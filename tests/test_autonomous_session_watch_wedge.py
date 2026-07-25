@@ -27,6 +27,8 @@ from __future__ import annotations
 
 import json
 import sys
+import time
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -40,6 +42,12 @@ import backend_poll as bp  # noqa: E402
 from runpod_api import PodInfo  # noqa: E402
 
 K = bp.RUNPOD_WEDGE_K_SEC  # 900s — the SAME floor the poller uses (no duplicate literal)
+
+# Genuine helper bodies captured at import time (BEFORE any fixture stubs
+# them) — the #1667 tests restore these to exercise the REAL code paths
+# (the keep_running_owner file's _REAL_APPEND convention).
+_REAL_OWNER_LIVE = asw._wedge_owner_live
+_REAL_POST_PROGRESS = asw._post_progress_marker
 
 
 # ---------------------------------------------------------------------------
@@ -370,6 +378,7 @@ def _patch_wedge_io(
     status="running",
     keep_running="unknown",
     inputs_ok=False,
+    owner_live=False,
     failover_outcome="failover",
     failover_terminal=None,
 ):
@@ -396,6 +405,9 @@ def _patch_wedge_io(
     monkeypatch.setattr(asw, "_task_status", lambda issue: status)
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: keep_running)
     monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: inputs_ok)
+    # #1667 owner-liveness probe: default False (no live owner) so the
+    # pre-#1667 tests keep their terminate behavior byte-equivalent.
+    monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: owner_live)
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
     monkeypatch.setattr(
         asw,
@@ -1118,6 +1130,7 @@ def _patch_real_marker_recorders(monkeypatch, *, outcome, terminal):
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: False)  # #1667: no owner
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(
         asw,
@@ -1251,6 +1264,7 @@ def test_wedge_failover_raise_after_terminate_routes_to_blocked_redrivable(
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: False)  # #1667: no owner
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(
         asw,
@@ -1331,6 +1345,7 @@ def test_wedge_failover_preterminate_raise_does_not_falsely_block_live_pod(
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: False)  # #1667: no owner
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(
         asw,
@@ -1493,6 +1508,7 @@ def test_wedge_terminal_recording_partial_does_not_clear_clock(
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: False)  # #1667: no owner
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(
         asw,
@@ -1571,6 +1587,7 @@ def test_wedge_terminal_recording_both_succeed_clears_clock(isolated_registry, m
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: False)  # #1667: no owner
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(
         asw,
@@ -1628,6 +1645,7 @@ def test_wedge_terminal_record_retries_then_succeeds(isolated_registry, monkeypa
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: False)  # #1667: no owner
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(
         asw,
@@ -1702,6 +1720,7 @@ def test_wedge_terminal_record_exhausts_retries_keeps_clock(isolated_registry, m
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: False)  # #1667: no owner
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(
         asw,
@@ -1796,3 +1815,480 @@ def test_wedge_terminated_pod_absent_from_running_set_no_redrive_next_tick(monke
     assert pod_ids == ["p692-RUNNING"]
     assert "p692-TERMINATED" not in pod_ids
     assert "p692-EXITED" not in pod_ids
+
+
+# ===========================================================================
+# 11. The #1667 owner-liveness guard: decide_pod_wedge owner axis, the
+#     tri-state _wedge_owner_live probe (#1586 incident replay), the
+#     alert-owner-live defer block (once-per-episode marker, clock
+#     preserved), the kill switch, the env window, and the self-defer-loop
+#     sentinel pin.
+# ===========================================================================
+
+
+def test_wedge_decide_owner_live_demotes_to_alert():
+    # Durability pin (#1667): confirmed + keep_running=False + inputs_ok=True
+    # but a LIVE owning session -> the terminate demotes to the defer action.
+    assert _decide(keep_running=False, inputs_ok=True, owner_live=True) == (
+        "alert-owner-live",
+        0,
+    )
+
+
+def test_wedge_decide_owner_unknown_demotes_to_alert():
+    # The owner axis extends the MF2 only-the-literal-False-acts invariant
+    # (the test_wedge_decision_invariant_terminate_only_on_literal_false
+    # sweep pattern): "unknown" AND any garbage value demote; terminate fires
+    # ONLY on the literal False.
+    for owner_live in (True, "unknown", None, 0, 1, "live", ""):
+        action, counter = _decide(keep_running=False, inputs_ok=True, owner_live=owner_live)
+        assert action == "alert-owner-live", owner_live
+        assert counter == 0, owner_live
+        assert action != "terminate-failover", owner_live
+    # The full (keep_running x inputs_ok x owner_live) grid: terminate ONLY at
+    # the one literal-False + True + literal-False cell.
+    for keep_running in (True, False, "unknown"):
+        for inputs_ok in (True, False):
+            for owner_live in (True, False, "unknown"):
+                action, _ = _decide(
+                    keep_running=keep_running, inputs_ok=inputs_ok, owner_live=owner_live
+                )
+                if keep_running is False and inputs_ok and owner_live is False:
+                    assert action == "terminate-failover"
+                else:
+                    assert action != "terminate-failover", (keep_running, inputs_ok, owner_live)
+
+
+def test_wedge_decide_owner_absent_still_terminates():
+    # The terminate-still-fires-when-owner-dead pin: the #664 dead-everything
+    # case is preserved (owner_live resolved to the literal False).
+    assert _decide(keep_running=False, inputs_ok=True, owner_live=False) == (
+        "terminate-failover",
+        0,
+    )
+
+
+def test_wedge_decide_owner_default_backcompat():
+    # Param omitted -> default False -> terminate unchanged (pins kill-switch
+    # equivalence at the pure layer: the kill-switch path passes the same
+    # literal False every pre-#1667 call site implied).
+    assert _decide(keep_running=False, inputs_ok=True) == ("terminate-failover", 0)
+
+
+# Content-thinned REAL event rows from tasks/*/1586/events.jsonl (the #1586
+# incident this guard closes): the crash-fix-round epm:failure + the
+# stage-dispatch breadcrumb, plus the 05:42:00Z wedge-failover WATCHER row —
+# included so its exclusion from leg-1 recency is demonstrated by the code
+# path (_latest_nonwatcher_event_ts), not by fixture omission.
+_ROWS_1586 = [
+    {
+        "kind": "epm:progress",
+        "ts": "2026-07-24T05:16:00Z",
+        "by": "poll_pipeline",
+        "note": "phase transition: p7_margin -> p8_capture",
+    },
+    {
+        "kind": "epm:failure",
+        "ts": "2026-07-24T05:18:59Z",
+        "by": "unknown",
+        "note": "failure_class: code phase: p8_capture (fu resume 6, fix_sha 6e329e7c)",
+    },
+    {
+        "kind": "epm:progress",
+        "ts": "2026-07-24T05:19:13Z",
+        "by": "unknown",
+        "note": "stage-dispatch stage=followup-implementing round=10 "
+        "subagent=experiment-implementer label=caveat-fix",
+    },
+    {
+        "kind": "epm:progress",
+        "ts": "2026-07-24T05:42:00Z",
+        "by": "autonomous_session_watch",
+        "note": asw._WEDGE_FAILOVER_NOTE_SENTINEL
+        + " TERMINATED + re-provisioned a FRESH pod for issue #1586",
+    },
+]
+
+
+def _epoch(iso: str) -> float:
+    return datetime.fromisoformat(iso.replace("Z", "+00:00")).timestamp()
+
+
+def _fixture_1586_events(monkeypatch):
+    """Route the REAL _task_events -> _latest_nonwatcher_event_ts path through
+    the #1586 fixture: the subprocess boundary (task.py list-markers --json)
+    is the ONLY thing faked, exactly as _fake_task_view does."""
+
+    class _Out:
+        returncode = 0
+        stdout = json.dumps(_ROWS_1586)
+
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: _Out())
+
+
+def test_wedge_owner_live_1586_timeline(monkeypatch):
+    # Incident replay of _wedge_owner_live against the real #1586 rows.
+    monkeypatch.delenv("EPM_DISABLE_WEDGE_OWNER_GUARD", raising=False)
+    monkeypatch.delenv("EPM_WEDGE_OWNER_RECENT_H", raising=False)
+    _fixture_1586_events(monkeypatch)
+
+    # LIVE arm: at the ~05:33Z decision instant the newest non-watcher marker
+    # (stage-dispatch, 05:19:13Z) is ~14.5 min old << 2h -> leg 1 reads True
+    # (the demote fires on its own motivating incident). Leg 2 is
+    # short-circuited (returning "absent" here must NOT flip the verdict).
+    monkeypatch.setattr(
+        asw, "_keep_running_owner_state", lambda issue, now, min_idle_s: ("absent", {})
+    )
+    now_live = _epoch("2026-07-24T05:33:43Z")
+    assert asw._wedge_owner_live(1586, now_live) is True
+
+    # DEAD-owner arm: at 07:30:00Z every NON-watcher row is > 2h old
+    # (05:19:13Z -> gap 7847s >= 7200) while the 05:42:00Z WATCHER failover
+    # row is only 6480s old — if the sentinel row counted, leg 1 would read
+    # LIVE and the wedge would defer to its own marker forever (the
+    # self-defer loop). Exclusion by the code path + leg 2 "absent" -> the
+    # literal False (terminate may proceed — the #664 dead-everything case).
+    now_dead = _epoch("2026-07-24T07:30:00Z")
+    assert asw._wedge_owner_live(1586, now_dead) is False
+
+    # Unresolvable leg 2 ("unknown" owner state) with the same stale markers
+    # -> "unknown", never False (uncertainty must not enable terminate).
+    monkeypatch.setattr(
+        asw, "_keep_running_owner_state", lambda issue, now, min_idle_s: ("unknown", {})
+    )
+    assert asw._wedge_owner_live(1586, now_dead) == "unknown"
+
+
+def test_wedge_owner_live_tsless_events_and_exception_unknown(monkeypatch):
+    # ts-less events (leg 1 unresolvable) -> "unknown" even when leg 2 reads
+    # wedged/absent; and ANY probe exception -> "unknown" (loud, never False).
+    monkeypatch.delenv("EPM_DISABLE_WEDGE_OWNER_GUARD", raising=False)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress"}])
+    monkeypatch.setattr(
+        asw, "_keep_running_owner_state", lambda issue, now, min_idle_s: ("absent", {})
+    )
+    assert asw._wedge_owner_live(1586, time.time()) == "unknown"
+    # Exception path: the events read raises -> "unknown".
+    monkeypatch.setattr(
+        asw, "_task_events", lambda issue: (_ for _ in ()).throw(RuntimeError("boom"))
+    )
+    assert asw._wedge_owner_live(1586, time.time()) == "unknown"
+
+
+@pytest.mark.parametrize("owner_live", [True, "unknown"])
+def test_wedge_owner_defer_marker_posted_once_per_episode(
+    isolated_registry, monkeypatch, capsys, owner_live
+):
+    # Integration through _process_wedged_pod: the confirming tick with a
+    # live/"unknown" owner posts ONE defer marker (sentinel + pod_id +
+    # terminate recipe in the note), preserves the wedge clock, and later
+    # confirmed ticks do NOT repost. The wedge-ALERT path is NOT consumed:
+    # no wedge-alert marker fires and wedge_alerted stays False, so a LATER
+    # gated-off tick still gets its once-per-episode alert (the
+    # "alert-owner-live return skips nothing pre-existing" pin — this branch
+    # was previously terminate-only, so no pre-#1667 marker fired on it).
+    now = 1_000_000.0
+    onset = now - (K + 50.0)
+    asw._save_pod_safety_state(
+        692,
+        "p692",
+        missed=0,
+        alerted=False,
+        last_progress_ts=None,
+        wedge_first_seen=onset,
+        wedge_missed=1,
+        wedge_alerted=False,
+        prev={"first_seen": onset, "pod_id": "p692"},
+    )
+    stops, _posts, failovers = _patch_wedge_io(
+        monkeypatch,
+        status="running",
+        keep_running=False,
+        inputs_ok=True,
+        owner_live=owner_live,
+    )
+    notes: list[tuple[int, str, str]] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: notes.append((issue, label, note)),
+    )
+    asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
+    assert failovers == []  # the terminate was DEFERRED
+    assert stops == []
+    defer_notes = [n for _i, label, n in notes if label == "wedge-owner-defer"]
+    assert len(defer_notes) == 1
+    assert asw._WEDGE_OWNER_DEFER_NOTE_SENTINEL in defer_notes[0]
+    assert "p692" in defer_notes[0]
+    assert "pod.py terminate --issue 692 --yes" in defer_notes[0]
+    assert f"owner_live={owner_live}" in defer_notes[0]
+    # The stderr defer line fires on BOTH the True and the "unknown" branch.
+    assert "WEDGE-OWNER-DEFER issue #692" in capsys.readouterr().err
+    loaded = asw._load_pod_safety_state(692)
+    assert loaded["wedge_first_seen"] == onset  # CLOCK PRESERVED (acceptance #4)
+    assert loaded["wedge_owner_defer_noted"] is True
+    assert loaded["wedge_alerted"] is False  # the wedge-alert dedup is NOT consumed
+    assert not any(label == "wedge-alert" for _i, label, _n in notes)
+    # Tick 2 (counter was reset to 0 -> re-accumulates) + tick 3 (re-confirmed
+    # -> the probe re-runs, still live) -> NO second defer marker.
+    asw._process_pod(692, "p692", _wedged_info(), now + 600, dry_run=False, threshold=2)
+    asw._process_pod(692, "p692", _wedged_info(), now + 1200, dry_run=False, threshold=2)
+    assert len([n for _i, label, n in notes if label == "wedge-owner-defer"]) == 1
+    assert failovers == []
+
+
+def test_wedge_owner_defer_rearms_after_episode_reset(isolated_registry, monkeypatch):
+    # Episode-reset re-arm: after a defer episode ends (the heal-path
+    # _clear_wedge_state clear), a FRESH matured episode re-posts the defer
+    # marker — and an MF4 pod_id-mismatch save resets the dedup flag too
+    # (pinned independent of the _CARRY-vs-kwarg persistence choice).
+    now = 1_000_000.0
+    onset = now - (K + 50.0)
+
+    def _seed(pod_id: str) -> None:
+        asw._save_pod_safety_state(
+            692,
+            pod_id,
+            missed=0,
+            alerted=False,
+            last_progress_ts=None,
+            wedge_first_seen=onset,
+            wedge_missed=1,
+            wedge_alerted=False,
+            wedge_owner_defer_noted=False,
+            prev={"first_seen": onset, "pod_id": pod_id},
+        )
+
+    _seed("p692")
+    _stops, posts, _fo = _patch_wedge_io(
+        monkeypatch, status="running", keep_running=False, inputs_ok=True, owner_live=True
+    )
+    asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
+    assert [label for _i, label in posts].count("wedge-owner-defer") == 1
+    assert asw._load_pod_safety_state(692)["wedge_owner_defer_noted"] is True
+    # Heal path: the port re-appears -> _clear_wedge_state ends the episode
+    # and clears the defer dedup with the other wedge fields.
+    asw._clear_wedge_state(692, "p692")
+    assert asw._load_pod_safety_state(692)["wedge_owner_defer_noted"] is False
+    # A fresh matured episode re-fires the defer marker.
+    _seed("p692")
+    asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
+    assert [label for _i, label in posts].count("wedge-owner-defer") == 2
+    # MF4: a stale noted flag under an OLD pod_id never shields the NEW
+    # incarnation — the mismatch save persists the reset flag.
+    asw._save_pod_safety_state(
+        692,
+        "p_OLD",
+        missed=0,
+        alerted=False,
+        last_progress_ts=None,
+        wedge_first_seen=onset,
+        wedge_missed=5,
+        wedge_alerted=True,
+        wedge_owner_defer_noted=True,
+        prev={"first_seen": onset, "pod_id": "p_OLD"},
+    )
+    asw._process_pod(692, "p_NEW", _wedged_info(pod_id="p_NEW"), now, dry_run=False, threshold=2)
+    assert asw._load_pod_safety_state(692)["wedge_owner_defer_noted"] is False
+
+
+def test_wedge_owner_defer_then_owner_dead_terminates(isolated_registry, monkeypatch):
+    # Defer tick, then the owner quiets (probe flips to the literal False):
+    # the re-confirmation ticks dispatch _wedge_failover WITHOUT restarting
+    # the K-floor maturation (the clock is never re-stamped from zero).
+    now = 1_000_000.0
+    onset = now - (K + 50.0)
+    asw._save_pod_safety_state(
+        692,
+        "p692",
+        missed=0,
+        alerted=False,
+        last_progress_ts=None,
+        wedge_first_seen=onset,
+        wedge_missed=1,
+        wedge_alerted=False,
+        prev={"first_seen": onset, "pod_id": "p692"},
+    )
+    owner = {"live": True}
+    _stops, _posts, failovers = _patch_wedge_io(
+        monkeypatch, status="running", keep_running=False, inputs_ok=True
+    )
+    monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: owner["live"])
+    asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
+    assert failovers == []  # deferred to the live owner
+    assert asw._load_pod_safety_state(692)["wedge_first_seen"] == onset
+    # Owner activity quiets.
+    owner["live"] = False
+    # Re-confirmation tick 1: counter 0 -> 1 < threshold -> keep (clock intact).
+    asw._process_pod(692, "p692", _wedged_info(), now + 600, dry_run=False, threshold=2)
+    assert failovers == []
+    assert asw._load_pod_safety_state(692)["wedge_first_seen"] == onset  # never restarted
+    # Re-confirmation tick 2: confirmed again + owner dead -> terminate fires.
+    asw._process_pod(692, "p692", _wedged_info(), now + 1200, dry_run=False, threshold=2)
+    assert failovers == [692]
+
+
+def test_wedge_owner_guard_kill_switch(isolated_registry, monkeypatch):
+    # EPM_DISABLE_WEDGE_OWNER_GUARD=1 -> byte-equivalent pre-#1667 terminate:
+    # the probe legs (events read, owner-state resolver) are NEVER invoked
+    # (raise-if-called) and the terminate proceeds.
+    monkeypatch.setenv("EPM_DISABLE_WEDGE_OWNER_GUARD", "1")
+    now = 1_000_000.0
+    onset = now - (K + 50.0)
+    asw._save_pod_safety_state(
+        692,
+        "p692",
+        missed=0,
+        alerted=False,
+        last_progress_ts=None,
+        wedge_first_seen=onset,
+        wedge_missed=1,
+        wedge_alerted=False,
+        prev={"first_seen": onset, "pod_id": "p692"},
+    )
+    _stops, _posts, failovers = _patch_wedge_io(
+        monkeypatch, status="running", keep_running=False, inputs_ok=True
+    )
+    # The REAL probe runs (un-stub it), but its legs must never be touched.
+    monkeypatch.setattr(asw, "_wedge_owner_live", _REAL_OWNER_LIVE)
+
+    def _raise(*_a, **_k):
+        raise AssertionError("probe leg invoked despite the kill switch")
+
+    monkeypatch.setattr(asw, "_task_events", _raise)
+    monkeypatch.setattr(asw, "_latest_nonwatcher_event_ts", _raise)
+    monkeypatch.setattr(asw, "_keep_running_owner_state", _raise)
+    asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
+    assert failovers == [692]  # terminate proceeded exactly as pre-#1667
+
+
+def test_wedge_owner_recent_window_env_and_malformed_fallback(monkeypatch):
+    # EPM_WEDGE_OWNER_RECENT_H honored (HOURS); malformed / non-positive /
+    # empty fall back to the 7200s default (never a kill switch).
+    monkeypatch.delenv("EPM_WEDGE_OWNER_RECENT_H", raising=False)
+    assert asw.WEDGE_OWNER_RECENT_S == 2 * 3600
+    assert asw._wedge_owner_recent_s() == 7200.0
+    monkeypatch.setenv("EPM_WEDGE_OWNER_RECENT_H", "6")
+    assert asw._wedge_owner_recent_s() == 6 * 3600.0
+    monkeypatch.setenv("EPM_WEDGE_OWNER_RECENT_H", "0.5")
+    assert asw._wedge_owner_recent_s() == 1800.0
+    for bad in ("garbage", "", "0", "-5"):
+        monkeypatch.setenv("EPM_WEDGE_OWNER_RECENT_H", bad)
+        assert asw._wedge_owner_recent_s() == 7200.0
+    # Kill-switch reader: default enabled; truthy values disable.
+    monkeypatch.delenv("EPM_DISABLE_WEDGE_OWNER_GUARD", raising=False)
+    assert asw._wedge_owner_guard_enabled() is True
+    for truthy in ("1", "true", "YES", "on"):
+        monkeypatch.setenv("EPM_DISABLE_WEDGE_OWNER_GUARD", truthy)
+        assert asw._wedge_owner_guard_enabled() is False
+
+
+def test_wedge_owner_defer_sentinel_in_watcher_note_sentinels():
+    # The self-defer-loop pin: the defer marker is epm:progress; if it counted
+    # as non-watcher activity, leg 1 of _wedge_owner_live would read the
+    # watcher's OWN marker as owner liveness and defer forever. Membership in
+    # _WATCHER_NOTE_SENTINELS excludes it from BOTH recency filters.
+    assert asw._WEDGE_OWNER_DEFER_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+    row = {
+        "kind": "epm:progress",
+        "ts": "2026-07-24T05:42:00Z",
+        "note": f"{asw._WEDGE_OWNER_DEFER_NOTE_SENTINEL} WEDGE FAILOVER DEFERRED TO LIVE OWNER",
+        "by": "autonomous_session_watch",
+    }
+    assert asw._latest_nonwatcher_event_ts([row]) is None
+    assert asw._latest_progress_ts([row]) is None
+
+
+def test_wedge_owner_probe_lazy(isolated_registry, monkeypatch):
+    # The probe is NEVER invoked below eligibility: below confirmation, when
+    # keep_running is True/"unknown", or when inputs_ok=False (the MF2 lazy
+    # pattern — the events read + daemon /list are paid only for a matured,
+    # otherwise terminate-eligible wedge).
+    now = 1_000_000.0
+
+    def _run(status_kw):
+        _patch_wedge_io(monkeypatch, **status_kw)
+        monkeypatch.setattr(
+            asw,
+            "_wedge_owner_live",
+            lambda issue, now: (_ for _ in ()).throw(
+                AssertionError("owner probe invoked below eligibility")
+            ),
+        )
+        asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
+
+    def _seed_matured():
+        asw._save_pod_safety_state(
+            692,
+            "p692",
+            missed=0,
+            alerted=False,
+            last_progress_ts=None,
+            wedge_first_seen=now - (K + 50.0),
+            wedge_missed=1,
+            wedge_alerted=False,
+            prev={"first_seen": now - (K + 50.0), "pod_id": "p692"},
+        )
+
+    # (a) Below the K floor (fresh onset this tick): probe never runs.
+    _run(dict(status="running", keep_running=False, inputs_ok=True))
+    # (b) Past K but unconfirmed (miss 0 -> 1 < threshold): probe never runs.
+    asw._save_pod_safety_state(
+        692,
+        "p692",
+        missed=0,
+        alerted=False,
+        last_progress_ts=None,
+        wedge_first_seen=now - (K + 50.0),
+        wedge_missed=0,
+        wedge_alerted=False,
+        prev={"first_seen": now - (K + 50.0), "pod_id": "p692"},
+    )
+    _run(dict(status="running", keep_running=False, inputs_ok=True))
+    # (c) Confirmed + keep_running=True: probe never runs.
+    _seed_matured()
+    _run(dict(status="running", keep_running=True, inputs_ok=True))
+    # (d) Confirmed + keep_running="unknown": probe never runs.
+    _seed_matured()
+    _run(dict(status="running", keep_running="unknown", inputs_ok=True))
+    # (e) Confirmed + untagged + inputs_ok=False: probe never runs.
+    _seed_matured()
+    _run(dict(status="running", keep_running=False, inputs_ok=False))
+
+
+def test_wedge_owner_defer_dry_run_no_writes(isolated_registry, monkeypatch):
+    # Dry-run on a DEFERRING tick (the alert-owner-live branch): no marker
+    # subprocess fires (the REAL _post_progress_marker body dry-run-prints
+    # only) and no state file is written (mirrors the keep_running_owner
+    # file's dry-run contract).
+    now = 1_000_000.0
+    onset = now - (K + 50.0)
+    asw._save_pod_safety_state(
+        692,
+        "p692",
+        missed=0,
+        alerted=False,
+        last_progress_ts=None,
+        wedge_first_seen=onset,
+        wedge_missed=1,
+        wedge_alerted=False,
+        prev={"first_seen": onset, "pod_id": "p692"},
+    )
+    seeded = asw._load_pod_safety_state(692)
+    _stops, posts, failovers = _patch_wedge_io(
+        monkeypatch, status="running", keep_running=False, inputs_ok=True, owner_live=True
+    )
+    # Restore the REAL marker helper body; its subprocess boundary raises if
+    # ever touched (dry-run must return before the subprocess).
+    monkeypatch.setattr(asw, "_post_progress_marker", _REAL_POST_PROGRESS)
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda *a, **k: (_ for _ in ()).throw(
+            AssertionError("marker subprocess fired under dry_run")
+        ),
+    )
+    asw._process_pod(692, "p692", _wedged_info(), now, dry_run=True, threshold=2)
+    assert failovers == []
+    assert posts == []  # the stub was restored; nothing recorded there either
+    assert asw._load_pod_safety_state(692) == seeded  # no state write under dry_run

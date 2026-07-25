@@ -57,7 +57,7 @@ adding a pass means adding a numbered item here AND bumping the digit:
    session whose driver process has died. Gated on daemon reachability — it
    reasons about session liveness, which is unknowable during a daemon outage.
 3. **Pod-safety pass.** Reconcile RUNNING managed pods (``pod-<N>`` / legacy
-   ``epm-issue-<N>``) against their task's STATUS. Two conservative actions:
+   ``epm-issue-<N>``) against their task's STATUS. Conservative actions:
 
    - **AUTO-STOP** (reversible, never terminate) a RUNNING pod whose task is
      already DONE (``completed`` / ``awaiting_promotion`` / ``archived``) or
@@ -88,6 +88,24 @@ adding a pass means adding a numbered item here AND bumping the digit:
      frozen wrapper). An "unknown" owner read (daemon unreachable,
      unresolvable transcript) FREEZES the confirmation counter — fail toward
      no-fire. Kill switch ``EPM_DISABLE_KEEP_RUNNING_OWNER_AUDIT=1``.
+   - **TERMINATE+FAILOVER (#664 RunPod no-port wedge arm, #692/#770)** a
+     RUNNING pod on a NON-done task stuck in the RUNNING-but-no-port host
+     wedge past the K floor (``backend_poll.RUNPOD_WEDGE_K_SEC``) for >=
+     threshold consecutive checks — the poller-DEAD backstop. ALERT by
+     default; the IRREVERSIBLE terminate + fresh re-provision (the SAME
+     recovery the poller owns, ``backend_poll._failover_wedged_runpod``,
+     bounded-once via the shared lease + sentinel) fires ONLY for the
+     provably-safe case: keep-running tag read and absent, inputs verified
+     on HF, AND — the #1667 owner guard — NO live owning session working the
+     issue (tri-state ``_wedge_owner_live``: recent non-watcher markers /
+     live registered or cwd-mapped session within
+     ``EPM_WEDGE_OWNER_RECENT_H``, default 2h; only the literal ``False``
+     permits terminate — a live/"unknown" owner demotes to a
+     once-per-episode defer marker with the wedge clock PRESERVED, so a dead
+     owner still gets the terminate once activity quiets). Incident #1586: a
+     wedge terminate mid-crash-fix-round destroyed live run state. Kill
+     switch ``EPM_DISABLE_WEDGE_OWNER_GUARD=1`` (restores the pre-#1667
+     terminate).
 
    The pod-safety pass does NOT use session-cwd liveness as a stop trigger
    (see "Why STOP is keyed on task status, not session liveness" below) and
@@ -1073,7 +1091,13 @@ _WEDGE_STOP_NOTE_SENTINEL = "[autonomous_session_watch:runpod-noport-wedge-stop]
 # Substring stamped into the #770 RunPod no-port wedge TERMINATE+FAILOVER marker
 # — posted when the wedge matured past the K floor for >= threshold consecutive
 # checks AND the inputs-on-HF + (tri-state) keep-running gates confirm the
-# provably-safe case (`keep_running is False AND inputs_ok=True`). Promotes the
+# provably-safe case (`keep_running is False AND inputs_ok=True`). As of #1667
+# the confirmed case carries one MORE upstream gate: the tri-state
+# owner-liveness probe (`_wedge_owner_live`) — the terminate fires only when
+# NO live owning session is working the issue (recent non-watcher markers /
+# live registered session); a live/"unknown" owner demotes to the
+# `_WEDGE_OWNER_DEFER_NOTE_SENTINEL` defer-alert below (incident #1586: a
+# wedge terminate mid-crash-fix-round destroyed live run state). Promotes the
 # #692 backstop's strongest action from a reversible `pod.py stop` (which cannot
 # heal a host-pinned dead RunPod host, #763) to the SAME irreversible terminate +
 # fresh re-provision the poller owns (`backend_poll._failover_wedged_runpod`),
@@ -1081,6 +1105,32 @@ _WEDGE_STOP_NOTE_SENTINEL = "[autonomous_session_watch:runpod-noport-wedge-stop]
 # for the success / already-handled / no-capacity / blocked outcomes; excluded
 # from "real progress" like the other wedge markers.
 _WEDGE_FAILOVER_NOTE_SENTINEL = "[autonomous_session_watch:runpod-noport-wedge-failover]"
+
+# Substring stamped into the #1667 wedge OWNER-DEFER marker — posted (once per
+# wedge episode, deduped via the `wedge_owner_defer_noted` pod-safety state
+# field) when the #770 terminate+failover is ELIGIBLE (matured + confirmed +
+# untagged + inputs verified on HF) but the owner-liveness probe
+# (`_wedge_owner_live`) reads the owning session as live or "unknown", so the
+# watcher DEFERS the irreversible terminate to the owning session (incident
+# #1586, 2026-07-24: the wedge arm terminated pod-1586 mid-crash-fix-round —
+# newest non-watcher marker 14 min old — destroying live run state the owner
+# was about to reuse). Posted as epm:progress, so it MUST be a member of
+# _WATCHER_NOTE_SENTINELS: leg 1 of the probe reads the newest NON-watcher
+# marker as owner-liveness evidence, and an unexcluded defer marker would
+# count as that very evidence and defer forever (the self-defer loop).
+_WEDGE_OWNER_DEFER_NOTE_SENTINEL = "[autonomous_session_watch:runpod-noport-wedge-owner-defer]"
+
+#: Recent-owner-activity window (seconds) for the #1667 wedge owner-liveness
+#: probe: an issue with a non-watcher marker newer than this — or a live
+#: registered/cwd-mapped session with a transcript idle below it — has a LIVE
+#: owner, and the #770 wedge terminate defers to it. 2h is the same construct
+#: as the stalled detector's marker-heartbeat window ("a session that posted
+#: ANY non-watcher marker within 2h is never declared stalled" —
+#: ``EPM_STALLED_MARKER_HEARTBEAT_MIN`` = 120 min, #845 a-i); the #1586
+#: incident margin is 14-min marker age vs the 120-min window (~8.6x
+#: headroom). Env-overridable at CALL time via ``EPM_WEDGE_OWNER_RECENT_H``
+#: (HOURS; :func:`_wedge_owner_recent_s`).
+WEDGE_OWNER_RECENT_S = 2 * 3600
 
 # Substring stamped into the #1490 orphan-gcp-handle alert marker: a RUNNING
 # bare `pod-<N>` whose run-handle sidecar still points at backend=gcp past the
@@ -1549,6 +1599,11 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _WEDGE_ALERT_NOTE_SENTINEL,
         _WEDGE_STOP_NOTE_SENTINEL,
         _WEDGE_FAILOVER_NOTE_SENTINEL,
+        # #1667 self-defer-loop hazard: the owner-defer marker is epm:progress;
+        # if it counted as non-watcher activity, leg 1 of _wedge_owner_live
+        # would read the watcher's OWN defer marker as owner liveness and the
+        # wedge terminate would defer forever. Membership here excludes it.
+        _WEDGE_OWNER_DEFER_NOTE_SENTINEL,
         _ORPHAN_GCP_HANDLE_NOTE_SENTINEL,
         _UNLAUNCHED_ORPHAN_NOTE_SENTINEL,
         _STALLED_ALERT_NOTE_SENTINEL,
@@ -3208,14 +3263,15 @@ def decide_pod_wedge(
     alerted: bool,
     keep_running: bool | str,
     inputs_ok: bool,
+    owner_live: bool | str = False,
 ) -> tuple[str, int]:
     """Pure decision for a RUNNING managed pod in the #664 RunPod no-port wedge.
 
     The watcher backstop for when the poller's
     ``backend_poll._maybe_escalate_runpod_wedge`` never ran (the per-issue poll
     loop died). Returns ``(action, new_wedge_missed)`` where action is
-    ``"terminate-failover"`` | ``"alert"`` | ``"keep"`` (#770: the strongest
-    action was promoted from the reversible ``"stop"`` to
+    ``"terminate-failover"`` | ``"alert-owner-live"`` | ``"alert"`` | ``"keep"``
+    (#770: the strongest action was promoted from the reversible ``"stop"`` to
     ``"terminate-failover"`` — see the Decision invariant below). The caller
     (``_process_wedged_pod``) has already confirmed the RAW wedge condition
     (``backend_poll._pod_is_runpod_runtime_wedged``) and excluded DONE-status
@@ -3256,6 +3312,23 @@ def decide_pod_wedge(
         Whether the wedged run's recoverable inputs are verified on HF (the same
         gate #689 fix (b) uses, via ``backend_poll._wedged_run_inputs_on_hf``).
         A STOP fires only when inputs are PROVABLY safe.
+    owner_live
+        TRI-STATE (#1667): ``True`` (a live owning session is working the
+        issue — recent non-watcher markers, or a live registered/cwd-mapped
+        session with a fresh transcript) | ``False`` (BOTH probe legs resolved
+        and read not-live) | ``"unknown"`` (the probe could not resolve —
+        daemon down, ts-less events, an exception). The IRREVERSIBLE
+        terminate fires ONLY on the literal ``False`` — the SAME
+        only-the-literal-False-acts polarity as ``keep_running`` (MF2);
+        ``True`` / ``"unknown"`` / any garbage value demote the
+        otherwise-terminate-eligible case to ``("alert-owner-live", 0)``
+        (a once-per-episode defer marker; the wedge clock keeps running so a
+        later tick where owner activity has quieted terminates without
+        restarting maturation). Defaults to ``False`` so every pre-#1667 call
+        site — and the kill-switch path — keeps byte-equivalent terminate
+        behavior. Incident #1586: the wedge arm terminated a pod out from
+        under a live session mid-crash-fix round (newest non-watcher marker
+        14 min old at decision time).
 
     Cases:
 
@@ -3279,29 +3352,42 @@ def decide_pod_wedge(
           This is a STRONGER gate than the status-class DONE arm's
           False-on-failure (safe there only because it auto-stops DONE-status
           pods; the wedge arm auto-stops live-work pods).
-        - ``keep_running is False`` AND ``inputs_ok`` ->
-          ``("terminate-failover", 0)``. Inputs are verified on HF AND the tag
-          was read AND it is absent, so the IRREVERSIBLE terminate +
-          re-provision is safe — route to the existing poller recovery
-          (``backend_poll._failover_wedged_runpod``: terminate the wedged pod,
-          re-provision a FRESH pod, bounded-once via the durable lease +
-          sentinel). A reversible ``pod.py stop`` cannot heal a host-pinned dead
-          RunPod host — ``resume_pod`` returns to the SAME dead host (#763) —
-          which is why the action was promoted from ``"stop"`` to
-          ``"terminate-failover"`` (#770).
+        - ``keep_running is False`` AND ``inputs_ok`` AND
+          ``owner_live is False`` -> ``("terminate-failover", 0)``. Inputs are
+          verified on HF AND the tag was read AND it is absent AND no live
+          owning session is working the issue (#1667), so the IRREVERSIBLE
+          terminate + re-provision is safe — route to the existing poller
+          recovery (``backend_poll._failover_wedged_runpod``: terminate the
+          wedged pod, re-provision a FRESH pod, bounded-once via the durable
+          lease + sentinel). A reversible ``pod.py stop`` cannot heal a
+          host-pinned dead RunPod host — ``resume_pod`` returns to the SAME
+          dead host (#763) — which is why the action was promoted from
+          ``"stop"`` to ``"terminate-failover"`` (#770).
+        - ``keep_running is False`` AND ``inputs_ok`` AND ``owner_live`` is
+          ``True`` / ``"unknown"`` / anything else -> ``("alert-owner-live", 0)``
+          (#1667). The terminate is ELIGIBLE but a live (or unresolvable)
+          owning session is working the issue — DEFER to it (a
+          once-per-episode defer marker; the counter reset mirrors the alert
+          convention, so after a defer re-confirmation needs ``threshold``
+          fresh ticks and the probe re-runs every ~2 ticks). The wedge clock
+          is the CALLER's to preserve — a later tick where owner activity has
+          quieted terminates without restarting the K-floor maturation.
         - ``keep_running is False`` AND not ``inputs_ok`` -> ``("alert", 0)``.
           Inputs are NOT verified on HF (or no run handle to gate on); a
           terminate could strand un-uploaded work, so ALERT-only and let a
           human / the re-invoked /issue decide (CLAUDE.md halt-criterion #2).
 
-    Decision invariant (MF2): ``("terminate-failover", _)`` is the ONLY
+    Decision invariant (MF2 + #1667): ``("terminate-failover", _)`` is the ONLY
     irreversible action and is returned ONLY when ``keep_running is False`` (the
     literal boolean False, NOT ``"unknown"`` and NOT ``True``) AND
-    ``inputs_ok is True``. Every other ``keep_running`` value (``True``,
-    ``"unknown"``) and the ``not inputs_ok`` case route to ALERT-only. The
-    action set is now ``"terminate-failover" | "alert" | "keep"`` — ``"stop"``
-    is NO LONGER a value this fn returns (#770; the reversible ``_stop_pod`` is
-    still used by the status-class DONE escaped-pod arm).
+    ``inputs_ok is True`` AND ``owner_live is False`` (again the literal
+    boolean False). Every other ``keep_running`` value (``True``,
+    ``"unknown"``) and the ``not inputs_ok`` case route to ALERT-only; every
+    other ``owner_live`` value routes to the ``"alert-owner-live"`` defer. The
+    action set is now ``"terminate-failover" | "alert-owner-live" | "alert" |
+    "keep"`` — ``"stop"`` is NO LONGER a value this fn returns (#770; the
+    reversible ``_stop_pod`` is still used by the status-class DONE
+    escaped-pod arm).
     """
     if wedged_for <= k_floor:
         # Below the maturity floor (or exactly at it — MF5 parity with the
@@ -3318,7 +3404,11 @@ def decide_pod_wedge(
         return ("alert", 0)
     # keep_running is the literal False (tag read OK and absent).
     if inputs_ok:
-        return ("terminate-failover", 0)
+        if owner_live is False:
+            return ("terminate-failover", 0)
+        # #1667: terminate-eligible, but a live/"unknown" owning session is
+        # working the issue — defer to it (only the literal False acts).
+        return ("alert-owner-live", 0)
     return ("alert", 0)
 
 
@@ -8044,7 +8134,8 @@ def _clear_wedge_state(issue: int, pod_id: str) -> None:
     or the pod was never wedged this tick), so a one-tick no-port blip never
     matures toward a stop and a healed pod's stale wedge fields are reset. It
     re-saves the state with ``wedge_first_seen=None, wedge_missed=0,
-    wedge_alerted=False`` (NOT :func:`_clear_pod_safety_state`, which clears the
+    wedge_alerted=False, wedge_owner_defer_noted=False`` (NOT
+    :func:`_clear_pod_safety_state`, which clears the
     WHOLE file and would wipe the GC anchor ``first_seen``), and records the
     current ``pod_id`` so a later pod_id mismatch is detectable. The status-class
     counters (``missed`` / ``alerted`` / ``last_progress_ts``) are forward-carried
@@ -8065,6 +8156,7 @@ def _clear_wedge_state(issue: int, pod_id: str) -> None:
         wedge_first_seen=None,
         wedge_missed=0,
         wedge_alerted=False,
+        wedge_owner_defer_noted=False,
         prev=prev,
     )
 
@@ -8571,6 +8663,7 @@ def _save_pod_safety_state(
     wedge_first_seen: float | None = _CARRY,
     wedge_missed: int | None = _CARRY,
     wedge_alerted: bool | None = _CARRY,
+    wedge_owner_defer_noted: bool | None = _CARRY,
     kr_owner_missed: int | None = _CARRY,
     kr_owner_first_ts: float | None = _CARRY,
     kr_owner_last_alert_ts: float | None = _CARRY,
@@ -8621,6 +8714,11 @@ def _save_pod_safety_state(
     ``followup_noted`` flags whose only carry-forward signal IS ``None``. MF3:
     without this forward-carry the wedge fields would be silently dropped on
     every save and the wedge miss-guard / alert-dedup would never accumulate.
+    ``wedge_owner_defer_noted`` (#1667) is the once-per-wedge-episode dedup for
+    the owner-liveness defer marker and rides the SAME ``_CARRY`` convention as
+    ``wedge_alerted`` (carried on every unrelated save; explicitly cleared by
+    :func:`_clear_wedge_state`, the failover-outcome clock clear, and the MF4
+    pod_id-mismatch reset in :func:`_process_wedged_pod`).
 
     The #1582 keep-running wedged-owner fields — ``kr_owner_missed`` (the
     arm's >=threshold consecutive-confirmed-ticks counter),
@@ -8680,6 +8778,9 @@ def _save_pod_safety_state(
         wedge_missed = prev_wedge_missed if isinstance(prev_wedge_missed, int) else 0
     if wedge_alerted is _CARRY:
         wedge_alerted = bool((prev or {}).get("wedge_alerted", False))
+    if wedge_owner_defer_noted is _CARRY:
+        # #1667 owner-defer dedup — same carry convention as wedge_alerted.
+        wedge_owner_defer_noted = bool((prev or {}).get("wedge_owner_defer_noted", False))
     # #1582 kr_owner_* carry: _CARRY-defaulted like the wedge fields, but
     # pod_id-KEYED like orphan_gcp_noted — a save under a NEW pod_id resets
     # the episode (fresh incarnation), and the reset lives in-save so the
@@ -8718,6 +8819,7 @@ def _save_pod_safety_state(
         "wedge_first_seen": wedge_first_seen,
         "wedge_missed": int(wedge_missed),
         "wedge_alerted": bool(wedge_alerted),
+        "wedge_owner_defer_noted": bool(wedge_owner_defer_noted),
         "kr_owner_missed": int(kr_owner_missed),
         "kr_owner_first_ts": kr_owner_first_ts,
         "kr_owner_last_alert_ts": kr_owner_last_alert_ts,
@@ -10359,6 +10461,7 @@ def _handle_wedge_failover_outcome(
             wedge_first_seen=None,
             wedge_missed=0,
             wedge_alerted=False,
+            wedge_owner_defer_noted=False,
             prev=state_save["prev"],
         )
     return "handled"
@@ -10405,6 +10508,7 @@ def _process_wedged_pod(
         wedge_first_seen: float | None = None
         prev_wedge_missed = 0
         prev_wedge_alerted = False
+        prev_owner_defer_noted = False  # #1667: a fresh incarnation is a fresh episode
     else:
         prev_wfs = prev_state.get("wedge_first_seen")
         wedge_first_seen = prev_wfs if isinstance(prev_wfs, int | float) else None
@@ -10412,6 +10516,7 @@ def _process_wedged_pod(
         if not isinstance(prev_wedge_missed, int):
             prev_wedge_missed = 0
         prev_wedge_alerted = bool(prev_state.get("wedge_alerted", False))
+        prev_owner_defer_noted = bool(prev_state.get("wedge_owner_defer_noted", False))
 
     # ── MF1: dedicated wedge_first_seen clock ─────────────────────────────────
     # Stamp `now` on the FIRST tick the raw wedge predicate is True (wedge
@@ -10441,6 +10546,17 @@ def _process_wedged_pod(
     confirmed = wedged_for > RUNPOD_WEDGE_K_SEC and (prev_wedge_missed + 1) >= threshold
     keep_running: bool | str = _wedge_keep_running(issue) if confirmed else True
     inputs_ok = _wedge_inputs_safe(issue) if (confirmed and keep_running is False) else False
+    # #1667 owner-liveness gate — probed LAZILY, only when every OTHER
+    # terminate precondition already holds (the MF2 lazy pattern), so the
+    # events read + daemon /list are paid only for a matured, otherwise
+    # terminate-eligible wedge. Below eligibility the placeholder is `True`,
+    # which can never enable terminate (MF2 parity with the keep_running
+    # below-K placeholder).
+    owner_live: bool | str = (
+        _wedge_owner_live(issue, now)
+        if (confirmed and keep_running is False and inputs_ok)
+        else True
+    )
 
     action, new_wedge_missed = decide_pod_wedge(
         wedged_for=wedged_for,
@@ -10450,12 +10566,14 @@ def _process_wedged_pod(
         alerted=prev_wedge_alerted,
         keep_running=keep_running,
         inputs_ok=inputs_ok,
+        owner_live=owner_live,
     )
     wedged_h = f"{wedged_for / 3600:.2f}h"
     print(
         f"  issue #{issue} pod={pod_id}: RUNPOD NO-PORT WEDGE wedged_for={wedged_h} "
         f"(K={RUNPOD_WEDGE_K_SEC}s) wedge_missed={prev_wedge_missed}->{new_wedge_missed} "
-        f"keep_running={keep_running} inputs_ok={inputs_ok} action={action}"
+        f"keep_running={keep_running} inputs_ok={inputs_ok} owner_live={owner_live} "
+        f"action={action}"
     )
 
     if action == "terminate-failover":
@@ -10486,6 +10604,59 @@ def _process_wedged_pod(
         # failover raised -> fall through to the existing alert block (carries the
         # clock forward + dedups the alert); we did NOT act, so re-try later.
         action = "alert"
+
+    if action == "alert-owner-live":
+        # #1667 owner-liveness demote: the terminate is ELIGIBLE (matured +
+        # confirmed + untagged + inputs verified) but a live/"unknown" owning
+        # session is working the issue — DEFER to it. One defer marker per
+        # wedge episode (`wedge_owner_defer_noted` dedup); the wedge clock is
+        # PRESERVED so a later tick where owner activity has quieted
+        # terminates without restarting the K-floor maturation. Returning
+        # here mirrors the alert block's return — the ONLY behavior skipped
+        # relative to pre-#1667 is the terminate itself (this branch was
+        # previously terminate-only; the wedge-alert marker never fired on
+        # it), and `wedge_alerted` is carried untouched so a LATER gated-off
+        # tick (tag re-appears, inputs unverified) still posts its
+        # once-per-episode wedge-alert.
+        recent_h = _wedge_owner_recent_s() / 3600.0
+        if not prev_owner_defer_noted:
+            _post_progress_marker(
+                issue,
+                f"{_WEDGE_OWNER_DEFER_NOTE_SENTINEL} WEDGE FAILOVER DEFERRED TO LIVE OWNER "
+                f"(#1667): RUNNING pod {pod_id} is stuck in the #664 RUNNING-but-no-port "
+                f"host wedge for {wedged_h} (> {RUNPOD_WEDGE_K_SEC}s K floor, confirmed >= "
+                f"{threshold} checks; inputs verified on HF, keep-running absent) — the "
+                f"terminate+re-provision backstop (#770) is ELIGIBLE, but this issue shows "
+                f"recent owner activity (owner_live={owner_live}), so the watcher is "
+                f"DEFERRING to the owning session (incident #1586: a wedge terminate "
+                f"mid-crash-fix-round destroyed live run state). If the pod is truly "
+                f"unusable, persist state then terminate it yourself "
+                f"(`pod.py terminate --issue {issue} --yes`), or tag keep-running to hold "
+                f"it. The watcher re-checks every tick and terminates+fails over once "
+                f"owner activity quiets (> ~{recent_h:.0f}h). Posted once per wedge "
+                f"episode.",
+                dry_run,
+                label="wedge-owner-defer",
+            )
+        print(
+            f"  WEDGE-OWNER-DEFER issue #{issue}: terminate-eligible wedge {wedged_h} "
+            f"deferred to live/unknown owner (owner_live={owner_live}); NOT terminating.",
+            file=sys.stderr,
+        )
+        if not dry_run:
+            _save_pod_safety_state(
+                issue,
+                pod_id,
+                missed=prev_missed,
+                alerted=prev_status_alerted,
+                last_progress_ts=prev_progress,
+                wedge_first_seen=wedge_first_seen,  # CLOCK PRESERVED (acceptance #4)
+                wedge_missed=new_wedge_missed,
+                wedge_alerted=prev_wedge_alerted,
+                wedge_owner_defer_noted=True,
+                prev=prev_state,
+            )
+        return
 
     if action == "alert":
         post_alert = not prev_wedge_alerted
@@ -10519,6 +10690,7 @@ def _process_wedged_pod(
                 wedge_first_seen=wedge_first_seen,
                 wedge_missed=new_wedge_missed,
                 wedge_alerted=True,
+                wedge_owner_defer_noted=prev_owner_defer_noted,
                 prev=prev_state,
             )
         return
@@ -10535,6 +10707,7 @@ def _process_wedged_pod(
             wedge_first_seen=wedge_first_seen,
             wedge_missed=new_wedge_missed,
             wedge_alerted=prev_wedge_alerted,
+            wedge_owner_defer_noted=prev_owner_defer_noted,
             prev=prev_state,
         )
 
@@ -10616,6 +10789,34 @@ def _keep_running_owner_audit_enabled() -> bool:
     is set truthy ("1"/"true"/"yes"/"on", case-insensitive). Default enabled.
     Mirrors :func:`_cpu_guard_enabled`."""
     raw = os.environ.get("EPM_DISABLE_KEEP_RUNNING_OWNER_AUDIT", "").strip().lower()
+    return raw not in {"1", "true", "yes", "on"}
+
+
+def _wedge_owner_recent_s() -> float:
+    """#1667 recent-owner-activity window in seconds (env
+    ``EPM_WEDGE_OWNER_RECENT_H``, HOURS; default :data:`WEDGE_OWNER_RECENT_S`
+    = 2h). Malformed / non-positive env falls back — a typo'd var must not
+    collapse the defer window to zero and re-enable the #1586 live-owner
+    terminate (the :func:`_keep_running_owner_idle_s` defensive shape)."""
+    raw = os.environ.get("EPM_WEDGE_OWNER_RECENT_H")
+    if not raw:
+        return float(WEDGE_OWNER_RECENT_S)
+    try:
+        parsed = float(raw) * 3600.0
+    except ValueError:
+        return float(WEDGE_OWNER_RECENT_S)
+    if parsed <= 0:
+        return float(WEDGE_OWNER_RECENT_S)
+    return parsed
+
+
+def _wedge_owner_guard_enabled() -> bool:
+    """#1667 kill switch: False when ``EPM_DISABLE_WEDGE_OWNER_GUARD`` is set
+    truthy ("1"/"true"/"yes"/"on", case-insensitive). Default enabled.
+    Disabled restores byte-equivalent pre-#1667 terminate behavior — the
+    probe legs are never invoked (:func:`_wedge_owner_live` returns ``False``
+    immediately). Mirrors :func:`_keep_running_owner_audit_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_WEDGE_OWNER_GUARD", "").strip().lower()
     return raw not in {"1", "true", "yes", "on"}
 
 
@@ -11027,6 +11228,72 @@ def _keep_running_owner_state(issue: int, now: float, min_idle_s: float) -> tupl
         "wedged",
         {"pid": pid, "sid": sid, "transcript_idle_s": idle_s, "self_report_age_s": sr_age},
     )
+
+
+def _wedge_owner_live(issue: int, now: float) -> bool | str:
+    """Tri-state owner-liveness probe for the #1667 wedge owner guard.
+
+    Returns ``True`` (a live owning session is working ``issue``) | ``False``
+    (BOTH legs resolved and read not-live) | ``"unknown"`` (unresolvable).
+    Called by :func:`_process_wedged_pod` ONLY on the otherwise
+    terminate-eligible branch (matured + confirmed + untagged + inputs
+    verified — the MF2 lazy pattern), so the events read + daemon /list are
+    paid at most once per matured terminate-eligible wedge tick.
+
+    INVERTED POLARITY vs :func:`_wedge_inputs_safe` (stated because the two
+    catch-print-return shapes look alike): there SAFE = the fail-closed
+    ``False`` (ALERT-only, never an unsafe stop); HERE the literal ``False``
+    is the ACTING value (it is what PERMITS the irreversible terminate), so
+    safe = ``True``/``"unknown"`` (never-terminate, defer to the owner). Every
+    uncertainty path — kill switch aside — therefore returns ``"unknown"``,
+    never ``False`` (incident #1586: the wedge arm terminated a pod out from
+    under a live session mid-crash-fix round).
+
+    Legs:
+
+    1. Daemon-INDEPENDENT marker recency: the newest NON-watcher event ts on
+       the issue (:func:`_latest_nonwatcher_event_ts` over
+       :func:`_task_events` — watcher sentinels, incl. this guard's own defer
+       marker, are excluded by construction). A gap below
+       :func:`_wedge_owner_recent_s` (default 2h) is live crash-fix-round
+       activity (epm:failure, stage-dispatch, implementer markers all count).
+    2. The #1582 owner machinery, REUSED with the short window:
+       :func:`_keep_running_owner_state` (registration sids + cwd-mapped
+       daemon children + the fresh-self-report rescue + transcript idle)
+       with ``min_idle_s`` = the same window — ``"live"`` means a fresh
+       self-report or a live registered/cwd-mapped session with a transcript
+       idle below the window.
+
+    ``False`` requires BOTH legs resolved not-live: a resolved stale marker
+    gap (leg 1 found a ts and it is >= the window) AND a resolved
+    ``"wedged"``/``"absent"`` owner state (leg 2). Anything else — daemon
+    down, ts-less events, an ``"unknown"`` owner read, ANY exception (loud
+    stderr) — is ``"unknown"``. The kill switch
+    (:func:`_wedge_owner_guard_enabled`) returns ``False`` immediately:
+    byte-equivalent pre-#1667 terminate behavior, probes never invoked."""
+    if not _wedge_owner_guard_enabled():
+        return False  # kill switch: pre-#1667 behavior
+    try:
+        recent_s = _wedge_owner_recent_s()
+        # Leg 1 — daemon-INDEPENDENT: newest non-watcher marker on the issue.
+        ts = _latest_nonwatcher_event_ts(_task_events(issue))
+        gap = (now - ts) if ts is not None else None
+        if gap is not None and gap < recent_s:
+            return True  # recent crash-fix-round activity
+        # Leg 2 — the #1582 owner machinery, reused with the short window.
+        state, _evidence = _keep_running_owner_state(issue, now, min_idle_s=recent_s)
+        if state == "live":
+            return True  # fresh self-report, or live session with a fresh transcript
+        if state in ("wedged", "absent") and gap is not None:
+            return False  # BOTH legs resolved not-live -> terminate may proceed
+        return "unknown"  # daemon down / unresolvable transcript / ts-less events
+    except Exception as exc:  # probe failure -> uncertain -> never enables terminate
+        print(
+            f"  wedge: owner-liveness probe failed for #{issue} "
+            f"({type(exc).__name__}: {exc}); demoting to ALERT",
+            file=sys.stderr,
+        )
+        return "unknown"
 
 
 def _keep_running_wedged_sidecar_path() -> Path:
