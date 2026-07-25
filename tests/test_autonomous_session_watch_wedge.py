@@ -2292,3 +2292,88 @@ def test_wedge_owner_defer_dry_run_no_writes(isolated_registry, monkeypatch):
     assert failovers == []
     assert posts == []  # the stub was restored; nothing recorded there either
     assert asw._load_pod_safety_state(692) == seeded  # no state write under dry_run
+
+
+# ===========================================================================
+# 13. #1668 D10 (T13): the watcher's durable wedge-failover note is TRUTHFUL
+#     on the D9 probe-success return — the REAL _wedge_failover mapping
+#     (structural current_phase key) + the REAL _handle_wedge_failover_outcome
+#     note composer run end-to-end; only backend_poll._failover_wedged_runpod
+#     (the shared recovery, via _stub_failover_fn) and the I/O seams are
+#     stubbed. Constants come from backend_poll (never literals).
+# ===========================================================================
+
+
+def test_wedge_probe_alive_outcome_posts_truthful_note_and_failover_note_unchanged(
+    isolated_registry, monkeypatch, tmp_path
+):
+    """T13: leg (a) — the D9 probe-success running return (current_phase ==
+    RUNPOD_WORKLOAD_OBSERVED_PHASE) posts a note that claims NEITHER a
+    terminate NOR a re-provision (nothing happened to the pod), names the
+    probe, and clears the wedge-episode state exactly as the success branch
+    does today. Leg (b) — the relaunch-success running return
+    (current_phase == FRESH_POD_PHASE) still posts the established
+    "TERMINATED + re-provisioned" note (no regression on true-failover
+    narration)."""
+    now = 1_000_000.0
+    posts: list[tuple[int, str, str]] = []
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_wedge_owner_live", lambda issue, now: False)  # #1667: no owner
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(
+        asw,
+        "_stop_pod",
+        lambda issue, dry_run: (_ for _ in ()).throw(
+            AssertionError("watcher must never _stop_pod")
+        ),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, note, label)),
+    )
+    _stub_handle_sidecar(monkeypatch, tmp_path)
+
+    # ── leg (a): D9 probe-success shape → the "probe-alive" truthful note ──
+    _matured_confirming_state(now)
+    _stub_failover_fn(
+        monkeypatch,
+        returns={
+            "status": "running",
+            "current_phase": bp.RUNPOD_WORKLOAD_OBSERVED_PHASE,
+            "log_tail_excerpt": "no-port API read contradicted by live SSH",
+        },
+    )
+    asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
+    wedge_posts = [(i, n) for i, n, label in posts if label == "wedge-failover"]
+    assert len(wedge_posts) == 1
+    note = wedge_posts[0][1]
+    assert "TERMINATED" not in note  # nothing was terminated — no false durable record
+    assert "re-provisioned" not in note  # nothing was re-provisioned
+    assert "probe" in note  # names the liveness probe as the reason
+    # The wedge-episode state clears exactly as the success branch does today.
+    loaded = asw._load_pod_safety_state(692)
+    assert loaded["wedge_first_seen"] is None
+    assert loaded["wedge_missed"] == 0
+    assert loaded["wedge_alerted"] is False
+
+    # ── leg (b): relaunch-success shape → the terminate note still posts ──
+    posts.clear()
+    _matured_confirming_state(now)
+    _stub_failover_fn(
+        monkeypatch,
+        returns={
+            "status": "running",
+            "current_phase": bp.RUNPOD_NOPORT_WEDGE_FAILOVER_FRESH_POD_PHASE,
+            "log_tail_excerpt": "terminated + re-provisioned fresh pod",
+        },
+    )
+    asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
+    wedge_posts = [(i, n) for i, n, label in posts if label == "wedge-failover"]
+    assert len(wedge_posts) == 1
+    note_b = wedge_posts[0][1]
+    assert "TERMINATED + re-provisioned" in note_b  # the true-failover narration is unchanged
+    loaded = asw._load_pod_safety_state(692)
+    assert loaded["wedge_first_seen"] is None  # state clears on the failover outcome too

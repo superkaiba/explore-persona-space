@@ -1229,7 +1229,17 @@ every COMPLETE cell's data already present on HF.
 
 **Idempotency = a DURABLE lease + a sentinel, exactly as the GCP analogue
 (#689 blocker-2).** The wedge failover guards its terminate + re-provision with
-TWO records keyed to the wedged pod identity (pod_name/job_id): (1) the
+TWO records keyed to the wedged ATTEMPT identity (pod_name / job_id /
+runpod_attempt_id): on RunPod `pod_name` is the canonical `pod-<N>` and
+`job_id` is `""`, so the per-launch `runpod_attempt_id` is what stops a stale
+record from blinding a fresh adopted attempt — pre-#1668 the 2-key identity
+was degenerate per issue and "exactly once per wedge" silently read as "once
+per issue forever" (#1586). #1668 also adds a PRE-TERMINATE SSH liveness
+cross-probe (`_runpod_wedge_liveness_probe`, fail-open) between the inputs
+gate and the terminate: a matured no-port wedge whose pod still answers SSH is
+a sustained API port-misreport on a HEALTHY pod, so the failover clears the
+wedge clock and returns a non-terminal running JSON instead of terminating;
+probe failure/error proceeds to terminate exactly as before. Records: (1) the
 AUTHORITATIVE durable lease at `~/.eps-routing/` (`Lease.runpod_wedge_failover_of`,
 checked by `_lease_records_runpod_wedge_failover`, stamped by
 `_stamp_runpod_wedge_failover` after the fresh-pod relaunch succeeds) — it
@@ -1500,7 +1510,10 @@ forks. Layers, in the order checked:
    inspection. NO second pivot.
 2. **PER-WEDGE IDEMPOTENCY.** A re-fired tick on the SAME crashed handle after a
    successful pivot short-circuits (durable lease authoritative + `.claude/cache`
-   sentinel fast-path, both keyed to the crashed pod identity).
+   sentinel fast-path, both keyed to the crashed ATTEMPT identity — pod_name /
+   job_id / runpod_attempt_id, #1668 — so a stale stamp never blinds a fresh
+   adopted attempt; no D9 liveness probe on this family — a reachable pod does
+   NOT contradict a CUDA-IMA crash).
 3. **INPUTS-ON-HF GATE** (reused as-is — a PARTIAL cell BLOCKS the irreversible
    terminate; human decides).
 4. **TERMINATE** the crashed pod (best-effort — a CUDA-IMA-wedged pod is usually

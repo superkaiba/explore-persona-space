@@ -1152,8 +1152,10 @@ class Lease:
     #: DURABLE idempotency record for the RunPod RUNNING-but-no-port host-wedge
     #: failover (#664/#689). The exact sibling of ``gcp_failover_of``: when this
     #: lease's fresh-pod re-provision was a failover OF a specific WEDGED RunPod
-    #: pod, this holds that wedged pod's stable identity
-    #: (``{"pod_name": ..., "job_id": ...}``). The poller
+    #: pod, this holds that wedged ATTEMPT's stable identity
+    #: (``{"pod_name": ..., "job_id": ..., "runpod_attempt_id": ...}`` — the
+    #: attempt key present whenever the handle carries one, #1668; a legacy
+    #: pre-#598 record holds the 2-key form). The poller
     #: (``scripts/backend_poll.py``) stamps it AFTER the fresh-pod relaunch
     #: succeeds, so even when EDQUOT / a read-only-fs / out-of-inodes fails BOTH
     #: the ``.claude/cache`` sidecar write AND the same-dir wedge sentinel write,
@@ -1165,7 +1167,9 @@ class Lease:
     #: failover (#775). The exact sibling of ``runpod_wedge_failover_of``: when
     #: this lease's fresh-host re-provision was a failover OF a specific RunPod
     #: pod that crashed twice with the SAME CUDA-IMA crash signature, this holds
-    #: that crashed pod's stable identity (``{"pod_name": ..., "job_id": ...}``).
+    #: that crashed ATTEMPT's stable identity (``{"pod_name": ..., "job_id":
+    #: ..., "runpod_attempt_id": ...}`` — attempt key per #1668, as its
+    #: sibling).
     #: A SEPARATE field from ``runpod_wedge_failover_of`` so a no-port wedge
     #: failover and a CUDA-IMA repeat failover on the SAME issue do not
     #: cross-suppress (each gets its own one bounded pivot). The poller
