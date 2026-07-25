@@ -9428,8 +9428,14 @@ def _wedge_failover(
 
     Outcomes:
 
-    * ``"failover"`` — terminated + re-provisioned a FRESH pod (or a
-      running-shaped success);
+    * ``"failover"`` — terminated + re-provisioned a FRESH pod (the
+      relaunch-success running return, ``current_phase`` = FRESH_POD_PHASE);
+    * ``"probe-alive"`` — the D9 pre-terminate liveness probe contradicted the
+      no-port read (#1668): the pod answers SSH, so NOTHING was terminated and
+      no fresh pod was provisioned; the wedge clock was cleared by the shared
+      recovery, and the caller posts a TRUTHFUL note (structurally keyed on
+      ``current_phase == backend_poll.RUNPOD_WORKLOAD_OBSERVED_PHASE`` — the
+      only other running-status return of ``_failover_wedged_runpod``);
     * ``"already-handled"`` — the poller or a prior watcher tick already failed
       this wedge over (bounded-once short-circuit on the idempotency lease /
       sentinel), OR the sidecar was re-pointed at a DIFFERENT pod between the
@@ -9511,7 +9517,7 @@ def _wedge_failover(
         print(f"  [dry-run] would terminate+failover wedged pod for issue #{issue}")
         return ("failover", None)
     try:
-        from backend_poll import _failover_wedged_runpod
+        from backend_poll import RUNPOD_WORKLOAD_OBSERVED_PHASE, _failover_wedged_runpod
 
         from explore_persona_space.backends.issue_dispatch import (
             read_handle_sidecar,
@@ -9652,6 +9658,15 @@ def _wedge_failover(
     status = out.get("status")
     reason = out.get("reason")
     if status == "running":
+        # #1668 D10: the D9 probe-success return (the pre-terminate liveness probe
+        # contradicted the no-port read; NOTHING terminated, no fresh pod
+        # provisioned) is STRUCTURALLY keyed on current_phase ==
+        # RUNPOD_WORKLOAD_OBSERVED_PHASE — the relaunch success carries
+        # FRESH_POD_PHASE ("runpod_noport_wedge_failover_fresh_pod"), the only
+        # other running-status return of _failover_wedged_runpod. Structural key
+        # only; note/log-text matching is FORBIDDEN (plan v3 §3-D10).
+        if out.get("current_phase") == RUNPOD_WORKLOAD_OBSERVED_PHASE:
+            return ("probe-alive", out)
         return ("failover", out)  # fresh pod re-provisioned (running-shaped success)
     if reason == "runpod_wedge_already_handled":
         return ("already-handled", out)  # bounded-once short-circuit (cross-actor idempotency)
@@ -10326,8 +10341,10 @@ def _handle_wedge_failover_outcome(
       AND ``set-status <N> blocked`` (CRITICAL #1) — then clear the wedge clock.
       The re-drivable ``no_compute_available`` block is re-driven by the
       capacity-retry pass; a non-capacity reason stays parked for a human.
-    * ``"failover"`` / ``"already-handled"`` → a success / no-op: a generic
-      ``epm:progress`` note (NOT a failure), then clear the wedge clock.
+    * ``"failover"`` / ``"already-handled"`` / ``"probe-alive"`` → a success /
+      no-op: a generic ``epm:progress`` note (NOT a failure), then clear the
+      wedge clock. The ``"probe-alive"`` note is TRUTHFUL to the #1668 D9
+      probe-success return: nothing terminated, no fresh pod provisioned.
 
     Returns ``"handled"`` when the outcome was fully processed here (the caller
     returns), or ``"alert"`` to defer to the alert block. ``state_save`` carries
@@ -10418,10 +10435,12 @@ def _handle_wedge_failover_outcome(
             )
             return "handled"
     else:
-        # outcome in ("failover", "already-handled") — a success / no-op, NOT a
-        # failure: a generic progress note (NOT epm:failure, NOT a status change).
-        # "already-handled" also covers the fresh-pod race the sidecar-binding
-        # defense catches.
+        # outcome in ("failover", "already-handled", "probe-alive") — a success /
+        # no-op, NOT a failure: a generic progress note (NOT epm:failure, NOT a
+        # status change). "already-handled" also covers the fresh-pod race the
+        # sidecar-binding defense catches; "probe-alive" is the #1668 D9
+        # probe-success return (nothing terminated, no fresh pod provisioned —
+        # the note must stay truthful to that).
         note = {
             "failover": (
                 f"{_WEDGE_FAILOVER_NOTE_SENTINEL} TERMINATED + re-provisioned a FRESH pod "
@@ -10442,6 +10461,13 @@ def _handle_wedge_failover_outcome(
                 f"the sidecar was re-pointed at a FRESH pod between the inputs-safe read and "
                 f"the failover re-read (the fresh-pod race; the watcher refuses to terminate "
                 f"the fresh pod). No second terminate. Clearing the wedge clock."
+            ),
+            "probe-alive": (
+                f"{_WEDGE_FAILOVER_NOTE_SENTINEL} liveness probe contradicted the no-port "
+                f"read for issue #{issue} pod {pod_id}: direct SSH answered, so the pod is "
+                f"NOT host-wedged (#1668 D9) — pod NOT terminated, no fresh pod "
+                f"provisioned; wedge clock cleared (a genuine wedge must re-mature). "
+                f"Sustained no-port API misreport suspected (the #1586 shape)."
             ),
         }[outcome]
         _post_progress_marker(issue, note, dry_run, label="wedge-failover")
