@@ -25,6 +25,7 @@ tests/test_issue_skill_followup_cap_park_note_pin.py
 tests/test_issue_skill_forensics_ingest_pointer.py
 tests/test_issue_skill_gate_scope_brief_pin.py
 tests/test_issue_skill_gate_single_flight.py
+tests/test_issue_skill_inline_gate_pin.py
 tests/test_issue_skill_inline_measurement_duties.py
 tests/test_issue_skill_marker_contract.py
 tests/test_issue_skill_merge_resnapshot_pin.py

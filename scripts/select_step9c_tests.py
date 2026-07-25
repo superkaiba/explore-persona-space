@@ -304,6 +304,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_gate_scope_brief_pin.py",
     # NEW (#1627) — SKILL.md Step 9c/10d gate single-flight probe pin (#1606)
     "tests/test_issue_skill_gate_single_flight.py",
+    # Registration rider (#1673) — the pre-existing #1500 inline-payload-gate
+    # pin file was never registered (the #1546 unregistered-pin class); it now
+    # also pins the worker-brief composition duty (#1673).
+    "tests/test_issue_skill_inline_gate_pin.py",
     # NEW (#1625) — SKILL.md 9a-ter + CLAUDE.md inline measurement-design +
     # figure-sanity duties pin (both-arms mapping statement, rendered-PNG check)
     "tests/test_issue_skill_inline_measurement_duties.py",
