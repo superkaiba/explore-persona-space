@@ -5288,8 +5288,8 @@
     "1680": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1680",
-      "status": "planning",
+      "path": "tasks/approved/1680",
+      "status": "approved",
       "title": "daily-fix: Step C suppression honors routed-record ts"
     },
     "1681": {
