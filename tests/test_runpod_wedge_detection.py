@@ -1853,3 +1853,63 @@ def test_wedge_failover_liveness_probe_failure_proceeds_to_terminate(tmp_path, m
     assert terminated == ["pod-id-55"]  # terminate fired exactly once
     assert len(relaunched) == 1  # the fresh relaunch fires
     assert out["status"] == "running"
+
+
+def test_liveness_probe_real_body_ssh_outcomes(monkeypatch):
+    """Production-body coverage for the T11/T12 seam (code-style § One
+    production-body test per seam-stubbed function): execute the REAL
+    ``_runpod_wedge_liveness_probe`` body, faking ONLY the external
+    filesystem/network boundary — ``_resolve_pod_endpoint`` (pods.conf read;
+    a ``def``-mirroring fake) and ``subprocess.run`` (SSH; autospec'd,
+    returning a real ``CompletedProcess``). Reaches the endpoint-resolution
+    call, the ssh argv construction, and the ``.returncode`` dereference."""
+    import subprocess as sp
+    from unittest import mock
+
+    import explore_persona_space.backends.runpod as RP
+
+    def fake_resolve(pod_name: str) -> tuple[str, int]:
+        assert pod_name == "pod-689"
+        return ("1.2.3.4", 41234)
+
+    monkeypatch.setattr(RP, "_resolve_pod_endpoint", fake_resolve, raising=True)
+    fake_run = mock.create_autospec(
+        sp.run, return_value=sp.CompletedProcess(args=["ssh"], returncode=0)
+    )
+    monkeypatch.setattr(bp.subprocess, "run", fake_run, raising=True)
+
+    # rc == 0 -> reachable -> True.
+    assert bp._runpod_wedge_liveness_probe(_attempt_handle(_ATTEMPT_A)) is True
+    argv = fake_run.call_args.args[0]
+    assert argv[0] == "ssh" and "BatchMode=yes" in argv and "root@1.2.3.4" in argv
+    assert "41234" in argv  # the resolved port is threaded into -p
+    assert fake_run.call_args.kwargs.get("timeout") == 15  # timeout_sec + 5
+
+    # rc != 0 -> unreachable -> False (the established terminate path proceeds).
+    fake_run.return_value = sp.CompletedProcess(args=["ssh"], returncode=255)
+    assert bp._runpod_wedge_liveness_probe(_attempt_handle(_ATTEMPT_A)) is False
+
+
+def test_liveness_probe_real_body_fail_open_on_errors(monkeypatch):
+    """The REAL probe body's fail-open legs: a missing pods.conf row
+    (``_resolve_pod_endpoint`` raises ``RunPodWorkloadStartError``) and an SSH
+    timeout (``subprocess.TimeoutExpired``) each return False — LOGGED, never
+    raised — so a true wedge is never suppressed by a probe defect."""
+    import subprocess as sp
+    from unittest import mock
+
+    import explore_persona_space.backends.runpod as RP
+
+    def raise_resolve(pod_name: str) -> tuple[str, int]:
+        raise RP.RunPodWorkloadStartError(f"pod {pod_name!r} has no pods.conf row")
+
+    monkeypatch.setattr(RP, "_resolve_pod_endpoint", raise_resolve, raising=True)
+    assert bp._runpod_wedge_liveness_probe(_attempt_handle(_ATTEMPT_A)) is False
+
+    def ok_resolve(pod_name: str) -> tuple[str, int]:
+        return ("1.2.3.4", 41234)
+
+    monkeypatch.setattr(RP, "_resolve_pod_endpoint", ok_resolve, raising=True)
+    fake_run = mock.create_autospec(sp.run, side_effect=sp.TimeoutExpired(cmd=["ssh"], timeout=15))
+    monkeypatch.setattr(bp.subprocess, "run", fake_run, raising=True)
+    assert bp._runpod_wedge_liveness_probe(_attempt_handle(_ATTEMPT_A)) is False
