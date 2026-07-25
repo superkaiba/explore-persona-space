@@ -22,6 +22,17 @@ OPEN (proposed/on_hold/blocked) tasks tagged ``daily-held`` for
 template-stripped ``origin_prompt``); a hit records terminal outcome ``already-tracked``
 and skips the filer; any scan error fails OPEN toward filing with a loud stderr WARN.
 
+Same-target dispatch hold (#1678): a route-2 item sharing >=1 normalized target token
+(comma-split, ``./``-stripped, glob-as-literal) with any EARLIER route-2 item in the FULL
+manifest files via ``--no-dispatch`` (task filed, session NOT spawned); the watcher's
+``proposed_infra_sweep`` is the dispatch backstop. The contention reduction is
+PROBABILISTIC and staggers only the group HEAD vs its HELD siblings (~3-13 min via the
+watcher's 10-min cron cadence + its 600 s dispatch-marker-freshness gate; longer under
+the shared 5-slot cap): two HELD same-target siblings dispatch in the SAME sweep pass,
+spaced only by the #1059 60 s stamp — a k-item group goes from k simultaneous same-file
+editors to k-1. No merge-ordering guarantee is claimed; the Step 10d merge-recovery
+shapes remain the backstop.
+
 Route-2 bodies are normalized in place before filing (#1173; skipped for ``wf_fix: false``
 items): a body missing the durable
 recursion-guard Provenance lines gains ``- workflow_fix_target: <manifest target>`` +
@@ -43,7 +54,9 @@ Ledger row shapes (one JSON object per line, ISO-UTC ``ts`` on every row):
   BEFORE the filer subprocess (the crash-safety ordering); ``id_floor`` is the max
   task id at that moment and scopes later title-scan recovery to THIS filing.
 - ``{"slug", "outcome": "filed", "id", "rc", "fp", "route", "tail", "ts"}`` — plus
-  ``"sha_warnings": [tokens]`` when the #1467 backstop annotated commit-context tokens
+  ``"sha_warnings": [tokens]`` when the #1467 backstop annotated commit-context tokens,
+  plus ``"held_dispatch": true, "held_with": <slug>, "shared_target": [tokens]`` when
+  the #1678 same-target hold applied
 - ``{"slug", "outcome": "deduped", "against", "fp", "route", "ts"}`` (route 2 only)
 - ``{"slug", "outcome": "already-tracked", "against": <task id>, "against_title",
   "shared": [tokens], "fp", "route": 3, "ts"}`` (route 3 only — the #1483 open
@@ -388,13 +401,16 @@ def _filed_ledger_row(
     tail: str,
     sha_warnings: list[str],
     advisories: list[str],
+    held: dict | None,
 ) -> dict:
     """Compose the terminal ``filed`` ledger row.
 
     Gains ``"sha_warnings": [tokens]`` only when the #1467 backstop annotated
-    non-resolving commit-context tokens, and ``"advisories": [lines]`` only when
-    the filer's #1399/#1502 sibling-advisory stderr was non-empty (#1529) —
-    both conditional (rows are free-form dicts — schema-safe).
+    non-resolving commit-context tokens, ``"advisories": [lines]`` only when
+    the filer's #1399/#1502 sibling-advisory stderr was non-empty (#1529), and
+    ``"held_dispatch"/"held_with"/"shared_target"`` only when the #1678
+    same-target hold filed this item with ``--no-dispatch`` — all conditional
+    (rows are free-form dicts — schema-safe; no-hold rows are byte-identical).
     """
     row = {
         "slug": slug,
@@ -409,6 +425,10 @@ def _filed_ledger_row(
         row["sha_warnings"] = sha_warnings
     if advisories:
         row["advisories"] = advisories
+    if held:
+        row["held_dispatch"] = True
+        row["held_with"] = held["with"]
+        row["shared_target"] = held["shared"]
     return row
 
 
@@ -798,10 +818,61 @@ def _dry_run_inject_note(item: dict, dirpath: Path, fp: str) -> str:
     return note
 
 
+def _target_tokens(target: str) -> set[str]:
+    """Normalized target tokens of a manifest ``target`` (#1678): split on commas,
+    whitespace-stripped, leading './' removed (removeprefix, NOT lstrip), empties
+    dropped. A glob string is a LITERAL token — two identical globs overlap; a glob
+    vs a concrete path under it does NOT (accepted false negative: the Step 10d
+    recovery shapes remain the backstop)."""
+    return {t.strip().removeprefix("./") for t in str(target).split(",") if t.strip()}
+
+
+def compute_target_holds(manifest: list[dict]) -> dict[str, dict]:
+    """slug -> {"with": <earliest overlapping route-2 slug>, "shared": [tokens]}
+    for every route-2 item that must file WITHOUT dispatch (#1678 same-target hold).
+
+    Positional + deterministic over the FULL manifest (never the --start/--end
+    slice, so multi-slice and resume invocations compute the identical map):
+    a route-2 item is HELD iff any EARLIER route-2 item shares >=1 normalized
+    target token; attribution goes to the EARLIEST such sibling. Route-3 items
+    neither hold nor are held (they already file --no-dispatch, so they are not
+    a contention source). Deliberately ledger-state-independent: holding a
+    sibling whose earlier group-head deduped/errored is harmless (the watcher
+    dispatches it ~10 min later) and buys invocation-order determinism. The
+    stagger is HEAD-vs-HELD only and probabilistic — held siblings of one group
+    dispatch in the same sweep pass, 60 s apart (#1059); see the module
+    docstring — never a merge-ordering guarantee."""
+    holds: dict[str, dict] = {}
+    seen: list[tuple[str, set[str]]] = []
+    for item in manifest:
+        if item["route"] != 2:
+            continue
+        toks = _target_tokens(item["target"])
+        for earlier_slug, earlier_toks in seen:
+            shared = toks & earlier_toks
+            if shared:
+                holds[item["slug"]] = {"with": earlier_slug, "shared": sorted(shared)}
+                break
+        seen.append((item["slug"], toks))
+    return holds
+
+
 def _filer_cmd(
-    filer_prefix: list[str], item: dict, body_path: Path, date: str, fp: str
+    filer_prefix: list[str],
+    item: dict,
+    body_path: Path,
+    date: str,
+    fp: str,
+    *,
+    hold_dispatch: bool = False,
 ) -> list[str]:
-    """Compose the file_infra_task.py argv for one manifest item (per-route tags)."""
+    """Compose the file_infra_task.py argv for one manifest item (per-route tags).
+
+    ``hold_dispatch=True`` (route 2 only; #1678 same-target hold) appends
+    ``--no-dispatch`` so the task is filed but no session spawns — the watcher
+    ``proposed_infra_sweep`` dispatches it later (the route-3 argv precedent;
+    ``FILED_ID_RE`` already parses the filer's ``--no-dispatch`` stdout shape).
+    """
     cmd = [
         *filer_prefix,
         "--kind",
@@ -817,6 +888,8 @@ def _filer_cmd(
         if _wf_fix_enabled(item):
             cmd += ["--tag", "wf-fix", "--tag", f"wf-fix-fp:{fp}"]
         cmd += ["--tag", "daily-auto-filed"]
+        if hold_dispatch:
+            cmd += ["--no-dispatch"]  # #1678 same-target hold; watcher sweep dispatches
     else:
         cmd += ["--tag", "daily-held", "--tag", "needs-human", "--no-dispatch"]
     return cmd
@@ -1016,8 +1089,12 @@ def process_item(
     root: Path,
     retry_errors: bool,
     dry_run: bool,
+    target_holds: dict[str, dict] | None = None,
 ) -> str:
     """Run one manifest item through resume -> recovery -> dedup -> two-phase file.
+
+    ``target_holds`` is the full-manifest #1678 same-target hold map from
+    ``compute_target_holds`` (None — the direct-call default — means no holds).
 
     Returns the item outcome:
     'skip' | 'recovered' | 'deduped' | 'already-tracked' | 'filed' | 'error'.
@@ -1025,6 +1102,7 @@ def process_item(
     slug = item["slug"]
     fp = wf_fix_fingerprint(item["change"], item["bug"])
     state = _slug_state(ledger, slug, retry_errors)
+    hold = (target_holds or {}).get(slug)
 
     if state == "terminal":
         print(f"SKIP {slug}")
@@ -1038,13 +1116,20 @@ def process_item(
         if _wf_fix_enabled(item) and find_open_fp_duplicate(tasks_root, fp) is not None:
             print(f"DEDUP {slug} -> wf-fix-fp:{fp}")
         else:
-            tags = _filer_cmd([], item, Path("-"), date, fp)
+            tags = _filer_cmd([], item, Path("-"), date, fp, hold_dispatch=hold is not None)
             pending = (
                 " [in-flight attempting row; recovery scan runs first]" if state != "fresh" else ""
             )
+            held = (
+                f" [held dispatch: shares {','.join(hold['shared'])} with {hold['with']}]"
+                if hold
+                else ""
+            )
             inject = _dry_run_inject_note(item, dirpath, fp)
             sha_note = _dry_run_sha_note(item, dirpath, root)
-            print(f"FILE {slug} tags={tags[tags.index('--tag') :]}{pending}{inject}{sha_note}")
+            print(
+                f"FILE {slug} tags={tags[tags.index('--tag') :]}{pending}{held}{inject}{sha_note}"
+            )
         return "skip"
 
     if state in ("in-flight", "retry-error"):
@@ -1105,7 +1190,13 @@ def process_item(
             "id_floor": max_task_id(tasks_root),
         },
     )
-    cmd = _filer_cmd(filer_prefix, item, body_path, date, fp)
+    cmd = _filer_cmd(filer_prefix, item, body_path, date, fp, hold_dispatch=hold is not None)
+    if hold is not None:
+        print(
+            f"HELD-DISPATCH {slug}: shares target {','.join(hold['shared'])} with earlier "
+            f"wave sibling {hold['with']} — filing with --no-dispatch; the watcher "
+            f"proposed_infra_sweep dispatches it (#1678)"
+        )
     try:
         proc = subprocess.run(
             cmd, capture_output=True, text=True, cwd=str(root), timeout=FILER_TIMEOUT_S
@@ -1139,7 +1230,8 @@ def process_item(
         # INSIDE the success branch (error/timeout/dedup paths stay byte-unchanged).
         advisories = extract_filer_advisories(proc.stderr)
         append_row(
-            dirpath, _filed_ledger_row(slug, tid, fp, item, out[-300:], sha_warnings, advisories)
+            dirpath,
+            _filed_ledger_row(slug, tid, fp, item, out[-300:], sha_warnings, advisories, hold),
         )
         print(f"FILED {slug} -> #{tid} (rc=0)")
         _print_advisory_forward(slug, tid, advisories)
@@ -1220,6 +1312,9 @@ def main(argv: list[str] | None = None) -> int:
         else ["uv", "run", "python", "scripts/file_infra_task.py"]
     )
     manifest = load_and_validate_manifest(dirpath)
+    # #1678: computed over the FULL manifest BEFORE slicing, so every --start/--end
+    # slice and every resume invocation derives the identical hold map.
+    target_holds = compute_target_holds(manifest)
     ledger = load_ledger(dirpath)
     sliced = manifest[args.start : args.end]
     any_error = False
@@ -1234,6 +1329,7 @@ def main(argv: list[str] | None = None) -> int:
             root=root,
             retry_errors=args.retry_errors,
             dry_run=args.dry_run,
+            target_holds=target_holds,
         )
         if outcome == "error":
             any_error = True
