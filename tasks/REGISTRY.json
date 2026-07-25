@@ -5246,22 +5246,22 @@
     "1675": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1675",
-      "status": "reviewing",
+      "path": "tasks/completed/1675",
+      "status": "completed",
       "title": "daily-fix: piped-git guard ignores quoted pattern text"
     },
     "1676": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1676",
-      "status": "reviewing",
+      "path": "tasks/completed/1676",
+      "status": "completed",
       "title": "daily-fix: root-commit guard recognizes cd-into-worktree"
     },
     "1677": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1677",
-      "status": "running",
+      "path": "tasks/completed/1677",
+      "status": "completed",
       "title": "daily-fix: label unverified claims in route-2 bodies"
     },
     "1678": {
@@ -5274,8 +5274,8 @@
     "1679": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1679",
-      "status": "planning",
+      "path": "tasks/reviewing/1679",
+      "status": "reviewing",
       "title": "workflow-fix: c37 requires bundled_in_no_flags pin test"
     },
     "168": {
@@ -5288,22 +5288,22 @@
     "1680": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1680",
-      "status": "proposed",
+      "path": "tasks/running/1680",
+      "status": "running",
       "title": "daily-fix: Step C suppression honors routed-record ts"
     },
     "1681": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1681",
-      "status": "proposed",
+      "path": "tasks/planning/1681",
+      "status": "planning",
       "title": "workflow-fix: prioritize parked candidates on live red main"
     },
     "1682": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1682",
-      "status": "proposed",
+      "path": "tasks/running/1682",
+      "status": "running",
       "title": "workflow-fix: implementer reports rev-parse SHAs verbatim"
     },
     "1683": {

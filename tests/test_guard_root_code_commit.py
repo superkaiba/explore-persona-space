@@ -761,3 +761,138 @@ def test_c8c_cert_diag_stale(code_repo: Path, cert: Path) -> None:
     r = _run("git commit -m x", code_repo, cert)
     _assert_blocked(r)
     assert "cert=stale:" in r.stderr, r.stderr
+
+
+# ---------------------------------------------------------------------------
+# D — cd-latch variable resolution + unproven-cd diagnostics (issue #1676)
+# ---------------------------------------------------------------------------
+# Incident #1644 (2026-07-24): a `cd "$WT" && pytest ... && git commit ...`
+# compound was blocked whole — the read-only pytest leg included — and the
+# block message never named the cause: the cd-latch arms only on provably
+# non-root LITERAL targets, so a variable target was always unproven. Fix
+# (plan #1676, ``tasks/*/1676/plans/plan.md``): (a) a variable-resolution arm
+# latches the ``NAME=<literal> && cd "$NAME" && ...`` shape ONLY when all
+# seven certification gates hold (compound-context refusal / whole-clause
+# assignment anchor / exactly-one-preceding / unconditional position /
+# mutation belt / path-sane RHS / suffix sanity), feeding the resolved string
+# to the SAME verdict pattern list as the literal arm; (b) every
+# still-unproven cd target is named in the block message via stable
+# ``cd-diag: unproven-cd target=<tgt> reason=<token>`` lines plus a
+# remediation paragraph. Case ids A17-A19 / B20-B34 mirror the hook's
+# embedded self-test battery; the stderr reason-token asserts here cover what
+# the exit-code-only ``run_case`` harness cannot.
+
+_WT_ASSIGN = "WT=.claude/worktrees/issue-9"
+
+
+def test_a17_var_assign_cd_latch_allowed(code_repo: Path, cert: Path) -> None:
+    _assert_allowed(_run(f'{_WT_ASSIGN} && cd "$WT" && git commit -m x', code_repo, cert))
+
+
+def test_a18_seq_quoted_assignment_braced_var_allowed(code_repo: Path, cert: Path) -> None:
+    cmd = 'WT="/abs/.claude/worktrees/issue-9"; cd "${WT}" && git commit -m x'
+    _assert_allowed(_run(cmd, code_repo, cert))
+
+
+def test_a19_var_with_literal_suffix_allowed(code_repo: Path, cert: Path) -> None:
+    cmd = 'WT=/abs/.claude/worktrees && cd "$WT/issue-9" && git commit -m x'
+    _assert_allowed(_run(cmd, code_repo, cert))
+
+
+def test_b20_unresolved_var_cd_blocks_and_names_cause(code_repo: Path, cert: Path) -> None:
+    """The #1644 shape: no same-command assignment -> still blocks, and the
+    block message now names the unprovable cd target + the remediations."""
+    r = _run('cd "$WT" && git commit -m x', code_repo, cert)
+    _assert_blocked(r)  # rc == 2 + "BLOCKED" in stderr
+    assert "cd-diag:" in r.stderr, r.stderr
+    assert "reason=no-assignment" in r.stderr, r.stderr
+    assert "UNPROVEN-CD?" in r.stderr, r.stderr
+    assert 'git -C "$WT"' in r.stderr, r.stderr  # the worktree remediation
+
+
+def test_b21_two_assignments_refused_multiple(code_repo: Path, cert: Path) -> None:
+    r = _run(f'{_WT_ASSIGN}; WT=$REPO; cd "$WT" && git commit -m x', code_repo, cert)
+    _assert_blocked(r)
+    assert "reason=multiple-assignments" in r.stderr, r.stderr
+
+
+def test_b22_root_path_rhs_never_latches(code_repo: Path, cert: Path) -> None:
+    """A root-spelling RHS resolves to verdict `root` via the SAME shared
+    pattern list — a crafted assignment can never latch a root commit."""
+    _assert_blocked(_run(f'WT={_CANONICAL_ROOT} && cd "$WT" && git commit -m x', code_repo, cert))
+
+
+def test_b23_dynamic_rhs_command_substitution_refused(code_repo: Path, cert: Path) -> None:
+    r = _run('WT=$(mktemp) && cd "$WT" && git commit -m x', code_repo, cert)
+    _assert_blocked(r)
+    assert "reason=dynamic-rhs" in r.stderr, r.stderr
+
+
+def test_b23b_dynamic_rhs_with_args_still_blocks(code_repo: Path, cert: Path) -> None:
+    # A space-bearing substitution fails the whole-clause anchor instead of
+    # the path-sane gate — same fail-closed disposition, different token.
+    _assert_blocked(_run('WT=$(mktemp -d) && cd "$WT" && git commit -m x', code_repo, cert))
+
+
+def test_b24_conditional_assignment_refused(code_repo: Path, cert: Path) -> None:
+    r = _run(f'true && {_WT_ASSIGN}; cd "$WT" && git commit -m x', code_repo, cert)
+    _assert_blocked(r)
+    assert "reason=conditional-assignment" in r.stderr, r.stderr
+
+
+def test_b25_subshell_assignment_refused(code_repo: Path, cert: Path) -> None:
+    _assert_blocked(_run(f'({_WT_ASSIGN}); cd "$WT" && git commit -m x', code_repo, cert))
+
+
+def test_b26_backgrounded_assignment_refused(code_repo: Path, cert: Path) -> None:
+    r = _run(f'{_WT_ASSIGN} & cd "$WT" && git commit -m x', code_repo, cert)
+    _assert_blocked(r)
+    assert "reason=backgrounded-assignment" in r.stderr, r.stderr
+
+
+def test_b27_latch_persistence_seq_after_cd_resets(code_repo: Path, cert: Path) -> None:
+    """Latch persistence semantics untouched (#1676 must-ask): a resolved
+    latch still resets at any non-`&&` separator."""
+    _assert_blocked(_run(f'{_WT_ASSIGN} && cd "$WT"; git commit -m x', code_repo, cert))
+
+
+def test_b28_compound_body_assignment_refused(code_repo: Path, cert: Path) -> None:
+    """Gate 7: the masker tracks quote/heredoc state only, so an assignment
+    on an if-body interior line surfaces as its own NL-tagged record — any
+    compound opener in the command refuses resolution outright."""
+    r = _run(f'if true; then\n{_WT_ASSIGN}\nfi\ncd "$WT" && git commit -m x', code_repo, cert)
+    _assert_blocked(r)
+    assert "reason=compound-context" in r.stderr, r.stderr
+
+
+def test_b29_function_body_assignment_refused(code_repo: Path, cert: Path) -> None:
+    r = _run(f'f() {{\n{_WT_ASSIGN}\n}}\nf; cd "$WT" && git commit -m x', code_repo, cert)
+    _assert_blocked(r)
+    assert "reason=compound-context" in r.stderr, r.stderr
+
+
+def test_b30_suffix_with_parent_dir_segment_refused(code_repo: Path, cert: Path) -> None:
+    cmd = 'WT=/abs/.claude/worktrees && cd "$WT/issue-9/../.." && git commit -m x'
+    _assert_blocked(_run(cmd, code_repo, cert))
+
+
+def test_b31_mutated_between_assignment_and_cd_refused(code_repo: Path, cert: Path) -> None:
+    r = _run(f'{_WT_ASSIGN}; unset WT; cd "$WT" && git commit -m x', code_repo, cert)
+    _assert_blocked(r)
+    assert "reason=mutation-belt" in r.stderr, r.stderr
+
+
+def test_b32_env_prefix_assignment_refused(code_repo: Path, cert: Path) -> None:
+    r = _run(f'{_WT_ASSIGN} true; cd "$WT" && git commit -m x', code_repo, cert)
+    _assert_blocked(r)
+    assert "reason=no-assignment" in r.stderr, r.stderr
+
+
+def test_b33_assignment_after_cd_blocks(code_repo: Path, cert: Path) -> None:
+    _assert_blocked(_run(f'cd "$WT" && git commit -m x; {_WT_ASSIGN}', code_repo, cert))
+
+
+def test_b34_pipelined_assignment_refused(code_repo: Path, cert: Path) -> None:
+    r = _run(f'{_WT_ASSIGN} | true; cd "$WT" && git commit -m x', code_repo, cert)
+    _assert_blocked(r)
+    assert "reason=pipelined-assignment" in r.stderr, r.stderr
