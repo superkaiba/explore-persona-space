@@ -523,6 +523,22 @@ days carried grep-refutable claims (nonexistent call sites, overcounted
 verification rounds. There is NO mechanical injector or lint for this line —
 it is a compose-time duty.
 
+**Unverified-premise labeling (#1677).** The `n/a — <reason>` escape
+covers the LINE; it
+does not license asserting the unverifiable claim itself as fact. Any
+claim in the body the filer could not mechanically verify or read from
+the named artifact at compose time — timings / wall-time figures,
+incident root-cause mechanisms, API- or tool-behavior assumptions — is
+written as `unverified hypothesis — verify at plan time: <claim>`
+(recall source named where known), never as bare fact: the spawned
+session's planner inherits body claims as premises, and in the
+2026-07-24 wave 4 of 6 filed bodies carried refutable bare-fact
+premises (#1655/#1662/#1646/#1660), each burning a fact-checker or
+critic correction round. Verified claims are unaffected — state them
+as fact with their evidence; do not blanket-label (over-labeling
+dilutes the signal). Binds route-2 AND route-3 /daily filings and
+manual/orchestrator filings alike.
+
 ## Dedup
 
 The dedup GRAIN is `(target_file, fingerprint)`:
@@ -836,6 +852,7 @@ homepage rendering of the fallback is unimplemented.)
 | Accept a verbatim-literal 0-hit grep as absence evidence for a TEXT-MATCHING guard (#1386 filed+spawned ~9h after #1360 landed the shorter `'queue size reached'` substring; the grep searched the full `'maximum queue size'`) | Semantic probe (clause (a')): run the predicate against the claimed text and/or grep fragments/substrings of it repo-wide, PLUS `git log --oneline --since='7 days ago' -- <target_file>` for a just-landed fix — open-task dedup stays blind to an ordinary landed infra fix by design, and the advisory's widened pass (#1446) covers ordinary closed infra tasks only window-bounded + overlap-matched, so the git-log landed-fix check remains the backstop |
 | Cite a mined hex token as a commit SHA without rev-parse-verifying it at compose time (#1414: transcript basename `fc2b61b7` filed as "the fix commit"; the spawned session's fact-checker burned a round proving the real commit was `5a02359cc8`) | Clause (d): rev-parse every cited-as-commit token at body-compose time; a non-resolving token is re-derived (`git log` on the target file) or cited as a transcript/session reference, never a commit |
 | Read post-mutation artifact state as filing-time evidence — a tag/field absent from a cited task's body.md filed as "dropped at filing" with no git-history check (#1497: needs-human absent from every cited task was a deliberate 2026-07-17 user-directed mass remove-tag — one commit per task, e.g. eaa4e10a67/1bd90f800e; archived as a false-premise filing) | Clause (e) artifact-state mutation check: `git log --follow --format='%h %s' -- <body.md>` (path via `task.py find <M>`) at compose time — a `remove-tag <value>` commit explaining the absence, or a create-commit diff carrying the value, refutes the drop claim |
+| Assert a timing / incident root-cause / API-behavior premise as bare fact when it could not be mechanically verified (or read from the named artifact) at compose time (#1677: 4 of 6 bodies in the 2026-07-24 wave — #1655/#1662/#1646/#1660 — each burned a correction round) | Label it `unverified hypothesis — verify at plan time: <claim>` with the recall source; the spawned planner treats it as an assumption to verify, not a premise |
 
 ## Composition with other rules
 
