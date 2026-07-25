@@ -5295,8 +5295,8 @@
     "1681": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1681",
-      "status": "running",
+      "path": "tasks/reviewing/1681",
+      "status": "reviewing",
       "title": "workflow-fix: prioritize parked candidates on live red main"
     },
     "1682": {
