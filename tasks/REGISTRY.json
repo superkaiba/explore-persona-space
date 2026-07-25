@@ -5253,8 +5253,8 @@
     "1676": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1676",
-      "status": "proposed",
+      "path": "tasks/planning/1676",
+      "status": "planning",
       "title": "daily-fix: root-commit guard recognizes cd-into-worktree"
     },
     "1677": {
