@@ -5302,8 +5302,8 @@
     "1682": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1682",
-      "status": "running",
+      "path": "tasks/reviewing/1682",
+      "status": "reviewing",
       "title": "workflow-fix: implementer reports rev-parse SHAs verbatim"
     },
     "1683": {
