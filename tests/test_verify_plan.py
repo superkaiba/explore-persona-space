@@ -7719,6 +7719,42 @@ C37_TRUE_CLAIM = (
     "`--check-lessons-index`) passes."
 )
 
+# The founding silent-unbundling shape (#1385 v1:13 / #1648 v2:11 core): a
+# long Plan-Summary line whose bundling claim co-occurs with an incidental
+# FAR negation token ("not allowed here") — the whole-line guard drops it;
+# the pin arm's 40-char pre-window guard must not. Flag synthetic (absent
+# from the live lint source ⇒ the proposed-new-check branch).
+C37_PROPOSED_CLAIM = (
+    "New `check_notyetbuilt()` in `scripts/workflow_lint.py` "
+    "(`--check-notyetbuilt` flag, bundled into the no-flags default run); rows "
+    'failing `yaml.safe_load` with "mapping values are not allowed here" are offenders.'
+)
+
+# tasks/completed/1648/plans/v2.md:11 VERBATIM (byte-for-byte copy of the
+# founding pin-arm incident line): the bundling claim co-occurs with the
+# incidental far negation "not a comment", and the v2 plan named zero
+# bundled_in_no_flags pin tests (the pin landed only in v3 as a round-1
+# Statistics Must-Fix). Replayed through the stripped-source machinery in
+# test_c37_founding_incident_1648_verbatim_line_warns.
+C37_1648_V2_L11 = (
+    "**Change:** New `check_bare_commit_pathspec()` in `scripts/workflow_lint.py` + `"
+    "--check-bare-commit-pathspec` flag, bundled into the no-flags default run (`or n"
+    "o_flags` wiring + `no_flags` disjunction term + module-docstring bullet + argpar"
+    "se help). Scans `bash`/`sh`/`shell`-tagged fenced blocks in the workflow surface"
+    " (`.claude/agents/*.md`, `.claude/skills/**/SKILL.md`, `.claude/rules/*.md`, `CL"
+    "AUDE.md` — reusing `_root_guard_target_files` + `_iter_bash_fences`) and FAILs a"
+    "ny `git commit` invocation with no ` -- <pathspec>` tail, no `-C <tree>` scope, "
+    "no `xargs` driver, no `--dry-run`, not a comment, and no per-fence waiver sentin"
+    "el. **Offender sweep (prototype run at SHA `be7c297b52`, 2026-07-24): 17 fenced "
+    "git-commit lines, 14 structurally exempt, 3 offenders** — `ideation/SKILL.md:440"
+    "`, `weekly/SKILL.md:232`, `issue-v2/SKILL.md:396` — each fixed by appending the "
+    "explicit ` -- <paths>` (the #1630 daily precedent). **Tests:** 6 new tests in `t"
+    "ests/test_workflow_lint.py` (offender / exempt-forms / multiline-quote / sentine"
+    "l / non-bash-fence / live-tree). **Hyperparameters:** N/A — no model training. *"
+    "*Baselines / controls:** N/A — infra lint change. **Compute:** VM-local, ~1-2 h "
+    "implementer wall."
+)
+
 
 def _c37_plan(*extra: str) -> str:
     return GOOD_PLAN + "\n" + "\n\n".join(extra) + ("\n" if extra else "")
@@ -7792,14 +7828,159 @@ def test_c37_into_destination_flag_not_flagged():
     assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "PASS"
 
 
-def test_c37_proposed_new_flag_passes():
-    # Calibration FP class 3 (forward-looking extension plans): a flag with
-    # no occurrence in the workflow_lint source is a PROPOSED new check —
-    # unfalsifiable at plan time, never an offender.
+def test_c37_proposed_new_flag_without_pin_test_warns():
+    # DELIBERATE semantics flip (#1679): pre-#1679 this exact shape PASSed
+    # (the existence gate read a proposed new check as "never an offender")
+    # — that PASS was the silent-unbundling hole. A proposed-new-check
+    # bundling claim naming no test_<check>_bundled_in_no_flags pin
+    # anywhere in the plan is the #1385 v1 / #1648 v2 shape and WARNs.
     plan = _c37_plan(
         "Add `--check-notyetbuilt`, bundled into the no-flags default run, to workflow_lint."
     )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "WARN"
+    assert "`--check-notyetbuilt`" in r.detail
+    assert "test_<check>_bundled_in_no_flags" in r.detail
+    assert "`N/A — not bundled into no-flags`" in r.detail
+
+
+def test_c37_proposed_new_flag_with_pin_test_passes():
+    # The corrected #1385 v2 / #1648 v3 shape: the pin test named in prose
+    # satisfies the arm.
+    plan = _c37_plan(
+        "Add `--check-notyetbuilt`, bundled into the no-flags default run, to workflow_lint.",
+        "Tests: `test_check_notyetbuilt_bundled_in_no_flags` pins the dispatch wiring.",
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "PASS"
+    assert "pin test" in r.detail
+
+
+def test_c37_pin_test_satisfier_matches_in_fenced_block():
+    # RAW-scan contract (the c41 satisfier-(a) precedent): test enumerations
+    # and pytest commands legitimately live in fenced blocks.
+    plan = _c37_plan(
+        "Add `--check-notyetbuilt`, bundled into the no-flags default run, to workflow_lint.",
+        "```bash\nuv run pytest "
+        "tests/test_workflow_lint.py::test_check_notyetbuilt_bundled_in_no_flags\n```",
+    )
     assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "PASS"
+
+
+def test_c37_founding_incident_shape_warns():
+    # The localized-guard survival of the FAR incidental "not": the falsity
+    # arm's whole-line guard drops this line entirely (measured 2026-07-25 —
+    # both founding incidents read SKIP under it), so a pin arm reusing the
+    # whole-line hit set would have missed #1385 v1 / #1648 v2 outright.
+    _, by_id = _run(_c37_plan(C37_PROPOSED_CLAIM), kind="infra")
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "WARN"
+    assert "silent-unbundling" in r.detail
+
+
+def test_c37_founding_incident_1648_verbatim_line_warns(tmp_path, monkeypatch):
+    # Plan-time source simulation on the VERBATIM #1648 v2:11 line: strip
+    # the (since-landed) `--check-bare-commit-pathspec` flag from a copy of
+    # the live lint source so the line reads as a PROPOSED new check again,
+    # exactly as at plan time. v2 named no bundled_in_no_flags pin test →
+    # WARN (v3 added test_check_bare_commit_pathspec_bundled_in_no_flags).
+    src = verify_plan._c37_lint_source()
+    assert src is not None and "--check-bare-commit-pathspec" in src
+    stripped = src.replace("--check-bare-commit-pathspec", "--check-STRIPPED").replace(
+        "args.check_bare_commit_pathspec", "args.check_STRIPPED"
+    )
+    stub = tmp_path / "workflow_lint.py"
+    stub.write_text(stripped)
+    monkeypatch.setattr(verify_plan, "_C37_LINT_PATH", stub)
+    _, by_id = _run(_c37_plan(C37_1648_V2_L11), kind="infra")
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "WARN"
+    assert "`--check-bare-commit-pathspec`" in r.detail
+    assert "PROPOSED new check" in r.detail
+
+
+def test_c37_pin_arm_immediate_negation_skips():
+    # A deliberately explicit-only new check is never nagged: the negation
+    # sits inside the 40-char pre-window, so the claim match is guarded.
+    plan = _c37_plan(
+        "`--check-notyetbuilt` is NOT bundled into the no-flags default run — explicit-only."
+    )
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "SKIP"
+
+
+def test_c37_not_bundled_escape_passes():
+    plan = _c37_plan(
+        "Add `--check-notyetbuilt`, bundled into the no-flags default run.",
+        "N/A — not bundled into no-flags",
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "PASS"
+    assert "declared" in r.detail
+
+
+def test_c37_quoted_not_bundled_escape_does_not_escape():
+    # Anti-paste convention (#810/#1238 lineage): the pin-arm escape phrase
+    # quoted mid-sentence / backtick-wrapped does not count; the quoting
+    # line itself is pre-window-negated, adding no hits.
+    plan = _c37_plan(
+        "Add `--check-notyetbuilt`, bundled into the no-flags default run.",
+        "The bounce brief quotes `N/A — not bundled into no-flags` as the pin-arm escape.",
+    )
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "WARN"
+
+
+def test_c37_falsity_warn_takes_precedence():
+    # One CheckResult per check: a genuinely-false claim about an EXISTING
+    # flag outranks a co-occurring pin-arm miss; the pin WARN resurfaces on
+    # the post-fix re-verify.
+    plan = _c37_plan(
+        C37_FALSE_CLAIM,
+        "Add `--check-notyetbuilt`, bundled into the no-flags default run.",
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "WARN"
+    assert "args.check_references" in r.detail
+    assert "PROPOSED new check" not in r.detail
+
+
+def test_c37_pin_warn_detail_does_not_retrigger_or_satisfy():
+    # Mirror of test_c37_pasted_warn_detail_does_not_retrigger_or_satisfy
+    # for the pin arm: the WARN detail's embedded offending-line quote is
+    # SANITIZED (claim noun → no_flags), its escape phrase is
+    # backtick-wrapped, and the pin-test convention appears only in the
+    # angle-bracketed template form — a verbatim paste neither re-triggers,
+    # nor self-satisfies the pin regex, nor self-escapes.
+    _, by_id = _run(
+        _c37_plan("Add `--check-notyetbuilt`, bundled into the no-flags default run."),
+        kind="infra",
+    )
+    detail = by_id["c37_noflags_bundling_claim"].detail
+    assert not verify_plan._C37_PIN_TEST_RE.search(detail)
+    clean_plus_detail = _c37_plan(detail)
+    assert _status(clean_plus_detail, "c37_noflags_bundling_claim", kind="infra") == "SKIP"
+    offending_plus_detail = _c37_plan(
+        "Add `--check-notyetbuilt`, bundled into the no-flags default run.", detail
+    )
+    assert _status(offending_plus_detail, "c37_noflags_bundling_claim", kind="infra") == "WARN"
+
+
+def test_c37_pin_warn_detail_mixed_case_offender_paste_safe():
+    # The claim regexes are (?i), so a "No-Flags"-spelled offender must be
+    # sanitized case-insensitively too — a case-sensitive replace would let
+    # the pasted WARN detail's quoted excerpt carry a live claim match.
+    _, by_id = _run(
+        _c37_plan("Add `--check-notyetbuilt`, bundled into the No-Flags default run."),
+        kind="infra",
+    )
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "WARN"
+    assert "No-Flags" not in r.detail
+    clean_plus_detail = _c37_plan(r.detail)
+    assert _status(clean_plus_detail, "c37_noflags_bundling_claim", kind="infra") == "SKIP"
 
 
 def test_c37_fenced_claim_does_not_trigger():
@@ -7885,6 +8066,7 @@ def test_c37_phrase_listed_in_skillmd():
     anchor = text.index("Canonical N/A escape phrases")
     block = text[anchor : text.index("bounce to the planner", anchor)]
     assert "`N/A — no no-flags bundling claim`" in block
+    assert "`N/A — not bundled into no-flags`" in block
     assert "check 37" in block
 
 
