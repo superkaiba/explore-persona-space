@@ -87,3 +87,21 @@ def test_hook_block_message_names_helper_invocation_and_override() -> None:
     assert "scripts/inline_lint_gate.py --issue" in hook_text
     assert "EPM_ALLOW_ROOT_CODE_COMMIT=1" in hook_text
     assert "NEVER hand-write" in hook_text
+
+
+def test_step9ater_worker_brief_duty_present() -> None:
+    """Durability pin (#1673): the gate section carries the worker-brief
+    composition duty — briefs inline the cert recipe, and a guard-blocked
+    commit is a report-now event, never a wait state."""
+    section = _gate_section()
+    assert "Worker-brief composition duty" in section
+    assert "report-now event, never a wait state" in section
+
+
+def test_step9ater_step2_brief_points_at_worker_brief_duty() -> None:
+    """Durability pin (#1673): the Auto-run step-2 brief contract points at
+    the worker-brief duty (the arming site for 9a-ter worker briefs)."""
+    text = SKILL.read_text(encoding="utf-8")
+    start = text.index("**Auto-run procedure.**")
+    end = text.index("**Inline payload lint gate")
+    assert "worker-brief composition duty" in text[start:end].lower()
