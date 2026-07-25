@@ -1,0 +1,95 @@
+{
+  "directions": {
+    "b2i": {
+      "within": {
+        "r2_foldmean": 0.6730940896675954,
+        "r2_global": 0.6734489624360014,
+        "n_covered": 5000
+      },
+      "naive": {
+        "r2_foldmean": -0.06744776580739131,
+        "r2_global": -0.06628899769764285,
+        "n_covered": 5000
+      },
+      "tier15": {
+        "r2_foldmean": 0.17552427102592782,
+        "r2_global": 0.17641928079839586,
+        "n_covered": 5000
+      },
+      "tier15d": {
+        "r2_foldmean": 0.2908530112396899,
+        "r2_global": 0.2916228258779513,
+        "n_covered": 5000
+      },
+      "fractions_foldmean": {
+        "naive": -0.10020555349208325,
+        "tier15": 0.2607722660476929,
+        "tier15d": 0.43211345293988
+      },
+      "fractions_global": {
+        "naive": -0.09843210309191376,
+        "tier15": 0.26196384676316314,
+        "tier15d": 0.43302884426919663
+      }
+    },
+    "i2b": {
+      "within": {
+        "r2_foldmean": 0.5876803039140208,
+        "r2_global": 0.5881361399952163,
+        "n_covered": 5000
+      },
+      "naive": {
+        "r2_foldmean": -0.17080770288609126,
+        "r2_global": -0.16951332767146465,
+        "n_covered": 5000
+      },
+      "tier15": {
+        "r2_foldmean": 0.14570112391040901,
+        "r2_global": 0.1466455858304757,
+        "n_covered": 5000
+      },
+      "tier15d": {
+        "r2_foldmean": 0.0968037076558631,
+        "r2_global": 0.09780222764498869,
+        "n_covered": 5000
+      },
+      "fractions_foldmean": {
+        "naive": -0.29064731580842784,
+        "tier15": 0.24792582453422748,
+        "tier15d": 0.1647217152100196
+      },
+      "fractions_global": {
+        "naive": -0.28822124019252315,
+        "tier15": 0.24933952508286342,
+        "tier15d": 0.16629181747917104
+      }
+    }
+  },
+  "gates": [
+    {
+      "name": "A.within_instruct(b2i tgt ceiling)",
+      "got": 0.6730940896675954,
+      "want": 0.673,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "A.within_base(i2b tgt ceiling)",
+      "got": 0.5876803039140208,
+      "want": 0.588,
+      "tol": 0.01,
+      "pass": true
+    }
+  ],
+  "n_rows": 5000,
+  "pilot_seconds": 5.229599475860596,
+  "meta": {
+    "script": "scripts/issue1639_tier15_intercept_refit.py",
+    "git_commit": "d5e7b37fb9b5446d55379809fb18f53ec30e11f6",
+    "layer": 19,
+    "date": "2026-07-24",
+    "provenance": "user-chat inline free-analysis round (tier-1.5 intercept refit)",
+    "family": "A",
+    "wall_seconds": 219.99516081809998
+  }
+}
