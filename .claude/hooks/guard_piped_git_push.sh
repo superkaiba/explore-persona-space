@@ -54,20 +54,45 @@
 #     the final stage's exit code IS the pipeline's, nothing is masked;
 #   - pipes on a DIFFERENT `&&`/`||`/`;`/`&`/newline segment than the
 #     producer are allowed (`git status | grep x && git push`);
-#   - unparseable / ambiguous input is allowed (fail-soft, exit 0).
+#   - unparseable / ambiguous input is allowed (fail-soft, exit 0);
+#   - quoted STRING ARGUMENTS are stripped before matching (#1675): single-
+#     quoted spans and substitution-free double-quoted spans are removed
+#     (backslash-escape pairs consumed), while a double-quoted span carrying
+#     a bare `$`/backtick is kept as ONE atomic token (a "$(...)" payload
+#     EXECUTES, so its interior stays scannable). Consumption-completeness
+#     is the design principle: every quote-opening or backslash character is
+#     consumed by exactly one branch, so no span type's interior can seed
+#     another span type's match (B25/B26 pin the two phantom-span channels).
 #
 # <!-- known limitation -->
-# Detectors scan the RAW command string without stripping quoted arguments
-# (the guard_repo_root_branch.sh trade-off): a commit `-m` / marker `--note`
-# string containing a literal `git push | tail` inside a NON-heredoc command
-# false-blocks (test-pinned as the deliberate plan §7-row-1 trade-off).
-# Remediation: `git commit -F <file>` / `task.py post-marker --file <path.md>`
-# / the heredoc commit recipe (blanket-allowed above). Related residual: the
-# whitespace-anchored comment-tail strip cuts at a quoted ` #` too (the
-# guard_repo_root_branch.sh residual-gap-(viii) family), so a quoted `-m`
-# text whose pattern sits AFTER a ` #` is truncated away — here that fails
-# toward ALLOW (a miss on an already-false-positive shape), the safe
-# direction for this guard.
+# Quoted string arguments are stripped before matching (#1675), so a commit
+# `-m` / marker `--note` string that merely MENTIONS a guarded pattern no
+# longer false-blocks (S7r1 flipped to allow; A25-A29/A33 pin the fixed
+# class). Residual FALSE-POSITIVE shapes (fail-closed): an UNQUOTED mention
+# (`echo git push | head` — remediation unchanged: `git commit -F <file>` /
+# `task.py post-marker --file <path.md>` / the heredoc recipe), a
+# `$VAR`-bearing double-quoted mention (preserved as live substitution),
+# and unbalanced quotes (span unmatched -> text scanned raw).
+# FAIL-OPEN classes — exactly two, both named here (NO universal
+# fail-direction claim is made for this hook):
+#   (1) interpreter/remote-executor payloads WITHOUT live substitution —
+#       a quoted payload handed to an interpreter or remote executor
+#       (`bash -c '...'`, substitution-free `sh -c "..."`, `eval '...'`,
+#       `xargs ... sh -c`, `python -c '...'`, `ssh host '...'`,
+#       `tmux send-keys`) is string data to this guard but executes
+#       downstream. DELIBERATE under the cooperative-agent threat model
+#       above (pinned A30/A31; the lint + prose rule remain defense in
+#       depth; zero recorded incidents of this shape).
+#   (2) ANSI-C `$'...'` with an interior `\'` — unmodeled (the leading `'`
+#       opens the single-quote branch before the interior escape is seen);
+#       a mis-paired span can fail open OR closed. Rare in Bash-tool
+#       commands; plain `\'` OUTSIDE `$'...'` — the common case — IS
+#       covered by the escape-pair branch (B26).
+# Every other span-semantics divergence fails toward BLOCK / scan-raw.
+# Related residual: the whitespace-anchored comment-tail strip now cuts at
+# a ` #` in UNQUOTED text only (quoted ` #` text is stripped with its span
+# before the tail cut); an unquoted-mention pattern sitting AFTER a ` #` is
+# truncated away — a miss on an already-false-positive shape.
 #
 # Escape hatch: EPM_ALLOW_PIPED_PUSH=1 — honored both as session env and as
 # an inline prefix on the command itself (`EPM_ALLOW_PIPED_PUSH=1 git ...`).
@@ -94,6 +119,20 @@ PRODUCER_ERE='\bgit +(-[^ ]+( +[^ ]+)?( +|$))*(push|merge|commit)([[:space:]]|$)
 # reaches the full parse (a pre-filter miss would fail-open).
 PREFILTER_ERE='\bgit\b[^|;&]*\b(push|merge|commit)([[:space:]]|\||$)|\bgh[[:space:]]+pr[[:space:]]+(merge|create)\b'
 
+# Quoted-span strip (#1675): remove quoted STRING ARGUMENTS before any
+# matching. Branches, in order: (1) PRESERVE — a double-quoted span with a
+# bare $ or backtick (live substitution: a "$(...)" payload EXECUTES) is
+# MATCHED, captured as group 1, and replaced by ITSELF + a space — consumed
+# atomically, so its interior (apostrophes included) can never seed a later
+# span match; (2) top-level escape pairs \<any> are consumed (bash treats
+# \' \" \| as literal chars, never quote/pipe operators); (3) single-quoted
+# spans always strip (bash expands nothing inside, no escapes exist);
+# (4) substitution-free double-quoted spans strip, consuming \-escape pairs
+# so the incident's \| strips with its span. Branches are start-disjoint
+# (no leftmost-longest ambiguity); replacement is "\1 " (group 1 unset on
+# strip branches -> a single space; GNU sed substitutes empty).
+STRIP_QUOTED_SPANS_ERE="(\"(\\\\.|[^\"\\\\\$\`])*[\$\`](\\\\.|[^\"\\\\])*\")|\\\\.|'[^']*'|\"(\\\\.|[^\"\\\\\$\`])*\""
+
 # Classify one command string. Returns 0 = allow, 1 = block.
 check_cmd() {
   local cmd="$1"
@@ -115,8 +154,11 @@ check_cmd() {
 
   # Bash line-continuation normalization (`\<CR?><NL>` -> space), verbatim
   # the guard_repo_root_branch.sh pre-pass: bash strips these pre-execution,
-  # joining the physical lines into one logical command.
-  cmd=$(printf '%s' "$cmd" | sed -zE 's/\\\r?\n/ /g')
+  # joining the physical lines into one logical command. THEN the quoted-span
+  # strip (#1675) — continuation first so a span broken across a
+  # backslash-continuation is rejoined before the strip (and branch 2 never
+  # sees `\<newline>`); `-z` lets spans match across raw newlines (B24).
+  cmd=$(printf '%s' "$cmd" | sed -zE -e 's/\\\r?\n/ /g' -e "s/${STRIP_QUOTED_SPANS_ERE}/\\1 /g")
 
   # Fast pre-filter: no pipe at all, or no producer token -> allow.
   printf '%s' "$cmd" | grep -q '|' || return 0
@@ -211,8 +253,21 @@ git push origin main | tail -5'
   run_case "B16 pipe on the commit's own && segment" 2 \
     'git add -A && git commit -m x 2>&1 | head'
   run_case "B17 |& shorthand commit" 2 'git commit -m "wip" |& head -3'
-  run_case "S7r1 pinned FP: -m text mentions the pattern (no heredoc)" 2 \
-    'git commit -m "never git push | tail in a recipe" && git push'
+  # B18-B26 (#1675): adversarial true positives under the quoted-span strip.
+  run_case "B18 quoted arg before pipe" 2 'git commit -m "msg" | head'
+  run_case "B19 double-quoted command-substitution push" 2 'echo "$(git push 2>&1 | tail -1)"'
+  run_case "B20 quoted assignment substitution" 2 'out="$(git push 2>&1 | tail -1)"'
+  run_case "B21 quoted consumer args" 2 'git push origin main 2>&1 | grep "error" | head'
+  run_case "B22 two double-quoted spans flanking a real pipe (M3)" 2 \
+    'git commit -m "wip" 2>&1 | grep "error"'
+  run_case "B23 two single-quoted spans flanking a real pipe (M3)" 2 \
+    "git commit -m 'wip' 2>&1 | grep 'error'"
+  run_case "B24 multi-line quoted msg piped (pre-existing miss now blocked)" 2 'git commit -m "line1
+line2" 2>&1 | head'
+  run_case "B25 M1 counter-shape: preserved-span interior apostrophe" 2 \
+    "git commit -m \"fix \$MODULE's loader\" 2>&1 | awk '{print \$1}'"
+  run_case "B26 M2 counter-shape: escaped apostrophes flanking a real pipe" 2 \
+    "echo can\\'t stop && git push 2>&1 | tail -3 && echo don\\'t care"
 
   # --- plan #1048 §6: must ALLOW (exit 0) ---
   run_case "A1 bare push" 0 'git push'
@@ -252,6 +307,24 @@ msg
 EOF
 )" 2>&1 | tail -3'
   run_case "A24 commit as argument word" 0 'git cat-file commit HEAD | head -3'
+  # A25-A33 (#1675): quoted-mention FP class fixed + documented known-miss pins.
+  run_case "A25 verbatim 07-23 incident: quoted grep pattern mentions the verbs" 0 \
+    'grep -n "bare.*commit\|git commit -m" scripts/workflow_lint.py | head -5'
+  run_case "A26 quoted echo mention piped" 0 'echo "then git push | tail the log" | wc -l'
+  run_case "A27 single-quoted span containing double quotes" 0 \
+    "uv run python -c 'print(\"git commit -m test\")' | head -2"
+  run_case "A28 quoted grep merge mention" 0 'grep -rn "git merge --squash" .claude/ | head'
+  run_case "A29 quoted mention on the || segment" 0 \
+    'git push origin main || echo "git push | tail is banned"'
+  run_case "A30 interpreter-payload DOCUMENTED KNOWN MISS (single-quote form)" 0 \
+    "bash -c 'git push 2>&1 | tail -3'"
+  run_case "A31 interpreter-payload DOCUMENTED KNOWN MISS (double-quote subst-free form)" 0 \
+    'sh -c "git push 2>&1 | tail -3"'
+  run_case "A32 quoted separator no longer severs units" 0 'grep "a & b" f | head'
+  run_case "A33 quoted gh pr merge mention" 0 \
+    'echo "run gh pr merge 123 --squash later" | tee /tmp/note'
+  run_case "S7r1 FIXED FP: -m text mentions the pattern (no heredoc)" 0 \
+    'git commit -m "never git push | tail in a recipe" && git push'
 
   # A15b: malformed stdin JSON -> fail-soft allow.
   local rc=0
