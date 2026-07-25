@@ -24,6 +24,18 @@ date tokens, and additionally requiring >= 1 shared post-exclusion TITLE token (
 a hit records terminal outcome ``already-tracked``
 and skips the filer; any scan error fails OPEN toward filing with a loud stderr WARN.
 
+Every item (routes 2 AND 3) additionally gets the #1674 mechanical landed-fix probe as
+the LAST dedup-family check before any mutation: ``git log --since='7 days ago'``
+scoped to the item's own target path(s); a commit SUBJECT sharing
+``>= LANDED_FIX_MIN_SHARED_TOKENS`` informative tokens with the item's title+bug+change
+text (same tokenizer + exclusions as the route-3 dedup) records terminal outcome
+``landed-fix-suspect`` (suspect sha(s) + subjects + shared tokens for the eyeball) and
+skips the filer; the override is ``--retry-suspects`` after eyeballing the commit(s).
+Any git error fails OPEN toward filing with ONE loud stderr WARN. Subject-only matching
+by design (plan #1674 §11 D3) — vocabulary-divergent landed fixes are a documented
+residual, so the compose-time clause-(a') git-log duty (daily SKILL.md route-2 mandate)
+stays PRIMARY.
+
 Same-target dispatch hold (#1678): a route-2 item sharing >=1 normalized target token
 (comma-split, ``./``-stripped, glob-as-literal) with any EARLIER route-2 item in the FULL
 manifest files via ``--no-dispatch`` (task filed, session NOT spawned); the watcher's
@@ -64,6 +76,9 @@ Ledger row shapes (one JSON object per line, ISO-UTC ``ts`` on every row):
   "shared": [tokens], "fp", "route": 3, "ts"}`` (route 3 only — the #1483 open
   daily-held overlap dedup; NOTE ``against`` is an int task id here vs the path
   string on route-2 ``deduped`` rows)
+- ``{"slug", "outcome": "landed-fix-suspect", "suspects": [{"sha", "subject",
+  "shared"}], "threshold", "window", "paths", "fp", "route", "ts"}`` (routes 2 AND 3 —
+  the #1674 mechanical landed-fix probe hit; terminal without ``--retry-suspects``)
 - ``{"slug", "outcome": "recovered", "id", "fp", "route", "dispatch_unconfirmed", "ts"}``
 - ``{"slug", "outcome": "ERROR", "flag", "id", "rc", "fp", "route", "tail", "ts"}``
   with ``flag`` one of ``filer-failed`` / ``no-id-parsed`` / ``timeout`` /
@@ -76,7 +91,7 @@ raise before any filing starts.
 
 Usage:
     uv run python scripts/daily_drive_filings.py --dir logs/daily/filings-2026-07-05 \\
-        [--start I --end J] [--retry-errors] [--dry-run]
+        [--start I --end J] [--retry-errors] [--retry-suspects] [--dry-run]
 """
 
 from __future__ import annotations
@@ -158,6 +173,19 @@ ROUTE3_DATE_TOKEN_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 # title-anchor condition in find_open_daily_held_duplicate carries the
 # structural margin (plan #1687 §11 D2/D3).
 ROUTE3_MIN_SHARED_TOKENS = 3
+# ── #1674 mechanical landed-fix probe ────────────────────────────────────────
+# Window matches the compose-time clause-(a') duty + the #1446 advisory window
+# (plan #1674 §11 D2); all three measured incidents are in-window.
+LANDED_FIX_WINDOW = "7 days ago"
+# Calibrated on the incident pairs (plan #1674 §11 D1, measured 2026-07-25 with the
+# live tokenizer + #1687 exclusions): true-dup #1652 vs ce11dff560 shares 3
+# ({pods, runpod, scope}); the false-positive probes (this fix's own item text vs the
+# 4 most recent driver commit subjects) max out at 2 ({driver, filing} vs the #1678
+# commit). 3 fires on the motivating incident and passes every measured legitimate
+# pair; 2 would false-suppress. Replay tests pin both sides.
+LANDED_FIX_MIN_SHARED_TOKENS = 3
+LANDED_FIX_GIT_TIMEOUT_S = 10  # same class as SHA_REV_PARSE_TIMEOUT_S (#1467)
+LANDED_FIX_MAX_SUSPECTS = 5  # ledger-row size bound; git log order = most recent first
 REQUIRED_ITEM_KEYS = frozenset({"slug", "route", "title", "target", "bug", "change"})
 # Anchored to the line start: every file_infra_task.py success path prints a line starting
 # `filed #<id>` or `filed + dispatched #<id>`. A stray `#N` elsewhere must not win.
@@ -873,6 +901,140 @@ def _route3_already_tracked(
     return "skip" if dry_run else "already-tracked"
 
 
+def _landed_fix_item_tokens(item: dict) -> set[str]:
+    """Informative tokens of the item's title+bug+change (#1674).
+
+    Title prefixes stripped (WF_FIX_TITLE_PREFIXES members + ROUTE3_TITLE_PREFIX);
+    _route3_informative exclusions applied (generic workflow vocabulary + dates
+    never count toward overlap — the #1687 calibration transfers, plan #1674 §11 D4).
+    """
+    t = item["title"] or ""
+    for pfx in (*WF_FIX_TITLE_PREFIXES, ROUTE3_TITLE_PREFIX):
+        t = t.removeprefix(pfx)
+    return _route3_informative(
+        informative_title_tokens(t)
+        | informative_title_tokens(item.get("bug") or "")
+        | informative_title_tokens(item.get("change") or "")
+    )
+
+
+def find_landed_fix_suspects(item: dict, root: Path) -> list[dict]:
+    """Recent commits on the item's OWN target path(s) whose SUBJECT shares
+    >= LANDED_FIX_MIN_SHARED_TOKENS informative tokens with the item text (#1674).
+
+    Subject-only by design — subject+body matching false-positives on hot files
+    (plan #1674 §11 D3). Path-scoped: ``git log -- <paths>`` with the item's own
+    _target_tokens (never a repo-wide subject scan). Returns up to
+    LANDED_FIX_MAX_SUSPECTS dicts {"sha", "subject", "shared"} in git log order
+    (most recent first). Raises on git failure — _landed_fix_or_none fail-opens.
+    """
+    paths = sorted(_target_tokens(item["target"]))
+    if not paths:
+        return []
+    item_toks = _landed_fix_item_tokens(item)
+    if not item_toks:
+        return []
+    proc = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(root),
+            "log",
+            f"--since={LANDED_FIX_WINDOW}",
+            "--format=%h%x09%s",
+            "--",
+            *paths,
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=LANDED_FIX_GIT_TIMEOUT_S,
+    )
+    suspects: list[dict] = []
+    for line in proc.stdout.splitlines():
+        sha, _, subject = line.partition("\t")
+        if not subject:
+            continue
+        shared = item_toks & _route3_informative(informative_title_tokens(subject))
+        if len(shared) >= LANDED_FIX_MIN_SHARED_TOKENS:
+            suspects.append({"sha": sha, "subject": subject, "shared": sorted(shared)})
+            if len(suspects) >= LANDED_FIX_MAX_SUSPECTS:
+                break
+    return suspects
+
+
+def _landed_fix_or_none(item: dict, root: Path) -> list[dict]:
+    """Fail-open wrapper (#1674): a git/IO error WARNs loudly and files as today.
+
+    Enumerated classes only (OSError, CalledProcessError, TimeoutExpired,
+    UnicodeDecodeError) — deliberately NARROWER than _route3_dup_or_none's broad
+    catch: the probe's error surface is one git subprocess (the fail-open mandate
+    covers "git itself errors"); a driver bug still fails loud per fail-fast
+    (the #1467 _sha_resolves tuple lacks CalledProcessError because it reads rc
+    without check=True; this probe's check=True requires the 4-class tuple —
+    plan #1674 §11 D6).
+    """
+    try:
+        return find_landed_fix_suspects(item, root)
+    except (
+        OSError,
+        subprocess.CalledProcessError,
+        subprocess.TimeoutExpired,
+        UnicodeDecodeError,
+    ) as e:
+        print(
+            f"WARNING {item['slug']}: landed-fix probe skipped"
+            f" ({e.__class__.__name__}: {e}) — fail-open, filing proceeds; the"
+            " compose-time git-log duty still applies (#1674)",
+            file=sys.stderr,
+        )
+        return []
+
+
+def _has_landed_fix_suspect_row(ledger: list[dict], slug: str) -> bool:
+    """True when the slug already carries a landed-fix-suspect ledger row (#1674)."""
+    return any(r.get("slug") == slug and r.get("outcome") == "landed-fix-suspect" for r in ledger)
+
+
+def _landed_fix_suspect_outcome(
+    item: dict, root: Path, *, dirpath: Path, fp: str, dry_run: bool
+) -> str | None:
+    """Landed-fix probe outcome for process_item, or None (mirror of
+    _route3_already_tracked's contract, #1674). Routes 2 AND 3 (plan #1674 §11 D5).
+
+    No-suspect scans return None (caller proceeds to file). On a hit the
+    LANDED-FIX-SUSPECT line prints either way; the real path appends the
+    terminal ``landed-fix-suspect`` ledger row and returns 'landed-fix-suspect';
+    dry-run stays read-only by construction (no ledger write) and returns 'skip'.
+    """
+    suspects = _landed_fix_or_none(item, root)
+    if not suspects:
+        return None
+    slug = item["slug"]
+    if not dry_run:
+        append_row(
+            dirpath,
+            {
+                "slug": slug,
+                "outcome": "landed-fix-suspect",
+                "suspects": suspects,
+                "threshold": LANDED_FIX_MIN_SHARED_TOKENS,
+                "window": LANDED_FIX_WINDOW,
+                "paths": sorted(_target_tokens(item["target"])),
+                "fp": fp,
+                "route": item["route"],
+            },
+        )
+    top = suspects[0]
+    more = f"; +{len(suspects) - 1} more" if len(suspects) > 1 else ""
+    print(
+        f'LANDED-FIX-SUSPECT {slug} -> {top["sha"]} "{top["subject"]}"'
+        f" (shared: {','.join(top['shared'])}{more}) — NOT filing; eyeball the"
+        " commit(s), re-run with --retry-suspects to file anyway (#1674)"
+    )
+    return "skip" if dry_run else "landed-fix-suspect"
+
+
 def _dry_run_inject_note(item: dict, dirpath: Path, fp: str) -> str:
     """Read-only injection/reconcile-intent probe for the dry-run FILE line: write-free.
 
@@ -1053,14 +1215,28 @@ def _print_advisory_forward(slug: str, tid: int, advisories: list[str]) -> None:
         print(ln, file=sys.stderr)
 
 
-def _slug_state(ledger: list[dict], slug: str, retry_errors: bool) -> str:
-    """Classify a slug against the ledger: 'terminal' | 'retry-error' | 'in-flight' | 'fresh'."""
+def _slug_state(
+    ledger: list[dict], slug: str, retry_errors: bool, retry_suspects: bool = False
+) -> str:
+    """Classify a slug against the ledger:
+    'terminal' | 'retry-error' | 'retry-suspect' | 'in-flight' | 'fresh'.
+
+    ``landed-fix-suspect`` gets the ERROR-style two-state treatment (#1674):
+    terminal without ``--retry-suspects``, re-drivable with it. The ERROR branch
+    is checked FIRST, so a slug carrying BOTH an ERROR row and a suspect row
+    needs both ``--retry-errors --retry-suspects`` to re-drive — with
+    ``--retry-errors`` alone the state is 'retry-error', the probe re-runs, and
+    it may append another suspect row per pass (benign accumulation; the
+    idempotence corollary of the two-state design).
+    """
     rows = [r for r in ledger if r.get("slug") == slug]
     outcomes = {r.get("outcome") for r in rows}
     if outcomes & TERMINAL_OUTCOMES:
         return "terminal"
     if "ERROR" in outcomes:
         return "retry-error" if retry_errors else "terminal"
+    if "landed-fix-suspect" in outcomes:  # NEW (#1674)
+        return "retry-suspect" if retry_suspects else "terminal"
     if rows and rows[-1].get("outcome") == "attempting":
         return "in-flight"
     return "fresh"
@@ -1169,19 +1345,25 @@ def process_item(
     retry_errors: bool,
     dry_run: bool,
     target_holds: dict[str, dict] | None = None,
+    retry_suspects: bool = False,
 ) -> str:
     """Run one manifest item through resume -> recovery -> dedup -> two-phase file.
 
     ``target_holds`` is the full-manifest #1678 same-target hold map from
     ``compute_target_holds`` (None — the direct-call default — means no holds).
 
-    Returns the item outcome:
-    'skip' | 'recovered' | 'deduped' | 'already-tracked' | 'filed' | 'error'.
+    Returns the item outcome: 'skip' | 'recovered' | 'deduped' | 'already-tracked'
+    | 'landed-fix-suspect' | 'filed' | 'error'.
     """
     slug = item["slug"]
     fp = wf_fix_fingerprint(item["change"], item["bug"])
-    state = _slug_state(ledger, slug, retry_errors)
+    state = _slug_state(ledger, slug, retry_errors, retry_suspects)
     hold = (target_holds or {}).get(slug)
+    # #1674: under --retry-suspects the filer already EYEBALLED this slug's prior
+    # suspect commit(s), so the probe is SKIPPED for it — including the
+    # ERROR+suspect combination, where the ERROR branch wins _slug_state and both
+    # --retry-errors --retry-suspects are needed to re-drive (see _slug_state).
+    suspect_eyeballed = retry_suspects and _has_landed_fix_suspect_row(ledger, slug)
 
     if state == "terminal":
         print(f"SKIP {slug}")
@@ -1195,6 +1377,15 @@ def process_item(
         if _wf_fix_enabled(item) and find_open_fp_duplicate(tasks_root, fp) is not None:
             print(f"DEDUP {slug} -> wf-fix-fp:{fp}")
         else:
+            # #1674 dry-run mirror of the landed-fix probe (read-only by
+            # construction — no ledger write); same relative position as the
+            # real path: the LAST dedup-family check before the FILE line.
+            if not suspect_eyeballed:
+                outcome_lf = _landed_fix_suspect_outcome(
+                    item, root, dirpath=dirpath, fp=fp, dry_run=True
+                )
+                if outcome_lf is not None:
+                    return outcome_lf
             tags = _filer_cmd([], item, Path("-"), date, fp, hold_dispatch=hold is not None)
             pending = (
                 " [in-flight attempting row; recovery scan runs first]" if state != "fresh" else ""
@@ -1242,6 +1433,15 @@ def process_item(
     outcome3 = _route3_already_tracked(item, tasks_root, dirpath=dirpath, fp=fp, dry_run=False)
     if outcome3 is not None:
         return outcome3
+
+    # #1674 mechanical landed-fix probe — the LAST dedup-family check before any
+    # mutation (body provenance write, `attempting` row, filer subprocess), so it
+    # runs only for items that would otherwise actually file. A suspect never
+    # leaves an `attempting` row (recovery semantics untouched).
+    if not suspect_eyeballed:
+        outcome_lf = _landed_fix_suspect_outcome(item, root, dirpath=dirpath, fp=fp, dry_run=False)
+        if outcome_lf is not None:
+            return outcome_lf
 
     body_path = _resolve_body_path(item, dirpath)
     if _wf_fix_enabled(item):
@@ -1370,10 +1570,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="re-attempt slugs whose only terminal row is ERROR (recovery scan runs first)",
     )
     parser.add_argument(
+        "--retry-suspects",
+        action="store_true",
+        help="re-attempt slugs whose only terminal row is landed-fix-suspect; the probe is"
+        " SKIPPED for them — the filer already eyeballed the suspect commit(s) (#1674)",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="print per-item planned action (FILE/DEDUP/SKIP); no filer subprocess, no"
-        " ledger/body writes (read-only git rev-parse sha-scan probes may run, #1467)",
+        " ledger/body writes (read-only git probes may run: rev-parse sha-scan #1467,"
+        " git-log landed-fix probe #1674)",
     )
     return parser
 
@@ -1409,6 +1616,7 @@ def main(argv: list[str] | None = None) -> int:
             retry_errors=args.retry_errors,
             dry_run=args.dry_run,
             target_holds=target_holds,
+            retry_suspects=args.retry_suspects,
         )
         if outcome == "error":
             any_error = True

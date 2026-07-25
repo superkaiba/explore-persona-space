@@ -534,3 +534,36 @@ def test_route3_open_daily_held_dedup_documented(daily_skill_text: str):
     assert "find_open_daily_held_duplicate" in daily_skill_text, (
         "the #1483 scan function name dropped from the route-3 dedup documentation"
     )
+
+
+# ── #1674: route-2 mechanical landed-fix probe documented ─────────────────────
+
+
+def test_route2_landed_fix_probe_documented(daily_skill_text: str):
+    """The route-2 block documents the driver's mechanical landed-fix probe (#1674).
+
+    Presence checks, count-robust (this file's convention) — the durability pin
+    for plan #1674 acceptance 7: the terminal ledger outcome name and the
+    override flag must survive future prose edits of the route-2 block.
+    """
+    anchor = "Mechanical landed-fix probe (#1674)"
+    assert anchor in daily_skill_text, (
+        "the #1674 mechanical landed-fix probe paragraph dropped from the daily SKILL.md"
+    )
+    probe_at = daily_skill_text.index(anchor)
+    # Region-scoped to the route-2 block: the paragraph sits after the wf-fix body
+    # Provenance mandate and before the route-3 item.
+    assert daily_skill_text.index("wf-fix body Provenance mandate") < probe_at, (
+        "the probe paragraph moved out of the route-2 block (before the Provenance mandate)"
+    )
+    route3_at = daily_skill_text.index("3. **Route 3", probe_at)
+    region = daily_skill_text[probe_at:route3_at]
+    assert "landed-fix-suspect" in region, (
+        "the terminal ledger outcome `landed-fix-suspect` dropped from the probe paragraph"
+    )
+    assert "`--retry-suspects`" in region, (
+        "the `--retry-suspects` override dropped from the probe paragraph"
+    )
+    assert "fail-open" in region.lower(), (
+        "the fail-open-on-git-errors contract dropped from the probe paragraph"
+    )
