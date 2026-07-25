@@ -6921,7 +6921,12 @@ explicit eval-data path):
    ANALYSIS-ONLY: NO new training script, NO new eval generation, NO
    pod call, NO new prompts to a base model, NO new data file
    downloaded from outside the existing `eval_results/` / HF data
-   repo paths the analyzer named. If the implementer (or
+   repo paths the analyzer named. When the brief delegates the
+   round's landing commit to the worker itself (the worker will
+   `git add`/`git commit` repo-root payload), it ALSO inlines the
+   § Inline payload lint gate worker-brief composition duty below —
+   the certification recipe + the guard-block = report-now contract
+   (#1673). If the implementer (or
    `code-reviewer` on its diff) determines the change CANNOT be done
    without new data collection — **ABORT** the auto-run: post
    `epm:free-analysis-followup-run v1` with
@@ -7077,6 +7082,34 @@ explicit eval-data path):
    the override instead). Deliberate override:
    `EPM_ALLOW_ROOT_CODE_COMMIT=1` + an `epm:progress` note naming the
    reason.
+
+   **Worker-brief composition duty (#1673) — arm the worker BEFORE it
+   meets the hook.** A brief that directs a worker/teammate subagent
+   to produce AND itself commit repo-root code payload
+   (`scripts/`/`src/`/`tests/` — the hook's glob) MUST inline this
+   section's certification recipe: the single-flight probe, the
+   fenced two-command block above (payload-file `printf` +
+   `scripts/inline_lint_gate.py`, ONE background Bash — the no-flags
+   leg is ~2.5-6 min and never fits a foreground bound), and the
+   Preferred-ordering instruction to kick it off at script-freeze.
+   The brief ALSO states the worker-side contract: **a guard-blocked
+   commit is a report-now event, never a wait state** — on a
+   `guard_root_code_commit.sh` refusal the worker EITHER runs the
+   certification recipe itself (single-flight probe first; the cert
+   is per-content-hash + flock-guarded, #1620, so a live run on the
+   SAME payload is waited on and its verdict read) and retries the
+   commit once the cert lands, OR immediately reports the block plus
+   its staged-file state (`git diff --cached --name-only`) on the
+   teammate channel (SendMessage to the orchestrator, or its final
+   Agent-result return) so the orchestrator lands it; idling on the
+   block is the banned outcome (incident #1092, session f4b1d707:
+   the pooled-probe-runner teammate finished its analysis, staged 8
+   files, and stalled 3x on the blocked commit until the
+   orchestrator stood it down, ran the gate — PASS — and committed
+   itself). Briefs composed OUTSIDE this step that delegate a
+   repo-root landing commit (the user-chat inline carve-out, ad-hoc
+   teammate fan-outs) carry the same duty — this block is the
+   canonical text they inline.
 
    This gate binds the user-chat sibling (the CLAUDE.md § Routing
    "User-chat inline free analysis" carve-out) identically —
