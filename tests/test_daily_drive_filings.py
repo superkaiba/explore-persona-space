@@ -1554,3 +1554,147 @@ def test_workflow_fix_rule_documents_advisory_forwarding():
     assert "CLOSED (#1529)" in section
     assert "`advisories`" in section
     assert "persists only a ~300-char output tail" not in rule
+
+
+# ── #1678: same-target dispatch hold ───────────────────────────────────────────
+
+HOLD_FIELDS = ("held_dispatch", "held_with", "shared_target")
+
+
+def _filed_row(d: Path, slug: str) -> dict:
+    """The terminal ``filed`` ledger row for one slug (exactly one expected)."""
+    (row,) = [r for r in ledger_rows(d) if r["slug"] == slug and r["outcome"] == "filed"]
+    return row
+
+
+def test_same_target_second_route2_item_files_without_dispatch(tmp_path, tasks_root, capsys):
+    # Durability pin (#1678): the LATER same-target route-2 sibling files with
+    # --no-dispatch + the hold ledger fields; the group HEAD stays dispatched
+    # and its row carries NONE of the hold fields (an implementation stamping
+    # every group member must fail here).
+    items = [make_item("fix-a"), make_item("fix-b")]  # shared default target
+    d = make_filings_dir(tmp_path, items)
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    call_a, call_b = filer_calls(d)
+    assert "--no-dispatch" not in call_a
+    assert "--no-dispatch" in call_b
+    row_a = _filed_row(d, "fix-a")
+    assert not any(f in row_a for f in HOLD_FIELDS)  # head row unchanged
+    row_b = _filed_row(d, "fix-b")
+    assert row_b["held_dispatch"] is True
+    assert row_b["held_with"] == "fix-a"
+    assert row_b["shared_target"] == [".claude/skills/daily/SKILL.md"]
+    assert "HELD-DISPATCH fix-b" in capsys.readouterr().out
+
+
+def test_third_same_target_sibling_attributes_to_earliest(tmp_path, tasks_root):
+    items = [make_item("fix-a"), make_item("fix-b"), make_item("fix-c")]
+    d = make_filings_dir(tmp_path, items)
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    call_a, call_b, call_c = filer_calls(d)
+    assert "--no-dispatch" not in call_a
+    assert "--no-dispatch" in call_b and "--no-dispatch" in call_c
+    assert _filed_row(d, "fix-b")["held_with"] == "fix-a"
+    assert _filed_row(d, "fix-c")["held_with"] == "fix-a"  # earliest, not fix-b
+
+
+def test_distinct_targets_no_hold_no_new_ledger_fields(tmp_path, tasks_root):
+    # Byte-parity pin: no overlapping targets -> no --no-dispatch, no hold fields.
+    items = [
+        make_item("fix-a", target="scripts/task.py"),
+        make_item("fix-b", target="scripts/pod.py"),
+    ]
+    d = make_filings_dir(tmp_path, items)
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    for call in filer_calls(d):
+        assert "--no-dispatch" not in call
+    for slug in ("fix-a", "fix-b"):
+        assert not any(f in _filed_row(d, slug) for f in HOLD_FIELDS)
+
+
+def test_comma_separated_target_overlap_holds_on_shared_path(tmp_path, tasks_root):
+    items = [
+        make_item("fix-a", target="scripts/a.py, scripts/b.py"),
+        make_item("fix-b", target="./scripts/b.py"),
+    ]
+    d = make_filings_dir(tmp_path, items)
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    _, call_b = filer_calls(d)
+    assert "--no-dispatch" in call_b
+    assert _filed_row(d, "fix-b")["shared_target"] == ["scripts/b.py"]
+
+
+def test_glob_target_literal_token_only(tmp_path, tasks_root):
+    # Globs are LITERAL tokens: identical globs overlap; a concrete path under a
+    # glob does NOT (the documented false negative — Step 10d stays the backstop).
+    items = [
+        make_item("fix-a", target=".claude/agents/*.md"),
+        make_item("fix-b", target=".claude/agents/*.md"),
+        make_item("fix-c", target=".claude/agents/planner.md"),
+    ]
+    d = make_filings_dir(tmp_path, items)
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    call_a, call_b, call_c = filer_calls(d)
+    assert "--no-dispatch" not in call_a
+    assert "--no-dispatch" in call_b
+    assert "--no-dispatch" not in call_c
+    assert not any(f in _filed_row(d, "fix-c") for f in HOLD_FIELDS)
+
+
+def test_route3_same_target_never_holds_route2(tmp_path, tasks_root):
+    # Route-3 items already file --no-dispatch (not a contention source): they
+    # neither hold nor are held.
+    items = [make_item("hold-a", route=3), make_item("fix-b")]  # same default target
+    d = make_filings_dir(tmp_path, items)
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    call_3, call_2 = filer_calls(d)
+    assert "--no-dispatch" in call_3  # route-3's own flag, unchanged
+    assert "--no-dispatch" not in call_2  # route-2 NOT held by the route-3 item
+    assert not any(f in _filed_row(d, "fix-b") for f in HOLD_FIELDS)
+
+
+def test_hold_computed_over_full_manifest_not_slice(tmp_path, tasks_root):
+    # The hold map is a pure function of the FULL manifest: slicing to item 1
+    # only (--start 1) still holds fix-b against the unsliced fix-a.
+    items = [make_item("fix-a"), make_item("fix-b")]
+    d = make_filings_dir(tmp_path, items)
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d), "--start", "1") == 0
+    (call_b,) = filer_calls(d)  # only the sliced item ran
+    assert "--no-dispatch" in call_b
+    assert _filed_row(d, "fix-b")["held_with"] == "fix-a"
+
+
+def test_dry_run_surfaces_hold_no_writes(tmp_path, tasks_root, capsys):
+    items = [make_item("fix-a"), make_item("fix-b")]
+    d = make_filings_dir(tmp_path, items)
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d), "--dry-run") == 0
+    out = capsys.readouterr().out
+    line_a = next(ln for ln in out.splitlines() if ln.startswith("FILE fix-a"))
+    line_b = next(ln for ln in out.splitlines() if ln.startswith("FILE fix-b"))
+    assert "--no-dispatch" not in line_a
+    assert "[held dispatch:" not in line_a
+    assert "'--no-dispatch'" in line_b  # rides the printed tags slice, as route 3 does
+    assert "[held dispatch: shares .claude/skills/daily/SKILL.md with fix-a]" in line_b
+    assert filer_calls(d) == []
+    assert not (d / "filed.jsonl").exists()
+
+
+def test_held_item_terminal_files_then_rerun_skips(tmp_path, tasks_root, capsys):
+    # Resume safety (#1678 plan §4.7): a held item that terminal-filed is SKIPped
+    # on re-run exactly like any other terminal slug — no re-file, no double-file.
+    items = [make_item("fix-a"), make_item("fix-b")]
+    d = make_filings_dir(tmp_path, items)
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    assert _filed_row(d, "fix-b")["held_dispatch"] is True
+    n_calls = len(filer_calls(d))
+    capsys.readouterr()  # drain run-1 output
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d, name="stub2.py")) == 0
+    assert "SKIP fix-b" in capsys.readouterr().out
+    assert len(filer_calls(d)) == n_calls  # no new filer invocations
+
+
+def test_parse_filed_id_matches_no_dispatch_stdout_shape():
+    # Pins the FILED_ID_RE compatibility the hold design leans on: the filer's
+    # --no-dispatch success line still yields the task id.
+    assert ddf.parse_filed_id("filed #77 (dispatch skipped: --no-dispatch)", "") == 77
