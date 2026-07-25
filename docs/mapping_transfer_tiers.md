@@ -33,28 +33,40 @@ that meet at Tier 4.
 
 ### Tier 2 — Constant shift (offset only)
 
-- Frozen linear part; refit only the intercept on target train folds:
-  `ŷ = W_s x + b*`, `b* = ȳ_t − W_s x̄_t` (the least-squares-optimal
-  intercept given a frozen slope; equivalently, recenter the source map's
-  predictions with target train-fold means).
-- d free parameters (one vector).
-- **Reading:** same map, displaced operating point — a constant vector
-  (persona/format/register shift) moves the whole activation cloud, and the
-  relation between deviations-from-mean is unchanged. Because held-out R²
-  punishes a constant displacement without bound, catastrophically negative
-  naive transfer is *compatible with* a Tier-2 relationship; this rung is
-  what separates "different origin" from "different map."
-- **Side ambiguity:** the correction relative to naive transfer is
-  `b* − b_s = Δy − W_s Δx` with `Δx = x̄_t − x̄_s`, `Δy = ȳ_t − ȳ_s` — one
-  constant in answer space that bundles the context-mean displacement (as
-  seen through the frozen map) and the answer-mean displacement. Only the
-  net combination is identified; Tier 2 alone cannot say whether the clouds
-  moved on the input side, the output side, or both.
-- **One-sided sub-rungs (proposed):** Tier 2a — context recentering only,
-  `ŷ = W_s(x − x̄_t) + ȳ_s`; Tier 2b — answer recentering only,
-  `ŷ = W_s(x − x̄_s) + ȳ_t`; plus the direct decomposition report ‖Δy‖,
-  ‖W_s Δx‖, and the cosine between them (large and aligned ⇒ the two sides
-  mostly cancel and the map itself transports the shift).
+The source map is anchored to where the source's data lived: inputs centered
+at x̄_s, predictions anchored at ȳ_s. A constant shift can re-anchor the
+context side, the answer side, or both (all refit means come from target
+train folds only; d free parameters per applied recentering):
+
+- **Tier 2a — context-side shift:** recenter only the inputs to the target's
+  context mean; keep the source answer anchor:
+  `ŷ = W_s(x − x̄_t) + ȳ_s`.
+  Corrects the context-mean displacement as seen through the frozen map (the
+  term `W_s Δx`, `Δx = x̄_t − x̄_s`). Recovers transfer iff the two settings
+  differ by where their CONTEXTS sit.
+- **Tier 2b — answer-side shift:** keep the source input centering; re-anchor
+  predictions at the target's answer mean:
+  `ŷ = W_s(x − x̄_s) + ȳ_t`.
+  Corrects the answer-mean displacement (`Δy = ȳ_t − ȳ_s`). Recovers transfer
+  iff the settings differ by where their ANSWERS sit.
+- **Tier 2 — both sides combined:** apply both recenterings; equivalently,
+  refit the single least-squares-optimal intercept given the frozen slope:
+  `ŷ = W_s(x − x̄_t) + ȳ_t = W_s x + b*`, with `b* = ȳ_t − W_s x̄_t`.
+  The correction relative to naive transfer is `b* − b_s = Δy − W_s Δx` — one
+  constant in answer space that bundles both sides, which is why the combined
+  rung alone cannot say which side moved; 2a vs 2b split it.
+- **Decomposition report:** ‖W_s Δx‖, ‖Δy‖, and cos(W_s Δx, Δy). Large and
+  aligned ⇒ the two terms cancel inside `Δy − W_s Δx` and the map itself
+  already transports the shift — naive transfer then carries little constant
+  error even though both clouds moved.
+- **Reading:** same map, displaced operating point(s). Held-out R² punishes a
+  constant displacement without bound, so catastrophically negative naive
+  transfer is still *compatible with* a Tier-2 relationship — this rung
+  family is what separates "different origin" from "different map."
+- **Measured (characters, 2026-07-24):** 2b recovers essentially the full
+  combined correction in all 24 pairs; 2a ≈ nothing (‖Δy‖ 11–32 vs
+  ‖W_s Δx‖ 2.0–5.5) — the character shift is answer-side (see § "The offset
+  as a steering vector").
 
 ### Tier 2.5 — Global gain (proposed, not yet measured)
 
@@ -160,6 +172,29 @@ per-character output bias. This is the bridge between the mapping-transfer
 line and the persona-vector line: the fitted operator is the propagator that
 turns a persona displacement at the context into a behavior displacement at
 the answer.
+
+**Measured side attribution (characters, 2026-07-24 —
+`eval_results/issue_1310/xpersona_similarity/tier2_sides/results.json`):** the
+Tier-2 shift is almost entirely ANSWER-side. Answer-recentering alone (2b)
+recovers essentially the full Tier-2 correction in all 24 ordered pairs
+(e.g. base Wren→HELIOS naive −7.73 → 2b −0.07 vs full Tier-2 −0.00, fractions
+of ceiling), while context-recentering alone (2a) changes nothing or slightly
+hurts; in prediction space ‖Δy‖ = 11–32 vs ‖W_s Δx‖ = 2.0–5.5 with modest
+alignment (cos 0.01–0.54). The raw-space reads sharpen the reading: personas
+DO separate in context space (raw ‖Δx‖ = 5.6–12.1, separation effect size
+0.79–1.09 against within-persona spread) but somewhat more in answer space
+(effect size 0.86–1.58), and the frozen SPECIALIST slope attenuates the
+between-persona context displacement ~2–3× in norm — a direction it never saw
+vary during within-persona training. The pooled map's M1−M0 ≈ 0, by contrast,
+implies M₀Δx ≈ Δy: the between-persona transport direction is learnable from
+pooled data but absent from any single persona's specialist estimate. The raw
+cross-position shift cosine cos(Δx, Δy) is 0.10–0.43 per pair; per persona
+(shift vs the 4-persona global mean, near-identical across models): Wren
+0.32/0.35, HELIOS 0.32/0.29, Dana 0.07/0.08, Vex 0.41/0.44 (base/instruct;
+chance ≈ 0.017 at d = 3584) — the persona direction is weakly-to-moderately
+shared across positions, strongest for the villain, near-orthogonal for the
+ordinary-person persona, so position-invariance of the "persona vector" is
+partial, not given.
 
 Three qualifications before this is a steering *claim*:
 
