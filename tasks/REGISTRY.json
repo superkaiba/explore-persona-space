@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1666,
+  "highest_id": 1667,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5186,6 +5186,13 @@
       "path": "tasks/completed/1666",
       "status": "completed",
       "title": "fix: load_dotenv before heavy imports in issue1586_fu_caveatfix_figures.py (thread-caps red on main)"
+    },
+    "1667": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1667",
+      "status": "proposed",
+      "title": "daily-fix: wedge-failover checks live owner before terminate"
     },
     "168": {
       "has_clean_result": true,
