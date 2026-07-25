@@ -110,6 +110,9 @@ def origin_and_clone(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv("EPM_ROOT_SYNC_RETRY_SLEEP_S", raising=False)
     monkeypatch.delenv("EPM_ROOT_SYNC_PROBE_TIMEOUT_S", raising=False)
     monkeypatch.delenv("EPM_ROOT_SYNC_PROBE_BUDGET_S", raising=False)
+    monkeypatch.delenv("EPM_ROOT_SYNC_ABORT_LOCK_WAIT_S", raising=False)
+    monkeypatch.delenv("EPM_ROOT_SYNC_ABORT_LOCK_POLL_S", raising=False)
+    monkeypatch.delenv("EPM_ROOT_SYNC_ABORT_LOCK_RETRIES", raising=False)
     return origin, local, other
 
 
@@ -1792,3 +1795,285 @@ def test_probe_fake_proc_budget_exhaustion_uncertain(tmp_path, monkeypatch):
     assert probe.verdict == "uncertain"
     assert "budget" in probe.evidence
     assert "scan incomplete" in probe.evidence
+
+
+# ─── 20. Abort lock-race bounded retry (#1671) ───────────────────────────────
+
+
+def _lock_race_stderr(lock_path: str, prefix: str = "error") -> str:
+    """The measured git 2.34.1 lockfile.c EEXIST stderr (plan §2 live probes):
+    ``Unable to create '<path>': File exists.`` + the hint block + the
+    ``fatal: could not move back`` trailer a lock-blocked abort emits."""
+    return (
+        f"{prefix}: Unable to create '{lock_path}': File exists.\n"
+        "\n"
+        "Another git process seems to be running in this repository, e.g.\n"
+        "an editor opened by 'git commit'. Please make sure all processes\n"
+        "are terminated then try again. If it still fails, a git process\n"
+        "may have crashed in this repository earlier:\n"
+        "remove the file manually to continue.\n"
+        "fatal: could not move back to 0123456789abcdef0123456789abcdef01234567\n"
+    )
+
+
+@pytest.mark.parametrize(
+    ("stderr", "should_match"),
+    [
+        pytest.param(
+            _lock_race_stderr("/tmp/lockprobe/local/.git/HEAD.lock"),
+            True,
+            id="head-lock-error-with-hint-block",
+        ),
+        pytest.param(
+            "error: Unable to create '/tmp/lockprobe/local/.git/index.lock': File exists.\n",
+            True,
+            id="index-lock-error",
+        ),
+        pytest.param(
+            "fatal: Unable to create '/tmp/lockprobe/local/.git/index.lock': File exists.\n",
+            True,
+            id="index-lock-fatal-merge-abort",
+        ),
+        pytest.param(
+            "error: Unable to create '.git/HEAD.lock': File exists",
+            True,
+            id="incident-1645-relative-path",
+        ),
+        pytest.param(
+            "error: cannot lock ref 'refs/heads/main': Unable to create "
+            "'/x/.git/refs/heads/main.lock': File exists.\n",
+            True,
+            id="ref-lock-wrapper",
+        ),
+        pytest.param("simulated abort failure", False, id="simulated-fixture-string"),
+        pytest.param(
+            "fatal: Unable to create '/x/.git/index.lock': Permission denied",
+            False,
+            id="permission-denied-lock",
+        ),
+        pytest.param("fatal: No rebase in progress?", False, id="no-rebase-in-progress"),
+        pytest.param("", False, id="empty"),
+    ],
+)
+def test_lock_race_regex_shapes(stderr, should_match):
+    """Pure-unit pin of the detection needle against the measured positive
+    shapes (plan §2 probes + the #1645 incident form) and the known negatives
+    (a non-EEXIST errno prints a different suffix and must never retry)."""
+    m = srr._LOCK_RACE_RE.search(stderr)
+    assert bool(m) == should_match
+    if should_match:
+        assert m.group(1).endswith(".lock")
+
+
+def test_husk_abort_lock_race_retried_then_succeeds(origin_and_clone, monkeypatch, capsys):
+    """A transient lock race on the stale-husk abort (the #1645 site) is
+    retried; the abort succeeds on attempt 2 and the run proceeds to its
+    normal outcome (the same genuine conflict → clean exit 2)."""
+    _origin, local, other = origin_and_clone
+    husk = _make_conflicted_rebase_husk(local, other)
+    t = time.time() - 7200
+    os.utime(husk, (t, t))
+    monkeypatch.setenv("EPM_ROOT_SYNC_ABORT_LOCK_POLL_S", "0.01")
+
+    real_git = srr.git
+    fails = {"left": 1}
+    # Lock path points at a NONEXISTENT file so the bounded poll exits at once.
+    gone = str(local / ".git" / "GONE.lock")
+
+    def fake_git(repo, *args, **kwargs):
+        if args[:2] == ("rebase", "--abort") and fails["left"]:
+            fails["left"] -= 1
+            return subprocess.CompletedProcess(args, 128, stdout="", stderr=_lock_race_stderr(gone))
+        return real_git(repo, *args, **kwargs)
+
+    monkeypatch.setattr(srr, "git", fake_git)
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert any("transient lock race" in m for m in rep["messages"])
+    assert any("succeeded on retry 1" in m for m in rep["messages"])
+    assert any("STALE-HUSK ABORT" in m for m in rep["messages"])
+    assert rc == 2  # run continued into the same genuine conflict
+    assert not (local / ".git" / "rebase-merge").exists()
+
+
+def test_husk_abort_lock_race_exhausted_exit6_lock_never_deleted(
+    origin_and_clone, monkeypatch, capsys
+):
+    """Persistent lock → DEADLINE-BOUND exhaustion: today's exit-6 refusal
+    fires with its message unchanged, the husk is kept, and the lock file is
+    NEVER deleted. The abort is invoked >= 2 and <= 1 + RETRIES times — the
+    inner poll consumes the wall bound before the count limit binds, so the
+    exact count is deliberately NOT asserted here (the count-bound exact pin
+    is test_abort_lock_retry_count_bound_exact_invocations)."""
+    _origin, local, other = origin_and_clone
+    husk = _make_conflicted_rebase_husk(local, other)
+    t = time.time() - 7200
+    os.utime(husk, (t, t))
+    head_lock = local / ".git" / "HEAD.lock"
+    head_lock.write_text("")
+    monkeypatch.setenv("EPM_ROOT_SYNC_ABORT_LOCK_WAIT_S", "0.3")
+    monkeypatch.setenv("EPM_ROOT_SYNC_ABORT_LOCK_POLL_S", "0.05")
+    monkeypatch.setenv("EPM_ROOT_SYNC_ABORT_LOCK_RETRIES", "2")
+
+    real_git = srr.git
+    calls = {"abort": 0}
+
+    def fake_git(repo, *args, **kwargs):
+        if args[:2] == ("rebase", "--abort"):
+            calls["abort"] += 1
+            return subprocess.CompletedProcess(
+                args, 128, stdout="", stderr=_lock_race_stderr(str(head_lock))
+            )
+        return real_git(repo, *args, **kwargs)
+
+    monkeypatch.setattr(srr, "git", fake_git)
+    rc, rep, err = _run(local, capsys=capsys)
+    assert rc == 6
+    assert "not the known un-abortable" in err  # raise-site message preserved
+    assert husk.exists()  # KEPT
+    assert head_lock.exists()  # NEVER deleted
+    assert 2 <= calls["abort"] <= 3  # deadline-bound: count limit need not be reached
+    assert any("still lock-blocked" in m for m in rep["messages"])
+
+
+def test_abort_non_lock_failure_not_retried(origin_and_clone, monkeypatch, capsys):
+    """The conservative predicate: a NON-lock abort failure is surfaced from
+    the FIRST attempt — exactly one invocation, behavior identical to today
+    (the :985 shape plus an invocation counter)."""
+    _origin, local, other = origin_and_clone
+    husk = _make_conflicted_rebase_husk(local, other)
+    t = time.time() - 7200
+    os.utime(husk, (t, t))
+
+    real_git = srr.git
+    calls = {"abort": 0}
+
+    def fake_git(repo, *args, **kwargs):
+        if args[:2] == ("rebase", "--abort"):
+            calls["abort"] += 1
+            return subprocess.CompletedProcess(args, 1, stdout="", stderr="simulated abort failure")
+        return real_git(repo, *args, **kwargs)
+
+    monkeypatch.setattr(srr, "git", fake_git)
+    rc, _rep, err = _run(local, capsys=capsys)
+    assert calls["abort"] == 1  # never retried
+    assert rc == 6
+    assert "not the known un-abortable" in err
+    assert husk.exists()
+
+
+def test_conflict_abort_lock_race_retried(origin_and_clone, monkeypatch, capsys):
+    """check=True success-after-retry at the conflict-abort site
+    (_capture_conflict_and_abort): a genuine content conflict still exits 2
+    cleanly when the abort's first attempt loses a transient lock race."""
+    _origin, local, other = origin_and_clone
+    _write(local, "conflict.txt", "base\n")
+    _commit(local, "conflict.txt")
+    _git(local, "push", "-q", "origin", "main")
+    _git(other, "pull", "-q", "origin", "main")
+    _write(other, "conflict.txt", "origin-side\n")
+    _commit(other, "conflict.txt")
+    _git(other, "push", "-q", "origin", "main")
+    _write(local, "conflict.txt", "local-side\n")
+    _commit(local, "conflict.txt")
+    monkeypatch.setenv("EPM_ROOT_SYNC_ABORT_LOCK_POLL_S", "0.01")
+
+    real_git = srr.git
+    fails = {"left": 1}
+    gone = str(local / ".git" / "GONE.lock")
+
+    def fake_git(repo, *args, **kwargs):
+        if args[:2] == ("rebase", "--abort") and fails["left"]:
+            fails["left"] -= 1
+            return subprocess.CompletedProcess(args, 128, stdout="", stderr=_lock_race_stderr(gone))
+        return real_git(repo, *args, **kwargs)
+
+    monkeypatch.setattr(srr, "git", fake_git)
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 2
+    assert "conflict.txt" in rep["conflicted_paths"]
+    assert not (local / ".git" / "rebase-merge").exists()
+    assert any("succeeded on retry 1" in m for m in rep["messages"])
+
+
+def test_abort_with_lock_retry_check_true_exhaustion_raises(origin_and_clone, monkeypatch):
+    """Direct unit pin of the check=True exhaustion contract the pull-timeout
+    sites rely on: CalledProcessError carrying the FINAL attempt's fields (the
+    EXIT_UNEXPECTED conversion in main is already pinned by existing tests)."""
+    _origin, local, _other = origin_and_clone
+    monkeypatch.setenv("EPM_ROOT_SYNC_ABORT_LOCK_WAIT_S", "60")
+    monkeypatch.setenv("EPM_ROOT_SYNC_ABORT_LOCK_RETRIES", "1")
+    monkeypatch.setenv("EPM_ROOT_SYNC_ABORT_LOCK_POLL_S", "0.01")
+    stderr = _lock_race_stderr(str(local / ".git" / "GONE.lock"))
+
+    def fake_git(repo, *args, **kwargs):
+        assert args[:2] == ("rebase", "--abort")
+        return subprocess.CompletedProcess(args, 128, stdout="", stderr=stderr)
+
+    monkeypatch.setattr(srr, "git", fake_git)
+    report = {"messages": []}
+    with pytest.raises(subprocess.CalledProcessError) as excinfo:
+        srr._abort_with_lock_retry(local, report, "rebase", "--abort")
+    assert excinfo.value.returncode == 128
+    assert excinfo.value.stderr == stderr  # FINAL attempt's stderr preserved
+    assert excinfo.value.cmd == ["git", "-C", str(local), "rebase", "--abort"]
+
+
+def test_real_lock_race_end_to_end(origin_and_clone, capsys, monkeypatch):
+    """NO fake git: a REAL pre-created HEAD.lock blocks the real abort; a
+    timer clears it mid-poll and the retry succeeds — validates the detection
+    needle against LIVE git output end to end (the git-version canary; a
+    wording change in a future git fails this loudly, not silently in prod).
+    2.0s timer, generous vs the 10s wall bound, so the first abort attempt
+    reliably sees the lock even on a loaded shared VM; the flake direction is
+    false-RED only (a too-early clear skips the retry and fails the retry
+    assertions), never a vacuous pass."""
+    _origin, local, other = origin_and_clone
+    husk = _make_conflicted_rebase_husk(local, other)
+    t = time.time() - 7200
+    os.utime(husk, (t, t))
+    monkeypatch.setenv("EPM_ROOT_SYNC_ABORT_LOCK_WAIT_S", "10")
+    monkeypatch.setenv("EPM_ROOT_SYNC_ABORT_LOCK_POLL_S", "0.1")
+    lock = local / ".git" / "HEAD.lock"
+    lock.write_text("")
+    timer = threading.Timer(2.0, lambda: lock.unlink(missing_ok=True))
+    timer.start()
+    try:
+        rc, rep, _err = _run(local, capsys=capsys)
+    finally:
+        timer.join()
+    assert any("transient lock race" in m for m in rep["messages"])
+    assert any("succeeded on retry" in m for m in rep["messages"])
+    assert not (local / ".git" / "rebase-merge").exists()
+    assert rc == 2  # run continued into the same genuine conflict
+
+
+def test_abort_lock_retry_count_bound_exact_invocations(origin_and_clone, monkeypatch):
+    """The COUNT-BOUND exhaustion pin (the `retries >= _abort_lock_retries()`
+    break — replace it with 999 and ONLY this test goes red): the named lock
+    clears instantly between attempts (nonexistent path) while the abort keeps
+    failing on a fresh lock needle (the two-lock-chain case), so the RETRIES
+    limit is what binds and the abort runs exactly 1 + RETRIES times."""
+    _origin, local, _other = origin_and_clone
+    monkeypatch.setenv("EPM_ROOT_SYNC_ABORT_LOCK_WAIT_S", "60")
+    monkeypatch.setenv("EPM_ROOT_SYNC_ABORT_LOCK_RETRIES", "2")
+    monkeypatch.setenv("EPM_ROOT_SYNC_ABORT_LOCK_POLL_S", "0.01")
+    stderr = _lock_race_stderr(str(local / ".git" / "GONE.lock"))
+    calls = {"abort": 0}
+
+    def fake_git(repo, *args, **kwargs):
+        assert args[:2] == ("rebase", "--abort")
+        calls["abort"] += 1
+        return subprocess.CompletedProcess(args, 128, stdout="", stderr=stderr)
+
+    monkeypatch.setattr(srr, "git", fake_git)
+    report = {"messages": []}
+    with pytest.raises(subprocess.CalledProcessError) as excinfo:
+        srr._abort_with_lock_retry(local, report, "rebase", "--abort")
+    assert calls["abort"] == 3  # exactly 1 + RETRIES
+    assert excinfo.value.stderr == stderr  # FINAL attempt carried
+
+    calls["abort"] = 0  # check=False variant: same fake, same bounds, fresh counter
+    res = srr._abort_with_lock_retry(local, report, "rebase", "--abort", check=False)
+    assert calls["abort"] == 3
+    assert res.returncode == 128
+    assert res.stderr == stderr
