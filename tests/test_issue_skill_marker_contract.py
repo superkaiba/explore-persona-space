@@ -44,6 +44,8 @@ ROOT = Path(__file__).resolve().parent.parent
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 EXPERIMENT_IMPLEMENTER = ROOT / ".claude" / "agents" / "experiment-implementer.md"
 CODE_REVIEWER = ROOT / ".claude" / "agents" / "code-reviewer.md"
+IMPLEMENTER = ROOT / ".claude" / "agents" / "implementer.md"
+CRASH_FIX_ROUNDS = ROOT / ".claude" / "rules" / "crash-fix-rounds.md"
 
 
 def _line_anchored_h3_pattern(label: str) -> re.Pattern[str]:
@@ -264,3 +266,33 @@ def test_step6d0bis_smoke_covers_class_regime_axes():
         "Smoke/production parity includes REGIME/CLASS COVERAGE",
     ):
         assert needle in span, needle
+
+
+# ── SHA-verbatim report rule (#1682) ─────────────────────────────────────────
+#
+# Incident #1586 r7 (2026-07-24): an implementer report's fix-engaged
+# element-4 "full" SHA was a hand-extended short SHA; the orchestrator had
+# to rev-parse-correct it before composing the relaunch brief. Downstream
+# consumers (relaunch briefs, ancestry probes, markers) re-cite report SHAs
+# verbatim, so the compose-site rule must survive in all three surfaces:
+# both implementer report contracts and the crash-fix element-4 field spec.
+
+
+def test_sha_verbatim_report_rule_pinned():
+    """#1682: the SHA-verbatim rule survives in all three compose-site surfaces.
+
+    Pins BOTH the ban token (``hand-extended``) and the positive
+    instruction (``rev-parse``) — dropping either half re-opens the
+    #1586 r7 fabricated-hex class, because downstream relaunch briefs
+    and markers re-cite the report's SHAs verbatim.
+    """
+    for path in (EXPERIMENT_IMPLEMENTER, IMPLEMENTER, CRASH_FIX_ROUNDS):
+        body = path.read_text(encoding="utf-8")
+        for needle in ("hand-extended", "rev-parse"):
+            assert needle in body, (
+                f"{path.name} must keep the SHA-verbatim report rule token "
+                f"{needle!r} (#1682; incident #1586 r7: a hand-extended 'full' "
+                "SHA reached the fix-engaged field and had to be "
+                "rev-parse-corrected before the relaunch brief — downstream "
+                "briefs/markers re-cite report SHAs verbatim)."
+            )

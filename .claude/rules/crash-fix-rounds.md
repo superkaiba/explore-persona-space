@@ -88,7 +88,9 @@ with five elements:
    to the specific branch the fix added (so a reviewer can tell a generic
    startup log from a fix-specific one).
 4. **The fix commit(s)** — the FULL SHA(s) on `issue-<N>` containing your
-   fix (the commits this round pushed). Any subsequent relaunch asserts
+   fix (the commits this round pushed), each pasted verbatim from
+   `git rev-parse` / `git log --format=%H` output — never hand-extended
+   from a short SHA (#1586 r7). Any subsequent relaunch asserts
    this SHA is an ancestor of the launch checkout's HEAD (§ Crash-fix
    relaunch below). Declare it so the relauncher keys the probe to the
    SPECIFIC fix — never to "the branch tip": a checkout at the tip of a
