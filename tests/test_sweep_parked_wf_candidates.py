@@ -414,6 +414,11 @@ def test_malformed_rows_skipped_counted_exit_0(tmp_path: Path, capsys) -> None:
     assert out["skipped_rows"] == 3
     assert len(out["candidates"]) == 1
     assert out["candidates"][0]["ts"] == T0
+    # #1680: every skip is described by a structured record (no truncation here)
+    assert len(out["skipped"]) == out["skipped_rows"]
+    for entry in out["skipped"]:
+        assert set(entry) == {"source", "path", "line_no", "reason", "kind_hint", "relevant_kind"}
+    assert {e["source"] for e in out["skipped"]} == {"task:18", "cache"}
 
 
 # ── 16. raw U+2028 inside a note must not shred the JSONL row (#950 gotcha) ─
@@ -519,11 +524,15 @@ def test_issue1248_na_fp_record_suppresses_formal_block_candidate(
     assert run_sweep(tmp_path)["candidates"] == []
 
 
-def test_issue1248_real_differing_fp_record_never_suppresses_even_with_matching_ts(
+def test_issue1680_differing_fp_record_matching_origin_ts_suppresses(
     tmp_path: Path,
 ) -> None:
-    """§ Dedup invariant survives the widening: a real 12-hex DIFFERING fp is a
-    DIFFERENT bug — the matching origin_candidate_ts must not rescue it."""
+    """#1680 deliberately supersedes the #1248 differing-fp veto (this test's
+    predecessor, test_issue1248_real_differing_fp_record_never_suppresses_even_
+    with_matching_ts, pinned the inverse): a record naming the candidate's
+    exact row ts claims to have routed THAT row — the differing real 12-hex fp
+    is a driver recomputation artifact (#1630), not a different bug. Same
+    fixture, flipped assertion."""
     bug, change = "bug 1248-a.", "change 1248-a."
     other_fp = wf_fix_fingerprint("unrelated change.", "unrelated bug.")
     make_task(
@@ -539,7 +548,9 @@ def test_issue1248_real_differing_fp_record_never_suppresses_even_with_matching_
             ),
         ],
     )
-    assert only(run_sweep(tmp_path))["suppressed"] is False
+    c = only(run_sweep(tmp_path, include_routed=True))
+    assert c["suppressed"] is True
+    assert c["suppressed_by"]["kind"] == "same-stream-filed"
 
 
 def test_issue1248_na_fp_record_mismatched_origin_ts_does_not_suppress(tmp_path: Path) -> None:
@@ -598,10 +609,15 @@ def test_issue1248_na_fp_record_incompatible_target_file_does_not_suppress(
     assert only(run_sweep(tmp_path))["suppressed"] is False
 
 
-def test_issue1248_structured_real_fp_key_vetoes_ts_fallback(tmp_path: Path) -> None:
-    """A cache-stream filed row with a STRUCTURED differing 12-hex `fingerprint`
-    key (no note) hits the _FP_SHAPE_RE.fullmatch veto branch -> never suppresses,
-    even with a matching structured origin_candidate_ts."""
+def test_issue1680_structured_differing_fp_matching_structured_ts_suppresses(
+    tmp_path: Path,
+) -> None:
+    """#1680 supersedes the #1248 structured-fp veto (predecessor:
+    test_issue1248_structured_real_fp_key_vetoes_ts_fallback): a cache-stream
+    filed row with a STRUCTURED differing 12-hex `fingerprint` key (no note)
+    and a matching structured origin_candidate_ts now suppresses — the exact
+    row-ts claim overrides the recomputed-fp mismatch. Same fixture, flipped
+    assertion."""
     root = tmp_path / "tasks"
     root.mkdir()
     cache = tmp_path / "workflow-fix-events.jsonl"
@@ -624,7 +640,7 @@ def test_issue1248_structured_real_fp_key_vetoes_ts_fallback(tmp_path: Path) -> 
         },
     ]
     cache.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
-    assert only(run_sweep(root, cache, include_routed=True))["suppressed"] is False
+    assert only(run_sweep(root, cache, include_routed=True))["suppressed"] is True
 
 
 def test_issue1248_comma_separated_record_target_file_is_prefix_compatible(
@@ -1098,3 +1114,307 @@ def test_issue1599_scan_continues_past_non_suppressing_terminal_hit(tmp_path: Pa
     )
     c = only(run_sweep(tmp_path, include_routed=True))
     assert c["suppressed_by"] == {"kind": "fp-tag-closed", "ref": "#72", "basis": "close"}
+
+
+# ── 21. #1680: ts-claim precedence over differing fps + structured skips ────
+
+
+def test_issue1680_1630_shape_driver_recomputed_fp_record_suppresses(tmp_path: Path) -> None:
+    """The #1630 regression shape near-verbatim: the /daily driver recomputed
+    the fp from ABRIDGED origin text (differing from the sweep-canonical fp)
+    but named the candidate's exact row ts — the record must close it. A
+    DECOY full-ISO ts (a DIFFERENT candidate's row ts) planted inside the
+    abridged `origin_candidate:` tail must NOT close that other candidate
+    (pins _record_origin_ts's field-segment bounding at the ' / ' separator)."""
+    bug_a, change_a = "bug 1630-a.", "change 1630-a."
+    bug_b, change_b = "bug 1630-b.", "change 1630-b."
+    driver_fp = wf_fix_fingerprint("abridged change.", "abridged bug.")
+    make_task(
+        tmp_path,
+        1630,
+        "completed",
+        events=[
+            cand_row(T0, block_note("scripts/workflow_lint.py", bug_a, change_a)),
+            cand_row(T1, block_note("scripts/workflow_lint.py", bug_b, change_b)),
+            filed_row(
+                T2,
+                "filed_task: #1648 / target_file: scripts/workflow_lint.py / "
+                f"fingerprint: {driver_fp} / session_spawned: best-effort (driver) / "
+                f"source: daily-parked-candidate-sweep / origin_candidate_ts: {T0} / "
+                f"origin_candidate: abridged tail quoting a decoy row ts {T1} verbatim",
+            ),
+        ],
+    )
+    by_ts = {c["ts"]: c for c in run_sweep(tmp_path, include_routed=True)["candidates"]}
+    assert by_ts[T0]["suppressed"] is True
+    assert by_ts[T0]["suppressed_by"] == {"kind": "same-stream-filed", "ref": "#1648"}
+    # the decoy ts sits OUTSIDE the origin_candidate_ts field's value segment
+    assert by_ts[T1]["suppressed"] is False
+
+
+def test_issue1680_differing_fp_record_nonmatching_ts_not_suppressed(tmp_path: Path) -> None:
+    """Dedup doctrine preserved: a differing-fp record whose origin_candidate_ts
+    names a DIFFERENT row is a different bug — never suppresses."""
+    other_fp = wf_fix_fingerprint("unrelated change.", "unrelated bug.")
+    make_task(
+        tmp_path,
+        26,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", "bug 1680-b.", "change 1680-b.")),
+            filed_row(
+                T2,
+                f"filed_task: #96 / target_file: a/b.md / fingerprint: {other_fp} / "
+                f"origin_candidate_ts: {T1}",
+            ),
+        ],
+    )
+    assert only(run_sweep(tmp_path))["suppressed"] is False
+
+
+def test_issue1680_differing_fp_record_no_origin_ts_not_suppressed(tmp_path: Path) -> None:
+    """Pure fp-mismatch with NO row-ts claim keeps the #1248 outcome: a
+    differing real fp is a different bug (workflow-fix-on-bug.md § Dedup)."""
+    other_fp = wf_fix_fingerprint("unrelated change.", "unrelated bug.")
+    make_task(
+        tmp_path,
+        27,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", "bug 1680-c.", "change 1680-c.")),
+            filed_row(T1, f"filed_task: #97 / target_file: a/b.md / fingerprint: {other_fp}"),
+        ],
+    )
+    assert only(run_sweep(tmp_path))["suppressed"] is False
+
+
+def test_issue1680_differing_fp_matching_ts_incompatible_target_file_not_suppressed(
+    tmp_path: Path,
+) -> None:
+    """The target_file prefix-compatibility veto survives the #1680 widening."""
+    other_fp = wf_fix_fingerprint("unrelated change.", "unrelated bug.")
+    make_task(
+        tmp_path,
+        28,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", "bug 1680-d.", "change 1680-d.")),
+            filed_row(
+                T1,
+                f"filed_task: #98 / target_file: some/other.py / fingerprint: {other_fp} / "
+                f"origin_candidate_ts: {T0}",
+            ),
+        ],
+    )
+    assert only(run_sweep(tmp_path))["suppressed"] is False
+
+
+def test_issue1680_differing_fp_matching_ts_missing_target_file_abstains_suppresses(
+    tmp_path: Path,
+) -> None:
+    """Behavior-table row-3 abstain sub-case: with a matching row-ts claim and
+    NO target_file on the record side, the veto abstains (the inherited #1248
+    semantics) and the exact row ts decides — suppressed."""
+    other_fp = wf_fix_fingerprint("unrelated change.", "unrelated bug.")
+    make_task(
+        tmp_path,
+        29,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", "bug 1680-e.", "change 1680-e.")),
+            filed_row(T1, f"filed_task: #99 / fingerprint: {other_fp} / origin_candidate_ts: {T0}"),
+        ],
+    )
+    assert only(run_sweep(tmp_path, include_routed=True))["suppressed"] is True
+
+
+def test_issue1680_multi_ts_record_closes_each_listed_candidate(tmp_path: Path) -> None:
+    """A record whose origin_candidate_ts lists several full-ISO timestamps
+    (`TS1 + TS2 + TS3`, the live #1630 v4 corrective shape) closes EACH listed
+    park; unlisted timestamps stay enumerated."""
+    make_task(
+        tmp_path,
+        30,
+        "completed",
+        events=[
+            cand_row(T0, PROSE_NOTE),
+            cand_row(T1, PROSE_NOTE),
+            cand_row(T2, PROSE_NOTE),
+            filed_row(
+                "2026-07-07T10:00:00Z",
+                "filed_task: #1650 / fingerprint: n/a (prose park) / "
+                f"origin_candidate_ts: {T0} + {T2} / origin_candidate: abridged",
+            ),
+        ],
+    )
+    by_ts = {c["ts"]: c for c in run_sweep(tmp_path, include_routed=True)["candidates"]}
+    assert by_ts[T0]["suppressed"] is True
+    assert by_ts[T2]["suppressed"] is True
+    assert by_ts[T1]["suppressed"] is False
+
+
+def test_issue1680_same_second_sibling_residual_both_suppressed(tmp_path: Path) -> None:
+    """Pins the ACCEPTED residual (documented in the module docstring; #1680
+    kill criterion 1): two DISTINCT formal blocks at the SAME second on the
+    same task with compatible target_files are indistinguishable to the
+    ts+target_file key — one differing-fp record naming that second closes
+    BOTH. Live candidate rows are minutes apart, and a false closure
+    additionally requires a wrong-fp record on top; if this residual ever
+    fires on live evidence, the fix direction reverts to fp-primacy.
+    (Enumerator note: one row yields at most ONE Candidate — _extract_fields
+    parses the FIRST formal block per note — so the two same-second
+    candidates here are necessarily two distinct rows.)"""
+    other_fp = wf_fix_fingerprint("unrelated change.", "unrelated bug.")
+    make_task(
+        tmp_path,
+        31,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", "bug 1680-f.", "change 1680-f.")),
+            cand_row(T0, block_note("a/b.md", "bug 1680-g.", "change 1680-g.")),
+            filed_row(
+                T1,
+                f"filed_task: #100 / target_file: a/b.md / fingerprint: {other_fp} / "
+                f"origin_candidate_ts: {T0}",
+            ),
+        ],
+    )
+    result = run_sweep(tmp_path, include_routed=True)
+    assert len(result["candidates"]) == 2
+    assert all(c["suppressed"] for c in result["candidates"])
+
+
+def test_issue1680_present_but_unparseable_origin_ts_no_target_file_fallback(
+    tmp_path: Path,
+) -> None:
+    """The #1248 absent-vs-unparseable distinction survives _record_origin_ts:
+    a PRESENT origin_candidate_ts with no parseable full-ISO token is a
+    non-match and never falls through to the legacy target_file key — on the
+    fp-less primary path AND the fp-bearing ts-claim branch."""
+    # fp-less park: the record's target_file matches EXACTLY, but the present
+    # (garbage) ts field blocks the legacy target_file fallback
+    make_task(
+        tmp_path,
+        32,
+        "completed",
+        events=[
+            cand_row(T0, PROSE_NOTE),
+            filed_row(
+                T1,
+                "filed_task: #101 / target_file: scripts/codex_task.py / "
+                "fingerprint: n/a (prose park) / origin_candidate_ts: not-a-timestamp",
+            ),
+        ],
+    )
+    assert only(run_sweep(tmp_path))["suppressed"] is False
+
+    # fp-bearing candidate: differing fp + garbage ts field -> non-match
+    other_fp = wf_fix_fingerprint("unrelated change.", "unrelated bug.")
+    make_task(
+        tmp_path / "b",
+        33,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", "bug 1680-h.", "change 1680-h.")),
+            filed_row(
+                T1,
+                f"filed_task: #102 / target_file: a/b.md / fingerprint: {other_fp} / "
+                "origin_candidate_ts: not-a-timestamp",
+            ),
+        ],
+    )
+    assert only(run_sweep(tmp_path / "b"))["suppressed"] is False
+
+
+def test_issue1680_note_and_structured_ts_fields_union(tmp_path: Path) -> None:
+    """_record_origin_ts UNIONS the note-form field and the structured key: a
+    record carrying T0 in its note and T2 in its structured
+    origin_candidate_ts key closes fp-less parks at BOTH timestamps."""
+    root = tmp_path / "tasks"
+    root.mkdir()
+    cache = tmp_path / "workflow-fix-events.jsonl"
+    rows = [
+        {"ts": T0, "marker": "epm:workflow-fix-candidate v1", "note": PROSE_NOTE},
+        {"ts": T2, "marker": "epm:workflow-fix-candidate v1", "note": PROSE_NOTE},
+        {
+            "ts": "2026-07-07T10:00:00Z",
+            "marker": "epm:workflow-fix-task-filed v1",
+            "note": (
+                f"filed_task: #103 / fingerprint: n/a (prose park) / origin_candidate_ts: {T0}"
+            ),
+            "origin_candidate_ts": T2,
+        },
+    ]
+    cache.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    result = run_sweep(root, cache, include_routed=True)
+    assert [c["suppressed"] for c in result["candidates"]] == [True, True]
+
+
+def test_issue1680_skipped_record_json_decode_error_irrelevant_kind(tmp_path: Path) -> None:
+    """The #1333:152 shape: a truncated raw line of an IRRELEVANT marker kind
+    is a benign skip — relevant_kind False, fully attributed."""
+    truncated = (
+        '{"ts": "2026-07-11T00:00:00Z", "kind": "epm:experiment-implementation", "note": "trunc'
+    )
+    make_task(
+        tmp_path,
+        1333,
+        "completed",
+        events=[cand_row(T0, PROSE_NOTE)],
+        raw_event_lines=[truncated],
+    )
+    out = run_sweep(tmp_path)
+    assert out["skipped_rows"] == 1
+    (entry,) = out["skipped"]
+    assert entry["reason"] == "json-decode-error"
+    assert entry["kind_hint"] == "epm:experiment-implementation"
+    assert entry["relevant_kind"] is False
+    assert entry["source"] == "task:1333"
+    assert entry["path"].endswith("completed/1333/events.jsonl")
+    assert entry["line_no"] == 2
+
+
+def test_issue1680_skipped_record_relevant_kind_malformed_line(tmp_path: Path) -> None:
+    """A malformed line of CANDIDATE kind is a possible lost park ->
+    relevant_kind True (investigate)."""
+    truncated = (
+        '{"ts": "2026-07-11T00:00:00Z", "kind": "epm:workflow-fix-candidate", "note": "parked trunc'
+    )
+    make_task(tmp_path, 34, "completed", raw_event_lines=[truncated])
+    out = run_sweep(tmp_path)
+    (entry,) = out["skipped"]
+    assert entry["reason"] == "json-decode-error"
+    assert entry["kind_hint"] == "epm:workflow-fix-candidate"
+    assert entry["relevant_kind"] is True
+
+
+def test_issue1680_skipped_record_missing_ts_and_non_dict(tmp_path: Path) -> None:
+    """A ts-less candidate row is relevant by construction (only kind-matched
+    rows reach the ts check); a valid-JSON non-dict line is unknown
+    (kind_hint None -> relevant_kind None, investigate)."""
+    make_task(
+        tmp_path,
+        35,
+        "completed",
+        events=[{"kind": CAND_KIND, "note": "parked — but no ts"}],
+        raw_event_lines=["[1, 2, 3]"],
+    )
+    out = run_sweep(tmp_path)
+    assert out["skipped_rows"] == 2
+    by_reason = {e["reason"]: e for e in out["skipped"]}
+    ts_less = by_reason["missing-or-unparseable-ts"]
+    assert ts_less["kind_hint"] == CAND_KIND
+    assert ts_less["relevant_kind"] is True
+    non_dict = by_reason["non-dict-row"]
+    assert non_dict["kind_hint"] is None
+    assert non_dict["relevant_kind"] is None
+
+
+def test_issue1680_skipped_list_capped_total_preserved(tmp_path: Path) -> None:
+    """The emitted list caps at _SKIPPED_EMIT_CAP while skipped_rows keeps the
+    TRUE total — skipped_rows > len(skipped) is the truncation signal."""
+    n = spc._SKIPPED_EMIT_CAP + 1
+    make_task(tmp_path, 36, "completed", raw_event_lines=["{bad json"] * n)
+    out = run_sweep(tmp_path)
+    assert out["skipped_rows"] == n
+    assert len(out["skipped"]) == spc._SKIPPED_EMIT_CAP

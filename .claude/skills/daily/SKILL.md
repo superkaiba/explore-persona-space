@@ -379,9 +379,23 @@ Routes 1 and 3 post the routed-record too — a route-3 needs-human filing DOES
 have a real `filed_task: #<M>`; route 1 records the commit sha in place of a
 task id. Without a record for every disposition, a route-3 architectural park
 would re-enumerate nightly; the record makes each disposition
-sweep-idempotent. `origin_candidate_ts` is the suppression key for fp-less
-parks; `origin_candidate` (abridged verbatim) keeps the marker
-self-describing per workflow-fix-on-bug.md § Markers.
+sweep-idempotent. For a formal-block candidate the record's `fingerprint:`
+field MUST carry the sweep-reported `c["fingerprint"]` copied VERBATIM —
+never recomputed from abridged/synthesized origin text (#1680:
+driver-recomputed fps differed from the sweep-canonical ones and broke
+suppression for the #1630 trio; the sweep now also honors an exact
+`origin_candidate_ts` claim as a fallback, but the verbatim fp stays the
+PRIMARY key) — and `origin_candidate_ts:` MUST be `c["ts"]` copied verbatim:
+the exact row ts is the suppression key for fp-less parks AND the #1680
+fallback key for fp-bearing ones; `origin_candidate` (abridged verbatim)
+keeps the marker self-describing per workflow-fix-on-bug.md § Markers.
+
+Also check `sweep["skipped"]` (structured skipped-line records, #1680): an
+entry with `relevant_kind` true or null is a possible LOST PARK — or, on a
+FILED-kind hint, possibly lost SUPPRESSION EVIDENCE (a malformed
+routed-record lets its park re-enumerate: the inverse failure direction) —
+and warrants investigation; `relevant_kind: false` is benign (a malformed
+line of irrelevant kind, the #1333 shape).
 
 Future sweeps skip routed candidates mechanically — see the enumerator's
 suppression predicate (`scripts/sweep_parked_wf_candidates.py --help`).
