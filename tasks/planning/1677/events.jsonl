@@ -4,3 +4,4 @@
 {"ts": "2026-07-25T12:25:54Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-25T12:26:22Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "stage-dispatch stage=planning round=1 subagent=planner worktree=repo-root"}
 {"ts": "2026-07-25T12:33:17Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py PASS, n_fail=0, n_warn=0, plan v1"}
+{"ts": "2026-07-25T12:33:24Z", "kind": "epm:plan", "version": 1, "by": "unknown", "note": "Plan v1 written to tasks/planning/1677/plans/plan.md (gpu_hours_total=0). Doc-only workflow-fix: unverified-premise labeling clause in daily/SKILL.md route-2 + workflow-fix-on-bug.md body template + 2 pin tests in tests/test_daily_three_route_classifier_doc.py. architectural: false."}
