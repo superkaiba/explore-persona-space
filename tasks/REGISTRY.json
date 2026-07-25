@@ -5260,8 +5260,8 @@
     "1677": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1677",
-      "status": "planning",
+      "path": "tasks/approved/1677",
+      "status": "approved",
       "title": "daily-fix: label unverified claims in route-2 bodies"
     },
     "1678": {
