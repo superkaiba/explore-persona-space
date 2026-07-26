@@ -436,7 +436,17 @@ such corpora or banks:
 
 ### After implementation (mandatory checklist)
 
-1. **Lint:** `uv run ruff check . && uv run ruff format .`
+1. **Lint + ruff-policy pin (#1699).** Bare `ruff check` uses
+   `pyproject.toml`'s per-file-ignores which relax rules on `scripts/*`, so
+   a UP-class violation on a live workflow helper passes locally and fails
+   the Step 9c gate's `tests/test_ruff_policy.py` full-ruleset pin (incident
+   #1672: UP033 slipped → corrective commit `cfb4a2a297`). Run BOTH:
+   `uv run ruff check . && uv run ruff format --check .` (broad style +
+   format across the tree — the pre-existing check, unchanged) AND
+   `uv run pytest tests/test_ruff_policy.py::test_live_workflow_helpers_clean_under_full_ruleset -x`
+   (the policy pin the gate enforces on live workflow helpers, measured
+   0.30 s total / 0.03 s test call on 2026-07-26). Report both under `(c)` — a passing bare-ruff
+   with a failing policy pin is the #1672 shape and blocks the round.
 2. **Compile-test critical paths:** `uv run python -c "from explore_persona_space.<module> import *"`
    for any module you touched. **Deferred imports count:** a lazy
    `import` / `from ... import` inside a branch your smokes skip
@@ -462,18 +472,46 @@ such corpora or banks:
    the r1 fix). Full recipe + worked examples + incidents
    #606/#1332/#1481: `.claude/rules/gotchas.md` "Lazy imports inside
    smoke-skipped branches" + its fenced-branch runtime-probe sibling.
-2b. **Changed-literal pin-sweep + mapped-scan run (#1288/#1144).** Grep
-   `tests/` for each changed literal (old+new); run every hit, plus the
-   Step 10d mapped tests (`select_step9c_tests.py --map-files
-   <diff-list> --repo-root "$WT"`) — experiment kinds skip Step 9c;
-   that merge-gate leg is the backstop. Record the fragments grepped +
-   the verbatim deduplicated hit-file list in `(c)` (`pin-sweep:
-   <fragments> → <N> hit files: <list>; sweep_scope: repo-wide` — the
-   REALIZED universe: this duty greps ALL of `tests/`, so `repo-wide`;
-   a sweep actually run only over a selector enumeration states
-   `selector-universe` — #1651; never a count-only summary — #1494). This adds a report record only, not a `Gate-scope check`
-   line — code-reviewer Step 4.6's binding scope (`epm:results` only)
-   is unchanged.
+2b. **Mechanical pin-sweep hit-list (#1288/#1144, refined #1699).** Compute the
+   pin-sweep hit list from `scripts/select_step9c_tests.py --map-files
+   <diff-list> --repo-root "$WT"`'s OWN stdout — the tool emits one
+   `<test>\t<matched_path>` line per hit across four arms (GLOB_SCAN_TESTS,
+   rules-pin #1496, src/scripts dependency arms #1573/#1688,
+   transitive-consumer #1589), all WORKFLOW_INVARIANT-excluded — and take
+   the deduplicated union of the `<test>` column (col-1) verbatim from the
+   --map-files stdout as the hit-file list you REPORT in `(c)`. The reported
+   `sweep_scope:` token on this path is the fixed literal `selector-universe`
+   (declared by the tool via its arm exclusions, not by the implementer).
+   Run every hit file.
+   Additionally, grep `tests/` for each changed literal (old+new) as a
+   belt-and-suspenders check that catches literals in prose / docstrings /
+   comments the selector arms skip — a grep-only hit that is NOT in the
+   tool's stdout still gets run and added to `(c)`'s ran-locally list, and
+   is called out with `sweep_scope: repo-wide (grep-only supplement)` on a
+   SEPARATE `pin-sweep:` line (never fused with the selector line).
+   Experiment kinds skip Step 9c; that merge-gate leg is the backstop.
+   Report format: `pin-sweep: <fragments> → <N> hit files: <verbatim
+   dedup list from --map-files stdout>; sweep_scope: selector-universe`.
+   This adds a report record only, not a `Gate-scope check` line — code-
+   reviewer Step 4.6's binding scope (`epm:results` only) is unchanged.
+2c. **Repo-wide invariants in the local union (#1699).** When your diff
+   touches any `scripts/*.py` or `src/**` file, ADD these three static
+   scans to the local test union regardless of what the touched-file
+   mapping selected: `tests/test_no_direct_task_path_construction.py`
+   (canonical-resolver invariant), `tests/test_no_pod_side_task_py_shellout.py`
+   (pod-side task.py shellout ban), `tests/test_no_dollar_budget_caps.py`
+   (no experiment-script dollar caps). They always run in the Step 9c gate
+   as `WORKFLOW_INVARIANT` members but are EXCLUDED from the selector's
+   discovery arms by design, so a diff that violates them passes the
+   implementer's local union and only fails the Step 9c gate 20-30 min later
+   (incident #1681: a `PROJECT_ROOT / "tasks"` regression at
+   `scripts/autonomous_session_watch.py:8220` slipped the local union → +40 min
+   gate/round). Measured 2026-07-26: each of the first two is a ~28 s
+   repo-wide AST/grep scan; the third is ~4 s; union ≈ 60 s sequential (well
+   within the local pre-commit budget, and the two ~28 s tests are exactly
+   the shape the #1681 catch requires). Do NOT balloon the union into the
+   full `WORKFLOW_INVARIANT` tuple — this list is scoped to the three tests
+   whose invariants any `scripts/*.py` or `src/**` edit can silently break.
 3. **End-to-end smoke run PER PHASE.** For EACH distinct entrypoint the
    experiment pipeline executes — data-gen, training, eval (and any
    separate analysis / upload step) — run the script ONCE on a tiny real
