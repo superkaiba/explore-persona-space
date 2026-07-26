@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1703,
+  "highest_id": 1704,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5474,6 +5474,13 @@
       "path": "tasks/proposed/1703",
       "status": "proposed",
       "title": "daily-fix: sweep emits unmatched_record_fps advisory"
+    },
+    "1704": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1704",
+      "status": "proposed",
+      "title": "daily-fix: reconcile crash bundles against git"
     },
     "171": {
       "has_clean_result": true,
