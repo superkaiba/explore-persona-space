@@ -123,6 +123,16 @@ derived from the 0.36.2 code paths + HF's documented legacy-LFS fallback
 rung-3 reroute is the proven recovery. On a known org-wide 429/CDN-incident
 day, consider going straight from one confirmed rung-1 wedge to rung 3.
 
+**The reader-back of the `issue<N>_partial/` crash-persist path is
+`autonomous_session_watch.partial_bundle_pass` (#1704, motivating incident
+#1345)** — an ESCALATE-ONLY hourly audit that reconciles bundle contents
+against the committed `eval_results/issue_<N>/` tree in git and flags any
+bundle carrying a completed result whose payload has no committed
+counterpart (sidecar `.claude/cache/partial-bundle-events.jsonl` + one
+deduped Telegram push per (issue, attempt_id, band); NEVER auto-commits,
+NEVER deletes, NEVER posts task markers). Full predicate: § "Autonomous-
+session watcher" in `.claude/rules/background-automation.md`.
+
 **Intermediate analysis tensors referenced by the plan MUST upload before pod
 termination.** Any artifact the plan's analysis / negative-control sections
 name as a downstream input — per-cell shift tensors (`shifts/*.pt`), cached

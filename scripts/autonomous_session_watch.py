@@ -7508,6 +7508,500 @@ def completed_unmerged_pass(dry_run: bool, now: float | None = None) -> None:
         print(f"  completed-unmerged: pass failed (fail-soft): {exc}", file=sys.stderr)
 
 
+# ─── Partial-bundle reconciliation pass (task #1704) ─────────────────────────
+#
+# WHY: the GCP EXIT-trap crash-persist path (backends/gcp.py
+# _eps_persist_diagnostics) uploads partial artifacts to
+# ``superkaiba1/explore-persona-space-data`` under
+# ``issue<N>_partial/<attempt_id>/`` on every non-zero rc — but nothing ever
+# reads those bundles back, so a bundle carrying a COMPLETED result (whose
+# workload's own upload path never fired) is indistinguishable from a
+# genuinely-partial persist. This pass is the safety-net-that-reads-the-net:
+# it lists the ``issue<N>_partial/`` prefixes, decides which bundles carry a
+# completed result, and escalates any whose payload paths have no committed
+# counterpart in git under ``eval_results/issue_<N>/``. ESCALATE-ONLY: NEVER
+# auto-commits (a partial result silently landing in ``eval_results/`` is
+# worse than the current loss), NEVER deletes a bundle (crash forensics are
+# durable record), NEVER posts task markers (the verdict-disagree /
+# root-draft precedent — this flag's consumer is a human, not the next
+# dispatch).
+
+DATA_REPO_PARTIAL_BUNDLE = "superkaiba1/explore-persona-space-data"
+# Hourly self-gate matches registry-drift/completed-unmerged precedent —
+# a strand lives on hours-to-days-to-weeks; every-10-min tick is 6× the
+# cost of scoped HF listings for < 50 min better detection latency. Env
+# EPM_PARTIAL_BUNDLE_INTERVAL_HOURS, read at CALL time; lo=0.0 lets a
+# live smoke force a run.
+PARTIAL_BUNDLE_INTERVAL_HOURS = 1.0
+# Lookback for the candidate gate's events-mtime filter (registry rows
+# with events touched within this window). ~113 recently-touched completed
+# tasks measured live 2026-07-20 under the same filter; the wider
+# non-`proposed` set here fits the ~50-200 assumption per plan §A4.
+PARTIAL_BUNDLE_LOOKBACK_H = 168.0
+# Re-alert TTL — weekly matches the registry-drift precedent for a
+# persistent, un-remediable-until-user condition.
+PARTIAL_BUNDLE_REALERT_HOURS = 168.0
+# Per-pass cap on scoped HF listings (protects against a large candidate
+# universe overrunning the org 2500-req/5-min HF quota). Overflow rolls
+# to the next interval via a persisted cursor.
+PARTIAL_BUNDLE_LISTING_CAP = 50
+
+
+def _partial_bundle_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_PARTIAL_BUNDLE_AUDIT`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_registry_drift_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_PARTIAL_BUNDLE_AUDIT", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _partial_bundle_sidecar_path() -> Path:
+    """DEDICATED partial-bundle event stream (own stream for clean grep —
+    the registry-drift / root-draft sidecar precedent). The escalate-only
+    contract makes this the durable audit trail."""
+    return PROJECT_ROOT / ".claude" / "cache" / "partial-bundle-events.jsonl"
+
+
+def _partial_bundle_state_path() -> Path:
+    """Singleton throttle+dedup+cursor state (deliberately NOT a per-issue
+    GC target); ``-observer.json`` suffix mirrors the sibling
+    ``registry-drift-observer.json`` / ``root-draft-observer.json``."""
+    return AUTONOMOUS_REGISTRY_DIR / "partial-bundle-observer.json"
+
+
+def _load_partial_bundle_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards (mirrors :func:`_load_registry_drift_state`)."""
+    path = _partial_bundle_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_partial_bundle_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the partial-bundle state (fail-soft;
+    mirrors :func:`_save_registry_drift_state`); ``dry_run`` performs zero
+    writes."""
+    if dry_run:
+        n_alerted = len(state.get("alerted") or {})
+        print(f"  [dry-run] would save partial-bundle state ({n_alerted} alert(s))")
+        return
+    dest = _partial_bundle_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  partial-bundle: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_partial_bundle_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the partial-bundle sidecar (fail-soft). A
+    ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_registry_drift_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append partial-bundle sidecar row: {line[:160]}")
+        return
+    dest = _partial_bundle_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  partial-bundle: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _classify_bundle_completeness(bundle_files: list[str]) -> str:
+    """Pure classifier over the FULL Hub-relative paths of one bundle
+    (files under ``issue<N>_partial/<attempt_id>/``) — see plan §4e.
+
+    Returns one of:
+      * ``"complete"`` — ``crash_persist_transcript.log`` present AND at
+        least one ``eval_results_issue_<N>/*`` file present (the primary
+        completeness signal — transcript is staged LAST in the FINAL
+        bundle commit; its presence proves the persist ran end to end);
+      * ``"workload_ts_backstop"`` — transcript ABSENT but a
+        ``workload_<ts>.log`` timestamped copy AND at least one
+        ``eval_results_issue_<N>/*`` are present (a WEAKER signal — the
+        transcript upload can lag the final bundle commit; the flag rides
+        as ``completeness_signal`` on the sidecar row + push so the
+        operator can weigh backstop vs primary firings);
+      * ``"no_result_payload"`` — transcript present, but zero
+        ``eval_results_issue_<N>/*`` files (a KILLED-EARLY crash before
+        any workload output; nothing to flag);
+      * ``"persist_killed"`` — neither transcript NOR ``workload_<ts>.log``
+        (persist ran out of time / was killed mid-upload; nothing is
+        recoverable via a git comparison).
+
+    v2 open item (recorded here, not v1): a
+    ``killed_mid_persist_with_partial_result`` band — a bundle with
+    workload_ts absent but result payload present — is currently absorbed
+    into ``persist_killed`` and silently skipped. See plan Phase-2
+    Alternatives concern; add as a WEAKER band with its own sidecar/push
+    if the observed rate of "genuinely stranded" cases within
+    ``persist_killed`` justifies it.
+    """
+    # TODO(v2): consider a `killed_mid_persist_with_partial_result` band for
+    # bundles with result payload but neither transcript nor workload_ts —
+    # currently classified `persist_killed` and silently skipped.
+    basenames = {Path(f).name for f in bundle_files}
+    has_transcript = "crash_persist_transcript.log" in basenames
+    has_workload_ts = any(re.match(r"workload_\d{8}T\d{6}Z\.log$", b) for b in basenames)
+    has_result = any("/eval_results_issue_" in f for f in bundle_files)
+    if has_transcript:
+        return "complete" if has_result else "no_result_payload"
+    if has_workload_ts and has_result:
+        return "workload_ts_backstop"
+    return "persist_killed"
+
+
+def _extract_bundle_result_paths(issue: int, attempt_id: str, files: list[str]) -> list[str]:
+    """Return bundle-relative paths (basenames + subdirs) under
+    ``issue<N>_partial/<attempt_id>/eval_results_issue_<N>/`` — the
+    consumer-view of what committed ``eval_results/issue_<N>/{P}`` a
+    live-good bundle claims. Sorted for deterministic ``missing_paths``
+    reporting."""
+    prefix = f"issue{issue}_partial/{attempt_id}/eval_results_issue_{issue}/"
+    return sorted(f[len(prefix) :] for f in files if f.startswith(prefix))
+
+
+def _committed_eval_paths(issue: int) -> set[str] | None:
+    """One ``git ls-tree -r --name-only HEAD -- eval_results/issue_<N>/``
+    from ``PROJECT_ROOT`` (main checkout, NOT a transient worktree HEAD —
+    semantic contract is "landed on main"; the sibling
+    ``root_draft_pass._enumerate_root_draft_paths`` idiom).
+    ``--no-optional-locks`` is read-only: never takes the shared root's
+    index lock. Returns ``None`` on ANY git failure — the caller emits
+    one ``partial-bundle-git-error`` sidecar row and continues to the
+    next issue.
+
+    Bundle-relative paths (returned by
+    :func:`_extract_bundle_result_paths`) are compared against these
+    committed paths STRIPPED of the ``eval_results/issue_<N>/`` prefix,
+    so both live in the same relative-path space."""
+    try:
+        out = subprocess.run(
+            [
+                "git",
+                "--no-optional-locks",
+                "-C",
+                str(PROJECT_ROOT),
+                "ls-tree",
+                "-r",
+                "--name-only",
+                "HEAD",
+                "--",
+                f"eval_results/issue_{issue}/",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        print(
+            f"  partial-bundle: git ls-tree failed for issue {issue}: {exc}",
+            file=sys.stderr,
+        )
+        return None
+    if out.returncode != 0:
+        print(
+            f"  partial-bundle: git ls-tree rc={out.returncode} for issue {issue}: "
+            f"{(out.stderr or '').strip()[:200]}",
+            file=sys.stderr,
+        )
+        return None
+    prefix = f"eval_results/issue_{issue}/"
+    result: set[str] = set()
+    for line in out.stdout.split("\n"):
+        line = line.strip()
+        if line.startswith(prefix):
+            result.add(line[len(prefix) :])
+    return result
+
+
+def _partial_bundle_candidate_issues(now: float, lookback_s: float) -> list[int]:
+    """REGISTRY-snapshot enumeration of candidate issues — non-``proposed``
+    status (an explicit negation, per plan §4c; a task can carry a
+    partial-crash bundle at any active/terminal-ish status except
+    ``proposed`` where no compute has ever run) with ``events.jsonl``
+    mtime within ``lookback_s``. Sorted ascending by issue id for
+    deterministic cursor progression. Mirrors
+    :func:`_completed_unmerged_candidates` in enumeration shape."""
+    from explore_persona_space.task_workflow import registry_path
+
+    try:
+        reg = json.loads(registry_path().read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"  partial-bundle: registry read failed: {exc}", file=sys.stderr)
+        return []
+    tasks = reg.get("tasks") if isinstance(reg, dict) else None
+    if not isinstance(tasks, dict):
+        print("  partial-bundle: registry has no tasks map; skipping", file=sys.stderr)
+        return []
+    reg_root = registry_path().parent.parent
+    out: list[int] = []
+    for id_str, meta in tasks.items():
+        if not isinstance(meta, dict):
+            continue
+        if meta.get("status") == "proposed":
+            continue  # explicit negation per §4c
+        try:
+            issue = int(id_str)
+        except (TypeError, ValueError):
+            continue
+        rel = meta.get("path")
+        if not isinstance(rel, str) or not rel:
+            continue
+        events = reg_root / rel / "events.jsonl"
+        try:
+            mtime = events.stat().st_mtime
+        except OSError:
+            continue
+        if now - mtime > lookback_s:
+            continue
+        out.append(issue)
+    out.sort()
+    return out
+
+
+def _partial_bundle_scoped_listing(api, issue: int) -> list[str] | None:
+    """One ``retry_transient``-wrapped ``list_hf_files_under_path`` call
+    per candidate — prefix-scoped (never a bare full-repo listing on
+    the ~1M-file data repo, #833). Returns ``[]`` if the prefix does
+    not exist (Assumption A2); returns ``None`` on a retry-exhausted
+    Hub failure (caller logs + one ``partial-bundle-hub-error``
+    sidecar row and continues to the next issue — fail-soft PER ISSUE,
+    never per pass)."""
+    from explore_persona_space.orchestrate.hub import (
+        list_hf_files_under_path,
+        retry_transient,
+    )
+
+    prefix = f"issue{issue}_partial"
+    try:
+        return retry_transient(
+            lambda: list_hf_files_under_path(
+                api,
+                DATA_REPO_PARTIAL_BUNDLE,
+                prefix,
+                repo_type="dataset",
+                revision="main",
+            ),
+            what=f"list_hf_files_under_path({DATA_REPO_PARTIAL_BUNDLE}, {prefix})",
+        )
+    except Exception as exc:
+        print(
+            f"  partial-bundle: HF listing failed for issue {issue}: {exc}",
+            file=sys.stderr,
+        )
+        return None
+
+
+def partial_bundle_pass(dry_run: bool) -> bool:
+    """ESCALATE-ONLY reconciliation of HF ``issue<N>_partial/<attempt_id>/``
+    crash-persist bundles against the committed ``eval_results/issue_<N>/``
+    tree in git (task #1704; motivating incident #1345 — the base-model
+    story leg's eval JSONs were persisted to
+    ``issue1345_partial/<attempt_id>/eval_results_issue_1345/`` via the
+    GCP EXIT-trap crash-persist path, but the workload's own upload path
+    never fired, so nothing ever reads those bundles back and a bundle
+    carrying a COMPLETED result is indistinguishable from a
+    genuinely-partial one without this pass).
+
+    Sidecar rows + ONE deduped ``_telegram_push`` per (issue, attempt_id,
+    band); NEVER auto-commits bundle contents, NEVER deletes a bundle,
+    NEVER posts task markers (the ``verdict_disagree_pass`` posture — the
+    escalation target is a HUMAN, not the next dispatch;
+    :func:`_post_progress_marker` is deliberately NOT called anywhere in
+    this pass).
+
+    Daemon-independent (HF listing + one ``git ls-tree`` per flagged
+    issue; marker posts NEVER go via the ``task.py`` subprocess). Hourly
+    self-gate throttled, per-pass listing-capped with a persisted cursor
+    so tail-of-list issues never starve. Returns True when any (issue,
+    attempt_id, band) fired this run."""
+    if not _partial_bundle_enabled():
+        print("  partial-bundle: disabled via EPM_DISABLE_PARTIAL_BUNDLE_AUDIT; skipping")
+        return False
+    try:
+        now = time.time()
+        interval_h = _env_float(
+            "EPM_PARTIAL_BUNDLE_INTERVAL_HOURS",
+            PARTIAL_BUNDLE_INTERVAL_HOURS,
+            lo=0.0,
+            hi=720.0,
+        )
+        realert_h = _env_float(
+            "EPM_PARTIAL_BUNDLE_REALERT_HOURS",
+            PARTIAL_BUNDLE_REALERT_HOURS,
+            lo=1.0,
+            hi=2160.0,
+        )
+        lookback_h = _env_float(
+            "EPM_PARTIAL_BUNDLE_LOOKBACK_H",
+            PARTIAL_BUNDLE_LOOKBACK_H,
+            lo=1.0,
+            hi=720.0,
+        )
+        cap = int(
+            _env_float(
+                "EPM_PARTIAL_BUNDLE_LISTING_CAP",
+                float(PARTIAL_BUNDLE_LISTING_CAP),
+                lo=1.0,
+                hi=500.0,
+            )
+        )
+        state = _load_partial_bundle_state()
+        last = state.get("last_run_ts")
+        if isinstance(last, int | float) and (now - last) < interval_h * 3600.0:
+            return False  # throttled — hourly self-gate
+        state["last_run_ts"] = now
+        # Stamp the ATTEMPT before collecting: a crashing pass is bounded
+        # to one error sidecar row per throttle interval instead of
+        # spamming every 10-min tick (registry-drift precedent).
+        _save_partial_bundle_state(state, dry_run)
+
+        from huggingface_hub import HfApi
+
+        api = HfApi()
+        candidates = _partial_bundle_candidate_issues(now, lookback_s=lookback_h * 3600.0)
+        # Cursor-resume — bound each pass to `cap` listings; overflow
+        # rolls to the next interval so tail-of-list issues never
+        # starve. Reset to 0 when the candidate set shrinks below the
+        # persisted cursor (avoid stale cursor beyond bounds).
+        raw_cursor = state.get("enum_cursor_idx")
+        cursor = int(raw_cursor) if isinstance(raw_cursor, int | float) else 0
+        if cursor >= len(candidates):
+            cursor = 0
+        window = candidates[cursor : cursor + cap]
+        next_cursor = (cursor + cap) if (cursor + cap) < len(candidates) else 0
+
+        raw_alerted = state.get("alerted")
+        alerted: dict = raw_alerted if isinstance(raw_alerted, dict) else {}
+        new_alerted: dict = dict(alerted)
+        flagged_any = False
+
+        for issue in window:
+            files = _partial_bundle_scoped_listing(api, issue)
+            if files is None:
+                _append_partial_bundle_sidecar(
+                    {"kind": "partial-bundle-hub-error", "issue": issue},
+                    dry_run,
+                )
+                continue
+            if not files:
+                continue  # no bundle for this issue (A2)
+            # Group by attempt_id — second path segment of
+            # `issue<N>_partial/<attempt_id>/...`. Malformed / short
+            # paths are skipped with a stderr debug line.
+            by_attempt: dict[str, list[str]] = {}
+            for f in files:
+                parts = f.split("/", 2)
+                if len(parts) >= 3:
+                    by_attempt.setdefault(parts[1], []).append(f)
+                else:
+                    print(
+                        f"  partial-bundle: skipping malformed path (issue {issue}): {f}",
+                        file=sys.stderr,
+                    )
+            if not by_attempt:
+                continue
+
+            committed = _committed_eval_paths(issue)
+            if committed is None:
+                _append_partial_bundle_sidecar(
+                    {"kind": "partial-bundle-git-error", "issue": issue},
+                    dry_run,
+                )
+                continue
+
+            for att_id, att_files in sorted(by_attempt.items()):
+                cls = _classify_bundle_completeness(att_files)
+                if cls in ("no_result_payload", "persist_killed"):
+                    # KILLED-EARLY or KILLED-MID-PERSIST — nothing to
+                    # reconcile against git; one debug log line per
+                    # skip so operators can spot the class.
+                    print(f"  partial-bundle: issue={issue} att={att_id} cls={cls} — skipping")
+                    continue
+                bundle_paths = _extract_bundle_result_paths(issue, att_id, att_files)
+                missing = [p for p in bundle_paths if p not in committed]
+                if not missing:
+                    continue
+
+                key = f"{issue}|{att_id}|stranded_eval_results"
+                entry = new_alerted.get(key)
+                last_alert = entry.get("last_alert_ts") if isinstance(entry, dict) else None
+                dedup = (
+                    isinstance(last_alert, int | float) and (now - last_alert) <= realert_h * 3600.0
+                )
+                if dedup:
+                    new_alerted[key] = {
+                        **(entry if isinstance(entry, dict) else {}),
+                        "last_alert_ts": last_alert,
+                    }
+                    continue
+                new_alerted[key] = {
+                    "first_flagged_ts": (
+                        entry.get("first_flagged_ts", now) if isinstance(entry, dict) else now
+                    ),
+                    "last_alert_ts": now,
+                }
+                flagged_any = True
+                print(
+                    f"  partial-bundle: STRANDED issue={issue} att={att_id} "
+                    f"missing={len(missing)} signal={cls}"
+                )
+                _append_partial_bundle_sidecar(
+                    {
+                        "kind": "partial-bundle-stranded",
+                        "issue": issue,
+                        "attempt_id": att_id,
+                        "band": "stranded_eval_results",
+                        "completeness_signal": cls,
+                        "n_missing": len(missing),
+                        "missing_paths": missing[:20],
+                        "bundle_hub_prefix": (
+                            f"issue{issue}_partial/{att_id}/eval_results_issue_{issue}/"
+                        ),
+                    },
+                    dry_run,
+                )
+                # Thread the completeness signal into the push text
+                # verbatim so the operator sees the weaker
+                # `workload_ts_backstop` band at a glance (Phase-2
+                # Alternatives / Statistics concern).
+                _telegram_push(
+                    f"partial-bundle STRANDED (issue #{issue}, att {att_id}, "
+                    f"{len(missing)} eval JSONs on HF with no git counterpart; "
+                    f"completeness_signal={cls}). Investigate: `hf_hub_download "
+                    f"--repo-type dataset {DATA_REPO_PARTIAL_BUNDLE} "
+                    f"issue{issue}_partial/{att_id}/...` then verify + commit "
+                    f"via #{issue}'s clean-result path. NEVER auto-committed; "
+                    f"NEVER deleted.",
+                    dry_run,
+                )
+
+        state["alerted"] = new_alerted
+        state["enum_cursor_idx"] = next_cursor
+        state["enum_cursor_ts"] = now
+        _save_partial_bundle_state(state, dry_run)
+        return flagged_any
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  partial-bundle: pass failed (fail-soft): {exc}", file=sys.stderr)
+        _append_partial_bundle_sidecar(
+            {"kind": "partial-bundle-error", "error": str(exc)[:500]},
+            dry_run,
+        )
+        return False
+
+
 # ─── Codex quota-outage alert pass (task #1691) ──────────────────────────────
 #
 # ESCALATE-ONLY audit sibling of the #1204 pre-spawn sentinel check. #1204
@@ -27397,6 +27891,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "--dry-run for a live smoke against the real completed set.",
     )
     parser.add_argument(
+        "--partial-bundle-only",
+        action="store_true",
+        help="run ONLY the partial-bundle reconciliation pass (#1704, "
+        "escalate-only — audit HF `issue<N>_partial/<attempt_id>/` "
+        "crash-persist bundles against the committed "
+        "`eval_results/issue_<N>/` tree in git; flag any bundle carrying "
+        "a completed result whose payload has no committed counterpart) "
+        "and exit; skip every other pass. Daemon-independent (scoped HF "
+        "listings + read-only git ls-tree; sidecar + Telegram push only, "
+        "NEVER task markers). Pair with --dry-run for a zero-write live "
+        "smoke against the real data repo.",
+    )
+    parser.add_argument(
         "--codex-outage-only",
         action="store_true",
         help="run ONLY the codex-outage alert pass (#1691, escalate-only — "
@@ -27546,6 +28053,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # toward flag-only when unreachable — so the pass still runs alone.
     if args.completed_unmerged_only:
         completed_unmerged_pass(args.dry_run)
+        return 0
+
+    # --partial-bundle-only mirrors --completed-unmerged-only: the pass is
+    # daemon-independent (scoped HF listings + read-only git ls-tree;
+    # sidecar + Telegram push only, no task markers, no session spawns),
+    # so run it alone.
+    if args.partial_bundle_only:
+        partial_bundle_pass(args.dry_run)
         return 0
 
     # --codex-outage-only mirrors --registry-drift-only: the pass is
@@ -27702,6 +28217,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # is daemon-independent (the respawn probe skips toward flag-only on a
     # daemon outage), so it runs in this block on a daemon outage too.
     completed_unmerged_pass(args.dry_run)
+
+    # Partial-bundle reconciliation (#1704, motivating incident #1345):
+    # ESCALATE-ONLY reconciliation of HF issue<N>_partial/<attempt_id>/
+    # bundles against the committed eval_results/issue_<N>/ tree — a
+    # bundle carrying a COMPLETED result whose workload upload path
+    # never fired is indistinguishable from a genuinely-partial one
+    # without this pass. Sidecar rows + one deduped push per (issue,
+    # attempt_id, band); NEVER auto-commits, NEVER deletes a bundle,
+    # NEVER posts task markers. Daemon-independent; hourly self-gate.
+    partial_bundle_pass(args.dry_run)
 
     # Urgent-park router (#1681): mechanically route parked workflow-fix
     # candidates that self-declare a VERIFIED live-red-on-main test via the
