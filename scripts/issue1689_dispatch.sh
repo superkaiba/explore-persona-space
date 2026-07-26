@@ -131,8 +131,16 @@ run_phase_onpolicy() {
 run_phase_capture() {
     echo "[phase=capture]"
     local rendered_dir="$DATA_ROOT/rendered.jsonl"
+    # R13 fix: capture the FULL 21-condition lattice per plan §4/§5, not a
+    # smoke-slice. The stale "full path drives via a per-cell loop in
+    # production" comment described no such loop; production silently ran
+    # smoke-scale (assistant_chat only) and Phase D fit_ladder crashed on
+    # missing cells (assistant_naturalistic/L14.pt) after ~13h of upstream
+    # compute.
     local conds_smoke="assistant_chat"
-    local conds="$conds_smoke"  # full path drives via a per-cell loop in production
+    local conds_full="assistant_chat assistant_naturalistic assistant_story dana_chat dana_naturalistic dana_story helios_chat helios_naturalistic helios_story wren_chat wren_naturalistic wren_story user_haiku_chat user_haiku_naturalistic user_haiku_story user_lmsys_chat user_lmsys_naturalistic user_lmsys_story user_onpolicy_chat user_onpolicy_naturalistic user_onpolicy_story"
+    local conds="$conds_full"
+    [ -n "$SMOKE" ] && conds="$conds_smoke"
     # Same both-models discipline as run_phase_onpolicy: H5 (base vs instruct
     # parity) needs both arms captured. Smoke stays instruct-only to bound wall.
     local models_smoke="$MODEL_INSTRUCT"
@@ -141,6 +149,22 @@ run_phase_capture() {
     [ -n "$SMOKE" ] && models="$models_smoke"
     for cond in $conds; do
         for model in $models; do
+            # Idempotent skip-if-exists: capture is expensive (LoRA-adapter-free
+            # forward passes for prefix/context/answer at 4 layers), and a
+            # partial capture (e.g. assistant_chat × both models already
+            # completed under R11) is byte-identical to what this rerun would
+            # produce (same code path, same inputs). Skip populated cells so a
+            # resume can complete the missing 40/42 cells without re-doing
+            # the 2 already captured. See save_cell() in issue1689_capture.py:
+            # model_slug = model_name.replace("/", "_") → "Qwen_Qwen2.5-7B" /
+            # "Qwen_Qwen2.5-7B-Instruct".
+            local model_slug
+            model_slug=$(echo "$model" | tr '/' '_')
+            local cell_dir="${STORE_ROOT}/${model_slug}/${cond}"
+            if [ -d "$cell_dir" ] && [ -n "$(ls -A "$cell_dir" 2>/dev/null)" ]; then
+                echo "[capture] SKIP ${cell_dir} (already populated)"
+                continue
+            fi
             local input="$DATA_ROOT/onpolicy/${cond}_$(basename "$model").jsonl"
             [ ! -f "$input" ] && input="$rendered_dir/${cond}.jsonl"
             local skip_upload_flag=""
@@ -155,11 +179,33 @@ run_phase_capture() {
 
 run_phase_fit_cells() {
     echo "[phase=fit_cells]"
-    local model_slug="Qwen_Qwen2.5-7B-Instruct"
-    local cell="${model_slug}/assistant_chat"
-    local out="$EVAL_ROOT/percell/heldout_r2_${model_slug}_assistant_chat.json"
-    uv run python scripts/issue1689_fit_cells.py \
-        --store-root "$STORE_ROOT" --cell "$cell" --out "$out" $SMOKE
+    # R13 fix: iterate the FULL 42-cell (2 models × 21 conditions) lattice, not
+    # the single hardcoded (Qwen_Qwen2.5-7B-Instruct, assistant_chat) cell.
+    # Idempotent skip-if-exists: fit_cells writes one JSON per cell; a resume
+    # skips the 1 completed cell (heldout_r2_Qwen_Qwen2.5-7B-Instruct_assistant_chat.json
+    # under R11) and processes the remaining 41.
+    local models_full="Qwen_Qwen2.5-7B Qwen_Qwen2.5-7B-Instruct"
+    local models_smoke="Qwen_Qwen2.5-7B-Instruct"
+    local models="$models_full"
+    local conds_full="assistant_chat assistant_naturalistic assistant_story dana_chat dana_naturalistic dana_story helios_chat helios_naturalistic helios_story wren_chat wren_naturalistic wren_story user_haiku_chat user_haiku_naturalistic user_haiku_story user_lmsys_chat user_lmsys_naturalistic user_lmsys_story user_onpolicy_chat user_onpolicy_naturalistic user_onpolicy_story"
+    local conds_smoke="assistant_chat"
+    local conds="$conds_full"
+    if [ -n "$SMOKE" ]; then
+        models="$models_smoke"
+        conds="$conds_smoke"
+    fi
+    for model_slug in $models; do
+        for cond in $conds; do
+            local cell="${model_slug}/${cond}"
+            local out="$EVAL_ROOT/percell/heldout_r2_${model_slug}_${cond}.json"
+            if [ -f "$out" ]; then
+                echo "[fit_cells] SKIP ${out} (already exists)"
+                continue
+            fi
+            uv run python scripts/issue1689_fit_cells.py \
+                --store-root "$STORE_ROOT" --cell "$cell" --out "$out" $SMOKE
+        done
+    done
 }
 
 run_phase_fit_ladder() {
