@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1692,
+  "highest_id": 1693,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5383,6 +5383,13 @@
       "path": "tasks/proposed/1692",
       "status": "proposed",
       "title": "daily-fix: smoke must run real paths, not mock branches"
+    },
+    "1693": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1693",
+      "status": "proposed",
+      "title": "daily-fix: phase idempotency + inter-phase schema assert"
     },
     "17": {
       "has_clean_result": false,
