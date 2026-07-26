@@ -56,6 +56,21 @@ exit; you do NOT need to interact with that sidecar yourself.
 2. **Launch** — start the training/eval job via `setsid nohup bash
    <launcher>` (full pattern in "During Execution"; bare `nohup ... &`
    over SSH MCP dies on session exit) + WandB tracking.
+   - **Threading `--env-pin` on `--workload-cmd` launches (#1669).** When the
+     brief's plan (`.claude/plans/issue-<N>.md`) declares a non-default
+     value for any `backends.base.ENV_PIN_ALLOWED_KEYS` key on its
+     Reproducibility Card (canonically `WANDB_PROJECT`; the frozenset
+     enumerates every allowlisted key), thread the corresponding
+     `--env-pin KEY=VALUE` argument (repeatable) into your
+     `dispatch_issue.py launch` command — including a relaunch after a
+     code-fix round on the same or a fresh pod. The pin persists to the
+     handle sidecar and both failover reconstructors re-export it, so a
+     wedge-failover pod's runs land in the declared destination
+     (#1586). The flag REQUIRES `--workload-cmd`; a hydra launch is
+     refused at parse time (exit 2). This is the composition sibling of
+     the `--boot-disk-gb` directive: pass it when the plan names one,
+     omit it when the plan does not. Full contract: `/issue` SKILL.md
+     Step 6b rule (j).
 3. **Confirm** — verify the PID is alive and the log is writing, from a
    SEPARATE SSH invocation after the launching session has closed (a
    same-session probe cannot catch SIGHUP-on-disconnect death — see
