@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1709,
+  "highest_id": 1710,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5523,6 +5523,13 @@
       "path": "tasks/archived/171",
       "status": "archived",
       "title": "If you take system prompts that mimic an emergent-misalignment finetune's broad-question output distribution and run them through that finetune's alignment evaluation, they score 17 to 40 alignment points more aligned than the finetune itself \u2014 distributional match and alignment-judge match identify almost-disjoint regions of prompt space (LOW confidence)"
+    },
+    "1710": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1710",
+      "status": "proposed",
+      "title": "daily-fix: repo-root guard FP on ssh/note payloads"
     },
     "172": {
       "has_clean_result": false,
