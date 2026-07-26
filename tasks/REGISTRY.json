@@ -5408,8 +5408,8 @@
     "1696": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1696",
-      "status": "planning",
+      "path": "tasks/approved/1696",
+      "status": "approved",
       "title": "daily-fix: guard-surface reviewer posts verdict first"
     },
     "1697": {
