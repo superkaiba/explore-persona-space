@@ -5394,8 +5394,8 @@
     "1694": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1694",
-      "status": "proposed",
+      "path": "tasks/planning/1694",
+      "status": "planning",
       "title": "daily-fix: Step 10d apply-verification + pre-sync"
     },
     "1695": {
