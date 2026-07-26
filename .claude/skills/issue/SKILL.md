@@ -3593,7 +3593,30 @@ project stop landing in WandB's global default `huggingface` project
 follow-up r1 landed there silently). An inline `WANDB_PROJECT=...`
 prefix on the workload command — or the workload setting its own
 project internally — still wins (`:-` fills only unset/empty); hydra
-launches are unaffected (project comes from Hydra config).
+launches are unaffected (project comes from Hydra config). (j) **Launch
+env pins on `--workload-cmd` launches — thread `--env-pin KEY=VALUE`
+when the plan's Reproducibility Card declares one** — the `--env-pin`
+channel (`dispatch_issue.py launch --env-pin KEY=VALUE`, repeatable;
+merged in #1669) persists an env export to `spec.extra["env_pins"]` →
+the handle sidecar → every lane's workload-cmd launcher (GCE startup
+script's workload branch, SLURM custom stage, RunPod launcher), AND the
+async failover reconstructors (`backend_poll._runspec_from_gcp_handle` /
+`_runspec_from_runpod_handle`) re-export the pins onto the fresh pod,
+so a wedge-failover pod's runs land in the plan-declared destination
+instead of the generic `issue<N>` fallback (rule (i) above — incident
+#1586: a wedge-failover pod rebooted with only the generic WandB
+default and its runs landed in the wrong project). KEY is restricted to
+`backends.base.ENV_PIN_ALLOWED_KEYS` (secret KEY names are
+unrepresentable by construction); consult that frozenset for the current
+set. `--env-pin` REQUIRES a non-empty `--workload-cmd` (parse-time
+refusal, exit 2 — every renderer insertion point is a workload-cmd
+branch; a hydra launch has no pin consumer). ADOPTION (the
+`--boot-disk-gb` pattern above): launch composers pass
+`--env-pin WANDB_PROJECT=<declared project>` (and any other
+`ENV_PIN_ALLOWED_KEYS` value the plan's Repro Card declares) on every
+`--workload-cmd` launch — including relaunches after a code-fix
+round — whenever the plan declares a non-default value; a flag-less
+launch keeps today's behavior.
 SLURM custom stages are
 render-tested only as of #588 (never live-run).
 (Incident #571, 2026-06-11: auto routing sent a dispatch-script
