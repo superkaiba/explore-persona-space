@@ -63,6 +63,28 @@ reviewers never attempt model pins themselves (pins live on the Agent call).
    Step 5b). In-context modes (adversarial-planner Phase 2 lenses;
    reconciler `mode: in-context`) have no marker: put the role-tagged
    verdict block FIRST in the returned text, any extra prose after it.
+   **Guard/hook-surface rounds — file-first ordering (post-marker before
+   composing the report; #1673/#1675/#1676/#1687).** On a trigger-dense
+   round targeting `.claude/hooks/*.sh` or `scripts/guard_*.sh`, the
+   verdict body is composed DIRECTLY into its file via the `Write` tool —
+   never as inline assistant text or reasoning first — then posted with
+   `uv run python scripts/task.py post-marker <N> epm:code-review
+   --version <K> --file <path>` (or the reconciler analogue
+   `epm:review-reconcile`; `--file`, never `--note`, because the marker
+   body itself is trigger-dense and must ride the file path). The
+   reviewer's ordered tool-call sequence on such rounds is `Write` (verdict
+   file) → `Bash` (post-marker `--file`) → return text; composing the
+   verdict body as inline assistant text on a turn that then gets killed
+   by the filter destroys the verdict before it ever reaches the file
+   (four refusal kills on the #1667–#1689 wave: #1673, #1675 15 tool calls
+   in, #1676 24 tool calls in, #1687 on the orchestrator turn itself).
+   The in-context RETURN TEXT (marker mode) or the role-tagged verdict
+   block (in-context mode) is composed AFTER the marker lands and stays
+   under the discipline 4 shape (verdict + pointer + counts, no findings
+   recap). Pairs with SKILL.md Step 5b's durable-verdict-first probe: with
+   the marker landed first, a final-turn refusal costs the summary
+   (recoverable via a discipline-4-clean re-post or the orchestrator's
+   own summary composition) rather than the verdict (a full respawn).
 3. **Windowed reads; excerpts over originals.** Prefer orchestrator-provided
    pre-materialized excerpt files with stated read budgets when the brief
    names them. Reading the artifact directly: Grep for the finding's anchor
