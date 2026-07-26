@@ -172,6 +172,31 @@ def tasks_root(tmp_path: Path) -> Path:
     return root
 
 
+# The un-neutralized original — the ``_isolate_closed_sibling_probe`` autouse
+# fixture below saves + replaces this; unit tests that call the real function
+# through a monkeypatched Hub helper (the ``test_find_closed_sibling_suspects_*``
+# family) reach for this alias instead.
+_REAL_FIND_CLOSED_SIBLING_SUSPECTS = ddf.find_closed_sibling_suspects
+
+
+@pytest.fixture(autouse=True)
+def _isolate_closed_sibling_probe(monkeypatch):
+    """Neutralize the #1711 closed-sibling probe by default across every test.
+
+    The probe reads the LIVE ``task_workflow.registry_path()`` / ``repo_root()``
+    globals (they are not seeded by the driver's ``--tasks-root`` CLI seam), so
+    without this fixture every test in this file would false-fire against real
+    closed-sibling tasks in the working tree — breaking every existing test that
+    predates #1711. Tests that specifically exercise the closed-sibling probe
+    override ``ddf.find_closed_sibling_suspects`` per-test (see the
+    ``test_closed_sibling_probe_*`` section at file bottom). A unit test that
+    needs to call the REAL production body (with a fake at the
+    ``task_workflow.recent_closed_workflow_fix_tasks`` seam) uses the module-
+    level alias ``_REAL_FIND_CLOSED_SIBLING_SUSPECTS`` above.
+    """
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda item: ([], []))
+
+
 # ── case 1: route-2 filing — tags, fp, parsed id ───────────────────────────────
 
 
@@ -2256,3 +2281,419 @@ def test_landed_fix_probe_guards_route3(tmp_path, tasks_root, monkeypatch):
     rows = ledger_rows(d)
     assert [r["outcome"] for r in rows] == ["landed-fix-suspect"]
     assert rows[0]["route"] == 3
+
+
+# ── #1711: mechanical closed-sibling probe ─────────────────────────────────────
+#
+# Test seams (deviation from brief's SEED-REAL-REGISTRY preference, documented
+# per-plan-brief in the implementer report):
+#
+# For tests 1-4, 7, 10 the brief prefers seeding real closed infra tasks + a
+# rebound task_workflow (the `fake_repo` pattern in tests/test_workflow_fix_dedup.py:
+# monkeypatch tw.repo_root / tw.tasks_dir / tw.registry_path / lock paths, then
+# `create_task` + `set_status`). That harness is a full parallel test-workflow
+# rewire and does not compose with THIS file's `--tasks-root` CLI seam (the
+# driver-level fixtures) without duplicating fake_repo across every fixture.
+# Instead these tests monkeypatch `ddf.find_closed_sibling_suspects` to return
+# synthetic hit dicts matching the helper's documented six-field schema (id,
+# title, status, target, closed_at, matched — verified from
+# task_workflow.recent_closed_workflow_fix_tasks docstring + implementation
+# line ~1388). The seams are all AT the boundary this task added, and the
+# hit-dict schema is pinned by the helper's own test suite
+# (tests/test_workflow_fix_dedup.py::test_recent_closed_*).
+#
+# Test 6 (fault-injection) uses monkeypatch by contract (matches
+# test_landed_fix_probe_non_enumerated_exception_propagates precedent). Test 8
+# uses monkeypatched helpers for BOTH probes to pin probe order (matches the
+# brief's suggested split for the fixture-complexity concern).
+
+
+def _closed_sibling_hit(
+    tid: int,
+    *,
+    title: str = "workflow-fix: fix scripts/foo.py",
+    status: str = "completed",
+    target: str = "scripts/foo.py",
+    matched: list[str] | None = None,
+    closed_at: str = "2026-07-22T12:00:00Z",
+) -> dict:
+    """Synthetic hit dict matching recent_closed_workflow_fix_tasks's schema.
+
+    Fields verified from task_workflow.recent_closed_workflow_fix_tasks docstring
+    + the return-append at ~line 1388. Default `matched=["target"]` — a blocking
+    (PATH-based) hit; override to `["title:foo,bar"]` for a title-only advisory.
+    """
+    if matched is None:
+        matched = ["target"]
+    return {
+        "id": tid,
+        "title": title,
+        "status": status,
+        "target": target,
+        "closed_at": closed_at,
+        "matched": matched,
+    }
+
+
+def test_closed_sibling_probe_blocks_on_target_arm(tmp_path, tasks_root, monkeypatch):
+    # Test 1 (plan §15): a prefixed closed wf-fix sibling with workflow_fix_target:
+    # scripts/foo.py blocks a candidate whose target=scripts/foo.py. Expect
+    # ledger row outcome=landed-fix-suspect with suspects[0].kind=closed-sibling
+    # + matched=['target'], NO filer call, exit 0.
+    item = make_item(
+        "cs-target-block",
+        route=2,
+        target="scripts/foo.py",
+        bug="foo.py bug",
+        change="fix foo.py",
+    )
+    hit = _closed_sibling_hit(1600, matched=["target"])
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda it: ([hit], []))
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert filer_calls(d) == []
+    rows = ledger_rows(d)
+    assert [r["outcome"] for r in rows] == ["landed-fix-suspect"]
+    row = rows[0]
+    assert row["threshold"] is None  # closed-sibling arms are boolean, not token-count
+    assert row["window"] == "7.0 days"
+    assert row["paths"] == ["scripts/foo.py"]
+    assert row["fp"] == wf_fix_fingerprint(item["change"], item["bug"])
+    assert row["route"] == 2
+    (suspect,) = row["suspects"]
+    assert suspect["kind"] == "closed-sibling"
+    assert suspect["id"] == 1600
+    assert suspect["matched"] == ["target"]
+    # #1674's row shape uses `sha` not `id` — the presence of `id` (not `sha`)
+    # is the structural discriminator per plan §4.3 (Option A source-compat).
+    assert "sha" not in suspect
+
+
+def test_closed_sibling_probe_blocks_on_infra_target_arm(tmp_path, tasks_root, monkeypatch):
+    # Test 2 (plan §15): a widened (non-prefixed) closed kind:infra sibling
+    # whose body contains the FULL candidate path (infra-target arm) blocks the
+    # filing — the vocabulary-divergent landed-fix class #1386/#1360 the whole
+    # plan exists for.
+    item = make_item(
+        "cs-infra-target",
+        route=2,
+        target="src/explore_persona_space/orchestrate/hub.py",
+        bug="hub upload wedge",
+        change="hub xet retry",
+    )
+    hit = _closed_sibling_hit(
+        1360,
+        title="hub upload retry cleanup",  # non-prefixed
+        matched=["infra-target"],
+        target="src/explore_persona_space/orchestrate/hub.py",
+    )
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda it: ([hit], []))
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert filer_calls(d) == []
+    rows = ledger_rows(d)
+    assert [r["outcome"] for r in rows] == ["landed-fix-suspect"]
+    (suspect,) = rows[0]["suspects"]
+    assert suspect["matched"] == ["infra-target"]
+    assert suspect["kind"] == "closed-sibling"
+
+
+def test_closed_sibling_probe_title_only_advises_but_files(
+    tmp_path, tasks_root, monkeypatch, capsys
+):
+    # Test 3 (plan §15): a prefixed sibling with only shared title tokens (NO
+    # path overlap) fires an ADVISORY line on stderr but does NOT suppress —
+    # the item files normally. Rationale: helper's own docstring flags the
+    # unmeasured title-arm FP surface; plan §4.2 defends the PATH-only block.
+    item = make_item("cs-title-advise", route=2, target="scripts/foo.py")
+    hit = _closed_sibling_hit(
+        1500,
+        title="workflow-fix: unrelated but tokens shared",
+        matched=["title:foo,bar"],  # title-only, NO path arm
+    )
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda it: ([], [hit]))
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    # Filer WAS called; item filed normally.
+    assert len(filer_calls(d)) == 1
+    rows = ledger_rows(d)
+    assert [r["outcome"] for r in rows] == ["attempting", "filed"]
+    err = capsys.readouterr().err
+    assert "CLOSED-SIBLING-ADVISORY cs-title-advise -> #1500" in err
+    assert "NOT blocking" in err
+
+
+def test_closed_sibling_probe_infra_title_only_advises_but_files(
+    tmp_path, tasks_root, monkeypatch, capsys
+):
+    # Test 4 (plan §15): the widened title arm (infra-title:*) equivalent —
+    # a non-prefixed infra task with >=2 shared title tokens but no path
+    # overlap fires the same stderr advisory + files normally.
+    item = make_item("cs-infra-title", route=2, target="scripts/foo.py")
+    hit = _closed_sibling_hit(
+        1400,
+        title="watcher retry backstop for pod polling",  # non-prefixed
+        matched=["infra-title:retry,backstop"],
+    )
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda it: ([], [hit]))
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert len(filer_calls(d)) == 1
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    err = capsys.readouterr().err
+    assert "CLOSED-SIBLING-ADVISORY cs-infra-title -> #1400" in err
+    assert "infra-title:retry,backstop" in err
+
+
+def test_closed_sibling_probe_no_hits_files_normally(tmp_path, tasks_root, monkeypatch, capsys):
+    # Test 5 (plan §15): no closed sibling in the window — normal filing path,
+    # NO CLOSED-SIBLING-* lines anywhere. The default autouse-fixture return
+    # is ([], []) so this test would pass without the explicit setattr — it is
+    # kept explicit to pin the "empty result -> silent proceed" contract.
+    item = make_item("cs-nohit")
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda it: ([], []))
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert len(filer_calls(d)) == 1
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    output = capsys.readouterr()
+    assert "CLOSED-SIBLING" not in output.out
+    assert "CLOSED-SIBLING" not in output.err
+
+
+def test_closed_sibling_probe_helper_error_fails_open(tmp_path, tasks_root, monkeypatch, capsys):
+    # Test 6 (plan §15): a bug INSIDE the helper (TypeError) triggers the
+    # deliberate broad `except Exception` fail-open — exactly ONE stderr
+    # WARNING naming the exception class + fail-open message, the item files
+    # normally, driver exit 0. Pins the broad-catch shape (a regression to a
+    # narrower enumerated tuple would propagate TypeError and fail this test).
+    def boom(item: dict) -> tuple[list[dict], list[dict]]:
+        raise TypeError("helper bug")
+
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", boom)
+    item = make_item("cs-helper-boom")
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
+    assert rc == 0
+    assert len(filer_calls(d)) == 1
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    err = capsys.readouterr().err
+    assert err.count("closed-sibling probe skipped") == 1
+    assert "TypeError" in err
+    assert "helper bug" in err
+
+
+def test_retry_suspects_re_drives_both_probes(tmp_path, tasks_root, monkeypatch, capsys):
+    # Test 7 (plan §15): a pre-seeded landed-fix-suspect row (from a prior
+    # closed-sibling hit) is TERMINAL on a plain re-invocation. Passing
+    # --retry-suspects makes _slug_state return 'retry-suspect' AND
+    # `suspect_eyeballed` short-circuits BOTH probes — filer runs, filed
+    # row lands.
+    item = make_item("cs-retry-flow")
+    fp = wf_fix_fingerprint(item["change"], item["bug"])
+    d = make_filings_dir(tmp_path, [item])
+    # Seed a prior closed-sibling landed-fix-suspect row directly.
+    seed = {
+        "slug": "cs-retry-flow",
+        "outcome": "landed-fix-suspect",
+        "suspects": [_closed_sibling_hit(1200) | {"kind": "closed-sibling"}],
+        "threshold": None,
+        "window": "7.0 days",
+        "paths": [".claude/skills/daily/SKILL.md"],
+        "fp": fp,
+        "route": 2,
+    }
+    with open(d / "filed.jsonl", "a", encoding="utf-8") as fh:
+        fh.write(json.dumps(seed) + "\n")
+
+    # Without --retry-suspects: TERMINAL, skip. (The closed-sibling probe
+    # must NOT be called — otherwise the autouse-fixture no-op would still
+    # allow re-filing; assert filer never fires.)
+    stub = make_stub(tmp_path, d)
+    rc = run_driver(d, tasks_root, stub)
+    assert rc == 0
+    assert "SKIP cs-retry-flow" in capsys.readouterr().out
+    assert filer_calls(d) == []
+
+    # With --retry-suspects: `suspect_eyeballed` short-circuits BOTH probes
+    # (the closed-sibling probe MUST be skipped even under a monkeypatch that
+    # would still return a hit — pins the short-circuit correctness).
+    monkeypatch.setattr(
+        ddf,
+        "find_closed_sibling_suspects",
+        lambda it: ([_closed_sibling_hit(1200)], []),
+    )
+    rc = run_driver(d, tasks_root, stub, "--retry-suspects")
+    assert rc == 0
+    assert len(filer_calls(d)) == 1
+    assert [r["outcome"] for r in ledger_rows(d)] == [
+        "landed-fix-suspect",
+        "attempting",
+        "filed",
+    ]
+
+
+def test_probe_order_1674_wins_when_both_would_fire(tmp_path, tasks_root, monkeypatch):
+    # Test 8 (plan §15, using the brief's suggested split option (a) — a pure
+    # unit-style pin via BOTH-monkeypatched helpers): assert the #1674 probe
+    # is called FIRST and its non-None return short-circuits before
+    # _closed_sibling_outcome is reached. Signalled via a call-order recorder.
+    calls: list[str] = []
+
+    def fake_landed(item, root, *, dirpath, fp, dry_run):
+        calls.append("landed")
+        # Simulate #1674 hit: append the row and return the terminal outcome.
+        ddf.append_row(
+            dirpath,
+            {
+                "slug": item["slug"],
+                "outcome": "landed-fix-suspect",
+                "suspects": [{"sha": "abc1234", "subject": "fake", "shared": ["x", "y", "z"]}],
+                "threshold": ddf.LANDED_FIX_MIN_SHARED_TOKENS,
+                "window": ddf.LANDED_FIX_WINDOW,
+                "paths": ["scripts/foo.py"],
+                "fp": fp,
+                "route": item["route"],
+            },
+        )
+        return "landed-fix-suspect"
+
+    def fake_closed(item):
+        calls.append("closed")
+        return ([_closed_sibling_hit(1600)], [])
+
+    monkeypatch.setattr(ddf, "_landed_fix_suspect_outcome", fake_landed)
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", fake_closed)
+    item = make_item("cs-order", target="scripts/foo.py")
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    assert filer_calls(d) == []
+    # #1674 ran first and short-circuited; #1711 never ran.
+    assert calls == ["landed"]
+    rows = ledger_rows(d)
+    assert [r["outcome"] for r in rows] == ["landed-fix-suspect"]
+    # The written row is #1674's shape (sha, not id).
+    (suspect,) = rows[0]["suspects"]
+    assert "sha" in suspect and "kind" not in suspect
+
+
+def test_closed_sibling_probe_dry_run_read_only(tmp_path, tasks_root, monkeypatch, capsys):
+    # Test 9 (plan §15): --dry-run with a would-block closed sibling prints
+    # CLOSED-SIBLING-SUSPECT (stdout, operator-facing), NO ledger row written,
+    # NO filer call.
+    item = make_item("cs-dry", target="scripts/foo.py")
+    monkeypatch.setattr(
+        ddf,
+        "find_closed_sibling_suspects",
+        lambda it: ([_closed_sibling_hit(1600, title="workflow-fix: dry test")], []),
+    )
+    d = make_filings_dir(tmp_path, [item])
+    rc = run_driver(d, tasks_root, make_stub(tmp_path, d), "--dry-run")
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "CLOSED-SIBLING-SUSPECT cs-dry -> #1600" in out
+    assert "--retry-suspects" in out
+    assert ledger_rows(d) == []
+    assert filer_calls(d) == []
+
+
+def test_closed_sibling_probe_route3_also_guarded(tmp_path, tasks_root, monkeypatch):
+    # Test 10 (plan §15): the probe is route-blind — a route-3 item with a
+    # blocking closed sibling records a landed-fix-suspect row carrying
+    # route: 3 and never files (parallel to #1674's
+    # test_landed_fix_probe_guards_route3 at ~line 2246).
+    item = make_item("cs-r3", route=3, target="scripts/foo.py")
+    hit = _closed_sibling_hit(1600, matched=["target"])
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda it: ([hit], []))
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    assert filer_calls(d) == []
+    rows = ledger_rows(d)
+    assert [r["outcome"] for r in rows] == ["landed-fix-suspect"]
+    assert rows[0]["route"] == 3
+    (suspect,) = rows[0]["suspects"]
+    assert suspect["kind"] == "closed-sibling"
+
+
+def test_closed_sibling_error_plus_suspect_needs_both_flags(tmp_path, tasks_root, monkeypatch):
+    # Concern-fold (Statistics critic): mirror of
+    # test_landed_fix_error_plus_suspect_needs_both_flags at ~line 2127, but
+    # for the closed-sibling probe. A slug carrying BOTH an ERROR row AND a
+    # closed-sibling suspect row: --retry-errors alone re-runs the probe
+    # (benign accumulation — another suspect row, no filing); BOTH
+    # --retry-errors --retry-suspects re-drive it to a filed row.
+    item = make_item("cs-both-rows", target="scripts/foo.py")
+    fp = wf_fix_fingerprint(item["change"], item["bug"])
+    d = make_filings_dir(tmp_path, [item])
+    ddf.append_row(
+        d,
+        {
+            "slug": "cs-both-rows",
+            "outcome": "ERROR",
+            "flag": "filer-failed",
+            "id": None,
+            "rc": 1,
+            "fp": fp,
+            "route": 2,
+            "tail": "",
+        },
+    )
+    ddf.append_row(
+        d,
+        {
+            "slug": "cs-both-rows",
+            "outcome": "landed-fix-suspect",
+            "suspects": [_closed_sibling_hit(1600) | {"kind": "closed-sibling"}],
+            "threshold": None,
+            "window": "7.0 days",
+            "paths": ["scripts/foo.py"],
+            "fp": fp,
+            "route": 2,
+        },
+    )
+    # Under --retry-errors alone: the probe re-runs. Keep it returning a hit
+    # to prove the second suspect row appends (benign accumulation).
+    monkeypatch.setattr(
+        ddf,
+        "find_closed_sibling_suspects",
+        lambda it: ([_closed_sibling_hit(1600)], []),
+    )
+    stub = make_stub(tmp_path, d)
+    assert run_driver(d, tasks_root, stub, "--retry-errors") == 0
+    assert filer_calls(d) == []
+    assert [r["outcome"] for r in ledger_rows(d)][-1] == "landed-fix-suspect"
+    # BOTH flags: `suspect_eyeballed` short-circuits the probe, filer runs.
+    assert run_driver(d, tasks_root, stub, "--retry-errors", "--retry-suspects") == 0
+    assert len(filer_calls(d)) == 1
+    assert [r["outcome"] for r in ledger_rows(d)][-1] == "filed"
+
+
+def test_find_closed_sibling_suspects_partitions_blocking_and_advisory(monkeypatch):
+    # Unit-level: find_closed_sibling_suspects partitions the helper's return
+    # into (blocking, advisory) by arm class. Pin the exact partition rule
+    # (arm prefix ∈ _CLOSED_SIBLING_BLOCKING_ARMS -> blocking; anything else,
+    # incl. title:*/infra-title:* -> advisory).
+    fake_helper_return = [
+        _closed_sibling_hit(1, matched=["target"]),  # blocking
+        _closed_sibling_hit(2, matched=["title:foo,bar"]),  # advisory (title only)
+        _closed_sibling_hit(3, matched=["infra-target"]),  # blocking
+        _closed_sibling_hit(4, matched=["infra-title:baz,qux"]),  # advisory
+        _closed_sibling_hit(5, matched=["target", "title:z"]),  # blocking (mixed)
+    ]
+
+    # Patch the imported symbol WHERE `find_closed_sibling_suspects` calls it
+    # (module-scope import in the function body -> lives on task_workflow).
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "recent_closed_workflow_fix_tasks", lambda *a, **k: fake_helper_return)
+    # Bypass the autouse-fixture neutralization to reach the REAL body.
+    blocking, advisory = _REAL_FIND_CLOSED_SIBLING_SUSPECTS(
+        make_item("part-test", target="scripts/x.py")
+    )
+    assert [h["id"] for h in blocking] == [1, 3, 5]
+    assert [h["id"] for h in advisory] == [2, 4]
