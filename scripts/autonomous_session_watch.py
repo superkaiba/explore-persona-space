@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-30 passes ("pass" = one top-level per-tick action block in ``main()``'s
+31 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -11,7 +11,7 @@ IDENTIFIERS (cross-referenced throughout this docstring), NOT execution
 order. The per-tick execution order is: 1 (VM disk) -> 15 (data-disk) ->
 16 (happy-patch) -> 12 (CPU-guard) -> 17 (triage-observer) ->
 18 (verdict-disagree) -> 26 (root-draft) -> 27 (registry-drift) ->
-29 (completed-unmerged) -> 30 (urgent-park router) ->
+31 (codex-outage) -> 29 (completed-unmerged) -> 30 (urgent-park router) ->
 19 (VM-ledger reap) -> 20 (program-orchestrator
 recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
 -> 3 (pod-safety) -> 4 (stalled-detector) -> 5 (orphan sweep) ->
@@ -618,6 +618,40 @@ adding a pass means adding a numbered item here AND bumping the digit:
    switch ``EPM_DISABLE_URGENT_WF_PARK_PASS=1``; ``--urgent-wf-park-only``
    runs just this pass (pair with ``--dry-run`` for a zero-write,
    zero-subprocess live smoke). (:func:`urgent_wf_park_pass`.)
+
+31. **Codex quota-outage alert pass (#1691; ESCALATE-ONLY;
+   daemon-INDEPENDENT; runs right after pass 27).** The audit sibling of
+   the #1204 pre-spawn sentinel check: #1204 skips ``codex-*`` composer
+   spawns while ``.claude/cache/codex-quota-exhausted-until`` is live;
+   this pass alerts once per Codex quota-outage EPISODE (episode key =
+   the sentinel's ``detected_at_iso``) when the sentinel has been
+   continuously live beyond ``EPM_CODEX_OUTAGE_ALERT_HOURS`` (default
+   24h), re-alerts weekly (``EPM_CODEX_OUTAGE_REALERT_HOURS``, 168h)
+   while it persists, and clears the episode when the sentinel
+   disappears. Hourly self-gate (``EPM_CODEX_OUTAGE_INTERVAL_HOURS``, 1h)
+   with an attempt-stamp-first save (a crashing pass writes at most one
+   error sidecar row per interval). Reads the sentinel READ-ONLY with
+   the SAME two-sided plausibility window as the #1204 pre-spawn check
+   (``now < until_unix <= now + 45 d``, byte-parity with
+   ``QUOTA_MAX_PLAUSIBLE_SECS``); NEVER mutates it (lifecycle stays with
+   ``codex_task.py``). Push text names the outage window
+   (detected_at → until_iso, days elapsed/remaining) plus a bounded count
+   of single-Claude review rounds since the outage opened — REGISTRY-scoped
+   ``events.jsonl`` scan (the triage-observer enumeration pattern) with a
+   mtime pre-filter (skip files older than ``detected_at_unix``) and a
+   256 KB per-file tail read; substring match on the canonical #1204 skip
+   phrase (CLAUDE.md line 119). Enumerator failure returns
+   ``count not available`` (push still fires with the load-bearing outage
+   window). ONE dedicated sidecar row per firing tick
+   (``.claude/cache/codex-outage-events.jsonl``); NO task markers by
+   construction (the outage is fleet-level, no single task owns it —
+   verdict-disagree precedent). Fail-open reader + top-level try/except
+   fail-soft (writes ONE ``codex-outage-error`` sidecar row and returns
+   False on any unexpected exception, never crashes the tick). Silence at
+   this pass means no outage. Kill switch
+   ``EPM_DISABLE_CODEX_OUTAGE_PASS=1``; ``--codex-outage-only`` runs just
+   this pass (pair with ``--dry-run`` for a zero-write live smoke against
+   the real sentinel). (:func:`codex_outage_pass`.)
 
 Why each pass exists
 --------------------
@@ -7419,6 +7453,430 @@ def completed_unmerged_pass(dry_run: bool, now: float | None = None) -> None:
         _save_completed_unmerged_state(state, dry_run)
     except Exception as exc:  # top-level fail-soft: never take down the tick
         print(f"  completed-unmerged: pass failed (fail-soft): {exc}", file=sys.stderr)
+
+
+# ─── Codex quota-outage alert pass (task #1691) ──────────────────────────────
+#
+# ESCALATE-ONLY audit sibling of the #1204 pre-spawn sentinel check. #1204
+# skips codex-* composer spawns while the sentinel is live; this pass surfaces
+# a LONG outage (>= threshold hours since detected_at_iso) with ONE deduped
+# push per episode + a weekly re-alert while the outage persists. Read-only
+# w.r.t. the sentinel (lifecycle stays with codex_task.py, per the task body's
+# Scope constraint); NEVER posts task markers (fleet-level condition, no
+# single task owns it — verdict_disagree precedent); NEVER stops sessions.
+# Live outage at compose time: detected_at_iso=2026-07-08T08:23:26+00:00 ->
+# until_iso=2026-08-06T13:26:00+00:00, ~29d total, ~17d elapsed, ~12d
+# remaining. On merge this pass alerts THIS outage on its first watcher tick.
+
+# Hourly self-gate matches completed_unmerged (sub-daily is required so a
+# fresh outage detected 30 min after the last read doesn't wait ~23h to fire,
+# but 10-min-tick cadence is unnecessary since the alert threshold is 24h).
+# The count only enters the push text; a slightly stale count between the
+# hourly refresh and the next daily/weekly push is fine.
+CODEX_OUTAGE_INTERVAL_HOURS = 1.0
+# First-alert threshold since detected_at_iso — 24h gives a full working day
+# of "give the outage a chance to self-resolve" before paging the operator on
+# a FUTURE outage that starts within a day. Env-overridable per plan §11.
+CODEX_OUTAGE_ALERT_HOURS = 24.0
+# Weekly re-alert of a persistent outage (mirrors REGISTRY_DRIFT_REALERT_HOURS
+# — both reflect long-lived slowly-changing states where daily re-pushes
+# would be noise).
+CODEX_OUTAGE_REALERT_HOURS = 168.0
+# Count-scan lookback cap (30d; matches the sentinel's max plausible window).
+CODEX_OUTAGE_LOOKBACK_H_CAP = 720.0
+# Two-sided plausibility window upper bound — byte-parity with the helper's
+# QUOTA_MAX_PLAUSIBLE_SECS (codex_task.py:295) so a hand-seeded or corrupt
+# far-future timestamp cannot false-fire this pass any more than it can wedge
+# composer spawning off permanently.
+CODEX_OUTAGE_MAX_PLAUSIBLE_SECS = 45 * 24 * 3600
+# Bounded per-file tail read for the events.jsonl skip-count scan. 256 KB
+# matches the transcript-tail read that other passes use for cheap
+# fixed-cost audits over the REGISTRY task set; an overflow means "count is
+# a lower bound" and the push text degrades to ">=N".
+CODEX_OUTAGE_EVENTS_TAIL_BYTES = 256 * 1024
+# Canonical substring appearing in the #1204 pre-spawn skip note. Defined in
+# CLAUDE.md line 119 (the pre-spawn check block's post-marker note text);
+# orchestrators following that recipe post `epm:progress` notes carrying
+# exactly this substring. Loose match is intentional — the count is
+# illustrative, not authoritative.
+CODEX_OUTAGE_SKIP_PHRASE = b"codex composers skipped"
+
+
+def _codex_outage_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_CODEX_OUTAGE_PASS`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_registry_drift_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_CODEX_OUTAGE_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _codex_outage_sentinel_path() -> Path:
+    """The #1204 sentinel file the codex_task helper writes. Overridable via
+    ``EPM_CODEX_QUOTA_SENTINEL_PATH`` (matches the CLAUDE.md pre-spawn check's
+    own env-override name — tests set this to a tmp path)."""
+    override = os.environ.get("EPM_CODEX_QUOTA_SENTINEL_PATH")
+    if override:
+        return Path(override)
+    return PROJECT_ROOT / ".claude" / "cache" / "codex-quota-exhausted-until"
+
+
+def _codex_outage_sidecar_path() -> Path:
+    """DEDICATED codex-outage event stream (own stream for clean grep — the
+    root-draft / registry-drift sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "codex-outage-events.jsonl"
+
+
+def _codex_outage_state_path() -> Path:
+    """Singleton throttle+dedup state (deliberately NOT a per-issue GC
+    target); ``-observer.json`` suffix mirrors the sibling
+    ``registry-drift-observer.json`` / ``triage-observer.json`` /
+    ``root-draft-observer.json``."""
+    return AUTONOMOUS_REGISTRY_DIR / "codex-outage-observer.json"
+
+
+def _load_codex_outage_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards (mirrors :func:`_load_registry_drift_state`)."""
+    path = _codex_outage_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_codex_outage_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the codex-outage throttle/dedup state
+    (fail-soft; mirrors :func:`_save_registry_drift_state`); ``dry_run``
+    performs zero writes."""
+    if dry_run:
+        print(
+            "  [dry-run] would save codex-outage state "
+            f"(episode={state.get('episode_detected_at_iso')})"
+        )
+        return
+    dest = _codex_outage_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  codex-outage: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_codex_outage_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the codex-outage sidecar (fail-soft). A ``ts``
+    is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_registry_drift_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append codex-outage sidecar row: {line[:160]}")
+        return
+    dest = _codex_outage_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  codex-outage: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _codex_outage_read_sentinel(now: float) -> dict | None:
+    """Read the #1204 sentinel with the SAME two-sided plausibility window
+    the pre-spawn check enforces (``now < until_unix <= now + 45 d``).
+    Returns a dict with ``until_unix, until_iso, detected_at_iso,
+    detected_at_unix`` on a LIVE sentinel; ``None`` on missing / unreadable /
+    corrupt / expired / far-future (FAIL-OPEN: no alert, no crash — mirrors
+    the ``_quota_sentinel_active`` semantics in codex_task.py). NEVER mutates
+    the file (this is the READ-ONLY audit sibling of the pre-spawn check;
+    lifecycle stays with the helper)."""
+    path = _codex_outage_sentinel_path()
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    try:
+        until_unix = float(data["until_unix"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    # Two-sided plausibility window — #1204 parity (never fires on a corrupt
+    # far-future or already-expired sentinel).
+    if not (now < until_unix <= now + CODEX_OUTAGE_MAX_PLAUSIBLE_SECS):
+        return None
+    detected_at_iso = data.get("detected_at_iso")
+    if not isinstance(detected_at_iso, str):
+        return None
+    try:
+        detected_at_unix = datetime.fromisoformat(
+            detected_at_iso.replace("Z", "+00:00")
+        ).timestamp()
+    except ValueError:
+        return None
+    return {
+        "until_unix": until_unix,
+        "until_iso": str(data.get("until_iso") or until_unix),
+        "detected_at_iso": detected_at_iso,
+        "detected_at_unix": detected_at_unix,
+    }
+
+
+def _codex_outage_bounded_skip_count(detected_at_unix: float) -> tuple[int | None, bool]:
+    """Bounded REGISTRY-scoped scan of ``events.jsonl`` files for the
+    ``codex composers skipped`` phrase (the canonical #1204 pre-spawn skip
+    note text, defined in CLAUDE.md line 119). Returns
+    ``(count, overflowed)`` on success where ``overflowed`` is ``True`` iff
+    at least one file was TAIL-truncated (count is then a lower bound);
+    ``(None, False)`` on any enumerator/read failure (the push text then
+    prints "count not available" rather than fabricating a 0).
+
+    Enumeration follows the sibling ``triage_observer_pass`` convention
+    (scripts/autonomous_session_watch.py:5654-5665) — public
+    ``task_workflow.registry_path()`` + a single ``json.loads(...read_text())``
+    (never a filesystem walk of ``tasks/*/*/events.jsonl``). Bounds:
+    (a) per-file mtime pre-filter drops files older than
+    ``detected_at_unix``; (b) per-file tail read is capped at
+    ``CODEX_OUTAGE_EVENTS_TAIL_BYTES`` (256 KB). Loose substring match is
+    intentional (the phrase originates in CLAUDE.md and is copied by
+    orchestrators; the count is illustrative, not authoritative)."""
+    try:
+        from explore_persona_space.task_workflow import registry_path
+
+        reg = json.loads(registry_path().read_text())
+    except Exception as exc:  # pragma: no cover - fail-soft enumerator guard
+        print(f"  codex-outage: registry enumerator failed: {exc}", file=sys.stderr)
+        return (None, False)
+    tasks = reg.get("tasks") if isinstance(reg, dict) else None
+    if not isinstance(tasks, dict):
+        return (None, False)
+    reg_root = registry_path().parent.parent
+    count = 0
+    overflowed = False
+    for tid_raw, meta in tasks.items():
+        try:
+            rel = None
+            if isinstance(meta, dict):
+                rel = meta.get("path")
+            if not isinstance(rel, str):
+                continue
+            events_path = reg_root / rel / "events.jsonl"
+            if not events_path.is_file():
+                continue
+            try:
+                st = events_path.stat()
+            except OSError:
+                continue
+            if st.st_mtime < detected_at_unix:
+                continue
+            # Bounded tail read: seek to (size - cap), read to end. Handles
+            # short files transparently (seek to 0). Set overflowed when the
+            # file was larger than the cap (count is then a lower bound).
+            try:
+                with open(events_path, "rb") as fh:
+                    if st.st_size > CODEX_OUTAGE_EVENTS_TAIL_BYTES:
+                        fh.seek(st.st_size - CODEX_OUTAGE_EVENTS_TAIL_BYTES)
+                        overflowed = True
+                    tail = fh.read()
+            except OSError:
+                continue
+            count += tail.count(CODEX_OUTAGE_SKIP_PHRASE)
+        except Exception:  # pragma: no cover - per-file skip on any exception
+            continue
+    return (count, overflowed)
+
+
+def decide_codex_outage_alert(
+    sentinel: dict | None,
+    state: dict,
+    now: float,
+    threshold_s: float,
+    realert_s: float,
+) -> tuple[bool, str]:
+    """Pure fire decision. Returns ``(fire, reason)``.
+
+    ``fire=True`` iff:
+      (a) sentinel is LIVE (not None), AND
+      (b) age = ``now - sentinel['detected_at_unix']`` >= ``threshold_s``, AND
+      (c) EITHER (i) episode key CHANGED — new outage since last state
+              OR (ii) ``last_alert_ts`` is None (first alert of this episode)
+              OR (iii) ``now - last_alert_ts > realert_s``
+                       (weekly re-alert of ongoing episode).
+
+    Reasons: ``no-live-sentinel`` / ``below-threshold`` / ``new-episode`` /
+    ``first-alert`` / ``weekly-realert`` / ``within-realert-ttl``. Corrupt
+    state fields degrade to fire-as-if-unalerted (the ``isinstance`` guards —
+    the registry-drift corrupt-state contract).
+    """
+    if sentinel is None:
+        return (False, "no-live-sentinel")
+    detected_at_unix = sentinel.get("detected_at_unix")
+    if not isinstance(detected_at_unix, int | float):
+        return (False, "no-live-sentinel")
+    if (now - detected_at_unix) < threshold_s:
+        return (False, "below-threshold")
+    prev_key = state.get("episode_detected_at_iso")
+    cur_key = sentinel.get("detected_at_iso")
+    if not isinstance(prev_key, str) or prev_key != cur_key:
+        return (True, "new-episode")
+    last_alert = state.get("last_alert_ts")
+    if not isinstance(last_alert, int | float):
+        return (True, "first-alert")
+    if (now - last_alert) > realert_s:
+        return (True, "weekly-realert")
+    return (False, "within-realert-ttl")
+
+
+def codex_outage_pass(dry_run: bool) -> bool:
+    """ESCALATE-ONLY pass (#1691): alert once per Codex quota-outage episode
+    when the sentinel has been live >= ``EPM_CODEX_OUTAGE_ALERT_HOURS`` since
+    ``detected_at_iso``, re-alert weekly while it persists, and clear the
+    episode when the sentinel disappears.
+
+    NEVER mutates the sentinel (lifecycle stays with codex_task.py, per the
+    task body's Scope constraint). NEVER posts task markers (the outage is
+    fleet-level, no single task owns it — verdict_disagree precedent).
+    Sidecar rows + Telegram push via the shared :func:`_telegram_push`
+    helper. Daemon-INDEPENDENT (pure filesystem + registry reads).
+
+    Returns True when a push fired this run."""
+    if not _codex_outage_enabled():
+        print("  codex-outage: disabled via EPM_DISABLE_CODEX_OUTAGE_PASS; skipping")
+        return False
+    try:
+        now = time.time()
+        interval_h = _env_float(
+            "EPM_CODEX_OUTAGE_INTERVAL_HOURS",
+            CODEX_OUTAGE_INTERVAL_HOURS,
+            lo=0.0,
+            hi=24.0,
+        )
+        alert_h = _env_float(
+            "EPM_CODEX_OUTAGE_ALERT_HOURS",
+            CODEX_OUTAGE_ALERT_HOURS,
+            lo=1.0,
+            hi=720.0,
+        )
+        realert_h = _env_float(
+            "EPM_CODEX_OUTAGE_REALERT_HOURS",
+            CODEX_OUTAGE_REALERT_HOURS,
+            lo=1.0,
+            hi=720.0,
+        )
+        state = _load_codex_outage_state()
+        last = state.get("last_run_ts")
+        if isinstance(last, int | float) and (now - last) < interval_h * 3600.0:
+            return False  # throttled — silent (would fire ~6x/hour otherwise)
+        # Stamp the attempt BEFORE reading so any exception below is bounded
+        # to one skipped hour instead of repeating every 10-min tick.
+        state["last_run_ts"] = now
+        _save_codex_outage_state(state, dry_run)
+
+        sentinel = _codex_outage_read_sentinel(now)
+        if sentinel is None:
+            # Recovered? Clear the episode key so a later outage re-fires as
+            # a new episode. Missing/corrupt/expired all land here (fail-open
+            # per _codex_outage_read_sentinel's contract) — the clear is safe
+            # because a subsequent LIVE sentinel with a fresh detected_at_iso
+            # is always treated as a new episode by decide_codex_outage_alert.
+            if state.get("episode_detected_at_iso"):
+                print("  codex-outage: recovered — sentinel absent/expired")
+                _save_codex_outage_state(
+                    {
+                        **state,
+                        "episode_detected_at_iso": None,
+                        "first_alert_ts": None,
+                        "last_alert_ts": None,
+                        "last_count": None,
+                        "last_count_ts": None,
+                    },
+                    dry_run,
+                )
+            return False
+
+        fire, reason = decide_codex_outage_alert(
+            sentinel, state, now, alert_h * 3600.0, realert_h * 3600.0
+        )
+        # Refresh the count only on a firing tick (bounds cost — non-firing
+        # hourly ticks stay ~free of the events.jsonl scan).
+        skipped_count: int | None = None
+        overflowed = False
+        if fire:
+            skipped_count, overflowed = _codex_outage_bounded_skip_count(
+                sentinel["detected_at_unix"]
+            )
+
+        elapsed_h = (now - sentinel["detected_at_unix"]) / 3600.0
+        remaining_h = (sentinel["until_unix"] - now) / 3600.0
+        _append_codex_outage_sidecar(
+            {
+                "kind": "codex-outage",
+                "episode_detected_at_iso": sentinel["detected_at_iso"],
+                "until_iso": sentinel["until_iso"],
+                "elapsed_hours": round(elapsed_h, 1),
+                "remaining_hours": round(remaining_h, 1),
+                "skipped_rounds": skipped_count,  # int or None
+                "skipped_rounds_overflowed": overflowed,
+                "fire_reason": reason,
+                # `pushed` records the fire DECISION (dedup bookkeeping),
+                # not delivery — _telegram_push is fail-soft and sent != seen.
+                "pushed": fire,
+            },
+            dry_run,
+        )
+
+        if fire:
+            days_elapsed = round(elapsed_h / 24.0, 1)
+            days_remaining = round(remaining_h / 24.0, 1)
+            if isinstance(skipped_count, int):
+                lo_prefix = ">=" if overflowed else ""
+                count_str = f"{lo_prefix}{skipped_count} review round(s) ran single-Claude"
+            else:
+                count_str = "single-Claude round count not available"
+            _telegram_push(
+                f"Codex quota outage live: opened {sentinel['detected_at_iso']}, "
+                f"expires {sentinel['until_iso']} "
+                f"(~{days_elapsed}d elapsed, ~{days_remaining}d remaining). "
+                f"Since it opened, {count_str}. Fleet-wide loss of "
+                f"cross-family reviewer diversity for the entire window. "
+                f"Silence-check kill switch: EPM_DISABLE_CODEX_OUTAGE_PASS=1. "
+                f"Account triage tracked separately (do NOT triage from this "
+                f"alert).",
+                dry_run,
+            )
+            _save_codex_outage_state(
+                {
+                    **state,
+                    "episode_detected_at_iso": sentinel["detected_at_iso"],
+                    "first_alert_ts": state.get("first_alert_ts") or now,
+                    "last_alert_ts": now,
+                    "last_count": skipped_count,
+                    "last_count_ts": now,
+                },
+                dry_run,
+            )
+        else:
+            # No push this tick, but keep the episode key in sync — this is
+            # the initial write when we first observed the current outage
+            # while its age is still below the threshold. Preserves everything
+            # else on the state file (last_alert_ts, first_alert_ts, cached
+            # count) — those keys are per-episode and cleared on recovery.
+            _save_codex_outage_state(
+                {**state, "episode_detected_at_iso": sentinel["detected_at_iso"]}, dry_run
+            )
+        return fire
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  codex-outage: pass failed (fail-soft): {exc}", file=sys.stderr)
+        _append_codex_outage_sidecar(
+            {"kind": "codex-outage-error", "error": str(exc)[:500]}, dry_run
+        )
+        return False
 
 
 # ─── Urgent-park router pass (task #1681) — "main is red" fast path ──────────
@@ -26776,6 +27234,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "--dry-run for a live smoke against the real completed set.",
     )
     parser.add_argument(
+        "--codex-outage-only",
+        action="store_true",
+        help="run ONLY the codex-outage alert pass (#1691, escalate-only — "
+        "the audit sibling of the #1204 pre-spawn sentinel check; ONE deduped "
+        "push per Codex quota-outage episode past the threshold, weekly "
+        "re-alert while it persists) and exit; skip every other pass. "
+        "Daemon-independent (reads the sentinel + REGISTRY events.jsonl "
+        "only). Pair with --dry-run for a zero-write live smoke against the "
+        "real sentinel.",
+    )
+    parser.add_argument(
         "--urgent-wf-park-only",
         action="store_true",
         help="run ONLY the urgent-park router pass (#1681 — mechanically "
@@ -26916,6 +27385,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         completed_unmerged_pass(args.dry_run)
         return 0
 
+    # --codex-outage-only mirrors --registry-drift-only: the pass is
+    # daemon-independent (reads the #1204 sentinel + REGISTRY events.jsonl
+    # only; marker never posts to a task), so run it alone.
+    if args.codex_outage_only:
+        codex_outage_pass(args.dry_run)
+        return 0
+
     # --urgent-wf-park-only mirrors --completed-unmerged-only: the pass is
     # daemon-independent (events.jsonl reads + a bounded pytest probe; the
     # file+dispatch subprocess carries its own daemon/cap gates), so run it
@@ -27039,6 +27515,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # --repair`; NEVER repairs, posts NO task markers. Daemon-independent,
     # so it runs on a daemon outage too.
     registry_drift_pass(args.dry_run)
+
+    # Codex quota-outage alert (#1691): ESCALATE-ONLY audit sibling of the
+    # #1204 pre-spawn sentinel check. Alerts once per Codex quota-outage
+    # episode when the sentinel has been live past the alert threshold
+    # (default 24h), re-alerts weekly while it persists, and clears the
+    # episode when the sentinel disappears. Reads the sentinel READ-ONLY —
+    # never mutates it (lifecycle stays with codex_task.py); posts NO task
+    # markers (fleet-level condition, no single task owns it). Daemon-
+    # independent, so it runs on a daemon outage too.
+    codex_outage_pass(args.dry_run)
 
     # Completed-unmerged pass (#1564 flag + #1653 bounded respawn; incident
     # #1540): hourly audit of `completed` tasks whose events carry epm:done

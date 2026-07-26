@@ -18,6 +18,7 @@ Two passes are pinned here:
 import json
 import sys
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -1736,6 +1737,10 @@ def test_stub_fleet_mutating_passes_covers_main_pass_roster():
         "stale_registration_pass",
         "zombie_wrapper_pass",
         "idle_unmapped_pass",
+        # codex_outage_pass (#1691) is escalate-only: writes ONLY its own state +
+        # sidecar + push. NEVER mutates task/fleet state, NEVER stops sessions,
+        # NEVER posts task markers. Safe against isolated_registry.
+        "codex_outage_pass",
     }
     unclassified = invoked - set(_FLEET_MUTATING_PASS_NAMES) - benign_or_per_test
     assert not unclassified, (
@@ -22188,3 +22193,572 @@ def test_completed_unmerged_flag_preserves_respawn_latch():
     )
     assert "respawned_ts" not in episodes["9"]
     assert "respawn_result" not in episodes["9"]
+
+
+# ─── Codex quota-outage alert pass (task #1691) ───────────────────────────────
+#
+# Predicate trace (plan §6): the audit sibling of the #1204 pre-spawn sentinel
+# check. ONE deduped push per episode past the threshold + weekly re-alert;
+# sentinel is READ-ONLY (lifecycle stays with codex_task.py); NO task markers;
+# fail-open reader + top-level try/except fail-soft.
+
+
+def _codex_outage_isolate(asw, monkeypatch, tmp_path: Path) -> tuple[Path, Path, Path]:
+    """Point the pass's state (AUTONOMOUS_REGISTRY_DIR) + sidecar
+    (PROJECT_ROOT-derived) at tmp_path, override the sentinel path via
+    EPM_CODEX_QUOTA_SENTINEL_PATH, and zero the hourly self-gate. Returns
+    (state_path, sidecar_path, sentinel_path). Mirrors :func:`_rdrift_isolate`.
+    """
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path / "registry")
+    monkeypatch.setattr(asw, "PROJECT_ROOT", tmp_path / "root")
+    (tmp_path / "root").mkdir(parents=True, exist_ok=True)
+    sentinel = tmp_path / "codex-quota-exhausted-until"
+    monkeypatch.setenv("EPM_CODEX_QUOTA_SENTINEL_PATH", str(sentinel))
+    # Zero self-gate so a second call in the same test isn't throttled.
+    monkeypatch.setenv("EPM_CODEX_OUTAGE_INTERVAL_HOURS", "0")
+    return (
+        tmp_path / "registry" / "codex-outage-observer.json",
+        tmp_path / "root" / ".claude" / "cache" / "codex-outage-events.jsonl",
+        sentinel,
+    )
+
+
+def _write_sentinel(path: Path, *, detected_ago_h: float, remaining_h: float) -> dict:
+    """Write a #1204-shape sentinel file whose detected_at_iso sits
+    ``detected_ago_h`` hours in the past and whose until_unix sits
+    ``remaining_h`` hours in the future. Returns the written payload."""
+    now = time.time()
+    detected_at_unix = now - detected_ago_h * 3600.0
+    detected_at_iso = datetime.fromtimestamp(detected_at_unix, tz=UTC).isoformat(timespec="seconds")
+    until_unix = now + remaining_h * 3600.0
+    until_iso = datetime.fromtimestamp(until_unix, tz=UTC).isoformat(timespec="seconds")
+    payload = {
+        "until_unix": until_unix,
+        "until_iso": until_iso,
+        "parse_ok": True,
+        "detected_at_iso": detected_at_iso,
+        "job_id": "test-job",
+        "raw_excerpt": "You've hit your usage limit.",
+    }
+    path.write_text(json.dumps(payload))
+    return payload
+
+
+# ─── Sentinel reader unit tests (5) ──────────────────────────────────────────
+
+
+def test_codex_outage_read_sentinel_absent_returns_none(tmp_path, monkeypatch):
+    """No file at the sentinel path -> None (fail-open: no alert, no crash)."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_CODEX_QUOTA_SENTINEL_PATH", str(tmp_path / "missing"))
+    assert asw._codex_outage_read_sentinel(time.time()) is None
+
+
+def test_codex_outage_read_sentinel_corrupt_returns_none(tmp_path, monkeypatch):
+    """Non-JSON / non-dict / missing keys / bad ISO all fail-open to None."""
+    import autonomous_session_watch as asw
+
+    s = tmp_path / "sentinel"
+    monkeypatch.setenv("EPM_CODEX_QUOTA_SENTINEL_PATH", str(s))
+    now = time.time()
+
+    # Not JSON at all.
+    s.write_text("not json {")
+    assert asw._codex_outage_read_sentinel(now) is None
+    # JSON but not a dict.
+    s.write_text("[1, 2, 3]")
+    assert asw._codex_outage_read_sentinel(now) is None
+    # Dict but missing until_unix.
+    s.write_text(json.dumps({"detected_at_iso": "2026-07-08T08:23:26+00:00"}))
+    assert asw._codex_outage_read_sentinel(now) is None
+    # until_unix present but not floatable.
+    s.write_text(json.dumps({"until_unix": "not-a-float", "detected_at_iso": "x"}))
+    assert asw._codex_outage_read_sentinel(now) is None
+    # Missing detected_at_iso (window plausible).
+    s.write_text(json.dumps({"until_unix": now + 3600.0}))
+    assert asw._codex_outage_read_sentinel(now) is None
+    # Bad ISO in detected_at_iso.
+    s.write_text(json.dumps({"until_unix": now + 3600.0, "detected_at_iso": "not-an-iso-date"}))
+    assert asw._codex_outage_read_sentinel(now) is None
+
+
+def test_codex_outage_read_sentinel_expired_returns_none(tmp_path, monkeypatch):
+    """until_unix <= now -> None (the sentinel window has passed)."""
+    import autonomous_session_watch as asw
+
+    s = tmp_path / "sentinel"
+    monkeypatch.setenv("EPM_CODEX_QUOTA_SENTINEL_PATH", str(s))
+    now = time.time()
+    # Write a payload with until_unix in the past; use naive fields since
+    # the reader tolerates a stringified until_iso.
+    s.write_text(
+        json.dumps(
+            {
+                "until_unix": now - 60.0,  # expired
+                "until_iso": "past",
+                "detected_at_iso": "2026-07-08T08:23:26+00:00",
+            }
+        )
+    )
+    assert asw._codex_outage_read_sentinel(now) is None
+
+
+def test_codex_outage_read_sentinel_far_future_returns_none(tmp_path, monkeypatch):
+    """until_unix > now + 45d -> None (the two-sided plausibility window,
+    byte-parity with QUOTA_MAX_PLAUSIBLE_SECS in codex_task.py:295)."""
+    import autonomous_session_watch as asw
+
+    s = tmp_path / "sentinel"
+    monkeypatch.setenv("EPM_CODEX_QUOTA_SENTINEL_PATH", str(s))
+    now = time.time()
+    # 46 days ahead -> beyond the 45d plausibility ceiling.
+    s.write_text(
+        json.dumps(
+            {
+                "until_unix": now + 46 * 24 * 3600,
+                "until_iso": "far",
+                "detected_at_iso": "2026-07-08T08:23:26+00:00",
+            }
+        )
+    )
+    assert asw._codex_outage_read_sentinel(now) is None
+
+
+def test_codex_outage_read_sentinel_live_returns_dict(tmp_path, monkeypatch):
+    """Valid live sentinel -> dict with the four fields the pass consumes.
+    Byte-exact snapshot of the compose-time live sentinel schema (§2)."""
+    import autonomous_session_watch as asw
+
+    s = tmp_path / "sentinel"
+    monkeypatch.setenv("EPM_CODEX_QUOTA_SENTINEL_PATH", str(s))
+    payload = _write_sentinel(s, detected_ago_h=25.0, remaining_h=12 * 24)
+    now = time.time()
+    got = asw._codex_outage_read_sentinel(now)
+    assert isinstance(got, dict)
+    assert got["until_unix"] == payload["until_unix"]
+    assert got["until_iso"] == payload["until_iso"]
+    assert got["detected_at_iso"] == payload["detected_at_iso"]
+    # detected_at_unix is derived from the ISO string; parses back within ~1s.
+    assert abs(got["detected_at_unix"] - (now - 25.0 * 3600.0)) < 2.0
+
+
+# ─── Decision function (5) ───────────────────────────────────────────────────
+
+
+def test_codex_outage_decide_below_threshold_no_fire():
+    """detected_at = now - 23h with a 24h threshold -> (False,
+    'below-threshold')."""
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    sentinel = {
+        "detected_at_iso": "s",
+        "detected_at_unix": now - 23 * 3600.0,
+        "until_unix": now + 24 * 3600.0,
+        "until_iso": "u",
+    }
+    fire, reason = asw.decide_codex_outage_alert(sentinel, {}, now, 24 * 3600.0, 168 * 3600.0)
+    assert fire is False
+    assert reason == "below-threshold"
+
+
+def test_codex_outage_decide_first_alert_fires():
+    """detected_at = now - 25h with a 24h threshold, no prior state ->
+    (True, 'new-episode') on the FIRST tick because the state has no
+    stored episode key — subsequent ticks in the same episode take the
+    'first-alert' / 'weekly-realert' paths."""
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    sentinel = {
+        "detected_at_iso": "s",
+        "detected_at_unix": now - 25 * 3600.0,
+        "until_unix": now + 24 * 3600.0,
+        "until_iso": "u",
+    }
+    # No prior state at all -> episode key differs (None != 's') -> new-episode.
+    fire, reason = asw.decide_codex_outage_alert(sentinel, {}, now, 24 * 3600.0, 168 * 3600.0)
+    assert fire is True
+    assert reason == "new-episode"
+    # Episode key seeded but no last_alert_ts -> first-alert.
+    fire, reason = asw.decide_codex_outage_alert(
+        sentinel,
+        {"episode_detected_at_iso": "s"},
+        now,
+        24 * 3600.0,
+        168 * 3600.0,
+    )
+    assert fire is True
+    assert reason == "first-alert"
+
+
+def test_codex_outage_decide_within_realert_ttl_no_fire():
+    """Same episode key, last_alert_ts = now - 24h, realert 168h ->
+    (False, 'within-realert-ttl')."""
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    sentinel = {
+        "detected_at_iso": "s",
+        "detected_at_unix": now - 48 * 3600.0,
+        "until_unix": now + 24 * 3600.0,
+        "until_iso": "u",
+    }
+    fire, reason = asw.decide_codex_outage_alert(
+        sentinel,
+        {"episode_detected_at_iso": "s", "last_alert_ts": now - 24 * 3600.0},
+        now,
+        24 * 3600.0,
+        168 * 3600.0,
+    )
+    assert fire is False
+    assert reason == "within-realert-ttl"
+
+
+def test_codex_outage_decide_weekly_realert_fires():
+    """Same episode, last_alert_ts = now - 200h, realert 168h ->
+    (True, 'weekly-realert')."""
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    sentinel = {
+        "detected_at_iso": "s",
+        "detected_at_unix": now - 300 * 3600.0,
+        "until_unix": now + 24 * 3600.0,
+        "until_iso": "u",
+    }
+    fire, reason = asw.decide_codex_outage_alert(
+        sentinel,
+        {"episode_detected_at_iso": "s", "last_alert_ts": now - 200 * 3600.0},
+        now,
+        24 * 3600.0,
+        168 * 3600.0,
+    )
+    assert fire is True
+    assert reason == "weekly-realert"
+
+
+def test_codex_outage_decide_new_episode_fires():
+    """Sentinel key changed -> (True, 'new-episode') regardless of the
+    stored last_alert_ts."""
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    sentinel = {
+        "detected_at_iso": "NEW",
+        "detected_at_unix": now - 25 * 3600.0,
+        "until_unix": now + 24 * 3600.0,
+        "until_iso": "u",
+    }
+    fire, reason = asw.decide_codex_outage_alert(
+        sentinel,
+        {"episode_detected_at_iso": "OLD", "last_alert_ts": now - 60.0},
+        now,
+        24 * 3600.0,
+        168 * 3600.0,
+    )
+    assert fire is True
+    assert reason == "new-episode"
+
+
+# ─── Pass-level tests (7) ────────────────────────────────────────────────────
+
+
+def test_codex_outage_pass_fires_end_to_end_and_dedups(tmp_path, monkeypatch):
+    """Full-pass predicate trace: a live outage past the 24h threshold ->
+    ONE push, then a same-tick+realert-TTL second call is throttled
+    (throttle re-enabled) or dedupes to no-push (unthrottled). Assert
+    push count == 1, state fields saved atomically, sidecar row present."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path, sentinel_path = _codex_outage_isolate(asw, monkeypatch, tmp_path)
+    # 25h into a live outage past the 24h alert threshold.
+    _write_sentinel(sentinel_path, detected_ago_h=25.0, remaining_h=12 * 24)
+    # Stub the events-scan enumerator to avoid touching the real REGISTRY.
+    monkeypatch.setattr(asw, "_codex_outage_bounded_skip_count", lambda _d: (5, False))
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
+
+    # (i) First tick: push fires.
+    assert asw.codex_outage_pass(dry_run=False) is True
+    assert len(pushes) == 1
+    assert "Codex quota outage live" in pushes[0]
+    assert "5 review round(s) ran single-Claude" in pushes[0]
+    assert "EPM_DISABLE_CODEX_OUTAGE_PASS=1" in pushes[0]
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert len(rows) == 1
+    assert rows[0]["kind"] == "codex-outage"
+    assert rows[0]["skipped_rounds"] == 5
+    assert rows[0]["skipped_rounds_overflowed"] is False
+    assert rows[0]["pushed"] is True
+    state = json.loads(state_path.read_text())
+    assert isinstance(state["last_run_ts"], float)
+    assert isinstance(state["first_alert_ts"], float)
+    assert isinstance(state["last_alert_ts"], float)
+    assert state["episode_detected_at_iso"] is not None
+
+    # (ii) Second call: same tick, within-realert-TTL -> no push.
+    assert asw.codex_outage_pass(dry_run=False) is False
+    assert len(pushes) == 1  # still one
+
+
+def test_codex_outage_pass_kill_switch_skips_everything(tmp_path, monkeypatch):
+    """Env kill switch -> no reads, no writes, no pushes. Forbidden-raiser
+    stubs make a broken gate raise into the fail-soft path (which would
+    write an error sidecar row); a bare returns-False pin would be vacuous."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_DISABLE_CODEX_OUTAGE_PASS", "1")
+    state_path, sidecar_path, _sentinel_path = _codex_outage_isolate(asw, monkeypatch, tmp_path)
+
+    def _forbidden(*a, **kw):
+        raise AssertionError("no read/write/push under the kill switch")
+
+    monkeypatch.setattr(asw, "_codex_outage_read_sentinel", _forbidden)
+    monkeypatch.setattr(asw, "_telegram_push", _forbidden)
+    assert asw.codex_outage_pass(dry_run=False) is False
+    assert not state_path.exists() and not sidecar_path.exists()
+
+
+def test_codex_outage_pass_sentinel_absent_clears_episode(tmp_path, monkeypatch):
+    """A prior episode in state + sentinel gone this tick -> state
+    cleared, no push, no crash."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path, sentinel_path = _codex_outage_isolate(asw, monkeypatch, tmp_path)
+    # Seed a prior episode in state (no sentinel file exists yet).
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(
+        json.dumps(
+            {
+                "last_run_ts": 0.0,  # unthrottled
+                "episode_detected_at_iso": "2026-01-01T00:00:00+00:00",
+                "first_alert_ts": 100.0,
+                "last_alert_ts": 100.0,
+                "last_count": 3,
+                "last_count_ts": 100.0,
+            }
+        )
+    )
+    assert not sentinel_path.exists()
+
+    def _no_push(*a, **kw):
+        raise AssertionError("recovery tick must not push")
+
+    monkeypatch.setattr(asw, "_telegram_push", _no_push)
+    assert asw.codex_outage_pass(dry_run=False) is False
+    # Episode fields cleared; last_run_ts retained (attempt stamp).
+    state = json.loads(state_path.read_text())
+    assert state["episode_detected_at_iso"] is None
+    assert state["first_alert_ts"] is None
+    assert state["last_alert_ts"] is None
+    assert state["last_count"] is None
+    assert state["last_count_ts"] is None
+    assert isinstance(state["last_run_ts"], float)
+    assert not sidecar_path.exists()
+
+
+def test_codex_outage_pass_sentinel_corrupt_fail_open(tmp_path, monkeypatch):
+    """Corrupt JSON at the sentinel path -> no push, no crash, no
+    codex-outage sidecar row for the corrupt sentinel (fail-open reader
+    returns None; the sentinel-absent branch fires the recovery path
+    with NO prior episode in state, so nothing is written)."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path, sentinel_path = _codex_outage_isolate(asw, monkeypatch, tmp_path)
+    sentinel_path.write_text("not json {")
+
+    def _no_push(*a, **kw):
+        raise AssertionError("corrupt sentinel must not push")
+
+    monkeypatch.setattr(asw, "_telegram_push", _no_push)
+    assert asw.codex_outage_pass(dry_run=False) is False
+    # The attempt-stamp state file exists (throttle stamp), but no episode
+    # cleared / no error sidecar row (a corrupt sentinel is a fail-OPEN
+    # read, not an exception at the top-level guard).
+    assert state_path.exists()
+    assert not sidecar_path.exists()
+
+
+def test_codex_outage_pass_dry_run_writes_no_state(tmp_path, monkeypatch):
+    """dry_run=True on a firing tick -> zero disk writes (state, sidecar).
+    The push stub still records what WOULD have been pushed so a hollow
+    dry_run implementation cannot pass."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path, sentinel_path = _codex_outage_isolate(asw, monkeypatch, tmp_path)
+    _write_sentinel(sentinel_path, detected_ago_h=25.0, remaining_h=12 * 24)
+    monkeypatch.setattr(asw, "_codex_outage_bounded_skip_count", lambda _d: (3, False))
+    pushes: list[str] = []
+    # The real _telegram_push honors dry_run (prints a [dry-run] line and
+    # skips the notif_enqueue subprocess) — stub it so we can PROVE the
+    # pass propagated dry_run to it AND still called it (fire path taken).
+    monkeypatch.setattr(
+        asw,
+        "_telegram_push",
+        lambda msg, dry_run: pushes.append((msg, dry_run)) or True,
+    )
+    assert asw.codex_outage_pass(dry_run=True) is True
+    # Fire path taken (msg composed, dry_run flag threaded).
+    assert len(pushes) == 1
+    assert pushes[0][1] is True
+    # No disk writes: neither the state singleton nor the sidecar file exists.
+    assert not state_path.exists()
+    assert not sidecar_path.exists()
+
+
+def test_codex_outage_pass_top_level_exception_fail_soft(tmp_path, monkeypatch, capsys):
+    """Monkeypatch the reader to RAISE -> pass returns False, prints
+    stderr, writes ONE codex-outage-error sidecar row, does NOT crash."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path, _sentinel_path = _codex_outage_isolate(asw, monkeypatch, tmp_path)
+
+    def _boom(_now):
+        raise RuntimeError("sentinel reader exploded")
+
+    def _no_push(*a, **kw):
+        raise AssertionError("crashed reader must not push")
+
+    monkeypatch.setattr(asw, "_codex_outage_read_sentinel", _boom)
+    monkeypatch.setattr(asw, "_telegram_push", _no_push)
+    assert asw.codex_outage_pass(dry_run=False) is False
+    err = capsys.readouterr().err
+    assert "codex-outage: pass failed (fail-soft): sentinel reader exploded" in err
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert len(rows) == 1
+    assert rows[0]["kind"] == "codex-outage-error"
+    assert "sentinel reader exploded" in rows[0]["error"]
+    # The attempt stamp was saved BEFORE the collect (bounds the crash
+    # rate to one row per interval); no episode fp/key written.
+    state = json.loads(state_path.read_text())
+    assert isinstance(state["last_run_ts"], float)
+    assert "episode_detected_at_iso" not in state
+
+
+def test_codex_outage_pass_never_mutates_sentinel(tmp_path, monkeypatch):
+    """Durability pin (plan §12 c31): a FIRING pass MUST leave the
+    ``.claude/cache/codex-quota-exhausted-until`` file BYTE-IDENTICAL
+    before vs after — the hard invariant from the task body's Scope
+    section ('Read-only w.r.t. the sentinel'). Mirrors
+    :func:`test_registry_drift_pass_report_only_never_applies` and
+    :func:`test_completed_unmerged_pass_never_mutates_status_or_merges`.
+    """
+    import autonomous_session_watch as asw
+
+    _state_path, _sidecar_path, sentinel_path = _codex_outage_isolate(asw, monkeypatch, tmp_path)
+    _write_sentinel(sentinel_path, detected_ago_h=25.0, remaining_h=12 * 24)
+    before = sentinel_path.read_bytes()
+    before_stat = sentinel_path.stat()
+    monkeypatch.setattr(asw, "_codex_outage_bounded_skip_count", lambda _d: (0, False))
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: True)
+    assert asw.codex_outage_pass(dry_run=False) is True
+    after = sentinel_path.read_bytes()
+    after_stat = sentinel_path.stat()
+    assert before == after, "sentinel bytes changed — the pass MUTATED it"
+    # mtime + size must also be byte-identical (an atomic tmp+rename would
+    # keep bytes but change the inode/mtime).
+    assert before_stat.st_size == after_stat.st_size
+    assert before_stat.st_mtime == after_stat.st_mtime
+
+
+# ─── Bounded-scan count (2) ──────────────────────────────────────────────────
+
+
+def test_codex_outage_count_bounded_scan_registry_only(tmp_path, monkeypatch):
+    """Synthetic tasks/ tree with 3 events.jsonl (2 carry the skip phrase,
+    1 does not) — detected_at set so the mtime pre-filter keeps all three;
+    the scanner reads via task_workflow.registry_path() + json.loads (the
+    triage-observer pattern), NOT a filesystem walk."""
+    import autonomous_session_watch as asw
+
+    # Build a minimal REGISTRY snapshot pointing at three synthetic task dirs.
+    # reg_root is resolved as registry_path().parent.parent, so the registry
+    # must live at <reg_root>/tasks/REGISTRY.json (the triage-observer
+    # convention in scripts/autonomous_session_watch.py:5654-5665).
+    reg_root = tmp_path
+    tasks_root = reg_root / "tasks"
+    (tasks_root / "running" / "1").mkdir(parents=True, exist_ok=True)
+    (tasks_root / "running" / "2").mkdir(parents=True, exist_ok=True)
+    (tasks_root / "running" / "3").mkdir(parents=True, exist_ok=True)
+    e1 = tasks_root / "running" / "1" / "events.jsonl"
+    e2 = tasks_root / "running" / "2" / "events.jsonl"
+    e3 = tasks_root / "running" / "3" / "events.jsonl"
+    e1.write_text(
+        '{"ts":"t","kind":"epm:progress","note":"codex composers skipped — quota sentinel"}\n'
+    )
+    e2.write_text('{"ts":"t","kind":"epm:progress","note":"unrelated marker"}\n')
+    e3.write_text(
+        '{"ts":"t","kind":"epm:progress","note":"other note"}\n'
+        '{"ts":"t","kind":"epm:progress","note":"codex composers skipped — again"}\n'
+    )
+    registry = tasks_root / "REGISTRY.json"
+    registry.write_text(
+        json.dumps(
+            {
+                "tasks": {
+                    "1": {"path": "tasks/running/1"},
+                    "2": {"path": "tasks/running/2"},
+                    "3": {"path": "tasks/running/3"},
+                }
+            }
+        )
+    )
+    # Monkeypatch registry_path on the LAZY-IMPORTED module so the scanner's
+    # `from ... import registry_path` picks up our tmp path.
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "registry_path", lambda: registry)
+    # detected_at_unix at 0 so the mtime pre-filter keeps everything.
+    count, overflowed = asw._codex_outage_bounded_skip_count(0.0)
+    assert count == 2  # e1 (1 hit) + e3 (1 hit); e2 has none
+    assert overflowed is False
+
+
+def test_codex_outage_count_none_on_enumerator_failure(tmp_path, monkeypatch):
+    """Monkeypatch task_workflow.registry_path to RAISE -> count returns
+    (None, False); the push text then prints 'count not available'."""
+    import autonomous_session_watch as asw
+
+    # Also verify the pass composes the graceful fallback message.
+    state_path, sidecar_path, sentinel_path = _codex_outage_isolate(asw, monkeypatch, tmp_path)
+    _write_sentinel(sentinel_path, detected_ago_h=25.0, remaining_h=12 * 24)
+
+    def _boom():
+        raise RuntimeError("registry unreadable")
+
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "registry_path", _boom)
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
+
+    # Unit-level: the enumerator returns (None, False).
+    count, overflowed = asw._codex_outage_bounded_skip_count(0.0)
+    assert count is None
+    assert overflowed is False
+
+    # Integration: the pass push text names the fallback.
+    assert asw.codex_outage_pass(dry_run=False) is True
+    assert len(pushes) == 1
+    assert "single-Claude round count not available" in pushes[0]
+    # Sidecar records the None value honestly (no fabricated 0).
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert rows[0]["skipped_rounds"] is None
+    # State-file writes still succeeded.
+    assert state_path.exists()
+
+
+# ─── Docstring lint pin (1) ──────────────────────────────────────────────────
+
+
+def test_codex_outage_docstring_pass_count_lint_stays_green():
+    """The Durability pin (plan §12 c31): after the edit,
+    workflow_lint.check_asw_docstring_pass_count() must return an empty
+    error list — the docstring header digit, the numbered-item count, and
+    the live *_pass set in main() are all reconciled to 31 passes."""
+    import workflow_lint
+
+    errors = workflow_lint.check_asw_docstring_pass_count()
+    assert errors == [], f"docstring pass-count lint fails after the edit: {errors!r}"
