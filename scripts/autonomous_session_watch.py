@@ -7585,7 +7585,7 @@ def completed_unmerged_pass(dry_run: bool, now: float | None = None) -> None:
 
 DATA_REPO_PARTIAL_BUNDLE = "superkaiba1/explore-persona-space-data"
 # Hourly self-gate matches registry-drift/completed-unmerged precedent —
-# a strand lives on hours-to-days-to-weeks; every-10-min tick is 6× the
+# a strand lives on hours-to-days-to-weeks; every-10-min tick is 6x the
 # cost of scoped HF listings for < 50 min better detection latency. Env
 # EPM_PARTIAL_BUNDLE_INTERVAL_HOURS, read at CALL time; lo=0.0 lets a
 # live smoke force a run.
@@ -7861,6 +7861,129 @@ def _partial_bundle_scoped_listing(api, issue: int) -> list[str] | None:
         return None
 
 
+def _partial_bundle_reconcile_one_issue(
+    api,
+    issue: int,
+    new_alerted: dict,
+    now: float,
+    realert_h: float,
+    dry_run: bool,
+) -> bool:
+    """Per-issue reconciliation body of :func:`partial_bundle_pass` (task #1704).
+
+    Lists ``issue<N>_partial/`` on the HF data repo, groups by ``attempt_id``,
+    classifies each bundle, diffs the extracted bundle-relative eval paths
+    against the committed ``eval_results/issue_<N>/`` tree, and emits ONE
+    sidecar row + ONE deduped ``_telegram_push`` per newly-flagged
+    (issue, attempt_id, band). Mutates ``new_alerted`` in place with the
+    per-key first-flagged / last-alert timestamps. Returns True when any
+    (attempt_id, band) fired this call.
+
+    ESCALATE-ONLY under the same contract as the outer pass: NEVER
+    auto-commits, NEVER deletes a bundle, NEVER posts task markers. Every
+    Hub / git failure is caught by the caller's fail-soft envelope; this
+    helper writes ``partial-bundle-hub-error`` / ``partial-bundle-git-error``
+    sidecar rows for issue-scoped failures and continues to the next
+    (issue, attempt_id).
+    """
+    files = _partial_bundle_scoped_listing(api, issue)
+    if files is None:
+        _append_partial_bundle_sidecar(
+            {"kind": "partial-bundle-hub-error", "issue": issue},
+            dry_run,
+        )
+        return False
+    if not files:
+        return False  # no bundle for this issue (A2)
+    # Group by attempt_id — second path segment of
+    # `issue<N>_partial/<attempt_id>/...`. Malformed / short
+    # paths are skipped with a stderr debug line.
+    by_attempt: dict[str, list[str]] = {}
+    for f in files:
+        parts = f.split("/", 2)
+        if len(parts) >= 3:
+            by_attempt.setdefault(parts[1], []).append(f)
+        else:
+            print(
+                f"  partial-bundle: skipping malformed path (issue {issue}): {f}",
+                file=sys.stderr,
+            )
+    if not by_attempt:
+        return False
+
+    committed = _committed_eval_paths(issue)
+    if committed is None:
+        _append_partial_bundle_sidecar(
+            {"kind": "partial-bundle-git-error", "issue": issue},
+            dry_run,
+        )
+        return False
+
+    flagged_any = False
+    for att_id, att_files in sorted(by_attempt.items()):
+        cls = _classify_bundle_completeness(att_files)
+        if cls in ("no_result_payload", "persist_killed"):
+            # KILLED-EARLY or KILLED-MID-PERSIST — nothing to
+            # reconcile against git; one debug log line per
+            # skip so operators can spot the class.
+            print(f"  partial-bundle: issue={issue} att={att_id} cls={cls} — skipping")
+            continue
+        bundle_paths = _extract_bundle_result_paths(issue, att_id, att_files)
+        missing = [p for p in bundle_paths if p not in committed]
+        if not missing:
+            continue
+
+        key = f"{issue}|{att_id}|stranded_eval_results"
+        entry = new_alerted.get(key)
+        last_alert = entry.get("last_alert_ts") if isinstance(entry, dict) else None
+        dedup = isinstance(last_alert, int | float) and (now - last_alert) <= realert_h * 3600.0
+        if dedup:
+            new_alerted[key] = {
+                **(entry if isinstance(entry, dict) else {}),
+                "last_alert_ts": last_alert,
+            }
+            continue
+        new_alerted[key] = {
+            "first_flagged_ts": (
+                entry.get("first_flagged_ts", now) if isinstance(entry, dict) else now
+            ),
+            "last_alert_ts": now,
+        }
+        flagged_any = True
+        print(
+            f"  partial-bundle: STRANDED issue={issue} att={att_id} "
+            f"missing={len(missing)} signal={cls}"
+        )
+        _append_partial_bundle_sidecar(
+            {
+                "kind": "partial-bundle-stranded",
+                "issue": issue,
+                "attempt_id": att_id,
+                "band": "stranded_eval_results",
+                "completeness_signal": cls,
+                "n_missing": len(missing),
+                "missing_paths": missing[:20],
+                "bundle_hub_prefix": (f"issue{issue}_partial/{att_id}/eval_results_issue_{issue}/"),
+            },
+            dry_run,
+        )
+        # Thread the completeness signal into the push text
+        # verbatim so the operator sees the weaker
+        # `workload_ts_backstop` band at a glance (Phase-2
+        # Alternatives / Statistics concern).
+        _telegram_push(
+            f"partial-bundle STRANDED (issue #{issue}, att {att_id}, "
+            f"{len(missing)} eval JSONs on HF with no git counterpart; "
+            f"completeness_signal={cls}). Investigate: `hf_hub_download "
+            f"--repo-type dataset {DATA_REPO_PARTIAL_BUNDLE} "
+            f"issue{issue}_partial/{att_id}/...` then verify + commit "
+            f"via #{issue}'s clean-result path. NEVER auto-committed; "
+            f"NEVER deleted.",
+            dry_run,
+        )
+    return flagged_any
+
+
 def partial_bundle_pass(dry_run: bool) -> bool:
     """ESCALATE-ONLY reconciliation of HF ``issue<N>_partial/<attempt_id>/``
     crash-persist bundles against the committed ``eval_results/issue_<N>/``
@@ -7883,7 +8006,8 @@ def partial_bundle_pass(dry_run: bool) -> bool:
     issue; marker posts NEVER go via the ``task.py`` subprocess). Hourly
     self-gate throttled, per-pass listing-capped with a persisted cursor
     so tail-of-list issues never starve. Returns True when any (issue,
-    attempt_id, band) fired this run."""
+    attempt_id, band) fired this run. The per-issue body is extracted to
+    :func:`_partial_bundle_reconcile_one_issue`."""
     if not _partial_bundle_enabled():
         print("  partial-bundle: disabled via EPM_DISABLE_PARTIAL_BUNDLE_AUDIT; skipping")
         return False
@@ -7946,104 +8070,15 @@ def partial_bundle_pass(dry_run: bool) -> bool:
         flagged_any = False
 
         for issue in window:
-            files = _partial_bundle_scoped_listing(api, issue)
-            if files is None:
-                _append_partial_bundle_sidecar(
-                    {"kind": "partial-bundle-hub-error", "issue": issue},
-                    dry_run,
-                )
-                continue
-            if not files:
-                continue  # no bundle for this issue (A2)
-            # Group by attempt_id — second path segment of
-            # `issue<N>_partial/<attempt_id>/...`. Malformed / short
-            # paths are skipped with a stderr debug line.
-            by_attempt: dict[str, list[str]] = {}
-            for f in files:
-                parts = f.split("/", 2)
-                if len(parts) >= 3:
-                    by_attempt.setdefault(parts[1], []).append(f)
-                else:
-                    print(
-                        f"  partial-bundle: skipping malformed path (issue {issue}): {f}",
-                        file=sys.stderr,
-                    )
-            if not by_attempt:
-                continue
-
-            committed = _committed_eval_paths(issue)
-            if committed is None:
-                _append_partial_bundle_sidecar(
-                    {"kind": "partial-bundle-git-error", "issue": issue},
-                    dry_run,
-                )
-                continue
-
-            for att_id, att_files in sorted(by_attempt.items()):
-                cls = _classify_bundle_completeness(att_files)
-                if cls in ("no_result_payload", "persist_killed"):
-                    # KILLED-EARLY or KILLED-MID-PERSIST — nothing to
-                    # reconcile against git; one debug log line per
-                    # skip so operators can spot the class.
-                    print(f"  partial-bundle: issue={issue} att={att_id} cls={cls} — skipping")
-                    continue
-                bundle_paths = _extract_bundle_result_paths(issue, att_id, att_files)
-                missing = [p for p in bundle_paths if p not in committed]
-                if not missing:
-                    continue
-
-                key = f"{issue}|{att_id}|stranded_eval_results"
-                entry = new_alerted.get(key)
-                last_alert = entry.get("last_alert_ts") if isinstance(entry, dict) else None
-                dedup = (
-                    isinstance(last_alert, int | float) and (now - last_alert) <= realert_h * 3600.0
-                )
-                if dedup:
-                    new_alerted[key] = {
-                        **(entry if isinstance(entry, dict) else {}),
-                        "last_alert_ts": last_alert,
-                    }
-                    continue
-                new_alerted[key] = {
-                    "first_flagged_ts": (
-                        entry.get("first_flagged_ts", now) if isinstance(entry, dict) else now
-                    ),
-                    "last_alert_ts": now,
-                }
+            if _partial_bundle_reconcile_one_issue(
+                api,
+                issue,
+                new_alerted,
+                now,
+                realert_h,
+                dry_run,
+            ):
                 flagged_any = True
-                print(
-                    f"  partial-bundle: STRANDED issue={issue} att={att_id} "
-                    f"missing={len(missing)} signal={cls}"
-                )
-                _append_partial_bundle_sidecar(
-                    {
-                        "kind": "partial-bundle-stranded",
-                        "issue": issue,
-                        "attempt_id": att_id,
-                        "band": "stranded_eval_results",
-                        "completeness_signal": cls,
-                        "n_missing": len(missing),
-                        "missing_paths": missing[:20],
-                        "bundle_hub_prefix": (
-                            f"issue{issue}_partial/{att_id}/eval_results_issue_{issue}/"
-                        ),
-                    },
-                    dry_run,
-                )
-                # Thread the completeness signal into the push text
-                # verbatim so the operator sees the weaker
-                # `workload_ts_backstop` band at a glance (Phase-2
-                # Alternatives / Statistics concern).
-                _telegram_push(
-                    f"partial-bundle STRANDED (issue #{issue}, att {att_id}, "
-                    f"{len(missing)} eval JSONs on HF with no git counterpart; "
-                    f"completeness_signal={cls}). Investigate: `hf_hub_download "
-                    f"--repo-type dataset {DATA_REPO_PARTIAL_BUNDLE} "
-                    f"issue{issue}_partial/{att_id}/...` then verify + commit "
-                    f"via #{issue}'s clean-result path. NEVER auto-committed; "
-                    f"NEVER deleted.",
-                    dry_run,
-                )
 
         state["alerted"] = new_alerted
         state["enum_cursor_idx"] = next_cursor
