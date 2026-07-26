@@ -20150,6 +20150,634 @@ def test_root_draft_enumeration_respects_gitignore(tmp_path):
     ]
 
 
+# ─── Unfolded-round observer pass (task #1712; origin incident #1639) ────────
+
+
+def _ur_isolate(asw, monkeypatch, tmp_path: Path) -> tuple[Path, Path]:
+    """Point the pass's state (AUTONOMOUS_REGISTRY_DIR) + sidecar
+    (PROJECT_ROOT-derived) at tmp_path; return (state_path,
+    sidecar_path). Mirrors :func:`_rd_isolate`."""
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path / "registry")
+    monkeypatch.setattr(asw, "PROJECT_ROOT", tmp_path / "root")
+    (tmp_path / "root").mkdir(parents=True, exist_ok=True)
+    return (
+        tmp_path / "registry" / "unfolded-round-observer.json",
+        tmp_path / "root" / ".claude" / "cache" / "unfolded-round-events.jsonl",
+    )
+
+
+def _ur_setup_registry(tmp_path: Path, monkeypatch, tasks: dict) -> Path:
+    """Write a hermetic REGISTRY.json at ``<tmp_path>/tasks/REGISTRY.json``
+    and rebind :func:`registry_path` to it. ``tasks`` is the map that lands
+    in REGISTRY.json's ``tasks`` key: ``{"<id>": {"status": ..., "path":
+    ..., "has_clean_result": ...}}`` — path relative to ``tmp_path`` (the
+    canonical shape: ``tasks/<status>/<N>``). Returns ``tmp_path`` (the
+    reg-root the pass resolves task paths against via
+    ``registry_path().parent.parent``); the caller drops body.md files at
+    ``<tmp_path>/<path>/body.md``."""
+    tasks_root_parent = tmp_path
+    reg_dir = tasks_root_parent / "tasks"
+    reg_dir.mkdir(parents=True, exist_ok=True)
+    reg_file = reg_dir / "REGISTRY.json"
+    reg_file.write_text(json.dumps({"highest_id": 0, "tasks": tasks}))
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "registry_path", lambda: reg_file)
+    # asw lazy-imports registry_path from task_workflow, so patching TW is enough.
+    return tasks_root_parent
+
+
+def _ur_write_body(
+    reg_root: Path, rel_path: str, body_text: str, events_mtime: float | None = None
+) -> Path:
+    """Create ``<reg_root>/<rel_path>/`` with body.md + a fresh
+    events.jsonl (so the sweep-helper's mtime freshness gate passes);
+    return the task directory. ``events_mtime`` overrides the events.jsonl
+    mtime (for the T-forgotten-fresh cases)."""
+    import os as _os
+
+    task_dir = reg_root / rel_path
+    task_dir.mkdir(parents=True, exist_ok=True)
+    (task_dir / "body.md").write_text(body_text)
+    events = task_dir / "events.jsonl"
+    events.write_text('{"kind": "epm:status-changed"}\n')
+    if events_mtime is not None:
+        _os.utime(events, (events_mtime, events_mtime))
+    return task_dir
+
+
+# A minimal hermetic body carrying all 4 real #1639 phrases + a
+# would-have-landed artifact right next to them. #1639's actual body
+# names sibling artifacts (`scripts/issue1310_xpersona_similarity_v2.py`,
+# already in **Repro:**) but never inlines the round-3 assistant test
+# script; the plan (§T10) directs a subset carrying the phrases plus a
+# stub-True artifact that IS mentioned near a phrase — this is the
+# workflow-fix shape the pass exists to catch.
+_UR_1639_PHRASES_BODY = """---
+title: 1639 test
+kind: experiment
+status: awaiting_promotion
+has_clean_result: true
+---
+
+# 1639 shape (hermetic)
+
+## Goal
+
+**Broader narrative:** a direct assistant-inclusion test using
+`scripts/issue1310_xpersona_assistant_test.py` is running as a follow-up
+round and folds here on landing.
+
+## Methodology
+
+**Design:** ...
+
+## Results
+
+### xpersona
+Nothing about the assistant test yet — it was running at write time.
+
+**Repro:**
+- Code (branch main): `scripts/issue1310_xpersona_similarity_v2.py` @9edaab4fa4
+- Round 3 — the assistant direct test — was running at write time; its
+  results and figure fold into this body on landing.
+
+**Context:** created 2026-07-23; origin prompt: hermetic fixture.
+"""
+
+
+# ─── T1: positive fixture — body naming a landed script is flagged ───
+
+
+def test_unfolded_round_pass_flags_landed_script(isolated_registry, tmp_path, monkeypatch):
+    """T1 (plan §4): a body carrying a fold-cue phrase alongside a
+    ``scripts/*.py`` path already on ``main``, with no ``**Repro:**`` /
+    ``## Results`` mention, is flagged. Assert: one sidecar row + one
+    push line + state singleton records the alert."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _ur_isolate(asw, monkeypatch, tmp_path)
+    tasks_root = _ur_setup_registry(
+        tmp_path,
+        monkeypatch,
+        {
+            "1639": {
+                "status": "awaiting_promotion",
+                "path": "tasks/awaiting_promotion/1639",
+                "has_clean_result": True,
+            }
+        },
+    )
+    body = (
+        "# t\n\nA follow-up using scripts/issue1310_xpersona_assistant_test.py "
+        "folds here on landing.\n\n## Results\n\n(nothing about the assistant "
+        "test yet)\n"
+    )
+    _ur_write_body(tasks_root, "tasks/awaiting_promotion/1639", body)
+    monkeypatch.setattr(asw, "_unfolded_git_cat_file_main", lambda p: True)
+    monkeypatch.setattr(asw, "_unfolded_git_commit_on_main", lambda s: False)
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda m, dry_run: pushes.append(m) or True)
+
+    assert asw.unfolded_round_pass(dry_run=False) is True
+    assert len(pushes) == 1 and "issue1310_xpersona_assistant_test.py" in pushes[0]
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["kind"] == "unfolded-round"
+    assert row["issue"] == 1639
+    assert row["artifact"] == "scripts/issue1310_xpersona_assistant_test.py"
+    assert row["artifact_kind"] == "script"
+    assert row["task_status"] == "awaiting_promotion"
+    state = json.loads(state_path.read_text())
+    fired = state["issues"]["1639"]["fired"]
+    key = "script::scripts/issue1310_xpersona_assistant_test.py"
+    assert key in fired and isinstance(fired[key]["last_alert_ts"], float)
+
+
+# ─── T2: negative fixture — body's Repro block already names the artifact ───
+
+
+def test_unfolded_round_pass_silent_when_body_names_result(
+    isolated_registry, tmp_path, monkeypatch
+):
+    """T2 (plan §4): same body as T1 but the ``**Repro:**`` code list
+    additionally names the artifact — the real ``unfolded_body_names_result``
+    path returns True and the pass stays silent. No sidecar row, no push,
+    the state singleton records no alert."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _ur_isolate(asw, monkeypatch, tmp_path)
+    tasks_root = _ur_setup_registry(
+        tmp_path,
+        monkeypatch,
+        {
+            "9": {
+                "status": "awaiting_promotion",
+                "path": "tasks/awaiting_promotion/9",
+                "has_clean_result": True,
+            }
+        },
+    )
+    body = (
+        "# t\n\nA follow-up using scripts/issue1310_xpersona_assistant_test.py "
+        "folds here on landing.\n\n## Results\n\n(nothing yet)\n\n"
+        "**Repro:**\n- Code: `scripts/issue1310_xpersona_assistant_test.py` @9e65fe09ad\n"
+    )
+    _ur_write_body(tasks_root, "tasks/awaiting_promotion/9", body)
+    monkeypatch.setattr(asw, "_unfolded_git_cat_file_main", lambda p: True)
+    monkeypatch.setattr(asw, "_unfolded_git_commit_on_main", lambda s: False)
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda m, dry_run: pushes.append(m) or True)
+
+    assert asw.unfolded_round_pass(dry_run=False) is False
+    assert pushes == []
+    assert not sidecar_path.exists()
+    # State file WAS written (last_run_ts) but records no per-issue alert.
+    state = json.loads(state_path.read_text())
+    assert state.get("issues", {}).get("9", {}).get("fired", {}) == {}
+
+
+# ─── T3: NEVER-mutate invariant — subprocess pin + body-bytes pin ───
+
+
+def test_unfolded_round_pass_never_mutates_task_state(isolated_registry, tmp_path, monkeypatch):
+    """T3 (plan §4): the ESCALATE-ONLY hard invariant. Monkeypatches
+    ``subprocess.run`` to record every argv it sees, then asserts (a) no
+    argv starts a mutating ``task.py`` subcommand, (b) no ``git`` write
+    (commit / push / rm / checkout / reset / merge / add) is issued, and
+    (c) the task's ``body.md`` file is byte-identical pre- and
+    post-pass."""
+    import hashlib
+    import subprocess as _sp
+
+    import autonomous_session_watch as asw
+
+    _ur_isolate(asw, monkeypatch, tmp_path)
+    tasks_root = _ur_setup_registry(
+        tmp_path,
+        monkeypatch,
+        {
+            "1639": {
+                "status": "awaiting_promotion",
+                "path": "tasks/awaiting_promotion/1639",
+                "has_clean_result": True,
+            }
+        },
+    )
+    body = (
+        "# t\n\nA follow-up using scripts/issue1310_xpersona_assistant_test.py "
+        "folds here on landing.\n\n## Results\n\n(nothing yet)\n"
+    )
+    body_path = _ur_write_body(tasks_root, "tasks/awaiting_promotion/1639", body) / "body.md"
+    pre_hash = hashlib.sha256(body_path.read_bytes()).hexdigest()
+
+    # Force the fs probe True so the flag actually fires (exercising the
+    # emit path — the invariant would trivially hold on a no-fire pass).
+    monkeypatch.setattr(asw, "_unfolded_git_cat_file_main", lambda p: True)
+    monkeypatch.setattr(asw, "_unfolded_git_commit_on_main", lambda s: False)
+    monkeypatch.setattr(asw, "_telegram_push", lambda m, dry_run: True)
+
+    argvs: list[list[str]] = []
+
+    def _record_run(cmd, *a, **kw):
+        argvs.append(list(cmd))
+        return _sp.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(asw.subprocess, "run", _record_run)
+
+    assert asw.unfolded_round_pass(dry_run=False) is True
+
+    # (a) no mutating task.py subcommand.
+    _mutators = {
+        "set-body",
+        "set-status",
+        "add-tag",
+        "remove-tag",
+        "promote",
+        "post-marker",
+        "set-title",
+        "set-clean-result",
+    }
+    for cmd in argvs:
+        has_task = any("task.py" in str(tok) for tok in cmd)
+        if has_task:
+            assert not (set(cmd) & _mutators), f"forbidden task.py mutator: {cmd}"
+    # (b) no git write ops.
+    for cmd in argvs:
+        if not cmd or "git" not in str(cmd[0]):
+            continue
+        # The whole cmd tokens set — reject any of the write verbs.
+        forbidden = {"commit", "push", "rm", "checkout", "reset", "merge", "add"}
+        # Skip the read-only forms that HAVE `--is-ancestor` etc.
+        if set(cmd) & forbidden:
+            pytest.fail(f"forbidden git write in cmd: {cmd}")
+    # (c) body.md byte-identical.
+    assert hashlib.sha256(body_path.read_bytes()).hexdigest() == pre_hash
+
+
+# ─── T4: fail-open — malformed body / git raise → silent skip ───
+
+
+def test_unfolded_round_pass_fail_open_on_body_and_probe_errors(
+    isolated_registry, tmp_path, monkeypatch
+):
+    """T4 (plan §4): every uncertain condition degrades to silence — an
+    empty body, an unreadable body, and a git-probe that raises all
+    produce zero fires. Assert: return False, no sidecar row, no push,
+    no crash."""
+    import subprocess as _sp
+
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _ur_isolate(asw, monkeypatch, tmp_path)
+    tasks_root = _ur_setup_registry(
+        tmp_path,
+        monkeypatch,
+        {
+            "1": {
+                "status": "awaiting_promotion",
+                "path": "tasks/awaiting_promotion/1",
+                "has_clean_result": True,
+            }
+        },
+    )
+    # Case: body is empty ("").
+    _ur_write_body(tasks_root, "tasks/awaiting_promotion/1", "")
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda m, dry_run: pushes.append(m) or True)
+
+    # Even so, force the probe to raise so we exercise the fail-open path.
+    def _boom(*a, **kw):
+        raise _sp.SubprocessError("simulated git raise")
+
+    monkeypatch.setattr(asw, "_unfolded_git_cat_file_main", _boom)
+    monkeypatch.setattr(asw, "_unfolded_git_commit_on_main", _boom)
+
+    assert asw.unfolded_round_pass(dry_run=False) is False
+    assert pushes == []
+    assert not sidecar_path.exists()
+    # State file may exist (last_run_ts) but must not carry an alert.
+    if state_path.exists():
+        state = json.loads(state_path.read_text())
+        assert state.get("issues", {}).get("1", {}).get("fired", {}) == {}
+
+
+# ─── T5: idempotency / dedup within the re-alert TTL ───
+
+
+def test_unfolded_round_pass_dedups_within_realert_ttl(isolated_registry, tmp_path, monkeypatch):
+    """T5 (plan §4): call the pass twice back-to-back within the re-alert
+    TTL; the second call fires zero new alerts (sidecar unchanged, no
+    new push, state's ``last_alert_ts`` unchanged)."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _ur_isolate(asw, monkeypatch, tmp_path)
+    tasks_root = _ur_setup_registry(
+        tmp_path,
+        monkeypatch,
+        {
+            "1639": {
+                "status": "awaiting_promotion",
+                "path": "tasks/awaiting_promotion/1639",
+                "has_clean_result": True,
+            }
+        },
+    )
+    body = (
+        "# t\n\nA follow-up using scripts/issue1310_xpersona_assistant_test.py "
+        "folds here on landing.\n\n## Results\n\n(nothing yet)\n"
+    )
+    _ur_write_body(tasks_root, "tasks/awaiting_promotion/1639", body)
+    monkeypatch.setattr(asw, "_unfolded_git_cat_file_main", lambda p: True)
+    monkeypatch.setattr(asw, "_unfolded_git_commit_on_main", lambda s: False)
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda m, dry_run: pushes.append(m) or True)
+
+    assert asw.unfolded_round_pass(dry_run=False) is True
+    assert len(pushes) == 1
+    n_rows_1 = len(sidecar_path.read_text().splitlines())
+    state1 = json.loads(state_path.read_text())
+    last_ts_1 = state1["issues"]["1639"]["fired"][
+        "script::scripts/issue1310_xpersona_assistant_test.py"
+    ]["last_alert_ts"]
+
+    # Force the throttle to allow a second call this tick.
+    monkeypatch.setenv("EPM_UNFOLDED_ROUND_INTERVAL_HOURS", "0")
+    assert asw.unfolded_round_pass(dry_run=False) is False
+    assert len(pushes) == 1
+    assert len(sidecar_path.read_text().splitlines()) == n_rows_1
+    state2 = json.loads(state_path.read_text())
+    last_ts_2 = state2["issues"]["1639"]["fired"][
+        "script::scripts/issue1310_xpersona_assistant_test.py"
+    ]["last_alert_ts"]
+    assert last_ts_1 == last_ts_2
+
+
+# ─── T6: re-alert TTL — same fixture past TTL re-fires ───
+
+
+def test_unfolded_round_pass_realert_ttl(isolated_registry, tmp_path, monkeypatch):
+    """T6 (plan §4): shrink the re-alert TTL so the second call re-fires
+    the same artifact; sidecar gains a row, push fires again, and the
+    state's ``last_alert_ts`` refreshes."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _ur_isolate(asw, monkeypatch, tmp_path)
+    tasks_root = _ur_setup_registry(
+        tmp_path,
+        monkeypatch,
+        {
+            "1639": {
+                "status": "awaiting_promotion",
+                "path": "tasks/awaiting_promotion/1639",
+                "has_clean_result": True,
+            }
+        },
+    )
+    body = (
+        "# t\n\nA follow-up using scripts/issue1310_xpersona_assistant_test.py "
+        "folds here on landing.\n\n## Results\n\n(nothing yet)\n"
+    )
+    _ur_write_body(tasks_root, "tasks/awaiting_promotion/1639", body)
+    monkeypatch.setattr(asw, "_unfolded_git_cat_file_main", lambda p: True)
+    monkeypatch.setattr(asw, "_unfolded_git_commit_on_main", lambda s: False)
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda m, dry_run: pushes.append(m) or True)
+    # env: clamp both throttle and TTL below their lo=1.0 → the _env_float
+    # helper clamps to lo, so use its floor: 1.0h re-alert AND 1.0h
+    # interval. Manipulate the state file directly to simulate elapsed
+    # time.
+    monkeypatch.setenv("EPM_UNFOLDED_ROUND_INTERVAL_HOURS", "0")
+    monkeypatch.setenv("EPM_UNFOLDED_ROUND_REALERT_HOURS", "1")
+
+    assert asw.unfolded_round_pass(dry_run=False) is True
+    assert len(pushes) == 1
+    n_rows_1 = len(sidecar_path.read_text().splitlines())
+
+    # Age the alert stamp backwards by 2 hours so the TTL (1h) is crossed.
+    state = json.loads(state_path.read_text())
+    for entry in state["issues"]["1639"]["fired"].values():
+        entry["last_alert_ts"] = entry["last_alert_ts"] - 2 * 3600.0
+    state.pop("last_run_ts", None)  # so the throttle re-arms
+    state_path.write_text(json.dumps(state))
+
+    assert asw.unfolded_round_pass(dry_run=False) is True
+    assert len(pushes) == 2
+    assert len(sidecar_path.read_text().splitlines()) == n_rows_1 + 1
+
+
+# ─── T7: throttle self-gate — second call within interval is silent ───
+
+
+def test_unfolded_round_pass_throttle_self_gate(isolated_registry, tmp_path, monkeypatch):
+    """T7 (plan §4): the hourly self-gate blocks a second call within
+    ``EPM_UNFOLDED_ROUND_INTERVAL_HOURS``. Second-call return is False
+    with zero writes after the first stamp."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _ur_isolate(asw, monkeypatch, tmp_path)
+    tasks_root = _ur_setup_registry(
+        tmp_path,
+        monkeypatch,
+        {
+            "9": {
+                "status": "awaiting_promotion",
+                "path": "tasks/awaiting_promotion/9",
+                "has_clean_result": True,
+            }
+        },
+    )
+    # No fold-cue phrase — first call succeeds silently, second is
+    # throttle-silent. This tests the throttle path directly.
+    _ur_write_body(
+        tasks_root,
+        "tasks/awaiting_promotion/9",
+        "# t\n\nA normal body with no fold-cue phrase.\n",
+    )
+    monkeypatch.setattr(asw, "_telegram_push", lambda m, dry_run: True)
+
+    assert asw.unfolded_round_pass(dry_run=False) is False
+    state1 = json.loads(state_path.read_text())
+    stamp1 = state1["last_run_ts"]
+
+    # Immediate second call is throttled — must NOT overwrite last_run_ts.
+    assert asw.unfolded_round_pass(dry_run=False) is False
+    state2 = json.loads(state_path.read_text())
+    assert state2["last_run_ts"] == stamp1
+    assert not sidecar_path.exists()
+
+
+# ─── T8: GC on status leave — entry pruned when task exits sweep set ───
+
+
+def test_unfolded_round_pass_gc_on_status_leave(isolated_registry, tmp_path, monkeypatch):
+    """T8 (plan §4): after firing on issue 1639, if the task's status
+    later moves to ``completed`` (outside ``_UNFOLDED_ROUND_STATUSES``),
+    the next pass prunes the entry from state. Matches the
+    verdict-disagree observer's self-prune loop."""
+    import autonomous_session_watch as asw
+
+    state_path, _sidecar_path = _ur_isolate(asw, monkeypatch, tmp_path)
+    tasks_root = _ur_setup_registry(
+        tmp_path,
+        monkeypatch,
+        {
+            "1639": {
+                "status": "awaiting_promotion",
+                "path": "tasks/awaiting_promotion/1639",
+                "has_clean_result": True,
+            }
+        },
+    )
+    body = (
+        "# t\n\nA follow-up using scripts/issue1310_xpersona_assistant_test.py "
+        "folds here on landing.\n"
+    )
+    _ur_write_body(tasks_root, "tasks/awaiting_promotion/1639", body)
+    monkeypatch.setattr(asw, "_unfolded_git_cat_file_main", lambda p: True)
+    monkeypatch.setattr(asw, "_unfolded_git_commit_on_main", lambda s: False)
+    monkeypatch.setattr(asw, "_telegram_push", lambda m, dry_run: True)
+
+    assert asw.unfolded_round_pass(dry_run=False) is True
+    assert "1639" in json.loads(state_path.read_text())["issues"]
+
+    # Move the task to completed and re-run the pass with the throttle
+    # off; the GC prong should prune the state entry.
+    reg_file = tasks_root / "tasks" / "REGISTRY.json"
+    reg = json.loads(reg_file.read_text())
+    reg["tasks"]["1639"]["status"] = "completed"
+    reg_file.write_text(json.dumps(reg))
+    monkeypatch.setenv("EPM_UNFOLDED_ROUND_INTERVAL_HOURS", "0")
+    asw.unfolded_round_pass(dry_run=False)
+    state = json.loads(state_path.read_text())
+    assert "1639" not in state["issues"]
+
+
+# ─── T9: kill switch — EPM_DISABLE_UNFOLDED_ROUND_PASS=1 → no-op ───
+
+
+def test_unfolded_round_pass_kill_switch_skips_everything(tmp_path, monkeypatch):
+    """T9 (plan §4): the kill switch stops the pass before any
+    subprocess / enumeration / push. Matches the root-draft equivalent."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_DISABLE_UNFOLDED_ROUND_PASS", "1")
+    state_path, sidecar_path = _ur_isolate(asw, monkeypatch, tmp_path)
+
+    def _forbidden(*a, **kw):
+        raise AssertionError("no subprocess / probe under the kill switch")
+
+    monkeypatch.setattr(asw, "_unfolded_git_cat_file_main", _forbidden)
+    monkeypatch.setattr(asw, "_unfolded_git_commit_on_main", _forbidden)
+    monkeypatch.setattr(asw, "_telegram_push", _forbidden)
+
+    assert asw.unfolded_round_pass(dry_run=False) is False
+    assert not state_path.exists() and not sidecar_path.exists()
+
+
+# ─── T10: hermetic #1639 replay — the origin-incident-catch gate ───
+
+
+def test_unfolded_round_pass_flags_1639_replay(isolated_registry, tmp_path, monkeypatch):
+    """T10 (plan §4): a hermetic subset carrying #1639's actual four
+    fold-cue phrases + the round-3 script name near them + a stubbed
+    git-probe returning True flags exactly that artifact. This is the
+    'would this have caught the origin incident' check.
+
+    #1639's own body carries the 4 phrases but never inlines the round-3
+    ``scripts/issue1310_xpersona_assistant_test.py`` (the script Round-3
+    landed on ``main`` at 9e65fe09ad before the body absorbed it) — the
+    fixture matches the workflow-fix shape the pass exists to catch."""
+    import autonomous_session_watch as asw
+
+    _state_path, sidecar_path = _ur_isolate(asw, monkeypatch, tmp_path)
+    tasks_root = _ur_setup_registry(
+        tmp_path,
+        monkeypatch,
+        {
+            "1639": {
+                "status": "awaiting_promotion",
+                "path": "tasks/awaiting_promotion/1639",
+                "has_clean_result": True,
+            }
+        },
+    )
+    _ur_write_body(tasks_root, "tasks/awaiting_promotion/1639", _UR_1639_PHRASES_BODY)
+    monkeypatch.setattr(
+        asw,
+        "_unfolded_git_cat_file_main",
+        lambda p: p == "scripts/issue1310_xpersona_assistant_test.py",
+    )
+    monkeypatch.setattr(asw, "_unfolded_git_commit_on_main", lambda s: False)
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda m, dry_run: pushes.append(m) or True)
+
+    assert asw.unfolded_round_pass(dry_run=False) is True
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert any(
+        r["artifact"] == "scripts/issue1310_xpersona_assistant_test.py"
+        and r["artifact_kind"] == "script"
+        for r in rows
+    )
+    assert len(pushes) == 1
+
+
+# ─── T11: dry_run pin — dry-run performs zero side effects ───
+
+
+def test_unfolded_round_pass_dry_run_pin(isolated_registry, tmp_path, monkeypatch):
+    """T11 (plan §4): under ``dry_run=True`` the pass may DECIDE fires
+    but performs NO push / NO sidecar row / NO state mutation. A
+    follow-up call at ``dry_run=False`` still fires normally — proving
+    the dry branch never poisoned the dedup state."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _ur_isolate(asw, monkeypatch, tmp_path)
+    tasks_root = _ur_setup_registry(
+        tmp_path,
+        monkeypatch,
+        {
+            "1639": {
+                "status": "awaiting_promotion",
+                "path": "tasks/awaiting_promotion/1639",
+                "has_clean_result": True,
+            }
+        },
+    )
+    body = (
+        "# t\n\nA follow-up using scripts/issue1310_xpersona_assistant_test.py "
+        "folds here on landing.\n\n## Results\n\n(nothing yet)\n"
+    )
+    _ur_write_body(tasks_root, "tasks/awaiting_promotion/1639", body)
+    monkeypatch.setattr(asw, "_unfolded_git_cat_file_main", lambda p: True)
+    monkeypatch.setattr(asw, "_unfolded_git_commit_on_main", lambda s: False)
+    calls: list[bool] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda m, dry_run: calls.append(dry_run) or True)
+
+    # Dry-run call.
+    asw.unfolded_round_pass(dry_run=True)
+    # Sibling passes (root-draft) DO call telegram_push under dry_run
+    # with dry_run=True (the push helper is trusted to no-op the wire);
+    # the requirement is that no STATE writes and no sidecar rows land.
+    # Verify: sidecar file not created; state singleton absent.
+    assert not sidecar_path.exists()
+    assert not state_path.exists()
+    if calls:
+        assert all(c is True for c in calls)
+
+    # A follow-up dry_run=False call must still fire normally (proving
+    # dry-run left dedup state untouched).
+    calls.clear()
+    real_pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda m, dry_run: real_pushes.append(m) or True)
+    monkeypatch.setenv("EPM_UNFOLDED_ROUND_INTERVAL_HOURS", "0")
+    assert asw.unfolded_round_pass(dry_run=False) is True
+    assert len(real_pushes) == 1
+    assert sidecar_path.exists()
+    assert state_path.exists()
+
+
 # ─── Registry-drift audit pass (task #1439) ───────────────────────────────────
 
 

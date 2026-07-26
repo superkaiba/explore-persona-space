@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-31 passes ("pass" = one top-level per-tick action block in ``main()``'s
+32 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -10,9 +10,9 @@ in ``scripts/workflow_lint.py``). Item numbers below are STABLE
 IDENTIFIERS (cross-referenced throughout this docstring), NOT execution
 order. The per-tick execution order is: 1 (VM disk) -> 15 (data-disk) ->
 16 (happy-patch) -> 12 (CPU-guard) -> 17 (triage-observer) ->
-18 (verdict-disagree) -> 26 (root-draft) -> 27 (registry-drift) ->
-31 (codex-outage) -> 29 (completed-unmerged) -> 30 (urgent-park router) ->
-19 (VM-ledger reap) -> 20 (program-orchestrator
+18 (verdict-disagree) -> 32 (unfolded-round) -> 26 (root-draft) ->
+27 (registry-drift) -> 31 (codex-outage) -> 29 (completed-unmerged) ->
+30 (urgent-park router) -> 19 (VM-ledger reap) -> 20 (program-orchestrator
 recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
 -> 3 (pod-safety) -> 4 (stalled-detector) -> 5 (orphan sweep) ->
 11 (infra-drain) -> 21 (proposed-infra-sweep) -> 22 (capacity-retry) ->
@@ -652,6 +652,61 @@ adding a pass means adding a numbered item here AND bumping the digit:
    ``EPM_DISABLE_CODEX_OUTAGE_PASS=1``; ``--codex-outage-only`` runs just
    this pass (pair with ``--dry-run`` for a zero-write live smoke against
    the real sentinel). (:func:`codex_outage_pass`.)
+
+32. **Unfolded-round observer pass (#1712; origin incident #1639;
+   ESCALATE-ONLY; daemon-INDEPENDENT; runs right after pass 18
+   verdict-disagree).** Flags an ``awaiting_promotion`` / ``reviewing``
+   task whose body carries a pending-fold cue phrase (``UNFOLDED_PHRASES``:
+   "folds here on landing" / "folds into this body on landing" / "is
+   running as a follow-up round" / "running at write time" / "will fold
+   here" / "pending fold" / "pending analysis fold" — all grounded on
+   #1639's own body wording) on the SAME LINE (± ``PHRASE_WINDOW_LINES``,
+   2 lines each side) as an artifact name — a ``scripts/*.py`` path, a
+   7-40 hex commit SHA, or an ``eval_results/issue_<N>/...`` path — that
+   already resolves on ``main`` (read-only ``git --no-optional-locks
+   cat-file -e`` / ``rev-parse --verify`` / ``merge-base --is-ancestor``,
+   5s timeouts, NO ``git fetch``), and whose body does NOT carry a
+   result-section mention of that artifact (``**Repro:**`` code list, or
+   the ``## Results`` / ``## Findings`` H2 span). #1639 sat 2 days at
+   ``awaiting_promotion`` while ``scripts/issue1310_xpersona_assistant_test.py``
+   (round 3) was committed on ``main`` at ``9e65fe09ad`` and the body
+   never absorbed it; every other watcher pass structurally misses this
+   class (the tick cron is torn down at ``awaiting_promotion``, the
+   wedge lanes need failed wakes, the completed-unmerged pass audits
+   merges not results-folding). Sweep reuses
+   :func:`_triage_observer_sweep_issue` then filters to
+   ``{awaiting_promotion, reviewing}`` with ``has_clean_result: true``;
+   events.jsonl-mtime freshness gate ``EPM_UNFOLDED_ROUND_LOOKBACK_H``
+   (default 336h / 14d — covers a mentor-break park while the /daily and
+   /weekly sweeps own anything older). Hourly self-gate
+   (``EPM_UNFOLDED_ROUND_INTERVAL_HOURS``, 1h; attempt-stamp saved BEFORE
+   collecting so a crashing evaluation is bounded to one error sidecar
+   row per interval — the registry-drift precedent). Dedicated sidecar
+   (``.claude/cache/unfolded-round-events.jsonl``) every fired finding;
+   push cap ``EPM_UNFOLDED_ROUND_PUSH_CAP`` (default 5) individual push
+   lines with a rollover-summary push semantics from the triage
+   observer (#1167 — over-cap fires stay in the sidecar and appear as one
+   "+N more, see sidecar" summary at the end of the tick); NO task
+   markers (deliberate divergence from the completed-unmerged pass — an
+   unfolded round is a human-consumer signal targeting the promotion
+   decision, and posting on the task's events.jsonl would touch the
+   stream a resume ``/issue N`` session reads at Step 0 + risk resetting
+   the anti-liveness clocks the sibling observers depend on). Per-(issue,
+   artifact) fire-once dedup with a ``EPM_UNFOLDED_ROUND_REALERT_HOURS``
+   (default 168h / 7d) re-alert TTL in the state singleton
+   ``~/.eps-autonomous/unfolded-round-observer.json`` (atomic tmp+rename;
+   entries pruned when the task leaves the sweep set for good). NEVER
+   mutates status, never posts a task marker, never modifies ``body.md``,
+   never ``git`` write — pinned by test. Fail-open everywhere: an
+   unparseable body / a git-probe raise / a corrupt state file /
+   unresolvable-status all degrade toward silence (never a false
+   flag). ``paper: true`` tasks are SKIPPED in v1 — their bodies are thin
+   paper-stubs and the fold-cue phrase would fire on paper artifacts
+   differently; a future extension would read
+   ``docs/papers/issue_<N>/*.tex``. Kill switch
+   ``EPM_DISABLE_UNFOLDED_ROUND_PASS=1``; ``--unfolded-round-only`` runs
+   just this pass (pair with ``--dry-run`` for a live smoke).
+   (:func:`unfolded_round_pass`.)
 
 Why each pass exists
 --------------------
@@ -6379,6 +6434,667 @@ def root_draft_pass(dry_run: bool) -> bool:
         return bool(fires)
     except Exception as exc:  # top-level fail-soft: never take down the tick
         print(f"  root-draft: pass failed (fail-soft): {exc}", file=sys.stderr)
+        return False
+
+
+# ─── Unfolded-round observer pass (task #1712; origin incident #1639) ────────
+#
+# WHY: task #1639 sat 2 days at `awaiting_promotion` while
+# `scripts/issue1310_xpersona_assistant_test.py` (round 3) was already
+# committed on `main` at `9e65fe09ad`. #1639's own body says the assistant
+# test "is running as a follow-up round" that "folds into this body on
+# landing"; the artifact landed; the body never absorbed it; the gap
+# surfaced only by chance. Every other watcher pass structurally misses
+# this class — the tick cron is torn down at `awaiting_promotion`, the
+# wedge lanes need failed wakes, the completed-unmerged pass audits merges
+# not results-folding. This adds ONE dedicated ESCALATE-ONLY observer
+# modeled architecturally on `root_draft_pass` (the simplest sibling — one
+# enum + stat + decide + emit), extended with the
+# `_triage_observer_sweep_issue` sweep pattern (for the
+# `awaiting_promotion`/`reviewing` scope + events.jsonl-mtime freshness
+# gate) and the `triage_observer_pass` rollover-summary push cap (so a
+# body naming many pending artifacts doesn't storm the digest queue).
+# ESCALATE-ONLY invariants: NEVER `set-body` / `set-status` / `add-tag` /
+# `remove-tag` / `promote` / `post-marker` / `set-title` /
+# `set-clean-result`; NEVER a body mutation; NEVER a `git` write. Writes
+# only the state singleton (atomic tmp+rename) + the sidecar (append) +
+# stderr/stdout log lines + a fail-soft `_telegram_push`. Deliberate
+# divergence from `completed_unmerged_pass`: NO task marker — the consumer
+# is the human/PM (a task-marker on a promoted clean-result's own event
+# log would be noise, and would risk resetting the anti-liveness clocks
+# the sibling observers depend on).
+
+#: Case-insensitive substring phrases keying the narrow fold-cue predicate
+#: (§3.3 of the plan). The first four are LITERAL matches from #1639's own
+#: body.md at plan time (`grep -oE "folds? here on landing|is running as a
+#: follow-up round|folds? into this body on landing|running at write time"`
+#: returned all four); the last three are cheap forward coverage for bodies
+#: that use idiomatic near-variants. All lowercased at compile time; matching
+#: lowercases the body line. MODULE CONSTANT — extending requires a code
+#: change (the deliberately narrow-net posture; per the task body "prefer
+#: starting narrow and widening on measured misses"). NAMED-EXTENSION
+#: TRIGGER: if a future incident shows the list missed the fold cue, add the
+#: phrase in a follow-up.
+UNFOLDED_PHRASES: tuple[str, ...] = (
+    "folds here on landing",
+    "folds into this body on landing",
+    "is running as a follow-up round",
+    "running at write time",
+    "will fold here",
+    "pending fold",
+    "pending analysis fold",
+)
+#: Number of lines above/below a phrase-match line to scan for artifact
+#: names. Empirically the phrase and its artifact land in the same
+#: sentence/paragraph; 2 lines above + hit line + 2 lines below (5-line
+#: window) covers wrapping without inhaling unrelated text.
+PHRASE_WINDOW_LINES: int = 2
+#: Freshness gate: max events.jsonl mtime age for the sweep to consider a
+#: task (default 14d). #1639 sat 2 days pre-detection — the FLOOR is
+#: >= ~72h; 14d covers a long weekend + a week of un-monitored parking
+#: (mentor-break shape). Beyond 14d, a body carrying a stale pending
+#: phrase is presumed truly abandoned (the /daily and /weekly sweeps own
+#: that class). Env EPM_UNFOLDED_ROUND_LOOKBACK_H, read at CALL time.
+UNFOLDED_ROUND_LOOKBACK_H: float = 336.0
+#: Self-gate throttle. Sub-hour recurrence provides no operational value
+#: (the observer's user is a human seeing the alert at most every few
+#: hours), and probes subprocess-out to git — hourly bounds the worst
+#: case. Attempt stamp saved BEFORE collecting so a crashing evaluation
+#: is bounded to one error sidecar row per interval. Env
+#: EPM_UNFOLDED_ROUND_INTERVAL_HOURS.
+UNFOLDED_ROUND_INTERVAL_HOURS: float = 1.0
+#: Per-(issue, artifact) push re-alert TTL: weekly re-surface bounds
+#: indefinite silence while avoiding daily push spam for a persistent
+#: condition. Sibling REGISTRY_DRIFT_REALERT_HOURS = 168.0 uses the same
+#: shape. Env EPM_UNFOLDED_ROUND_REALERT_HOURS.
+UNFOLDED_ROUND_REALERT_HOURS: float = 168.0
+#: Max individual push lines per tick; over-cap fires become one "+N
+#: more, see sidecar" summary push. Bodies commonly cite <=2 pending
+#: artifacts; this is a safety net, not a routine gate. Sibling
+#: TRIAGE_OBSERVER_PUSH_CAP = 5 uses the identical semantics. Env
+#: EPM_UNFOLDED_ROUND_PUSH_CAP.
+UNFOLDED_ROUND_PUSH_CAP: int = 5
+
+# Narrow artifact-capture regexes (§3.2). Each is applied to the same
+# window ± PHRASE_WINDOW_LINES around a phrase-match line; a matched
+# capture is threaded to the appropriate probe closure.
+_UNFOLDED_RE_SCRIPT: re.Pattern[str] = re.compile(r"\b(scripts/[A-Za-z0-9_./-]+\.py)\b")
+_UNFOLDED_RE_COMMIT: re.Pattern[str] = re.compile(r"\b(?:@|commit\s+)?([0-9a-f]{7,40})\b")
+_UNFOLDED_RE_EVAL: re.Pattern[str] = re.compile(
+    r"\b(eval_results/issue_[0-9]+(?:_[A-Za-z0-9_-]+)?/[A-Za-z0-9_./-]+)"
+)
+
+# Status set the pass sweeps (§3.6). Deliberately tighter than
+# _TRIAGE_OBSERVER_STATUSES (ACTIVE ∪ {awaiting_promotion, blocked}): an
+# unfolded round is a *promoted* clean-result concern.
+_UNFOLDED_ROUND_STATUSES: frozenset[str] = frozenset({"awaiting_promotion", "reviewing"})
+
+
+def _unfolded_round_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_UNFOLDED_ROUND_PASS`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_root_draft_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_UNFOLDED_ROUND_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _unfolded_round_sidecar_path() -> Path:
+    """DEDICATED unfolded-round event stream (own file for clean grep —
+    the root-draft / verdict-disagree sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "unfolded-round-events.jsonl"
+
+
+def _unfolded_round_state_path() -> Path:
+    """Singleton dedup state. Schema:
+    ``{"last_run_ts": <float>, "issues": {"<issue>": {"fired": {
+    "<artifact_kind>::<artifact>": {"last_alert_ts": <float>,
+    "phrase": <str>}}}}}``."""
+    return AUTONOMOUS_REGISTRY_DIR / "unfolded-round-observer.json"
+
+
+def _load_unfolded_round_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards in the driver (mirrors
+    :func:`_load_root_draft_state`)."""
+    path = _unfolded_round_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_unfolded_round_state(state: dict, dry_run: bool) -> None:
+    """Atomic tmp+rename write of the unfolded-round dedup state
+    (fail-soft; mirrors :func:`_save_root_draft_state`). ``dry_run``
+    performs zero writes."""
+    if dry_run:
+        n = len(state.get("issues", {}))
+        print(f"  [dry-run] would save unfolded-round state ({n} issues)")
+        return
+    dest = _unfolded_round_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  unfolded-round: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_unfolded_round_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the unfolded-round sidecar (fail-soft). A
+    ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_root_draft_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append unfolded-round sidecar row: {line[:160]}")
+        return
+    dest = _unfolded_round_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  unfolded-round: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _unfolded_extract_artifacts(
+    window_lines: list[str],
+) -> list[tuple[str, str]]:
+    """Extract ``(artifact_kind, artifact)`` pairs from ``window_lines``
+    using the three narrow regexes (script / commit / eval_path). A single
+    line may yield multiple hits across kinds; dedup within the window
+    preserves order-of-first-appearance. Pure — no I/O.
+
+    NOTE: the commit regex matches any 7-40 hex token, so a false capture
+    (an incident id, a hash-like word) is expected — the driver's git
+    probes reject it (fail-open ⇒ no flag), so this regex intentionally
+    over-captures rather than under-captures.
+    """
+    seen: set[tuple[str, str]] = set()
+    out: list[tuple[str, str]] = []
+    joined = "\n".join(window_lines)
+    for kind, pat in (
+        ("script", _UNFOLDED_RE_SCRIPT),
+        ("commit", _UNFOLDED_RE_COMMIT),
+        ("eval_path", _UNFOLDED_RE_EVAL),
+    ):
+        for m in pat.finditer(joined):
+            key = (kind, m.group(1))
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(key)
+    return out
+
+
+def decide_unfolded_round_flag(
+    body_text: str,
+    fs_probe: "Callable[[str], bool]",
+    git_probe: "Callable[[str], bool]",
+    body_names_result: "Callable[[str], bool]",
+    *,
+    window_lines: int = PHRASE_WINDOW_LINES,
+) -> list[dict]:
+    """Pure predicate: return a list of ``{"phrase", "artifact",
+    "artifact_kind", "line_ix"}`` findings for a body. NO I/O — the driver
+    fills the three closures with real subprocess / fs / body-scan calls,
+    tests fill them with dict-shaped fakes.
+
+    Algorithm:
+      1. Lowercase-scan for any :data:`UNFOLDED_PHRASES` phrase; capture
+         its 0-indexed line ``line_ix``.
+      2. On the SAME line ± ``window_lines`` each side, extract every
+         candidate artifact (script / commit / eval_path).
+      3. For each (phrase, artifact, kind) triple: fire ONLY when
+         ``fs_probe(artifact)`` / ``git_probe(artifact)`` (per kind)
+         returns True AND ``body_names_result(artifact)`` returns False.
+
+    Probe closures fail-open by convention (any exception ⇒ False ⇒ no
+    flag); ``body_names_result`` fails toward True (assume the body has
+    the result — silent). Dedup within a body on
+    ``(artifact_kind, artifact)`` — one finding per artifact per body
+    even if multiple phrases surround it.
+    """
+    if not body_text:
+        return []
+    lines = body_text.splitlines()
+    lower_lines = [ln.lower() for ln in lines]
+    findings: list[dict] = []
+    seen_artifacts: set[tuple[str, str]] = set()
+    for ix, lower in enumerate(lower_lines):
+        for phrase in UNFOLDED_PHRASES:
+            if phrase not in lower:
+                continue
+            lo = max(0, ix - window_lines)
+            hi = min(len(lines), ix + window_lines + 1)
+            window = lines[lo:hi]
+            for kind, artifact in _unfolded_extract_artifacts(window):
+                key = (kind, artifact)
+                if key in seen_artifacts:
+                    continue
+                # Route to the right probe by kind (fail-open on raise).
+                try:
+                    if kind == "commit":
+                        exists = git_probe(artifact)
+                    else:  # script or eval_path — filesystem-tree probe
+                        exists = fs_probe(artifact)
+                except Exception:
+                    exists = False
+                if not exists:
+                    continue
+                # Body-scan for a result-section mention (fail toward
+                # True = silent — never a false flag on a scanner raise).
+                try:
+                    has_result = body_names_result(artifact)
+                except Exception:
+                    has_result = True
+                if has_result:
+                    continue
+                seen_artifacts.add(key)
+                findings.append(
+                    {
+                        "phrase": phrase,
+                        "artifact": artifact,
+                        "artifact_kind": kind,
+                        "line_ix": ix,
+                    }
+                )
+            break  # one finding-set per line — don't double-count phrases
+    return findings
+
+
+def _unfolded_git_cat_file_main(path: str) -> bool:
+    """``git --no-optional-locks cat-file -e main:<path>`` — True iff
+    ``<path>`` exists on ``main`` (rc==0). Read-only, 5s timeout,
+    fail-open (any error ⇒ False). ``--no-optional-locks`` never takes
+    the shared root's index lock (concurrent-committer safety). NO
+    ``git fetch`` — the caller relies on the local ``main`` ref."""
+    try:
+        res = subprocess.run(
+            [
+                "git",
+                "--no-optional-locks",
+                "-C",
+                str(PROJECT_ROOT),
+                "cat-file",
+                "-e",
+                f"main:{path}",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return False
+    return res.returncode == 0
+
+
+def _unfolded_git_commit_on_main(sha: str) -> bool:
+    """True iff ``sha`` resolves as a commit AND is an ancestor of
+    ``main``. Both probes required — a valid sha alone does not prove
+    it's on main; the ancestor probe is load-bearing. Each subprocess
+    5s-bounded, fail-open on any error. NO ``git fetch``."""
+    try:
+        res = subprocess.run(
+            [
+                "git",
+                "--no-optional-locks",
+                "-C",
+                str(PROJECT_ROOT),
+                "rev-parse",
+                "--verify",
+                "--quiet",
+                f"{sha}^{{commit}}",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return False
+    if res.returncode != 0:
+        return False
+    try:
+        res = subprocess.run(
+            [
+                "git",
+                "--no-optional-locks",
+                "-C",
+                str(PROJECT_ROOT),
+                "merge-base",
+                "--is-ancestor",
+                sha,
+                "main",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return False
+    return res.returncode == 0
+
+
+def _unfolded_slice_h2_section(body: str, heading: str) -> str:
+    """Return the substring of ``body`` from the LINE that equals
+    ``## <heading>`` (any surrounding whitespace tolerated) up to the
+    NEXT ``## `` H2 line (or end of body). ``""`` when the heading is
+    absent. H2 semantics only (never matches ``### <heading>``).
+    """
+    lines = body.splitlines()
+    start = None
+    for ix, ln in enumerate(lines):
+        stripped = ln.strip()
+        if stripped == f"## {heading}":
+            start = ix
+            break
+    if start is None:
+        return ""
+    end = len(lines)
+    for ix in range(start + 1, len(lines)):
+        if lines[ix].strip().startswith("## "):
+            end = ix
+            break
+    return "\n".join(lines[start:end])
+
+
+def _unfolded_slice_repro_block(body: str) -> str:
+    """Return the ``**Repro:**`` code-list section: from the line that
+    contains ``**Repro:**`` up to the NEXT ``**Context:**`` line (or the
+    next H2, or end of body). ``""`` when ``**Repro:**`` is absent."""
+    lines = body.splitlines()
+    start = None
+    for ix, ln in enumerate(lines):
+        if "**Repro:**" in ln:
+            start = ix
+            break
+    if start is None:
+        return ""
+    end = len(lines)
+    for ix in range(start + 1, len(lines)):
+        stripped = lines[ix].strip()
+        if "**Context:**" in stripped or stripped.startswith("## "):
+            end = ix
+            break
+    return "\n".join(lines[start:end])
+
+
+def unfolded_body_names_result(body: str, artifact: str, artifact_kind: str) -> bool:
+    """True iff ``body`` mentions ``artifact`` inside a result section
+    (evidence the round is folded). Three checks (any hit suffices):
+
+      1. ``**Repro:**`` block: the artifact's basename (for a script or
+         eval_path) or the sha itself (for a commit) appears there.
+      2. ``## Results`` (v4) OR ``## Findings`` (v3): the artifact
+         string appears anywhere in that H2 span.
+      3. For a commit sha: any ``@<hex>`` pinning line inside
+         ``**Repro:**`` whose sha shares a >=7-char common prefix with
+         the queried sha.
+
+    Not required to be perfect — this is the false-positive dial; erring
+    toward false-positive is the deliberate v1 posture (the re-alert TTL
+    bounds push spam).
+    """
+    if not body or not artifact:
+        return False
+    repro = _unfolded_slice_repro_block(body)
+    results_v4 = _unfolded_slice_h2_section(body, "Results")
+    findings_v3 = _unfolded_slice_h2_section(body, "Findings")
+
+    if artifact_kind == "commit":
+        # Direct sha appearance in either the Repro block or a results H2.
+        if artifact in repro or artifact in results_v4 or artifact in findings_v3:
+            return True
+        # Prefix-match against @<hex> pins inside Repro.
+        prefix = artifact[:7]
+        for m in re.finditer(r"@([0-9a-f]{7,40})\b", repro):
+            other = m.group(1)
+            if other.startswith(prefix) or prefix.startswith(other[:7]):
+                return True
+        return False
+
+    # script / eval_path: basename in Repro OR full path in results H2.
+    basename = Path(artifact).name
+    if basename in repro:
+        return True
+    if artifact in results_v4 or artifact in findings_v3:
+        return True
+    return False
+
+
+def _unfolded_is_paper_task(body_text: str) -> bool:
+    """Cheap frontmatter probe for ``paper: true`` — skips the task in
+    v1 (paper stubs carry paper artifacts elsewhere; a future extension
+    would read ``docs/papers/issue_<N>/*.tex``). Reads the top YAML block
+    only, tolerant of quoting styles / whitespace. False on any parse
+    failure (fail-open toward SCANNING, since paper stubs are rare and
+    the false-positive cost is one un-actioned digest push line)."""
+    if not body_text.startswith("---"):
+        return False
+    end = body_text.find("\n---", 3)
+    if end < 0:
+        return False
+    fm = body_text[3:end]
+    for line in fm.splitlines():
+        m = re.match(r"^\s*paper\s*:\s*(.+?)\s*$", line)
+        if m:
+            v = m.group(1).strip().strip("\"'").lower()
+            return v == "true"
+    return False
+
+
+def unfolded_round_pass(dry_run: bool) -> bool:
+    """ESCALATE-ONLY observer of unfolded-round stranding at
+    ``awaiting_promotion`` / ``reviewing`` (#1712; origin incident #1639
+    — see the block comment above). Sweeps the REGISTRY snapshot via the
+    triage-observer's :func:`_triage_observer_sweep_issue`, filters to
+    the target status set, reads each task's ``body.md``, runs the pure
+    :func:`decide_unfolded_round_flag` with real fs/git/body-scan
+    closures, and emits one sidecar row + one push line per finding
+    (deduped per (issue, artifact-kind, artifact)) with a
+    :data:`UNFOLDED_ROUND_PUSH_CAP` rollover-summary push semantics.
+    ``dry_run`` performs zero writes / zero task.py subprocess calls /
+    zero push subprocess calls; the push helper receives ``dry_run=True``
+    and is trusted to no-op the wire. Returns True iff any finding fired
+    this tick. Fail-soft throughout (per-task guard + top-level guard);
+    daemon-independent."""
+    if not _unfolded_round_enabled():
+        print("  unfolded-round: disabled via EPM_DISABLE_UNFOLDED_ROUND_PASS; skipping")
+        return False
+    try:
+        # Lazy in-process imports (watcher convention): resolves THIS
+        # checkout's helpers via the tests' sys.path shim / the editable
+        # install.
+        from explore_persona_space.task_workflow import registry_path
+
+        interval_h = _env_float(
+            "EPM_UNFOLDED_ROUND_INTERVAL_HOURS",
+            UNFOLDED_ROUND_INTERVAL_HOURS,
+            lo=0.0,
+            hi=720.0,
+        )
+        lookback_s = (
+            _env_float(
+                "EPM_UNFOLDED_ROUND_LOOKBACK_H",
+                UNFOLDED_ROUND_LOOKBACK_H,
+                lo=1.0,
+                hi=8760.0,
+            )
+            * 3600.0
+        )
+        realert_s = (
+            _env_float(
+                "EPM_UNFOLDED_ROUND_REALERT_HOURS",
+                UNFOLDED_ROUND_REALERT_HOURS,
+                lo=1.0,
+                hi=8760.0,
+            )
+            * 3600.0
+        )
+        push_cap = int(
+            _env_float(
+                "EPM_UNFOLDED_ROUND_PUSH_CAP",
+                UNFOLDED_ROUND_PUSH_CAP,
+                lo=0.0,
+                hi=100.0,
+            )
+        )
+        state = _load_unfolded_round_state()
+        now = time.time()
+        last = state.get("last_run_ts")
+        if isinstance(last, int | float) and (now - last) < interval_h * 3600.0:
+            return False  # hourly self-gate — silent
+        # Stamp the ATTEMPT before sweeping (registry-drift precedent):
+        # a crashing sweep is bounded to one attempt per interval.
+        state["last_run_ts"] = now
+        raw_issues = state.get("issues")
+        issues: dict = raw_issues if isinstance(raw_issues, dict) else {}
+        state["issues"] = issues
+        _save_unfolded_round_state(state, dry_run)
+
+        try:
+            reg = json.loads(registry_path().read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"  unfolded-round: registry read failed: {exc}", file=sys.stderr)
+            return False
+        tasks = reg.get("tasks") if isinstance(reg, dict) else None
+        if not isinstance(tasks, dict):
+            print("  unfolded-round: registry has no tasks map; skipping", file=sys.stderr)
+            return False
+        reg_root = registry_path().parent.parent
+
+        push_items: list[str] = []
+        suppressed = 0
+        seen_this_tick: set[str] = set()
+        wrote = False
+
+        for id_str, meta in sorted(tasks.items()):
+            # Widest sweep (triage helper's ACTIVE ∪ {awaiting_promotion,
+            # blocked} + events.jsonl-mtime freshness); we then TIGHTEN
+            # to the pass's own status set.
+            issue = _triage_observer_sweep_issue(id_str, meta, reg_root, now, lookback_s)
+            if issue is None:
+                continue
+            if meta.get("status") not in _UNFOLDED_ROUND_STATUSES:
+                continue
+            if not meta.get("has_clean_result"):
+                continue
+            try:
+                rel = meta.get("path")
+                if not isinstance(rel, str) or not rel:
+                    continue
+                body_path = reg_root / rel / "body.md"
+                try:
+                    body_text = body_path.read_text()
+                except OSError:
+                    continue  # missing / unreadable body — skip fail-soft
+                if _unfolded_is_paper_task(body_text):
+                    # v1: skip paper stubs (their canonical results live
+                    # in docs/papers/issue_<N>/, not in body.md).
+                    continue
+                seen_this_tick.add(str(issue))
+
+                # Per-tick memoization of git/fs probes (bounds worst
+                # case — five artifacts cited twice pay for five probes).
+                _probe_cache: dict[tuple[str, str], bool] = {}
+
+                def _fs_probe(path: str, _c=_probe_cache) -> bool:
+                    key = ("fs", path)
+                    if key in _c:
+                        return _c[key]
+                    _c[key] = _unfolded_git_cat_file_main(path)
+                    return _c[key]
+
+                def _git_probe(sha: str, _c=_probe_cache) -> bool:
+                    key = ("git", sha)
+                    if key in _c:
+                        return _c[key]
+                    _c[key] = _unfolded_git_commit_on_main(sha)
+                    return _c[key]
+
+                def _names_result(a: str, _b=body_text) -> bool:
+                    # Kind isn't known here; we let the artifact string
+                    # discriminate — but the decider ONLY calls this
+                    # once per artifact, and the closure decides KIND
+                    # from the artifact shape.
+                    kind = (
+                        "commit"
+                        if re.fullmatch(r"[0-9a-f]{7,40}", a)
+                        else ("eval_path" if a.startswith("eval_results/") else "script")
+                    )
+                    return unfolded_body_names_result(_b, a, kind)
+
+                findings = decide_unfolded_round_flag(
+                    body_text, _fs_probe, _git_probe, _names_result
+                )
+                if not findings:
+                    continue
+                issue_key = str(issue)
+                raw_entry = issues.get(issue_key)
+                entry: dict = raw_entry if isinstance(raw_entry, dict) else {}
+                raw_fired = entry.get("fired")
+                fired: dict = raw_fired if isinstance(raw_fired, dict) else {}
+                for f in findings:
+                    a_key = f"{f['artifact_kind']}::{f['artifact']}"
+                    prev = fired.get(a_key)
+                    last_ts = prev.get("last_alert_ts") if isinstance(prev, dict) else None
+                    if isinstance(last_ts, int | float) and (now - last_ts) <= realert_s:
+                        continue  # deduped within TTL
+                    line = (
+                        f"#{issue} {f['artifact_kind']}:{f['artifact']} "
+                        f"(phrase='{f['phrase']}', line {f['line_ix']})"
+                    )
+                    print(f"  unfolded-round: FLAG {line}")
+                    _append_unfolded_round_sidecar(
+                        {
+                            "kind": "unfolded-round",
+                            "issue": issue,
+                            "artifact": f["artifact"],
+                            "artifact_kind": f["artifact_kind"],
+                            "phrase": f["phrase"],
+                            "line_ix": f["line_ix"],
+                            "task_status": meta.get("status"),
+                        },
+                        dry_run,
+                    )
+                    wrote = True
+                    if push_cap == 0 or len(push_items) < push_cap:
+                        push_items.append(line)
+                    else:
+                        suppressed += 1
+                    fired[a_key] = {"last_alert_ts": now, "phrase": f["phrase"]}
+                if fired:
+                    issues[issue_key] = {"fired": fired}
+            except Exception as exc:  # per-issue fail-soft
+                print(f"  unfolded-round: #{issue} evaluation failed: {exc}", file=sys.stderr)
+                continue
+
+        if push_items:
+            body = (
+                "unfolded-round observer: promoted body(ies) at "
+                "awaiting_promotion / reviewing carry a pending-fold cue "
+                "next to an artifact already landed on main (#1639 shape). " + "; ".join(push_items)
+            )
+            if suppressed:
+                body += f"; +{suppressed} more, see .claude/cache/unfolded-round-events.jsonl"
+            _telegram_push(body, dry_run)
+
+        # Self-prune entries whose task left the sweep set for good.
+        for key in list(issues):
+            m = tasks.get(key)
+            status = m.get("status") if isinstance(m, dict) else None
+            if m is None or status not in _UNFOLDED_ROUND_STATUSES:
+                issues.pop(key, None)
+
+        _save_unfolded_round_state(state, dry_run)
+        return wrote
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  unfolded-round: pass failed (fail-soft): {exc}", file=sys.stderr)
         return False
 
 
@@ -27370,6 +28086,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "with --dry-run for a live smoke.",
     )
     parser.add_argument(
+        "--unfolded-round-only",
+        action="store_true",
+        help="run ONLY the unfolded-round observer pass (#1712, escalate-only "
+        "— an awaiting_promotion / reviewing body carrying a pending-fold cue "
+        "next to an artifact already landed on main, the #1639 shape) and "
+        "exit; skip every other pass. Daemon-independent; pair with --dry-run "
+        "for a live smoke.",
+    )
+    parser.add_argument(
         "--root-draft-only",
         action="store_true",
         help="run ONLY the root-draft observer pass (#1341, escalate-only — "
@@ -27525,6 +28250,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         verdict_disagree_pass(args.dry_run)
         return 0
 
+    # --unfolded-round-only mirrors --verdict-disagree-only: the pass is
+    # daemon-independent (registry + body.md reads + read-only git probes
+    # against local main), so run it alone. Pair with --dry-run for a
+    # live smoke.
+    if args.unfolded_round_only:
+        unfolded_round_pass(args.dry_run)
+        return 0
+
     # --root-draft-only mirrors --verdict-disagree-only: the pass is
     # daemon-independent (one read-only git status + stats only), so run
     # it alone.
@@ -27659,6 +28392,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # (registry + events.jsonl reads only), so it runs on a daemon outage
     # too.
     verdict_disagree_pass(args.dry_run)
+
+    # Unfolded-round observer (#1712; origin incident #1639): ESCALATE-ONLY
+    # flag of an awaiting_promotion / reviewing body carrying a pending-fold
+    # cue phrase (UNFOLDED_PHRASES) next to an artifact (script /
+    # commit-sha / eval_results path) already resolved on `main`, when the
+    # body's ## Results / ## Findings H2 / **Repro:** code list does NOT
+    # mention that artifact — the #1639 shape where a landed round sat two
+    # days silently unfolded. One hourly-self-gated sweep + read-only git
+    # probes (no fetch) + a sidecar + a rollover-summary push; NO task
+    # markers (deliberate divergence from completed-unmerged — the consumer
+    # is the human/PM). NEVER mutates status/body/git. Daemon-independent,
+    # so it runs on a daemon outage too.
+    unfolded_round_pass(args.dry_run)
 
     # Root-draft observer (#1341; origin incident #1320): ESCALATE-ONLY flag
     # of stale UNTRACKED *.py drafts in the SHARED repo-root working tree —
