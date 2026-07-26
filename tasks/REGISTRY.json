@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1693,
+  "highest_id": 1694,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5390,6 +5390,13 @@
       "path": "tasks/proposed/1693",
       "status": "proposed",
       "title": "daily-fix: phase idempotency + inter-phase schema assert"
+    },
+    "1694": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1694",
+      "status": "proposed",
+      "title": "daily-fix: Step 10d apply-verification + pre-sync"
     },
     "17": {
       "has_clean_result": false,
