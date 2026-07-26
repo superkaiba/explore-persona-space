@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-31 passes ("pass" = one top-level per-tick action block in ``main()``'s
+32 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -11,8 +11,8 @@ IDENTIFIERS (cross-referenced throughout this docstring), NOT execution
 order. The per-tick execution order is: 1 (VM disk) -> 15 (data-disk) ->
 16 (happy-patch) -> 12 (CPU-guard) -> 17 (triage-observer) ->
 18 (verdict-disagree) -> 26 (root-draft) -> 27 (registry-drift) ->
-31 (codex-outage) -> 29 (completed-unmerged) -> 30 (urgent-park router) ->
-19 (VM-ledger reap) -> 20 (program-orchestrator
+31 (codex-outage) -> 29 (completed-unmerged) -> 32 (partial-bundle) ->
+30 (urgent-park router) -> 19 (VM-ledger reap) -> 20 (program-orchestrator
 recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
 -> 3 (pod-safety) -> 4 (stalled-detector) -> 5 (orphan sweep) ->
 11 (infra-drain) -> 21 (proposed-infra-sweep) -> 22 (capacity-retry) ->
@@ -652,6 +652,63 @@ adding a pass means adding a numbered item here AND bumping the digit:
    ``EPM_DISABLE_CODEX_OUTAGE_PASS=1``; ``--codex-outage-only`` runs just
    this pass (pair with ``--dry-run`` for a zero-write live smoke against
    the real sentinel). (:func:`codex_outage_pass`.)
+
+32. **Partial-bundle reconciliation pass (#1704; motivating incident
+   #1345; ESCALATE-ONLY; daemon-INDEPENDENT; runs right after pass 29).**
+   The reader-back of the GCP EXIT-trap crash-persist path
+   (``backends/gcp.py`` ``_eps_persist_diagnostics``): partial artifacts
+   land on the HF data repo under ``issue<N>_partial/<attempt_id>/`` on
+   every non-zero rc, but nothing ever reads those bundles back — so a
+   bundle carrying a COMPLETED result whose workload upload path never
+   fired is indistinguishable from a genuinely-partial persist without
+   this pass. Hourly self-gate (``EPM_PARTIAL_BUNDLE_INTERVAL_HOURS``,
+   default 1.0) with attempt-stamp-first save. Task-set-bounded
+   enumeration (REGISTRY non-``proposed`` rows with ``events.jsonl``
+   mtime within ``EPM_PARTIAL_BUNDLE_LOOKBACK_H``, default 168h),
+   per-pass listing cap (``EPM_PARTIAL_BUNDLE_LISTING_CAP``, default 50)
+   + persisted cursor (``enum_cursor_idx``) so tail-of-list issues
+   never starve. Per candidate: ONE
+   ``list_hf_files_under_path(api, "superkaiba1/explore-persona-space-data",
+   f"issue{N}_partial", repo_type="dataset")`` call (prefix-scoped,
+   ``retry_transient``-wrapped, fail-soft PER ISSUE via one
+   ``partial-bundle-hub-error`` sidecar row on
+   ``HfHubHTTPError``), grouped by ``attempt_id`` (second path
+   segment). Pure classifier
+   :func:`_classify_bundle_completeness` returns one of four states
+   over the file set: ``complete`` (transcript + result payload) /
+   ``workload_ts_backstop`` (workload_<ts>.log + result, weaker) /
+   ``no_result_payload`` (silent skip) / ``persist_killed`` (silent
+   skip). Result-shape extraction strips the
+   ``issue{N}_partial/<attempt_id>/eval_results_issue_{N}/`` prefix;
+   comparison uses ONE read-only
+   ``git --no-optional-locks -C PROJECT_ROOT ls-tree -r --name-only HEAD
+   -- eval_results/issue_<N>/`` (never a worktree HEAD — semantic
+   contract is "landed on ``main``"); any bundle-relative path with NO
+   committed counterpart FLAGS. Channels: ONE row per flagged
+   ``(issue, attempt_id, band=stranded_eval_results)`` to the dedicated
+   sidecar ``.claude/cache/partial-bundle-events.jsonl`` (with
+   ``completeness_signal`` recording the classifier return verbatim
+   for backstop-vs-primary weighing) + ONE deduped fail-soft
+   ``_telegram_push`` per episode threading the same
+   ``completeness_signal`` into the push text. Dedup keyed on
+   ``(issue, attempt_id, band)`` in
+   ``~/.eps-autonomous/partial-bundle-observer.json`` (atomic
+   tmp+rename) with a 168h re-alert TTL
+   (``EPM_PARTIAL_BUNDLE_REALERT_HOURS``) — the registry-drift weekly
+   re-alert precedent for a persistent, un-remediable-until-user
+   condition. **ESCALATE-ONLY is a hard invariant** — the pass NEVER
+   auto-commits, NEVER deletes a bundle (crash forensics are durable
+   record), NEVER posts task markers (the verdict-disagree posture —
+   the escalation target is a HUMAN, not the next dispatch); pinned by
+   :func:`tests.test_autonomous_session_watch.test_partial_bundle_pass_never_mutates_state`
+   (argv spy on every ``subprocess.run`` — every argv is ``git ls-tree``
+   at ``PROJECT_ROOT`` with no ``commit``/``add``/``push``/``rm``
+   anywhere) and
+   :func:`tests.test_autonomous_session_watch.test_partial_bundle_pass_never_posts_task_markers`.
+   Kill switch ``EPM_DISABLE_PARTIAL_BUNDLE_AUDIT=1``;
+   ``--partial-bundle-only`` runs just this pass (pair with
+   ``--dry-run`` for a zero-write live smoke against the real data
+   repo). (:func:`partial_bundle_pass`.)
 
 Why each pass exists
 --------------------
