@@ -103,16 +103,28 @@ def _spec(*, extra: dict | None = None, workload_cmd: str = WORKLOAD, **override
 
 
 def test_launch_executes_workload_when_opted_in(monkeypatch):
+    # #1698 Item 1(b): a non-main repo_branch fires the post-bootstrap
+    # branch-assert SSH probe BEFORE _execute_workload_on_pod runs its
+    # own 3-call sequence. Prepend the branch-verify output so the
+    # scripted fake covers all 4 SSH calls.
     ssh = _wire_exec_leg(
         monkeypatch,
-        ["SYNC-OK abc123\n", "WRAPPER-STARTED 4242\n", "LAUNCH-OK pid=777\n"],
+        [
+            "issue-909\n",  # #1698 branch assertion: `git rev-parse --abbrev-ref HEAD`
+            "SYNC-OK abc123\n",
+            "WRAPPER-STARTED 4242\n",
+            "LAUNCH-OK pid=777\n",
+        ],
     )
     handle = RP.RunPodBackend().launch(
         _spec(extra={"execute_workload": True, "repo_branch": "issue-909"})
     )
-    # Exactly 3 SSH calls, in order: sync -> detach -> verify.
-    assert len(ssh.calls) == 3
-    sync_cmd, launch_cmd, verify_cmd = ssh.calls
+    # 4 SSH calls: the #1698 branch-assert probe then the 3-call
+    # execution-leg sequence (sync -> detach -> verify). The branch-assert
+    # probe is the FIRST call.
+    assert len(ssh.calls) == 4
+    branch_probe_cmd, sync_cmd, launch_cmd, verify_cmd = ssh.calls
+    assert "git rev-parse --abbrev-ref HEAD" in branch_probe_cmd, branch_probe_cmd
     assert "refs/heads/issue-909" in sync_cmd
     assert "git reset --hard" in sync_cmd
     assert "SYNC-MISMATCH" in sync_cmd  # HEAD == FETCH_HEAD verification present
@@ -606,6 +618,14 @@ def test_end_to_end_failover_spec_flows_through_execution_leg(monkeypatch, tmp_p
     )
 
     _noop_provision(monkeypatch)
+    # #1698 Item 1(b): no-op the post-bootstrap branch assertion — this
+    # test uses `_execute_workload_on_pod` as a stub, not the real SSH
+    # fake, so the branch-assert SSH call would try to resolve
+    # pod-909's endpoint from a real (empty) pods.conf and fail. The
+    # branch-assertion body has its own direct tests in
+    # `tests/test_runpod_backend.py`; here we exercise the failover +
+    # execution-leg dispatch specifically.
+    monkeypatch.setattr(RP, "_assert_pod_on_branch", lambda pod_name, expected_branch: None)
     executed: list = []
 
     def _fake_exec(spec, *, pod_name, log_path, pid_file, sentinel_path, attempt_id):
@@ -698,7 +718,11 @@ def test_launch_attaches_partial_handle_on_workload_start_error(monkeypatch):
     error carries a PARTIAL handle matching the success-path handle shape
     except ``workload_executed is False`` + ``workload_start_error`` — and the
     SUCCESS-path handle ``extra`` stays byte-identical (no new keys)."""
-    _wire_exec_leg(monkeypatch, [])
+    # #1698 Item 1(b): supply the branch-assert SSH output; the SSH fake
+    # is otherwise scripted with an empty output list so the execution
+    # leg's own SSH calls (never reached because _execute_workload_on_pod
+    # is stubbed to raise) do not draw from it.
+    _wire_exec_leg(monkeypatch, ["issue-909\n"])
 
     def _fake_exec(spec, **kwargs):
         raise RP.RunPodWorkloadStartError("branch sync of pod-909 timed out (ssh TimeoutExpired)")

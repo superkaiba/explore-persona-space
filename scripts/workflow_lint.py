@@ -11813,12 +11813,18 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # 67,472 B post-#1363, 67,400 — measured 66,574 B post-#1349,
     # 66,300 — measured 65,548 B post-#1311)
     "experiment-implementer.md": 76_500,
-    # measured 66,921 B post-#1416 (Pre-Launch step 9 foreign-tenant
-    # memory.used read — plan-mandated growth; cap = measured + ~0.6 KB.
-    # Prior: 66,500 — measured 65,540 B post-#1081 r2 (D3
-    # crash-fix-relaunch addendum: disposition-conditional resume-glob
-    # confirm), 65,500 — measured 62,672 B)
-    "experimenter.md": 67_500,
+    # measured 73,872 B post-#1698 (Contract scope H2 — the
+    # already-bootstrapped-pod 60s budget + fresh-provision refusal;
+    # fence-field derivation recipe — gcloud maxRunDuration + RunPod
+    # audit-cron ttl_days disclosure — with poller_timeout= separated
+    # from fence= in the epm:run-launched marker template; #1689 R8
+    # launch-path fixes 3 + 4 — plan-mandated growth; cap = measured +
+    # ~0.5 KB. Prior: 67,500 — measured 66,921 B post-#1416 (Pre-Launch
+    # step 9 foreign-tenant memory.used read), 66,500 — measured
+    # 65,540 B post-#1081 r2 (D3 crash-fix-relaunch addendum:
+    # disposition-conditional resume-glob confirm), 65,500 — measured
+    # 62,672 B)
+    "experimenter.md": 74_400,
     # measured 49,740 B post-#1115 (read-hygiene context-budget section —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
     # measured 48,197 B post-#1102)
