@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1691,
+  "highest_id": 1692,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5376,6 +5376,13 @@
       "path": "tasks/proposed/1691",
       "status": "proposed",
       "title": "daily-fix: escalate multi-day Codex quota outage"
+    },
+    "1692": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1692",
+      "status": "proposed",
+      "title": "daily-fix: smoke must run real paths, not mock branches"
     },
     "17": {
       "has_clean_result": false,
