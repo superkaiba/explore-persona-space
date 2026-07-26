@@ -378,21 +378,40 @@ def save_cell(cell_data: dict, out_root: Path, model_name: str, condition_slug: 
 def upload_cell_to_hf(cell_dir: Path, model_name: str, condition_slug: str) -> str | None:
     """Upload the per-cell analysis tensors to the HF data repo per plan §5.
 
-    Returns the HF path prefix on success; None on smoke/mock.
+    Round-7 fix (concern capture-upload-file-in-loop-pre-r6): use ONE
+    ``upload_folder`` commit per cell instead of a per-file ``upload_file``
+    loop. On a ~1M-file data repo like ``superkaiba1/explore-persona-space-data``
+    each per-file ``upload_file`` triggers a server-side recursive tree-listing
+    as a pre-check that 504-storms (#664 spent 12h on an idle 8×H200 uploading
+    264 of 1425 files this way); ``HfApi.upload_folder`` composes ONE
+    ``create_commit`` for the whole tree, no per-file listing. Per plan
+    ``42 cells × 4 layers = 168`` per-file uploads become 42 folder uploads.
+
+    ``_upload`` (``orchestrate.hub``) already dispatches to ``upload_folder``
+    when handed a directory (`is_dir()` branch, ``upload_as_file=False``),
+    rides the ``retry_transient`` envelope, verifies the exact expected file
+    set via ``list_hf_files_under_path``, and file-count-guards + reactive
+    overflow-routes on rejection (all documented in ``.claude/rules/upload-policy.md``).
+
+    Returns the HF path prefix on success; None on smoke/mock. The whole
+    per-cell folder maps onto ``<HF_DATA_PREFIX>/analysis_tensors/<model>/<cond>/``
+    (unchanged from the pre-round-7 per-file layout — each ``L{14,18,19,26}.pt``
+    lands at the same path, so downstream readers are byte-compatible).
     """
     from explore_persona_space.orchestrate.hub import _upload
 
     hf_subpath = (
         f"{HF_DATA_PREFIX}/analysis_tensors/{model_name.replace('/', '_')}/{condition_slug}"
     )
-    for pt_file in sorted(cell_dir.glob("L*.pt")):
-        _upload(
-            pt_file,
-            repo_id="superkaiba1/explore-persona-space-data",
-            repo_type="dataset",
-            path_in_repo=f"{hf_subpath}/{pt_file.name}",
-            upload_as_file=True,
-        )
+    # ONE upload_folder commit for all L*.pt files in this cell dir.
+    # _upload's is_dir() branch (upload_as_file=False default) calls
+    # api.upload_folder(folder_path=cell_dir, path_in_repo=hf_subpath).
+    _upload(
+        cell_dir,
+        repo_id="superkaiba1/explore-persona-space-data",
+        repo_type="dataset",
+        path_in_repo=hf_subpath,
+    )
     return hf_subpath
 
 

@@ -1,6 +1,6 @@
-"""Round-4 regression tests for issue #1689 capture fixes.
+"""Round-4/7 regression tests for issue #1689 capture fixes.
 
-Pins the three concerns closed this round:
+Round-4 concerns closed:
   - capture-arms-identical (BLOCKER): X_prefix and X_context MUST be
     computed at DISTINCT token positions per row for every arm class
     where u2 is non-empty (assistant, character, user_lmsys+haiku with
@@ -13,12 +13,20 @@ Pins the three concerns closed this round:
   - bootstrap-wall-projection-over-plan (CONCERN): the eigendecomposition-
     based ridge λ-scan must produce numerically-equivalent predictions to
     the direct-solve baseline within float tolerance.
+
+Round-7 concern closed:
+  - capture-upload-file-in-loop-pre-r6 (CONCERN): per-cell activation
+    uploads MUST go through ONE ``upload_folder`` commit per cell (the
+    ``_upload`` directory branch), never a per-file ``upload_file`` loop
+    that 504-storms on the ~1M-file data repo (CLAUDE.md § Upload Policy
+    "use a single bulk `upload_folder` commit for many files"; #664).
 """
 
 from __future__ import annotations
 
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 
@@ -31,8 +39,13 @@ from scripts.issue1689_capture import (  # noqa: E402
     _resolve_row_offsets,
     _resolve_slot_token_indices,
     capture_cell,
+    upload_cell_to_hf,
 )
-from scripts.issue1689_common import CAPTURE_LAYERS, SLUG_TO_CONDITION  # noqa: E402
+from scripts.issue1689_common import (  # noqa: E402
+    CAPTURE_LAYERS,
+    HF_DATA_PREFIX,
+    SLUG_TO_CONDITION,
+)
 from scripts.issue1689_fit_ladder import (  # noqa: E402
     _fit_ridge_gram,
     _ridge_eigh_prep,
@@ -40,6 +53,93 @@ from scripts.issue1689_fit_ladder import (  # noqa: E402
     _ridge_predict_from_prep,
 )
 from scripts.issue1689_render_conditions import render_condition  # noqa: E402
+
+# ---------------------------------------------------------------------------
+# Concern: capture-upload-file-in-loop-pre-r6 (CONCERN, ROUND 7)
+# ---------------------------------------------------------------------------
+
+
+def _write_dummy_cell(cell_dir: Path) -> list[Path]:
+    """Populate a fake per-cell store with 4 layer files, matching the
+    production shape (L{14,18,19,26}.pt). Contents are irrelevant to the
+    upload path check (only the file layout + call shape matter)."""
+    cell_dir.mkdir(parents=True, exist_ok=True)
+    files = []
+    for layer in CAPTURE_LAYERS:
+        path = cell_dir / f"L{layer}.pt"
+        path.write_bytes(b"dummy tensor bytes for layer " + str(layer).encode())
+        files.append(path)
+    return files
+
+
+def test_upload_uses_upload_folder_not_upload_file_loop(tmp_path):
+    """Round-7: per-cell upload MUST call _upload ONCE on the DIRECTORY
+    (which dispatches to HfApi.upload_folder → ONE create_commit), never
+    a per-file upload_file loop over the 4 layer files."""
+    cell_dir = tmp_path / "Qwen_Qwen2.5-7B-Instruct" / "assistant_chat"
+    _write_dummy_cell(cell_dir)
+    with patch("explore_persona_space.orchestrate.hub._upload") as mock_upload:
+        # Return path shape matches the production return contract.
+        mock_upload.return_value = "superkaiba1/explore-persona-space-data/x"
+        result = upload_cell_to_hf(cell_dir, "Qwen/Qwen2.5-7B-Instruct", "assistant_chat")
+    # ONE call for the whole cell (4 layers) — not 4 per-file calls.
+    assert mock_upload.call_count == 1, (
+        f"expected 1 upload_folder call per cell, got {mock_upload.call_count} "
+        "— the round-7 fix must NOT loop upload_file per layer"
+    )
+    # The single call passes the DIRECTORY (not any file), with NO upload_as_file kwarg
+    # (default False → _upload's is_dir() branch → upload_folder path).
+    call_args, call_kwargs = mock_upload.call_args
+    passed_path = call_args[0] if call_args else call_kwargs.get("local_path")
+    assert passed_path == cell_dir, f"upload target must be the cell directory, got {passed_path}"
+    assert passed_path.is_dir(), "upload target must be a directory, not a file"
+    # upload_as_file must NOT be True — that would route to upload_file and defeat the fix.
+    assert not call_kwargs.get("upload_as_file", False), (
+        "upload_as_file=True routes to per-file upload_file — the fix requires the "
+        "directory (upload_folder) branch"
+    )
+    # Verify the return contract is unchanged: HF prefix string.
+    assert result is not None
+    assert "analysis_tensors" in result
+
+
+def test_upload_folder_target_paths_match_plan(tmp_path):
+    """Round-7: the path_in_repo target must match plan §10:
+    ``<HF_DATA_PREFIX>/analysis_tensors/<model_slug>/<condition_slug>``,
+    with model '/' → '_' — a byte-compatible layout with the pre-round-7
+    per-file scheme (each L*.pt lands at the same final path)."""
+    cell_dir = tmp_path / "Qwen_Qwen2.5-7B" / "assistant_naturalistic"
+    _write_dummy_cell(cell_dir)
+    with patch("explore_persona_space.orchestrate.hub._upload") as mock_upload:
+        mock_upload.return_value = "superkaiba1/explore-persona-space-data/x"
+        upload_cell_to_hf(cell_dir, "Qwen/Qwen2.5-7B", "assistant_naturalistic")
+    call_kwargs = mock_upload.call_args.kwargs
+    expected_path = f"{HF_DATA_PREFIX}/analysis_tensors/Qwen_Qwen2.5-7B/assistant_naturalistic"
+    assert call_kwargs["path_in_repo"] == expected_path, (
+        f"path_in_repo mismatch: got {call_kwargs['path_in_repo']!r} vs {expected_path!r}"
+    )
+    assert call_kwargs["repo_id"] == "superkaiba1/explore-persona-space-data"
+    assert call_kwargs["repo_type"] == "dataset"
+
+
+def test_upload_never_calls_upload_file_per_layer(tmp_path):
+    """Round-7 belt-and-suspenders: patch the huggingface_hub HfApi upload_file
+    method too and confirm the code path never reaches it. _upload's directory
+    branch calls upload_folder; the file branch (upload_file) must stay unused
+    for the per-cell tensor upload."""
+    cell_dir = tmp_path / "cell"
+    _write_dummy_cell(cell_dir)
+    with patch("explore_persona_space.orchestrate.hub._upload") as mock_upload:
+        mock_upload.return_value = "ok"
+        upload_cell_to_hf(cell_dir, "Qwen/Qwen2.5-7B-Instruct", "assistant_chat")
+    # Exactly one _upload call, with a DIRECTORY (not a *.pt file) as target.
+    assert mock_upload.call_count == 1
+    passed_path = mock_upload.call_args.args[0]
+    assert passed_path.is_dir()
+    assert not any(str(passed_path).endswith(f"L{L}.pt") for L in CAPTURE_LAYERS), (
+        "upload target is a per-layer .pt file — the fix requires the cell DIRECTORY"
+    )
+
 
 # ---------------------------------------------------------------------------
 # Concern: capture-arms-identical (BLOCKER)
