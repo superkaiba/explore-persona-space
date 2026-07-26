@@ -1227,6 +1227,43 @@ def _closed_sibling_outcome(item: dict, *, dirpath: Path, fp: str, dry_run: bool
     return "skip" if dry_run else "landed-fix-suspect"
 
 
+def _landed_fix_probes_outcome(
+    item: dict,
+    root: Path,
+    *,
+    dirpath: Path,
+    fp: str,
+    suspect_eyeballed: bool,
+    dry_run: bool,
+) -> str | None:
+    """Run the two landed-fix probes in order (#1674 first, #1711 second).
+
+    Extracted from process_item + _dry_run_item for the C901 budget (#1699
+    ruff-policy pin). The suppression contract is unchanged:
+
+    - ``suspect_eyeballed`` short-circuits BOTH probes — the filer already
+      eyeballed this slug's prior suspect commit(s) and/or closed sibling(s).
+    - #1674 (commit-subject) runs FIRST; a non-None result wins with its
+      row shape (Option A source-compat — every existing #1674 test stays
+      byte-identical).
+    - #1711 (closed-sibling) runs SECOND, ONLY when #1674 did not suppress;
+      belt-and-suspenders for the vocabulary-divergent landed-fix class
+      (#1386/#1360 — no #1674 arm coverage by construction).
+    - Both probes write the SAME terminal ledger outcome
+      (``landed-fix-suspect``) so ``_slug_state`` treats them identically
+      and one ``--retry-suspects`` re-drives both.
+
+    Returns the terminal outcome ('landed-fix-suspect' or 'skip' under
+    dry_run) or None (caller proceeds).
+    """
+    if suspect_eyeballed:
+        return None
+    outcome_lf = _landed_fix_suspect_outcome(item, root, dirpath=dirpath, fp=fp, dry_run=dry_run)
+    if outcome_lf is not None:
+        return outcome_lf
+    return _closed_sibling_outcome(item, dirpath=dirpath, fp=fp, dry_run=dry_run)
+
+
 def _dry_run_inject_note(item: dict, dirpath: Path, fp: str) -> str:
     """Read-only injection/reconcile-intent probe for the dry-run FILE line: write-free.
 
@@ -1551,20 +1588,14 @@ def _dry_run_item(
     if _wf_fix_enabled(item) and find_open_fp_duplicate(tasks_root, fp) is not None:
         print(f"DEDUP {slug} -> wf-fix-fp:{fp}")
         return "skip"
-    # #1674 dry-run mirror of the landed-fix probe (read-only by construction —
-    # no ledger write); same relative position as the real path.
-    if not suspect_eyeballed:
-        outcome_lf = _landed_fix_suspect_outcome(item, root, dirpath=dirpath, fp=fp, dry_run=True)
-        if outcome_lf is not None:
-            return outcome_lf
-    # #1711 dry-run mirror of the closed-sibling probe (read-only by construction
-    # — no ledger write); runs SECOND, same as the real path. Suppressed under the
-    # same `suspect_eyeballed` short-circuit as #1674 — a single --retry-suspects
-    # covers both (they share the `landed-fix-suspect` terminal outcome).
-    if not suspect_eyeballed:
-        outcome_cs = _closed_sibling_outcome(item, dirpath=dirpath, fp=fp, dry_run=True)
-        if outcome_cs is not None:
-            return outcome_cs
+    # #1674 + #1711 dry-run mirror of the landed-fix probes (read-only by
+    # construction — no ledger write); same relative position + probe order as
+    # the real path.
+    outcome_probes = _landed_fix_probes_outcome(
+        item, root, dirpath=dirpath, fp=fp, suspect_eyeballed=suspect_eyeballed, dry_run=True
+    )
+    if outcome_probes is not None:
+        return outcome_probes
     tags = _filer_cmd([], item, Path("-"), date, fp, hold_dispatch=hold is not None)
     pending = " [in-flight attempting row; recovery scan runs first]" if state != "fresh" else ""
     held = (
@@ -1657,28 +1688,15 @@ def process_item(
     if outcome3 is not None:
         return outcome3
 
-    # #1674 mechanical landed-fix probe — one of the LAST dedup-family checks before
-    # any mutation (body provenance write, `attempting` row, filer subprocess), so it
-    # runs only for items that would otherwise actually file. A suspect never
-    # leaves an `attempting` row (recovery semantics untouched).
-    if not suspect_eyeballed:
-        outcome_lf = _landed_fix_suspect_outcome(item, root, dirpath=dirpath, fp=fp, dry_run=False)
-        if outcome_lf is not None:
-            return outcome_lf
-
-    # #1711 mechanical closed-sibling probe — belt-and-suspenders for the
-    # vocabulary-divergent landed-fix class (#1386/#1360; caught by neither #1674's
-    # commit-subject arm nor the #1446 filer-side advisory in production). Runs
-    # SECOND, ONLY when #1674 did NOT suppress; short-circuits under the same
-    # `suspect_eyeballed` flag (a single --retry-suspects re-drives BOTH probes —
-    # they share the SAME `landed-fix-suspect` terminal outcome, so `_slug_state`
-    # cannot distinguish which probe wrote the row and the ERROR-vs-suspect
-    # priority stays unchanged). #1674 wins when both would fire (Option A ledger
-    # row shape stability — every existing #1674 test stays byte-identical).
-    if not suspect_eyeballed:
-        outcome_cs = _closed_sibling_outcome(item, dirpath=dirpath, fp=fp, dry_run=False)
-        if outcome_cs is not None:
-            return outcome_cs
+    # #1674 + #1711 mechanical landed-fix probes — one of the LAST dedup-family
+    # checks before any mutation (body provenance write, `attempting` row, filer
+    # subprocess). A suspect never leaves an `attempting` row (recovery
+    # semantics untouched).
+    outcome_probes = _landed_fix_probes_outcome(
+        item, root, dirpath=dirpath, fp=fp, suspect_eyeballed=suspect_eyeballed, dry_run=False
+    )
+    if outcome_probes is not None:
+        return outcome_probes
 
     body_path = _resolve_body_path(item, dirpath)
     if _wf_fix_enabled(item):
