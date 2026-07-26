@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1689,
+  "highest_id": 1690,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5362,6 +5362,13 @@
       "path": "tasks/on_hold/169",
       "status": "on_hold",
       "title": "Midtraining about SDF inoculation prompting for EM works"
+    },
+    "1690": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1690",
+      "status": "proposed",
+      "title": "daily-fix: verified-at-filing: 3 new probe clauses"
     },
     "17": {
       "has_clean_result": false,
