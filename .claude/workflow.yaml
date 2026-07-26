@@ -1670,20 +1670,42 @@ markers:
           same dispatcher and subprocess shape end-to-end, AND the
           cell-subset parameterization threads through EVERY phase the
           dispatcher executes (train, eval enumeration, anchor/analyze
-          tolerance). A subset honored by the train loop only, with a
-          downstream phase re-enumerating the full registered grid, is
-          FAIL_NO_CANARY (incident #546 round 1, 2026-06-10: PASS_UNIFIED
-          train + full-grid cross-eval → HF 404 on never-trained
-          adapters; the smoke could never pass by construction).
-          Non-cell smoke axes (questions/rows/steps/draws) sized below a
-          downstream phase's minimum-N assert are likewise FAIL_NO_CANARY
-          — the smoke crashes by construction (incident #1315 r4); the
-          notes: line names the floor per sliced axis.
+          tolerance), AND every planned arm's per-arm-resolution row
+          reads REAL or N/A, AND the Axis 1 import-resolution leg passed
+          on the REAL branch. A subset honored by the train loop only,
+          with a downstream phase re-enumerating the full registered
+          grid, is FAIL_NO_CANARY (incident #546 round 1, 2026-06-10:
+          PASS_UNIFIED train + full-grid cross-eval → HF 404 on
+          never-trained adapters; the smoke could never pass by
+          construction). Non-cell smoke axes (questions/rows/steps/draws)
+          sized below a downstream phase's minimum-N assert are likewise
+          FAIL_NO_CANARY — the smoke crashes by construction (incident
+          #1315 r4); the notes: line names the floor per sliced axis.
+          The notes: MUST also carry an `import-resolution: <cmd>` line
+          (Axis 1, experiment-implementer.md item 5) and a
+          `per-arm-resolution:` sub-block with one row per plan-named
+          arm (Axis 2); a `kind: infra` plan whose §4 names no arms
+          writes `per-arm-resolution: N/A — no plan-named arms`.
         `verdict: PASS_CANARY canary_cell=<cell_id>` — paths diverge
           (e.g., smoke uses in-process train, sweep uses subprocess
           wrapper) AND the plan §4 Design section justified the
           divergence in two sentences AND named the canary cell that
-          exercises the sweep path during smoke.
+          exercises the sweep path during smoke. Same per-arm invariant
+          as PASS_UNIFIED — every per-arm row reads REAL or N/A; a
+          FALLBACK row under PASS_CANARY is a marker-shape violation.
+        `verdict: PASS_PARTIAL arms_stubbed=<comma-list>` — phase
+          coverage holds AND the Axis 1 import-resolution leg passed
+          BUT ≥1 planned arm's per-arm-resolution row reads FALLBACK
+          (a stub / bias-refit / early-return in place of the arm's
+          production computation path). The `arms_stubbed` set MUST
+          equal the names of every FALLBACK-rowed arm verbatim. SKILL.md
+          Step 6d.0 gate (inline gates id=10) refuses to dispatch
+          experimenter on PASS_PARTIAL — bounces to planner to either
+          resolve the stubbed arms in the diff or re-authorize the stubs
+          in §4 Design (canary-like exception, v1.1). Closes the #1689
+          rounds-2/3/4 false-pass class where literal fallback stubs
+          satisfied phase coverage but delivered arms of the wrong
+          science.
         `verdict: FAIL_NO_CANARY` — paths diverge without the §4
           justification + canary; implementer also emits a
           `workflow-fix-candidate v1` suggesting re-architect toward

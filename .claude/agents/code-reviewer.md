@@ -228,9 +228,42 @@ with a round-1 marker PASSes this gate.
 - **Present with `verdict: FAIL_NO_CANARY`**: NOT a reviewer FAIL — Step 6d.0
   (gates.inline id=10) owns FAIL_NO_CANARY adjudication (bounce to planning).
   Note it as a CONCERNS bullet so the orchestrator sees it early.
-- **Present + parseable** (either PASS verdict): proceed. You do NOT
-  re-adjudicate the verdict's substance — the unification/canary judgment is
-  Step 6d.0's.
+- **Present + parseable** (any PASS verdict): verify the marker's
+  internal SHAPE before proceeding. Grep the plan §4 Design for the
+  arm/rung/condition names it declares (a `kind: experiment` plan
+  typically enumerates these; a `kind: infra` plan often names none —
+  the vacuous `per-arm-resolution: N/A — no plan-named arms` line
+  satisfies the shape check by construction). For every plan-named
+  arm, confirm the marker's `notes: per-arm-resolution:` sub-block
+  contains a row. Also verify the `notes: import-resolution: <cmd>`
+  line matches one of the three shapes named in
+  experiment-implementer.md Axis 1: (a) the dispatcher's
+  `--import-check` mode, (b) a `from <mod> import (<names>)` form
+  enumerating every deferred symbol, or (c) a bare `import <mod>`
+  tagged `import-resolution-mode: top-level-only` — only when the
+  entrypoint's changed lines contain no function-body imports (grep
+  the entrypoint's diff for `def .*:` blocks containing `from` or
+  `importlib`; a match returns a `marker-shape` blocker). Then bind
+  per verdict:
+  - `verdict: PASS_UNIFIED` — every per-arm row must read `REAL` or
+    `N/A`. Any `FALLBACK` row is a `marker-shape` blocker (the
+    verdict should have been `PASS_PARTIAL`).
+  - `verdict: PASS_PARTIAL arms_stubbed=<list>` — the `<list>` must
+    equal (as a set) the names of every `FALLBACK`-rowed arm.
+  - `verdict: PASS_CANARY canary_cell=<id>` — same REAL / N/A
+    invariant as `PASS_UNIFIED` (a `FALLBACK` row here is a
+    `marker-shape` blocker).
+  - `verdict: FAIL_NO_CANARY` — no per-arm binding (Step 6d.0
+    bounces regardless).
+
+  You do NOT re-adjudicate whether a `REAL` row actually ran real
+  code — that substance remains Step 6d.0's; the reviewer only
+  checks the marker's internal shape (rows present, verdict
+  consistent with rows, import-resolution shape matches one of the
+  three). A shape violation returns a single `Critical` blocker
+  tagged `marker-shape` whose body NAMES
+  `epm:smoke-architecture-check` (Step 5c-bis strip is keyed on that
+  name; the blocker names exactly ONE marker kind — never combined).
 
 ### Step 0.8: Read prior open binding concerns
 
