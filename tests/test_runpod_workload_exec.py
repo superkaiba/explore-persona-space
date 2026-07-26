@@ -230,7 +230,12 @@ def test_launch_dead_pid_raises(monkeypatch):
 
 
 def test_branch_sync_mismatch_raises(monkeypatch):
-    _wire_exec_leg(monkeypatch, ["SYNC-MISMATCH head=aaa fetch=bbb\n"])
+    # #1698 Item 1(b): the branch-assert SSH probe fires BEFORE
+    # _execute_workload_on_pod's own SYNC probe when repo_branch is
+    # non-`main`. Prepend the branch-verify output so the SYNC-MISMATCH
+    # output reaches the second SSH call — the one _execute_workload_on_pod
+    # actually issues.
+    _wire_exec_leg(monkeypatch, ["issue-909\n", "SYNC-MISMATCH head=aaa fetch=bbb\n"])
     with pytest.raises(RP.RunPodWorkloadStartError) as ei:
         RP.RunPodBackend().launch(
             _spec(extra={"execute_workload": True, "repo_branch": "issue-909"})
