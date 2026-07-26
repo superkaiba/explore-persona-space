@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1696,
+  "highest_id": 1697,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5411,6 +5411,13 @@
       "path": "tasks/proposed/1696",
       "status": "proposed",
       "title": "daily-fix: guard-surface reviewer posts verdict first"
+    },
+    "1697": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1697",
+      "status": "proposed",
+      "title": "daily-fix: --map-files timeout dispersion margin"
     },
     "17": {
       "has_clean_result": false,
