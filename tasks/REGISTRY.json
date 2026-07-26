@@ -5366,8 +5366,8 @@
     "1690": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1690",
-      "status": "proposed",
+      "path": "tasks/planning/1690",
+      "status": "planning",
       "title": "daily-fix: verified-at-filing: 3 new probe clauses"
     },
     "1691": {
