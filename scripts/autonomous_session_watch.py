@@ -25097,6 +25097,43 @@ def _boot_death_api_error_excerpt(rows: list[dict], cap: int = 200) -> str | Non
     return None
 
 
+def _boot_death_arm2_shape_and_window(
+    all_turns_failed: bool | None,
+    tail_rows: list[dict] | None,
+    refusal_window_s: float,
+    transport_window_s: float,
+) -> tuple[str, float]:
+    """Pre-classify the arm-2 subclass (#1695) and pick its age window.
+
+    Finds the LAST ``api-error`` row in ``tail_rows`` and routes to
+    ``"boot-transport"`` (freely-retryable 5-min threshold) vs
+    ``"boot-refusal"`` (usage-policy 30-min threshold) via
+    :func:`classify_boot_death_row`. When arm 2 does not apply
+    (``all_turns_failed`` is not ``True`` OR ``tail_rows`` is empty/None)
+    or no api-error row is present, defaults to ``"boot-refusal"``
+    (matching arm 1's 30-min threshold; refusal wins on tie, so unknown
+    text stays refusal by design). Returns ``(shape_pre, window_s)`` where
+    ``shape_pre`` is one of ``"boot-refusal"`` / ``"boot-transport"``.
+
+    Pure helper factored out of :func:`_process_boot_death` for C901 —
+    the classification loop + shape/window ternaries added ~5 to that
+    function's cyclomatic complexity.
+    """
+    last_api_error_row: dict | None = None
+    if all_turns_failed is True and tail_rows:
+        for r in reversed(tail_rows):
+            if _classify_wedge_row(r) == "api-error":
+                last_api_error_row = r
+                break
+    shape_pre = (
+        classify_boot_death_row(last_api_error_row)
+        if last_api_error_row is not None
+        else "boot-refusal"
+    )
+    window_s = transport_window_s if shape_pre == "boot-transport" else refusal_window_s
+    return shape_pre, window_s
+
+
 def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry_run: bool) -> None:
     """Evaluate ONE auto registration against the boot-death predicate and
     STOP its session when it verdicts ``"stop"`` (cap permitting). Every
@@ -25158,25 +25195,12 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
         None if turns is None else bool(turns) and all(o == "failed" for o, _ts in turns)
     )
     idle_s, _why = _transcript_idle_age_s(pid, now)
-    # Pre-classify the arm-2 subclass (#1695): find the LAST api-error row
-    # in the tail and route to boot-transport (freely-retryable 5-min
-    # threshold) vs boot-refusal (usage-policy 30-min threshold). Arm 1
-    # (zero-response) has no api-error row to classify — it defaults to
-    # boot-refusal, and its 30-min threshold is unchanged. Refusal wins on
-    # tie: unknown text stays boot-refusal by design, preserving today's
-    # behavior on any unlabeled row.
-    last_api_error_row: dict | None = None
-    if all_turns_failed is True and tail_rows:
-        for r in reversed(tail_rows):
-            if _classify_wedge_row(r) == "api-error":
-                last_api_error_row = r
-                break
-    shape_pre = (
-        classify_boot_death_row(last_api_error_row)
-        if last_api_error_row is not None
-        else "boot-refusal"
+    # Pre-classify the arm-2 subclass (#1695) — see
+    # :func:`_boot_death_arm2_shape_and_window` for the docstring covering
+    # the refusal-wins-on-tie tie-break and the arm-1 default.
+    shape_pre, window_s = _boot_death_arm2_shape_and_window(
+        all_turns_failed, tail_rows, refusal_window_s, transport_window_s
     )
-    window_s = transport_window_s if shape_pre == "boot-transport" else refusal_window_s
     state = _load_boot_death_state(issue)
     day_key = time.strftime("%Y-%m-%d", time.gmtime(now))  # the #1209/#1241 day-cap derivation
     stops_today = _day_scoped_count(state, "stop_day", "stops_today", day_key)
@@ -25229,10 +25253,7 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
     # turns), so arm 1 owning the tag when it fired is unambiguous. The
     # arm-2 shape is the pre-classified boot-refusal | boot-transport
     # (#1695).
-    if response_row_seen is False:
-        shape = "zero-response"
-    else:
-        shape = shape_pre  # boot-refusal | boot-transport
+    shape = "zero-response" if response_row_seen is False else shape_pre
     if shape == "zero-response":
         evidence = (
             f"transcript rows={len(rows)} size={size}B with ZERO response rows "
