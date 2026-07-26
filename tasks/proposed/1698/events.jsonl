@@ -1,2 +1,3 @@
 {"ts": "2026-07-26T07:06:08Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
 {"ts": "2026-07-26T10:23:37Z", "kind": "epm:progress", "version": 1, "by": "autonomous_session_watch", "note": "[autonomous_session_watch:proposed-infra-sweep-dispatch] watcher auto-dispatched ripe proposed infra task (no PM queue entry)"}
+{"ts": "2026-07-26T10:25:31Z", "kind": "epm:clarify", "version": 1, "by": "unknown", "note": "No blocking ambiguities. Body carries 4 numbered gaps with concrete evidence + corrections (pod-branch drop, finalize idempotency, RunPod launch duration contract, fence report source), scope surfaces, and constraints. Proceeding to adversarial planning."}
