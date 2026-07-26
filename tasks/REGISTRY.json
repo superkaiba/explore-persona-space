@@ -5415,8 +5415,8 @@
     "1697": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1697",
-      "status": "reviewing",
+      "path": "tasks/completed/1697",
+      "status": "completed",
       "title": "daily-fix: --map-files timeout dispersion margin"
     },
     "1698": {
