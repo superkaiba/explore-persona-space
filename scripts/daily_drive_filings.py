@@ -24,17 +24,48 @@ date tokens, and additionally requiring >= 1 shared post-exclusion TITLE token (
 a hit records terminal outcome ``already-tracked``
 and skips the filer; any scan error fails OPEN toward filing with a loud stderr WARN.
 
-Every item (routes 2 AND 3) additionally gets the #1674 mechanical landed-fix probe as
-the LAST dedup-family check before any mutation: ``git log --since='7 days ago'``
-scoped to the item's own target path(s); a commit SUBJECT sharing
-``>= LANDED_FIX_MIN_SHARED_TOKENS`` informative tokens with the item's title+bug+change
-text (same tokenizer + exclusions as the route-3 dedup) records terminal outcome
-``landed-fix-suspect`` (suspect sha(s) + subjects + shared tokens for the eyeball) and
-skips the filer; the override is ``--retry-suspects`` after eyeballing the commit(s).
-Any git error fails OPEN toward filing with ONE loud stderr WARN. Subject-only matching
-by design (plan #1674 §11 D3) — vocabulary-divergent landed fixes are a documented
-residual, so the compose-time clause-(a') git-log duty (daily SKILL.md route-2 mandate)
-stays PRIMARY.
+Every item (routes 2 AND 3) additionally gets TWO mechanical landed-fix probes as
+one of the LAST dedup-family checks before any mutation, in order (#1674 first,
+#1711 second):
+
+- #1674 commit-subject probe: ``git log --since='7 days ago'`` scoped to the
+  item's own target path(s); a commit SUBJECT sharing
+  ``>= LANDED_FIX_MIN_SHARED_TOKENS`` informative tokens with the item's
+  title+bug+change text (same tokenizer + exclusions as the route-3 dedup) records
+  terminal outcome ``landed-fix-suspect`` (suspect sha(s) + subjects + shared
+  tokens for the eyeball) and skips the filer. Any git error fails OPEN toward
+  filing with ONE loud stderr WARN. Subject-only matching by design (plan #1674
+  §11 D3).
+- #1711 closed-sibling probe (belt-and-suspenders backstop for the
+  vocabulary-divergent landed-fix class #1386/#1360; runs ONLY when #1674 did NOT
+  suppress): reuses ``task_workflow.recent_closed_workflow_fix_tasks`` (#1446 helper)
+  scanning recently-closed ``kind: infra`` sibling tasks. PATH arms (``target`` /
+  ``infra-target``) BLOCK the filing with the SAME ``landed-fix-suspect`` terminal
+  outcome (suspects[].kind = ``"closed-sibling"``); TITLE-only arms (``title:*`` /
+  ``infra-title:*``) fire a ``CLOSED-SIBLING-ADVISORY`` stderr line but do NOT
+  suppress (the helper docstring flags the unmeasured title-arm FP surface).
+  Any error fails OPEN toward filing (broad ``except Exception``, mirroring
+  ``_route3_dup_or_none``'s rationale — the helper's error surface spans registry
+  reads + N body reads + YAML parses, broader than a single ``git log`` call).
+
+The two probes are OR-combined at ``process_item`` level; either can suppress with
+the SAME terminal outcome, so one ``--retry-suspects`` re-drives both. The
+compose-time clause-(a') git-log duty (daily SKILL.md route-2 mandate) plus the
+compose-time closed-sibling eyeball stay PRIMARY — these probes are the
+mechanical backstops.
+
+Stdout/stderr split for the closed-sibling probe (mirrors #1674's
+``LANDED-FIX-SUSPECT`` on stdout / ``WARNING`` on stderr): the blocking
+``CLOSED-SIBLING-SUSPECT`` line prints on stdout (operator-facing — same channel
+as ``LANDED-FIX-SUSPECT``, so a fleet eyeball grep catches both), while the
+non-blocking ``CLOSED-SIBLING-ADVISORY`` line prints on stderr (informational,
+WARNING-adjacent — same channel as the helper's fail-open WARN).
+
+Why closed-sibling and NOT a commit-body / files-changed extension of #1674: the
+closed-sibling probe carries stronger provenance (the closed task IS the sibling
+and can be linked in the ledger for the eyeball); commit-body/files-changed
+matching is looser (any recent commit touching the paths, not necessarily a
+landed FIX).
 
 Same-target dispatch hold (#1678): a route-2 item sharing >=1 normalized target token
 (comma-split, ``./``-stripped, glob-as-literal) with any EARLIER route-2 item in the FULL
@@ -78,7 +109,16 @@ Ledger row shapes (one JSON object per line, ISO-UTC ``ts`` on every row):
   string on route-2 ``deduped`` rows)
 - ``{"slug", "outcome": "landed-fix-suspect", "suspects": [{"sha", "subject",
   "shared"}], "threshold", "window", "paths", "fp", "route", "ts"}`` (routes 2 AND 3 —
-  the #1674 mechanical landed-fix probe hit; terminal without ``--retry-suspects``)
+  the #1674 mechanical commit-subject landed-fix probe hit; terminal without
+  ``--retry-suspects``)
+- ``{"slug", "outcome": "landed-fix-suspect", "suspects": [{"kind":
+  "closed-sibling", "id", "title", "status", "target", "closed_at", "matched"}],
+  "threshold": null, "window": "7.0 days", "paths", "fp", "route", "ts"}``
+  (routes 2 AND 3 — the #1711 closed-sibling probe hit; the ``kind`` discriminator
+  distinguishes closed-sibling rows from #1674's commit-subject rows, which stay
+  byte-unchanged without a ``kind`` field — Option A source-compat; ``threshold``
+  is ``null`` here because closed-sibling arms are boolean, not token-threshold
+  based; ``--retry-suspects`` re-drives BOTH probes together)
 - ``{"slug", "outcome": "recovered", "id", "fp", "route", "dispatch_unconfirmed", "ts"}``
 - ``{"slug", "outcome": "ERROR", "flag", "id", "rc", "fp", "route", "tail", "ts"}``
   with ``flag`` one of ``filer-failed`` / ``no-id-parsed`` / ``timeout`` /
@@ -186,6 +226,25 @@ LANDED_FIX_WINDOW = "7 days ago"
 LANDED_FIX_MIN_SHARED_TOKENS = 3
 LANDED_FIX_GIT_TIMEOUT_S = 10  # same class as SHA_REV_PARSE_TIMEOUT_S (#1467)
 LANDED_FIX_MAX_SUSPECTS = 5  # ledger-row size bound; git log order = most recent first
+# ── #1711 mechanical closed-sibling probe ────────────────────────────────────
+# Reuses task_workflow.recent_closed_workflow_fix_tasks (#1446 helper). Fires
+# ALONGSIDE the #1674 commit-subject probe as the belt-and-suspenders backstop
+# for the vocabulary-divergent landed-fix class (#1386/#1360 — where the compose-
+# time git-log duty + the #1446 filer-side advisory both failed). Window matches
+# #1674's LANDED_FIX_WINDOW + the compose-time clause-(a') duty + the #1446
+# advisory window default (helper `days=7.0`) — all three same by design; a
+# narrower window here would diverge from the compose-time duty this backstop
+# supplements (plan #1711 §11 D1).
+CLOSED_SIBLING_WINDOW_DAYS = 7.0
+CLOSED_SIBLING_MAX_HITS = 5  # ledger-row size bound; helper already sorted DESC by closed_at
+# Arms of the helper's returned `matched` list that BLOCK a filing (PATH-based —
+# the strongest signal that the closed sibling actually addresses the same file
+# the candidate wants to touch). `title:*` / `infra-title:*` fire a stderr
+# advisory line but never suppress: the helper docstring itself warns of the
+# unmeasured FP surface on closed-task titles (task #1711 body's open question),
+# and the 3/3 measured incidents (#1330, #1386, #1652) all suppress on the PATH
+# arms alone. Rationale + block-vs-advisory design defense: plan #1711 §4.2.
+_CLOSED_SIBLING_BLOCKING_ARMS = ("target", "infra-target")
 REQUIRED_ITEM_KEYS = frozenset({"slug", "route", "title", "target", "bug", "change"})
 # Anchored to the line start: every file_infra_task.py success path prints a line starting
 # `filed #<id>` or `filed + dispatched #<id>`. A stray `#N` elsewhere must not win.
@@ -1037,6 +1096,137 @@ def _landed_fix_suspect_outcome(
     return "skip" if dry_run else "landed-fix-suspect"
 
 
+def find_closed_sibling_suspects(item: dict) -> tuple[list[dict], list[dict]]:
+    """Recently-closed infra siblings overlapping the item's target/title (#1711).
+
+    Returns ``(blocking_hits, advisory_hits)``: each is a list of dicts filtered
+    from :func:`task_workflow.recent_closed_workflow_fix_tasks` by whether ANY
+    matched arm is in :data:`_CLOSED_SIBLING_BLOCKING_ARMS`. Blocking hits carry
+    at least one PATH-based match (``target`` / ``infra-target``); advisory hits
+    carry only TITLE-based matches (``title:*`` / ``infra-title:*``).
+
+    Reuses the #1446 helper verbatim — its own error surface (per-task read
+    failures skip; empty inputs return ``[]``) is unchanged; the CALLER wraps
+    this in :func:`_closed_sibling_or_none` for the broad fail-open (the helper
+    reads registry + N body files, broader error space than a single ``git log``
+    subprocess). Both returned lists are capped at
+    :data:`CLOSED_SIBLING_MAX_HITS`; the helper already sorts DESC by
+    ``closed_at``, so the cap keeps the most-recent hits (parity with #1674's
+    ``LANDED_FIX_MAX_SUSPECTS``).
+    """
+    from explore_persona_space.task_workflow import recent_closed_workflow_fix_tasks
+
+    hits = recent_closed_workflow_fix_tasks(
+        item["target"], item["title"], days=CLOSED_SIBLING_WINDOW_DAYS
+    )
+    blocking: list[dict] = []
+    advisory: list[dict] = []
+    for h in hits:
+        matched_arms = {m.split(":", 1)[0] for m in h.get("matched", [])}
+        if matched_arms & set(_CLOSED_SIBLING_BLOCKING_ARMS):
+            blocking.append(h)
+        else:
+            advisory.append(h)
+    return blocking[:CLOSED_SIBLING_MAX_HITS], advisory[:CLOSED_SIBLING_MAX_HITS]
+
+
+def _closed_sibling_or_none(item: dict) -> tuple[list[dict], list[dict]]:
+    """Fail-open wrapper (#1711): any error WARNs loudly and files as today.
+
+    Broad ``except Exception`` catch is DELIBERATE (plan #1711 §4.7): the
+    helper reads the whole registry + N task body files (YAML + markdown
+    parse); the error surface is broader than a single ``git log`` subprocess
+    and than #1674's narrow enumerated tuple. Same rationale as
+    :func:`_route3_dup_or_none` (#1483) which uses the identical broad catch
+    for the identical reason ("broad Exception catch is DELIBERATE, mandated
+    by the task's fail-open constraint … the token/YAML surface has a broader
+    error space than the enumerable I/O classes there"). A held item is never
+    lost to a scan bug; the loud stderr WARNING is the fail-loud channel.
+    """
+    try:
+        return find_closed_sibling_suspects(item)
+    except Exception as e:  # deliberate fail-open, see docstring
+        print(
+            f"WARNING {item['slug']}: closed-sibling probe skipped"
+            f" ({e.__class__.__name__}: {e}) — fail-open, filing proceeds; the"
+            " compose-time closed-sibling eyeball + #1674 commit-subject probe"
+            " still apply (#1711)",
+            file=sys.stderr,
+        )
+        return [], []
+
+
+def _closed_sibling_outcome(item: dict, *, dirpath: Path, fp: str, dry_run: bool) -> str | None:
+    """Closed-sibling probe outcome for process_item, or None (mirror of
+    :func:`_landed_fix_suspect_outcome`'s contract, #1711). Routes 2 AND 3.
+
+    - No hits at all → returns ``None`` (caller proceeds to file).
+    - Advisory-only hits (title/infra-title arms) → prints ONE stderr
+      ``CLOSED-SIBLING-ADVISORY`` line per hit naming the sibling, returns
+      ``None`` (caller proceeds to file — title-only arms are non-blocking
+      by design; see :data:`_CLOSED_SIBLING_BLOCKING_ARMS`).
+    - Blocking hits (target/infra-target arms) → prints
+      ``CLOSED-SIBLING-SUSPECT`` on STDOUT (operator-facing, mirroring #1674's
+      ``LANDED-FIX-SUSPECT`` stdout shape so a fleet eyeball grep catches
+      both); the real path appends a terminal ``landed-fix-suspect`` ledger
+      row (with ``suspects[].kind == "closed-sibling"`` — Option A per plan
+      §4.3; distinguishable from #1674 rows by presence of ``id`` vs ``sha``)
+      and returns ``'landed-fix-suspect'``; dry-run stays read-only by
+      construction (no ledger write) and returns ``'skip'``.
+
+    Advisory lines print on STDERR (informational, WARNING-adjacent), the
+    intentional stdout/stderr split — plan #1711 concern-fold from
+    Methodology critic.
+    """
+    blocking, advisory = _closed_sibling_or_none(item)
+    slug = item["slug"]
+    # Print advisory-only hits first (never suppresses; visible on both dry-run
+    # and real paths). Stderr channel — informational, non-blocking.
+    for h in advisory:
+        arms = ",".join(h["matched"])
+        print(
+            f"CLOSED-SIBLING-ADVISORY {slug} -> #{h['id']}"
+            f' "{h["title"]}" (matched: {arms}) — title-only, NOT blocking (#1711)',
+            file=sys.stderr,
+        )
+    if not blocking:
+        return None
+    if not dry_run:
+        append_row(
+            dirpath,
+            {
+                "slug": slug,
+                "outcome": "landed-fix-suspect",
+                "suspects": [
+                    {
+                        "kind": "closed-sibling",
+                        "id": h["id"],
+                        "title": h["title"],
+                        "status": h["status"],
+                        "target": h["target"],
+                        "closed_at": h["closed_at"],
+                        "matched": h["matched"],
+                    }
+                    for h in blocking
+                ],
+                "threshold": None,
+                "window": f"{CLOSED_SIBLING_WINDOW_DAYS} days",
+                "paths": sorted(_target_tokens(item["target"])),
+                "fp": fp,
+                "route": item["route"],
+            },
+        )
+    top = blocking[0]
+    more = f"; +{len(blocking) - 1} more" if len(blocking) > 1 else ""
+    # Stdout channel — operator-facing, same as #1674's LANDED-FIX-SUSPECT.
+    print(
+        f"CLOSED-SIBLING-SUSPECT {slug} -> #{top['id']}"
+        f' "{top["title"]}" (matched: {",".join(top["matched"])}{more}) — NOT filing;'
+        " eyeball the sibling, re-run with --retry-suspects to file anyway (#1711)"
+    )
+    return "skip" if dry_run else "landed-fix-suspect"
+
+
 def _dry_run_inject_note(item: dict, dirpath: Path, fp: str) -> str:
     """Read-only injection/reconcile-intent probe for the dry-run FILE line: write-free.
 
@@ -1362,12 +1552,19 @@ def _dry_run_item(
         print(f"DEDUP {slug} -> wf-fix-fp:{fp}")
         return "skip"
     # #1674 dry-run mirror of the landed-fix probe (read-only by construction —
-    # no ledger write); same relative position as the real path: the LAST
-    # dedup-family check before the FILE line.
+    # no ledger write); same relative position as the real path.
     if not suspect_eyeballed:
         outcome_lf = _landed_fix_suspect_outcome(item, root, dirpath=dirpath, fp=fp, dry_run=True)
         if outcome_lf is not None:
             return outcome_lf
+    # #1711 dry-run mirror of the closed-sibling probe (read-only by construction
+    # — no ledger write); runs SECOND, same as the real path. Suppressed under the
+    # same `suspect_eyeballed` short-circuit as #1674 — a single --retry-suspects
+    # covers both (they share the `landed-fix-suspect` terminal outcome).
+    if not suspect_eyeballed:
+        outcome_cs = _closed_sibling_outcome(item, dirpath=dirpath, fp=fp, dry_run=True)
+        if outcome_cs is not None:
+            return outcome_cs
     tags = _filer_cmd([], item, Path("-"), date, fp, hold_dispatch=hold is not None)
     pending = " [in-flight attempting row; recovery scan runs first]" if state != "fresh" else ""
     held = (
@@ -1460,14 +1657,28 @@ def process_item(
     if outcome3 is not None:
         return outcome3
 
-    # #1674 mechanical landed-fix probe — the LAST dedup-family check before any
-    # mutation (body provenance write, `attempting` row, filer subprocess), so it
+    # #1674 mechanical landed-fix probe — one of the LAST dedup-family checks before
+    # any mutation (body provenance write, `attempting` row, filer subprocess), so it
     # runs only for items that would otherwise actually file. A suspect never
     # leaves an `attempting` row (recovery semantics untouched).
     if not suspect_eyeballed:
         outcome_lf = _landed_fix_suspect_outcome(item, root, dirpath=dirpath, fp=fp, dry_run=False)
         if outcome_lf is not None:
             return outcome_lf
+
+    # #1711 mechanical closed-sibling probe — belt-and-suspenders for the
+    # vocabulary-divergent landed-fix class (#1386/#1360; caught by neither #1674's
+    # commit-subject arm nor the #1446 filer-side advisory in production). Runs
+    # SECOND, ONLY when #1674 did NOT suppress; short-circuits under the same
+    # `suspect_eyeballed` flag (a single --retry-suspects re-drives BOTH probes —
+    # they share the SAME `landed-fix-suspect` terminal outcome, so `_slug_state`
+    # cannot distinguish which probe wrote the row and the ERROR-vs-suspect
+    # priority stays unchanged). #1674 wins when both would fire (Option A ledger
+    # row shape stability — every existing #1674 test stays byte-identical).
+    if not suspect_eyeballed:
+        outcome_cs = _closed_sibling_outcome(item, dirpath=dirpath, fp=fp, dry_run=False)
+        if outcome_cs is not None:
+            return outcome_cs
 
     body_path = _resolve_body_path(item, dirpath)
     if _wf_fix_enabled(item):
@@ -1598,15 +1809,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--retry-suspects",
         action="store_true",
-        help="re-attempt slugs whose only terminal row is landed-fix-suspect; the probe is"
-        " SKIPPED for them — the filer already eyeballed the suspect commit(s) (#1674)",
+        help="re-attempt slugs whose only terminal row is landed-fix-suspect; BOTH the"
+        " #1674 commit-subject probe AND the #1711 closed-sibling probe are SKIPPED for"
+        " them — the filer already eyeballed the suspect commit(s) and/or closed sibling"
+        " task(s) (#1674, #1711)",
     )
     parser.add_argument(
         "--dry-run",
         action="store_true",
         help="print per-item planned action (FILE/DEDUP/SKIP); no filer subprocess, no"
-        " ledger/body writes (read-only git probes may run: rev-parse sha-scan #1467,"
-        " git-log landed-fix probe #1674)",
+        " ledger/body writes (read-only probes may run: rev-parse sha-scan #1467,"
+        " git-log landed-fix probe #1674, closed-sibling registry+body scan #1711)",
     )
     return parser
 
