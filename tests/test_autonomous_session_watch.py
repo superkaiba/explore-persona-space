@@ -18996,6 +18996,277 @@ def test_boot_death_sentinels_in_watcher_note_sentinels():
     assert asw._BOOT_DEATH_CAP_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
 
 
+# ── boot-transport subclass split (#1695) ───────────────────────────────────
+
+
+def _api_error_row_with_text(text: str) -> dict:
+    """An `isApiErrorMessage: true` assistant row carrying ``text``.
+    Mirrors the shape :func:`_boot_refusal_rows_fixture` builds."""
+    return {
+        "type": "assistant",
+        "isApiErrorMessage": True,
+        "message": {"content": [{"type": "text", "text": text}]},
+    }
+
+
+@pytest.mark.parametrize(
+    "phrase",
+    [
+        "API Error: Repeated 529 Overloaded errors. The API is at capacity",
+        "529",
+        "overloaded",
+        "429",
+        "rate limit",
+        "ratelimit",  # no-space variant — plan calibration Statistics critic pin
+        "timeout",
+        "connection error",
+        "api connection",  # api-connection error variant
+        "TIMEOUT",  # case-insensitive
+        "Rate Limit exceeded",  # mixed case
+    ],
+)
+def test_boot_death_classifier_transport_substrings(phrase):
+    """Every listed transport substring routes the row to boot-transport
+    (case-insensitive) — covers the two substrings the plan enumerated but
+    that were not pinned in the plan's own §6.2 test enumeration:
+    `"ratelimit"` (no-space) and `"api connection"`."""
+    import autonomous_session_watch as asw
+
+    row = _api_error_row_with_text(phrase)
+    assert asw.classify_boot_death_row(row) == "boot-transport"
+
+
+def test_boot_death_classifier_classifies_issue_1689_incident_string_as_transport():
+    """The strongest "the fix actually addresses the incident that motivated
+    it" invariant — the verbatim #1689 incident content string classifies
+    as boot-transport, so the 5-min collapsed threshold engages (not the
+    30-min refusal grace that caused #1689's ~2h 24m wait)."""
+    import autonomous_session_watch as asw
+
+    text = "API Error: Repeated 529 Overloaded errors. The API is at capacity"
+    row = _api_error_row_with_text(text)
+    assert asw.classify_boot_death_row(row) == "boot-transport"
+
+
+def test_boot_death_classifier_returns_refusal_for_usage_policy():
+    """A usage-policy refusal is classified as boot-refusal (preserves
+    today's 30-min grace — the API will refuse the same content on retry)."""
+    import autonomous_session_watch as asw
+
+    row = _api_error_row_with_text("I can't help with cyber content, it violates our usage policy.")
+    assert asw.classify_boot_death_row(row) == "boot-refusal"
+
+
+def test_boot_death_classifier_refusal_wins_on_tie():
+    """DURABILITY PIN (#1695): a row containing BOTH a refusal substring and
+    a transport substring stays boot-refusal — refusal wins on tie, so we
+    never weaken the pre-existing 30-min refusal grace on a row that also
+    mentions a transport keyword in passing."""
+    import autonomous_session_watch as asw
+
+    # Contains both "529" AND "usage policy" — refusal must win.
+    row = _api_error_row_with_text("429 rate limit hit while text violates our usage policy check")
+    assert asw.classify_boot_death_row(row) == "boot-refusal"
+
+
+def test_boot_death_classifier_defaults_to_refusal_on_unknown_text():
+    """Content matching neither substring set defaults to boot-refusal —
+    unknown text keeps today's 30-min grace, never the collapsed 5-min
+    threshold."""
+    import autonomous_session_watch as asw
+
+    row = _api_error_row_with_text("boot script exited with an unusual error")
+    assert asw.classify_boot_death_row(row) == "boot-refusal"
+
+
+def test_boot_death_classifier_empty_text_defaults_to_refusal():
+    """Fail-toward-refusal on empty / missing text — a row we cannot
+    classify keeps the 30-min grace."""
+    import autonomous_session_watch as asw
+
+    # Empty content
+    assert (
+        asw.classify_boot_death_row({"type": "assistant", "message": {"content": ""}})
+        == "boot-refusal"
+    )
+    # No message at all
+    assert asw.classify_boot_death_row({"type": "assistant"}) == "boot-refusal"
+
+
+def test_boot_transport_env_default_is_5_min(monkeypatch):
+    """Default 5 min (300s) when the env is unset; parity with
+    :func:`_boot_death_window_s` env-parse test."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_BOOT_TRANSPORT_MIN_AGE_MIN", raising=False)
+    assert asw._boot_transport_min_age_s() == 300.0
+
+
+def test_boot_transport_env_honors_valid_minutes(monkeypatch):
+    """A valid minutes value is honored (minutes x 60 = seconds)."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_BOOT_TRANSPORT_MIN_AGE_MIN", "7")
+    assert asw._boot_transport_min_age_s() == 420.0
+
+
+@pytest.mark.parametrize("bad", ["0", "-5", "junk", "-0.1"])
+def test_boot_transport_env_reject_negative_and_malformed(monkeypatch, bad):
+    """Malformed / non-positive env falls back to the default. Never a kill
+    switch — the lane's kill switch is EPM_DISABLE_BOOT_DEATH_PASS=1."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_BOOT_TRANSPORT_MIN_AGE_MIN", bad)
+    assert asw._boot_transport_min_age_s() == 300.0
+
+
+def test_process_boot_death_uses_transport_threshold_when_row_is_529(
+    isolated_registry, monkeypatch
+):
+    """End-to-end pin: a boot-transport-classified refusal at registration
+    age 7 min (past the 5-min transport threshold but < 30-min refusal
+    threshold) STOPS the session — the collapsed lane engages. Companion
+    assertion: the marker note carries the new shape token and the
+    transport-descriptor language."""
+    import autonomous_session_watch as asw
+
+    # #1287 arm 2 shape (all completed turns failed) with a 529 api-error row.
+    rows = _boot_refusal_rows_fixture()
+    # Replace the trailing api-error text with a transport-classifiable
+    # phrase — the classifier must route to boot-transport.
+    for row in reversed(rows):
+        if row.get("isApiErrorMessage"):
+            row["message"] = {"content": [{"type": "text", "text": "API Error: 529 Overloaded"}]}
+            break
+
+    stops: list = []
+    monkeypatch.setattr(
+        asw, "_stop_session", lambda sid, dry_run: bool(stops.append((sid, dry_run))) or True
+    )
+    markers: list = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: markers.append((issue, label, note, dry_run)),
+    )
+    _boot_death_env(monkeypatch, asw, rows=rows)
+    # Registration age = 7 min: BELOW the 30-min refusal threshold, ABOVE
+    # the 5-min transport threshold — the collapsed lane must fire here
+    # and would NOT fire without the split.
+    _write_boot_death_entry(isolated_registry, 991, "sess-991", _BOOT_DEATH_NOW - 7 * 60)
+    asw.boot_death_pass(
+        dry_run=False,
+        children=[{"happySessionId": "sess-991", "pid": 5252}],
+        now=_BOOT_DEATH_NOW,
+    )
+
+    assert stops == [("sess-991", False)], f"Expected transport-classified stop, got: {stops}"
+    assert len(markers) == 1
+    note = markers[0][2]
+    assert "shape=boot-transport" in note
+    assert "transport-class" in note
+
+
+def test_process_boot_death_boot_refusal_keeps_before_30_min(isolated_registry, monkeypatch):
+    """Companion to the previous test: at the SAME age (7 min) with a
+    boot-refusal-classified row, the session is NOT stopped — the 30-min
+    threshold still binds for refusals. This pins the "refusal wins on tie"
+    fail-safe: only the transport case gets the collapsed threshold."""
+    import autonomous_session_watch as asw
+
+    # Use the default fixture (its trailing api-error text is _BOOT_REFUSAL_TEXT
+    # `"API Error: 400 request was blocked by our usage policy"` — a refusal).
+    rows = _boot_refusal_rows_fixture()
+
+    stops: list = []
+    monkeypatch.setattr(
+        asw, "_stop_session", lambda sid, dry_run: bool(stops.append((sid, dry_run))) or True
+    )
+    _boot_death_env(monkeypatch, asw, rows=rows)
+    _write_boot_death_entry(isolated_registry, 992, "sess-992", _BOOT_DEATH_NOW - 7 * 60)
+    asw.boot_death_pass(
+        dry_run=False,
+        children=[{"happySessionId": "sess-992", "pid": 5253}],
+        now=_BOOT_DEATH_NOW,
+    )
+
+    assert stops == [], (
+        "Refusal at 7 min must NOT stop — the 30-min threshold is unchanged for refusals"
+    )
+
+
+def test_process_boot_death_transport_stop_counts_against_shared_day_cap(
+    isolated_registry, monkeypatch
+):
+    """SHARED DAY CAP PIN (#1695 A3): boot-transport stops count against the
+    same `stops_today` counter as boot-refusal / zero-response, so a
+    degenerate transport re-dispatch loop is bounded by
+    EPM_BOOT_DEATH_STOPS_PER_DAY (default 3) — no new bucket, no new key."""
+    import json
+    import time as _t
+
+    import autonomous_session_watch as asw
+
+    # Boot-transport shape at 7 min age.
+    rows = _boot_refusal_rows_fixture()
+    for row in reversed(rows):
+        if row.get("isApiErrorMessage"):
+            row["message"] = {"content": [{"type": "text", "text": "API Error: 529"}]}
+            break
+
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: True)
+    markers: list = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: markers.append((issue, label, note, dry_run)),
+    )
+    _boot_death_env(monkeypatch, asw, rows=rows)
+
+    # Pre-seed the day-cap counter at 3 (cap reached).
+    day_key = _t.strftime("%Y-%m-%d", _t.gmtime(_BOOT_DEATH_NOW))
+    state_path = isolated_registry / "boot-death-993.json"
+    state_path.write_text(json.dumps({"stop_day": day_key, "stops_today": 3}))
+
+    _write_boot_death_entry(isolated_registry, 993, "sess-993", _BOOT_DEATH_NOW - 7 * 60)
+    asw.boot_death_pass(
+        dry_run=False,
+        children=[{"happySessionId": "sess-993", "pid": 5254}],
+        now=_BOOT_DEATH_NOW,
+    )
+
+    # Cap reached => cap-alert marker fires (not a stop), and the transport
+    # shape shares the counter.
+    labels = [la for _i, la, _n, _d in markers]
+    assert labels == ["boot-death-cap-exhausted"], (
+        f"Expected cap-alert (transport shares the shared day cap), got: {labels}"
+    )
+
+
+def test_process_boot_death_zero_response_keeps_30_min_threshold(isolated_registry, monkeypatch):
+    """ARM 1 PIN: zero-response (no api-error row to classify) uses the
+    30-min refusal threshold — a boot-transport miscategorization must not
+    escape via arm 1. At age 7 min zero-response keeps."""
+    import autonomous_session_watch as asw
+
+    # Zero-response fixture (no api-error, no assistant rows).
+    rows = _boot_death_rows_fixture()
+
+    stops: list = []
+    monkeypatch.setattr(
+        asw, "_stop_session", lambda sid, dry_run: bool(stops.append((sid, dry_run))) or True
+    )
+    _boot_death_env(monkeypatch, asw, rows=rows)
+    _write_boot_death_entry(isolated_registry, 994, "sess-994", _BOOT_DEATH_NOW - 7 * 60)
+    asw.boot_death_pass(
+        dry_run=False,
+        children=[{"happySessionId": "sess-994", "pid": 5255}],
+        now=_BOOT_DEATH_NOW,
+    )
+
+    assert stops == [], "Zero-response at 7 min must NOT stop — arm 1 keeps the 30-min threshold"
+
+
 def test_main_order_boot_death_before_stale_registration(isolated_registry, monkeypatch):
     # #1267 wiring: boot_death_pass runs AFTER gate_push_pass (the gate-push-
     # before-reaper ordering invariant) and BEFORE stale_registration_pass,

@@ -1619,6 +1619,59 @@ BOOT_DEATH_QUIET_S = 10 * 60
 BOOT_DEATH_TAIL_BYTES = 256 * 1024
 BOOT_DEATH_STOPS_PER_DAY = 3
 
+# Boot-death arm-2 subclass split (#1695). The 30-min refusal window
+# (BOOT_DEATH_WINDOW_S) is correct for a usage-policy refusal — the API
+# will refuse the same content on retry, so waiting shields a session that
+# is only genuinely dead once the tick cron backstop times out. It is
+# WRONG for a transport failure (529/429/timeout/connection): those are
+# freely retryable (`.claude/rules/llm-judging.md` rule 24), the SDK's
+# transient tuple resolves inside its 5-retry AIMD budget in ~seconds to
+# a few minutes, and waiting 30 min forfeits ~25 min of latency per
+# incident at zero benefit (#1689: first-turn 529 waited ~2h 24m
+# post-stop grace on top of the 30-min refusal window).
+#
+# The 5-min transport threshold sits past the SDK's transient retry
+# budget's typical wall-time envelope; 10 min was rejected as slack (a
+# healthy 529 is resolved well inside that window), 1 min was rejected
+# as too tight (leaves no room for a first-turn retry that would
+# complete in-session). The stop cap is UNCHANGED and SHARED across all
+# three shapes (zero-response / boot-refusal / boot-transport) — no new
+# bucket, no new day-cap key: a degenerate transport re-dispatch loop is
+# bounded at BOOT_DEATH_STOPS_PER_DAY (default 3) per issue per UTC day.
+BOOT_TRANSPORT_MIN_AGE_S = 5 * 60
+
+# Transport substrings (case-insensitive, whole-content match). Verbatim
+# from the #1689 incident content ("Repeated 529 Overloaded errors. The
+# API is at capacity") + the SDK-standard transient-error class
+# (`.claude/rules/llm-judging.md` rule 24 —
+# `anthropic._exceptions.OverloadedError` / `RateLimitError` /
+# `APITimeoutError` / `APIConnectionError` / `APIStatusError` with
+# `status_code == 529`). Claude Code renders these into the
+# ``isApiErrorMessage`` row's content with those exact substrings.
+BOOT_TRANSPORT_SUBSTRINGS: tuple[str, ...] = (
+    "529",
+    "overloaded",
+    "429",
+    "rate limit",
+    "ratelimit",
+    "timeout",
+    "connection error",
+    "api connection",
+)
+
+# Usage-policy substrings (also case-insensitive). REFUSAL WINS ON TIE:
+# a row containing BOTH a transport substring AND a usage-policy
+# substring stays boot-refusal — we deliberately do NOT weaken the
+# pre-existing 30-min refusal grace. The exact refusal wording Claude
+# Code emits on a usage-policy refusal (CLAUDE.md § "Spurious
+# usage-policy refusals" — "violates our Usage Policy" verbatim);
+# "cyber content" is the guard-surface subclass from #1098.
+BOOT_REFUSAL_SUBSTRINGS: tuple[str, ...] = (
+    "usage policy",
+    "violates our",
+    "cyber content",
+)
+
 # OPT-IN heartbeat sentinel for legitimately-slow phases (off-pod analyzer
 # verifier rounds, in-flight Anthropic Batch polling). UNLIKE every other
 # sentinel in this file, this one is stamped by the LONG-RUNNING PHASE
@@ -24840,6 +24893,69 @@ def _boot_death_window_s() -> float:
     return parsed
 
 
+def _boot_transport_min_age_s() -> float:
+    """Boot-transport registration-age threshold in seconds (env
+    ``EPM_BOOT_TRANSPORT_MIN_AGE_MIN``, MINUTES — the collapsed lane for
+    freely-retryable transport failures, #1695; default
+    :data:`BOOT_TRANSPORT_MIN_AGE_S`). Malformed / non-positive env falls
+    back to the default; never a kill switch (the lane's kill switch is
+    ``EPM_DISABLE_BOOT_DEATH_PASS=1``, unchanged). Byte-parallel to
+    :func:`_boot_death_window_s`."""
+    raw = os.environ.get("EPM_BOOT_TRANSPORT_MIN_AGE_MIN")
+    if not raw:
+        return float(BOOT_TRANSPORT_MIN_AGE_S)
+    try:
+        parsed = float(raw) * 60.0
+    except ValueError:
+        return float(BOOT_TRANSPORT_MIN_AGE_S)
+    if parsed <= 0:
+        return float(BOOT_TRANSPORT_MIN_AGE_S)
+    return parsed
+
+
+def _boot_death_row_texts(row: dict) -> list[str]:
+    """Every text field the row's ``message.content`` exposes. Pure helper
+    factored from :func:`_boot_death_api_error_excerpt` (whose iteration
+    shape it mirrors byte-for-byte) so the classifier and the excerpt
+    helper share ONE content walker (#1695). Never raises on the dict
+    shapes ``row`` can hold — a text block whose ``"text"`` value is
+    non-str is skipped."""
+    msg = row.get("message")
+    content = msg.get("content") if isinstance(msg, dict) else None
+    texts: list[str] = []
+    if isinstance(content, str):
+        texts.append(content)
+    elif isinstance(content, list):
+        texts.extend(
+            b["text"]
+            for b in content
+            if isinstance(b, dict) and b.get("type") == "text" and isinstance(b.get("text"), str)
+        )
+    return texts
+
+
+def classify_boot_death_row(row: dict) -> str:
+    """Classify the failing api-error row that killed the boot turn (#1695).
+
+    Returns ``"boot-transport"`` when the row's text contains ANY
+    :data:`BOOT_TRANSPORT_SUBSTRINGS` (case-insensitive) AND NO
+    :data:`BOOT_REFUSAL_SUBSTRINGS`. Returns ``"boot-refusal"`` otherwise —
+    the default: unclassifiable content, empty text, and content that
+    matches BOTH sets all keep today's 30-min refusal grace (refusal wins
+    on tie, since a row whose text names a transport substring in passing
+    but IS a usage-policy refusal must not be routed to the collapsed
+    5-min transport threshold). Pure string scanning; never raises."""
+    texts = _boot_death_row_texts(row)
+    joined = " ".join(texts).lower()
+    if not joined:
+        return "boot-refusal"  # no text to classify -> today's default
+    if any(sub in joined for sub in BOOT_REFUSAL_SUBSTRINGS):
+        return "boot-refusal"  # refusal wins on tie
+    if any(sub in joined for sub in BOOT_TRANSPORT_SUBSTRINGS):
+        return "boot-transport"
+    return "boot-refusal"  # unknown text -> today's default
+
+
 def _boot_death_stops_per_day() -> int:
     """Daily per-issue cap on boot-death stops (env
     ``EPM_BOOT_DEATH_STOPS_PER_DAY``; default
@@ -24974,20 +25090,7 @@ def _boot_death_api_error_excerpt(rows: list[dict], cap: int = 200) -> str | Non
     for row in reversed(rows):
         if _classify_wedge_row(row) != "api-error":
             continue
-        msg = row.get("message")
-        content = msg.get("content") if isinstance(msg, dict) else None
-        texts: list[str] = []
-        if isinstance(content, str):
-            texts.append(content)
-        elif isinstance(content, list):
-            texts.extend(
-                b["text"]
-                for b in content
-                if isinstance(b, dict)
-                and b.get("type") == "text"
-                and isinstance(b.get("text"), str)
-            )
-        for text in texts:
+        for text in _boot_death_row_texts(row):
             excerpt = " ".join(text.split())
             if excerpt:
                 return excerpt[:cap]
@@ -25021,7 +25124,16 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
         entry_age_s = now - float(spawned_at)
     # Cheap early exits BEFORE any transcript IO: a dead sid is the
     # crash-recovery pass's property; a young/unaged entry can't fire.
-    if pid is None or entry_age_s is None or entry_age_s < _boot_death_window_s():
+    # NOTE (#1695): the min-window floor is the SHORTER of the two shape
+    # thresholds — a boot-transport session age >= 5 min but < 30 min must
+    # not be filtered out here (its shape-specific 5-min threshold is
+    # applied later, after row classification). Arm 1 (zero-response) and
+    # boot-refusal keep the 30-min window via the `window_s=` selection
+    # below.
+    refusal_window_s = _boot_death_window_s()
+    transport_window_s = _boot_transport_min_age_s()
+    min_window_s = min(refusal_window_s, transport_window_s)
+    if pid is None or entry_age_s is None or entry_age_s < min_window_s:
         return
     # Activity guards (both fail toward keep): something owns this issue.
     if _provision_in_flight_reason(issue, now) is not None:
@@ -25046,6 +25158,25 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
         None if turns is None else bool(turns) and all(o == "failed" for o, _ts in turns)
     )
     idle_s, _why = _transcript_idle_age_s(pid, now)
+    # Pre-classify the arm-2 subclass (#1695): find the LAST api-error row
+    # in the tail and route to boot-transport (freely-retryable 5-min
+    # threshold) vs boot-refusal (usage-policy 30-min threshold). Arm 1
+    # (zero-response) has no api-error row to classify — it defaults to
+    # boot-refusal, and its 30-min threshold is unchanged. Refusal wins on
+    # tie: unknown text stays boot-refusal by design, preserving today's
+    # behavior on any unlabeled row.
+    last_api_error_row: dict | None = None
+    if all_turns_failed is True and tail_rows:
+        for r in reversed(tail_rows):
+            if _classify_wedge_row(r) == "api-error":
+                last_api_error_row = r
+                break
+    shape_pre = (
+        classify_boot_death_row(last_api_error_row)
+        if last_api_error_row is not None
+        else "boot-refusal"
+    )
+    window_s = transport_window_s if shape_pre == "boot-transport" else refusal_window_s
     state = _load_boot_death_state(issue)
     day_key = time.strftime("%Y-%m-%d", time.gmtime(now))  # the #1209/#1241 day-cap derivation
     stops_today = _day_scoped_count(state, "stop_day", "stops_today", day_key)
@@ -25056,7 +25187,7 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
         response_row_seen=response_row_seen,
         all_turns_failed=all_turns_failed,
         transcript_idle_s=idle_s,
-        window_s=_boot_death_window_s(),
+        window_s=window_s,
         quiet_s=BOOT_DEATH_QUIET_S,
         stops_today=stops_today,
         stops_per_day=cap,
@@ -25095,8 +25226,13 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
     _save_boot_death_state(issue, state, dry_run)
     stop_ok = _stop_session(sid, dry_run)
     # Arms are mutually exclusive (zero response rows => zero completed
-    # turns), so arm 1 owning the tag when it fired is unambiguous.
-    shape = "zero-response" if response_row_seen is False else "boot-refusal"
+    # turns), so arm 1 owning the tag when it fired is unambiguous. The
+    # arm-2 shape is the pre-classified boot-refusal | boot-transport
+    # (#1695).
+    if response_row_seen is False:
+        shape = "zero-response"
+    else:
+        shape = shape_pre  # boot-refusal | boot-transport
     if shape == "zero-response":
         evidence = (
             f"transcript rows={len(rows)} size={size}B with ZERO response rows "
@@ -25106,14 +25242,20 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
         n_tail = len(tail_rows) if tail_rows is not None else 0
         n_turns = len(turns) if turns else 0
         api_error_rows = sum(1 for r in (tail_rows or []) if _classify_wedge_row(r) == "api-error")
+        if shape == "boot-transport":
+            descriptor = (
+                "transport-class api-error (529 / 429 / timeout / connection) — "
+                "freely-retryable, collapsed 5-min threshold, #1695"
+            )
+        else:
+            descriptor = "refusal-killed boot turn, #1287"
         evidence = (
             f"256KB-tail rows={n_tail} (file size={size}B): {n_turns} completed "
-            f"turn(s), ALL failed ({api_error_rows} api-error row(s) — "
-            f"refusal-killed boot turn, #1287)"
+            f"turn(s), ALL failed ({api_error_rows} api-error row(s) — {descriptor})"
         )
     note = (
         f"{_BOOT_DEATH_STOP_NOTE_SENTINEL} stopped boot-dead session sid={sid}: "
-        f"registration age {entry_age_s / 60:.0f}m >= {_boot_death_window_s() / 60:.0f}m, "
+        f"registration age {entry_age_s / 60:.0f}m >= {window_s / 60:.0f}m, "
         f"shape={shape}, {evidence}, idle {(idle_s or 0) / 60:.0f}m; stop_ok={stop_ok}; "
         f"task status={status}; stop {stops_today + 1}/{cap} today; registration kept: "
         f"crash-recovery re-drives an ACTIVE task (~20 min); the proposed-infra sweep's "
