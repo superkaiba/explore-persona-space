@@ -5534,8 +5534,8 @@
     "1711": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1711",
-      "status": "proposed",
+      "path": "tasks/planning/1711",
+      "status": "planning",
       "title": "daily-fix: closed-sibling probe in /daily driver"
     },
     "1712": {
