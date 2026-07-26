@@ -5422,8 +5422,8 @@
     "1698": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1698",
-      "status": "reviewing",
+      "path": "tasks/completed/1698",
+      "status": "completed",
       "title": "daily-fix: RunPod launch-path branch/teardown contract"
     },
     "1699": {
@@ -5457,29 +5457,29 @@
     "1701": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1701",
-      "status": "running",
+      "path": "tasks/completed/1701",
+      "status": "completed",
       "title": "daily-fix: inline-round scientific duties"
     },
     "1702": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1702",
-      "status": "planning",
+      "path": "tasks/reviewing/1702",
+      "status": "reviewing",
       "title": "daily-fix: thread --env-pin into Step 6b composition"
     },
     "1703": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1703",
-      "status": "running",
+      "path": "tasks/completed/1703",
+      "status": "completed",
       "title": "daily-fix: sweep emits unmatched_record_fps advisory"
     },
     "1704": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1704",
-      "status": "proposed",
+      "path": "tasks/reviewing/1704",
+      "status": "reviewing",
       "title": "daily-fix: reconcile crash bundles against git"
     },
     "1705": {
@@ -5513,8 +5513,8 @@
     "1709": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1709",
-      "status": "proposed",
+      "path": "tasks/reviewing/1709",
+      "status": "reviewing",
       "title": "daily-fix: SPECS syncs paired tests/test_guard_ files"
     },
     "171": {
@@ -5534,8 +5534,8 @@
     "1711": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1711",
-      "status": "proposed",
+      "path": "tasks/planning/1711",
+      "status": "planning",
       "title": "daily-fix: closed-sibling probe in /daily driver"
     },
     "1712": {
