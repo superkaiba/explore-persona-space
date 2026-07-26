@@ -7659,7 +7659,7 @@ def _codex_outage_bounded_skip_count(detected_at_unix: float) -> tuple[int | Non
     reg_root = registry_path().parent.parent
     count = 0
     overflowed = False
-    for tid_raw, meta in tasks.items():
+    for _tid_raw, meta in tasks.items():
         try:
             rel = None
             if isinstance(meta, dict):
