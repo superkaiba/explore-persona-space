@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1700,
+  "highest_id": 1701,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5453,6 +5453,13 @@
       "path": "tasks/proposed/1700",
       "status": "proposed",
       "title": "daily-fix: verify_plan exempt-kind + commit-SHA check"
+    },
+    "1701": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1701",
+      "status": "proposed",
+      "title": "daily-fix: inline-round scientific duties"
     },
     "171": {
       "has_clean_result": true,
