@@ -108,6 +108,27 @@ def render_condition(
         "assistant_label": identity_display(condition),
     }
 
+    # For the distinct prefix / context / answer arms per plan §4 + CLAUDE.md
+    # "Prefix mapping AND context mapping", the renderer emits THREE text
+    # segments (never re-joined at capture time — capture concatenates in the
+    # SAME order the render used to compute character offsets):
+    #   prefix_text_only  = everything BEFORE u2 (system + u1 + a1 + role hdr)
+    #   u2_text_marked    = the u2 segment itself (may be empty for user-arm
+    #                       where u2 IS the DV; character-offset-continuous
+    #                       with prefix_text_only)
+    #   context_tail      = interstitial between u2 and a2 (e.g. "\n\nAssistant: ")
+    # The capture rig tokenizes  prefix_text_only + u2_text_marked + context_tail
+    # + a2_text  in ONE pass with return_offsets_mapping=True and reads:
+    #   prefix_end_char_offset  = len(prefix_text_only)
+    #   context_end_char_offset = len(prefix_text_only + u2_text_marked + context_tail)
+    # then maps each char offset → token index via offset_mapping (BPE-safe;
+    # avoids the plain-text-boundary merge trap in gotchas.md § "Plain-text
+    # span boundaries are the WORST case").
+    #
+    # Also retained: prompt_text (= prefix_text_only + u2_text_marked +
+    # context_tail — the exact model input up to a2), for backwards compat
+    # with any downstream reader.
+
     # 1) chat template - inject system prompt when character; user/assistant
     # arms use the base chat template.
     if condition.framing == "chat":
@@ -121,8 +142,17 @@ def render_condition(
         row["messages"] = messages
         # For a Qwen chat-template render we defer to the tokenizer at capture
         # time (`apply_chat_template(add_generation_prompt=True)`). Record the
-        # abstract shape here.
+        # abstract shape here. Capture also splits at the u2 message boundary
+        # using apply_chat_template on the leading conversation prefix (up to
+        # a1) vs the full conversation (through u2) — see capture_cell's
+        # _chat_offsets helper.
         row["prompt_source"] = "chat_template"
+        # For chat framing, prefix_text_only + u2 + context_tail are rendered
+        # at capture time via apply_chat_template. Renderer stores the
+        # per-role parts so the capture rig can reconstruct all three.
+        row["prefix_text_only"] = None  # capture reconstructs via chat_template
+        row["u2_text_marked"] = u2_text
+        row["context_tail"] = None
     # 2) naturalistic — plain text with role headers `User:` / `Assistant:` (or
     # persona-labeled) per plan §4.
     elif condition.framing == "naturalistic":
@@ -132,43 +162,58 @@ def render_condition(
         # a2, not u2). For the user arm, u2 IS what the model produces.
         # Naturalistic user-in-frame: {User_prev: u1} \n\n {Assistant_prev: a1}
         # \n\n {User: u2} \n\n {Assistant_next:}
+        prefix_only = f"{user_tag}: {u1}\n\n{assistant_tag}: {a1}\n\n{user_tag}: "
         if condition.is_user:
             # The user-arm asks the MODEL to produce u2 (the user's next turn),
             # so the FILLED "u2" is what the model just wrote (or an lmsys/haiku
-            # substitute).
-            text = (
-                f"{user_tag}: {u1}\n\n"
-                f"{assistant_tag}: {a1}\n\n"
-                f"{user_tag}: "  # a2 slot: MODEL generates the user's turn 2
-            )
-            # For the user arm's naturalistic framing, u2_text is the DV: the
-            # model generates it. We only render up to the a2 slot.
+            # substitute). context_end == prefix_end (no u2 in the input prompt
+            # for THIS arm's on-policy read — capture treats the two arms as
+            # identical here, per plan §4 "user-in-frame u2 IS the DV").
+            u2_marked = ""
+            context_tail = ""
             row["prompt_source"] = "naturalistic_user_arm"
         else:
-            text = (
-                f"{user_tag}: {u1}\n\n"
-                f"{assistant_tag}: {a1}\n\n"
-                f"{user_tag}: {u2_text}\n\n"
-                f"{assistant_tag}: "  # a2 slot
-            )
+            u2_marked = u2_text
+            context_tail = f"\n\n{assistant_tag}: "
             row["prompt_source"] = "naturalistic_assistant"
-        row["prompt_text"] = text
+        row["prefix_text_only"] = prefix_only
+        row["u2_text_marked"] = u2_marked
+        row["context_tail"] = context_tail
+        row["prompt_text"] = prefix_only + u2_marked + context_tail
     # 3) story framing — narrative prose w/ dialogue.
     elif condition.framing == "story":
+        # Story templates embed u2 as a QUOTED DIALOGUE turn: `"..."`. The
+        # boundary layout is (prefix_up_to_open_quote) + u2 + (close_quote +
+        # narrative_tail). To keep char offsets non-ambiguous, we split each
+        # template on the {u2} placeholder BEFORE formatting — the head
+        # holds everything up to (but not including) the open quote around
+        # u2's content, and the tail holds the closing quote + narrative
+        # bridge + a2-slot lead-in.
         if condition.identity == "assistant":
             template = _STORY_ASSISTANT_TEMPLATE
-            text = template.format(u1=u1, a1=a1, u2=u2_text)
+            fmt_kwargs = {"u1": u1, "a1": a1, "u2": u2_text}
         elif condition.is_user:
-            # Novel construction: user-in-story - the story has u2 as content
-            # the MODEL generates (frames the model as writing the user's line).
             template = _STORY_USER_TEMPLATE
-            text = template.format(u1=u1, a1=a1, u2=u2_text)
+            fmt_kwargs = {"u1": u1, "a1": a1, "u2": u2_text}
         else:  # character
             name = identity_display(condition)
             desc = PERSONAS[name]
             template = _STORY_CHARACTER_TEMPLATE
-            text = template.format(name=name, desc=desc, u1=u1, a1=a1, u2=u2_text)
-        row["prompt_text"] = text
+            fmt_kwargs = {"name": name, "desc": desc, "u1": u1, "a1": a1, "u2": u2_text}
+        # Split template around the {u2} placeholder so prefix_text_only holds
+        # everything (verbatim) up to the u2 content, and context_tail holds
+        # everything after.
+        head_tpl, tail_tpl = template.split("{u2}", 1)
+        # Strip u2 from fmt_kwargs when formatting head and tail (they no
+        # longer contain {u2} but may contain other placeholders).
+        head_kwargs = {k: v for k, v in fmt_kwargs.items() if k != "u2"}
+        prefix_only = head_tpl.format(**head_kwargs)
+        u2_marked = u2_text
+        context_tail = tail_tpl.format(**head_kwargs)
+        row["prefix_text_only"] = prefix_only
+        row["u2_text_marked"] = u2_marked
+        row["context_tail"] = context_tail
+        row["prompt_text"] = prefix_only + u2_marked + context_tail
         row["prompt_source"] = "story"
     else:
         raise ValueError(f"unknown framing: {condition.framing}")
