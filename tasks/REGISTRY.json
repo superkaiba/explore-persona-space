@@ -5366,29 +5366,29 @@
     "1690": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1690",
-      "status": "proposed",
+      "path": "tasks/planning/1690",
+      "status": "planning",
       "title": "daily-fix: verified-at-filing: 3 new probe clauses"
     },
     "1691": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1691",
-      "status": "planning",
+      "path": "tasks/reviewing/1691",
+      "status": "reviewing",
       "title": "daily-fix: escalate multi-day Codex quota outage"
     },
     "1692": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1692",
-      "status": "running",
+      "path": "tasks/completed/1692",
+      "status": "completed",
       "title": "daily-fix: smoke must run real paths, not mock branches"
     },
     "1693": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1693",
-      "status": "planning",
+      "path": "tasks/reviewing/1693",
+      "status": "reviewing",
       "title": "daily-fix: phase idempotency + inter-phase schema assert"
     },
     "1694": {
@@ -5401,8 +5401,8 @@
     "1695": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1695",
-      "status": "planning",
+      "path": "tasks/reviewing/1695",
+      "status": "reviewing",
       "title": "daily-fix: refusal/transport-aware session recovery"
     },
     "1696": {
@@ -5527,8 +5527,8 @@
     "1710": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1710",
-      "status": "planning",
+      "path": "tasks/completed/1710",
+      "status": "completed",
       "title": "daily-fix: repo-root guard FP on ssh/note payloads"
     },
     "1711": {
