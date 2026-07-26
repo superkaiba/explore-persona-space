@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1694,
+  "highest_id": 1695,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5397,6 +5397,13 @@
       "path": "tasks/proposed/1694",
       "status": "proposed",
       "title": "daily-fix: Step 10d apply-verification + pre-sync"
+    },
+    "1695": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1695",
+      "status": "proposed",
+      "title": "daily-fix: refusal/transport-aware session recovery"
     },
     "17": {
       "has_clean_result": false,
