@@ -527,6 +527,60 @@ filing-time drop; every task was created WITH the tag, and a
 deliberate 2026-07-17 user-directed mass remove-tag — one commit per
 task, e.g. eaa4e10a67 / 1bd90f800e for #1140/#1472 — explained every
 absence; archived as a false-premise filing).
+(f) **marker-existence** — a claim that "no marker was posted" / "no
+record exists" / "nothing was noted" on task #M's events stream (or on
+its comments / markers / plans folder) is verified at compose time with
+`uv run python scripts/task.py view <M> --json | jq -r '.events[] | select(.kind == "<kind>") | "\(.ts) \(.note // .summary // "")"' | grep -iE '<sentinel|phrase the claim denies>'`
+(the exact `jq` filter is illustrative — use the kind + sentinel the
+claim actually denies; a plain `... | jq '.events'` scan is also
+acceptable when the claim does not name a specific kind). A found
+marker refutes the claim: re-scope before filing — the real defect is
+almost certainly a triage / read-back miss by the owning session, not
+the absence of the marker itself. Half a filing whose primary claim is
+refuted collapses to a verify-only fix; the other half (the triage
+gap) is the real workflow-fix candidate. (#1667: session `203baf55`
+filed "no failover marker was posted on #1586" while
+`epm:progress v146` at 05:42:00Z carried the exact
+`[autonomous_session_watch:runpod-noport-wedge-failover]` sentinel;
+the clarifier found it, and the task collapsed to verify-only.)
+
+(g) **call-hop target tracing** — before naming `target_file` for a
+misbehavior claim ("the fix belongs in `<path>`"), trace the failing
+behavior ONE call-hop past the observed symptom: name the site that
+CONSTRUCTS the wrong value, not the caller that consumes / propagates
+/ reports it. The compose-time probe is a bounded `grep -rn` from the
+symptom back to its source
+(`grep -rn '<wrong_value_field_or_symbol>' src/ scripts/`), reading
+each hit's context, until the construction site is found. Record BOTH
+the symptom site and the construction site in the body — and re-run
+the dedup fingerprint against the corrected `target_file`, since the
+dedup key is `(target_file, fingerprint)` and a mis-target silently
+weakens dedup. A filing whose planning round rediscovers this hop is a
+filing whose `target_file` was wrong at compose time (#1669: session
+`7457e1a3` named `scripts/autonomous_session_watch.py` — the watcher
+that READ a `RunSpec` field written by
+`scripts/backend_poll.py::_runspec_from_runpod_handle` +
+`src/explore_persona_space/backends/runpod.py` (launcher render) +
+`backends/issue_dispatch.py` (handle writer); the shipped 13-file
+diff touched NONE of the named target).
+
+(h) **suppression-predicate** — a claim that a candidate / park / record
+/ event was DROPPED or LOST by a downstream tool binds only after
+enumerating the documented suppression predicates that tool applies.
+The compose-time probe is `grep -n 'suppress\|skip\|dedup\|routed'`
+against the tool's own source or `SKILL.md`, listing every predicate
+that could legitimately have suppressed the record, and checking each
+against the specific record's fields. A correctly-suppressed record
+refutes the claim: the real workflow-fix candidate is then
+observability (counter opacity, missing sidecar row, unlogged
+suppression outcome), not "record lost". Worked example for Step C:
+the routed-record scan reads a verbatim-fp key AND the #1680
+`origin_candidate_ts` exact-match fallback; a park suppressed by the
+ts-fallback reads as "lost" only when the fallback path is not
+enumerated (#1680: session `5277f92c` filed "the #1642 parked
+candidate was lost by Step C"; the park was correctly suppressed by
+the `origin_candidate_ts` fp-less primary key, and the real gap was
+counter opacity — the session re-scoped mid-flight).
 Lineage: #1221/#1229/#1249 — three filings in two
 days carried grep-refutable claims (nonexistent call sites, overcounted
 "unguarded sites", an improvised path); each burned a spawned session's
@@ -894,6 +948,9 @@ homepage rendering of the fallback is unimplemented.)
 | Cite a mined hex token as a commit SHA without rev-parse-verifying it at compose time (#1414: transcript basename `fc2b61b7` filed as "the fix commit"; the spawned session's fact-checker burned a round proving the real commit was `5a02359cc8`) | Clause (d): rev-parse every cited-as-commit token at body-compose time; a non-resolving token is re-derived (`git log` on the target file) or cited as a transcript/session reference, never a commit |
 | Read post-mutation artifact state as filing-time evidence — a tag/field absent from a cited task's body.md filed as "dropped at filing" with no git-history check (#1497: needs-human absent from every cited task was a deliberate 2026-07-17 user-directed mass remove-tag — one commit per task, e.g. eaa4e10a67/1bd90f800e; archived as a false-premise filing) | Clause (e) artifact-state mutation check: `git log --follow --format='%h %s' -- <body.md>` (path via `task.py find <M>`) at compose time — a `remove-tag <value>` commit explaining the absence, or a create-commit diff carrying the value, refutes the drop claim |
 | Assert a timing / incident root-cause / API-behavior premise as bare fact when it could not be mechanically verified (or read from the named artifact) at compose time (#1677: 4 of 6 bodies in the 2026-07-24 wave — #1655/#1662/#1646/#1660 — each burned a correction round) | Label it `unverified hypothesis — verify at plan time: <claim>` with the recall source; the spawned planner treats it as an assumption to verify, not a premise |
+| Assert "no marker was posted / no record exists" on task #M without running the compose-time events-scan probe (#1667: filed "no failover marker on #1586" while `epm:progress v146` at 05:42:00Z carried the exact `[autonomous_session_watch:runpod-noport-wedge-failover]` sentinel; task collapsed to verify-only after the clarifier found it) | Clause (f) marker-existence: `uv run python scripts/task.py view <M> --json \| jq '.events'` (or the matching kind+sentinel `jq`/`grep` at compose time) — a found marker refutes the claim; re-scope before filing (the real defect is a triage miss, not an absent marker) |
+| Name `target_file` at the site that consumes / propagates / reports the wrong value instead of the site that CONSTRUCTS it (#1669: filed `scripts/autonomous_session_watch.py` — the caller — while the real fix surface was `scripts/backend_poll.py::_runspec_from_runpod_handle` + `src/explore_persona_space/backends/runpod.py` (launcher render) + `backends/issue_dispatch.py` (handle writer); the shipped 13-file diff touched none of the named target) | Clause (g) call-hop target tracing: `grep -rn '<wrong-value-field>' src/ scripts/` from the symptom back to its construction site; record both sites, re-run the dedup fingerprint against the corrected target (dedup key is `(target_file, fingerprint)`) |
+| Claim "a candidate / park / record was dropped or lost" without enumerating the downstream tool's documented suppression predicates (#1680: filed "the #1642 park was lost by Step C" while the park was correctly suppressed by the `origin_candidate_ts` fp-less primary key; the real gap was counter opacity) | Clause (h) suppression-predicate: enumerate every predicate the owning tool applies (`grep -n 'suppress\|skip\|dedup\|routed' <tool>`) and check each against the specific record; a correctly-suppressed record refutes the claim — the workflow-fix candidate is then observability (missing counter, unlogged suppression outcome), not "record lost" |
 
 ## Composition with other rules
 
