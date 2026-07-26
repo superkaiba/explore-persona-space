@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1702,
+  "highest_id": 1703,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5467,6 +5467,13 @@
       "path": "tasks/proposed/1702",
       "status": "proposed",
       "title": "daily-fix: thread --env-pin into Step 6b composition"
+    },
+    "1703": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1703",
+      "status": "proposed",
+      "title": "daily-fix: sweep emits unmatched_record_fps advisory"
     },
     "171": {
       "has_clean_result": true,
