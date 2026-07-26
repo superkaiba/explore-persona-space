@@ -17,6 +17,7 @@ Smoke: --smoke → 1 condition × 5 rows using a mock response injected via
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import sys
 from pathlib import Path
@@ -32,6 +33,10 @@ if str(REPO_ROOT) not in sys.path:
 
 from scripts.issue1689_common import CONDITION_TABLE, ISSUE_NUM, ISSUE_SLUG  # noqa: E402
 
+
+HAIKU_MODEL = "claude-haiku-4-5"
+HAIKU_MAX_TOKENS = 256
+HAIKU_TEMPERATURE = 0.7
 
 HAIKU_SYSTEM_PROMPT = (
     "You are simulating a user in an ongoing chat conversation with an AI "
@@ -51,6 +56,29 @@ def _build_prompt(u1: str, a1: str) -> str:
     )
 
 
+def _build_request(item) -> dict:  # type: ignore[no-untyped-def]
+    """Build Anthropic Messages-API params for one DispatchItem.
+
+    Lifts the system prompt to the top-level ``system=`` param — the Messages
+    API has NO ``"system"`` message role (`llm/api_dispatch.py` docstring +
+    `.claude/rules/gotchas.md` "no `system` message ROLE" entry).
+    """
+    p = item.payload
+    return {
+        "model": HAIKU_MODEL,
+        "max_tokens": HAIKU_MAX_TOKENS,
+        "temperature": HAIKU_TEMPERATURE,
+        "system": HAIKU_SYSTEM_PROMPT,
+        "messages": [
+            {"role": "user", "content": _build_prompt(p["u1"], p["a1"])},
+        ],
+    }
+
+
+def _parse(text: str) -> str:
+    return text.strip()
+
+
 def generate_u2(rows: list[dict], *, mock_response: str | None = None) -> list[dict]:
     """Generate u2 texts for the given rows.
 
@@ -59,38 +87,61 @@ def generate_u2(rows: list[dict], *, mock_response: str | None = None) -> list[d
 
     Real-call routing (per plan §4/§9 and CLAUDE.md § LLM judge):
       - model: claude-haiku-4-5
-      - system: HAIKU_SYSTEM_PROMPT
-      - user: _build_prompt(u1, a1)
-      - via api_dispatch.dispatch_calls with Batch API for ≥1000 items,
-        sync fan-out below.
+      - system prompt: HAIKU_SYSTEM_PROMPT (top-level ``system=`` param;
+        the Messages API has no ``"system"`` message role)
+      - user turn: _build_prompt(u1, a1)
+      - routed via ``asyncio.run(dispatch_calls(...))`` — ``dispatch_calls``
+        is ``async def``; a bare (non-awaited) call returns a coroutine.
     """
-    out = []
-    for row in rows:
-        u1 = row.get("u1", "")
-        a1 = row.get("a1", "")
-        if mock_response is not None:
-            u2_text = mock_response
-        else:
-            # Real routing: import lazily so smoke tests avoid the API import.
-            from explore_persona_space.llm.api_dispatch import (  # noqa: E402
-                DispatchCall,
-                dispatch_calls,
-            )
+    if mock_response is not None:
+        # Bypass the API entirely for smoke / test paths.
+        out = []
+        for row in rows:
+            new_row = dict(row)
+            new_row["u2_text"] = mock_response
+            new_row["u2_source"] = "haiku"
+            out.append(new_row)
+        return out
 
-            calls = [
-                DispatchCall(
-                    item_id=row["conv_id"],
-                    payload={
-                        "model": "claude-haiku-4-5",
-                        "system": HAIKU_SYSTEM_PROMPT,
-                        "user": _build_prompt(u1, a1),
-                        "max_tokens": 256,
-                        "temperature": 0.7,
-                    },
-                )
-            ]
-            results = dispatch_calls(calls, provider="anthropic")
-            u2_text = results[0].text if results and results[0].text else ""
+    # Real routing: import lazily so smoke tests avoid the API import.
+    from explore_persona_space.llm.api_dispatch import (  # noqa: E402
+        DispatchItem,
+        dispatch_calls,
+    )
+
+    # Build one DispatchItem per row; item_id must be a stable STRING (the
+    # dispatcher keys the content-hash cache + checkpoint on it, and JSONL
+    # `conv_id` values may be int).
+    items: list = []
+    id_to_row: dict[str, dict] = {}
+    for row in rows:
+        item_id = str(row["conv_id"])
+        items.append(
+            DispatchItem(
+                item_id=item_id,
+                payload={"u1": row.get("u1", ""), "a1": row.get("a1", "")},
+            )
+        )
+        id_to_row[item_id] = row
+
+    results = asyncio.run(
+        dispatch_calls(
+            items,
+            model=HAIKU_MODEL,
+            build_request=_build_request,
+            parse_response=_parse,
+            response_valid=lambda t: isinstance(t, str) and len(t.strip()) > 0,
+            force_path="sync",
+        )
+    )
+
+    out = []
+    for item_id, row in id_to_row.items():
+        res = results[item_id]
+        if res.error or not isinstance(res.result, str) or not res.result.strip():
+            u2_text = ""
+        else:
+            u2_text = res.result
         new_row = dict(row)
         new_row["u2_text"] = u2_text
         new_row["u2_source"] = "haiku"
