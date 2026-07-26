@@ -4059,6 +4059,34 @@ launches post no `stage-dispatch` breadcrumb, so the
 `external-markers triaged:` line goes in an `epm:progress` note posted
 immediately before the experimenter spawn.
 
+**4. Fresh-provision RunPod launches run in orchestrator bg-Bash, NOT in
+the experimenter.** A cold `dispatch_issue.py launch --backend runpod`
+runs 25-50 minutes on the RunPod lane (`podFindAndDeployOnDemand` create
++ `wait_for_ssh` up to ~10 min + `bootstrap_pod.sh`'s 11 steps including
+a 2.8 GB shallow clone through MooseFS + `uv sync --locked` + flash-attn
+build + preflight — the wedge classes in `.claude/rules/gotchas.md`
+document the wall-time). A subagent's turn cannot survive that: a
+`Bash(run_in_background=true)` dispatched inside the experimenter dies
+when the experimenter's ~60 s turn ends (the #1689 R8 failure shape —
+the subagent bg-Bash died mid-bootstrap, steps 5-11 never ran, the pod
+sat on `main` with no `/workspace/logs/` and no workload). So when the
+pod is NOT yet bootstrapped, the orchestrator dispatches
+`scripts/dispatch_issue.py launch` in its OWN
+`Bash(run_in_background=true, timeout=600000, command="uv run python
+scripts/dispatch_issue.py launch --backend runpod ...")` — the harness
+re-invokes the orchestrator when this bg-Bash exits, so the
+orchestrator SURVIVES the 25-50 min wait by design. ONLY after (a) the
+handle sidecar (`.claude/cache/issue-<N>-handle.json`) exists AND (b)
+the `experimenter.md` § "Post-dispatch bootstrap-completeness probe"
+passes on the pod (uv.lock + .venv/ + preflight-OK signals) is the pod
+eligible for a WORKLOAD-launch experimenter spawn (the 60 s
+launch-and-exit contract of `experimenter.md` § "Contract scope —
+already-bootstrapped pod only"). Never brief the experimenter with a
+cold `dispatch_issue.py launch` command; it will refuse and post
+`epm:failure v1 failure_class: infra reason:
+fresh-provision-in-subagent` per that same Contract scope. (Incident
+#1689 R8, 2026-07-26.)
+
 Spawn `experimenter` subagent via `Agent()`. Brief:
 - The plan path (the `plans/plan.md` symlink) + the code-reviewed
   branch (`issue-<N>`)
@@ -6878,6 +6906,8 @@ extraction bug was found).
 Non-mapping rounds with no figures state nothing — each duty fires only on
 its trigger; routing, auto-continue behavior, and the marker schema are
 unchanged.
+
+**Inline estimator-validity + record-integrity duties (REQUIRED — same rationale: this carve-out skips the planner+critic stack, where the fit-well-posedness / estimator-parity / promoted-body-consistency reviews live):** (1) BEFORE any ridge / linear-map / probe FIT, the dispatch note states `n_train` vs the feature dimension `d`; when `n_train < d` the round REFUSES the fit unless the note explicitly justifies a deliberately under-determined regime (regularization-limit / null-space read / smoke shape) — every held-out R² in the `n_train < d` regime is estimator-degenerate, not a signal read (#1701, sess `dffde9b6`: n=1,877 vs d=3,584 → ceiling 0.099 vs published 0.625). (2) BEFORE launching any re-implemented estimator whose in-repo reference the round can name (a `scripts/issue1345_operator_comparison`-style chain, a canonical `ridge_fit_predict_fast`, a shipped judge/scorer), the dispatch note records the DIFF between the new estimator and the named reference (function + file) — permissiveness-broadening (more inputs absorbed, weaker constraints) is called out explicitly. (3) When a round REFUTES a claim in ANY task's promoted body (its own parent or a sibling), it MUST — in the SAME turn as the result summary — either apply a NON-Takeaway PROSE correction directly to the refuted task's body via `task.py set-body` (typo / caption / fixed numeric value — never `task.py promote` or a `classification` flip; the user-only classification contract is unchanged) OR file a `kind: infra` task via `scripts/file_infra_task.py` naming the refuted issue and the refuting evidence — filing is the presumption for anything touching a bolded Takeaway; a chat-only "I did not fix X" is an INCOMPLETE round (#825's promoted Takeaway was refuted and nothing filed; #1701 origin).
 
 **Pod-safety pre-launch signals (deviation case — a pod on a
 parked/terminal parent).** This step and its user-chat sibling (the
