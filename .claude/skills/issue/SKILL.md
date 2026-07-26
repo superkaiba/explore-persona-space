@@ -2239,14 +2239,14 @@ already runs on `main`):
 WT=$(git rev-parse --show-toplevel)
 # Lint/guard family rides the sync (#1560): the specs synced below are budget-
 # checked by workflow_lint.py constants, enforced by .claude/hooks/, and pinned
-# by the test_workflow_lint*/test_guard_lessons_edit pin tests — syncing
+# by the test_workflow_lint*/test_guard_* pin tests — syncing
 # specs without their enforcing family creates the #1489/#1482/#1417 vintage
 # skew. `:(glob)` is a git pathspec (never shell-expands: no path starts with
 # ":(glob)"), so `git checkout main --` matches main-NEW pin tests too. The
 # per-file branch-side-edit guard's skip grain is PER-ITEM: a branch editing
 # ONE pin test skips the whole `:(glob)` family entry (fail-safe — status-quo
 # staleness for those files, never a clobber).
-SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py :(glob)tests/test_workflow_lint*.py"
+SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py"
 MB=$(git -C "$WT" merge-base HEAD main)
 SAFE_SPECS=""
 for f in $SPECS; do
@@ -2305,7 +2305,7 @@ safely override the skip for those specific files with a manual
 **The sync scope is specs + the spec-coupled lint/guard family — do NOT
 extend it further into `scripts/`, `tests/`, or `src/`.** The family
 exception (#1560: `scripts/workflow_lint.py`, `.claude/hooks`,
-`tests/test_guard_lessons_edit.py`, `:(glob)tests/test_workflow_lint*.py`)
+`:(glob)tests/test_guard_*.py`, `:(glob)tests/test_workflow_lint*.py`)
 exists because those files execute FROM the worktree tree on four
 surfaces — the Step 10d TG legs, worktree pytest / Step 9c, the hooks'
 own-tree `workflow_lint` import, and the inline gate invoked in a
