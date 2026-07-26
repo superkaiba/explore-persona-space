@@ -1023,6 +1023,58 @@ mask_ssh_payload_separators() {
               }
             }
           }
+          else if (substr(s, j, 1) == "\042") {
+            # (#1710) Arm 1: DOUBLE-quoted ssh payload. Byte-identical to
+            # single-quoted parse ONLY when the payload carries no
+            # expansion / escape / backtick token — R9 refuses on `$`,
+            # `\140` (backtick), and `\\`. A refuse falls through to the
+            # head-copy-verbatim path exactly like the single-quoted
+            # refused branch.
+            cq = index(substr(s, j + 1), "\042")
+            if (cq > 0) {
+              payload = substr(s, j + 1, cq - 1)
+              after = j + 1 + cq                   # first char past closing quote
+              t = after
+              while (t <= n && substr(s, t, 1) ~ /[ \t]/) t++
+              # R1: whitespace-only tail ending in ; / && / || / NL / EOS.
+              tail_ok = (t > n)
+              if (!tail_ok) {
+                c1 = substr(s, t, 1); c2 = substr(s, t, 2)
+                tail_ok = (c1 == ";" || c1 == "\n" || c2 == "&&" || c2 == "||")
+              }
+              cand = substr(s, i, after - i)       # head + quoted payload
+              pfx  = substr(s, 1, i - 1)           # everything before candidate
+              lc   = tolower(cand)
+              if (tail_ok &&
+                  saw_quote == 0 &&
+                  index(cand, "$(") == 0 && index(cand, "${") == 0 &&
+                  index(cand, "\140") == 0 && index(cand, "<") == 0 &&
+                  index(cand, ">") == 0 && index(cand, "\001") == 0 &&
+                  index(lc, "proxycommand") == 0 &&
+                  index(lc, "localcommand") == 0 &&
+                  index(lc, "knownhostscommand") == 0 &&
+                  index(cand, repo) == 0 &&
+                  index(cand, "$HOME/" repo_base) == 0 &&
+                  index(cand, "~/" repo_base) == 0 &&
+                  !(cand ~ /cd[ \t]/ && (index(cand, "/tmp/") > 0 ||
+                                         index(cand, ".claude/worktrees/") > 0)) &&
+                  !(pfx ~ /cd[ \t]/ && (index(pfx, "/tmp/") > 0 ||
+                                        index(pfx, ".claude/worktrees/") > 0)) &&
+                  index(cand, "WT=") == 0 &&
+                  # R9: no expansion / escape / backtick in the payload
+                  # body. A double-quoted bash string with none of these
+                  # is byte-identical to the same content single-quoted.
+                  index(payload, "$") == 0 &&
+                  index(payload, "\140") == 0 &&
+                  index(payload, "\\") == 0) {
+                gsub(/[;&|\n]+/, " __EPM_SSH_SEP__ ", payload)
+                out = out substr(s, i, j - i) "\042" payload "\042"
+                i = after; atstart = 0
+                # ssh-mask parity: consumed pair does NOT set saw_quote.
+                continue
+              }
+            }
+          }
           # REFUSED: copy the head word(s) verbatim — minus the single
           # trailing whitespace char the head regex consumed, which the char
           # path re-emits — and fall back to the char path; the refused
@@ -1152,8 +1204,10 @@ mask_taskpy_arg_payloads() {
         }
         if (headlen > 0) {
           # Candidate. Walk the clause: safe chars (P2) advance; a
-          # single-quoted span (P3) is recorded exactly; a separator or
-          # end-of-string completes the candidate; anything else refuses.
+          # SINGLE- or DOUBLE-quoted span (P3, #1710 extends P3 to double
+          # quotes under a P7 no-expansion refusal) is recorded exactly; a
+          # separator or end-of-string completes the candidate; anything
+          # else refuses.
           j = i + headlen
           nspans = 0
           ok = 1
@@ -1165,6 +1219,22 @@ mask_taskpy_arg_payloads() {
               nspans++
               sp_open[nspans] = j              # index of the opening quote
               sp_len[nspans] = cq - 1          # payload body length
+              sp_quote[nspans] = "\047"        # single quote type
+              j = j + 1 + cq                   # first char past closing quote
+              continue
+            }
+            if (c == "\042") {
+              # (#1710) Double-quoted span. Refused later by P7 if the
+              # body carries any expansion / escape / backtick token; the
+              # body must be byte-identical-to-single-quoted content
+              # (no `$`, no backtick, no `\\`) for the double-quoted span
+              # to admit the P3 exact-parse property.
+              cq = index(substr(s, j + 1), "\042")
+              if (cq == 0) { ok = 0; break }   # P3: no closing quote
+              nspans++
+              sp_open[nspans] = j              # index of the opening quote
+              sp_len[nspans] = cq - 1          # payload body length
+              sp_quote[nspans] = "\042"        # double quote type
               j = j + 1 + cq                   # first char past closing quote
               continue
             }
@@ -1174,7 +1244,23 @@ mask_taskpy_arg_payloads() {
           }
           cand = substr(s, i, j - i)           # head + spans + tail
           pfx  = substr(s, 1, i - 1)           # everything before candidate
-          if (ok && nspans > 0 &&
+          # (#1710) P7: every double-quoted span body must carry NO
+          # expansion / backtick / backslash. A double-quoted span whose
+          # body contains any of `$`, backtick, or `\\` is executable
+          # data and refuses the candidate. Single-quoted spans are
+          # unaffected (exact-parse by shell semantics).
+          p7_ok = 1
+          for (k = 1; k <= nspans; k++) {
+            if (sp_quote[k] == "\042") {
+              spanbody = substr(s, sp_open[k] + 1, sp_len[k])
+              if (index(spanbody, "$") > 0 ||
+                  index(spanbody, "\140") > 0 ||
+                  index(spanbody, "\\") > 0) {
+                p7_ok = 0; break
+              }
+            }
+          }
+          if (ok && p7_ok && nspans > 0 &&
               saw_quote == 0 &&
               !(cand ~ /cd[ \t]/ && (index(cand, "/tmp/") > 0 ||
                                      index(cand, ".claude/worktrees/") > 0)) &&
@@ -1183,12 +1269,13 @@ mask_taskpy_arg_payloads() {
                                     index(pfx, ".claude/worktrees/") > 0)) &&
               index(pfx, "WT=") == 0) {
             # arms in order: P2/P3 (walk above) | P5 prefix quote-state |
-            # P4 candidate latch vocab + WT | P6 prefix latch vocab + WT.
+            # P4 candidate latch vocab + WT | P6 prefix latch vocab + WT |
+            # P7 double-quoted body no-expansion (#1710).
             # ACCEPTED: the ONLY rewrite the function ever performs is
             # replacing each span BODY with the sentinel (quotes kept).
             pos = i
             for (k = 1; k <= nspans; k++) {
-              out = out substr(s, pos, sp_open[k] - pos) "\047__EPM_ARG_PAYLOAD__\047"
+              out = out substr(s, pos, sp_open[k] - pos) sp_quote[k] "__EPM_ARG_PAYLOAD__" sp_quote[k]
               pos = sp_open[k] + sp_len[k] + 2
             }
             out = out substr(s, pos, j - pos)
@@ -1220,6 +1307,127 @@ mask_taskpy_arg_payloads() {
 # Cheap literal gate: the awk pass spawns only for task.py-mentioning
 # commands (the hook runs on EVERY Bash call); zero added cost otherwise.
 case "$cmd" in *task.py*) cmd=$(mask_taskpy_arg_payloads "$cmd") ;; esac
+
+# (#1710) Mask the BODIES of balanced SINGLE- or DOUBLE-quoted string
+# literals of a clause-initial `python[3][.<M>]? -c` / `uv run
+# python[...] -c` invocation to the neutral sentinel
+# __EPM_PYTHON_C_LITERAL__ BEFORE the trigger-literal pre-filter below,
+# so a helper-script `python -c` payload whose Python string LITERAL
+# merely quotes a destructive-git phrase as inert prose (e.g. a
+# fingerprint helper that hashes a bug description) no longer
+# false-blocks. A Python string literal is INERT DATA to the local
+# shell — bash never executes it, and single-quoted spans admit no
+# escapes (ssh mask exact-parse property). But a `python -c` payload
+# IS executable code by construction, so the refusal ladder is
+# STRICTER than the ssh + taskpy masks: the string is admitted ONLY
+# when it carries no shell-out / subprocess / function-call vocabulary
+# (see C4-C10 refusal arms in-function).
+mask_python_c_string_literals() {
+  printf '%s' "$1" | awk '
+    BEGIN { nrec = 0 }
+    { rec[nrec++] = $0 }
+    END {
+      # Re-join records with the newlines awk consumed (ssh/taskpy-mask
+      # parity; a trailing newline is stripped by the caller command
+      # substitution either way).
+      s = ""
+      for (r = 0; r < nrec; r++) s = s (r ? "\n" : "") rec[r]
+      n = length(s)
+      i = 1; atstart = 1; out = ""; saw_quote = 0
+      while (i <= n) {
+        headlen = 0
+        if (atstart) {
+          # C1: head is `python[0-9.]*[ \t]+-c[ \t]+`, optionally
+          # prefixed by `uv[ \t]+run[ \t]+`. Head-regex parity with
+          # taskpy mask line 1151 for the python token.
+          if (match(substr(s, i), /^(uv[ \t]+run[ \t]+)?python[0-9.]*[ \t]+-c[ \t]+/)) headlen = RLENGTH
+        }
+        if (headlen > 0) {
+          j = i + headlen
+          # C2: accept a SINGLE- or DOUBLE-quoted string literal at j.
+          q = substr(s, j, 1)
+          if (q != "\047" && q != "\042") {
+            # No quoted arg at all — refuse; fall through to char path.
+            out = out substr(s, i, headlen - 1); i += headlen - 1; atstart = 0
+            continue
+          }
+          cq = index(substr(s, j + 1), q)
+          if (cq == 0) {
+            # C3: no closing quote — refuse.
+            out = out substr(s, i, headlen - 1); i += headlen - 1; atstart = 0
+            continue
+          }
+          payload = substr(s, j + 1, cq - 1)
+          after   = j + 1 + cq                   # first char past closing quote
+          # C-tail: whitespace-only tail ending in ; / && / || / NL / EOS
+          # (ssh mask R1 parity).
+          t = after
+          while (t <= n && substr(s, t, 1) ~ /[ \t]/) t++
+          tail_ok = (t > n)
+          if (!tail_ok) {
+            c1 = substr(s, t, 1); c2 = substr(s, t, 2)
+            tail_ok = (c1 == ";" || c1 == "\n" || c2 == "&&" || c2 == "||")
+          }
+          # C4-C10 refusal ladder: payload must be provably INERT
+          # prose. A `python -c` string is executable code, so the
+          # burden of proof for "inert" is HIGHER than the ssh mask.
+          bad = 0
+          if (!tail_ok) bad = 1
+          if (saw_quote != 0) bad = 1
+          # C4: no backslash anywhere (Python `\xNN` / `\n` / `\uNNNN`
+          # escapes resolve at runtime — a payload with any `\\` is
+          # not provably inert).
+          if (index(payload, "\\") > 0) bad = 1
+          # C5: no backtick (shell subprocess).
+          if (index(payload, "\140") > 0) bad = 1
+          # C6: no `$` (any expansion / `${VAR}` / `$(cmd)` heredoc).
+          if (index(payload, "$") > 0) bad = 1
+          # C7-C10: no shell-out / subprocess vocabulary.
+          if (index(payload, "subprocess") > 0) bad = 1
+          if (index(payload, "os.system") > 0) bad = 1
+          if (index(payload, "os.popen") > 0) bad = 1
+          if (index(payload, "Popen") > 0) bad = 1
+          if (index(payload, "commands.getoutput") > 0) bad = 1
+          if (index(payload, "pty.spawn") > 0) bad = 1
+          if (index(payload, "check_output") > 0) bad = 1
+          if (index(payload, "check_call") > 0) bad = 1
+          # Conservative: any function-call shape refuses. A `run(x)`
+          # / `call(x)` / `foo(x)` invocation cannot be proved inert
+          # by awk-level parsing (residual gap xiii). Fail-closed.
+          if (payload ~ /[A-Za-z_][A-Za-z_0-9.]*\(/) bad = 1
+          if (bad) {
+            # REFUSED: copy the head verbatim — minus the single
+            # trailing whitespace char the head regex consumed, which
+            # the char path re-emits — and fall back to the char path
+            # (ssh/taskpy-mask parity).
+            out = out substr(s, i, headlen - 1); i += headlen - 1; atstart = 0
+            continue
+          }
+          # ACCEPTED: replace the payload BODY with the neutral
+          # sentinel (surrounding quotes kept, quote-char preserved).
+          out = out substr(s, i, j - i) q "__EPM_PYTHON_C_LITERAL__" q
+          i = after; atstart = 0
+          # Consumed pair does NOT set saw_quote (ssh/taskpy-mask
+          # parity): by construction bash treats it as a balanced
+          # pair; later candidates in a compound still compose.
+          continue
+        }
+        c = substr(s, i, 1)
+        out = out c
+        if (c == "\047" || c == "\042") saw_quote = 1
+        if (c ~ /[;|&\n]/) atstart = 1
+        else if (c !~ /[ \t]/) atstart = 0
+        i++
+      }
+      printf "%s", out
+    }'
+}
+# Cheap literal gate: the awk pass spawns only for `-c`-mentioning
+# commands (parity with taskpy mask's `*task.py*` gate above); zero
+# added cost otherwise. The tight C1 head regex inside then rejects
+# `bash -c` / `sh -c` / `ssh -c <cipher>` / `chmod -c` / other non-
+# python `-c` shapes and falls through unchanged.
+case "$cmd" in *" -c "*) cmd=$(mask_python_c_string_literals "$cmd") ;; esac
 
 # Only consider git checkout/switch/restore/clean/reset/merge/rebase/
 # cherry-pick/revert/am invocations at all (loose pre-filter — a cheap skip,
