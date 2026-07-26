@@ -6525,7 +6525,7 @@ _UNFOLDED_RE_EVAL: re.Pattern[str] = re.compile(
 )
 
 # Status set the pass sweeps (§3.6). Deliberately tighter than
-# _TRIAGE_OBSERVER_STATUSES (ACTIVE ∪ {awaiting_promotion, blocked}): an
+# _TRIAGE_OBSERVER_STATUSES (ACTIVE union {awaiting_promotion, blocked}): an
 # unfolded round is a *promoted* clean-result concern.
 _UNFOLDED_ROUND_STATUSES: frozenset[str] = frozenset({"awaiting_promotion", "reviewing"})
 
@@ -6634,9 +6634,9 @@ def _unfolded_extract_artifacts(
 
 def decide_unfolded_round_flag(
     body_text: str,
-    fs_probe: "Callable[[str], bool]",
-    git_probe: "Callable[[str], bool]",
-    body_names_result: "Callable[[str], bool]",
+    fs_probe: Callable[[str], bool],
+    git_probe: Callable[[str], bool],
+    body_names_result: Callable[[str], bool],
     *,
     window_lines: int = PHRASE_WINDOW_LINES,
 ) -> list[dict]:
@@ -6678,11 +6678,10 @@ def decide_unfolded_round_flag(
                 if key in seen_artifacts:
                     continue
                 # Route to the right probe by kind (fail-open on raise).
+                # Ternary picks git_probe for commits, fs_probe otherwise
+                # (script or eval_path — filesystem-tree probe).
                 try:
-                    if kind == "commit":
-                        exists = git_probe(artifact)
-                    else:  # script or eval_path — filesystem-tree probe
-                        exists = fs_probe(artifact)
+                    exists = git_probe(artifact) if kind == "commit" else fs_probe(artifact)
                 except Exception:
                     exists = False
                 if not exists:
@@ -6862,9 +6861,7 @@ def unfolded_body_names_result(body: str, artifact: str, artifact_kind: str) -> 
     basename = Path(artifact).name
     if basename in repro:
         return True
-    if artifact in results_v4 or artifact in findings_v3:
-        return True
-    return False
+    return artifact in results_v4 or artifact in findings_v3
 
 
 def _unfolded_is_paper_task(body_text: str) -> bool:
@@ -6888,7 +6885,7 @@ def _unfolded_is_paper_task(body_text: str) -> bool:
     return False
 
 
-def unfolded_round_pass(dry_run: bool) -> bool:
+def unfolded_round_pass(dry_run: bool) -> bool:  # noqa: C901 — flat sweep/probe/emit/GC pipeline; matches sibling observer passes (main(), _apply_pod_safety_action) where extraction would over-abstract the linear structure
     """ESCALATE-ONLY observer of unfolded-round stranding at
     ``awaiting_promotion`` / ``reviewing`` (#1712; origin incident #1639
     — see the block comment above). Sweeps the REGISTRY snapshot via the
@@ -6974,7 +6971,7 @@ def unfolded_round_pass(dry_run: bool) -> bool:
         wrote = False
 
         for id_str, meta in sorted(tasks.items()):
-            # Widest sweep (triage helper's ACTIVE ∪ {awaiting_promotion,
+            # Widest sweep (triage helper's ACTIVE union {awaiting_promotion,
             # blocked} + events.jsonl-mtime freshness); we then TIGHTEN
             # to the pass's own status set.
             issue = _triage_observer_sweep_issue(id_str, meta, reg_root, now, lookback_s)

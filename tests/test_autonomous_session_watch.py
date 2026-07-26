@@ -1741,6 +1741,10 @@ def test_stub_fleet_mutating_passes_covers_main_pass_roster():
         # sidecar + push. NEVER mutates task/fleet state, NEVER stops sessions,
         # NEVER posts task markers. Safe against isolated_registry.
         "codex_outage_pass",
+        # unfolded_round_pass (task #1712) is escalate-only: writes ONLY its own
+        # state + sidecar + push. NEVER mutates task/fleet state, NEVER stops
+        # sessions, NEVER posts task markers. Daemon-independent (T3 pin).
+        "unfolded_round_pass",
     }
     unclassified = invoked - set(_FLEET_MUTATING_PASS_NAMES) - benign_or_per_test
     assert not unclassified, (
