@@ -5541,8 +5541,8 @@
     "1712": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1712",
-      "status": "approved",
+      "path": "tasks/running/1712",
+      "status": "running",
       "title": "daily-fix: audit landed-but-unfolded rounds"
     },
     "172": {
