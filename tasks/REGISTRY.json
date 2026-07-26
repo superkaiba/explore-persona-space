@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1705,
+  "highest_id": 1706,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5488,6 +5488,13 @@
       "path": "tasks/proposed/1705",
       "status": "proposed",
       "title": "daily-held: #825 Takeaway refuted by guarded rerun"
+    },
+    "1706": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1706",
+      "status": "proposed",
+      "title": "daily-held: #1639 missing #1310 assistant-test fold"
     },
     "171": {
       "has_clean_result": true,
