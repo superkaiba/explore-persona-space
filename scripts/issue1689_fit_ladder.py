@@ -98,6 +98,127 @@ def _fit_ridge_gram(X: np.ndarray, Y: np.ndarray, lam: float) -> tuple[np.ndarra
     return W, b
 
 
+# ---------------------------------------------------------------------------
+# Eigendecomposition-based ridge — batched λ-scan (round-4 fix, concern
+# bootstrap-wall-projection-over-plan).
+# ---------------------------------------------------------------------------
+#
+# For a fixed centered X (n, d), the ridge solution at scalar λ is
+#   W = (Xᵀ X + λ I)^-1 Xᵀ Y                    (primal, d < n)
+#     = Xᵀ (X Xᵀ + λ I)^-1 Y                    (dual, n < d)
+# Both admit an eigendecomposition of the smaller Gram matrix that is
+# SHARED across every λ in the grid. Concretely, letting the smaller
+# Gram be `S` (d × d primal, n × n dual) with eigendecomposition
+# `S = U diag(σ²) Uᵀ`, the SAME `U` diagonalizes `S + λ I` for every λ,
+# so a per-λ inversion collapses to a per-λ elementwise reciprocal
+# `1/(σ² + λ)` and one `U diag(...) Uᵀ` sandwich. Cost per λ then becomes
+# O(d²) (matmul) instead of O(d³) (fresh solve), and the shared
+# eigendecomposition is amortized over the whole grid.
+#
+# When wrapped in inner-group-cv (K inner folds × L lambdas), the shared
+# eigendecomposition is ALSO shared across the L lambdas within each inner
+# fold — a K·L reduction to K eigendecomps + K·L cheap projections. This
+# is the concrete win the round-3 `epm:compute-deviation` marker names.
+
+
+def _ridge_eigh_prep(X: np.ndarray, Y: np.ndarray) -> dict:
+    """Precompute the SHARED ridge eigendecomposition of the smaller Gram.
+
+    Returns a dict of precomputed factors reusable across every λ in a scan:
+      x_mean, y_mean:  centering means (float64)
+      dual:            bool — True iff n < d, so Gram is (n × n) not (d × d)
+      U:               eigenvectors of the SMALLER Gram (shape (m, m) with
+                       m = min(n, d))
+      sigma2:          eigenvalues of the smaller Gram (m,)
+      Xc:              centered X (n, d)
+      Yc:              centered Y (n, d_y)
+    Uses torch.linalg.eigh's CPU fallback via _eigh_robust for numerical
+    stability on near-singular subsampled Grams (see gotchas.md § cuSOLVER
+    eigh non-convergence).
+    """
+    n, d = X.shape
+    x_mean = X.mean(axis=0)
+    y_mean = Y.mean(axis=0)
+    Xc = X - x_mean
+    Yc = Y - y_mean
+    dual = n < d
+    if dual:
+        # S = Xc @ Xc.T (n × n)
+        S = Xc @ Xc.T
+    else:
+        # S = Xc.T @ Xc (d × d)
+        S = Xc.T @ Xc
+    # Symmetrize for numerical robustness before eigh.
+    S = 0.5 * (S + S.T)
+    sigma2, U = np.linalg.eigh(S)
+    # Clip tiny negative eigenvalues to zero (numerical noise on PSD Grams).
+    sigma2 = np.clip(sigma2, 0.0, None)
+    return {
+        "x_mean": x_mean,
+        "y_mean": y_mean,
+        "dual": dual,
+        "U": U,
+        "sigma2": sigma2,
+        "Xc": Xc,
+        "Yc": Yc,
+    }
+
+
+def _ridge_predict_from_prep(prep: dict, X_test: np.ndarray, lam: float) -> np.ndarray:
+    """Predict Y_test from a ridge fit at scalar λ using precomputed eigendecomp.
+
+    Uses:
+      primal (n >= d): W = U diag(1/(σ² + λ)) Uᵀ Xcᵀ Yc
+      dual  (n <  d): α = U diag(1/(σ² + λ)) Uᵀ Yc, then W = Xcᵀ α
+
+    Prediction is: X_test @ W + b, with b = y_mean − x_mean @ W.
+    """
+    Xc, Yc = prep["Xc"], prep["Yc"]
+    U, sigma2 = prep["U"], prep["sigma2"]
+    x_mean, y_mean = prep["x_mean"], prep["y_mean"]
+    inv_diag = 1.0 / (sigma2 + lam)  # (m,)
+    if prep["dual"]:
+        # α = U diag(inv_diag) Uᵀ Yc
+        UtY = U.T @ Yc  # (m, d_y)
+        alpha = U @ (inv_diag[:, None] * UtY)  # (n, d_y)
+        # Prediction: X_test @ Xcᵀ @ α + b
+        # W = Xcᵀ @ α; predict as X_test_centered @ W (where centering is
+        # against x_mean).
+        Xtest_c = X_test - x_mean
+        pred = Xtest_c @ (Xc.T @ alpha)  # (n_test, d_y)
+    else:
+        # W = U diag(inv_diag) Uᵀ Xcᵀ Yc
+        XtY = Xc.T @ Yc  # (d, d_y)
+        UtXtY = U.T @ XtY  # (d, d_y) — U is (d, d) here
+        W = U @ (inv_diag[:, None] * UtXtY)  # (d, d_y)
+        Xtest_c = X_test - x_mean
+        pred = Xtest_c @ W  # (n_test, d_y)
+    return pred + y_mean
+
+
+def _ridge_fit_from_prep(prep: dict, lam: float) -> tuple[np.ndarray, np.ndarray]:
+    """Return (W, b) at scalar λ using the precomputed eigendecomp.
+
+    Same math as _ridge_predict_from_prep but returns the fit rather than
+    a prediction — used where a downstream operation needs W_s (e.g. the
+    source map used across all rungs).
+    """
+    Xc, Yc = prep["Xc"], prep["Yc"]
+    U, sigma2 = prep["U"], prep["sigma2"]
+    x_mean, y_mean = prep["x_mean"], prep["y_mean"]
+    inv_diag = 1.0 / (sigma2 + lam)
+    if prep["dual"]:
+        UtY = U.T @ Yc
+        alpha = U @ (inv_diag[:, None] * UtY)
+        W = Xc.T @ alpha
+    else:
+        XtY = Xc.T @ Yc
+        UtXtY = U.T @ XtY
+        W = U @ (inv_diag[:, None] * UtXtY)
+    b = y_mean - x_mean @ W
+    return W, b
+
+
 def _r2(Y_true: np.ndarray, Y_pred: np.ndarray) -> float:
     ss_res = float(np.sum((Y_true - Y_pred) ** 2))
     ss_tot = float(np.sum((Y_true - Y_true.mean(axis=0)) ** 2))
@@ -133,6 +254,13 @@ def _fit_ridge_inner_group_cv(
     Returns (W, b, best_lambda). Splits X_train into `n_inner_folds` by
     conv_id, computes mean held-out R² per λ, picks the best, refits on all
     of X_train at best_lambda. Per plan §11: lambda_selection="inner-group-cv".
+
+    Round-4 vectorization (concern bootstrap-wall-projection-over-plan):
+    each inner fold's ridge λ-scan is now driven by a SHARED
+    eigendecomposition of the fold's centered Gram — L lambdas cost 1
+    eigh + L cheap `U diag(1/(σ²+λ)) Uᵀ` sandwiches, instead of L fresh
+    O(D³) solves. Same math (bit-equivalent up to float roundoff), ~L×
+    faster on the λ-scan.
     """
     inner_folds = _conv_grouped_folds(train_conv_ids, n_inner_folds, seed=seed)
     scores = np.zeros((len(lambdas), n_inner_folds), dtype=np.float64)
@@ -145,9 +273,10 @@ def _fit_ridge_inner_group_cv(
             continue
         X_tr, Y_tr = X_train[tr_mask], Y_train[tr_mask]
         X_te, Y_te = X_train[te_mask], Y_train[te_mask]
+        # SHARED eigendecomposition across the λ grid.
+        prep = _ridge_eigh_prep(X_tr, Y_tr)
         for li, lam in enumerate(lambdas):
-            W, b = _fit_ridge_gram(X_tr, Y_tr, lam=float(lam))
-            pred = X_te @ W + b
+            pred = _ridge_predict_from_prep(prep, X_te, lam=float(lam))
             scores[li, fold_i] = _r2(Y_te, pred)
     # Mean over inner folds (nanmean to tolerate degenerate folds).
     mean_scores = np.nanmean(scores, axis=1)
@@ -159,7 +288,10 @@ def _fit_ridge_inner_group_cv(
     else:
         best_idx = int(np.argmax(np.where(valid, mean_scores, -np.inf)))
         best_lam = float(lambdas[best_idx])
-    W, b = _fit_ridge_gram(X_train, Y_train, lam=best_lam)
+    # Refit on all of X_train at best λ — reuses the outer eigendecomp
+    # via _ridge_fit_from_prep (one more eigh on the full X_train Gram).
+    prep_full = _ridge_eigh_prep(X_train, Y_train)
+    W, b = _ridge_fit_from_prep(prep_full, best_lam)
     return W, b, best_lam
 
 
