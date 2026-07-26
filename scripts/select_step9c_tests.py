@@ -341,6 +341,13 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_daily_stub_first_doc.py",
     # NEW (#1645) — /daily SKILL.md three-route classifier prose pin (#706)
     "tests/test_daily_three_route_classifier_doc.py",
+    # NEW (#1699) — implementer spec pin: mechanical --map-files pin-sweep hit list
+    "tests/test_implementer_spec_mechanical_pin_sweep.py",
+    # NEW (#1699) — implementer spec pin: repo-wide invariants in local union on
+    # any scripts/*.py or src/** edit (#1681)
+    "tests/test_implementer_spec_names_invariant_local_union.py",
+    # NEW (#1699) — implementer spec pin: ruff-policy pin invocation in lint step (#1672)
+    "tests/test_implementer_spec_names_ruff_policy_pin.py",
     # NEW (#1659) — SKILL.md 9a-ter + CLAUDE.md measured 1-cell pilot +
     # >=2x pilot-extrapolated fence-sizing pin
     "tests/test_issue_skill_compute_pilot_fence_pin.py",
