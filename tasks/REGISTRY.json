@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1707,
+  "highest_id": 1708,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5502,6 +5502,13 @@
       "path": "tasks/proposed/1707",
       "status": "proposed",
       "title": "daily-held: #1345 base story leg lost in crash bundle"
+    },
+    "1708": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1708",
+      "status": "proposed",
+      "title": "daily-held: deferred sweep backlog 2026-07-25"
     },
     "171": {
       "has_clean_result": true,
