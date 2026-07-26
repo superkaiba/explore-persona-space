@@ -5464,8 +5464,8 @@
     "1702": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1702",
-      "status": "reviewing",
+      "path": "tasks/completed/1702",
+      "status": "completed",
       "title": "daily-fix: thread --env-pin into Step 6b composition"
     },
     "1703": {
