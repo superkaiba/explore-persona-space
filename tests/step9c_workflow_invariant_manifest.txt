@@ -15,6 +15,7 @@ tests/test_daily_skill_commit_pathspec_pin.py
 tests/test_daily_stub_first_doc.py
 tests/test_daily_three_route_classifier_doc.py
 tests/test_diff_base_origin_main_pin.py
+tests/test_experimenter_md.py
 tests/test_failure_classifier.py
 tests/test_fit_loop_batching_review_pin.py
 tests/test_gotchas_finalization_entry.py

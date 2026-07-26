@@ -2239,14 +2239,14 @@ already runs on `main`):
 WT=$(git rev-parse --show-toplevel)
 # Lint/guard family rides the sync (#1560): the specs synced below are budget-
 # checked by workflow_lint.py constants, enforced by .claude/hooks/, and pinned
-# by the test_workflow_lint*/test_guard_lessons_edit pin tests — syncing
+# by the test_workflow_lint*/test_guard_* pin tests — syncing
 # specs without their enforcing family creates the #1489/#1482/#1417 vintage
 # skew. `:(glob)` is a git pathspec (never shell-expands: no path starts with
 # ":(glob)"), so `git checkout main --` matches main-NEW pin tests too. The
 # per-file branch-side-edit guard's skip grain is PER-ITEM: a branch editing
 # ONE pin test skips the whole `:(glob)` family entry (fail-safe — status-quo
 # staleness for those files, never a clobber).
-SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py :(glob)tests/test_workflow_lint*.py"
+SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py"
 MB=$(git -C "$WT" merge-base HEAD main)
 SAFE_SPECS=""
 for f in $SPECS; do
@@ -2305,7 +2305,7 @@ safely override the skip for those specific files with a manual
 **The sync scope is specs + the spec-coupled lint/guard family — do NOT
 extend it further into `scripts/`, `tests/`, or `src/`.** The family
 exception (#1560: `scripts/workflow_lint.py`, `.claude/hooks`,
-`tests/test_guard_lessons_edit.py`, `:(glob)tests/test_workflow_lint*.py`)
+`:(glob)tests/test_guard_*.py`, `:(glob)tests/test_workflow_lint*.py`)
 exists because those files execute FROM the worktree tree on four
 surfaces — the Step 10d TG legs, worktree pytest / Step 9c, the hooks'
 own-tree `workflow_lint` import, and the inline gate invoked in a
@@ -3593,7 +3593,30 @@ project stop landing in WandB's global default `huggingface` project
 follow-up r1 landed there silently). An inline `WANDB_PROJECT=...`
 prefix on the workload command — or the workload setting its own
 project internally — still wins (`:-` fills only unset/empty); hydra
-launches are unaffected (project comes from Hydra config).
+launches are unaffected (project comes from Hydra config). (j) **Launch
+env pins on `--workload-cmd` launches — thread `--env-pin KEY=VALUE`
+when the plan's Reproducibility Card declares one** — the `--env-pin`
+channel (`dispatch_issue.py launch --env-pin KEY=VALUE`, repeatable;
+merged in #1669) persists an env export to `spec.extra["env_pins"]` →
+the handle sidecar → every lane's workload-cmd launcher (GCE startup
+script's workload branch, SLURM custom stage, RunPod launcher), AND the
+async failover reconstructors (`backend_poll._runspec_from_gcp_handle` /
+`_runspec_from_runpod_handle`) re-export the pins onto the fresh pod,
+so a wedge-failover pod's runs land in the plan-declared destination
+instead of the generic `issue<N>` fallback (rule (i) above — incident
+#1586: a wedge-failover pod rebooted with only the generic WandB
+default and its runs landed in the wrong project). KEY is restricted to
+`backends.base.ENV_PIN_ALLOWED_KEYS` (secret KEY names are
+unrepresentable by construction); consult that frozenset for the current
+set. `--env-pin` REQUIRES a non-empty `--workload-cmd` (parse-time
+refusal, exit 2 — every renderer insertion point is a workload-cmd
+branch; a hydra launch has no pin consumer). ADOPTION (the
+`--boot-disk-gb` pattern above): launch composers pass
+`--env-pin WANDB_PROJECT=<declared project>` (and any other
+`ENV_PIN_ALLOWED_KEYS` value the plan's Repro Card declares) on every
+`--workload-cmd` launch — including relaunches after a code-fix
+round — whenever the plan declares a non-default value; a flag-less
+launch keeps today's behavior.
 SLURM custom stages are
 render-tested only as of #588 (never live-run).
 (Incident #571, 2026-06-11: auto routing sent a dispatch-script

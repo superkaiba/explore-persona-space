@@ -1429,6 +1429,55 @@ switch `EPM_DISABLE_COMPLETED_UNMERGED_PASS=1`; `--completed-unmerged-only`
 runs just this pass (pair with `--dry-run` for a live smoke — zero writes,
 zero marker/push/spawn subprocesses).
 
+**Partial-bundle reconciliation pass (task #1704, `partial_bundle_pass`;
+motivating incident #1345; daemon-INDEPENDENT, runs right after
+`completed_unmerged_pass`).** The reader-back of the GCP EXIT-trap
+crash-persist path — `_eps_persist_diagnostics` (`backends/gcp.py`)
+uploads partial artifacts to `superkaiba1/explore-persona-space-data`
+under `issue<N>_partial/<attempt_id>/` on every non-zero rc, but nothing
+ever reads those bundles back, so a bundle carrying a COMPLETED result
+whose workload upload path never fired is indistinguishable from a
+genuinely-partial persist. This pass lists the `issue<N>_partial/`
+prefixes for recently-touched non-`proposed` REGISTRY tasks
+(`EPM_PARTIAL_BUNDLE_LOOKBACK_H`, default 168 h), groups by attempt_id,
+classifies each bundle via `_classify_bundle_completeness` (four states:
+`complete` — transcript + result payload / `workload_ts_backstop` —
+weaker signal, workload_<ts>.log + result / `no_result_payload` — silent
+skip / `persist_killed` — silent skip), extracts the bundle-relative
+paths under `eval_results_issue_<N>/`, and compares against ONE
+read-only `git ls-tree -r --name-only HEAD -- eval_results/issue_<N>/`
+at `PROJECT_ROOT` (semantic contract: "landed on `main`", NEVER a
+worktree HEAD). Any bundle-relative path with NO committed counterpart
+flags. **Channels:** one row per firing to the dedicated sidecar
+`.claude/cache/partial-bundle-events.jsonl` (with
+`completeness_signal` recording the classifier's return
+verbatim — the operator can weigh backstop vs primary firings at a
+glance) + ONE deduped fail-soft `_telegram_push` per (issue,
+attempt_id, band); NO task markers (the `verdict_disagree_pass`
+posture — the escalation target is a HUMAN, not the next dispatch).
+**Cadence + bounds:** hourly self-gate (`EPM_PARTIAL_BUNDLE_INTERVAL_HOURS`,
+default 1.0; the attempt stamp is saved BEFORE the collect, so a
+crashing pass is bounded to one error row per interval) with a per-pass
+listing cap (`EPM_PARTIAL_BUNDLE_LISTING_CAP`, default 50) + a persisted
+cursor `enum_cursor_idx` in `~/.eps-autonomous/partial-bundle-observer.json`
+so tail-of-list issues never starve; per-episode dedup keyed on `(issue,
+attempt_id, band)` with a 168 h re-alert TTL
+(`EPM_PARTIAL_BUNDLE_REALERT_HOURS`) — mirrors the registry-drift
+weekly re-alert for a persistent, un-remediable-until-user condition.
+**Fail-soft PER ISSUE** (never per pass): a retry-exhausted Hub error
+for ONE issue writes ONE `partial-bundle-hub-error` sidecar row and
+continues to the next; a git failure for ONE issue writes ONE
+`partial-bundle-git-error` sidecar row and continues. **ESCALATE-ONLY
+is a hard invariant:** the pass NEVER auto-commits bundle contents,
+NEVER deletes a bundle (crash forensics are durable record), NEVER
+posts task markers — pinned by `tests/test_autonomous_session_watch.py::test_partial_bundle_pass_never_mutates_state`
+(argv spy on every `subprocess.run` — every argv is `git ls-tree`
+under `PROJECT_ROOT`, with no `commit`/`add`/`push`/`rm` anywhere) and
+`test_partial_bundle_pass_never_posts_task_markers`. Kill switch
+`EPM_DISABLE_PARTIAL_BUNDLE_AUDIT=1`; `--partial-bundle-only` runs
+just this pass (pair with `--dry-run` for a zero-write live smoke
+against the real data repo).
+
 **Urgent-park router pass (task #1681, `urgent_wf_park_pass`;
 daemon-INDEPENDENT, runs right after `completed_unmerged_pass`).** The
 "main is red" fast path for PARKED workflow-fix candidates: a park whose
