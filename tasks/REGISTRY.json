@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1697,
+  "highest_id": 1698,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5418,6 +5418,13 @@
       "path": "tasks/proposed/1697",
       "status": "proposed",
       "title": "daily-fix: --map-files timeout dispersion margin"
+    },
+    "1698": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1698",
+      "status": "proposed",
+      "title": "daily-fix: RunPod launch-path branch/teardown contract"
     },
     "17": {
       "has_clean_result": false,
