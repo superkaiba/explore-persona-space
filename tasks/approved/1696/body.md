@@ -5,6 +5,7 @@ tags:
 - wf-fix
 - wf-fix-fp:a4f81976404b
 - daily-auto-filed
+- trigger-dense
 created_at: '2026-07-26T07:05:32Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-25 problem sweep (route 2): Four spurious usage-policy
