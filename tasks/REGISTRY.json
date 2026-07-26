@@ -5478,8 +5478,8 @@
     "1704": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1704",
-      "status": "reviewing",
+      "path": "tasks/completed/1704",
+      "status": "completed",
       "title": "daily-fix: reconcile crash bundles against git"
     },
     "1705": {
