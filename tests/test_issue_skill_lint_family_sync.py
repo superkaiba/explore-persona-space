@@ -2,12 +2,12 @@
 
 #1560 (2026-07-20) extended the Step 5a spec-freshness sync to cover the
 lint/guard family (scripts/workflow_lint.py, .claude/hooks, the
-test_guard_lessons_edit / test_workflow_lint* pin tests), subject-scoped the
+test_guard_* / test_workflow_lint* pin tests), subject-scoped the
 sync's per-file branch-side-edit exclusion (the Guard-3 convention), and
 added a mandatory pre-gate freshness re-sync against fetched origin/main to
 the Step 10d pre-push workflow-lint gate — closing the branch-era-linter
 vintage-skew class that red the gate three times on 2026-07-19
-(#1489 / #1482 / #1417).
+(#1489 / #1482 / #1417 / #1675→#1682).
 
 These tests fail the suite if a later SKILL.md editor drops the family
 entries, the boundary-paragraph family exception, the pre-gate re-sync
@@ -64,11 +64,14 @@ def test_step5a_specs_include_lint_family():
     assert (
         'SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml '
         "CLAUDE.md scripts/workflow_lint.py .claude/hooks "
-        'tests/test_guard_lessons_edit.py :(glob)tests/test_workflow_lint*.py"'
+        "tests/test_guard_lessons_edit.py :(glob)tests/test_workflow_lint*.py "
+        ':(glob)tests/test_guard_*.py"'
     ) in _text(), (
         "Step 5a SPECS must carry the #1560 lint/guard family "
-        "(workflow_lint.py, .claude/hooks, test_guard_lessons_edit.py, "
-        "the :(glob) test_workflow_lint* pin-test family)"
+        "(workflow_lint.py, .claude/hooks, the :(glob) test_workflow_lint* "
+        "and :(glob) test_guard_* pin-test families) — the guard-family "
+        "widening pinned by #1709 covers all tests/test_guard_*.py "
+        "(vintage-skew class #1489/#1482/#1417/#1675→#1682)"
     )
 
 
