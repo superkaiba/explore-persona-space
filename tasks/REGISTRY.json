@@ -5471,8 +5471,8 @@
     "1703": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1703",
-      "status": "approved",
+      "path": "tasks/running/1703",
+      "status": "running",
       "title": "daily-fix: sweep emits unmatched_record_fps advisory"
     },
     "1704": {
