@@ -5527,8 +5527,8 @@
     "1710": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1710",
-      "status": "planning",
+      "path": "tasks/approved/1710",
+      "status": "approved",
       "title": "daily-fix: repo-root guard FP on ssh/note payloads"
     },
     "1711": {
