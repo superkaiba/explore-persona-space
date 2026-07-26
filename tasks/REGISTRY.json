@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1698,
+  "highest_id": 1699,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5425,6 +5425,13 @@
       "path": "tasks/proposed/1698",
       "status": "proposed",
       "title": "daily-fix: RunPod launch-path branch/teardown contract"
+    },
+    "1699": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1699",
+      "status": "proposed",
+      "title": "daily-fix: implementer pin-sweep + lint parity"
     },
     "17": {
       "has_clean_result": false,
