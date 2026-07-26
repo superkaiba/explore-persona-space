@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1706,
+  "highest_id": 1707,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5495,6 +5495,13 @@
       "path": "tasks/proposed/1706",
       "status": "proposed",
       "title": "daily-held: #1639 missing #1310 assistant-test fold"
+    },
+    "1707": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1707",
+      "status": "proposed",
+      "title": "daily-held: #1345 base story leg lost in crash bundle"
     },
     "171": {
       "has_clean_result": true,
