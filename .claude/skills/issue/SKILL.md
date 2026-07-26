@@ -2760,11 +2760,23 @@ judgment, just structural presence:
   When the blocker names `epm:smoke-architecture-check` (Step 0.55): a
   separate `epm:smoke-architecture-check` events row exists in canonical task
   state with a `verdict:` line matching `PASS_UNIFIED` | `PASS_CANARY
-  canary_cell=<id>` | `FAIL_NO_CANARY` — present + parseable → STRIP (a
-  stale-worktree false absence); absent or verdict-less → leave the FAIL in
-  place (the gate is doing its job; do NOT check the implementation marker's
-  H3s for this sub-case — they can be conforming while the separate row is
-  missing, which is exactly incident #811).
+  canary_cell=<id>` | `PASS_PARTIAL arms_stubbed=<comma-list>` |
+  `FAIL_NO_CANARY` — present + parseable → STRIP (a stale-worktree false
+  absence); absent or verdict-less → leave the FAIL in place (the gate is
+  doing its job; do NOT check the implementation marker's H3s for this
+  sub-case — they can be conforming while the separate row is missing, which
+  is exactly incident #811). **Discriminator (#1692):** the strip fires
+  ONLY when the blocker names ABSENCE (the marker is missing / verdict-less)
+  and the canonical marker is actually PRESENT with a valid verdict — the
+  blocker body then reads like "no `epm:smoke-architecture-check` events
+  row" / "marker missing" / "verdict-less". A SHAPE-VIOLATION blocker
+  (marker present, verdict parseable, but internal-shape inconsistent —
+  e.g. "PASS_UNIFIED verdict but arm foo reads FALLBACK", "per-arm-resolution
+  row missing for plan-named arm bar", "import-resolution shape unrecognized")
+  is `substantive`-adjacent: the strip does NOT fire and the FAIL stands.
+  Distinguish by the blocker body phrasing (absence vocabulary → strip
+  when marker present; verdict-vs-rows / row-missing / import-shape vocabulary
+  → leave in place).
   When the blocker names `Gate-scope check` (Step 4.6 presence): the `(c)`
   section of the highest-version `epm:results` marker in canonical task
   state carries a `Gate-scope check` line — present → STRIP (a
@@ -3901,8 +3913,9 @@ Verdict routing:
 
 | `verdict` | Action |
 |---|---|
-| `PASS_UNIFIED` | Advance to Step 6d.1 — smoke IS sweep with one cell; the architecture is unified end-to-end. |
+| `PASS_UNIFIED` | Advance to Step 6d.1 — smoke IS sweep with one cell; the architecture is unified end-to-end AND every planned arm resolved REAL or N/A. |
 | `PASS_CANARY canary_cell=<id>` | Advance to Step 6d.1 — paths diverge but the plan §4 Design justifies the divergence in two sentences AND names the canary cell that exercised the sweep path during smoke. Log to chat: `divergence accepted; canary cell <id> exercised the subprocess path during smoke`. |
+| `PASS_PARTIAL arms_stubbed=<comma-list>` | **REFUSE to dispatch.** Bounce back to status:planning; re-invoke `/adversarial-planner` with pivot scope: "arms {arms_stubbed} resolved to fallback/stub in smoke — phase coverage + import-resolution passed BUT ≥1 planned arm is not exercising its production computation path; resolve them in the diff, OR re-authorize the stubs in §4 Design (canary-like exception, not yet wired)." Round counter does NOT increment (strategy pivot, mirroring `FAIL_NO_CANARY`). |
 | `FAIL_NO_CANARY` | **REFUSE to dispatch.** Bounce back to status:planning; re-invoke `/adversarial-planner` with pivot scope: "the smoke/sweep architectural divergence has no justification + canary; re-architect toward UNIFICATION (smoke = sweep with one cell), OR add the two-sentence justification + named canary cell to §4 Design." Round counter does NOT increment (this is a strategy pivot, not a fresh review round). |
 | (marker missing) | **REFUSE to dispatch.** Bounce back to implementer with a one-line prompt: `post epm:smoke-architecture-check v1 per the mandatory checklist before code-review-PASS`. |
 
