@@ -5387,8 +5387,8 @@
     "1693": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1693",
-      "status": "planning",
+      "path": "tasks/approved/1693",
+      "status": "approved",
       "title": "daily-fix: phase idempotency + inter-phase schema assert"
     },
     "1694": {
