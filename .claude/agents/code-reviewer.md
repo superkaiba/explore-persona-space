@@ -940,6 +940,145 @@ verify crawl wedged a live A100 run in 429 storms). Record
 `Hub-call-scoping sub-check: N/A — no data-repo Hub calls in diff` when
 absent. Full listings of the SMALL model repo are fine — data repo only.
 
+### Step 0.69: Phase-idempotency + inter-phase-contract gate (any diff type; multi-phase dispatchers only)
+
+A phased dispatcher that lacks skip-if-output-exists is the recurring paid-API
+spend leak: a downstream vLLM crash restarts the pipeline from the top, re-running
+a paid-Anthropic / paid-OpenAI phase whose artifacts already sit on HF. And a
+consumer phase that asserts its input JSONL contract AFTER model initialization
+turns a schema mismatch into a wasted GPU cycle (the #1689 shape: 79,800 rows
+rendered, vLLM initialized, then `ValueError: The decoder prompt cannot be
+empty` — 33% of rows resolved to `messages: [...]` with no `prompt_text` — after
+the pod was billing). Both are code-review-time catchable from the dispatcher
+diff alone. This gate is the review-side sibling of `.claude/rules/code-style.md`
+line 53 (checkpoint-per-phase, ADVISORY-prose): the rule exists, and this gate
+enforces it on dispatcher diffs.
+
+**Trigger — does the diff add/modify a multi-phase dispatcher?** Grep the diff
+for a phase-dispatch shape:
+
+```bash
+# Bash entrypoint dispatchers (issue<N>_dispatch.sh, one line per phase):
+grep -nE '^phase_[a-z0-9_]+\s*\(\)|^case .* in$|_run_phase [a-z0-9_]+' <each dispatcher .sh in diff>
+# Python phase-loop dispatchers (`for phase in PHASES`, `if args.phase == 'a'`):
+grep -nE 'def phase_[a-z0-9_]+|PHASES *= *\[|args\.phase|--phase' <each dispatcher .py in diff>
+```
+
+Multi-phase = >1 phase name. Not a trigger — a single-entrypoint script or a
+one-phase run: record `Step 0.69: N/A — diff carries no multi-phase dispatcher`
+and proceed.
+
+**Sub-check (1) — phase-level skip-if-output-exists.** For each phase, verify
+ONE of the two patterns holds by reading the phase entry body:
+
+- **(a) Sentinel/output-artifact skip.** The phase body checks a declared
+  completion-sentinel or primary-output path at entry
+  (`[ -e "$OUT/phaseA_done" ] && { echo "[phaseA] skip — sentinel exists"; return; }`,
+  or a Python `if OUT.exists() and not args.force: return`). Bare file existence
+  is ACCEPTABLE only when the phase writes its output atomically-then-renames
+  (`os.replace` or `mv` of a tmp file) — otherwise the sentinel discipline of
+  CLAUDE.md § Monitoring re-run discipline applies (never key "done" on a
+  half-written file). Prefer a completion sentinel over a bare glob.
+- **(b) First-class `--force` (or equivalently-named) flag.** The dispatcher
+  accepts `--force` / `--rerun` / `--no-skip` / `--overwrite` (or the same as
+  an env var like `FORCE_PHASE=1`) whose DEFAULT is OFF and whose value is
+  threaded through the phase entry — so a deliberate rerun stays first-class.
+  A phase that ALWAYS re-runs (no sentinel check AND no force flag) FAILs
+  this sub-check.
+
+Waiver form (mirrors `# CVD_PIN_EXEMPT: <reason>` from
+`.claude/rules/gotchas.md`): a phase legitimately non-idempotent by nature (a
+stochastic sampling phase whose output is per-run, an eval whose "done" state
+is a WandB run id, etc.) carries `# PHASE_IDEMPOTENCY_EXEMPT: <reason ≥ 20 chars>`
+on the phase entry's signature line. A waiver ≥ 20 chars is credited PASS.
+
+**Verdict routing — sub-check (1):**
+
+- Phase ships with (a) or (b) or a valid waiver → PASS this sub-check.
+- **Phase makes paid API calls** (Anthropic/OpenAI/HF inference — grep the
+  phase transitively for `anthropic.Anthropic`, `openai.OpenAI`,
+  `api_dispatch.dispatch_judge_items` / `batch_judge` / `judge_completions_batch`,
+  `openai.chat.completions.create`, or the plan §9 marks the phase `paid`) OR
+  **holds a GPU** (grep for `vllm`, `AutoModel.from_pretrained`, `train_lora`,
+  `LLM(`, `torch.cuda`, `accelerate launch`) AND ships without (a)/(b)/waiver →
+  return verdict FAIL with a single `Critical` issue tagged `phase-not-idempotent`
+  (SUBSTANTIVE — never stripped by Step 5c-bis), AND still read the diff and
+  report substantive findings in the same pass (do not short-circuit — see
+  Step 0.7):
+
+  > `epm:experiment-implementation v<n>`'s dispatcher `scripts/<file>` phase
+  > `<name>` makes paid API calls (or holds a GPU) but has no skip-if-output-exists
+  > guard and accepts no `--force`/`--rerun` flag. A downstream crash re-runs it
+  > from scratch, re-spending its API budget (or re-holding its GPU) each cycle
+  > — the #1689 shape (4× re-runs of the same 3-condition × 3800-row Sonnet
+  > phase across crash-fix relaunches). Re-post `v<n+1>` adding EITHER a
+  > completion-sentinel check at phase entry (`[ -e "$SENTINEL" ] && return`)
+  > OR a first-class `--force`-family flag (defaulting OFF), threaded through
+  > the phase entry. Prefer a completion sentinel over bare file existence
+  > (CLAUDE.md § Monitoring re-run discipline). A legitimately
+  > non-idempotent phase carries `# PHASE_IDEMPOTENCY_EXEMPT: <reason ≥ 20c>`
+  > on its entry.
+
+- Phase is cheap CPU-only (no paid API, no GPU) AND ships without (a)/(b)/waiver
+  → CONCERN bullet under "Issues Found"; NOT a standalone FAIL. Persist via
+  `task.py raise-concern` per Step 0.8 / Rule 11 so the concern actually binds.
+
+**Sub-check (2) — consumer inter-phase contract assertion.** For each phase
+whose INPUT is another phase's persistent output (a JSONL / parquet / npz file
+the earlier phase wrote), READ the consumer phase's entry:
+
+- The consumer asserts every required input field non-empty (`assert
+  row['prompt_text']` — never a silent `row.get('prompt_text', '')` chained to a
+  filter), reports drop counts (`n_dropped > 0 → fail loud with the drop
+  fraction`, per `.claude/rules/llm-judging.md` rule 9's drop-never-coerce
+  discipline and CLAUDE.md § Critical Rules "Fail fast"), and does the check
+  BEFORE any heavy initialization: `AutoModel.from_pretrained`, `LLM(`,
+  `accelerate launch`, `torch.distributed.init_process_group`, first GPU-tensor
+  allocation.
+- **Verdict routing — sub-check (2):**
+  - Contract assertion present + fail-loud + BEFORE model init → PASS.
+  - Assertion present but AFTER model init → verdict FAIL with a single
+    `Critical` issue tagged `consumer-contract-post-init` (SUBSTANTIVE, never
+    stripped):
+
+    > `epm:experiment-implementation v<n>`'s consumer phase `<name>` reads
+    > `<producer_output.jsonl>` and initializes vLLM / AutoModel before checking
+    > the input contract. A schema mismatch (missing field, empty row) then
+    > wastes a pod cycle rather than seconds of CPU (the #1689 shape: 79,800
+    > render rows, vLLM initialized, then died on 33% empty `prompt_text` — one
+    > `.get()` with no assert). Re-post `v<n+1>` moving the assertion above the
+    > model init call: `assert all(r['prompt_text'] for r in rows), f'{sum(1
+    > for r in rows if not r.get(\"prompt_text\")):d} rows empty'` (fail loud;
+    > no silent drop, no default fill).
+
+  - Assertion silently drops / defaults / substring-matches → CONCERN bullet,
+    persisted via `task.py raise-concern` (contract enforcement present but
+    permissive enough that a schema mismatch could mask itself).
+  - No assertion + consumer initializes heavy state → same FAIL as above.
+
+**Fingerprint-of-degradation.** A gate that cannot NAME the expected phase
+output artifact degrades to a judgement call (task-body constraint). This gate
+credits an artifact name from THREE sources, in order: (i) the plan §9
+`phase_outputs:` map (planner.md §9 requirement, see the sibling planner-side
+edit), (ii) a `--out-root` / `--sentinel` flag the dispatcher exposes, (iii)
+a plan-body `**Design:**` / `**Methodology:**` section explicitly naming the
+output. If NONE of the three exist, record `Step 0.69: unable to verify —
+plan/diff names no phase output artifact` (a CONCERNS bullet, NOT a FAIL — the
+gate is designed to degrade gracefully; the sibling planner.md §9 edit is what
+raises the artifact-name floor over time, without ratcheting this gate to a
+false FAIL). This matches Step 0.65's "necessary-but-not-sufficient grep"
+caution and Step 0.67's "plausible-but-unconfirmed" pattern (CONCERNS not FAIL).
+
+Record the verdict as one line: `Step 0.69: PASS — <N> phases idempotent, <M>
+consumers assert contract early`, `Step 0.69: FAIL — <phase> not idempotent /
+<phase> contract post-init`, `Step 0.69: CONCERNS — <one-liner>`, or `Step
+0.69: N/A — no multi-phase dispatcher in diff`.
+
+Sibling: this gate reads dispatcher SHAPE for idempotency; Step 3.6 reads
+long-loop RESTARTABILITY (>~1h serial loops must persist + resume) — the two
+compose (a Step 0.69-idempotent phase's inner loop still owes Step 3.6's
+intra-phase checkpointing).
+
 ### Step 0.7: Pre-diff gates never short-circuit the diff
 
 Steps 0.5, 0.55, 0.6, 0.65, and 0.67 are pre-diff *contract* checks, not a
