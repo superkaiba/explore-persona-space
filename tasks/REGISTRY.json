@@ -5415,8 +5415,8 @@
     "1697": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1697",
-      "status": "proposed",
+      "path": "tasks/planning/1697",
+      "status": "planning",
       "title": "daily-fix: --map-files timeout dispersion margin"
     },
     "1698": {
