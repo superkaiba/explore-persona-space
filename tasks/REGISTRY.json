@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1710,
+  "highest_id": 1711,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5530,6 +5530,13 @@
       "path": "tasks/proposed/1710",
       "status": "proposed",
       "title": "daily-fix: repo-root guard FP on ssh/note payloads"
+    },
+    "1711": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1711",
+      "status": "proposed",
+      "title": "daily-fix: closed-sibling probe in /daily driver"
     },
     "172": {
       "has_clean_result": false,
