@@ -5401,8 +5401,8 @@
     "1695": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1695",
-      "status": "reviewing",
+      "path": "tasks/completed/1695",
+      "status": "completed",
       "title": "daily-fix: refusal/transport-aware session recovery"
     },
     "1696": {
