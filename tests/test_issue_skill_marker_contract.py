@@ -42,6 +42,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
+ISSUE_TICK_SKILL = ROOT / ".claude" / "skills" / "issue-tick" / "SKILL.md"
 EXPERIMENT_IMPLEMENTER = ROOT / ".claude" / "agents" / "experiment-implementer.md"
 CODE_REVIEWER = ROOT / ".claude" / "agents" / "code-reviewer.md"
 IMPLEMENTER = ROOT / ".claude" / "agents" / "implementer.md"
@@ -296,3 +297,19 @@ def test_sha_verbatim_report_rule_pinned():
                 "rev-parse-corrected before the relaunch brief — downstream "
                 "briefs/markers re-cite report SHAs verbatim)."
             )
+
+
+def test_skill_md_documents_api_error_after_marker():
+    """#1695 durability pin: the issue-tick SKILL.md documents the new
+    ``api-error-after-marker`` STALE-REDRIVE reason (the token that
+    `tick_triage.api_error_after_marker_reason` embeds in the verdict
+    string). A future editor silently dropping the docs row would leave
+    the runtime behavior unexplained; this test greps the literal token
+    so the SKILL.md stays in sync with the runtime."""
+    body = ISSUE_TICK_SKILL.read_text(encoding="utf-8")
+    assert "api-error-after-marker" in body, (
+        "issue-tick SKILL.md must document the api-error-after-marker "
+        "STALE-REDRIVE reason (#1695). The token is what "
+        "tick_triage.api_error_after_marker_reason embeds in the verdict "
+        "string — the docs and the runtime must not drift."
+    )

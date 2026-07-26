@@ -796,6 +796,70 @@ def is_human_transcript_row(row: object) -> bool:
     return False
 
 
+def api_error_after_marker_reason(now: float, marker_ts: float | None) -> str | None:
+    """Return a content-invariant reason suffix when THIS session's transcript
+    tail carries an assistant row with ``isApiErrorMessage: true`` whose ts is
+    NEWER than the latest events.jsonl marker ts (#1687), else ``None``.
+
+    Fully exception-guarded (fail toward today's verdict — a spurious
+    STALE-REDRIVE is more expensive than a missed one on this predicate; the
+    marker-age STALE-REDRIVE remains the backstop). Content invariant #1000:
+    the returned reason names ages/counts ONLY, NEVER the row's message text
+    (refusal bodies are trigger-dense — the #866/#1073/#1098 containment).
+
+    Reuses the same transcript reader ``human_activity_reason`` uses
+    (:func:`_transcript_tail_rows_1629` at 256 KB tail bound); on a HEALTHY
+    tick this predicate is the ONLY reader of that file, so the healthy tick
+    stays ONE Bash call by construction (the `human_activity_reason` call
+    lives inside the ``verdict == STALE-REDRIVE`` branch, which is not entered
+    on the HEALTHY path).
+
+    Kill switch: ``EPM_TICK_API_ERROR_PROBE=0`` (or ``false``/``off``) reverts
+    to pre-#1695 HEALTHY behavior. Default enabled — parallel to
+    :func:`human_active_probe_enabled`.
+    """
+    try:
+        raw = os.environ.get("EPM_TICK_API_ERROR_PROBE", "").strip().lower()
+        if raw in ("0", "false", "off"):
+            return None
+        path = _own_session_transcript_path()
+        if path is None:
+            return None
+        newest_api_error_ts: float | None = None
+        for row in _transcript_tail_rows_1629(path):
+            if not isinstance(row, dict) or row.get("type") != "assistant":
+                continue
+            if row.get("isApiErrorMessage") is not True:
+                continue
+            ts = parse_event_ts(row.get("timestamp"))
+            if ts is None:
+                continue
+            if newest_api_error_ts is None or ts > newest_api_error_ts:
+                newest_api_error_ts = ts
+        if newest_api_error_ts is None:
+            return None
+        # STRICT `>`: a marker posted at the same ts as the api-error row
+        # (or newer) wins (fail toward today's verdict; row ts precision is
+        # ~1s so a tie is ambiguous — the marker-post likely followed).
+        if marker_ts is not None and newest_api_error_ts <= marker_ts:
+            return None
+        age = now - newest_api_error_ts
+        # Future-dated row (clock skew, age < 0): skip, don't latch (mirrors
+        # `human_activity_reason`'s future-row skip).
+        if age < 0:
+            return None
+        return f"api-error-after-marker (api-error {age / 60:.0f}m ago, newer than marker)"
+    except Exception as exc:
+        # Debug-only error rung (parallel to `human_activity_reason`): TYPE
+        # only (content invariant #1000), itself guarded so the helper can
+        # never raise into triage().
+        try:
+            _human_probe_debug(f"api-error-probe error={type(exc).__name__}")
+        except Exception:
+            return None
+        return None
+
+
 def human_activity_reason(now: float) -> str | None:
     """Return a content-invariant reason suffix when a HUMAN (non-cron)
     user message appears in THIS session's transcript within the recency
@@ -1060,6 +1124,28 @@ def triage(issue: int, kind: str, now: float | None = None) -> tuple[str, str]:
                 )
                 verdict = "HEALTHY"
                 reason = f"status={status}, {age_desc} — {live}"
+        elif verdict == "HEALTHY":
+            # #1687 api-error-after-marker predicate: an assistant row with
+            # `isApiErrorMessage: true` newer than the latest marker means a
+            # refusal / 529 killed the driving turn AFTER the last real
+            # event log post — marker-age freshness masks the death.
+            # HEALTHY -> STALE-REDRIVE, so the tick loads the full /issue
+            # skill and re-drives. Placement on the HEALTHY branch keeps
+            # the STALE-REDRIVE cascade (liveness / human-active) untouched;
+            # since the new predicate reads the SAME transcript file as
+            # `human_activity_reason` and the HEALTHY path never enters the
+            # STALE branch, a HEALTHY tick still costs ONE Bash call.
+            # Teardown verdicts (TERMINAL / GATE-TRANSITION) are UNAFFECTED
+            # — a refusal after gate-park is still a teardown (the same
+            # posture as the #1629 screen). Kill switch:
+            # ``EPM_TICK_API_ERROR_PROBE=0``.
+            api_err = api_error_after_marker_reason(now, marker_ts)
+            if api_err is not None:
+                verdict = "STALE-REDRIVE"
+                age_desc = (
+                    "no markers" if marker_age is None else f"marker age {marker_age / 60:.0f}m"
+                )
+                reason = f"status={status}, {age_desc} — {api_err}"
 
     # Runaway streak counts every TEARDOWN verdict, not just the terminal
     # STATUS sets — a teardown that whiffs forever at over-cap plan_pending

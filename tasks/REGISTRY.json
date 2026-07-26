@@ -5366,8 +5366,8 @@
     "1690": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1690",
-      "status": "planning",
+      "path": "tasks/reviewing/1690",
+      "status": "reviewing",
       "title": "daily-fix: verified-at-filing: 3 new probe clauses"
     },
     "1691": {
@@ -5387,15 +5387,15 @@
     "1693": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1693",
-      "status": "reviewing",
+      "path": "tasks/completed/1693",
+      "status": "completed",
       "title": "daily-fix: phase idempotency + inter-phase schema assert"
     },
     "1694": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1694",
-      "status": "proposed",
+      "path": "tasks/completed/1694",
+      "status": "completed",
       "title": "daily-fix: Step 10d apply-verification + pre-sync"
     },
     "1695": {
@@ -5408,29 +5408,29 @@
     "1696": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1696",
-      "status": "proposed",
+      "path": "tasks/completed/1696",
+      "status": "completed",
       "title": "daily-fix: guard-surface reviewer posts verdict first"
     },
     "1697": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1697",
-      "status": "proposed",
+      "path": "tasks/completed/1697",
+      "status": "completed",
       "title": "daily-fix: --map-files timeout dispersion margin"
     },
     "1698": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1698",
-      "status": "proposed",
+      "path": "tasks/running/1698",
+      "status": "running",
       "title": "daily-fix: RunPod launch-path branch/teardown contract"
     },
     "1699": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1699",
-      "status": "proposed",
+      "path": "tasks/planning/1699",
+      "status": "planning",
       "title": "daily-fix: implementer pin-sweep + lint parity"
     },
     "17": {
@@ -5450,8 +5450,8 @@
     "1700": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1700",
-      "status": "proposed",
+      "path": "tasks/planning/1700",
+      "status": "planning",
       "title": "daily-fix: verify_plan exempt-kind + commit-SHA check"
     },
     "1701": {
