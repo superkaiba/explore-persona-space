@@ -5527,8 +5527,8 @@
     "1710": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1710",
-      "status": "reviewing",
+      "path": "tasks/completed/1710",
+      "status": "completed",
       "title": "daily-fix: repo-root guard FP on ssh/note payloads"
     },
     "1711": {
