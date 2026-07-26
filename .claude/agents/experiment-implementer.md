@@ -121,43 +121,107 @@ section wins on invocation form.
    smoke-width entry in `.claude/rules/gotchas.md`, #1315/#1333), same
    env injection, same logging surface, same teardown sequence, AND the
    cell-subset parameterization threads through
-   EVERY phase the dispatcher executes), the verdict is `PASS_UNIFIED`.
-   **Per-phase subset threading is part of the PASS_UNIFIED definition,
-   not an optional extra:** list each phase the dispatcher runs (train,
-   eval / cross-eval enumeration, anchor selection, analysis tolerance,
-   upload) and name where each phase's cell list comes from — it must
-   derive from the same `--cells`/override subset the smoke passes. A
-   smoke whose subset shapes only the train loop while a downstream phase
-   re-enumerates the full registered grid is NOT unified — verdict
-   `FAIL_NO_CANARY`, exactly as if the paths had diverged, because that
-   smoke can never pass by construction. Incident #546 round 1
-   (2026-06-10, inherited from the i533 dispatcher family): the train
-   loop honored the EPOCHS/SEEDS/ARMS/PERSONAS smoke overrides, so the
-   implementer attested PASS_UNIFIED, but the cross-eval phase enumerated
-   the full 120-cell registered grid and HF-404'd on never-trained
-   adapters (the anchor selector would have crashed next for the same
-   class, lacking `--allow-partial`). **The same duty covers NON-cell smoke axes:**
-   for every axis the smoke slices below production scale (questions,
-   rows, steps, draws), verify the sliced size satisfies every
-   downstream phase's minimum-N asserts — grep the consumers for
-   `assert len(...) >=` / min-N `raise` shapes and derive each floor
-   from the code (asserts are the greppable common case; floors can
-   also hide in arithmetic — slicing, n-1 divisions), never from the
-   plan's literal stub prose — and name the floor per sliced axis in
-   the attestation `notes:`. Resize an under-floor slice up to the
-   floor (recording it) where the plan permits; a slice you cannot
-   bring to the floor makes the smoke un-passable by construction —
-   verdict `FAIL_NO_CANARY`. Incident #1315 r4: `questions[:1]` sat
-   below `split_half_self_cosine`'s `len(qs) >= 2` and a PASS_UNIFIED
-   smoke crashed at its LAST phase. (Resizing keeps floors from firing
-   in the MAIN smoke leg only — the gate branches themselves must still
-   be demonstrated to execute once in a separate degenerate probe: the
-   data-dependent-gates duty, "After implementation" item 3.) If the
-   plan diverged
+   EVERY phase the dispatcher executes), the verdict is `PASS_UNIFIED`
+   ONLY when the Axis 1 import-resolution leg passed AND every planned
+   arm's per-arm-resolution row (Axis 2) reads `REAL` or `N/A` — a
+   `FALLBACK` row makes the verdict `PASS_PARTIAL`.
+
+   **Axis 1 — Import-resolution leg (execute on the REAL branch).**
+   For every changed entrypoint in this round's diff (a `scripts/*.py`
+   or `src/**/*.py` file the round touches), execute its deferred/lazy
+   imports on the REAL branch. Bare `python -c 'import <module>'` fires
+   ONLY module-level imports; the #1689 rounds 2/3/4 false-pass class
+   was a `from foo import DispatchCall` NESTED inside a function body,
+   which a top-level import never fires. Use ONE of these three shapes:
+   (a) **PREFERRED — the dispatcher's `--import-check` mode**, which
+   loads the entrypoint AND resolves every function-body `from … import
+   …` + every `importlib` / `getattr` deferred import the entrypoint
+   hits on its real code path (a one-line `if args.import_check: from
+   foo import (DispatchCall, dispatch_calls); sys.exit(0)` at the top
+   of `main()` is sufficient — the point is to NAME the deferred
+   symbols). (b) **acceptable fallback** — `uv run python -c 'from
+   scripts.issueNNNN_entrypoint import (dispatch_calls, DispatchCall,
+   …every named function-body import…)'`; the `from <mod> import
+   <names>` form fires those specific deferred names at module load,
+   BUT only when every deferred import in the entrypoint's changed
+   lines is enumerated in the `from ... import ...` list. A bare
+   `import <mod>` is EXPLICITLY INSUFFICIENT here — it does not close
+   this failure class. (c) **for pure top-level-import entrypoints**
+   (NO `def foo(): from … import …` and NO `importlib` anywhere in the
+   changed file's changed lines), a bare `uv run python -c 'import
+   <mod>'` suffices — state this explicitly in `notes:` as
+   `import-resolution-mode: top-level-only` so the reviewer can verify
+   the changed lines contain no function-body imports. Record the
+   EXACT command executed in the marker `notes:` under
+   `import-resolution: <command>`; a deferred import behind a mock-only
+   branch is the #1689 rounds 2/3/4 false-pass class — the smoke MUST
+   exercise the real branch. If import resolution FAILS, the verdict
+   is `FAIL_NO_CANARY` (a broken import is a coverage failure, not a
+   fallback choice).
+
+   **Axis 2 — Per-arm resolution attestation.** For every arm / rung /
+   condition the PLAN §4 Design names (a `kind: experiment` plan lists
+   these explicitly; a `kind: infra` plan typically names none), state
+   in the marker `notes:` under a `per-arm-resolution:` sub-block —
+   one row per plan-named arm:
+
+   ```
+   per-arm-resolution:
+     <arm-name-1>: REAL — <one-line: which real computation ran>
+     <arm-name-2>: FALLBACK — <one-line: what stub / bias-refit / default>
+     <arm-name-3>: N/A — no computation path (<API-only | data-load-only | …>)
+   ```
+
+   An arm reads `REAL` when the smoke exercised its production
+   computation path (not a stub, not a mock-only branch, not a
+   fallback); `FALLBACK` when the smoke resolved to a placeholder
+   (a bias-refit R², a `NotImplementedError`-guarded default, an
+   early-return); `N/A — no computation path` when the arm is
+   legitimately arm-less (API-only phase, data-loading probe, an arm
+   with nothing to compute in the smoke slice — the vacuous case).
+   The vacuous form for a `kind: infra` plan whose §4 names no arms
+   is a single-line `per-arm-resolution: N/A — no plan-named arms`.
+   A missing per-arm row for a plan-named arm is a marker-shape
+   violation (verdict `FAIL_NO_CANARY`, not `PASS_PARTIAL`).
+   **Per-phase subset threading is part of the PASS_UNIFIED
+   definition, not optional:** list each phase the dispatcher runs
+   (train, eval / cross-eval enumeration, anchor selection, analysis
+   tolerance, upload) and name where each phase's cell list comes from
+   — it must derive from the same `--cells`/override subset the smoke
+   passes. A smoke whose subset shapes only the train loop while a
+   downstream phase re-enumerates the full registered grid is NOT
+   unified — verdict `FAIL_NO_CANARY` (incident #546 r1: train honored
+   smoke overrides, cross-eval enumerated the full 120-cell grid,
+   HF-404'd on never-trained adapters). **Same duty covers NON-cell smoke axes:**
+   for every axis the smoke slices below production
+   (questions, rows, steps, draws), verify the sliced size satisfies
+   every downstream phase's minimum-N asserts — grep the consumers for
+   `assert len(...) >=` / min-N `raise` shapes AND arithmetic floors
+   (slicing, n-1 divisions), never from the plan's stub prose — and
+   name the floor per sliced axis in `notes:`. Resize an under-floor
+   slice up to the floor (recording it) where the plan permits; a
+   slice you cannot bring to the floor makes the smoke un-passable by
+   construction — verdict `FAIL_NO_CANARY` (incident #1315 r4:
+   `questions[:1]` sat below `split_half_self_cosine`'s `len(qs) >= 2`
+   and a PASS_UNIFIED smoke crashed at its LAST phase). Resizing keeps
+   floors from firing in the MAIN smoke leg only — the gate branches
+   themselves must still execute once in a separate degenerate probe
+   (data-dependent-gates duty, "After implementation" item 3). If phase
+   coverage holds AND the Axis 1 import-resolution leg passed BUT ≥1
+   planned arm's per-arm-resolution row reads `FALLBACK`, the verdict
+   is `PASS_PARTIAL arms_stubbed=<comma-list-of-fallback-arm-names>`.
+   Step 6d.0 refuses to dispatch on `PASS_PARTIAL` for planned
+   experiment arms — the round bounces to `status:planning` (mirroring
+   `FAIL_NO_CANARY`) for the planner to either resolve the stubbed
+   arms in the diff or re-authorize the stubs by naming them in §4
+   Design (a plan-level canary-like opt-in this v1 does NOT yet wire).
+   If the plan diverged
    (e.g., smoke uses in-process `train_one_cell`, sweep uses a subprocess
    wrapper) AND the plan §4 Design section justified the divergence in two
    sentences AND named which canary cell exercises the sweep path during
-   smoke, the verdict is `PASS_CANARY canary_cell=<cell_id>`. If the plan
+   smoke, the verdict is `PASS_CANARY canary_cell=<cell_id>` (same
+   REAL/N/A per-arm invariant as `PASS_UNIFIED` — a `FALLBACK` row
+   under `PASS_CANARY` is a marker-shape violation). If the plan
    diverged WITHOUT the canary section (or without the two-sentence
    justification), the verdict is `FAIL_NO_CANARY`.
 
@@ -169,99 +233,94 @@ section wins on invocation form.
    notes: <one-line description of how smoke = sweep with one cell, naming
    each phase's cell-list source (e.g. train/eval/anchor all read --cells)
    and, per sliced non-cell axis, its smoke size vs the downstream min-N
-   floor (e.g. questions=2 >= split-half floor 2)>"
+   floor (e.g. questions=2 >= split-half floor 2)>
+   import-resolution: <the EXACT command executed on the REAL branch —
+   see Axis 1 shapes (a)/(b)/(c) above>
+   per-arm-resolution:
+     <arm-1>: REAL | FALLBACK <reason> | N/A — no computation path
+     <arm-2>: …
+   "
    ```
-   For `PASS_CANARY`, use `verdict: PASS_CANARY canary_cell=<cell_id>` and
-   cite the plan §4 two-sentence justification in the `notes:` line. For
-   `FAIL_NO_CANARY`, post the marker AND additionally emit a one-line
+   Legal `verdict:` tokens: `PASS_UNIFIED` | `PASS_CANARY
+   canary_cell=<id>` | `PASS_PARTIAL arms_stubbed=<comma-list>` |
+   `FAIL_NO_CANARY`. For `PASS_CANARY`, cite the plan §4 two-sentence
+   justification in the `notes:` line. For `PASS_PARTIAL`, list the
+   fallback-rowed arm names verbatim (as a set they must equal the
+   arms whose per-arm row reads `FALLBACK`). For `FAIL_NO_CANARY`,
+   post the marker AND additionally emit a one-line
    `<!-- workflow-fix-candidate v1 -->` block in your implementer report
    text suggesting the planner re-architect toward unification, then EXIT.
 
-   Do NOT rely on an inline HTML-comment block in your report text — the
-   orchestrator's `/issue` Step 6d.0 gate scans `events.jsonl` for a
-   separate `epm:smoke-architecture-check` row, not for substrings inside
-   the `epm:experiment-implementation` row's `note` payload. An HTML
-   comment embedded in another marker's body does NOT become a separate
-   events row of the new kind.
+   Do NOT rely on an inline HTML-comment block in your report text —
+   the `/issue` Step 6d.0 gate scans `events.jsonl` for a separate
+   `epm:smoke-architecture-check` row, not for substrings inside another
+   marker's payload.
 
-   The planner needs to revise toward unification first on `FAIL_NO_CANARY`;
-   canary is the escape hatch when unification is genuinely impossible
-   (e.g., per-cell vLLM allocation that can't be reset cleanly in-process).
-   Rationale: task #397 rounds 9/10/10' (2026-05-27) all PASSed smoke and
-   crashed sweep within ~5s of nohup because smoke didn't exercise the
-   subprocess dispatcher. The orchestrator's `/issue` Step 6d.0 gate
-   refuses to dispatch experimenter without PASS_UNIFIED or PASS_CANARY.
+   The planner revises toward unification on `FAIL_NO_CANARY` /
+   `PASS_PARTIAL`; canary is the escape hatch when unification is
+   genuinely impossible (e.g., per-cell vLLM allocation that can't
+   reset in-process). Rationale: #397 rounds 9/10/10' PASSed smoke and
+   crashed sweep because smoke didn't exercise the subprocess
+   dispatcher; #1689 rounds 2/3/4 PASSed smoke behind `--mock-response`
+   branches and stub fallbacks. Step 6d.0 refuses to dispatch on
+   anything other than `PASS_UNIFIED` or `PASS_CANARY`.
 
-   Four additional smoke-contract requirements (the first two bit hard on 2026-06-09, the third on 2026-07-02):
+   Four additional smoke-contract requirements:
 
-   - **Cross-phase data-contract smoke.** When any phase CONSUMES artifacts
-     produced under a DIFFERENT issue / condition registry (a parent's
-     matrices, another arm's adapters, a prior task's eval JSONs), the smoke
-     MUST run the consumer against the producer's REAL output shape at tiny
-     N — not component-level calls on synthetic fixtures. Incident #518: the
-     bakeoff phase read #474's 16-condition `G_logprob_matrix` (A1-A5/B1-B11
-     keys) while #518 passed R1..R24; the first real contact between the two
-     was a `KeyError` 11 hours into the production run.
-   - **Smoke drives the production entrypoint.** The smoke invokes the
-     launcher CLI with the production flag set (then scaled down), never the
-     library functions directly — a function-level smoke "verified" #518's
-     round-15 fix that lived in a branch the launcher never entered.
-   - **Real-trainer-path smoke for callback-bearing training code.** When the
-     diff passes `callbacks=[...]` to `train_lora` / any HF Trainer, the smoke
-     MUST construct a real (SFT)Trainer and traverse
-     `__init__ → on_init_end → on_train_begin → step → on_train_end` (tiny
-     same-arch model, CPU, `max_steps=1-2`) — a dry-run/import-check substitute
-     never fires `on_init_end` and passed #816's non-subclassed callback
-     straight into a production crash after 53/53 sibling cells had burned
-     GPU-hours (gotchas.md entry "A hand-rolled HF Trainer callback that does
-     not subclass `transformers.TrainerCallback` crashes at
-     `Trainer.__init__` …").
+   - **Cross-phase data-contract smoke.** When any phase CONSUMES
+     artifacts from a DIFFERENT issue / condition registry (parent
+     matrices, sibling adapters, prior eval JSONs), the smoke runs the
+     consumer against the producer's REAL output shape at tiny N — not
+     component calls on synthetic fixtures (#518: bakeoff phase read
+     #474's 16-condition matrix while #518 passed R1..R24 — `KeyError`
+     11 h into production).
+   - **Smoke drives the production entrypoint.** Invoke the launcher
+     CLI with the production flag set (then scaled down), never the
+     library functions directly — a function-level smoke misses branches
+     the launcher never enters.
+   - **Real-trainer-path smoke for callback-bearing training code.**
+     When the diff passes `callbacks=[...]` to `train_lora` / any HF
+     Trainer, the smoke MUST construct a real (SFT)Trainer and traverse
+     `__init__ → on_init_end → on_train_begin → step → on_train_end`
+     (tiny same-arch model, CPU, `max_steps=1-2`) — a
+     dry-run/import-check substitute never fires `on_init_end` (#816:
+     non-subclassed callback passed straight to production crash after
+     53/53 sibling cells burned GPU-hours; gotchas.md HF Trainer
+     callback entry).
    - **Tiny-real CPU e2e before the FIRST GPU launch of a multi-stage
      driver.** Mock-seam smokes surface shape bugs one per GPU cycle
      (#906 r11-r14: four bugs, four ~1.5h pod cycles). Run the FULL
      production path once on CPU with REAL library types at every
-     internal seam the pipeline has; fake ONLY GPU-scale weights + the
-     remote Hub boundary (GPU-bound phases: see item 3). When the
-     pipeline INGESTS a real corpus (a WildChat/LMSYS-class streaming
-     builder), the **data-ingestion probe class** (#1092) binds too:
-     a bounded tiny-real streaming probe against the REAL dataset —
-     a kept cap AND a TOTAL-streamed-rows cap, asserting kept > 0 per
-     dataset, with per-filter rejection counters in the stream's
-     `done:` line (recipe: `.claude/rules/gotchas.md` "Real-corpus
-     streaming filters" + your agent-memory
-     `feedback_real_corpus_streaming_filters_tiny_real_probe.md`).
-     Full recipe + traps + worked example: `.claude/rules/gotchas.md`
-     "Mock-seam smokes". Record it under `## Smoke run` — Step
-     6d.0-bis refuses seam-stubbed evidence, and synthetic-fixture-only
-     evidence for a real-corpus ingestion phase.
+     internal seam; fake ONLY GPU-scale weights + the remote Hub
+     boundary (GPU-bound phases: see item 3). When the pipeline
+     INGESTS a real corpus (WildChat/LMSYS-class streaming), the
+     **data-ingestion probe class** (#1092) binds too: a bounded
+     tiny-real streaming probe against the REAL dataset — a kept cap
+     AND a TOTAL-streamed-rows cap, `kept > 0` per dataset,
+     per-filter rejection counters in the `done:` line (recipe:
+     gotchas.md "Real-corpus streaming filters"). Record it under
+     `## Smoke run` — Step 6d.0-bis refuses seam-stubbed evidence and
+     synthetic-fixture-only evidence for a real-corpus ingestion phase.
 6. **Cite CLAUDE.md gotchas in your mini-plan.** Grep `CLAUDE.md`
-   §Gotchas for libraries / patterns relevant to the modules you're
-   about to edit (e.g. vLLM, TRL, Hydra, MooseFS, RunPod, persona
-   injection, marker tokenization). In your Implementation Report
-   under `(b) Considered but not done`, cite the specific gotchas you
-   read and how your design avoids each one — even a one-line "no
-   vLLM in this diff; gotcha #X N/A" is acceptable. Rationale: task
-   #397 round 8 (2026-05-27) hit the "vLLM in-process teardown does
-   NOT reap worker subprocesses" gotcha documented in CLAUDE.md, but
-   the implementer's report didn't cite it as a considered constraint;
-   the orphan PID re-allocated 74 GB and crashed the next phase's HF
-   load. A one-line "I read the vLLM teardown gotcha; this diff
-   subprocess-isolates each phase" would have caught the design
-   mismatch at review-time.
-7. **Vectorize-first default (ALWAYS-ON — do not rely on the rule's `paths:`
-   glob to load it).** Before writing ANY fit / battery / sweep loop
-   (per-cell, per-fold, per-draw, per-row, per-layer), OPEN and follow
-   `.claude/rules/vectorize-many-cell-fits.md` — the glob injection
-   demonstrably misses (0 hits in the #778 follow-up implementer transcript
-   even though the edited file matched the rule's `analysis/**` glob). The
-   default implementation is BATCHED: no serial Python loop over cells /
-   folds / draws / rows — batch the axes into tensor ops (`torch.vmap`/`bmm`,
-   subset-sum GEMM, shared/Gram-space factorizations; canonical helpers
-   `src/explore_persona_space/analysis/vectorized_mlp_skill.py`,
-   `src/explore_persona_space/analysis/null_battery.py`) and check device
-   routing is parametrized, not pinned. NAME the batched helper (or your
-   explicit batching strategy, or the one-line reason the loop is genuinely
-   not batchable) in your implementation report §(a).
+   §Gotchas for libraries / patterns relevant to the modules you edit
+   (vLLM, TRL, Hydra, MooseFS, RunPod, persona injection, marker
+   tokenization). In `(b) Considered but not done`, cite each gotcha
+   read and how your design avoids it — a one-line "no vLLM in this
+   diff; gotcha #X N/A" suffices. Rationale (#397 r8): the vLLM
+   in-process teardown gotcha was documented but uncited; the orphan
+   PID re-allocated 74 GB and crashed the next phase — a one-line
+   citation at review-time would have caught the design mismatch.
+7. **Vectorize-first default (ALWAYS-ON — the rule's `paths:` glob
+   demonstrably misses, #778).** Before writing ANY fit / battery /
+   sweep loop (per-cell, per-fold, per-draw, per-row, per-layer),
+   OPEN and follow `.claude/rules/vectorize-many-cell-fits.md`. Default
+   is BATCHED: no serial Python loop over cells / folds / draws /
+   rows — batch the axes into tensor ops (`torch.vmap`/`bmm`,
+   subset-sum GEMM, shared/Gram-space factorizations; canonical
+   helpers `analysis/vectorized_mlp_skill.py`,
+   `analysis/null_battery.py`) with device routing parametrized.
+   NAME the batched helper (or your explicit batching strategy, or
+   the one-line reason not batchable) in report §(a).
 
 > **Porting from an unmerged parent/sibling branch** — READ `.claude/rules/artifact-reuse.md` § "Porting a recipe from an unmerged sibling branch" IN FULL before porting. (Relocated verbatim from this spec, #829.)
 
@@ -292,61 +351,50 @@ section wins on invocation form.
      credential env, e.g. nvidia-smi probe).
   2. **`load_dotenv()` (or credential assertion) at module-top OR
      `main()`-top OR `if __name__ == "__main__":` block-top.** Any file
-     containing a `subprocess.<func>` call MUST have at least one of:
-     (a) `load_dotenv()` import-and-call before the first function def,
-     (b) the same call at the top of `main()`, (c) the same at the top
-     of the `if __name__ == "__main__":` block, OR (d) an explicit
-     `assert os.environ.get("HF_TOKEN")` (or `WANDB_API_KEY`,
-     `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `RUNPOD_API_KEY`) at any
-     of those three positions. `uv run python` does NOT auto-load
-     `.env`; without the load-at-entry, a fresh dispatcher process
-     spawns subprocesses with the credential env missing — even when
-     `env=env` is passed, the `env` dict came from `os.environ.copy()`
-     of an unloaded parent. Rationale: task #397 round-10' (2026-05-27)
-     — the dispatcher passed `env=env` correctly but never called
-     `load_dotenv()`, so `HF_TOKEN` was never in the parent process's
-     env; `_upload` returned empty path; cell exited rc=2. Enforced by
-     `tests/test_subprocess_env_explicit.py` (two AST checks per
-     in-scope file).
+     with a `subprocess.<func>` call MUST have at least one of: (a)
+     `load_dotenv()` before the first function def, (b) same at
+     `main()` top, (c) same at the `if __name__ == "__main__":`
+     block-top, OR (d) an explicit
+     `assert os.environ.get("HF_TOKEN"|"WANDB_API_KEY"|"ANTHROPIC_API_KEY"|"OPENAI_API_KEY"|"RUNPOD_API_KEY")`
+     at any of those positions. `uv run python` does NOT auto-load
+     `.env`; without load-at-entry, subprocesses spawn with credential
+     env missing even with `env=env` (#397 r10': dispatcher passed
+     env=env correctly, never called load_dotenv, HF_TOKEN missing,
+     `_upload` returned empty path, cell exited rc=2). Enforced by
+     `tests/test_subprocess_env_explicit.py`.
 - **Per-GPU parallel fan-out: pin `CUDA_VISIBLE_DEVICES=<gpu>` in the
   LAUNCHER env per cell, with the matching `+gpu_id=N` / `--gpu-id N`.**
-  Any dispatcher running N cells in parallel with one GPU each must set
-  BOTH; the in-process clobber in `train/sft.py` is silently defeated by
-  any import-time cuInit (`import peft` — #545), co-locating every cell
-  on physical GPU 0 (#523/#541/#543/#557). Reference shape:
-  `scripts/i474_phase23_dispatch.sh:192-193`. Regression smoke:
-  `tests/test_cvd_wave_assignment_smoke.py` — extend it or add a sibling
-  when you write a new wave dispatcher. Launch-side enforcement:
-  `experimenter.md` Before Running step 10. Mechanical backstop:
-  `workflow_lint.py --check-dispatcher-cvd-pin` (bundled into the
-  no-flags default run) FAILs any backgrounded `--gpu-id` / `+gpu_id=`
-  python launch in `scripts/**/*.sh` lacking a `CUDA_VISIBLE_DEVICES=`
-  prefix on the same command; waive deliberately unpinned shapes with
-  `# CVD_PIN_EXEMPT: <reason ≥10 chars>` on the same logical line or
-  the immediately preceding non-blank line. Full mechanics:
-  `.claude/rules/gotchas.md`.
+  Any dispatcher running N cells in parallel with one GPU each MUST set
+  BOTH; the in-process clobber in `train/sft.py` is silently defeated
+  by any import-time cuInit (`import peft` — #545), co-locating every
+  cell on physical GPU 0 (#523/#541/#543/#557). Reference:
+  `scripts/i474_phase23_dispatch.sh:192-193`; regression smoke:
+  `tests/test_cvd_wave_assignment_smoke.py`. Mechanical backstop:
+  `workflow_lint.py --check-dispatcher-cvd-pin` (no-flags default)
+  FAILs a backgrounded `--gpu-id`/`+gpu_id=` launch in `scripts/**/*.sh`
+  without a `CUDA_VISIBLE_DEVICES=` prefix; waive with
+  `# CVD_PIN_EXEMPT: <reason ≥10 chars>`. Full mechanics: gotchas.md.
 - **Persona injection.** Always system-prompt
   (`{"role": "system", "content": "<persona>"}`); never inject in user/
   assistant turns.
 - **vLLM for batched eval generation.** Never sequential `model.generate()` for
   K samples — use `LLM.generate()` with `SamplingParams(n=K)`.
-- **Checkpoint per phase; never accumulate-in-memory and write-at-end.** Any
-  multi-phase / multi-domain / multi-condition / multi-seed dispatcher MUST
-  persist each phase's output (to disk, HF data repo, or WandB) the moment that
-  phase completes. The canonical anti-pattern — `results = []; for phase:
-  results.append(...); write(results, path)` — turns ANY downstream phase crash
-  (quality gate, OOM, mid-run `SystemExit`, network blip) into total data loss.
-  Prefer per-phase files (`output/<phase>.jsonl`) — cleanest re-runnability and
-  downstream globs. Append-mode single file only when downstream code already
-  handles re-run dedup. Task #377 lost 3 of 4 clean domains' output on rounds
-  5/6/7 when the 4th domain tripped the mid-run quality gate (2026-05-22/23).
-  External-stream loops (HF `datasets` `streaming=True`, API pagination, web harvest)
-  are PRESUMED over the ~1h intra-phase checkpoint floor regardless of per-row kernel
-  triviality — persist each chunk/source pool durably + fingerprint-gated resume keyed
-  on dataset revision + filter/recipe constants; short bounded fetches (known
-  ≤~10^4-row scan, fixed stop) exempt (#1092: a 3h06m stream died in memory on a
-  downstream KeyError; full clause: `.claude/rules/code-style.md` § "Checkpoint per
-  phase").
+- **Checkpoint per phase; never accumulate-in-memory and write-at-end.**
+  Any multi-phase / multi-domain / multi-condition / multi-seed
+  dispatcher MUST persist each phase's output the moment it completes.
+  Anti-pattern: `results = []; for phase: results.append(...);
+  write(results, path)` — any downstream crash (quality gate, OOM,
+  mid-run `SystemExit`, network blip) = total data loss. Prefer
+  per-phase files (`output/<phase>.jsonl`); append-mode single file
+  only when downstream handles re-run dedup. #377 lost 3/4 domains on
+  the 4th's mid-run quality-gate trip. External-stream loops (HF
+  `streaming=True`, API pagination, web harvest) are PRESUMED over
+  the ~1h intra-phase checkpoint floor regardless of per-row kernel
+  triviality — persist each chunk durably + fingerprint-gated resume
+  keyed on dataset revision + filter/recipe constants; short bounded
+  fetches (known ≤~10^4-row scan, fixed stop) exempt (#1092: 3h06m
+  stream died in memory on a downstream KeyError). Full clause:
+  `.claude/rules/code-style.md` § "Checkpoint per phase".
 
 ### Content hygiene for harmful-content datasets (EM, refusal-bait, harmful-advice)
 

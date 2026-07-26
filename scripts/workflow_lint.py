@@ -11763,16 +11763,19 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 109,583 B post-#1449 (Step 0.65 plan-glob vs
-    # uploader-eligibility parity sub-check — plan-mandated growth; cap =
-    # measured + ~0.7 KB. Prior: 108,000 — measured 106,853 B post-#1397
-    # (Step 2 fit-loop batched-helper naming paragraph), 105,000 — measured
-    # 104,235 B post-#1317 (Step 4.6 Gate-scope line verification), 101,500 —
+    # measured 112,177 B post-#1692 (Step 0.55 SHAPE-check binding: per-arm
+    # attestation-row consistency + import-resolution three-shape gate for
+    # the smoke-architecture-check marker — plan-mandated growth; cap =
+    # measured + ~0.3 KB. Prior: 110,300 — measured 109,583 B post-#1449
+    # (Step 0.65 plan-glob vs uploader-eligibility parity sub-check),
+    # 108,000 — measured 106,853 B post-#1397 (Step 2 fit-loop
+    # batched-helper naming paragraph), 105,000 — measured 104,235 B
+    # post-#1317 (Step 4.6 Gate-scope line verification), 101,500 —
     # measured 100,555 B post-#1254 (Step 3.9 degenerate-statistic check,
-    # observed-vs-null reads), 99,000 — measured 98,126 B post-#1230 (Step 6
-    # durability-pin shipping duty), 97,000 — measured 96,072 B post-#1119,
-    # 95,000 — measured 94,126 B post-#1115)
-    "code-reviewer.md": 110_300,
+    # observed-vs-null reads), 99,000 — measured 98,126 B post-#1230
+    # (Step 6 durability-pin shipping duty), 97,000 — measured 96,072 B
+    # post-#1119, 95,000 — measured 94,126 B post-#1115)
+    "code-reviewer.md": 112_500,
     # measured 74,082 B post-#1447 (family-enumeration sync: the two
     # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
     # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
@@ -11790,17 +11793,21 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 52,361 B post-#1254, 51,600 — measured 50,642 B post-#948,
     # 47,930 B post-#881)
     "codex-code-reviewer.md": 59_200,
-    # measured 74,240 B post-#1682 (Report Format SHA-verbatim rule —
-    # plan-mandated growth; cap = measured + ~0.26 KB.
-    # Prior: 74,000 — measured 73,554 B post-#1572 (step-10 staged-index
-    # verification pointer), 73,000 — measured 72,240 B post-#1449
-    # (After-implementation step-7 plan-glob parity self-check), 72,000 —
+    # measured 76,274 B post-#1692 (item 5 Axis 1 import-resolution leg,
+    # Axis 2 per-arm resolution attestation, PASS_PARTIAL verdict +
+    # post-marker template extension — plan-mandated growth; cap =
+    # measured + ~0.23 KB, with condensing sweep across older Rationale
+    # / incident prose to stay near budget. Prior: 74,500 — measured
+    # 74,240 B post-#1682 (Report Format SHA-verbatim rule), 74,000 —
+    # measured 73,554 B post-#1572 (step-10 staged-index verification
+    # pointer), 73,000 — measured 72,240 B post-#1449 (After-
+    # implementation step-7 plan-glob parity self-check), 72,000 —
     # measured 71,114 B post-#1409 (data-dependent-gates smoke duty in
     # checklist item 3 + item-5 cross-ref), 69,800 — measured 68,888 B
     # post-#1384 (per-arm-class smoke-coverage clause), 67,900 — measured
     # 67,472 B post-#1363, 67,400 — measured 66,574 B post-#1349,
     # 66,300 — measured 65,548 B post-#1311)
-    "experiment-implementer.md": 74_500,
+    "experiment-implementer.md": 76_500,
     # measured 66,921 B post-#1416 (Pre-Launch step 9 foreign-tenant
     # memory.used read — plan-mandated growth; cap = measured + ~0.6 KB.
     # Prior: 66,500 — measured 65,540 B post-#1081 r2 (D3
