@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1699,
+  "highest_id": 1700,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5446,6 +5446,13 @@
       "path": "tasks/completed/170",
       "status": "completed",
       "title": "Gradient prompt optimization with KL-to-EM-finetune as objective (soft + hard)"
+    },
+    "1700": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1700",
+      "status": "proposed",
+      "title": "daily-fix: verify_plan exempt-kind + commit-SHA check"
     },
     "171": {
       "has_clean_result": true,
