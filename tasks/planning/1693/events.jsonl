@@ -4,3 +4,4 @@
 {"ts": "2026-07-26T07:10:31Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-26T07:21:16Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "PASS n_fail=0 n_warn=2 warns=c31_skillmd_prose_pin,c34_ratchet_headroom plan v1 (carried into critic briefs per SKILL § Phase 1.5.0)"}
 {"ts": "2026-07-26T07:21:38Z", "kind": "epm:plan", "version": 1, "by": "unknown", "note": "Plan v1 written to /home/thomasjiralerspong/explore-persona-space/tasks/planning/1693/plans/plan.md (gpu_hours_total=0)"}
+{"ts": "2026-07-26T07:22:17Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "codex composers skipped — quota sentinel live until 2026-08-06T13:26Z (#1204 pre-spawn check); single-Claude per no-show fallback for Phase 2 critics"}
