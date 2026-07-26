@@ -5513,8 +5513,8 @@
     "1709": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1709",
-      "status": "proposed",
+      "path": "tasks/planning/1709",
+      "status": "planning",
       "title": "daily-fix: SPECS syncs paired tests/test_guard_ files"
     },
     "171": {
