@@ -33,9 +33,6 @@ if str(REPO_ROOT) not in sys.path:
 from scripts.issue1689_common import (  # noqa: E402
     CAPTURE_LAYERS,
     HEADLINE_LAYER,
-    LAMBDA_GRID_SIZE,
-    LAMBDA_LOG_MAX,
-    LAMBDA_LOG_MIN,
     N_FOLDS,
 )
 
@@ -86,7 +83,12 @@ def fit_cell(
     X_context = np.stack(per_layer_X_context, axis=1)
     Y = np.stack(per_layer_Y, axis=1)
 
-    lambdas = np.logspace(LAMBDA_LOG_MIN, LAMBDA_LOG_MAX, LAMBDA_GRID_SIZE)
+    # NOTE: Under lambda_selection="inner-group-cv" the parent
+    # heldout_r2_sweep (scripts/issue825_fit_cells.py) asserts lambdas is
+    # None -- inner-CV selection scans its module-global LAMBDAS grid, which
+    # is np.logspace(-2, 4, 13), byte-identical to our local plan grid. We
+    # therefore do NOT pass a lambdas= kwarg (see .claude/rules/artifact-reuse.md
+    # check (i)).
 
     results = {
         "n_rows": int(X_prefix.shape[0]),
@@ -106,7 +108,6 @@ def fit_cell(
             null_draws=null_draws,
             collect_lambdas=True,
             lambda_selection=lambda_selection,
-            lambdas=lambdas,
         )
         arm_summary = {
             "held_out_r2_per_layer": [float(x) for x in sweep["r2_obs"]],
