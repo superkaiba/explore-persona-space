@@ -309,6 +309,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # group 2 — workflow-lint / yaml / fix-dedup
     "tests/test_workflow_lint.py",
     "tests/test_workflow_lint_dotenv_check.py",
+    # NEW (#1701) — workflow_lint --check-inline-round-duty-mirror + no-flags
+    # bundling + drift-detection semantics pin
+    "tests/test_workflow_lint_inline_round_duty_mirror.py",
     "tests/test_workflow_yaml.py",
     "tests/test_workflow_fix_dedup.py",
     "tests/test_workflow_hub_upload_as_file.py",
