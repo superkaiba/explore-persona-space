@@ -5373,8 +5373,8 @@
     "1691": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1691",
-      "status": "reviewing",
+      "path": "tasks/completed/1691",
+      "status": "completed",
       "title": "daily-fix: escalate multi-day Codex quota outage"
     },
     "1692": {
