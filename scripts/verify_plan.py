@@ -7195,8 +7195,14 @@ _C42_CITE_PATTERNS = [
     re.compile(r"(?i)\blanded\s+(?:in|at)\s+`?(?P<sha>[0-9a-f]{7,40})`?\b"),
     # "merge `<sha>`" / "merged in <sha>" / "merged at <sha>"
     re.compile(r"(?i)\bmerge(?:d)?\s+(?:in\s+|at\s+)?`?(?P<sha>[0-9a-f]{7,40})`?\b"),
-    # "`<sha>` (commit)" / "`<sha>` — commit" / "`<sha>` — merge"
-    re.compile(r"(?i)`(?P<sha>[0-9a-f]{7,40})`\s*(?:\(commit\)|[—–-]\s*(?:commit|merge))"),
+    # "`<sha>` (commit)" / "`<sha>` -- commit" (em/en dash or ASCII hyphen)
+    # / same for "merge". The dash class carries em dash + en dash + ASCII
+    # hyphen; the RUF001 en-dash flag is a false-positive here (the en
+    # dash is REAL plan text -- same rationale as NA_RE, and measurement
+    # plans use these interchangeably).
+    re.compile(
+        r"(?i)`(?P<sha>[0-9a-f]{7,40})`\s*(?:\(commit\)|[—–-]\s*(?:commit|merge))"  # noqa: RUF001
+    ),
     # "**commit:** <sha>" / "**merge:** <sha>" / "**commit_sha:** <sha>"
     re.compile(r"(?i)\*\*(?:commit|merge)(?:_sha)?:\*\*\s*`?(?P<sha>[0-9a-f]{7,40})`?\b"),
     # "fix_sha=<sha>" / "fix_sha: <sha>" / "merge_sha=<sha>" / "merge_sha: <sha>"
