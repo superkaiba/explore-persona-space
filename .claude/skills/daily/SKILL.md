@@ -397,6 +397,14 @@ routed-record lets its park re-enumerate: the inverse failure direction) —
 and warrants investigation; `relevant_kind: false` is benign (a malformed
 line of irrelevant kind, the #1333 shape).
 
+Also check `sweep["unmatched_record_fps"]` (structured advisory records,
+#1703): a non-empty list is silent evidence of driver
+fingerprint-recomputation drift (the #1630 class) — the ts-claim
+fallback correctly suppressed the park, but the recomputed fp indicates
+the routed-record driver operated on abridged/synthesized origin text.
+Investigate per Edit-C of the wf-fix body verbatim-fingerprint mandate.
+Advisory only; suppression semantics are unchanged.
+
 Future sweeps skip routed candidates mechanically — see the enumerator's
 suppression predicate (`scripts/sweep_parked_wf_candidates.py --help`).
 
