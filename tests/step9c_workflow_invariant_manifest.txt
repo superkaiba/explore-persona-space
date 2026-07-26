@@ -10,12 +10,14 @@ tests/test_autonomous_session_watch.py
 tests/test_check_mcp_json_no_secrets.py
 tests/test_check_no_secret_shaped_strings.py
 tests/test_clean_result_critic_planned_vs_actual.py
+tests/test_code_reviewer_phase_idempotency_gate.py
 tests/test_daily_skill_commit_pathspec_pin.py
 tests/test_daily_stub_first_doc.py
 tests/test_daily_three_route_classifier_doc.py
 tests/test_diff_base_origin_main_pin.py
 tests/test_failure_classifier.py
 tests/test_fit_loop_batching_review_pin.py
+tests/test_gotchas_finalization_entry.py
 tests/test_guard_trigger_dense_read.py
 tests/test_issue_skill_compute_pilot_fence_pin.py
 tests/test_issue_skill_detached_harvest_pin.py
@@ -44,6 +46,7 @@ tests/test_no_pod_side_task_py_shellout.py
 tests/test_ownership_probe_exemplar_bracketed.py
 tests/test_plan_handoff_path_convention.py
 tests/test_plan_patch.py
+tests/test_planner_phase_outputs_declaration.py
 tests/test_precommit_gitleaks_merge_scope.py
 tests/test_ruff_format_hook_tmp_exclusion.py
 tests/test_sparse_worktree.py

@@ -443,6 +443,16 @@ Compute-sizing recipes: `.claude/rules/plan-compute-sizing.md`
 (on-demand); phase placement + GPU-width right-sizing are always-on in
 CLAUDE.md § Pods.
 
+Phase-output declaration (idempotency gate at code review): a plan whose §9
+per-component compute-projection table lists MORE THAN ONE phase MUST carry a
+fenced `phase_outputs:` map in this section — per phase: `sentinel` (the
+completion-sentinel path the phase writes atomically at end) OR `outputs`
+(the primary output artifact(s) the phase produces). This gives the
+code-reviewer's Step 0.69 (Phase-idempotency + inter-phase-contract gate) a
+concrete artifact to grep the dispatcher against; a single-phase run omits the
+block entirely. Template + worked example:
+`.claude/rules/planner-section-reference.md` § 9 (phase_outputs).
+
 Phase-ORDER expensive-intermediate persistence: the §9 phase sequence names
 the upload point of every regeneration-costly intermediate (extraction /
 activation store, capture, rollout set) BEFORE — or detached-concurrent
