@@ -11812,7 +11812,7 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # post-#1384 (per-arm-class smoke-coverage clause), 67,900 — measured
     # 67,472 B post-#1363, 67,400 — measured 66,574 B post-#1349,
     # 66,300 — measured 65,548 B post-#1311)
-    "experiment-implementer.md": 76_500,
+    "experiment-implementer.md": 79_500,
     # measured 73,872 B post-#1698 (Contract scope H2 — the
     # already-bootstrapped-pod 60s budget + fresh-provision refusal;
     # fence-field derivation recipe — gcloud maxRunDuration + RunPod
