@@ -37,6 +37,7 @@ report per-condition empty/short-prompt counts + one sample row each.
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import sys
 from pathlib import Path
@@ -125,6 +126,44 @@ def _mock_generation(row: dict) -> str:
 
 def _mock_judge_score(_completion: str) -> float:
     return 85.0  # passes >50 threshold
+
+
+def _build_request(item) -> dict:  # type: ignore[no-untyped-def]
+    """Build Anthropic Messages-API params for one judge DispatchItem.
+
+    Lifts the rubric system prompt to the top-level ``system=`` param — the
+    Messages API has NO ``"system"`` message role (`llm/api_dispatch.py`
+    docstring + `.claude/rules/gotchas.md` "no `system` message ROLE" entry).
+    """
+    p = item.payload
+    return {
+        "model": p["model"],
+        "max_tokens": p["max_tokens"],
+        "temperature": p["temperature"],
+        "system": p["system"],
+        "messages": [
+            {"role": "user", "content": p["user"]},
+        ],
+    }
+
+
+def _parse(text: str) -> str:
+    return text.strip()
+
+
+def _score_from_text(text: str) -> float | None:
+    """Extract a trailing integer 0-100 from the judge's reason-then-score
+    response, dropping (returning None) on parse failure or out-of-range.
+
+    Rule 9 drop-never-coerce (`.claude/rules/llm-judging.md`).
+    """
+    try:
+        score = float(text.strip().split()[-1])
+    except (ValueError, IndexError):
+        return None
+    if 0 <= score <= 100:
+        return score
+    return None
 
 
 def _resolve_prompt_text(row: dict, tokenizer=None) -> str:
@@ -289,48 +328,79 @@ def generate_and_filter(
 
     rubric = _rubric_key_for(condition_slug)
 
-    # (3) Judge each (row, completion).
-    for (row, _prompt), completion in zip(kept_input, completions):
-        if mock:
-            scores = [_mock_judge_score(completion)] * JUDGE_N_DRAWS
-        else:
-            from explore_persona_space.llm.api_dispatch import (  # noqa: E402
-                DispatchCall,
-                dispatch_calls,
-            )
+    # (3) Judge each (row, completion) — hoist ALL draws across ALL rows into
+    # ONE dispatch_calls batch. Per CLAUDE.md § LLM judge, api_dispatch routes
+    # large sets to the Anthropic Batch API; a per-row inner loop of
+    # asyncio.run(...) calls serializes the API layer entirely.
+    per_row_scores: dict[str, list[float]] = {str(row["conv_id"]): [] for row, _ in kept_input}
 
-            calls = [
-                DispatchCall(
-                    item_id=f"{row['conv_id']}_draw{i}",
-                    payload={
-                        "model": JUDGE_MODEL,
-                        "system": _JUDGE_RUBRIC_BY_ARM[rubric],
-                        "user": (
-                            f"Content to score:\n\n{completion}\n\n"
-                            "Reason briefly (1-2 sentences), then output "
-                            "an integer 0-100."
-                        ),
-                        "max_tokens": JUDGE_MAX_TOKENS,
-                        "temperature": JUDGE_TEMPERATURE,
-                    },
-                )
-                for i in range(JUDGE_N_DRAWS)
+    if mock:
+        for (row, _), completion in zip(kept_input, completions):
+            per_row_scores[str(row["conv_id"])] = [
+                _mock_judge_score(completion) for _ in range(JUDGE_N_DRAWS)
             ]
-            results = dispatch_calls(calls, provider="anthropic")
-            scores = []
-            for r in results:
-                if r.text is None:
-                    dropped_transport += 1
-                    continue
-                # parse trailing integer, drop-never-coerce
-                try:
-                    score = float(r.text.strip().split()[-1])
-                    if 0 <= score <= 100:
-                        scores.append(score)
-                    else:
-                        dropped_content += 1
-                except (ValueError, IndexError):
-                    dropped_content += 1
+    else:
+        from explore_persona_space.llm.api_dispatch import (  # noqa: E402
+            DispatchItem,
+            dispatch_calls,
+        )
+
+        items: list = []
+        item_to_row_id: dict[str, str] = {}
+        for (row, _prompt), completion in zip(kept_input, completions):
+            row_id = str(row["conv_id"])
+            user_msg = (
+                f"Content to score:\n\n{completion}\n\n"
+                "Reason briefly (1-2 sentences), then output an integer 0-100."
+            )
+            for i in range(JUDGE_N_DRAWS):
+                item_id = f"{row_id}_draw{i}"
+                items.append(
+                    DispatchItem(
+                        item_id=item_id,
+                        payload={
+                            "model": JUDGE_MODEL,
+                            "system": _JUDGE_RUBRIC_BY_ARM[rubric],
+                            "user": user_msg,
+                            "max_tokens": JUDGE_MAX_TOKENS,
+                            "temperature": JUDGE_TEMPERATURE,
+                        },
+                    )
+                )
+                item_to_row_id[item_id] = row_id
+
+        results = asyncio.run(
+            dispatch_calls(
+                items,
+                model=JUDGE_MODEL,
+                build_request=_build_request,
+                parse_response=_parse,
+                response_valid=lambda t: isinstance(t, str) and len(t.strip()) > 0,
+                force_path="sync",
+            )
+        )
+
+        for item_id, row_id in item_to_row_id.items():
+            res = results[item_id]
+            # Transport-class failure — retried by api_dispatch, exhausted:
+            # never coerce, never enter scores (llm-judging.md rule 24).
+            if res.error:
+                dropped_transport += 1
+                continue
+            text = res.result
+            if not isinstance(text, str):
+                dropped_content += 1
+                continue
+            score = _score_from_text(text)
+            if score is None:
+                dropped_content += 1
+                continue
+            per_row_scores[row_id].append(score)
+
+    # (4) Reduce per-row scores → row verdicts.
+    for (row, _prompt), completion in zip(kept_input, completions):
+        row_id = str(row["conv_id"])
+        scores = per_row_scores[row_id]
 
         if not scores:
             dropped_content += 1
