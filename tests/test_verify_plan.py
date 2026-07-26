@@ -179,10 +179,11 @@ def test_good_plan_passes_all():
         "c38_exit0_repo_wide_baseline": "SKIP",
         "c39_off_pod_phase_declaration": "SKIP",
         "c41_regression_anchor_executed": "SKIP",
+        "c42_commit_sha_resolves": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 40
+    assert len(results) == 41
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -5874,15 +5875,17 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    # 34 = the 32 pre-c40 skips + c40 (SKIP: `plan.md` carries no v{K} version)
+    # 35 = the 32 pre-c40 skips + c40 (SKIP: `plan.md` carries no v{K} version)
     # + c41 (kind-exempt SKIP: regression-anchor check is infra|batch-only and
-    # --plan-file mode defaults to kind=experiment).
-    assert payload["n_skip"] == 34
+    # --plan-file mode defaults to kind=experiment)
+    # + c42 (SKIP: GOOD_PLAN cites no commit SHAs; the check is trigger-
+    #   conditional, #1683/#1700).
+    assert payload["n_skip"] == 35
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 42
-    assert len({c["id"] for c in payload["checks"]}) == 42
+    assert len(payload["checks"]) == 43
+    assert len({c["id"] for c in payload["checks"]}) == 43
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -8510,3 +8513,365 @@ def test_c41_registration_end_to_end(tmp_path, monkeypatch):
     ok, by_id = _run(plan, kind="infra")
     assert by_id[C41].status == "WARN"
     assert ok is True  # WARN never blocks exit
+
+
+# ─── Check 8 — exempt-kind acceptance-criteria branch (#1668/#1700) ────────
+
+
+def test_c8_exempt_kind_acceptance_criteria_h2_satisfies_kill():
+    # #1668/#1700: a kind: infra plan whose success anchor sits under an
+    # ``Acceptance criteria`` heading (H2 or nested under §1 Goal /
+    # Motivation) PASSes even when NO dedicated kill-criteria section
+    # exists and NO §0.0 TL;DR change-my-mind line is present. The
+    # acceptance-criteria block IS the revert criterion for an infra fix.
+    # (Success family is solid; kill family solid absent.)
+    plan = (
+        GOOD_PLAN.replace(KILL_SENT, "")
+        .replace(CRITERIA_HEADING, "## 7. Acceptance criteria")
+        .replace(TLDR_CHANGE_MIND_LINE, "")
+    )
+    assert "What would change my mind" not in plan
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c8_success_kill_criteria"]
+    assert r.status == "PASS", r.detail
+    assert "acceptance-criteria block SATISFIES" in r.detail
+    assert "#1668/#1700" in r.detail
+    # Same acceptance holds for other exempt kinds.
+    assert _status(plan, "c8_success_kill_criteria", kind="analysis") == "PASS"
+    assert _status(plan, "c8_success_kill_criteria", kind="batch") == "PASS"
+
+
+def test_c8_exempt_kind_acceptance_criteria_iterates_all_success_hits():
+    # Concern-address pin: iterate ALL succ_solid, not succ_solid[0]. Two
+    # success anchors exist in the plan — the FIRST hit (a bare
+    # "**Success criteria:**" bullet under §2 Design that DOES NOT sit
+    # under an "acceptance criteri" section) and the SECOND hit (a
+    # "**Success criteria:**" bullet under a dedicated §7 Acceptance
+    # criteria heading). GOOD_PLAN's §7 kill-criteria heading is
+    # replaced entirely so no kill anchor exists in a solid carrier
+    # (only the exempt-kind acceptance-criteria branch can PASS this).
+    # If _exempt_tldr_kill_pass ever regressed to `succ_solid[0]` alone,
+    # the first (§2 Design) hit's section name would NOT match
+    # "acceptance criteri" and the branch would fall through to the
+    # TL;DR path — but the TL;DR line is stripped too, so the check
+    # would WARN instead of PASS. This test would fail on the regression.
+    plan = (
+        GOOD_PLAN.replace(SUCCESS_SENT, "")
+        .replace(KILL_SENT, "")
+        .replace(TLDR_CHANGE_MIND_LINE, "")
+        # Rename the §7 heading to something that carries NEITHER success
+        # NOR kill vocabulary (so the standard both-solid path can't fire
+        # on the heading text; the branch must ride the acceptance-criteria
+        # rescue).
+        .replace(CRITERIA_HEADING, "## 7. Notes")
+        .replace(
+            "## 2. Design\n\n",
+            (
+                "## 2. Design\n\n"
+                "This design section carries a bare success anchor NOT inside "
+                "an acceptance-criteria heading; the anchor's carrier is padded "
+                "well above the 80-char emptiness bar to exercise the "
+                "iterate-all-succ_solid guarantee. "
+                + ("Filler prose to clear the carrier bar. " * 4)
+                + "\n\n"
+                "**Success criteria:** the standard pytest gate is green.\n\n"
+            ),
+        )
+        .replace(
+            "## 9. Resources",
+            (
+                "## 8. Acceptance criteria\n\n"
+                "The infra fix is accepted when the pytest gate is fully green "
+                "against the plan-time baseline; a revert is triggered on any "
+                "new red. This carrier is deliberately padded well above "
+                "the 80-char emptiness bar so the second success anchor is "
+                "solid too.\n\n"
+                "**Success criteria:** all pin tests green after the fix.\n\n"
+                "## 9. Resources"
+            ),
+        )
+    )
+    assert "What would change my mind" not in plan
+    # Both success anchors present (case-insensitive; _SUCCESS_RE is (?i)).
+    assert plan.lower().count("success criteri") >= 2
+    # No kill anchor present in a solid carrier: the heading was renamed
+    # and KILL_SENT was stripped.
+    assert plan.lower().count("kill criteri") == 0
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c8_success_kill_criteria"]
+    assert r.status == "PASS", r.detail
+    assert "acceptance-criteria block SATISFIES" in r.detail
+
+
+def test_c8_experiment_kind_acceptance_only_still_fails_on_missing_kill():
+    # Regression: kind: experiment is BYTE-UNCHANGED by the #1668/#1700
+    # branch. Under an ``Acceptance criteria`` heading with a solid
+    # success anchor but NO kill anchor and NO TL;DR change-my-mind line,
+    # an experiment plan does NOT get the exempt-kind rescue — the
+    # missing-kill WARN still fires. (When BOTH success and kill are
+    # missing, experiment FAILs — pinned separately by
+    # test_c8_both_missing_fails_for_experiment.)
+    plan = (
+        GOOD_PLAN.replace(KILL_SENT, "")
+        .replace(CRITERIA_HEADING, "## 7. Acceptance criteria")
+        .replace(TLDR_CHANGE_MIND_LINE, "")
+    )
+    _, by_id = _run(plan, kind="experiment")
+    r = by_id["c8_success_kill_criteria"]
+    # For an experiment: success present + kill absent -> WARN (not FAIL);
+    # the acceptance-criteria rescue never fires (kind: experiment is
+    # explicitly gated out of _exempt_tldr_kill_pass).
+    assert r.status == "WARN", r.detail
+    assert "kill criteria" in r.detail.lower()
+    assert "kind-exempt degrade" not in r.detail  # not the exempt WARN path
+    # And when BOTH are missing, experiment still FAILs (byte-identical
+    # to the original both-absent-fails-experiment pin).
+    plan_both = plan.replace(SUCCESS_SENT, "")
+    _, by_id_both = _run(plan_both, kind="experiment")
+    assert by_id_both["c8_success_kill_criteria"].status == "FAIL"
+
+
+# ─── Check 4 — measurement-plan alias (#1689/#1700) ────────────────────────
+
+
+def test_c4_measurement_alias_na_line_passes():
+    # #1689/#1700: measurement-plan alias. Also serves as the durability
+    # pin for the SKILL.md registry addition (the phrase MUST parse via
+    # _standalone_na_declared — if the SKILL.md registration diverges from
+    # the regex, this test surfaces it).
+    plan = (
+        GOOD_PLAN
+        + "\nThe word implant appears in a quoted sibling methodology.\n"
+        + "\nN/A — no behavior implantation (this is a measurement plan).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c4_contrastive_negatives"]
+    assert r.status == "PASS"
+    assert "on its own line, unwrapped" in r.detail
+
+
+def test_c4_measurement_alias_wrapped_does_not_escape():
+    # Paste-attack negative: wrapped-alone form must NOT self-escape (the
+    # #1238 anti-paste discipline still holds for the alias).
+    plan = (
+        GOOD_PLAN
+        + "\nWe implant a refusal behavior into the source persona.\n"
+        + "- `N/A — no behavior implantation` (declare per the bounce brief).\n"
+    )
+    assert _status(plan, "c4_contrastive_negatives") == "WARN"
+
+
+def test_c4_measurement_alias_midprose_does_not_escape():
+    # Paste-attack negative: the alias mid-prose must NOT escape.
+    plan = (
+        GOOD_PLAN
+        + "\nThe word implant appears but this is not a behavior "
+        + "implantation plan (no behavior implantation is performed).\n"
+    )
+    assert _status(plan, "c4_contrastive_negatives") == "WARN"
+
+
+# ─── Check 18 — coverage-decl + N/A -> PASS (#1689/#1700) ──────────────────
+
+
+def test_c18_na_escape_with_coverage_decl_passes():
+    # #1689/#1700: when a valid Row-coverage declaration co-occurs with
+    # the standalone N/A line, the coverage decl is decisive and the
+    # check PASSes (the N/A is a spurious leftover paste). Original
+    # masking case (N/A alone, no coverage decl) still WARNs — pinned by
+    # test_c18_na_escape_with_detected_contrast_warns above.
+    coverage_decl = (
+        "Row-coverage: both arms computed by this plan's own fits over the shared probe grid."
+    )
+    plan = _c18_plan(C18_V13_REGISTRATION, coverage_decl) + (
+        "\nN/A — no paired contrast (spurious leftover from a prior draft).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c18_paired_contrast_source_coverage"]
+    assert r.status == "PASS", r.detail
+    assert "spurious leftover" in r.detail
+    assert "coverage decl is decisive" in r.detail
+    assert "#1689/#1700" in r.detail
+
+
+# ─── Check 20 — tier-1 threshold+otherwise SKIP (#1689/#1700) ──────────────
+
+C20_TIER1_THRESHOLD_OTHERWISE = (
+    "- The three labels are DISJOINT and exhaustive: "
+    "H1_Confirmed ⇔ ≥8/9 within-identity framing pairs reconcile at rung ≤ 5 in BOTH models; "
+    "H1_Falsified ⇔ ≥2 within-identity framing pairs need rung ≥ 7 in at least one model; "
+    "H1_Inconclusive ⇔ otherwise."
+)
+C20_TIER1_THRESHOLD_NO_OTHERWISE = (
+    "- The two labels are DISJOINT and exhaustive: "
+    "H-a ⇔ ≥8/9 within-identity framing pairs reconcile at rung ≤ 5; "
+    "H-b ⇔ ≥2 within-identity framing pairs need rung ≥ 7."
+)
+
+
+def test_c20_tier1_threshold_atoms_with_otherwise_skips():
+    # #1689/#1700: threshold-form inequality atoms (``rung ≤ 5``,
+    # ``≥ 8/9 pairs``, ``rung ≥ 7``) closed by an ``⇔ otherwise``
+    # complement mirror the tier-2 k-of-n SKIP: the partition is
+    # exhaustive-by-construction, the co-fire risk is Statistics-critic
+    # scope, out of v1 cell algebra.
+    _, by_id = _run(_c20_plan(C20_TIER1_THRESHOLD_OTHERWISE))
+    r = by_id[C20]
+    assert r.status == "SKIP", r.detail
+    assert "threshold-form" in r.detail
+    assert "otherwise" in r.detail
+    assert "#1689/#1700" in r.detail
+
+
+def test_c20_tier1_thresholds_without_otherwise_still_warns():
+    # Scoping guard: threshold predicates WITHOUT an ⇔ otherwise
+    # complement do NOT SKIP — the exhaustive-by-construction claim
+    # requires the otherwise closure. The parser correctly rejects the
+    # threshold atoms as unparsed residue -> WARN.
+    r = by_id_from(_c20_plan(C20_TIER1_THRESHOLD_NO_OTHERWISE))
+    assert r.status == "WARN", r.detail
+    # detail names either "unparsed" residue or the missing otherwise —
+    # implementation-agnostic; the invariant is not-SKIP-not-PASS.
+    assert "SKIP" not in r.status
+    assert "PASS" not in r.status
+
+
+def by_id_from(plan: str, kind: str = "experiment"):
+    _, by_id = _run(plan, kind=kind)
+    return by_id[C20]
+
+
+# ─── Check 42 — cited commit SHA resolves (NEW) ────────────────────────────
+
+C42 = "c42_commit_sha_resolves"
+
+# From #1683 v1: `7c7095f40e` is the typo, `7c8095f40e` is the real commit.
+# Verified 2026-07-26 (plan §12 assumption 15 + verified-at-filing record):
+#   git rev-parse --verify --quiet '7c8095f40e^{commit}' -> RESOLVES
+#   git rev-parse --verify --quiet '7c7095f40e^{commit}' -> does NOT resolve
+C42_REAL_SHA = "7c8095f40e"
+C42_TYPO_SHA = "7c7095f40e"
+
+
+def _c42_plan(cite_line: str) -> str:
+    """GOOD_PLAN + a Prior Work section carrying a commit-cite line
+    outside a code fence."""
+    return GOOD_PLAN + "\n## Prior Work\n\n" + cite_line + "\n"
+
+
+def test_c42_no_cites_skips():
+    assert _status(GOOD_PLAN, C42) == "SKIP"
+
+
+def test_c42_resolvable_sha_passes():
+    plan = _c42_plan(f"The fix landed in commit `{C42_REAL_SHA}` after review.")
+    _, by_id = _run(plan)
+    r = by_id[C42]
+    assert r.status == "PASS", r.detail
+    assert "resolve" in r.detail
+
+
+def test_c42_unresolvable_sha_fails():
+    # #1683 v1 typo: 7c7095f40e — verified NOT to resolve as a commit at
+    # plan compose time (task body §12 assumption 15).
+    plan = _c42_plan(f"The fix landed in commit `{C42_TYPO_SHA}` (per the task body).")
+    ok, by_id = _run(plan)
+    r = by_id[C42]
+    assert r.status == "FAIL"
+    assert ok is False  # FAIL flips exit
+    assert C42_TYPO_SHA in r.detail
+    assert "do NOT resolve" in r.detail
+    assert "workflow-fix-on-bug.md" in r.detail  # remedy names clause (d)
+
+
+def test_c42_fingerprint_line_does_not_trigger():
+    # A same-line `fingerprint:` disqualifier drops the hex from
+    # cite-context — even if the hex looks like a valid short SHA.
+    plan = _c42_plan(f"- fingerprint: {C42_TYPO_SHA}   (dedup key, not a commit)")
+    assert _status(plan, C42) == "SKIP"
+
+
+def test_c42_hf_revision_does_not_trigger():
+    # HF revision pin: `--revision <hex>` on the same line drops the hex.
+    plan = _c42_plan(
+        "The parent artifact is pinned with `--revision abc1234def56` on the read call."
+    )
+    assert _status(plan, C42) == "SKIP"
+
+
+def test_c42_session_basename_does_not_trigger():
+    # Codex session basename: `session_id: <hex>` or `session <hex>`
+    # drops the hex (workflow-fix-on-bug.md clause (d) exclusion class).
+    plan = _c42_plan(f"session_id: {C42_TYPO_SHA} — Codex transcript basename, not a commit.")
+    assert _status(plan, C42) == "SKIP"
+
+
+def test_c42_fenced_hex_does_not_trigger():
+    # Fenced code blocks are masked via _fence_mask; a hex inside a
+    # code fence — even after a commit-cite marker — cannot trigger.
+    plan = GOOD_PLAN + f"\n## Prior Work\n\n```\ncommit `{C42_TYPO_SHA}` (transcript dump)\n```\n"
+    assert _status(plan, C42) == "SKIP"
+
+
+def test_c42_git_unavailable_skips(monkeypatch):
+    # Fail-open on git unavailability: OSError from subprocess.run ->
+    # SKIP (not FAIL, not silent PASS). Simulates a broken git install /
+    # permission failure. Retries ONCE then SKIPs.
+    def raise_oserror(*a, **kw):
+        raise OSError("git not found")
+
+    monkeypatch.setattr(verify_plan.subprocess, "run", raise_oserror)
+    plan = _c42_plan(f"The fix landed in commit `{C42_REAL_SHA}`.")
+    _, by_id = _run(plan)
+    r = by_id[C42]
+    assert r.status == "SKIP"
+    assert "unavailable" in r.detail.lower()
+
+
+def test_c42_index_lock_transient_retries_then_recovers(monkeypatch):
+    # Concern-address pin: ONE retry on transient OSError before SKIP.
+    # First call raises (simulating an .git/index.lock collision), second
+    # call succeeds — the retry lets the check PASS instead of SKIPping.
+    calls = {"n": 0}
+    real_run = verify_plan.subprocess.run
+
+    def flaky_run(cmd, **kw):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise OSError("transient index.lock collision")
+        return real_run(cmd, **kw)
+
+    monkeypatch.setattr(verify_plan.subprocess, "run", flaky_run)
+    plan = _c42_plan(f"The fix landed in commit `{C42_REAL_SHA}`.")
+    _, by_id = _run(plan)
+    r = by_id[C42]
+    # With ONE cited SHA, the retry recovers -> PASS. calls["n"] == 2
+    # confirms the retry actually happened.
+    assert calls["n"] == 2, calls
+    assert r.status == "PASS", r.detail
+
+
+def test_c42_merge_sha_marker_note_convention_triggers():
+    # Marker-note convention (`.claude/rules/crash-fix-rounds.md` §
+    # fix-engaged signal): `fix_sha=<sha>` and `merge_sha=<sha>` are
+    # cite-as-commit contexts too.
+    plan = _c42_plan(f"fix_sha={C42_TYPO_SHA} on the relaunch (crash-fix round).")
+    _, by_id = _run(plan)
+    r = by_id[C42]
+    assert r.status == "FAIL"
+    assert C42_TYPO_SHA in r.detail
+
+
+def test_c42_deduplicates_repeated_sha():
+    # A plan may cite the same commit N times; dedup keys the rev-parse
+    # call by lowercased SHA, so the "N cited commit SHA(s)" count in
+    # the PASS detail should say 1 (unique), not the raw occurrence count.
+    plan = _c42_plan(
+        f"The fix landed in commit `{C42_REAL_SHA}`. "
+        f"See commit `{C42_REAL_SHA}` for the diff. "
+        f"Verified against merge `{C42_REAL_SHA}`."
+    )
+    _, by_id = _run(plan)
+    r = by_id[C42]
+    assert r.status == "PASS", r.detail
+    assert "all 1 cited commit SHA" in r.detail
