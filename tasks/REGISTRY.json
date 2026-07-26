@@ -5422,8 +5422,8 @@
     "1698": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1698",
-      "status": "approved",
+      "path": "tasks/running/1698",
+      "status": "running",
       "title": "daily-fix: RunPod launch-path branch/teardown contract"
     },
     "1699": {
