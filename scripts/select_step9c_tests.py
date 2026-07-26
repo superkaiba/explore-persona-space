@@ -361,6 +361,12 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # Registration rider (#1659) — the pre-existing 9a-ter element-(5) content
     # pin (#1393) was never registered (the #1546 unregistered-pin class)
     "tests/test_issue_skill_disk_routing_pin.py",
+    # NEW (#1698) — experimenter.md Contract scope + fence-field derivation
+    # prose pins (#1689 R8 launch-path fix). experimenter.md is
+    # WORKFLOW_SURFACE, so this test file must live in WORKFLOW_INVARIANT to
+    # gate the prose (touched-file selector routes WORKFLOW_SURFACE files
+    # here). SKILL.md Step 6d.1 check-4 is pinned in the same file.
+    "tests/test_experimenter_md.py",
     "tests/test_issue_skill_exit_breadcrumb.py",  # NEW (#1242) — SKILL.md exit-breadcrumb pin
     # NEW (#1575) — SKILL.md cap-park surfacing pins (#1548/#1558/#1575)
     "tests/test_issue_skill_followup_cap_park_note_pin.py",

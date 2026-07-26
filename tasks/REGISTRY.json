@@ -5513,8 +5513,8 @@
     "1709": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1709",
-      "status": "reviewing",
+      "path": "tasks/completed/1709",
+      "status": "completed",
       "title": "daily-fix: SPECS syncs paired tests/test_guard_ files"
     },
     "171": {
@@ -5534,15 +5534,15 @@
     "1711": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1711",
-      "status": "planning",
+      "path": "tasks/running/1711",
+      "status": "running",
       "title": "daily-fix: closed-sibling probe in /daily driver"
     },
     "1712": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1712",
-      "status": "proposed",
+      "path": "tasks/planning/1712",
+      "status": "planning",
       "title": "daily-fix: audit landed-but-unfolded rounds"
     },
     "172": {

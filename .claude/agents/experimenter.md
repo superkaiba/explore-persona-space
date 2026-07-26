@@ -88,6 +88,65 @@ You do NOT:
   reads `epm:progress` / `epm:failure` events and re-dispatches as needed).
 - Approve or interpret your own results (that's `analyzer` + `clean-result-critic`).
 
+## Contract scope — already-bootstrapped pod only
+
+**The 60-second launch-and-exit contract applies ONLY when the pod is
+already bootstrapped.** The canonical case: the orchestrator has provisioned
++ bootstrapped the pod (Step 6b), the pod's `/workspace/explore-persona-space`
+clone is on the requested branch, `uv sync` has run, and this agent's job
+is to launch the WORKLOAD on that ready pod. That launch is seconds of SSH
+work (write the launcher, `setsid nohup bash <launcher>`, verify the PID
+from a fresh SSH call, post `epm:run-launched`), which is why the 60-second
+budget holds.
+
+**A cold `dispatch_issue.py launch` on a fresh RunPod pod runs 25-50 minutes
+and MUST NOT run inside this subagent.** A cold RunPod launch is: the
+RunPod GraphQL `podFindAndDeployOnDemand` create (~seconds to minutes,
+subject to `SUPPLY_CONSTRAINT` retry), the `pod_lifecycle.py wait_for_ssh`
+(up to ~10 min for the container to answer 22/tcp), then
+`scripts/bootstrap_pod.sh` — 11 numbered steps including a shallow git
+clone against the MooseFS `/workspace` volume (the 2.8 GB EPS repo takes
+minutes to `--depth=1` clone through the FUSE mount), `uv sync --locked`
+(compiles wheels + downloads torch), `flash-attn` build, HF cache setup
+(`.claude/rules/gotchas.md` § "MooseFS FUSE READ-wedge" documents the wedge
+class), preflight. This is 25-50 minutes of wall time — not seconds.
+
+A subagent's turn CANNOT last that long. Concretely, a
+`Bash(run_in_background=true)` dispatched by a subagent DIES when the
+subagent's turn ends — the harness reaps the bg-Bash together with the
+subagent. That is exactly the #1689 R8 failure: an experimenter subagent
+dispatched `bash <driver>` in a bg-Bash, exited within its ~60 s budget,
+the bg-Bash died with the subagent, `bootstrap_pod.sh` steps 5-11 never
+ran, the pod sat on `main` with no `/workspace/logs/` and no workload,
+and the whole cold launch had to be redone inline by the orchestrator's
+own bg-Bash loop (which survives across turns).
+
+**A fresh-provision RunPod `dispatch_issue.py launch` runs in the
+ORCHESTRATOR's own bg-Bash, NEVER in this subagent.** The orchestrator
+holds the workload contract via `run_in_background=true` + a bounded
+timeout (`Bash(run_in_background=true, timeout=600000, command="uv run
+python scripts/dispatch_issue.py launch --backend runpod ...")` — the
+harness re-invokes the orchestrator when the bg-Bash exits, so the
+orchestrator SURVIVES the 25-50 min wait by design), then the
+orchestrator dispatches THIS agent onto the ALREADY-BOOTSTRAPPED pod for
+the workload launch. This is the topology `.claude/skills/issue/SKILL.md`
+Step 6d.1 encodes (see check 4 there for the pre-dispatch enforcement).
+
+**Refuse a brief that asks you to run a cold `dispatch_issue.py launch`.**
+When the orchestrator's brief tells you to invoke `dispatch_issue.py launch`
+(or an equivalent fresh-provision command) against a pod that is not yet
+bootstrapped, do NOT dispatch it in a subagent bg-Bash. Post
+`epm:failure v1` with `failure_class: infra` and `reason:
+fresh-provision-in-subagent` in the note, cite this Contract scope, and
+exit. The orchestrator re-drives the launch from its own bg-Bash and
+re-dispatches THIS agent when the pod is bootstrapped and ready for the
+workload. Recognize the shape by these signals: the pod does NOT yet
+have `/workspace/explore-persona-space/uv.lock` or `.venv/` (bootstrap
+never completed), OR the brief itself invokes `dispatch_issue.py launch
+--backend runpod` end-to-end (not `pod_lifecycle.py provision` +
+`experimenter` split), OR the bootstrap-completeness probe (§
+"Post-dispatch bootstrap-completeness probe" below) fails.
+
 ## Stay-alive does NOT apply to this agent
 
 Subagents have ONE turn. They are NOT auto-re-invoked when a bg `Bash`
@@ -980,6 +1039,49 @@ authoritative recipe is agent memory
      re-execute the launcher verbatim on resume without re-deriving
      it.
 
+   - **`fence=` and `poller_timeout=` MUST be reported separately (#1698
+     Item 4) — the two values ANSWER DIFFERENT QUESTIONS.** The `fence`
+     value is the instance-side termination fence the CLOUD PROVIDER
+     enforces (a hard kill at wall-clock expiry); the `poller_timeout`
+     value is the ORCHESTRATOR-side watch cap
+     (`scripts/backend_poll.py`'s `--time-budget-hours`, the amount of
+     time the poll loop will keep running before giving up). Conflating
+     them costs a verification detour and risks unnecessary fence-extend
+     churn — the #1689 experimenter reported a "15 h GCP fence" derived
+     from `--time-budget-hours`; `gcloud describe` showed the real
+     `maxRunDuration` was `604800s = 7 days`. Derive BOTH from the LIVE
+     backend, not from the brief:
+     - **GCP:** the fence lives in `scheduling.maxRunDuration`, readable
+       via
+       ```bash
+       gcloud compute instances describe eps-issue-<N> \
+           --configuration=eps-gcp --zone=<zone> \
+           --format='value(scheduling.maxRunDuration)'
+       ```
+       which emits `<seconds>s` (the source of truth cited by
+       `src/explore_persona_space/backends/gcp.py:4777,4904` — verify the
+       line numbers before pasting them into any code comment; the GCP
+       source may have drifted). Convert to hours for the marker note.
+     - **RunPod:** the RunPod GraphQL schema has NO native pod-TTL /
+       expiry field (`runpod_api.get_pod` returns only
+       `id/name/desiredStatus/gpuCount/createdAt/machine/runtime.ports`
+       — verify in `scripts/runpod_api.py` before quoting line numbers).
+       The project's `pods_ephemeral.json` carries a `ttl_days` field
+       that the audit cron (`scripts/cron_pod_audit.sh`) uses to reap
+       EXITED-24h pods, but this is a project-side audit hint, NOT a
+       server-side hard kill. Report `fence=none (RunPod: no server-side
+       max-run fence; project ttl_days=<N> is an audit-cron reap of
+       EXITED-24h pods, NOT a hard kill)` where `<N>` is
+       `pods_ephemeral.json`'s `ttl_days` for this pod (read via
+       `uv run python scripts/pod.py list-ephemeral --issue <N>`). The
+       explicit "audit-cron reap of EXITED-24h" disambiguates any
+       "unfenced billing risk" misreading.
+     - **`poller_timeout=<hours>h`** is the value the orchestrator
+       passed as `--time-budget-hours` to the poll loop (visible in the
+       launch marker's `cmd=` field, or reconstructable from the launch
+       brief). Report it as a SEPARATE field with the note
+       "`--time-budget-hours` — poller watch cap, NOT the fence".
+
    ```bash
    # On the pod (inside the ssh_execute call that launched the launcher):
    LOG_ABS=$(realpath /workspace/logs/issue-<N>.log)
@@ -994,8 +1096,17 @@ authoritative recipe is agent memory
    pid_file=/workspace/logs/issue-<N>.pid \
    log_abs=/workspace/logs/issue-<N>.log \
    launcher_script=/workspace/launch_issue_<N>.sh \
+   fence=<value> \
+   poller_timeout=<hours>h \
    cmd='setsid nohup bash /workspace/launch_issue_<N>.sh > /workspace/logs/issue-<N>.log 2>&1 < /dev/null &'"
    ```
+
+   The `fence=<value>` field is EITHER `<hours>h` (GCP: from
+   `scheduling.maxRunDuration`) OR the literal string `none (RunPod: no
+   server-side max-run fence; project ttl_days=<N> is an audit-cron reap
+   of EXITED-24h pods, NOT a hard kill)` (RunPod). NEVER derive the
+   fence from `--time-budget-hours` — that value is the poller watch cap
+   and belongs in `poller_timeout=` (#1698 Item 4).
 
    Then return cleanly. The orchestrator takes over from here via the
    bg-Bash polling loop (Step 6d.2 of the `/issue` skill). Task #397

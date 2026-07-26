@@ -4082,6 +4082,34 @@ launches post no `stage-dispatch` breadcrumb, so the
 `external-markers triaged:` line goes in an `epm:progress` note posted
 immediately before the experimenter spawn.
 
+**4. Fresh-provision RunPod launches run in orchestrator bg-Bash, NOT in
+the experimenter.** A cold `dispatch_issue.py launch --backend runpod`
+runs 25-50 minutes on the RunPod lane (`podFindAndDeployOnDemand` create
++ `wait_for_ssh` up to ~10 min + `bootstrap_pod.sh`'s 11 steps including
+a 2.8 GB shallow clone through MooseFS + `uv sync --locked` + flash-attn
+build + preflight — the wedge classes in `.claude/rules/gotchas.md`
+document the wall-time). A subagent's turn cannot survive that: a
+`Bash(run_in_background=true)` dispatched inside the experimenter dies
+when the experimenter's ~60 s turn ends (the #1689 R8 failure shape —
+the subagent bg-Bash died mid-bootstrap, steps 5-11 never ran, the pod
+sat on `main` with no `/workspace/logs/` and no workload). So when the
+pod is NOT yet bootstrapped, the orchestrator dispatches
+`scripts/dispatch_issue.py launch` in its OWN
+`Bash(run_in_background=true, timeout=600000, command="uv run python
+scripts/dispatch_issue.py launch --backend runpod ...")` — the harness
+re-invokes the orchestrator when this bg-Bash exits, so the
+orchestrator SURVIVES the 25-50 min wait by design. ONLY after (a) the
+handle sidecar (`.claude/cache/issue-<N>-handle.json`) exists AND (b)
+the `experimenter.md` § "Post-dispatch bootstrap-completeness probe"
+passes on the pod (uv.lock + .venv/ + preflight-OK signals) is the pod
+eligible for a WORKLOAD-launch experimenter spawn (the 60 s
+launch-and-exit contract of `experimenter.md` § "Contract scope —
+already-bootstrapped pod only"). Never brief the experimenter with a
+cold `dispatch_issue.py launch` command; it will refuse and post
+`epm:failure v1 failure_class: infra reason:
+fresh-provision-in-subagent` per that same Contract scope. (Incident
+#1689 R8, 2026-07-26.)
+
 Spawn `experimenter` subagent via `Agent()`. Brief:
 - The plan path (the `plans/plan.md` symlink) + the code-reviewed
   branch (`issue-<N>`)
