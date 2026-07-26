@@ -393,6 +393,14 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_step_completed_resume.py",  # NEW (#1242) — resume/step-completed contract pin
     # NEW (#1662) — CLAUDE.md + SKILL.md suffixed-pod completion-teardown contract pin
     "tests/test_suffixed_pod_completion_teardown_pin.py",
+    # NEW (#1693) — code-reviewer.md Step 0.69 phase-idempotency + inter-phase-
+    # contract gate pin (prose + codex mirror + substantive-tag registry + ratchet-cap)
+    "tests/test_code_reviewer_phase_idempotency_gate.py",
+    # NEW (#1693) — gotchas.md finalization-crash entry pin (PyGILState_Release +
+    # explicit-exit remedy under existing dispatcher paths: glob)
+    "tests/test_gotchas_finalization_entry.py",
+    # NEW (#1693) — planner.md §9 phase_outputs: declaration pin
+    "tests/test_planner_phase_outputs_declaration.py",
     # NEW (#1598) — CLAUDE.md teammate-coordination bullet pins (a)-(d)
     "tests/test_teammate_coordination_pins.py",
     "tests/test_plan_handoff_path_convention.py",

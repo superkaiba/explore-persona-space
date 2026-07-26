@@ -419,6 +419,14 @@ both reviewers are graded against the same standard. Read
   data-repo Hub calls). Copy in full so Codex never
   re-derives a narrower check (incident #823: round-1 plan-adherence blessed
   the slow import while the body named the fast twin).
+- **Step 0.69 — Phase-idempotency + inter-phase-contract gate** — for every
+  multi-phase dispatcher in the diff, verify each phase (a) checks a
+  completion-sentinel / output-artifact at entry (or accepts `--force`) and
+  (b) any consumer phase asserts its input JSONL contract BEFORE model init.
+  BLOCKER (`phase-not-idempotent`) for paid-API / GPU-holding phases without
+  a skip/force; BLOCKER (`consumer-contract-post-init`) for post-init
+  contract asserts. CONCERN for the cheap-CPU or permissive variants.
+  Full rubric: inlined from `.claude/agents/code-reviewer.md` Step 0.69.
 - "Step 0.7: Mechanical-contract gates never short-circuit the diff" — the two
   hard rules (a FAIL must carry a genuine-absence blocker OR a substantive
   finding; always read the diff even when raising a 0.5 / 0.6 / 0.65
