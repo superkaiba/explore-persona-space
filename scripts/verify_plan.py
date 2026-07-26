@@ -7,7 +7,7 @@ Phase 1.5.0 BEFORE the fact-checker + critic ensemble spawn. The plan-side
 sibling of ``scripts/verify_task_body.py`` (clean-result bodies): pure
 regex / string presence checks, NO LLM calls, no network, no side effects
 (the orchestrator running the adversarial-planner skill posts the
-``epm:plan-verify`` marker — never this script). Four disclosed read-only
+``epm:plan-verify`` marker — never this script). Five disclosed read-only
 exceptions: check 31, when its trigger fires and a pin-form satisfier names
 a ``tests/`` path, existence-``stat()``s the named pin-test file(s) under
 the repo root — read-only, no import, no network (#1557); check 34, when
@@ -16,11 +16,15 @@ the ratcheted workflow files the plan names and lazily imports
 ``scripts/workflow_lint.py`` for their size-cap constants — read-only, no
 writes, still no network; check 37, when its trigger fires, reads
 ``scripts/workflow_lint.py`` SOURCE TEXT to derive main()'s no-flags
-dispatch set — read-only, no import, no network; and check 41, when its
+dispatch set — read-only, no import, no network; check 41, when its
 trigger fires and the cheaper satisfiers leave survivors, path-loads
 ``scripts/select_step9c_tests.py`` and runs its pure selection functions
 over the plan's declared touched files — file reads under ``tests/``, no
-git, no network; measured ~0.7-0.9 s on the live tree.
+git, no network; and check 42, when its trigger fires, invokes
+``git rev-parse --verify --quiet '<sha>^{commit}'`` per unique cited SHA
+— read-only, no network (git-local object DB read; #1683/#1414;
+retries once on a brief ``.git/index.lock`` collision, SKIPs on git
+unavailability); measured ~0.7-0.9 s on the live tree.
 
 Check catalog (id — classification — kind scope)
 ------------------------------------------------
@@ -102,12 +106,14 @@ Check catalog (id — classification — kind scope)
       persisted filename
   c41 regression-anchor named   WARN-only, conditional    infra + batch only
       test executed or gate-selected
+  c42 cited commit SHA          FAIL, conditional         all kinds
+      resolves
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41) also SKIP when their content trigger does not fire.
+37, 38, 39, 40, 41, 42) also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -127,7 +133,9 @@ labeled-line forms):
   - ``N/A — no model training`` / ``N/A — no training hyperparameters``
     (check 1)
   - ``N/A — no behavioral construct`` (check 2)
-  - ``N/A — not a behavior-implantation`` (check 4)
+  - ``N/A — not a behavior-implantation`` /
+    ``N/A — no behavior implantation`` (check 4 — the alias reads more
+    naturally for measurement/geometry plans, #1689/#1700)
   - ``N/A — no artifact reuse`` (check 6)
   - ``N/A — not a replication`` (check 7)
   - ``N/A — no dry-run smoke`` (check 11)
@@ -214,7 +222,9 @@ import importlib.util
 import json
 import math
 import re
+import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from fractions import Fraction
@@ -739,6 +749,19 @@ def check_data_tier(plan: str, kind: str) -> CheckResult:
 # ─── Check 4 — contrastive negatives (WARN-only, conditional) ──────────────
 
 
+def _c4_na_escape_declared(plan: str) -> bool:
+    """Standalone c4 escape — accepts BOTH the canonical
+    ``N/A — not a behavior-implantation`` AND the measurement-plan alias
+    ``N/A — no behavior implantation`` (#1689/#1700; measurement/geometry
+    plans read awkwardly under the "not a behavior-implantation" wording,
+    so the alias makes the escape naturally discoverable). Both forms route
+    through ``_standalone_na_declared`` so the same anti-paste discipline
+    (standalone line, unwrapped, non-fenced) applies."""
+    return _standalone_na_declared(
+        plan, r"not a behavior[- ]implantation"
+    ) or _standalone_na_declared(plan, r"no behavior[- ]implantation")
+
+
 def check_contrastive_negatives(plan: str, kind: str) -> CheckResult:
     """Behavior-implantation plans must name a contrastive-negative set or
     one of the two named exemptions (.claude/rules/contrastive-negatives.md).
@@ -759,11 +782,12 @@ def check_contrastive_negatives(plan: str, kind: str) -> CheckResult:
             name,
             "not detected as behavior-implantation (no implant/leakage-marker vocabulary)",
         )
-    if _standalone_na_declared(plan, r"not a behavior[- ]implantation"):
+    if _c4_na_escape_declared(plan):
         return _pass(
             cid,
             name,
-            "explicit N/A declared on its own line, unwrapped (not a behavior-implantation)",
+            "explicit N/A declared on its own line, unwrapped "
+            "(not a behavior-implantation | no behavior implantation)",
         )
     if re.search(r"(?i)contrastive[- ]negatives?", text):
         lowered = text.lower()
@@ -790,7 +814,8 @@ def check_contrastive_negatives(plan: str, kind: str) -> CheckResult:
         "behavior-implantation vocabulary detected but no contrastive-negative set or named "
         "exemption — .claude/rules/contrastive-negatives.md (panel + ratio + disjointness); "
         "Methodology critic must gate this; or declare `N/A — not a behavior-implantation` "
-        "on its own line, unwrapped (no backticks/quotes)",
+        "(or `N/A — no behavior implantation` for measurement/geometry plans) on its own "
+        "line, unwrapped (no backticks/quotes)",
     )
 
 
@@ -989,12 +1014,35 @@ def _exempt_tldr_kill_pass(
     cid, name, kind, succ_solid, kill_solid, kill_tldr_hits, carrier_ok, section_name
 ):
     """PASS result for the #1291 exempt-kind acceptance — a kind-exempt plan
-    whose kill family is satisfied by a solid §0.0/TL;DR change-my-mind hit
-    (success family solid, no solid kill outside the TL;DR); None when the
-    acceptance does not apply (check_success_kill falls through to its
-    missing-family verdicts)."""
+    whose kill family is satisfied EITHER by (a) a solid §0.0/TL;DR
+    change-my-mind hit, OR (b) a solid ``acceptance criteri`` success anchor
+    whose enclosing section itself names acceptance criteria (#1668/#1700 —
+    for an infra fix the acceptance-criteria BLOCK IS the revert criterion,
+    even when it lives under §1 Goal / Motivation instead of a dedicated
+    ``## 7. Decision gates, success and kill criteria`` heading).
+    (Success family solid, no solid kill outside the TL;DR.) None when
+    the acceptance does not apply (``check_success_kill`` falls through to
+    its missing-family verdicts). ``kind: experiment`` is BYTE-UNCHANGED:
+    the guard on ``kind not in EXEMPT_KINDS`` gates both branches."""
     if kind not in EXEMPT_KINDS or not succ_solid or kill_solid:
         return None
+    # (b) Acceptance-criteria-block branch (#1668/#1700): iterate ALL solid
+    # success hits — the FIRST hit may sit under a non-acceptance section
+    # (e.g. §2 Design) while a later hit lands under the true acceptance
+    # heading. Fail-closed to the (a) TL;DR path when no hit's enclosing
+    # section names acceptance criteria.
+    for si, sa in succ_solid:
+        sec = section_name(si).lower()
+        if "acceptance criteri" in sec:
+            return _pass(
+                cid,
+                name,
+                f"success anchor {sa!r} in §{section_name(si)!r} — the acceptance-criteria "
+                "block SATISFIES the kill family for kind-exempt plans (the block IS the "
+                "revert criterion for a code/infra change; kind: experiment still requires "
+                "kill criteria outside the TL;DR — #1668/#1700, extending #1291)",
+            )
+    # (a) EXISTING: §0.0 TL;DR change-my-mind path (unchanged).
     tldr_solid = [(i, a) for i, a in kill_tldr_hits if carrier_ok(i)]
     if not tldr_solid:
         return None
@@ -2704,12 +2752,30 @@ def check_paired_contrast_source_coverage(plan: str, kind: str) -> CheckResult:
     triggers = _c18_registered_paired_lines(plan)
     if not triggers:
         return _skip(cid, name, "no registered paired contrast detected")
+    decls = _c18_coverage_declarations(plan)
     if _c18_na_escape_declared(plan):
         # #1258 (the #1223 c20 port): reachable ONLY when a registered paired
         # contrast WAS detected (the no-trigger case SKIPs above) — a PASS
         # here masks the row-coverage verification c18 exists to run (the
         # #810 v13 class). WARN, not FAIL: the trigger harvest may be a false
         # positive on quoted guidance; reviewers adjudicate.
+        #
+        # #1689/#1700 refinement: when a valid Row-coverage declaration ALSO
+        # co-occurs, the coverage decl is the DECISIVE load-bearing assertion
+        # (D1/D2 grammar unchanged; _c18_coverage_declarations gates it), and
+        # the N/A line is a spurious leftover paste — PASS on the coverage
+        # decl. The original masking case (N/A alone, no coverage decl) still
+        # WARNs, preserving c18's original defense.
+        if decls:
+            return _pass(
+                cid,
+                name,
+                f'row-coverage declaration found ("{decls[0][:90]}") — declaration surface '
+                "only; the co-occurring standalone `N/A — no paired contrast` line is "
+                "treated as a spurious leftover, not a masking claim (the coverage decl "
+                "is decisive; #1689/#1700). Whether the named sources truly contain every "
+                "registered row on both arms stays with the fact-checker.",
+            )
         return _warn(
             cid,
             name,
@@ -2722,7 +2788,6 @@ def check_paired_contrast_source_coverage(plan: str, kind: str) -> CheckResult:
             "fence/remove the registration-shaped prose the detector matched "
             "if it is quoted guidance rather than this plan's own registration",
         )
-    decls = _c18_coverage_declarations(plan)
     if decls:
         return _pass(
             cid,
@@ -2969,6 +3034,37 @@ _C20_PRECEDENCE_RE = re.compile(
 _C20_QUANT_RE = re.compile(
     r"(?i)(?:at least\s+\d+|≥\s*\d+|>=\s*\d+)\s*(?:of|/)\s*\d+|\ball\s+\d+\b|\bfor (?:all|each)\b"
 )
+
+# Threshold-form atoms (#1689/#1700 — the tier-1 analogue of _C20_QUANT_RE):
+# ``<qty> <ineq> <nonzero>`` — ``rung ≥ 5``, ``≥ 8/9 pairs``, ``≤ 1 rung``,
+# ``≥ 20 percent``. Deliberately mirrors ``_C20_POINT_RE`` (same qty/cmp
+# capture shape) but the right-hand side captures ANY numeric literal
+# (int / decimal / fraction) — the ``_c20_has_threshold_atom`` filter
+# EXCLUDES ``0``, ``0.xxx`` and ``0/N`` after the fact so the sign-atom
+# scope (``qty ≥/> 0``) stays owned by ``_C20_POINT_RE``.
+_C20_THRESHOLD_RE = re.compile(
+    r"(?P<qty>[^\s,;()]+)\s*(?P<cmp>≥|>=|≤|<=|>|<)\s*(?P<thr>\d+(?:[./]\d+)?)"
+)
+
+
+def _c20_has_threshold_atom(segment: str) -> bool:
+    """True when ``segment`` carries a non-zero threshold-form inequality
+    atom (``rung ≥ 5``, ``≥ 8/9 pairs``, ``≤ 1 rung``). Zero-right-hand-side
+    matches (``qty ≥ 0``, ``qty ≥ 0.5``, ``qty ≥ 0/N``) are EXCLUDED —
+    those are sign atoms and stay with ``_C20_POINT_RE``. This is the
+    tier-1 detector for the #1689 shape (``rung ≥ 5`` / ``≥ 8/9 pairs``);
+    the parser correctly rejects them as outside the v1 cell algebra, so
+    ``_c20_tier1_result`` uses this + an ``⇔ otherwise`` complement to
+    SKIP the whole lattice (mirroring the tier-2 ``_C20_QUANT_RE`` SKIP)."""
+    for m in _C20_THRESHOLD_RE.finditer(segment):
+        thr = m.group("thr")
+        # Sign-atom exclusions (owned by _C20_POINT_RE): bare "0", "0.xxx"
+        # decimals, and "0/N" fractions.
+        if thr == "0" or thr.startswith("0.") or thr.startswith("0/"):
+            continue
+        return True
+    return False
+
 
 # Tier-2 segment machinery: sentence split, →/Consequence truncation, the
 # "confirmed if(f)" selector.
@@ -3323,7 +3419,16 @@ def _c20_find_declaration(sections: list[str]) -> tuple[str, list[tuple[str, str
 
 def _c20_tier1_result(cid: str, name: str, kind: str, sec: str, clauses: list) -> CheckResult:
     """Tier-1 verdict: the plan CLAIMED a partition, so co-fire AND gap are
-    both FAIL-capable (WARN under kind=analysis); unparsed clauses WARN."""
+    both FAIL-capable (WARN under kind=analysis); unparsed clauses WARN.
+    #1689/#1700: when the tier-1 lattice uses THRESHOLD-form inequality
+    predicates (``rung ≥ 5``, ``≥ 8/9 pairs``, ``≤ 1 rung``) AND carries
+    an ``⇔ otherwise`` complement, the partition is exhaustive-by-
+    construction (the otherwise clause covers every residual cell) and
+    the co-fire risk on threshold predicates is Statistics-critic scope,
+    outside the v1 cell algebra — SKIP (mirrors the tier-2
+    ``_C20_QUANT_RE`` SKIP). Threshold-only lattices WITHOUT an
+    ``⇔ otherwise`` complement still route through the normal parse
+    (which correctly WARNs on the unparsed residue)."""
     if len(clauses) < 2:
         return _warn(
             cid,
@@ -3332,6 +3437,19 @@ def _c20_tier1_result(cid: str, name: str, kind: str, sec: str, clauses: list) -
             "`<label> ⇔ <predicate>` clauses parsed from it — the claimed partition is "
             "not machine-checkable; use the canonical form (`DISJOINT and exhaustive: "
             "<label> ⇔ <predicate>; …; <label> ⇔ otherwise`)",
+        )
+    # #1689/#1700: threshold-atoms + ⇔ otherwise ⇒ SKIP (see docstring).
+    has_otherwise = any(_C20_OTHERWISE_RE.search(cpred) for _, cpred in clauses)
+    uses_thresholds = any(_c20_has_threshold_atom(cpred) for _, cpred in clauses)
+    if has_otherwise and uses_thresholds:
+        return _skip(
+            cid,
+            name,
+            f"tier-1 lattice ({len(clauses)} clauses) uses threshold-form inequality "
+            "predicates (e.g. `rung ≥ 5`, `≥ 8/9 pairs`) closed by an `⇔ otherwise` "
+            "complement — the partition is exhaustive-by-construction and the "
+            "co-fire risk on threshold predicates is Statistics-critic scope, out "
+            "of v1 cell algebra (mirrors the tier-2 k-of-n SKIP; #1689/#1700)",
         )
     labels = []
     for clabel, cpred in clauses:
@@ -7061,6 +7179,151 @@ def check_regression_anchor_executed(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 42 — cited commit SHA resolves ─────────────────────────────────
+
+_C42_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c34/c41 pattern)
+
+# Cite-as-commit context patterns. Each anchors on a marker BEFORE (or
+# labeled inline with) the 7-40-char hex token — grammar ports from
+# ``.claude/rules/workflow-fix-on-bug.md`` clause (d) + the crash-fix
+# marker-note convention (``fix_sha=`` / ``merge_sha=``,
+# ``.claude/rules/crash-fix-rounds.md`` § fix-engaged signal element 4).
+_C42_CITE_PATTERNS = [
+    # "commit `<sha>`" / "commit <sha>"
+    re.compile(r"(?i)\bcommit\s+`?(?P<sha>[0-9a-f]{7,40})`?\b"),
+    # "landed in `<sha>`" / "landed at `<sha>`"
+    re.compile(r"(?i)\blanded\s+(?:in|at)\s+`?(?P<sha>[0-9a-f]{7,40})`?\b"),
+    # "merge `<sha>`" / "merged in <sha>" / "merged at <sha>"
+    re.compile(r"(?i)\bmerge(?:d)?\s+(?:in\s+|at\s+)?`?(?P<sha>[0-9a-f]{7,40})`?\b"),
+    # "`<sha>` (commit)" / "`<sha>` — commit" / "`<sha>` — merge"
+    re.compile(r"(?i)`(?P<sha>[0-9a-f]{7,40})`\s*(?:\(commit\)|[—–-]\s*(?:commit|merge))"),
+    # "**commit:** <sha>" / "**merge:** <sha>" / "**commit_sha:** <sha>"
+    re.compile(r"(?i)\*\*(?:commit|merge)(?:_sha)?:\*\*\s*`?(?P<sha>[0-9a-f]{7,40})`?\b"),
+    # "fix_sha=<sha>" / "fix_sha: <sha>" / "merge_sha=<sha>" / "merge_sha: <sha>"
+    re.compile(r"(?i)\b(?:fix_sha|merge_sha)\s*[:=]\s*`?(?P<sha>[0-9a-f]{7,40})`?\b"),
+]
+
+# Same-line disqualifiers: a hex captured by cite-context is dropped when
+# the line ALSO carries workflow-fix fingerprint / session-basename / HF
+# revision labels. These are the exclusion classes named in
+# ``.claude/rules/workflow-fix-on-bug.md`` clause (d): "cite the token as
+# what it actually is (transcript/session basename, HF revision,
+# fingerprint), labeled as such."
+_C42_EXCLUDE_LINE_PATTERNS = [
+    re.compile(r"(?i)\bfingerprint\s*[:=]"),
+    re.compile(r"(?i)\bsession(?:_id)?\s*[:=]|session\s+basename"),
+    re.compile(r"(?i)\brevision\s*[:=]|--revision|hf_revision|dataset_revision"),
+]
+
+
+def _c42_rev_parse(sha: str) -> bool | None:
+    """``True`` when ``sha`` resolves under
+    ``git rev-parse --verify --quiet '<sha>^{commit}'``, ``False`` when it
+    does not, ``None`` when git is unavailable (permission / OS / timeout —
+    the check fails OPEN via a caller-side SKIP). Retries ONCE on a
+    transient ``CalledProcessError`` / ``OSError`` after 0.1s (the plan's
+    Methodology-critic concern: a brief ``.git/index.lock`` collision on
+    the concurrent-committer repo root — the shared-VM #1201 shape — must
+    not spuriously fail the check)."""
+    cmd = ["git", "rev-parse", "--verify", "--quiet", f"{sha}^{{commit}}"]
+    for attempt in (1, 2):
+        try:
+            r = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=10,
+                cwd=str(_C42_REPO_ROOT),
+                check=False,
+            )
+            return r.returncode == 0
+        except subprocess.TimeoutExpired:
+            return None  # timeout is not retriable — the git command hung
+        except OSError:
+            if attempt == 1:
+                time.sleep(0.1)
+                continue
+            return None
+    return None  # unreachable (defensive; the loop always returns)
+
+
+def check_commit_sha_resolves(plan: str, kind: str) -> CheckResult:
+    """Every hex token the plan cites AS A COMMIT — ``commit `<sha>```,
+    ``landed in <sha>``, ``**commit:** <sha>``, ``fix_sha=<sha>`` — must
+    resolve under ``git rev-parse --verify --quiet '<sha>^{commit}'``.
+    Mirrors ``.claude/rules/workflow-fix-on-bug.md`` clause (d) on the
+    filing side.
+
+    FAIL (all kinds) — a typo'd commit SHA is a factual defect independent
+    of experiment kind (incident #1683: ``7c7095f40e`` was cited as the
+    fix commit; the real commit was ``7c8095f40e`` and the fact-checker
+    round burned proving the mismatch; #1414: transcript basename
+    ``fc2b61b7`` shipped as "the fix commit"). Bare hex tokens
+    (fingerprints, HF revisions, transcript basenames, arXiv ids) are OUT
+    OF SCOPE — the cite-context grammar in ``_C42_CITE_PATTERNS`` gates
+    entry, and ``_C42_EXCLUDE_LINE_PATTERNS`` drops same-line
+    disqualifiers. Hex tokens inside fenced code blocks are excluded via
+    ``_fence_mask``.
+
+    Fail-open on git unavailability: the check is a mechanical gate, not
+    a hard block on a broken git install / permission failure. A brief
+    ``.git/index.lock`` collision retries ONCE (0.1 s) before SKIPping."""
+    cid, name = "c42_commit_sha_resolves", "cited commit SHA resolves"
+    del kind  # this check is kind-blind — a typo'd commit is a factual defect for all
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    cited: list[tuple[int, str, str]] = []  # (line_idx, sha, matched_context)
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced:
+            continue
+        if any(p.search(line) for p in _C42_EXCLUDE_LINE_PATTERNS):
+            continue
+        for pat in _C42_CITE_PATTERNS:
+            for m in pat.finditer(line):
+                sha = m.group("sha").lower()
+                cited.append((i, sha, m.group(0)))
+    if not cited:
+        return _skip(cid, name, "no hex tokens cited as commits detected")
+    # Deduplicate by SHA (a plan may cite the same commit N times).
+    unique: dict[str, tuple[int, str]] = {}
+    for ln, sha, ctx in cited:
+        unique.setdefault(sha, (ln, ctx))
+    unresolved: list[tuple[str, str]] = []
+    for sha, (_ln, ctx) in unique.items():
+        result = _c42_rev_parse(sha)
+        if result is None:
+            # Fail-open on git unavailability — SKIP the whole check
+            # (rather than mixed-verdict FAIL some / skip others), because
+            # a partial run under a broken git install would mask the very
+            # positives the check is here to catch.
+            return _skip(
+                cid,
+                name,
+                "git rev-parse unavailable (permission / OS / timeout) — check inconclusive",
+            )
+        if not result:
+            unresolved.append((sha, ctx))
+    if not unresolved:
+        return _pass(
+            cid,
+            name,
+            f"all {len(unique)} cited commit SHA(s) resolve (verified via "
+            "`git rev-parse --verify --quiet '<sha>^{commit}'`)",
+        )
+    detail = (
+        f"{len(unresolved)} of {len(unique)} cited commit SHA(s) do NOT resolve as commits: "
+        + "; ".join(f"{sha} (context: {ctx!r})" for sha, ctx in unresolved[:4])
+        + (" …" if len(unresolved) > 4 else "")
+        + ". Remedy: verify the SHA at compose time — "
+        "`git rev-parse --verify --quiet '<sha>^{commit}'` — and re-derive the real "
+        "commit (`git log --oneline --since='14 days ago' -- <touched-file>`) or "
+        "cite the token as what it actually is (an HF revision, transcript basename, "
+        "fingerprint), labeled as such. Mirrors "
+        "`.claude/rules/workflow-fix-on-bug.md` clause (d)."
+    )
+    return _fail(cid, name, detail)
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -7103,6 +7366,7 @@ CHECKS = [
     check_exit0_repo_wide_baseline,
     check_off_pod_phase_declaration,
     check_regression_anchor_executed,
+    check_commit_sha_resolves,
 ]
 
 
