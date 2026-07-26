@@ -5380,8 +5380,8 @@
     "1692": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1692",
-      "status": "planning",
+      "path": "tasks/approved/1692",
+      "status": "approved",
       "title": "daily-fix: smoke must run real paths, not mock branches"
     },
     "1693": {
