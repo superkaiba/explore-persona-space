@@ -11798,11 +11798,14 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 52,361 B post-#1254, 51,600 — measured 50,642 B post-#948,
     # 47,930 B post-#881)
     "codex-code-reviewer.md": 60_800,
-    # measured 76,274 B post-#1692 (item 5 Axis 1 import-resolution leg,
-    # Axis 2 per-arm resolution attestation, PASS_PARTIAL verdict +
-    # post-marker template extension — plan-mandated growth; cap =
-    # measured + ~0.23 KB, with condensing sweep across older Rationale
-    # / incident prose to stay near budget. Prior: 74,500 — measured
+    # measured 79,104 B post-#1699 (After-Implementation §2b mechanical
+    # pin-sweep refactor + new §2c repo-wide-invariants item + Run-lint
+    # ruff-policy pin extension — plan-mandated growth; cap = measured +
+    # ~0.4 KB. Prior: 76,500 — measured 76,274 B post-#1692 (item 5 Axis 1
+    # import-resolution leg, Axis 2 per-arm resolution attestation,
+    # PASS_PARTIAL verdict + post-marker template extension — plan-mandated
+    # growth; cap = measured + ~0.23 KB, with condensing sweep across older
+    # Rationale / incident prose to stay near budget. Prior: 74,500 — measured
     # 74,240 B post-#1682 (Report Format SHA-verbatim rule), 74,000 —
     # measured 73,554 B post-#1572 (step-10 staged-index verification
     # pointer), 73,000 — measured 72,240 B post-#1449 (After-
@@ -11812,7 +11815,7 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # post-#1384 (per-arm-class smoke-coverage clause), 67,900 — measured
     # 67,472 B post-#1363, 67,400 — measured 66,574 B post-#1349,
     # 66,300 — measured 65,548 B post-#1311)
-    "experiment-implementer.md": 76_500,
+    "experiment-implementer.md": 79_500,
     # measured 66,921 B post-#1416 (Pre-Launch step 9 foreign-tenant
     # memory.used read — plan-mandated growth; cap = measured + ~0.6 KB.
     # Prior: 66,500 — measured 65,540 B post-#1081 r2 (D3
