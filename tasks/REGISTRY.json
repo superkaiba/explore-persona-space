@@ -5534,8 +5534,8 @@
     "1711": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1711",
-      "status": "running",
+      "path": "tasks/reviewing/1711",
+      "status": "reviewing",
       "title": "daily-fix: closed-sibling probe in /daily driver"
     },
     "1712": {
