@@ -5457,8 +5457,8 @@
     "1701": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1701",
-      "status": "reviewing",
+      "path": "tasks/completed/1701",
+      "status": "completed",
       "title": "daily-fix: inline-round scientific duties"
     },
     "1702": {
