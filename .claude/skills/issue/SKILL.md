@@ -11864,15 +11864,58 @@ Decision tree:
   Branch unsafe to blind-rebase: <based on <PARENT> (not on mainline) |
   own commits touch foreign / out-of-scope paths>. Cherry-picked this
   task's own added files only; shared src/ / scripts/ unchanged." --
+    # PARTIAL-APPLY VERIFICATION (this task's Edit A): the branch's own ADDED
+    # files were just staged from the branch tip and committed. Confirm — by
+    # materialize-then-check — that every claimed additive path landed with
+    # content byte-identical to its branch-tip source. The commit message
+    # above asserts a "cherry-picked" apply; verify the assertion before
+    # recording `landed`. Any path whose committed content diverges from its
+    # branch-tip source is a PARTIAL apply (incident 3c24493113, 2026-07-05:
+    # an orchestrator-improvised recovery outside the documented paths
+    # landed the test file but not the extractor half it tested; main red
+    # 20 days until #1683 ported it). Edit A adds the guarantee to the
+    # CURRENT documented template; a future improvised apply is out of
+    # scope here (workflow_lint follow-up).
+    # xargs feeds paths one-per-line (whitespace/glob-safe, matches the
+    # block's convention); stderr is retained so a producer failure
+    # surfaces its cause. The PUSH block below is now gated on
+    # $APPLY_OK — a partial apply short-circuits it (methodology-critic
+    # Must-Fix: bare `false` at the end of an if-branch does NOT halt
+    # subsequent commands in the enclosing block, so a variable-gated
+    # conditional is required).
+    APPLY_OK=yes
+    if ! xargs -r -a /tmp/issue-<N>-additive-files.txt \
+         git -C "$REPO_ROOT" diff --name-only HEAD "issue-<N>" -- \
+         > /tmp/issue-<N>-postapply-diff.txt; then
+      echo "PARTIAL-APPLY VERIFY: diff HEAD vs issue-<N> FAILED — cannot certify apply; refusing to record landed"
+      echo partial-apply-verify-failed > /tmp/issue-<N>-surgical-outcome.txt
+      APPLY_OK=no
+    elif [ -s /tmp/issue-<N>-postapply-diff.txt ]; then
+      # Non-empty diff = one or more claimed paths were NOT byte-identically
+      # applied. Fail LOUD — a claimed clean apply that did not land is the
+      # 3c24493113 shape.
+      echo "PARTIAL-APPLY VERIFY: $(wc -l < /tmp/issue-<N>-postapply-diff.txt) claimed additive path(s) diverge from their branch-tip source:"
+      cat /tmp/issue-<N>-postapply-diff.txt
+      echo "The 'surgical additive checkout' commit above does NOT reflect all claimed content; recording partial-apply outcome, NOT landed."
+      echo partial-apply > /tmp/issue-<N>-surgical-outcome.txt
+      APPLY_OK=no
+    fi
     # Bounded push (the one network op on this arm): a hung push would wedge
     # the background call with the outcome sentinel unwritten. rc 124 takes
     # the push-failed arm — the same degradation as a rejected push (the
     # "Surgical checkout itself fails" bullet / sync-retry below).
-    if timeout --kill-after=30s 300s git push origin main; then
-      echo landed > /tmp/issue-<N>-surgical-outcome.txt
+    # GATED on APPLY_OK: a partial-apply outcome above short-circuits the
+    # push and its `landed` sentinel; the enclosing background call still
+    # exits non-zero via the `false` at the end of the else arm.
+    if [ "$APPLY_OK" = "yes" ]; then
+      if timeout --kill-after=30s 300s git push origin main; then
+        echo landed > /tmp/issue-<N>-surgical-outcome.txt
+      else
+        echo push-failed > /tmp/issue-<N>-surgical-outcome.txt
+        false
+      fi
     else
-      echo push-failed > /tmp/issue-<N>-surgical-outcome.txt
-      false
+      false   # partial-apply / verify-failed sentinel already written above
     fi
   else
     # BLOCKED: the checkout above already staged the A-only paths AND wrote
@@ -11903,6 +11946,20 @@ Decision tree:
   - `blocked-cleaned` -> the gate subsection's case-1/3 fix path; read the
     background call's BLOCKED echo, which carries `$GATE_VERDICT`, for
     block-vs-crash attribution.
+  - `partial-apply` -> post `epm:merge-failed v1` with `{reason: "surgical
+    additive checkout — partial apply", diverged_paths: [...]}` (read the
+    diverged file list from `/tmp/issue-<N>-postapply-diff.txt`), name the
+    diverged files in ONE chat line, CONTINUE (idempotent retry on next
+    `/issue <N>`). The task still parks per the standard failure path.
+    (This task's Edit A: closes the false-`landed` gap by refusing to write
+    the `landed` sentinel when the surgical commit's content diverges from
+    the branch-tip source.)
+  - `partial-apply-verify-failed` -> post `epm:merge-failed v1` with
+    `{reason: "surgical additive checkout — apply-verification diff
+    producer failed"}`, name the branch + worktree in ONE chat line,
+    CONTINUE. (This task's Edit A: the diff producer itself errored — a
+    materialize-then-check failure, treated as terminal rather than a
+    false `landed`.)
   - MISSING sentinel -> the sequence died mid-run (tool kill / watcher
     force-stop / wedge-bound kill) and the root may hold staged payload.
     Recover IN THIS ORDER: (1) kill-before-relaunch probe FIRST
@@ -11999,6 +12056,19 @@ CANON=$(realpath --relative-to="$REPO_ROOT" \
 # check pattern as the pre-push lint-gate trigger diff (#1047). Failure arms
 # are TERMINAL (echo + false — routes to the epm:merge-failed handling
 # above); never proceed believing cleanup ran.
+# PRE-SYNC (this task's Edit B): the local root routinely lags origin/main
+# by a completed-status mv committed locally but not yet pushed (incident
+# #1688, 2026-07-25 18:19:37Z: guard exit 1 with sync_repo_root.py fixing
+# it in one attempt at ahead=8 behind=2). Run the sanctioned root sync
+# UNCONDITIONALLY before the guard's canonical-folder check, so the
+# guard's nonzero exit becomes reserved for genuine drift rather than the
+# expected unpushed-mv state. sync_repo_root.py is single-flight
+# flock-serialized (a concurrent sync returns exit 0 without re-syncing),
+# so this call is idempotent and tolerant of in-flight state. Failure is
+# NON-FATAL — the guard's own unpushed-mv pre-check (#1300) remains the
+# fallback recovery if the sync did not fully converge.
+uv run python "$REPO_ROOT/scripts/sync_repo_root.py" || \
+  echo "post-merge guard pre-sync: sync_repo_root.py exited non-zero; guard's own unpushed-mv pre-check is the fallback"
 if [ -z "$CANON" ]; then
   # task.py find / realpath failed -> empty CANON. Classifying with an empty
   # CANON would mark the CANONICAL folder itself as a duplicate and rm it.
