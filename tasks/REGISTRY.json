@@ -5429,8 +5429,8 @@
     "1699": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1699",
-      "status": "planning",
+      "path": "tasks/approved/1699",
+      "status": "approved",
       "title": "daily-fix: implementer pin-sweep + lint parity"
     },
     "17": {
