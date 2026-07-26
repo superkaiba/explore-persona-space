@@ -5450,8 +5450,8 @@
     "1700": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1700",
-      "status": "planning",
+      "path": "tasks/approved/1700",
+      "status": "approved",
       "title": "daily-fix: verify_plan exempt-kind + commit-SHA check"
     },
     "1701": {
