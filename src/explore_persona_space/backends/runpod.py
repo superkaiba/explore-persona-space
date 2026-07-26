@@ -349,6 +349,69 @@ class RunPodWorkloadStartError(RuntimeError):
         self.handle = handle
 
 
+class RunPodProvisionBranchMismatchError(RunPodWorkloadStartError):
+    """Post-bootstrap branch assertion failed — the pod is not on the requested branch (#1698).
+
+    Raised by :func:`_assert_pod_on_branch` when the ``--repo-branch`` value
+    threaded from the orchestrator (``spec.extra["repo_branch"]``) does NOT
+    match the on-pod ``git rev-parse --abbrev-ref HEAD`` after
+    ``bootstrap_pod.sh`` completes. This surfaces a PLUMBING regression LOUD
+    instead of running stale code for 25+ minutes: the #1689 R8/R9 shape
+    landed the pod on ``main`` twice while every plan-level probe read the
+    branch value as correctly threaded.
+
+    Subclasses :class:`RunPodWorkloadStartError` so the existing partial-handle
+    machinery at :meth:`RunPodBackend.launch`'s ``#954`` catch site wraps it
+    into a partial-handle failure — the pod exists and BILLS, so the
+    failover / diagnostics contract is identical to any other workload-start
+    failure. The pod is left RUNNING for SSH diagnosis (the
+    RunPod-as-diagnosis-lane doctrine).
+    """
+
+
+def _assert_pod_on_branch(pod_name: str, expected_branch: str) -> None:
+    """Post-bootstrap fail-loud: pod HEAD branch MUST equal ``expected_branch`` (#1698).
+
+    SSH-probes ``git rev-parse --abbrev-ref HEAD`` on the pod's
+    ``/workspace/explore-persona-space`` clone and raises
+    :class:`RunPodProvisionBranchMismatchError` on ANY mismatch — the pod
+    landed on the wrong branch, the plumbing dropped the requested value
+    (``bootstrap_pod.sh:52`` defaults ``BOOTSTRAP_BRANCH=main``), and the
+    workload would silently run stale code.
+
+    Called by :meth:`RunPodBackend.launch` immediately AFTER
+    ``_run_pod_lifecycle_relay`` returns, and ONLY when the launch explicitly
+    requested a non-``main`` branch via ``spec.extra["repo_branch"]``: the
+    default-``main`` case is a no-op (the assertion binds only to launches
+    that named a specific branch). See :meth:`RunPodBackend.launch` for the
+    bind condition.
+    """
+    host, port = _resolve_pod_endpoint(pod_name)
+    out = _ssh_pod_run(
+        host,
+        port,
+        "cd /workspace/explore-persona-space && git rev-parse --abbrev-ref HEAD",
+        timeout=30,
+        context=f"post-bootstrap branch verify on {pod_name}",
+    )
+    # git rev-parse --abbrev-ref HEAD prints ONE line: the branch name (or
+    # 'HEAD' on a detached checkout). Take the last non-empty line so a
+    # bootstrap that appended a trailing progress line does not corrupt the
+    # comparison — the branch line itself is the last real content.
+    actual = ""
+    for line in out.splitlines():
+        stripped = line.strip()
+        if stripped:
+            actual = stripped
+    if actual != expected_branch:
+        raise RunPodProvisionBranchMismatchError(
+            f"pod {pod_name!r} bootstrapped onto branch {actual!r}, expected "
+            f"{expected_branch!r} — the --repo-branch plumbing dropped the "
+            f"value (bootstrap_pod.sh:52 defaults BOOTSTRAP_BRANCH=main when "
+            f"the env var is unset); refusing to proceed on stale code"
+        )
+
+
 def _resolve_pod_endpoint(pod_name: str) -> tuple[str, int]:
     """Resolve ``(host, port)`` for ``pod_name`` from the live pods.conf.
 
@@ -942,6 +1005,37 @@ class RunPodBackend(ComputeBackend):
                     "--volume-gb",
                     str(max(_GPU_VOLUME_FLOOR_GB, boot_disk_gb)),
                 ]
+        # #1698: plumb `spec.extra["repo_branch"]` into the provision
+        # subprocess env as BOOTSTRAP_BRANCH so `bootstrap_pod.sh:52` picks
+        # it up (``BOOTSTRAP_BRANCH="${BOOTSTRAP_BRANCH:-main}"``). Without
+        # this thread, the argv for `pod_lifecycle.py provision` carries no
+        # `--repo-branch` term (`pod_lifecycle.py` has no such argparse arg
+        # — verified 2026-07-26) and `_bootstrap()` at :744-759 only pins
+        # `POD_INTENT`, so the env var is unset in the subprocess and the
+        # bash default lands every launch on `main` even when the caller
+        # requested a specific branch. The #1689 R8/R9 pods bootstrapped
+        # onto `main` twice through exactly this drop.
+        #
+        # DESIGN CHOICE (concern #4). The #1669 `env_pins` plumbing threads
+        # workload-env pins (WANDB_PROJECT et al., see
+        # `backends/base.py::ENV_PIN_ALLOWED_KEYS`) into the RENDERED launcher
+        # via `_render_launch_script` — a different subprocess boundary that
+        # fires only when the execution-leg opts in (`execute_workload`) and
+        # scoped to the workload's env. `BOOTSTRAP_BRANCH` gates the
+        # PRE-workload bootstrap subprocess (`pod_lifecycle.py provision` ->
+        # `bootstrap_pod.sh`), which runs UNCONDITIONALLY on every provision
+        # regardless of the execution flag. Piggybacking on `env_pins` would
+        # (a) require extending the allowlist to a key that is provisioning-
+        # scoped (mixing two orthogonal env-pin scopes), and (b) tie the
+        # pin's flow to the `--execute-workload` opt-in when it applies
+        # unconditionally to every provision. Keep a distinct
+        # `env_for_provision` copy: mirrors the `teardown` shape at :1545
+        # (`env=os.environ.copy()`), one localized change, no allowlist
+        # surface widening.
+        repo_branch_env = str((spec.extra or {}).get("repo_branch") or "").strip()
+        env_for_provision = os.environ.copy()
+        if repo_branch_env:
+            env_for_provision["BOOTSTRAP_BRANCH"] = repo_branch_env
         # _run_pod_lifecycle_relay raises PodLifecycleProcessError (a
         # CalledProcessError subclass carrying the child's stderr tail,
         # #1465) on non-zero exit; that propagates to the selector, which
@@ -951,7 +1045,22 @@ class RunPodBackend(ComputeBackend):
         # returncode + cmd ride verbatim. (Slice 1 does NOT add a provision
         # retry — the existing `--wait-for-capacity` retry inside
         # `pod_lifecycle.py` already handles SUPPLY_CONSTRAINT.)
-        _run_pod_lifecycle_relay(cmd)
+        _run_pod_lifecycle_relay(cmd, env=env_for_provision)
+        # #1698 Item 1(b) — fail-loud post-bootstrap branch assertion. Bind
+        # ONLY when a specific non-`main` branch was requested: the default
+        # case (empty / explicit `main`) is a no-op so a launch that
+        # legitimately wants `main` is unaffected. `RunPodProvisionBranchMismatchError`
+        # subclasses `RunPodWorkloadStartError`, so the :1124 catch at
+        # `_execute_workload_on_pod`'s call site would wrap it into a #954
+        # partial-handle failure IF the execution leg is opted in. On the
+        # non-execute path (the default `/issue` Step 6d.1 flow) the
+        # exception propagates verbatim — the pod stays RUNNING for SSH
+        # diagnosis per the RunPod-as-diagnosis-lane doctrine.
+        if repo_branch_env and repo_branch_env != "main":
+            _assert_pod_on_branch(
+                pod_name=_runpod_pod_name(spec.issue),
+                expected_branch=repo_branch_env,
+            )
         pod_name = _runpod_pod_name(spec.issue)
         # Attempt id + sentinel path minted BEFORE the execution leg (#909 r2,
         # `runpod-execute-missing-completion-sentinel`): the handle's
@@ -1537,9 +1646,39 @@ class RunPodBackend(ComputeBackend):
             str(issue),
             "--yes",
         ]
-        # Inherit current env so RUNPOD_API_KEY etc. propagate. The relay
-        # raises PodLifecycleProcessError (a CalledProcessError subclass
-        # carrying the stderr tail, #1465) so the selector sees a non-zero
-        # terminate exit (e.g. survivors detected by the post-terminate
-        # live-API re-query inside ``cmd_terminate``) WITH its diagnostics.
-        _run_pod_lifecycle_relay(cmd, env=os.environ.copy())
+        # #1698 Item 2 — idempotent teardown for an already-terminated pod.
+        # When no live pod matches the issue AND no local sidecar record is
+        # left, `pod_lifecycle._terminate_clear_stale_sidecar` at
+        # `scripts/pod_lifecycle.py:2911` raises
+        # `SystemExit("No live pod found for issue <N> (and no local
+        # record). Nothing to terminate.")` (verified 2026-07-26: exactly 1
+        # emission site in `pod_lifecycle.py`). The subprocess exits rc=1
+        # and `_run_pod_lifecycle_relay:200` wraps it as
+        # `PodLifecycleProcessError`, which pre-#1698 propagated all the
+        # way up to `dispatch_issue._cmd_finalize`, exited non-zero, and
+        # left the handle sidecar UNRENAMED — the #1689 recovery required
+        # hand-`mv`ing `.claude/cache/issue-1689-handle.json` to
+        # `…finalized` twice.
+        #
+        # Catch that specific stderr signature and treat as idempotent
+        # success: the goal ("this pod is gone") already holds by
+        # construction. Every OTHER `PodLifecycleProcessError` re-raises
+        # verbatim (auth error, RunPod API 5xx, pod-exists-but-terminate-
+        # refused, post-terminate live-API survivors, #1485
+        # `keep-running`-tag refusal) so the fail-loud contract for real
+        # terminate failures is UNCHANGED. `_cmd_finalize`'s
+        # `<name>.finalized` sidecar rename in `dispatch_issue.py` then
+        # executes cleanly on the already-gone case.
+        try:
+            _run_pod_lifecycle_relay(cmd, env=os.environ.copy())
+        except PodLifecycleProcessError as exc:
+            stderr_tail = (exc.stderr or "").lower()
+            if "nothing to terminate" not in stderr_tail:
+                raise
+            logger.info(
+                "RunPodBackend.teardown: pod-%s already gone (matched "
+                "'Nothing to terminate' in pod_lifecycle stderr); treating "
+                "as idempotent success so finalize can retire the sidecar "
+                "(#1698 Item 2).",
+                issue,
+            )

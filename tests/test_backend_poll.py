@@ -1679,6 +1679,13 @@ def test_production_runpod_handle_repo_branch_roundtrips_reconstructor(monkeypat
     # #1465: the provision leg routes through the pod_lifecycle-only helper —
     # patching it is selective by construction (subprocess.run stays real).
     monkeypatch.setattr(RP, "_run_pod_lifecycle_relay", lambda cmd, **k: None)
+    # #1698 Item 1(b): the post-bootstrap branch assertion fires when
+    # repo_branch is non-empty AND non-`main`; without the pods.conf
+    # SSH-endpoint plumbing (this test does not wire it), the probe
+    # would raise. No-op it here — the assertion body has its own direct
+    # tests in tests/test_runpod_backend.py; this test targets the
+    # sidecar handle round-trip, not the branch-verify probe itself.
+    monkeypatch.setattr(RP, "_assert_pod_on_branch", lambda pod_name, expected_branch: None)
     handle = RP.RunPodBackend().launch(
         RunSpec(
             issue=909,
@@ -1757,6 +1764,10 @@ def test_runspec_from_runpod_handle_forwards_boot_disk_gb(monkeypatch):
     # #1465: the provision leg routes through the pod_lifecycle-only helper —
     # patching it is selective by construction (subprocess.run stays real).
     monkeypatch.setattr(RP, "_run_pod_lifecycle_relay", lambda cmd, **k: None)
+    # #1698 Item 1(b): no-op the post-bootstrap branch assertion — this
+    # test targets the sidecar footprint-key round-trip, not the branch
+    # probe (which has its own tests in tests/test_runpod_backend.py).
+    monkeypatch.setattr(RP, "_assert_pod_on_branch", lambda pod_name, expected_branch: None)
     handle = RP.RunPodBackend().launch(
         RunSpec(
             issue=1118,
