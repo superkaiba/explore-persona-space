@@ -22466,6 +22466,586 @@ def test_completed_unmerged_flag_preserves_respawn_latch():
     assert "respawn_result" not in episodes["9"]
 
 
+# ─── Partial-bundle reconciliation pass (task #1704) ─────────────────────────
+#
+# ESCALATE-ONLY reconciliation of HF `issue<N>_partial/<attempt_id>/`
+# crash-persist bundles against committed `eval_results/issue_<N>/`.
+# Sidecar rows + one deduped push per (issue, attempt_id, band); NEVER
+# mutates task state (motivating incident #1345; plan §6 covers 14
+# acceptance criteria).
+
+
+def _pb_paths(asw, monkeypatch, tmp_path):
+    """Redirect the pass's sidecar + state to a scratch dir. Returns the
+    sidecar path so tests can inspect written rows."""
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path / "state")
+    monkeypatch.setattr(asw, "PROJECT_ROOT", tmp_path / "root")
+    (tmp_path / "state").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "root" / ".claude" / "cache").mkdir(parents=True, exist_ok=True)
+    return tmp_path / "root" / ".claude" / "cache" / "partial-bundle-events.jsonl"
+
+
+def _pb_env(monkeypatch):
+    """Common env pins used across the acceptance-criteria tests."""
+    monkeypatch.delenv("EPM_DISABLE_PARTIAL_BUNDLE_AUDIT", raising=False)
+    # Force the throttle to zero so tests can drive multiple runs.
+    monkeypatch.setenv("EPM_PARTIAL_BUNDLE_INTERVAL_HOURS", "0")
+
+
+def _pb_stub_pass_deps(
+    asw,
+    monkeypatch,
+    listings: dict[int, list[str]],
+    committed_by_issue: dict[int, set[str]],
+    *,
+    push_capture=None,
+    hf_raise_on: set[int] | None = None,
+    git_none_on: set[int] | None = None,
+    candidates: list[int] | None = None,
+):
+    """Stub the Hub listing / git read / candidate enumerator / push
+    boundaries with faithful fakes. All contract-shaped: the fakes'
+    return types match the production seams' contracts."""
+
+    monkeypatch.setattr(
+        asw,
+        "_partial_bundle_candidate_issues",
+        lambda now, lookback_s: (
+            list(candidates) if candidates is not None else sorted(listings.keys())
+        ),
+    )
+
+    def _listing(_api, issue: int):
+        if hf_raise_on and issue in hf_raise_on:
+            return None
+        return listings.get(issue, [])
+
+    monkeypatch.setattr(asw, "_partial_bundle_scoped_listing", _listing)
+
+    def _committed(issue: int):
+        if git_none_on and issue in git_none_on:
+            return None
+        return committed_by_issue.get(issue, set())
+
+    monkeypatch.setattr(asw, "_committed_eval_paths", _committed)
+
+    class _FakeApi:
+        pass
+
+    class _FakeHfApi:
+        HfApi = _FakeApi
+
+    import sys as _sys
+
+    monkeypatch.setitem(_sys.modules, "huggingface_hub", _FakeHfApi)
+
+    pushed: list[str] = []
+    if push_capture is not None:
+        pushed = push_capture
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushed.append(msg) or True)
+    return pushed
+
+
+def test_partial_bundle_classifier_all_eight_states():
+    """Plan §6 acceptance 5 (fuzz test — Statistics lens concern): pins
+    all 2^3 = 8 states of {transcript x workload_ts x result payload}
+    against the classifier's return values. A future refactor cannot
+    silently drift the discriminator."""
+    import autonomous_session_watch as asw
+
+    T = "issue9_partial/att-x/crash_persist_transcript.log"
+    W = "issue9_partial/att-x/workload_20260726T110000Z.log"
+    R = "issue9_partial/att-x/eval_results_issue_9/foo.json"
+
+    # transcript present + result payload -> complete
+    assert asw._classify_bundle_completeness([T, R]) == "complete"
+    # transcript present + workload_ts + result -> transcript wins -> complete
+    assert asw._classify_bundle_completeness([T, W, R]) == "complete"
+    # transcript present, no result -> no_result_payload
+    assert asw._classify_bundle_completeness([T]) == "no_result_payload"
+    # transcript + workload_ts, no result -> no_result_payload (transcript wins)
+    assert asw._classify_bundle_completeness([T, W]) == "no_result_payload"
+    # no transcript, workload_ts + result -> workload_ts_backstop
+    assert asw._classify_bundle_completeness([W, R]) == "workload_ts_backstop"
+    # no transcript, workload_ts only, no result -> persist_killed
+    assert asw._classify_bundle_completeness([W]) == "persist_killed"
+    # no transcript, no workload_ts, result only -> persist_killed (v1 skips)
+    assert asw._classify_bundle_completeness([R]) == "persist_killed"
+    # empty bundle -> persist_killed
+    assert asw._classify_bundle_completeness([]) == "persist_killed"
+
+
+def test_partial_bundle_positive_stranded_fires_once(tmp_path, monkeypatch):
+    """Plan §6 acceptance 1: a bundle with transcript + result payload
+    whose path is ABSENT from git flags — one sidecar row, one push."""
+    import autonomous_session_watch as asw
+
+    _pb_env(monkeypatch)
+    sidecar = _pb_paths(asw, monkeypatch, tmp_path)
+    listings = {
+        9999: [
+            "issue9999_partial/att-1/crash_persist_transcript.log",
+            "issue9999_partial/att-1/eval_results_issue_9999/foo.json",
+        ]
+    }
+    committed_by_issue = {9999: set()}  # nothing landed at HEAD
+    pushed = _pb_stub_pass_deps(asw, monkeypatch, listings, committed_by_issue)
+
+    assert asw.partial_bundle_pass(dry_run=False) is True
+    rows = [json.loads(x) for x in sidecar.read_text().splitlines()]
+    stranded = [r for r in rows if r["kind"] == "partial-bundle-stranded"]
+    assert len(stranded) == 1
+    row = stranded[0]
+    assert row["issue"] == 9999
+    assert row["attempt_id"] == "att-1"
+    assert row["band"] == "stranded_eval_results"
+    assert row["completeness_signal"] == "complete"
+    assert row["n_missing"] == 1
+    assert "foo.json" in row["missing_paths"]
+    assert len(pushed) == 1
+    assert "9999" in pushed[0]
+    assert "att-1" in pushed[0]
+    assert "completeness_signal=complete" in pushed[0]
+
+
+def test_partial_bundle_negative_landed_does_not_fire(tmp_path, monkeypatch):
+    """Plan §6 acceptance 2: a bundle whose result paths are ALL committed
+    at HEAD produces zero sidecar rows and zero pushes — the #1345 shape."""
+    import autonomous_session_watch as asw
+
+    _pb_env(monkeypatch)
+    sidecar = _pb_paths(asw, monkeypatch, tmp_path)
+    listings = {
+        1345: [
+            "issue1345_partial/att-x/crash_persist_transcript.log",
+            "issue1345_partial/att-x/eval_results_issue_1345/foo.json",
+        ]
+    }
+    committed_by_issue = {1345: {"foo.json"}}
+    pushed = _pb_stub_pass_deps(asw, monkeypatch, listings, committed_by_issue)
+
+    assert asw.partial_bundle_pass(dry_run=False) is False
+    assert not sidecar.exists() or "stranded" not in sidecar.read_text()
+    assert pushed == []
+
+
+def test_partial_bundle_persist_killed_skips_silently(tmp_path, monkeypatch):
+    """Plan §6 acceptance 3: a bundle with neither transcript nor
+    `workload_<ts>.log` does not fire (KILLED-MID-PERSIST class)."""
+    import autonomous_session_watch as asw
+
+    _pb_env(monkeypatch)
+    sidecar = _pb_paths(asw, monkeypatch, tmp_path)
+    listings = {5: ["issue5_partial/att-x/crash_report.json"]}
+    pushed = _pb_stub_pass_deps(asw, monkeypatch, listings, {5: set()})
+
+    assert asw.partial_bundle_pass(dry_run=False) is False
+    if sidecar.exists():
+        assert "stranded" not in sidecar.read_text()
+    assert pushed == []
+
+
+def test_partial_bundle_no_result_payload_skips_silently(tmp_path, monkeypatch):
+    """Plan §6 acceptance 4: a bundle with the transcript but zero
+    `eval_results_issue_<N>/` files does not fire (KILLED-EARLY class —
+    a stranded result requires a payload to lose)."""
+    import autonomous_session_watch as asw
+
+    _pb_env(monkeypatch)
+    sidecar = _pb_paths(asw, monkeypatch, tmp_path)
+    listings = {7: ["issue7_partial/att-x/crash_persist_transcript.log"]}
+    pushed = _pb_stub_pass_deps(asw, monkeypatch, listings, {7: set()})
+
+    assert asw.partial_bundle_pass(dry_run=False) is False
+    if sidecar.exists():
+        assert "stranded" not in sidecar.read_text()
+    assert pushed == []
+
+
+def test_partial_bundle_workload_ts_backstop_fires_with_signal(tmp_path, monkeypatch):
+    """Plan §6 acceptance 5: a `workload_ts_backstop`-classified bundle
+    fires, and the sidecar row AND Telegram push text carry the weaker
+    signal verbatim (Phase-2 Alternatives concern)."""
+    import autonomous_session_watch as asw
+
+    _pb_env(monkeypatch)
+    sidecar = _pb_paths(asw, monkeypatch, tmp_path)
+    listings = {
+        3: [
+            "issue3_partial/att-x/workload_20260726T110000Z.log",
+            "issue3_partial/att-x/eval_results_issue_3/bar.json",
+        ]
+    }
+    pushed = _pb_stub_pass_deps(asw, monkeypatch, listings, {3: set()})
+
+    assert asw.partial_bundle_pass(dry_run=False) is True
+    stranded = [
+        json.loads(x)
+        for x in sidecar.read_text().splitlines()
+        if json.loads(x)["kind"] == "partial-bundle-stranded"
+    ]
+    assert len(stranded) == 1
+    assert stranded[0]["completeness_signal"] == "workload_ts_backstop"
+    assert len(pushed) == 1
+    assert "completeness_signal=workload_ts_backstop" in pushed[0]
+
+
+def test_partial_bundle_fail_open_on_hf_error(tmp_path, monkeypatch):
+    """Plan §6 acceptance 6 (explicitly named in plan): a
+    ``HfHubHTTPError`` on ONE issue's listing does NOT crash the pass —
+    a `partial-bundle-hub-error` sidecar row is written for the erroring
+    issue and processing continues to the next issue (which fires
+    normally). The stub returns ``None`` for the erroring issue (the
+    real `_partial_bundle_scoped_listing` catches HfHubHTTPError and
+    returns None; here we exercise the caller's None-handling)."""
+    import autonomous_session_watch as asw
+
+    _pb_env(monkeypatch)
+    sidecar = _pb_paths(asw, monkeypatch, tmp_path)
+    listings = {
+        11: ["issue11_partial/att-a/crash_persist_transcript.log"],  # ignored on err
+        12: [
+            "issue12_partial/att-b/crash_persist_transcript.log",
+            "issue12_partial/att-b/eval_results_issue_12/x.json",
+        ],
+    }
+    pushed = _pb_stub_pass_deps(
+        asw,
+        monkeypatch,
+        listings,
+        {11: set(), 12: set()},
+        hf_raise_on={11},
+    )
+
+    result = asw.partial_bundle_pass(dry_run=False)
+    assert result is True  # issue 12 fired
+
+    rows = [json.loads(x) for x in sidecar.read_text().splitlines()]
+    hub_errors = [r for r in rows if r["kind"] == "partial-bundle-hub-error"]
+    stranded = [r for r in rows if r["kind"] == "partial-bundle-stranded"]
+    assert len(hub_errors) == 1
+    assert hub_errors[0]["issue"] == 11
+    assert len(stranded) == 1
+    assert stranded[0]["issue"] == 12
+    assert len(pushed) == 1  # only the stranded issue pushes
+
+
+def test_partial_bundle_dedup_second_call_same_tick(tmp_path, monkeypatch):
+    """Plan §6 acceptance 7: a second call within the re-alert TTL for
+    the same (issue, attempt_id, band) appends NO new sidecar row and
+    fires NO new push. Force interval=0 so throttling is not the
+    silencer."""
+    import autonomous_session_watch as asw
+
+    _pb_env(monkeypatch)
+    sidecar = _pb_paths(asw, monkeypatch, tmp_path)
+    listings = {
+        22: [
+            "issue22_partial/att-y/crash_persist_transcript.log",
+            "issue22_partial/att-y/eval_results_issue_22/z.json",
+        ]
+    }
+    pushed = _pb_stub_pass_deps(asw, monkeypatch, listings, {22: set()})
+
+    assert asw.partial_bundle_pass(dry_run=False) is True
+    first_rows = len(
+        [
+            r
+            for r in (json.loads(x) for x in sidecar.read_text().splitlines())
+            if r["kind"] == "partial-bundle-stranded"
+        ]
+    )
+    assert first_rows == 1
+    assert len(pushed) == 1
+
+    # Same-tick re-call: dedup keeps the alert.
+    result2 = asw.partial_bundle_pass(dry_run=False)
+    assert result2 is False  # dedup path returned no new flag
+    second_rows = len(
+        [
+            r
+            for r in (json.loads(x) for x in sidecar.read_text().splitlines())
+            if r["kind"] == "partial-bundle-stranded"
+        ]
+    )
+    assert second_rows == 1  # no new row
+    assert len(pushed) == 1  # no new push
+
+
+def test_partial_bundle_cursor_advances_and_wraps(tmp_path, monkeypatch):
+    """Plan §6 acceptance 8: cap=1 forces the cursor to advance every
+    call; the second call handles a different issue; the third call
+    wraps to 0 (candidate list has 2 issues). No task marker (never
+    mutates task state)."""
+    import autonomous_session_watch as asw
+
+    _pb_env(monkeypatch)
+    _pb_paths(asw, monkeypatch, tmp_path)
+    monkeypatch.setenv("EPM_PARTIAL_BUNDLE_LISTING_CAP", "1")
+    seen: list[int] = []
+    listings: dict[int, list[str]] = {}
+
+    def _record_listing(_api, issue):
+        seen.append(issue)
+        return listings.get(issue, [])
+
+    _pb_stub_pass_deps(asw, monkeypatch, listings, {}, candidates=[100, 200])
+    monkeypatch.setattr(asw, "_partial_bundle_scoped_listing", _record_listing)
+
+    asw.partial_bundle_pass(dry_run=False)
+    assert seen == [100]
+    asw.partial_bundle_pass(dry_run=False)
+    assert seen == [100, 200]
+    # Third call wraps back to index 0 (cursor was reset from 2 -> 0 by
+    # the boundary; the wrap goes 0 -> 1 (cap 1) -> 2 -> 0 -> 1 ...).
+    asw.partial_bundle_pass(dry_run=False)
+    assert seen == [100, 200, 100]
+
+
+def test_partial_bundle_cursor_resets_when_beyond_shrunken_list(tmp_path, monkeypatch):
+    """Plan §6 acceptance 8 extension: a stale cursor beyond the
+    current candidate list length resets to 0 rather than skipping
+    every issue."""
+    import autonomous_session_watch as asw
+
+    _pb_env(monkeypatch)
+    _pb_paths(asw, monkeypatch, tmp_path)
+    monkeypatch.setenv("EPM_PARTIAL_BUNDLE_LISTING_CAP", "1")
+    # Prime state with stale cursor beyond the current 1-candidate list.
+    (asw.AUTONOMOUS_REGISTRY_DIR).mkdir(parents=True, exist_ok=True)
+    (asw.AUTONOMOUS_REGISTRY_DIR / "partial-bundle-observer.json").write_text(
+        json.dumps({"enum_cursor_idx": 99})
+    )
+    seen: list[int] = []
+
+    def _record(_api, issue):
+        seen.append(issue)
+        return []
+
+    _pb_stub_pass_deps(asw, monkeypatch, {}, {}, candidates=[500])
+    monkeypatch.setattr(asw, "_partial_bundle_scoped_listing", _record)
+
+    asw.partial_bundle_pass(dry_run=False)
+    assert seen == [500]
+
+
+def test_partial_bundle_kill_switch_skips_everything(tmp_path, monkeypatch):
+    """Plan §6 acceptance 9: `EPM_DISABLE_PARTIAL_BUNDLE_AUDIT=1` returns
+    False with zero sidecar rows, zero pushes, zero state writes."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_DISABLE_PARTIAL_BUNDLE_AUDIT", "1")
+    sidecar = _pb_paths(asw, monkeypatch, tmp_path)
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
+    # Stub the enumerator to raise if the pass ignores the kill switch.
+    monkeypatch.setattr(
+        asw,
+        "_partial_bundle_candidate_issues",
+        lambda *a, **kw: (_ for _ in ()).throw(AssertionError("kill switch bypassed")),
+    )
+    assert asw.partial_bundle_pass(dry_run=False) is False
+    assert not sidecar.exists()
+    assert pushes == []
+
+
+def test_partial_bundle_pass_never_mutates_state(tmp_path, monkeypatch):
+    """Plan §6 acceptance 10 (two-way): the pass is ESCALATE-ONLY. Spy on
+    every ``subprocess.run`` argv the pass invokes (the pass shells out
+    for the `git ls-tree` read — Phase-2 Statistics concern) AND on the
+    in-process ``task_workflow`` mutators. Positive assertion: every
+    argv is ``git ls-tree`` at ``PROJECT_ROOT``; no
+    commit/add/push/rm/checkout/merge ever appears; no ``set_status`` /
+    ``post_event`` is called."""
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    from explore_persona_space import task_workflow
+
+    _pb_env(monkeypatch)
+    _pb_paths(asw, monkeypatch, tmp_path)
+
+    def _forbidden(*a, **kw):
+        raise AssertionError("partial_bundle_pass must never mutate task state in-process")
+
+    monkeypatch.setattr(task_workflow, "set_status", _forbidden)
+    monkeypatch.setattr(task_workflow, "post_event", _forbidden)
+
+    argvs: list[list[str]] = []
+
+    def _record_run(cmd, *a, **kw):
+        argvs.append(list(cmd))
+        # Return an empty ls-tree stdout (nothing committed) so the
+        # bundle stays flagged and the git call is exercised.
+        return _subprocess.CompletedProcess(cmd, 0, "", "")
+
+    # Direct stubs — the pass reaches the REAL `_committed_eval_paths`
+    # helper which is what we want to audit (its subprocess call is
+    # what argvs records). Do NOT use _pb_stub_pass_deps here — it
+    # would monkey-patch `_committed_eval_paths` itself.
+    listings = {
+        808: [
+            "issue808_partial/att-z/crash_persist_transcript.log",
+            "issue808_partial/att-z/eval_results_issue_808/w.json",
+        ]
+    }
+    monkeypatch.setattr(
+        asw,
+        "_partial_bundle_candidate_issues",
+        lambda now, lookback_s: [808],
+    )
+    monkeypatch.setattr(
+        asw, "_partial_bundle_scoped_listing", lambda api, issue: listings.get(issue, [])
+    )
+    monkeypatch.setattr(asw.subprocess, "run", _record_run)
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: True)
+
+    class _FakeApi:
+        pass
+
+    class _FakeHfApi:
+        HfApi = _FakeApi
+
+    import sys as _sys
+
+    monkeypatch.setitem(_sys.modules, "huggingface_hub", _FakeHfApi)
+    asw.partial_bundle_pass(dry_run=False)
+
+    # Assert every recorded argv is a `git ls-tree` call at PROJECT_ROOT,
+    # with no commit/add/push/rm/checkout/merge anywhere.
+    assert len(argvs) >= 1, "expected at least one git ls-tree call"
+    for argv in argvs:
+        assert argv[0] == "git", f"unexpected non-git argv: {argv}"
+        assert "ls-tree" in argv, f"expected ls-tree in argv, got {argv}"
+        forbidden_tokens = {"commit", "add", "push", "rm", "checkout", "merge"}
+        assert not (set(argv) & forbidden_tokens), f"forbidden git verb in argv: {argv}"
+        # Positive: -C targets PROJECT_ROOT (main-checkout semantic,
+        # never a transient worktree HEAD — Phase-2 Methodology concern).
+        assert str(asw.PROJECT_ROOT) in argv, (
+            f"expected PROJECT_ROOT ({asw.PROJECT_ROOT}) in argv: {argv}"
+        )
+
+
+def test_partial_bundle_pass_never_posts_task_markers(tmp_path, monkeypatch):
+    """Plan §6 acceptance 11: the pass never calls
+    ``_post_progress_marker`` — the escalation target is a HUMAN, not
+    the next dispatch (the `verdict_disagree_pass` precedent). This
+    verifies the in-process mutator boundary; the argv spy in the
+    never-mutates test already covers the subprocess boundary."""
+    import autonomous_session_watch as asw
+
+    _pb_env(monkeypatch)
+    _pb_paths(asw, monkeypatch, tmp_path)
+
+    def _forbidden_marker(*a, **kw):
+        raise AssertionError("partial_bundle_pass must never post task markers")
+
+    monkeypatch.setattr(asw, "_post_progress_marker", _forbidden_marker)
+
+    listings = {
+        44: [
+            "issue44_partial/att-q/crash_persist_transcript.log",
+            "issue44_partial/att-q/eval_results_issue_44/x.json",
+        ]
+    }
+    _pb_stub_pass_deps(asw, monkeypatch, listings, {44: set()})
+
+    # Firing does not post a task marker (the pass never calls
+    # `_post_progress_marker`; a sidecar row + push are the only
+    # channels).
+    assert asw.partial_bundle_pass(dry_run=False) is True
+
+
+def test_partial_bundle_dry_run_writes_nothing(tmp_path, monkeypatch):
+    """Plan §6 acceptance 14 (explicitly named in plan): calling
+    ``partial_bundle_pass(dry_run=True)`` against a stranded-payload
+    fixture bundle writes zero sidecar rows, writes zero state, and
+    routes ``_telegram_push`` invocations with ``dry_run=True`` (the
+    production helper's own ``dry_run=True`` branch is a no-op that
+    prints instead of sending — mirrors the sibling passes'
+    dry-run-threaded push contract). The pass returns True (the
+    "would-have-fired" signal)."""
+    import autonomous_session_watch as asw
+
+    _pb_env(monkeypatch)
+    sidecar = _pb_paths(asw, monkeypatch, tmp_path)
+    state_path = asw.AUTONOMOUS_REGISTRY_DIR / "partial-bundle-observer.json"
+    listings = {
+        55: [
+            "issue55_partial/att-d/crash_persist_transcript.log",
+            "issue55_partial/att-d/eval_results_issue_55/y.json",
+        ]
+    }
+    # Custom push spy: capture (msg, dry_run) so we can assert dry_run
+    # threads through, and reject any live-mode call under dry-run.
+    push_calls: list[tuple[str, bool]] = []
+
+    def _spy_push(msg, dry_run):
+        push_calls.append((msg, dry_run))
+        return False  # matches production dry_run-True return
+
+    _pb_stub_pass_deps(asw, monkeypatch, listings, {55: set()})
+    monkeypatch.setattr(asw, "_telegram_push", _spy_push)
+
+    assert asw.partial_bundle_pass(dry_run=True) is True
+    # Zero writes to the sidecar (the sidecar helper's `dry_run` branch
+    # prints instead of appending).
+    assert not sidecar.exists()
+    # Zero writes to the state singleton (same contract as sidecar).
+    assert not state_path.exists()
+    # Every push invocation carries dry_run=True — the production
+    # helper's `dry_run` branch prints "would telegram-push: …"
+    # instead of shelling out to notif_enqueue.
+    assert push_calls, "expected the pass to route pushes through _telegram_push"
+    assert all(dr is True for _msg, dr in push_calls), push_calls
+
+
+def test_partial_bundle_empty_prefix_no_alert(tmp_path, monkeypatch):
+    """Alternatives lens Phase-2 concern: a candidate issue with NO
+    ``issue<N>_partial/`` prefix on HF processes without alerting and
+    without erroring — the `list_hf_files_under_path` returns `[]`
+    contract (Assumption A2). The pass returns False with zero rows
+    and zero pushes."""
+    import autonomous_session_watch as asw
+
+    _pb_env(monkeypatch)
+    sidecar = _pb_paths(asw, monkeypatch, tmp_path)
+    pushed = _pb_stub_pass_deps(
+        asw,
+        monkeypatch,
+        {},
+        {},
+        candidates=[9001],  # Issue exists, no bundle.
+    )
+    assert asw.partial_bundle_pass(dry_run=False) is False
+    assert not sidecar.exists()
+    assert pushed == []
+
+
+def test_main_partial_bundle_only_flag(isolated_registry, monkeypatch):
+    """--partial-bundle-only runs JUST the new pass and exits (mirrors
+    ``test_main_completed_unmerged_only_flag``)."""
+    import autonomous_session_watch as asw
+
+    calls: list[str] = []
+    monkeypatch.setattr(asw, "partial_bundle_pass", lambda *a, **kw: calls.append("pb"))
+    monkeypatch.setattr(
+        asw,
+        "completed_unmerged_pass",
+        lambda *a, **kw: pytest.fail("ran another pass under --only"),
+    )
+    monkeypatch.setattr(
+        asw, "registry_drift_pass", lambda *a, **kw: pytest.fail("ran another pass under --only")
+    )
+    monkeypatch.setattr(
+        asw, "vm_disk_pass", lambda *a, **kw: pytest.fail("ran another pass under --only")
+    )
+    rc = asw.main(["--partial-bundle-only", "--dry-run"])
+    assert rc == 0
+    assert calls == ["pb"]
+
+
 # ─── Codex quota-outage alert pass (task #1691) ───────────────────────────────
 #
 # Predicate trace (plan §6): the audit sibling of the #1204 pre-spawn sentinel
