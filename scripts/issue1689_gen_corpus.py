@@ -218,4 +218,23 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    import os
+
+    rc = main()
+    # HF datasets/transformers/torch (203 C-extension modules on Qwen-2.5-7B
+    # environments) can SIGABRT / PyGILState_Release at interpreter finalize
+    # AFTER all writes complete — the exact class documented in
+    # .claude/rules/gotchas.md § "HF `datasets` / `transformers` subprocesses
+    # can exit `rc=134` (SIGABRT) with a `PyGILState_Release` fatal abort".
+    # Phase A crashed exactly this way on RunPod pod-1689 (2026-07-26): the
+    # corpus JSONL was written cleanly, then Python's shutdown race raised
+    # a fatal error, and dispatch.sh `set -euo pipefail` aborted the sweep.
+    # `os._exit` skips atexit handlers ONLY; the main() body above flushes
+    # writes via explicit fh.close() / atomic replace, so this bypass is
+    # safe for THIS driver. Do NOT copy-paste to code that relies on atexit
+    # for genuine work (checkpoint flushes, upload sentinels): the shutdown
+    # race is C-extension teardown, distinct from that guarantee, and the
+    # gotchas.md entry warns against this pattern as a general default.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(rc if isinstance(rc, int) else 0)
