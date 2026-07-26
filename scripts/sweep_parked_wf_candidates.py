@@ -96,6 +96,19 @@ entries; ``skipped_rows > len(skipped)`` is the truncation signal. Never a
 crash, never a silent drop. Exit code is 0 always — this is an enumerator,
 not a gate.
 
+Advisory: ``unmatched_record_fps`` (top-level list, #1703) — same-stream
+filed-record fingerprints that match NO enumerated candidate fingerprint
+on the same stream, one entry per (source, unique unmatched fp) as
+``{source, ref, fp}``. This is the DETECTOR for driver
+fingerprint-recomputation drift (the #1630 class): a routed-record
+carrying a real 12-hex fingerprint that matches no candidate fp is
+silent evidence the driver recomputed the fingerprint from
+abridged/synthesized text — the ts-claim fallback (#1680) correctly
+suppressed the park, so nothing else surfaces it. Advisory ONLY: never
+gates, suppresses, or re-enumerates anything; the ts-claim fallback
+remains the load-bearing suppression path. /daily Step C flags a
+non-empty list for investigation.
+
 Usage:
     uv run python scripts/sweep_parked_wf_candidates.py [--window-days 0]
         [--include-routed] [--tasks-root PATH] [--cache-file PATH]
@@ -182,6 +195,12 @@ _ISO_TS_TOKEN_RE = re.compile(
 # _row_kind's dual-key convention: events rows carry "kind", cache rows
 # "marker") so /daily can tell a malformed line of relevant kind from noise.
 _KIND_HINT_RE = re.compile(r'"(?:kind|marker)"\s*:\s*"([^"]+)"')
+# 12-hex fingerprint pattern (matches wf_fix_fingerprint(...)[:12]).
+# Used to extract a filed record's real fp for the unmatched_record_fps
+# advisory (#1703). Word-boundary bracketed so a 12-hex prefix of a
+# longer sha does NOT false-match.
+_FP_HEX_RE = re.compile(r"\b([0-9a-f]{12})\b")
+_FILED_FP_NOTE_RE = re.compile(r"(?:fingerprint:\s*|wf-fix-fp:)([0-9a-f]{12})\b")
 # Emit cap for the structured `skipped` list; `skipped_rows` keeps the TRUE
 # total (skipped_rows > len(skipped) == truncated). Defensive bound for the
 # /daily LLM consumer — the live tree carries ~1 skip.
@@ -420,6 +439,28 @@ def _filed_ref(record: dict) -> str:
     if filed:
         return str(filed) if str(filed).startswith("#") else f"#{filed}"
     return str(record.get("ts") or "")
+
+
+def _extract_filed_fp(record: dict) -> str | None:
+    """One 12-hex fingerprint from a filed record, or None (#1703).
+
+    Structured ``record["fingerprint"]`` key wins over note-embedded
+    values. Prose values (``n/a (prose park)``, ``n/a-fp``, empty string)
+    never yield a hit — the 12-hex word-boundary regex requires the exact
+    canonical shape ``wf_fix_fingerprint(...)[:12]`` produces.
+
+    Advisory use only: consumers must never gate on the return value.
+    """
+    raw = record.get("fingerprint")
+    if isinstance(raw, str):
+        m = _FP_HEX_RE.search(raw)
+        if m:
+            return m.group(1)
+    note = str(record.get("note") or "")
+    m = _FILED_FP_NOTE_RE.search(note)
+    if m:
+        return m.group(1)
+    return None
 
 
 def _load_task_bodies(tasks_root: Path) -> list[tuple[int, str, Path, str, dict]]:
@@ -675,6 +716,7 @@ def sweep(
 
     skips: list[dict] = []
     candidates: list[Candidate] = []
+    unmatched_record_fps: list[dict] = []
     now = datetime.now(UTC)
     cutoff = now - timedelta(days=window_days) if window_days > 0 else None
     bodies: list[tuple[int, str, Path, str, dict]] | None = None  # loaded lazily, ONCE
@@ -687,6 +729,7 @@ def sweep(
             rows.extend(path_rows)
             skips.extend(path_skips)
         filed = [(r, ts) for r, ts, _raw in rows if _row_kind(r).startswith(FILED_KIND_PREFIX)]
+        stream_candidate_start = len(candidates)
         for row, ts, ts_raw in rows:
             if not _row_kind(row).startswith(CANDIDATE_KIND_PREFIX):
                 continue
@@ -725,6 +768,39 @@ def sweep(
                 cand.open_wf_fix_on_file = _open_wf_fix_on_file(bodies or [], cand.target_file)
             candidates.append(cand)
 
+        # #1703 unmatched_record_fps advisory: enumerated candidate fps FOR
+        # THIS STREAM (fp-computable candidates only; fp-less prose parks
+        # contribute nothing to the enumerated set). Iterate filed records
+        # and record any real 12-hex fp that matches no enumerated candidate
+        # fp on this stream. This is the driver fingerprint-recomputation
+        # drift detector (#1630 class): the ts-claim fallback (#1680)
+        # correctly suppresses the park, but a recomputed fp is silent
+        # evidence the driver operated on abridged/synthesized origin text.
+        stream_enumerated_fps = {
+            c.fingerprint for c in candidates[stream_candidate_start:] if c.fingerprint is not None
+        }
+        # Track fps we've already emitted for THIS stream so a record-fp that
+        # appears in multiple filed records emits ONCE per stream (advisory
+        # dedup — the /daily consumer wants one investigation entry per
+        # drift, not one per repeated routed-record).
+        seen_unmatched: set[str] = set()
+        for record, _record_ts in filed:
+            rec_fp = _extract_filed_fp(record)
+            if rec_fp is None:
+                continue  # prose-park record / no extractable fp — nothing to detect
+            if rec_fp in stream_enumerated_fps:
+                continue  # matches an enumerated candidate on this stream — normal case
+            if rec_fp in seen_unmatched:
+                continue  # already listed this drift for the stream — dedup within stream
+            seen_unmatched.add(rec_fp)
+            unmatched_record_fps.append(
+                {
+                    "source": source,
+                    "ref": _filed_ref(record),
+                    "fp": rec_fp,
+                }
+            )
+
     candidates.sort(key=lambda c: (c.source, c.ts_raw))
     listed = candidates if include_routed else [c for c in candidates if not c.suppressed]
     return {
@@ -732,6 +808,7 @@ def sweep(
         "window_days": window_days,
         "skipped_rows": len(skips),  # KEPT: the TRUE total, output-compat (#1274 precedent)
         "skipped": skips[:_SKIPPED_EMIT_CAP],  # NEW (#1680): additive structured records
+        "unmatched_record_fps": unmatched_record_fps,  # NEW (#1703): additive advisory
         "candidates": [c.to_json() for c in listed],
     }
 

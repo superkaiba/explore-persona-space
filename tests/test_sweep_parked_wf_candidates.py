@@ -1418,3 +1418,158 @@ def test_issue1680_skipped_list_capped_total_preserved(tmp_path: Path) -> None:
     out = run_sweep(tmp_path)
     assert out["skipped_rows"] == n
     assert len(out["skipped"]) == spc._SKIPPED_EMIT_CAP
+
+
+# ── 18. unmatched_record_fps advisory (#1703) ──────────────────────────
+
+
+def test_unmatched_record_fp_emitted_when_fp_differs_from_candidate(tmp_path: Path) -> None:
+    """Filed record carries a real fp differing from the candidate's
+    enumerated fp AND names the candidate's ts (the #1630 drift shape):
+    the record still SUPPRESSES via the #1680 ts fallback, AND the
+    unmatched fp is recorded in the advisory for investigation."""
+    bug, change = "drift bug.", "drift change."
+    cand_fp = wf_fix_fingerprint(change, bug)
+    drift_fp = "abcdef012345"  # 12 hex, ≠ cand_fp
+    assert drift_fp != cand_fp
+    make_task(
+        tmp_path,
+        100,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", bug, change)),
+            filed_row(
+                T1,
+                f"filed_task: #200 / target_file: a/b.md / "
+                f"fingerprint: {drift_fp} / origin_candidate_ts: {T0}",
+            ),
+        ],
+    )
+    result = run_sweep(tmp_path, include_routed=True)
+    # Suppression semantics UNCHANGED — the ts fallback closes the park.
+    c = only(result)
+    assert c["suppressed"] is True
+    assert c["suppressed_by"]["kind"] == "same-stream-filed"
+    # NEW: the drift is surfaced in the advisory field.
+    assert result["unmatched_record_fps"] == [{"source": "task:100", "ref": "#200", "fp": drift_fp}]
+
+
+def test_unmatched_advisory_empty_when_all_fps_match(tmp_path: Path) -> None:
+    """Normal suppression case (test 3): filed fp EQUALS candidate fp.
+    Advisory is EMPTY — the field exists but no drift surfaced."""
+    bug, change = "bug one.", "change one."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(
+        tmp_path,
+        101,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", bug, change)),
+            filed_row(T1, f"filed_task: #201 / fingerprint: {fp}"),
+        ],
+    )
+    result = run_sweep(tmp_path, include_routed=True)
+    assert result["unmatched_record_fps"] == []
+    assert only(result)["suppressed"] is True  # semantics preserved
+
+
+def test_unmatched_advisory_ignores_prose_and_na_fp_records(tmp_path: Path) -> None:
+    """Fail-soft: a filed record with prose-only fp values (n/a, empty
+    string, missing entirely) contributes NOTHING to the advisory —
+    never raises."""
+    make_task(
+        tmp_path,
+        102,
+        "completed",
+        events=[
+            cand_row(T0, PROSE_NOTE),
+            filed_row(T1, "filed_task: #202 / fingerprint: n/a (prose park)"),
+            filed_row(T2, "filed_task: #203 / target_file: scripts/codex_task.py"),
+        ],
+    )
+    result = run_sweep(tmp_path, include_routed=True)
+    assert result["unmatched_record_fps"] == []
+
+
+def test_unmatched_advisory_dedupes_within_stream(tmp_path: Path) -> None:
+    """A drift fp appearing in TWO filed records on the same stream
+    emits ONCE (advisory dedup — one investigation entry per drift)."""
+    bug, change = "d bug.", "d change."
+    drift_fp = "cafebabe0011"
+    make_task(
+        tmp_path,
+        103,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", bug, change)),
+            filed_row(
+                T1,
+                f"filed_task: #301 / fingerprint: {drift_fp} / origin_candidate_ts: {T0}",
+            ),
+            filed_row(
+                T2,
+                f"filed_task: #302 / fingerprint: {drift_fp} / origin_candidate_ts: {T0}",
+            ),
+        ],
+    )
+    result = run_sweep(tmp_path, include_routed=True)
+    assert len(result["unmatched_record_fps"]) == 1
+    entry = result["unmatched_record_fps"][0]
+    assert entry["fp"] == drift_fp
+    assert entry["source"] == "task:103"
+
+
+def test_unmatched_advisory_isolates_across_streams(tmp_path: Path) -> None:
+    """A drift fp on task:X does not surface on task:Y's stream — the
+    advisory is per-source."""
+    bug_x, change_x = "x bug.", "x change."
+    bug_y, change_y = "y bug.", "y change."
+    fp_y = wf_fix_fingerprint(change_y, bug_y)  # matches y's candidate
+    drift_fp = "deadbeef0022"  # matches neither
+    make_task(
+        tmp_path,
+        104,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", bug_x, change_x)),
+            filed_row(
+                T1,
+                f"filed_task: #401 / fingerprint: {drift_fp} / origin_candidate_ts: {T0}",
+            ),
+        ],
+    )
+    make_task(
+        tmp_path,
+        105,
+        "completed",
+        events=[
+            cand_row(T0, block_note("c/d.md", bug_y, change_y)),
+            filed_row(T1, f"filed_task: #402 / fingerprint: {fp_y}"),
+        ],
+    )
+    result = run_sweep(tmp_path, include_routed=True)
+    # Only task:104 contributes to the advisory.
+    assert result["unmatched_record_fps"] == [{"source": "task:104", "ref": "#401", "fp": drift_fp}]
+
+
+def test_unmatched_advisory_extracts_from_structured_fingerprint_key(tmp_path: Path) -> None:
+    """A filed record carrying its fp under a STRUCTURED ``fingerprint``
+    key (not the note) still contributes to the advisory."""
+    bug, change = "s bug.", "s change."
+    drift_fp = "0123456789ab"
+    row = {
+        "ts": T1,
+        "kind": FILED_KIND,
+        "version": 1,
+        "by": "unknown",
+        "note": "filed_task: #501 (structured fp key)",
+        "fingerprint": drift_fp,
+    }
+    make_task(
+        tmp_path,
+        106,
+        "completed",
+        events=[cand_row(T0, block_note("e/f.md", bug, change)), row],
+    )
+    result = run_sweep(tmp_path, include_routed=True)
+    assert result["unmatched_record_fps"] == [{"source": "task:106", "ref": "#501", "fp": drift_fp}]
