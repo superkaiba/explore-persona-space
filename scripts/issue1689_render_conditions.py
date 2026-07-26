@@ -221,6 +221,38 @@ def render_condition(
     return row
 
 
+# Structural render-side validation. A rendered row is VALID for downstream
+# vLLM consumption iff at least one of these holds:
+#   - chat framing: `messages` present, non-empty, and each message has
+#     non-empty content.
+#   - naturalistic / story: `prompt_text` present and non-empty.
+# A row failing this is a broken render — Phase B / Phase C both crash on it
+# (vLLM raises `ValueError: The decoder prompt cannot be empty`), so we catch
+# it here at write time instead of one full pod cycle later.
+def validate_rendered_row(row: dict) -> tuple[bool, str]:
+    """Return (ok, reason). ok=True iff the row is downstream-usable."""
+    framing = row.get("framing")
+    if framing == "chat":
+        msgs = row.get("messages")
+        if not isinstance(msgs, list) or not msgs:
+            return False, "chat row missing/empty messages"
+        for m in msgs:
+            if not isinstance(m, dict):
+                return False, "chat row: non-dict message"
+            content = m.get("content", "")
+            if content is None or (isinstance(content, str) and content == ""):
+                # Note: an EMPTY user turn (u2="") is legal for the user-arm
+                # in naturalistic/story but NOT in chat (vLLM chokes on empty
+                # message content in the chat template render).
+                return False, f"chat row: empty content on role={m.get('role')!r}"
+        return True, "ok"
+    # naturalistic / story: rely on prompt_text
+    prompt_text = row.get("prompt_text", "")
+    if not prompt_text or not prompt_text.strip():
+        return False, f"{framing} row: empty prompt_text"
+    return True, "ok"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--in", dest="in_path", required=True, type=Path)
@@ -231,6 +263,16 @@ def main() -> int:
         help='Either "all" or a comma-separated list of condition slugs.',
     )
     ap.add_argument("--smoke", action="store_true")
+    ap.add_argument(
+        "--strict-validate",
+        action="store_true",
+        help=(
+            "Fail loud if ANY rendered row fails structural validation "
+            "(empty prompt_text on naturalistic/story, empty message "
+            "content on chat). Recommended for production; the smoke path "
+            "should stay lenient so a placeholder u2 does not abort."
+        ),
+    )
     args = ap.parse_args()
 
     args.out.mkdir(parents=True, exist_ok=True)
@@ -254,6 +296,7 @@ def main() -> int:
     # we need u2 (a real second-user turn) — the smoke corpus doesn't have
     # LMSYS turn-3, so we fall back to a placeholder to preserve the row.
     n_rendered = 0
+    validation_failures: list[dict] = []
     for cond in conditions:
         out_path = args.out / f"{cond.slug}.jsonl"
         with out_path.open("w") as fout:
@@ -265,9 +308,34 @@ def main() -> int:
                 else:
                     u2_text = conv.get("u2_lmsys", "Can you say a bit more about that?")
                 row = render_condition(conv, cond, u2_text=u2_text)
+                ok, reason = validate_rendered_row(row)
+                if not ok:
+                    validation_failures.append(
+                        {
+                            "conv_id": row.get("conv_id"),
+                            "condition": cond.slug,
+                            "framing": cond.framing,
+                            "reason": reason,
+                        }
+                    )
                 fout.write(json.dumps(row) + "\n")
                 n_rendered += 1
         print(f"[render] {cond.slug} -> {out_path} ({len(rows)} rows)", flush=True)
+
+    if validation_failures:
+        n_fail = len(validation_failures)
+        print(
+            f"[render] WARNING: {n_fail} rows failed structural validation "
+            f"(sample: {validation_failures[:3]!r})",
+            flush=True,
+        )
+        if args.strict_validate:
+            print(
+                f"[render] --strict-validate: FAILING because {n_fail} rows "
+                f"would crash vLLM at the decoder-prompt-empty check.",
+                flush=True,
+            )
+            return 2
 
     print(f"[render] done: {n_rendered} total rows across {len(conditions)} conditions")
     return 0
