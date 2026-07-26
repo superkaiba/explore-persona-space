@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1711,
+  "highest_id": 1712,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5537,6 +5537,13 @@
       "path": "tasks/proposed/1711",
       "status": "proposed",
       "title": "daily-fix: closed-sibling probe in /daily driver"
+    },
+    "1712": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1712",
+      "status": "proposed",
+      "title": "daily-fix: audit landed-but-unfolded rounds"
     },
     "172": {
       "has_clean_result": false,
