@@ -309,6 +309,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # group 2 — workflow-lint / yaml / fix-dedup
     "tests/test_workflow_lint.py",
     "tests/test_workflow_lint_dotenv_check.py",
+    # NEW (#1701) — workflow_lint --check-inline-round-duty-mirror + no-flags
+    # bundling + drift-detection semantics pin
+    "tests/test_workflow_lint_inline_round_duty_mirror.py",
     "tests/test_workflow_yaml.py",
     "tests/test_workflow_fix_dedup.py",
     "tests/test_workflow_hub_upload_as_file.py",
@@ -341,6 +344,13 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_daily_stub_first_doc.py",
     # NEW (#1645) — /daily SKILL.md three-route classifier prose pin (#706)
     "tests/test_daily_three_route_classifier_doc.py",
+    # NEW (#1699) — implementer spec pin: mechanical --map-files pin-sweep hit list
+    "tests/test_implementer_spec_mechanical_pin_sweep.py",
+    # NEW (#1699) — implementer spec pin: repo-wide invariants in local union on
+    # any scripts/*.py or src/** edit (#1681)
+    "tests/test_implementer_spec_names_invariant_local_union.py",
+    # NEW (#1699) — implementer spec pin: ruff-policy pin invocation in lint step (#1672)
+    "tests/test_implementer_spec_names_ruff_policy_pin.py",
     # NEW (#1659) — SKILL.md 9a-ter + CLAUDE.md measured 1-cell pilot +
     # >=2x pilot-extrapolated fence-sizing pin
     "tests/test_issue_skill_compute_pilot_fence_pin.py",
@@ -634,6 +644,18 @@ MAP_TIMEOUT_FLOOR_S = 600  # Step-10d TG-leg floor (#1646; was 300, basis the
 #                            residual load; 600 ~= 3x the measured healthy
 #                            small-map wall (#1634 run 2 passed, TG legs
 #                            174/174 on both trees).
+MAP_TIMEOUT_DISPERSION = 2.0  # p90 dispersion factor on the map path (#1697;
+#                               was implicit 1.0). Two independent same-day
+#                               sessions #1675/#1682 (2026-07-25) hit the
+#                               undersized-bound trap at 728.19s / 751.7s
+#                               measured walls against the 780s formula-derived
+#                               bound (~1.04-1.07x) and each hand-doubled to
+#                               1560s / 1600s to recover. Matches the p90 x2
+#                               default in .claude/rules/plan-compute-sizing.md
+#                               (#833's realized-vs-planned mean overrun of ~2x).
+#                               Applies ONLY on the --map-files path; the diff
+#                               path already carries the per-file SLOW_TESTS
+#                               surcharge (#1646, 1.40x-dispersion-adjusted).
 
 
 def dependency_map_pairs(files: list[str], work_root: Path) -> list[tuple[str, str]]:
@@ -795,19 +817,31 @@ def resolve_base(base: str, work_root: Path, *, fetch: bool = True) -> str:
     return branch
 
 
-def recommended_timeout_s(tests: list[str], *, floor: int = TIMEOUT_FLOOR_S) -> int:
+def recommended_timeout_s(
+    tests: list[str],
+    *,
+    floor: int = TIMEOUT_FLOOR_S,
+    dispersion: float = 1.0,
+) -> int:
     """Deterministic `timeout(1)` bound for a Step 9c gate selection.
 
-    ``BASE + PER_FILE * len(tests) + sum(slow surcharges)``, floored at
-    *floor* (default ``TIMEOUT_FLOOR_S`` — diff-path callers unchanged;
+    ``BASE + PER_FILE * len(tests)`` scaled by *dispersion*, then plus the
+    slow-file surcharges, floored at *floor*.
+    Default ``dispersion=1.0`` keeps the diff-path callers byte-identical;
+    ``--map-files`` mode passes ``dispersion=MAP_TIMEOUT_DISPERSION`` (2.0;
+    #1697) so a healthy leg's bound is ~2x its measured wall, not ~1x.
+    Slow-file surcharges are NOT re-scaled (they already encode a per-file
+    dispersion-adjusted headroom: #1646 pinned `tests/test_workflow_lint.py`
+    at 2400s = 1.40x its 1819s worst measured wall).
+    Default ``floor`` (``TIMEOUT_FLOOR_S``) keeps diff-path callers unchanged;
     ``--map-files`` mode passes ``floor=MAP_TIMEOUT_FLOOR_S``, the Step-10d
-    TG-leg 600 s floor, #1573/#1646). Invariant-only selection (61 files as
+    TG-leg 600 s floor (#1573/#1646). Invariant-only selection (61 files as
     of 2026-07-24, incl. the workflow-lint surcharge) -> 4350 s (72.5 min),
     matching the invariant-set-scale precedents (``step9c_baseline.py
     refresh`` ``--timeout-s`` default 4350 s; the SKILL.md detached
     refresh's 4650 s).
     """
-    t = TIMEOUT_BASE_S + TIMEOUT_PER_FILE_S * len(tests)
+    t = round(dispersion * (TIMEOUT_BASE_S + TIMEOUT_PER_FILE_S * len(tests)))
     t += sum(SLOW_TESTS.get(x, 0) for x in tests)
     return max(t, floor)
 
@@ -1680,7 +1714,11 @@ def main(argv: list[str] | None = None) -> int:
             # TG legs can size their pytest bound from the map (#1573; floor =
             # the pre-#1573 fixed 300 s TG-leg bound).
             k_tests = sorted({t for t, _f in all_pairs})
-            map_timeout = recommended_timeout_s(k_tests, floor=MAP_TIMEOUT_FLOOR_S)
+            map_timeout = recommended_timeout_s(
+                k_tests,
+                floor=MAP_TIMEOUT_FLOOR_S,
+                dispersion=MAP_TIMEOUT_DISPERSION,
+            )
             print(
                 f"select_step9c_tests: map-files — {len(all_pairs)} pairs, "
                 f"{len(k_tests)} tests; recommended-timeout-s={map_timeout}",

@@ -1764,7 +1764,7 @@ def test_map_files_sizing_line(tmp_path: Path, capsys):
     assert "recommended-timeout-s=600" in captured.err
     assert not any("\t" in line for line in captured.err.splitlines())
     assert len(captured.out.splitlines()) == 2
-    # 17 tests clear the floor: 120 + 17*30 = 630.
+    # 17 tests clear the floor: (120 + 17*30) * 2.0 dispersion = 1260 (#1697).
     repo17 = _make_import_tree(
         tmp_path / "seventeen",
         {
@@ -1775,7 +1775,7 @@ def test_map_files_sizing_line(tmp_path: Path, capsys):
     rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo17)])
     assert rc == 0
     captured = capsys.readouterr()
-    assert "recommended-timeout-s=630" in captured.err
+    assert "recommended-timeout-s=1260" in captured.err
     assert not any("\t" in line for line in captured.err.splitlines())
 
 
@@ -1791,6 +1791,52 @@ def test_recommended_timeout_s_floor_kwarg():
     expected = sel.TIMEOUT_BASE_S + 40 * sel.TIMEOUT_PER_FILE_S  # 1320 > both floors
     assert sel.recommended_timeout_s(forty, floor=sel.MAP_TIMEOUT_FLOOR_S) == expected
     assert sel.recommended_timeout_s(forty) == expected
+
+
+# --- Case 69-bis (#1697): --map-files dispersion factor ---------------------------
+def test_recommended_timeout_s_map_dispersion():
+    """The --map-files path applies MAP_TIMEOUT_DISPERSION=2.0 to base+per_file,
+    but NOT to the SLOW_TESTS surcharge; diff-path (default dispersion=1.0)
+    stays byte-identical. Ties to #1697 (the #1675/#1682 undersized-bound trap
+    at 780 s vs 728-752 s measured walls, ~1.04-1.07x)."""
+    assert sel.MAP_TIMEOUT_DISPERSION == 2.0
+
+    # The exact #1682/#1675 shape: 26 tests, no SLOW_TESTS members in the map.
+    # NOTE: tests/test_workflow_lint_x{i}.py filenames are NOT in SLOW_TESTS —
+    # only the exact `tests/test_workflow_lint.py` key matches (single-file
+    # per-key surcharge, not a glob-family), so these 26 synthetic tests
+    # contribute 0 surcharge and exercise the base+per_file*dispersion path
+    # cleanly.
+    twenty_six = [f"tests/test_workflow_lint_x{i}.py" for i in range(26)]
+    # Base+per_file only: 120 + 30*26 = 900. Times 2.0 dispersion = 1800.
+    assert (
+        sel.recommended_timeout_s(
+            twenty_six, floor=sel.MAP_TIMEOUT_FLOOR_S, dispersion=sel.MAP_TIMEOUT_DISPERSION
+        )
+        == 1800
+    )
+    # Diff-path default: dispersion=1.0, byte-identical to today's arithmetic.
+    assert sel.recommended_timeout_s(twenty_six) == 900
+
+    # SLOW_TESTS surcharge is NOT re-scaled by dispersion (already headroom'd).
+    with_wl = [*twenty_six, "tests/test_workflow_lint.py"]
+    # Dispersed base: (120 + 30*27) * 2 = 1860. Plus 2400 surcharge = 4260.
+    expected_map = (
+        round(sel.MAP_TIMEOUT_DISPERSION * (sel.TIMEOUT_BASE_S + 27 * sel.TIMEOUT_PER_FILE_S))
+        + sel.SLOW_TESTS["tests/test_workflow_lint.py"]
+    )
+    assert (
+        sel.recommended_timeout_s(
+            with_wl, floor=sel.MAP_TIMEOUT_FLOOR_S, dispersion=sel.MAP_TIMEOUT_DISPERSION
+        )
+        == expected_map
+    )
+    assert expected_map == 4260  # explicit sanity — 1860 + 2400
+
+    # Diff-path with SLOW_TESTS unchanged: 120 + 30*27 + 2400 = 4130.
+    assert sel.recommended_timeout_s(with_wl) == (
+        sel.TIMEOUT_BASE_S + 27 * sel.TIMEOUT_PER_FILE_S + 2400
+    )
 
 
 # --- Case 70: dependency_map_pairs unit — import + literal + stem union, sorted ----

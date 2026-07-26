@@ -5366,8 +5366,8 @@
     "1690": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1690",
-      "status": "reviewing",
+      "path": "tasks/completed/1690",
+      "status": "completed",
       "title": "daily-fix: verified-at-filing: 3 new probe clauses"
     },
     "1691": {
@@ -5422,15 +5422,15 @@
     "1698": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1698",
-      "status": "running",
+      "path": "tasks/completed/1698",
+      "status": "completed",
       "title": "daily-fix: RunPod launch-path branch/teardown contract"
     },
     "1699": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1699",
-      "status": "planning",
+      "path": "tasks/completed/1699",
+      "status": "completed",
       "title": "daily-fix: implementer pin-sweep + lint parity"
     },
     "17": {
@@ -5450,36 +5450,36 @@
     "1700": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1700",
-      "status": "planning",
+      "path": "tasks/completed/1700",
+      "status": "completed",
       "title": "daily-fix: verify_plan exempt-kind + commit-SHA check"
     },
     "1701": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1701",
-      "status": "proposed",
+      "path": "tasks/reviewing/1701",
+      "status": "reviewing",
       "title": "daily-fix: inline-round scientific duties"
     },
     "1702": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1702",
-      "status": "proposed",
+      "path": "tasks/approved/1702",
+      "status": "approved",
       "title": "daily-fix: thread --env-pin into Step 6b composition"
     },
     "1703": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1703",
-      "status": "proposed",
+      "path": "tasks/completed/1703",
+      "status": "completed",
       "title": "daily-fix: sweep emits unmatched_record_fps advisory"
     },
     "1704": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1704",
-      "status": "proposed",
+      "path": "tasks/running/1704",
+      "status": "running",
       "title": "daily-fix: reconcile crash bundles against git"
     },
     "1705": {
@@ -5513,8 +5513,8 @@
     "1709": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1709",
-      "status": "proposed",
+      "path": "tasks/running/1709",
+      "status": "running",
       "title": "daily-fix: SPECS syncs paired tests/test_guard_ files"
     },
     "171": {
