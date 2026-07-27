@@ -4982,8 +4982,9 @@ Gate handlers (one per registered `<name>`):
   v1` marker carries a ranked candidate table (one row per Wikipedia-
   stub fact passing the log-prob band filter, with `id` + summary
   + log-prob). The orchestrator reads the just-posted marker via
-  `task.py latest-marker <N> --kind epm:fact-candidates`, then branches
-  on session mode.
+  `task.py latest-marker <N> --prefix epm:fact-candidates`, then branches
+  on session mode. (The flag is `--prefix`; `latest-marker` has no
+  `--kind` option — see `task.py latest-marker --help`.)
 
   **Interactive mode** (`EPM_AUTONOMOUS_SESSION` unset/falsy): surface
   the table via `AskUserQuestion` <!-- gate: gates.fact_candidates --> and
