@@ -6705,7 +6705,11 @@ def _c38_repo_wide_cmd(line: str) -> str | None:
     workflow_lint arg tail; a ``.py`` path / ``::`` node id / ``-k``
     filter in the pytest tail; any non-``.`` path token in the ruff tail.
     Arm B (the "no-flags default run" phrase) is suppressed when the line
-    already carries a SCOPED workflow_lint invocation (commentary shape)."""
+    already carries a SCOPED workflow_lint invocation (commentary shape).
+    Pytest arm: the scoped test additionally re-scans the rest of the line
+    past the arg-tail terminator, so a scoping ``::`` node id / ``tests?/…py``
+    path / ``-k`` filter written inside backticks after the word "pytest"
+    does NOT read as unscoped."""
     saw_scoped_lint = False
     for m in _C38_LINT_OCC_RE.finditer(line):
         tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
@@ -6716,8 +6720,13 @@ def _c38_repo_wide_cmd(line: str) -> str | None:
     if not saw_scoped_lint and _C38_NOFLAGS_RUN_RE.search(line):
         return "the workflow_lint no-flags default run"
     for m in _C38_PYTEST_OCC_RE.finditer(line):
-        tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
-        if not _C38_PYTEST_SCOPED_RE.search(tail):
+        rest = line[m.end() :]
+        tail = _C38_TAIL_SPLIT_RE.split(rest, 1)[0]
+        # A scoping token (`::` node id, `tests?/…py` path, or `-k` filter)
+        # may live PAST a backtick that terminates the arg tail — the
+        # ordinary prose shape "Concrete pytest node id: `tests/x.py::y`".
+        # Widen to the rest-of-line so the tail split does not hide it.
+        if not _C38_PYTEST_SCOPED_RE.search(tail) and not _C38_PYTEST_SCOPED_RE.search(rest):
             return "pytest (no path scope)"
     for m in _C38_RUFF_OCC_RE.finditer(line):
         tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
@@ -6747,8 +6756,11 @@ def check_exit0_repo_wide_baseline(plan: str, kind: str) -> CheckResult:
     assertion vocabulary (endemic; partially c37's subject); an
     assertion sentence separated from its fenced command by ≥1 line;
     "full suite" with no literal pytest token. Disclosed over-trigger
-    residual: a prose pytest mention with a non-scoping tail on an
-    assertion-bearing line. Deliberate reading (disclosed,
+    residual (narrowed 2026-07-27 for #1729): a bare unscoped `pytest`
+    assertion whose only nearby scoping token is on an unrelated line.
+    (The backticked-node-id class — a scoping ``::`` / ``tests?/…py`` /
+    ``-k`` token past the arg-tail terminator on the SAME line — is now
+    handled by the pytest arm's rest-of-line rescan.) Deliberate reading (disclosed,
     fact-checker-confirmed correct): an EMPTY arg tail — bare
     `ruff check` / bare `pytest` plus an assertion word — classifies
     REPO-WIDE and WARNs (both default to cwd/repo-wide; `all([]) is

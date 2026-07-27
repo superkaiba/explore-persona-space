@@ -12,6 +12,7 @@ tests/test_check_mcp_json_no_secrets.py
 tests/test_check_no_secret_shaped_strings.py
 tests/test_clean_result_critic_planned_vs_actual.py
 tests/test_code_reviewer_phase_idempotency_gate.py
+tests/test_consistency_checker_parentless_infra_skip.py
 tests/test_daily_skill_commit_pathspec_pin.py
 tests/test_daily_stub_first_doc.py
 tests/test_daily_three_route_classifier_doc.py

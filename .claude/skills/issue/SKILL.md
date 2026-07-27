@@ -1764,6 +1764,23 @@ be folded in BEFORE posting the plan as `epm:plan`. It receives:
 - The `epm:plan` and `epm:results` markers from those related tasks
   (read via `task.py latest-marker` + `task.py view --json`)
 
+**Skipped branch (parentless non-experiment, added #1732).** When the
+invoking task is `kind: infra | batch | survey` with no `parent_id`
+AND no unrun `epm:followup-scope v1` marker on this issue, the
+`consistency-checker` spawn is SKIPPED entirely (no experimental recipe
+for the five checks below to bind to; see
+`.claude/agents/consistency-checker.md` § Rules). The orchestrator
+posts the marker VM-side —
+`uv run python scripts/task.py post-marker <N> epm:consistency --note '<PASS-skipped body>'` —
+where the note body is an `<!-- epm:consistency v1 -->` block with
+`**Verdict: PASS**` whose first line reads
+`Skipped: kind:<X>, no parent experiment` (X = the actual `kind`:
+`infra`, `batch`, or `survey`) and whose rows read
+`N/A — <reason>`. The plan-approval gate then proceeds as if PASS.
+`kind: experiment` with no parent runs the checker against the standard
+baseline (Qwen-2.5-7B + standard eval suite) as today; same-issue
+follow-ups still diff against the issue's own prior run.
+
 The consistency checker verifies:
 
 | Check | Violation action |

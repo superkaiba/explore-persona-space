@@ -505,6 +505,22 @@ stay exactly as `/issue` Step 2b defines them — only the scheduling
 moved. Standalone `/adversarial-planner` invocations (no task context)
 skip it.
 
+**Parentless non-experiment precondition (added #1732).** SKIP the
+`consistency-checker` spawn entirely when the invoking task is
+`kind: infra | batch | survey` with no `parent_id` AND no unrun
+`epm:followup-scope v1` marker on the task — this shape carries no
+experimental recipe for the checker's five checks to bind to
+(`.claude/agents/consistency-checker.md` § Rules). The orchestrator
+(from `/issue` Step 2b Skipped branch) posts an
+`<!-- epm:consistency v1 -->` marker with `**Verdict: PASS**` whose
+first line reads `Skipped: kind:<X>, no parent experiment` (X = the
+actual `kind`) and whose per-check rows read `N/A — <reason>`, so the
+marker channel that answers "did the gate run?" is populated on both
+branches. `kind: experiment` with no parent keeps the standard-baseline
+RAN behavior; same-issue follow-ups (`epm:followup-scope v1`) still diff
+against the issue's own prior run. Standalone `/adversarial-planner`
+invocations (no task context) skip the checker as before.
+
 **Canonical-rubric anchor — REQUIRED in every Claude critic brief, default
 or adapted (#1282).** Each of the three lens templates below carries a
 `Canonical rubric:` line naming `.claude/rules/critic-lens-reference.md`
@@ -829,7 +845,24 @@ a_codex  = Agent(subagent_type="codex-critic", prompt="lens=alternatives\nplan_b
 # When invoked from /issue Step 2, ALSO add the consistency-checker to
 # this same parallel batch (7th spawn; BLOCK findings union into the
 # Phase 3 revise round — see /issue Step 2b for verdict semantics):
-c_check  = Agent(subagent_type="consistency-checker", prompt="Plan + related-task markers per /issue Step 2b:\n\n{corrected_plan}", run_in_background=True)
+# 4-pre-cc. Parentless-non-experiment pre-check (#1732):
+#    when the invoking task (from /issue Step 2) is
+#    kind: infra|batch|survey with no parent_id AND no unrun
+#    epm:followup-scope v1 marker, SKIP the c_check spawn below; the
+#    orchestrator posts the `epm:consistency v1` PASS-skipped marker
+#    directly (see /issue Step 2b's Skipped branch), and Phase 3
+#    proceeds as if PASS.
+task_kind = ...       # read from the task's frontmatter (kind:)
+task_parent_id = ...  # read from the task's frontmatter (parent_id:)
+has_followup_scope = ...  # scan events for an unrun epm:followup-scope v1
+if (invoked_from_issue
+        and task_kind in {"infra", "batch", "survey"}
+        and task_parent_id is None
+        and not has_followup_scope):
+    # Do NOT spawn; orchestrator posts the marker at /issue Step 2b.
+    c_check = None
+else:
+    c_check  = Agent(subagent_type="consistency-checker", prompt="Plan + related-task markers per /issue Step 2b:\n\n{corrected_plan}", run_in_background=True)
 # Wait for all spawns to complete.
 
 # 4b. Pick up each codex-critic's dispatch config and bg-dispatch
@@ -943,7 +976,7 @@ review = Agent(subagent_type="reviewer", prompt="Verify this implementation matc
 | Critic — Statistics (Codex) | `codex-critic` | Thin Claude wrapper → Codex gpt-5.5. Measurement lens. |
 | Critic — Alternatives (Claude) | `critic` | Read-only + Bash. Fresh context, alternatives lens. |
 | Critic — Alternatives (Codex) | `codex-critic` | Thin Claude wrapper → Codex gpt-5.5. Alternatives lens. |
-| Consistency-checker (∥ critics, /issue-invoked only) | `consistency-checker` | Same Phase-2 spawn batch; needs only the corrected plan + parent recipe. BLOCK findings union into Phase 3 revise (verdict semantics per /issue Step 2b). |
+| Consistency-checker (∥ critics, /issue-invoked only) | `consistency-checker` | Same Phase-2 spawn batch; needs only the corrected plan + parent recipe. BLOCK findings union into Phase 3 revise (verdict semantics per /issue Step 2b). SKIPPED for parentless `kind: infra | batch | survey` (no unrun `epm:followup-scope v1`); orchestrator posts a PASS-skipped `epm:consistency v1` marker naming the reason (#1732). |
 | Codex bg-dispatch (×3, one per lens) | Manager (inline) | Bg-Bash `uv run python scripts/codex_task.py --prompt-file <prompt> --output-file <output> --effort high` for each codex-critic dispatch config returned in Step 4. WITHOUT this step, codex_out[lens] holds the dispatch-config text and the ensemble silently drops to single-Claude per lens. Subagents cannot bg-dispatch (no notification listener after they exit). |
 | Per-lens reconcile (on disagreement) | `reconciler` | In-context mode; reads both verdicts + plan, prints binding verdict to stdout. |
 | Cross-lens merge | Manager (inline) | Manager merges 3 lens verdicts after reconciliation: worst verdict wins, concatenate critique bodies with lens labels. |
