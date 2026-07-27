@@ -333,5 +333,24 @@ Post as `<!-- epm:consistency v1 -->` marker:
   toward it.
 - If the experiment has no parent (first in a new direction), check against the
   project's standard baseline (Qwen-2.5-7B, standard eval suite).
+- **Parentless non-experiment (`kind: infra | batch | survey` with no
+  `parent_id` AND no unrun `epm:followup-scope v1` marker on the task):**
+  SKIP the consistency check — this task shape carries no experimental
+  recipe (no base model, no eval suite, no seeds, no data version) for
+  the five checks above to bind to. Record the SKIP by posting an
+  `<!-- epm:consistency v1 -->` marker with `**Verdict: PASS**` whose
+  first line reads `Skipped: kind:<X>, no parent experiment` (X = the
+  actual `kind`: `infra`, `batch`, or `survey`) and whose per-check rows
+  read `N/A — kind:<X>, no parent experiment` (no recipe to grade). The
+  plan-approval gate proceeds as if PASS. Same-issue follow-ups
+  (`epm:followup-scope v1`) still diff against the issue's own prior run
+  per § "Same-issue follow-ups" above — the SKIP applies only when there
+  is no parent AND no prior-run baseline. `kind: experiment` with no
+  parent keeps the standard-baseline behavior above (Qwen-2.5-7B +
+  standard eval suite). (Added by task #1732 — the #1697 vs #1711
+  divergence, where two parentless `kind: infra` workflow-fix tasks
+  received different treatments: #1697 spawned the checker and it
+  returned a PASS with all-"N/A" rows; #1711 skipped the checker via an
+  ad-hoc orchestrator note and posted no `epm:consistency` marker.)
 - Fresh context: you must not see the planner's reasoning about why changes were made.
   Judge only from the plan text and the prior experiment records.
