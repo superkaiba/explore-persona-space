@@ -5,6 +5,7 @@
 # Register a new pin test by adding one line at its sorted position (plus the
 # tuple entry) — never edit an existing line.
 tests/test_adhoc_summary_disclosure_pins.py
+tests/test_adversarial_planner_warn_disposition.py
 tests/test_autonomous_plan_gate.py
 tests/test_autonomous_session_watch.py
 tests/test_check_mcp_json_no_secrets.py
@@ -39,6 +40,7 @@ tests/test_issue_skill_merge_resnapshot_pin.py
 tests/test_issue_skill_orchestrator_turn_discipline_pointer.py
 tests/test_issue_skill_staged_index_verification.py
 tests/test_issue_skill_step10_teardown_ordering.py
+tests/test_issue_skill_step2_floor.py
 tests/test_issue_skill_stopped_volume_persist_pin.py
 tests/test_issue_skill_trigger_dense_tag_adoption.py
 tests/test_issue_skill_width_reeval_pointer.py

@@ -1610,6 +1610,50 @@ Invoke the `adversarial-planner` skill with the task body + clarifier
 output as the task. The skill runs planner -> fact-checker -> critic
 -> revise internally.
 
+**Minimum plan-review floor (binds even on `kind: infra` workflow-surface edits).**
+The CLAUDE.md "Every new experiment MUST go through `/adversarial-planner`" bullet
+carries a `"re-runs with different seeds, monitoring, syncing, bug fixes, or
+explicit override skip it"` carve-out; that carve-out does NOT reach `kind: infra`
+workflow-fix tasks (`wf-fix` tag OR title prefix in `WF_FIX_TITLE_PREFIXES` —
+`workflow-fix:` / `daily-fix:` — `task_workflow.is_workflow_fix_session`). Even a
+1-line prose edit runs, at minimum:
+
+1. **Persist a plan version** via `uv run python scripts/task.py new-plan-version <N>` —
+   plans are `tasks/<status>/<N>/plans/v{K}.md`, never `Write`-authored in-place
+   (a `Write`-authored plan is invisible to `verify_plan.py --issue <N>` and to
+   the dashboard). The plan may be a two-file prose edit's shape; it just has to
+   exist as a versioned artifact.
+2. **Run `verify_plan.py` and post `epm:plan-verify`** — the mechanical
+   pre-pass (seconds, no agent spawn) per `adversarial-planner` SKILL.md
+   § Phase 1.5.0. The marker records `verdict / n_fail / n_warn / failed check
+   ids / plan version`; without it there is no durable proof the pre-pass ran.
+3. **Spawn at minimum ONE Claude `critic`** (Methodology lens is the usual
+   choice on a workflow-surface edit; Alternatives is the second candidate).
+   Codex-only is not sufficient — the `code-reviewer` ensemble at Step 5
+   already runs Claude+Codex on the diff, so the plan-review stage adds
+   Claude by default; a Codex-only round can be added on top when the plan
+   is trigger-dense. #1692's single critic returned REVISE with two Must-Fix
+   findings on a same-class task; one critic is not nothing.
+
+The floor is a MINIMUM — sessions that judge the full stack proportionate
+(fact-checker + full 6-critic ensemble + consistency-checker) are unaffected.
+The floor is what stops the floor from sinking to zero.
+
+**Same-issue follow-up rounds inherit the floor** (`followups_running`, Step 9b) —
+the same three legs bind on every follow-up round's plan revision. The cheap-band
+auto-run (`0 < est_gpu_hours < 20`) does not bypass the floor.
+
+**Recorded-skip contract.** Any leg SKIPPED below the full stack (fact-checker,
+consistency-checker, additional critic lenses) is recorded in the `epm:plan`
+note with a one-line reason, in the shape #1709 used:
+
+> `"Bug-fix category (CLAUDE.md /adversarial-planner carve-out) — direct plan drafted for a 1-line SPECS widen + a 1-line pin-test update; no critic ensemble needed for a data-widen with pre-existing coverage."`
+
+The recorded reason is auditable rather than invisible. The three floor legs
+above are NEVER a recorded-skip candidate — a skip below the floor is a
+substantive bug, not an audit entry. Recording the skip is the orchestrator's
+duty (the same post that already carries `gpu_hours_total=<X>` per L1690).
+
 **Required sections in the final plan (enforced by this skill — reject
 plans missing any):**
 - Goal + hypothesis (experiments) or requirement + acceptance criteria (code changes)
