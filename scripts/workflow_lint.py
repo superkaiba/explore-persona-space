@@ -11888,9 +11888,13 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 120,709 B post-#1693 (Step 0.69 phase-idempotency +
-    # inter-phase-contract gate — plan-mandated growth atop #1692's
-    # Step 0.55 SHAPE-check binding; cap = measured + ~0.6 KB. Prior:
+    # measured 121,782 B post-#1726 (Step 3.6 T2 count trigger + 3-part
+    # Check incl. per-unit progress-line item 3 + verdict-routing rewrite
+    # — plan-mandated growth atop #1693's Step 0.69 gate; cap = measured
+    # + ~0.6 KB. Prior:
+    # 121,300 — measured 120,709 B post-#1693 (Step 0.69 phase-idempotency
+    # + inter-phase-contract gate — plan-mandated growth atop #1692's
+    # Step 0.55 SHAPE-check binding),
     # 112,500 — measured 112,177 B post-#1692 (Step 0.55 SHAPE-check
     # binding: per-arm attestation-row consistency + import-resolution
     # three-shape gate for the smoke-architecture-check marker),
@@ -11903,7 +11907,7 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # observed-vs-null reads), 99,000 — measured 98,126 B post-#1230 (Step 6
     # durability-pin shipping duty), 97,000 — measured 96,072 B post-#1119,
     # 95,000 — measured 94,126 B post-#1115)
-    "code-reviewer.md": 121_300,
+    "code-reviewer.md": 122_400,
     # measured 74,082 B post-#1447 (family-enumeration sync: the two
     # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
     # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
@@ -11937,7 +11941,10 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # post-#1384 (per-arm-class smoke-coverage clause), 67,900 — measured
     # 67,472 B post-#1363, 67,400 — measured 66,574 B post-#1349,
     # 66,300 — measured 65,548 B post-#1311)
-    "experiment-implementer.md": 79_500,
+    "experiment-implementer.md": 80_500,
+    # measured 79,611 B post-#1720 (§ Local runs pre-emptive NOT-RUN escape
+    # for Step 9c-selected slow tests — mirrors implementer.md L174; ~500 B
+    # growth; cap = measured + ~0.9 KB. Prior: 79_500 —
     # measured 74,867 B post-#1702 (Responsibility 2 --env-pin composition
     # sub-bullet threading --env-pin KEY=VALUE on --workload-cmd launches,
     # #1669 channel merge + #1586 wedge-failover WandB incident — plan-

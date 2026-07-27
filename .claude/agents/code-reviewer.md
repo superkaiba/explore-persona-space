@@ -1270,7 +1270,12 @@ re-derivation is the PREFERRED sizing input over §9 prose — a fabricated §9 
 exactly what defeated the sizing at #823), or a trivial count × per-call estimate you
 can form from the diff; a loop of more than ~500 serial calls of a non-trivial kernel
 is presumed >~1h absent measured evidence otherwise (the
-`.claude/rules/plan-compute-sizing.md` many-call floor). EXTERNAL-STREAM presumption: a
+`.claude/rules/plan-compute-sizing.md` many-call floor). **COUNT-based trigger (T2).** A loop over more than ~50 independent units
+ALSO trips this step regardless of projected wall-time — the count is
+readable straight off the diff, so a loop whose sizing is absent or wrong
+inherits the durability obligation from the count alone (#1689: 126 pairs
+× 2 arms = 252 units, §9 never sized the phase against T1). T1 and T2 are
+OR'd; either fires the requirement. EXTERNAL-STREAM presumption: a
 loop consuming an external streaming source (HF `datasets` `streaming=True`, API
 pagination, web harvest, S3/HTTP row iteration) is presumed >~1h REGARDLESS of per-row
 kernel triviality when the scanned-row count exceeds ~10^4, is unknowable in advance (a
@@ -1291,7 +1296,7 @@ long analysis loop is as restart-prone as an experiment dispatcher). No such loo
 the diff → record `Step 3.6: N/A — no >~1h loop in the diff` in the verdict body and
 proceed.
 
-**Check — verify BOTH by READING the loop (a grep hit alone is insufficient):**
+**Check — verify ALL THREE by READING the loop (a grep hit alone is insufficient):**
 
 1. **Per-unit persistence:** each completed unit's result is durably written when it
    completes — atomic JSONL append or per-unit files + a done-sentinel — NOT accumulated
@@ -1299,11 +1304,20 @@ proceed.
 2. **Resume predicate:** at entry the script loads existing partial results and SKIPS
    completed units, keyed on every output-affecting regime key (a resume that ignores an
    output-affecting flag silently reuses wrong cached rows and mislabels output — #722 r3).
+3. **Per-unit progress line:** the loop emits one stdout line per completed
+   unit carrying at minimum the unit index/total, a stable unit key, and
+   elapsed seconds (canonical shape `[<phase>] unit k/N <key> elapsed=<s>s`,
+   flushed). A loop whose only observable is process liveness is a wedge to
+   every poller and to the reviewer — see #1689's 5 h 14 m of zero log output
+   after `[phase=fit_ladder]`, five consecutive poll ticks and two rounds of
+   `/proc` forensics spent proving `run_all_pairs` was computing rather than
+   deadlocked. The `.claude/rules/code-style.md` § Checkpoint-per-phase
+   intra-phase clause is the surface rule.
 
 **Verdict routing:**
 
-- BOTH present → note which mechanism satisfied it and proceed.
-- Either missing, with NO plan-stated justification → **Major** finding, blocker tag
+- ALL THREE present → note which mechanisms satisfied them and proceed.
+- Any of the three missing, with NO plan-stated justification → **Major** finding, blocker tag
   `substantive` when it drives a FAIL. This is a SUBSTANTIVE finding, NOT a mechanical
   gate — the SKILL.md Step 5c-bis strip list is limited to `marker-shape` /
   `smoke-run-missing` / `git-provenance`, so it stands until the implementer adds the
