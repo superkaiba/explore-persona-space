@@ -51,8 +51,13 @@ def test_step10d_gate_single_flight_hook_present_and_precedes_launch():
 
 def test_step10d_surgical_single_flight_hook_present():
     text = _text()
-    probe = "pgrep -af 'issue-<N>-surgical-outcome[.]txt|scripts/workflow_lint[.]py'"
+    # Issue-scoped alternate (task #1719): the fleet-wide `scripts/workflow_lint[.]py`
+    # alternate was replaced with the `issue-<N>-lint-gate-tre[e]` shape used at
+    # L10418/L10792, so a sibling session's root lint cannot phantom-match.
+    probe = "pgrep -af 'issue-<N>-surgical-outcome[.]txt|issue-<N>-lint-gate-tre[e]'"
     assert probe in text
+    # Regression: the previous fleet-wide alternate must not creep back in.
+    assert "pgrep -af 'issue-<N>-surgical-outcome[.]txt|scripts/workflow_lint[.]py'" not in text
     assert text.index(probe) < text.index("rm -f /tmp/issue-<N>-surgical-outcome.txt")
 
 
