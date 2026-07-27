@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1715,
+  "highest_id": 1716,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5565,6 +5565,13 @@
       "path": "tasks/proposed/1715",
       "status": "proposed",
       "title": "daily-fix: draft-PR recipe uses stale local main and omits -"
+    },
+    "1716": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1716",
+      "status": "proposed",
+      "title": "daily-fix: code-reviewer has no full-ruleset ruff policy-pin"
     },
     "172": {
       "has_clean_result": false,
