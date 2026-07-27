@@ -32,7 +32,7 @@ Read:
 Useful commands:
 
 ```bash
-export PATH="$HOME/.local/bin:$PATH"   # uv lives in ~/.local/bin; non-login (cron) shells miss it
+export PATH="$HOME/.local/bin:/snap/bin:$PATH"   # uv lives in ~/.local/bin; gcloud lives in /snap/bin; non-login (cron) shells miss both
 uv run python scripts/task.py list-by-status --limit 500
 uv run python scripts/task.py list-by-status --status running --limit 100
 uv run python scripts/task.py list-by-status --status uploading --limit 100
@@ -643,7 +643,7 @@ is fine, dropping is not.
 `workflow_lint.py` is a **repo-wide** validator, not a per-file `.md` linter (its `--file` flag only points at `workflow.yaml`; passing an `.md` path makes it try to parse that file AS workflow.yaml and falsely fail). So do NOT run it "per touched file". Instead, after ALL bucket-1 fixes are committed, run it ONCE for the whole repo:
 
 ```bash
-export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:/snap/bin:$PATH"
 uv run python scripts/workflow_lint.py --check-references
 ```
 
