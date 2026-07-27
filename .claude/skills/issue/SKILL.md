@@ -2250,9 +2250,49 @@ WT=$(git rev-parse --show-toplevel)
 # per-file branch-side-edit guard's skip grain is PER-ITEM: a branch editing
 # ONE pin test skips the whole `:(glob)` family entry (fail-safe — status-quo
 # staleness for those files, never a clobber).
-SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py"
+# Step 5a family-atomic sync (#1714 — supersedes #1560's per-item skip
+# for coupled specs, while preserving the fail-safe direction: any dirty
+# member widens the skip to the whole family, never narrows it into a
+# clobber; #535).
+#
+# 3 coupled families exist in SPECS:
+#   FAMILY_workflow: .claude/workflow.yaml <-> .claude/skills/markers.md
+#     (markers.md's marker-kinds + active-statuses tables are GENERATED
+#     from workflow.yaml via `workflow_lint.py --emit-tables`; syncing
+#     one without the other creates a stale-derived tree — the 0e2c3b21
+#     incident, 2026-07-26)
+#   FAMILY_lint: scripts/workflow_lint.py <-> :(glob)tests/test_workflow_lint*.py
+#     plus tests/test_workflow_yaml.py and tests/test_autonomous_session_watch.py
+#     (pin tests import symbols from workflow_lint.py; syncing new pin
+#     tests against a stale linter is a collection ImportError — the
+#     2de5253e incident, 2026-07-26)
+#   FAMILY_guard: .claude/hooks <-> :(glob)tests/test_guard_*.py
+#                                <-> tests/test_guard_lessons_edit.py
+#     (guard tests exercise the hook implementations; syncing tests
+#     against stale hooks fails behaviorally)
+#
+# Everything else in SPECS is a singleton (its own family, no coupling):
+# .claude/agents, .claude/rules, CLAUDE.md.
+declare -A FAMILY_OF
+FAMILY_OF[".claude/workflow.yaml"]="workflow"
+FAMILY_OF[".claude/skills"]="workflow"    # contains markers.md, the derived table target
+FAMILY_OF["tests/test_workflow_yaml.py"]="workflow"    # imports render_*_table from workflow_lint AND reads workflow.yaml data via load_workflow_yaml — a workflow-data behavioral test
+FAMILY_OF["scripts/workflow_lint.py"]="lint"
+FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"
+FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"    # test_codex_outage_docstring_pass_count_lint_stays_green imports check_asw_docstring_pass_count from workflow_lint
+FAMILY_OF[".claude/hooks"]="guard"
+FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
+FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
+# Singletons: .claude/agents, .claude/rules, CLAUDE.md — each is its
+# own family key (set below in the pass-1 loop by defaulting to its own path).
+
+SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py"
 MB=$(git -C "$WT" merge-base HEAD main)
-SAFE_SPECS=""
+
+# Pass 1: detect dirty family keys. A family is DIRTY if ANY member has
+# branch-side commits (subject-scoped exclusion for prior spec-freshness
+# commits, as in #1560).
+declare -A DIRTY_FAMILIES
 for f in $SPECS; do
   # Branch-side feature edits = commits since merge-base touching $f,
   # EXCLUDING prior spec-freshness sync commits (which legitimately
@@ -2260,9 +2300,9 @@ for f in $SPECS; do
   # commit would poison every later freshness check on the branch).
   bs_commits=$(git -C "$WT" log --format='%H %s' "$MB"..HEAD -- "$f" \
     | awk 'index($0, "spec-freshness") == 0')
-  if [ -z "$bs_commits" ]; then
-    SAFE_SPECS="$SAFE_SPECS $f"
-  else
+  if [ -n "$bs_commits" ]; then
+    fam="${FAMILY_OF[$f]:-$f}"    # default: singleton family = own path
+    DIRTY_FAMILIES[$fam]=1
     # Print the offending commits so the orchestrator can decide whether
     # to reconcile (cherry-pick main's drift on top of the branch edits)
     # or whether the branch-side touch is a global revert/port that has
@@ -2273,15 +2313,36 @@ for f in $SPECS; do
     # main's current state). Without these commit titles printed, the
     # operator cannot tell a legitimate branch deliverable (#535
     # incident) from a stale port/revert that needs no protection.
-    echo "spec-freshness: $f carries branch-side feature edits — skipping blind sync; reconcile manually."
+    echo "spec-freshness: $f carries branch-side feature edits — marking family '$fam' dirty; skipping blind sync for the whole family; reconcile manually."
     echo "  branch-side commits:"
     echo "$bs_commits" | sed 's/^/    /'
   fi
 done
+
+# Pass 2: filter SAFE_SPECS to items in a NON-dirty family.
+SAFE_SPECS=""
+for f in $SPECS; do
+  fam="${FAMILY_OF[$f]:-$f}"
+  if [ -z "${DIRTY_FAMILIES[$fam]}" ]; then
+    SAFE_SPECS="$SAFE_SPECS $f"
+  fi
+  # else: skipped by family transitivity (message already printed in pass 1
+  # for the offending member; skipped-siblings are covered by the family
+  # membership declared above)
+done
+
 if [ -n "$SAFE_SPECS" ] && ! git -C "$WT" diff --quiet main -- $SAFE_SPECS; then
   git -C "$WT" checkout main -- $SAFE_SPECS    # surgical refresh: workflow surface only
   git -C "$WT" diff --quiet HEAD -- $SAFE_SPECS || \
     git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from main (spec-freshness)" -- $SAFE_SPECS
+fi
+# Observability echo (Decision 4, #1714): show the operator what changed at a
+# glance. This is NOT a gate — family-atomic skip + git checkout's own semantics
+# handle the 139-line-revert prevention (see plan §4.1 Decision 4 for the full
+# rationale).
+if [ -n "$SAFE_SPECS" ]; then
+  echo "[step5a] synced from main:"
+  git -C "$WT" diff --stat HEAD^ HEAD -- $SAFE_SPECS 2>/dev/null || echo "  (no commit — no drift)"
 fi
 ```
 
@@ -2323,7 +2384,17 @@ imports are from the low-churn `explore_persona_space.workflow` module
 residual: a synced family file ImportError-ing on that module means
 branch-era `src/explore_persona_space/workflow.py` skew (rebase onto
 origin/main, or cross-check at the repo root; module stable since
-2026-06-13). Everything ELSE keeps the original rationale: workflow-
+2026-06-13). Family atomicity (#1714): within the spec-coupled
+lint/guard family, the per-item branch-side-edit skip is transitive —
+a branch-side edit on ANY family member widens the skip to the WHOLE
+family (never narrows it). Three families are declared: workflow
+(`.claude/workflow.yaml` + `.claude/skills` where the derived
+`markers.md` and SKILL.md generated tables live), lint
+(`scripts/workflow_lint.py` + `:(glob)tests/test_workflow_lint*.py`
+plus the explicit importers `tests/test_workflow_yaml.py` and
+`tests/test_autonomous_session_watch.py`), and guard (`.claude/hooks`
++ `:(glob)tests/test_guard_*.py` + `tests/test_guard_lessons_edit.py`).
+Everything else in SPECS is a singleton (its own family). Everything ELSE keeps the original rationale: workflow-
 helper SCRIPTS are already resolved from the MAIN checkout (Step 0
 § worktree spec-freshness: `"$REPO_ROOT"/scripts/...`), and blind-
 syncing broader `tests/` is actively unsafe — main's newer workflow
@@ -10312,43 +10383,6 @@ tests BEFORE anything lands:
   `ood_eval_results/`, `raw/`, `data/`, `docs/methodology/`). The lint's
   no-flags default run walks `.claude/**`, `CLAUDE.md`, `scripts/`, and
   `src/`, so any code-bearing payload is in scope.
-- **Pre-gate freshness re-sync (#1560; forms (i)/(ii) — form (iii) operates
-  on the root tree and is exempt).** Step 5a syncs fire at fan-out time, so
-  a branch merged hours later can carry stale spec + lint/guard-family
-  copies that would land regressive content on trunk (a rebase replays the
-  morning copies over evening main) and red the gate (#1489 blockers 1 AND
-  2; #1482; #1417). BEFORE launching the background gate call, run the
-  Step 5a spec-freshness block (§ Step 5a) ONCE with source `origin/main` —
-  **against the ALREADY-BOUND `$WT`**: the merge flow bound
-  `WT="$REPO_ROOT/.claude/worktrees/issue-<N>"` in the guards block, so
-  DROP the Step 5a block's own `WT=$(git rev-parse --show-toplevel)` line —
-  do NOT re-derive `$WT` at Step 10d (a repo-root cwd would rebind it to
-  the SHARED ROOT and either silently no-op the re-sync or check out +
-  commit older origin/main content over newer root-main state). Then: first
-  `timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet || true`,
-  then the rest of the block with every `main` ref replaced by
-  `origin/main`. Same per-file branch-side-edit guard, subject-scoped per
-  the Step 5a block (a branch whose deliverable edits a family file keeps
-  its copies — the gate's #1456 3-way merge covers its lint legs, and its
-  TG legs then run the branch's kept copies plus any main-new synced pin
-  tests: a fail-closed hybrid that mirrors the post-merge trunk state, not
-  a fully coherent pair); same `spec-freshness` commit-subject convention.
-  Commit-message filtering follows the Guard-3 subject-scoped convention —
-  never write a full-message grep-exclusion invocation into this Step 10d
-  gate section (enforcement = the gate-region negative assert in
-  `tests/test_issue_skill_lint_family_sync.py`, whose region spans this
-  pre-push gate section through the auto-merge heading — the Guard-3 pin
-  test's own region ban stops at the fast-path heading and does not reach
-  here). End the re-sync with one echo —
-  `[step10d] pre-gate re-sync: synced <n> files (<sha>) | no drift` — so
-  ran-vs-never-ran is observable in the gate transcript (copy the line
-  into the epm:merged / epm:merge-failed note). Run the re-sync to
-  completion BEFORE the gate's stale-verdict `rm` below, so the verdict
-  sha-binds the synced tip; a no-change re-sync commits nothing and the
-  flow is idempotent. Synced files enter the own-diff (they differ from
-  the merge-base) — harmless by construction: the overlay writes
-  origin/main-identical bytes, and any TG hits they trigger are identical
-  on both legs and subtract to empty.
 - **Run a LANDING-TREE lint copy, both legs — no-flags bundle PLUS the parity leg.**
   The gate builds ONE ephemeral landing tree in /tmp (`git archive
   origin/main` over the lint-scanned cones), runs the BASELINE legs from
@@ -11058,6 +11092,55 @@ tests BEFORE anything lands:
   concurrent gate runs would share one `$GT` (a phase-flip race) —
   excluded by the Step 0 single-orchestrator guard + the pre-dispatch
   dedup, with the #911 janitor reaping any crash leftovers.
+- **Post-gate freshness re-sync (#1714; supersedes the #1560 pre-gate
+  placement).** The lint gate builds its landing tree from `git archive
+  origin/main`, so a re-sync AFTER the gate returns does not invalidate
+  the gate verdict — but a re-sync BEFORE a ~30-min gate snapshots
+  origin/main against a tip that will be stale by merge time, and #1476
+  (the 67cf175e session, 2026-07-26T16:25Z) proved that
+  origin/main advances DURING the gate window often enough to break the
+  squash merge with `CONFLICTING`. The re-sync is invoked from the
+  auto-merge subsection below (the H4 heading immediately following
+  this gate section), IMMEDIATELY before `gh pr merge --squash` and
+  AFTER the gate verdict file has been read (i.e. after the
+  stale-verdict `rm -f` above and after the executable gate block has
+  returned pass):
+    1. `timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet || true`
+    2. Run the Step 5a family-atomic block (§ Step 5a) once with source
+       `origin/main` (every `main` ref replaced by `origin/main`),
+       against the ALREADY-BOUND `$WT` — the merge flow bound
+       `WT="$REPO_ROOT/.claude/worktrees/issue-<N>"` in the guards
+       block, so DROP the Step 5a block's own
+       `WT=$(git rev-parse --show-toplevel)` line —
+       do NOT re-derive `$WT` at Step 10d (a repo-root cwd would
+       rebind it to the shared root).
+    3. End with one echo — `[step10d] post-gate re-sync: synced <n> files (<sha>) | no drift` —
+       so ran-vs-never-ran is observable in the merge transcript (copy
+       the line into the `epm:merged` / `epm:merge-failed` note).
+    4. `gh pr merge --squash` — if it returns `CONFLICTING`, fall
+       through to the existing merge-conflict-recovery path
+       (§ Concurrent-committer merge conflicts).
+
+  The Guard-3 subject-scoped commit-subject convention still applies —
+  never write a full-message grep-exclusion invocation into this Step 10d
+  section (enforcement = the gate-region negative assert in
+  `tests/test_issue_skill_lint_family_sync.py`, whose region spans this
+  post-gate section through the auto-merge heading — the Guard-3 pin
+  test's own region ban stops at the fast-path heading and does not
+  reach here).
+
+  Synced files enter the sync commit ONLY if they DIFFER from HEAD
+  (the family-atomic block's `git diff --quiet` gate is what commits;
+  a no-drift re-sync commits nothing and the flow is idempotent). The
+  gate has already verified the landing tree; a post-gate sync of
+  origin/main-identical bytes over the branch tip does not change the
+  landing tree the gate green-lit, because family-atomic skip preserves
+  branch-side content — a branch that edits `workflow.yaml` still
+  merges with its own `workflow.yaml`+ generated `markers.md` after
+  this sync (the family is still dirty), so the gate's #1456 3-way
+  merge of `workflow_lint.py` remains the covering mechanism for that
+  specific file's payload edits, and the merge's own conflict resolution
+  handles the residual.
 
 #### The auto-merge procedure (safe case: guard 3 clean — mainline-based, own commits in scope)
 
@@ -11164,6 +11247,57 @@ else
     if [ "${HS%% *}" = "$TIP" ]; then
       echo "head-sync pre-check: parity at $TIP (mergeable=${HS##* })"
     fi
+    # Post-gate freshness re-sync (#1714): the lint gate has PASSed against
+    # origin/main-as-of-gate-start; origin/main may have advanced during the
+    # ~30-min gate window. Re-run the Step 5a family-atomic block with source
+    # origin/main immediately before the merge to minimize the merge-race
+    # window. Uses the ALREADY-BOUND $WT (do NOT re-derive from cwd; a
+    # repo-root cwd would rebind to the shared root).
+    timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet || true
+    # --- inline Step 5a family-atomic block (main -> origin/main) ---
+    declare -A FAMILY_OF
+    FAMILY_OF[".claude/workflow.yaml"]="workflow"
+    FAMILY_OF[".claude/skills"]="workflow"
+    FAMILY_OF["tests/test_workflow_yaml.py"]="workflow"
+    FAMILY_OF["scripts/workflow_lint.py"]="lint"
+    FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"
+    FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"
+    FAMILY_OF[".claude/hooks"]="guard"
+    FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
+    FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
+    SPECS_10D=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py"
+    MB_10D=$(git -C "$WT" merge-base HEAD origin/main)
+    declare -A DIRTY_FAMILIES_10D
+    for f in $SPECS_10D; do
+      bs_commits=$(git -C "$WT" log --format='%H %s' "$MB_10D"..HEAD -- "$f" \
+        | awk 'index($0, "spec-freshness") == 0')
+      if [ -n "$bs_commits" ]; then
+        fam="${FAMILY_OF[$f]:-$f}"
+        DIRTY_FAMILIES_10D[$fam]=1
+      fi
+    done
+    SAFE_SPECS_10D=""
+    for f in $SPECS_10D; do
+      fam="${FAMILY_OF[$f]:-$f}"
+      if [ -z "${DIRTY_FAMILIES_10D[$fam]}" ]; then
+        SAFE_SPECS_10D="$SAFE_SPECS_10D $f"
+      fi
+    done
+    SYNC_SHA="no-drift"
+    if [ -n "$SAFE_SPECS_10D" ] && ! git -C "$WT" diff --quiet origin/main -- $SAFE_SPECS_10D; then
+      git -C "$WT" checkout origin/main -- $SAFE_SPECS_10D
+      if ! git -C "$WT" diff --quiet HEAD -- $SAFE_SPECS_10D; then
+        git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from origin/main (spec-freshness)" -- $SAFE_SPECS_10D
+        SYNC_SHA=$(git -C "$WT" rev-parse HEAD | head -c 12)
+        # Push the new sync commit so gh pr merge sees it on the PR head ref
+        git -C "$WT" push origin issue-<N> \
+          || { git -C "$WT" pull --rebase=merges --autostash \
+               && git -C "$WT" push origin issue-<N>; }
+      fi
+    fi
+    SYNC_COUNT=$(echo $SAFE_SPECS_10D | wc -w)
+    echo "[step10d] post-gate re-sync: synced $SYNC_COUNT files ($SYNC_SHA) | no drift"
+    # --- end inline Step 5a family-atomic block ---
     gh pr ready <PR>
     if gh pr merge <PR> $MERGE_FORM --delete-branch=false; then
       rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on MERGE SUCCESS — the verdict certified exactly the tip that landed
