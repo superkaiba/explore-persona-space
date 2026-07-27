@@ -5576,8 +5576,8 @@
     "1717": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1717",
-      "status": "reviewing",
+      "path": "tasks/completed/1717",
+      "status": "completed",
       "title": "daily-fix: select_step9c_tests --json/--map-files ergonomics"
     },
     "1718": {
