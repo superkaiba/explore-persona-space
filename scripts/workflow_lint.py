@@ -11888,10 +11888,15 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 128,507 B post-#1727 (Step 0.70 smoke-variable gating
-    # gate — trigger + sub-checks (1)/(2)/(3) + waiver form + verdict
-    # routing with the smoke-var-ungated / smoke-var-orphan-full FAIL
-    # tags — plan-mandated growth; cap = measured + ~1.5 KB. Prior:
+    # measured 131,378 B post-Step-10d-merge (task #1727 Step 0.70
+    # smoke-variable gating gate + task #1716 Step 4 ruff-policy pin +
+    # L99 style-bullet + Step 0.5 pin-invocation marker-shape check —
+    # both landings STACKED at Step 10d merge; cap = measured + ~1.0 KB.
+    # Prior:
+    # 130_000 — measured 128,507 B post-#1727 unmerged (Step 0.70
+    # alone atop pre-#1716 base — trigger + sub-checks (1)/(2)/(3) +
+    # waiver form + verdict routing with the smoke-var-ungated /
+    # smoke-var-orphan-full FAIL tags),
     # 128_000 — measured 127,227 B post-#1716 (Step 4 ruff-policy pin
     # + L99 style-bullet clause + Step 0.5 pin-invocation marker-shape
     # check — plan-mandated growth atop main's #1728 Step 3.75 grep
@@ -11919,7 +11924,7 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # reads), 99,000 — measured 98,126 B post-#1230 (Step 6 durability-pin
     # shipping duty), 97,000 — measured 96,072 B post-#1119, 95,000 —
     # measured 94,126 B post-#1115)
-    "code-reviewer.md": 130_000,
+    "code-reviewer.md": 132_500,
     # measured 74,082 B post-#1447 (family-enumeration sync: the two
     # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
     # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:

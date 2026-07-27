@@ -1,6 +1,19 @@
 #!/usr/bin/env python3
 """verify_task_body.py — mechanical verifier for markdown clean-result bodies.
 
+Exit codes (as returned by `main()`):
+
+- ``0`` — ``OVERALL: PASS``.
+- ``1`` — ``OVERALL: FAIL``.
+- ``2`` — the ``--issue`` task-body file could not be found.
+- ``3`` — ``OVERALL: N/A``. The ``--issue`` target is a ``kind: infra``,
+  ``kind: batch``, or ``kind: survey`` task with ``has_clean_result: false``
+  in its frontmatter; the clean-result spec does not apply to that body, so
+  the verifier short-circuits without running the check chain. See
+  ``_NOT_APPLICABLE_KINDS`` / ``_kind_short_circuit`` below. The ``--file``
+  and ``--body-stdin`` paths never emit exit 3 (they carry no authoritative
+  task frontmatter).
+
 Replaces `verify_sagan_card.py` for new (markdown) bodies. Mechanical
 gate for the markdown clean-result spec, which has TWO live,
 sentinel-gated shapes (plus pre-sentinel legacy as a third grandfathered
@@ -1052,6 +1065,74 @@ REQUIRED_H2_SECTIONS = ["Human TL;DR", "TL;DR", "Reproducibility"]
 # pre-2026-W22 are forward-grandfathered (the verifier never re-runs
 # over them).
 RETIRED_H2_SECTIONS = ["Details", "Figure"]
+
+# ─── Not-applicable-kind short-circuit (task #1724) ──────────────────────
+#
+# The clean-result spec applies to `kind: experiment` bodies and to
+# PROMOTED `kind: analysis` bodies (once the analyzer flips
+# `has_clean_result: true`). Every other kind — `infra`, `batch`,
+# `survey` — completes on the /issue Step 9c test-verdict path and never
+# carries a clean-result body by design (CLAUDE.md § "Fix-validation /
+# 'test that X works' → kind: infra"). Running the check chain on such a
+# body produces a bare FAIL (the body has no `# <title>` H1, etc.) that
+# every infra session then reasons away by hand — repeated fleet-wide
+# noise plus an unusable gate signal.
+#
+# `_kind_short_circuit` is the pure predicate; `main()` wires it in
+# ONLY on the `--issue` branch (task frontmatter is authoritative there).
+# `--file` / `--body-stdin` intentionally never fire the short-circuit —
+# a user passing an arbitrary file with `kind: infra` frontmatter for a
+# spec spot-check should still get the full verifier output.
+_NOT_APPLICABLE_KINDS: frozenset[str] = frozenset({"infra", "batch", "survey"})
+
+
+def _kind_short_circuit(fm: dict) -> str | None:
+    """Return the ``kind`` name when the verifier should short-circuit to a
+    not-applicable verdict, else ``None``.
+
+    Fires when frontmatter ``kind`` is in
+    :data:`_NOT_APPLICABLE_KINDS` (``{"infra", "batch", "survey"}``) AND
+    ``has_clean_result`` is falsy (missing / ``None`` / ``False`` /
+    ``""`` / ``0`` / one of the YAML-string forms
+    ``"false" / "no" / "0" / "null" / "none"``, case-insensitive with
+    surrounding whitespace stripped).
+
+    Returns the matching kind string (``"infra"`` / ``"batch"`` /
+    ``"survey"``) so the caller can emit a kind-labeled verdict.
+
+    A truthy ``has_clean_result`` means the task was promoted and DOES
+    carry a clean-result body (a rare mis-filed infra task, or a
+    legitimately-promoted analysis) — that case falls through to the
+    normal check path and produces a real PASS/FAIL against the spec.
+
+    ``kind: analysis`` is deliberately EXCLUDED from the short-circuit
+    set: an analysis task can produce a clean-result once the analyzer
+    finishes (SKILL.md § 9a-quater: "kind: analysis → only when the task
+    has a discernible measured finding"). An analysis task at
+    ``has_clean_result: false`` and no clean-result body is a legitimate
+    FAIL signalling the analyzer hasn't produced a finding yet, which is
+    a real state to keep visible. Adding analysis to the short-circuit
+    set would silence that pre-promotion signal.
+
+    See :data:`_NOT_APPLICABLE_KINDS` for the driving incident (task
+    #1702's crash-fix implementer explaining away the FAIL by hand).
+    """
+    kind = fm.get("kind")
+    if not isinstance(kind, str) or kind not in _NOT_APPLICABLE_KINDS:
+        return None
+    hcr = fm.get("has_clean_result")
+    # Coerce common YAML-parses. YAML `false` bareword → bool False; a
+    # string "false" (rare / mis-quoted) is treated as falsy here for
+    # safety — bare `bool("false")` reads truthy, which would flip the
+    # short-circuit off for exactly the mis-quoted bodies we want it to
+    # fire on.
+    if isinstance(hcr, str):
+        hcr_bool = hcr.strip().lower() not in {"", "false", "no", "0", "null", "none"}
+    else:
+        hcr_bool = bool(hcr)
+    return None if hcr_bool else kind
+
+
 # TL;DR opens with a Motivation block — either an `### Motivation` H3
 # (preferred new shape) or a `**Motivation:**` boldface bullet (legacy
 # form, still accepted). The retired `What I ran` / `Results` required
@@ -14630,6 +14711,24 @@ def main() -> int:
     else:
         raw = sys.stdin.read()
         source = "<stdin>"
+
+    # Not-applicable-kind short-circuit (task #1724). Fires ONLY on the
+    # `--issue` branch: task frontmatter is authoritative there, and a
+    # `--file` / `--body-stdin` caller passing an arbitrary body for a
+    # spec spot-check should still get the full verifier output. See
+    # `_kind_short_circuit` for the predicate + rationale.
+    if args.issue is not None:
+        fm, _ = split_frontmatter(raw)
+        na_kind = _kind_short_circuit(fm)
+        if na_kind is not None:
+            print(f"verify_task_body — {source}")
+            print(
+                f"  [N/A] kind:{na_kind} task with has_clean_result:false — "
+                f"the clean-result spec does not apply to this body."
+            )
+            print()
+            print(f"OVERALL: N/A (kind: {na_kind} — no clean-result body expected)")
+            return 3
 
     overall, results = verify_text(
         raw,
