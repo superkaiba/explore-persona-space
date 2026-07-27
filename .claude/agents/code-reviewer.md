@@ -1393,6 +1393,49 @@ PASS→FAIL on its own; the FAIL comes from a load-bearing sibling left in the
 tree. (Promotes the 7-step sibling-scan recipe from reconciler memory
 `.claude/agent-memory/reconciler/feedback_claude_misses_same_file_siblings.md`.)
 
+### Step 3.75: Symbol-rename grep verification (any diff type; #1728)
+
+**Trigger:** the diff RENAMES a module-exported symbol — a class, a
+top-level `def`, a top-level dataclass, a top-level module-level constant
+(SCREAMING_SNAKE or literal assignment at module scope), or an
+`__init__.py` re-export. Enumerate mechanically from the diff: a `-class
+Foo` paired with a `+class Bar`, a `-def foo(` paired with `+def bar(`, a
+`-FOO = ` paired with `+BAR = ` at module scope, an `__all__` entry
+edited from one name to another, or a `-from x import old` /
+`+from x import new` at the site the callee is *renamed*.
+
+**When the trigger fires,** verify that the implementer's
+`epm:experiment-implementation` marker carries a `### Symbol-rename grep`
+section listing, per renamed symbol, the exact `grep -rn '<old_name>'
+scripts/ src/` command run AND a per-hit disposition (each hit either
+fixed in-diff or explicitly dispositioned — comment history / `external/` /
+regression fixture). Cross-check by re-running the grep yourself in the
+review env: every remaining hit on `main` at the diff's `HEAD` MUST be
+covered by an in-diff fix OR a marker disposition. An uncovered hit is a
+Critical (`substantive`; blocker tag `symbol-rename-sibling-hit`) —
+name the specific `file.py:LINE` and cite the `.claude/rules/crash-fix-rounds.md`
+"symbol-rename whole-tree grep duty" section. The marker being ABSENT
+when the trigger fires is itself a Critical (`substantive`; blocker tag
+`symbol-rename-grep-absent`) — the round did not record the required
+duty.
+
+**When the trigger does NOT fire** (the diff has no module-exported
+symbol rename), the code-review verdict carries one line `Symbol-rename
+grep: N/A — no module-exported rename in diff` (the auditable-N/A
+convention, same shape as Step 0.68's `N/A — no fit-loop`); this makes
+the check visible as PASSing rather than silently skipped, so a future
+diff that DOES rename a symbol is measurably distinguishable in the
+verdict text from a diff that does not.
+
+**Scope split vs Step 3.7 (Bug-class sibling sweep).** Step 3.7 fires on
+a Critical/Major finding and sweeps for THIS diff's bug-class siblings;
+Step 3.75 fires on a DIFF SHAPE (a rename) and verifies the round's own
+recorded duty. A rename that Step 3.75 catches with an uncovered sibling
+also triggers Step 3.7's bug-class sibling sweep — the same finding
+counts once (the higher-severity Critical from Step 3.75 subsumes it).
+Rationale + incident: `.claude/rules/crash-fix-rounds.md`
+"Crash-fix rounds: symbol-rename whole-tree grep duty" section.
+
 ### Step 3.8: Seam-stubbed production-body verification (any diff type)
 
 **Trigger:** the diff ADDS a production function (a new `def` in non-test
