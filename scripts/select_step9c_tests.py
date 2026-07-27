@@ -336,6 +336,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_sparse_worktree.py",
     # NEW (#1623) — CLAUDE.md ad-hoc-summaries disclosure-clause pins (#1458/#1539/#1623)
     "tests/test_adhoc_summary_disclosure_pins.py",
+    # NEW (#1734) — adversarial-planner SKILL.md Phase 1.5.0 per-WARN disposition pin
+    "tests/test_adversarial_planner_warn_disposition.py",
     "tests/test_autonomous_plan_gate.py",
     "tests/test_autonomous_session_watch.py",
     # NEW (#1630) — /daily SKILL.md pathspec-commit (own-files-only) pin
@@ -391,6 +393,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_orchestrator_turn_discipline_pointer.py",
     # NEW (#1572) — staged-index verification pin
     "tests/test_issue_skill_staged_index_verification.py",
+    # NEW (#1734) — SKILL.md Step 2 minimum plan-review floor + recorded-skip contract pin
+    "tests/test_issue_skill_step2_floor.py",
     # NEW (#1595) — stopped-volume persist-before-park pin (SKILL.md + pod-config.md)
     "tests/test_issue_skill_stopped_volume_persist_pin.py",
     # NEW (#1587) — SKILL.md trigger-dense tag-adoption pin

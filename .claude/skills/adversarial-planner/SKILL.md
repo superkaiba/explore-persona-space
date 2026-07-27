@@ -365,11 +365,36 @@ Run the structural verifier against the plan version just persisted:
   words, proceed anyway (verifier false positive), record `verdict: PASS-with-override`
   + the overridden check ids in the marker note, and emit a workflow-fix candidate
   against `scripts/verify_plan.py`.
-- **PASS (with WARNs) → proceed** — EXCEPT a `goal_currency` WARN
-  (`c23_goal_currency`), which instead triggers the mechanical redraft
-  bounce per § Goal-currency gate above (the one WARN that bounces);
-  copy any OTHER WARN lines verbatim into the fact-checker
-  brief (and later the critic briefs) as "mechanical pre-pass notes".
+- **PASS (with WARNs) → proceed with a per-WARN disposition** — EXCEPT a
+  `goal_currency` WARN (`c23_goal_currency`), which instead triggers the
+  mechanical redraft bounce per § Goal-currency gate above (the one WARN
+  that bounces). For every OTHER WARN, EITHER:
+  - **Resolve** it in the next plan revision (the planner amends the
+    plan and the WARN drops on the next `verify_plan.py` run), OR
+  - **Carry** it with a one-line reason naming WHY it cannot bite this
+    plan (the same specific-defect standard `verify_plan.py`'s own check
+    detail uses — e.g. "check c17 fires on the mind/behavior segment
+    quoting the #1345 incident, not this plan's own claim scope"; "check
+    c25 flags an html entity in a `<>`-wrapped anchor in prose text, not
+    a shell command").
+
+  The bare word `benign` is BANNED as a carried-WARN reason. "Benign" is
+  what session `6b3fca14` wrote when narrating both of the round's WARNs;
+  the same-file ratchet pressure one of those WARNs named
+  (`c34_ratchet_headroom`) then produced a `scripts/workflow_lint.py`
+  merge conflict roughly 12 min into the review round. A carried WARN
+  needs a mechanism-level reason, not an aesthetic verdict.
+
+  `c34_ratchet_headroom` is NEVER a carry candidate — it is the
+  deterministic predictor of a same-file cap collision, so it must be
+  resolved (raise the size ratchet in the same plan, or split the insert
+  across a second file). Every other WARN is a per-plan disposition call.
+
+  The dispositions ride the plan (a `## WARN dispositions` sub-block
+  under the Reproducibility Card §10 — one line per carried WARN, or a
+  standalone "no WARNs on this run" line when `n_warn=0`), not the
+  marker; they are what the fact-checker and critic briefs see when they
+  read the plan text.
 - **Post the marker** (VM-side; the adversarial-planner skill always runs in the
   orchestrator session, never on a pod):
   `uv run python scripts/task.py post-marker <N> epm:plan-verify --note '<verdict, n_fail, n_warn, failed/overridden check ids, plan version>'`
