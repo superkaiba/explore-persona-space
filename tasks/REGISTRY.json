@@ -5555,8 +5555,8 @@
     "1714": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1714",
-      "status": "approved",
+      "path": "tasks/reviewing/1714",
+      "status": "reviewing",
       "title": "daily-fix: spec-freshness sync manufactures self-inconsisten"
     },
     "1715": {
