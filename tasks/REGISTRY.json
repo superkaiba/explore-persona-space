@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1726,
+  "highest_id": 1727,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5649,6 +5649,13 @@
       "path": "tasks/proposed/1726",
       "status": "proposed",
       "title": "daily-fix: long fit loops must checkpoint per cell and log p"
+    },
+    "1727": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1727",
+      "status": "proposed",
+      "title": "daily-fix: flag ungated smoke/full variable pairs in review"
     },
     "173": {
       "has_clean_result": true,
