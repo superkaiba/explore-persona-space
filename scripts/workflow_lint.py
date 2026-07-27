@@ -11639,6 +11639,131 @@ def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity
     return errors
 
 
+# `--check-inline-round-duty-mirror` (#1701): the three "Inline
+# estimator-validity + record-integrity duties" sentences mirror byte-for-byte
+# between CLAUDE.md § "User-chat inline free analysis" and
+# .claude/skills/issue/SKILL.md Step 9a-ter. A future editor who updates one
+# location and forgets the other silently drifts the mirror; a count-only
+# check would slip past a mid-sentence text edit that keeps the anchor
+# prefix. Two-part invariant: (a) each of three anchor prefixes appears
+# exactly once in EACH file, (b) the full sentence starting at each anchor
+# prefix is BYTE-IDENTICAL across the two files.
+
+_INLINE_ROUND_DUTY_ANCHORS: tuple[str, ...] = (
+    "(1) BEFORE any ridge",
+    "(2) BEFORE launching any re-implemented",
+    "(3) When a round REFUTES",
+)
+
+
+def _extract_inline_round_duty_sentence(text: str, anchor: str) -> str | None:
+    """Extract the full sentence starting at ``anchor`` through the next
+    terminator: the first ``. `` (period + whitespace) OR ``.\\n`` OR a bare
+    newline. Returns None if the anchor is not present.
+
+    In-line ``.`` inside a backtick-quoted span does not terminate — e.g.
+    ``scripts/issue1345_operator_comparison`` has no closing period. The
+    canonical anchor sentences end with ``.`` followed by whitespace or a
+    newline; the terminator scan walks past backtick spans.
+    """
+    idx = text.find(anchor)
+    if idx == -1:
+        return None
+    n = len(text)
+    i = idx
+    in_backtick = False
+    while i < n:
+        ch = text[i]
+        if ch == "`":
+            in_backtick = not in_backtick
+        elif ch == "\n" and not in_backtick:
+            return text[idx:i]
+        elif ch == "." and not in_backtick and i + 1 < n:
+            nxt = text[i + 1]
+            if nxt.isspace():
+                return text[idx : i + 1]
+        i += 1
+    return text[idx:n]
+
+
+def check_inline_round_duty_mirror(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the three "Inline estimator-validity + record-integrity
+    duties" anchor sentences drift between CLAUDE.md and
+    .claude/skills/issue/SKILL.md.
+
+    Two-part invariant per anchor prefix:
+      (a) COUNT: the anchor prefix appears exactly once in EACH file
+          (locates the sentence unambiguously — zero hits means the block
+          was deleted; more than one means an editor duplicated it).
+      (b) BYTE-EQUALITY: the full sentence (anchor prefix through next
+          terminator — see ``_extract_inline_round_duty_sentence``) is
+          byte-identical across the two files.
+
+    ``repo_root`` is a unit-test override hook; production callers pass
+    None. Bundled into the no-flags default run.
+    """
+    import os as _os
+
+    if repo_root is not None:
+        root = repo_root
+    else:
+        # Env-override so BEHAVIORAL subprocess tests can point the check
+        # at a tmp corpus without also having to relocate every other
+        # bundled check. Absent: the production _REPO_ROOT.
+        env_root = _os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    claude_path = root / "CLAUDE.md"
+    skill_path = root / ".claude" / "skills" / "issue" / "SKILL.md"
+    errors: list[str] = []
+    try:
+        claude_text = claude_path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        errors.append(f"check-inline-round-duty-mirror: {claude_path} not found")
+        return errors
+    try:
+        skill_text = skill_path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        errors.append(f"check-inline-round-duty-mirror: {skill_path} not found")
+        return errors
+
+    claude_rel = claude_path.relative_to(root) if claude_path.is_relative_to(root) else claude_path
+    skill_rel = skill_path.relative_to(root) if skill_path.is_relative_to(root) else skill_path
+
+    for anchor in _INLINE_ROUND_DUTY_ANCHORS:
+        claude_count = claude_text.count(anchor)
+        skill_count = skill_text.count(anchor)
+        if claude_count != 1:
+            errors.append(
+                f"check-inline-round-duty-mirror: {claude_rel} has {claude_count} "
+                f"occurrence(s) of anchor {anchor!r}, expected exactly 1 "
+                "(part (a) count invariant)"
+            )
+        if skill_count != 1:
+            errors.append(
+                f"check-inline-round-duty-mirror: {skill_rel} has {skill_count} "
+                f"occurrence(s) of anchor {anchor!r}, expected exactly 1 "
+                "(part (a) count invariant)"
+            )
+        if claude_count != 1 or skill_count != 1:
+            continue  # cannot compare byte-equality without unambiguous anchors
+        claude_sent = _extract_inline_round_duty_sentence(claude_text, anchor)
+        skill_sent = _extract_inline_round_duty_sentence(skill_text, anchor)
+        if claude_sent is None or skill_sent is None:
+            errors.append(
+                f"check-inline-round-duty-mirror: could not extract anchor sentence "
+                f"for {anchor!r} (part (b) byte-equality invariant)"
+            )
+            continue
+        if claude_sent != skill_sent:
+            errors.append(
+                f"check-inline-round-duty-mirror: anchor sentence for {anchor!r} "
+                f"drifted between {claude_rel} and {skill_rel} "
+                "(part (b) byte-equality invariant); the three duty sentences "
+                "must stay byte-identical across the two files"
+            )
+    return errors
+
+
 # `--check-rule-frontmatter-parses` (#1385, from #1348): a `.claude/rules/*.md`
 # rule on-demand-loads ONLY through its frontmatter `paths:` globs. A YAML
 # parse failure (e.g. an unquoted `description:` containing ': ') silently
@@ -12866,6 +12991,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-inline-round-duty-mirror",
+        action="store_true",
+        help="Verify the three 'Inline estimator-validity + record-integrity "
+        "duties' anchor sentences are mirrored byte-identically between "
+        "CLAUDE.md § 'User-chat inline free analysis' and "
+        ".claude/skills/issue/SKILL.md Step 9a-ter (#1701). Two-part "
+        "invariant: (a) each anchor prefix appears exactly once in each "
+        "file; (b) the full anchor sentence is byte-identical across the "
+        "two files. Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-rule-frontmatter-parses",
         action="store_true",
         help="YAML-parse every .claude/rules/*.md frontmatter block and "
@@ -13329,6 +13465,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_no_repo_root_worktree_revert
         or args.check_gate_ids_unique
         or args.check_lessons_index
+        or args.check_inline_round_duty_mirror
         or args.check_rule_frontmatter_parses
         or args.check_compute_shape_review_lens
         or args.check_long_loop_restartability_review_lens
@@ -13452,6 +13589,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_gate_ids_unique(workflow))
     if args.check_lessons_index or no_flags:
         errors.extend(check_lessons_index())
+    if args.check_inline_round_duty_mirror or no_flags:
+        errors.extend(check_inline_round_duty_mirror())
     if args.check_rule_frontmatter_parses or no_flags:
         errors.extend(check_rule_frontmatter_parses())
     if args.check_agent_spec_size or no_flags:

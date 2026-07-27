@@ -756,10 +756,16 @@ executable-tested (`tests/test_workflow_fix_dedup.py`
 is a CURRENTLY-FAILING test on origin/main has fleet-wide per-hour cost
 (every intervening session's Step 9c gate must re-classify the red;
 incident #1643: an 07:08Z park's red lived ~11.5h to #1666's merge). When
-the parking session has direct evidence of a live red (e.g. its own Step
-9c gate classified the node pre-existing-red against the baseline ledger),
-it SHOULD park in the MECHANICALLY ROUTABLE form: the formal candidate
-block PLUS three fields inside it —
+the parking session has direct evidence of a live red — its own Step 9c
+gate has classified the node pre-existing-red against the baseline
+ledger — it MUST park in the MECHANICALLY ROUTABLE form (the three
+fields below); a prose "noted for /daily follow-up" terminal
+disposition is banned in this evidence-strong case (SKILL.md Step 9c
+"Verdict" block, #1713). Sessions WITHOUT direct Step 9c evidence
+retain the SHOULD form (their claim cannot be verified within a tick
+without a bounded pytest run; the router still verifies before
+filing). The routable form is the formal candidate block PLUS three
+fields inside it —
 
 ```
 urgency: main-red
