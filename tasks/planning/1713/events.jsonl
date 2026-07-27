@@ -1,0 +1,2 @@
+{"ts": "2026-07-27T07:13:44Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-07-27T07:17:06Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear (body carries verified-at-filing evidence + 4-part proposal); moving to adversarial-planner."}
