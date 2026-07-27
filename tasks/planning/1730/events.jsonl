@@ -4,3 +4,4 @@
 {"ts": "2026-07-27T16:16:17Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-27T16:23:49Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py verdict: PASS n_fail=0 n_warn=0 failed:none"}
 {"ts": "2026-07-27T16:23:53Z", "kind": "epm:plan", "version": 1, "by": "unknown", "note": "plan v1 persisted (tasks/planning/1730/plans/v1.md); verify_plan.py PASS; gpu_hours_total=0; kind=infra doc-only workflow-fix; 3 targets: .claude/rules/gotchas.md (primary), .claude/skills/daily/SKILL.md (L35+L646), CLAUDE.md (L187); fingerprint 3cec01f4afca"}
+{"ts": "2026-07-27T16:24:17Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "Phase 2: codex composers skipped — quota sentinel live until 2026-08-06T13:26:00Z (#1204 pre-spawn check); single-Claude per no-show fallback for Methodology / Statistics / Alternatives lenses"}
