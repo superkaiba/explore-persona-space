@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1722,
+  "highest_id": 1723,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5621,6 +5621,13 @@
       "path": "tasks/proposed/1722",
       "status": "proposed",
       "title": "daily-fix: Step 10d durable markers record wrong SHA and emp"
+    },
+    "1723": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1723",
+      "status": "proposed",
+      "title": "daily-fix: CRON-TEARDOWN precedes the Step 10d merge, leavin"
     },
     "173": {
       "has_clean_result": true,
