@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1718,
+  "highest_id": 1719,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5586,6 +5586,13 @@
       "path": "tasks/proposed/1718",
       "status": "proposed",
       "title": "daily-fix: AGENT_SPEC_SIZE_GRANDFATHER is a chronic merge-co"
+    },
+    "1719": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1719",
+      "status": "proposed",
+      "title": "daily-fix: single-flight pgrep probes self-match and are not"
     },
     "172": {
       "has_clean_result": false,
