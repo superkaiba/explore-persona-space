@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1729,
+  "highest_id": 1730,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5677,6 +5677,13 @@
       "path": "tasks/archived/173",
       "status": "archived",
       "title": "Both system prompt and answer content drive [ZLT] marker output in roughly equal measure under contrastive-LoRA persona training, with one fictional persona as the cleanly prompt-gated exception (MODERATE confidence)"
+    },
+    "1730": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1730",
+      "status": "proposed",
+      "title": "daily-fix: gcloud missing from non-login PATH silently repor"
     },
     "174": {
       "has_clean_result": false,
