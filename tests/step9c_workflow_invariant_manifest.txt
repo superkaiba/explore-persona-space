@@ -54,6 +54,7 @@ tests/test_planner_phase_outputs_declaration.py
 tests/test_precommit_gitleaks_merge_scope.py
 tests/test_ruff_format_hook_tmp_exclusion.py
 tests/test_sparse_worktree.py
+tests/test_step0_enumerator_total_form.py
 tests/test_step10d_guard3.py
 tests/test_step_completed_resume.py
 tests/test_suffixed_pod_completion_teardown_pin.py
