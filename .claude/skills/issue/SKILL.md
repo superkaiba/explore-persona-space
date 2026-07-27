@@ -2013,15 +2013,19 @@ recipe (as above) — NOT `git rev-parse --show-toplevel`, which from a
 worktree cwd returns the worktree root and doubles the path — and reuse
 `$WORKTREE` / `$REPO_ROOT` in every subsequent command.
 
-**Open the draft PR only if the branch is ahead of `main`.** `gh pr
-create` errors with `No commits between main and issue-<N>` when the
-branch has no commits yet (the common case before the implementer has
-run). Pre-check first:
+**Open the draft PR only if the branch is ahead of fetched `origin/main`.** `gh pr create` errors with `No commits between main and issue-<N>` when the branch has no commits yet (the common case before the implementer has run). Pre-check first (bounded fetch + `origin/main`-anchored aheadness):
 ```bash
-if [ "$(git -C "$REPO_ROOT" rev-list --count main..issue-<N>)" -gt 0 ]; then
-  gh pr create --draft --head issue-<N> --body "Closes task #<N>."
+# Base ref is FETCHED origin/main — new_worktree.sh cuts branches from
+# refs/remotes/origin/main, and the repo root's local `main` routinely lags it.
+# NEVER pipe this block — guard_piped_git_push.sh blocks a piped `gh pr create`
+# (CLAUDE.md § Concurrent repo-root committers): a pipe masks the exit code.
+timeout --kill-after=30s 120s git -C "$REPO_ROOT" fetch origin main --quiet || true
+if [ "$(git -C "$REPO_ROOT" rev-list --count origin/main..issue-<N>)" -gt 0 ]; then
+  gh pr create --draft --head issue-<N> \
+    --title "issue-<N>: <task title>" \
+    --body "Closes task #<N>."
 else
-  echo "issue-<N> has no commits ahead of main yet; skipping draft PR (open it after the implementer commits)."
+  echo "issue-<N> has no commits ahead of origin/main yet; skipping draft PR (open it after the implementer commits)."
 fi
 ```
 
