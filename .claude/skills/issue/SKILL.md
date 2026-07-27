@@ -8958,8 +8958,14 @@ suite directly and posts an `epm:test-verdict` event with the result.
       **Single-flight probe (#1606) — run before EVERY gate (re)launch, Step
       9c AND Step 10d alike.** In a SEPARATE FOREGROUND call — never inside
       the launch call itself: the launch command's argv carries the
-      unbracketed junit path and would phantom-match its own shell — probe
-      for a live gate: `pgrep -af 'step9c-junit-issue-<N>[.]xml'` (bracketed
+      unbracketed junit path and would phantom-match its own shell, and the
+      observed consequence is a silent exit-0 skip of the leg that the
+      harness reports as successful completion (2026-07-26 session
+      `2b779905`, 12:24:08Z: the compare leg printed `GATE STILL RUNNING;
+      skip compare`, then `FATAL: compare rc file missing`, and exited 0 — a
+      false DONE in the #825 empty-dir false-DONE class) — probe for a live
+      gate:
+ `pgrep -af 'step9c-junit-issue-<N>[.]xml'` (bracketed
       per the gotchas.md self-match entry; the junit path rides the argv of
       the gate pytest, its `timeout` wrapper, its enclosing background
       shell, AND the 1d compare, so the probe is exact-ISSUE-scoped — a
@@ -11983,13 +11989,12 @@ Decision tree:
 
   **Single-flight probe (#1606)** first, per the Step 9c 1b statement: a
   separate foreground
-  `pgrep -af 'issue-<N>-surgical-outcome[.]txt|scripts/workflow_lint[.]py'`.
+  `pgrep -af 'issue-<N>-surgical-outcome[.]txt|issue-<N>-lint-gate-tre[e]'`.
   An `issue-<N>`-scoped hit = THIS gate-and-land sequence is still
   running — WAIT for exit, never relaunch into it (the outcome-sentinel
-  `rm -f` below would clobber it, and the root holds ITS staged payload). A
-  `workflow_lint.py`-only hit is AMBIGUOUS (root-copy lint invocations are
-  not issue-scoped in argv — possibly a SIBLING session's root lint or a
-  9a-ter inline gate): WAIT for exit, never kill — the same rule as this
+  `rm -f` below would clobber it, and the root holds ITS staged payload).
+  A residual ambiguous hit that is neither this session's own gate nor a
+  matching sibling gate: WAIT for exit, never kill — the same rule as this
   block's completion-read recovery arm.
 
   Then, from the **repo root on `main`** (never switch the branch
@@ -12290,10 +12295,11 @@ Decision tree:
   - MISSING sentinel -> the sequence died mid-run (tool kill / watcher
     force-stop / wedge-bound kill) and the root may hold staged payload.
     Recover IN THIS ORDER: (1) kill-before-relaunch probe FIRST
-    (`pgrep -af 'scripts/workflow_lint[.]py'` — root-copy invocations are
-    not issue-scoped in argv, so on an ambiguous match WAIT for exit,
-    never kill; the Step 0 single-orchestrator guard excludes same-issue
-    concurrency). (2) Landed/committed classification BEFORE any cleanup —
+    (`pgrep -af 'issue-<N>-lint-gate-tre[e]'` — issue-scoped per the L11949
+    Step 10d single-flight probe; on any residual ambiguous match WAIT for
+    exit, never kill; the Step 0 single-orchestrator guard excludes
+    same-issue concurrency).
+ (2) Landed/committed classification BEFORE any cleanup —
     a shell killed between commit/push success and the sentinel write
     leaves the payload COMMITTED (tracked + clean), which a naive
     contamination probe misreads: check whether the surgical commit is on
