@@ -454,6 +454,10 @@ def test_empty_diff_note_at_main_checkout_real_git(tmp_path: Path, monkeypatch, 
     captured = capsys.readouterr()
     # The #851 shape is no longer silent:
     assert "NOTE — empty diff" in captured.err
+    # #1717 defect (d): the NOTE names uncommitted edits as a likely cause
+    # (case-insensitive substring pin — the widened NOTE writes
+    # "empty diff — commit first;" mid-sentence).
+    assert "commit first" in captured.err.lower()
     # Provenance breadcrumb names the main checkout + branch:
     assert f"work root {repo.resolve()}" in captured.err
     assert "(branch: main)" in captured.err
@@ -2360,3 +2364,113 @@ def test_issue1688_live_tree_escapee_shape():
     assert "tests/test_issue667_dispatcher.py" in tests
     assert "tests/test_issue811_maxp.py" in tests
     assert probe not in untested  # stem/import arms already matched it pre-#1688
+
+
+# --- #1717 defect (a): --map-files + --json fails loud (argparse exit 2) ------
+@pytest.mark.parametrize(
+    "extra",
+    [
+        [],  # ordinary two-flag combo
+        # A third co-passed flag that IS in the parser (--no-fetch) does not
+        # change the parser.error verdict — the (--map-files, --json)
+        # combination itself is what fires, regardless of surrounding argv.
+        ["--no-fetch"],
+    ],
+)
+def test_cli_map_files_json_flag_rejected(tmp_path: Path, capsys, extra: list[str]):
+    """The (a) fix: `--map-files` combined with `--json` is a CLI usage error.
+    argparse's `parser.error()` exits 2 with a stderr `: error: ...` line and
+    empty stdout; no work-root resolution, no map-files load. Both flag
+    orderings are checked (argparse is order-agnostic post-parse). A third
+    valid flag (`--no-fetch`) co-passed does NOT change the verdict — the
+    combination itself is what fires, regardless of surrounding argv.
+    """
+    repo = _make_tree(tmp_path, [])
+    listing = tmp_path / "payload.txt"
+    listing.write_text("scripts/issue123_foo.py\n")
+    # Ordering A: --map-files first, --json after.
+    with pytest.raises(SystemExit) as excinfo:
+        sel.main(["--map-files", str(listing), "--json", "--repo-root", str(repo), *extra])
+    assert excinfo.value.code == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "--json is not supported with --map-files" in captured.err
+    # Ordering B: --json first, --map-files after.
+    with pytest.raises(SystemExit) as excinfo:
+        sel.main(["--json", "--map-files", str(listing), "--repo-root", str(repo), *extra])
+    assert excinfo.value.code == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "--json is not supported with --map-files" in captured.err
+
+
+# --- #1717 defect (c): --map-files comma-detected hint (opt-in on comma) ------
+def test_cli_map_files_comma_hint(tmp_path: Path, capsys):
+    """The (c) fix: a comma in the --map-files argument (the session
+    `c0a2df1b` shape — `--map-files a.md,b.md`) APPENDS an opt-in hint
+    after the standard Errno-2 line, telling the caller to pass a
+    newline-separated file path. A non-comma missing path preserves the
+    base OSError text WITHOUT the hint (hint is opt-in on comma
+    detection — a real comma-in-path failure still surfaces Errno + path
+    verbatim).
+    """
+    repo = _make_tree(tmp_path, [])
+    # Positive branch: a comma in the argument triggers the hint.
+    rc = sel.main(["--map-files", "a.md,b.md", "--repo-root", str(repo)])
+    assert rc == 1
+    err = capsys.readouterr().err
+    assert "cannot read --map-files input" in err
+    # Base Errno-2 text stays first, then the appended hint.
+    assert "Errno 2" in err or "No such file" in err
+    assert (
+        "--map-files takes a PATH to a newline-separated file list, not a comma-separated list"
+    ) in err
+    # Negative branch: a non-comma missing path — NO hint appended.
+    rc = sel.main(
+        ["--map-files", str(tmp_path / "definitely-not-there.txt"), "--repo-root", str(repo)]
+    )
+    assert rc == 1
+    err = capsys.readouterr().err
+    assert "cannot read --map-files input" in err
+    assert "comma-separated list" not in err
+
+
+# --- #1717 defect (d): empty-diff NOTE names uncommitted edits ---------------
+def test_empty_diff_note_names_uncommitted_edits(tmp_path: Path, monkeypatch, capsys):
+    """The (d) fix: the empty-diff NOTE at the main checkout carries the
+    widened phrasing calling out uncommitted edits as the first likely
+    cause. Reuses the `_make_git_repo_with_worktree` fixture; asserts the
+    case-insensitive `commit first` substring survives in stderr.
+    Distinct from `test_empty_diff_note_at_main_checkout_real_git` — that
+    test now ALSO asserts `commit first` alongside its existing prefix +
+    breadcrumb pins, and this test preserves the isolated pin so a future
+    NOTE rewording immediately surfaces which assertion caught it.
+    """
+    repo, _wt = _make_git_repo_with_worktree(tmp_path)
+    monkeypatch.chdir(repo)
+    rc = sel.main([])
+    assert rc == 0
+    captured = capsys.readouterr()
+    # The widened NOTE still starts with the byte-identical prefix (pinned
+    # by test_empty_diff_note_at_main_checkout_real_git):
+    assert "NOTE — empty diff" in captured.err
+    # The new cause line: uncommitted edits are named first.
+    assert "commit first" in captured.err.lower()
+
+
+# --- #1717 defect (b): --json help text warns against `2>&1` stderr redirect --
+def test_json_help_warns_against_stderr_redirect(capsys):
+    """The (b) fix: the `--json` flag's help string carries a safety
+    warning against redirecting stderr into stdout (`2>&1`), naming the
+    safe recipe (`2>/dev/null`). Broader-invariant assertion: the help
+    text mentions BOTH the concept (`stderr`) AND the recipe recommendation
+    (`2>/dev/null`) — a benign softening of the exact phrasing that keeps
+    both survives the pin; dropping either fails.
+    """
+    with pytest.raises(SystemExit) as excinfo:
+        sel.main(["--help"])
+    # argparse's --help handler exits 0.
+    assert excinfo.value.code == 0
+    help_text = capsys.readouterr().out
+    assert "stderr" in help_text.lower()
+    assert "2>/dev/null" in help_text
