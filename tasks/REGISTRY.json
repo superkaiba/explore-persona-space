@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1713,
+  "highest_id": 1714,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5551,6 +5551,13 @@
       "path": "tasks/proposed/1713",
       "status": "proposed",
       "title": "daily-fix: restore check_inline_round_duty_mirror \u2014 main red"
+    },
+    "1714": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1714",
+      "status": "proposed",
+      "title": "daily-fix: spec-freshness sync manufactures self-inconsisten"
     },
     "172": {
       "has_clean_result": false,
