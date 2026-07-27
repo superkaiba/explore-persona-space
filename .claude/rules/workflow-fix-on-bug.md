@@ -669,27 +669,62 @@ re-route — while a candidate parked AFTER the fix closed is a genuine
 re-raise and stays enumerated; see
 `scripts/sweep_parked_wf_candidates.py`.)
 
-**Recently-closed-sibling ADVISORY (#1399 — advisory only, never a block).**
+**Recently-closed-sibling SUSPECT probe (#1399/#1711/#1735 — blocking on the
+composite target+title arm, advisory on bare-target or bare-title).**
 The predicate above is exact-`(target_file, fingerprint)` over OPEN tasks, so
 a JUST-MERGED sibling with different wording is invisible by design
 (2026-07-15: #1350 was filed 25 min after #1329 merged the same fix, and
 #1330 duplicated #1309's already-landed guidance — two pipeline sessions
-burned). At filing time `scripts/file_infra_task.py` therefore prints a
-stderr advisory listing recently-closed (completed/archived, last ~7 days)
-siblings that overlap the candidate: `workflow-fix:`/`daily-fix:`-prefixed
-tasks by `workflow_fix_target:` path token or by informative title token,
-and — since #1446 — ordinary (non-prefixed) `kind: infra` tasks by ≥2
-shared informative title tokens (`infra-title:`) or by a candidate target
-path appearing in the task body (`infra-target`)
+burned). At filing time `scripts/file_infra_task.py` prints a stderr advisory
+listing recently-closed (completed/archived, last ~7 days) siblings that
+overlap the candidate: `workflow-fix:`/`daily-fix:`-prefixed tasks by
+`workflow_fix_target:` path token or by informative title token, and — since
+#1446 — ordinary (non-prefixed) `kind: infra` tasks by ≥2 shared informative
+title tokens (`infra-title:`) or by a candidate target path appearing in the
+task body (`infra-target`)
 (`task_workflow.recent_closed_workflow_fix_tasks`) — capped at the 10 most
 recent. The filer eyeballs the list before letting the spawned session run.
-ADVISORY ONLY: it never blocks the filing, never changes exit codes, and
-fails soft with a printed diagnostic — the rule above is unchanged (a closed
-fix still never blocks a genuine re-raise). Because the wrapper's stderr
-arrives after it has already filed and best-effort-spawned, an agent consumer
-that spots a just-merged duplicate in the list applies the post-hoc remedy:
-archive the just-filed task (`task.py set-status <id> archived`) and stop its
-spawned session (`spawn_session.py stop --session-id <sid>`).
+The stderr advisory arm is FAIL-SOFT (informational output only, filer
+exit code untouched, fails soft with a printed diagnostic on error) —
+this is the FILER's stderr advisory arm; the driver-level probe (below)
+carries the real blocking contract. The exact-`(target_file,
+fingerprint)` OPEN dedup predicate above is unchanged (a closed fix
+still never suppresses a genuine re-raise there). Because the wrapper's stderr arrives after it has already
+filed and best-effort-spawned, an agent consumer that spots a just-merged
+duplicate in the list applies the post-hoc remedy: archive the just-filed
+task (`task.py set-status <id> archived`) and stop its spawned session
+(`spawn_session.py stop --session-id <sid>`).
+
+In ADDITION, when the manifest-driven daily driver (`scripts/daily_drive_filings.py`)
+processes an item, it re-runs the same recently-closed-sibling scan through
+the `find_closed_sibling_suspects` pre-filing probe (#1711), whose arm
+partition is the load-bearing suppression contract: a hit BLOCKS the
+filing — records a terminal `landed-fix-suspect` ledger row (with
+`suspects[0].kind == "closed-sibling"`), prints `CLOSED-SIBLING-SUSPECT` on
+stdout, and does NOT run the filer — ONLY when it satisfies the #1735
+composite arm predicate: BOTH a path-family arm (`target` / `infra-target`)
+AND a title-family arm (`title:*` / `infra-title:*`) whose shared
+informative tokens are not exclusively driver-scoped stopwords
+(`scripts/daily_drive_filings.py` `_CLOSED_SIBLING_TITLE_ARMS` +
+`CLOSED_SIBLING_TITLE_STOPWORDS`, calibrated on task #1735's ORIGINAL
+2026-07-26 measured false-positive shape — the generic workflow vocabulary
+attested at ≥3-as-sole-informative-token frequency across 21/24 blocked
+items on this repo's hot workflow-surface files). Bare-target hits and
+bare-title hits (composite predicate not satisfied) are ADVISORY: one
+`CLOSED-SIBLING-ADVISORY` stderr line per hit, no ledger row, no
+suppression — the shared hot-file signal alone is not evidence of
+duplication on this repo's workflow surface (task #1735: 21/24 measured
+false positives on a single nightly batch dominated by bare-`target` and
+`target`+stopword-title matches). A driver-level SUSPECT block is
+overridable via `--retry-suspects` (the operator has eyeballed the sibling
+and wants to re-drive the filing anyway) — the driver short-circuits BOTH
+the #1711 closed-sibling probe AND the sibling #1674 landed-fix-sha probe
+for a slug that already carries a `landed-fix-suspect` ledger row under
+that flag. At the end of every driver run a terminal `SUMMARY` stderr line
++ a `filed.jsonl` `outcome=daily-drive-summary` row report the outcome
+counts (`closed-sibling-suspects` / `landed-fix-suspects` split by probe
+source) so a mass suppression can never masquerade as a clean batch (#1735
+§4.4).
 
 **Open-sibling arm (#1502 — same advisory contract).** The same filing-time
 advisory ALSO lists OPEN (non-terminal — the dedup predicate's own

@@ -237,14 +237,63 @@ LANDED_FIX_MAX_SUSPECTS = 5  # ledger-row size bound; git log order = most recen
 # supplements (plan #1711 §11 D1).
 CLOSED_SIBLING_WINDOW_DAYS = 7.0
 CLOSED_SIBLING_MAX_HITS = 5  # ledger-row size bound; helper already sorted DESC by closed_at
-# Arms of the helper's returned `matched` list that BLOCK a filing (PATH-based —
-# the strongest signal that the closed sibling actually addresses the same file
-# the candidate wants to touch). `title:*` / `infra-title:*` fire a stderr
-# advisory line but never suppress: the helper docstring itself warns of the
-# unmeasured FP surface on closed-task titles (task #1711 body's open question),
-# and the 3/3 measured incidents (#1330, #1386, #1652) all suppress on the PATH
-# arms alone. Rationale + block-vs-advisory design defense: plan #1711 §4.2.
-_CLOSED_SIBLING_BLOCKING_ARMS = ("target", "infra-target")
+# Composite blocking rule (#1735, replacing #1711's PATH-only rule): a hit BLOCKS
+# only when it matches BOTH a target-family arm (`target` / `infra-target`) AND a
+# title-family arm (`title:*` / `infra-title:*`) whose shared informative tokens
+# survive the driver-scoped `CLOSED_SIBLING_TITLE_STOPWORDS` filter below. A
+# bare-target hit — the shared hot-file signal alone — is ADVISORY: on the
+# 2026-07-26 batch the #1711 PATH-only rule blocked 21/24 items, dominated by
+# bare-`target` (7 hits) and `target`+stopword-title matches (`title:main` 9,
+# `title:runs` 5, `title:merge` 4, `title:tests`/`title:step`/`title:probe`/
+# `title:path`/`title:check` 3 each) on this repo's hot workflow-surface files
+# (`.claude/skills/issue/SKILL.md`, `scripts/workflow_lint.py`,
+# `.claude/agents/*.md`) — where nearly every new filing shares a target file
+# with some recently-closed sibling within the 7-day window. A bare-title hit is
+# ADVISORY (unchanged from #1711's original design).
+#
+# The composite rule INTENTIONALLY SACRIFICES 2 of the 3 historical measured
+# true positives named in the L240-246 comment: fact-check on plan v1
+# (2026-07-27) established that #1330 vs #1309 shares ZERO informative title
+# tokens (DOWNGRADED to advisory), #1386 vs #1360 shares `retry`,`queue-full`
+# (STILL BLOCKS under composite), and #1652 vs #1329 shares ZERO informative
+# title tokens (DOWNGRADED to advisory). This is the DELIBERATE trade: the
+# pre-fix 21/24 false-positive rate on hot workflow-surface files is a higher
+# blast-radius cost than the two historical bare-target-only cases (#1330,
+# #1652) that now surface as `CLOSED-SIBLING-ADVISORY` stderr prints instead
+# of blocking. Regression coverage rests on (a) the #1350/#1329-shape pinned
+# test (shares `workload-cmd`, not a stopword — the composite-rule survivor
+# class) and (b) the `CLOSED-SIBLING-ADVISORY` stderr channel still surfacing
+# bare-target hits for operator eyeballing. If a future duplicate shares zero
+# informative title tokens with its motivating candidate, it surfaces as
+# ADVISORY (mirroring the pre-#1711 behaviour for that class); the operator
+# eyeballs the stderr line and re-runs with `--retry-suspects` if real. See
+# plan #1735 §4.1 for the full block-vs-advisory design defense.
+_CLOSED_SIBLING_TARGET_ARMS = ("target", "infra-target")
+_CLOSED_SIBLING_TITLE_ARMS = ("title", "infra-title")
+# Driver-scoped stopword set for the #1735 composite arm's title contribution.
+# Applied ONLY inside find_closed_sibling_suspects (via
+# _closed_sibling_informative_title_arms) — the shared
+# `_WF_FIX_TITLE_STOPWORDS` in `task_workflow.py` is intentionally UNCHANGED,
+# because #1674's `find_landed_fix_suspects` and the open/closed sibling
+# advisories are calibrated on the current shared set. Tokens here are the
+# generic workflow vocabulary attested in task #1735's ORIGINAL 2026-07-26
+# `## Evidence` measurement (verified-at-filing top-uniq output) at
+# ≥3-as-SOLE-informative-token frequency across the 21 blocked false-positive
+# items: `title:main` (9), `title:runs` (5), `title:merge` (4), `title:tests`
+# (3), `title:step` (3), `title:probe` (3), `title:path` (3), `title:check`
+# (3). Extra plan v1 candidates (`state`, `daily`, `zero`, `repo`, `shared`)
+# were DROPPED per plan §8 A13's implementer re-derivation: they are not
+# attested at ≥3-count in the ORIGINAL 2026-07-26 evidence, and the calibration
+# corpus is the batch that motivated the fix, not a shifted-since replay.
+# Precedent: `ROUTE3_GENERIC_TOKENS` is driver-scoped for the same reason.
+CLOSED_SIBLING_TITLE_STOPWORDS: frozenset[str] = frozenset(
+    {"main", "runs", "step", "merge", "tests", "path", "check", "probe"}
+)
+# Legacy alias — retained for one release cycle so any external caller/mock
+# that predates #1735 still resolves the symbol. New code MUST reference
+# `_CLOSED_SIBLING_TARGET_ARMS` directly; new hits are advisory unless the
+# composite predicate fires (title-arm hits carry no path signal by construction).
+_CLOSED_SIBLING_BLOCKING_ARMS = _CLOSED_SIBLING_TARGET_ARMS
 REQUIRED_ITEM_KEYS = frozenset({"slug", "route", "title", "target", "bug", "change"})
 # Anchored to the line start: every file_infra_task.py success path prints a line starting
 # `filed #<id>` or `filed + dispatched #<id>`. A stray `#N` elsewhere must not win.
@@ -1096,14 +1145,47 @@ def _landed_fix_suspect_outcome(
     return "skip" if dry_run else "landed-fix-suspect"
 
 
+def _closed_sibling_informative_title_arms(h: dict) -> set[str]:
+    """Title-family arm PREFIXES of ``h`` whose shared informative tokens survive
+    ``CLOSED_SIBLING_TITLE_STOPWORDS`` (#1735).
+
+    Reads the arm labels ``title:<t1>,<t2>,...`` / ``infra-title:<t1>,...``
+    from ``h["matched"]``: splits each on ``:`` to isolate the arm prefix,
+    then splits the token comma-list and filters out driver-scoped
+    stopwords. Returns the surviving arm prefixes as a set — empty when every
+    title-arm's shared tokens were exclusively stopwords. Path-family arms
+    (``target`` / ``infra-target``) never appear in the return (they carry no
+    ``:`` payload); the composite predicate handles them separately via
+    :data:`_CLOSED_SIBLING_TARGET_ARMS`.
+
+    The arm labels themselves are the source of truth for which tokens
+    overlapped (parsed at helper time by ``_wf_fix_sibling_arms``): no
+    re-tokenization of the closed task titles is needed here.
+    """
+    surviving: set[str] = set()
+    for m in h.get("matched", []):
+        if ":" not in m:
+            continue
+        arm_prefix, token_list = m.split(":", 1)
+        if arm_prefix not in _CLOSED_SIBLING_TITLE_ARMS:
+            continue
+        tokens = {t.strip() for t in token_list.split(",") if t.strip()}
+        if tokens - CLOSED_SIBLING_TITLE_STOPWORDS:
+            surviving.add(arm_prefix)
+    return surviving
+
+
 def find_closed_sibling_suspects(item: dict) -> tuple[list[dict], list[dict]]:
-    """Recently-closed infra siblings overlapping the item's target/title (#1711).
+    """Recently-closed infra siblings overlapping the item's target/title (#1711, #1735).
 
     Returns ``(blocking_hits, advisory_hits)``: each is a list of dicts filtered
-    from :func:`task_workflow.recent_closed_workflow_fix_tasks` by whether ANY
-    matched arm is in :data:`_CLOSED_SIBLING_BLOCKING_ARMS`. Blocking hits carry
-    at least one PATH-based match (``target`` / ``infra-target``); advisory hits
-    carry only TITLE-based matches (``title:*`` / ``infra-title:*``).
+    from :func:`task_workflow.recent_closed_workflow_fix_tasks` by the #1735
+    composite arm predicate. A hit is BLOCKING iff it matches BOTH a
+    target-family arm (:data:`_CLOSED_SIBLING_TARGET_ARMS`) AND a title-family
+    arm whose shared informative tokens survive
+    :data:`CLOSED_SIBLING_TITLE_STOPWORDS`. Bare-target hits (target arm only,
+    no informative title overlap) and bare-title hits (title arm only, no path
+    overlap) BOTH partition into ``advisory``.
 
     Reuses the #1446 helper verbatim — its own error surface (per-task read
     failures skip; empty inputs return ``[]``) is unchanged; the CALLER wraps
@@ -1123,7 +1205,9 @@ def find_closed_sibling_suspects(item: dict) -> tuple[list[dict], list[dict]]:
     advisory: list[dict] = []
     for h in hits:
         matched_arms = {m.split(":", 1)[0] for m in h.get("matched", [])}
-        if matched_arms & set(_CLOSED_SIBLING_BLOCKING_ARMS):
+        has_target = bool(matched_arms & set(_CLOSED_SIBLING_TARGET_ARMS))
+        has_informative_title = bool(_closed_sibling_informative_title_arms(h))
+        if has_target and has_informative_title:
             blocking.append(h)
         else:
             advisory.append(h)
@@ -1158,21 +1242,24 @@ def _closed_sibling_or_none(item: dict) -> tuple[list[dict], list[dict]]:
 
 def _closed_sibling_outcome(item: dict, *, dirpath: Path, fp: str, dry_run: bool) -> str | None:
     """Closed-sibling probe outcome for process_item, or None (mirror of
-    :func:`_landed_fix_suspect_outcome`'s contract, #1711). Routes 2 AND 3.
+    :func:`_landed_fix_suspect_outcome`'s contract, #1711 / #1735). Routes 2
+    AND 3.
 
     - No hits at all → returns ``None`` (caller proceeds to file).
-    - Advisory-only hits (title/infra-title arms) → prints ONE stderr
-      ``CLOSED-SIBLING-ADVISORY`` line per hit naming the sibling, returns
-      ``None`` (caller proceeds to file — title-only arms are non-blocking
-      by design; see :data:`_CLOSED_SIBLING_BLOCKING_ARMS`).
-    - Blocking hits (target/infra-target arms) → prints
-      ``CLOSED-SIBLING-SUSPECT`` on STDOUT (operator-facing, mirroring #1674's
-      ``LANDED-FIX-SUSPECT`` stdout shape so a fleet eyeball grep catches
-      both); the real path appends a terminal ``landed-fix-suspect`` ledger
-      row (with ``suspects[].kind == "closed-sibling"`` — Option A per plan
-      §4.3; distinguishable from #1674 rows by presence of ``id`` vs ``sha``)
-      and returns ``'landed-fix-suspect'``; dry-run stays read-only by
-      construction (no ledger write) and returns ``'skip'``.
+    - Advisory-only hits (composite predicate NOT satisfied — bare-target,
+      bare-title, or target + only-stopword-title arms per plan #1735 §4.1)
+      → prints ONE stderr ``CLOSED-SIBLING-ADVISORY`` line per hit naming
+      the sibling, returns ``None`` (caller proceeds to file).
+    - Blocking hits (composite predicate satisfied — target/infra-target
+      arm AND title/infra-title arm with ≥1 non-stopword informative token)
+      → prints ``CLOSED-SIBLING-SUSPECT`` on STDOUT (operator-facing,
+      mirroring #1674's ``LANDED-FIX-SUSPECT`` stdout shape so a fleet
+      eyeball grep catches both); the real path appends a terminal
+      ``landed-fix-suspect`` ledger row (with ``suspects[].kind ==
+      "closed-sibling"`` — Option A per plan §4.3; distinguishable from
+      #1674 rows by presence of ``id`` vs ``sha``) and returns
+      ``'landed-fix-suspect'``; dry-run stays read-only by construction
+      (no ledger write) and returns ``'skip'``.
 
     Advisory lines print on STDERR (informational, WARNING-adjacent), the
     intentional stdout/stderr split — plan #1711 concern-fold from
@@ -1186,7 +1273,8 @@ def _closed_sibling_outcome(item: dict, *, dirpath: Path, fp: str, dry_run: bool
         arms = ",".join(h["matched"])
         print(
             f"CLOSED-SIBLING-ADVISORY {slug} -> #{h['id']}"
-            f' "{h["title"]}" (matched: {arms}) — title-only, NOT blocking (#1711)',
+            f' "{h["title"]}" (matched: {arms}) — NOT blocking'
+            " (composite predicate not satisfied, #1735)",
             file=sys.stderr,
         )
     if not blocking:
@@ -1842,6 +1930,142 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+# ── #1735 terminal SUMMARY line + `daily-drive-summary` ledger row ────────────
+# Emitted at the tail of main() so a nightly-batch operator (and a future
+# reader of filed.jsonl) cannot mistake a mass suspect suppression for a
+# clean batch. The two suspect counters are named separately because the
+# `landed-fix-suspect` outcome string is emitted by BOTH the closed-sibling
+# probe (#1711, §4.1 of this fix) AND the sibling #1674 landed-fix-sha probe;
+# conflating them in a single `suspects=S` counter would hide a legitimate
+# #1674-only burst under the appearance of a closed-sibling regression.
+#
+# `counts` schema (EXACTLY 8 keys — pinned by
+# tests/test_daily_drive_filings.py::test_summary_row_appended_to_ledger):
+#   filed, deduped, already-tracked, recovered, skip, error,
+#   closed-sibling-suspects, landed-fix-suspects
+#
+# The single `landed-fix-suspect` process_item outcome is split by probe
+# source: read back the just-written ledger row's `suspects[0]["kind"]`
+# field — `"closed-sibling"` → `closed-sibling-suspects`; absent (i.e. the
+# #1674 shape, `{"sha","subject","shared"}`) → `landed-fix-suspects`. A
+# corrupt / missing suspects field falls soft to
+# `landed-fix-suspects-unknown-kind` and emits an implementer stderr WARN
+# (an unclassified suspect is still a suspect for `--retry-suspects`
+# purposes; the operator still sees it in the SUMMARY line). The `held=H`
+# column is NOT emitted — `held` is a row FIELD on `filed` rows set inside
+# process_item, not a returned outcome (Statistics-critic MF2).
+_SUMMARY_LEDGER_OUTCOME = "daily-drive-summary"
+
+
+def _summary_key_for_outcome(outcome: str, dirpath: Path, slug: str) -> str:
+    """Map a process_item outcome onto its SUMMARY counter key (#1735 §4.4).
+
+    Non-suspect outcomes map to themselves verbatim. The single
+    ``landed-fix-suspect`` outcome is discriminated by the just-written
+    ledger row's ``suspects[0]["kind"]`` — the row was appended by
+    ``_closed_sibling_outcome`` (kind=``"closed-sibling"``) or
+    ``_landed_fix_suspect_outcome`` (no ``kind`` field; #1674 row shape).
+    Falls soft on any ledger read/schema error to the aggregate key
+    ``landed-fix-suspects-unknown-kind`` + a stderr WARN.
+    """
+    if outcome != "landed-fix-suspect":
+        return outcome
+    try:
+        # The just-written row is the LAST row of filed.jsonl for this slug;
+        # append_row does an O_APPEND single-line write, so the tail row is
+        # this slug's suspect row by construction. Load with load_ledger for
+        # its corrupt-line tolerance (mirrors the same read the driver uses
+        # everywhere else).
+        rows = load_ledger(dirpath)
+        for row in reversed(rows):
+            if row.get("slug") != slug:
+                continue
+            suspects = row.get("suspects") or []
+            if not suspects:
+                break
+            kind = suspects[0].get("kind")
+            if kind == "closed-sibling":
+                return "closed-sibling-suspects"
+            if kind is None:
+                return "landed-fix-suspects"
+            break
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        print(
+            f"WARNING {slug}: SUMMARY suspect-kind read failed"
+            f" ({e.__class__.__name__}: {e}) — recording under"
+            " landed-fix-suspects-unknown-kind; the item still appears in the SUMMARY"
+            " suspect count (#1735)",
+            file=sys.stderr,
+        )
+        return "landed-fix-suspects-unknown-kind"
+    print(
+        f"WARNING {slug}: SUMMARY suspect-kind unreadable"
+        " (missing / malformed suspects[0].kind) — recording under"
+        " landed-fix-suspects-unknown-kind (#1735)",
+        file=sys.stderr,
+    )
+    return "landed-fix-suspects-unknown-kind"
+
+
+def _emit_daily_drive_summary(
+    dirpath: Path,
+    outcome_counts: dict[str, int],
+    args: argparse.Namespace,
+    date: str,
+    *,
+    dry_run: bool,
+) -> None:
+    """Print the terminal SUMMARY stderr line and (unless dry_run) append a
+    ``daily-drive-summary`` row to filed.jsonl (#1735 §4.4).
+
+    The schema key set is exact — the eight counters are named + present
+    regardless of whether they saw any activity this run (0 when a counter
+    saw no items). ``slug: null`` distinguishes the row from any item row;
+    existing ledger consumers filter on ``outcome`` in one of the item-outcome
+    values (or the ``attempting``/``ERROR`` two-phase tail) and ignore this
+    row by default. Grep-based consumers find it via
+    ``jq 'select(.outcome=="daily-drive-summary")'``.
+    """
+    keys = (
+        "filed",
+        "deduped",
+        "already-tracked",
+        "recovered",
+        "skip",
+        "error",
+        "closed-sibling-suspects",
+        "landed-fix-suspects",
+    )
+    counts: dict[str, int] = {k: int(outcome_counts.get(k, 0)) for k in keys}
+    # Preserve any fail-soft unknown-kind bucket in the printed line + ledger
+    # row (never silently collapse it into a named counter). Numbers stay
+    # int-typed for JSON schema stability.
+    unknown = int(outcome_counts.get("landed-fix-suspects-unknown-kind", 0))
+    if unknown:
+        counts["landed-fix-suspects-unknown-kind"] = unknown
+    n_suspects = counts["closed-sibling-suspects"] + counts["landed-fix-suspects"] + unknown
+    suspect_hint = " — re-run with --retry-suspects to file suspects" if n_suspects > 0 else ""
+    parts = [f"{k}={counts[k]}" for k in keys]
+    if unknown:
+        parts.append(f"landed-fix-suspects-unknown-kind={unknown}")
+    print(
+        f"SUMMARY dir={dirpath} {' '.join(parts)}{suspect_hint}",
+        file=sys.stderr,
+    )
+    if dry_run:
+        return
+    append_row(
+        dirpath,
+        {
+            "slug": None,
+            "outcome": _SUMMARY_LEDGER_OUTCOME,
+            "counts": counts,
+            "sliced": [args.start, args.end],
+            "date": date,
+        },
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     """Validate the manifest, then drive the slice through resume/recovery/dedup/file."""
     args = build_parser().parse_args(argv)
@@ -1861,6 +2085,7 @@ def main(argv: list[str] | None = None) -> int:
     ledger = load_ledger(dirpath)
     sliced = manifest[args.start : args.end]
     any_error = False
+    outcome_counts: dict[str, int] = {}
     for item in sliced:
         outcome = process_item(
             item,
@@ -1875,8 +2100,15 @@ def main(argv: list[str] | None = None) -> int:
             target_holds=target_holds,
             retry_suspects=args.retry_suspects,
         )
+        # Split `landed-fix-suspect` by probe source before tallying; every
+        # other outcome maps to its own name (see _summary_key_for_outcome).
+        key = _summary_key_for_outcome(outcome, dirpath, item["slug"])
+        outcome_counts[key] = outcome_counts.get(key, 0) + 1
         if outcome == "error":
             any_error = True
+    # Terminal SUMMARY: always emitted (dry-run too); ledger append skipped on
+    # dry-run (read-only by construction, #1735 §4.4).
+    _emit_daily_drive_summary(dirpath, outcome_counts, args, date, dry_run=args.dry_run)
     return 1 if any_error else 0
 
 
