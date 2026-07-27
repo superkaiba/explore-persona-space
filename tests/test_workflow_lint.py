@@ -9086,3 +9086,33 @@ def test_hub_verify_bare_hits_default_targets_unchanged():
     assert default_patterns == [".list_repo_files(", ".list_repo_tree(", "file_exists("]
     narrowed = _hub_verify_bare_hits(tree, targets=frozenset({"list_repo_files"}))
     assert narrowed == [(5, ".list_repo_files(")]
+
+
+def test_check_inline_round_duty_mirror_symbol_and_argparse_pin() -> None:
+    """#1713 lost-update regression pin. Fails if a future whole-file
+    snapshot of scripts/workflow_lint.py silently drops the
+    check_inline_round_duty_mirror function OR unregisters the flag.
+
+    Complements tests/test_workflow_lint_inline_round_duty_mirror.py by
+    firing at import + argparse layer, so a delete of THAT test file
+    still leaves this pin.
+    """
+    import contextlib
+    import io
+
+    from workflow_lint import check_inline_round_duty_mirror, main
+
+    assert callable(check_inline_round_duty_mirror)
+
+    buf = io.StringIO()
+    rc = None
+    with contextlib.redirect_stdout(buf):
+        try:
+            main(["--help"])
+        except SystemExit as e:
+            rc = e.code
+    help_text = buf.getvalue()
+    assert "--check-inline-round-duty-mirror" in help_text, (
+        "flag missing from argparse; #1701 restoration incomplete"
+    )
+    assert rc == 0
