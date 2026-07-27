@@ -146,7 +146,11 @@ rounds).
 
 Applies to EVERY re-run of a smoke / launch / dispatch command — crash-fix
 rounds, code-review revision rounds, and same-turn retries after a
-timed-out or abandoned Bash call — on the shared VM and on pods alike. A
+timed-out or abandoned Bash call — AND to any kill targeting a workload
+pattern for any other reason (e.g. cancelling a redundant background
+job of your own, the session `0e2c3b21` 2026-07-26 shape). Applies on
+the shared VM and on pods alike.
+ A
 timed-out / abandoned Bash TOOL call kills the SHELL but ORPHANS the
 python child, which keeps running and writing its output paths;
 relaunching without killing it duplicates load and corrupts shared
@@ -160,10 +164,16 @@ load-186 VM overload).
 1. **Probe** — `pgrep -af 'run_823[.]py --phase 4'`. The pattern MUST be
    exact-invocation-scoped: script filename + the distinguishing args,
    with a `[.]` bracket so the probe's own shell cmdline cannot
-   self-match. The same bracket idiom equally covers OWNERSHIP/liveness
-   probes, including SSH-remote ones — `ssh <host> "pgrep -af ..."`
-   re-materializes the pattern in the remote shell's argv (see the
-   `.claude/rules/gotchas.md` SSH-remote ownership-probe entry).
+   self-match. When the same command line ALSO passes the artifact PATH
+   as an argument, or uses MULTIPLE alternates, the bracket idiom alone
+   does NOT protect: the artifact path / any unbracketed alternate rides
+   the probe's own argv and self-matches — apply the self-exclusion filter
+   / per-pid iteration recipes in `.claude/rules/gotchas.md` (SSH-remote
+   ownership-probe entry) alongside the bracket. The same bracket idiom
+   equally covers OWNERSHIP/liveness probes, including SSH-remote ones —
+   `ssh <host> "pgrep -af ..."` re-materializes the pattern in the remote
+   shell's argv (see the `.claude/rules/gotchas.md` SSH-remote
+   ownership-probe entry).
    Run the probe (and any pkill) in its OWN Bash call — the
    harness wrapper embeds the full compound-command text in its own
    cmdline, so a probe sharing a call with text spelling the raw
