@@ -5632,8 +5632,8 @@
     "1724": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1724",
-      "status": "reviewing",
+      "path": "tasks/completed/1724",
+      "status": "completed",
       "title": "daily-fix: verify_task_body FAILs every kind:infra task"
     },
     "1725": {
