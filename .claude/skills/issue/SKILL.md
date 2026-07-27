@@ -2120,12 +2120,18 @@ Brief passed to the implementer:
   persisted concerns, not (d) prose", so round-N briefs surface the
   duty without the implementer having to recall its agent spec.
 - The brief MUST also carry the gate-scope verification duty (#1288):
-  before posting the report marker, the implementer enumerates the Step
+  before posting the report marker, the implementer **commits their edits
+  first** — the selector diffs COMMITTED state against fetched
+  `origin/main`, so uncommitted edits silently degrade to the
+  invariant-only set (#1717 defect (d)) — then enumerates the Step
   9c selection from the worktree — `uv run python
-  scripts/select_step9c_tests.py --json`, the DEFAULT invocation (the
-  base defaults to FETCHED `origin/main` per #1289; `--base main` exists
-  only to deliberately diff against the local ref, per Step 9c step 1a —
-  never for this duty) — pin-sweeps the enumerated test files for every
+  scripts/select_step9c_tests.py --json 2>/dev/null` (stderr routed off
+  stdout so the JSON stays parseable — the informational NOTE / WARN /
+  sizing lines go to stderr BY DESIGN; #1717 defect (b)), the DEFAULT
+  invocation (the base defaults to FETCHED `origin/main` per #1289;
+  `--base main` exists only to deliberately diff against the local ref,
+  per Step 9c step 1a — never for this duty) — pin-sweeps the enumerated
+  test files for every
   literal / command fragment / symbol the diff changed or deleted, and
   runs the diff-linked + pin-hit subset locally, deferring only the
   invariant-only remainder to the gate (which remains the backstop),
