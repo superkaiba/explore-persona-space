@@ -11763,22 +11763,25 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 120,709 B post-#1693 (Step 0.69 phase-idempotency +
-    # inter-phase-contract gate — plan-mandated growth atop #1692's
-    # Step 0.55 SHAPE-check binding; cap = measured + ~0.6 KB. Prior:
-    # 112,500 — measured 112,177 B post-#1692 (Step 0.55 SHAPE-check
-    # binding: per-arm attestation-row consistency + import-resolution
-    # three-shape gate for the smoke-architecture-check marker),
-    # 110,300 — measured 109,583 B post-#1449 (Step 0.65 plan-glob vs
-    # uploader-eligibility parity sub-check), 108,000 — measured
-    # 106,853 B post-#1397 (Step 2 fit-loop batched-helper naming
-    # paragraph), 105,000 — measured 104,235 B post-#1317 (Step 4.6
-    # Gate-scope line verification), 101,500 —
-    # measured 100,555 B post-#1254 (Step 3.9 degenerate-statistic check,
-    # observed-vs-null reads), 99,000 — measured 98,126 B post-#1230 (Step 6
-    # durability-pin shipping duty), 97,000 — measured 96,072 B post-#1119,
-    # 95,000 — measured 94,126 B post-#1115)
-    "code-reviewer.md": 121_300,
+    # measured 123,275 B post-#1728 (Step 3.75 symbol-rename grep
+    # verification — plan-mandated growth binding the crash-fix-rounds
+    # symbol-rename whole-tree grep duty at code-review; cap =
+    # measured + ~1.1 KB. Prior: 121,300 — measured 120,709 B post-#1693
+    # (Step 0.69 phase-idempotency + inter-phase-contract gate atop
+    # #1692's Step 0.55 SHAPE-check binding), 112,500 — measured
+    # 112,177 B post-#1692 (Step 0.55 SHAPE-check binding: per-arm
+    # attestation-row consistency + import-resolution three-shape gate
+    # for the smoke-architecture-check marker), 110,300 — measured
+    # 109,583 B post-#1449 (Step 0.65 plan-glob vs uploader-eligibility
+    # parity sub-check), 108,000 — measured 106,853 B post-#1397 (Step
+    # 2 fit-loop batched-helper naming paragraph), 105,000 — measured
+    # 104,235 B post-#1317 (Step 4.6 Gate-scope line verification),
+    # 101,500 — measured 100,555 B post-#1254 (Step 3.9
+    # degenerate-statistic check, observed-vs-null reads), 99,000 —
+    # measured 98,126 B post-#1230 (Step 6 durability-pin shipping duty),
+    # 97,000 — measured 96,072 B post-#1119, 95,000 — measured 94,126 B
+    # post-#1115)
+    "code-reviewer.md": 124_400,
     # measured 74,082 B post-#1447 (family-enumeration sync: the two
     # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
     # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
