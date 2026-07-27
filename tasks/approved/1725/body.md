@@ -69,6 +69,6 @@ Close the two remaining shared-repo-root staleness windows in `/issue`: add a ro
 - fingerprint: 845a0f74c1f5
 
 - workflow_fix_target: .claude/skills/issue/SKILL.md
-- fingerprint: PENDING
 
 /daily 2026-07-26 route-2 filing. Miner refs: F-P1, C-P2, I-P4.
+
