@@ -10293,8 +10293,11 @@ tests BEFORE anything lands:
   too — so trunk-pytest parity takes BOTH invocations. Measured wall
   ~4.5-6 min (no-flags) + ~1.4 s (parity leg) + ~1-2 s gate-tree
   construction on the shared VM; WARNs do not fail (PASS = exit 0 on
-  both). The two leg pairs + TG legs total ~9-12+ min, so the executable
-  block below can NEVER fit the 600s foreground Bash tool cap — run it as
+  both). The two leg pairs + TG legs total ~9-12+ min on an IDLE VM, but
+  **30-40 min under typical fleet load (3+ concurrent gates)** — measured
+  2026-07-26: #1690 32 min, #1694 37 min, #1711 ~30 min. Size any
+  wall-time-derived fence off the LOADED range, not the idle one. So the
+  executable block below can NEVER fit the 600s foreground Bash tool cap — run it as
   ONE BACKGROUND Bash call (`run_in_background=true`) with the per-leg
   `timeout` wedge bounds shown (the #991/#996 kill class: wrapping it in
   any ≤600s foreground bound, or running it foreground, SIGKILLs the
