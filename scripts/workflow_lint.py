@@ -11888,9 +11888,13 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 120,709 B post-#1693 (Step 0.69 phase-idempotency +
-    # inter-phase-contract gate — plan-mandated growth atop #1692's
-    # Step 0.55 SHAPE-check binding; cap = measured + ~0.6 KB. Prior:
+    # measured 121,782 B post-#1726 (Step 3.6 T2 count trigger + 3-part
+    # Check incl. per-unit progress-line item 3 + verdict-routing rewrite
+    # — plan-mandated growth atop #1693's Step 0.69 gate; cap = measured
+    # + ~0.6 KB. Prior:
+    # 121,300 — measured 120,709 B post-#1693 (Step 0.69 phase-idempotency
+    # + inter-phase-contract gate — plan-mandated growth atop #1692's
+    # Step 0.55 SHAPE-check binding),
     # 112,500 — measured 112,177 B post-#1692 (Step 0.55 SHAPE-check
     # binding: per-arm attestation-row consistency + import-resolution
     # three-shape gate for the smoke-architecture-check marker),
@@ -11903,7 +11907,7 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # observed-vs-null reads), 99,000 — measured 98,126 B post-#1230 (Step 6
     # durability-pin shipping duty), 97,000 — measured 96,072 B post-#1119,
     # 95,000 — measured 94,126 B post-#1115)
-    "code-reviewer.md": 121_300,
+    "code-reviewer.md": 122_400,
     # measured 74,082 B post-#1447 (family-enumeration sync: the two
     # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
     # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
