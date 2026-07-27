@@ -400,8 +400,12 @@ _EXIT_SITE_ANCHORS = {
     "park-mode-gate": ("run CRON-TEARDOWN before parking", "window"),
     "step9b-awaiting-promotion": ("Run CRON-TEARDOWN now.", "window"),
     "step9c-3x-fail": ("FAIL after 3 rounds — open it", "window"),
-    "step10-auto-complete": (
-        "Run CRON-TEARDOWN before applying the terminal status",
+    "step10-auto-complete-experiment": (
+        "If `epm:merged` is ALREADY present",
+        "window",
+    ),
+    "step10d-terminal-teardown": (
+        "The `/issue-tick` backstop stayed armed through the",
         "window",
     ),
     "resume-row-promote-pending-unmerged": ("Step 9b auto-merge was interrupted", "line"),

@@ -907,11 +907,28 @@ def test_recovery_contract_reruns_producer_before_corrected_consumer():
 
 
 def _post_merge_guard_region(text: str) -> str:
+    """The Post-merge stale-task-folder guard span only.
+
+    The region ends at the next `####` H4 heading (the Terminal-teardown
+    sub-section, #1723 — which comes right after the guard in the
+    code-change path) OR at ``## Resume semantics`` when no intervening
+    H4 exists. Scoping to the H4 boundary keeps the guard's `bash`
+    fence count invariant intact under Step 10d structural growth: the
+    Terminal-teardown H4's own fenced bash block belongs to its own
+    sub-section, not to the guard.
+    """
     start = text.find("#### Post-merge stale-task-folder guard")
-    end = text.find("## Resume semantics")
     assert start != -1, "post-merge stale-task-folder guard heading not found"
-    assert end != -1 and start < end, "guard region must precede Resume semantics"
-    return text[start:end]
+    tail = text[start:]
+    # Prefer the earliest sibling H4 after the guard; fall back to
+    # `## Resume semantics` when no such H4 exists.
+    next_h4 = tail.find("\n#### ", 1)
+    fallback = tail.find("## Resume semantics")
+    end_rel = next_h4 if next_h4 != -1 and (fallback == -1 or next_h4 < fallback) else fallback
+    assert end_rel != -1 and end_rel > 0, (
+        "guard region must precede either the next H4 or the Resume semantics header"
+    )
+    return tail[:end_rel]
 
 
 def test_post_merge_guard_materializes_lstree_and_fails_closed():
