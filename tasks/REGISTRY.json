@@ -5583,8 +5583,8 @@
     "1718": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/completed/1718",
-      "status": "completed",
+      "path": "tasks/blocked/1718",
+      "status": "blocked",
       "title": "daily-fix: AGENT_SPEC_SIZE_GRANDFATHER is a chronic merge-co"
     },
     "1719": {
@@ -5625,22 +5625,22 @@
     "1723": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1723",
-      "status": "running",
+      "path": "tasks/reviewing/1723",
+      "status": "reviewing",
       "title": "daily-fix: CRON-TEARDOWN precedes the Step 10d merge, leavin"
     },
     "1724": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1724",
-      "status": "approved",
+      "path": "tasks/completed/1724",
+      "status": "completed",
       "title": "daily-fix: verify_task_body FAILs every kind:infra task"
     },
     "1725": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1725",
-      "status": "planning",
+      "path": "tasks/completed/1725",
+      "status": "completed",
       "title": "daily-fix: Step 4 root-divergence probe; post-merge sync sit"
     },
     "1726": {
@@ -5653,8 +5653,8 @@
     "1727": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1727",
-      "status": "planning",
+      "path": "tasks/reviewing/1727",
+      "status": "reviewing",
       "title": "daily-fix: flag ungated smoke/full variable pairs in review"
     },
     "1728": {
@@ -5667,8 +5667,8 @@
     "1729": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1729",
-      "status": "proposed",
+      "path": "tasks/planning/1729",
+      "status": "planning",
       "title": "daily-fix: verify_plan c38 false-positives on a backticked p"
     },
     "173": {

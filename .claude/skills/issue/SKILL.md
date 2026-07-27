@@ -6258,7 +6258,10 @@ uv run python - <<'PY'
 from explore_persona_space.task_workflow import (
     list_events, triage_candidates_since_last_dispatch)
 for e in triage_candidates_since_last_dispatch(list_events(<N>)):
-    print(e["ts"], e["kind"], (e.get("note") or "").splitlines()[0][:140])
+    # #1722: total form — an event whose note is "" / None / "\n" makes
+    # the classic ("" or "").splitlines()[0] raise IndexError (three sessions
+    # hit this shape on 2026-07-26 on markers with empty notes).
+    print(e["ts"], e["kind"], (((e.get("note") or "").splitlines()) or [""])[0][:140])
 PY
 ```
 
@@ -8980,8 +8983,14 @@ suite directly and posts an `epm:test-verdict` event with the result.
       **Single-flight probe (#1606) — run before EVERY gate (re)launch, Step
       9c AND Step 10d alike.** In a SEPARATE FOREGROUND call — never inside
       the launch call itself: the launch command's argv carries the
-      unbracketed junit path and would phantom-match its own shell — probe
-      for a live gate: `pgrep -af 'step9c-junit-issue-<N>[.]xml'` (bracketed
+      unbracketed junit path and would phantom-match its own shell, and the
+      observed consequence is a silent exit-0 skip of the leg that the
+      harness reports as successful completion (2026-07-26 session
+      `2b779905`, 12:24:08Z: the compare leg printed `GATE STILL RUNNING;
+      skip compare`, then `FATAL: compare rc file missing`, and exited 0 — a
+      false DONE in the #825 empty-dir false-DONE class) — probe for a live
+      gate:
+ `pgrep -af 'step9c-junit-issue-<N>[.]xml'` (bracketed
       per the gotchas.md self-match entry; the junit path rides the argv of
       the gate pytest, its `timeout` wrapper, its enclosing background
       shell, AND the 1d compare, so the probe is exact-ISSUE-scoped — a
@@ -11554,6 +11563,34 @@ when the lag outlasts the pre-check budget.
   2026-07-26). Update the chat title with `merged`. Then run the **post-merge
   stale-task-folder guard** below (it runs on every merge form).
 
+  **Authoritative merge-SHA derivation (#1722).** Read the merge SHA
+  from the PR object itself, AFTER `gh pr merge` reports success:
+  `MERGE_SHA=$(gh pr view <PR> --json mergeCommit -q .mergeCommit.oid)`.
+  This is the shape SKILL.md already uses elsewhere for other PR fields
+  (`state`, `mergeable`, `headRefOid`), and `mergeCommit` is a documented
+  `gh pr view --json` field — it resolves the merge commit for BOTH
+  merge forms (`--squash` returns the single squash commit; `--rebase`
+  returns the tip of the replayed commits; verified live 2026-07-27
+  against PR #1487 (rebase form) → `85db2fba593a1b201175cbb5438568be32ca161f`).
+  A NOT-YET-MERGED PR returns `null` for `.mergeCommit`, so the derivation
+  is ordering-safe as long as it runs AFTER `gh pr merge` reports success.
+  NEVER derive the SHA from the shared `origin/main` tip
+  (e.g. `git log -1 --format=%H origin/main`) — concurrent sessions'
+  merges advance the shared tip between the merge and the read, so a
+  sibling task's merge commit can substitute for yours (incident
+  2026-07-26 session `06447a89`: the tip read #1692's SHA while
+  posting the #1691 merge marker).
+
+  **Pre-post commit-subject cross-check (#1722).** Before posting
+  `epm:merged v1`, verify the derived commit's subject names THIS task —
+  `SUBJECT=$(git -C "$REPO_ROOT" log -1 --format='%s' "$MERGE_SHA")` —
+  and confirm `task #<N>` (or the issue-branch name `issue-<N>`) appears
+  in `$SUBJECT`. On a mismatch, ABORT the post and re-derive from
+  `gh pr view <PR> --json mergeCommit` (the null case from a not-yet-merged
+  PR also fails this check: `git log -1 --format=%s null` errors, so a
+  premature call is caught here rather than shipping `null` in the marker).
+  A foreign SHA is caught at post time rather than by eye after the fact.
+
   Note. A merged diff that touches `scripts/*guard*.sh`, `.claude/hooks/*`, or
   any workflow-surface content that the session's own remaining Bash calls
   route through is NOT live at the shared repo root the instant `gh pr merge`
@@ -12027,13 +12064,12 @@ Decision tree:
 
   **Single-flight probe (#1606)** first, per the Step 9c 1b statement: a
   separate foreground
-  `pgrep -af 'issue-<N>-surgical-outcome[.]txt|scripts/workflow_lint[.]py'`.
+  `pgrep -af 'issue-<N>-surgical-outcome[.]txt|issue-<N>-lint-gate-tre[e]'`.
   An `issue-<N>`-scoped hit = THIS gate-and-land sequence is still
   running — WAIT for exit, never relaunch into it (the outcome-sentinel
-  `rm -f` below would clobber it, and the root holds ITS staged payload). A
-  `workflow_lint.py`-only hit is AMBIGUOUS (root-copy lint invocations are
-  not issue-scoped in argv — possibly a SIBLING session's root lint or a
-  9a-ter inline gate): WAIT for exit, never kill — the same rule as this
+  `rm -f` below would clobber it, and the root holds ITS staged payload).
+  A residual ambiguous hit that is neither this session's own gate nor a
+  matching sibling gate: WAIT for exit, never kill — the same rule as this
   block's completion-read recovery arm.
 
   Then, from the **repo root on `main`** (never switch the branch
@@ -12351,10 +12387,11 @@ Decision tree:
   - MISSING sentinel -> the sequence died mid-run (tool kill / watcher
     force-stop / wedge-bound kill) and the root may hold staged payload.
     Recover IN THIS ORDER: (1) kill-before-relaunch probe FIRST
-    (`pgrep -af 'scripts/workflow_lint[.]py'` — root-copy invocations are
-    not issue-scoped in argv, so on an ambiguous match WAIT for exit,
-    never kill; the Step 0 single-orchestrator guard excludes same-issue
-    concurrency). (2) Landed/committed classification BEFORE any cleanup —
+    (`pgrep -af 'issue-<N>-lint-gate-tre[e]'` — issue-scoped per the L11949
+    Step 10d single-flight probe; on any residual ambiguous match WAIT for
+    exit, never kill; the Step 0 single-orchestrator guard excludes
+    same-issue concurrency).
+ (2) Landed/committed classification BEFORE any cleanup —
     a shell killed between commit/push success and the sentinel write
     leaves the payload COMMITTED (tracked + clean), which a naive
     contamination probe misreads: check whether the surgical commit is on
