@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1719,
+  "highest_id": 1720,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5600,6 +5600,13 @@
       "path": "tasks/archived/172",
       "status": "archived",
       "title": "Refactor to use agent teams in a worktree"
+    },
+    "1720": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1720",
+      "status": "proposed",
+      "title": "daily-fix: make the implementer NOT-RUN escape pre-emptive f"
     },
     "173": {
       "has_clean_result": true,
