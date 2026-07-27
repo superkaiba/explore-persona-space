@@ -952,7 +952,7 @@ with the turn.
   NOT end the turn silently mid-verification: post the implementation
   marker with that phase explicitly marked NOT-RUN plus the exact
   copy-pasteable command, so code-reviewer and the orchestrator see the
-  gap instead of a truncation.
+  gap instead of a truncation. **PRE-EMPTIVE case for Step 9c-listed slow tests:** if the Step 9c selector's `--json` `slow_tests_selected` list contains any file this round would otherwise run locally, route it PRE-EMPTIVELY to NOT-RUN + Step 9c deferral at minute zero — zero local attempts, no timeout probe. Report each with the exact copy-pasteable command AND the selector's `recommended_timeout_s`. A `-k` subset is an acceptable local substitute ONLY when named explicitly in the `epm:results` marker with its deselected count.
 - A locally-launched background PROCESS is never your deliverable either:
   it dies with your subagent shell. A long local job that must outlive the
   turn: launch

@@ -5548,36 +5548,36 @@
     "1713": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1713",
-      "status": "running",
+      "path": "tasks/completed/1713",
+      "status": "completed",
       "title": "daily-fix: restore check_inline_round_duty_mirror \u2014 main red"
     },
     "1714": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1714",
-      "status": "proposed",
+      "path": "tasks/completed/1714",
+      "status": "completed",
       "title": "daily-fix: spec-freshness sync manufactures self-inconsisten"
     },
     "1715": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1715",
-      "status": "proposed",
+      "path": "tasks/completed/1715",
+      "status": "completed",
       "title": "daily-fix: draft-PR recipe uses stale local main and omits -"
     },
     "1716": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1716",
-      "status": "proposed",
+      "path": "tasks/approved/1716",
+      "status": "approved",
       "title": "daily-fix: code-reviewer has no full-ruleset ruff policy-pin"
     },
     "1717": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1717",
-      "status": "proposed",
+      "path": "tasks/planning/1717",
+      "status": "planning",
       "title": "daily-fix: select_step9c_tests --json/--map-files ergonomics"
     },
     "1718": {
@@ -5604,8 +5604,8 @@
     "1720": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1720",
-      "status": "running",
+      "path": "tasks/completed/1720",
+      "status": "completed",
       "title": "daily-fix: make the implementer NOT-RUN escape pre-emptive f"
     },
     "1721": {
@@ -5646,8 +5646,8 @@
     "1726": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1726",
-      "status": "planning",
+      "path": "tasks/completed/1726",
+      "status": "completed",
       "title": "daily-fix: long fit loops must checkpoint per cell and log p"
     },
     "1727": {
@@ -5660,8 +5660,8 @@
     "1728": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1728",
-      "status": "approved",
+      "path": "tasks/reviewing/1728",
+      "status": "reviewing",
       "title": "daily-fix: reuse check (l) needs a call-shape bind; renames "
     },
     "1729": {
@@ -5688,8 +5688,8 @@
     "1731": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1731",
-      "status": "planning",
+      "path": "tasks/completed/1731",
+      "status": "completed",
       "title": "daily-fix: harden the /daily miner brief (JSONL traps, probe"
     },
     "1732": {
