@@ -4771,7 +4771,16 @@ transitions:
 
 - at `awaiting_promotion` (Step 9b — the pod was terminated at Step 8 and
   this is a human gate, so no more auto-driving);
-- at `completed` (Step 10 auto-complete);
+- at the Step 10d merge exit (code-change paths only — the auto-merge is
+  the terminal step there, so CRON-TEARDOWN + `set-status completed` +
+  `epm:done` fire AFTER `epm:merged` posts, or in the `epm:merge-failed`
+  terminal-failure branch, instead of at Step 10 auto-complete;
+  #1723 — closes the ~33 min merge window that used to run without
+  `/issue-tick` re-drive coverage and with the durable record already
+  reading `completed`+`epm:done` on an unmerged branch);
+- at `completed` (Step 10 auto-complete on the experiment path, once
+  `epm:merged` is already present from Step 9b — the code-change path
+  reaches `completed` via the Step 10d exit bullet above);
 - at any `set-status <N> blocked` exit in Step 9 / the
   interpretation+review loop;
 - at the `status=stalled` / `status=dead` / unrecognised-gate `blocked`
@@ -4917,7 +4926,10 @@ Do NOT run CRON-TEARDOWN here. The backstop INTENTIONALLY survives past
 those stages have no other auto-wake, so an interactive per-issue session
 that stalls in them would otherwise go silent forever. The cron is torn
 down only at the true terminal / park transitions: at `awaiting_promotion`
-(Step 9b), at `completed` (Step 10 auto-complete), and at any
+(Step 9b), at the Step 10d exit (code-change paths only — after
+`epm:merged` posts or in the `epm:merge-failed` terminal-failure branch;
+#1723), at `completed` (Step 10 auto-complete on the experiment path,
+`epm:merged` already present from Step 9b), and at any
 `set-status <N> blocked` exit in Step 9 / the interpretation+review loop
 (plus the poll-loop stalled/dead/blocked exits and the Step 6d.4 gate-park
 that already tear it down). The Step 9 idempotency guard (below) bounds the
@@ -9398,21 +9410,54 @@ work* contract.
      user to add one. Do NOT pick a default, and do NOT advance until
      fixed.
 
-6. Run CRON-TEARDOWN before applying the terminal status (fresh
-   `CronList` → `CronDelete` every job in the two-leg match set: the
-   recurring `/issue-tick <N>` tick + stray one-shot `/issue <N>` wakeups;
-   not-found = success; § CRON-TEARDOWN procedure). For an
-   experiment the cron was already torn down at Step 9b
-   (`awaiting_promotion`), so this is an idempotent backstop; for a
-   code-change path arriving via Step 9c PASS it is the teardown site (a
-   code-change task usually never armed a cron, so it no-ops, but running
-   it keeps the "every terminal/park exit tears down" contract uniform).
-   Then apply the chosen status via `task.py set-status` (which performs the
-   `git mv` + commit + folder move):
-   ```bash
-   uv run python scripts/task.py set-status <N> <new-status> \
-     --note "Step 10 auto-complete: <reason>"
-   ```
+6. **Branch on `epm:merged` presence (routing predicate; #1723).** The
+   idempotency signal `epm:merged` is the same one Step 10d itself keys off
+   (Step 10d § Idempotent — "Skip the whole step if `epm:merged` already
+   exists"), so we branch on it here to place the terminal transition
+   AFTER the merge on the code-change path without changing the experiment
+   path's behavior:
+
+   - **If `epm:merged` is ALREADY present** (experiment path — Step 9b
+     auto-merged the worktree while parking at `awaiting_promotion`, so
+     the merge landed BEFORE Step 10 saw the task): run CRON-TEARDOWN as
+     an idempotent backstop (fresh `CronList` → `CronDelete` every job in
+     the two-leg match set: the recurring `/issue-tick <N>` tick + stray
+     one-shot `/issue <N>` wakeups; not-found = success; § CRON-TEARDOWN
+     procedure). The cron was already torn down at Step 9b, so this
+     no-ops in the common case — running it keeps the "every terminal /
+     park exit tears down" contract uniform. Then apply the chosen
+     status via `task.py set-status` (which performs the `git mv` +
+     commit + folder move) and proceed to step 7 below to post the final
+     `epm:done`:
+     ```bash
+     uv run python scripts/task.py set-status <N> <new-status> \
+       --note "Step 10 auto-complete: <reason>"
+     ```
+
+   - **If `epm:merged` is NOT yet present** (code-change path arriving via
+     Step 9c PASS — `kind: infra | batch | analysis | survey`): do NOT
+     tear down the cron here and do NOT apply the terminal status /
+     `epm:done` here. Advance directly to Step 10d — its success path
+     posts `epm:merged` and THEN, in its `#### Terminal teardown
+     (code-change path only)` sub-section, fires CRON-TEARDOWN +
+     `set-status completed` + `epm:done` in that order. Its
+     terminal-failure branch (`epm:merge-failed v1` after every retry
+     surface is exhausted) takes the SAME terminal-teardown sequence,
+     since a code-change task still completes even when the merge
+     terminally failed (the merge retries idempotently on the next
+     `/issue <N>` re-invocation — the resume-semantics table's `completed`
+     + `epm:done` + no `epm:merged` row).
+
+   Rationale: the previous ordering (teardown → `set-status completed` →
+   `epm:done` → Step 10d) left the entire Step 10d merge window (up to
+   ~33 min under fleet churn — recovery cycle + two ~12-min lint-gate
+   waits observed on 2026-07-26) with NO `/issue-tick` re-drive coverage
+   AND with the durable record reading `completed`+`epm:done` on an
+   unmerged branch — the `completed_unmerged_pass` (#1540, #1653) flag
+   class. Moving the terminal transition to AFTER `epm:merged` closes
+   both gaps by construction on the code-change path; the experiment
+   path is untouched (the routing predicate above sees `epm:merged`
+   present and takes the same idempotent-backstop shape as today).
 
 7. Post final event `epm:done v1` (or
    `epm:status-changed` recording the followups_running transition)
@@ -9420,7 +9465,10 @@ work* contract.
    what's next, plus a link to the clean-result write-up location (for
    experiments) AND a list of in-flight child follow-ups (when
    transitioning to `followups_running`). Include the line
-   `Moved to **<status-name>**.`
+   `Moved to **<status-name>**.` — for the experiment path (step 6
+   `epm:merged`-present branch); the code-change path's `epm:done`
+   fires from Step 10d's Terminal-teardown sub-section AFTER
+   `epm:merged v1` has been posted.
 
 8. **LEAVE THE TASK ON DISK.** Tasks are never deleted by the skill.
    Done-ness lives in the parent folder under `tasks/`. The folder is
@@ -11365,7 +11413,18 @@ branch tip is unchanged, so the SHA-bound verdict re-certifies it
 (consume-on-merge-success survives this failure by design; never
 hand-write the verdict file, #1082). Bounded at TWO same-tip retries
 per Step 10d invocation; a third consecutive hit is no longer plausibly
-timing — reclassify by error text per shapes 1/2/3/else. Before #1288
+timing — reclassify by error text per shapes 1/2/3/else.
+
+Before each retried merge call, post an `[long-phase-heartbeat]`
+progress note so the stalled detector, `tick_triage.py`, and downstream
+sessions can tell an in-flight retry from a stranded merge (#1723;
+same long-phase-heartbeat family recognized by
+`autonomous_session_watch._long_phase_heartbeat_reason`):
+
+```bash
+uv run python scripts/task.py post-marker <N> epm:progress \
+  --note "[long-phase-heartbeat] step10d-merge attempt=<k> shape=0"
+``` Before #1288
 this shape fell through to the "anything else" catch-all (then
 numbered (3); now class (4) after #1657 added the head-sync shape) and
 burned a full
@@ -11411,6 +11470,14 @@ commit's replay — the fall-through to the merge-conflict recovery below
 covers it. Even a fresh snapshot can go stale in the seconds between the
 fetch and the server-side merge — this recipe bounds and mechanizes
 recovery; it does not eliminate the race.
+
+Before the re-snapshot-and-retry runs, post an `[long-phase-heartbeat]`
+progress note (#1723; same family as shape 0 above):
+
+```bash
+uv run python scripts/task.py post-marker <N> epm:progress \
+  --note "[long-phase-heartbeat] step10d-merge attempt=<k> shape=2"
+```
 
 ```bash
 # Re-snapshot-and-retry (ONCE per Step 10d invocation) — fires ONLY on
@@ -11508,6 +11575,15 @@ the gate). Still refused → the Failure bullet (`epm:merge-failed`).
 The head-sync pre-check inside the safe-case block above exists to
 keep this shape off the FIRST attempt; this paragraph is the backstop
 when the lag outlasts the pre-check budget.
+
+Before each retried merge call in this shape (each same-tip re-entry
+AND after the close/reopen nudge), post an `[long-phase-heartbeat]`
+progress note (#1723; same family as shapes 0/2 above):
+
+```bash
+uv run python scripts/task.py post-marker <N> epm:progress \
+  --note "[long-phase-heartbeat] step10d-merge attempt=<k> shape=3"
+```
 
 - **Success:** post `epm:merged v1` with the list of merge SHAs plus
   `merge_form: squash|rebase` and `merge_attempts: <n>` (note-token
@@ -11708,7 +11784,13 @@ fi
 # #1082). The recovery just added a merge commit, so --rebase is
 # documented-doomed here (#1041 — the old flow burned that attempt, then
 # took the --squash substitution). Go straight to --squash for ALL kinds
-# (#1288):
+# (#1288).
+#
+# Before the post-recovery `gh pr merge --squash` retry, post an
+# `[long-phase-heartbeat]` progress note (#1723; same family as shapes
+# 0/2/3 above):
+#   uv run python scripts/task.py post-marker <N> epm:progress \
+#     --note "[long-phase-heartbeat] step10d-merge attempt=<k> shape=conflict-recovery"
 if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/null \
    && [ -n "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" ] \
    && [ "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" = "$(git -C "$WT" rev-parse HEAD)" ]; then
@@ -12554,6 +12636,72 @@ failure that drove the #1253 improvised, hook-blocked checkout-pathspec
 fallback). The local-residue tail converges the local root via
 `scripts/sync_repo_root.py`, with the existence re-check as the arbiter
 (the helper's exit 0 alone does not prove the pull ran).
+
+#### Terminal teardown (code-change path only; runs AFTER `epm:merged v1` has been posted)
+
+Fires ONLY on the code-change path (`kind: infra | batch | analysis |
+survey` — the arm that reached Step 10d via Step 10 step 6's
+`epm:merged`-not-yet-present branch, #1723). The experiment path
+already parked at `awaiting_promotion` in Step 9b and its own terminal
+transition to `completed` happens later on user promotion, so this
+sub-section is UNREACHABLE from that arm by design — the routing
+predicate is `kind ∈ {infra, batch, analysis, survey}`.
+
+Runs AFTER `epm:merged v1` has been posted AND AFTER the
+`#### Post-merge stale-task-folder guard` above has finished reconciling
+the shared `main` tree. All four `epm:merged` posting sites reach this
+block on success — the safe-case `gh pr merge $MERGE_FORM` above, the
+merge-conflict-recovery retry, the artifact-confirmed (guard-3-tripped)
+sentinel, and the surgical additive checkout — because the stale-folder
+guard runs on ALL of them ("runs after EVERY merge form lands") and
+this sub-section is its immediate successor. The block below fires
+IDEMPOTENTLY: a re-entry that already sees `status == "completed"` +
+`epm:done` present exits as a no-op (the standard SKILL.md resume
+convention).
+
+1. **Run CRON-TEARDOWN** — fresh `CronList` → `CronDelete` every job in
+   the two-leg match set (the recurring `/issue-tick <N>` tick + stray
+   one-shot `/issue <N>` wakeups; not-found = success; § CRON-TEARDOWN
+   procedure). The `/issue-tick` backstop stayed armed through the
+   entire Step 10d merge window (up to ~33 min under fleet churn — the
+   shape-2 conflict-recovery cycle + two ~12-min lint-gate waits
+   observed on 2026-07-26); a wedged / refused session during the
+   merge would have been re-driven by the tick, and now that
+   `epm:merged` is posted the backstop has done its job. Step 1 is
+   idempotent — a paranoid re-entry that already ran teardown reads
+   both legs empty and no-ops.
+
+2. **Apply the terminal status** via `task.py set-status`:
+   ```bash
+   uv run python scripts/task.py set-status <N> completed \
+     --note "Step 10d auto-complete: merged, terminal teardown"
+   ```
+   `<new-status>` is always `completed` for the code-change kinds —
+   code-change paths never seed `followups_running` (Step 10 step 5's
+   destination logic already selected `completed` for these kinds, and
+   the experiment-path branches — the ones that can pick
+   `awaiting_promotion` / `followups_running` — never reach this
+   sub-section).
+
+3. **Post final event `epm:done v1`** summarizing outcome, key numbers,
+   what's confirmed/falsified, what's next, plus a link to the
+   worktree-side write-up location and the merge SHA(s) recorded on the
+   `epm:merged` note just posted above. Include the line
+   `Moved to **completed**.`
+
+**Terminal-failure branch.** If the merge terminally failed after every
+retry surface exhausted (`epm:merge-failed v1` posted at the safe-case
+Failure bullet, the merge-conflict-recovery Failure arm, the
+artifact-confirmed / new-shared-`src/`-infra refusal, or the surgical
+checkout's `push-failed`/`partial-apply` arms), the code-change task
+still needs to complete (see the Failure bullet's own contract:
+"a code-change task still completes"). Run the SAME three-step sequence
+(CRON-TEARDOWN → `set-status completed` → `epm:done`), but the
+`epm:done` note records `merge_status: failed` and links to the
+`epm:merge-failed v1` marker for the manual-resolution audit trail. The
+merge retries idempotently on the next `/issue <N>` re-invocation
+regardless (per the resume-semantics table's `completed` + `epm:done`
++ no `epm:merged` row above).
 
 ---
 

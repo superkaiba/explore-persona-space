@@ -406,6 +406,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1631) — plan-patch helper + SKILL.md pointer pin
     "tests/test_plan_patch.py",
     "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
+    # NEW (#1723) — SKILL.md Step 10 CRON-TEARDOWN + epm:done reorder around
+    # Step 10d merge (Terminal-teardown H4 + exit-site enumeration +
+    # Step 10 step 6 branch-on-epm:merged + retry-surface long-phase heartbeats)
+    "tests/test_issue_skill_step10_teardown_ordering.py",
     "tests/test_step_completed_resume.py",  # NEW (#1242) — resume/step-completed contract pin
     # NEW (#1662) — CLAUDE.md + SKILL.md suffixed-pod completion-teardown contract pin
     "tests/test_suffixed_pod_completion_teardown_pin.py",
