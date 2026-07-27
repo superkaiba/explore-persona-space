@@ -511,6 +511,29 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   subsets where supersets and matched-n subsamples fit at +0.3…+0.65,
   voiding the run's map-identity verdict layer, found only by the analyzer
   post-run.)
+  Call-shape bind (added #1728). Reading declared boundaries out of the
+  instrument's docs / module constants is NOT enough: a reused fit /
+  analysis helper can carry a runtime guard buried inside a code path —
+  `assert <cond>, "..."` / `raise NotImplementedError(...)` / `raise
+  ValueError(...)` — that rejects a legal-looking kwarg combination the
+  signature and the module-level docs both accept. Before reuse, the plan
+  records a probe of the ACTUAL call the new code will make: the exact
+  kwargs at their exact values (or minimal stand-ins), executed at smoke
+  shape — NOT a signature-name membership test. A kwarg present in the
+  callee's signature is NOT evidence the call PATH accepts it. Cheap
+  companion (run in the same round, not a substitute): direct
+  `grep -n 'assert\|raise NotImplementedError\|raise ValueError' <reused
+  helper>` for guards NAMING the kwargs the new caller passes, and read the
+  hit lines. (Incident #1728 × session `5c5a89e8` 2026-07-26T19:42:33Z:
+  `scripts/issue1689_fit_cells.py` reused
+  `issue825_fit_cells.heldout_r2_sweep` with a custom `lambdas=` grid; the
+  parent's `_ridge_predict_cached` (line 329) asserts `lambdas is None` on
+  the `inner-group-cv` + inner-cache path — the signature accepts the
+  kwarg, the code path rejects it. The signature smoke below and the doc /
+  constants read above BOTH passed; crash surfaced ~13h into upstream
+  compute.) Scope split vs the L697 signature smoke: that smoke is
+  NAME-membership only; a runtime-guard rejection is out of ITS scope and
+  belongs here.
 
 A failing check other than (i)/(h)(iv)/(k)/(l) → retrain / regenerate; a failing
 throughput check (i) → fix the SOURCE module (batch / parametrize / scope it
@@ -720,6 +743,15 @@ Three mandatory steps, BEFORE the first commit on the worktree:
    GPU-bound-phase carve-out (the per-phase one verifies the
    dispatcher → trainer ABI; this per-kwarg one verifies every
    field the dispatcher's call site already names).
+   Scope limit (added #1728). This smoke is NAME-MEMBERSHIP only — it
+   catches a kwarg the callee's SIGNATURE has retired / renamed /
+   type-changed on `main`. It does NOT bind the actual VALUES the new
+   caller will pass against runtime guards buried in the callee's body
+   (`assert <cond>`, `raise NotImplementedError`, `raise ValueError`);
+   a runtime-guard rejection of a legal-looking kwarg combination is
+   OUT OF SCOPE HERE and belongs to check (l)'s call-shape bind above
+   (incident #1728 × `heldout_r2_sweep(lambdas=<grid>)` vs
+   `_ridge_predict_cached`'s `assert lambdas is None`).
 
 3. **Surface every reconciled drift in the implementation report.**
    Under `(b) Considered but not done`, one bullet per drift item:

@@ -453,3 +453,58 @@ mid-run rebase of `issue-<N>` re-opens the gap there (out of scope
 here, noted for the record). The implementer's
 own same-pod smoke-slice confirmation (element 2) is UNCHANGED and is
 not a "relaunch" under this section.
+
+### Crash-fix rounds: symbol-rename whole-tree grep duty (REQUIRED — every retry round; #1728)
+
+Any crash-fix round (or ordinary round) whose diff RENAMES a
+MODULE-EXPORTED SYMBOL — a class / top-level function / top-level
+dataclass / top-level module-level constant / package-exported name in an
+`__init__.py` — MUST, in the SAME round, before its
+`epm:experiment-implementation` marker, run
+
+```bash
+grep -rn '<old_name>' scripts/ src/
+```
+
+for each renamed symbol and EITHER fix every hit to the new name OR
+explicitly disposition each hit (e.g. "hit is a comment referencing the
+old API history — leave"; "hit is under `external/` — out of scope"; "hit
+is a test that pins the pre-rename shape as a regression fixture —
+leave"). The grep command AND its per-hit disposition are recorded in the
+implementer's `epm:experiment-implementation` marker under a top-level
+`### Symbol-rename grep` section. A round that renames >1 symbol records
+one grep + disposition block per symbol; a round with NO
+module-exported symbol rename records NO block (auditable-N/A convention,
+same as Step 0.68's `N/A — no fit-loop`).
+
+**Scope-limit — module-exported symbols only.** This duty fires on renames of
+names any OTHER file in `scripts/` or `src/` can `import`, `from ... import`,
+or textually reference by identifier: a class, a top-level `def`, a top-level
+dataclass, a top-level module-level constant (SCREAMING_SNAKE / literal
+assignment at module scope), or an `__init__.py` re-export. It does NOT fire
+on renames of LOCAL variables inside a function body (`data → payload` inside
+a function), private helpers whose name starts with `_` AND that no other
+file imports (verify by the grep itself returning ≤ ~1 hit — self-file only),
+loop counters, or parameter names in an internal signature no external caller
+threads. When in doubt, run the grep: an over-fire produces one extra grep
+command in the marker (cost: seconds); an under-fire is the incident this
+duty exists to prevent.
+
+**Cross-round rename discipline.** A rename in ROUND R that missed a sibling
+hit at time R and was caught in ROUND R' by an import-time crash does NOT
+retroactively excuse round R — round R''s marker MUST record the grep + fix
+for the missed hit, tagged `(carrying #<R>'s rename)`. This closes the gap
+that "the rename shipped in an earlier round, so it's not my rename" would
+otherwise open.
+
+(Incident #1728 × session `5c5a89e8` 2026-07-26T06:35:50Z: round R5 renamed
+`DispatchCall → DispatchItem` in `scripts/issue1689_haiku_u2_gen.py` but
+left `scripts/issue1689_gen_onpolicy.py:297` importing the old name. Phase
+B relaunched, reached the sibling script's import, and the vLLM engine
+core died: `ImportError: cannot import name 'DispatchCall' from
+'explore_persona_space.llm.api_dispatch'`. The implementer's own
+`epm:failure-lesson` (`generalizes: yes`) named the exact rule this section
+now durablizes: *"grep the whole scripts/ tree for the old name in the
+same round and fix every hit — sibling scripts drift until the next phase
+invokes them."* Cost: full crash-fix round R9, ~20 min, plus a wasted pod
+launch cycle.)

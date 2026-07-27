@@ -167,6 +167,21 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    plan, then reuse.
    (Relocated verbatim from this spec, #829.)
 
+   **Call-shape bind for reused fit / analysis helpers (added #1728).**
+   In addition to (a)-(l), for EVERY reused fit / analysis helper the plan
+   would call with kwargs, the plan §10 (Reproducibility Card) records the
+   exact kwargs at their exact values the new caller will pass and STATES
+   that a runtime call at smoke shape (not a signature-membership test)
+   binds against the callee's body. A `grep -n 'assert\|raise
+   NotImplementedError\|raise ValueError' <reused helper>` for guards
+   naming any of those kwargs is the cheap companion; a hit whose predicate
+   contradicts the new caller's value REQUIRES engaging the guard's stated
+   alternative (or a `Source:` justification in §11) BEFORE the plan is
+   returned. Rationale + incident: `.claude/rules/artifact-reuse.md`
+   check (l) "Call-shape bind" clause. This item MIRRORS the fitness-check
+   self-attestation above; it is enforced downstream by `critic.md`
+   Methodology lens item 9 (REVISE) alongside the (a)-(l) check.
+
    **Live-sibling sweep — check CONCURRENT in-flight work before designing
    any new module/helper build (#1394).** The searches above cover merged
    code, HF artifacts, and PAST parent/sibling issue branches; a concurrent

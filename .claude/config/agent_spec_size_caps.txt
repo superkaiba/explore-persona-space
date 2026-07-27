@@ -6,7 +6,7 @@
 # attribute keeps its name + type (dict[str, int]) so every consumer site,
 # test monkeypatch, and verify_plan reference is unchanged.
 
-code-reviewer.md            122_400   # measured 121,782 B post-#1726 (Step 3.6 T2 count trigger + verdict-routing rewrite); cap = measured + ~0.6 KB
+code-reviewer.md            125_500   # measured 124,356 B post-merge (main #1726 Step 3.6 T2-trigger + #1728 Step 3.75 symbol-rename grep verification); cap = measured + ~1.15 KB
 codex-clean-result-critic.md 75_200   # measured 74,082 B post-#1447; cap = measured + ~1.1 KB
 codex-code-reviewer.md       60_800   # measured 59,576 B post-#1693 (Step 0.69 mirror paragraph); cap = measured + ~1.2 KB
 experiment-implementer.md    80_500   # measured 76,274 B post-#1692 (item 5 Axis 1 import-resolution leg); cap = measured + ~0.23 KB

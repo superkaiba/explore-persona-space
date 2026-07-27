@@ -55,7 +55,7 @@ from workflow_lint import _load_agent_spec_caps  # noqa: E402
 # data file in lockstep (see #1718 for the split rationale). NOT an ongoing
 # invariant.
 _MIGRATION_SNAPSHOT: dict[str, int] = {
-    "code-reviewer.md": 122_400,
+    "code-reviewer.md": 125_500,
     "codex-clean-result-critic.md": 75_200,
     "codex-code-reviewer.md": 60_800,
     "experiment-implementer.md": 80_500,
