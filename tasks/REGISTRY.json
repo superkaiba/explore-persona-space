@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1734,
+  "highest_id": 1735,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5712,6 +5712,13 @@
       "path": "tasks/proposed/1734",
       "status": "proposed",
       "title": "daily-fix: state the minimum Step-2 plan-review floor for ki"
+    },
+    "1735": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1735",
+      "status": "proposed",
+      "title": "daily-fix: closed-sibling probe suppressed 21 of 24 filings "
     },
     "174": {
       "has_clean_result": false,
