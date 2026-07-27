@@ -5625,8 +5625,8 @@
     "1723": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1723",
-      "status": "running",
+      "path": "tasks/reviewing/1723",
+      "status": "reviewing",
       "title": "daily-fix: CRON-TEARDOWN precedes the Step 10d merge, leavin"
     },
     "1724": {
