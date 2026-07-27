@@ -5569,29 +5569,29 @@
     "1716": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1716",
-      "status": "approved",
+      "path": "tasks/completed/1716",
+      "status": "completed",
       "title": "daily-fix: code-reviewer has no full-ruleset ruff policy-pin"
     },
     "1717": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1717",
-      "status": "planning",
+      "path": "tasks/reviewing/1717",
+      "status": "reviewing",
       "title": "daily-fix: select_step9c_tests --json/--map-files ergonomics"
     },
     "1718": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1718",
-      "status": "proposed",
+      "path": "tasks/approved/1718",
+      "status": "approved",
       "title": "daily-fix: AGENT_SPEC_SIZE_GRANDFATHER is a chronic merge-co"
     },
     "1719": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1719",
-      "status": "proposed",
+      "path": "tasks/approved/1719",
+      "status": "approved",
       "title": "daily-fix: single-flight pgrep probes self-match and are not"
     },
     "172": {
@@ -5611,8 +5611,8 @@
     "1721": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1721",
-      "status": "proposed",
+      "path": "tasks/planning/1721",
+      "status": "planning",
       "title": "daily-fix: planner grounding \u2014 run grep-answerable claims, t"
     },
     "1722": {
@@ -5660,8 +5660,8 @@
     "1728": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1728",
-      "status": "reviewing",
+      "path": "tasks/completed/1728",
+      "status": "completed",
       "title": "daily-fix: reuse check (l) needs a call-shape bind; renames "
     },
     "1729": {
