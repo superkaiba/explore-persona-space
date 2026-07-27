@@ -5716,8 +5716,8 @@
     "1735": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1735",
-      "status": "reviewing",
+      "path": "tasks/completed/1735",
+      "status": "completed",
       "title": "daily-fix: closed-sibling probe suppressed 21 of 24 filings "
     },
     "1736": {
