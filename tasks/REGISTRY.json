@@ -5548,8 +5548,8 @@
     "1713": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1713",
-      "status": "running",
+      "path": "tasks/reviewing/1713",
+      "status": "reviewing",
       "title": "daily-fix: restore check_inline_round_duty_mirror \u2014 main red"
     },
     "1714": {
