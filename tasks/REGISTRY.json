@@ -5639,8 +5639,8 @@
     "1725": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1725",
-      "status": "proposed",
+      "path": "tasks/planning/1725",
+      "status": "planning",
       "title": "daily-fix: Step 4 root-divergence probe; post-merge sync sit"
     },
     "1726": {
