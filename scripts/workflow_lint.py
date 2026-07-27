@@ -11892,6 +11892,10 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # gate — trigger + sub-checks (1)/(2)/(3) + waiver form + verdict
     # routing with the smoke-var-ungated / smoke-var-orphan-full FAIL
     # tags — plan-mandated growth; cap = measured + ~1.5 KB. Prior:
+    # 128_000 — measured 127,227 B post-#1716 (Step 4 ruff-policy pin
+    # + L99 style-bullet clause + Step 0.5 pin-invocation marker-shape
+    # check — plan-mandated growth atop main's #1728 Step 3.75 grep
+    # verification + #1726 Step 3.6 T2-trigger),
     # 125_500 — measured 124,356 B post-merge (main #1726 Step 3.6
     # T2-trigger additions + #1728 Step 3.75 symbol-rename grep
     # verification — plan-mandated growth binding both the
