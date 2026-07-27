@@ -5688,8 +5688,8 @@
     "1731": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1731",
-      "status": "proposed",
+      "path": "tasks/planning/1731",
+      "status": "planning",
       "title": "daily-fix: harden the /daily miner brief (JSONL traps, probe"
     },
     "1732": {
