@@ -5653,8 +5653,8 @@
     "1727": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1727",
-      "status": "approved",
+      "path": "tasks/running/1727",
+      "status": "running",
       "title": "daily-fix: flag ungated smoke/full variable pairs in review"
     },
     "1728": {
