@@ -209,6 +209,43 @@ Signals to hunt for (non-exhaustive — anything that went wrong counts):
 - **Voice / register drift** — corporate-speak, AI-slop vocab, invented jargon, opaque condition codes, or template-copying instead of plain-English.
 - **Dropped handoffs / manual fixes** — information lost between agents, or anything Thomas had to do by hand that an agent should have done.
 
+#### Miner-brief composition (recipe the per-run brief inherits)
+
+This is the DURABLE source the per-run `logs/daily/mining-<date>/BRIEF.md`
+inherits from. The per-run brief is regenerated nightly and must copy the
+recipe from here — never re-improvise it — so a trap one miner hits tonight
+is a trap every miner avoids tomorrow.
+
+Transcript-reading traps every miner brief carries verbatim:
+
+- **Rows without a `message` key exist.** Transcript-row types
+  `queue-operation`, `attachment`, and `last-prompt` carry no `message`
+  field. Use `row.get('message', {})` — never `row['message']` (raises
+  `KeyError: 'message'` mid-loop).
+- **Multi-file JSONL loops need an explicit Bash `timeout ≥ 300000` ms.**
+  The Bash tool's default 2-minute cap kills a 6-transcript loop mid-pass
+  with `Exit code 143 Command timed out after 2m 0s`. Cap is 600000 ms
+  (10 min) — pick a value between 300000 and 600000 sized to the loop.
+- **Run every `git` call from the repo root.** The transcript directories
+  under `~/.claude/projects/...` are not a git repository — a `git log` /
+  `git blame` there returns `Exit code 128`. `cd` back to the repo root
+  (or use `git -C <repo-root> ...`) before any git invocation.
+
+Miner output schema — `suggested fix` probed-vs-inferred field:
+
+- When a fix names a mechanism (a missing surcharge, a hard-set variable,
+  a rule violation, any concrete root cause), the miner states one of:
+  - `probed: <exact command it ran>` — the miner ran the probe, this is
+    the verified output; OR
+  - `inferred — not probed` — the miner is naming a plausible mechanism
+    it did not verify.
+- A miner is not obliged to probe. It is obliged to say which it did, so
+  the filer knows which premises need a verification round before body
+  compose (three route-2 drafts on 2026-07-26 named mechanisms that were
+  refuted at compose time — see the Evidence-counting discipline block
+  immediately below for the firings-only counting convention that pairs
+  with this field).
+
 **Evidence-counting discipline — count `tool_result` firing EVENTS, never
 raw string occurrences (#1484).** When quantifying an error/warn string in
 a transcript ("N failed vs M ok"), count firing events: `tool_result`
