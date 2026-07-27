@@ -5681,8 +5681,8 @@
     "1730": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1730",
-      "status": "planning",
+      "path": "tasks/approved/1730",
+      "status": "approved",
       "title": "daily-fix: gcloud missing from non-login PATH silently repor"
     },
     "1731": {
