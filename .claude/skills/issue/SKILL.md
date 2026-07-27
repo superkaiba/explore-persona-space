@@ -10113,6 +10113,77 @@ rebase-merged. Three guards:
    its `origin/main...HEAD` diff carries the whole `#472` parent
    payload, failing the content check.)
 
+4. **Lost-update refusal (shared workflow-surface files).** A branch
+   whose copy of a SHARED workflow-surface file predates a sibling's
+   already-merged additions can carry a whole-file snapshot that
+   silently DROPS lines that landed on `origin/main` after the branch's
+   merge-base — no conflict, no warning, hard to spot in the diff,
+   catastrophic when it drops a bundled `workflow_lint.py` check or an
+   operational SKILL.md guardrail (incident #1701 → #1698, 2026-07-26:
+   153 lines of `check_inline_round_duty_mirror` deleted 45 min after
+   they landed, breaking full-suite collection fleet-wide for ~15.5 h;
+   #1713 encodes this guard as the mechanical backstop). Refuse the
+   merge with a loud message when the shape is detected.
+
+   Scope: `scripts/workflow_lint.py`, `.claude/skills/**/SKILL.md`,
+   `.claude/rules/*.md`, `.claude/workflow.yaml`, `CLAUDE.md`. Predicate:
+   for every branch-touched path in that scope, enumerate the lines
+   `origin/main` ADDED since the merge-base (post-merge-base additions
+   only — never `main`'s own pre-fork content), then check whether each
+   such line is present in the branch's current version of that file
+   (`grep -Fxq` — full-line, fixed-string, so quoting or partial
+   substring matches cannot mask a drop). A missing line is by
+   definition a main-side addition the branch's snapshot silently
+   REVERTED — a legitimate branch DELETION of a pre-existing function
+   is NOT this class, because those lines were never main-side
+   additions past the merge-base. Kill switch:
+   `EPM_SKIP_LOST_UPDATE_GUARD=1` (document the reason on the
+   `epm:merged` note when used — e.g. the branch DELIBERATELY reverts
+   a merged sibling per a user directive).
+
+   ```bash
+   if [ -z "${EPM_SKIP_LOST_UPDATE_GUARD:-}" ]; then
+     MB=$(git -C "$WT" merge-base HEAD origin/main)
+     LOST_UPDATE_PATHS=""
+     while IFS= read -r P; do
+       case "$P" in
+         scripts/workflow_lint.py|.claude/skills/*|.claude/rules/*|.claude/workflow.yaml|CLAUDE.md)
+           MAIN_ADDS=$(git -C "$WT" diff --numstat "$MB" origin/main -- "$P" \
+             | awk '{print $1+0}')
+           if [ "${MAIN_ADDS:-0}" -gt 0 ]; then
+             git -C "$WT" diff "$MB" origin/main -- "$P" \
+               | grep -E '^\+[^+]' | sed 's/^\+//' > /tmp/1713-main-adds.txt
+             MISSING_ON_BRANCH=0
+             while IFS= read -r ADD_LINE; do
+               [ -z "$ADD_LINE" ] && continue
+               if ! git -C "$WT" show HEAD:"$P" 2>/dev/null \
+                    | grep -Fxq "$ADD_LINE"; then
+                 MISSING_ON_BRANCH=$((MISSING_ON_BRANCH + 1))
+               fi
+             done < /tmp/1713-main-adds.txt
+             if [ "$MISSING_ON_BRANCH" -gt 0 ]; then
+               LOST_UPDATE_PATHS="$LOST_UPDATE_PATHS $P(${MISSING_ON_BRANCH})"
+             fi
+           fi
+           ;;
+       esac
+     done < <(git -C "$WT" diff --name-only "$MB"...HEAD)
+     if [ -n "$LOST_UPDATE_PATHS" ]; then
+       echo "LOST-UPDATE REFUSAL (Guard 4, #1713): branch carries a" \
+            "whole-file snapshot dropping main-side additions on:" \
+            "$LOST_UPDATE_PATHS" >&2
+       echo "Recovery: rebase onto origin/main and re-apply the intended" \
+            "edits by explicit path; post epm:merge-failed v1" \
+            "(reason: lost-update, paths=$LOST_UPDATE_PATHS)."
+       false
+     fi
+   fi
+   ```
+
+   Non-workflow-surface files stay covered by Guards 1-3 alone; Guard 4
+   focuses the scan on the files whose silent-revert blast radius is
+   fleet-wide.
+
 #### Fast-path routing pre-check (workflow-fix / small-ADDED-diff far-behind branches)
 
 Run this AFTER guards 1-3 and BEFORE the safe-case `gh pr merge $MERGE_FORM`
@@ -10866,6 +10937,30 @@ tests BEFORE anything lands:
      an unconditional block-path verdict: fix the crash cause in the
      worktree, re-run the gate ONCE; still crashing → the SAME
      `epm:merge-failed v1` handling as case 1. Never merge/push on `crash`.
+- **Mandatory urgent-park emission on workflow-surface pre-existing red
+  (#1713).** Whenever the gate's `pass` verdict rests on a pre-existing
+  red hit whose file matches the workflow surface (`scripts/`,
+  `.claude/`, `CLAUDE.md`, `docs/`, `tests/`), the session MUST emit —
+  in the same turn as the `epm:merged` (or `epm:progress` completion)
+  note — a `<!-- workflow-fix-candidate v1 -->` block carrying the
+  #1681 urgent grammar: three fields inside the block —
+  `urgency: main-red`, `failing_test: <ONE pytest node id, e.g.
+  tests/test_x.py::test_y>`, and `wf_fix: true|false` (`true` when the
+  offending file itself lives on the workflow surface, `false`
+  otherwise; the parked candidate is still mechanically routable
+  regardless via the watcher's urgent-park router pass). Prose
+  alternatives ("noted for /daily follow-up", "will be picked up
+  later", "leaving for the sweep") are NOT acceptable terminal
+  dispositions — the nightly /daily Step C sweep is the FALLBACK, not
+  the primary route: without the urgent grammar every intervening
+  session's Step 9c gate must re-classify the same pre-existing red
+  (incident #1701 → #1698: the red lived ~15.5 h fleet-wide before
+  #1713 landed the fix). See
+  `.claude/rules/workflow-fix-on-bug.md` § Recursion guard "Urgent
+  fast path" for the router semantics; the parking session STILL
+  never files or spawns the fix itself. Non-workflow-surface
+  pre-existing red keeps the report-and-continue disposition
+  unchanged.
 - **Baseline semantics per binding form (the baseline is ALWAYS a
   payload-free tree).** The mapped invariant-TEST legs (#1147) keep the
   ORIGINAL per-form placement (gated = the `$WT` copy on the branch-tip /
