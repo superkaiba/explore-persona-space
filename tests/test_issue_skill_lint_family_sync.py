@@ -1,4 +1,4 @@
-"""Pin the #1560 lint/guard-family freshness sync in .claude/skills/issue/SKILL.md.
+"""Pin the #1560 → #1714 lint/guard-family freshness sync in .claude/skills/issue/SKILL.md.
 
 #1560 (2026-07-20) extended the Step 5a spec-freshness sync to cover the
 lint/guard family (scripts/workflow_lint.py, .claude/hooks, the
@@ -9,11 +9,22 @@ the Step 10d pre-push workflow-lint gate — closing the branch-era-linter
 vintage-skew class that red the gate three times on 2026-07-19
 (#1489 / #1482 / #1417 / #1675→#1682).
 
+#1714 (2026-07-26) makes the sync family-atomic (a branch-side edit on
+ANY member of a coupled family — workflow.yaml + markers.md,
+scripts/workflow_lint.py + its pin tests, .claude/hooks + its guard
+tests — widens the skip to the WHOLE family), moves the Step 10d
+re-sync from PRE-gate to POST-gate (right before `gh pr merge`) so
+origin/main advancement during the ~30-min gate window can no longer
+red the squash merge with CONFLICTING, and adds two new pin tests
+(family declaration + Step 5a/§4.6 drift guard).
+
 These tests fail the suite if a later SKILL.md editor drops the family
-entries, the boundary-paragraph family exception, the pre-gate re-sync
-bullet (or reorders it after the gate's stale-verdict rm), the 9a-ter
-staleness note, or reintroduces the full-message commit filter the Step 5a
-sync and the gate section deliberately avoid.
+entries, the boundary-paragraph family exception, the post-gate re-sync
+bullet (or reorders it before the gate's stale-verdict rm), the 9a-ter
+staleness note, reintroduces the full-message commit filter the Step 5a
+sync and the gate section deliberately avoid, drops the family-atomic
+declaration in Step 5a, or lets the Step 10d inline family-atomic block
+drift from Step 5a's family definition.
 
 NOTE for future SKILL.md editors: these assertions pin literal snippet text.
 A legitimate rewording of the pinned lines in SKILL.md must update the
@@ -64,14 +75,20 @@ def test_step5a_specs_include_lint_family():
     assert (
         'SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml '
         "CLAUDE.md scripts/workflow_lint.py .claude/hooks "
-        "tests/test_guard_lessons_edit.py :(glob)tests/test_workflow_lint*.py "
+        "tests/test_guard_lessons_edit.py "
+        "tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py "
+        ":(glob)tests/test_workflow_lint*.py "
         ':(glob)tests/test_guard_*.py"'
     ) in _text(), (
         "Step 5a SPECS must carry the #1560 lint/guard family "
         "(workflow_lint.py, .claude/hooks, the :(glob) test_workflow_lint* "
-        "and :(glob) test_guard_* pin-test families) — the guard-family "
-        "widening pinned by #1709 covers all tests/test_guard_*.py "
-        "(vintage-skew class #1489/#1482/#1417/#1675→#1682)"
+        "and :(glob) test_guard_* pin-test families) plus the #1714 "
+        "explicit importers tests/test_workflow_yaml.py and "
+        "tests/test_autonomous_session_watch.py (workflow_lint symbols "
+        "used outside the :(glob) test_workflow_lint* pattern) — the "
+        "guard-family widening pinned by #1709 covers all "
+        "tests/test_guard_*.py (vintage-skew class "
+        "#1489/#1482/#1417/#1675→#1682)"
     )
 
 
@@ -99,23 +116,25 @@ def test_sync_scope_paragraph_names_family_boundary():
     )
 
 
-# --- (3) pre-gate re-sync bullet present + ordered before the verdict rm --
+# --- (3) post-gate re-sync bullet present + ordered AFTER the verdict rm --
 
 
-def test_step10d_pregate_resync_present_and_ordered():
+def test_step10d_postgate_resync_present_and_ordered():
     region = _gate_region(_text())
-    bullet_idx = region.index("**Pre-gate freshness re-sync (#1560")
+    bullet_idx = region.index("**Post-gate freshness re-sync (#1714")
     assert "origin/main" in region[bullet_idx:], "re-sync must anchor to origin/main"
     assert 'timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet' in region, (
         "re-sync must start with the bounded fetch"
     )
-    assert "[step10d] pre-gate re-sync: synced <n> files (<sha>) | no drift" in region, (
+    assert "[step10d] post-gate re-sync: synced <n> files (<sha>) | no drift" in region, (
         "the re-sync must end with the ran-vs-never-ran echo breadcrumb"
     )
     rm_idx = region.index("rm -f /tmp/issue-<N>-lint-verdict.txt")
-    assert bullet_idx < rm_idx, (
-        "the pre-gate re-sync must complete BEFORE the gate's stale-verdict rm "
-        "so the verdict sha-binds the synced tip"
+    assert bullet_idx > rm_idx, (
+        "the post-gate re-sync must be positioned AFTER the gate's "
+        "stale-verdict rm (the bullet documents a post-gate operation "
+        "executed from the auto-merge subsection below, so its prose "
+        "must come after the executable gate block containing the rm)"
     )
 
 
@@ -183,10 +202,10 @@ def test_step5a_exclusion_is_subject_scoped():
 # --- (8) the re-sync never re-derives $WT (the MF-A pin) --------------------
 
 
-def test_pregate_resync_does_not_rederive_wt():
+def test_postgate_resync_does_not_rederive_wt():
     region = _gate_region(_text())
-    bullet_idx = region.index("**Pre-gate freshness re-sync (#1560")
-    bullet = region[bullet_idx : region.index("[step10d] pre-gate re-sync:", bullet_idx)]
+    bullet_idx = region.index("**Post-gate freshness re-sync (#1714")
+    bullet = region[bullet_idx : region.index("[step10d] post-gate re-sync:", bullet_idx)]
     assert "ALREADY-BOUND `$WT`" in bullet, (
         "the re-sync bullet must state $WT is already bound by the merge flow"
     )
@@ -197,3 +216,80 @@ def test_pregate_resync_does_not_rederive_wt():
         "the re-sync bullet must ban re-deriving $WT at Step 10d (a repo-root "
         "cwd would rebind it to the shared root)"
     )
+
+
+# --- (9) family-atomic declaration in Step 5a bash (#1714 new pin) --------
+
+
+def test_step5a_family_atomicity_declared_in_bash():
+    """The Step 5a block must declare family membership as bash associative
+    array entries (the #1714 family-atomic skip)."""
+    span = _step5a_span(_text())
+    assert "declare -A FAMILY_OF" in span, (
+        "Step 5a must declare family membership via `declare -A FAMILY_OF` "
+        "(the #1714 family-atomic transitive skip)"
+    )
+    assert 'FAMILY_OF[".claude/workflow.yaml"]="workflow"' in span, (
+        "the workflow family must include .claude/workflow.yaml"
+    )
+    assert 'FAMILY_OF[".claude/skills"]="workflow"' in span, (
+        "the workflow family must include .claude/skills (markers.md + SKILL.md derived tables)"
+    )
+    assert 'FAMILY_OF["scripts/workflow_lint.py"]="lint"' in span, (
+        "the lint family must include scripts/workflow_lint.py"
+    )
+    assert 'FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"' in span, (
+        "the lint family must include :(glob)tests/test_workflow_lint*.py"
+    )
+    assert 'FAMILY_OF[".claude/hooks"]="guard"' in span, (
+        "the guard family must include .claude/hooks"
+    )
+    assert 'FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"' in span, (
+        "the guard family must include :(glob)tests/test_guard_*.py"
+    )
+    assert 'FAMILY_OF["tests/test_workflow_yaml.py"]="workflow"' in span, (
+        "the workflow family must include tests/test_workflow_yaml.py "
+        "(imports render_*_table from workflow_lint AND reads workflow.yaml data)"
+    )
+    assert 'FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"' in span, (
+        "the lint family must include tests/test_autonomous_session_watch.py "
+        "(imports check_asw_docstring_pass_count from workflow_lint)"
+    )
+    assert 'FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"' in span, (
+        "the guard family must include the explicit tests/test_guard_lessons_edit.py "
+        "entry (it also matches the :(glob) but is declared explicitly for clarity)"
+    )
+    assert "DIRTY_FAMILIES" in span, (
+        "the family-atomic loop must gate the sync on a DIRTY_FAMILIES associative array"
+    )
+
+
+# --- (10) auto-merge post-gate re-sync matches Step 5a family (#1714 drift guard) --
+
+
+def test_step10d_family_atomicity_matches_step5a():
+    """The auto-merge subsection's inline family-atomic bash block must
+    declare the SAME FAMILY_OF entries as the Step 5a block. #1714 §4.6
+    inlines the block into `#### The auto-merge procedure` so the
+    post-gate re-sync uses the same family definition; a future editor
+    that adds a family entry to Step 5a but forgets the auto-merge copy
+    would silently produce a divergent post-gate re-sync — this test
+    catches that."""
+    text = _text()
+    # Auto-merge span: from the H4 to the next H4 that follows.
+    merge_start = text.index("#### The auto-merge procedure")
+    merge_end = text.index("#### ", merge_start + 4)
+    merge_span = text[merge_start:merge_end]
+    # Every FAMILY_OF entry declared in the Step 5a span must also
+    # appear in the auto-merge span (identical string).
+    step5a_span = _step5a_span(text)
+    for line in step5a_span.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("FAMILY_OF[") and stripped.endswith(
+            ('="workflow"', '="lint"', '="guard"')
+        ):
+            assert stripped in merge_span, (
+                f"Step 5a declares {stripped!r} but the auto-merge "
+                f"post-gate re-sync block does not — the two copies must "
+                f"stay in sync (§4.6 drift guard, #1714 methodology concern 1)"
+            )
