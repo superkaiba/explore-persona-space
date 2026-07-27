@@ -5555,8 +5555,8 @@
     "1714": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1714",
-      "status": "proposed",
+      "path": "tasks/planning/1714",
+      "status": "planning",
       "title": "daily-fix: spec-freshness sync manufactures self-inconsisten"
     },
     "1715": {
