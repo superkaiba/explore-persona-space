@@ -35,6 +35,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -726,7 +727,16 @@ def run_all_pairs(
         "n_null_draws": n_null_draws,
         "pairs": {},
     }
-    for src, tgt in pairs:
+    n_pairs = len(pairs)
+    for i, (src, tgt) in enumerate(pairs):
+        # Flushed per-pair progress print — bypasses libc's 4KB block buffer
+        # so a long serial ladder loop is observable instead of appearing hung
+        # (R14 fix, issue #1689 crash-fix round: pre-fix stdout was buffered,
+        # so per-layer prints only surfaced at process exit).
+        print(
+            f"[fit_ladder]   pair {i + 1}/{n_pairs}: {src} -> {tgt}",
+            flush=True,
+        )
         src_cell = f"{model_slug}/{src}"
         tgt_cell = f"{model_slug}/{tgt}"
         source = _load_cell_layer(store_root, src_cell, layer)
@@ -776,15 +786,38 @@ def main() -> int:
     if args.null_draws is None:
         args.null_draws = 5 if args.smoke else N_REPARAM_NULL_DRAWS
 
-    print(f"[fit_ladder] model={args.model_slug} smoke={args.smoke}")
+    # flush=True on every progress print: pod stdout is block-buffered by
+    # default (no PYTHONUNBUFFERED=1 in the R11-R13 launcher), so unflushed
+    # per-layer prints stayed in the 4KB libc buffer for 8+ hours (R14 fix).
+    print(f"[fit_ladder] model={args.model_slug} smoke={args.smoke}", flush=True)
     print(
         f"[fit_ladder] bootstrap_draws={args.bootstrap_draws} null_draws={args.null_draws} "
-        f"(N_BOOTSTRAP_DRAWS={N_BOOTSTRAP_DRAWS}, N_REPARAM_NULL_DRAWS={N_REPARAM_NULL_DRAWS})"
+        f"(N_BOOTSTRAP_DRAWS={N_BOOTSTRAP_DRAWS}, N_REPARAM_NULL_DRAWS={N_REPARAM_NULL_DRAWS})",
+        flush=True,
     )
 
     layers = list(CAPTURE_LAYERS) if args.all_layers else [args.layer]
     for layer in layers:
-        print(f"[fit_ladder] --- layer L{layer} ---")
+        # Compute the per-layer output path FIRST so we can skip a
+        # completed layer without paying the run_all_pairs cost. This is
+        # the core resume affordance: once R14 completes a layer, that
+        # layer's JSON is durable, and future crashes/restarts skip it.
+        if args.all_layers:
+            out_path = args.out.with_name(
+                args.out.stem.replace(f"_L{args.layer}", "") + f"_L{layer}" + args.out.suffix
+            )
+        else:
+            out_path = args.out
+
+        if out_path.exists():
+            print(
+                f"[fit_ladder] SKIP layer L{layer} — output {out_path} already exists",
+                flush=True,
+            )
+            continue
+
+        print(f"[fit_ladder] --- layer L{layer} ---", flush=True)
+        layer_t0 = time.perf_counter()
         results = run_all_pairs(
             args.store_root,
             model_slug=args.model_slug,
@@ -793,17 +826,16 @@ def main() -> int:
             n_bootstrap_draws=args.bootstrap_draws,
             n_null_draws=args.null_draws,
         )
-        # Rewrite out path to include layer when running all-layers.
-        if args.all_layers:
-            out_path = args.out.with_name(
-                args.out.stem.replace(f"_L{args.layer}", "") + f"_L{layer}" + args.out.suffix
-            )
-        else:
-            out_path = args.out
+        layer_elapsed = time.perf_counter() - layer_t0
+        print(
+            f"[fit_ladder] layer L{layer} done in {layer_elapsed:.1f}s "
+            f"({results['n_pairs']} pairs)",
+            flush=True,
+        )
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with out_path.open("w") as fh:
             json.dump(results, fh, indent=2)
-        print(f"[fit_ladder] wrote {out_path} ({results['n_pairs']} pairs)")
+        print(f"[fit_ladder] wrote {out_path} ({results['n_pairs']} pairs)", flush=True)
     return 0
 
 
