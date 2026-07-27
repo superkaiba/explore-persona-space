@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1725,
+  "highest_id": 1726,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5642,6 +5642,13 @@
       "path": "tasks/proposed/1725",
       "status": "proposed",
       "title": "daily-fix: Step 4 root-divergence probe; post-merge sync sit"
+    },
+    "1726": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1726",
+      "status": "proposed",
+      "title": "daily-fix: long fit loops must checkpoint per cell and log p"
     },
     "173": {
       "has_clean_result": true,
