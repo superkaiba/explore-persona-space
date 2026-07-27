@@ -440,6 +440,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # the selector's arms are .py-only, so a settings.json diff re-runs this
     # pin ONLY via this tuple.
     "tests/test_ruff_format_hook_tmp_exclusion.py",
+    # NEW (#1732) — parentless-kind: infra consistency-checker SKIP rule pin
+    # (agent spec + adversarial-planner SKILL.md + /issue SKILL.md Step 2b);
+    # any of the three targets can be edited independently, so this pin
+    # lives in WORKFLOW_INVARIANT to gate all three prose surfaces.
+    "tests/test_consistency_checker_parentless_infra_skip.py",
 )
 
 # --- Touched files that short-circuit (no per-file test map). ----------------
