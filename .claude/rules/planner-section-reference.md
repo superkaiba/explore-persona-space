@@ -136,6 +136,9 @@ Concrete steps with:
 - **Equalize-down when a per-unit resource varies across units/conditions.** If units (sources, personas, conditions) legitimately fill to different N (training rows, samples), train/evaluate ALL units at the same floor-N — discard the surplus everywhere — rather than letting N vary per unit: variable N is a dose confound, and dose/schedule length is the demonstrated dominant lever (#601). Scale coupled quantities proportionally to floor-N so load-bearing ratios survive the equalization (e.g. contrastive negatives at the ~1:1 positives-to-total-negatives ratio, `.claude/rules/contrastive-negatives.md`). Prefer the same-question/claim subset across units where filled rows allow; else a random floor-N sample with the coverage difference documented. If per-unit N is equal by construction, write "N/A" and move on.
 - **Baseline propensity on BOTH sides of an implantation design.** Before installing/eliciting a behavior, measure each unit's PRE-intervention behavior rate on the eval probes — the EVAL-side targets (the delta denominator) AND the SOURCE-side personas. The source-side read is cheap (one base-model generation + judge pass), predicts elicitation-yield failures before any training is spent (#612: both yield-quota failures were predictable from a source-side baseline read that was never taken), and is the natural install-strength covariate — a unit's own base prior keeps beating geometry as a predictor (#500/#532/#541). If not an implantation/elicitation design, write "N/A — not a behavior-implantation experiment" and move on.
 - **Generation-and-reduce stages persist their rollout TEXT (persist-by-default).** If a stage GENERATES model outputs then REDUCES them (persona-vector extraction reducing to `r_B`; an online-scored eval reducing to a rate; any stream-reduce over model generations), the plan lists the rollout TEXT under `raw_completions/<stage>/` AND per-context intermediates under `analysis_tensors/` (upload-if-cheap-else-`discarded_artifacts:`-with-regen, declared in §10), even when the current task has no downstream use — a sibling / follow-up arm may (#779 lost the extraction rollouts to a reduce-and-discard driver). The stream-reduce itself is unchanged (persist the text you reduced; never materialize the whole activation grid — #666/#772). Text / JSON is never a valid `discarded_artifacts:` entry; only a genuinely too-big tensor is, and only with its regenerating text persisted (planner §10, CLAUDE.md § Upload Policy). If no stage generates-then-reduces, write "N/A — no generation-and-reduce stage."
+- **Symbol-existence grep-at-plan-time.** Every `module.symbol` (function, class, subcommand, CLI flag) named in plan pseudocode or a §4 mechanism is confirmed at plan time by a recorded grep — `grep -rn 'def <symbol>' src/ scripts/` (or the equivalent for a class / CLI arg / config key), pasted verbatim into the §12 assumption row for that symbol. Deferring a grep-answerable symbol-existence check to the implementer is banned: a plan that names `foo.bar()` without a plan-time grep silently pivots to a "does this function exist?" implementer round when it does not. Worked example (§4 bullet): `Uses `scripts/task.py post-marker` (verified `grep -n 'def cmd_post_marker' scripts/task.py → 1289:def cmd_post_marker`, §12 row A1).` Escape: `N/A — no external symbol referenced` when the plan's §4 is pure prose / narrative spec-text edits with no code symbols.
+- **Pre-return self-check enumerating task-body-named required edits.** Before returning the plan, enumerate every file + section the TASK BODY's `## Proposed change` (or equivalent required-edits block) names, and assert each appears in §4 Design. A deliberate omission (an edit the planner elected to skip / defer / merge into another) carries a one-line reason next to the missing item; a silent omission is a defect. Worked example (a self-check block near the end of §12): `Task body §Proposed change lists 6 required edits: (1) §11 tool-behavior Source — PRESENT as §4 Edit 1; (2) §12 grep -n VERBATIM — PRESENT as Edit 2; ... (6) shell exit-path — PRESENT as Edit 6. No omissions.` This self-check is REQUIRED on every workflow-fix plan and every plan whose task body carries a `## Proposed change` list of required edits; other plans may skip it (escape: `N/A — task body has no required-edits list`).
+- **Embedded-shell exit-path trace (prose-only clause).** For every FAILURE ARM in embedded shell — every `false` / `exit 1` / `return 1` / `raise` that a plan writes inside a `&&`-chain, an `if`/`else`, a `case`, or a Bash function meant to halt the enclosing block — trace the exit path: does the failure actually propagate to the enclosing script's exit code, or does it get swallowed by a sibling `then` / `else` branch that runs after it? A bare `false` inside an `if ... ; then true; else false; fi` does NOT halt a subsequent `echo` on the next line; the recommended shape is the OK-flag pattern `OK=yes; [ ... ] || OK=no; [ "$OK" = yes ] || exit 1` (single exit point, no sibling races). This clause is prose-only (no mechanical `workflow_lint.py` check in v1); the two review sites that catch a bare `false` in embedded shell are (a) `.claude/agents/critic.md` § Statistics & Measurement lens item 3 (decision-gate coherence / joint satisfiability) at plan review, and (b) `.claude/agents/code-reviewer.md` at the implementer diff. A future workflow-fix task MAY add a `workflow_lint.py --check-plan-shell-exit-paths` mechanical gate; out of scope here. Escape: `N/A — plan embeds no shell control flow` when the plan is pure narrative / no shell blocks.
 
 ## 6. Evaluation
 
@@ -376,6 +379,17 @@ gate the plan retains:
 The critic now REVISEs incoherent or ungrounded gate sets (`critic.md`
 Statistics & Measurement lens item 3), so an over-laddered or contradictory
 gate set will bounce the plan — sanity-check before shipping.
+
+**Per-criterion §4-mechanism binding.** Every acceptance criterion in §6 / §7 names — in the same row / bullet — WHICH §4 mechanism produces the number the criterion reads, AND what the criterion COMPARES (count / equality / presence / set-difference / regex-match). Three columns per criterion: `Criterion` · `§4 mechanism` · `Compares-what`. The L602 Self-count rule (planner.md § Plan Quality) covers COUNT-style criteria only — it does not bind equality / presence / set-difference criteria to their §4 mechanisms, so those routinely ship unbound and get "measured by whatever the implementer thinks fits" at gate time. Worked example:
+
+| Criterion | §4 mechanism | Compares-what |
+|---|---|---|
+| `wc -c file.md ≤ 40000` | Edit-set §4 total byte delta | Equality (≤ threshold) |
+| `grep -c 'Foo' bar.md ≥ 1` | Edit N insert text | Presence (count ≥ 1) |
+| `workflow_lint.py NEW violations == ∅` | Full edit set vs plan-time baseline | Set-difference vs baseline ledger |
+| Reference-file §K added | Reference-file additions §K | Presence (heading count ≥ 1) |
+
+Bind every criterion this way. A criterion whose §4 mechanism cannot be named is a criterion the design has not produced; back-fill §4 or drop the criterion.
 
 ## 9. Resources & Parallelism
 
@@ -770,3 +784,45 @@ need a fresh smoke — cite the inheriting `Source:` as usual. (#506:
 `Qwen/Qwen3.5-27B` passed 4 code-review rounds + cap-3 override, provisioned
 an 8× H200, then died at launch because `transformers` did not recognize
 the `model_type`.)
+
+### Tool-behavior grounding (extended from hyperparameters)
+
+The `Source:` bar extends beyond hyperparameters to **tool-behavior claims** — any assertion in the plan about what a repo script / lint / CLI / helper / marker-post / verifier DOES. When the plan says "workflow_lint's no-flags run enforces X", "task.py post-marker rejects Y", "verify_plan.py check cN WARNs on Z", "the janitor cron reaps W", each such claim carries a `Source:` naming the grep or `file:line` READ at plan time — not an assertion from memory. Worked examples:
+
+- **Correct (grounded):** `Source: grep -n 'def cmd_post_marker' scripts/task.py → 1289:def cmd_post_marker` — the plan cites the exact function definition it relies on.
+- **Correct (grounded):** `Source: grep -n 'AGENT_SPEC_FAIL_BYTES' scripts/workflow_lint.py → 11865:AGENT_SPEC_FAIL_BYTES = 40_000` — the plan cites the exact constant + value driving a byte-cap acceptance criterion.
+- **Correct (ungrounded, honest):** `Source: ungrounded — verify at implementation` — the plan admits the claim was not grep-verified at plan time; the implementer runs the grep before relying on it.
+- **Wrong (silent-memory claim):** `The workflow_lint no-flags run enforces the byte cap.` — no `Source:` → the critic REVISEs it (Methodology lens item 4). "Everyone knows" is not a source.
+
+Fact-checker (Phase 1.5) verifies each tool-behavior `Source:` the same way it verifies each hyperparameter `Source:` — open the cited file at the cited line, confirm the behavior claimed. An `ungrounded` mark is honest but shifts the verification burden to the implementer; the critic REVISEs an `ungrounded` claim only when the tool behavior is both un-grep-verified AND plausibly outcome-changing.
+
+## 12. Assumptions
+
+Full template + worked examples referenced by planner.md § 12. Each assumption row is: **Assumption / Confidence / Source / How to verify**. Three sub-rules bind every §12:
+
+### Line-number assumptions quote `grep -n` output VERBATIM
+
+Assumptions about "line N of file X" are FRAGILE — line numbers shift on every neighboring edit. When a plan cites a line number, it MUST quote the exact `grep -n` output (number + text as printed), not a bare "at line 142". The verbatim line self-verifies across edits: even if the number drifts by ±5 lines, the text still grep-matches, and the fact-checker / implementer re-runs the same grep to relocate. Worked examples:
+
+- **Correct:** `A3. planner.md §11 sits at L511. Source: grep -n '^### 11\. Decision Rationale' .claude/agents/planner.md → 511:### 11. Decision Rationale. How to verify: re-run the grep.`
+- **Correct:** `A10. Self-count rule is at planner.md L602. Source: grep -n 'Self-count every count-style' .claude/agents/planner.md → 602:- **Self-count every count-style mechanical acceptance criterion.** Before. How to verify: re-run the grep.`
+- **Wrong:** `A5. §12 sits at line 525.` — bare line number, no `grep -n` output → drifts silently, unverifiable across edits.
+
+Rationale (#1721): a plan that says "the check at line 142 does Y" against a codebase where the check has already moved to line 156 silently confuses the reviewer + implementer; the verbatim grep line rescues the intent regardless of drift.
+
+### Detection / trigger-lane predicate plans — trace the predicate
+
+Copied by reference from planner.md § 12 (the always-on paragraph): when the plan designs or modifies a predicate that classifies a persisted artifact's shape to decide an automated action (watcher fire/keep, guard block/allow, janitor reap, failure classifier class) AND the motivating incident left a persisted artifact, §12 MUST carry one row per predicate arm — including the read/ingest path that feeds it — traced against the actual artifact by path, with each arm evaluated on values MEASURED from it at plan time (row counts, byte sizes, field values — READ, never recalled), and the traced outcome stated. The predicate MUST fire on its own motivating incident; "would not fire" is a design defect to fix before returning the plan. Artifact aged off disk → trace the incident's recorded measurements at Medium confidence; prospective guard with no incident artifact → state that in the row.
+
+### General shape
+
+Every §12 row has these four fields at minimum:
+
+- **Assumption:** a single factual claim, one row per claim.
+- **Confidence:** High / Medium / Low. High = grep-verified or read from code at plan time. Medium = read from a recorded artifact (prior body, mentor-update, sibling issue). Low = guessed / recalled / not verified.
+- **Source:** where the assumption came from — a grep line (High), an artifact path + field (Medium), or "recalled / guessed" (Low). NEVER blank.
+- **How to verify:** the exact command / read the fact-checker or implementer runs to confirm the assumption. Prefer a re-runnable `grep -n` / `wc -c` / `git log` / `HfApi().file_exists(...)` invocation.
+
+An ungrounded (Low-confidence) row is honest, not a defect — it flags a smoke-test target for the implementer. What IS a defect: a bare unmarked claim, or a High-confidence row whose `Source:` is not actually a verifiable READ (a paraphrase, a memory, a "the docs say"). Wrong assumptions are the #1 cause of wasted GPU time — over-list before under-listing.
+
+
