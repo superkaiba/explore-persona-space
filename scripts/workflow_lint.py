@@ -11937,7 +11937,10 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # post-#1384 (per-arm-class smoke-coverage clause), 67,900 — measured
     # 67,472 B post-#1363, 67,400 — measured 66,574 B post-#1349,
     # 66,300 — measured 65,548 B post-#1311)
-    "experiment-implementer.md": 79_500,
+    "experiment-implementer.md": 80_500,
+    # measured 79,611 B post-#1720 (§ Local runs pre-emptive NOT-RUN escape
+    # for Step 9c-selected slow tests — mirrors implementer.md L174; ~500 B
+    # growth; cap = measured + ~0.9 KB. Prior: 79_500 —
     # measured 74,867 B post-#1702 (Responsibility 2 --env-pin composition
     # sub-bullet threading --env-pin KEY=VALUE on --workload-cmd launches,
     # #1669 channel merge + #1586 wedge-failover WandB incident — plan-
