@@ -8137,6 +8137,47 @@ def test_c38_scoped_pytest_does_not_trigger():
     assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
 
 
+def test_c38_pytest_node_id_in_backticks_does_not_trigger():
+    # #1729: the ordinary prose shape "Concrete pytest node id:
+    # `tests/x.py::test_y`" MUST NOT read as unscoped — the arg-tail
+    # split truncates at the opening backtick, hiding the scope from
+    # tail-only inspection. The rest-of-line rescan is what catches it.
+    line = (
+        "- Acceptance: mapper exits 0. "
+        "Concrete pytest node id: `tests/test_select_step9c_tests.py::test_map_files`."
+    )
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+def test_c38_pytest_bare_unscoped_still_warns():
+    # #1729 trade-off (i): a bare `pytest` assertion with NO scoping
+    # token anywhere on the line MUST still WARN — the deliberate,
+    # fact-checker-confirmed reading that an empty arg tail classifies
+    # repo-wide (docstring: "an EMPTY arg tail — bare `ruff check` /
+    # bare `pytest` plus an assertion word — classifies REPO-WIDE").
+    line = "- Acceptance: the full pytest suite must exit 0 after the edit."
+    _, by_id = _run(_c38_plan(line), kind="infra")
+    r = by_id["c38_exit0_repo_wide_baseline"]
+    assert r.status == "WARN"
+    assert "pytest (no path scope)" in r.detail
+
+
+def test_c38_pytest_repro_helper_returns_none():
+    # #1729 direct pin on the private helper: exactly the
+    # verified-at-filing reproduction. Guards against a future refactor
+    # that keeps the WARN-level pin green but silently regresses the
+    # helper (e.g. if `check_exit0_repo_wide_baseline` grew a
+    # compensating filter that hid a re-broken `_c38_repo_wide_cmd`).
+    line = (
+        "- Acceptance: mapper exits 0. "
+        "Concrete pytest node id: `tests/test_select_step9c_tests.py::test_map_files`."
+    )
+    assert verify_plan._c38_repo_wide_cmd(line) is None
+
+    bare = "- Acceptance: the full pytest suite must exit 0 after the edit."
+    assert verify_plan._c38_repo_wide_cmd(bare) == "pytest (no path scope)"
+
+
 def test_c38_repo_wide_ruff_warns():
     _, by_id = _run(_c38_plan("uv run ruff check .  # exit 0"), kind="infra")
     r = by_id["c38_exit0_repo_wide_baseline"]
