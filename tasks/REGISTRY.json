@@ -5562,8 +5562,8 @@
     "1715": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1715",
-      "status": "planning",
+      "path": "tasks/approved/1715",
+      "status": "approved",
       "title": "daily-fix: draft-PR recipe uses stale local main and omits -"
     },
     "1716": {
