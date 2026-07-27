@@ -5709,8 +5709,8 @@
     "1734": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1734",
-      "status": "reviewing",
+      "path": "tasks/completed/1734",
+      "status": "completed",
       "title": "daily-fix: state the minimum Step-2 plan-review floor for ki"
     },
     "1735": {
