@@ -5611,8 +5611,8 @@
     "1721": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1721",
-      "status": "proposed",
+      "path": "tasks/planning/1721",
+      "status": "planning",
       "title": "daily-fix: planner grounding \u2014 run grep-answerable claims, t"
     },
     "1722": {
