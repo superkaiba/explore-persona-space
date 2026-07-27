@@ -5660,8 +5660,8 @@
     "1728": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1728",
-      "status": "running",
+      "path": "tasks/reviewing/1728",
+      "status": "reviewing",
       "title": "daily-fix: reuse check (l) needs a call-shape bind; renames "
     },
     "1729": {
