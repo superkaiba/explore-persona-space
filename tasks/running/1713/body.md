@@ -5,6 +5,7 @@ tags:
 - wf-fix
 - wf-fix-fp:1007e9704d5f
 - daily-auto-filed
+- trigger-dense
 created_at: '2026-07-27T07:13:44Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-26 problem sweep (route 2): check_inline_round_duty_mirror
