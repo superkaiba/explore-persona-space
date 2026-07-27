@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1724,
+  "highest_id": 1725,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5635,6 +5635,13 @@
       "path": "tasks/proposed/1724",
       "status": "proposed",
       "title": "daily-fix: verify_task_body FAILs every kind:infra task"
+    },
+    "1725": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1725",
+      "status": "proposed",
+      "title": "daily-fix: Step 4 root-divergence probe; post-merge sync sit"
     },
     "173": {
       "has_clean_result": true,
