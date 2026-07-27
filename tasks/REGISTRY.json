@@ -5695,8 +5695,8 @@
     "1732": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1732",
-      "status": "proposed",
+      "path": "tasks/planning/1732",
+      "status": "planning",
       "title": "daily-fix: settle whether consistency-checker runs for paren"
     },
     "1733": {
