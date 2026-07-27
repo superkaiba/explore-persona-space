@@ -5590,8 +5590,8 @@
     "1719": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1719",
-      "status": "running",
+      "path": "tasks/reviewing/1719",
+      "status": "reviewing",
       "title": "daily-fix: single-flight pgrep probes self-match and are not"
     },
     "172": {
