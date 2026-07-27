@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1712,
+  "highest_id": 1713,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5544,6 +5544,13 @@
       "path": "tasks/completed/1712",
       "status": "completed",
       "title": "daily-fix: audit landed-but-unfolded rounds"
+    },
+    "1713": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1713",
+      "status": "proposed",
+      "title": "daily-fix: restore check_inline_round_duty_mirror \u2014 main red"
     },
     "172": {
       "has_clean_result": false,
