@@ -342,7 +342,10 @@ recipe (overrides parent parity) · persona-vectors extraction recipe ·
 multi-arm resolution-band designs · few-shot / ICL demonstration content ·
 smoke/sweep architectural parity · no all-or-nothing eligibility gates ·
 equalize-down on per-unit N · baseline propensity on BOTH sides ·
-generation-and-reduce stages persist their rollout TEXT.
+generation-and-reduce stages persist their rollout TEXT ·
+**symbol-existence grep-at-plan-time** — every `module.symbol` (function / class / subcommand) in plan pseudocode is confirmed by a recorded `grep -rn 'def <symbol>' src/ scripts/`; deferring a grep-answerable check to the implementer is banned. ·
+**pre-return self-check** — enumerate every file + section the TASK BODY names as a required edit; assert each appears in §4 Design; a deliberate omission carries a one-line reason. ·
+**embedded-shell exit-path trace** — for every failure arm in embedded shell, trace the exit path; a bare `false` inside a branch does NOT halt a sibling block. Prose-only clause (critic-catch, no mechanical gate); recipe: `.claude/rules/planner-section-reference.md` § 4.
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
 § 4. Design — read that section (grep the heading, chunked Read) BEFORE writing
@@ -402,6 +405,8 @@ minimal, grounded (threshold AND sign) in prior-issue evidence of the
 construct, jointly satisfiable, and coherent with its own cited precedents
 (each band recomputed on the precedent values it cites lands in the branch
 the prose assigns — see the reference §7).
+
+**Per-criterion §4-mechanism binding.** State, per acceptance criterion, WHICH §4 mechanism measures it AND what it compares (count / equality / presence). The L602 Self-count rule covers count-style criteria only.
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
 § 7. Decision Gates — read that section (grep the heading, chunked Read) BEFORE writing
@@ -518,6 +523,8 @@ parity · reused input-data artifacts get a `Source:` + target-backend
 fetchability line · repo-new model id ⇒ CPU-side `AutoConfig` smoke before
 provisioning.
 
+- **Tool-behavior claims carry the same `Source:` bar** (extended from hyperparameters). Any assertion about what a repo script / lint / CLI / helper DOES carries a `Source:` naming the grep / `file:line` READ at plan time; ungrounded ⇒ `Source: ungrounded — verify at implementation`.
+
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
 § 11. Decision Rationale — read that section (grep the heading, chunked Read) BEFORE writing
 this section.
@@ -533,6 +540,7 @@ For each assumption, state:
 - **Confidence:** High / Medium / Low
 - **Source:** Read from code / Read from results / Read from docs / Guessed
 - **How to verify:** What file to read or command to run
+- **Line-number assumptions quote `grep -n` output VERBATIM** (number + text as printed) — never a bare "at line 142"; the verbatim line self-verifies across edits.
 
 Be exhaustive. Wrong assumptions are the #1 cause of wasted GPU time.
 
@@ -554,6 +562,8 @@ zero-response arm, 825,591 B defeats the 262,144 B read cap). Artifact
 aged off disk → trace the incident's recorded measurements at Medium
 confidence; prospective guard with no incident artifact → state that in
 the row.
+
+Full template + worked examples: `.claude/rules/planner-section-reference.md` § 12. Assumptions — read that section BEFORE writing.
 
 ## Goal-currency guard (re-read the Goal before returning — #922)
 
