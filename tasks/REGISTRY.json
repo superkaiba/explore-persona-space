@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1720,
+  "highest_id": 1721,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5607,6 +5607,13 @@
       "path": "tasks/proposed/1720",
       "status": "proposed",
       "title": "daily-fix: make the implementer NOT-RUN escape pre-emptive f"
+    },
+    "1721": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1721",
+      "status": "proposed",
+      "title": "daily-fix: planner grounding \u2014 run grep-answerable claims, t"
     },
     "173": {
       "has_clean_result": true,
