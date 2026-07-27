@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1727,
+  "highest_id": 1728,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5656,6 +5656,13 @@
       "path": "tasks/proposed/1727",
       "status": "proposed",
       "title": "daily-fix: flag ungated smoke/full variable pairs in review"
+    },
+    "1728": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1728",
+      "status": "proposed",
+      "title": "daily-fix: reuse check (l) needs a call-shape bind; renames "
     },
     "173": {
       "has_clean_result": true,
