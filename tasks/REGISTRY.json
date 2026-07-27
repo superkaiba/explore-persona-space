@@ -5618,8 +5618,8 @@
     "1722": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1722",
-      "status": "running",
+      "path": "tasks/reviewing/1722",
+      "status": "reviewing",
       "title": "daily-fix: Step 10d durable markers record wrong SHA and emp"
     },
     "1723": {
