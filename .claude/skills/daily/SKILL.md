@@ -658,6 +658,10 @@ git diff --cached --name-only
 # not the message text (it varies: "no changes added to commit" vs "nothing
 # to commit") — the content already landed (e.g. a rerun); log it and carry
 # on, same ethos as the push-not-confirmed paragraph below.
+# Run BARE — never `| tail`/`| head`/`| grep`. `guard_piped_git_push.sh`
+# BLOCKS a piped git commit/push/merge (it masks the exit code, and SIGPIPEs
+# the pre-commit hook mid-run, #1584). Need the text? `> /tmp/out 2>&1` then
+# read the file. Same for the `git push` below.
 git commit -m "logs: daily stub for YYYY-MM-DD" -- logs/daily/YYYY-MM-DD.md .claude/cache/nightly-consolidation-events.jsonl
 # Push IMMEDIATELY (project-standard recipe). The daily-stub commit sits on
 # the always-concurrent shared main; if it stays committed-but-unpushed it
