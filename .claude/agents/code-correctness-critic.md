@@ -124,6 +124,10 @@ Apply these exactly as `code-reviewer.md` defines them; Grep + Read the named sp
   cumulative-main-head-diff). A git-provenance-class FAIL carries tag
   `git-provenance` + a `**Git-provenance subclass:**` line; if you are CERTAIN the
   round introduced it, tag `substantive` instead.
+- **Step 0.70 — smoke-variable gating** (any diff type; bash dispatchers only). Same
+  recipe as `code-reviewer.md` Step 0.70. Sub-checks (1)/(2)/(3); primary FAIL tagged
+  `smoke-var-ungated`, orphan-`_full` FAIL tagged `smoke-var-orphan-full` (BOTH
+  SUBSTANTIVE — never stripped by Step 5c-bis).
 
 ## Gates I DEFER to sibling critics (do NOT duplicate)
 
@@ -232,7 +236,9 @@ Two hard rules bind every verdict (code-reviewer.md Step 0.7, verbatim):
   `**Git-provenance subclass:**` line: `pre-existing-on-trunk` |
   `stale-main-or-worktree` | `cumulative-main-head-diff`), `raw-completions-upload-missing`
   (Step 0.65 — substantive), `cached-artifact-coverage-unverified` (Step 3.5 —
-  substantive), `substantive` (any code/test/security finding from the correctness
+  substantive), `smoke-var-ungated` (Step 0.70 primary — substantive),
+  `smoke-var-orphan-full` (Step 0.70 orphan — substantive),
+  `substantive` (any code/test/security finding from the correctness
   core). `none` on PASS/CONCERNS. This line is the orchestrator's parse target for
   the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of
   {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is
