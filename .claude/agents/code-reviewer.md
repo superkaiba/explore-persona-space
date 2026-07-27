@@ -1096,6 +1096,79 @@ long-loop RESTARTABILITY (>~1h serial loops must persist + resume) — the two
 compose (a Step 0.69-idempotent phase's inner loop still owes Step 3.6's
 intra-phase checkpointing).
 
+### Step 0.70: Smoke-variable gating (any diff type; bash dispatchers only)
+
+**Trigger — bash dispatcher (`scripts/*dispatch*.sh`, any `.sh` in the diff)
+carries a `<name>_smoke=` declaration OR a live `<name>="$<name>_smoke"`
+assignment** (either grep hits):
+`grep -nE '^[[:space:]]*(local +)?[a-z_][a-z_0-9]*_smoke='` /
+`grep -nE '^[[:space:]]*(local +)?[a-z_][a-z_0-9]*="\$[a-z_][a-z_0-9]*_smoke"'`.
+A sibling `<name>_full=` is NOT required — the load-bearing signature is a
+live var pinned to `_smoke` with no `$SMOKE` fallback (pre-R13 #1689:
+`conds_smoke="assistant_chat"` + `conds="$conds_smoke"`, NO `conds_full=` —
+`git show 15906d680a^:scripts/issue1689_dispatch.sh` L134-135). No trigger
+→ record `Step 0.70: N/A — diff carries no smoke-scoped variable`.
+
+**Sub-check (1) — every live `<name>="$<name>_smoke"` has a `$SMOKE`-guarded
+fallback in the SAME enclosing function/block.** ONE of: (a)
+**bidirectional-pair** (preferred; `models`'s #1689 shape — declare both
+variants, default `<name>="$<name>_full"`, then `[ -n "$SMOKE" ] &&
+<name>="$<name>_smoke"`); (b) **in-line SMOKE guard** on the same variable
+(`[ -n "$SMOKE" ] && <name>=...`, `if [ -n "$SMOKE" ]; then …; fi`,
+`${SMOKE:+"$<name>_smoke"}`, or equivalent reading `$SMOKE` in the SAME
+command); (c) **waiver** below. Otherwise-ungated → FAIL.
+
+**Sub-check (2) — no hardcoded smoke-scoped literal masquerading as
+production default.** Fires ONLY when a `<name>_smoke=` is declared in the
+file. In the SAME enclosing function/block, flag any live loop-driving
+assignment whose value is a hardcoded string equal to that `<name>_smoke`
+variant (or a subset of `<name>_full` when declared) AND has no
+`$SMOKE`-conditional override (pre-R13 `run_phase_fit_cells` L158
+hardcoding the smoke `model_slug`). Waiver same as (1c).
+
+**Sub-check (3) — orphaned `_full` (dead-code signal).** `<name>_full=`
+declared with no `<name>="$<name>_full"` assignment anywhere → FAIL, tag
+`smoke-var-orphan-full` (separately tagged so it never fuses with the
+primary `smoke-var-ungated`).
+
+**Waiver** (mirrors Step 0.69's `# PHASE_IDEMPOTENCY_EXEMPT:`):
+`# SMOKE_VAR_UNGATED_EXEMPT: <reason ≥ 20 chars>` on the line above the
+ungated assignment. Credits PASS.
+
+**Verdict routing:** All (1)+(2) pass or waived AND no orphaned `_full` →
+PASS. Any (1) or (2) FAIL → verdict FAIL, single `Critical` tagged
+**`smoke-var-ungated`** (SUBSTANTIVE — never stripped by Step 5c-bis):
+
+> `epm:experiment-implementation v<n>`'s dispatcher `scripts/<file>` at line
+> `<L>` assigns `<var>="$<var>_smoke"` (or hardcodes its literal to a live
+> loop-driving variable) with no bidirectional-pair fallback and no
+> in-line `$SMOKE` guard — silently ships the smoke-scoped list as the
+> production default. #1689 shape (2026-07-26, commit `15906d680a`):
+> `conds="$conds_smoke"` with the `$SMOKE` gate on the sibling `models` but
+> never on `conds` collapsed a 21-condition lattice to 1 through eight
+> rounds. Re-post `v<n+1>` with the bidirectional-pair pattern (declare
+> `<var>_full=`, default `<var>="$<var>_full"`, then `[ -n "$SMOKE" ] &&
+> <var>="$<var>_smoke"`), OR add `# SMOKE_VAR_UNGATED_EXEMPT: <reason ≥
+> 20c>`.
+
+Any (3) FAIL → verdict FAIL, single `Major` tagged **`smoke-var-orphan-full`**
+(SUBSTANTIVE): body names `<var>_full=` at `<file>:<L>` declared but never
+assigned to a live `<var>`; re-post either assigning `<var>="$<var>_full"`
+as the default (with optional `[ -n "$SMOKE" ] && <var>="$<var>_smoke"`) or
+deleting the unused declaration.
+
+Record one line: `Step 0.70: PASS — <N> smoke-scoped variables correctly
+gated`, `Step 0.70: FAIL smoke-var-ungated — <var> ungated at <file>:<L>`,
+`Step 0.70: FAIL smoke-var-orphan-full — <var>_full declared at <file>:<L>
+but never used`, or `Step 0.70: N/A — diff carries no smoke-scoped
+variable`.
+
+**Fingerprint-of-degradation** (mirrors Step 0.69): bash source only; a
+python dispatcher whose smoke gating lives in `args.smoke` records `Step
+0.70: N/A — python dispatcher; smoke gating is arg-level`. Widening path
+(python `args.smoke`, YAML/JSON `conditions_smoke:`) named in the plan
+follow-ups.
+
 ### Step 0.7: Pre-diff gates never short-circuit the diff
 
 Steps 0.5, 0.55, 0.6, 0.65, and 0.67 are pre-diff *contract* checks, not a
