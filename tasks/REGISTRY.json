@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1732,
+  "highest_id": 1733,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5698,6 +5698,13 @@
       "path": "tasks/proposed/1732",
       "status": "proposed",
       "title": "daily-fix: settle whether consistency-checker runs for paren"
+    },
+    "1733": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1733",
+      "status": "proposed",
+      "title": "daily-held: #1689 fit_ladder cannot finish \u2014 kill, cut, or r"
     },
     "174": {
       "has_clean_result": false,
