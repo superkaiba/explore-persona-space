@@ -5569,8 +5569,8 @@
     "1716": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1716",
-      "status": "proposed",
+      "path": "tasks/planning/1716",
+      "status": "planning",
       "title": "daily-fix: code-reviewer has no full-ruleset ruff policy-pin"
     },
     "1717": {
