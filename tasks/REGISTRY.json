@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1735,
+  "highest_id": 1736,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5719,6 +5719,13 @@
       "path": "tasks/proposed/1735",
       "status": "proposed",
       "title": "daily-fix: closed-sibling probe suppressed 21 of 24 filings "
+    },
+    "1736": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1736",
+      "status": "proposed",
+      "title": "daily-held: 23 stashes accumulated on the shared repo root"
     },
     "174": {
       "has_clean_result": false,
