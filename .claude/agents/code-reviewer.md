@@ -1316,7 +1316,7 @@ proceed.
 
 **Verdict routing:**
 
-- BOTH present → note which mechanism satisfied it and proceed.
+- ALL THREE present → note which mechanisms satisfied them and proceed.
 - Any of the three missing, with NO plan-stated justification → **Major** finding, blocker tag
   `substantive` when it drives a FAIL. This is a SUBSTANTIVE finding, NOT a mechanical
   gate — the SKILL.md Step 5c-bis strip list is limited to `marker-shape` /
