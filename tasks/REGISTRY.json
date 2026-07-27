@@ -5667,8 +5667,8 @@
     "1729": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1729",
-      "status": "approved",
+      "path": "tasks/reviewing/1729",
+      "status": "reviewing",
       "title": "daily-fix: verify_plan c38 false-positives on a backticked p"
     },
     "173": {
