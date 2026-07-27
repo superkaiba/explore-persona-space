@@ -314,6 +314,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_workflow_lint_inline_round_duty_mirror.py",
     "tests/test_workflow_yaml.py",
     "tests/test_workflow_fix_dedup.py",
+    # NEW (#1735) — rule reconciliation pin: workflow-fix-on-bug.md §
+    # Recently-closed-sibling SUSPECT probe describes the composite blocking
+    # contract (target + non-stopword title arm), not the retired
+    # "advisory only, never a block" phrasing.
+    "tests/test_workflow_fix_rule_closed_sibling_reconciliation.py",
     "tests/test_workflow_hub_upload_as_file.py",
     # group 3 — test_no_* invariants
     "tests/test_no_auto_runpod_path_under_any_failure.py",

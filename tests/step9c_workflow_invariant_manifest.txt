@@ -77,6 +77,7 @@ tests/test_verify_uploads_card_fallback.py
 tests/test_verify_uploads_claimed_urls.py
 tests/test_verify_uploads_type_selection.py
 tests/test_workflow_fix_dedup.py
+tests/test_workflow_fix_rule_closed_sibling_reconciliation.py
 tests/test_workflow_hub_upload_as_file.py
 tests/test_workflow_lint.py
 tests/test_workflow_lint_dotenv_check.py
