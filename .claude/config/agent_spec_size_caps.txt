@@ -1,0 +1,16 @@
+# Agent-spec grandfather caps — one line per entry, line-mergeable by design.
+# Format: <filename> <cap_bytes>  # optional reason/history
+# Blank lines and lines whose first non-whitespace char is `#` are ignored.
+# The trailing `# ...` on a data line is stripped by the loader (informational only).
+# Semantics: read by workflow_lint.AGENT_SPEC_SIZE_GRANDFATHER — the module
+# attribute keeps its name + type (dict[str, int]) so every consumer site,
+# test monkeypatch, and verify_plan reference is unchanged.
+
+code-reviewer.md            122_400   # measured 121,782 B post-#1726 (Step 3.6 T2 count trigger + verdict-routing rewrite); cap = measured + ~0.6 KB
+codex-clean-result-critic.md 75_200   # measured 74,082 B post-#1447; cap = measured + ~1.1 KB
+codex-code-reviewer.md       60_800   # measured 59,576 B post-#1693 (Step 0.69 mirror paragraph); cap = measured + ~1.2 KB
+experiment-implementer.md    80_500   # measured 76,274 B post-#1692 (item 5 Axis 1 import-resolution leg); cap = measured + ~0.23 KB
+experimenter.md              75_400   # measured 79,611 B post-#1720 (§ Local runs pre-emptive NOT-RUN escape); cap = measured + ~0.9 KB
+methodology-writer.md        50_700   # measured 49,740 B post-#1115 (read-hygiene context-budget section); cap = measured + <=~1 KB
+research-pm.md               47_000   # measured 46,785 B post-#1618 (unmapped-pod triage + Mode-2 audit template relocated); cap = measured + ~0.2 KB
+upload-verifier.md           51_500   # measured 50,741 B post-#1535 (Step 2.7 declared-off-pod outputs sub-rule); cap = measured + ~0.8 KB

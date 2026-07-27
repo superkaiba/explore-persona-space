@@ -74,6 +74,8 @@ tests/test_verify_uploads_type_selection.py
 tests/test_workflow_fix_dedup.py
 tests/test_workflow_hub_upload_as_file.py
 tests/test_workflow_lint.py
+tests/test_workflow_lint_agent_spec_caps.py
+tests/test_workflow_lint_agent_spec_size.py
 tests/test_workflow_lint_dotenv_check.py
 tests/test_workflow_lint_inline_round_duty_mirror.py
 tests/test_workflow_yaml.py

@@ -96,13 +96,17 @@ def test_ratchet_caps_raised_for_step_0_69_insert() -> None:
     (3000) of measured — the ratchet-hug invariant.
     """
     src = WORKFLOW_LINT_PY.read_text(encoding="utf-8")
+    # Ensure workflow_lint is importable — the caps map is a module attribute
+    # after #1718 (loaded from .claude/config/agent_spec_size_caps.txt).
+    import sys
+
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    import workflow_lint
 
     def _extract_cap(key: str) -> int:
-        # e.g. `"code-reviewer.md": 118_800,`
-        pattern = rf'"{re.escape(key)}"\s*:\s*([0-9_]+)\s*,'
-        match = re.search(pattern, src)
-        assert match, f"AGENT_SPEC_SIZE_GRANDFATHER entry for {key!r} not found"
-        return int(match.group(1).replace("_", ""))
+        cap = workflow_lint.AGENT_SPEC_SIZE_GRANDFATHER.get(key)
+        assert cap is not None, f"AGENT_SPEC_SIZE_GRANDFATHER entry for {key!r} not found"
+        return cap
 
     def _extract_headroom() -> int:
         match = re.search(

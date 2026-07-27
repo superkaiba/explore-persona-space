@@ -11883,99 +11883,67 @@ AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES = 3_000
 # when trimmed. planner.md and critic.md are deliberately NOT grandfathered
 # (#838): both were structurally trimmed to <=20 KB, so regrowth on the two
 # incident files is a commit-time FAIL.
-AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
-    # clean-result-critic.md: split to clean-result-critic-lens-reference.md
-    # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
-    # the rest measured at the #838 tightening (2026-07-02), caps = measured
-    # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 121,782 B post-#1726 (Step 3.6 T2 count trigger + 3-part
-    # Check incl. per-unit progress-line item 3 + verdict-routing rewrite
-    # — plan-mandated growth atop #1693's Step 0.69 gate; cap = measured
-    # + ~0.6 KB. Prior:
-    # 121,300 — measured 120,709 B post-#1693 (Step 0.69 phase-idempotency
-    # + inter-phase-contract gate — plan-mandated growth atop #1692's
-    # Step 0.55 SHAPE-check binding),
-    # 112,500 — measured 112,177 B post-#1692 (Step 0.55 SHAPE-check
-    # binding: per-arm attestation-row consistency + import-resolution
-    # three-shape gate for the smoke-architecture-check marker),
-    # 110,300 — measured 109,583 B post-#1449 (Step 0.65 plan-glob vs
-    # uploader-eligibility parity sub-check), 108,000 — measured
-    # 106,853 B post-#1397 (Step 2 fit-loop batched-helper naming
-    # paragraph), 105,000 — measured 104,235 B post-#1317 (Step 4.6
-    # Gate-scope line verification), 101,500 —
-    # measured 100,555 B post-#1254 (Step 3.9 degenerate-statistic check,
-    # observed-vs-null reads), 99,000 — measured 98,126 B post-#1230 (Step 6
-    # durability-pin shipping duty), 97,000 — measured 96,072 B post-#1119,
-    # 95,000 — measured 94,126 B post-#1115)
-    "code-reviewer.md": 122_400,
-    # measured 74,082 B post-#1447 (family-enumeration sync: the two
-    # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
-    # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
-    # 74,000 — measured 73,408 B post-#1159 (Step 2 dual-source read
-    # contract: lens rubrics from clean-result-critic-lens-reference.md,
-    # report schema from the slim agent spec), 73,000 — measured
-    # 72,229 B post-#1056, 72,000 post-#1050 r2, 71,000 post-#1050 r1,
-    # 60,554 B pre-#1050)
-    "codex-clean-result-critic.md": 75_200,
-    # measured 59,576 B post-#1693 (Step 0.69 mirror paragraph pointing at
-    # code-reviewer.md's phase-idempotency + inter-phase-contract gate —
-    # plan-mandated growth; cap = measured + ~1.2 KB. Prior: 59,200 —
-    # measured 58,271 B post-#1438 (Step 0.9 copy-list bullet + inlined-
-    # rubric 0.9 slot + Blocker-tags data-access-blocked entry),
-    # 56,800 — measured 55,870 B post-#1380 (Step 4.6 copy-list bullet +
-    # inlined-rubric 4.6 slot + Blocker-tags 4.6-presence), 53,300 —
-    # measured 52,361 B post-#1254, 51,600 — measured 50,642 B post-#948,
-    # 47,930 B post-#881)
-    "codex-code-reviewer.md": 60_800,
-    # measured 76,274 B post-#1692 (item 5 Axis 1 import-resolution leg,
-    # Axis 2 per-arm resolution attestation, PASS_PARTIAL verdict +
-    # post-marker template extension — plan-mandated growth; cap =
-    # measured + ~0.23 KB, with condensing sweep across older Rationale
-    # / incident prose to stay near budget. Prior: 74,500 — measured
-    # 74,240 B post-#1682 (Report Format SHA-verbatim rule), 74,000 —
-    # measured 73,554 B post-#1572 (step-10 staged-index verification
-    # pointer), 73,000 — measured 72,240 B post-#1449 (After-
-    # implementation step-7 plan-glob parity self-check), 72,000 —
-    # measured 71,114 B post-#1409 (data-dependent-gates smoke duty in
-    # checklist item 3 + item-5 cross-ref), 69,800 — measured 68,888 B
-    # post-#1384 (per-arm-class smoke-coverage clause), 67,900 — measured
-    # 67,472 B post-#1363, 67,400 — measured 66,574 B post-#1349,
-    # 66,300 — measured 65,548 B post-#1311)
-    "experiment-implementer.md": 80_500,
-    # measured 79,611 B post-#1720 (§ Local runs pre-emptive NOT-RUN escape
-    # for Step 9c-selected slow tests — mirrors implementer.md L174; ~500 B
-    # growth; cap = measured + ~0.9 KB. Prior: 79_500 —
-    # measured 74,867 B post-#1702 (Responsibility 2 --env-pin composition
-    # sub-bullet threading --env-pin KEY=VALUE on --workload-cmd launches,
-    # #1669 channel merge + #1586 wedge-failover WandB incident — plan-
-    # mandated growth on top of #1698; cap = measured + ~0.53 KB. Prior:
-    # 74,400 — measured 73,872 B post-#1698 (Contract scope H2 — the
-    # already-bootstrapped-pod 60s budget + fresh-provision refusal;
-    # fence-field derivation recipe — gcloud maxRunDuration + RunPod
-    # audit-cron ttl_days disclosure — with poller_timeout= separated
-    # from fence= in the epm:run-launched marker template; #1689 R8
-    # launch-path fixes 3 + 4), 67,500 — measured 66,921 B post-#1416
-    # (Pre-Launch step 9 foreign-tenant memory.used read), 66,500 —
-    # measured 65,540 B post-#1081 r2 (D3 crash-fix-relaunch addendum:
-    # disposition-conditional resume-glob confirm), 65,500 — measured
-    # 62,672 B)
-    "experimenter.md": 75_400,
-    # measured 49,740 B post-#1115 (read-hygiene context-budget section —
-    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
-    # measured 48,197 B post-#1102)
-    "methodology-writer.md": 50_700,
-    # measured 46,785 B post-#1618 (unmapped-pod triage + non-EPS pod-cost
-    # directive + Mode-2 audit template relocated to
-    # .claude/rules/pm-audit-reference.md — #829 trim after the 5d84120ac9
-    # overage to 47,861; cap UNCHANGED = measured + ~0.2 KB. Prior:
-    # measured 46,187 B post-#1082 (negative-existence search recipe),
-    # 43,500 / 40,990 B)
-    "research-pm.md": 47_000,
-    # measured 50,741 B post-#1535 (Step 2.7 declared-off-pod outputs
-    # sub-rule + Step 2.8 off_pod_phases reads arm — plan-mandated growth;
-    # cap = measured + ~0.8 KB. Prior: 47,800 — measured 46,830 B post-#1115)
-    "upload-verifier.md": 51_500,
-}
+_AGENT_SPEC_CAPS_PATH = _REPO_ROOT / ".claude" / "config" / "agent_spec_size_caps.txt"
+
+
+def _load_agent_spec_caps(path: Path | None = None) -> dict[str, int]:
+    """Load per-file agent-spec caps from the line-mergeable data file at
+    ``.claude/config/agent_spec_size_caps.txt`` (relative to ``_REPO_ROOT``).
+
+    Format: one entry per line, ``<name> <cap>`` with optional trailing
+    ``# <reason>`` (stripped). Blank lines + ``#``-only lines are ignored.
+    Underscores in cap ints are supported (``122_400`` → 122400), matching
+    the pre-migration Python literal at ``AGENT_SPEC_SIZE_GRANDFATHER``.
+
+    Storage split (#1718): moved out of a single Python dict literal so
+    concurrent workflow-fix sessions raising caps on DIFFERENT agent files
+    edit DIFFERENT lines and merge cleanly. The module attribute
+    ``AGENT_SPEC_SIZE_GRANDFATHER`` keeps its name + type
+    (``dict[str, int]``) so every consumer + test + verify_plan reference
+    is unchanged.
+
+    Fail-loud: a missing file, a malformed line, or a duplicate name
+    raises at import time. Rationale: the ratchet is safety
+    infrastructure — a silent empty ``{}`` would un-grandfather every
+    currently-grandfathered spec and flip every WARN-under-cap into
+    FAIL-uncapped fleet-wide within one lint invocation. Do NOT wrap the
+    caller in ``try: except FileNotFoundError: caps = {}`` — that
+    silently un-grandfathers, and is exactly the failure mode this
+    fail-loud posture exists to prevent.
+    """
+    p = path if path is not None else _AGENT_SPEC_CAPS_PATH
+    caps: dict[str, int] = {}
+    text = p.read_text(encoding="utf-8")  # raises FileNotFoundError loud
+    for lineno, raw in enumerate(text.splitlines(), start=1):
+        line = raw.split("#", 1)[0].strip()
+        if not line:
+            continue
+        parts = line.split()
+        if len(parts) != 2:
+            raise ValueError(f"{p}:{lineno}: expected `<name> <cap>` (got {raw!r})")
+        name, cap_str = parts
+        try:
+            cap = int(cap_str.replace("_", ""))
+        except ValueError as exc:
+            raise ValueError(f"{p}:{lineno}: cap {cap_str!r} is not an integer") from exc
+        if name in caps:
+            raise ValueError(
+                f"{p}:{lineno}: duplicate entry for {name!r} (first seen at earlier line)"
+            )
+        caps[name] = cap
+    return caps
+
+
+# Grandfather-ratchet caps for agent specs still above AGENT_SPEC_FAIL_BYTES.
+# Storage is a one-entry-per-line data file (see _load_agent_spec_caps above
+# + .claude/config/agent_spec_size_caps.txt) so concurrent workflow-fix
+# sessions raising caps on DIFFERENT files edit different lines and merge
+# cleanly (#1718). The module attribute name + type (dict[str, int]) is
+# preserved so every consumer site, test monkeypatch, and verify_plan
+# reference is unchanged. The chronicle history of prior caps that used to
+# live above each entry is preserved in `git log --follow scripts/workflow_lint.py`
+# at commits before the #1718 migration.
+AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = _load_agent_spec_caps()
 
 
 def check_agent_spec_size(  # noqa: C901 -- flat per-entry hygiene ladder (stale/retired/headroom, #986); extracting a branch would just relocate it
