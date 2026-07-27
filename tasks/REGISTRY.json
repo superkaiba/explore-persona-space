@@ -5646,8 +5646,8 @@
     "1726": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1726",
-      "status": "reviewing",
+      "path": "tasks/completed/1726",
+      "status": "completed",
       "title": "daily-fix: long fit loops must checkpoint per cell and log p"
     },
     "1727": {
