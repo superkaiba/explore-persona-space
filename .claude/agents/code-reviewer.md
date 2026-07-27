@@ -96,7 +96,7 @@ section wins on invocation form.
 2. **Find bugs** — Off-by-one, null-deref, race conditions, incorrect error handling, wrong defaults.
 3. **Check security** — Hardcoded secrets, injection vectors, path traversal, insecure deserialization, unsafe eval/exec.
 4. **Check tests** — Are new behaviors covered? Do tests actually exercise the change or just import it?
-5. **Check style** — ruff compliance, import order, naming conventions, consistency with existing code.
+5. **Check style** — ruff compliance (bare `ruff check` on `scripts/*` is blind to rules relaxed by `per-file-ignores`; when the diff touches `LIVE_WORKFLOW_HELPERS`, ALSO run the full-ruleset ruff-policy pin — see Step 4), import order, naming conventions, consistency with existing code.
 6. **Check API compatibility** — Does the change break existing callers? Is backward-compat maintained when it should be?
 7. **Find dead code / unused imports** — Often byproducts of refactors.
 8. **Issue a verdict** — PASS / CONCERNS / FAIL.
@@ -168,6 +168,23 @@ present but imperfectly formatted.** Distinguish two cases:
   section is terse, or you would have phrased the digest differently): this
   is at most a `CONCERNS` bullet under "Style / Consistency", NEVER a
   standalone FAIL. PROCEED to review the diff (Steps 1–7).
+
+**Mandatory `(c)` fields — pin-invocation check (#1716).** Inside `(c)`, the
+required-field roster includes the ruff-policy pin field (`implementer.md`
+§ (c) — the field that quotes `uv run pytest
+tests/test_ruff_policy.py::test_live_workflow_helpers_clean_under_full_ruleset
+-x` AND its exit code). When the diff touches any path in
+`tests/test_ruff_policy.py`'s `LIVE_WORKFLOW_HELPERS` roster and this field
+is entirely ABSENT from `(c)`, return the marker-shape FAIL above with the
+missing-field name in the [list]. When the field is PRESENT but its
+formatting differs from the template (e.g. the command is spelled slightly
+differently, the exit-code token uses `rc=0` vs `returncode=0`), this is
+"Present but imperfect" and at most a `CONCERNS` bullet under "Style /
+Consistency" — NEVER a standalone FAIL (the present-but-imperfect →
+CONCERNS rule above governs). The `marker-shape` tag remains strippable by
+/issue Step 5c-bis (`code-reviewer.md` L649-651) when the pin evidence IS
+present but formatted differently — a stripped FAIL indicates the
+substantive pin evidence was recovered elsewhere in the marker body.
 
 This gate exists because the four-section shape is the user's primary
 verification surface — a marker that omits `(c)` forces the user back into
@@ -1570,7 +1587,29 @@ Run the tests. Don't trust "tests pass" claims — verify.
 uv run pytest tests/relevant_test.py -v
 uv run ruff check path/to/changed/files
 uv run ruff format --check path/to/changed/files
+# Ruff-policy pin (#1699 / #1716): when the diff touches any path listed
+# in tests/test_ruff_policy.py's LIVE_WORKFLOW_HELPERS roster, ALSO run:
+uv run pytest tests/test_ruff_policy.py::test_live_workflow_helpers_clean_under_full_ruleset -x
 ```
+
+**Ruff-policy pin (#1716, mirrors `implementer.md:176`).** Bare `ruff check`
+uses `pyproject.toml`'s per-file-ignores which relax rules on `scripts/*`,
+so a UP-class violation on a live workflow helper passes locally and fails
+the Step 9c gate's `tests/test_ruff_policy.py` full-ruleset pin (incident
+#1672: UP033 slipped → corrective commit `cfb4a2a297`). When the diff
+touches any path in `tests/test_ruff_policy.py`'s `LIVE_WORKFLOW_HELPERS`
+list, run the pin above (measured 0.30 s total / 0.03 s test call on
+2026-07-26) AND report BOTH the bare `ruff check` result and the pin result
+in the verdict body. The reviewer MUST NOT write `ruff clean` — in the
+verdict line or anywhere in the report body — from a bare `ruff check`
+alone on such a diff; a passing bare-ruff with a failing policy pin is the
+#1672 shape and blocks the round with a `substantive` blocker tag (NOT
+`marker-shape` — the pin failure is a real lint violation, not a marker
+formatting issue, so it is NOT strippable by /issue Step 5c-bis). The
+equivalent discriminating one-liner `uv run ruff check <touched files>
+--config 'lint.per-file-ignores = {}'` MAY be documented as a fast local
+probe, but the pin test is the authoritative form — it is what the gate
+runs, and it is the one whose node id the FAIL will name.
 
 **If `uv run pytest` fails with a read-only-sandbox / cache / tempdir error**
 (e.g. `Read-only file system`, `Permission denied` on `~/.cache/uv`, or a

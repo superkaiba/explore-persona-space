@@ -574,6 +574,19 @@ both reviewers are graded against the same standard. Read
   mechanizable check belongs in a workflow-surface verifier and is likely
   to recur, Codex notes it in plain English in the verdict body and the
   orchestrator decides.
+- "Step 4: Run / Verify Tests" (the mechanical pre-pass) — INCLUDING the
+  ruff-policy pin (#1716): when the diff touches any path in
+  `tests/test_ruff_policy.py`'s `LIVE_WORKFLOW_HELPERS` roster, the
+  composed prompt MUST instruct Codex to run
+  `uv run pytest tests/test_ruff_policy.py::test_live_workflow_helpers_clean_under_full_ruleset -x`
+  AND report both the bare-ruff result and the pin result — NEVER a bare
+  `ruff clean` verdict from bare `ruff check` alone on such a diff. Codex
+  cannot re-run pytest (no `uv` env), so it applies this as a
+  REPORT-review rubric: verify the implementer's `(c)` field carries the
+  pin's literal command + exit code alongside the bare-ruff result; a
+  passing bare-ruff with a failing pin is the #1672 shape and blocks the
+  round with a `substantive` blocker tag (NOT `marker-shape` — a real
+  lint violation is never strippable by Step 5c-bis).
 - "Step 4.5: Regression-test presence for substantive BLOCKER fixes"
   VERBATIM. This is a test-PRESENCE check (grep the worktree for a committed
   pytest pinning the invariant), NOT a test-RUNNING check, so Codex CAN and
@@ -722,7 +735,7 @@ fine.)
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.68, 0.7, 0.8, 0.9, 1, 2, 3, 3.5, 3.6, 3.7, 3.8, 3.9, 4.5, 4.6, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher + work-conserving schedule)}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.68, 0.7, 0.8, 0.9, 1, 2, 3, 3.5, 3.6, 3.7, 3.8, 3.9, 4, 4.5, 4.6, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher + work-conserving schedule)}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:
