@@ -5604,8 +5604,8 @@
     "1720": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1720",
-      "status": "reviewing",
+      "path": "tasks/completed/1720",
+      "status": "completed",
       "title": "daily-fix: make the implementer NOT-RUN escape pre-emptive f"
     },
     "1721": {
