@@ -1,6 +1,5 @@
 """Round-A skeleton tests for issue #1739 (constants, fit-pool mask, registry, dispatcher)."""
 
-import json
 import os
 import subprocess
 from pathlib import Path
@@ -130,14 +129,11 @@ def test_dispatch_unknown_phase_exits_two(tmp_path):
     assert proc.returncode == 2, (proc.stdout, proc.stderr)
 
 
-def test_dispatch_unimplemented_phase_exits_three_and_writes_sentinel(tmp_path):
-    # `fits` is a round-B/C phase: exit 3 + a not-implemented sentinel (no network).
+def test_dispatch_fits_phase_fails_loud_without_staged_inputs(tmp_path):
+    # Round C1 implemented `fits`: with no staged stores the phase must FAIL
+    # LOUD at the loader (never a silent ok sentinel; no network touched —
+    # the crash is a local FileNotFoundError before any Hub call).
     proc = _run_dispatch(["--phase", "fits"], tmp_path)
-    assert proc.returncode == 3, (proc.stdout, proc.stderr)
-    sentinel = tmp_path / "issue-1739-fits.json"
-    assert sentinel.exists()
-    payload = json.loads(sentinel.read_text())
-    assert payload["issue"] == 1739
-    assert payload["phase"] == "fits"
-    assert payload["status"] == "not-implemented"
-    assert payload["rc"] == 3
+    assert proc.returncode != 0, (proc.stdout, proc.stderr)
+    assert "no context_end shards" in proc.stderr or "FileNotFoundError" in proc.stderr, proc.stderr
+    assert not (tmp_path / "issue-1739-fits.json").exists()  # no ok sentinel on crash

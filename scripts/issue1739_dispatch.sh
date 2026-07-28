@@ -112,11 +112,36 @@ stage_corpus(b, 'eval', cap, 0)
       write_sentinel "$phase" ok 0
       echo "[phase=${phase}] done (judge)"
       ;;
-    fits|figures)
-      echo "[phase=${phase}] NOT IMPLEMENTED in round B (lands in round C)" >&2
-      write_sentinel "$phase" not-implemented 3
-      echo "[phase=${phase}] done (not-implemented)"
-      return 3
+    fits)
+      # Matched-budget arm grid per behavior (both prefix+context variants).
+      # The smoke slice threads through EPM_I1739_LIMIT exactly like the
+      # earlier phases (smoke IS the production path with tiny caps).
+      for b in $BEHAVIORS_RUN; do
+        echo "[phase=${phase}] fits behavior=${b}"
+        FITS_ARGS=(--behavior "$b"
+          --labeled-store data/issue_1739/store/"$b"_labeling
+          --dv-json eval_results/issue_1739/dv_dataset/"$b"/labeling.json
+          --u-store data/issue_1739/hf_dl/u_store
+          --e1-store data/issue_1739/store/"$b"_extraction
+          --out-root eval_results/issue_1739/"$b")
+        if [ -n "${EPM_I1739_LIMIT:-}" ]; then
+          FITS_ARGS+=(--budgets "$EPM_I1739_LIMIT" --u-size 64 --layers 0 1 2
+            --n-boot 50 --n-perm 50 --mlp-epochs 5)
+        fi
+        "${CAPS[@]}" uv run python scripts/issue1739_fits.py "${FITS_ARGS[@]}"
+      done
+      write_sentinel "$phase" ok 0
+      echo "[phase=${phase}] done (fits)"
+      ;;
+    figures)
+      for b in $BEHAVIORS_RUN; do
+        echo "[phase=${phase}] figures behavior=${b}"
+        "${CAPS[@]}" uv run python scripts/issue1739_figures.py \
+          --summary eval_results/issue_1739/"$b"/arm_results/all_arms_spearman.json \
+          --out-dir figures/issue_1739/"$b"
+      done
+      write_sentinel "$phase" ok 0
+      echo "[phase=${phase}] done (figures)"
       ;;
     *)
       echo "unknown phase: ${phase}" >&2
