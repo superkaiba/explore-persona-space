@@ -5795,8 +5795,8 @@
     "1745": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1745",
-      "status": "approved",
+      "path": "tasks/running/1745",
+      "status": "running",
       "title": "daily-fix: pre-persist plan header retitle stops c40 churn"
     },
     "1746": {
