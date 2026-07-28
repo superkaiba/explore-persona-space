@@ -13,6 +13,9 @@ goal: 'Characterise what fine-tuning a behavior into a specific context does to 
   the context vector moves, whether the map itself changes, whether the answer vector
   moves, what shape the write has and whether it is predictable ahead of time (delta
   vs r_B vs the marker unembedding row), and which of theory assumptions A7-A11 hold.'
+relates_to:
+- identity-contextual-vs-base
+- leak-predictor
 ---
 ## Goal
 
