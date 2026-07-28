@@ -1573,3 +1573,130 @@ def test_unmatched_advisory_extracts_from_structured_fingerprint_key(tmp_path: P
     )
     result = run_sweep(tmp_path, include_routed=True)
     assert result["unmatched_record_fps"] == [{"source": "task:106", "ref": "#501", "fp": drift_fp}]
+
+
+# ── #1741: URGENT fast-path park accept arms (#1681 grammar; incident #1718) ─
+
+# Byte-verbatim fixture row: _RAW_1718_CAND is the EXACT JSONL line from the
+# live #1718 events.jsonl (the 2026-07-27 urgent fast-path park — leads
+# `URGENT-PARK`, formal block carries urgency: main-red + failing_test +
+# wf_fix, ZERO occurrences of the word "parked"). Pre-#1741 the predicate
+# never enumerated it, so BOTH consumers (the watcher's urgent-park router
+# and the nightly /daily Step C sweep) were blind for ~16 h while main
+# stayed red. Consumed via make_task(raw_event_lines=...), so the sweep
+# parses the same bytes the live tree carries.
+
+_RAW_1718_CAND = r"""{"ts": "2026-07-27T14:38:28Z", "kind": "epm:workflow-fix-candidate", "version": 1, "by": "unknown", "note": "URGENT-PARK workflow-fix candidate raised from #1718 Step 10d merge attempt (autonomous session).\n\n## Context\n\n- Session: task #1718 (workflow-fix session — carries `workflow_fix_target: scripts/workflow_lint.py` Provenance; recursion guard ACTIVE).\n- Blocked action: `/issue 1718` Step 10d local merge (`git merge origin/main` after `gh pr merge --squash` reported CONFLICTING).\n- Blocker: pristine `origin/main` fails the agent-spec-size ratchet. Verified two ways:\n  (a) `git show origin/main:.claude/agents/planner.md | wc -c` = 40900 (over the 40000 FAIL threshold).\n  (b) In a scratch worktree detached at `origin/main` (SHA `0a056258de4de8e209ddd1535269ebf38aa477f2` at diagnosis time; `f36fdb2f84` post-`task #1725: set-body` commit), `uv run python scripts/workflow_lint.py --check-agent-spec-size` prints `workflow_lint: .claude/agents/planner.md: 40900 bytes exceeds the 40000-byte agent-spec FAIL threshold — relocate per-scenario content to .claude/rules/ (see #829). workflow_lint: FAIL (1 error(s))`.\n\n- My branch alone is GREEN — `tests/test_workflow_lint_agent_spec_size.py::test_live_tree_passes` PASSES on `issue-1718` @ `a6d4a4b9a4` (planner.md there = 39371 bytes). The failure entered my worktree only via the merge that pulled origin/main's planner.md at 40900 bytes.\n\n## Why urgent-park (per `.claude/rules/workflow-fix-on-bug.md` § Recursion guard \"Urgent fast path\", #1681)\n\n- My session is a workflow-fix session ⇒ recursion guard PARKS the candidate; the orchestrator does NOT auto-file/spawn.\n- Every intervening Step 10d merge attempt across the fleet must re-classify this red vs the baseline ledger; the #1643-class fleet-wide cost applies.\n- Direct evidence exists: `test_live_tree_passes` FAILs on pristine `origin/main`, and my in-worktree merge attempt fired the same failure through the pre-commit hook (`workflow-lint-agent-spec-size`).\n\n## Post-park action\n\n- Parking #1718 at status `blocked` with `epm:failure v1 failure_class: infra reason: main-red-planner-md-ratchet-blocks-step10d-merge`.\n- The autonomous-session watcher's `urgent_wf_park_pass` (every 10 min) will detect the token, VERIFY the claim (one bounded pytest run of the named node, expecting rc=1), and file+dispatch via `scripts/file_infra_task.py` — `epm:workflow-fix-task-filed` will land on #1718 with the routed record.\n- Once the routed fix lands (planner.md trimmed to <40 KB and merged to main), a fresh `/issue 1718` respawn (via the completed-unmerged watcher pass or manual) can retry Step 10d cleanly.\n\n## Bug details\n\n- **File:** `.claude/agents/planner.md`\n- **Current size (origin/main):** 40900 bytes\n- **FAIL threshold:** 40000 bytes (`AGENT_SPEC_FAIL_BYTES` in `scripts/workflow_lint.py`)\n- **Overage:** 900 bytes\n- **Policy stance (per #829 / #838):** planner.md was DELIBERATELY not grandfathered — it was structurally trimmed to ≤20 KB and per-scenario content moved to `.claude/rules/`. Concurrent growth pushed it past 40 KB without an offsetting relocation.\n- **Correct fix (per the workflow_lint hook message itself):** \"relocate per-scenario content to .claude/rules/ (see #829)\".\n\n<!-- workflow-fix-candidate v1 -->\ntarget_file: .claude/agents/planner.md\nbug_observed: origin/main planner.md is 40900 bytes, exceeds the 40000-byte AGENT_SPEC_FAIL threshold; pristine origin/main fails workflow_lint --check-agent-spec-size and tests/test_workflow_lint_agent_spec_size.py::test_live_tree_passes\nwhy_workflow_gap: planner.md was deliberately NOT grandfathered per #829/#838 (structurally trimmed to <=20 KB, per-scenario content moved to .claude/rules/); concurrent growth pushed it past 40 KB without a relocation, so every Step 10d merge that pulls origin/main hits the pre-commit ratchet hook and cannot land — fleet-wide per-hour cost until fixed\nproposed_change: Relocate per-scenario content in .claude/agents/planner.md to .claude/rules/ subfiles per #829 so planner.md falls below 40000 bytes\ndiff_sketch: |\n  # Scenario-specific content trimming; the spawned session's planner+implementer\n  # will identify the largest relocatable per-scenario sections per the #829\n  # protocol. Verify with:\n  #   uv run pytest tests/test_workflow_lint_agent_spec_size.py::test_live_tree_passes\n  #   uv run python scripts/workflow_lint.py --check-agent-spec-size\nconfidence: high\nrelated_task: #1718\nurgency: main-red\nfailing_test: tests/test_workflow_lint_agent_spec_size.py::test_live_tree_passes\nwf_fix: true\n<!-- /workflow-fix-candidate -->\n\nFingerprint (sha256(normalize(proposed_change) + \"||\" + normalize(bug_observed))[:12]): 06bc0203d759\n"}"""  # noqa: E501
+
+_1718_TS = "2026-07-27T14:38:28Z"
+_1718_FP = "06bc0203d759"
+
+
+def test_issue1741_urgent_park_lead_note_enumerated(tmp_path: Path) -> None:
+    """Arm (a): the verbatim #1718 URGENT-PARK note enumerates with its fp."""
+    # round-trip guard: the embedded fixture line is a single valid JSON row
+    row = json.loads(_RAW_1718_CAND)
+    assert row["ts"] == _1718_TS
+    # the incident's defining property: no "parked" token anywhere
+    assert "parked" not in row["note"].lower()
+    make_task(tmp_path, 1718, "blocked", raw_event_lines=[_RAW_1718_CAND])
+    c = only(run_sweep(tmp_path))
+    assert c["source"] == "task:1718"
+    assert c["formal_block"] is True
+    assert c["fingerprint"] == _1718_FP
+    assert c["target_file"] == ".claude/agents/planner.md"
+    assert c["suppressed"] is False
+
+
+def test_issue1741_urgent_block_token_enumerated_without_lead(tmp_path: Path) -> None:
+    """Arm (b) independently: `urgency: main-red` INSIDE the formal block
+    enumerates with neither an URGENT-PARK lead nor any "parked" token."""
+    bug = "check c99 fails on origin/main after the ratchet landed."
+    change = "raise the size cap for the offending file."
+    note = (
+        "Recursion-guard candidate surfaced for the nightly sweep (no routing "
+        "performed by this session).\n\n"
+        "<!-- workflow-fix-candidate v1 -->\n"
+        "target_file: .claude/agents/planner.md\n"
+        f"bug_observed: {bug}\n"
+        "why_workflow_gap: the ratchet lacks headroom\n"
+        f"proposed_change: {change}\n"
+        "urgency: main-red\n"
+        "failing_test: tests/test_x.py::test_y\n"
+        "wf_fix: true\n"
+        "confidence: high\n"
+        "related_task: #1718\n"
+        "<!-- /workflow-fix-candidate -->\n"
+    )
+    assert "parked" not in note.lower() and not note.lower().startswith("urgent-park")
+    make_task(tmp_path, 42, "completed", events=[cand_row(T0, note)])
+    c = only(run_sweep(tmp_path))
+    assert c["formal_block"] is True
+    assert c["fingerprint"] == wf_fix_fingerprint(change, bug)
+    assert c["target_file"] == ".claude/agents/planner.md"
+
+
+def test_issue1741_urgent_park_suppressed_by_matching_filed_record(tmp_path: Path) -> None:
+    """The #1718→#1740 no-double-route pin: a LATER same-stream filed record
+    carrying the matching fp suppresses the urgent park (suppression rule 1)."""
+    rec = filed_row(
+        "2026-07-28T06:41:05Z",
+        "filed_task: #1740 / target_file: .claude/agents/planner.md / "
+        f"fingerprint: {_1718_FP} / session_spawned: true / "
+        f"source: daily-parked-candidate-sweep / origin_candidate_ts: {_1718_TS}",
+    )
+    make_task(tmp_path, 1718, "blocked", events=[rec], raw_event_lines=[_RAW_1718_CAND])
+    assert run_sweep(tmp_path)["candidates"] == []
+    c = only(run_sweep(tmp_path, include_routed=True))
+    assert c["suppressed"] is True
+    assert c["suppressed_by"] == {"kind": "same-stream-filed", "ref": "#1740"}
+
+
+def test_issue1741_urgency_token_outside_block_not_enumerated(tmp_path: Path) -> None:
+    """Prose QUOTING the grammar (`urgency: main-red` with NO formal block, no
+    park token) stays out — the casual-mention exclusion is not widened."""
+    note = (
+        "Discussion of the #1681 urgent fast path: a parking session adds\n"
+        "urgency: main-red\n"
+        "failing_test: tests/test_x.py::test_y\n"
+        "inside its formal block; the router verifies before filing."
+    )
+    make_task(tmp_path, 43, "completed", events=[cand_row(T0, note)])
+    assert run_sweep(tmp_path)["candidates"] == []
+    assert run_sweep(tmp_path, include_routed=True)["candidates"] == []
+
+
+def test_issue1741_routed_urgent_note_suppressed(tmp_path: Path) -> None:
+    """A mis-tagged ROUTED urgent-block candidate (`routed: filed #999` note
+    lead) is enumerated by arm (b) but closed by its later same-stream filed
+    record — the routed corner the arm-(b) rationale leans on (rule 1)."""
+    bug = "some urgent bug."
+    change = "some urgent change."
+    fp = wf_fix_fingerprint(change, bug)
+    note = (
+        "routed: filed #999\n\n"
+        "<!-- workflow-fix-candidate v1 -->\n"
+        "target_file: a/b.md\n"
+        f"bug_observed: {bug}\n"
+        "why_workflow_gap: gap\n"
+        f"proposed_change: {change}\n"
+        "urgency: main-red\n"
+        "failing_test: tests/test_x.py::test_y\n"
+        "wf_fix: true\n"
+        "confidence: high\n"
+        "related_task: #999\n"
+        "<!-- /workflow-fix-candidate -->\n"
+    )
+    make_task(
+        tmp_path,
+        44,
+        "completed",
+        events=[
+            cand_row(T0, note),
+            filed_row(T1, f"filed_task: #999 / target_file: a/b.md / fingerprint: {fp}"),
+        ],
+    )
+    assert run_sweep(tmp_path)["candidates"] == []
+    c = only(run_sweep(tmp_path, include_routed=True))
+    assert c["suppressed"] is True
+    assert c["suppressed_by"] == {"kind": "same-stream-filed", "ref": "#999"}

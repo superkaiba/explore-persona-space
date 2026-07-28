@@ -6,8 +6,14 @@ fallback stream ``.claude/cache/workflow-fix-events.jsonl`` for
 ``epm:workflow-fix-candidate`` rows whose note/``routed`` field marks them
 PARKED — a leading ``parked``, a ``routed:``/``Routing:`` ``parked`` token, a
 bare ``parked: architectural``/``parked: EPM_WORKFLOW_FIX_SESSION``
-routing-decision token, or a mid-note ``parked <punct> ... recursion guard``
-declaration (#1281); casual "parked" mentions do not count — (the
+routing-decision token, a mid-note ``parked <punct> ... recursion guard``
+declaration (#1281), or an URGENT fast-path park (#1741; grammar #1681;
+incident #1718) — a leading ``URGENT-PARK`` token, or an
+``urgency: main-red`` field INSIDE the formal candidate block (the #1681
+grammar never required a "parked" token, so pre-#1741 the emitter and this
+enumerator disagreed on the park surface and the #1718 park was invisible to
+BOTH consumers for ~16 h); casual "parked" mentions — and prose merely
+QUOTING ``urgency: main-red`` outside a formal block — do not count (the
 recursion-guard escape valve,
 ``.claude/rules/workflow-fix-on-bug.md`` § Recursion guard), and prints ONE
 JSON object to stdout listing the candidates no later routed-record has
@@ -178,6 +184,19 @@ _PARKED_MIDNOTE_RE = re.compile(
     r"|\bparked\s*(?:—|--|-\s|:)[^\n]{0,160}\brecursion guard\b",
     re.IGNORECASE,
 )
+# URGENT fast-path park arms (#1741; grammar #1681; incident #1718). The
+# urgent grammar (workflow-fix-on-bug.md § Recursion guard "Urgent fast
+# path") prescribes three in-block fields but never required a "parked"
+# token, so the #1718 park (leads `URGENT-PARK`, zero "parked" tokens) was
+# invisible to every arm above for ~16 h while main stayed red. Arm (a):
+# leading `URGENT-PARK` token (used with .match, mirroring _PARKED_LEAD_RE).
+# Arm (b): `urgency: main-red` field INSIDE the _BLOCK_RE-extracted formal
+# candidate block — searched against the block group ONLY, never the whole
+# note, so prose QUOTING the grammar keeps the casual-mention exclusion. A
+# mis-tagged already-ROUTED urgent block is closed by suppression rules 1/2
+# (demonstrated live by the #1718→#1740 record).
+_URGENT_PARK_LEAD_RE = re.compile(r"\s*urgent-park\b", re.IGNORECASE)
+_URGENT_BLOCK_FIELD_RE = re.compile(r"^urgency:\s*main-red\b", re.IGNORECASE | re.MULTILINE)
 _ARCHITECTURAL_RE = re.compile(r"parked:\s*architectural", re.IGNORECASE)
 _BLOCK_RE = re.compile(
     r"<!--\s*workflow-fix-candidate v1\s*-->(.*?)<!--\s*/workflow-fix-candidate\s*-->",
@@ -286,8 +305,13 @@ def _row_is_parked(row: dict) -> bool:
     Accept paths: a LEADING 'parked' note; 'routed: parked' anywhere; a
     mid-note park DECLARATION (_PARKED_MIDNOTE_RE — 'Routing: parked', the
     bare 'parked: architectural|EPM_WORKFLOW_FIX_SESSION' tokens, or
-    'parked <punct> ... recursion guard'; #1281); or a structured 'routed'
-    field containing 'parked'. Casual mid-note mentions do not count.
+    'parked <punct> ... recursion guard'; #1281); an URGENT fast-path park
+    (#1741; grammar #1681; incident #1718) — a LEADING 'URGENT-PARK' token,
+    or an 'urgency: main-red' field INSIDE the formal candidate block (the
+    block group only, never a whole-note scan); or a structured 'routed'
+    field containing 'parked' (the fallback stays LAST). Casual mid-note
+    mentions — incl. prose quoting 'urgency: main-red' outside a block — do
+    not count.
     """
     note = str(row.get("note") or "")
     if (
@@ -295,6 +319,11 @@ def _row_is_parked(row: dict) -> bool:
         or _PARKED_ROUTED_RE.search(note)
         or _PARKED_MIDNOTE_RE.search(note)
     ):
+        return True
+    if _URGENT_PARK_LEAD_RE.match(note):
+        return True
+    m = _BLOCK_RE.search(note)
+    if m and _URGENT_BLOCK_FIELD_RE.search(m.group(1)):
         return True
     routed = row.get("routed")
     return isinstance(routed, str) and "parked" in routed.lower()
