@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1750,
+  "highest_id": 1751,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5833,6 +5833,13 @@
       "path": "tasks/proposed/1750",
       "status": "proposed",
       "title": "daily-fix: pod-side descope posts marker + rewrites handle"
+    },
+    "1751": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1751",
+      "status": "proposed",
+      "title": "daily-fix: surface sync_repo_root stash-KEPT at Step 10d"
     },
     "176": {
       "has_clean_result": false,
