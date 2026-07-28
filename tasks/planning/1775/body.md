@@ -17,6 +17,7 @@ goal: 'Determine where the linear story of the context→answer map ends: per-ar
 relates_to:
 - spec-context-as-vector
 - leak-predictor
+backend: gcp
 ---
 # Nonlinearity of the four-arm context→answer maps: bilinear interaction vs kernel/MLP gain
 
