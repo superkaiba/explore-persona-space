@@ -1,1 +1,2 @@
 {"ts": "2026-07-28T21:35:32Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-07-28T21:38:35Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #1774 to open question(s) spec-context-as-vector, leak-predictor; created_new=none; mode=auto-match (inherited from parent #1092 — same context→answer map line)."}
