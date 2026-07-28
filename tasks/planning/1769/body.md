@@ -15,6 +15,9 @@ goal: 'Determine when behavioral commitment happens in Qwen-2.5-7B-Instruct: doe
   vs both change on-policy judged behavior expression - i.e., is the answer''s behavior
   already committed in the pre-answer context state, or decided token-by-token during
   generation?'
+relates_to:
+- spec-steering
+- spec-context-as-vector
 ---
 ## Goal
 

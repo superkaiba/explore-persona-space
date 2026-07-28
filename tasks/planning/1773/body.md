@@ -15,6 +15,8 @@ goal: Build and validate a production pipeline that describes and categorizes SA
   features (mechanical axes + five judged axes + a validation harness), producing
   a per-feature table every map round joins against, and determine whether the judged
   axes are trustworthy enough to carry a headline or remain a search index only.
+relates_to:
+- spec-context-as-vector
 ---
 ## Goal
 
