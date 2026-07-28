@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1739,
+  "highest_id": 1740,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5756,6 +5756,13 @@
       "path": "tasks/on_hold/174",
       "status": "on_hold",
       "title": "Save all papers COMPLETELY in repo somewhere easily searchable"
+    },
+    "1740": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1740",
+      "status": "proposed",
+      "title": "daily-fix: planner.md 40900B over 40000 ratchet \u2014 main red"
     },
     "176": {
       "has_clean_result": false,
