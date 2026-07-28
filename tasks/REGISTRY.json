@@ -5823,8 +5823,8 @@
     "1749": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1749",
-      "status": "planning",
+      "path": "tasks/approved/1749",
+      "status": "approved",
       "title": "daily-fix: relaunch rounds re-run compute-character check"
     },
     "1750": {
