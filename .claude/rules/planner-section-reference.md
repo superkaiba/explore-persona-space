@@ -485,8 +485,12 @@ parallelism axis and pick the spec accordingly:
 State explicitly in the plan: (a) the GPU spec chosen, (b) the parallelism
 axis it exploits, (c) the wall-time delta vs. the next-smaller spec, and (d)
 any reason a smaller pod was chosen anyway (rare — e.g. "data is too small
-to amortize 8× setup"). If the answer is "no parallelism axis applies,"
-say so — silence is not acceptable.
+to amortize 8× setup"). A stay-narrow reason must BIND to the wall-dominant
+GPU-BOUND phase(s) it keeps narrow (name the phase; address ITS bottleneck)
+— a bottleneck claim about a DIFFERENT phase (an API-bound judge, a CPU fit)
+does not justify narrow width for the shardable phase(s) kept narrow (e.g.
+generation/capture legs, a training fan-out) (#1739). If the answer is "no
+parallelism axis applies," say so — silence is not acceptable.
 
 > **Compute-sizing recipes (HBM sizing / merge-disk + ladder-checkpoint
 > retention / Out-root mount binding / sentinel lanes / floor cross-check
@@ -525,6 +529,19 @@ uses the `parallelism` field to compute auto-descope options.
 | (e.g., "smoke-phase per-cell train") | 0.5 | 0.5 | TP=1 | "matched to #382 round-2 trained-on-same-mix wall-time" |
 | (e.g., "sweep all-cells train") | 16 | 64 | 4× H100 ZeRO-3 across 8 cells | "16h × 8 cells / 4 GPU = 32h wall; 16 GPU-hours × 8 = 128 GPU-h" |
 | (e.g., "eval all-cells generation") | 2 | 2 | TP=1 | "vLLM batched, 400 prompts × 4 framings @ ~5s/prompt" |
+
+**Per-phase shardable-axis declaration (REQUIRED, #1739).** For every
+GPU-bound row with `planned_wall_h` > ~2 h, the `parallelism` field names
+the shardable axis (contexts / behaviors / seeds / conditions / cells) or
+states `none — <why>`. When an axis exists, the phase defaults to WIDE
+(`--gpus N`, the #1121 width-aware walk); a stay-narrow choice carries a
+justification binding to THAT phase per the "State explicitly" item (d)
+above. For a row kept narrow, `planned_wall_h` is the serial-on-1× wall,
+so the > ~2 h threshold coincides with the critic's ">~2 h serial on 1×"
+bar (item 10(iv)) by construction. Short phases (< ~2 h), genuinely
+non-shardable workloads, width-required pinned jobs, and the
+re-provision-churn tradeoff for SHORT narrow phases remain valid
+stay-narrow reasons.
 
 **Serial-fit-loop, draw-battery & store-serialization sizing (REQUIRED
 whenever any §9 component loops a fit / solve / factorization / draw — or a
