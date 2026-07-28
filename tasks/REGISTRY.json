@@ -5837,8 +5837,8 @@
     "1751": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1751",
-      "status": "approved",
+      "path": "tasks/running/1751",
+      "status": "running",
       "title": "daily-fix: surface sync_repo_root stash-KEPT at Step 10d"
     },
     "1752": {
