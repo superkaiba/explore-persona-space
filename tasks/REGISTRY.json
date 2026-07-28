@@ -5781,8 +5781,8 @@
     "1743": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1743",
-      "status": "reviewing",
+      "path": "tasks/completed/1743",
+      "status": "completed",
       "title": "daily-fix: code-reviewer verdict post via --file + read-back"
     },
     "1744": {
@@ -5795,22 +5795,22 @@
     "1745": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1745",
-      "status": "reviewing",
+      "path": "tasks/completed/1745",
+      "status": "completed",
       "title": "daily-fix: pre-persist plan header retitle stops c40 churn"
     },
     "1746": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1746",
-      "status": "running",
+      "path": "tasks/completed/1746",
+      "status": "completed",
       "title": "daily-fix: step9c gate degrade on collection ImportError"
     },
     "1747": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1747",
-      "status": "running",
+      "path": "tasks/reviewing/1747",
+      "status": "reviewing",
       "title": "daily-fix: Step 5a spec-freshness syncs local main (stale)"
     },
     "1748": {
@@ -5823,22 +5823,22 @@
     "1749": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1749",
-      "status": "proposed",
+      "path": "tasks/running/1749",
+      "status": "running",
       "title": "daily-fix: relaunch rounds re-run compute-character check"
     },
     "1750": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1750",
-      "status": "proposed",
+      "path": "tasks/running/1750",
+      "status": "running",
       "title": "daily-fix: pod-side descope posts marker + rewrites handle"
     },
     "1751": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1751",
-      "status": "proposed",
+      "path": "tasks/planning/1751",
+      "status": "planning",
       "title": "daily-fix: surface sync_repo_root stash-KEPT at Step 10d"
     },
     "1752": {

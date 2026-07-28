@@ -229,6 +229,15 @@ PYTEST_BASE_FLAGS: tuple[str, ...] = (
     "no:cacheprovider",
     "-o",
     "junit_family=xunit1",
+    # #1746: one collection-broken file must not abort the whole run (rc=2,
+    # unclassifiable — MF-1b refuses). With this flag pytest runs the surviving
+    # collected tests, reports each collect error as a junit <error> testcase
+    # keyed to the broken FILE (empirical shape, pytest 9.0.2 xunit1:
+    # file="tests/test_broken.py", classname="", name="tests.test_broken"),
+    # and exits rc=1 — inside the accepted {0,1} set — so compare's existing
+    # NEW-vs-pre-existing node subtraction classifies it. rc=2 is thereafter
+    # reserved for genuine interruption / internal error (MF-1b preserved).
+    "--continue-on-collection-errors",
 )
 
 
@@ -912,6 +921,16 @@ def parse_junit(path: Path) -> tuple[list[Node], dict]:
     failure, or a failing testcase without the per-case ``file`` attribute
     (pytest 9.0.2 xunit1 emits it — plan #1022 A3; the K2 short-summary
     fallback is a deliberate redesign, not a silent guess).
+
+    Collect-error absorb (#1746, ``--continue-on-collection-errors``): pytest
+    9.0.2 empirically emits the ``file`` attribute on a collect-error testcase
+    too (probe 2026-07-28: ``file="tests/test_broken.py"``, ``classname=""``,
+    ``name="tests.test_broken"``), so the broken file keys to a stable Node via
+    the normal path. As version-drift insurance, a testcase with an ``error``
+    child, NO ``file`` attr, and a ``name`` that is a plausible test-file path
+    (endswith ``.py``) derives ``file`` from ``name``
+    (``Node(file=name, classname="", name=name)``); every OTHER missing-file
+    shape keeps the hard JunitParseError (the xunit1 contract stays fail-loud).
     """
     if not path.exists():
         raise JunitParseError(
@@ -934,13 +953,20 @@ def parse_junit(path: Path) -> tuple[list[Node], dict]:
         n_err += int(has_error)
         if has_failure or has_error:
             file_attr = tc.get("file")
+            name_attr = tc.get("name") or ""
+            if not file_attr and has_error and name_attr.endswith(".py"):
+                # Collect-error row keyed only through ``name`` (#1746 —
+                # version-drift fallback; see docstring): derive a stable
+                # per-file Node from the plausible test-file path in ``name``.
+                failing.append(Node(file=name_attr, classname="", name=name_attr))
+                continue
             if not file_attr:
                 raise JunitParseError(
                     f"failing testcase {tc.get('classname')}::{tc.get('name')} has no "
                     "file attribute — xunit1 contract violated (see plan #1022 K2 fallback)"
                 )
             failing.append(
-                Node(file=file_attr, classname=tc.get("classname") or "", name=tc.get("name") or "")
+                Node(file=file_attr, classname=tc.get("classname") or "", name=name_attr)
             )
     duration = 0.0
     for suite in tree.getroot().iter("testsuite"):
@@ -1322,11 +1348,14 @@ def lint_verdict(root: Path, wt: Path, touched: list[str]) -> dict:
 
 
 def _pristine_command(root: Path, test_file: str) -> str:
-    """The copy-pasteable single-file pristine check printed on the no-run path."""
-    return (
-        f"(cd {root} && uv run pytest {test_file} -q --tb=no -p no:cacheprovider "
-        "-o junit_family=xunit1)"
-    )
+    """The copy-pasteable single-file pristine check printed on the no-run path.
+
+    Built from ``PYTEST_BASE_FLAGS`` (single source — #1746 Must-Fix 1: a
+    duplicated literal here would drop ``--continue-on-collection-errors`` and
+    make the printed manual-recovery command abort rc=2 on a collection-red
+    file instead of reproducing the oracle's flags).
+    """
+    return f"(cd {root} && uv run pytest {test_file} {' '.join(PYTEST_BASE_FLAGS)})"
 
 
 class _Indeterminate(RuntimeError):
