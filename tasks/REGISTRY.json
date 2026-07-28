@@ -5809,8 +5809,8 @@
     "1747": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1747",
-      "status": "reviewing",
+      "path": "tasks/completed/1747",
+      "status": "completed",
       "title": "daily-fix: Step 5a spec-freshness syncs local main (stale)"
     },
     "1748": {
@@ -5823,22 +5823,22 @@
     "1749": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1749",
-      "status": "running",
+      "path": "tasks/reviewing/1749",
+      "status": "reviewing",
       "title": "daily-fix: relaunch rounds re-run compute-character check"
     },
     "1750": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1750",
-      "status": "running",
+      "path": "tasks/reviewing/1750",
+      "status": "reviewing",
       "title": "daily-fix: pod-side descope posts marker + rewrites handle"
     },
     "1751": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1751",
-      "status": "approved",
+      "path": "tasks/reviewing/1751",
+      "status": "reviewing",
       "title": "daily-fix: surface sync_repo_root stash-KEPT at Step 10d"
     },
     "1752": {
@@ -5851,8 +5851,8 @@
     "1753": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1753",
-      "status": "proposed",
+      "path": "tasks/running/1753",
+      "status": "running",
       "title": "daily-fix: Step 10d checks the LANDING tree; sync attributio"
     },
     "1754": {

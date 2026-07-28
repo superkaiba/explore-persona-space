@@ -293,3 +293,60 @@ def test_step10d_family_atomicity_matches_step5a():
                 f"post-gate re-sync block does not — the two copies must "
                 f"stay in sync (§4.6 drift guard, #1714 methodology concern 1)"
             )
+
+
+# --- (11) Step 5a sources fetched origin/main (#1747 durability pin) --------
+
+# Banned bare-local-main fragments, built by CONCATENATION so this test file
+# itself never carries them (the file's _FULL_MESSAGE_FILTER convention).
+_BARE_CHECKOUT_MAIN = "checkout " + "main --"
+_BARE_CHECKOUT_MAIN_SPECS = _BARE_CHECKOUT_MAIN + " $SAFE_SPECS"
+_BARE_DIFF_QUIET_MAIN_SPECS = "diff --quiet " + "main -- $SAFE_SPECS"
+_BARE_MERGE_BASE_MAIN = "merge-base HEAD " + "main"
+
+
+def test_step5a_sources_fetched_origin_main():
+    """#1747: the Step 5a spec-freshness sync sources FETCHED origin/main —
+    never a possibly-lagging local main (#1724 synced REGRESSED spec bytes
+    from a lagging shared-root main) — and skips the ENTIRE sync body on a
+    main checkout (the explicit replacement for the old vacuous-local-diff
+    self-no-op, which origin/main sourcing removed)."""
+    span = _step5a_span(_text())
+    # (a) bounded freshness fetch (the #1289/#1714 degrade-never-wedge shape)
+    assert 'timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet' in span, (
+        "Step 5a must run the bounded freshness fetch before the merge-base capture"
+    )
+    # (b) the surgical checkout sources origin/main
+    assert "checkout origin/main -- $SAFE_SPECS" in span, (
+        "the Step 5a sync must check out $SAFE_SPECS from origin/main"
+    )
+    # (c) the merge-base is captured against origin/main
+    assert "merge-base HEAD origin/main" in span, (
+        "the Step 5a pass-1 scan must merge-base against origin/main"
+    )
+    # (d) explicit on-main skip guard covering the whole sync body
+    assert "rev-parse --abbrev-ref HEAD" in span, (
+        "the on-main skip guard must probe the session branch via rev-parse --abbrev-ref HEAD"
+    )
+    assert '" = "main" ]' in span, (
+        "the on-main skip guard must compare the session branch against main"
+    )
+    assert "[step5a] session on main" in span, (
+        "the on-main skip must announce itself with the one-line [step5a] skip echo"
+    )
+    # (e) NEGATIVE: no bare-local-main sync forms survive in the span
+    assert _BARE_CHECKOUT_MAIN_SPECS not in span, (
+        "the Step 5a sync must not check out $SAFE_SPECS from bare local main (#1724)"
+    )
+    assert _BARE_DIFF_QUIET_MAIN_SPECS not in span, (
+        "the Step 5a sync condition must not diff against bare local main (#1724)"
+    )
+    assert _BARE_MERGE_BASE_MAIN not in span, (
+        "the Step 5a pass-1 scan must not merge-base against bare local main (#1724)"
+    )
+    # (f) NEGATIVE, span-scoped: no bare checkout-from-local-main fragment
+    # anywhere in the span (catches the prose/comment class — e.g. the
+    # in-block :(glob) comment — that the $SAFE_SPECS-anchored bans miss).
+    assert _BARE_CHECKOUT_MAIN not in span, (
+        "nothing in the Step 5a span may reference a bare checkout from local main"
+    )
