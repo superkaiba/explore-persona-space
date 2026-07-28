@@ -183,6 +183,7 @@ def _collect_holdout_texts(args, needed: set[int]) -> dict[int, dict]:
 
 
 def phase_judge(args) -> None:
+    from explore_persona_space.eval.batch_judge import is_transport_error_dict
     from explore_persona_space.eval.judge_dispatch import dispatch_judge_items, keep_raw_judge_text
 
     needed = set(_holdout_ci(Path(args.split_file)))
@@ -215,11 +216,13 @@ def phase_judge(args) -> None:
 
     results = _run("main", items)
     labels: dict[str, dict] = {}
-    drops = {"content": 0, "transport_or_error": 0}
+    # rule-24 split: post-retry transport losses (freely re-judgeable) vs
+    # content-class drops vs other error dicts (parse_error / quarantined 400s).
+    drops = {"content": 0, "transport_loss": 0, "error_other": 0}
     raw_rows = []
     for cid, res in results.items():
         if isinstance(res, dict) and res.get("error"):
-            drops["transport_or_error"] += 1
+            drops["transport_loss" if is_transport_error_dict(res) else "error_other"] += 1
             raw_rows.append(
                 {"custom_id": cid, "error": True, "reason": str(res.get("reason"))[:300]}
             )
@@ -367,6 +370,8 @@ def phase_kresample_floor(args) -> None:
     gates: dict = {"n_kresample": int(len(kci)), "k_draws": int(V.shape[1])}
     floor_doc: dict = {"layers": layers, "per_layer": {}}
     fields = _manifest_fields(Path(args.manifest_dir)) if args.manifest_dir else {}
+    kdir = args.out_eval / "kresample"
+    kdir.mkdir(parents=True, exist_ok=True)
     for lpos, li in enumerate(layers):
         yh = np.load(Path(args.y_holdout_dir) / f"L{li}.npz")
         y16, yci = yh["y16"].astype(np.float64), yh["ci"]
@@ -378,6 +383,7 @@ def phase_kresample_floor(args) -> None:
         }
         ki = np.asarray([a for a, _ in joined])
         hp = np.asarray([b for _, b in joined])
+        joined_ci = np.asarray([int(kci[a]) for a in ki], dtype=np.int64)
         mu = y16.mean(axis=0)
         den = ((y16[hp] - mu) ** 2).sum(axis=1)  # stored denominator, per context
         Vl = V[ki, :, lpos, :].astype(np.float64)  # (n, K, H)
@@ -386,6 +392,15 @@ def phase_kresample_floor(args) -> None:
         floor = ((Vl - vbar) ** 2).sum(axis=(1, 2)) / (k - 1)  # ddof-1 trace
         with np.errstate(divide="ignore", invalid="ignore"):
             share = floor / den
+        # per-context floors — the P4c floor-adjusted joint-bootstrap input
+        # (plan §4; consumed by phase_taxonomy on the VM).
+        np.savez(
+            kdir / f"floors_L{li}.npz",
+            ci=joined_ci,
+            floor=floor.astype(np.float64),
+            den=den.astype(np.float64),
+            share=share.astype(np.float64),
+        )
         entry: dict = {
             "floor_median": float(np.nanmedian(floor)),
             "floor_share_median": float(np.nanmedian(share)),
@@ -428,8 +443,6 @@ def phase_kresample_floor(args) -> None:
     gates["ok"] = all(g["ok"] for g in gates.get("identity", {}).values()) and all(
         g["ok"] for g in gates.get("join", {}).values()
     )
-    kdir = args.out_eval / "kresample"
-    kdir.mkdir(parents=True, exist_ok=True)
     GG.N1M._atomic_write_json(kdir / "gates.json", gates)
     GG.N1M._atomic_write_json(kdir / "floor_summary.json", floor_doc)
     if not gates["ok"]:
@@ -490,6 +503,19 @@ def phase_taxonomy(args) -> None:
     }
     depth_doc: dict = {"arms": {}}
     li = 19 if 19 in layers else layers[0]
+    # per-context floors from the K-resample phase (P4c floor-adjusted input).
+    floors_p = args.out_eval / "kresample" / f"floors_L{li}.npz"
+    floor_summary_p = args.out_eval / "kresample" / "floor_summary.json"
+    if floor_summary_p.exists() and not floors_p.exists():
+        raise SystemExit(
+            f"{floor_summary_p} exists but per-context floors {floors_p} are missing — "
+            "stale pre-fix kresample-floor artifact; re-run --phase kresample-floor"
+        )
+    floors = None
+    if floors_p.exists():
+        with np.load(floors_p) as fz:
+            floors = {"ci": fz["ci"].copy(), "share": fz["share"].copy()}
+    out["floor_adjusted_available"] = floors is not None
     for arm in ("prefix", "context"):
         nz = args.out_eval / "percontext" / f"{arm}_L{li}_ridge.npz"
         if not nz.exists():
@@ -522,10 +548,16 @@ def phase_taxonomy(args) -> None:
             "contrasts": rows,
             "family": names,
         }
-        # depth-stratified holdout R² per band (from pred16 + y_holdout)
+        # depth-stratified holdout R² per band (from pred16 + y_holdout); the
+        # three artifacts MUST share row order — a capture-set-changed re-run
+        # that mixed stale/fresh files fails loud here (Major-1 ci asserts).
         pz = Path(args.pred16_dir) / f"{arm}_L{li}_ridge.npz"
         yh = np.load(Path(args.y_holdout_dir) / f"L{li}.npz")
-        pred = np.load(pz)["pred16"].astype(np.float64)
+        pd_z = np.load(pz)
+        assert (pd_z["ci"] == yh["ci"]).all() and (pd_z["ci"] == ci_rows).all(), (
+            f"pred16/y_holdout/percontext ci misalign ({arm} L{li}) — stale artifact mix"
+        )
+        pred = pd_z["pred16"].astype(np.float64)
         y = yh["y16"].astype(np.float64)
         bands: dict[str, dict] = {}
         for band in ("2-2", "3-4", ">=5"):
@@ -537,9 +569,59 @@ def phase_taxonomy(args) -> None:
             r2, cos = F._recon_point(pred[sel], y[sel])
             bands[band] = {"n": int(sel.sum()), "r2": float(r2), "mean_cosine": float(cos)}
         depth_doc["arms"][f"{arm}_L{li}_ridge"] = bands
-    # floor-adjusted note: contrasts re-run on the K-resample subset where floors exist
-    floor_p = args.out_eval / "kresample" / "floor_summary.json"
-    out["floor_adjusted_available"] = floor_p.exists()
+        # floor-adjusted contrasts (plan §4 P4c): the SAME contrast families on
+        # adj_i = nerr_i − floor_i/den_i over the K-resample subset, with a
+        # 10k-draw JOINT bootstrap — each draw resamples CONTEXTS, so floor and
+        # error ride together (paired) — via the #1482 batched masked-GEMM
+        # helpers (never a serial draw loop).
+        if floors is not None:
+            pos_of = {int(c): p for p, c in enumerate(ci_rows.tolist())}
+            missing = [int(c) for c in floors["ci"] if int(c) not in pos_of]
+            assert not missing, (
+                f"floors ci absent from {arm} percontext rows (capture-set drift?): {missing[:5]}"
+            )
+            sub_pos = np.asarray([pos_of[int(c)] for c in floors["ci"]], dtype=np.int64)
+            adj_all = nerr[sub_pos] - floors["share"]
+            fin = np.isfinite(adj_all)
+            if not fin.all():  # named non-fatal exclusion (degenerate den), never a coerce
+                logger.warning(
+                    "[taxonomy] floor-adjusted %s: dropping %d non-finite rows",
+                    arm,
+                    int((~fin).sum()),
+                )
+            adj = adj_all[fin]
+            sub_ci = np.asarray(floors["ci"])[fin]
+            fmasks = _contrast_masks(sub_ci, labels, fields)
+            fpv = A82._perm_pvals(adj, [m for _, m in fmasks], N_PERM, STAT_SEED)
+            fsig = A82._bh_fdr(fpv, BH_Q)
+            frows = []
+            for (name, m), p, s in zip(fmasks, fpv, fsig, strict=True):
+                deltas = A82._boot_group_delta(adj, m, ~m, N_BOOT, STAT_SEED)
+                frows.append(
+                    {
+                        "contrast": name,
+                        "n_group": int(m.sum()),
+                        "delta_mean_adj_nerr": float(adj[m].mean() - adj[~m].mean()),
+                        "boot_ci": [
+                            float(np.quantile(deltas, 0.025)),
+                            float(np.quantile(deltas, 0.975)),
+                        ],
+                        "perm_p": float(p),
+                        "bh_significant": bool(s),
+                    }
+                )
+            out["arms"][f"{arm}_L{li}_ridge"]["floor_adjusted"] = {
+                "n": int(len(adj)),
+                "n_dropped_nonfinite": int((~fin).sum()),
+                "n_boot": N_BOOT,
+                "n_perm": N_PERM,
+                "seed": STAT_SEED,
+                "definition": (
+                    "adj_i = nerr_i - floor_i/den_i (map error net of answer-sampling "
+                    "variance); contexts resampled JOINTLY per draw"
+                ),
+                "contrasts": frows,
+            }
     GG.N1M._atomic_write_json(args.out_eval / "taxonomy.json", out)
     GG.N1M._atomic_write_json(args.out_eval / "depth_contrasts.json", depth_doc)
     logger.info("[taxonomy] wrote %d arm tables", len(out["arms"]))
@@ -557,7 +639,11 @@ def phase_h1(args) -> None:
         pz = Path(args.pred16_dir) / f"{arm}_L{li}_ridge.npz"
         if not pz.exists():
             continue
-        pred = np.load(pz)["pred16"].astype(np.float64)
+        pd_z = np.load(pz)
+        # Major-1 ci assert: the REGISTERED H1 contrast must never pair stale
+        # y_holdout rows with fresh pred16 rows (capture-set-changed re-run).
+        assert (pd_z["ci"] == yh["ci"]).all(), f"pred16/y_holdout ci misalign ({arm} L{li})"
+        pred = pd_z["pred16"].astype(np.float64)
         ci_b = FT._boot_recon_ci_batched(pred, y, N_BOOT, STAT_SEED)
         doc[arm] = {"holdout_r2": ci_b["r2"], "mean_cosine": ci_b["mean_cosine"]}
     if "prefix" in doc:
@@ -590,6 +676,11 @@ def phase_h1(args) -> None:
 
 
 def _pdshrink_lambda_grid() -> np.ndarray:
+    """Union λ grid for the per-direction shrinkage control. NOTE (review
+    Minor 7): the plan's "38" assumes the two logspaces' shared values (1e-3,
+    1e-2) dedup, which holds only when float-identical across the differently-
+    parameterized calls — the realized grid may be 38–40 values (harmless:
+    denser grid; recorded as ``lambda_grid_len`` in the summary)."""
     import issue779_ffc_n1m_fits as PF
 
     vals = {float(v) for v in np.logspace(-5, -2, 16)} | {float(v) for v in PF.LAMBDAS_N1M} | {1e-9}
@@ -675,10 +766,12 @@ def phase_perdirection(args) -> None:
             proj_ho, np.broadcast_to(sel[None, None, :], (1,) + proj_ho.shape[1:]), axis=0
         )[0]
         tuned_r2 = _pd_r2(tuned_proj.astype(np.float64), yh_rot)
-        # shared-λ ridge + retained MLP holdout predictions, projected
-        ridge16 = np.load(Path(args.pred16_dir) / f"{arm}_L{li}_ridge.npz")["pred16"].astype(
-            np.float64
-        )
+        # shared-λ ridge + retained MLP holdout predictions, projected. Major-1
+        # ci assert: retained pred16 rows must align with THIS assembly's
+        # holdout rows (fresh mm) — stale retained fits fail loud here.
+        ridge_z = np.load(Path(args.pred16_dir) / f"{arm}_L{li}_ridge.npz")
+        assert (ridge_z["ci"] == ci[ho]).all(), f"pred16 ridge ci != assembly ho ci ({arm} L{li})"
+        ridge16 = ridge_z["pred16"].astype(np.float64)
         mlp16_p = Path(args.pred16_dir) / f"{arm}_L{li}_mlp_w8192.npz"
         ridge_r2 = _pd_r2(ridge16 @ top, yh_rot)
         arm_doc: dict = {
@@ -690,7 +783,9 @@ def phase_perdirection(args) -> None:
             },
         }
         if mlp16_p.exists():
-            mlp_r2 = _pd_r2(np.load(mlp16_p)["pred16"].astype(np.float64) @ top, yh_rot)
+            mlp_z = np.load(mlp16_p)
+            assert (mlp_z["ci"] == ci[ho]).all(), f"pred16 mlp ci != assembly ho ci ({arm} L{li})"
+            mlp_r2 = _pd_r2(mlp_z["pred16"].astype(np.float64) @ top, yh_rot)
             arm_doc["per_direction"]["mlp_w8192"] = [float(x) for x in mlp_r2]
             for bname, (lo, hi) in bands.items():
                 hi = min(hi, topk)
@@ -890,6 +985,9 @@ def _smoke(args) -> int:
     assert gates["ok"], gates
     floor = json.loads((out_eval / "kresample" / "floor_summary.json").read_text())
     assert "19" in floor["per_layer"]
+    with np.load(out_eval / "kresample" / "floors_L19.npz") as fz:
+        assert fz["ci"].shape == fz["share"].shape == fz["floor"].shape == fz["den"].shape
+        assert len(fz["ci"]) == sub["n"], (len(fz["ci"]), sub["n"])
 
     # degenerate probe (data-dependent-gates duty): a tampered stored nerr must
     # trip the identity gate -> designed halt rc 23 (gates.json written first).
@@ -936,8 +1034,13 @@ def _smoke(args) -> int:
     phase_taxonomy(ns)
     tax = json.loads((out_eval / "taxonomy.json").read_text())
     assert tax["arms"], "no taxonomy arms"
+    assert tax["floor_adjusted_available"] is True
     for arm in tax["arms"].values():
         assert arm["contrasts"], "empty contrast table"
+        fa = arm["floor_adjusted"]  # plan §4 P4c: joint bootstrap present per arm
+        assert fa["contrasts"] and fa["n_boot"] == N_BOOT and fa["seed"] == STAT_SEED, fa
+        for row in fa["contrasts"]:
+            assert len(row["boot_ci"]) == 2 and "perm_p" in row, row
 
     # (5) h1 + perdirection + figures
     phase_h1(ns)
