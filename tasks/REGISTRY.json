@@ -6032,8 +6032,8 @@
     "1777": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1777",
-      "status": "approved",
+      "path": "tasks/running/1777",
+      "status": "running",
       "title": "workflow-fix: verify_plan WARN check for /workspace sentinels on unpinned auto lane"
     },
     "18": {
