@@ -1292,13 +1292,23 @@ def merge_pair_checkpoints(
     return out
 
 
-def _compare_pair_results(ref: dict, new: dict, atol: float = 1e-6) -> tuple[bool, list[str]]:
+def _compare_pair_results(ref: dict, new: dict, atol: float = 1e-4) -> tuple[bool, list[str]]:
     """Compare numpy-engine vs torch-engine results for one (pair, arm).
 
     Returns (ok, messages). Scalars/matrices compare with atol (nan-equal);
     the point rung_reached must match exactly; per-draw rung_reached flips
-    are tolerated up to 2% (bootstrap draws sitting float-epsilon from the
-    reach bar can legitimately flip across fp64 backends).
+    are tolerated up to max(2%, 2 draws) (draws sitting float-epsilon from
+    the reach bar can legitimately flip across fp64 backends).
+
+    atol CALIBRATION (measured, 2026-07-28 gate on pod-1689, real pair
+    assistant_chat->assistant_naturalistic L19): worst cross-backend
+    (numpy LAPACK vs cuSOLVER fp64) R^2 deviation was 4.476e-6 on the
+    bootstrap matrix and 1.5e-6 on the point estimate, concentrated in the
+    SVD-bearing rung 6 (Procrustes rotation — singular vectors of
+    near-tied singular values rotate freely across backends). Bar = 1e-4:
+    ~22x the measured worst (gotchas.md gate-calibration rule: >=4x
+    headroom on the noisiest quantity class), still 3+ orders of magnitude
+    below the real-bug regime (R^2 differences of ~0.1-1).
     """
     msgs: list[str] = []
     ok = True
@@ -1332,7 +1342,9 @@ def _compare_pair_results(ref: dict, new: dict, atol: float = 1e-6) -> tuple[boo
         if n_flip:
             frac = n_flip / max(1, len(rr_ref))
             msg = f"{section} rung_reached flips: {n_flip}/{len(rr_ref)} ({frac:.1%})"
-            if frac > 0.02:
+            # max(2%, 2 draws): at smoke draw counts a single epsilon-adjacent
+            # flip would otherwise dominate the fraction (1/10 = 10%).
+            if frac > 0.02 and n_flip > 2:
                 ok = False
                 msgs.append(msg)
             else:
