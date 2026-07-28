@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1768,
+  "highest_id": 1769,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5967,6 +5967,13 @@
       "path": "tasks/running/1768",
       "status": "running",
       "title": "What fine-tuning a behavior into a context does to the context->answer map (60-arm organism fleet, 15k contexts)"
+    },
+    "1769": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1769",
+      "status": "proposed",
+      "title": "Prefill-vs-decode behavioral commitment: does r_B steering only during decode change judged behavior expression in a dense full-attention model"
     },
     "18": {
       "has_clean_result": false,
