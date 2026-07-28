@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1763,
+  "highest_id": 1764,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5931,6 +5931,13 @@
       "path": "tasks/proposed/1763",
       "status": "proposed",
       "title": "daily-fix: Step 10d merge-SHA check fetches before compare"
+    },
+    "1764": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1764",
+      "status": "proposed",
+      "title": "daily-fix: sudo tail for root-owned GCE workload log probes"
     },
     "18": {
       "has_clean_result": false,
