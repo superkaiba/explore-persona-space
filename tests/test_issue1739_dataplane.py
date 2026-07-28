@@ -96,6 +96,66 @@ def test_usable_text_reject_reasons():
     assert corpus_staging.usable_text("a perfectly usable synthetic row of text") is None
 
 
+def test_parse_bool_field_string_typed_over_18():
+    # REDDIT_submissions ships over_18 as the STRING "False"/"True" (C1 fix):
+    # a bare truthiness read rejects every SFW row.
+    assert corpus_staging.parse_bool_field("False") is False
+    assert corpus_staging.parse_bool_field("false") is False
+    assert corpus_staging.parse_bool_field("True") is True
+    assert corpus_staging.parse_bool_field("TRUE") is True
+    assert corpus_staging.parse_bool_field(None) is False
+    assert corpus_staging.parse_bool_field(False) is False
+    assert corpus_staging.parse_bool_field(True) is True
+    assert corpus_staging.parse_bool_field(0) is False
+    assert corpus_staging.parse_bool_field(1) is True
+    assert corpus_staging.parse_bool_field("") is False
+    # Unknown non-empty token -> conservative reject (NSFW filter fails closed).
+    assert corpus_staging.parse_bool_field("maybe") is True
+
+
+def test_reddit_text_selftext_first_with_content_fallback():
+    # Live REDDIT_submissions schema: title + selftext carry the post; the
+    # `content` column belongs to the Value-Trade-off corpus (fallback only).
+    long_body = "a synthetic post body that is comfortably long enough " * 3
+    row = {"title": "A synthetic question title", "selftext": long_body}
+    text = corpus_staging.reddit_text(row)
+    assert text is not None and "synthetic question title" in text and long_body.strip() in text
+    # Removed/deleted sentinel bodies are stripped, keeping the title.
+    row_removed = {"title": "A synthetic question title", "selftext": "[removed]"}
+    assert corpus_staging.reddit_text(row_removed) == "A synthetic question title"
+    row_deleted = {"title": "A synthetic question title", "selftext": "[deleted]"}
+    assert corpus_staging.reddit_text(row_deleted) == "A synthetic question title"
+    # content fallback fires only when title+selftext are absent/empty.
+    row_content = {"content": "fallback content column text"}
+    assert corpus_staging.reddit_text(row_content) == "fallback content column text"
+    row_prefers_selftext = {"title": "t1", "selftext": "the real body", "content": "other corpus"}
+    assert corpus_staging.reddit_text(row_prefers_selftext) == "t1\n\nthe real body"
+    # Non-string / all-sentinel rows -> None.
+    assert corpus_staging.reddit_text({"title": None, "selftext": 3}) is None
+    assert corpus_staging.reddit_text({"selftext": "[removed]", "content": "[deleted]"}) is None
+
+
+def test_stage_reddit_keeps_string_false_over_18(tmp_path):
+    # End-to-end through _stage_reddit's keep fn + stream stage: string-typed
+    # over_18 "False" rows are KEPT, "True" rows rejected as over_18.
+    body = "a sufficiently long synthetic reddit post body for the filter " * 2
+    rows = [
+        {"id": f"r{i}", "title": f"Synthetic title {i}", "selftext": body, "over_18": "False"}
+        for i in range(4)
+    ] + [
+        {"id": "nsfw1", "title": "Synthetic title x", "selftext": body, "over_18": "True"},
+        {"id": "gone1", "title": "", "selftext": "[removed]", "over_18": "False"},
+    ]
+    import unittest.mock as mock
+
+    with mock.patch.object(corpus_staging, "_hf_stream", return_value=iter(rows)):
+        kept = corpus_staging._stage_reddit(
+            tmp_path, "socialskills", keep_cap=4, stream_cap=None, seed=0, tag="train"
+        )
+    assert len(kept) == 4
+    assert {r["source_id"] for r in kept} == {"r0", "r1", "r2", "r3"}
+
+
 def test_to_contexts_group_keys():
     rows = [
         {"text": "row with an answer key", "source_id": "s0", "answer_key": "norm-key"},

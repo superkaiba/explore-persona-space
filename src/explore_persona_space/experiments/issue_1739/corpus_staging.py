@@ -61,6 +61,33 @@ def norm_text(text: str) -> str:
     return re.sub(r"\s+", " ", str(text)).strip().lower()
 
 
+_FALSY_STRINGS = frozenset({"", "false", "f", "0", "no", "n", "none", "null"})
+_TRUTHY_STRINGS = frozenset({"true", "t", "1", "yes", "y"})
+
+
+def parse_bool_field(value: object) -> bool:
+    """Schema-defensive bool parse for HF fields that ship bool OR string.
+
+    HuggingFaceGECLM/REDDIT_submissions stores ``over_18`` as the STRING
+    "False"/"True" (round-C1 bug: a bare truthiness check reads "False" as
+    True and rejects every SFW row). Accepts bool / numeric / case-insensitive
+    string; an unrecognized non-empty token parses True (conservative for an
+    NSFW filter: reject, never keep). Never blind-truthy on unknown types.
+    """
+    if value is None:
+        return False
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    token = str(value).strip().lower()
+    if token in _FALSY_STRINGS:
+        return False
+    if token in _TRUTHY_STRINGS:
+        return True
+    return True
+
+
 def usable_text(text: object, *, min_chars: int = MIN_TEXT_CHARS) -> str | None:
     """Return the reject reason for an unusable text, else None (usable).
 
@@ -477,16 +504,33 @@ def _stage_toxicchat(out_dir: Path, keep_cap: int | None, stream_cap: int | None
     return rows
 
 
+def _clean_reddit_field(value: object) -> str:
+    """One REDDIT text field, schema-defensively cleaned.
+
+    Non-string -> "". A field that IS a removed/deleted/redacted sentinel
+    (or starts with one — reddit ships literal "[removed]"/"[deleted]"
+    selftext bodies) -> "" so the sentinel never pollutes the joined text.
+    """
+    if not isinstance(value, str):
+        return ""
+    t = value.strip()
+    if not t or t.lower().startswith(_REMOVED_MARKERS):
+        return ""
+    return t
+
+
 def reddit_text(raw: dict) -> str | None:
-    """REDDIT_submissions row text: prefer ``content`` (plan pin), else
-    title + selftext (live schema shows title/selftext; content absent)."""
-    content = raw.get("content")
-    if isinstance(content, str) and content.strip():
-        return content
-    title = raw.get("title") if isinstance(raw.get("title"), str) else ""
-    body = raw.get("selftext") if isinstance(raw.get("selftext"), str) else ""
-    text = (title.strip() + "\n\n" + body.strip()).strip()
-    return text or None
+    """REDDIT_submissions row text: title + selftext (the live schema; the
+    ``content`` column belongs to the DIFFERENT Value-Trade-off corpus and is
+    kept only as a fallback), removed/deleted sentinels stripped per field
+    (round-C1 bug fix: the old content-first read + unstripped "[removed]"
+    bodies produced short/degenerate texts)."""
+    title = _clean_reddit_field(raw.get("title"))
+    body = _clean_reddit_field(raw.get("selftext"))
+    text = (title + "\n\n" + body).strip()
+    if text:
+        return text
+    return _clean_reddit_field(raw.get("content")) or None
 
 
 def _stage_reddit(
@@ -509,7 +553,7 @@ def _stage_reddit(
         reject = usable_text(text, min_chars=64)
         if reject:
             return None, reject
-        if bool(raw.get("over_18")):
+        if parse_bool_field(raw.get("over_18")):
             return None, "over_18"
         return {"text": text, "source_id": rid}, None
 
@@ -518,7 +562,7 @@ def _stage_reddit(
         fingerprint=_fingerprint(
             ds="HuggingFaceGECLM/REDDIT_submissions",
             split=subreddit_split,
-            filters="usable64+sfw.v1",
+            filters="usable64+sfw.v2",  # v2: string-typed over_18 + selftext-first text (C1 fix)
             oversample=OVERSAMPLE_FACTOR * keep_cap,
             n_excluded=len(exclude_ids),
             stream_cap=stream_cap,
