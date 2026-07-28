@@ -136,6 +136,38 @@ majority vote over 5 draws at temperature > 0 (llm-judging rule 4; the
 Reported per axis, **never pooled into a composite** — pooling language into
 "persona" is exactly what produced the retracted OR 8.3.
 
+### Phase 3b — What each categorizer actually sees (input matrix + blinding)
+
+Shared packet blocks (built once per feature in Phase 1): **[EX+]** 40
+quantile-stratified activating windows (32 tok, peak token delimiter-marked);
+**[EX-]** 20 non-activating windows; **[NEAR]** 5 windows from top decoder-cosine
+neighbours' activating sets; **[OUT]** top-10 promoted / top-10 suppressed
+unembedding tokens; **[DESC]** our own Phase-2 description; **[STAT]** density,
+persistence, tier.
+
+| Axis | Sees | Withheld | Why |
+|---|---|---|---|
+| `abstraction` | EX+, EX−, DESC | STAT, OUT, R² | density/footprint are its mechanical correlates — showing them makes the correlation circular |
+| `speaker_property` | EX+ (topic-diverse draw), EX−, NEAR, DESC | STAT, OUT, R² | the invariant is only visible across topically varied examples; NEAR forces the language-vs-register-vs-identity discrimination that the binary field collapsed |
+| `content_type` | EX+, NEAR, DESC | STAT, R² | — |
+| `functional_role` | EX+, **OUT**, DESC | STAT, R² | cannot be judged from activations alone (2501.08319); OUT is required evidence, so its mechanical validator must be an *independent* quantity — attribution profiles / steering (2604.07615), not the footprint it was shown |
+| `interpretable` | EX+, EX−, DESC | STAT, OUT, R² | — |
+
+**Two blinding rules, both load-bearing:**
+
+1. **Blind every categorizer to the dependent variable** (per-feature R², arm
+   shares, any map output). We correlate labels against these; showing them
+   manufactures the correlation.
+2. **Blind each axis to its own mechanical validator.** An axis judged from the
+   same quantity it is later checked against has no independent check. Where a
+   mechanical block is *required* evidence (OUT for `functional_role`),
+   validation moves to a different quantity.
+
+**Also withheld: the Neuronpedia description.** It is median one word, produced
+from token lists on a different corpus, and would anchor the judge toward
+surface labels ("uso" → token-level). Keep it on the dashboard as auxiliary
+provenance, out of the categorizer prompt.
+
 ### Phase 4 — Validation (the part that makes labels trustworthy)
 
 1. **Detection + fuzzing scoring** on a stratified ~1,000-feature sample
