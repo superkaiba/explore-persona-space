@@ -5,17 +5,18 @@ Inputs: the `out/` digest tree the dispatcher wrote (harvested from HF or local
 `data/issue_1092/crossed_core_sae/out`). Outputs: PNG+PDF+meta under
 `figures/issue_1092/crossed_core_sae/` (override with --fig-dir for smoke).
 
-Hero figures (plan section 6, v13 rubric amendment): (1) per-feature scatter
-prefix-share x cross-query consistency with judged features colored by
-speaker_property CLASS (5-way); (2) tail-composition bars — per-class
-speaker_property rates per judged set (identity_disposition is the headline
-class; language / register_style shown separately, never pooled), bootstrap
-CIs. Plus the v13 sink/massive-activation map figure (per-position sink rate +
-top rogue dims + gamma). Exploratory dump: share histograms + selection-null
-lines, per-arm per-feature R^2 distributions, four-object matched-table R^2
-bars (+ identity+bias line), |cos(W_dec, r_B)| tail curves vs the
-selection-symmetric null (raw + centered), induced vs independently-fit
-averaged comparison.
+Hero figures (plan v14 section 6): (1) per-feature scatter prefix-share x
+cross-query consistency colored by MECHANICAL class (dense-latent flag + tail
+membership — judged-label coloring is DEFERRED to the #1773 round under the
+JUDGED-LABEL FREEZE); (2) scaffold-projected vs raw |cos(W_dec, r_B)| tail
+curves vs their matched selection-symmetric nulls (the honest alignment
+headline). The speaker_property tail-composition bars are DEFERRED to the
+#1773 round — `fig_tail_bars` is retained and self-skips when the labels
+payload carries no `speaker` key. Plus the v13 sink/massive-activation map
+figure (per-position sink rate + top rogue dims + gamma). Exploratory dump:
+share histograms + selection-null lines, per-arm per-feature R^2
+distributions, four-object matched-table R^2 bars (+ identity+bias line),
+induced vs independently-fit averaged comparison.
 """
 
 from __future__ import annotations
@@ -67,42 +68,42 @@ def _bootstrap_rate_ci(flags: np.ndarray, n_draws: int = 10_000, seed: int = 0):
     return float(lo), float(hi)
 
 
-def fig_hero_scatter(out_dir: Path, fig_dir: Path, labels: dict, cell: str) -> None:
+def fig_hero_scatter(out_dir: Path, fig_dir: Path, cell: str) -> None:
+    """Hero (1), plan v14: points colored by MECHANICAL class — prefix-share
+    tail > query-share tail > dense-latent flag > other (precedence order);
+    judged-label coloring is DEFERRED to the #1773 round."""
     z = np.load(out_dir / f"perfeature_join_{cell}.npz", allow_pickle=True)
     sp = z["share_prefix"]
     cq = z["cross_query_consistency_mean"]
     feats = z["feats"]
+    dense = z["dense_latent"].astype(bool)
     fin = np.isfinite(sp) & np.isfinite(cq)
+    d = sp.size
+    k = min(100, d)
+    m_tp = np.zeros(d, dtype=bool)
+    m_tp[np.argsort(np.nan_to_num(sp, nan=-1))[::-1][:k]] = True
+    m_tq = np.zeros(d, dtype=bool)
+    m_tq[np.argsort(np.nan_to_num(z["share_query"], nan=-1))[::-1][:k]] = True
+    classes = [
+        ("other active features", ~(m_tp | m_tq | dense), "neutral", 4, 0.15),
+        ("dense latent (top activity decile)", dense & ~m_tp & ~m_tq, "baseline", 10, 0.5),
+        (f"query-share tail (top-{k})", m_tq & ~m_tp, "primary", 14, 0.9),
+        (f"prefix-share tail (top-{k})", m_tp, "accent", 18, 0.9),
+    ]
     fig, ax = plt.subplots(figsize=(7, 5))
-    ax.scatter(sp[fin], cq[fin], s=4, alpha=0.15, color=paper_palette_role("neutral"), lw=0)
-    speaker = labels.get("speaker", {}).get("labels", {})
-    buckets: dict[str, tuple[list, list]] = {c: ([], []) for c in SPEAKER_CLASSES}
-    for i in np.where(fin)[0]:
-        lab = speaker.get(str(int(feats[i])))
-        if lab is None:
-            continue
-        xs, ys = buckets[lab["speaker_property"]]
-        xs.append(float(sp[i]))
-        ys.append(float(cq[i]))
-    for cls in SPEAKER_CLASSES:
-        xs, ys = buckets[cls]
-        if not xs:
+    for label, mask, role, size, alpha in classes:
+        mm = mask & fin
+        if not mm.any():
             continue
         ax.scatter(
-            xs,
-            ys,
-            s=18 if cls == "identity_disposition" else 14,
-            color=paper_palette_role(CLASS_ROLE[cls]),
-            edgecolors="black" if cls == "unclear" else "none",
-            linewidths=0.4 if cls == "unclear" else 0.0,
-            label=f"judged: {cls}",
+            sp[mm], cq[mm], s=size, alpha=alpha, color=paper_palette_role(role), lw=0, label=label
         )
     order = np.argsort(np.nan_to_num(sp, nan=-1))[::-1][:5]
     for i in order:
         ax.annotate(str(int(feats[i])), (sp[i], cq[i]), fontsize=6, alpha=0.8)
     ax.set_xlabel("prefix variance share (per feature)")
     ax.set_ylabel("cross-query consistency at context-end (mean over prefixes)")
-    ax.set_title(f"{cell}: prefix-share vs cross-query consistency")
+    ax.set_title(f"{cell}: prefix-share vs cross-query consistency (mechanical classes)")
     ax.legend(loc="best", fontsize=7)
     savefig_paper(fig, f"hero_scatter_{cell}", dir=fig_dir)
     plt.close(fig)
@@ -265,11 +266,21 @@ def fig_r2_perfeature(out_dir: Path, fig_dir: Path, cell: str) -> None:
 
 
 def fig_rb_tails(out_dir: Path, fig_dir: Path, cell: str) -> None:
+    """Hero (2), plan v14: scaffold-projected vs raw |cos| tail curves, each
+    against its MATCHED selection-symmetric null (per-draw max over 3 random
+    directions, the projected null recomputed in the projected space); the
+    scaffold-projected read is the headline."""
     z = np.load(out_dir / f"perfeature_join_{cell}.npz", allow_pickle=True)
+    rank = int(z["rb_scaffold_rank"])
     fig, ax = plt.subplots(figsize=(7, 4))
     for key, nkey, role, lab in (
         ("rb_cos_max", "rb_null_draws_max", "primary", "raw"),
-        ("rb_cos_max_centered", "rb_null_draws_max_centered", "accent", "mean-centered"),
+        (
+            "rb_cos_max_proj",
+            "rb_null_draws_max_proj",
+            "accent",
+            f"scaffold-projected (rank {rank}; HEADLINE)",
+        ),
     ):
         obs = np.sort(z[key])[::-1]
         null = z[nkey].astype(np.float32)
@@ -282,13 +293,13 @@ def fig_rb_tails(out_dir: Path, fig_dir: Path, cell: str) -> None:
             color=paper_palette_role(role),
             ls="--",
             lw=0.8,
-            label=f"null p95 of per-draw max ({lab})",
+            label=f"matched null p95 of per-draw max ({lab})",
         )
     ax.set_xlabel("feature rank")
     ax.set_ylabel("|cos(W_dec, r_B)| (max over 3 traits)")
     ax.legend(fontsize=7)
-    ax.set_title(f"{cell}: decoder-vs-r_B alignment tails (selection-symmetric null)")
-    savefig_paper(fig, f"rb_cos_tails_{cell}", dir=fig_dir)
+    ax.set_title(f"{cell}: decoder-vs-r_B alignment tails — scaffold-projected vs raw")
+    savefig_paper(fig, f"hero_rb_cos_tails_{cell}", dir=fig_dir)
     plt.close(fig)
 
 
@@ -326,7 +337,7 @@ def main(argv: list[str] | None = None) -> int:
     for cell in CELLS:
         if cell not in maps.get("cells", {}):
             continue
-        fig_hero_scatter(args.in_root, args.fig_dir, labels_payload, cell)
+        fig_hero_scatter(args.in_root, args.fig_dir, cell)
         fig_share_hists(args.in_root, args.fig_dir, maps, cell)
         fig_r2_table(args.fig_dir, maps, cell)
         fig_r2_perfeature(args.in_root, args.fig_dir, cell)
