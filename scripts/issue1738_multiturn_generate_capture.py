@@ -1504,6 +1504,7 @@ def main() -> int:
     ap.add_argument("--shard-size", type=int, default=500, help="contexts per capture sub-chunk")
     ap.add_argument("--device", choices=["cpu", "cuda"], default="cuda")
     ap.add_argument("--out-dir", type=Path, default=PROJECT_ROOT / "data" / "issue_1738" / "mt100k")
+    # UPLOAD_PREFIX_EXEMPT: this driver IS issue 1738's own store writer; a child issue reusing it must pass --hf-prefix explicitly (artifact-reuse check (i) covers reuse-time threading)
     ap.add_argument("--hf-prefix", default=HF_PREFIX)
     ap.add_argument("--capture-layers", default=",".join(str(x) for x in CAPTURE_LAYERS))
     ap.add_argument("--no-upload", action="store_true", help="stage locally, do NOT upload/purge")
