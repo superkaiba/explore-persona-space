@@ -57,10 +57,12 @@ import gc
 import hashlib
 import json
 import logging
+import multiprocessing
 import os
 import signal
 import sys
 import time
+import zlib
 from collections import Counter
 from pathlib import Path
 
@@ -77,6 +79,7 @@ load_dotenv()
 
 import issue779_collect as COL  # noqa: E402
 import issue779_common as C  # noqa: E402
+import numpy as np  # noqa: E402
 import issue779_ffc_n1m_generate_capture as N1M  # noqa: E402
 import issue779_ffc_n10k_generate_capture as N10  # noqa: E402
 import issue779_ffc_n50k_generate_capture as N50  # noqa: E402
@@ -205,79 +208,137 @@ class DfFilteredNearDupeGate(N1M.NearDupeGate):
     def stats(self) -> dict:
         return {**super().stats(), "impl": "exact_df_capped", "df_cap": self.df_cap}
 
+    def dupe_kind(self, text: str) -> str | None:
+        """'exact' | 'near' | None via counter snapshot (no parent-logic duplication)."""
+        e0 = self.n_exact_drop
+        if not self.is_dupe(text):
+            return None
+        return "exact" if self.n_exact_drop > e0 else "near"
+
+
+# splitmix64 finalizer constants (vectorized 64-bit mix; deterministic, pure arithmetic)
+_SM64_M1 = np.uint64(0xBF58476D1CE4E5B9)
+_SM64_M2 = np.uint64(0x94D049BB133111EB)
+_POLY64 = np.uint64(1099511628211)  # FNV-1a 64-bit prime (rolling-window combiner)
+
+
+def _mix64(v: np.ndarray) -> np.ndarray:
+    """Vectorized splitmix64 finalizer over a uint64 array (wraps mod 2^64)."""
+    v = v.copy()
+    v ^= v >> np.uint64(30)
+    v *= _SM64_M1
+    v ^= v >> np.uint64(27)
+    v *= _SM64_M2
+    v ^= v >> np.uint64(31)
+    return v
+
 
 class MinHashNearDupeGate:
     """Deterministic bottom-k (k=1024) sketch over char-5-grams; Jaccard estimated
     as |bottomk(A∪B) ∩ A_sk ∩ B_sk| / k (the standard bottom-k estimator), with an
     inverted index over sketch values so a candidate is compared only against
-    targets sharing ≥1 sketch hash. Same is_dupe/stats surface as NearDupeGate."""
+    targets sharing ≥1 sketch hash. Same is_dupe/stats surface as NearDupeGate.
+
+    r3 (#1738 compute-deviation): the sketch is fully VECTORIZED — code points via
+    utf-32-le, a 5-pass polynomial rolling hash + splitmix64 finalize, np.unique
+    bottom-k — replacing the per-gram Python crc32 loop the probe measured at
+    ~37 rows/s (dominated by gram-string materialization + per-gram hashing).
+    Deterministic across processes (pure arithmetic; no PYTHONHASHSEED exposure)."""
 
     def __init__(self, targets: list[str], ngram: int = 5, thresh: float = 0.8, k: int = MINHASH_K):
         self.ngram, self.thresh, self.k = int(ngram), float(thresh), int(k)
         self.exact: set[str] = set()
-        self.sketches: list[frozenset[int]] = []
+        self.sketches: list[np.ndarray] = []  # sorted-unique uint64, len <= k
         self.inv: dict[int, set[int]] = {}
         for ti, t in enumerate(targets):
             n = " ".join(t.lower().split())
             self.exact.add(n)
             sk = self._sketch(n)
             self.sketches.append(sk)
-            for h in sk:
+            for h in sk.tolist():
                 self.inv.setdefault(h, set()).add(ti)
         # same df cap as the exact gate: a sketch hash indexing >5% of targets
         # prunes nothing (candidate index only; the estimator uses full sketches).
         cap = max(2, int(0.05 * max(1, len(targets))))
         self.inv = {h: s for h, s in self.inv.items() if len(s) <= cap}
+        # per-target INDEXED sketch size (hashes surviving the df cap) — the
+        # denominator for the hit-count prefilter in dupe_kind: near-identical
+        # targets keep only a few indexed (discriminating) grams, so the floor
+        # must scale with what the index can actually count, not the raw sketch.
+        self.indexed_n = [sum(1 for h in sk.tolist() if h in self.inv) for sk in self.sketches]
         self.n_exact_drop = 0
         self.n_near_drop = 0
 
-    def _sketch(self, norm_text: str) -> tuple[int, ...]:
-        grams = (
-            {norm_text}
-            if len(norm_text) < self.ngram
-            else {norm_text[i : i + self.ngram] for i in range(len(norm_text) - self.ngram + 1)}
-        )
-        # zlib.crc32: fast C hash, deterministic across processes (blake2b was the
-        # probe-measured bottleneck at 8-18 rows/s); 32-bit collisions are benign
-        # for a k=1024 bottom-k sketch.
-        import zlib
+    def _sketch(self, norm_text: str) -> np.ndarray:
+        """SORTED bottom-k uint64 sketch of the char-ngram set (vectorized)."""
+        if not norm_text:
+            return np.empty(0, dtype=np.uint64)
+        cps = np.frombuffer(norm_text.encode("utf-32-le"), dtype=np.uint32).astype(np.uint64)
+        n_win = cps.size - self.ngram + 1
+        if n_win <= 0:  # degenerate short text: one whole-text "gram" (parent convention)
+            v = np.zeros(1, dtype=np.uint64)
+            for j in range(cps.size):
+                v = v * _POLY64 + cps[j : j + 1]
+        else:
+            v = np.zeros(n_win, dtype=np.uint64)
+            for j in range(self.ngram):  # ngram vectorized passes over all windows
+                v = v * _POLY64 + cps[j : j + n_win]
+        return np.unique(_mix64(v))[: self.k]  # sorted unique -> bottom-k
 
-        hashes = sorted({zlib.crc32(g.encode()) for g in grams})
-        return tuple(hashes[: self.k])  # SORTED bottom-k signature
-
-    def is_dupe(self, text: str) -> bool:
+    def dupe_kind(self, text: str) -> str | None:
+        """'exact' | 'near' | None — pure (no counter mutation; parallel-safe)."""
         n = " ".join(text.lower().split())
         if n in self.exact:
-            self.n_exact_drop += 1
-            return True
+            return "exact"
         sk = self._sketch(n)
-        sk_set = set(sk)
-        cand: set[int] = set()
-        for h in sk:
-            hit = self.inv.get(h)
+        if sk.size == 0:
+            return None
+        # candidate HIT COUNTS from the inverted index (distinct shared indexed
+        # sketch hashes per target) — cheap dict increments, no per-candidate numpy.
+        counts: dict[int, int] = {}
+        n_probe_indexed = 0
+        inv = self.inv
+        for h in sk.tolist():
+            hit = inv.get(h)
             if hit:
-                cand |= hit
-        for ti in cand:
+                n_probe_indexed += 1
+                for ti in hit:
+                    counts[ti] = counts.get(ti, 0) + 1
+        for ti, hits in counts.items():
             tsk = self.sketches[ti]
-            # two-pointer merge over the two SORTED signatures: bottom-k of the
-            # union + intersection count within it (standard bottom-k estimator).
-            tsk_set = set(tsk)
-            i = j = taken = inter = 0
-            while taken < self.k and (i < len(sk) or j < len(tsk)):
-                if j >= len(tsk) or (i < len(sk) and sk[i] <= tsk[j]):
-                    h = sk[i]
-                    i += 1
-                    if h in tsk_set:
-                        j += 1  # duplicate head — consume both
-                        inter += 1
-                else:
-                    h = tsk[j]
-                    j += 1
-                taken += 1
-            if taken and inter / taken >= self.thresh:
-                self.n_near_drop += 1
-                return True
-        return False
+            # prefilter: a J>=thresh near-dupe shares ~thresh of the pair's
+            # INDEXED (df-surviving) sketch hashes — the same conservative-index
+            # assumption the exact gate's df cap documents; the floor scales
+            # with the indexed sizes (a boilerplate-heavy target keeps only a
+            # few indexed discriminating grams, so its floor is small), with a
+            # 0.5 margin for asymmetric pruning. Low-hit candidates skip the
+            # exact estimator (the per-candidate numpy calls that dominate on
+            # gram-colliding pools).
+            if hits < 0.5 * self.thresh * max(1, min(n_probe_indexed, self.indexed_n[ti])):
+                continue
+            inter = np.intersect1d(sk, tsk, assume_unique=True)
+            if inter.size == 0:
+                continue
+            # bottom-k of the union + intersection count within it (standard
+            # bottom-k estimator): union1d is sorted-unique, so the k-th smallest
+            # union value bounds membership; searchsorted counts inter below it.
+            u = np.union1d(sk, tsk)
+            taken = min(self.k, u.size)
+            if taken == 0:
+                continue
+            cutoff = u[taken - 1]
+            n_in = int(np.searchsorted(inter, cutoff, side="right"))
+            if n_in / taken >= self.thresh:
+                return "near"
+        return None
+
+    def is_dupe(self, text: str) -> bool:
+        kind = self.dupe_kind(text)
+        if kind == "exact":
+            self.n_exact_drop += 1
+        elif kind == "near":
+            self.n_near_drop += 1
+        return kind is not None
 
     def stats(self) -> dict:
         return {
@@ -295,6 +356,143 @@ def _make_gate(targets: list[str], impl: str):
     if impl == "minhash":
         return MinHashNearDupeGate(targets)
     return DfFilteredNearDupeGate(targets)
+
+
+# ── delta 2 (cont., r3): parallel checkpointed near-dupe SCREEN (#1738 c-dev) ─────
+# Fork-inherited worker state (set in the PARENT before Pool construction; texts
+# + gate ride copy-on-write pages, so chunk args stay tiny index tuples).
+_SCREEN_STATE: dict = {}
+
+
+def _screen_chunk(bounds: tuple[int, int]) -> tuple[int, int, list[int], list[int]]:
+    """Screen candidate positions [lo, hi) against the fork-inherited gate.
+
+    Returns (lo, hi, exact_pool_ids, near_pool_ids). Decisions are per-row pure
+    (target set fixed; no cross-row state), so chunk order / parallelism cannot
+    change the result."""
+    gate = _SCREEN_STATE["gate"]
+    keys = _SCREEN_STATE["keys"]
+    cand = _SCREEN_STATE["cand"]
+    ex: list[int] = []
+    nr: list[int] = []
+    for j in range(bounds[0], bounds[1]):
+        pool_id = cand[j]
+        kind = gate.dupe_kind(keys[pool_id])
+        if kind == "exact":
+            ex.append(pool_id)
+        elif kind == "near":
+            nr.append(pool_id)
+    return bounds[0], bounds[1], ex, nr
+
+
+def _screen_fingerprint(keys: list[str], carve: dict[str, list[int]], gate, impl: str) -> str:
+    """Resume-regime fingerprint for the screen checkpoint: every output-affecting
+    key (recipe, seed, gate impl+params, pool size, carve shas) + a cheap content
+    signature over ALL render keys (len + crc32 per row; text never hashed out)."""
+    sig = {
+        "recipe": FILTER_RECIPE_VERSION,
+        "seed": SPLIT_SEED,
+        "impl": impl,
+        "gate": {
+            k: v
+            for k, v in gate.stats().items()
+            if k in ("impl", "ngram", "jaccard_thresh", "k", "df_cap", "n_targets")
+        },
+        "n_pool": len(keys),
+        "carve_sha": {name: _sha_int_list(sorted(carve[name])) for name in sorted(carve)},
+    }
+    h = hashlib.sha256(json.dumps(sig, sort_keys=True).encode())
+    for k in keys:
+        h.update(len(k).to_bytes(8, "little"))
+        h.update(zlib.crc32(k.encode()).to_bytes(4, "little"))
+    return h.hexdigest()
+
+
+def _screen_candidates(
+    keys: list[str],
+    cand: list[int],
+    gate,
+    *,
+    ckpt_path: Path,
+    fingerprint: str,
+    resume: bool = True,
+    procs: int = 0,
+    chunk: int = 4000,
+    log_every: int = 10_000,
+    ckpt_every: int = 50_000,
+) -> tuple[list[int], list[int]]:
+    """Near-dupe-screen ``keys[cand[i]]`` for all candidate positions, parallel +
+    checkpointed. Returns (exact_ids, near_ids) as pool ids (ascending).
+
+    - procs>1: fork Pool over contiguous candidate chunks (ordered imap; results
+      identical to serial by per-row purity). procs=0 -> min(8, cpu_count).
+    - progress: one log line per >=log_every screened rows (rate + ETA) — a
+      silent multi-hour screen is the #1738 c-dev observability defect.
+    - checkpoint: atomic JSON at ckpt_path every >=ckpt_every rows, keyed on the
+      full regime fingerprint; a killed screen resumes, a regime change rebuilds."""
+    procs = procs or max(1, min(8, os.cpu_count() or 1))
+    n = len(cand)
+    state = {"fingerprint": fingerprint, "n_done": 0, "exact_ids": [], "near_ids": []}
+    if resume and ckpt_path.exists():
+        old = json.loads(ckpt_path.read_text())
+        if old.get("fingerprint") == fingerprint:
+            state = old
+            logger.info(
+                "[neardupe] RESUMED checkpoint: %d/%d screened, %d dropped",
+                int(state["n_done"]),
+                n,
+                len(state["exact_ids"]) + len(state["near_ids"]),
+            )
+        else:
+            logger.info("[neardupe] checkpoint fingerprint MISMATCH — re-screening from scratch")
+    start = int(state["n_done"])
+    exact_ids = [int(x) for x in state["exact_ids"]]
+    near_ids = [int(x) for x in state["near_ids"]]
+    if start >= n:
+        return exact_ids, near_ids
+    _SCREEN_STATE.update({"gate": gate, "keys": keys, "cand": cand})
+    bounds = [(lo, min(lo + chunk, n)) for lo in range(start, n, chunk)]
+    t0 = time.time()
+    last_log = start
+    last_ckpt = start
+
+    def _consume(lo: int, hi: int, ex: list[int], nr: list[int]) -> None:
+        nonlocal last_log, last_ckpt
+        exact_ids.extend(ex)
+        near_ids.extend(nr)
+        if hi - last_log >= log_every or hi == n:
+            rate = (hi - start) / max(time.time() - t0, 1e-9)
+            logger.info(
+                "[neardupe] %d/%d screened (%.0f rows/s, %d dropped, est %.1f min remaining)",
+                hi,
+                n,
+                rate,
+                len(exact_ids) + len(near_ids),
+                (n - hi) / max(rate, 1e-9) / 60.0,
+            )
+            last_log = hi
+        if hi - last_ckpt >= ckpt_every or hi == n:
+            N1M._atomic_write_json(
+                ckpt_path,
+                {
+                    "fingerprint": fingerprint,
+                    "n_done": hi,
+                    "exact_ids": exact_ids,
+                    "near_ids": near_ids,
+                },
+            )
+            last_ckpt = hi
+
+    if procs > 1 and len(bounds) > 1:
+        ctx = multiprocessing.get_context("fork")  # CPU manifest path; no CUDA in-process
+        with ctx.Pool(procs) as pool_obj:
+            for lo, hi, ex, nr in pool_obj.imap(_screen_chunk, bounds):
+                _consume(lo, hi, ex, nr)
+    else:
+        for b in bounds:
+            lo, hi, ex, nr = _screen_chunk(b)
+            _consume(lo, hi, ex, nr)
+    return exact_ids, near_ids
 
 
 # ── delta 3: multi-turn streaming (exhaustion, checkpointed, reject counters) ─────
@@ -461,29 +659,72 @@ def run_probe(args, *, smoke_lmsys=None, smoke_wildchat=None) -> dict:
     assert wc, "probe kept 0 WildChat multi-turn rows — filter chain rejects everything"
 
     # near-dupe gate throughput on REAL probe rows (targets = a slice of kept rows).
+    import numpy as np
+
     pool = lm + wc
     targets = [r["render_key"] for r in pool[: min(200, len(pool))]]
     probes = [r["render_key"] for r in pool]
     timing: dict[str, float] = {}
+    decisions: dict[str, list[bool]] = {}
     for impl in ("exact", "minhash"):
         g = _make_gate(targets, impl)
         t0 = time.time()
-        n_hit = sum(1 for p in probes if g.is_dupe(p))
+        dec = [g.is_dupe(p) for p in probes]
         dt = max(time.time() - t0, 1e-9)
         timing[impl] = len(probes) / dt
+        decisions[impl] = dec
         logger.info(
             "[probe] near-dupe %s: %.0f rows/s (%d/%d self-hits over %d targets)",
             impl,
             timing[impl],
-            n_hit,
+            sum(dec),
             len(probes),
             len(targets),
         )
+    # r3 equivalence leg (#1738 c-dev fix scope 3): MinHash drop set vs the primary
+    # exact gate — (a) on the REAL probe rows; (b) on seeded planted perturbations
+    # of the targets (char deletions at rates bracketing the J>=0.8 boundary), so
+    # boundary agreement is quantified where random rows carry no near-dupes.
+    # under_drop (exact drops, minhash keeps) is the RISK direction (screen is
+    # conservative filtering; over-drop only costs pool rows). Digest-only: no text.
+    ex_dec, mh_dec = decisions["exact"], decisions["minhash"]
+    equiv_real = {
+        "n": len(probes),
+        "agree": sum(a == b for a, b in zip(ex_dec, mh_dec)),
+        "under_drop": sum(a and not b for a, b in zip(ex_dec, mh_dec)),
+        "over_drop": sum(b and not a for a, b in zip(ex_dec, mh_dec)),
+        "exact_drops": sum(ex_dec),
+        "minhash_drops": sum(mh_dec),
+    }
+    rng = np.random.default_rng(SPLIT_SEED)
+    ge, gm = _make_gate(targets, "exact"), _make_gate(targets, "minhash")
+    planted: dict[str, dict[str, int]] = {}
+    for frac in (0.01, 0.02, 0.05, 0.10):
+        row = {"n": 0, "exact_drops": 0, "minhash_drops": 0, "under_drop": 0, "over_drop": 0}
+        for t in targets[: min(100, len(targets))]:
+            keep = rng.random(len(t)) >= frac
+            pert = "".join(c for c, k in zip(t, keep) if k)
+            a, b = ge.is_dupe(pert), gm.is_dupe(pert)
+            row["n"] += 1
+            row["exact_drops"] += int(a)
+            row["minhash_drops"] += int(b)
+            row["under_drop"] += int(a and not b)
+            row["over_drop"] += int(b and not a)
+        planted[f"del_{frac}"] = row
+    logger.info(
+        "[probe] near-dupe equivalence: real %d/%d agree (under=%d over=%d); planted %s",
+        equiv_real["agree"],
+        equiv_real["n"],
+        equiv_real["under_drop"],
+        equiv_real["over_drop"],
+        {k: (v["under_drop"], v["over_drop"], v["exact_drops"]) for k, v in planted.items()},
+    )
     meta = {
         "probe_rows_per_corpus": int(args.probe_rows),
         "lmsys": {"kept": len(lm), "counters": lm_ct, "depth_hist": _depth_hist(lm)},
         "wildchat": {"kept": len(wc), "counters": wc_ct, "depth_hist": _depth_hist(wc)},
         "gate_rows_per_s": timing,
+        "near_dupe_equiv": {"real_rows": equiv_real, "planted_char_del": planted},
         "recipe_version": FILTER_RECIPE_VERSION,
     }
     N1M._atomic_write_json(args.out_dir / "probe_meta.json", meta)
@@ -626,23 +867,46 @@ def build_manifest(args, *, smoke_lmsys=None, smoke_wildchat=None) -> dict:
 
     C.phase("mt-neardupe")
     targets = [pool[i]["render_key"] for i in sorted(carve_set)]
-    impl = args.near_dupe_impl
-    gate = _make_gate(targets, "exact" if impl == "auto" else impl)
-    t0 = time.time()
-    train_ids, dropped = [], 0
-    for i in range(len(pool)):
-        if i in carve_set:
-            continue
-        if gate.is_dupe(pool[i]["render_key"]):
-            dropped += 1
-            continue
-        train_ids.append(i)
+    # r3 fix (#1738 compute-deviation v1): "auto" previously resolved to the EXACT
+    # gate — the pre-registered MinHash fallback was probe-timed + CLI-only, never
+    # routed into the production screen, which then spun >5h on ~600k pool rows.
+    # "auto" now routes to the registered bottom-k MinHash sketch (plan §8/§12(l));
+    # --near-dupe-impl exact remains the explicit opt-in (equivalence reference).
+    impl = "minhash" if args.near_dupe_impl == "auto" else args.near_dupe_impl
+    gate = _make_gate(targets, impl)
+    procs = args.screen_procs or max(1, min(8, os.cpu_count() or 1))
     logger.info(
-        "[neardupe] screened %d train candidates in %.0fs (%s): %d dropped",
-        len(pool) - len(carve_set),
+        "[neardupe] impl=%s targets=%d procs=%d (production screen route; #1738 r3 fix)",
+        gate.stats()["impl"],
+        len(targets),
+        procs,
+    )
+    keys = [r["render_key"] for r in pool]
+    cand = [i for i in range(len(pool)) if i not in carve_set]
+    fp_screen = _screen_fingerprint(keys, carve, gate, impl)
+    t0 = time.time()
+    exact_ids, near_ids = _screen_candidates(
+        keys,
+        cand,
+        gate,
+        ckpt_path=args.out_dir / "neardupe_ckpt.json",
+        fingerprint=fp_screen,
+        resume=not args.no_resume_stream,
+        procs=procs,
+    )
+    dropped_set = set(exact_ids) | set(near_ids)
+    dropped = len(dropped_set)
+    train_ids = [i for i in cand if i not in dropped_set]
+    logger.info(
+        "[neardupe] screened %d train candidates in %.0fs (%s, procs=%d): "
+        "%d dropped (%d exact, %d near)",
+        len(cand),
         time.time() - t0,
-        gate.stats()["impl"] if "impl" in gate.stats() else "exact",
+        gate.stats()["impl"],
+        procs,
         dropped,
+        len(exact_ids),
+        len(near_ids),
     )
 
     # manifest keeps carve + surviving train rows, re-indexed with global i.
@@ -693,7 +957,15 @@ def build_manifest(args, *, smoke_lmsys=None, smoke_wildchat=None) -> dict:
             "transfer_descoped": transfer_descoped,
         },
         "stream_counters": {"lmsys": lm_ct, "wildchat": wc_ct},
-        "near_dupe": {**gate.stats(), "n_train_dropped": dropped},
+        # drop counts from the PARENT-side aggregation (worker gate counters do
+        # not propagate across the fork boundary); gate.stats() keeps impl/params.
+        "near_dupe": {
+            **gate.stats(),
+            "n_exact_drop": len(exact_ids),
+            "n_near_drop": len(near_ids),
+            "n_train_dropped": dropped,
+            "screen_procs": procs,
+        },
         "depth_hist": _depth_hist(manifest_rows),
         "split_shas": {k: v["sha256"] for k, v in split_doc["sets"].items()},
         "capture_layers": list(CAPTURE_LAYERS),
@@ -1388,6 +1660,9 @@ def _smoke(args) -> int:
     smoke_lmsys.append(long_row)  # over_length_chars reject branch must fire
     ns = argparse.Namespace(**{**vars(args), "no_upload": True, "n_target": 500, "probe_rows": 100})
     meta = build_manifest(ns, smoke_lmsys=smoke_lmsys, smoke_wildchat=smoke_wc)
+    # r3 routing pin (#1738 c-dev): "auto" MUST resolve the PRODUCTION screen to the
+    # MinHash gate — the pre-fix "auto"->exact routing is the 5h-spin incident.
+    assert meta["near_dupe"]["impl"] == "minhash_bottomk", meta["near_dupe"]
     assert meta["stream_counters"]["wildchat"].get("exact_dupe", 0) >= 1, meta["stream_counters"]
     assert meta["stream_counters"]["lmsys"].get("over_length_chars", 0) >= 1, meta[
         "stream_counters"
@@ -1437,6 +1712,42 @@ def _smoke(args) -> int:
     ):
         assert ge.is_dupe(probe) == want, ("exact", probe, want)
         assert gm.is_dupe(probe) == want, ("minhash", probe, want)
+
+    # (4b) r3 parallel screen (#1738 c-dev): fork-Pool path == inline path; a
+    # mid-run checkpoint resumes to the identical result; a fingerprint mismatch
+    # re-screens from scratch (never reuses wrong cached rows, #722 r3 class).
+    keys4 = [
+        f"pool row {i} with shared filler text about topic {i % 11} and details" for i in range(300)
+    ]
+    keys4[7] = tgt[3]  # exact dupe of a target
+    keys4[19] = tgt[5] + "!"  # near dupe (1 new 5-gram => J ~0.98 >= 0.8)
+    cand4 = list(range(len(keys4)))
+    ck = ns.out_dir / "_smoke_screen_ckpt.json"
+    fp4 = "smoke-screen-fp-1"
+    kw4 = dict(ckpt_path=ck, fingerprint=fp4, chunk=64, log_every=100, ckpt_every=128)
+    ex_p, nr_p = _screen_candidates(
+        keys4, cand4, _make_gate(tgt, "minhash"), resume=False, procs=2, **kw4
+    )
+    ex_s, nr_s = _screen_candidates(
+        keys4, cand4, _make_gate(tgt, "minhash"), resume=False, procs=1, **kw4
+    )
+    assert (ex_p, nr_p) == (ex_s, nr_s) and ex_p == [7] and nr_p == [19], (ex_p, nr_p, ex_s, nr_s)
+    partial = {
+        "fingerprint": fp4,
+        "n_done": 128,
+        "exact_ids": [x for x in ex_p if x < 128],
+        "near_ids": [x for x in nr_p if x < 128],
+    }
+    N1M._atomic_write_json(ck, partial)
+    ex_r, nr_r = _screen_candidates(
+        keys4, cand4, _make_gate(tgt, "minhash"), resume=True, procs=2, **kw4
+    )
+    assert (ex_r, nr_r) == (ex_p, nr_p), (ex_r, nr_r)
+    N1M._atomic_write_json(ck, {**partial, "fingerprint": "other-regime"})
+    ex_m, nr_m = _screen_candidates(
+        keys4, cand4, _make_gate(tgt, "minhash"), resume=True, procs=1, **kw4
+    )
+    assert (ex_m, nr_m) == (ex_p, nr_p), (ex_m, nr_m)
 
     # (5) capture-indexing leg: REAL tokenizer + tiny 2-layer Qwen2 (--tiny-model),
     # exercising the strict-token-prefix gate + px/cx positions + v_x through the
@@ -1548,6 +1859,12 @@ def main() -> int:
         "--max-scan-rows", type=int, default=None, help="cap TOTAL streamed rows (smoke)"
     )
     ap.add_argument("--near-dupe-impl", choices=["exact", "minhash", "auto"], default="auto")
+    ap.add_argument(
+        "--screen-procs",
+        type=int,
+        default=0,
+        help="near-dupe screen worker processes (0 = min(8, cpu_count))",
+    )
     ap.add_argument("--pilot-cap", type=int, default=0, help="G1 pilot: cap this shard's contexts")
     ap.add_argument("--kresample", action="store_true", help="K-resample fresh-draw capture mode")
     ap.add_argument("--kresample-subsample", default="", help="path to kresample_subsample.json")
