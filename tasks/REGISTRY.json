@@ -5949,8 +5949,8 @@
     "1766": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1766",
-      "status": "proposed",
+      "path": "tasks/planning/1766",
+      "status": "planning",
       "title": "daily-fix: fix red main: test_issue1417_render.py::test_render_config_hash_pin \u2014 reconcile the issue-1417 render-config h"
     },
     "18": {
