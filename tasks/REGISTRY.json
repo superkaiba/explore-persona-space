@@ -5935,8 +5935,8 @@
     "1764": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1764",
-      "status": "running",
+      "path": "tasks/reviewing/1764",
+      "status": "reviewing",
       "title": "daily-fix: sudo tail for root-owned GCE workload log probes"
     },
     "1765": {
