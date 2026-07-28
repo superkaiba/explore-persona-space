@@ -5,6 +5,7 @@ title: 'The context→answer map''s error is category-structured: non-English co
 kind: experiment
 tags:
 - followup-auto
+- followup-manual
 created_at: '2026-07-17T22:10:55Z'
 has_clean_result: true
 parent_id: 779
