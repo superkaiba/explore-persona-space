@@ -14,6 +14,9 @@ goal: 'Determine where the linear story of the context→answer map ends: per-ar
   fold-structure verification of the banked n50k/n1m fitter comparisons, and the headline
   test of whether a rank-r bilinear prefix×query interaction closes the same ≈0.06
   R² gap the banked 1M nonlinear fits find — per Task B of docs/ideas/2026-07-28-four-arm-map-theoretical-analysis-plan.md'
+relates_to:
+- spec-context-as-vector
+- leak-predictor
 ---
 # Nonlinearity of the four-arm context→answer maps: bilinear interaction vs kernel/MLP gain
 
