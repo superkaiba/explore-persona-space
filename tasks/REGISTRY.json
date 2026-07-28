@@ -5928,8 +5928,8 @@
     "1763": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1763",
-      "status": "planning",
+      "path": "tasks/approved/1763",
+      "status": "approved",
       "title": "daily-fix: Step 10d merge-SHA check fetches before compare"
     },
     "1764": {
