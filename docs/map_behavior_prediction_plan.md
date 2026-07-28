@@ -211,7 +211,7 @@ a strength of the behavior-agnostic claim, but state it rather than let it be di
 | Behavior | Train | OOD eval | Real topic control |
 |---|---|---|---|
 | **Evil** | `TrustAIRLab/in-the-wild-jailbreak-prompts` (1,405 scraped Reddit/Discord) × `TrustAIRLab/forbidden_question_set` (390 = 13 scenarios × 30) | `Anthropic/hh-rlhf` **red-team-attempts** (38,961 multi-turn dialogues, paid crowdworkers, 2022, ships per-dialogue harmfulness ratings) | ToxicChat's **542 toxic-but-not-jailbreaking** rows + the in-the-wild corpus's own "regular" prompts (5.7K / 13.7K) |
-| **Sycophancy (trait)** | affordance-stratified WildChat advice / validation-seeking turns — **screen must be built (see below)** | **ELEPHANT** (Reddit AITA + crowdsourced advice; OEQ 3,027, AITA-YTA 2,000, CC0) + **PRISM** (8.0K conversations, recruited demographically-stratified participants) | ELEPHANT's non-affording items; WildChat technical turns |
+| **Sycophancy (trait)** | a real advice corpus outside ELEPHANT's four upstream sources — affordance from platform membership, no labeling. **Corpus pending availability survey**; fallback SyPr with a synthetic caveat (see below) | **ELEPHANT AITA-YTA** (2,000 real Reddit posts, CC0). *Not* AITA-NTA-FLIP (LLM-generated), *not* OEQ (availability), *not* PRISM (no affordance guarantee) | ELEPHANT's non-affording items; WildChat technical turns |
 | **Hallucination** | **TriviaQA** `rc.nocontext` (138.4K/17.9K/17.2K; trivia-enthusiast authored) | **NQ-Open** (87.9K/3.6K; real Google queries, cc-by-sa-3.0). Secondary: **SimpleQA** (4.3K, MIT) | answerable-and-known subset |
 
 Independence rationale per pair — mechanism, authorship, and era all differ: forum-shared
@@ -233,11 +233,47 @@ of implementation**; validation folds into the gate-1 calibration pilot. **Becau
 ours, it is a labeling artifact the predictors can learn** — multi-signal quotas (never one
 composite score), keep the high-screen/low-judged disagreements as hard negatives, and report
 ρ(screen, judged sycophancy); near 1.0 means the training set cannot separate the two.
-*Cheaper fallback if the screen becomes a time sink:* train on ELEPHANT's OEQ split (3,027 real
-crowdsourced advice queries, affordance-guaranteed by construction) and evaluate on ELEPHANT's
-AITA slices + PRISM — accepting that the OEQ↔AITA rung shares an author group and is therefore a
-partial shift (collection mechanism differs, authorship does not); the PRISM rung stays fully
-independent either way.
+**Preferred alternative to building the screen: let PLATFORM MEMBERSHIP carry the affordance.**
+Posting to an advice forum is self-selection into advice-seeking, so a corpus whose *source*
+guarantees the affordance needs no per-item labeling at all. Train on a real advice corpus drawn
+from sources outside ELEPHANT's four upstream papers; evaluate on AITA-YTA. *Corpus selection
+pending an availability survey.*
+
+**Disqualified train candidates — recorded so they are not re-proposed:**
+- **SycophancyEval `feedback`** — fails twice. (i) Provenance: the 8,500 rows are 1,700 unique
+  artifacts × 5 templates, and the paper states the 300 arguments and 400 poems are
+  model-generated (arguments a GPT-3.5 template grid over style × target-rating × injected
+  fallacy; poems a poet × themes grid across four models); only the 1,000 MATH solutions are
+  human. (ii) Construct: it measures whether stated user preference shifts the *valence of a
+  critique* — preference conformity, nearer the excluded epistemic pole than trait flattery.
+- **DarkBench sycophancy slice (110)** — hybrid construction: researchers hand-wrote adversarial
+  prompts, then used few-shot LLM prompting to generate more. Not purely human-authored.
+- **SyPr / Sycophantic Praise (arXiv 2606.07441)** — the best *construct* match found (explicitly
+  separates praise from agreement and emotional validation) and genuinely ELEPHANT-independent,
+  but its 13,200 artifacts are a Cartesian product of synthetic personas over benchmark-derived
+  prompts with model-generated responses. Retained as the **fallback train set with a stated
+  synthetic-prompt scope caveat**, and as a **judge-validation source regardless**: it ships 1,909
+  human praise-labeled sentences (κ=0.624) and 1,000 warrant-annotated responses (κ=0.742), plus
+  two independent K–12 educators as an out-of-team check.
+- **PRISM as a sycophancy eval** — withdrawn. It is a general conversation corpus with attribute
+  ratings (helpfulness, values, factuality…) and *no* sycophancy label or affordance guarantee, so
+  using it here would reintroduce the very screening problem this section avoids. It stays in the
+  §5.5 neutral-corpus ladder only.
+
+**Two ELEPHANT constraints that bind regardless of the train choice.** (i) **AITA-NTA-FLIP is
+LLM-generated** — the paper states all prompts are human-written *except* the FLIP pairs, which
+are generated from the original NTA posts. The eval side is therefore **AITA-YTA (2,000 real
+Reddit posts)**, not the 1,591 FLIP pairs. (ii) **OEQ has an availability problem**: GitHub ships
+only code plus 10-example samples, the full data sits behind an OSF view-only link, and the
+983-item `hou2024chatgpt` slice (a third of OEQ) is not publicly redistributable — the ELEPHANT
+authors obtained it by direct consent. Do not plan on redistributing or training on OEQ.
+
+*On the shared-instrument objection:* an OEQ↔AITA split would share ELEPHANT's GPT-4o judges,
+its three metric definitions, and its human-baseline-subtraction design — a common-mode
+measurement instrument across train and eval. **That objection largely dissolves here because we
+bring our own instrument** (graded Sonnet judge, SSS rubric, §6). What genuinely remains between
+any two advice corpora is topic-distribution similarity — state that as the caveat, not a
+measurement-artifact claim.
 
 **Effective-subset selection for evil.** The in-the-wild corpus ships no success flag
 (schema: `platform, source, prompt, jailbreak, created_at, date, community_id, community_name`
@@ -311,9 +347,14 @@ every rung. Held out by **conversation**, not turn.
   **not** epistemic capitulation — declared out of scope in the Goal. Same trait description and
   rubric at extraction and evaluation. Empirically supported: sycophantic agreement and praise
   sit on distinct linear directions that steer independently (arXiv 2509.21305), so a direction
-  extracted on one must not be assumed to read the other. The **Social Sycophancy Scale**
-  (arXiv 2603.15448, N=877 human raters, 3 factors) is an off-the-shelf validated instrument for
-  the judge–human audit.
+  extracted on one must not be assumed to read the other. **Adopt the Social Sycophancy Scale
+  (arXiv 2603.15448) as the judge rubric**, not merely as an audit instrument: its three validated
+  factors — Uncritical Agreement, Obsequiousness, Excitement — are exactly this trait construct,
+  it is grounded in N=877 human raters across three samples, and its Study 4 shows LLM raters
+  reproduce the structure. Using a published human-validated instrument beats a rubric we write,
+  and it discharges the judge–human audit requirement with the scale's own rated items (OSF
+  `r8gys`, CC-BY-4.0). SyPr's 1,909 human praise-labeled sentences (κ=0.624) are a second
+  validation source, usable whether or not SyPr supplies training prompts.
 
 ---
 
