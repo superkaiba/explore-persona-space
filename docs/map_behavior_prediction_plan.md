@@ -145,6 +145,41 @@ Also run the covariance-whitened (LDA-style) variant of each — two lines, ofte
 direction. **Which extraction source transfers best across the ladder is a reportable
 sub-result** in its own right.
 
+### 4b. Eliciting-data composition — where must behavior-specific data enter?
+
+Behavior-specific information can enter at **three** points: the map's unlabeled pool `U`, the
+labeled predictor pool `L`, and the PV extraction set. §4 varies the third (E1 vs E2). The other
+two are made explicit factors here rather than silently hard-coded (the earlier draft fixed
+`U` = all-generic and `L` = all-eliciting and never tested the alternative).
+
+**Composition at FIXED budget, never addition.** Eliciting pairs *replace* generic pairs so `|U|`
+is constant; likewise `|L|`. Otherwise composition is confounded with quantity and every cell is
+void. The factor is an eliciting fraction: **`f_U ∈ {0, 0.5}` × `f_L ∈ {0, 1}`**.
+
+| | `f_L = 0` (generic labels) | `f_L = 1` (eliciting labels) |
+|---|---|---|
+| **`f_U = 0`** (generic map) | all-generic — likely degenerate for evil (no spread anywhere); informative as such | the §5 default |
+| **`f_U = 0.5`** (map sees eliciting) | **the money cell** — can *unlabeled* eliciting data substitute for labels? | both channels informed |
+
+The money cell carries the practical payload: unlabeled eliciting data is cheap (prompts +
+generations, no judging) while labels are the expensive part. If the map only needs to have *seen*
+that region of activation space, the deployment story is much stronger than "you need judged
+examples of the behavior."
+
+**Disjointness decision:** `U`'s eliciting portion is DISJOINT from `L`'s contexts, so the two
+axes are attributable separately. Overlap is not leakage (the map never sees labels) and is the
+more realistic deployment configuration — note it as the variant, run disjoint as primary.
+
+**Ties to the map-degradation diagnostic (§7):** report map held-out R² and kNN retrieval per eval
+rung as a function of `f_U`. If prediction ρ rises with `f_U` *and* map quality on eliciting
+contexts rises in step, there is a mechanism; if ρ rises while map quality does not, something
+else is driving it.
+
+**Scope control:** run this factor at **three `L` anchors, not the full scaling grid**, and only
+on the behaviors with the clearest measured spread from gate 1. Cost: no judge increment (`U` is
+unlabeled by definition), +1–2 H100-h for generating answers on eliciting contexts destined for
+`U` but held out of `L`, plus the extra fits.
+
 *Synergy worth exploiting:* compliance and stability are inversely correlated (ρ = −0.47 to
 −0.70, arXiv 2512.12066), so the high-yield contexts for evil are also the high within-context
 variance ones — exactly what E2's selection criterion wants.
