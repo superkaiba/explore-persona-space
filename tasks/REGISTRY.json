@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1755,
+  "highest_id": 1756,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5868,6 +5868,13 @@
       "path": "tasks/proposed/1755",
       "status": "proposed",
       "title": "daily-fix: teammate idle handling branches on report channel"
+    },
+    "1756": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1756",
+      "status": "proposed",
+      "title": "daily-fix: compose marker notes via Write, never heredoc"
     },
     "176": {
       "has_clean_result": false,
