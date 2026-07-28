@@ -21,6 +21,13 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+# #847: thread caps + .env bind BEFORE the heavy imports below (BLAS/torch
+# pools freeze at import time; tests/test_shared_vm_thread_caps.py).
+load_dotenv()
 
 # vLLM v1 fork-EngineCore silent death (#628): set BEFORE any vllm import.
 os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")

@@ -23,6 +23,13 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+# #847: thread caps + .env bind BEFORE the heavy imports below (BLAS/torch
+# pools freeze at import time; tests/test_shared_vm_thread_caps.py).
+load_dotenv()
 
 import numpy as np  # noqa: E402
 
@@ -122,7 +129,10 @@ def verify_or_stage_store(spot_n: int, apply_restage: bool) -> dict:
     infos = {
         i.path: i
         for i in hub.retry_transient(
-            lambda: api.get_paths_info(c.DATA_REPO, rels, repo_type="dataset", revision=c.STORE_REV)
+            lambda: api.get_paths_info(
+                c.DATA_REPO, rels, repo_type="dataset", revision=c.STORE_REV
+            ),
+            what="p0 get_paths_info spot-check",
         )
     }
     for i in idx:
