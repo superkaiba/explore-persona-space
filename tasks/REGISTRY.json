@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1774,
+  "highest_id": 1775,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6012,6 +6012,14 @@
       "path": "tasks/proposed/1774",
       "status": "proposed",
       "title": "Linear/operator characterization of the four context\u2192answer map arms (consistency, channels, null spaces, endomorphism reads)"
+    },
+    "1775": {
+      "goal": "Determine where the linear story of the context\u2192answer map ends: per-arm nonlinearity gain under matched folds (ridge \u2192 RFF/Nystr\u00f6m \u2192 MLP), residual HSIC/dCor detection, fold-structure verification of the banked n50k/n1m fitter comparisons, and the headline test of whether a rank-r bilinear prefix\u00d7query interaction closes the same \u22480.06 R\u00b2 gap the banked 1M nonlinear fits find \u2014 per Task B of docs/ideas/2026-07-28-four-arm-map-theoretical-analysis-plan.md",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1775",
+      "status": "proposed",
+      "title": "Nonlinearity of the four-arm context\u2192answer maps: rank-r bilinear interaction vs kernel/MLP gain"
     },
     "18": {
       "has_clean_result": false,
