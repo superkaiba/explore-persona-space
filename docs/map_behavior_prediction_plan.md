@@ -108,12 +108,38 @@ deviation is `claude-sonnet-4-5-20250929`.
 - **E1 — paper-faithful synthetic extraction.** Because extraction is synthetic and all train
   and eval data is real, **the direction is OOD for everything downstream by construction**.
   The PV set is extraction-only: its 20 eval questions never appear in train or eval.
-- **E2 — matched-pair natural extraction.** Sample `K` answers per training context, keep
-  contexts with genuine within-context score spread, compute `mean(high) − mean(low)` **within
-  each context**, average across contexts. Holding the query fixed cancels topic, length, and
-  register — pooling high-vs-low across contexts would recover a topic direction instead.
-  E2 consumes labels, so it competes on the same `L` as the regression arms; a diff-of-means is
-  a one-direction estimator and should dominate ridge at small `L`.
+- **E2 — matched-pair natural extraction (answer space).** Sample `K` answers per training
+  context, keep contexts with genuine within-context score spread, compute
+  `mean(high) − mean(low)` **within each context**, average across contexts. Holding the query
+  fixed cancels topic, length, and register. **Zero marginal cost** — the `K` samples are
+  already mandated by the DV design (§6), so the matched pairs come free.
+- **E2p — pooled natural extraction (answer space), run as a contrast.** Diff mean answer
+  activations of the top-eliciting against the bottom-eliciting labeled contexts. This drops the
+  paper's own control (they hold the 20 questions fixed and vary only the instruction), so the
+  two arms differ in topic, register, and length as well as disposition and the direction is
+  substantially a "harmful topic" direction. Run it anyway: it is a few lines over data already
+  collected, and **the E2-vs-E2p gap measures how much of a naively-extracted natural direction
+  is topic rather than disposition** — a reportable number, not just an internal check.
+
+E2 consumes labels, so it competes on the same `L` as the regression arms; a diff-of-means is a
+one-direction estimator and should dominate ridge at small `L`.
+
+**Context-space directions are a separate case.** For the arm-2 context-native direction, top-
+vs-bottom-eliciting pooling is not merely acceptable, it is the only available estimator — a
+context has one activation, so there is no within-context variation to match on. The matched-pair
+objection applies to answer-space directions only.
+
+**Selection caveat for every pooled/tail variant:** select contexts on the `K`-sample mean, never
+a single draw. Extreme-tail selection on a noisy per-context estimate partly selects for noise,
+and under the compliance-stability inverse correlation the noisiest contexts are the
+high-expression ones — the naive tails would be enriched for measurement error exactly where it
+hurts.
+
+**Fallbacks if matched pairs are thin** (a behavior near-deterministic per context): topic-matched
+pooling (cluster contexts, pair high/low within cluster), or residualize the pooled diff against
+the top-`k` principal components of the unlabeled activation distribution — free under the
+matched-budget protocol, since `U` is already spent. Both are weaker than true within-context
+matching, both clearly better than raw pooling.
 
 Also run the covariance-whitened (LDA-style) variant of each — two lines, often a better
 direction. **Which extraction source transfers best across the ladder is a reportable
