@@ -724,16 +724,16 @@ def test_judge_cli_writes_dv_dataset(tiny_tokenizer, tmp_path, monkeypatch):
                 }
             )
         )
-    inputs_dir = tmp_path / "inputs"
-    (inputs_dir / "e1_assets").mkdir(parents=True)
-    (inputs_dir / "e1_assets" / "sycophancy.json").write_text(
-        json.dumps(
-            {
-                "instruction": [],
-                "extraction_questions": [],
-                "eval_prompt": "rate {question} / {answer} from 0 to 100",
-            }
-        )
+    # Hermetic: the trait-rubric asset chain would otherwise hit the REAL
+    # cache -> Sonnet regeneration (a live API call from a unit test).
+    monkeypatch.setattr(
+        judging,
+        "load_e1_assets",
+        lambda behavior, *, inputs_dir=None: {
+            "instruction": [],
+            "extraction_questions": [],
+            "eval_prompt": "rate {question} / {answer} from 0 to 100",
+        },
     )
 
     def fake_judge_graded(items, eval_prompt, *, n_draws, cache_dir, save_raw, **kwargs):
@@ -760,7 +760,7 @@ def test_judge_cli_writes_dv_dataset(tiny_tokenizer, tmp_path, monkeypatch):
             "--out-dir",
             str(tmp_path / "judge_out"),
             "--inputs-dir",
-            str(inputs_dir),
+            str(tmp_path / "inputs"),
             "--dv-out-root",
             str(tmp_path / "evalroot"),
         ],
