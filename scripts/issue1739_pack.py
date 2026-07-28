@@ -24,6 +24,12 @@ Properties:
   files still match and repacks only the rest.
 - **Content hygiene**: no file CONTENT is ever printed or logged — counts,
   names, and digests only (rollout text may be real-corpus derived).
+
+r5 adds the consumer-side ``unpack`` mode (CLI ``--unpack``): stream the
+shards back into the per-file layout that ``issue1739_judge.py
+--rollout-dir`` and the fits staging expect. Optionally ``--from-hf`` first
+stages the shard set from the HF data repo via the canonical scoped-prefix
+helper (``hub.stage_hub_prefix``).
 """
 
 from __future__ import annotations
@@ -316,3 +322,181 @@ def pack_raw_tree(
         flush=True,
     )
     return manifest
+
+
+# ---------------------------------------------------------------------------
+# Unpack (r5): restore the per-file layout the judge / fits consumers expect.
+# ---------------------------------------------------------------------------
+
+# HF home of the packed layout (uploaded by issue1739_upload.py --stage raw).
+HF_RAW_PREFIX = "issue1739_ctxmap/raw_completions"
+
+
+def _serialize_doc(doc: object) -> bytes:
+    """Producer-convention bytes: generation.py ``_atomic_write_json`` writes
+    ``json.dumps(obj, ensure_ascii=False, indent=1)`` with no trailing newline,
+    so a pack->unpack round trip of producer-written files is byte-identical."""
+    return json.dumps(doc, ensure_ascii=False, indent=1).encode("utf-8")
+
+
+def _restore_file(out_root: Path, src: str, doc: object) -> str:
+    """Atomically write one record's doc to ``out_root/<src>``.
+
+    Returns ``"written"`` or ``"skipped"`` (existing file byte-identical or
+    JSON-equal — e.g. an original written under a different formatting).
+    Raises ``SystemExit`` on a DIFFERING existing file (never overwrites) or
+    an unsafe ``src`` path.
+    """
+    rel = Path(src)
+    if rel.is_absolute() or ".." in rel.parts:
+        raise SystemExit(f"[unpack] unsafe src path in shard: {src!r}")
+    dest = out_root / rel
+    data = _serialize_doc(doc)
+    if dest.exists():
+        existing = dest.read_bytes()
+        if existing == data:
+            return "skipped"
+        try:
+            if json.loads(existing.decode("utf-8")) == doc:
+                return "skipped"  # semantically identical, different formatting
+        except (ValueError, UnicodeDecodeError):
+            pass
+        raise SystemExit(f"[unpack] {dest} exists with DIFFERING content — refusing to overwrite")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.parent / (dest.name + f".unpack-tmp.{os.getpid()}")
+    tmp.write_bytes(data)
+    os.replace(tmp, dest)
+    return "written"
+
+
+def unpack_shards(
+    shards_dir: Path | str,
+    out_root: Path | str,
+    *,
+    groups: list[str] | None = None,
+) -> dict:
+    """Restore ``out_root/<src>`` per-file layout from ``<group>.shardNN.jsonl``.
+
+    Streams each shard line by line (memory-bounded: one record at a time),
+    verifying per-shard sha256 + line counts and per-group restored file
+    counts against ``pack_manifest.json`` — any mismatch fails loud. Existing
+    identical files are skipped (idempotent re-runs / partial trees); a
+    differing existing file raises. Prints counts only, never doc contents.
+    Returns ``{group: {"written": int, "skipped": int, "n_shards": int}}``.
+    """
+    shards_dir = Path(shards_dir)
+    out_root = Path(out_root)
+    manifest_path = shards_dir / MANIFEST_NAME
+    if not manifest_path.is_file():
+        raise SystemExit(f"[unpack] no {MANIFEST_NAME} under {shards_dir}")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if manifest.get("version") != MANIFEST_VERSION:
+        raise SystemExit(
+            f"[unpack] manifest version {manifest.get('version')!r} != {MANIFEST_VERSION}"
+        )
+    all_groups: dict[str, dict] = manifest["groups"]
+    if groups:
+        unknown = sorted(set(groups) - set(all_groups))
+        if unknown:
+            raise SystemExit(
+                f"[unpack] unknown group(s) {unknown}; manifest has {sorted(all_groups)}"
+            )
+        selected = {k: all_groups[k] for k in dict.fromkeys(groups)}
+    else:
+        selected = all_groups
+    out_root.mkdir(parents=True, exist_ok=True)
+
+    summary: dict[str, dict] = {}
+    for key in sorted(selected):
+        g = selected[key]
+        counts = {"written": 0, "skipped": 0}
+        seen: set[str] = set()
+        n_done = 0
+        for shard in g["shards"]:
+            spath = shards_dir / shard["name"]
+            if not spath.is_file():
+                raise SystemExit(f"[unpack] shard missing: {spath}")
+            hasher = hashlib.sha256()
+            n_lines = 0
+            with spath.open("rb") as fh:
+                for raw in fh:
+                    hasher.update(raw)
+                    if not raw.strip():
+                        continue
+                    n_lines += 1
+                    rec = json.loads(raw)
+                    src = rec["src"]
+                    if src in seen:
+                        raise SystemExit(f"[unpack] duplicate src {src!r} in group {key}")
+                    seen.add(src)
+                    counts[_restore_file(out_root, src, rec["doc"])] += 1
+                    n_done += 1
+                    if n_done % _PROGRESS_EVERY == 0:
+                        print(f"[unpack] {key}: {n_done}/{g['n_files']} files", flush=True)
+            if hasher.hexdigest() != shard["sha256"]:
+                raise SystemExit(
+                    f"[unpack] {shard['name']}: sha256 mismatch vs manifest — corrupt shard?"
+                )
+            if n_lines != shard["n_lines"]:
+                raise SystemExit(
+                    f"[unpack] {shard['name']}: {n_lines} lines != manifest {shard['n_lines']}"
+                )
+        restored = counts["written"] + counts["skipped"]
+        if restored != g["n_files"]:
+            raise SystemExit(
+                f"[unpack] {key}: restored {restored} files != manifest n_files {g['n_files']}"
+            )
+        summary[key] = {**counts, "n_shards": len(g["shards"])}
+        print(
+            f"[unpack] {key}: restored {restored} files from {len(g['shards'])} shards "
+            f"({counts['skipped']} already present)",
+            flush=True,
+        )
+    return summary
+
+
+def main(argv: list[str] | None = None) -> int:
+    """CLI: ``--unpack`` mode only (packing runs via issue1739_upload.py --stage raw)."""
+    import argparse
+
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    ap = argparse.ArgumentParser(description="issue-1739 raw-completions shard unpacker")
+    ap.add_argument("--unpack", action="store_true", help="restore per-file layout from shards")
+    ap.add_argument("--shards-dir", type=Path, required=True)
+    ap.add_argument("--out-root", type=Path, required=True)
+    ap.add_argument("--group", action="append", default=None, help="restrict to group(s)")
+    ap.add_argument(
+        "--from-hf",
+        action="store_true",
+        help=f"first stage the shard dir from the HF data repo prefix {HF_RAW_PREFIX}",
+    )
+    ap.add_argument("--hf-prefix", default=HF_RAW_PREFIX)
+    args = ap.parse_args(argv)
+    if not args.unpack:
+        ap.error("pass --unpack (packing runs via issue1739_upload.py --stage raw)")
+
+    shards_dir = args.shards_dir
+    if args.from_hf:
+        from explore_persona_space.orchestrate.env import load_dotenv
+
+        load_dotenv()
+        from explore_persona_space.orchestrate import hub
+
+        staged = hub.stage_hub_prefix(hub.DEFAULT_DATASET_REPO, args.hf_prefix, shards_dir)
+        # stage_hub_prefix mirrors the repo-relative prefix under dest (#1402);
+        # map hub-rel -> consumer layout explicitly + fail loud on the entry file.
+        shards_dir = shards_dir / args.hf_prefix
+        print(
+            f"[unpack] staged {len(staged)} file(s) from "
+            f"{hub.DEFAULT_DATASET_REPO}/{args.hf_prefix} -> {shards_dir}",
+            flush=True,
+        )
+        if not (shards_dir / MANIFEST_NAME).is_file():
+            raise SystemExit(f"[unpack] staged prefix has no {MANIFEST_NAME} at {shards_dir}")
+
+    unpack_shards(shards_dir, args.out_root, groups=args.group)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

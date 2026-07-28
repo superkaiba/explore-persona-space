@@ -18,7 +18,9 @@ from scripts.issue1739_pack import (
     MANIFEST_NAME,
     group_files,
     pack_raw_tree,
+    unpack_shards,
 )
+from scripts.issue1739_pack import main as pack_main
 
 
 def _mk_raw(tmp_path: Path, n_per_group: int = 5) -> Path:
@@ -196,3 +198,121 @@ def test_raw_stage_dry_run_touches_nothing(tmp_path, capsys):
     assert not pack.exists()  # dry-run neither packs nor uploads
     out = capsys.readouterr().out
     assert "dry-run" in out and "labeling_hallucination" in out
+
+
+# ---------------------------------------------------------------------------
+# r5: unpack mode
+# ---------------------------------------------------------------------------
+
+
+def _mk_raw_producer(tmp_path: Path, n_per_group: int = 4) -> Path:
+    """Raw tree written in the PRODUCER serialization (generation.py
+    ``_atomic_write_json``: ``json.dumps(obj, ensure_ascii=False, indent=1)``,
+    no trailing newline) so pack->unpack round-trips byte-identical.
+    Includes a non-ASCII value to exercise ensure_ascii=False."""
+    raw = tmp_path / "raw_completions" / "issue_1739"
+    for beh in ("hallucination", "sycophancy"):
+        d = raw / "labeling" / beh
+        d.mkdir(parents=True)
+        for i in range(n_per_group):
+            doc = {
+                "context_id": f"ctx{i:04d}",
+                "seed": 0,
+                "behavior": beh,
+                "text": f"synthetic placeholder — {beh} row {i} · non-ascii",
+            }
+            (d / f"ctx{i:04d}_seed0.json").write_text(
+                json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8"
+            )
+    e = raw / "extraction" / "rollouts"
+    e.mkdir(parents=True)
+    for i in range(2):
+        (e / f"roll{i}.json").write_text(
+            json.dumps({"i": i, "text": "synthetic rollout"}, ensure_ascii=False, indent=1),
+            encoding="utf-8",
+        )
+    return raw
+
+
+def test_unpack_round_trip_byte_identical(tmp_path, capsys):
+    raw = _mk_raw_producer(tmp_path)
+    pack = tmp_path / "packed"
+    manifest = pack_raw_tree(raw, pack)
+    out = tmp_path / "restored"
+    summary = unpack_shards(pack, out)
+    originals = sorted(p.relative_to(raw).as_posix() for p in raw.rglob("*.json"))
+    restored = sorted(p.relative_to(out).as_posix() for p in out.rglob("*.json"))
+    assert restored == originals
+    for rel in originals:  # byte-identical under the producer serialization
+        assert (out / rel).read_bytes() == (raw / rel).read_bytes(), rel
+    assert sum(s["written"] for s in summary.values()) == len(originals)
+    assert sum(s["skipped"] for s in summary.values()) == 0
+    assert set(summary) == set(manifest["groups"])
+    text = capsys.readouterr().out
+    assert "[unpack] labeling_hallucination: restored" in text
+
+
+def test_unpack_group_subset_and_unknown_group(tmp_path):
+    raw = _mk_raw_producer(tmp_path)
+    pack = tmp_path / "packed"
+    pack_raw_tree(raw, pack)
+    out = tmp_path / "restored"
+    summary = unpack_shards(pack, out, groups=["labeling_hallucination"])
+    assert set(summary) == {"labeling_hallucination"}
+    assert {p.relative_to(out).parts[0] for p in out.rglob("*.json")} == {"labeling"}
+    assert not (out / "extraction").exists()
+    with pytest.raises(SystemExit, match="unknown group"):
+        unpack_shards(pack, out, groups=["nope_group"])
+
+
+def test_unpack_idempotent_then_fails_loud_on_differing_existing(tmp_path):
+    raw = _mk_raw_producer(tmp_path)
+    pack = tmp_path / "packed"
+    pack_raw_tree(raw, pack)
+    out = tmp_path / "restored"
+    unpack_shards(pack, out)
+    # re-run over the identical tree: everything skips, nothing rewritten
+    summary = unpack_shards(pack, out)
+    assert all(s["written"] == 0 for s in summary.values())
+    assert sum(s["skipped"] for s in summary.values()) == len(list(out.rglob("*.json")))
+    # a differing existing file is NEVER overwritten
+    victim = out / "labeling" / "hallucination" / "ctx0000_seed0.json"
+    victim.write_text(json.dumps({"context_id": "ctx0000", "tampered": True}), encoding="utf-8")
+    before = victim.read_bytes()
+    with pytest.raises(SystemExit, match="DIFFERING"):
+        unpack_shards(pack, out)
+    assert victim.read_bytes() == before
+
+
+def test_unpack_verifies_manifest_counts_and_shard_sha(tmp_path):
+    raw = _mk_raw_producer(tmp_path)
+    pack = tmp_path / "packed"
+    manifest = pack_raw_tree(raw, pack)
+    # (a) manifest n_files mismatch fails loud (shards intact)
+    bad = json.loads((pack / MANIFEST_NAME).read_text(encoding="utf-8"))
+    bad["groups"]["extraction_rollouts"]["n_files"] += 1
+    (pack / MANIFEST_NAME).write_text(json.dumps(bad), encoding="utf-8")
+    with pytest.raises(SystemExit, match="n_files"):
+        unpack_shards(pack, tmp_path / "r1", groups=["extraction_rollouts"])
+    # (b) a corrupted shard fails the sha256 check before counts
+    (pack / MANIFEST_NAME).write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    shard = pack / manifest["groups"]["labeling_sycophancy"]["shards"][0]["name"]
+    lines = shard.read_bytes().splitlines(keepends=True)
+    shard.write_bytes(b"".join(lines[:-1]))  # drop the last record
+    with pytest.raises(SystemExit, match="sha256 mismatch"):
+        unpack_shards(pack, tmp_path / "r2", groups=["labeling_sycophancy"])
+
+
+def test_unpack_cli_entrypoint(tmp_path):
+    raw = _mk_raw_producer(tmp_path)
+    pack = tmp_path / "packed"
+    pack_raw_tree(raw, pack)
+    out = tmp_path / "restored"
+    rc = pack_main(["--unpack", "--shards-dir", str(pack), "--out-root", str(out)])
+    assert rc == 0
+    assert sorted(p.name for p in (out / "extraction" / "rollouts").iterdir()) == [
+        "roll0.json",
+        "roll1.json",
+    ]
