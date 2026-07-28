@@ -5879,8 +5879,8 @@
     "1757": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1757",
-      "status": "proposed",
+      "path": "tasks/planning/1757",
+      "status": "planning",
       "title": "daily-fix: act on consistency edit-locus WARN vs live siblin"
     },
     "1758": {
