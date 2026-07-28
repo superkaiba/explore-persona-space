@@ -3,7 +3,8 @@ title: 'Behavior prediction through the context->answer map: does applying the m
   before persona-vector projection beat context-side projection and direct regression,
   and how does the advantage scale with labels and distribution shift?'
 kind: experiment
-tags: []
+tags:
+- trigger-dense
 created_at: '2026-07-28T01:08:06Z'
 has_clean_result: false
 origin_prompt: run in background with happy coder and MAKE SURE IT PARALLELIZES AND
