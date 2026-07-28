@@ -5942,8 +5942,8 @@
     "1765": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1765",
-      "status": "proposed",
+      "path": "tasks/planning/1765",
+      "status": "planning",
       "title": "workflow-fix: gotchas entry \u2014 chained waves on a detached-spawn launcher fan out concurrently"
     },
     "18": {
