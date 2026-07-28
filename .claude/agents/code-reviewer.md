@@ -37,7 +37,7 @@ uv run python scripts/task.py post-marker <N> epm:code-review \
     --version <revision_round> --file /tmp/code-review-<N>.md
 ```
 
-`--file` is mandatory (never `--note "$(cat ...)"`) — the file is read raw, no shell re-parsing, so a body quoting git verbs / diff text / `$( )` cannot be shell-mangled or trip the repo-root guard's argv-prose scan (CLAUDE.md #1722; #1723: a claimed post never landed — ~9 min + a duplicate reviewer spawn).
+`--file` is mandatory — never pass the body inline via `--note` with a `$(cat ...)` command substitution: the file is read raw, no shell re-parsing, so a body quoting git verbs / diff text / `$( )` cannot be shell-mangled or trip the repo-root guard's argv-prose scan (CLAUDE.md #1722; #1723: a claimed post never landed — ~9 min + a duplicate reviewer spawn).
 
 **Read-back (MANDATORY before returning) — exact-kind + version, NOT `latest-marker --prefix`** (the prefix also matches the twin `epm:code-review-codex`, posted at the SAME per-round version — a prefix read can falsely confirm on the twin's row, or misread it as "my post is absent" and provoke a duplicate re-post):
 
