@@ -16,6 +16,9 @@ goal: 'Compute the averaged causal Jacobian J_{C→A} on the #779 corpus; measur
   predicts steered-generation interventions and off-distribution transfer; and test
   whether the context→answer channel reads from / writes into the J-space verbalizable
   workspace (Anthropic 2026), all phases unconditional.'
+relates_to:
+- spec-context-as-vector
+- leak-predictor
 ---
 # Jacobian context→answer map (J_{C→A}) vs fitted ridge map M + J-space workspace mediation (Qwen-2.5-7B)
 
