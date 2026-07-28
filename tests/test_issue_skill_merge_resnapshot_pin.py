@@ -447,3 +447,49 @@ def test_step10d_head_sync_pre_check_and_shape3_present():
     assert "Known failure shape 3" in text[failure_bullet : failure_bullet + 2500], (
         "the Failure bullet must route the head-sync-lag shape"
     )
+
+
+# --------------------------------------------------------------------------
+# #1757 — consistency edit-locus WARN → merge sequencing (Step 2b recording
+# duty + Step 10d Guard 5 bounded hold / proactive pre-resolution)
+# --------------------------------------------------------------------------
+
+
+def _step2b_region(text: str) -> str:
+    """The Step-2b consistency-checker slice (the #1757 recording duty's home)."""
+    start_marker = "### Step 2b: Consistency checker"
+    end_marker = "### Step 2c: Inline plan approval"
+    start = text.find(start_marker)
+    end = text.find(end_marker)
+    assert start != -1, "Step 2b consistency-checker heading not found in SKILL.md"
+    assert end != -1, "Step 2c inline-plan-approval heading not found in SKILL.md"
+    assert start < end, "Step 2b region must precede Step 2c"
+    return text[start:end]
+
+
+def test_merge_hold_tokens_present():
+    """#1757 durability pin: (i) Step 2b records an edit-locus consistency
+    WARN vs a live sibling as a machine-scannable `merge-hold-candidate`
+    events note; (ii) the merge-guards region carries Guard 5 — the bounded
+    sibling hold (2700 s cap, one 45-min gate cycle), the `merge-tree`
+    pre-resolution probe, and the `merge_hold:` / `pre_resolve:` disposition
+    tokens on the merged/merge-failed note."""
+    text = _skill_text()
+
+    step2b = _step2b_region(text)
+    assert "merge-hold-candidate" in step2b, (
+        "Step 2b must record the edit-locus WARN as a merge-hold-candidate events note"
+    )
+
+    guards = _merge_guards_region(text)
+    assert "Guard 5" in guards, "Guard 5 must live inside the merge-guards region"
+    assert "2700" in guards, "Guard 5's hold must be elapsed-capped at 2700 s (one gate cycle)"
+    assert "merge_hold:" in guards, (
+        "Guard 5 must record the merge_hold: disposition on the merged/merge-failed note"
+    )
+    assert "pre_resolve:" in guards, (
+        "Guard 5 must record the pre_resolve: disposition on the merged/merge-failed note"
+    )
+    assert "merge-tree" in guards, (
+        "Guard 5 must probe the predicted conflict up front via git merge-tree"
+    )
