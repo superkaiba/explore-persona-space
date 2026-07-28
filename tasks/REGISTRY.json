@@ -5998,6 +5998,7 @@
       "title": "workflow-fix: red main \u2014 add load_dotenv before heavy import in two figure scripts"
     },
     "1773": {
+      "goal": "Build and validate a production pipeline that describes and categorizes SAE features (mechanical axes + five judged axes + a validation harness), producing a per-feature table every map round joins against, and determine whether the judged axes are trustworthy enough to carry a headline or remain a search index only.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/1773",

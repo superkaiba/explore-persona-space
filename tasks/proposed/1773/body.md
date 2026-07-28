@@ -11,10 +11,14 @@ origin_prompt: 'deep literature review on autointerpretability methods to descri
   API + Claude Sonnet 4.5; then: is this running already and will the running SAE
   feature experiments use it already?'
 workflow: v1
+goal: Build and validate a production pipeline that describes and categorizes SAE
+  features (mechanical axes + five judged axes + a validation harness), producing
+  a per-feature table every map round joins against, and determine whether the judged
+  axes are trustworthy enough to carry a headline or remain a search index only.
 ---
 ## Goal
 
-Build and validate a production pipeline that DESCRIBES and CATEGORIZES SAE features for this project's dictionaries, producing a per-feature table (mechanical axes + judged axes + validation scores) that every map round joins against — replacing the ad-hoc per-round judging that has so far produced one retracted claim (the binary persona field, test-retest kappa 0.136) and labels derived from a defective evidence packet.
+Build and validate a production pipeline that describes and categorizes SAE features (mechanical axes + five judged axes + a validation harness), producing a per-feature table every map round joins against, and determine whether the judged axes are trustworthy enough to carry a headline or remain a search index only.
 
 ## Overview / Motivation
 
