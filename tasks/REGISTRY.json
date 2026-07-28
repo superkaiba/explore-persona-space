@@ -5956,8 +5956,8 @@
     "1767": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1767",
-      "status": "approved",
+      "path": "tasks/running/1767",
+      "status": "running",
       "title": "workflow-fix: width justification must bind to wall-dominant GPU-bound phases"
     },
     "18": {
