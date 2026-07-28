@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1756,
+  "highest_id": 1757,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5875,6 +5875,13 @@
       "path": "tasks/proposed/1756",
       "status": "proposed",
       "title": "daily-fix: compose marker notes via Write, never heredoc"
+    },
+    "1757": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1757",
+      "status": "proposed",
+      "title": "daily-fix: act on consistency edit-locus WARN vs live siblin"
     },
     "176": {
       "has_clean_result": false,
