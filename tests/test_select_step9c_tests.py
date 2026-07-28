@@ -469,8 +469,11 @@ def test_empty_diff_note_at_main_checkout_real_git(tmp_path: Path, monkeypatch, 
         "timeout --kill-after=60s "
         f"{sel.recommended_timeout_s(sorted(sel.WORKFLOW_INVARIANT))}s uv run pytest "
     )
-    assert line.startswith(prefix) and line.endswith(" -v --tb=short")
-    files = line.removeprefix(prefix).removesuffix(" -v --tb=short").split()
+    # #1746: the printed command carries --continue-on-collection-errors so a
+    # collection-broken selected file reports per-file instead of aborting rc=2.
+    suffix = " --continue-on-collection-errors -v --tb=short"
+    assert line.startswith(prefix) and line.endswith(suffix)
+    files = line.removeprefix(prefix).removesuffix(suffix).split()
     assert files == sorted(sel.WORKFLOW_INVARIANT)
 
 

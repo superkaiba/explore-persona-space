@@ -246,7 +246,10 @@ tab-free stderr WARN + exit 0 (a deletion-only ``git diff --name-only``
 payload is a legitimate zero-resolution list).
 
 Default output: the exact gate invocation
-``timeout --kill-after=60s <T>s uv run pytest <files...> -v --tb=short`` on
+``timeout --kill-after=60s <T>s uv run pytest <files...>
+--continue-on-collection-errors -v --tb=short`` (#1746: a collection-broken
+selected file reports as a per-file junit ``<error>`` testcase and pytest
+exits rc=1 instead of aborting the whole run rc=2) on
 stdout — ``<T>`` sized deterministically by :func:`recommended_timeout_s`
 (#1046: 120s base + 30s/file + a 2400s surcharge when
 ``tests/test_workflow_lint.py`` is selected; re-measured from 330 real gate
@@ -1865,7 +1868,11 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"timeout --kill-after=60s {timeout_s}s uv run pytest "
             + " ".join(tests)
-            + " -v --tb=short"
+            # #1746: one collection-broken selected file must not abort the
+            # whole gate rc=2 — pytest runs the surviving files, reports the
+            # collect error as a per-file junit <error> testcase, exits rc=1,
+            # and step9c_baseline compare classifies it like any other failure.
+            + " --continue-on-collection-errors -v --tb=short"
         )
         for f in untested:
             print(f"untested touched file: {f}", file=sys.stderr)
