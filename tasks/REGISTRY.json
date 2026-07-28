@@ -6001,8 +6001,8 @@
       "goal": "Build and validate a production pipeline that describes and categorizes SAE features (mechanical axes + five judged axes + a validation harness), producing a per-feature table every map round joins against, and determine whether the judged axes are trustworthy enough to carry a headline or remain a search index only.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/1773",
-      "status": "approved",
+      "path": "tasks/running/1773",
+      "status": "running",
       "title": "SAE feature description + categorization pipeline: evidence builder, five judged axes, and validation harness"
     },
     "1774": {
