@@ -5788,8 +5788,8 @@
     "1744": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1744",
-      "status": "approved",
+      "path": "tasks/running/1744",
+      "status": "running",
       "title": "daily-fix: implementer pin-sweep deleted-literal own substep"
     },
     "1745": {
