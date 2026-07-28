@@ -518,6 +518,414 @@ def _rung_reached_from_r2s(rung_r2s: dict[str, float], reach_bar: float) -> int:
     return 9  # default to strongest if none reaches
 
 
+# ---------------------------------------------------------------------------
+# Torch engine (R16) — numerics-preserving port of the numpy ladder.
+#
+# The numpy path above runs the whole ladder serially on CPU BLAS; the dense
+# kernels (Gram matmuls, n x n eigh, the rung-6 d x d SVD) dominate wall-time
+# and are far faster on one H100 in float64. ALL rng / fold-assignment /
+# lambda-selection logic STAYS in numpy with an IDENTICAL call order, so fold
+# splits, resample indices and lambda picks are bit-identical across engines;
+# only the dense linear algebra moves to torch (fp64). Equivalence is gated
+# by --verify-equivalence (runs BOTH engines on real pairs, compares every
+# rung R^2 + rung_reached). The numpy path is retained verbatim above as the
+# equivalence reference (vectorize-many-cell-fits.md Supersede contract:
+# contained reference, not a silently-importable twin — same entrypoint).
+# ---------------------------------------------------------------------------
+
+
+def _eigh_robust_t(S):
+    """torch.linalg.eigh with CPU fallback on cuSOLVER non-convergence.
+
+    The #1335 `_eigh_robust` pattern (gotchas.md): cuda syevd can fail on
+    near-singular resampled Grams that CPU LAPACK decomposes fine; the
+    fallback is an exact numerical-backend swap, not a semantic change.
+    """
+    import torch
+
+    try:
+        sigma2, U = torch.linalg.eigh(S)
+    except torch.linalg.LinAlgError:
+        print("[fit_ladder] eigh: cuSOLVER non-convergence -> CPU fallback", flush=True)
+        sigma2, U = torch.linalg.eigh(S.cpu())
+        sigma2 = sigma2.to(S.device)
+        U = U.to(S.device)
+    return sigma2, U
+
+
+def _svd_robust_t(M):
+    """torch.linalg.svd (full_matrices=False) with CPU fallback (same rationale)."""
+    import torch
+
+    try:
+        U, s, Vt = torch.linalg.svd(M, full_matrices=False)
+    except torch.linalg.LinAlgError:
+        print("[fit_ladder] svd: cuSOLVER non-convergence -> CPU fallback", flush=True)
+        U, s, Vt = torch.linalg.svd(M.cpu(), full_matrices=False)
+        U = U.to(M.device)
+        s = s.to(M.device)
+        Vt = Vt.to(M.device)
+    return U, s, Vt
+
+
+def _ridge_eigh_prep_t(X, Y) -> dict:
+    """Torch mirror of _ridge_eigh_prep (same keys, torch tensors)."""
+    n, d = X.shape
+    x_mean = X.mean(dim=0)
+    y_mean = Y.mean(dim=0)
+    Xc = X - x_mean
+    Yc = Y - y_mean
+    dual = n < d
+    S = Xc @ Xc.T if dual else Xc.T @ Xc
+    S = 0.5 * (S + S.T)
+    sigma2, U = _eigh_robust_t(S)
+    sigma2 = sigma2.clamp_min(0.0)
+    return {
+        "x_mean": x_mean,
+        "y_mean": y_mean,
+        "dual": dual,
+        "U": U,
+        "sigma2": sigma2,
+        "Xc": Xc,
+        "Yc": Yc,
+    }
+
+
+def _ridge_predict_from_prep_t(prep: dict, X_test, lam: float):
+    """Torch mirror of _ridge_predict_from_prep."""
+    Xc, Yc = prep["Xc"], prep["Yc"]
+    U, sigma2 = prep["U"], prep["sigma2"]
+    x_mean, y_mean = prep["x_mean"], prep["y_mean"]
+    inv_diag = 1.0 / (sigma2 + lam)
+    Xtest_c = X_test - x_mean
+    if prep["dual"]:
+        UtY = U.T @ Yc
+        alpha = U @ (inv_diag[:, None] * UtY)
+        pred = Xtest_c @ (Xc.T @ alpha)
+    else:
+        XtY = Xc.T @ Yc
+        UtXtY = U.T @ XtY
+        W = U @ (inv_diag[:, None] * UtXtY)
+        pred = Xtest_c @ W
+    return pred + y_mean
+
+
+def _ridge_fit_from_prep_t(prep: dict, lam: float):
+    """Torch mirror of _ridge_fit_from_prep — returns (W, b) tensors."""
+    Xc, Yc = prep["Xc"], prep["Yc"]
+    U, sigma2 = prep["U"], prep["sigma2"]
+    x_mean, y_mean = prep["x_mean"], prep["y_mean"]
+    inv_diag = 1.0 / (sigma2 + lam)
+    if prep["dual"]:
+        UtY = U.T @ Yc
+        alpha = U @ (inv_diag[:, None] * UtY)
+        W = Xc.T @ alpha
+    else:
+        XtY = Xc.T @ Yc
+        UtXtY = U.T @ XtY
+        W = U @ (inv_diag[:, None] * UtXtY)
+    b = y_mean - x_mean @ W
+    return W, b
+
+
+def _r2_t(Y_true, Y_pred) -> float:
+    """Torch mirror of _r2 (returns python float)."""
+    ss_res = float(((Y_true - Y_pred) ** 2).sum().item())
+    ss_tot = float(((Y_true - Y_true.mean(dim=0)) ** 2).sum().item())
+    if ss_tot <= 0:
+        return float("nan")
+    return 1.0 - ss_res / ss_tot
+
+
+def _fit_ridge_inner_group_cv_t(
+    X_train,
+    Y_train,
+    train_conv_ids: np.ndarray,
+    lambdas: np.ndarray,
+    n_inner_folds: int = 3,
+    seed: int = 42,
+):
+    """Torch mirror of _fit_ridge_inner_group_cv.
+
+    Fold assignment + lambda selection stay in numpy (identical rng + argmax
+    tie-breaking); only the per-fold prep/predict math runs on the device.
+    """
+    import torch
+
+    dev = X_train.device
+    inner_folds = _conv_grouped_folds(train_conv_ids, n_inner_folds, seed=seed)
+    scores = np.zeros((len(lambdas), n_inner_folds), dtype=np.float64)
+    for fold_i in range(n_inner_folds):
+        te_mask = inner_folds == fold_i
+        tr_mask = ~te_mask
+        if tr_mask.sum() < 3 or te_mask.sum() == 0:
+            scores[:, fold_i] = np.nan
+            continue
+        tr_idx = torch.from_numpy(np.where(tr_mask)[0]).to(dev)
+        te_idx = torch.from_numpy(np.where(te_mask)[0]).to(dev)
+        X_tr, Y_tr = X_train[tr_idx], Y_train[tr_idx]
+        X_te, Y_te = X_train[te_idx], Y_train[te_idx]
+        prep = _ridge_eigh_prep_t(X_tr, Y_tr)
+        for li, lam in enumerate(lambdas):
+            pred = _ridge_predict_from_prep_t(prep, X_te, lam=float(lam))
+            scores[li, fold_i] = _r2_t(Y_te, pred)
+    mean_scores = np.nanmean(scores, axis=1)
+    valid = ~np.isnan(mean_scores)
+    if not valid.any():
+        best_lam = float(lambdas[len(lambdas) // 2])
+    else:
+        best_idx = int(np.argmax(np.where(valid, mean_scores, -np.inf)))
+        best_lam = float(lambdas[best_idx])
+    prep_full = _ridge_eigh_prep_t(X_train, Y_train)
+    W, b = _ridge_fit_from_prep_t(prep_full, best_lam)
+    return W, b, best_lam
+
+
+def _compute_ladder_r2s_t(
+    X_S,
+    Y_S,
+    X_T,
+    Y_T,
+    train_idx,
+    test_idx,
+    train_conv_ids: np.ndarray,
+    lambdas: np.ndarray,
+    full_conv_ids: np.ndarray | None = None,
+) -> dict[str, float]:
+    """Torch mirror of _compute_ladder_r2s (tensors on device; idx torch long)."""
+    if full_conv_ids is None:
+        full_conv_ids = train_conv_ids
+    W_s, b_s, _lam_s = _fit_ridge_inner_group_cv_t(X_S, Y_S, full_conv_ids, lambdas)
+
+    X_S_train = X_S[train_idx]
+    Y_S_train = Y_S[train_idx]
+    X_T_train = X_T[train_idx]
+    Y_T_train = Y_T[train_idx]
+    X_T_test = X_T[test_idx]
+
+    pred_train_s = X_T_train @ W_s
+    b_star = (Y_T_train - pred_train_s).mean(dim=0)
+
+    preds = {}
+    # rung 1: direct
+    preds["rung_1_direct"] = X_T_test @ W_s + b_s
+    # rung 2: ctx offset
+    dx = X_S.mean(dim=0) - X_T.mean(dim=0)
+    preds["rung_2_ctx_offset"] = (X_T_test - dx) @ W_s + b_s
+    # rung 3: ans offset
+    mean_x = X_T.mean(dim=0)
+    pred_at_mean = mean_x @ W_s + b_s
+    dy = Y_T.mean(dim=0) - pred_at_mean
+    preds["rung_3_ans_offset"] = X_T_test @ W_s + b_s + dy
+    # rung 4: bias refit (recomputes b_star internally in the numpy path too)
+    b_star4 = (Y_T_train - X_T_train @ W_s).mean(dim=0)
+    preds["rung_4_bias_refit"] = X_T_test @ W_s + b_star4
+    # rung 5: scalar alpha
+    pred_train5 = X_T_train @ W_s
+    num = float((pred_train5 * (Y_T_train - b_star)).sum().item())
+    den = float((pred_train5**2).sum().item()) + 1e-12
+    alpha = num / den
+    preds["rung_5_scalar_alpha"] = alpha * (X_T_test @ W_s) + b_star
+    # rung 6: rotation (Procrustes on train residuals)
+    target6 = Y_T_train - b_star
+    M6 = target6.T @ pred_train5
+    U6, _s6, Vt6 = _svd_robust_t(M6)
+    R6 = U6 @ Vt6
+    preds["rung_6_rotation"] = (X_T_test @ W_s) @ R6.T + b_star
+    # rung 7: ctx reparam A
+    A_W, A_b, _ = _fit_ridge_inner_group_cv_t(X_T_train, X_S_train, train_conv_ids, lambdas)
+    x_pred_test = X_T_test @ A_W + A_b
+    y_pred_raw7 = x_pred_test @ W_s + b_s
+    x_pred_train = X_T_train @ A_W + A_b
+    y_pred_train_raw7 = x_pred_train @ W_s + b_s
+    preds["rung_7_ctx_reparam"] = (
+        y_pred_raw7 - y_pred_train_raw7.mean(dim=0) + Y_T_train.mean(dim=0)
+    )
+    # rung 8: ans reparam B
+    B_W, B_b, _ = _fit_ridge_inner_group_cv_t(Y_S_train, Y_T_train, train_conv_ids, lambdas)
+    y_s_test = X_T_test @ W_s + b_s
+    y_pred_raw8 = y_s_test @ B_W + B_b
+    y_s_train = X_T_train @ W_s + b_s
+    y_pred_train_raw8 = y_s_train @ B_W + B_b
+    preds["rung_8_ans_reparam"] = (
+        y_pred_raw8 - y_pred_train_raw8.mean(dim=0) + Y_T_train.mean(dim=0)
+    )
+    # rung 9: full A.M.B. The numpy path REFITS A and B with byte-identical
+    # inputs to the rung-7/8 fits (deterministic — no rng in the fit), so
+    # reusing (A_W, A_b) + (B_W, B_b) is mathematically identical and saves
+    # ~25% of the per-eval eigh work.
+    x_hat_test = X_T_test @ A_W + A_b
+    y_s_test9 = x_hat_test @ W_s + b_s
+    y_pred_raw9 = y_s_test9 @ B_W + B_b
+    x_hat_train = X_T_train @ A_W + A_b
+    y_s_train9 = x_hat_train @ W_s + b_s
+    y_pred_train_raw9 = y_s_train9 @ B_W + B_b
+    preds["rung_9_full_AMB"] = y_pred_raw9 - y_pred_train_raw9.mean(dim=0) + Y_T_train.mean(dim=0)
+
+    Y_T_test = Y_T[test_idx]
+    return {name: _r2_t(Y_T_test, pred) for name, pred in preds.items()}
+
+
+def _reach_bar_within_cell_t(
+    X_T,
+    Y_T,
+    train_idx,
+    test_idx,
+    train_conv_ids: np.ndarray,
+    lambdas: np.ndarray,
+    threshold: float = RUNG_REACHED_THRESHOLD,
+) -> tuple[float, float]:
+    """Torch mirror of _reach_bar_within_cell."""
+    W_ref, b_ref, _ = _fit_ridge_inner_group_cv_t(
+        X_T[train_idx], Y_T[train_idx], train_conv_ids, lambdas
+    )
+    pred = X_T[test_idx] @ W_ref + b_ref
+    r2_within = _r2_t(Y_T[test_idx], pred)
+    reach_bar = threshold * r2_within if r2_within > 0 else float("-inf")
+    return r2_within, reach_bar
+
+
+def _ladder_pair_core_torch(
+    X_S: np.ndarray,
+    Y_S: np.ndarray,
+    X_T: np.ndarray,
+    Y_T: np.ndarray,
+    common: np.ndarray,
+    train_idx: np.ndarray,
+    test_idx: np.ndarray,
+    train_conv_ids: np.ndarray,
+    *,
+    n_bootstrap_draws: int,
+    n_null_draws: int,
+    threshold: float,
+    seed: int,
+    device: str,
+) -> dict:
+    """Torch-engine core of _run_ladder_pair (point + bootstrap + null).
+
+    rng call ORDER is kept identical to the numpy core so resample indices,
+    fold splits and permutations are bit-identical across engines.
+    """
+    import torch
+
+    dev = torch.device(device)
+    tX_S = torch.from_numpy(np.ascontiguousarray(X_S)).to(dev)
+    tY_S = torch.from_numpy(np.ascontiguousarray(Y_S)).to(dev)
+    tX_T = torch.from_numpy(np.ascontiguousarray(X_T)).to(dev)
+    tY_T = torch.from_numpy(np.ascontiguousarray(Y_T)).to(dev)
+    t_train = torch.from_numpy(train_idx).to(dev)
+    t_test = torch.from_numpy(test_idx).to(dev)
+    n = len(common)
+
+    # ---- Point estimate ----
+    rung_r2s_point = _compute_ladder_r2s_t(
+        tX_S, tY_S, tX_T, tY_T, t_train, t_test, train_conv_ids, LAMBDAS, full_conv_ids=common
+    )
+    r2_within, reach_bar = _reach_bar_within_cell_t(
+        tX_T, tY_T, t_train, t_test, train_conv_ids, LAMBDAS, threshold=threshold
+    )
+    rung_reached_point = _rung_reached_from_r2s(rung_r2s_point, reach_bar)
+
+    # ---- Selection-symmetric bootstrap ----
+    rng = np.random.default_rng(seed + 1)
+    rung_names = list(rung_r2s_point.keys())
+    bootstrap_r2_matrix = np.full((n_bootstrap_draws, len(rung_names)), np.nan, dtype=np.float64)
+    bootstrap_rung_reached = np.zeros(n_bootstrap_draws, dtype=np.int64)
+    for draw_i in range(n_bootstrap_draws):
+        resample_idx = rng.choice(n, size=n, replace=True)
+        resample_convs = common[resample_idx]
+        resample_folds = _conv_grouped_folds(resample_convs, n_folds=N_FOLDS, seed=seed + draw_i)
+        rs_train = np.where(resample_folds != 0)[0]
+        rs_test = np.where(resample_folds == 0)[0]
+        if len(rs_train) < 3 or len(rs_test) < 1:
+            continue  # NaN row
+        t_resample = torch.from_numpy(resample_idx).to(dev)
+        X_S_d, Y_S_d = tX_S[t_resample], tY_S[t_resample]
+        X_T_d, Y_T_d = tX_T[t_resample], tY_T[t_resample]
+        train_conv_ids_d = resample_convs[rs_train]
+        try:
+            r2s_draw = _compute_ladder_r2s_t(
+                X_S_d,
+                Y_S_d,
+                X_T_d,
+                Y_T_d,
+                torch.from_numpy(rs_train).to(dev),
+                torch.from_numpy(rs_test).to(dev),
+                train_conv_ids_d,
+                LAMBDAS,
+                full_conv_ids=resample_convs,
+            )
+        except torch.linalg.LinAlgError:
+            continue  # degenerate resample; NaN row
+        for j, name in enumerate(rung_names):
+            bootstrap_r2_matrix[draw_i, j] = r2s_draw[name]
+        _, reach_bar_d = _reach_bar_within_cell_t(
+            X_T_d,
+            Y_T_d,
+            torch.from_numpy(rs_train).to(dev),
+            torch.from_numpy(rs_test).to(dev),
+            train_conv_ids_d,
+            LAMBDAS,
+            threshold=threshold,
+        )
+        bootstrap_rung_reached[draw_i] = _rung_reached_from_r2s(r2s_draw, reach_bar_d)
+
+    # ---- Matched-capacity null (shuffled-answer) ----
+    null_r2_matrix = np.full((n_null_draws, len(rung_names)), np.nan, dtype=np.float64)
+    null_rung_reached = np.zeros(n_null_draws, dtype=np.int64)
+    for draw_i in range(n_null_draws):
+        perm_s = rng.permutation(n)
+        perm_t = rng.permutation(n)
+        t_perm_s = torch.from_numpy(perm_s).to(dev)
+        t_perm_t = torch.from_numpy(perm_t).to(dev)
+        try:
+            r2s_null = _compute_ladder_r2s_t(
+                tX_S,
+                tY_S[t_perm_s],
+                tX_T,
+                tY_T[t_perm_t],
+                t_train,
+                t_test,
+                train_conv_ids,
+                LAMBDAS,
+                full_conv_ids=common,
+            )
+        except torch.linalg.LinAlgError:
+            continue
+        for j, name in enumerate(rung_names):
+            null_r2_matrix[draw_i, j] = r2s_null[name]
+        _, reach_bar_null = _reach_bar_within_cell_t(
+            tX_T, tY_T[t_perm_t], t_train, t_test, train_conv_ids, LAMBDAS, threshold=threshold
+        )
+        null_rung_reached[draw_i] = _rung_reached_from_r2s(r2s_null, reach_bar_null)
+
+    return {
+        "n_common": int(n),
+        "n_train": int(len(train_idx)),
+        "n_test": int(len(test_idx)),
+        "r2_within_target": float(r2_within),
+        "reach_bar_90pct": float(reach_bar),
+        "rung_r2s_point": {k: float(v) for k, v in rung_r2s_point.items()},
+        "rung_reached_point": int(rung_reached_point),
+        "bootstrap_draws": {
+            "n_draws": int(n_bootstrap_draws),
+            "rung_names": rung_names,
+            "r2_matrix": bootstrap_r2_matrix.tolist(),
+            "rung_reached_per_draw": bootstrap_rung_reached.tolist(),
+            "rung_reached_median": float(np.median(bootstrap_rung_reached)),
+            "rung_reached_p025": float(np.percentile(bootstrap_rung_reached, 2.5)),
+            "rung_reached_p975": float(np.percentile(bootstrap_rung_reached, 97.5)),
+        },
+        "matched_capacity_null": {
+            "n_draws": int(n_null_draws),
+            "rung_reached_per_draw": null_rung_reached.tolist(),
+            "rung_reached_null_p975": float(np.percentile(null_rung_reached, 97.5))
+            if n_null_draws > 0
+            else float("nan"),
+        },
+    }
+
+
 def _run_ladder_pair(
     source: dict,
     target: dict,
@@ -527,6 +935,8 @@ def _run_ladder_pair(
     n_null_draws: int,
     threshold: float = RUNG_REACHED_THRESHOLD,
     seed: int = 42,
+    engine: str = "numpy",
+    device: str = "cpu",
 ) -> dict:
     """Run 9 rungs + selection-symmetric bootstrap for one (source, target, arm).
 
@@ -571,7 +981,24 @@ def _run_ladder_pair(
         test_idx = np.arange(n)
     train_conv_ids = common[train_idx]
 
-    # ---- Point estimate ----
+    if engine == "torch":
+        return _ladder_pair_core_torch(
+            X_S,
+            Y_S,
+            X_T,
+            Y_T,
+            common,
+            train_idx,
+            test_idx,
+            train_conv_ids,
+            n_bootstrap_draws=n_bootstrap_draws,
+            n_null_draws=n_null_draws,
+            threshold=threshold,
+            seed=seed,
+            device=device,
+        )
+
+    # ---- Point estimate (numpy reference engine) ----
     rung_r2s_point = _compute_ladder_r2s(
         X_S,
         Y_S,
@@ -685,6 +1112,18 @@ def _run_ladder_pair(
     }
 
 
+def _pair_ckpt_meta(model_slug: str, layer: int, n_bootstrap_draws: int, n_null_draws: int) -> dict:
+    """Regime key for per-pair checkpoints — every output-affecting knob."""
+    return {
+        "model": model_slug,
+        "layer": int(layer),
+        "n_bootstrap_draws": int(n_bootstrap_draws),
+        "n_null_draws": int(n_null_draws),
+        "threshold": float(RUNG_REACHED_THRESHOLD),
+        "seed": 42,
+    }
+
+
 def run_all_pairs(
     store_root: Path,
     *,
@@ -693,8 +1132,22 @@ def run_all_pairs(
     smoke: bool = False,
     n_bootstrap_draws: int = N_BOOTSTRAP_DRAWS,
     n_null_draws: int = N_REPARAM_NULL_DRAWS,
+    engine: str = "numpy",
+    device: str = "cpu",
+    num_shards: int = 1,
+    shard_index: int = 0,
+    checkpoint_dir: Path | None = None,
 ) -> dict:
-    """Run the pair ladder for one (model, layer). Both arms per pair."""
+    """Run the pair ladder for one (model, layer). Both arms per pair.
+
+    R16: pairs are independent, so the loop shards (`pairs[shard_index::
+    num_shards]`) for multi-worker parallelism, and every completed pair is
+    persisted to `checkpoint_dir/<src>__<tgt>.json` the moment it finishes
+    (code-style.md checkpoint-per-unit: 126 pairs x 2 arms >> the ~50-unit
+    trigger; the pre-R16 loop accumulated everything in memory with one
+    terminal write). A resume run skips pairs whose checkpoint matches the
+    regime meta (draws/layer/model/threshold/seed).
+    """
     pairs = enumerate_pair_set()
     if smoke:
         # Smoke: filter pairs to those whose BOTH cells have captured stores;
@@ -718,6 +1171,8 @@ def run_all_pairs(
             else:
                 raise ValueError(f"no captured cells found under {store_root}/{model_slug}")
 
+    shard_pairs = pairs[shard_index::num_shards] if num_shards > 1 else pairs
+
     out: dict[str, Any] = {
         "model": model_slug,
         "layer": layer,
@@ -727,21 +1182,48 @@ def run_all_pairs(
         "n_null_draws": n_null_draws,
         "pairs": {},
     }
-    n_pairs = len(pairs)
-    for i, (src, tgt) in enumerate(pairs):
+    meta = _pair_ckpt_meta(model_slug, layer, n_bootstrap_draws, n_null_draws)
+    if checkpoint_dir is not None:
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    n_shard = len(shard_pairs)
+    for i, (src, tgt) in enumerate(shard_pairs):
+        pair_key = f"{src}__{tgt}"
+        ckpt_path = checkpoint_dir / f"{pair_key}.json" if checkpoint_dir is not None else None
+
+        # Resume predicate — keyed on the FULL regime meta (a 10/2-draw smoke
+        # checkpoint never satisfies a 200/40 production run).
+        if ckpt_path is not None and ckpt_path.exists():
+            try:
+                prior = json.loads(ckpt_path.read_text())
+            except (json.JSONDecodeError, OSError):
+                prior = None
+            if prior is not None and prior.get("meta") == meta:
+                out["pairs"][pair_key] = prior["arms"]
+                print(
+                    f"[fit_ladder]   pair {i + 1}/{n_shard}: {src} -> {tgt} RESUME (checkpoint)",
+                    flush=True,
+                )
+                continue
+            if prior is not None:
+                print(
+                    f"[fit_ladder]   pair {i + 1}/{n_shard}: {src} -> {tgt} "
+                    f"regime-mismatch checkpoint -> recompute",
+                    flush=True,
+                )
+
         # Flushed per-pair progress print — bypasses libc's 4KB block buffer
         # so a long serial ladder loop is observable instead of appearing hung
         # (R14 fix, issue #1689 crash-fix round: pre-fix stdout was buffered,
         # so per-layer prints only surfaced at process exit).
         print(
-            f"[fit_ladder]   pair {i + 1}/{n_pairs}: {src} -> {tgt}",
+            f"[fit_ladder]   pair {i + 1}/{n_shard}: {src} -> {tgt}",
             flush=True,
         )
+        pair_t0 = time.perf_counter()
         src_cell = f"{model_slug}/{src}"
         tgt_cell = f"{model_slug}/{tgt}"
         source = _load_cell_layer(store_root, src_cell, layer)
         target = _load_cell_layer(store_root, tgt_cell, layer)
-        pair_key = f"{src}__{tgt}"
         out["pairs"][pair_key] = {}
         for arm in ["prefix", "context"]:
             out["pairs"][pair_key][arm] = _run_ladder_pair(
@@ -750,8 +1232,178 @@ def run_all_pairs(
                 arm=arm,
                 n_bootstrap_draws=n_bootstrap_draws,
                 n_null_draws=n_null_draws,
+                engine=engine,
+                device=device,
             )
+        pair_dt = time.perf_counter() - pair_t0
+        print(
+            f"[fit_ladder]   pair {i + 1}/{n_shard}: {src} -> {tgt} done elapsed={pair_dt:.1f}s",
+            flush=True,
+        )
+        if ckpt_path is not None:
+            # Atomic same-dir tmp + replace (EXDEV rule: tmp INSIDE dest dir).
+            tmp_path = ckpt_path.with_name(f".{ckpt_path.name}.tmp")
+            with tmp_path.open("w") as fh:
+                json.dump({"meta": meta, "arms": out["pairs"][pair_key]}, fh)
+            tmp_path.replace(ckpt_path)
     return out
+
+
+def merge_pair_checkpoints(
+    checkpoint_dir: Path,
+    *,
+    model_slug: str,
+    layer: int,
+    n_bootstrap_draws: int,
+    n_null_draws: int,
+) -> dict:
+    """Assemble the final ladder JSON (same schema as run_all_pairs) from
+    per-pair checkpoints. Fails loud on missing pairs or regime mismatches."""
+    pairs = enumerate_pair_set()
+    meta = _pair_ckpt_meta(model_slug, layer, n_bootstrap_draws, n_null_draws)
+    out: dict[str, Any] = {
+        "model": model_slug,
+        "layer": layer,
+        "n_pairs": len(pairs),
+        "arms": ["prefix", "context"],
+        "n_bootstrap_draws": n_bootstrap_draws,
+        "n_null_draws": n_null_draws,
+        "pairs": {},
+    }
+    missing: list[str] = []
+    mismatched: list[str] = []
+    for src, tgt in pairs:
+        pair_key = f"{src}__{tgt}"
+        p = checkpoint_dir / f"{pair_key}.json"
+        if not p.exists():
+            missing.append(pair_key)
+            continue
+        d = json.loads(p.read_text())
+        if d.get("meta") != meta:
+            mismatched.append(pair_key)
+            continue
+        out["pairs"][pair_key] = d["arms"]
+    if missing or mismatched:
+        raise RuntimeError(
+            f"merge incomplete: {len(missing)} missing, {len(mismatched)} regime-mismatched "
+            f"of {len(pairs)} pairs under {checkpoint_dir} "
+            f"(first missing: {missing[:3]}; first mismatched: {mismatched[:3]})"
+        )
+    return out
+
+
+def _compare_pair_results(ref: dict, new: dict, atol: float = 1e-6) -> tuple[bool, list[str]]:
+    """Compare numpy-engine vs torch-engine results for one (pair, arm).
+
+    Returns (ok, messages). Scalars/matrices compare with atol (nan-equal);
+    the point rung_reached must match exactly; per-draw rung_reached flips
+    are tolerated up to 2% (bootstrap draws sitting float-epsilon from the
+    reach bar can legitimately flip across fp64 backends).
+    """
+    msgs: list[str] = []
+    ok = True
+
+    def _close(a, b) -> bool:
+        return bool(np.all(np.isclose(np.asarray(a), np.asarray(b), atol=atol, equal_nan=True)))
+
+    for k in ("r2_within_target", "reach_bar_90pct"):
+        if not _close(ref[k], new[k]):
+            ok = False
+            msgs.append(f"{k}: {ref[k]} vs {new[k]}")
+    for k, v in ref["rung_r2s_point"].items():
+        if not _close(v, new["rung_r2s_point"][k]):
+            ok = False
+            msgs.append(f"point {k}: {v} vs {new['rung_r2s_point'][k]}")
+    if int(ref["rung_reached_point"]) != int(new["rung_reached_point"]):
+        ok = False
+        msgs.append(
+            f"rung_reached_point: {ref['rung_reached_point']} vs {new['rung_reached_point']}"
+        )
+    ref_m = np.asarray(ref["bootstrap_draws"]["r2_matrix"], dtype=np.float64)
+    new_m = np.asarray(new["bootstrap_draws"]["r2_matrix"], dtype=np.float64)
+    if not _close(ref_m, new_m):
+        diff = np.nanmax(np.abs(ref_m - new_m))
+        ok = False
+        msgs.append(f"bootstrap r2_matrix max |diff| = {diff:.3e} > atol {atol}")
+    for section in ("bootstrap_draws", "matched_capacity_null"):
+        rr_ref = np.asarray(ref[section]["rung_reached_per_draw"], dtype=np.int64)
+        rr_new = np.asarray(new[section]["rung_reached_per_draw"], dtype=np.int64)
+        n_flip = int((rr_ref != rr_new).sum())
+        if n_flip:
+            frac = n_flip / max(1, len(rr_ref))
+            msg = f"{section} rung_reached flips: {n_flip}/{len(rr_ref)} ({frac:.1%})"
+            if frac > 0.02:
+                ok = False
+                msgs.append(msg)
+            else:
+                msgs.append(f"WARN (tolerated) {msg}")
+    return ok, msgs
+
+
+def _verify_equivalence(args) -> int:
+    """Run BOTH engines on real pairs and compare — the vectorize-rule
+    equivalence gate, dispatched through the same _run_ladder_pair the
+    production path calls (no hollow-gate sibling helper)."""
+    pairs = enumerate_pair_set()
+    avail: list[tuple[str, str]] = []
+    for src, tgt in pairs:
+        if (args.store_root / f"{args.model_slug}/{src}" / f"L{args.layer}.pt").exists() and (
+            args.store_root / f"{args.model_slug}/{tgt}" / f"L{args.layer}.pt"
+        ).exists():
+            avail.append((src, tgt))
+        if len(avail) >= args.verify_equivalence:
+            break
+    if not avail:
+        print("[fit_ladder] verify: no pairs with captured stores found", flush=True)
+        return 1
+    all_ok = True
+    for src, tgt in avail:
+        source = _load_cell_layer(args.store_root, f"{args.model_slug}/{src}", args.layer)
+        target = _load_cell_layer(args.store_root, f"{args.model_slug}/{tgt}", args.layer)
+        for arm in ["prefix", "context"]:
+            t0 = time.perf_counter()
+            ref = _run_ladder_pair(
+                source,
+                target,
+                arm=arm,
+                n_bootstrap_draws=args.bootstrap_draws,
+                n_null_draws=args.null_draws,
+                engine="numpy",
+            )
+            t_np = time.perf_counter() - t0
+            t0 = time.perf_counter()
+            new = _run_ladder_pair(
+                source,
+                target,
+                arm=arm,
+                n_bootstrap_draws=args.bootstrap_draws,
+                n_null_draws=args.null_draws,
+                engine="torch",
+                device=args.device,
+            )
+            t_torch = time.perf_counter() - t0
+            if "error" in ref or "error" in new:
+                match = ref == new
+                all_ok &= match
+                print(
+                    f"[fit_ladder] verify {src}->{tgt} [{arm}]: error-result match={match}",
+                    flush=True,
+                )
+                continue
+            ok, msgs = _compare_pair_results(ref, new)
+            all_ok &= ok
+            n_evals = 1 + args.bootstrap_draws + args.null_draws
+            print(
+                f"[fit_ladder] verify {src}->{tgt} [{arm}]: {'PASS' if ok else 'FAIL'} | "
+                f"numpy={t_np:.1f}s torch({args.device})={t_torch:.1f}s "
+                f"speedup={t_np / max(t_torch, 1e-9):.1f}x | "
+                f"per-eval torch={t_torch / n_evals:.2f}s ({n_evals} evals)",
+                flush=True,
+            )
+            for m in msgs:
+                print(f"[fit_ladder]   verify-detail: {m}", flush=True)
+    print(f"[fit_ladder] verify-equivalence VERDICT: {'PASS' if all_ok else 'FAIL'}", flush=True)
+    return 0 if all_ok else 1
 
 
 def main() -> int:
@@ -778,6 +1430,45 @@ def main() -> int:
         default=None,
         help="Override N_REPARAM_NULL_DRAWS (default: 200 full / 5 smoke)",
     )
+    ap.add_argument(
+        "--engine",
+        choices=["numpy", "torch"],
+        default="numpy",
+        help="Dense-math engine. numpy = pre-R16 reference path (byte-identical); "
+        "torch = fp64 port (GPU-capable), equivalence-gated via --verify-equivalence.",
+    )
+    ap.add_argument(
+        "--device",
+        type=str,
+        default="cpu",
+        help="torch device for --engine torch (e.g. cuda; pin the GPU via CUDA_VISIBLE_DEVICES).",
+    )
+    ap.add_argument(
+        "--num-shards",
+        type=int,
+        default=1,
+        help="Shard the 126 pairs across N workers (pairs[shard::N]); workers write per-pair "
+        "checkpoints only — assemble with --merge.",
+    )
+    ap.add_argument("--shard-index", type=int, default=0)
+    ap.add_argument(
+        "--checkpoint-dir",
+        type=Path,
+        default=None,
+        help="Per-pair checkpoint dir (default: <out_parent>/pairs_<model>_L<layer>).",
+    )
+    ap.add_argument(
+        "--merge",
+        action="store_true",
+        help="Assemble the final ladder JSON from per-pair checkpoints (run after all shards).",
+    )
+    ap.add_argument(
+        "--verify-equivalence",
+        type=int,
+        default=0,
+        metavar="N_PAIRS",
+        help="Run N pairs through BOTH engines at the given draw counts, compare, exit 0/1.",
+    )
     args = ap.parse_args()
 
     # Smoke defaults: keep bootstrap loop small so the code path executes without hours of compute.
@@ -786,15 +1477,28 @@ def main() -> int:
     if args.null_draws is None:
         args.null_draws = 5 if args.smoke else N_REPARAM_NULL_DRAWS
 
+    if args.engine == "torch" and args.device.startswith("cuda"):
+        import torch
+
+        if not torch.cuda.is_available():
+            raise RuntimeError("--engine torch --device cuda but torch.cuda.is_available() False")
+
     # flush=True on every progress print: pod stdout is block-buffered by
     # default (no PYTHONUNBUFFERED=1 in the R11-R13 launcher), so unflushed
     # per-layer prints stayed in the 4KB libc buffer for 8+ hours (R14 fix).
-    print(f"[fit_ladder] model={args.model_slug} smoke={args.smoke}", flush=True)
+    print(
+        f"[fit_ladder] model={args.model_slug} smoke={args.smoke} engine={args.engine} "
+        f"device={args.device} shard={args.shard_index}/{args.num_shards}",
+        flush=True,
+    )
     print(
         f"[fit_ladder] bootstrap_draws={args.bootstrap_draws} null_draws={args.null_draws} "
         f"(N_BOOTSTRAP_DRAWS={N_BOOTSTRAP_DRAWS}, N_REPARAM_NULL_DRAWS={N_REPARAM_NULL_DRAWS})",
         flush=True,
     )
+
+    if args.verify_equivalence:
+        return _verify_equivalence(args)
 
     layers = list(CAPTURE_LAYERS) if args.all_layers else [args.layer]
     for layer in layers:
@@ -808,6 +1512,22 @@ def main() -> int:
             )
         else:
             out_path = args.out
+
+        ckpt_dir = args.checkpoint_dir or out_path.parent / f"pairs_{args.model_slug}_L{layer}"
+
+        if args.merge:
+            results = merge_pair_checkpoints(
+                ckpt_dir,
+                model_slug=args.model_slug,
+                layer=layer,
+                n_bootstrap_draws=args.bootstrap_draws,
+                n_null_draws=args.null_draws,
+            )
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            with out_path.open("w") as fh:
+                json.dump(results, fh, indent=2)
+            print(f"[fit_ladder] MERGE wrote {out_path} ({results['n_pairs']} pairs)", flush=True)
+            continue
 
         if out_path.exists():
             print(
@@ -825,13 +1545,22 @@ def main() -> int:
             smoke=args.smoke,
             n_bootstrap_draws=args.bootstrap_draws,
             n_null_draws=args.null_draws,
+            engine=args.engine,
+            device=args.device,
+            num_shards=args.num_shards,
+            shard_index=args.shard_index,
+            checkpoint_dir=ckpt_dir,
         )
         layer_elapsed = time.perf_counter() - layer_t0
         print(
-            f"[fit_ladder] layer L{layer} done in {layer_elapsed:.1f}s "
-            f"({results['n_pairs']} pairs)",
+            f"[fit_ladder] layer L{layer} shard {args.shard_index}/{args.num_shards} done in "
+            f"{layer_elapsed:.1f}s ({len(results['pairs'])} pairs)",
             flush=True,
         )
+        if args.num_shards > 1:
+            # Shard workers persist per-pair checkpoints only; the final JSON
+            # is assembled by the --merge invocation after all shards join.
+            continue
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with out_path.open("w") as fh:
             json.dump(results, fh, indent=2)
