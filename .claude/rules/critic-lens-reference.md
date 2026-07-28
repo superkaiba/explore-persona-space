@@ -338,8 +338,15 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
       Sweep-parallelism row — every shard needs the pod at once, which is phases of the SAME width
       run in parallel, NOT a sequence of phases of DIFFERENT widths). Conversely, REVISE a plan
       that leaves a DECLARED shardable axis (>~2 h serial on 1×) on a narrow GCP provision without
-      justification — the width-aware auto lane (#1121) makes `--gpus N` wide provisioning the
-      encouraged default; "GCP only had 1× intents" is no longer a valid reason.
+      a BINDING justification — one that names the wall-dominant GPU-BOUND phase(s) kept narrow and
+      addresses THEIR bottleneck specifically. A true-but-irrelevant bottleneck claim about a
+      DIFFERENT phase (an API-bound judge phase, a CPU Gram-solve / fit, an off-pod analysis) does
+      not justify narrow width for the shardable phase(s) kept narrow (e.g. generation/capture
+      legs, a training fan-out) and is a REVISE exactly as if no justification were stated
+      (incident #1739: a plan kept its wall-dominant, declared-shardable vLLM generation + capture
+      legs at 1×, justified by Anthropic-API + CPU-fit bottlenecks in OTHER phases; leg-1 wall ran
+      ~2-3× longer than a wide dispatch). The width-aware auto lane (#1121) makes `--gpus N` wide
+      provisioning the encouraged default; "GCP only had 1× intents" is no longer a valid reason.
 
     Plan-time scheduling / routing only, never a mid-run cost or disk gate. Not a REVISE when the
     plan declares the phase off-pod on the VM AND its footprint is ≤50 GB (or it streams without
