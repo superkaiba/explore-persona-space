@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1769,
+  "highest_id": 1770,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5975,6 +5975,13 @@
       "path": "tasks/proposed/1769",
       "status": "proposed",
       "title": "Prefill-vs-decode behavioral commitment: does r_B steering only during decode change judged behavior expression in a dense full-attention model"
+    },
+    "1770": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1770",
+      "status": "proposed",
+      "title": "fix main-red test_no_new_torch_before_dotenv_vm_entrypoints: issue1481_coverage_fig + issue779_scaling_curve_fig import order"
     },
     "18": {
       "has_clean_result": false,
