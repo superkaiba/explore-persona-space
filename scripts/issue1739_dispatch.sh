@@ -152,8 +152,13 @@ run_fits_for_behavior() {
     # Budgets 6/10 sit above the arm-5 MLP fold floor for every fixture
     # group shape (the floor's SKIP branch is unit-pinned:
     # tests/test_issue1739_fits.py::test_run_cell_arm5_fold_floor_skip).
+    # --transfer-min-n 2: the smoke stages EPM_I1739_LIMIT (=2) contexts per
+    # (split, rung), below the production per-rung Spearman floor of 3 — the
+    # gate COMPUTATION stays exercised at min_n=2 while the production floor
+    # is unit-pinned (the #1345 smoke-gate-calibration rule).
     budgets="6 10"; u_sizes="32 64"; draws="0 1"; seeds="0 1"
-    extra=(--n-boot 50 --n-perm 50 --layers 0 1 2 --mlp-epochs 5 --compose-u-size 16)
+    extra=(--n-boot 50 --n-perm 50 --layers 0 1 2 --mlp-epochs 5 --compose-u-size 16
+      --transfer-min-n 2)
   fi
   echo "[phase=fits] features behavior=${b}"
   "${CAPS[@]}" uv run python scripts/issue1739_features.py \
@@ -171,11 +176,31 @@ run_fits_for_behavior() {
     --text-features "$FEATURES_ROOT/$b.npz"
     --device "$FITS_DEVICE"
     --config config_a
+    --transfer
     # shellcheck disable=SC2086
     --regimes $regimes --u-sizes $u_sizes --budgets $budgets --draws $draws --seeds $seeds
     "${extra[@]}")
   if [ "$b" = "evil" ]; then
     FITS_ARGS+=(--compose)  # §4b composition: f_U x f_L at the L-anchors (Config A evil)
+  fi
+  # §9 pilot gate (round-3 M-B): ONE production-shape unit through the SAME
+  # production entrypoint + args BEFORE the full grid; writes
+  # pilot_report.json under the behavior's out-root and exits rc=7 (designed
+  # halt, never bare rc=1) when projected wall > 3x the plan §9 estimate.
+  # Plan wall: §9 Phase-3 row = 2.0 h across 3 behaviors -> ~0.67 h each.
+  echo "[phase=fits] pilot gate behavior=${b}"
+  set +e
+  "${CAPS[@]}" uv run python scripts/issue1739_fits.py "${FITS_ARGS[@]}" \
+    --pilot --plan-wall-h "${EPM_I1739_FITS_PLAN_WALL_H:-0.67}"
+  pilot_rc=$?
+  set -e
+  if [ "$pilot_rc" -eq 7 ]; then
+    echo "[phase=fits] PILOT GATE ABORT behavior=${b}: projected wall exceeds 3x the plan" \
+      "§9 estimate — see $RESULTS_ROOT/$b/pilot_report.json" >&2
+    exit 7
+  elif [ "$pilot_rc" -ne 0 ]; then
+    echo "[phase=fits] pilot FAILED rc=${pilot_rc} behavior=${b}" >&2
+    exit "$pilot_rc"
   fi
   "${CAPS[@]}" uv run python scripts/issue1739_fits.py "${FITS_ARGS[@]}"
   if [ "$b" = "evil" ]; then
@@ -295,8 +320,12 @@ print(f'[fits] u_store staged/verified: layers={len(layers)}', flush=True)
     figures)
       for b in $BEHAVIORS_RUN; do
         echo "[phase=${phase}] figures behavior=${b}"
+        # --map-diag: the plan §4 Phase-4 map-degradation figure (round-3 M-A
+        # sweep item (d) — the fits phase always writes map_diagnostics.json;
+        # the figures CLI pools the per-layer diagnostics per U rung).
         "${CAPS[@]}" uv run python scripts/issue1739_figures.py \
           --summary "$RESULTS_ROOT/$b/arm_results/all_arms_spearman.json" \
+          --map-diag "$RESULTS_ROOT/$b/map_diagnostics.json" \
           --out-dir "$FIGURES_ROOT/$b"
       done
       ;;
@@ -326,6 +355,17 @@ payload = sentinels.compose_results_payload(
         'U ladder 50k nominal rung realized at the #1092 store fit-pool size (18,793 rows)',
         'arm-16 perplexity feature omitted (length/lexical surface stats only)',
         'hallucination runs regime e1 only (three-way DV has no per-rollout graded scores)',
+        'arm roster vs plan §5: plan arm 9 (map-identity M=I) realized as the run_grid '
+        'L->0 degeneracy gate + unit pin, not a production arm; plan arm 10 '
+        '(map-then-context-native) absent (arm10_stacked combiner stands in); code arms '
+        '7/8/14 (map_ridge_pred/true, shuffled_pt) are additions',
+        'Config A/B legs are within-split LOFO tables; the plan §4 cross-split '
+        'train->eval ladder read is carried by the config_a --transfer leg '
+        '(transfer_rows: TRAIN-frozen predictors scored per eval rung)',
+        'composition-cell map weights not persisted under analysis_tensors/maps/ '
+        '(behavior+anchor-specific, ~0.7 GB x ~30 combos; deterministically regenerable '
+        'from the pinned #1092 store + seeded code) — plain U-ladder rung maps ARE '
+        'persisted per (variant, u_label)',
     ],
 )
 sentinels.write_results_sentinel(out_root, payload, smoke=smoke)

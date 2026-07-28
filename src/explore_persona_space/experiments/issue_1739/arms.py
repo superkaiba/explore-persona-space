@@ -115,6 +115,22 @@ ARM_REGISTRY: dict[str, dict] = {
 
 HEADLINE_PAIR = ("arm6_map_proj_e1", "arm2_ctx_native")  # plan §6 pre-selected pair
 
+# Distribution-shift ladder arms (round-3 M-A): plan §4 Phase-3 names the
+# generic/neutral arms {1, 3, 4, 6} for the WildChat->LMSYS(->PRISM) ladder,
+# and the §4 Phase-4 distribution-shift figure additionally names the
+# shuffled-map + oracle-answer companions {11, 13}. The union below is the
+# transfer roster — deliberately EXCLUDING the expensive fitted arms the plan
+# never puts on the ladder (MLP arm 5, L2-SP arms 9/14, stacked arm 10, text
+# arms 15/16).
+TRANSFER_ARMS = (
+    "arm1_ctx_e1",
+    "arm3_identity_bias",
+    "arm4_ridge_ctx",
+    "arm6_map_proj_e1",
+    "arm11_oracle_proj",
+    "arm13_shuffled_map",
+)
+
 
 @dataclasses.dataclass
 class CellData:
@@ -499,6 +515,126 @@ def run_cell(  # noqa: C901 — deliberate single dispatch block over the 16 pla
         )
 
     return scores, skipped
+
+
+def run_transfer_cell(
+    data: CellData,
+    cell: BudgetCell,
+    z_ev: np.ndarray,
+    dv_ev: np.ndarray,
+    *,
+    za_ev: np.ndarray | None = None,
+    arms: list[str] | None = None,
+    device: str = "cpu",
+) -> tuple[dict[str, np.ndarray], dict[str, str]]:
+    """Frozen-predictor transfer scores for the eval-split ladder (plan §4).
+
+    Concatenates the TRAIN cell's rows with EVERY eval-split row and reuses
+    :func:`run_cell`'s fold machinery with exactly TWO folds: fold 1 = the
+    train cell rows, fold 0 = the eval rows — so the returned OOF values at
+    the eval positions come from arms fit on the FULL train cell and NEVER
+    on eval DV (the plan's train -> eval-rung transfer semantics; the
+    reverse-fold fit is discarded). Default arm roster: :data:`TRANSFER_ARMS`
+    (cheap projection / closed-form / single-ridge arms only). Eval arrays
+    must share the train slice's whitening + layer subset.
+
+    Returns ``(scores_ev, skipped)``: ``scores_ev[slug]`` is the eval-row
+    block ``(rows, n_ev)``.
+    """
+    want = list(TRANSFER_ARMS) if arms is None else list(arms)
+    idx = cell.row_idx
+    n_tr, n_ev = len(idx), int(z_ev.shape[1])
+    assert z_ev.shape[0] == data.z_ctx.shape[0], (z_ev.shape, data.z_ctx.shape)
+    z_ans_comb = None
+    if data.z_ans is not None and za_ev is not None:
+        z_ans_comb = np.concatenate([data.z_ans[:, idx], za_ev], axis=1)
+    comb = CellData(
+        z_ctx=np.concatenate([data.z_ctx[:, idx], z_ev], axis=1),
+        dv=np.concatenate([np.asarray(data.dv[idx], dtype=np.float64), dv_ev]),
+        rb=data.rb,
+        z_ans=z_ans_comb,
+        mapfit=data.mapfit,
+        w_shuffled=data.w_shuffled,
+        layers=data.layers,
+    )
+    cell_t = BudgetCell(
+        row_idx=np.arange(n_tr + n_ev),
+        fold_ids=np.concatenate([np.ones(n_tr, dtype=np.int64), np.zeros(n_ev, dtype=np.int64)]),
+        n_folds=2,
+        budget_l=cell.budget_l,
+        draw=cell.draw,
+        seed=cell.seed,
+        fold_scheme="transfer-train-vs-eval",
+    )
+    scores, skipped = run_cell(comb, cell_t, arms=want, device=device)
+    return {slug: sc[:, n_tr:] for slug, sc in scores.items()}, skipped
+
+
+def frozen_layer_idx(rho_per_layer: list[float]) -> int:
+    """Frozen-layer INDEX from a train record's per-layer rhos (nan-safe argmax)."""
+    if len(rho_per_layer) <= 1:
+        return 0
+    return int(np.nanargmax([r if np.isfinite(r) else -np.inf for r in rho_per_layer]))
+
+
+def evaluate_transfer(
+    scores_ev: dict[str, np.ndarray],
+    dv_ev: np.ndarray,
+    rungs_ev: np.ndarray,
+    frozen_by_arm: dict[str, int],
+    *,
+    provenance: dict,
+    cell: BudgetCell,
+    layers: tuple[int, ...] = (),
+    n_boot: int = N_BOOT,
+    min_n: int = 3,
+) -> tuple[list[dict], list[dict]]:
+    """Per-(arm, eval-rung) transfer rows at the TRAIN-frozen layer.
+
+    The frozen layer index comes from the TRAIN cell's own record (never
+    selected on eval outcome). Rungs with fewer than ``min_n`` finite rows
+    are recorded in the returned ``skips`` list (drop-never-silent), never
+    scored — Spearman over <3 rows is undefined/degenerate. Each kept row
+    carries a per-rung bootstrap CI (batched draws).
+    """
+    dv_ev = np.asarray(dv_ev, dtype=np.float64)
+    rungs_ev = np.asarray([str(r) for r in rungs_ev])
+    rows: list[dict] = []
+    skips: list[dict] = []
+    for slug, sc in sorted(scores_ev.items()):
+        if slug not in frozen_by_arm:
+            skips.append({"arm": slug, "reason": "no train frozen layer (arm absent)"})
+            continue
+        fl = min(int(frozen_by_arm[slug]), sc.shape[0] - 1)
+        s = np.asarray(sc[fl], dtype=np.float64)
+        for rung in sorted(set(rungs_ev)):
+            m = (rungs_ev == rung) & np.isfinite(s) & np.isfinite(dv_ev)
+            n = int(m.sum())
+            if n < min_n:
+                skips.append({"arm": slug, "eval_rung": rung, "n_eval": n, "reason": "min_n"})
+                continue
+            rho = float(spearman_rows(s[m][None], dv_ev[m])[0])
+            idx_b = make_bootstrap_idx(n, n_boot=n_boot, seed=cell.seed + 100 * cell.draw)
+            draws = bootstrap_rhos(s[m][None], dv_ev[m], idx_b)[0]
+            rows.append(
+                {
+                    **provenance,
+                    "arm": slug,
+                    "family": ARM_REGISTRY.get(slug, {}).get("family", "unknown"),
+                    "eval_rung": rung,
+                    "rung_kind": "eval_transfer",
+                    "rho_frozen": rho,
+                    "ci_frozen": [float(np.nanquantile(draws, q)) for q in (0.025, 0.975)],
+                    "n_eval": n,
+                    "layer": int(layers[fl])
+                    if layers and sc.shape[0] > 1
+                    else (fl if sc.shape[0] > 1 else None),
+                    "budget_l": cell.budget_l,
+                    "draw": cell.draw,
+                    "seed": cell.seed,
+                }
+            )
+    return rows, skips
 
 
 # ---------------------------------------------------------------------------
@@ -910,14 +1046,7 @@ def _save_cell_preds(
     import hashlib
 
     preds_dir.mkdir(parents=True, exist_ok=True)
-    frozen = {
-        row["arm"]: int(
-            np.nanargmax([r if np.isfinite(r) else -np.inf for r in row["rho_per_layer"]])
-        )
-        if len(row["rho_per_layer"]) > 1
-        else 0
-        for row in rec.get("arms", [])
-    }
+    frozen = {row["arm"]: frozen_layer_idx(row["rho_per_layer"]) for row in rec.get("arms", [])}
     name = hashlib.sha1(unit_key.encode()).hexdigest()[:16] + ".npz"
     payload = {
         "row_idx": cell.row_idx.astype(np.int64),
@@ -936,8 +1065,16 @@ def _save_cell_preds(
     return name
 
 
-def write_summary(records: list[dict], out_path: Path | str, *, meta: dict) -> Path:
-    """Aggregate per-cell records into ``all_arms_spearman.json`` (atomic)."""
+def write_summary(
+    records: list[dict], out_path: Path | str, *, meta: dict, extra: dict | None = None
+) -> Path:
+    """Aggregate per-cell records into ``all_arms_spearman.json`` (atomic).
+
+    ``extra`` merges additional TOP-LEVEL sections (round-3 M-A: the
+    ``transfer_rows`` / ``transfer_skips`` ladder sections consumed by
+    ``figures.render_summary_figures``) — kept separate from ``arm_rows`` so
+    in-split and cross-split reads never mix in the per-arm figures.
+    """
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     rows = [r for rec in records for r in rec.get("arms", [])]
@@ -949,6 +1086,7 @@ def write_summary(records: list[dict], out_path: Path | str, *, meta: dict) -> P
         "nulls": [rec["max_over_arms_null"] for rec in records if "max_over_arms_null" in rec],
         "meta": meta,
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        **(extra or {}),
     }
     tmp = out_path.with_name(out_path.name + ".tmp")
     tmp.write_text(json.dumps(payload, indent=1))

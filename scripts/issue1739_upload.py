@@ -60,6 +60,9 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--results-root", type=Path, default=Path("eval_results/issue_1739"))
     ap.add_argument("--figures-root", type=Path, default=Path("figures/issue_1739"))
     ap.add_argument("--branch", default=BRANCH)
+    # UPLOAD_PREFIX_EXEMPT: issue-1739-DEDICATED uploader (issue1739_*.py, never a
+    # shared fit script); a child issue reusing it copies + renames the script and
+    # its prefix constant with it, so the #1005 silent-inherit clobber cannot fire.
     ap.add_argument("--hf-prefix", default=HF_PREFIX)
     ap.add_argument(
         "--dry-run",
@@ -221,6 +224,7 @@ def main(argv: list[str] | None = None) -> int:
     load_dotenv()
     args = _parse_args(argv)
     if args.stage == "raw":
+        # UPLOAD_PREFIX_EXEMPT: issue-1739-dedicated uploader; child issues copy+rename the script (and its prefix constant) per house convention
         upload_tree(
             args.raw_root,
             f"{args.hf_prefix}/raw_completions",
@@ -229,6 +233,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
     if args.stage == "tensors":
+        # UPLOAD_PREFIX_EXEMPT: issue-1739-dedicated uploader; child issues copy+rename the script (and its prefix constant) per house convention
         upload_tree(
             args.tensors_root,
             f"{args.hf_prefix}/analysis_tensors",
@@ -240,6 +245,7 @@ def main(argv: list[str] | None = None) -> int:
             # percell prediction sidecars live under eval_results (gitignored
             # npz) — they ride the SAME analysis-tensors prefix on the Hub.
             for behavior_dir in sorted({p.parents[3] for p in preds}):
+                # UPLOAD_PREFIX_EXEMPT: issue-1739-dedicated uploader; child issues copy+rename the script (and its prefix constant) per house convention
                 upload_tree(
                     behavior_dir / "arm_results" / "percell" / "preds",
                     f"{args.hf_prefix}/analysis_tensors/percell_preds/{behavior_dir.name}",

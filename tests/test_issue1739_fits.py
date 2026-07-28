@@ -532,3 +532,207 @@ def test_synthetic_cli_and_figures_smoke(tmp_path):
         np.arange(10.0), np.linspace(0, 100, 10), [f"ctx{i}" for i in range(10)], fig_dir
     )
     assert Path(scatter["png"]).exists()
+
+
+# ---------------------------------------------------------------------------
+# round-3: distribution-shift transfer leg (M-A)
+# ---------------------------------------------------------------------------
+
+
+def _transfer_fixture(n_tr=24, n_ev=12, n_layers=2, d=6, seed=3):
+    rng = np.random.default_rng(seed)
+    rb = rng.normal(size=(n_layers, d))
+    z_tr = rng.normal(size=(n_layers, n_tr, d))
+    z_ev = rng.normal(size=(n_layers, n_ev, d))
+    dv_tr = np.clip(50 + 20 * np.einsum("lnd,ld->n", z_tr, rb) / n_layers, 0, 100)
+    dv_ev = np.clip(50 + 20 * np.einsum("lnd,ld->n", z_ev, rb) / n_layers, 0, 100)
+    groups = [f"g{i % 6}" for i in range(n_tr)]
+    data = arms.CellData(z_ctx=z_tr, dv=dv_tr, rb=rb, layers=(0, 1))
+    cell = fits.realize_budget_cell(groups, budget_l=n_tr, draw=0, seed=0)
+    return data, cell, z_ev, dv_ev, rng
+
+
+def test_transfer_cell_fits_on_train_never_on_eval_dv():
+    """run_transfer_cell: parameter-free arms score eval rows identically to a
+    direct projection; the fitted arm-4 predictor changes with TRAIN dv but is
+    BIT-INVARIANT to eval dv (the frozen-predictor / no-eval-leakage pin)."""
+    data, cell, z_ev, dv_ev, rng = _transfer_fixture()
+    want = ["arm1_ctx_e1", "arm4_ridge_ctx"]
+    s1, sk1 = arms.run_transfer_cell(data, cell, z_ev, dv_ev, arms=want)
+    assert not sk1, sk1
+    assert s1["arm1_ctx_e1"].shape == (2, z_ev.shape[1])
+    np.testing.assert_allclose(s1["arm1_ctx_e1"], np.einsum("lnd,ld->ln", z_ev, data.rb))
+
+    # eval-DV perturbation: transfer scores must be IDENTICAL (never fit on eval DV)
+    s2, _ = arms.run_transfer_cell(
+        data, cell, z_ev, dv_ev + rng.normal(scale=10, size=dv_ev.shape), arms=want
+    )
+    np.testing.assert_array_equal(s1["arm4_ridge_ctx"], s2["arm4_ridge_ctx"])
+
+    # train-DV perturbation: the fitted predictor MUST move (fit-on-train evidence)
+    data_p = arms.CellData(
+        z_ctx=data.z_ctx,
+        dv=np.clip(data.dv + rng.normal(scale=25, size=data.dv.shape), 0, 100),
+        rb=data.rb,
+        layers=data.layers,
+    )
+    s3, _ = arms.run_transfer_cell(data_p, cell, z_ev, dv_ev, arms=want)
+    assert not np.allclose(s1["arm4_ridge_ctx"], s3["arm4_ridge_ctx"])
+
+
+def test_evaluate_transfer_frozen_reuse_and_min_n_gate():
+    """evaluate_transfer scores at the TRAIN-frozen layer and records (never
+    silently drops) a rung below the min_n floor — the data-dependent-gate
+    degenerate probe."""
+    n_ev = 10
+    dv_ev = np.linspace(0, 100, n_ev)
+    rungs = np.asarray(["big"] * 8 + ["tiny"] * 2)
+    sc = np.stack([np.random.default_rng(0).normal(size=n_ev), dv_ev.copy()])  # layer 1 == dv
+    cell = fits.realize_budget_cell([f"g{i}" for i in range(12)], budget_l=12, draw=0, seed=0)
+    rows, skips = arms.evaluate_transfer(
+        {"arm1_ctx_e1": sc},
+        dv_ev,
+        rungs,
+        {"arm1_ctx_e1": 1},
+        provenance={"behavior": "syn", "eval_rung": "joined", "config": "config_a"},
+        cell=cell,
+        layers=(0, 1),
+        n_boot=25,
+        min_n=3,
+    )
+    assert len(rows) == 1 and rows[0]["eval_rung"] == "big"
+    assert rows[0]["rho_frozen"] == pytest.approx(1.0)  # frozen layer 1 == dv exactly
+    assert rows[0]["rung_kind"] == "eval_transfer" and rows[0]["n_eval"] == 8
+    assert len(rows[0]["ci_frozen"]) == 2
+    assert skips and skips[0]["eval_rung"] == "tiny" and skips[0]["reason"] == "min_n"
+    # missing frozen entry -> arm-level skip, never a KeyError
+    rows2, skips2 = arms.evaluate_transfer(
+        {"armX": sc},
+        dv_ev,
+        rungs,
+        {},
+        provenance={},
+        cell=cell,
+        layers=(0, 1),
+        n_boot=25,
+        min_n=3,
+    )
+    assert not rows2 and "no train frozen layer" in skips2[0]["reason"]
+
+
+def test_write_summary_extra_merges_transfer_rows(tmp_path):
+    out = arms.write_summary(
+        [],
+        tmp_path / "s.json",
+        meta={"mode": "syn"},
+        extra={"transfer_rows": [{"arm": "a"}], "transfer_skips": []},
+    )
+    payload = json.loads(out.read_text())
+    assert payload["transfer_rows"] == [{"arm": "a"}] and payload["transfer_skips"] == []
+
+
+def test_render_summary_figures_transfer_ladder_and_composition(tmp_path):
+    """The §6.5 ladder figure renders from transfer_rows (train rung ordered
+    first) and the §4b composition figure renders from f_u-bearing arm rows."""
+    from explore_persona_space.experiments.issue_1739 import figures
+
+    def _arm_row(**kw):
+        base = {
+            "arm": "arm6_map_proj_e1",
+            "family": "map",
+            "rho_frozen": 0.5,
+            "ci_frozen": [0.3, 0.7],
+            "budget_l": 250,
+            "draw": 0,
+            "seed": 0,
+            "eval_rung": "wildchat",
+            "f_u": None,
+            "f_l": None,
+        }
+        base.update(kw)
+        return base
+
+    summary = {
+        "arm_rows": [
+            _arm_row(),
+            _arm_row(arm="arm1_ctx_e1", family="context"),
+            _arm_row(f_u=0.0, f_l=0.0, rho_frozen=0.2),
+            _arm_row(f_u=0.5, f_l=1.0, rho_frozen=0.4),
+        ],
+        "transfer_rows": [
+            _arm_row(rung_kind="train_in_split"),
+            _arm_row(eval_rung="hhrt", rung_kind="eval_transfer", rho_frozen=0.35),
+            _arm_row(eval_rung="toxicchat", rung_kind="eval_transfer", rho_frozen=0.2),
+        ],
+    }
+    paths = figures.render_summary_figures(summary, tmp_path)
+    names = {Path(p).name for p in paths}
+    assert "distribution_shift_ladder.png" in names, names
+    assert "composition_factor.png" in names, names
+
+
+def test_save_map_fp16_roundtrip_idempotent(tmp_path):
+    cli = _load_fits_cli()
+    rng = np.random.default_rng(5)
+    n_layers, n, d = 2, 40, 6
+    x = rng.normal(size=(n_layers, n, d))
+    y = 0.6 * x + 0.1 * rng.normal(size=x.shape)
+    mapfit = fits.fit_linear_map(x, y)
+    out = cli._save_map(tmp_path, "context_end", "full", mapfit, [0, 1])
+    assert out == tmp_path / "maps" / "context_end__ufull.npz"
+    mt0 = out.stat().st_mtime_ns
+    with np.load(out, allow_pickle=False) as z:
+        assert z["w"].dtype == np.float16
+        meta = json.loads(str(z["meta"]))
+        assert meta["u_label"] == "full" and meta["variant"] == "context_end"
+        assert "git_commit" in meta and "ts" in meta
+        # fp16 W reproduces the frozen map's predictions within fp16 tolerance
+        m2 = fits.MapFit(
+            w=z["w"].astype(np.float64),
+            x_mu=z["x_mu"].astype(np.float64),
+            x_sd=z["x_sd"].astype(np.float64),
+            y_mu=z["y_mu"].astype(np.float64),
+            diagnostics={},
+        )
+    p_ref = fits.apply_map(x[:, :5], mapfit)
+    p_np = fits.apply_map(x[:, :5], m2)
+    scale = float(np.abs(p_ref).max()) or 1.0
+    assert float(np.abs(p_ref - p_np).max()) / scale < 2e-3
+    # idempotent: the second call SKIPS (no rewrite — behavior-shared file)
+    assert cli._save_map(tmp_path, "context_end", "full", mapfit, [0, 1]) == out
+    assert out.stat().st_mtime_ns == mt0
+
+
+def test_compose_pilot_report_fence_and_abort():
+    cli = _load_fits_cli()
+    kw = dict(
+        n_map_fits=6,
+        n_units=810,
+        n_transfer_units=810,
+        map_fit_s=60.0,
+        unit_s=4.0,
+        transfer_s=1.0,
+        abort_mult=3.0,
+    )
+    # projected = (6*60 + 810*4 + 810*1)/3600 = 1.225 h
+    rep = cli.compose_pilot_report(plan_wall_h=0.67, **kw)
+    assert rep["projected_wall_h"] == pytest.approx(1.225)
+    assert rep["fence_wall_h"] == pytest.approx(2.45)
+    assert rep["abort"] is False  # 1.225 < 3 x 0.67 = 2.01
+    rep2 = cli.compose_pilot_report(plan_wall_h=0.4, **kw)
+    assert rep2["abort"] is True  # 1.225 > 3 x 0.4 = 1.2
+    assert cli.PILOT_ABORT_RC == 7
+
+
+def test_record_compose_skip_reraises_on_plain_rung():
+    """Minor 1: the compose-skip except is scoped — a plain-rung load failure
+    RE-RAISES (run failure), only a composition quota records a skip."""
+    cli = _load_fits_cli()
+    plain = cli.RunSpec(variant="context_end", regime="e1", u_size=None)
+    comp = cli.RunSpec(variant="context_end", regime="e1", u_size=16, f_u=0.5, f_l=0.0)
+    skips: list = []
+    with pytest.raises(ValueError, match="boom"):
+        cli._record_compose_skip(plain, ValueError("boom"), skips)
+    assert skips == []
+    cli._record_compose_skip(comp, ValueError("quota"), skips)
+    assert len(skips) == 1 and skips[0]["reason"] == "quota"

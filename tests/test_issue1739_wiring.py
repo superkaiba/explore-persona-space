@@ -372,3 +372,103 @@ def test_extract_rb_e2_row_level_matches_tensor_reference():
     )
     with pytest.raises(SystemExit, match="per-rollout"):
         fits_cli._extract_rb("e2", _Args(), tbl_bare, list(range(n_layers)), d)
+
+
+# ---------------------------------------------------------------------------
+# round-3 wiring: pilot gate + transfer leg + maps persistence/upload + figures
+# ---------------------------------------------------------------------------
+
+
+def test_dispatcher_round3_pilot_transfer_mapdiag_pins():
+    """Textual pins on the round-3 dispatcher wiring: the fits phase runs the
+    §9 pilot gate (rc-7 designed halt) BEFORE the main grid, the config_a leg
+    carries --transfer (+ the smoke min-n calibration), and the figures phase
+    passes --map-diag."""
+    text = (REPO_ROOT / "scripts" / "issue1739_dispatch.sh").read_text()
+    for literal in (
+        "--transfer",
+        "--transfer-min-n 2",
+        "--pilot --plan-wall-h",
+        'if [ "$pilot_rc" -eq 7 ]; then',
+        "--map-diag",
+        "pilot_report.json",
+    ):
+        assert literal in text, literal
+    # ordering: the pilot invocation precedes the main fits invocation
+    pilot_at = text.index("--pilot --plan-wall-h")
+    main_at = text.index('uv run python scripts/issue1739_fits.py "${FITS_ARGS[@]}"\n', pilot_at)
+    assert pilot_at < main_at
+    # the Config-B secondary leg stays a within-split LOFO (no --transfer)
+    config_b_at = text.index("--config config_b")
+    assert "--transfer" not in text[config_b_at : config_b_at + 200]
+
+
+def test_saved_maps_ride_the_tensors_upload_stage(tmp_path, monkeypatch):
+    """C-1 sequencing: a _save_map artifact under tensors_root/maps/ lands in
+    the tensors stage's ONE bulk upload + exact-set verify (Hub stubbed with
+    autospec — signature-conformant by construction)."""
+    up = _load_script("issue1739_upload")
+    fits_cli = _load_script("issue1739_fits")
+    from explore_persona_space.experiments.issue_1739 import fits
+    from explore_persona_space.orchestrate import hub
+
+    rng = np.random.default_rng(11)
+    x = rng.normal(size=(1, 30, 4))
+    mapfit = fits.fit_linear_map(x, 0.5 * x)
+    tensors_root = tmp_path / "analysis_tensors"
+    saved = fits_cli._save_map(tensors_root, "context_end", "5000", mapfit, [0])
+    assert saved.exists()
+
+    upload_mock = mock.create_autospec(hub._upload, return_value="https://hf.co/x")
+    verify_mock = mock.create_autospec(hub.verify_repo_paths_uploaded, return_value=[])
+    monkeypatch.setattr(hub, "_upload", upload_mock)
+    monkeypatch.setattr(hub, "verify_repo_paths_uploaded", verify_mock)
+    rel = up.upload_tree(
+        tensors_root, "issue1739_ctxmap/analysis_tensors", dry_run=False, what="tensors"
+    )
+    assert rel == ["maps/context_end__u5000.npz"]
+    assert upload_mock.call_count == 1  # ONE bulk upload_folder commit
+    expected = verify_mock.call_args.args[2]
+    assert expected == ["issue1739_ctxmap/analysis_tensors/maps/context_end__u5000.npz"]
+
+
+def test_figures_cli_map_diag_adapter_pools_fits_format():
+    """map_diag_rows adapts the fits CLI's {'variant|u': diagnostics} format
+    (str acc@1 keys after a JSON roundtrip) to fig_map_degradation rows."""
+    fig_cli = _load_script("issue1739_figures")
+    diag = {
+        "context_end|full": {
+            "per_layer": [
+                {
+                    "layer_idx": 0,
+                    "r2_map": 0.6,
+                    "r2_identity_bias": 0.1,
+                    "knn": {
+                        "euclidean": {"acc_at_k": {"1": 0.8}, "chance_at_k": {"1": 0.05}},
+                        "cosine": {"acc_at_k": {"1": 0.7}, "chance_at_k": {"1": 0.05}},
+                    },
+                },
+                {
+                    "layer_idx": 1,
+                    "r2_map": 0.4,
+                    "r2_identity_bias": 0.3,
+                    "knn": {
+                        "euclidean": {"acc_at_k": {"1": 0.6}, "chance_at_k": {"1": 0.05}},
+                        "cosine": {"acc_at_k": {"1": 0.5}, "chance_at_k": {"1": 0.05}},
+                    },
+                },
+            ]
+        }
+    }
+    rows = fig_cli.map_diag_rows(json.loads(json.dumps(diag)))
+    assert rows == [
+        {
+            "rung": "context_end|full",
+            "r2_map": pytest.approx(0.5),
+            "r2_identity_bias": pytest.approx(0.2),
+            "knn_acc1_euclidean": pytest.approx(0.7),
+            "knn_chance1": pytest.approx(0.05),
+        }
+    ]
+    # already-pooled list payloads pass through unchanged
+    assert fig_cli.map_diag_rows([{"rung": "x"}]) == [{"rung": "x"}]

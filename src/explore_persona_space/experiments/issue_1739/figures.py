@@ -335,5 +335,34 @@ def render_summary_figures(summary: dict, out_dir: Path | str = DEFAULT_FIG_DIR)
         out += list(fig_scaling_curves(rows, out_dir).values())
     if len({r.get("eval_rung") for r in rows if r.get("eval_rung") is not None}) > 1:
         out += list(fig_degradation_slope(rows, out_dir).values())
+    # Round-3 M-A: the §6.5 distribution-shift ladder — TRAIN-frozen
+    # predictors scored per eval rung (transfer_rows), anchored by the
+    # in-split OOF read (rung_kind train_in_split, ordered first).
+    t_rows = summary.get("transfer_rows") or []
+    if len({str(r.get("eval_rung")) for r in t_rows}) > 1:
+        train_rungs = sorted(
+            {str(r.get("eval_rung")) for r in t_rows if r.get("rung_kind") == "train_in_split"}
+        )
+        eval_rungs = sorted(
+            {str(r.get("eval_rung")) for r in t_rows if r.get("rung_kind") != "train_in_split"}
+        )
+        out += list(
+            fig_degradation_slope(
+                t_rows,
+                out_dir,
+                stem="distribution_shift_ladder",
+                rung_order=train_rungs + [r for r in eval_rungs if r not in train_rungs],
+                title="Distribution-shift ladder: rho vs eval rung (train-frozen predictors)",
+            ).values()
+        )
+    # Round-3 M-A sweep item (d): composition rows ride arm_rows — render the
+    # §4b composition figure whenever >1 (f_U, f_L) combo is present.
+    comp = [
+        {"f_u": r["f_u"], "f_l": r["f_l"], "budget_l": r["budget_l"], "rho": r["rho_frozen"]}
+        for r in rows
+        if r.get("f_u") is not None
+    ]
+    if len({(c["f_u"], c["f_l"]) for c in comp}) > 1:
+        out += list(fig_composition(comp, out_dir).values())
     logger.info("[figures] rendered %d files -> %s", len(out), out_dir)
     return [Path(p) for p in out]
