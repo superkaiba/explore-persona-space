@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1765,
+  "highest_id": 1766,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5945,6 +5945,13 @@
       "path": "tasks/running/1765",
       "status": "running",
       "title": "workflow-fix: gotchas entry \u2014 chained waves on a detached-spawn launcher fan out concurrently"
+    },
+    "1766": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1766",
+      "status": "proposed",
+      "title": "daily-fix: fix red main: test_issue1417_render.py::test_render_config_hash_pin \u2014 reconcile the issue-1417 render-config h"
     },
     "18": {
       "has_clean_result": false,
