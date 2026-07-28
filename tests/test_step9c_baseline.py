@@ -597,6 +597,61 @@ def test_compare_blind_strip_happy_path(tmp_path: Path, monkeypatch, capsys):
     assert calls["pristine"] == []  # safe blind strip — no pristine run needed
 
 
+# --- Case 5b (#1742): urgent-park trigger on stripped workflow-invariant nodes --
+
+
+def _urgent_park_env(tmp_path: Path, monkeypatch, *, invariant: bool, pytest_rc: int = 1):
+    """Blind-strip fixture with NODE_A optionally a WORKFLOW_INVARIANT member."""
+    return _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(NODE_A.file, NODE_A.classname, NODE_A.name, "failed")],
+        pytest_rc=pytest_rc,
+        ledger_kw={"failing": (NODE_A,)},
+        reasons={NODE_A.file: ["invariant"]},
+        sel_attrs={"WORKFLOW_INVARIANT": (NODE_A.file,)} if invariant else None,
+    )
+
+
+def test_compare_stripped_workflow_invariant_emits_urgent_park(tmp_path, monkeypatch, capsys):
+    argv, _calls, _r, _w = _urgent_park_env(tmp_path, monkeypatch, invariant=True)
+    rc, out, err = _run_json(argv, capsys)
+    assert rc == 0
+    node_id = f"{NODE_A.file}::{NODE_A.name}"
+    assert out["urgent_park_required"] == [node_id]
+    # Fail-loud pin: the stderr demand line is EMITTED — never silently swallowed.
+    assert f"URGENT-PARK-REQUIRED: {node_id}" in err
+    assert "urgency: main-red" in err  # the demand names the routable grammar
+
+
+def test_compare_stripped_non_invariant_no_urgent_park(tmp_path, monkeypatch, capsys):
+    argv, _calls, _r, _w = _urgent_park_env(tmp_path, monkeypatch, invariant=False)
+    rc, out, err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["stripped"] == [{**NODE_A._asdict(), "via": "ledger"}]  # stripped, but...
+    assert out["urgent_park_required"] == []  # ...not a workflow-invariant member
+    assert "URGENT-PARK-REQUIRED" not in err
+
+
+def test_compare_urgent_park_non_json_stdout_line(tmp_path, monkeypatch, capsys):
+    argv, _calls, _r, _w = _urgent_park_env(tmp_path, monkeypatch, invariant=True)
+    argv.remove("--json")
+    rc = sb.main(argv)
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert f"  URGENT-PARK-REQUIRED: {NODE_A.file}::{NODE_A.name}" in captured.out
+
+
+def test_compare_indeterminate_payload_carries_empty_urgent_park(tmp_path, monkeypatch, capsys):
+    # pytest_rc outside {0,1} takes the _indeterminate_payload path (MF-1b);
+    # the #1742 field must ride the stable exit-2 shape too.
+    argv, _calls, _r, _w = _urgent_park_env(tmp_path, monkeypatch, invariant=True, pytest_rc=2)
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 2
+    assert out["indeterminate"] is True
+    assert out["urgent_park_required"] == []
+
+
 # --- Case 6 [A2]: node granularity — NEW node inside a known-red FILE -----------
 
 
