@@ -10055,6 +10055,29 @@ Inside Step 10d itself, use the full executable blocks below (they wrap
 forms (1)/(3) in the pre-push workflow-lint verdict gate); this subsection
 is the copy source for every OTHER site.
 
+**KEPT-stash surfacing duty (#1751; incident #1716).** Every
+`sync_repo_root.py` invocation this skill prescribes — form (2) above, the
+Step 4a divergence probe, the failure-lesson memory persist, Step 9a-ter
+re-analysis commits, and ALL Step 10d sites (the four pre-marker syncs, the
+post-merge-guard pre-sync, the unpushed-mv recovery, the local-residue
+tail, the surgical push retry) — prints a per-stash report line on its
+stderr report; a report line containing `stash: KEPT` (the emitted line is
+two-space-indented — `  stash: KEPT …` — never anchored at line start)
+means the sync could NOT cleanly re-apply a stash entry and a human owes
+triage (the entry is kept + a rescue patch written — `sync_repo_root.py`'s
+stash pop/keep step, rendered by `_emit_report`). When ANY sync this
+session ran reports `stash: KEPT`: (a) append one line PER KEPT entry — a
+sync reporting several KEPT entries gets one line each — to the round's
+durable marker note: the `epm:merged` note file at merge sites, or one
+adjacent `epm:progress` note where no merged marker fires (Step 4a, the
+failure-lesson persist, 9a-ter), of the form
+`stash-kept: <ref> (<sha12>) rescue=<rescue-patch path> — manual triage owed`;
+(b) carry the same line(s) in the session's end-of-turn wrap-up. NEVER
+summarize a KEPT-reporting sync as "clean" (the #1716 swallow: the flag
+printed, the wrap-up said "Post-merge guard clean", and the stash sat
+unowned). Surface only — the session never pops/drops the stash itself;
+triage stays human.
+
 #### Merge safety guards (run before the merge commands)
 
 Derive the two paths cwd-robustly FIRST — never via `git rev-parse
