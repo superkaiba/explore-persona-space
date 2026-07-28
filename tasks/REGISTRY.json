@@ -5781,8 +5781,8 @@
     "1743": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1743",
-      "status": "approved",
+      "path": "tasks/running/1743",
+      "status": "running",
       "title": "daily-fix: code-reviewer verdict post via --file + read-back"
     },
     "1744": {
