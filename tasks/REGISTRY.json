@@ -5886,8 +5886,8 @@
     "1758": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1758",
-      "status": "reviewing",
+      "path": "tasks/completed/1758",
+      "status": "completed",
       "title": "daily-fix: --retry-suspects prints zero-match notice"
     },
     "1759": {
