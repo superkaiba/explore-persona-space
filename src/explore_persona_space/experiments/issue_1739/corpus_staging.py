@@ -46,6 +46,13 @@ MAX_TEXT_CHARS = 20_000  # crude pre-tokenizer bound; token budget enforced at g
 MINHASH_N_PERM = 64
 MINHASH_SHINGLE = 5
 MINHASH_BANDS = 16
+# Sycophancy REDDIT train/eval partition (round C2 fix): sha1(post_id) mod 10.
+# Bucket SYC_EVAL_BUCKET -> eval-eligible; the other buckets -> train-eligible.
+# BOTH sides apply the partition at stream time, so the train and eval slices
+# are disjoint by post id BY CONSTRUCTION regardless of staging order; the
+# MinHash near-dup filter stays as the safety net.
+SYC_PARTITION_MOD = 10
+SYC_EVAL_BUCKET = 9
 
 _REMOVED_MARKERS = ("[removed]", "[deleted]", "[redacted]", "redacted")
 _MERSENNE_P = np.uint64((1 << 61) - 1)
@@ -533,6 +540,11 @@ def reddit_text(raw: dict) -> str | None:
     return _clean_reddit_field(raw.get("content")) or None
 
 
+def syc_post_bucket(post_id: str) -> int:
+    """Deterministic sha1 partition bucket (0..SYC_PARTITION_MOD-1) of a post id."""
+    return int(hashlib.sha1(str(post_id).encode("utf-8")).hexdigest(), 16) % SYC_PARTITION_MOD
+
+
 def _stage_reddit(
     out_dir: Path,
     subreddit_split: str,
@@ -542,11 +554,17 @@ def _stage_reddit(
     *,
     exclude_ids: set[str] | None = None,
     tag: str,
+    partition: str | None = None,
 ) -> list[dict]:
     exclude_ids = exclude_ids or set()
+    assert partition in (None, "train", "eval"), partition
 
     def keep(raw: dict) -> tuple[dict | None, str | None]:
         rid = str(raw.get("id"))
+        if partition is not None:
+            in_eval_bucket = syc_post_bucket(rid) == SYC_EVAL_BUCKET
+            if (partition == "eval") != in_eval_bucket:
+                return None, "hash_partition"
         if rid in exclude_ids:
             return None, "excluded_id"
         text = reddit_text(raw)
@@ -562,7 +580,12 @@ def _stage_reddit(
         fingerprint=_fingerprint(
             ds="HuggingFaceGECLM/REDDIT_submissions",
             split=subreddit_split,
-            filters="usable64+sfw.v2",  # v2: string-typed over_18 + selftext-first text (C1 fix)
+            # v3: sha1(post_id) mod-10 train/eval hash partition (C2 fix);
+            # v2: string-typed over_18 + selftext-first text (C1 fix).
+            filters="usable64+sfw.v3",
+            partition=partition,
+            partition_mod=SYC_PARTITION_MOD,
+            eval_bucket=SYC_EVAL_BUCKET,
             oversample=OVERSAMPLE_FACTOR * keep_cap,
             n_excluded=len(exclude_ids),
             stream_cap=stream_cap,
@@ -744,26 +767,22 @@ def _stage_elephant_or_fallback(
             "source": ds,
         }
 
-    # Plan-registered fallback (assumption 8): held-out socialskills slice
-    # disjoint from train by post id (belt) + near-dup filter (suspenders).
-    train_ids = {
-        r["source_id"]
-        for r in _read_component_if_exists(out_dir / "syc_train_socialskills_pool.jsonl")
-    }
+    # Plan-registered fallback (assumption 8): held-out socialskills slice,
+    # disjoint from train by a DETERMINISTIC HASH PARTITION of post ids applied
+    # at stream time on BOTH sides (sha1 mod SYC_PARTITION_MOD; bucket
+    # SYC_EVAL_BUCKET -> eval, others -> train) — order-independent, unlike the
+    # old read-the-train-pool exclusion (round C2 fix). The MinHash near-dup
+    # filter in stage_corpus stays as the safety net.
     rows = _stage_reddit(
         out_dir,
         "socialskills",
         keep_cap,
         stream_cap,
         seed + 1,
-        exclude_ids=train_ids,
         tag="eval",
+        partition="eval",
     )
     return rows, {"fallback_elephant_unresolved": True, "source": "REDDIT socialskills held-out"}
-
-
-def _read_component_if_exists(path: Path) -> list[dict]:
-    return read_jsonl(path) if Path(path).exists() else []
 
 
 # ---------------------------------------------------------------------------
@@ -868,8 +887,18 @@ def stage_corpus(
         )
     elif behavior == "sycophancy" and split == "train":
         per_split = (cap or 16_000) // 2
-        ra = _stage_reddit(out_dir, "relationship_advice", per_split, stream_cap, seed, tag="train")
-        ss = _stage_reddit(out_dir, "socialskills", per_split, stream_cap, seed, tag="train")
+        ra = _stage_reddit(
+            out_dir,
+            "relationship_advice",
+            per_split,
+            stream_cap,
+            seed,
+            tag="train",
+            partition="train",
+        )
+        ss = _stage_reddit(
+            out_dir, "socialskills", per_split, stream_cap, seed, tag="train", partition="train"
+        )
         rows = [dict(r, subreddit="relationship_advice") for r in ra] + [
             dict(r, subreddit="socialskills") for r in ss
         ]

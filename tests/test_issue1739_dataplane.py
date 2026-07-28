@@ -156,6 +156,50 @@ def test_stage_reddit_keeps_string_false_over_18(tmp_path):
     assert {r["source_id"] for r in kept} == {"r0", "r1", "r2", "r3"}
 
 
+def test_syc_hash_partition_train_eval_disjoint_and_nonempty(tmp_path):
+    # Round C2 fix: train + eval staged from ONE synthetic stream are disjoint
+    # by construction (sha1(post_id) mod SYC_PARTITION_MOD; bucket
+    # SYC_EVAL_BUCKET -> eval) and BOTH non-empty, regardless of staging order.
+    # ids post0..post59 realize 7 eval-bucket / 53 train-bucket ids (verified).
+    body = "a sufficiently long synthetic reddit post body for the filter " * 2
+    rows = [
+        {"id": f"post{i}", "title": f"Synthetic title {i}", "selftext": body, "over_18": "False"}
+        for i in range(60)
+    ]
+    import unittest.mock as mock
+
+    with mock.patch.object(corpus_staging, "_hf_stream", side_effect=lambda *a, **k: iter(rows)):
+        # Eval FIRST — the old bug was order-dependent (fallback read the
+        # not-yet-staged train pool); the partition must not care.
+        eval_rows = corpus_staging._stage_reddit(
+            tmp_path,
+            "socialskills",
+            keep_cap=100,
+            stream_cap=None,
+            seed=1,
+            tag="eval",
+            partition="eval",
+        )
+        train_rows = corpus_staging._stage_reddit(
+            tmp_path,
+            "socialskills",
+            keep_cap=100,
+            stream_cap=None,
+            seed=0,
+            tag="train",
+            partition="train",
+        )
+    train_ids = {r["source_id"] for r in train_rows}
+    eval_ids = {r["source_id"] for r in eval_rows}
+    assert train_ids and eval_ids
+    assert not (train_ids & eval_ids)
+    assert train_ids | eval_ids == {f"post{i}" for i in range(60)}
+    for rid in eval_ids:
+        assert corpus_staging.syc_post_bucket(rid) == corpus_staging.SYC_EVAL_BUCKET
+    for rid in train_ids:
+        assert corpus_staging.syc_post_bucket(rid) != corpus_staging.SYC_EVAL_BUCKET
+
+
 def test_to_contexts_group_keys():
     rows = [
         {"text": "row with an answer key", "source_id": "s0", "answer_key": "norm-key"},
