@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1759,
+  "highest_id": 1760,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5903,6 +5903,13 @@
       "path": "tasks/completed/176",
       "status": "completed",
       "title": "Ephemeral-pod provisioning is broken: cloudType enum encoding, epm-* pod-name pattern, silent failure in git clone"
+    },
+    "1760": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1760",
+      "status": "proposed",
+      "title": "daily-held: #1719 autonomous reset --hard + force-push revie"
     },
     "18": {
       "has_clean_result": false,
