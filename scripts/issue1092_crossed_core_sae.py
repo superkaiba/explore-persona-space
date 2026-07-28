@@ -220,6 +220,15 @@ def assert_label_freeze(judged_labels: str, override: bool) -> None:
         )
 
 
+def _judge_skip_reason(judged_labels: str, skip_judge: bool) -> str:
+    """Attribute the judge-phase skip to the flag that actually suppressed dispatch
+    (v22 Minor): `--skip-judge` when the override made dispatch reachable, else the
+    JUDGED-LABEL FREEZE default."""
+    if judged_labels == "on" and skip_judge:
+        return "--skip-judge"
+    return LABEL_FREEZE_NOTE
+
+
 def check_k2(n_expected: int, n_dropped: int, label: str) -> None:
     """K2 kill criterion: >5% of dense-core rows dropped (render/position/completion)."""
     if n_expected <= 0:
@@ -497,11 +506,20 @@ def run_import_check() -> None:
     inspect.signature(parent.load_rb_directions).bind(RB_REV, 28, 3, 3584)
     inspect.signature(BatchTopKSAE.ensure_downloaded).bind(SAE_K, Path("/tmp/x"))
     # v14 additions: freeze gate, scaffold read, evidence emission
-    from huggingface_hub import hf_hub_download
+    from huggingface_hub import hf_hub_download, list_repo_tree
 
     inspect.signature(hf_hub_download).bind("repo/id", "file.json", revision="rev")
+    inspect.signature(list_repo_tree).bind(
+        DATA_REPO, repo_type="dataset", path_in_repo="p", revision="rev"
+    )
     inspect.signature(hub.retry_transient).bind(lambda: None, what="probe")
     inspect.signature(assert_label_freeze).bind("off", False)
+    # v22 micro round: skip-reason attribution + evidence-union sets + rb-order pin
+    inspect.signature(_judge_skip_reason).bind("off", False)
+    inspect.signature(build_evidence_sets).bind(
+        None, np.zeros(2), np.zeros(2), np.zeros(2), np.zeros(2), 2
+    )
+    inspect.signature(_assert_rb_trait_order).bind()
     inspect.signature(scaffold_basis).bind(np.zeros((3, 4), dtype=np.float32), "cpu")
     inspect.signature(rb_cosine_join).bind(
         np.zeros(2, dtype=np.int64), Path("/tmp/x"), 8, 0, "cpu", np.zeros((3, 4))
@@ -2160,6 +2178,47 @@ def scaffold_basis(dense_mean: np.ndarray, device: str, rank: int = SCAFFOLD_RAN
     return v[:, -r:].contiguous(), r
 
 
+_RB_ORDER_VERIFIED = False
+
+
+def _assert_rb_trait_order() -> None:
+    """v22 Minor hardening: RB_TRAIT_ORDER is a POSITIONAL pin on the sorted r_B
+    .pt basenames `parent.load_rb_directions` stacks (it logs but does not return
+    them) — re-derive the SAME scoped listing at RB_REV and fail loud on drift.
+
+    Memoized: ONE scoped `list_repo_tree` per process (retry_transient-wrapped;
+    the listing is lazy, so it is materialized INSIDE the retry — gotchas.md)."""
+    global _RB_ORDER_VERIFIED
+    if _RB_ORDER_VERIFIED:
+        return
+    from huggingface_hub import list_repo_tree
+
+    from explore_persona_space.orchestrate import hub
+
+    entries = hub.retry_transient(
+        lambda: list(
+            list_repo_tree(
+                DATA_REPO,
+                repo_type="dataset",
+                path_in_repo="issue779_monitoring/r_b",  # parent.load_rb_directions prefix
+                revision=RB_REV,
+            )
+        ),
+        what="r_B trait-order listing",
+    )
+    names = tuple(
+        Path(rel).stem
+        for rel in sorted(
+            it.path
+            for it in entries
+            if getattr(it, "size", None) is not None and it.path.endswith(".pt")
+        )
+    )
+    if names != RB_TRAIT_ORDER:
+        raise RuntimeError(f"r_B trait basename order drifted: {names} != {RB_TRAIT_ORDER}")
+    _RB_ORDER_VERIFIED = True
+
+
 def rb_cosine_join(
     feats: np.ndarray,
     out_root: Path,
@@ -2183,6 +2242,7 @@ def rb_cosine_join(
     w_dec = sae.w_dec[:, torch.from_numpy(feats).to(sae.w_dec.device)]  # (H, d)
     w_hat = w_dec / w_dec.norm(dim=0, keepdim=True).clamp_min(1e-12)
     rb = parent.load_rb_directions(RB_REV, parent.N_LAYERS, parent.N_TRAITS, parent.HIDDEN_DIM)
+    _assert_rb_trait_order()  # v22 Minor: pin the positional trait axis to the .pt basenames
     r = torch.from_numpy(rb[SAE_LAYER]).to(w_hat.device, torch.float32)  # (3, H)
     r_hat = r / r.norm(dim=1, keepdim=True).clamp_min(1e-12)
     cos_traits = (r_hat @ w_hat).abs().cpu().numpy()  # (3, d)
@@ -2408,12 +2468,41 @@ def _load_unembedding(cell: str, device: str):
     return w.to(device=device, dtype=torch.float32), key
 
 
+def build_evidence_sets(
+    judge_sets: dict | None,
+    share_prefix: np.ndarray,
+    share_query: np.ndarray,
+    rb_cos_max: np.ndarray,
+    rb_cos_max_proj: np.ndarray,
+    d: int,
+) -> dict[str, np.ndarray]:
+    """Evidence-emission union sets (plan v14 Phase C'): the judge sets when
+    present (instruct arm), else the per-cell top prefix-share AND query-share
+    tails (BOTH fig_hero_scatter-highlighted mechanical classes — the query
+    tail joins the fallback per the v22 Minor), plus the figure-reported
+    rb-cos raw/projected tails. All values are POSITIONS on the active axis."""
+    ev_sets: dict[str, np.ndarray] = {
+        k: np.asarray(v, dtype=np.int64) for k, v in (judge_sets or {}).items()
+    }
+    if "tail_prefix" not in ev_sets:
+        sp = np.nan_to_num(share_prefix, nan=-1.0)
+        ev_sets["tail_prefix"] = np.argsort(sp)[::-1][: min(TAIL_PREFIX_N, d)]
+    if "ctrl_query_tail" not in ev_sets:
+        sq = np.nan_to_num(share_query, nan=-1.0)
+        ev_sets["ctrl_query_tail"] = np.argsort(sq)[::-1][: min(CTRL_QUERY_N, d)]
+    k_fig = min(RB_COS_FIG_TAIL_N, d)
+    ev_sets["rb_cos_tail_raw"] = np.argsort(np.nan_to_num(rb_cos_max, nan=-1.0))[::-1][:k_fig]
+    ev_sets["rb_cos_tail_proj"] = np.argsort(np.nan_to_num(rb_cos_max_proj, nan=-1.0))[::-1][:k_fig]
+    return ev_sets
+
+
 def emit_feature_evidence(
     out_root: Path, cell: str, res: dict, judge_sets: dict | None, args, device: str
 ) -> dict:
     """Phase C' (plan v14 — the leg that must NOT be skipped): per-feature
     evidence artifacts for the #1773 labelling round, per union feature
-    (judge 4-set union + figure-reported rb-cos tails + top prefix-share tail):
+    (judge 7-set union for the instruct arm, else the top prefix-share +
+    query-share tails; + figure-reported rb-cos tails):
 
       1. top-50 activating tuples (row_id, answer-token offset, activation) —
          one tuple per row (the row's max over sink-excluded answer tokens),
@@ -2435,17 +2524,9 @@ def emit_feature_evidence(
     feats = res["feats"]
     rb = res["rb"]
     d = int(feats.size)
-    ev_sets: dict[str, np.ndarray] = {
-        k: np.asarray(v, dtype=np.int64) for k, v in (judge_sets or {}).items()
-    }
-    if "tail_prefix" not in ev_sets:
-        sp = np.nan_to_num(res["share_prefix"], nan=-1.0)
-        ev_sets["tail_prefix"] = np.argsort(sp)[::-1][: min(TAIL_PREFIX_N, d)]
-    k_fig = min(RB_COS_FIG_TAIL_N, d)
-    ev_sets["rb_cos_tail_raw"] = np.argsort(np.nan_to_num(rb["cos_max"], nan=-1.0))[::-1][:k_fig]
-    ev_sets["rb_cos_tail_proj"] = np.argsort(np.nan_to_num(rb["cos_max_proj"], nan=-1.0))[::-1][
-        :k_fig
-    ]
+    ev_sets = build_evidence_sets(
+        judge_sets, res["share_prefix"], res["share_query"], rb["cos_max"], rb["cos_max_proj"], d
+    )
     union_pos = np.array(
         sorted({int(p) for arr in ev_sets.values() for p in np.asarray(arr).tolist()}),
         dtype=np.int64,
@@ -3306,7 +3387,10 @@ def main(argv: list[str] | None = None) -> int:
                 judge_thread.start()
                 _log("[phase=judge] dispatched on a worker thread (overlaps remaining phase B)")
             else:
-                _log(f"[phase=judge] SKIPPED — {LABEL_FREEZE_NOTE}")
+                _log(
+                    "[phase=judge] SKIPPED — "
+                    f"{_judge_skip_reason(args.judged_labels, args.skip_judge)}"
+                )
     judge_out: dict | None = None
     if judge_thread is not None:
         judge_thread.join()

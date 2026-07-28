@@ -5,6 +5,15 @@ Inputs: the `out/` digest tree the dispatcher wrote (harvested from HF or local
 `data/issue_1092/crossed_core_sae/out`). Outputs: PNG+PDF+meta under
 `figures/issue_1092/crossed_core_sae/` (override with --fig-dir for smoke).
 
+`--harvest-evidence` additionally copies the phase-C' `feature_evidence/`
+artifacts (evidence_{cell}.json + .npz — the #1773 relabeling inputs) from the
+HF round prefix into `--evidence-dir` (default the committed
+`eval_results/issue_1092/crossed_core_sae/feature_evidence/`), fail-loud when
+the prefix carries no complete json+npz pairs (concern
+feature-evidence-harvest-to-eval-results). NOTE for the committer: the repo-wide
+`*.npz` gitignore rule means the harvested npz files need `git add -f` +
+staged-index verification.
+
 Hero figures (plan v14 section 6): (1) per-feature scatter prefix-share x
 cross-query consistency colored by MECHANICAL class (dense-latent flag + tail
 membership — judged-label coloring is DEFERRED to the #1773 round under the
@@ -46,6 +55,55 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
 )
 
 CELLS = ("cell_inst_own", "cell_pre_own")
+
+# Keep in sync with issue1092_gpu_phase.{HF_DATA_REPO, HF_PREFIX} (not imported here —
+# the driver module chain pulls torch/vLLM-adjacent deps this VM-side script avoids).
+DATA_REPO = "superkaiba1/explore-persona-space-data"
+HF_PREFIX = "issue1092_realistic_crossing"
+
+
+def harvest_feature_evidence(hf_subdir: str, dest: Path, revision: str | None = None) -> list[Path]:
+    """Phase-E harvest (plan v14 Phase C' / concern
+    feature-evidence-harvest-to-eval-results): copy the round's
+    `feature_evidence/evidence_{cell}.{json,npz}` — the #1773 relabeling inputs —
+    from the HF round prefix into the committed eval tree.
+
+    `hub.stage_hub_prefix` mirrors the repo-relative path under its dest (staging
+    dir INSIDE `dest`, same filesystem — the #1335 EXDEV gotcha), so files are
+    then `os.replace`d flat into `dest`. Fail-loud: an EMPTY prefix raises
+    (stage_hub_prefix's FileNotFoundError), and a cell json without its npz
+    sibling (or vice versa) raises RuntimeError."""
+    import os
+    import tempfile
+
+    from explore_persona_space.orchestrate import hub
+
+    prefix = f"{HF_PREFIX}/{hf_subdir}/feature_evidence"
+    dest.mkdir(parents=True, exist_ok=True)
+    moved: list[Path] = []
+    with tempfile.TemporaryDirectory(dir=dest, prefix=".evharvest_") as td:
+        staged = hub.stage_hub_prefix(
+            DATA_REPO, prefix, Path(td), repo_type="dataset", revision=revision
+        )
+        for p in staged:
+            target = dest / Path(p).name
+            os.replace(p, target)
+            moved.append(target)
+    stems_json = {p.stem for p in moved if p.suffix == ".json" and p.name.startswith("evidence_")}
+    stems_npz = {p.stem for p in moved if p.suffix == ".npz" and p.name.startswith("evidence_")}
+    if not stems_json or stems_json != stems_npz:
+        raise RuntimeError(
+            f"feature-evidence harvest incomplete under {prefix}: "
+            f"json={sorted(stems_json)} npz={sorted(stems_npz)} "
+            f"(staged: {sorted(p.name for p in moved)})"
+        )
+    print(
+        f"[figs] harvested {len(moved)} feature-evidence files from {prefix} -> {dest}: "
+        f"{sorted(p.name for p in moved)}",
+        flush=True,
+    )
+    return moved
+
 
 # ONE color = ONE meaning across every figure: speaker_property class -> palette
 # role (paper_palette_role accepts only accent/baseline/control/neutral/primary).
@@ -328,8 +386,26 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="sink-map artifact dir (default: <in-root>/../sink_map)",
     )
+    ap.add_argument(
+        "--harvest-evidence",
+        action="store_true",
+        help=(
+            "phase-E harvest: copy feature_evidence/evidence_{cell}.{json,npz} from the "
+            "HF round prefix into --evidence-dir (fail-loud when absent) BEFORE rendering"
+        ),
+    )
+    ap.add_argument("--hf-subdir", default="crossed_core_sae", help="HF round prefix subdir")
+    ap.add_argument("--hf-revision", default=None, help="data-repo revision (default: main tip)")
+    ap.add_argument(
+        "--evidence-dir",
+        type=Path,
+        default=Path("eval_results/issue_1092/crossed_core_sae/feature_evidence"),
+        help="harvest destination (override for smoke — never the committed path)",
+    )
     args = ap.parse_args(argv)
     set_paper_style()
+    if args.harvest_evidence:
+        harvest_feature_evidence(args.hf_subdir, args.evidence_dir, revision=args.hf_revision)
     args.fig_dir.mkdir(parents=True, exist_ok=True)
     sinkmap_root = args.sinkmap_root or (args.in_root.parent / "sink_map")
     maps = json.loads((args.in_root / "maps_summary.json").read_text())
