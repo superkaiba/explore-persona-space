@@ -5738,8 +5738,8 @@
       "goal": "Build the multi-turn analogue of the #779 fitter-fair-comparison-n1m corpus at N\u2248100,000 real multi-turn LMSYS/WildChat conversations (prefix = full conversation history before the last user turn, \u22652 user turns; query = last user turn), generate one on-policy answer per context under the parent decoding recipe, capture layer-{14,19,26} prefix-end + context-end + mean-answer states under the parent capture convention, fit the five parent fitters in BOTH arms (prefix-based AND context-based) on a pinned near-dupe-gated split, and run the #1482 error-characterization pipeline on both arms: (1) prefix-arm transport at scale (held-out R\u00b2 per arm/layer vs the context arm and vs #1092's 0.05\u20130.11); (2) per-context error + judged taxonomy incl. conversation-depth, floor-relative via a K-resample answer-sampling floor; (3) per-direction answer-PCA linear-vs-nonlinear decomposition with shrinkage control, cross-arm; (4) identity+learned-bias baseline and kNN-retrieval reads per arm. Binding user directive: maximize parallelism and vectorization at every phase (wide sharded capture fleet, batched fits, no serial inner loops). Phase 0 CPU manifest probe verifies multi-turn supply before any GPU provisions; a 1-shard pilot re-measures multi-turn throughput before fleet sizing (plan basis ~1,500\u20132,000 ctx/GPU-h vs parent's measured single-turn 3,250).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/1738",
-      "status": "approved",
+      "path": "tasks/running/1738",
+      "status": "running",
       "title": "Multi-turn prefix-arm map at 100k: build the multi-turn n1M analogue, fit prefix+context arms, characterize both arms' prediction error"
     },
     "1739": {
