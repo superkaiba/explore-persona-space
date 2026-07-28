@@ -5872,8 +5872,8 @@
     "1756": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1756",
-      "status": "proposed",
+      "path": "tasks/planning/1756",
+      "status": "planning",
       "title": "daily-fix: compose marker notes via Write, never heredoc"
     },
     "1757": {
