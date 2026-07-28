@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1771,
+  "highest_id": 1772,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5989,6 +5989,13 @@
       "path": "tasks/planning/1771",
       "status": "planning",
       "title": "Remove (or neutralise) the Step-2c 100 GPU-h autonomous plan-approval gate"
+    },
+    "1772": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1772",
+      "status": "proposed",
+      "title": "workflow-fix: red main \u2014 add load_dotenv before heavy import in two figure scripts"
     },
     "18": {
       "has_clean_result": false,
