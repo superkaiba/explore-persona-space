@@ -38,3 +38,19 @@ N_LABELED_DRAWS = 5
 U_LADDER = (250, 5_000, 50_000)  # unlabeled-rows ladder
 L_LADDER = (250, 2_500, 16_000)  # labeled-rows ladder (evil L capped at EVIL_L_CAP)
 EVIL_L_CAP = 8_000
+
+# --- Phase-3 fit-engine pins (plan v3 §4 Phase 3 / §6; round C1) ---
+N_FOLDS = 5  # group-level folds per cell (round-robin over groups; ood-generalization-folds.md)
+N_BOOT = (
+    500  # paired-bootstrap draws (round-C1 brief pin; plan §6 registers 2000 for the final run)
+)
+N_PERM = 500  # selection-symmetric permutation draws (max-over-arms null)
+MLP_HIDDEN = 512  # arm-5/9 MLP width (single hidden layer; round-C1 brief pin)
+MLP_MAX_EPOCHS = 300
+E2_SPREAD_MIN = 15.0  # within-context score-spread floor for E2 qualifying contexts (plan §4 #24)
+AUROC_POS_THRESHOLD = 50.0  # graded 0-100 DV binarization for the AUROC companion
+KNN_KS = (1, 5)  # kNN retrieval ks (chance = k/n_pool stated by the helper)
+WHITEN_SHRINKAGE_GRID = (0.01, 0.05, 0.1, 0.3)  # Sigma_g = (1-g)Sigma + g(tr/d)I, g by held-out NLL
+WHITEN_HOLDOUT_FRAC = 0.2  # U-pool holdout for shrinkage selection + map diagnostics
+COMPOSITION_F_U = (0.0, 0.5)  # composition factor (Config A evil only, plan §4b)
+COMPOSITION_F_L = (0.0, 1.0)
