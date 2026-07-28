@@ -27,7 +27,7 @@ import sys  # noqa: E402
 import time  # noqa: E402
 from pathlib import Path  # noqa: E402
 
-from explore_persona_space.experiments.issue_1739 import judging  # noqa: E402
+from explore_persona_space.experiments.issue_1739 import dv_build, judging  # noqa: E402
 from explore_persona_space.experiments.issue_1739.constants import (  # noqa: E402
     JUDGE_MAX_TOKENS,
     JUDGE_MODEL,
@@ -63,6 +63,12 @@ def main() -> int:
     parser.add_argument("--max-tokens", type=int, default=JUDGE_MAX_TOKENS)
     parser.add_argument("--temperature", type=float, default=JUDGE_TEMPERATURE)
     parser.add_argument("--limit", type=int, default=None, help="smoke slice cap (rollout files)")
+    parser.add_argument(
+        "--dv-out-root",
+        default="eval_results/issue_1739",
+        help="root for the per-behavior DV dataset (dv_build.write_dv_dataset; "
+        "the fits phase reads dv_dataset/<behavior>/labeling.json under it)",
+    )
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
         "--threshold-base",
@@ -104,6 +110,7 @@ def main() -> int:
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
 
+    contexts_meta = {p["context_id"]: p for p in payloads}
     if args.behavior == "hallucination":
         correct_map, judge_items = judging.split_hallucination_items(payloads)
         result = judging.judge_items_graded(
@@ -135,6 +142,14 @@ def main() -> int:
                 "abstain_judge": tallies,
             }
         )
+        dv_rows = dv_build.build_three_way_dv(three_way)
+        # Attach the staged-context metadata (group_key drives the fits-side
+        # group folds; build_three_way_dv itself carries labels only).
+        for row in dv_rows:
+            meta = contexts_meta.get(row["context_id"], {})
+            for key in ("behavior", "split", "rung", "group_key"):
+                if key in meta:
+                    row.setdefault(key, meta[key])
     else:
         eval_prompt = judging.load_trait_rubric(args.behavior, inputs_dir=args.inputs_dir)
         items = [
@@ -157,6 +172,34 @@ def main() -> int:
             threshold_base=args.threshold_base,
         )
         payload_out.update({"rubric": "trait_eval_prompt", **judging.judge_tallies(result)})
+        dv_rows = dv_build.build_labeling_dv(
+            dict(result.scores),
+            n_draws=args.n_draws,
+            per_item_transport_losses=dict(getattr(result, "per_item_transport_losses", {}) or {}),
+            contexts_meta=contexts_meta,
+        )
+
+    # Round C2 wiring: the fits phase consumes dv_dataset/<behavior>/
+    # labeling.json — write it here (the judge output is its only input).
+    dv_path = dv_build.write_dv_dataset(
+        dv_rows,
+        out_root=args.dv_out_root,
+        behavior=args.behavior,
+        judge_payload_meta={
+            key: payload_out[key]
+            for key in (
+                "n_rollout_files",
+                "n_draws",
+                "judge_temperature",
+                "judge_max_tokens",
+                "judge_model",
+                "dry_run",
+                "rubric",
+            )
+            if key in payload_out
+        },
+        git_commit=payload_out["git_commit"],
+    )
 
     scores_path = out_dir / "labeling_scores.json"
     tmp = scores_path.with_name(scores_path.name + ".tmp")
@@ -165,7 +208,12 @@ def main() -> int:
     n_scores = len(payload_out.get("scores", payload_out.get("three_way", {})))
     print(
         json.dumps(
-            {"scores_path": str(scores_path), "n_items": n_scores, "dry_run": args.dry_run},
+            {
+                "scores_path": str(scores_path),
+                "dv_dataset_path": str(dv_path),
+                "n_items": n_scores,
+                "dry_run": args.dry_run,
+            },
             indent=2,
         )
     )

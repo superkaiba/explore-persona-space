@@ -337,40 +337,79 @@ def capture_rollout_files(
 ) -> dict:
     """Capture summaries for generation rollout JSONs into store shards.
 
-    Each rollout JSON (``generation.generate_labeling`` output) contributes one
-    row: (prefix_text, prompt_text, completion). Sharded per ``shard_rows``
-    with per-shard resume (checkpoint-per-unit; the shard is the unit).
-    Over-budget rows are DROPPED with a digest count (the capture itself fails
-    loud, so the filter runs at load). Returns the capture manifest.
+    A labeling rollout JSON (``generation.generate_labeling`` output)
+    contributes one row: (prefix_text, prompt_text, completion); an E1
+    extraction JSON (``generation.generate_e1_extraction`` output) contributes
+    one row PER rollout in its ``rollouts`` list, with ``side`` (pos/neg) in
+    the row_index. Sharded per ``shard_rows`` with per-shard resume
+    (checkpoint-per-unit; the shard is the unit). Over-budget rows are DROPPED
+    with a digest count (the capture itself fails loud, so the filter runs at
+    load). Returns the capture manifest.
     """
     store_dir = Path(store_dir)
     rows: list[tuple[dict, dict]] = []  # (payload, meta_row)
     n_over_budget = 0
     for path in rollout_paths:
         payload = json.loads(Path(path).read_text())
-        try:
-            _ = capture_row_ids_and_positions(
-                tokenizer,
-                payload["prefix_text"],
-                payload["prompt_text"],
-                payload["completion"],
-                max_model_len=max_model_len,
-                max_formatted_tokens=max_formatted_tokens,
-            )
-        except ValueError:
-            n_over_budget += 1
-            continue
-        meta_row = {
-            "context_id": payload.get("context_id"),
-            "behavior": payload.get("behavior"),
-            "split": payload.get("split"),
-            "rung": payload.get("rung"),
-            "group_key": payload.get("group_key"),
-            "rollout_k": payload.get("rollout_k"),
-            "is_eval_only": False,
-            "source_file": Path(path).name,
-        }
-        rows.append((payload, meta_row))
+        # Two rollout shapes (round C2): labeling files carry ONE completion
+        # per file; E1 extraction files (generation.generate_e1_extraction)
+        # carry a ``rollouts`` LIST + pair/sign/q_idx — expanded one row per
+        # rollout, with ``side`` (= sign) in the row_index so the fits-side
+        # pos/neg split (``_load_rb_e1``) resolves mechanically.
+        if "rollouts" in payload:
+            units = [
+                (
+                    {
+                        "prefix_text": payload["prefix_text"],
+                        "prompt_text": payload["prompt_text"],
+                        "completion": ro["text"],
+                    },
+                    {
+                        "context_id": (
+                            f"e1-pair{payload['pair']}-{payload['sign']}"
+                            f"-q{int(payload['q_idx']):02d}"
+                        ),
+                        "behavior": payload.get("behavior"),
+                        "side": payload["sign"],
+                        "pair": payload.get("pair"),
+                        "q_idx": payload.get("q_idx"),
+                        "rollout_k": k,
+                        "is_eval_only": False,
+                        "source_file": Path(path).name,
+                    },
+                )
+                for k, ro in enumerate(payload["rollouts"])
+            ]
+        else:
+            units = [
+                (
+                    payload,
+                    {
+                        "context_id": payload.get("context_id"),
+                        "behavior": payload.get("behavior"),
+                        "split": payload.get("split"),
+                        "rung": payload.get("rung"),
+                        "group_key": payload.get("group_key"),
+                        "rollout_k": payload.get("rollout_k"),
+                        "is_eval_only": False,
+                        "source_file": Path(path).name,
+                    },
+                )
+            ]
+        for unit_payload, meta_row in units:
+            try:
+                _ = capture_row_ids_and_positions(
+                    tokenizer,
+                    unit_payload["prefix_text"],
+                    unit_payload["prompt_text"],
+                    unit_payload["completion"],
+                    max_model_len=max_model_len,
+                    max_formatted_tokens=max_formatted_tokens,
+                )
+            except ValueError:
+                n_over_budget += 1
+                continue
+            rows.append((unit_payload, meta_row))
     if not rows:
         raise RuntimeError(
             f"capture has 0 in-budget rows from {len(rollout_paths)} rollout files "

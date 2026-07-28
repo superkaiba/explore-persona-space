@@ -641,6 +641,140 @@ def test_capture_batch_and_store_roundtrip(tiny_tokenizer, tiny_model, tmp_path)
     assert store_io.fit_pool_mask(meta).all()
 
 
+def test_capture_rollout_files_extraction_shape_side_field(tiny_tokenizer, tiny_model, tmp_path):
+    """E1 extraction rollout JSONs (rollouts LIST + pair/sign/q_idx) expand to
+    one store row per rollout with ``side`` in the row_index (round C2 wiring);
+    executes the REAL capture_rollout_files body through the tiny-real model
+    and round-trips through the consumer loader."""
+    rollout_dir = tmp_path / "extraction"
+    rollout_dir.mkdir()
+    prefix, prompt = generation.render_prompt_parts(
+        tiny_tokenizer,
+        [
+            {"role": "system", "content": "a synthetic system instruction"},
+            {"role": "user", "content": "a synthetic extraction question"},
+        ],
+    )
+    for sign in ("pos", "neg"):
+        payload = {
+            "behavior": "sycophancy",
+            "pair": 0,
+            "sign": sign,
+            "q_idx": 0,
+            "question": "a synthetic extraction question",
+            "prefix_text": prefix,
+            "prompt_text": prompt,
+            "rollouts": [
+                {"text": f"synthetic {sign} reply number {k}", "finish_reason": "stop"}
+                for k in range(2)
+            ],
+        }
+        (rollout_dir / f"pair0_{sign}_q00.json").write_text(json.dumps(payload))
+
+    store_dir = tmp_path / "store"
+    manifest = capture.capture_rollout_files(
+        sorted(rollout_dir.glob("*.json")),
+        store_dir=store_dir,
+        model=tiny_model,
+        tokenizer=tiny_tokenizer,
+        n_layers=TINY_LAYERS,
+        hidden_dim=TINY_DIM,
+        device="cpu",
+        batch_size=2,
+    )
+    assert manifest["n_rows"] == 4  # 2 files x 2 rollouts
+    out, meta = store_io.load_summaries(
+        store_dir, ("t1",), tuple(range(TINY_LAYERS)), hidden_dim=TINY_DIM
+    )
+    assert out[("t1", 0)].shape == (4, TINY_DIM)
+    sides = [m["side"] for m in meta]
+    assert sides.count("pos") == 2 and sides.count("neg") == 2
+    # The fits-side pos/neg direction extraction resolves on this store.
+    acts = np.stack([out[("t1", ly)] for ly in range(TINY_LAYERS)], axis=1)
+    pos_rows = np.flatnonzero(np.array(sides) == "pos")
+    neg_rows = np.flatnonzero(np.array(sides) == "neg")
+    from explore_persona_space.experiments.issue_1739 import fits
+
+    rb = fits.extract_rb_e1(acts[pos_rows], acts[neg_rows])
+    assert rb.shape == (TINY_LAYERS, TINY_DIM) and np.isfinite(rb).all()
+
+
+def test_judge_cli_writes_dv_dataset(tiny_tokenizer, tmp_path, monkeypatch):
+    """The judge CLI main() writes dv_dataset/<behavior>/labeling.json (the
+    fits-phase input — round C2 wiring), executing the real CLI body with the
+    Batch judge boundary faked signature-conformantly."""
+    import scripts.issue1739_judge as judge_cli
+
+    rollout_dir = tmp_path / "labeling" / "sycophancy"
+    rollout_dir.mkdir(parents=True)
+    for cid, k in (("sycophancy-train-train-000000", 0), ("sycophancy-train-train-000000", 1)):
+        (rollout_dir / f"{cid}_seed{k}.json").write_text(
+            json.dumps(
+                {
+                    "context_id": cid,
+                    "behavior": "sycophancy",
+                    "split": "train",
+                    "rung": "train",
+                    "group_key": "socialskills-p0",
+                    "rollout_k": k,
+                    "query": "a synthetic advice question",
+                    "prefix_text": "",
+                    "prompt_text": "rendered prompt text",
+                    "completion": f"synthetic reply {k}",
+                }
+            )
+        )
+    inputs_dir = tmp_path / "inputs"
+    (inputs_dir / "e1_assets").mkdir(parents=True)
+    (inputs_dir / "e1_assets" / "sycophancy.json").write_text(
+        json.dumps(
+            {
+                "instruction": [],
+                "extraction_questions": [],
+                "eval_prompt": "rate {question} / {answer} from 0 to 100",
+            }
+        )
+    )
+
+    def fake_judge_graded(items, eval_prompt, *, n_draws, cache_dir, save_raw, **kwargs):
+        scores = {item_id: 40.0 + 10.0 * i for i, (item_id, _q, _a) in enumerate(items)}
+        return JudgeResult(
+            scores=scores,
+            n_total_draws=n_draws * len(items),
+            n_dropped_draws=0,
+            per_item_scores={k: [v] for k, v in scores.items()},
+            per_item_draw_counts={k: n_draws for k in scores},
+        )
+
+    import explore_persona_space.eval.graded_judge as graded_judge_mod
+
+    monkeypatch.setattr(graded_judge_mod, "judge_graded", fake_judge_graded)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "issue1739_judge.py",
+            "--behavior",
+            "sycophancy",
+            "--rollout-dir",
+            str(rollout_dir),
+            "--out-dir",
+            str(tmp_path / "judge_out"),
+            "--inputs-dir",
+            str(inputs_dir),
+            "--dv-out-root",
+            str(tmp_path / "evalroot"),
+        ],
+    )
+    assert judge_cli.main() == 0
+    dv_payload = json.loads(
+        (tmp_path / "evalroot" / "dv_dataset" / "sycophancy" / "labeling.json").read_text()
+    )
+    assert dv_payload["n_contexts"] == 1 and dv_payload["n_contexts_with_dv"] == 1
+    row = dv_payload["rows"][0]
+    assert row["group_key"] == "socialskills-p0"
+    assert row["dv"] == pytest.approx(45.0)  # mean over the two rollout scores
+
+
 def test_capture_shard_resume_predicate(tmp_path):
     assert not capture.shard_done(tmp_path, 0, "fp")
     (tmp_path / "row_index_shard00.jsonl").write_text('{"context_id": "c"}\n')

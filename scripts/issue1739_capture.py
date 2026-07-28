@@ -47,6 +47,11 @@ def main() -> int:
 
     tokenizer = generation.get_tokenizer()
     model = capture.load_capture_model(device=args.device, dtype=args.dtype)
+    # Layer/dim come from the LOADED model's config (ground truth — equals the
+    # constants pins for the production model; lets a tiny-real smoke model
+    # thread its own geometry through the identical CLI path, round C2).
+    n_layers = int(model.config.num_hidden_layers)
+    hidden_dim = int(model.config.hidden_size)
     fingerprint = generation._gen_fingerprint(
         model=generation.MODEL_NAME,
         revision=generation.INSTRUCT_REVISION,
@@ -59,6 +64,8 @@ def main() -> int:
         store_dir=args.store_dir,
         model=model,
         tokenizer=tokenizer,
+        n_layers=n_layers,
+        hidden_dim=hidden_dim,
         device=args.device,
         batch_size=args.batch_size,
         shard_rows=args.shard_rows,

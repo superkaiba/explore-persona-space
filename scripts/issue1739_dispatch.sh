@@ -53,6 +53,11 @@ LIMIT_ARGS=()
 if [ -n "${EPM_I1739_LIMIT:-}" ]; then LIMIT_ARGS=(--limit "$EPM_I1739_LIMIT"); fi
 CTX_LIMIT_ARGS=()
 if [ -n "${EPM_I1739_LIMIT:-}" ]; then CTX_LIMIT_ARGS=(--max-contexts "$EPM_I1739_LIMIT"); fi
+# E1 extraction has no context cap (5 pairs x 2 signs x 20 questions is fixed);
+# the smoke slice narrows ROLLOUTS per job only. Production default (no
+# EPM_I1739_LIMIT) keeps the full E1_N_ROLLOUTS=10.
+E1_LIMIT_ARGS=()
+if [ -n "${EPM_I1739_LIMIT:-}" ]; then E1_LIMIT_ARGS=(--n-rollouts 2); fi
 
 run_phase() {
   local phase="$1" b
@@ -86,7 +91,7 @@ stage_corpus(b, 'eval', cap, 0)
         echo "[phase=${phase}] E1 extraction generation behavior=${b}"
         "${CAPS[@]}" uv run python scripts/issue1739_generate.py --mode extraction \
           --behavior "$b" --out-root raw_completions/issue_1739 \
-          --inputs-dir data/issue_1739/inputs
+          --inputs-dir data/issue_1739/inputs "${E1_LIMIT_ARGS[@]}"
       done
       write_sentinel "$phase" ok 0
       echo "[phase=${phase}] done (extract)"
@@ -97,6 +102,10 @@ stage_corpus(b, 'eval', cap, 0)
         "${CAPS[@]}" uv run python scripts/issue1739_capture.py \
           --rollout-dir raw_completions/issue_1739/labeling/"$b" \
           --store-dir data/issue_1739/store/"$b"_labeling "${LIMIT_ARGS[@]}"
+        echo "[phase=${phase}] E1 extraction capture behavior=${b}"
+        "${CAPS[@]}" uv run python scripts/issue1739_capture.py \
+          --rollout-dir raw_completions/issue_1739/extraction/"$b" \
+          --store-dir data/issue_1739/store/"$b"_extraction "${LIMIT_ARGS[@]}"
       done
       write_sentinel "$phase" ok 0
       echo "[phase=${phase}] done (capture)"
@@ -107,7 +116,8 @@ stage_corpus(b, 'eval', cap, 0)
         "${CAPS[@]}" uv run python scripts/issue1739_judge.py \
           --behavior "$b" \
           --rollout-dir raw_completions/issue_1739/labeling/"$b" \
-          --out-dir eval_results/issue_1739/judge/"$b" "${LIMIT_ARGS[@]}"
+          --out-dir eval_results/issue_1739/judge/"$b" \
+          --dv-out-root eval_results/issue_1739 "${LIMIT_ARGS[@]}"
       done
       write_sentinel "$phase" ok 0
       echo "[phase=${phase}] done (judge)"
