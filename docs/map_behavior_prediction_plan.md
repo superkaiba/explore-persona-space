@@ -330,6 +330,38 @@ unreleased. Two derivable proxies: **presence in both temporal snapshots** (2023
 2023-12-25 — surviving ~7 months of patching is the paper's own efficacy marker) and
 `community_id` propagation weighting. Prioritize the persona-roleplay slice.
 
+**Train/eval direction for evil — DAN→hh-rlhf is PRIMARY; the swap is a labeled secondary.**
+The projection arms never train on the training set (E1 is label-free), so their performance
+depends only on how well the PV matches the *eval* set. DAN prompts are real persona-instruction
+elicitation — the same mechanism family as PV's synthetic instruction pairs. Therefore:
+
+- **Config A (primary, adversarial): train DAN → eval hh-rlhf.** Projection arms face an
+  instruction→freeform mechanism shift at eval; regression arms face the same shift. Symmetric.
+- **Config B (secondary, favorable): train hh-rlhf → eval DAN.** Projection arms get a mechanism
+  *match* at eval while regression arms face a shift — an asymmetry favoring exactly the arms the
+  headline rests on. Never the primary.
+
+Two further reasons for A: **yield** (persona-roleplay wrappers are the high-ASR family, while
+hh-rlhf is 2022 attacks a safety-trained Qwen will mostly refuse — absolute positives are needed
+in *train* more than eval), and **turn structure** (train single-turn → eval multi-turn is the
+harder, more honest test; B runs it the easy way). Run B anyway as a labeled secondary (~+$300–500
+in judging): A and B together **bound** the mechanism-match effect, and the A−B gap measures how
+much PV projection depends on extraction and eval sharing a mechanism — a reportable finding about
+persona vectors in its own right.
+
+**Effective-N caveat for evil (does not apply to the other two behaviors).** The DAN×forbidden
+cross product is 1,405 prefixes × 390 questions — it inflates ROW count without inflating
+independent GROUPS. Under group-level folds the effective sample size is governed by ~1,405
+independent prefixes, so a "16k labeled" point for evil is not 16k independent examples and its
+scaling curve is not directly comparable to sycophancy's. Required: report **group-count-effective
+N alongside row count**, treat the forbidden-question set as a second grouping factor, and cap
+evil's labeled axis at what the group count honestly supports rather than matching the other
+behaviors.
+
+**Third eval rung for evil (cheap):** ToxicChat's 204 jailbreak-flagged rows — Vicuna-demo
+provenance, independent of both DAN and hh-rlhf. Small, but a genuine third collection process.
+(Its 542 toxic-but-not-jailbreaking rows remain the topic control, a separate role.)
+
 ### 5.4 Contamination map — pairings that would silently break the OOD claim
 
 - **AdvBench is a root contaminant**, reappearing verbatim in JBB-Behaviors, StrongREJECT (25),
