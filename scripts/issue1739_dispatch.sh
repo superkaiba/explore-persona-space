@@ -47,8 +47,15 @@ write_sentinel() {
     "$phase" "$status" "$rc" "$ts" "$commit" > "${OUT_ROOT}/issue-1739-${phase}.json"
 }
 
+# Behaviors + optional smoke slice (empty EPM_I1739_LIMIT = production, no cap).
+BEHAVIORS_RUN="${EPM_I1739_BEHAVIORS:-evil sycophancy hallucination}"
+LIMIT_ARGS=()
+if [ -n "${EPM_I1739_LIMIT:-}" ]; then LIMIT_ARGS=(--limit "$EPM_I1739_LIMIT"); fi
+CTX_LIMIT_ARGS=()
+if [ -n "${EPM_I1739_LIMIT:-}" ]; then CTX_LIMIT_ARGS=(--max-contexts "$EPM_I1739_LIMIT"); fi
+
 run_phase() {
-  local phase="$1"
+  local phase="$1" b
   echo "[phase=${phase}] start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
   case "$phase" in
     gates)
@@ -56,8 +63,57 @@ run_phase() {
       write_sentinel "$phase" ok 0
       echo "[phase=${phase}] done"
       ;;
-    extract|capture|judge|fits|figures)
-      echo "[phase=${phase}] NOT IMPLEMENTED in round A (lands in round B/C)" >&2
+    extract)
+      # Staging (streaming HF loads, checkpointed/resumable) + labeling
+      # generation (K rollouts/context) + E1 extraction generation.
+      for b in $BEHAVIORS_RUN; do
+        echo "[phase=${phase}] staging behavior=${b}"
+        "${CAPS[@]}" uv run python -c "
+import sys
+from explore_persona_space.orchestrate.env import load_dotenv
+load_dotenv()
+from explore_persona_space.experiments.issue_1739.corpus_staging import stage_corpus
+b = sys.argv[1]
+cap = int(sys.argv[2]) if sys.argv[2] != 'none' else None
+stage_corpus(b, 'train', cap, 0)
+stage_corpus(b, 'eval', cap, 0)
+" "$b" "${EPM_I1739_LIMIT:-none}"
+        echo "[phase=${phase}] labeling generation behavior=${b}"
+        "${CAPS[@]}" uv run python scripts/issue1739_generate.py --mode labeling \
+          --behavior "$b" \
+          --contexts-jsonl data/issue_1739/staged/"$b"/"$b"_*_*.contexts.jsonl \
+          --out-root raw_completions/issue_1739 "${CTX_LIMIT_ARGS[@]}"
+        echo "[phase=${phase}] E1 extraction generation behavior=${b}"
+        "${CAPS[@]}" uv run python scripts/issue1739_generate.py --mode extraction \
+          --behavior "$b" --out-root raw_completions/issue_1739 \
+          --inputs-dir data/issue_1739/inputs
+      done
+      write_sentinel "$phase" ok 0
+      echo "[phase=${phase}] done (extract)"
+      ;;
+    capture)
+      for b in $BEHAVIORS_RUN; do
+        echo "[phase=${phase}] capture behavior=${b}"
+        "${CAPS[@]}" uv run python scripts/issue1739_capture.py \
+          --rollout-dir raw_completions/issue_1739/labeling/"$b" \
+          --store-dir data/issue_1739/store/"$b"_labeling "${LIMIT_ARGS[@]}"
+      done
+      write_sentinel "$phase" ok 0
+      echo "[phase=${phase}] done (capture)"
+      ;;
+    judge)
+      for b in $BEHAVIORS_RUN; do
+        echo "[phase=${phase}] judge behavior=${b}"
+        "${CAPS[@]}" uv run python scripts/issue1739_judge.py \
+          --behavior "$b" \
+          --rollout-dir raw_completions/issue_1739/labeling/"$b" \
+          --out-dir eval_results/issue_1739/judge/"$b" "${LIMIT_ARGS[@]}"
+      done
+      write_sentinel "$phase" ok 0
+      echo "[phase=${phase}] done (judge)"
+      ;;
+    fits|figures)
+      echo "[phase=${phase}] NOT IMPLEMENTED in round B (lands in round C)" >&2
       write_sentinel "$phase" not-implemented 3
       echo "[phase=${phase}] done (not-implemented)"
       return 3
