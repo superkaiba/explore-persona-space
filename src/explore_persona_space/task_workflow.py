@@ -5258,6 +5258,82 @@ def set_track(task_id: int, track: str) -> None:
 # ─── Plans ──────────────────────────────────────────────────────────────────
 
 
+# Parity constants with scripts/verify_plan.py's c40 header-version check
+# (#1745): heading detection mirrors verify_plan._HEADING_RE (matched on
+# line.strip(), so indented heading-like lines count) and the version pattern
+# mirrors verify_plan._C40_HEADER_RE applied to the heading TEXT. The
+# round-trip test
+# tests/test_task_workflow.py::test_new_plan_version_output_passes_c40_roundtrip
+# runs c40 itself on this writer's output and guards drift between the two
+# implementations.
+_PLAN_HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
+_PLAN_HEADER_VERSION_RE = re.compile(r"(?i)^plan\s+v(\d+)\b")
+
+
+def _split_plan_frontmatter(text: str) -> tuple[str, str]:
+    """Split ``text`` into ``(frontmatter_prefix, body)``, byte-preserving.
+
+    Parity with ``scripts/verify_plan.py::split_frontmatter``'s skipping
+    rules (#1745): a leading ``---`` block is skipped ONLY when the text
+    starts with ``---\\n``, the block closes with ``\\n---\\n``, and the
+    block yaml-parses to a dict; on any other shape the whole text is the
+    body (prefix ``""``). Deliberately NO ``...`` closer and NO
+    thematic-break leniency — never more permissive than the verifier.
+    """
+    if not text.startswith("---\n"):
+        return "", text
+    rest = text[4:]
+    end = rest.find("\n---\n")
+    if end == -1:
+        return "", text
+    try:
+        fm = yaml.safe_load(rest[:end]) or {}
+    except yaml.YAMLError:
+        return "", text
+    if not isinstance(fm, dict):
+        return "", text
+    split_at = 4 + end + len("\n---\n")
+    return text[:split_at], text[split_at:]
+
+
+def _align_plan_header_version(plan_md: str, next_v: int) -> str:
+    """Rewrite a self-declared ``Plan v<X>`` in the FIRST markdown heading
+    to ``v{next_v}`` (c40 parity; #1745).
+
+    Skips YAML frontmatter (``_split_plan_frontmatter``) and fenced code
+    blocks; only the first real heading is considered. Version-neutral
+    headings (``# Plan — task #<N>: …``) and non-heading content are
+    untouched, and a header already reading ``v{next_v}`` is returned
+    byte-identical — a pure no-op when nothing matches.
+    """
+    prefix, body = _split_plan_frontmatter(plan_md)
+    lines = body.splitlines(keepends=True)
+    in_fence = False
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        m = _PLAN_HEADING_RE.match(stripped)
+        if m is None:
+            continue
+        # First real heading found (c40 reads heads[0] only). Align a
+        # self-declared version; anything else is left untouched.
+        hm = _PLAN_HEADER_VERSION_RE.match(m.group(2).strip())
+        if hm is None or int(hm.group(1)) == next_v:
+            return plan_md
+        lines[i] = re.sub(
+            r"(?i)^(\s*#{1,6}\s+plan\s+v)\d+",
+            lambda mo: f"{mo.group(1)}{next_v}",
+            line,
+            count=1,
+        )
+        return prefix + "".join(lines)
+    return plan_md
+
+
 def new_plan_version(task_id: int, plan_md: str) -> int:
     """Append plans/v{next}.md, update plans/plan.md symlink. Returns the
     new version number.
@@ -5272,6 +5348,11 @@ def new_plan_version(task_id: int, plan_md: str) -> int:
     belt-and-suspenders guard, refuse loudly if the computed target file
     somehow already exists (e.g. a concurrent writer between the glob and
     the write, or a manually pre-staged file).
+
+    Before writing, a self-declared ``Plan v<X>`` version in the plan's
+    first markdown heading is rewritten to the assigned ``v{next}``
+    (``_align_plan_header_version``, c40 parity) so a freshly-persisted
+    plan cannot carry a stale header-version label (#1745).
     """
     with _locked():
         plans_dir = find_task_path(task_id) / "plans"
@@ -5290,6 +5371,7 @@ def new_plan_version(task_id: int, plan_md: str) -> int:
                 f"the highest-version+1 resolver computed v{next_v} but "
                 f"that file already exists on disk"
             )
+        plan_md = _align_plan_header_version(plan_md, next_v)
         target.write_text(plan_md if plan_md.endswith("\n") else plan_md + "\n")
         # Symlink plan.md → v{next}.md
         symlink = plans_dir / "plan.md"
