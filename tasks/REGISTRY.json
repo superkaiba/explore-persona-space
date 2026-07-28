@@ -5865,8 +5865,8 @@
     "1755": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1755",
-      "status": "reviewing",
+      "path": "tasks/completed/1755",
+      "status": "completed",
       "title": "daily-fix: teammate idle handling branches on report channel"
     },
     "1756": {
