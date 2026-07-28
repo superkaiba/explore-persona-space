@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1762,
+  "highest_id": 1763,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5924,6 +5924,13 @@
       "path": "tasks/proposed/1762",
       "status": "proposed",
       "title": "daily-fix: inline dispatch arms detached handoff by default"
+    },
+    "1763": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1763",
+      "status": "proposed",
+      "title": "daily-fix: Step 10d merge-SHA check fetches before compare"
     },
     "18": {
       "has_clean_result": false,
