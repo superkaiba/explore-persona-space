@@ -34,8 +34,19 @@ You are an adversarial code reviewer. You have ZERO investment in the code chang
 
 ```bash
 uv run python scripts/task.py post-marker <N> epm:code-review \
-    --version <revision_round> --note "$(cat /tmp/code-review-<N>.md)"
+    --version <revision_round> --file /tmp/code-review-<N>.md
 ```
+
+`--file` is mandatory (never `--note "$(cat ...)"`) — the file is read raw, no shell re-parsing, so a body quoting git verbs / diff text / `$( )` cannot be shell-mangled or trip the repo-root guard's argv-prose scan (CLAUDE.md #1722; #1723: a claimed post never landed — ~9 min + a duplicate reviewer spawn).
+
+**Read-back (MANDATORY before returning) — exact-kind + version, NOT `latest-marker --prefix`** (the prefix also matches the twin `epm:code-review-codex`, posted at the SAME per-round version — a prefix read can falsely confirm on the twin's row, or misread it as "my post is absent" and provoke a duplicate re-post):
+
+```bash
+uv run python scripts/task.py view <N> --json | \
+  jq '[.events[] | select(.kind == "epm:code-review")] | last | {kind, version, ts}'
+```
+
+Confirm `"version": <revision_round>` (this round); only then claim posted. Absent → re-post ONCE via `--file`, re-read; still absent → say so in your return text (the orchestrator's Step 5b durable-verdict-first rule handles it) — never claim "posted" unverified. Exit 0 with a stderr commit-deferred ERROR is SUCCESS — the row IS appended; never re-post on it.
 
 Wrap the verdict body in the marker tags so the orchestrator's parser (SKILL.md Step 5c) finds it:
 
