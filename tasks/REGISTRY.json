@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1748,
+  "highest_id": 1749,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5819,6 +5819,13 @@
       "path": "tasks/proposed/1748",
       "status": "proposed",
       "title": "daily-fix: trigger-dense datagen first-pass decomposition"
+    },
+    "1749": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1749",
+      "status": "proposed",
+      "title": "daily-fix: relaunch rounds re-run compute-character check"
     },
     "176": {
       "has_clean_result": false,
