@@ -26,15 +26,26 @@ Single dispatcher, phases A-D (phase E figures live in
      per-feature crossed ANOVA shares on the balanced grid + batched permutation
      nulls (per-draw re-selected max/top-k persisted); |cos(W_dec, r_B)| join with
      a selection-symmetric max-over-3-random-directions null.
-  C  judge labels (level rubric VERBATIM from issue1482_feature_correlates +
-     the v13 speaker_property 5-way rubric as a SEPARATE call — mutually
-     exclusive {language, register_style, identity_disposition, none, unclear};
-     headline contrasts use the identity_disposition SUBSET only, language /
-     register_style reported separately per set, NEVER pooled; blind single
-     dispatch over the shuffled union; drop-never-coerce (out-of-set value =
-     content drop); transport retried via eval.judge_dispatch), dispatched on a
-     thread concurrent with phase B nulls.
-  D  per-feature join + headline Delta contrast (bootstrap CI) + digests + upload.
+  C  FROZEN this round (v14 JUDGED-LABEL FREEZE, user directive 2026-07-28
+     21:24Z): ZERO judge API calls — the retained rubric design (level rubric
+     VERBATIM from issue1482_feature_correlates + the v13 speaker_property
+     5-way rubric, blind shuffled-union dispatch, drop-never-coerce, transport
+     retried via eval.judge_dispatch) is the SPEC for the #1773-instrumented
+     follow-up and is reachable ONLY via `--judged-labels on
+     --override-label-freeze` (default `off`; `on` without the override is a
+     fail-loud refusal). The 4-set union is STILL computed — it feeds phase C'.
+  C' per-feature EVIDENCE EMISSION (plan v14 — the leg that must NOT be
+     skipped): for every union feature (+ figure-reported rb-cos tail members):
+     top-50 activating tuples (row_id, answer-token offset, activation), the
+     per-row pooled-mean vector, decoder-space top-10 NN feature ids (one
+     matmul), and top-30 mean-centered logit-footprint tokens (one matmul
+     against a partially-loaded unembedding) -> `feature_evidence/` JSON+npz,
+     uploaded so #1773 labels these features with NO new capture.
+  D  per-feature join + digests + upload; every decoder-r_B alignment read is
+     reported raw AND with the top-48 answer-PCA scaffold projected out of BOTH
+     r_B and the decoder columns (v14 SCAFFOLD CONTROL — the projected variant
+     is the HEADLINE alignment read; the max-over-3-random-directions null is
+     recomputed in the SAME projected space).
 
 Smoke IS this driver with tiny N through the same entrypoint (PASS_UNIFIED):
 `--smoke-prefixes/--smoke-queries` subset the dense core (balanced), and the
@@ -146,6 +157,28 @@ SPEAKER_JUDGE_SYSTEM = (
     "unclear = no coherent shared property is discernible from the examples."
 )
 
+# v14 JUDGED-LABEL FREEZE (user directive 2026-07-28 21:24Z): zero judge API
+# calls this round — the rubric design above is retained as the SPEC for the
+# #1773-instrumented follow-up and is unreachable without an explicit override.
+LABEL_FREEZE_NOTE = (
+    "JUDGED-LABEL FREEZE (2026-07-28): judged feature-label axes are DEFERRED to the "
+    "#1773-instrumented follow-up round — zero judge API calls this round (plan v14 Phase C)"
+)
+
+# v14 SCAFFOLD CONTROL (external directive 2026-07-28 21:11Z; grounded on the #779
+# rb-nuisance-profile round @ c724f5f588: 0.57-0.72 of r_B's squared mass at the
+# mean-answer layer-19 read lies inside the top-48 principal subspace).
+SCAFFOLD_RANK = 48
+# Trait axis order == sorted r_B .pt basenames in parent.load_rb_directions
+# (verified at RB_REV: evil.pt < hallucination.pt < sycophancy.pt).
+RB_TRAIT_ORDER = ("evil", "hallucination", "sycophancy")
+
+# v14 Phase C' evidence-emission sizes (plan v14 Phase C')
+EVIDENCE_TOP_ROWS = 50  # top activating (row_id, offset, activation) tuples per feature
+EVIDENCE_NN_K = 10  # decoder-space nearest-neighbour feature ids per feature
+EVIDENCE_LOGIT_TOPK = 30  # mean-centered logit-footprint tokens per feature
+RB_COS_FIG_TAIL_N = 50  # figure-reported alignment-tail members folded into the union
+
 # Sink/massive-activation map (v13 addendum; thresholds stated in the map JSON)
 SINKMAP_POS_CAP = 64  # per-position stats tracked for absolute positions 0..63
 SINKMAP_MIN_OCC = 20  # min occurrences before a position/token-id can classify as sink
@@ -176,6 +209,15 @@ def fitness_gate_verdict(fve: float, l0: float) -> bool:
         and fve >= FITNESS_FVE_MIN
         and FITNESS_L0_MIN <= l0 <= FITNESS_L0_MAX
     )
+
+
+def assert_label_freeze(judged_labels: str, override: bool) -> None:
+    """Fail-loud freeze gate: `--judged-labels on` without the explicit override is refused."""
+    if judged_labels == "on" and not override:
+        raise SystemExit(
+            f"--judged-labels on REFUSED: {LABEL_FREEZE_NOTE}. Pass --override-label-freeze "
+            "to run the retained judge design (the #1773 follow-up round)."
+        )
 
 
 def check_k2(n_expected: int, n_dropped: int, label: str) -> None:
@@ -367,6 +409,21 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--judge-limit", type=int, default=0, help="0=full union; N=pilot")
     ap.add_argument("--retest-n", type=int, default=FC.RETEST_N)
     ap.add_argument("--skip-judge", action="store_true", help="skip phase C entirely")
+    ap.add_argument(
+        "--judged-labels",
+        choices=("off", "on"),
+        default="off",
+        help=(
+            f"default off: {LABEL_FREEZE_NOTE}. 'on' is REFUSED unless "
+            "--override-label-freeze is also passed (the retained judge design is the "
+            "SPEC for the #1773 follow-up round)."
+        ),
+    )
+    ap.add_argument(
+        "--override-label-freeze",
+        action="store_true",
+        help="explicit opt-in required for --judged-labels on (see the freeze note above)",
+    )
     ap.add_argument("--capture-batch", type=int, default=8)
     ap.add_argument(
         "--sinkmap-rows",
@@ -398,6 +455,7 @@ def run_import_check() -> None:
     import inspect
 
     import torch  # noqa: F401
+    from safetensors import safe_open  # noqa: F401
     from transformers import AutoModelForCausalLM, AutoTokenizer  # noqa: F401
 
     import issue1482_analysis as A
@@ -438,6 +496,20 @@ def run_import_check() -> None:
     inspect.signature(A._cohens_kappa).bind(["a"], ["a"])
     inspect.signature(parent.load_rb_directions).bind(RB_REV, 28, 3, 3584)
     inspect.signature(BatchTopKSAE.ensure_downloaded).bind(SAE_K, Path("/tmp/x"))
+    # v14 additions: freeze gate, scaffold read, evidence emission
+    from huggingface_hub import hf_hub_download
+
+    inspect.signature(hf_hub_download).bind("repo/id", "file.json", revision="rev")
+    inspect.signature(hub.retry_transient).bind(lambda: None, what="probe")
+    inspect.signature(assert_label_freeze).bind("off", False)
+    inspect.signature(scaffold_basis).bind(np.zeros((3, 4), dtype=np.float32), "cpu")
+    inspect.signature(rb_cosine_join).bind(
+        np.zeros(2, dtype=np.int64), Path("/tmp/x"), 8, 0, "cpu", np.zeros((3, 4))
+    )
+    inspect.signature(_load_unembedding).bind("cell_inst_own", "cpu")
+    inspect.signature(emit_feature_evidence).bind(
+        Path("/tmp/x"), "cell_inst_own", {}, None, object(), "cpu"
+    )
     print("[import-check] all deferred imports resolved + call shapes bind", flush=True)
 
 
@@ -448,7 +520,7 @@ def run_gate_probes() -> None:
     def expect(name: str, fn, exc=None) -> None:
         try:
             out = fn()
-        except Exception as e:  # noqa: BLE001 — probe records the designed raise
+        except (Exception, SystemExit) as e:  # noqa: BLE001 — probe records the designed raise
             if exc is not None and isinstance(e, exc):
                 probes.append((name, f"raised {type(e).__name__} (designed)"))
                 return
@@ -519,6 +591,20 @@ def run_gate_probes() -> None:
         lambda: _validate_speaker({"speaker_property": "Identity_Disposition", "label": "x"})[
             "speaker_property"
         ],
+    )
+    # v14 additions: judged-label freeze gate + scaffold rank cap
+    expect("label_freeze_on_refused", lambda: assert_label_freeze("on", False), exc=SystemExit)
+    expect("label_freeze_on_with_override", lambda: assert_label_freeze("on", True))
+    expect("label_freeze_off_default", lambda: assert_label_freeze("off", False))
+    rng = np.random.default_rng(0)
+    expect(
+        "scaffold_rank_capped_below_48",
+        lambda: scaffold_basis(rng.normal(size=(3, 5)).astype(np.float32), "cpu")[1],
+    )
+    expect(
+        "scaffold_needs_2_rows",
+        lambda: scaffold_basis(np.zeros((1, 5), dtype=np.float32), "cpu"),
+        exc=AssertionError,
     )
     for name, outcome in probes:
         print(f"[gate-probe] {name}: {outcome}", flush=True)
@@ -837,6 +923,8 @@ def worker_capture(args: argparse.Namespace) -> int:
             "pooled_mean": [],
             "pooled_max": [],
             "pooled_frac": [],
+            "pooled_argmax": [],
+            "dense_mean": [],
             "pooledall_idx": [],
             "pooledall_val": [],
             "pe_sink": [],
@@ -932,9 +1020,26 @@ def worker_capture(args: argparse.Namespace) -> int:
                     n_sink = int((~inlier).sum().item())
                     if not bool(inlier.any()):
                         inlier = torch.ones_like(inlier)  # degenerate: keep all (recorded)
-                    pooled = pool_answer_features(ans_f[inlier])
+                    ans_in = ans_f[inlier]
+                    pooled = pool_answer_features(ans_in)
                     mean_all = ans_f.mean(0)
                     sp = sparsify(pooled)
+                    # v14 Phase C' support: per-active-feature argmax answer-token
+                    # offset (over the sink-excluded tokens; offsets index the
+                    # ORIGINAL answer span) — one batched argmax per row.
+                    inlier_offs = torch.nonzero(inlier, as_tuple=False).squeeze(-1)
+                    idx_t = torch.as_tensor(sp["idx"].astype(np.int64), device=ans_in.device)
+                    if idx_t.numel():
+                        arg_off = (
+                            inlier_offs[ans_in[:, idx_t].argmax(dim=0)]
+                            .to(torch.int32)
+                            .cpu()
+                            .numpy()
+                        )
+                    else:
+                        arg_off = np.zeros(0, dtype=np.int32)
+                    # v14 SCAFFOLD input: dense sink-excluded mean-answer state
+                    dense_mean_row = ans_h[inlier].mean(0).to(torch.float16).cpu().numpy()
 
                     for key, single in (("pe", pe_ce[0]), ("ce", pe_ce[1])):
                         nz = torch.nonzero(single != 0, as_tuple=False).squeeze(-1)
@@ -950,12 +1055,14 @@ def worker_capture(args: argparse.Namespace) -> int:
                     chunk["pooled_mean"].append(sp["mean"])
                     chunk["pooled_max"].append(sp["max"])
                     chunk["pooled_frac"].append(sp["frac"])
+                    chunk["pooled_argmax"].append(arg_off)
+                    chunk["dense_mean"].append(dense_mean_row)
                     chunk["row_ids"].append(r["row_id"])
                     chunk["prefix_ids"].append(r["prefix_id"])
                     chunk["query_ids"].append(r["query_id"])
                     chunk["n_answer_tokens"].append(a1 - a0)
                     n_tokens_done += n_total
-                    del ans_f, ans_h, pooled, pe_ce, mean_all
+                    del ans_f, ans_h, ans_in, pooled, pe_ce, mean_all
             captured.clear()
             del outputs, h19, input_ids, attention_mask
             elapsed = max(1e-9, time.time() - t_fwd0)
@@ -1026,6 +1133,13 @@ def _write_chunk_npz(chunk_path: Path, chunk: dict) -> None:
     for name in ("mean", "max", "frac"):
         _, val = _csr(chunk[f"pooled_{name}"], np.float16)
         payload[f"pooled_{name}"] = val
+    _, argmax_val = _csr(chunk["pooled_argmax"], np.int32)
+    payload["pooled_argmax"] = argmax_val
+    payload["dense_mean"] = (
+        np.stack(chunk["dense_mean"]).astype(np.float16)
+        if chunk["dense_mean"]
+        else np.zeros((0, 0), dtype=np.float16)
+    )
     indptr, idx = _csr(chunk["pooledall_idx"], np.int32)
     _, val = _csr(chunk["pooledall_val"], np.float16)
     payload["pooledall_indptr"] = indptr
@@ -1637,9 +1751,18 @@ class CellStore:
         pe_sink: list[np.ndarray] = []
         ce_sink: list[np.ndarray] = []
         n_sink: list[np.ndarray] = []
-        sparse: dict[str, list] = {k: [] for k in ("pe", "ce", "mean", "max", "frac", "mean_all")}
+        dense_mean_blocks: list[np.ndarray] = []
+        sparse: dict[str, list] = {
+            k: [] for k in ("pe", "ce", "mean", "max", "frac", "argmax", "mean_all")
+        }
         for path in chunks:
             z = np.load(path, allow_pickle=True)
+            if "dense_mean" not in z.files or "pooled_argmax" not in z.files:
+                raise RuntimeError(
+                    f"{path} lacks v14 keys (dense_mean/pooled_argmax) — pre-v14 capture "
+                    "chunk; re-run the capture phase against a fresh out-root"
+                )
+            dense_mean_blocks.append(z["dense_mean"])
             row_ids.extend(z["row_ids"].tolist())
             prefix_ids.extend(z["prefix_ids"].tolist())
             query_ids.extend(z["query_ids"].tolist())
@@ -1653,9 +1776,19 @@ class CellStore:
                 "mean": ("pooled_indptr", "pooled_idx", "pooled_mean"),
                 "max": ("pooled_indptr", "pooled_idx", "pooled_max"),
                 "frac": ("pooled_indptr", "pooled_idx", "pooled_frac"),
+                "argmax": ("pooled_indptr", "pooled_idx", "pooled_argmax"),
                 "mean_all": ("pooledall_indptr", "pooledall_idx", "pooledall_val"),
             }.items():
                 sparse[key].append((z[ip], z[ix], z[vv]))
+        self.dense_mean = (
+            np.concatenate(dense_mean_blocks, axis=0).astype(np.float32)
+            if dense_mean_blocks
+            else np.zeros((0, 0), dtype=np.float32)
+        )
+        if self.dense_mean.shape[0] != len(row_ids):
+            raise RuntimeError(
+                f"dense_mean rows {self.dense_mean.shape[0]} != {len(row_ids)} chunk rows"
+            )
         self.row_ids = row_ids
         self.prefix_ids = prefix_ids
         self.query_ids = query_ids
@@ -2009,11 +2142,40 @@ def bh_reject(pvals: np.ndarray, q: float = 0.05) -> np.ndarray:
     return reject
 
 
-def rb_cosine_join(feats: np.ndarray, out_root: Path, n_draws: int, seed: int, device: str) -> dict:
+def scaffold_basis(dense_mean: np.ndarray, device: str, rank: int = SCAFFOLD_RANK):
+    """Top-`rank` PCA basis (H, r) of the dense per-row mean-answer states.
+
+    Mean-centered; Gram eigh via `_eigh_robust` (cuSOLVER CPU fallback, #1335).
+    The realized rank is capped at min(rank, n_rows - 1, H) — smoke slices sit
+    far below 48 and the cap is recorded, never a floor. Returns (Q, r).
+    """
+    import torch
+
+    x = torch.from_numpy(np.asarray(dense_mean, dtype=np.float32)).to(device)
+    assert x.ndim == 2 and x.shape[0] >= 2, tuple(x.shape)
+    xc = x - x.mean(dim=0, keepdim=True)
+    r = int(min(rank, xc.shape[0] - 1, xc.shape[1]))
+    w, v = _eigh_robust(xc.T @ xc)  # (H, H); eigenvalues ascending
+    del w
+    return v[:, -r:].contiguous(), r
+
+
+def rb_cosine_join(
+    feats: np.ndarray,
+    out_root: Path,
+    n_draws: int,
+    seed: int,
+    device: str,
+    dense_mean: np.ndarray,
+) -> dict:
     """|cos(W_dec[:, j], r_B[L19, trait])| per active feature + selection-symmetric null.
 
     Observed statistic = max over the 3 traits; each null draw = max over 3
     RANDOM unit directions (matching the max-over-traits selection per draw).
+    v14 SCAFFOLD CONTROL: every read is ALSO reported with the top-48
+    answer-PCA scaffold projected out of BOTH r_B and the decoder columns —
+    the projected variant is the HEADLINE alignment read, and its null is the
+    SAME per-draw max-over-3 statistic recomputed in the projected space.
     """
     import torch
 
@@ -2041,16 +2203,47 @@ def rb_cosine_join(feats: np.ndarray, out_root: Path, n_draws: int, seed: int, d
     obs_max_c = cos_traits_c.max(axis=0)
     null_c = (dirs @ wc_hat).abs().reshape(n_draws, 3, -1).max(dim=1).values
     null_c_np = null_c.to(torch.float16).cpu().numpy()
-    del sae, w_dec, w_hat, wc, wc_hat, dirs, null, null_c
+    # v14 SCAFFOLD CONTROL: projected read (headline) + same-space null
+    q, scaffold_rank = scaffold_basis(dense_mean, str(w_hat.device))
+    q = q.to(w_hat.device, torch.float32)
+    mass = ((r @ q) ** 2).sum(dim=1) / (r**2).sum(dim=1).clamp_min(1e-12)
+    r_proj = r - (r @ q) @ q.T
+    r_proj_hat = r_proj / r_proj.norm(dim=1, keepdim=True).clamp_min(1e-12)
+    w_proj = w_dec - q @ (q.T @ w_dec)
+    w_proj_hat = w_proj / w_proj.norm(dim=0, keepdim=True).clamp_min(1e-12)
+    cos_traits_p = (r_proj_hat @ w_proj_hat).abs().cpu().numpy()
+    obs_max_p = cos_traits_p.max(axis=0)
+    dirs_proj = dirs - (dirs @ q) @ q.T
+    dirs_proj = dirs_proj / dirs_proj.norm(dim=1, keepdim=True).clamp_min(1e-12)
+    null_p = (dirs_proj @ w_proj_hat).abs().reshape(n_draws, 3, -1).max(dim=1).values
+    null_p_np = null_p.to(torch.float16).cpu().numpy()
+    null_p_scale = float(np.nanpercentile(null_p_np.astype(np.float32), 95))
+    assert_nondegenerate("rb_cos_max_scaffold_proj", float(obs_max_p.max()), null_p_scale)
+    mass_by_trait = {t: float(m) for t, m in zip(RB_TRAIT_ORDER, mass.cpu().numpy(), strict=True)}
+    _log(
+        f"[phase=fits] rb scaffold rank={scaffold_rank} "
+        f"mass_frac={ {t: round(v, 3) for t, v in mass_by_trait.items()} } "
+        f"obs_max raw={float(obs_max.max()):.3f} proj={float(obs_max_p.max()):.3f} "
+        f"null_p95 raw={null_scale:.3f} proj={null_p_scale:.3f}"
+    )
+    del sae, w_dec, w_hat, wc, wc_hat, dirs, null, null_c, q, r_proj, w_proj, dirs_proj, null_p
     return {
         "cos_traits": cos_traits.astype(np.float16),
         "cos_max": obs_max.astype(np.float32),
         "null_draws_max": null_np,
         "null_p95": null_scale,
         "p_max": perm_pvalues(obs_max, null_np),
+        "cos_traits_centered": cos_traits_c.astype(np.float16),
         "cos_max_centered": obs_max_c.astype(np.float32),
         "null_draws_max_centered": null_c_np,
         "p_max_centered": perm_pvalues(obs_max_c, null_c_np),
+        "cos_traits_proj": cos_traits_p.astype(np.float16),
+        "cos_max_proj": obs_max_p.astype(np.float32),
+        "null_draws_max_proj": null_p_np,
+        "null_p95_proj": null_p_scale,
+        "p_max_proj": perm_pvalues(obs_max_p, null_p_np),
+        "scaffold_rank": scaffold_rank,
+        "rb_scaffold_mass_frac": mass_by_trait,
     }
 
 
@@ -2184,6 +2377,190 @@ def build_judge_items(
         )
         items.append((f"feat{fid}", f"feature {fid}", body[:200], user))
     return items
+
+
+def _load_unembedding(cell: str, device: str):
+    """(V, H) unembedding via a partial safetensors read (never a full model load).
+
+    Qwen-2.5-7B(-Instruct) does not tie embeddings, so `lm_head.weight` resolves
+    from the safetensors index; a tied model falls back to
+    `model.embed_tokens.weight`. Returns (tensor fp32 on `device`, key used).
+    """
+    import torch
+    from huggingface_hub import hf_hub_download
+    from safetensors import safe_open
+
+    from explore_persona_space.orchestrate import hub
+
+    model_name, revision, _fmt = CELL_MODEL[cell]
+    idx_path = hub.retry_transient(
+        lambda: hf_hub_download(model_name, "model.safetensors.index.json", revision=revision),
+        what=f"unembedding index ({model_name})",
+    )
+    wmap = json.loads(Path(idx_path).read_text())["weight_map"]
+    key = "lm_head.weight" if "lm_head.weight" in wmap else "model.embed_tokens.weight"
+    shard = hub.retry_transient(
+        lambda: hf_hub_download(model_name, wmap[key], revision=revision),
+        what=f"unembedding shard ({wmap[key]})",
+    )
+    with safe_open(shard, framework="pt", device="cpu") as f:
+        w = f.get_tensor(key)
+    return w.to(device=device, dtype=torch.float32), key
+
+
+def emit_feature_evidence(
+    out_root: Path, cell: str, res: dict, judge_sets: dict | None, args, device: str
+) -> dict:
+    """Phase C' (plan v14 — the leg that must NOT be skipped): per-feature
+    evidence artifacts for the #1773 labelling round, per union feature
+    (judge 4-set union + figure-reported rb-cos tails + top prefix-share tail):
+
+      1. top-50 activating tuples (row_id, answer-token offset, activation) —
+         one tuple per row (the row's max over sink-excluded answer tokens),
+         top rows by that max; batched argsort, no per-feature loop;
+      2. the per-row pooled-mean activation vector (n_rows floats/feature);
+      3. decoder-space top-10 nearest-neighbour feature ids (ONE matmul over
+         all W_dec columns);
+      4. top-30 mean-centered logit-footprint tokens (ONE matmul against the
+         partially-loaded unembedding; token ids + single-token strings only —
+         NO corpus text, per the harmful-content digest discipline).
+
+    Writes `feature_evidence/evidence_{cell}.{json,npz}` (uploaded phase D).
+    """
+    import torch
+    from transformers import AutoTokenizer
+
+    t0 = time.time()
+    store: CellStore = res["store"]
+    feats = res["feats"]
+    rb = res["rb"]
+    d = int(feats.size)
+    ev_sets: dict[str, np.ndarray] = {
+        k: np.asarray(v, dtype=np.int64) for k, v in (judge_sets or {}).items()
+    }
+    if "tail_prefix" not in ev_sets:
+        sp = np.nan_to_num(res["share_prefix"], nan=-1.0)
+        ev_sets["tail_prefix"] = np.argsort(sp)[::-1][: min(TAIL_PREFIX_N, d)]
+    k_fig = min(RB_COS_FIG_TAIL_N, d)
+    ev_sets["rb_cos_tail_raw"] = np.argsort(np.nan_to_num(rb["cos_max"], nan=-1.0))[::-1][:k_fig]
+    ev_sets["rb_cos_tail_proj"] = np.argsort(np.nan_to_num(rb["cos_max_proj"], nan=-1.0))[::-1][
+        :k_fig
+    ]
+    union_pos = np.array(
+        sorted({int(p) for arr in ev_sets.values() for p in np.asarray(arr).tolist()}),
+        dtype=np.int64,
+    )
+    raw_ids = feats[union_pos]
+    n_u = int(raw_ids.size)
+    # (1) top-K activating tuples from per-row max + argmax offsets (batched)
+    y_max_u = store.dense("max", raw_ids)
+    y_arg_u = store.dense("argmax", raw_ids)
+    k_rows = min(EVIDENCE_TOP_ROWS, y_max_u.shape[0])
+    top_rows = np.argsort(-y_max_u, axis=0)[:k_rows]  # (K, U) row indices
+    top_act = np.take_along_axis(y_max_u, top_rows, axis=0).astype(np.float16)
+    top_off = np.take_along_axis(y_arg_u, top_rows, axis=0).astype(np.int32)
+    # (2) per-row pooled-mean vectors for the union
+    y_mean_u = store.dense("mean", raw_ids).astype(np.float16)
+    # (3) decoder-space top-10 neighbours (cosine over ALL columns, one matmul)
+    sae = BatchTopKSAE.load(k=SAE_K, device=device, cache_dir=out_root / "sae_cache")
+    w_hat = sae.w_dec / sae.w_dec.norm(dim=0, keepdim=True).clamp_min(1e-12)
+    cols = torch.from_numpy(raw_ids).to(w_hat.device)
+    cos_all = w_hat[:, cols].T @ w_hat  # (U, D)
+    cos_all[torch.arange(n_u, device=cos_all.device), cols] = -torch.inf  # exclude self
+    nn_cos, nn_ids = torch.topk(cos_all, k=min(EVIDENCE_NN_K, DICT_SIZE - 1), dim=1)
+    del cos_all
+    # (4) mean-centered logit footprints (one matmul against the unembedding)
+    w_u, unembed_key = _load_unembedding(cell, device)
+    logits = w_u @ sae.w_dec[:, cols]  # (V, U)
+    logits = logits - logits.mean(dim=0, keepdim=True)
+    lg_vals, lg_ids = torch.topk(logits, k=EVIDENCE_LOGIT_TOPK, dim=0)
+    del logits, w_u, sae
+    model_name, revision, _fmt = CELL_MODEL[cell]
+    tokenizer = AutoTokenizer.from_pretrained(model_name, revision=revision)
+    ev_dir = out_root / "feature_evidence"
+    ev_dir.mkdir(parents=True, exist_ok=True)
+    row_ids = np.array(store.row_ids, dtype=object)
+    np.savez(
+        ev_dir / f"evidence_{cell}.npz",
+        union_feature_ids=raw_ids,
+        union_positions=union_pos,
+        row_ids=row_ids,
+        top_row_idx=top_rows.astype(np.int32),
+        top_activation=top_act,
+        top_answer_token_offset=top_off,
+        pooled_mean_rows=y_mean_u,
+        nn_feature_ids=nn_ids.cpu().numpy().astype(np.int64),
+        nn_cos=nn_cos.cpu().numpy().astype(np.float16),
+        logit_top_token_ids=lg_ids.cpu().numpy().astype(np.int64),
+        logit_top_values=lg_vals.cpu().numpy().astype(np.float16),
+    )
+    member_of = {k: set(np.asarray(v).tolist()) for k, v in ev_sets.items()}
+    nn_ids_np = nn_ids.cpu().numpy()
+    nn_cos_np = nn_cos.cpu().numpy()
+    lg_ids_np = lg_ids.cpu().numpy()
+    lg_vals_np = lg_vals.cpu().numpy()
+    features = []
+    for j, pos in enumerate(union_pos.tolist()):  # JSON assembly only — compute is batched above
+        features.append(
+            {
+                "feature_id": int(raw_ids[j]),
+                "sets": sorted(k for k, s in member_of.items() if pos in s),
+                "top_rows": [
+                    {
+                        "row_id": str(row_ids[int(top_rows[i, j])]),
+                        "answer_token_offset": int(top_off[i, j]),
+                        "activation": float(top_act[i, j]),
+                    }
+                    for i in range(k_rows)
+                    if float(top_act[i, j]) > 0
+                ],
+                "decoder_nn": [
+                    {"feature_id": int(a), "cos": float(b)}
+                    for a, b in zip(nn_ids_np[j], nn_cos_np[j], strict=True)
+                ],
+                "logit_top_tokens": [
+                    {
+                        "token_id": int(a),
+                        "token": tokenizer.convert_ids_to_tokens(int(a)),
+                        "logit_centered": float(b),
+                    }
+                    for a, b in zip(lg_ids_np[:, j], lg_vals_np[:, j], strict=True)
+                ],
+            }
+        )
+    meta = {
+        "cell": cell,
+        "n_union": n_u,
+        "sets": {
+            k: [int(feats[int(p)]) for p in np.asarray(v).tolist()] for k, v in ev_sets.items()
+        },
+        "top_tuple_semantics": (
+            "one tuple per row: (row_id, answer-token offset of the row's max activation "
+            "over sink-excluded answer tokens, that max activation); top-50 rows per "
+            "feature by that max — offsets index the answer span under the capture "
+            "tokenization (issue1092_gpu_phase render)"
+        ),
+        "unembedding_key": unembed_key,
+        "logit_footprint": (
+            "W_dec column @ unembedding, mean-centered over vocab; token ids + "
+            "single-token strings only (no corpus text)"
+        ),
+        "judged_axes": LABEL_FREEZE_NOTE,
+        "repro": _repro_meta(),
+    }
+    (ev_dir / f"evidence_{cell}.json").write_text(
+        json.dumps({"meta": meta, "features": features}, indent=1)
+    )
+    _log(
+        f"[phase=evidence cell={cell}] union={n_u} features "
+        f"({ {k: int(np.asarray(v).size) for k, v in ev_sets.items()} }) -> "
+        f"evidence_{cell}.{{json,npz}} in {time.time() - t0:.0f}s"
+    )
+    return {
+        "n_union": n_u,
+        "set_sizes": {k: int(np.asarray(v).size) for k, v in ev_sets.items()},
+        "unembedding_key": unembed_key,
+    }
 
 
 def run_judge_phase(
@@ -2605,7 +2982,9 @@ def run_phase_b_cell(out_root: Path, cell: str, args, devices: list[str]) -> dic
             "the all-token mean (v12 taxonomy control (1): headline must survive)"
         ),
     }
-    rb = rb_cosine_join(feats, out_root, args.randdir_draws, args.seed, devices[0])
+    rb = rb_cosine_join(
+        feats, out_root, args.randdir_draws, args.seed, devices[0], store.dense_mean
+    )
     # characterization covariates
     act = y_mean > 0
     frac_active = act.mean(axis=0)
@@ -2659,10 +3038,19 @@ def run_phase_b_cell(out_root: Path, cell: str, args, devices: list[str]) -> dic
         rb_cos_traits=rb["cos_traits"],
         rb_cos_max=rb["cos_max"],
         rb_p_max=rb["p_max"],
+        rb_cos_traits_centered=rb["cos_traits_centered"],
         rb_cos_max_centered=rb["cos_max_centered"],
         rb_p_max_centered=rb["p_max_centered"],
         rb_null_draws_max=rb["null_draws_max"],
         rb_null_draws_max_centered=rb["null_draws_max_centered"],
+        rb_cos_traits_proj=rb["cos_traits_proj"],
+        rb_cos_max_proj=rb["cos_max_proj"],
+        rb_p_max_proj=rb["p_max_proj"],
+        rb_null_draws_max_proj=rb["null_draws_max_proj"],
+        rb_scaffold_rank=np.int64(rb["scaffold_rank"]),
+        rb_scaffold_mass_frac=np.array(
+            [rb["rb_scaffold_mass_frac"][t] for t in RB_TRAIT_ORDER], dtype=np.float32
+        ),
         dense_latent=dense_latent,
     )
     completions_by_row = {}
@@ -2671,6 +3059,7 @@ def run_phase_b_cell(out_root: Path, cell: str, args, devices: list[str]) -> dic
     completions = [completions_by_row[rid] for rid in store.row_ids]
     _log(f"[phase=fits cell={cell}] phase B done in {time.time() - t0:.0f}s")
     return {
+        "store": store,
         "feats": feats,
         "d_act": d_act,
         "y_mean": y_mean,
@@ -2817,6 +3206,7 @@ def _template_block(out_root: Path, kept: list[str], results: dict) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_argparser().parse_args(argv)
+    assert_label_freeze(args.judged_labels, args.override_label_freeze)
     if args.import_check:
         run_import_check()
         return 0
@@ -2886,7 +3276,9 @@ def main(argv: list[str] | None = None) -> int:
     for cell in kept:
         res = run_phase_b_cell(out_root, cell, args, devices)
         results[cell] = res
-        if cell == "cell_inst_own" and not args.skip_judge:
+        if cell == "cell_inst_own":
+            # The 4-set union is ALWAYS computed — it feeds phase C' evidence
+            # emission even under the v14 JUDGED-LABEL FREEZE.
             judge_sets = select_judge_sets(
                 res["share_prefix"],
                 res["share_query"],
@@ -2896,34 +3288,61 @@ def main(argv: list[str] | None = None) -> int:
                 res["mean_act_active"],
                 args.seed,
             )
-            judge_thread = threading.Thread(
-                target=_judge_worker,
-                args=(
-                    judge_box,
-                    judge_sets,
-                    res["feats"],
-                    res["y_mean"],
-                    res["completions"],
-                    out_root / "work",
-                    args.judge_limit,
-                    args.retest_n,
-                ),
-                daemon=True,
-            )
-            judge_thread.start()
-            _log("[phase=judge] dispatched on a worker thread (overlaps remaining phase B)")
+            if args.judged_labels == "on" and not args.skip_judge:
+                judge_thread = threading.Thread(
+                    target=_judge_worker,
+                    args=(
+                        judge_box,
+                        judge_sets,
+                        res["feats"],
+                        res["y_mean"],
+                        res["completions"],
+                        out_root / "work",
+                        args.judge_limit,
+                        args.retest_n,
+                    ),
+                    daemon=True,
+                )
+                judge_thread.start()
+                _log("[phase=judge] dispatched on a worker thread (overlaps remaining phase B)")
+            else:
+                _log(f"[phase=judge] SKIPPED — {LABEL_FREEZE_NOTE}")
     judge_out: dict | None = None
     if judge_thread is not None:
         judge_thread.join()
         if "error" in judge_box:
             raise judge_box["error"]
         judge_out = judge_box["result"]
-    elif args.skip_judge:
-        _log("[phase=judge] skipped (--skip-judge)")
+
+    # ---- Phase C': per-feature evidence emission (plan v14 — never skipped) ----
+    evidence_summary: dict[str, dict] = {}
+    for cell in kept:
+        evidence_summary[cell] = emit_feature_evidence(
+            out_root,
+            cell,
+            results[cell],
+            judge_sets if cell == "cell_inst_own" else None,
+            args,
+            fit_device,
+        )
+    _upload_tree(out_root, "feature_evidence", args, "phaseCprime-evidence")
 
     # ---- Phase D: joins + digests + upload ----
     out_dir = out_root / "out"
     maps_summary: dict = {"cells": {}, "repro": _repro_meta()}
+
+    def _tailq(a: np.ndarray) -> dict:
+        fin = np.asarray(a, dtype=np.float32)
+        fin = fin[np.isfinite(fin)]
+        if not fin.size:
+            return {"p50": None, "p95": None, "p99": None, "max": None}
+        return {
+            "p50": float(np.percentile(fin, 50)),
+            "p95": float(np.percentile(fin, 95)),
+            "p99": float(np.percentile(fin, 99)),
+            "max": float(fin.max()),
+        }
+
     for cell, res in results.items():
         reads = res["reads"]
         maps_summary["cells"][cell] = {
@@ -2935,6 +3354,25 @@ def main(argv: list[str] | None = None) -> int:
         }
         maps_summary["cells"][cell]["independently_fit_averaged"] = res["indep_averaged"]
         maps_summary["cells"][cell]["sink_robustness"] = res["sink_robustness"]
+        evil_i = RB_TRAIT_ORDER.index("evil")
+        maps_summary["cells"][cell]["rb_alignment"] = {
+            "headline": "scaffold_projected (plan v14 SCAFFOLD CONTROL; raw kept as companion)",
+            "scaffold_rank": res["rb"]["scaffold_rank"],
+            "rb_scaffold_mass_frac_per_trait": res["rb"]["rb_scaffold_mass_frac"],
+            "trait_order": list(RB_TRAIT_ORDER),
+            "raw": {
+                "obs_max_over_traits": _tailq(res["rb"]["cos_max"]),
+                "null_p95_of_per_draw_max": res["rb"]["null_p95"],
+            },
+            "scaffold_projected": {
+                "obs_max_over_traits": _tailq(res["rb"]["cos_max_proj"]),
+                "null_p95_of_per_draw_max": res["rb"]["null_p95_proj"],
+            },
+            # evil-specific reads carry the mean-centered read EXPLICITLY (plan v14)
+            "evil_raw": _tailq(res["rb"]["cos_traits"][evil_i]),
+            "evil_mean_centered": _tailq(res["rb"]["cos_traits_centered"][evil_i]),
+            "evil_scaffold_projected": _tailq(res["rb"]["cos_traits_proj"][evil_i]),
+        }
         maps_summary["cells"][cell]["anova_selection"] = {
             axis: {
                 k: v
@@ -2975,7 +3413,16 @@ def main(argv: list[str] | None = None) -> int:
             judge_out, judge_sets, res["feats"], res["dense_latent"], args
         )
     else:
-        labels_payload["skipped"] = "--skip-judge or instruct arm unavailable"
+        labels_payload["skipped"] = (
+            LABEL_FREEZE_NOTE
+            if args.judged_labels != "on"
+            else "--skip-judge or instruct arm unavailable"
+        )
+        if judge_sets is not None and "cell_inst_own" in results:
+            feats_i = results["cell_inst_own"]["feats"]
+            labels_payload["sets"] = {
+                k: [int(feats_i[p]) for p in v.tolist()] for k, v in judge_sets.items()
+            }
     (out_dir / "feature_labels.json").write_text(json.dumps(labels_payload, indent=1))
 
     template = _template_block(out_root, kept, results)
@@ -3000,6 +3447,11 @@ def main(argv: list[str] | None = None) -> int:
         "gamma_layer19": {c: gate_records[c].get("gamma_layer19") for c in cells},
         "sink_map": sink_summary,
         "headline": labels_payload.get("headline"),
+        "judged_axes": LABEL_FREEZE_NOTE,
+        "evidence": evidence_summary,
+        "rb_alignment_headline": {
+            c: maps_summary["cells"][c]["rb_alignment"]["scaffold_projected"] for c in results
+        },
         "wall_s": time.time() - t_run0,
         "args": {
             k: str(v)
@@ -3010,7 +3462,13 @@ def main(argv: list[str] | None = None) -> int:
     }
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=1))
     (out_dir / "DONE_upload.json").write_text(
-        json.dumps({"ts": time.time(), "phases": ["A", "B", "C", "D"]}, indent=1)
+        json.dumps(
+            {
+                "ts": time.time(),
+                "phases": ["A", "B"] + (["C"] if judge_out is not None else []) + ["Cprime", "D"],
+            },
+            indent=1,
+        )
     )
     _upload_tree(out_root, "out", args, "phaseD-digests")
     _log(f"[phase=done] wall={time.time() - t_run0:.0f}s cells={kept}")
