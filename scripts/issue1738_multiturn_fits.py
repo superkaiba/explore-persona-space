@@ -114,6 +114,29 @@ def split_positions(doc: dict, ci: np.ndarray) -> dict[str, np.ndarray]:
     return out
 
 
+def _coverage_shortfalls(sets: dict[str, np.ndarray], doc: dict, floor: float) -> list[str]:
+    """Pure fail-loud predicate for the capture-coverage floor (review Minor 1):
+    a per-set captured/intended ratio below ``floor`` (e.g. a missing fleet
+    shard) returns a naming string per offending set; empty = OK."""
+    bad = []
+    for name, rows in sets.items():
+        intended = int(doc["sets"][name]["n"])
+        if intended and len(rows) / intended < floor:
+            bad.append(f"{name}: {len(rows)}/{intended} = {len(rows) / intended:.3f} < {floor}")
+    return bad
+
+
+def _mlp_lr_better(vr2: float, best_vr2: float | None) -> bool:
+    """True when ``vr2`` should replace the incumbent val-R²: no incumbent, a
+    non-finite incumbent (NaN-first divergence — review Minor 2), or a finite
+    improvement. NaN never beats a finite incumbent."""
+    if best_vr2 is None:
+        return True
+    if not np.isfinite(best_vr2):
+        return bool(np.isfinite(vr2))
+    return bool(np.isfinite(vr2) and vr2 > best_vr2)
+
+
 # ── streaming chunk assembly → per-(array, layer) fp32 binaries + memmaps ─────────
 
 
@@ -280,7 +303,7 @@ def fit_predictor(name, X, Y, tr, val, te_all, args, dev, *, resid_lr: float):
             )
             vr2 = PR._pooled_r2(pred[: len(val)], np.asarray(Y[val]))
             meta = {**meta, "lr": float(lr), "val_r2": float(vr2)}
-            if best is None or (np.isfinite(vr2) and vr2 > best[0]):
+            if _mlp_lr_better(vr2, best[0] if best is not None else None):
                 best = (vr2, pred[len(val) :], meta)
         pred_te, meta = best[1], best[2]
         meta["selected_lr"] = meta["lr"]
@@ -364,8 +387,15 @@ def run_fits(args) -> int:
 
     C.phase("fits-assemble")
     mm, ci, ameta = assemble_streams(args, layers)
+    afp = ameta["fingerprint"]  # assembly fingerprint — the resume regime key
     split = load_split(Path(args.split_file))
     sets = split_positions(split, ci)
+    shortfalls = _coverage_shortfalls(sets, split, args.min_split_coverage)
+    if shortfalls:
+        raise SystemExit(
+            f"capture coverage below floor: {'; '.join(shortfalls)} — a fleet shard is "
+            "likely missing; backfill the capture or lower --min-split-coverage deliberately"
+        )
     tr, val, te, ho = sets["train"], sets["val"], sets["test"], sets["holdout"]
     n_tr, d = len(tr), H_DIM
     if n_tr < d and not args.allow_underdetermined:
@@ -390,11 +420,24 @@ def run_fits(args) -> int:
     for p in (cells_dir, pc_dir, pred_dir, yh_dir, args.out_local / "weights"):
         p.mkdir(parents=True, exist_ok=True)
 
-    # persist Y holdout (fp16) per layer — the off-pod H1 bootstrap input
+    # persist Y holdout (fp16) per layer — the off-pod H1 bootstrap input.
+    # Skip-if-exists is keyed on the ASSEMBLY FINGERPRINT (#722-r3 resume-regime
+    # class): a capture-set-changed re-run regenerates rather than silently
+    # pairing stale y_holdout rows with fresh pred16 rows.
     for li in layers:
         yhp = yh_dir / f"L{li}.npz"
-        if not yhp.exists():
-            np.savez(yhp, y16=np.asarray(mm[("vx", li)][ho], dtype=np.float16), ci=ci[ho])
+        if yhp.exists():
+            with np.load(yhp) as z:
+                stored_fp = z["fingerprint"].item() if "fingerprint" in z.files else ""
+            if stored_fp == afp:
+                continue
+            logger.info("[fits] y_holdout L%d assembly-fingerprint mismatch — regenerating", li)
+        np.savez(
+            yhp,
+            y16=np.asarray(mm[("vx", li)][ho], dtype=np.float16),
+            ci=ci[ho],
+            fingerprint=np.array(afp),
+        )
 
     C.phase("fits")
     first_wall: float | None = None
@@ -441,32 +484,54 @@ def run_fits(args) -> int:
         Y = mm[("vx", li)]
         t_cell = time.time()
         resid_lr = float(args.mlp_lrs_list[-1])
+        ridge_refit = False
         for name in [p for p in PREDICTORS if p in args.predictors.split(",")]:
             cj = cells_dir / f"{arm}_L{li}_{name}.json"
+            want_seed43 = name == "mlp_w8192" and li == 19
             if cj.exists() and not args.no_resume:
                 doc = json.loads(cj.read_text())
-                summary["cells"][f"{arm}_L{li}_{name}"] = doc["metrics"]
-                if name == "mlp_w8192" and "selected_lr" in doc.get("fit_meta", {}):
-                    resid_lr = float(doc["fit_meta"]["selected_lr"])
-                logger.info("[cell] %s_L%d_%s: resume-skip", arm, li, name)
-                continue
+                # resume keyed on the assembly fingerprint (#722-r3 regime-key
+                # class) — a capture-set-changed re-run refits, never resumes.
+                fp_ok = doc.get("assembly_fingerprint") == afp
+                s43_ok = (not want_seed43) or "seed43" in doc.get("metrics", {})
+                if fp_ok and s43_ok:
+                    summary["cells"][f"{arm}_L{li}_{name}"] = doc["metrics"]
+                    if name == "mlp_w8192" and "selected_lr" in doc.get("fit_meta", {}):
+                        resid_lr = float(doc["fit_meta"]["selected_lr"])
+                    logger.info("[cell] %s_L%d_%s: resume-skip", arm, li, name)
+                    continue
+                logger.info(
+                    "[cell] %s_L%d_%s: stale cell (fingerprint%s) — refit",
+                    arm,
+                    li,
+                    name,
+                    "" if fp_ok else " mismatch",
+                )
             t0 = time.time()
             pred_all, meta = fit_predictor(
                 name, X, Y, tr, val, te_all, args, dev, resid_lr=resid_lr
             )
             if name == "mlp_w8192" and "selected_lr" in meta:
                 resid_lr = float(meta["selected_lr"])  # residual_skip inherits the selected lr
+            if name == "ridge":
+                ridge_refit = True
             pred_te, pred_ho = pred_all[: len(te)], pred_all[len(te) :]
             y_te, y_ho = np.asarray(Y[te], dtype=np.float64), np.asarray(Y[ho], dtype=np.float64)
             r2_te, cos_te = F._recon_point(pred_te, y_te)
             r2_ho, cos_ho = F._recon_point(pred_ho, y_ho)
             ci_boot = _boot_recon_ci_batched(pred_ho, y_ho, args.n_boot, BOOT_SEED)
             nerr = _percontext_nerr(pred_ho, y_ho).astype(np.float32)
-            np.savez(pc_dir / f"{arm}_L{li}_{name}.npz", nerr=nerr, ci=ci[ho])
+            np.savez(
+                pc_dir / f"{arm}_L{li}_{name}.npz",
+                nerr=nerr,
+                ci=ci[ho],
+                fingerprint=np.array(afp),
+            )
             np.savez(
                 pred_dir / f"{arm}_L{li}_{name}.npz",
                 pred16=pred_ho.astype(np.float16),
                 ci=ci[ho],
+                fingerprint=np.array(afp),
             )
             metrics = {
                 "test_r2": float(r2_te),
@@ -478,8 +543,57 @@ def run_fits(args) -> int:
                 "n_holdout": int(len(ho)),
                 "wall_s": time.time() - t0,
             }
+            if want_seed43:
+                # second-seed MLP holdout read (plan §10 Seeds row, #1482
+                # convention; placed at the registered layer 19 — plan §13
+                # names the placement deviatable): one extra fit at the
+                # WINNING lr, seed 43, holdout eval rows only.
+                lr43 = float(meta.get("selected_lr", args.mlp_lrs_list[-1]))
+                pred43, _m43 = PF.fit_mlp(
+                    X,
+                    Y,
+                    tr,
+                    ho,
+                    PF.MLP_W_PROTOCOL,
+                    lr43,
+                    args.mlp_max_epochs,
+                    args.mlp_batch,
+                    43,
+                    dev,
+                )
+                r2_43, cos_43 = F._recon_point(pred43, y_ho)
+                nerr43 = _percontext_nerr(pred43, y_ho).astype(np.float32)
+                np.savez(
+                    pc_dir / f"{arm}_L{li}_{name}_seed43.npz",
+                    nerr=nerr43,
+                    ci=ci[ho],
+                    fingerprint=np.array(afp),
+                )
+                np.savez(
+                    pred_dir / f"{arm}_L{li}_{name}_seed43.npz",
+                    pred16=pred43.astype(np.float16),
+                    ci=ci[ho],
+                    fingerprint=np.array(afp),
+                )
+                metrics["seed43"] = {
+                    "seed": 43,
+                    "lr": lr43,
+                    "holdout_r2": float(r2_43),
+                    "holdout_mean_cosine": float(cos_43),
+                    "seed_pair_nerr_pearson": float(np.corrcoef(nerr, nerr43)[0, 1])
+                    if len(nerr) > 2
+                    else float("nan"),
+                }
             GG.N1M._atomic_write_json(
-                cj, {"arm": arm, "layer": li, "fitter": name, "metrics": metrics, "fit_meta": meta}
+                cj,
+                {
+                    "arm": arm,
+                    "layer": li,
+                    "fitter": name,
+                    "metrics": metrics,
+                    "fit_meta": meta,
+                    "assembly_fingerprint": afp,
+                },
             )
             summary["cells"][f"{arm}_L{li}_{name}"] = metrics
             logger.info(
@@ -491,15 +605,16 @@ def run_fits(args) -> int:
                 r2_ho,
                 metrics["wall_s"],
             )
-        # ridge weights persisted per cell (small; apply_map-compatible)
+        # ridge weights persisted per cell (small; apply_map-compatible); the
+        # write re-fires when the ridge cell itself refit (fingerprint change).
         wj = args.out_local / "weights" / f"L{li}" / f"{arm}_ridge.pt"
-        if not wj.exists() and "ridge" in args.predictors.split(","):
+        if (ridge_refit or not wj.exists()) and "ridge" in args.predictors.split(","):
             _, _, payload = PF.fit_ridge_with_weights(
                 X, Y, tr, val, te, LAMBDAS, dev, args.ridge_block
             )
             wj.parent.mkdir(parents=True, exist_ok=True)
             tmp = wj.parent / (wj.name + ".tmp")
-            torch.save({**payload, "arm": arm, "layer": li}, tmp)
+            torch.save({**payload, "arm": arm, "layer": li, "assembly_fingerprint": afp}, tmp)
             os.replace(tmp, wj)
         if first_wall is None:
             first_wall = time.time() - t_cell
@@ -580,8 +695,17 @@ def run_fits(args) -> int:
 
     if not args.no_upload:
         C.phase("fits-upload")
-        for sub in ("pred16", "y_holdout", "weights"):
-            local = args.out_local / sub
+        # percontext/*.npz is a plan §6.5 primary deliverable: gitignored by the
+        # repo-wide *.npz rule (#958 class) and consumed off-pod by Phase 4c, so
+        # it MUST ride the HF analysis_tensors upload (plan §10) — the
+        # DELETE-on-exit GCE lane would otherwise lose it (review Major 2).
+        upload_dirs = [
+            ("pred16", args.out_local / "pred16"),
+            ("y_holdout", args.out_local / "y_holdout"),
+            ("weights", args.out_local / "weights"),
+            ("percontext", pc_dir),
+        ]
+        for sub, local in upload_dirs:
             files = sorted(str(p.relative_to(local)) for p in local.rglob("*") if p.is_file())
             if not files:
                 continue
@@ -698,6 +822,12 @@ def main() -> int:
     ap.add_argument("--krr-gamma-mult", dest="krr_gamma_mult_s", default="1.0")
     ap.add_argument("--krr-lambdas", dest="krr_lambdas_s", default="0.1,10")
     ap.add_argument("--fence-mult", type=float, default=2.0, help="G2: halt past mult×first-cell")
+    ap.add_argument(
+        "--min-split-coverage",
+        type=float,
+        default=0.95,
+        help="fail-loud floor on per-set captured/intended (0 disables; Minor-1 fix)",
+    )
     ap.add_argument("--no-resume", action="store_true")
     ap.add_argument("--no-upload", action="store_true")
     ap.add_argument("--allow-underdetermined", action="store_true", help="smoke shape: n_train<d")
@@ -733,6 +863,38 @@ def main() -> int:
         rc = run_fits(args)
         summ = json.loads((args.out_eval / "fits" / f"{FIT_POINT}_fits.json").read_text())
         assert len(summ["cells"]) == 2 * 1 * 5, sorted(summ["cells"])
+        # second-seed MLP holdout read (plan §10 Seeds row): npz pair + metrics.
+        for arm_ in ("prefix", "context"):
+            s43 = summ["cells"][f"{arm_}_L19_mlp_w8192"]["seed43"]
+            assert s43["seed"] == 43 and np.isfinite(s43["holdout_r2"]), s43
+            assert (args.out_local / "pred16" / f"{arm_}_L19_mlp_w8192_seed43.npz").exists()
+        # resume-regime probes (fits-resume-ci-alignment-unkeyed fix): a stale
+        # assembly fingerprint on a cell JSON or the y_holdout npz forces a
+        # refit/regeneration on the resume run — never a silent resume.
+        cj_probe = args.out_eval / "fits" / "cells" / "context_L19_ridge.json"
+        doc_probe = json.loads(cj_probe.read_text())
+        real_fp = doc_probe["assembly_fingerprint"]
+        assert real_fp, "cell JSON missing assembly_fingerprint"
+        doc_probe["assembly_fingerprint"] = "stale"
+        cj_probe.write_text(json.dumps(doc_probe))
+        yhp_probe = args.out_local / "y_holdout" / "L19.npz"
+        with np.load(yhp_probe) as zp:
+            assert zp["fingerprint"].item() == real_fp
+            y16_probe, ci_probe = zp["y16"], zp["ci"]
+        np.savez(yhp_probe, y16=y16_probe, ci=ci_probe, fingerprint=np.array("stale"))
+        assert run_fits(args) == 0  # resume run: stale artifacts must regenerate
+        assert json.loads(cj_probe.read_text())["assembly_fingerprint"] == real_fp
+        with np.load(yhp_probe) as zp:
+            assert zp["fingerprint"].item() == real_fp
+        logger.info("[smoke] stale-fingerprint resume probes OK (cell JSON + y_holdout)")
+        # coverage-floor + lr-selection pure predicates, both sides.
+        cov_doc = {"sets": {"train": {"n": 100}}}
+        assert _coverage_shortfalls({"train": np.arange(90)}, cov_doc, 0.95)
+        assert not _coverage_shortfalls({"train": np.arange(96)}, cov_doc, 0.95)
+        assert _mlp_lr_better(0.5, float("nan"))  # NaN-first divergence loses
+        assert not _mlp_lr_better(float("nan"), 0.5)
+        assert _mlp_lr_better(0.6, 0.5) and not _mlp_lr_better(0.4, 0.5)
+        assert _mlp_lr_better(float("nan"), None)  # first lr always seeds
         bl = json.loads((args.out_eval / "mapping_baselines.json").read_text())
         assert "context_L19" in bl["cells"] and "prefix_L19" in bl["cells"]
         for cell in bl["cells"].values():

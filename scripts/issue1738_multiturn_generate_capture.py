@@ -1166,6 +1166,11 @@ def _write_pilot_meta(args, kept_total, wall_h, skipped_all, violations_all, pil
         "prefix_min_pairwise_cos_by_layer": min_cos_by_layer,
         "prefix_cos_max": PILOT_PREFIX_COS_MAX,
         "gate_g1": verdict,
+        # DELIBERATE (review Minor 4): ctx_per_gpu_h is NOT a gate_g1 term — the
+        # plan's G1 throughput clause is a RE-SIZE/descope decision the
+        # orchestrator makes from this reported rate (fleet sizing), not a kill.
+        "g1_throughput_note": "ctx_per_gpu_h feeds the orchestrator's fleet-sizing/"
+        "descope decision (plan G1 re-size semantics); deliberately not a gate term",
         "shard_index": int(args.shard_index),
         "pilot_cap": int(args.pilot_cap),
     }
@@ -1217,6 +1222,9 @@ def run_kresample(args) -> int:
         raise SystemExit(f"kresample subsample doc {sub_path} absent — run characterize first")
     sub = json.loads(sub_path.read_text())
     cis = [int(c) for c in sub["ci"]]
+    got_sha = _sha_int_list(cis)
+    if got_sha != sub["sha256"]:  # corrupted / hand-edited doc fails loud (Minor 6)
+        raise SystemExit(f"kresample subsample sha mismatch: {got_sha} != {sub['sha256']}")
     seeds = [int(s) for s in args.seeds.split(",")]
     by_ci = {int(r["i"]): r for r in pool}
     rows = [by_ci[c] for c in cis]
@@ -1255,6 +1263,7 @@ def run_kresample(args) -> int:
     kept_ci: list[int] = []
     raw_rows: list[dict] = []
     msgs = [r["messages"] for r in rows]
+    t_units0 = time.time()
     resp_by_seed = {s: _generate_multiturn(llm, tok, msgs, seed=s) for s in seeds}
     for j, r in enumerate(rows):
         vs = {}
@@ -1277,8 +1286,15 @@ def run_kresample(args) -> int:
                 "responses": {str(s): resp_by_seed[s][j] for s in seeds},
             }
         )
-        if (j + 1) % 50 == 0:
-            logger.info("[kresample] unit %d/%d elapsed", j + 1, len(rows))
+        # per-unit progress line (checkpoint-per-phase T2 convention): the
+        # capture loop is the wall-clock phase; a silent loop wedges pollers.
+        logger.info(
+            "[kresample] unit %d/%d ci=%d elapsed=%.0fs",
+            j + 1,
+            len(rows),
+            int(r["i"]),
+            time.time() - t_units0,
+        )
     if not kept_ci:
         logger.warning("[kresample] shard %d kept 0 contexts", args.shard_index)
         C.phase("done")
@@ -1473,7 +1489,10 @@ def _smoke(args) -> int:
 
     # (6) kresample path on the tiny model (stub generation, 2 contexts, K=2).
     sub_doc = ns.out_dir / "kresample_subsample.json"
-    N1M._atomic_write_json(sub_doc, {"ci": [int(pool[0]["i"]), int(pool[1]["i"])], "seed": 173801})
+    sub_cis = [int(pool[0]["i"]), int(pool[1]["i"])]
+    N1M._atomic_write_json(
+        sub_doc, {"ci": sub_cis, "seed": 173801, "sha256": _sha_int_list(sub_cis)}
+    )
     kargs = argparse.Namespace(
         **{
             **vars(cargs),
@@ -1484,6 +1503,15 @@ def _smoke(args) -> int:
             "pilot_cap": 0,
         }
     )
+    # degenerate probe (Minor-6 gate): a tampered subsample sha fails loud
+    # BEFORE any model work.
+    bad_doc = ns.out_dir / "kresample_subsample_bad.json"
+    N1M._atomic_write_json(bad_doc, {"ci": sub_cis, "seed": 173801, "sha256": "deadbeef"})
+    try:
+        run_kresample(argparse.Namespace(**{**vars(kargs), "kresample_subsample": str(bad_doc)}))
+        raise AssertionError("kresample subsample sha gate did not refuse")
+    except SystemExit as e:
+        assert "sha mismatch" in str(e.code), e.code
     rc = run_kresample(kargs)
     assert rc == 0
     kb = torch.load(ns.out_dir / "kresample" / "kresample_shard00.pt", weights_only=False)
