@@ -5823,22 +5823,22 @@
     "1749": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1749",
-      "status": "reviewing",
+      "path": "tasks/completed/1749",
+      "status": "completed",
       "title": "daily-fix: relaunch rounds re-run compute-character check"
     },
     "1750": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1750",
-      "status": "reviewing",
+      "path": "tasks/completed/1750",
+      "status": "completed",
       "title": "daily-fix: pod-side descope posts marker + rewrites handle"
     },
     "1751": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1751",
-      "status": "reviewing",
+      "path": "tasks/completed/1751",
+      "status": "completed",
       "title": "daily-fix: surface sync_repo_root stash-KEPT at Step 10d"
     },
     "1752": {
@@ -5851,29 +5851,29 @@
     "1753": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1753",
-      "status": "running",
+      "path": "tasks/reviewing/1753",
+      "status": "reviewing",
       "title": "daily-fix: Step 10d checks the LANDING tree; sync attributio"
     },
     "1754": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1754",
-      "status": "proposed",
+      "path": "tasks/reviewing/1754",
+      "status": "reviewing",
       "title": "daily-fix: recursion guard \u2014 briefs must not ban candidates"
     },
     "1755": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1755",
-      "status": "proposed",
+      "path": "tasks/running/1755",
+      "status": "running",
       "title": "daily-fix: teammate idle handling branches on report channel"
     },
     "1756": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1756",
-      "status": "proposed",
+      "path": "tasks/planning/1756",
+      "status": "planning",
       "title": "daily-fix: compose marker notes via Write, never heredoc"
     },
     "1757": {
