@@ -9036,7 +9036,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       uv run python scripts/select_step9c_tests.py   # base defaults to FETCHED origin/main (#1289)
       ```
       It prints the exact gate command —
-      `timeout --kill-after=60s <T>s uv run pytest <files> -v --tb=short`,
+      `timeout --kill-after=60s <T>s uv run pytest <files> --continue-on-collection-errors -v --tb=short`,
       `<T>` sized deterministically from the selection
       (`recommended_timeout_s()`: 120s base + 30s/file + a 2400s surcharge when
       `tests/test_workflow_lint.py` is selected, which alone measured median
@@ -9132,7 +9132,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
             /tmp/step9c-pytest-issue-<N>.log   # MANDATORY before EVERY gate pytest invocation
       # ONE background Bash call (run_in_background=true) — the selector-printed
       # command verbatim, with the junit + log + rc-file tail appended:
-      timeout --kill-after=60s <T>s uv run pytest <files> -v --tb=short \
+      timeout --kill-after=60s <T>s uv run pytest <files> --continue-on-collection-errors -v --tb=short \
         --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 \
         ${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p} \
         > /tmp/step9c-pytest-issue-<N>.log 2>&1; echo $? > /tmp/step9c-rc-issue-<N>
@@ -9167,6 +9167,14 @@ suite directly and posts an `epm:test-verdict` event with the result.
       failed `cd` that ran pytest in a directory with no tests (incident:
       issue 745, SHA 91bed41e, 2026-06-30 — the gate reported PASS on
       `no tests ran ... pytest exit: 0` and was silently skipped).
+      Collection errors no longer abort the run (#1746):
+      `--continue-on-collection-errors` lets the surviving files run, pytest
+      exits rc=1, and each broken file's junit `<error>` row classifies via
+      the step-1d compare like any other failure (a KNOWN main-side
+      collection-red file strips as pre-existing; a branch-introduced one
+      blocks as NEW) — so the `collected 0 items` FATAL grep above now fires
+      only when EVERY selected file is collection-red (the workflow-invariant
+      set rides along, making that practically unreachable).
 
       **Recipe exit-code hygiene (every gate call — and every improvised
       monitoring one-liner):** the Bash tool reports the exit code of the
@@ -9204,7 +9212,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       rm -f /tmp/step9c-junit-issue-<N>.xml /tmp/step9c-rc-issue-<N> \
             /tmp/step9c-pytest-issue-<N>.log
       # ONE background Bash call (run_in_background=true):
-      timeout --kill-after=60s 60m uv run pytest tests/ -q \
+      timeout --kill-after=60s 60m uv run pytest tests/ -q --continue-on-collection-errors \
         --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 \
         ${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p} \
         > /tmp/step9c-pytest-issue-<N>.log 2>&1; echo $? > /tmp/step9c-rc-issue-<N>
