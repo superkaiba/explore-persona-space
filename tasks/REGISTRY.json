@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1751,
+  "highest_id": 1752,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5840,6 +5840,13 @@
       "path": "tasks/proposed/1751",
       "status": "proposed",
       "title": "daily-fix: surface sync_repo_root stash-KEPT at Step 10d"
+    },
+    "1752": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1752",
+      "status": "proposed",
+      "title": "daily-fix: gpu-idle escalation consequence after N repeats"
     },
     "176": {
       "has_clean_result": false,
