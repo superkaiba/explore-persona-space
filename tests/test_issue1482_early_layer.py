@@ -151,6 +151,40 @@ def test_verify_reused_artifact_keys_npz_support(tmp_path):
     assert vk_main(["--artifact", str(p), "--keys", "row_idx,missing_key"]) == 1
 
 
+def test_results_sentinel_smoke_leg_kind_never_epm_results(tmp_path):
+    """The --full launcher runs the SMOKE leg first; its results sentinel must
+    carry kind epm:smoke-result (kresample precedent) so the poller can never
+    drain smoke numbers as the real epm:results (#1586 chained-legs class)."""
+    from types import SimpleNamespace
+
+    out_eval = tmp_path / "eval"
+    out_eval.mkdir()
+    pilot = {
+        "gate_be": {"verdict": "PASS"},
+        "chosen_k": 64,
+        "layers_fve": {"k64": {"L3": {"fve": 0.9}}, "k128": {"L3": {"fve": 0.94}}},
+        "g2e_early_cos_min": 1.0,
+        "g2e_flat_cos_min": 1.0,
+        "tokens_per_s": 100.0,
+    }
+    (out_eval / "early_pilot.json").write_text(json.dumps(pilot))
+    (out_eval / "early_summary.json").write_text(json.dumps({"pooled_r2": {}, "n_rows": {}}))
+    (out_eval / "split_early.json").write_text(
+        json.dumps({"s_fit_sha256": "a", "s_score_sha256": "b"})
+    )
+    (out_eval / "phase_times.json").write_text(
+        json.dumps({"phases": [{"name": "pilot", "wall_s": 1.0}]})
+    )
+    for smoke, want_kind in ((True, "epm:smoke-result"), (False, "epm:results")):
+        logs = tmp_path / f"logs_{smoke}"
+        logs.mkdir()
+        args = SimpleNamespace(out_eval=out_eval, smoke=smoke)
+        EL._results_sentinel(args, logs_dir=logs)
+        doc = json.loads((logs / "issue-1482-results.json").read_text())
+        assert doc["kind"] == want_kind, (smoke, doc["kind"])
+        assert ("SMOKE leg" in doc["note"]) == smoke
+
+
 def test_h1_depth_stratified_verdict_lattice():
     """H1 permutation read: a strong within-depth level->R2 signal is
     level-positive; shuffled labels are null-persists (seeded)."""

@@ -901,14 +901,15 @@ def phase_upload2(args) -> None:
 
     prefix = _early_hf_prefix(args)
     if not args.skip_upload:
-        expected = []
-        paths = sorted(args.out_eval.glob("*.json")) + sorted(args.out_eval.glob("*.npz"))
-        paths += sorted((args.out_eval / "judge").glob("*.json"))
-        for p in paths:
-            sub = "eval/judge" if p.parent.name == "judge" else "eval"
-            rp = f"{prefix}/{sub}/{p.name}"
-            hub._upload(p, HF_DATA_REPO, "dataset", rp, upload_as_file=True, raise_on_error=True)
-            expected.append(rp)
+        # ONE upload_folder commit for the whole eval dir (judge/ subdir rides
+        # along) — never a per-file upload loop (the #664 504-storm class);
+        # exact-set verify against the Hub after.
+        hub._upload(args.out_eval, HF_DATA_REPO, "dataset", f"{prefix}/eval", raise_on_error=True)
+        expected = [
+            f"{prefix}/eval/{p.relative_to(args.out_eval)}"
+            for p in sorted(args.out_eval.rglob("*"))
+            if p.is_file() and p.suffix in (".json", ".npz")
+        ]
         from huggingface_hub import HfApi
 
         missing = hub.verify_repo_paths_uploaded(
@@ -923,13 +924,19 @@ def phase_upload2(args) -> None:
     _record_phase_time(args, "upload2", time.time() - t0)
 
 
-def _results_sentinel(args) -> None:
+def _results_sentinel(args, logs_dir: Path | None = None) -> None:
     """poll_pipeline.py results sentinel (SKILL.md Step 7 contract): eval_numbers,
-    eval_paths, STRUCTURED reproducibility_card (no training -> wandb rows N/A)."""
-    logs_dir = Path("/workspace/logs")
-    if not logs_dir.is_dir():
-        logs_dir = PROJECT_ROOT / "logs"
-        logs_dir.mkdir(parents=True, exist_ok=True)
+    eval_paths, STRUCTURED reproducibility_card (no training -> wandb rows N/A).
+
+    Under --smoke the kind is epm:smoke-result (the issue1482_kresample.py
+    precedent) so a --full pod run's SMOKE leg can never be drained by the
+    poller as the real epm:results hours before the production leg completes
+    (the #1586 chained-legs class, sentinel side)."""
+    if logs_dir is None:
+        logs_dir = Path("/workspace/logs")
+        if not logs_dir.is_dir():
+            logs_dir = PROJECT_ROOT / "logs"
+            logs_dir.mkdir(parents=True, exist_ok=True)
     pilot = json.loads((args.out_eval / "early_pilot.json").read_text())
     summary_path = args.out_eval / "early_summary.json"
     summary = json.loads(summary_path.read_text()) if summary_path.exists() else {}
@@ -938,12 +945,13 @@ def _results_sentinel(args) -> None:
     gpu_h = sum(p["wall_s"] for p in times["phases"]) / 3600.0
     payload = {
         "sentinel_schema_version": C.SENTINEL_SCHEMA_VERSION,
-        "kind": "epm:results",
+        "kind": "epm:smoke-result" if args.smoke else "epm:results",
         "version": 1,
         "task_id": TASK_ID,
         "by": "issue1482_early_layer",
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "note": "issue-1482 early-layer-arm pod phases E0-E4 complete "
+        "note": ("SMOKE leg — not the production result. " if args.smoke else "")
+        + "issue-1482 early-layer-arm pod phases E0-E4 complete "
         "(E5 judge + E6 analysis run off-pod)",
         "eval_numbers": {
             "gate_be": pilot["gate_be"],
