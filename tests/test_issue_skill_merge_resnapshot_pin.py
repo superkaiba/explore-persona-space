@@ -28,6 +28,7 @@ legitimate hard-wrap rewording does not false-fail.
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -493,3 +494,79 @@ def test_merge_hold_tokens_present():
     assert "merge-file" in guards, (
         "Guard 5 must probe the predicted conflict up front via path-scoped git merge-file"
     )
+
+
+def _run_git(args: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+    """Run git in the throwaway probe repo; asserts read the returncode."""
+    return subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True)
+
+
+def test_merge_hold_probe_recipe_semantics(tmp_path):
+    """#1757 round-2 regression (round-1 review Critical): the documented
+    Guard 5(ii) PATH-SCOPED three-way `git merge-file` probe reads CLEAN on
+    clean divergent edits — including when main-side churn ELSEWHERE adds
+    content quoting conflict markers (the two classes the retired whole-tree
+    merge-tree probe misread as CONFLICTED on essentially every real merge)
+    — while a same-hunk edit reads CONFLICTED (rc > 0) and a side-deletion
+    degrades via a failed `git show` (fail-toward-conflicted)."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    assert _run_git(["init", "-q", "-b", "main", "."], repo).returncode == 0
+    _run_git(["config", "user.email", "pin@test"], repo)
+    _run_git(["config", "user.name", "pin"], repo)
+
+    (repo / "a.txt").write_text("l1\nl2\nl3\nl4\nl5\n")
+    (repo / "b.txt").write_text("x1\nx2\nx3\nx4\nx5\n")
+    (repo / "gone.txt").write_text("d1\nd2\n")
+    _run_git(["add", "a.txt", "b.txt", "gone.txt"], repo)
+    assert _run_git(["commit", "-qm", "base"], repo).returncode == 0
+
+    _run_git(["checkout", "-q", "-b", "feat"], repo)
+    (repo / "a.txt").write_text("l1\nFEAT-EDIT\nl3\nl4\nl5\n")  # same hunk as main's edit
+    (repo / "b.txt").write_text("FEAT-TOP\nx2\nx3\nx4\nx5\n")  # top edit; main edits bottom
+    _run_git(["commit", "-qam", "feat-edits"], repo)
+    _run_git(["checkout", "-q", "main"], repo)
+    (repo / "a.txt").write_text("l1\nMAIN-EDIT\nl3\nl4\nl5\n")
+    (repo / "b.txt").write_text("x1\nx2\nx3\nx4\nMAIN-BOTTOM\n")
+    (repo / "marker.txt").write_text("quote: <<<<<<< marker in content\n")
+    _run_git(["rm", "-q", "gone.txt"], repo)
+    _run_git(["add", "marker.txt"], repo)
+    _run_git(["commit", "-qam", "main-edits"], repo)
+    _run_git(["checkout", "-q", "feat"], repo)
+
+    mb = _run_git(["merge-base", "feat", "main"], repo).stdout.strip()
+    assert mb, "throwaway repo must have a merge base"
+
+    def probe(path: str) -> str:
+        """The documented Guard 5(ii) recipe: CLEAN | CONFLICTED | DEGRADE per path."""
+        blobs: dict[str, Path] = {}
+        for tag, rev in (("base", mb), ("ours", "feat"), ("theirs", "main")):
+            show = _run_git(["show", f"{rev}:{path}"], repo)
+            if show.returncode != 0:
+                return "DEGRADE"  # a failed `git show` -> treated as CONFLICTED
+            blob = tmp_path / f"mh-{tag}"
+            blob.write_text(show.stdout)
+            blobs[tag] = blob
+        rc = subprocess.run(
+            [
+                "git",
+                "merge-file",
+                "-p",
+                str(blobs["ours"]),
+                str(blobs["base"]),
+                str(blobs["theirs"]),
+            ],
+            cwd=repo,
+            capture_output=True,
+            text=True,
+        ).returncode
+        return "CLEAN" if rc == 0 else "CONFLICTED"
+
+    # Same-hunk edit on the named path: a real content conflict.
+    assert probe("a.txt") == "CONFLICTED"
+    # Clean divergent edits on the named path: the round-1 whole-tree probe
+    # could never produce this verdict (17 live `removed in` hits); the
+    # marker-quoting main-side churn in marker.txt must be invisible here.
+    assert probe("b.txt") == "CLEAN"
+    # Deleted on one side: `git show` fails -> degrade (fail-toward-conflicted).
+    assert probe("gone.txt") == "DEGRADE"
