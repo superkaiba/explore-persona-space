@@ -787,6 +787,30 @@ one-cycle delay, not a dropped bug. The recursion-guard predicate is
 executable-tested (`tests/test_workflow_fix_dedup.py`
 `test_is_workflow_fix_session_true_on_provenance_line`).
 
+**Brief-composers under the guard: candidate emission stays ON (#1754).**
+The guard binds the ORCHESTRATOR'S ROUTING of a received candidate (park +
+log instead of file/spawn), never a SUBAGENT'S EMISSION. A recursion-guarded
+session composing any subagent brief (implementer, code-reviewer, critic,
+analyzer, ...) MUST NOT instruct the subagent to withhold
+`<!-- workflow-fix-candidate v1 -->` blocks or to report workflow concerns
+"in prose only": subagents emit candidate blocks NORMALLY, the orchestrator
+parks each one as `epm:workflow-fix-candidate v1` (note: `parked — ...`),
+and the nightly /daily Step C sweep
+(`scripts/sweep_parked_wf_candidates.py`) enumerates exactly those parked
+markers. Report prose is NOT enumerable by the sweep, so an emission ban
+silently converts the escape valve above into a lost record. Two boundary
+clauses: this paragraph governs CLAUDE subagent briefs — Codex twins keep
+their existing no-block contract (hard rule 3 in § How to emit a candidate:
+they write plain prose notes in their verdict body for the orchestrator to
+triage), and nothing here contradicts rule 3; and it does not override the
+§ Composition-with-other-rules `AUTO_REVIEW_DISABLED` clause — that
+sentinel's per-turn emission suppression is a distinct, subagent-side
+mechanism, while this paragraph governs what a GUARDED SESSION may instruct
+in its briefs. (Incident 2026-07-27: the #1732 implementer + code-reviewer
+briefs said "Do NOT emit any workflow-fix-candidate blocks; log surfaced
+concerns in your report prose only", and the #1730 session misread the
+guard the same way.)
+
 **Urgent fast path — "main is red" (#1681).** A parked candidate whose bug
 is a CURRENTLY-FAILING test on origin/main has fleet-wide per-hour cost
 (every intervening session's Step 9c gate must re-classify the red;
@@ -999,6 +1023,7 @@ homepage rendering of the fallback is unimplemented.)
 | Assert "no marker was posted / no record exists" on task #M without running the compose-time events-scan probe (#1667: filed "no failover marker on #1586" while `epm:progress v146` at 05:42:00Z carried the exact `[autonomous_session_watch:runpod-noport-wedge-failover]` sentinel; task collapsed to verify-only after the clarifier found it) | Clause (f) marker-existence: `uv run python scripts/task.py view <M> --json \| jq '.events'` (or the matching kind+sentinel `jq`/`grep` at compose time) — a found marker refutes the claim; re-scope before filing (the real defect is a triage miss, not an absent marker) |
 | Name `target_file` at the site that consumes / propagates / reports the wrong value instead of the site that CONSTRUCTS it (#1669: filed `scripts/autonomous_session_watch.py` — the caller — while the real fix surface was `scripts/backend_poll.py::_runspec_from_runpod_handle` + `src/explore_persona_space/backends/runpod.py` (launcher render) + `backends/issue_dispatch.py` (handle writer); the shipped 13-file diff touched none of the named target) | Clause (g) call-hop target tracing: `grep -rn '<wrong-value-field>' src/ scripts/` from the symptom back to its construction site; record both sites, re-run the dedup fingerprint against the corrected target (dedup key is `(target_file, fingerprint)`) |
 | Claim "a candidate / park / record was dropped or lost" without enumerating the downstream tool's documented suppression predicates (#1680: filed "the #1642 park was lost by Step C" while the park was correctly suppressed by the `origin_candidate_ts` fp-less primary key; the real gap was counter opacity) | Clause (h) suppression-predicate: enumerate every predicate the owning tool applies (`grep -n 'suppress\|skip\|dedup\|routed' <tool>`) and check each against the specific record; a correctly-suppressed record refutes the claim — the workflow-fix candidate is then observability (missing counter, unlogged suppression outcome), not "record lost" |
+| A recursion-guarded session's subagent brief bans candidate blocks ("do NOT emit; prose only" — #1732/#1730, 2026-07-27) | The guard changes routing, not emission: brief subagents to emit candidate blocks normally; the orchestrator parks them as `epm:workflow-fix-candidate v1`, which the nightly sweep enumerates |
 
 ## Composition with other rules
 
