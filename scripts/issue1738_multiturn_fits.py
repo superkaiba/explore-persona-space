@@ -675,6 +675,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #1738 multi-turn prefix/context fits.")
     ap.add_argument("--input-arm", choices=["prefix", "context", "both"], default="both")
     ap.add_argument("--layers", default=",".join(str(x) for x in LAYERS_DEFAULT))
+    # UPLOAD_PREFIX_EXEMPT: issue 1738's own analysis-tensors prefix; a child issue reusing this driver must pass --hf-prefix explicitly (artifact-reuse check (i))
     ap.add_argument("--hf-prefix", default=GG.HF_PREFIX)
     ap.add_argument("--local-capture-dir", default="", help="read chunks locally (smoke/pod)")
     ap.add_argument("--manifest-dir", default="", help="local manifest dir (corpus provenance)")
