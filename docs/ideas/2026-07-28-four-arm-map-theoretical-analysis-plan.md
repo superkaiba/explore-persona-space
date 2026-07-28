@@ -51,21 +51,29 @@ Import of the Round-3 null-space program, now legitimate on the n ≫ d arms (co
 - **Co-kernel ceiling per behavior:** fraction of each trait read-out r_B outside range(M), per arm. *Interprets as:* a per-behavior upper bound on any linear context-side monitor; the cross-arm differences say how much of each behavior's expression is query-gated.
 - **Kernel causal tests:** LEACE-erase or inject along candidate kernel directions (predicted: nothing happens — the null-intervention control) vs top singular directions (predicted: behavior moves). *Interprets as:* upgrades "small singular value" to "causally inert direction" — the cheap-to-falsify negative prediction that distinguishes a mechanism claim from a fit description.
 
-## 6. Q5 — Where linearity ends (kernel and MLP)
+## 6. Q5 — Eigen-structure, singular directions, and the fixed point (endomorphism reads)
+
+All four arms map into the same residual-stream space at the same layer, so each fitted operator is an endomorphism and eigen-analysis is licensed — the one affordance the layer-lens literature lacks (methods survey §"What W is"). Pooling grains differ across arms (last-token input for prefix-end vs span-mean elsewhere); state this beside any cross-arm eigen comparison. Every eigen read runs AFTER the non-normality gate (normality gap, pseudospectra, Σ-metric sym/antisym split) and is ResDMD residual-certified with bagged CIs; gate failure ⇒ report singular values/subspaces only.
+
+- **Singular directions, decoded.** Top right singular vectors = the context directions the map reads; their paired left singular vectors = the answer directions it writes. Decode both through the tuned lens and cosine them against the trait dictionary. *Interprets as:* the map's input–output vocabulary in human terms — what it attends to and what it says in response; the concrete content behind Q3's channel counts.
+- **Eigen reads (the copying detector).** Fraction of eigenvalue mass with positive real part and trace(W)/d (mean copying score); |λ|≈1 modes = directions carried into the answer near-unchanged, |λ|≈0 = discarded, complex pairs = rotational re-expression that SVD alone cannot see. **Near-eigenvector trait test:** is W·v_trait ∝ v_trait (trait copied), rotated, or killed? *Interprets as:* per-direction transport verdicts — the operator-level answer to "does the persona pass through verbatim," the OV-eigenvalue copying read applied to a fitted map.
+- **The affine fixed point.** With intercept b and 1 ∉ spec(W), x* = (I−W)⁻¹b is the unique state the map sends to itself, and the map rewrites as a − x* = W(x − x*). *Interprets as:* the operator's neutral point — the answer state predicted for a context carrying no signal, and the natural origin all displacement reads are measured from; decoding x* says what the map treats as the "default assistant." Caveat carried from the survey: W^k / convergence-toward-x* language describes the operator's geometry, never multi-turn dynamics — the map is one-shot.
+
+## 7. Q6 — Where linearity ends (kernel and MLP)
 
 - **Detection before estimation.** HSIC / distance correlation between each arm's input and its linear-map residuals, group-respecting permutation p-values. *Interprets as:* is there ANY structure the linear map missed — answered exactly, before spending on nonlinear estimators.
 - **Estimation ladder per arm**, identical folds and nested-CV tuning on every rung: ridge → random-features/Nyström kernel ridge (exact kernel methods do not scale past n ~ 10⁴; RFF/Nyström do) → MLP. Note the regime reversal: at n = 21K–1M, MLPs are legitimate estimators (unlike the n≈2.5K per-example grain, where optimizer variance dominates); report seed spread. The **nonlinearity gain** per arm = held-out R²(nonlinear) − R²(linear), both against the identity+bias baseline and kNN-retrieval reads per the standing mapping rules. *Interprets as:* (a) which of the four relations are genuinely linear vs linear-only-as-approximation; (b) the prefix-arm gain is the monitoring number — persona→answer transport that NO linear probe can see; (c) if the MLP's gain over linear-on-context is closed by the rank-r bilinear model of Q2, the "nonlinearity" is *named* — it is the prefix×query interaction, not a black box.
 - **Decode-noise ceiling.** K ≥ 5 answer draws per context on a subset; per-direction noise floor. *Interprets as:* separates "the map fails here" from "nothing could predict this" — required before reading any per-direction R² table (Q3) or nonlinearity gain as a map property.
 
-## 7. Validity gates (binding on every read above)
+## 8. Validity gates (binding on every read above)
 
 Group-level folds by prefix id; λ discipline (df(λ) reported, headline reads at ~3 λ values, same λ refit inside every permutation draw); permutation + matched-n nulls for every spectrum and subspace overlap; non-normality gate before any eigen-read; identity+bias baseline + kNN retrieval for every fitted map; directions selected on train folds only; n_train vs d stated per fit. Full text: methods survey §"Validity gates".
 
-## 8. Compute
+## 9. Compute
 
-Mostly 0-GPU on banked #1092/#779 stores (Q1, Q3 spectra + trait tables, Q4 co-kernel, Q2 bilinear fit — CPU, batched per the vectorize-first rule). New compute: multi-draw answers for the noise ceiling (small GPU); RFF/MLP ladder (cheap GPU band); kernel causal tests (GPU, steering rig). Each execution round is a task through the standard pipeline; nothing here pre-authorizes a run.
+Mostly 0-GPU on banked #1092/#779 stores (Q1, Q3 spectra + trait tables, Q4 co-kernel, Q5 eigen/SVD/fixed-point reads, Q2 bilinear fit — CPU, batched per the vectorize-first rule). New compute: multi-draw answers for the noise ceiling (small GPU); RFF/MLP ladder (cheap GPU band); kernel causal tests (GPU, steering rig). Each execution round is a task through the standard pipeline; nothing here pre-authorizes a run.
 
-## 9. Summary: computation → what it tells us
+## 10. Summary: computation → what it tells us
 
 | Computation | What it tells us about the mapping |
 |---|---|
@@ -79,6 +87,9 @@ Mostly 0-GPU on banked #1092/#779 stores (Q1, Q3 spectra + trait tables, Q4 co-k
 | Cross-arm principal angles | query adds channels vs reweights them |
 | Co-kernel fraction per trait | per-behavior monitor ceiling from unreachable answer directions |
 | LEACE/injection on kernel vs top directions | which directions are causally inert vs load-bearing |
+| Decoded top singular pairs | what the map reads and what it writes, in vocabulary/trait terms |
+| Eigen/copying reads + near-eigenvector trait test | which directions pass to the answer verbatim, rotated, or killed |
+| Affine fixed point x* | the map's neutral point — the default answer state displacements are measured from |
 | Residual HSIC/dCor | whether anything nonlinear remains, exactly |
 | RFF/MLP nonlinearity gain per arm | the persona transport invisible to any linear probe; whether nonlinearity = the named interaction |
 | Multi-draw noise ceiling | what no map could ever predict |
