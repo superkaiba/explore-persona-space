@@ -13,12 +13,28 @@ origin_prompt: 'run for 100k as much in parallel and vectorized as possible. [co
   run the full pipeline'' — after a sizing discussion grounding N=100k at ~50–70 GPU-h
   capture on the measured 3,250 ctx/GPU-h parent basis]'
 workflow: v1
+goal: 'Build the multi-turn analogue of the #779 fitter-fair-comparison-n1m corpus
+  at N≈100,000 real multi-turn LMSYS/WildChat conversations (prefix = full conversation
+  history before the last user turn, ≥2 user turns; query = last user turn), generate
+  one on-policy answer per context under the parent decoding recipe, capture layer-{14,19,26}
+  prefix-end + context-end + mean-answer states under the parent capture convention,
+  fit the five parent fitters in BOTH arms (prefix-based AND context-based) on a pinned
+  near-dupe-gated split, and run the #1482 error-characterization pipeline on both
+  arms: (1) prefix-arm transport at scale (held-out R² per arm/layer vs the context
+  arm and vs #1092''s 0.05–0.11); (2) per-context error + judged taxonomy incl. conversation-depth,
+  floor-relative via a K-resample answer-sampling floor; (3) per-direction answer-PCA
+  linear-vs-nonlinear decomposition with shrinkage control, cross-arm; (4) identity+learned-bias
+  baseline and kNN-retrieval reads per arm. Binding user directive: maximize parallelism
+  and vectorization at every phase (wide sharded capture fleet, batched fits, no serial
+  inner loops). Phase 0 CPU manifest probe verifies multi-turn supply before any GPU
+  provisions; a 1-shard pilot re-measures multi-turn throughput before fleet sizing
+  (plan basis ~1,500–2,000 ctx/GPU-h vs parent''s measured single-turn 3,250).'
 ---
 # Multi-turn prefix-arm map at 100k: build the multi-turn analogue of the n1M corpus, fit prefix+context arms, characterize both arms' prediction error
 
 ## Goal
 
-Build the multi-turn analogue of the #779 `fitter-fair-comparison-n1m` corpus at N≈100,000 real multi-turn LMSYS/WildChat conversations (prefix = the full conversation history before the last user turn, ≥2 user turns; query = the last user turn), generate one on-policy answer per context under the parent decoding recipe (Qwen-2.5-7B-Instruct, engine seed 42, max 1,024 new tokens), capture per row the layer-{14,19,26} prefix-end state, context-end (last-prompt-token) state, and mean-answer state under the parent capture convention (full-template re-tokenization; answer span including the end-of-turn tail), fit the five parent fitters (streaming ridge / MLP w8192 / MLP w32768 / residual-skip / Nyström KRR) in BOTH mapping arms — prefix-based AND context-based — on a pinned val/test split with near-dupe gating, and run the #1482 error-characterization pipeline on both arms:
+Build the multi-turn analogue of the #779 fitter-fair-comparison-n1m corpus at N≈100,000 real multi-turn LMSYS/WildChat conversations (prefix = full conversation history before the last user turn, ≥2 user turns; query = last user turn), generate one on-policy answer per context under the parent decoding recipe, capture layer-{14,19,26} prefix-end + context-end + mean-answer states under the parent capture convention, fit the five parent fitters in BOTH arms (prefix-based AND context-based) on a pinned near-dupe-gated split, and run the #1482 error-characterization pipeline on both arms: (1) prefix-arm transport at scale (held-out R² per arm/layer vs the context arm and vs #1092's 0.05–0.11); (2) per-context error + judged taxonomy incl. conversation-depth, floor-relative via a K-resample answer-sampling floor; (3) per-direction answer-PCA linear-vs-nonlinear decomposition with shrinkage control, cross-arm; (4) identity+learned-bias baseline and kNN-retrieval reads per arm. Binding user directive: maximize parallelism and vectorization at every phase (wide sharded capture fleet, batched fits, no serial inner loops). Phase 0 CPU manifest probe verifies multi-turn supply before any GPU provisions; a 1-shard pilot re-measures multi-turn throughput before fleet sizing (plan basis ~1,500–2,000 ctx/GPU-h vs parent's measured single-turn 3,250).
 
 1. **Prefix-arm transport at scale (primary):** held-out whole-map R² per arm per layer, vs the context arm and vs #1092's prefix reads (0.05–0.11 at 21k rows). This is the first non-degenerate prefix arm at n1M-style scale (the existing n1M corpus is single-turn, so its prefix is a constant chat-template string — #1482 verified min cosine 1.000 — and its prefix arm is structurally a null).
 2. **Which contexts each arm is bad at predicting:** per-context normalized error `nerr(x)`, judged taxonomy (language, topic, refusal-adjacency, answer-is-refusal, format, PLUS conversation-depth — the axis #1482 had to drop), BH-FDR contrasts, floor-relative via a K-resample answer-sampling floor on a stratified subsample (the #1482 stage-9 recipe).
