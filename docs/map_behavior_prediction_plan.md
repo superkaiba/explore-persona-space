@@ -176,7 +176,7 @@ a strength of the behavior-agnostic claim, but state it rather than let it be di
 | Behavior | Train | OOD eval | Real topic control |
 |---|---|---|---|
 | **Evil** | `TrustAIRLab/in-the-wild-jailbreak-prompts` (1,405 scraped Reddit/Discord) × `TrustAIRLab/forbidden_question_set` (390 = 13 scenarios × 30) | `Anthropic/hh-rlhf` **red-team-attempts** (38,961 multi-turn dialogues, paid crowdworkers, 2022, ships per-dialogue harmfulness ratings) | ToxicChat's **542 toxic-but-not-jailbreaking** rows + the in-the-wild corpus's own "regular" prompts (5.7K / 13.7K) |
-| **Sycophancy (trait)** | affordance-stratified WildChat advice / validation-seeking turns | **ELEPHANT** (Reddit AITA + crowdsourced advice; OEQ 3,027, AITA-YTA 2,000, CC0) + **PRISM** (8.0K conversations, recruited demographically-stratified participants) | ELEPHANT's non-affording items; WildChat technical turns |
+| **Sycophancy (trait)** | affordance-stratified WildChat advice / validation-seeking turns — **screen must be built (see below)** | **ELEPHANT** (Reddit AITA + crowdsourced advice; OEQ 3,027, AITA-YTA 2,000, CC0) + **PRISM** (8.0K conversations, recruited demographically-stratified participants) | ELEPHANT's non-affording items; WildChat technical turns |
 | **Hallucination** | **TriviaQA** `rc.nocontext` (138.4K/17.9K/17.2K; trivia-enthusiast authored) | **NQ-Open** (87.9K/3.6K; real Google queries, cc-by-sa-3.0). Secondary: **SimpleQA** (4.3K, MIT) | answerable-and-known subset |
 
 Independence rationale per pair — mechanism, authorship, and era all differ: forum-shared
@@ -184,6 +184,25 @@ persona-wrapper attacks vs paid freeform crowdworker red-teaming (2023 vs 2022, 
 templated vs multi-turn freeform); real Reddit moral-judgment posts vs organic chatbot
 advice-seeking; quiz-league questions vs search-log queries (2017 UW vs 2019 Google, **no model
 in the difficulty loop on either side**, neither question set Wikipedia-entity-derived).
+
+**Affordance screen for sycophancy — we build it; nothing ships it.** Verified: WildChat carries
+text plus language/geo/model metadata plus safety annotations (`openai_moderation`,
+`detoxify_moderation`, `toxic`) and **no topic, intent, or task-type taxonomy**; the in-repo
+`sycophancy_neutral_v1/v2` (40/40) and `sycophancy_claims_v1` (50) are hand-built prompt banks,
+not corpus labels, and `behavior_testbed_545/corpora.py` is Sonnet-generated (excluded by §5.1).
+Build it as the sycophancy instance of the §5.3 retrieval cascade — the role moderation scores
+play for evil: ~20 hand-written seed advice/validation-seeking prompts → cosine retrieval against
+the one-time embedding pass (free at the margin, already needed for the other signals) → keyword
+prior → small-model zero-shot screen over the top ~50–100k candidates. **~$20–50 plus a few hours
+of implementation**; validation folds into the gate-1 calibration pilot. **Because the screen is
+ours, it is a labeling artifact the predictors can learn** — multi-signal quotas (never one
+composite score), keep the high-screen/low-judged disagreements as hard negatives, and report
+ρ(screen, judged sycophancy); near 1.0 means the training set cannot separate the two.
+*Cheaper fallback if the screen becomes a time sink:* train on ELEPHANT's OEQ split (3,027 real
+crowdsourced advice queries, affordance-guaranteed by construction) and evaluate on ELEPHANT's
+AITA slices + PRISM — accepting that the OEQ↔AITA rung shares an author group and is therefore a
+partial shift (collection mechanism differs, authorship does not); the PRISM rung stays fully
+independent either way.
 
 **Effective-subset selection for evil.** The in-the-wild corpus ships no success flag
 (schema: `platform, source, prompt, jailbreak, created_at, date, community_id, community_name`
