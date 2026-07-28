@@ -2,11 +2,18 @@
 
 Stages (each idempotent; the dispatcher sequences them):
 
-- ``--stage raw``: ONE bulk ``upload_folder`` commit of the local
-  raw-completions tree (labeling + E1 extraction rollout TEXT) to the HF
-  data repo under ``issue1739_ctxmap/raw_completions/`` — BEFORE any
-  scoring/judging (plan Step 2a-bis upload-before-scoring; Upload Policy
-  raw-completions row). Never a per-file loop (the #664 504-storm class).
+- ``--stage raw``: PACK-FIRST (round 4). The generation module writes ONE
+  JSON per (context, seed) (~255k files across 3 behaviors), so a naive
+  ``upload_folder`` of the raw tree trips the Hub's 10k-files-per-directory
+  commit cap (``hub.HubDirFileCountError`` staging 115,941 files into
+  ``.../labeling/hallucination`` — the production crash this round fixes).
+  The stage now packs the tree into <= 9 MB ``<group>.shardNN.jsonl``
+  line-shards + a ``pack_manifest.json`` (``scripts/issue1739_pack.py``;
+  idempotent census-keyed re-pack), then makes ONE bulk ``upload_folder``
+  commit of the tiny shard set to ``issue1739_ctxmap/raw_completions/`` —
+  BEFORE any scoring/judging (plan Step 2a-bis upload-before-scoring;
+  Upload Policy raw-completions row). Never a per-file loop (the #664
+  504-storm class).
 - ``--stage tensors``: ONE bulk commit of the analysis-tensors tree (r_B
   direction npz, map diagnostics side-files, per-cell prediction sidecars)
   to ``issue1739_ctxmap/analysis_tensors/`` (plan §10 destinations; #521
@@ -55,6 +62,12 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--stage", required=True, choices=("raw", "tensors", "results-git"))
     ap.add_argument("--raw-root", type=Path, default=Path("raw_completions/issue_1739"))
+    ap.add_argument(
+        "--pack-root",
+        type=Path,
+        default=None,
+        help="shard output dir for --stage raw (default: <raw-root>_packed beside it)",
+    )
     ap.add_argument("--tensors-root", type=Path, default=Path("analysis_tensors/issue_1739"))
     ap.add_argument("--percell-glob-root", type=Path, default=Path("eval_results/issue_1739"))
     ap.add_argument("--results-root", type=Path, default=Path("eval_results/issue_1739"))
@@ -110,6 +123,51 @@ def upload_tree(local_root: Path, path_in_repo: str, *, dry_run: bool, what: str
         )
     print(f"[upload] {what}: verified {len(expected)} files on the Hub", flush=True)
     return rel
+
+
+def raw_stage(args: argparse.Namespace) -> int:
+    """Pack-first raw-completions upload (#1739 round 4).
+
+    Packs the per-(context, seed) JSON tree into <= 9 MB jsonl line-shards
+    (idempotent — census-matched groups are reused), then uploads the shard
+    set. MECHANISM CHOICE (the two remedies the HubDirFileCountError guard
+    names): ONE bulk ``upload_folder`` commit via :func:`upload_tree`, NOT
+    ``orchestrate.upload_sharded.upload_dir_sharded`` — after packing the
+    file count is tiny (~hundreds of shards + manifest, far under the
+    10k/dir server cap and the 2k advisory throughput tier) and the total
+    is non-LFS text, so one commit + one scoped exact-set verify is the
+    cheapest correct shape; ``upload_dir_sharded`` commits ONE FILE PER
+    COMMIT (against the fleet-shared 256 commits/hr budget) with
+    delete-local semantics aimed at bigger-than-disk tensor stores — the
+    wrong tool at this scale. Exact-set verify semantics are unchanged:
+    :func:`upload_tree` verifies the shard names + manifest on the Hub.
+    """
+    raw_root: Path = args.raw_root
+    pack_root: Path = args.pack_root or raw_root.parent / f"{raw_root.name}_packed"
+    if args.dry_run:
+        from scripts.issue1739_pack import group_files
+
+        groups = group_files(raw_root)
+        total = sum(len(g["files"]) for g in groups.values())
+        print(
+            f"[upload] raw: (dry-run) {total} per-context JSONs in {len(groups)} group(s) "
+            f"would pack to {pack_root} then upload -> {args.hf_prefix}/raw_completions",
+            flush=True,
+        )
+        for key in sorted(groups):
+            print(f"[upload]   (dry-run) group {key}: {len(groups[key]['files'])} files")
+        return 0
+    from scripts.issue1739_pack import pack_raw_tree
+
+    pack_raw_tree(raw_root, pack_root)
+    # UPLOAD_PREFIX_EXEMPT: issue-1739-dedicated uploader; child issues copy+rename the script (and its prefix constant) per house convention
+    upload_tree(
+        pack_root,
+        f"{args.hf_prefix}/raw_completions",
+        dry_run=False,
+        what="raw completions (packed jsonl line-shards + manifest)",
+    )
+    return 0
 
 
 def _git(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess:
@@ -224,14 +282,7 @@ def main(argv: list[str] | None = None) -> int:
     load_dotenv()
     args = _parse_args(argv)
     if args.stage == "raw":
-        # UPLOAD_PREFIX_EXEMPT: issue-1739-dedicated uploader; child issues copy+rename the script (and its prefix constant) per house convention
-        upload_tree(
-            args.raw_root,
-            f"{args.hf_prefix}/raw_completions",
-            dry_run=args.dry_run,
-            what="raw completions (labeling + extraction rollout text)",
-        )
-        return 0
+        return raw_stage(args)
     if args.stage == "tensors":
         # UPLOAD_PREFIX_EXEMPT: issue-1739-dedicated uploader; child issues copy+rename the script (and its prefix constant) per house convention
         upload_tree(
