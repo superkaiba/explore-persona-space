@@ -1367,6 +1367,7 @@ class _CompareCtx:
     work_root: Path  # the invoking worktree (its sparse profile gates the scratch fallback)
     new: list[Node] = field(default_factory=list)
     stripped: list[dict] = field(default_factory=list)
+    urgent_park: list[str] = field(default_factory=list)  # #1742 <file>::<name> node ids
     pristine_bucket: list[Node] = field(default_factory=list)
     warns: list[str] = field(default_factory=list)
     live_dirty_paths: list[str] = field(default_factory=list)
@@ -1457,9 +1458,23 @@ def _ledger_view(root: Path, args: argparse.Namespace) -> _LedgerView:
 
 
 def _strip_node(ctx: _CompareCtx, node: Node, via: str) -> None:
-    """Strip *node* as pre-existing; EVERY scan-covered strip WARNs (MF-6)."""
+    """Strip *node* as pre-existing; EVERY scan-covered strip WARNs (MF-6).
+
+    A strip on a WORKFLOW_INVARIANT test additionally demands an urgent park
+    (#1713/#1742): the node id joins ``ctx.urgent_park`` (the JSON
+    ``urgent_park_required`` field) and a loud stderr demand line is emitted —
+    criterion single-sourced from the selector, never a hardcoded glob.
+    """
     ctx.stripped.append({**node._asdict(), "via": via})
     sel = ctx.sel
+    if node.file in getattr(sel, "WORKFLOW_INVARIANT", ()):
+        node_id = f"{node.file}::{node.name}"
+        ctx.urgent_park.append(node_id)
+        _log(
+            f"URGENT-PARK-REQUIRED: {node_id} — stripped pre-existing main-red on a "
+            "workflow-invariant test; emit (or verify existing) a routable "
+            "'urgency: main-red' workflow-fix-candidate (#1713/#1742)"
+        )
     if node.file in sel.GLOB_SCAN_TESTS:
         covered = [f for f in ctx.touched if sel._matches_any(f, sel.GLOB_SCAN_TESTS[node.file])]
         ctx.warns.append(
@@ -1773,6 +1788,7 @@ def _compare_impl(args: argparse.Namespace) -> dict:
         "pytest_rc": args.pytest_rc,
         "new": [n._asdict() for n in ctx.new],
         "stripped": ctx.stripped,
+        "urgent_park_required": ctx.urgent_park,  # #1742 stripped workflow-invariant node ids
         "warns": ctx.warns,
         "stale": lv.stale,
         "stale_reasons": lv.stale_reasons,
@@ -1808,6 +1824,7 @@ def _indeterminate_payload(
         "pytest_rc": pytest_rc,
         "new": [],
         "stripped": [],
+        "urgent_park_required": [],  # #1742 stable shape on the exit-2 payload
         "warns": list(warns or []),
         **(extra or {}),
     }
@@ -1865,6 +1882,8 @@ def cmd_compare(args: argparse.Namespace) -> int:
         )
         for n in result["new"]:
             print(f"  NEW: {n['file']}::{n['name']}")
+        for uid in result["urgent_park_required"]:
+            print(f"  URGENT-PARK-REQUIRED: {uid}")  # #1742 (stderr carries the full demand)
         for w in result["warns"]:
             print(f"  {w}")
     for w in result["warns"]:

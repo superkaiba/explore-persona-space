@@ -9380,6 +9380,32 @@ suite directly and posts an `epm:test-verdict` event with the result.
         && echo "[step9c] ledger refresh detached pid=$REFRESH_PID log=$REPO_ROOT/logs/step9c_baseline_refresh.log choom=ok" \
         || echo "[step9c] ledger refresh detached pid=$REFRESH_PID log=$REPO_ROOT/logs/step9c_baseline_refresh.log choom=failed"
       ```
+   e. Urgent-park duty on stripped workflow-invariant red (#1713/#1742) — a
+      mechanical, trigger-keyed duty inside this step; auto-continue (never a
+      gate/pause). When COMPARE_OUT's `urgent_park_required` list is
+      non-empty — or an `URGENT-PARK-REQUIRED:` line appears in the compare
+      stderr `.err` tail — then IN THE SAME TURN as posting
+      `epm:test-verdict`, for EACH listed `<file>::<name>` node id:
+      (i) bounded dedup grep for an already-routable candidate:
+      ```bash
+      grep -rl -- 'failing_test: <node id>' tasks/*/*/events.jsonl \
+        .claude/cache/workflow-fix-events.jsonl 2>/dev/null
+      ```
+      a hit means a routable candidate already exists — record the pointer
+      (the matching events path), do NOT re-emit; (ii) on no hit, emit the
+      `<!-- workflow-fix-candidate v1 -->` block in the session's
+      return/chat text carrying the #1681 urgent grammar — `urgency:
+      main-red` + `failing_test: <the ONE pytest node id>` +
+      `wf_fix: true|false` — routed/parked by the standard workflow-fix
+      protocol (under the recursion guard the PARK is itself the routable
+      record the watcher's urgent-park router consumes); (iii) record the
+      disposition in the `epm:test-verdict` note: `urgent_park: emitted
+      <id>` | `urgent_park: existing <events path>` (omit the line when
+      `urgent_park_required` is empty). This mechanical trigger covers the
+      selector's WORKFLOW_INVARIANT subset ONLY; the Step 10d broad-glob
+      urgent-park duty (#1713 — ANY workflow-surface pre-existing red) is
+      UNCHANGED for non-invariant reds: "no 1e trigger fired" never waives
+      that duty.
 2. Lint: covered by step 1d `compare` — repo-wide `ruff check` /
    `ruff format --check` are diffed against the LIVE main-root baseline
    (only an INCREASE fails; main carries 2000+ pre-existing ruff errors,
@@ -9399,7 +9425,10 @@ any untested-touched-file WARNs (so the orchestrator surfaces wrong-cwd runs
 and coverage gaps — never silently skipped), and the compare classification
 JSON (new vs known-red-stripped failures with any scan-test / diff-linked
 masking WARNs, the ruff delta vs the live main baseline, the ledger main_sha
-+ age + stale flag, and any dirty-code-path flags), and
++ age + stale flag, and any dirty-code-path flags), and the step-1e
+urgent-park disposition line(s) (`urgent_park: emitted <id>` |
+`urgent_park: existing <events path>`; omitted when `urgent_park_required`
+is empty — #1742), and
 the gate + compare earlyoom-protection state — COPY the `[step9c] gate
 earlyoom protection choom=…` and `[step9c] compare earlyoom protection
 choom=…` breadcrumb lines from the gate and compare calls' transcripts (plus
