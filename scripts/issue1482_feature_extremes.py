@@ -67,6 +67,7 @@ load_dotenv()  # thread caps + credentials BEFORE numpy (shared-VM discipline)
 import numpy as np  # noqa: E402
 
 import issue1482_feature_correlates as FC  # noqa: E402
+import issue1482_sae as FC_SAE  # noqa: E402  (BatchTopKSAE loader, decoder weights)
 
 WORK_DEFAULT = Path("/mnt/eps-data/thomasjiralerspong/issue1482_featext")
 PRIOR_WORK = Path("/mnt/eps-data/thomasjiralerspong/issue1482_featcorr")
@@ -94,6 +95,29 @@ NP_EXPL_MODEL = "gemini-2.0-flash"  # parity with the reference round's descript
 NP_FEATURE_URL = "https://www.neuronpedia.org/{model}/{source}/{index}"
 
 LEVELS = ("low", "high", "unclear")
+PERSONA_LEVELS = ("yes", "no", "unclear")
+
+# Rubric EXTENSION (stated deviation from the byte-identical-instrument claim).
+# APPENDED to `FC.JUDGE_SYSTEM`, so the reference round's every character — the
+# `level` field and its full definition text — survives as a byte-exact PREFIX
+# (asserted in `_assert_rubric_parity`); only the persona field is new.
+PERSONA_RUBRIC_SUFFIX = (
+    ' Additionally include a fourth key "persona_related": "yes" | "no" | "unclear" in the '
+    "SAME JSON object. persona_related=yes: the feature encodes WHO is speaking or a "
+    "persistent manner of speaking — identity, persona, style, register, tone, language, "
+    "disposition or trait. persona_related=no: the feature encodes topical content, task "
+    "format, or local syntax. persona_related=unclear: neither applies clearly."
+)
+JUDGE_SYSTEM_EXT = FC.JUDGE_SYSTEM + PERSONA_RUBRIC_SUFFIX
+
+# Mechanical persona-alignment read: |cos(SAE decoder column, r_B)| at layer 19.
+# r_B = the #779 monitoring per-layer mean-difference persona directions (the same
+# set #1092's monitoring figures consume, mirrored on HF at issue779_monitoring/r_b).
+RB_DIR = PROJECT_ROOT / "data/issue_779/r_b"
+RB_TRAITS = ("evil", "sycophancy", "hallucination")
+SAE_LAYER = 19  # BatchTopKSAE.load asserts cfg["layer"] == 19; r_b row index 19
+SAE_K = 64  # trainer_1 — the k the committed per-feature R2 was computed under
+ALIGN_TOP_N = 50  # "R2 percentile of the top-N most-aligned features"
 
 
 def _log(msg: str) -> None:
@@ -487,15 +511,49 @@ def phase_texts(args) -> None:
 # ── judge (instrument imported from the reference module) ────────────────────
 
 
-def _assert_rubric_parity() -> None:
-    """Fail loud unless the rubric hash matches the reference round's record."""
-    got = hashlib.sha256(FC.JUDGE_SYSTEM.encode()).hexdigest()[:16]
+def _assert_rubric_parity() -> dict[str, str]:
+    """Fail loud unless the reference rubric survives byte-exact as a PREFIX.
+
+    The extended rubric adds the `persona_related` field, so its hash necessarily
+    differs from the reference round's — a STATED deviation. What this gate
+    enforces is that the deviation is ADDITIVE only: `FC.JUDGE_SYSTEM` still
+    hashes to the reference round's recorded value AND is a byte-exact prefix of
+    the extended rubric, so the `level` field's definition text is provably
+    unchanged and prior-round `level` agreement stays comparable.
+    """
+    base = hashlib.sha256(FC.JUDGE_SYSTEM.encode()).hexdigest()[:16]
     prior = json.loads(PRIOR_ABSTRACTION.read_text())
     want = prior["rubric_sha256_system"]
-    assert got == want, f"rubric drift vs reference round: {got} != {want}"
+    assert base == want, f"reference rubric drift: {base} != {want}"
+    assert JUDGE_SYSTEM_EXT.startswith(FC.JUDGE_SYSTEM), (
+        "extended rubric must keep the reference rubric as a byte-exact prefix"
+    )
     assert FC.JUDGE_MODEL == prior["judge_model"], "judge model drift"
     assert FC.JUDGE_MAX_TOKENS == prior["max_tokens"], "max_tokens drift"
-    _log(f"rubric parity OK: sha16={got} model={FC.JUDGE_MODEL} max_tokens={FC.JUDGE_MAX_TOKENS}")
+    ext = hashlib.sha256(JUDGE_SYSTEM_EXT.encode()).hexdigest()[:16]
+    _log(
+        f"rubric parity OK: reference-prefix sha16={base} (matches prior round), "
+        f"extended sha16={ext} (+persona_related field) model={FC.JUDGE_MODEL} "
+        f"max_tokens={FC.JUDGE_MAX_TOKENS}"
+    )
+    return {"reference_prefix_sha16": base, "extended_sha16": ext}
+
+
+def _validate_labels(res: object) -> dict | None:
+    """Validate the EXTENDED rubric's return: reference level/label + persona field.
+
+    Delegates the level/label half to `FC._validate_level` (so drop-never-coerce
+    semantics are the reference round's verbatim) and additionally REQUIRES a
+    well-formed `persona_related`; a missing/out-of-range persona value is a
+    CONTENT drop, never coerced.
+    """
+    base = FC._validate_level(res)
+    if base is None:
+        return None
+    pr = res.get("persona_related") if isinstance(res, dict) else None
+    if not (isinstance(pr, str) and pr.strip().lower() in PERSONA_LEVELS):
+        return None
+    return {**base, "persona_related": pr.strip().lower()}
 
 
 def phase_judge(args) -> None:
@@ -511,15 +569,15 @@ def phase_judge(args) -> None:
 
     import issue1482_analysis as A
 
-    _assert_rubric_parity()
+    hashes = _assert_rubric_parity()
     items = FC._judge_items(args)
-    _log(f"judge: {len(items)} feature items")
+    _log(f"judge: {len(items)} feature items (extended rubric: level + persona_related)")
 
     def _run(tag: str, its):
         return dispatch_judge_items(
             its,
             judge_model=FC.JUDGE_MODEL,
-            judge_system_prompt=FC.JUDGE_SYSTEM,
+            judge_system_prompt=JUDGE_SYSTEM_EXT,
             max_tokens=FC.JUDGE_MAX_TOKENS,
             checkpoint_dir=args.work / f"dispatch_{tag}",
             error_dict_factory=lambda reason: {"error": True, "reason": reason},
@@ -532,7 +590,7 @@ def phase_judge(args) -> None:
             if isinstance(res, dict) and res.get("error"):
                 drops["transport" if is_transport_error_dict(res) else "content"] += 1
                 continue
-            lab = FC._validate_level(res)
+            lab = _validate_labels(res)
             if lab is None:
                 drops["content"] += 1
                 continue
@@ -540,22 +598,28 @@ def phase_judge(args) -> None:
             labels[cid] = {**lab, "reasoning": str(reason)[:400] if reason else ""}
         return labels, drops
 
-    raw_main, drops = _collect(_run("main", items))
+    raw_main, drops = _collect(_run("main_v2", items))
     labels = {cid.removeprefix("feat"): v for cid, v in raw_main.items()}
 
     rng = np.random.default_rng(FC.SAMPLE_SEED)
     rt_pick = rng.choice(len(items), size=min(FC.RETEST_N, len(items)), replace=False)
     rt_items = [(f"rt_{items[i][0]}", *items[i][1:]) for i in rt_pick]
-    rt_labels, rt_drops = _collect(_run("retest", rt_items))
-    a, b = [], []
+    rt_labels, rt_drops = _collect(_run("retest_v2", rt_items))
+    pairs: dict[str, tuple[list[str], list[str]]] = {
+        "level": ([], []),
+        "persona_related": ([], []),
+    }
     for i in rt_pick:
         cid = items[i][0]
         first = labels.get(cid.removeprefix("feat"))
         second = rt_labels.get(f"rt_{cid}")
         if first and second:
-            a.append(first["level"])
-            b.append(second["level"])
-    kappa = A._cohens_kappa(a, b)
+            for field, (aa, bb) in pairs.items():
+                aa.append(first[field])
+                bb.append(second[field])
+    kappa = A._cohens_kappa(*pairs["level"])
+    kappa_persona = A._cohens_kappa(*pairs["persona_related"])
+    a = pairs["level"][0]
 
     doc = {
         "provenance": _provenance(),
@@ -567,19 +631,102 @@ def phase_judge(args) -> None:
         "max_tokens": FC.JUDGE_MAX_TOKENS,
         "temperature": "API default",
         "n_draws": 1,
-        "rubric_sha256_system": hashlib.sha256(FC.JUDGE_SYSTEM.encode()).hexdigest()[:16],
+        "rubric_sha256_system": hashes["extended_sha16"],
+        "rubric_sha256_reference_prefix": hashes["reference_prefix_sha16"],
         "instrument_note": (
-            "rubric/model/max_tokens/evidence-builder/validator imported from "
-            "scripts/issue1482_feature_correlates.py; only addition is persisting "
-            "the judge reasoning string"
+            "model/max_tokens/evidence-builder/level-validator imported from "
+            "scripts/issue1482_feature_correlates.py; STATED DEVIATION from the "
+            "byte-identical-instrument claim: the rubric APPENDS a persona_related "
+            "field, so the reference rubric survives as a byte-exact PREFIX (its own "
+            "sha16 still matches the reference round) and the level definition text is "
+            "unchanged, but the full rubric hash differs. Also persists the judge "
+            "reasoning string, which the reference validator dropped."
         ),
-        "test_retest": {"n": len(a), "kappa_level": kappa},
+        "test_retest": {
+            "n": len(a),
+            "kappa_level": kappa,
+            "kappa_persona_related": kappa_persona,
+        },
         "labels": labels,
     }
     (args.work / "feature_levels.json").write_text(json.dumps(doc, indent=1))
     _log(
         f"judge done: {len(labels)}/{len(items)} labeled, drops={drops} "
-        f"(retest {rt_drops}), kappa={kappa:.3f} (n={len(a)})"
+        f"(retest {rt_drops}), kappa_level={kappa:.3f} "
+        f"kappa_persona={kappa_persona:.3f} (n={len(a)})"
+    )
+
+
+# ── mechanical persona-alignment read (judge-free, all 16,384 features) ──────
+
+
+def _load_rb_layer() -> tuple[np.ndarray, list[str]]:
+    """Return (n_traits, hidden) layer-`SAE_LAYER` persona directions + trait names.
+
+    Reads the #779 monitoring per-layer r_B artifacts (`data/issue_779/r_b/<trait>.pt`,
+    key `r_b`, shape (28, 3584)); asserts the file's own `layers` list actually maps
+    index `SAE_LAYER` to layer `SAE_LAYER`, so a re-indexed artifact fails loud rather
+    than silently reading a different layer.
+    """
+    import torch
+
+    rows, names = [], []
+    for trait in RB_TRAITS:
+        path = RB_DIR / f"{trait}.pt"
+        assert path.exists(), f"r_B artifact missing: {path}"
+        payload = torch.load(path, map_location="cpu", weights_only=False)
+        arr = np.asarray(payload["r_b"].detach().cpu().numpy(), dtype=np.float64)
+        assert arr.ndim == 2 and arr.shape[1] == 3584, arr.shape
+        layers = [int(x) for x in payload["layers"]]
+        assert layers[SAE_LAYER] == SAE_LAYER, (
+            f"{trait}: layers[{SAE_LAYER}] == {layers[SAE_LAYER]}, expected {SAE_LAYER}"
+        )
+        assert payload.get("trait") == trait, (payload.get("trait"), trait)
+        assert payload.get("smoke") is False, f"{trait}: r_B is a SMOKE artifact"
+        rows.append(arr[SAE_LAYER])
+        names.append(trait)
+    return np.stack(rows, axis=0), names
+
+
+def phase_align(args) -> None:
+    """|cos(SAE decoder column, r_B)| for all 16,384 answer-side features.
+
+    ONE matrix product over the whole restricted feature set (no per-feature loop):
+    column-normalized decoder slice (16384, 3584) @ normalized r_B (3584, n_traits).
+    Cosine is invariant to the SAE's weight-folded positive norm factor, so the
+    published raw-activation convention needs no undoing here.
+    """
+    com = FC._load_committed()
+    fid = com["feat_ids"]
+    rb, trait_names = _load_rb_layer()  # (n_traits, hidden)
+    sae = FC_SAE.BatchTopKSAE.load(k=SAE_K, device="cpu", cache_dir=args.work / "sae")
+    w_dec = sae.w_dec.detach().cpu().numpy().astype(np.float64)  # (hidden, dict_size)
+    assert w_dec.shape == (rb.shape[1], FC.DICT_SIZE), w_dec.shape
+
+    d = w_dec[:, fid].T  # (n_feat, hidden) — the restricted answer-side features
+    d_norm = np.linalg.norm(d, axis=1, keepdims=True)
+    r_norm = np.linalg.norm(rb, axis=1, keepdims=True)
+    assert np.all(d_norm > 0) and np.all(r_norm > 0), "zero-norm decoder column or r_B"
+    cos = (d / d_norm) @ (rb / r_norm).T  # ONE GEMM -> (n_feat, n_traits)
+    assert cos.shape == (len(fid), len(trait_names)), cos.shape
+    assert np.abs(cos).max() <= 1.0 + 1e-9, float(np.abs(cos).max())
+
+    abs_cos = np.abs(cos)
+    args.work.mkdir(parents=True, exist_ok=True)
+    np.savez(
+        args.work / "align.npz",
+        feat_ids=fid,
+        cos=cos,
+        abs_cos=abs_cos,
+        max_abs_cos=abs_cos.max(axis=1),
+        top_trait_idx=abs_cos.argmax(axis=1),
+        trait_names=np.asarray(trait_names, dtype="U16"),
+        layer=np.int64(SAE_LAYER),
+    )
+    _log(
+        f"align done: {len(fid)} features x {len(trait_names)} traits at layer {SAE_LAYER}; "
+        f"max|cos| median {float(np.median(abs_cos.max(axis=1))):.4f} "
+        f"max {float(abs_cos.max()):.4f}"
     )
 
 
@@ -642,6 +789,41 @@ def _composition(levels: np.ndarray) -> dict:
     lohi = int(((levels == "low") | (levels == "high")).sum())
     out["n_low_or_high"] = lohi
     out["frac_high_of_low_high"] = (int((levels == "high").sum()) / lohi) if lohi else float("nan")
+    return out
+
+
+def _composition_field(vals: np.ndarray, levels: tuple[str, ...]) -> dict:
+    """Category composition of `vals` over `levels` (counts + fractions)."""
+    n = int(len(vals))
+    out: dict = {"n": n}
+    for lev in levels:
+        c = int((vals == lev).sum())
+        out[f"n_{lev}"] = c
+        out[f"frac_{lev}"] = (c / n) if n else float("nan")
+    return out
+
+
+def _binary_contrast(best: np.ndarray, worst: np.ndarray, positive: str, negative: str) -> dict:
+    """Best-vs-worst contrast on a binary category (`positive` vs `negative`)."""
+    from scipy.stats import fisher_exact
+
+    hb = (best[np.isin(best, [positive, negative])] == positive).astype(float)
+    hw = (worst[np.isin(worst, [positive, negative])] == positive).astype(float)
+    out = {
+        "n_best": int(len(hb)),
+        "n_worst": int(len(hw)),
+        f"frac_{positive}_best": float(hb.mean()) if len(hb) else float("nan"),
+        f"frac_{positive}_worst": float(hw.mean()) if len(hw) else float("nan"),
+    }
+    if len(hb) and len(hw):
+        odds, pv = fisher_exact(
+            [
+                [int(hb.sum()), int(len(hb) - hb.sum())],
+                [int(hw.sum()), int(len(hw) - hw.sum())],
+            ]
+        )
+        out["fisher_exact_2x2"] = {"odds_ratio": float(odds), "p": float(pv)}
+        out["diff_best_minus_worst"] = out[f"frac_{positive}_best"] - out[f"frac_{positive}_worst"]
     return out
 
 
@@ -716,6 +898,14 @@ def _build_rows(args) -> list[dict]:
     cons = {int(f): float(c) for f, c in zip(z["feat_ids"], z["consistency"])}
     prior = json.loads(PRIOR_ABSTRACTION.read_text())
     prior_lv = {int(f["feat_id"]): f["level"] for f in prior["features"]}
+    al = np.load(args.work / "align.npz")
+    al_traits = [str(t) for t in al["trait_names"]]
+    al_max = {int(f): float(v) for f, v in zip(al["feat_ids"], al["max_abs_cos"])}
+    al_trait = {int(f): al_traits[int(i)] for f, i in zip(al["feat_ids"], al["top_trait_idx"])}
+    al_per = {
+        int(f): {t: float(v) for t, v in zip(al_traits, row)}
+        for f, row in zip(al["feat_ids"], al["abs_cos"])
+    }
 
     rows = []
     for r in sel["features"]:
@@ -727,9 +917,13 @@ def _build_rows(args) -> list[dict]:
             {
                 **r,
                 "level": lab["level"],
+                "persona_related": lab["persona_related"],
                 "label": lab["label"],
                 "reasoning": lab.get("reasoning", ""),
                 "consistency": cons.get(r["feat_id"], float("nan")),
+                "align_max_abs_cos": al_max.get(r["feat_id"], float("nan")),
+                "align_top_trait": al_trait.get(r["feat_id"], ""),
+                "align_abs_cos_per_trait": al_per.get(r["feat_id"], {}),
                 "neuronpedia_description": entry.get("description", ""),
                 "prior_round_level": prior_lv.get(r["feat_id"]),
             }
@@ -768,6 +962,8 @@ def phase_analyze(args) -> None:
     m_aw = np.asarray([r["a_worst"] for r in rows])
     m_bb = np.asarray([r["b_best"] for r in rows])
     m_bw = np.asarray([r["b_worst"] for r in rows])
+    pers = np.asarray([r["persona_related"] for r in rows])
+    amax = np.asarray([r["align_max_abs_cos"] for r in rows])
 
     # ── Set A: global tails (activity-confounded by construction) ──
     set_a = {
@@ -779,6 +975,9 @@ def phase_analyze(args) -> None:
         "worst": _composition(lev[m_aw]),
         "contrast": _arm_contrast(lev[m_ab], lev[m_aw]),
         "unclear_contrast": _unclear_contrast(lev[m_ab], lev[m_aw]),
+        "persona_best": _composition_field(pers[m_ab], PERSONA_LEVELS),
+        "persona_worst": _composition_field(pers[m_aw], PERSONA_LEVELS),
+        "persona_contrast": _binary_contrast(pers[m_ab], pers[m_aw], "yes", "no"),
         "r2_range_best": [float(r2[m_ab].min()), float(r2[m_ab].max())],
         "r2_range_worst": [float(r2[m_aw].min()), float(r2[m_aw].max())],
         "median_r2_by_level": {},
@@ -817,10 +1016,14 @@ def phase_analyze(args) -> None:
                 "worst": _composition(lev[worst_m]),
                 "median_r2_best": float(np.median(r2[best_m])) if best_m.any() else None,
                 "median_r2_worst": float(np.median(r2[worst_m])) if worst_m.any() else None,
+                "persona_best": _composition_field(pers[best_m], PERSONA_LEVELS),
+                "persona_worst": _composition_field(pers[worst_m], PERSONA_LEVELS),
             }
         )
     lohi_b = (m_bb | m_bw) & np.isin(lev, ["low", "high"])
     perm = _stratified_perm((lev[lohi_b] == "high").astype(float), m_bb[lohi_b], dec[lohi_b], rng)
+    yn_b = (m_bb | m_bw) & np.isin(pers, ["yes", "no"])
+    perm_pers = _stratified_perm((pers[yn_b] == "yes").astype(float), m_bb[yn_b], dec[yn_b], rng)
     set_b = {
         "definition": (
             f"within each of the {FC.N_DECILES} activity deciles, the {N_DECILE_TAIL} best "
@@ -831,6 +1034,10 @@ def phase_analyze(args) -> None:
         "pooled_worst": _composition(lev[m_bw]),
         "pooled_contrast": _arm_contrast(lev[m_bb], lev[m_bw]),
         "unclear_contrast": _unclear_contrast(lev[m_bb], lev[m_bw]),
+        "persona_pooled_best": _composition_field(pers[m_bb], PERSONA_LEVELS),
+        "persona_pooled_worst": _composition_field(pers[m_bw], PERSONA_LEVELS),
+        "persona_pooled_contrast": _binary_contrast(pers[m_bb], pers[m_bw], "yes", "no"),
+        "persona_stratified_permutation": perm_pers,
         "stratified_permutation": perm,
         "per_decile": per_decile,
     }
@@ -857,6 +1064,40 @@ def phase_analyze(args) -> None:
             is_high[lohi], r2[lohi], [act[lohi], cons[lohi]]
         ),
         "composition": _composition(lev),
+        "persona_composition": _composition_field(pers, PERSONA_LEVELS),
+        "spearman_persona_yes_vs_r2": float(
+            FC._spearman(
+                (pers[np.isin(pers, ["yes", "no"])] == "yes").astype(float),
+                r2[np.isin(pers, ["yes", "no"])],
+            )
+        ),
+        "partial_spearman_persona_yes_r2_given_activity": _partial_spearman_multi(
+            (pers[np.isin(pers, ["yes", "no"])] == "yes").astype(float),
+            r2[np.isin(pers, ["yes", "no"])],
+            [act[np.isin(pers, ["yes", "no"])]],
+        ),
+        "median_r2_by_persona": {
+            lv_: {
+                "n": int((pers == lv_).sum()),
+                "median_r2": float(np.median(r2[pers == lv_])) if (pers == lv_).any() else None,
+                "median_r2_ci95": _boot_median_ci(r2[pers == lv_], rng),
+                "median_activity": float(np.median(act[pers == lv_]))
+                if (pers == lv_).any()
+                else None,
+                "median_align_max_abs_cos": float(np.median(amax[pers == lv_]))
+                if (pers == lv_).any()
+                else None,
+            }
+            for lv_ in PERSONA_LEVELS
+        },
+        # Does the JUDGE's persona field agree with the judge-free decoder-alignment
+        # read? Load-bearing given the persona field's low test-retest kappa.
+        "spearman_persona_yes_vs_align_max_abs_cos": float(
+            FC._spearman(
+                (pers[np.isin(pers, ["yes", "no"])] == "yes").astype(float),
+                amax[np.isin(pers, ["yes", "no"])],
+            )
+        ),
     }
 
     # ── prior-round label agreement on the overlap ──
@@ -880,11 +1121,99 @@ def phase_analyze(args) -> None:
         ),
     }
 
+    # ── mechanical alignment read over ALL 16,384 features (judge-free) ──
+    com = FC._load_committed()
+    al = np.load(args.work / "align.npz")
+    al_traits = [str(t) for t in al["trait_names"]]
+    r2_all, act_all = com["r2"], com["activity"]
+    assert np.array_equal(al["feat_ids"], com["feat_ids"]), "align.npz feature order drift"
+    amax_all = al["max_abs_cos"]
+    abscos_all = al["abs_cos"]
+    r2_pct = (FC._rank(r2_all) - 0.5) / len(r2_all) * 100.0
+    top_idx = np.argsort(amax_all, kind="stable")[-ALIGN_TOP_N:][::-1]
+    alignment = {
+        "definition": (
+            f"|cos(SAE decoder column, r_B)| at layer {SAE_LAYER} for every one of the "
+            f"{len(r2_all)} answer-side features; r_B = the #779 monitoring per-layer "
+            "mean-difference persona directions; ONE matrix product, judge-free"
+        ),
+        "layer": SAE_LAYER,
+        "traits": al_traits,
+        "n_features": int(len(r2_all)),
+        "max_abs_cos_quantiles": {
+            q: float(np.quantile(amax_all, v))
+            for q, v in (("p50", 0.5), ("p90", 0.9), ("p99", 0.99), ("max", 1.0))
+        },
+        "spearman_max_abs_cos_vs_r2": float(FC._spearman(amax_all, r2_all)),
+        "partial_spearman_max_abs_cos_r2_given_activity": _partial_spearman_multi(
+            amax_all, r2_all, [act_all]
+        ),
+        "spearman_max_abs_cos_vs_activity": float(FC._spearman(amax_all, act_all)),
+        "per_trait": {
+            t: {
+                "spearman_abs_cos_vs_r2": float(FC._spearman(abscos_all[:, i], r2_all)),
+                "partial_given_activity": _partial_spearman_multi(
+                    abscos_all[:, i], r2_all, [act_all]
+                ),
+                "max_abs_cos": float(abscos_all[:, i].max()),
+                "median_abs_cos": float(np.median(abscos_all[:, i])),
+            }
+            for i, t in enumerate(al_traits)
+        },
+        "top_aligned": {
+            "n": int(ALIGN_TOP_N),
+            "min_max_abs_cos": float(amax_all[top_idx].min()),
+            "median_r2": float(np.median(r2_all[top_idx])),
+            "median_r2_percentile": float(np.median(r2_pct[top_idx])),
+            "mean_r2_percentile": float(np.mean(r2_pct[top_idx])),
+            "median_activity": float(np.median(act_all[top_idx])),
+            "trait_counts": {
+                t: int((al["top_trait_idx"][top_idx] == i).sum()) for i, t in enumerate(al_traits)
+            },
+            "feat_ids": [int(x) for x in al["feat_ids"][top_idx]],
+        },
+        "population_reference": {
+            "median_r2_all": float(np.median(r2_all)),
+            "median_r2_percentile_by_construction": 50.0,
+        },
+    }
+
+    # ── cross-dispatch replication of the level headline ──
+    ref_path = args.work / "extremes_refrubric.json"
+    replication = {"available": False}
+    if ref_path.exists():
+        ref = json.loads(ref_path.read_text())
+        ref_lv = {int(f["feat_id"]): f["level"] for f in ref["features"]}
+        both = [r for r in rows if r["feat_id"] in ref_lv]
+        agree = sum(1 for r in both if r["level"] == ref_lv[r["feat_id"]])
+        rsa, rsb = ref["set_a_global_tails"], ref["set_b_activity_controlled"]
+        replication = {
+            "available": True,
+            "note": (
+                "an EARLIER dispatch of this same round used the reference rubric "
+                "verbatim (no persona field); comparing the two gives an independent "
+                "replication of the level headline and a level-label stability read"
+            ),
+            "n_common": len(both),
+            "n_level_agree": agree,
+            "frac_level_agree": (agree / len(both)) if both else float("nan"),
+            "reference_rubric_dispatch": {
+                "kappa_level": ref["judge"]["test_retest"]["kappa_level"],
+                "set_b_frac_high_best": rsb["pooled_contrast"]["frac_high_best"],
+                "set_b_frac_high_worst": rsb["pooled_contrast"]["frac_high_worst"],
+                "set_b_perm_p": rsb["stratified_permutation"]["p_two_sided"],
+                "set_a_fisher_p": rsa["contrast"]["fisher_exact_2x2"]["p"],
+                "set_b_unclear_fisher_p": rsb["unclear_contrast"]["fisher_exact_2x2"]["p"],
+            },
+        }
+
     doc = {
         "provenance": _provenance(),
         "question": (
             "Are the best-predicted answer-side SAE features qualitatively different "
-            "(judged abstraction level) from the worst-predicted ones?"
+            "from the worst-predicted ones — in judged abstraction level, in judged "
+            "persona-relatedness, and in mechanical alignment with persona-vector "
+            "directions?"
         ),
         "selection": {k: v for k, v in sel.items() if k not in ("features", "idx")},
         "judge": {
@@ -897,6 +1226,7 @@ def phase_analyze(args) -> None:
                 "judge_model",
                 "max_tokens",
                 "rubric_sha256_system",
+                "rubric_sha256_reference_prefix",
                 "test_retest",
                 "instrument_note",
             )
@@ -905,6 +1235,8 @@ def phase_analyze(args) -> None:
         "set_a_global_tails": set_a,
         "set_b_activity_controlled": set_b,
         "union": union,
+        "alignment_mechanical": alignment,
+        "cross_dispatch_replication": replication,
         "prior_round_agreement": prior_agreement,
         "features": rows,
     }
@@ -917,6 +1249,8 @@ def phase_analyze(args) -> None:
         consistency=cons,
         decile=dec,
         level=lev.astype("U8"),
+        persona_related=pers.astype("U8"),
+        align_max_abs_cos=amax,
         a_best=m_ab,
         a_worst=m_aw,
         b_best=m_bb,
@@ -1038,11 +1372,103 @@ def phase_analyze(args) -> None:
     fig.tight_layout()
     savefig_paper(fig, "extremes_setA_tails", dir=OUT_FIGS)
     plt.close(fig)
+
+    # ── figure 3: persona-relatedness (judged) + mechanical alignment ──
+    # Deliberately NO third colour factor: the persona panel is coloured by ARM
+    # (same blue/orange as figure 1's arm factor), so one colour keeps one meaning
+    # across every figure; the persona category rides the bar HEIGHT instead.
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.4))
+    ax = axes[0]
+    arms = [
+        ("Set A\nbest", set_a["persona_best"], set_a["persona_contrast"]["frac_yes_best"], c_best),
+        (
+            "Set A\nworst",
+            set_a["persona_worst"],
+            set_a["persona_contrast"]["frac_yes_worst"],
+            c_worst,
+        ),
+        (
+            "Set B\nbest",
+            set_b["persona_pooled_best"],
+            set_b["persona_pooled_contrast"]["frac_yes_best"],
+            c_best,
+        ),
+        (
+            "Set B\nworst",
+            set_b["persona_pooled_worst"],
+            set_b["persona_pooled_contrast"]["frac_yes_worst"],
+            c_worst,
+        ),
+    ]
+    xs = np.arange(len(arms))
+    ax.bar(xs, [f for _n, _b, f, _c in arms], width=0.6, color=[c for *_r, c in arms])
+    for j, (_n, blk, frac, _c) in enumerate(arms):
+        ax.text(j, frac + 0.012, f"{frac:.2f}", ha="center", va="bottom", fontsize=9)
+        ax.text(
+            j,
+            0.012,
+            f"{blk['n_yes']}/{blk['n_yes'] + blk['n_no']}\n({blk['n_unclear']} unclear)",
+            ha="center",
+            va="bottom",
+            fontsize=7,
+            color="white",
+        )
+    ax.set_xticks(xs)
+    ax.set_xticklabels([n for n, *_r in arms], fontsize=8.5)
+    ax.set_ylabel('fraction judged "persona-related"\n(of yes+no)')
+    ax.set_ylim(0, max(0.32, max(f for _n, _b, f, _c in arms) * 1.35))
+    ax.set_title(
+        "Judged persona-relatedness — test-retest $\\kappa$ = "
+        f"{lv['test_retest']['kappa_persona_related']:.2f}, UNRELIABLE per feature",
+        fontsize=8.5,
+    )
+
+    ax = axes[1]
+    ax.scatter(
+        amax_all,
+        np.clip(r2_all, -1, None),
+        s=2,
+        alpha=0.10,
+        color=paper_palette_role("baseline"),
+        rasterized=True,
+        linewidths=0,
+        label=f"all {len(r2_all)} features",
+    )
+    qs = np.quantile(amax_all, np.linspace(0, 1, 11))
+    bins = [(amax_all >= qs[i]) & (amax_all <= qs[i + 1]) for i in range(10)]
+    mx = [float(np.median(amax_all[b])) for b in bins]
+    my = [float(np.median(np.clip(r2_all, -1, None)[b])) for b in bins]
+    ax.plot(
+        mx,
+        my,
+        color=paper_palette_role("accent"),
+        lw=2,
+        marker="o",
+        ms=4,
+        label="decile median",
+    )
+    ax.set_xlabel(f"persona alignment  max$_t$ |cos(decoder, $r_B^t$)|,  layer {SAE_LAYER}")
+    ax.set_ylabel("per-feature held-out $R^2$ (clipped at $-1$)")
+    ax.axhline(0, color="black", lw=0.7, alpha=0.4)
+    ax.legend(frameon=False, fontsize=8, loc="lower right")
+    ax.set_title(
+        "Judge-free mechanical read: Spearman = "
+        f"{alignment['spearman_max_abs_cos_vs_r2']:+.3f} "
+        f"({alignment['partial_spearman_max_abs_cos_r2_given_activity']:+.3f} | activity)",
+        fontsize=8.5,
+    )
+    fig.tight_layout()
+    savefig_paper(fig, "extremes_persona_alignment", dir=OUT_FIGS)
+    plt.close(fig)
     _log(
         "analyze done: extremes.json + extremes_perfeature.npz + 2 figures; "
         f"Set B frac-high best {set_b['pooled_contrast']['frac_high_best']:.3f} vs worst "
         f"{set_b['pooled_contrast']['frac_high_worst']:.3f}, "
-        f"stratified perm p={perm['p_two_sided']:.3f}"
+        f"stratified perm p={perm['p_two_sided']:.4f}; "
+        f"persona-yes best {set_b['persona_pooled_contrast']['frac_yes_best']:.3f} vs worst "
+        f"{set_b['persona_pooled_contrast']['frac_yes_worst']:.3f} "
+        f"(perm p={perm_pers['p_two_sided']:.4f}); "
+        f"mechanical Spearman(max|cos|, R2)={alignment['spearman_max_abs_cos_vs_r2']:+.3f}"
     )
 
 
@@ -1076,6 +1502,9 @@ table.kv td.k { color:var(--fg); white-space:nowrap; }
 .badge.high { background:#eef4ff; border-color:#c9d9fb; color:#1b3f9b; }
 .badge.low { background:#fff4ec; border-color:#f6d6bd; color:#8a4a12; }
 .badge.unclear { background:#f2f3f6; }
+.badge.pers-yes { background:#eafaf1; border-color:#bfe6d2; color:#0f6b43; }
+.badge.pers-no { background:#f7f7f9; }
+.badge.pers-unclear { background:#f2f3f6; }
 .nums { color:var(--mut); font-size:12px; font-variant-numeric:tabular-nums; }
 .lab { margin:6px 0 0; font-size:13.5px; color:var(--fg); }
 .why, .np { margin:4px 0 0; font-size:12.5px; color:var(--mut); }
@@ -1102,9 +1531,14 @@ def _card(rank: int, r: dict, texts: dict[int, str], top: dict) -> str:
         f'<span class="fid">feature <a href="{url}" target="_blank" '
         f'rel="noopener">{fid}</a></span>',
         f'<span class="badge {html.escape(r["level"])}">{html.escape(r["level"])}</span>',
+        f'<span class="badge pers-{html.escape(r["persona_related"])}">persona: '
+        f"{html.escape(r['persona_related'])}</span>",
         f'<span class="nums">R² {r["r2"]:.4f} &nbsp;·&nbsp; activity '
         f"{r['activity']:.5f} (decile {r['decile']}) &nbsp;·&nbsp; within-answer "
-        f"consistency {_fmt(r['consistency'])}</span>",
+        f"consistency {_fmt(r['consistency'])} &nbsp;·&nbsp; persona alignment "
+        f"max|cos| {_fmt(r['align_max_abs_cos'], 4)}"
+        f"{' (' + html.escape(r['align_top_trait']) + ')' if r['align_top_trait'] else ''}"
+        "</span>",
         f'<span class="badge">{html.escape(", ".join(sets))}</span>',
         "</div>",
     ]
@@ -1112,6 +1546,16 @@ def _card(rank: int, r: dict, texts: dict[int, str], top: dict) -> str:
         parts.append(f'<p class="lab"><b>Judged property:</b> {html.escape(r["label"])}</p>')
     if r["reasoning"]:
         parts.append(f'<p class="why"><b>Judge reasoning:</b> {html.escape(r["reasoning"])}</p>')
+    per_trait = r.get("align_abs_cos_per_trait") or {}
+    if per_trait:
+        parts.append(
+            '<p class="why"><b>Persona-vector alignment</b> |cos(decoder, r_B)| at layer '
+            f"{SAE_LAYER}: "
+            + " &nbsp;·&nbsp; ".join(
+                f"{html.escape(t)} {v:.4f}" for t, v in sorted(per_trait.items())
+            )
+            + "</p>"
+        )
     nd = r["neuronpedia_description"]
     parts.append(
         f'<p class="np"><b>Neuronpedia auto-interp ({html.escape(NP_EXPL_MODEL)}, '
@@ -1241,7 +1685,7 @@ def main() -> None:
     ap.add_argument(
         "--phase",
         required=True,
-        choices=["neuronpedia", "scan", "texts", "judge", "analyze", "dashboard"],
+        choices=["neuronpedia", "scan", "texts", "judge", "align", "analyze", "dashboard"],
     )
     ap.add_argument("--store", type=Path, default=FC.STORE_DEFAULT)
     ap.add_argument("--work", type=Path, default=WORK_DEFAULT)
@@ -1251,6 +1695,7 @@ def main() -> None:
         "scan": phase_scan,
         "texts": phase_texts,
         "judge": phase_judge,
+        "align": phase_align,
         "analyze": phase_analyze,
         "dashboard": phase_dashboard,
     }[args.phase](args)

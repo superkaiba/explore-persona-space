@@ -1,6 +1,6 @@
 {
-  "commit": "d71c58c467",
-  "created": "2026-07-28T18:15:36Z",
+  "commit": "295c58a60c",
+  "created": "2026-07-28T18:50:26Z",
   "figsize": [
     11.0,
     4.4
@@ -26,37 +26,37 @@
     },
     {
       "activity decile (low \u2192 high)": 2.81,
-      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.5333333333333333,
+      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.6666666666666666,
       "_kind": "bar",
       "_group": 0
     },
     {
       "activity decile (low \u2192 high)": 3.81,
-      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.5333333333333333,
+      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.6666666666666666,
       "_kind": "bar",
       "_group": 0
     },
     {
       "activity decile (low \u2192 high)": 4.81,
-      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.26666666666666666,
+      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.2,
       "_kind": "bar",
       "_group": 0
     },
     {
       "activity decile (low \u2192 high)": 5.81,
-      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.3333333333333333,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "activity decile (low \u2192 high)": 6.81,
       "fraction judged \"high-level\"\n(of low+high, within decile)": 0.4666666666666667,
       "_kind": "bar",
       "_group": 0
     },
     {
+      "activity decile (low \u2192 high)": 6.81,
+      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.6428571428571429,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
       "activity decile (low \u2192 high)": 7.81,
-      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.42857142857142855,
+      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.35714285714285715,
       "_kind": "bar",
       "_group": 0
     },
@@ -86,37 +86,37 @@
     },
     {
       "activity decile (low \u2192 high)": 3.19,
-      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.3076923076923077,
-      "_kind": "bar",
-      "_group": 1
-    },
-    {
-      "activity decile (low \u2192 high)": 4.19,
-      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.08333333333333333,
-      "_kind": "bar",
-      "_group": 1
-    },
-    {
-      "activity decile (low \u2192 high)": 5.19,
-      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.3333333333333333,
-      "_kind": "bar",
-      "_group": 1
-    },
-    {
-      "activity decile (low \u2192 high)": 6.19,
       "fraction judged \"high-level\"\n(of low+high, within decile)": 0.25,
       "_kind": "bar",
       "_group": 1
     },
     {
+      "activity decile (low \u2192 high)": 4.19,
+      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.15384615384615385,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "activity decile (low \u2192 high)": 5.19,
+      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.07692307692307693,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "activity decile (low \u2192 high)": 6.19,
+      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.4166666666666667,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
       "activity decile (low \u2192 high)": 7.19,
-      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.18181818181818182,
+      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.2727272727272727,
       "_kind": "bar",
       "_group": 1
     },
     {
       "activity decile (low \u2192 high)": 8.19,
-      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.45454545454545453,
+      "fraction judged \"high-level\"\n(of low+high, within decile)": 0.3333333333333333,
       "_kind": "bar",
       "_group": 1
     },
@@ -128,37 +128,37 @@
     },
     {
       "category": "best\n(n=150)",
-      "fraction of judged features": 0.5133333333333333,
-      "_kind": "bar",
-      "_group": 2
-    },
-    {
-      "category": "worst\n(n=150)",
-      "fraction of judged features": 0.6,
-      "_kind": "bar",
-      "_group": 2
-    },
-    {
-      "category": "best\n(n=150)",
       "fraction of judged features": 0.4666666666666667,
       "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "worst\n(n=150)",
+      "fraction of judged features": 0.6066666666666667,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "best\n(n=150)",
+      "fraction of judged features": 0.5066666666666667,
+      "_kind": "bar",
       "_group": 3
     },
     {
       "category": "worst\n(n=150)",
-      "fraction of judged features": 0.21333333333333337,
+      "fraction of judged features": 0.20000000000000007,
       "_kind": "bar",
       "_group": 3
     },
     {
       "category": "best\n(n=150)",
-      "fraction of judged features": 0.020000000000000018,
+      "fraction of judged features": 0.026666666666666616,
       "_kind": "bar",
       "_group": 4
     },
     {
       "category": "worst\n(n=150)",
-      "fraction of judged features": 0.18666666666666676,
+      "fraction of judged features": 0.19333333333333336,
       "_kind": "bar",
       "_group": 4
     }
@@ -207,10 +207,10 @@
           "unclear"
         ],
         "annotations": [
-          "0.51",
-          "0.60",
           "0.47",
-          "0.21",
+          "0.61",
+          "0.51",
+          "0.20",
           "0.19"
         ],
         "xticklabels": [
