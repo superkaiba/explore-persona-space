@@ -102,8 +102,11 @@ full generator template (`data_generation/prompts.py`) and verbatim trait descri
 appendix. **The vectors themselves are not released** — regenerate via `generate_vec.py`.
 Recipe: 10 rollouts per question per arm, judge-filter (pos > 50 / neg < 50, malformed /
 REFUSAL **dropped** both arms with per-arm counts reported), response-averaged activations,
-diff-of-means per layer. Their judge is `gpt-4.1-mini-2025-04-14`; our single standing
-deviation is `claude-sonnet-4-5-20250929`.
+diff-of-means per layer. **We use PV's own per-trait `eval_prompt` rubric throughout — at the
+extraction judge-filter AND as the evaluation DV rubric — so the construct is pinned identically
+at both ends.** The single standing deviation is the judge MODEL: their
+`gpt-4.1-mini-2025-04-14` → `claude-sonnet-4-5-20250929` (§6), with theirs run additionally as a
+κ-calibration control.
 
 - **E1 — paper-faithful synthetic extraction.** Because extraction is synthetic and all train
   and eval data is real, **the direction is OOD for everything downstream by construction**.
@@ -347,14 +350,25 @@ every rung. Held out by **conversation**, not turn.
   **not** epistemic capitulation — declared out of scope in the Goal. Same trait description and
   rubric at extraction and evaluation. Empirically supported: sycophantic agreement and praise
   sit on distinct linear directions that steer independently (arXiv 2509.21305), so a direction
-  extracted on one must not be assumed to read the other. **Adopt the Social Sycophancy Scale
-  (arXiv 2603.15448) as the judge rubric**, not merely as an audit instrument: its three validated
-  factors — Uncritical Agreement, Obsequiousness, Excitement — are exactly this trait construct,
-  it is grounded in N=877 human raters across three samples, and its Study 4 shows LLM raters
-  reproduce the structure. Using a published human-validated instrument beats a rubric we write,
-  and it discharges the judge–human audit requirement with the scale's own rated items (OSF
-  `r8gys`, CC-BY-4.0). SyPr's 1,909 human praise-labeled sentences (κ=0.624) are a second
-  validation source, usable whether or not SyPr supplies training prompts.
+  extracted on one must not be assumed to read the other.
+- **Rubric = the Persona Vectors per-trait `eval_prompt`, for all three behaviors.** The trait
+  JSONs ship one `eval_prompt` each (evil / hallucinating / sycophantic), produced by a single
+  shared generator template — so the rubric is standardized across behaviors, which the
+  multi-behavior standardization rule requires anyway. **The construct must be pinned identically
+  at extraction and evaluation**: PV's extraction judge-filter (pos > 50 / neg < 50) uses this
+  rubric, so scoring the DV with a *different* rubric would leave the direction and the DV
+  measuring different constructs. Do not substitute an external instrument here.
+- **Judge–human validation** (a separate job from the rubric): the **Social Sycophancy Scale**
+  (arXiv 2603.15448, N=877 raters, 3 validated factors — Uncritical Agreement, Obsequiousness,
+  Excitement; OSF `r8gys`, CC-BY-4.0) supplies human-rated items to check that the PV-rubric
+  judge tracks human ratings. SyPr's 1,909 human praise-labeled sentences (κ=0.624) are a second
+  source. Neither replaces the rubric.
+- **Judge model:** `claude-sonnet-4-5-20250929` (project standing pin, mechanically enforced by
+  `workflow_lint.py --check-judge-model-pins`). Persona Vectors uses
+  `gpt-4.1-mini-2025-04-14`; per the replication carve-out it is run **additionally** as a
+  κ-calibration control on a subsample, never as a replacement. Design reason beyond the rule:
+  this experiment compares three behaviors × ~16 arms, so one consistent judge is what makes the
+  comparisons commensurable — a per-arm judge swap would confound arm with judge.
 
 ---
 
