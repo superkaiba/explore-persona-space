@@ -70,9 +70,16 @@ All four arms map into the same residual-stream space at the same layer, so each
 
 Group-level folds by prefix id; λ discipline (df(λ) reported, headline reads at ~3 λ values, same λ refit inside every permutation draw); permutation + matched-n nulls for every spectrum and subspace overlap; non-normality gate before any eigen-read; identity+bias baseline + kNN retrieval for every fitted map; directions selected on train folds only; n_train vs d stated per fit. Full text: methods survey §"Validity gates".
 
-## 9. Compute
+## 9. Compute and reuse policy
 
-Mostly 0-GPU on banked #1092/#779 stores (Q1, Q3 spectra + trait tables, Q4 co-kernel, Q5 eigen/SVD/fixed-point reads, Q2 bilinear fit — CPU, batched per the vectorize-first rule). New compute: multi-draw answers for the noise ceiling (small GPU); RFF/MLP ladder (cheap GPU band); kernel causal tests (GPU, steering rig). Each execution round is a task through the standard pipeline; nothing here pre-authorizes a run.
+Per-family reuse (every reuse conditional on the artifact-reuse fitness check at execution):
+
+- **Ridge — reuse the banked fitted operators** (#779 up-to-1M-row; #1092 21K crossed) as the objects of study for every operator-geometry read (Q4, Q5). Reads that need held-out predictions (Q1, Q3) refit cheaply per fold from the banked activation *stores* — per-row held-out predictions were not persisted (#1092 banked-checkpoint note) — CPU, batched per the vectorize-first rule.
+- **Kernel — one rung already banked.** #779's fitter fair comparison holds an exact-RBF KRR at n_train=50k on the context arm (held-out R² 0.807 vs ridge 0.760, val-grid-tuned; `eval_results/issue_779/fitter-fair-comparison-n50k/`). Reuse it as the existing Q6 rung for that arm/grain — after verifying its fold structure respects novel-prefix grouping. New fits: the other three arms, and RFF/Nyström for n ≫ 50k (exact kernels stop scaling).
+- **MLP — two banked anchors.** The same n50k comparison's MLP (R² 0.779) and #1092's pca48 MLP companion ceiling. Reuse as anchors/ceilings; ladder rungs re-run only where the matched-folds + nested-CV protocol demands it (the nonlinearity *gain* is defined only under identical folds and tuning on both rungs).
+- **New compute:** multi-draw answers for the noise ceiling (small GPU); remaining ladder fits (cheap GPU band); kernel causal tests (GPU, steering rig).
+
+The banked n50k comparison is itself a first same-protocol Q6 datapoint for the context arm: nonlinearity gain ≈ +0.05 R² (KRR over ridge), with MLP below KRR at this n — pending the fold-structure check before it is quoted as a result. Each execution round is a task through the standard pipeline; nothing here pre-authorizes a run.
 
 ## 10. Summary: computation → what it tells us
 
