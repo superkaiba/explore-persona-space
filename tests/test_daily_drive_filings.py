@@ -3025,3 +3025,73 @@ def test_summary_hint_when_suspects_nonzero(tmp_path, tasks_root, monkeypatch, c
     err2 = capsys.readouterr().err
     (line2,) = [ln for ln in err2.splitlines() if ln.startswith("SUMMARY dir=")]
     assert "--retry-suspects" not in line2
+
+
+def test_retry_suspects_zero_match_notice(tmp_path, tasks_root, monkeypatch, capsys):
+    # #1758: --retry-suspects on a fresh dir (no suspect rows anywhere) prints
+    # ONE loud stderr NOTICE, the SUMMARY line carries the zero-match suffix,
+    # and the daily-drive-summary ledger row keeps the exact 8-key schema.
+    item = make_item("rs-zero-match")
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d), "--retry-suspects") == 0
+    err = capsys.readouterr().err
+    notices = [ln for ln in err.splitlines() if ln.startswith("NOTICE: --retry-suspects")]
+    assert len(notices) == 1
+    assert "matched 0 recorded suspects" in notices[0]
+    assert "nothing to retry (#1758)" in notices[0]
+    (summary_line,) = [ln for ln in err.splitlines() if ln.startswith("SUMMARY dir=")]
+    assert "--retry-suspects matched 0 recorded suspects (nothing retried)" in summary_line
+    summary = _last_summary_row(d)
+    assert summary is not None
+    assert set(summary["counts"].keys()) == set(_SUMMARY_KEYS)
+
+    # Coexistence pin: flag set, 0 pre-loop matches, but the run MINTS a new
+    # suspect row (composite closed-sibling blocker) → the zero-match suffix
+    # AND the re-run hint share ONE SUMMARY line, zero-match FIRST
+    # (chronological: pre-loop state before this run's minted suspects).
+    item2 = make_item("rs-zero-mints", target="scripts/foo.py")
+    hit = _closed_sibling_hit(1800, matched=["target", "title:planner"])
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda it: ([hit], []))
+    d2 = make_filings_dir(tmp_path, [item2], date="2026-07-08")
+    stub2 = make_stub(tmp_path, d2, name="stub_mint.py")
+    assert run_driver(d2, tasks_root, stub2, "--retry-suspects") == 0
+    err2 = capsys.readouterr().err
+    assert any(ln.startswith("NOTICE: --retry-suspects") for ln in err2.splitlines())
+    (line2,) = [ln for ln in err2.splitlines() if ln.startswith("SUMMARY dir=")]
+    zero_i = line2.index("matched 0 recorded suspects (nothing retried)")
+    hint_i = line2.index("re-run with --retry-suspects to file suspects")
+    assert zero_i < hint_i
+
+
+def test_retry_suspects_notice_absent_when_matched_or_flag_unset(tmp_path, tasks_root, capsys):
+    # #1758 (a): a pre-seeded landed-fix-suspect row on a sliced slug makes
+    # --retry-suspects match ≥1 — no NOTICE, no zero-match SUMMARY suffix.
+    item = make_item("rs-matched")
+    fp = wf_fix_fingerprint(item["change"], item["bug"])
+    d = make_filings_dir(tmp_path, [item])
+    seed = {
+        "slug": "rs-matched",
+        "outcome": "landed-fix-suspect",
+        "suspects": [_closed_sibling_hit(1300) | {"kind": "closed-sibling"}],
+        "threshold": None,
+        "window": "7.0 days",
+        "paths": [".claude/skills/daily/SKILL.md"],
+        "fp": fp,
+        "route": 2,
+    }
+    with open(d / "filed.jsonl", "a", encoding="utf-8") as fh:
+        fh.write(json.dumps(seed) + "\n")
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d), "--retry-suspects") == 0
+    err = capsys.readouterr().err
+    assert "NOTICE: --retry-suspects" not in err
+    (summary_line,) = [ln for ln in err.splitlines() if ln.startswith("SUMMARY dir=")]
+    assert "matched 0 recorded suspects" not in summary_line
+
+    # #1758 (b): flag unset on a fresh dir — no NOTICE and no zero-match
+    # suffix anywhere on stderr (stderr behavior byte-unchanged).
+    item2 = make_item("rs-flag-unset")
+    d2 = make_filings_dir(tmp_path, [item2], date="2026-07-07")
+    assert run_driver(d2, tasks_root, make_stub(tmp_path, d2, name="stub_unset.py")) == 0
+    err2 = capsys.readouterr().err
+    assert "NOTICE: --retry-suspects" not in err2
+    assert "matched 0 recorded suspects" not in err2
