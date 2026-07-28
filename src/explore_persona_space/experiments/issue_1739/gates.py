@@ -384,9 +384,25 @@ def run_gate1_pilot(
         per_item_transport_losses=transport,
         contexts_meta={c["context_id"]: c for c in contexts},
     )
+    # Gate-2 DV convention (round-C1 design-note resolution): the 0/100
+    # label mapping above exists ONLY so gate 1's keep-rate/histogram
+    # machinery is shared; its per-context mean is a label FRACTION in
+    # disguise, so gate 2's spread floor reads the fabrication-fraction rows
+    # from build_three_way_dv (x100 onto the 0-100 scale gate 2 is
+    # calibrated for) instead of the 0/100-mapped labeling rows.
+    if behavior == "hallucination":
+        gate2_rows = [
+            dict(r, dv=(None if r["dv"] is None else 100.0 * r["dv"]))
+            for r in dv_build.build_three_way_dv(three_way)
+        ]
+        gate2_dv = "fabrication_fraction_x100"
+    else:
+        gate2_rows = dv_rows
+        gate2_dv = "graded_judge_mean"
     report = {
         "gate1": gate1_yield_report(dv_rows, behavior=behavior, n_pilot=n_pilot),
-        "gate2": gate2_spread_floor(dv_rows, behavior=behavior),
+        "gate2": gate2_spread_floor(gate2_rows, behavior=behavior),
+        "gate2_dv": gate2_dv,
         "n_rollout_files": len(rollout_paths),
     }
     report_path = out_root / "gate1" / f"{behavior}_pilot_report.json"
