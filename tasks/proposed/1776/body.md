@@ -11,12 +11,17 @@ origin_prompt: 'don''t treat it as a kill switch. just run it then continue till
   everything we''ve discussed so far into a plan and estimate the GPU h and wall clock
   time'')'
 workflow: v1
+goal: 'Compute the averaged causal Jacobian J_{C→A} on the #779 corpus; measure what
+  fraction of the fitted ridge map M''s predictive power is causal; test which map
+  predicts steered-generation interventions and off-distribution transfer; and test
+  whether the context→answer channel reads from / writes into the J-space verbalizable
+  workspace (Anthropic 2026), all phases unconditional.'
 ---
 # Jacobian context→answer map (J_{C→A}) vs fitted ridge map M + J-space workspace mediation (Qwen-2.5-7B)
 
 ## Goal
 
-Compute the averaged causal Jacobian J_{C→A} = E_pairs[∂v(A)/∂v(C)] (broadcast perturbation over the context span, teacher-forced frozen on-policy answers, cotangent-summed backward estimator per anthropics/jacobian-lens) on the #779 corpus, and answer three questions: (1) what fraction of the fitted ridge map M's held-out predictive power is causally mediated by the layer-ℓ context representation (claimed gain σ_i vs measured causal gain per top singular direction); (2) which map — J or M — better predicts the ground-truth effect of finite context-activation interventions (steered regeneration: representation shift AND judge-scored behavior change) and off-distribution transfer; (3) does the context→answer channel read from / write into the J-space "verbalizable global workspace" of Anthropic's 2026 paper (Verbalizable Representations Form a Global Workspace in Language Models, transformer-circuits.pub/2026/workspace), operationalized as sparse-nonnegative-cone projection onto a Qwen-fitted J-lens dictionary, vs matched random-subspace nulls.
+Compute the averaged causal Jacobian J_{C→A} on the #779 corpus; measure what fraction of the fitted ridge map M's predictive power is causal; test which map predicts steered-generation interventions and off-distribution transfer; and test whether the context→answer channel reads from / writes into the J-space verbalizable workspace (Anthropic 2026), all phases unconditional.
 
 ## Provenance
 
