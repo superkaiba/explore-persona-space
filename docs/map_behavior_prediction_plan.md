@@ -161,7 +161,7 @@ void. The factor is an eliciting fraction: **`f_U ∈ {0, 0.5}` × `f_L ∈ {0, 
 
 | | `f_L = 0` (generic labels) | `f_L = 1` (eliciting labels) |
 |---|---|---|
-| **`f_U = 0`** (generic map) | all-generic — likely degenerate for evil (no spread anywhere); informative as such | the §5 default |
+| **`f_U = 0`** (generic map) | all-generic — informative for sycophancy and hallucination (both occur naturally in generic traffic); near-degenerate for evil, since the released WildChat is toxicity-filtered and has almost no evil expression to label. Read it as a floor for evil, not a comparison | the §5 default |
 | **`f_U = 0.5`** (map sees eliciting) | **the money cell** — can *unlabeled* eliciting data substitute for labels? | both channels informed |
 
 The money cell carries the practical payload: unlabeled eliciting data is cheap (prompts +
@@ -344,10 +344,15 @@ elicitation — the same mechanism family as PV's synthetic instruction pairs. T
 Two further reasons for A: **yield** (persona-roleplay wrappers are the high-ASR family, while
 hh-rlhf is 2022 attacks a safety-trained Qwen will mostly refuse — absolute positives are needed
 in *train* more than eval), and **turn structure** (train single-turn → eval multi-turn is the
-harder, more honest test; B runs it the easy way). Run B anyway as a labeled secondary (~+$300–500
-in judging): A and B together **bound** the mechanism-match effect, and the A−B gap measures how
-much PV projection depends on extraction and eval sharing a mechanism — a reportable finding about
-persona vectors in its own right.
+harder, more honest test; B runs it the easy way).
+
+**DECIDED (2026-07-28): run BOTH.** A is the pre-registered primary and carries the headline; B
+runs as a labeled secondary (~+$300–500 judging). Together they **bound** the mechanism-match
+effect, and the A−B gap measures how much PV projection depends on extraction and evaluation
+sharing an eliciting mechanism — a reportable finding about persona vectors in its own right.
+**Scope control: the §4b composition factor runs on Config A only.** Crossing it with both
+configs would double an already-large cell count for no additional claim; B runs the main arm
+roster at the same `L` anchors.
 
 **Effective-N caveat for evil (does not apply to the other two behaviors).** The DAN×forbidden
 cross product is 1,405 prefixes × 390 questions — it inflates ROW count without inflating
@@ -520,7 +525,9 @@ Qwen-2.5-7B-Instruct. Contingent on gate 3.
 | Fits: maps, ridges, MLPs, finetunes × `L` grid × 5 draws × seeds | ~2–4 h |
 | **GPU total** | **~14–20 H100-h** (≈10–14 with store reuse) |
 
-**Judge API dominates: ~$1.5–2.5k batched**, near $1k at `K`=3 and `L` capped at 8k.
+**Judge API dominates: ~$1.8–3.0k batched** (was $1.5–2.5k before evil's Config B was committed —
+B adds a judged hh-rlhf training set plus a judged DAN eval set, ~+$300–500). Near $1.2k at
+`K`=3 and `L` capped at 8k.
 Hallucination is cheaper than budgeted (exact-match grading needs no judge for correctness).
 Every arm in §3 and §7 is a fit over already-collected data: +1–2 H100-h, no judge increment.
 
