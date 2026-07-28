@@ -5,7 +5,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import matplotlib
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# Shared-VM thread caps (#847): env caps must bind BEFORE any heavy import.
+load_dotenv()
+
+import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
