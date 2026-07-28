@@ -261,7 +261,8 @@ def test_fit_map_and_map_change_block_synthetic(tmp_path):
     ib = fit._identity_bias_reads(C0[tr], V0[tr], C0[te], V0[te])
     assert ib["applicable"] is True
     tf_out = fit._transfer_fold(cell, dev)
-    assert set(tf_out) == {"lmsys->wildchat", "wildchat->lmsys"}
+    assert set(tf_out) == {"lmsys->wildchat", "wildchat->lmsys", "note"}
+    assert "dst-corpus TRAIN rows" in tf_out["note"]  # stated deviation (Minor)
 
 
 # ── disjoint-halves registration (Statistics Must-Fix) ───────────────────────
@@ -323,10 +324,16 @@ def test_disjoint_halves_w_and_delta_baselines(tmp_path):
         },
         tb_dir / "tbar.pt",
     )
-    dleg = dirs.delta_leg(tmp_path, arm, layer, legs["v0_half_B"], legs["v0_all"])
+    dleg = dirs.delta_leg(tmp_path, arm, layer, legs)
     np.testing.assert_allclose(dleg["delta_primary"], np.full(d, 3.0) + 1.0)
     np.testing.assert_allclose(dleg["delta_shared_record_only"], np.full(d, 3.0))
     assert "delta_split_half_cos" in dleg and legs["w_split_half_cos"] is not None
+    # δ reliability halves use DISJOINT quarter-split baselines (odd-q rows
+    # split further); the shared-B read is retained record-only (round-2 fix)
+    np.testing.assert_allclose(legs["v0_half_B1"], -np.ones(d))  # q=1
+    np.testing.assert_allclose(legs["v0_half_B2"], -np.ones(d))  # q=3
+    assert "delta_split_half_cos_sharedB_record_only" in dleg
+    assert "delta_split_half_cos_upper_bound_sharedB" not in dleg
 
 
 def test_null_bands_and_shuffled_row_shapes():
@@ -368,3 +375,275 @@ def test_estimator_validity_refuses_n_train_below_d():
     Yd = rng.standard_normal((n, d))
     with pytest.raises(AssertionError, match="under-determined"):
         fit._fit_map(Xd, Yd, np.arange(40), np.arange(40, 60), np.arange(60, 80), fit._device())
+
+
+# ── round-2 pins (code-review v1 punch list) ─────────────────────────────────
+
+
+def test_loader_coverage_floor_trips(tmp_path):
+    """fit.load_corpus_cell refuses <90% sha-join coverage (fit.py floor)."""
+    import issue1768_fit as fit
+
+    d, layer, n = 3, 0, 30
+    shas = [f"s{i}" for i in range(n)]
+    _write_sample(tmp_path, 20, 4, 6, shas)
+    base_mat = np.zeros((n, d))
+    _mk_store(
+        tmp_path / "corpus_capture" / "base_content" / "pooled.pt",
+        {"context": {layer: base_mat}, "response": {layer: base_mat}},
+        shas,
+        list(range(n)),
+    )
+    p_keep = list(range(20))  # 20/30 = 0.67 < 0.9 coverage floor
+    pm = np.zeros((len(p_keep), d))
+    _mk_store(
+        tmp_path / "corpus_capture" / "arm-a" / "pooled.pt",
+        {"context": {layer: pm}, "response": {layer: pm}},
+        [shas[i] for i in p_keep],
+        p_keep,
+    )
+    _mk_store(
+        tmp_path / "corpus_capture_tf" / "arm-a" / "pooled_tf.pt",
+        {"response": {layer: base_mat}},
+        shas,
+        list(range(n)),
+    )
+    with pytest.raises(AssertionError):
+        fit.load_corpus_cell("arm-a", layer, tmp_path)
+
+
+def test_pinned_split_mismatch_raises(monkeypatch):
+    """assert_pinned_split fail-louds on a sha mismatch (and PASSes on the
+    committed pins — the real recompute against the committed #779 block)."""
+    got = X.assert_pinned_split()  # committed pins reproduce
+    assert got["n_val"] == X.N_VAL and got["n_test"] == X.N_TEST
+    monkeypatch.setattr(
+        X,
+        "pinned_split_block",
+        lambda: {"pinned_val_sha256": "deadbeef", "pinned_test_sha256": "deadbeef"},
+    )
+    with pytest.raises(AssertionError):
+        X.assert_pinned_split()
+
+
+def test_fit_cell_call_shape_binds():
+    """Signature-bind the exact panel_fit_for_arm -> fit_cell call shape
+    (the smoke cannot run fit_cell at its (28, 3584) production contract)."""
+    import inspect
+
+    import issue722_fit_M as fit_m
+    import issue1768_fit as fit
+
+    sig = inspect.signature(fit_m.fit_cell)
+    sig.bind(
+        fit.FIT_CELL_BEHAVIOR_COL,
+        19,
+        [],
+        {"r_b": {fit.FIT_CELL_BEHAVIOR_COL: {"diffmeans": np.zeros((28, 4))}}},
+        None,
+        include_mlp=False,
+        floors="batched",
+        loco="batched",
+    )
+
+
+def test_floor_seed_deterministic_across_processes():
+    """floor_seed_for never rides Python hash(): identical across processes
+    with DIFFERENT PYTHONHASHSEED values (fails pre-fix, when the seed used
+    X.FLOOR_SEED + hash(cond) % 1000)."""
+    import os
+    import subprocess
+    import sys
+
+    outs = []
+    for hs in ("0", "424242"):
+        env = {**os.environ, "PYTHONHASHSEED": hs}
+        r = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import sys; sys.path.insert(0, 'scripts'); "
+                "import issue1768_fit as f; "
+                "print(f.floor_seed_for('M0'), f.floor_seed_for('Mplus'))",
+            ],
+            cwd=REPO,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        outs.append(r.stdout.strip())
+    assert outs[0] == outs[1]
+    assert outs[0] == f"{X.FLOOR_SEED} {X.FLOOR_SEED + 1}"
+
+
+def test_panel_baseline_reads_keys():
+    """identity+bias + kNN attach to the panel fit_cell maps (Major 6)."""
+    import issue1768_fit as fit
+    from issue722_load_activations import CellRecord
+
+    rng = np.random.default_rng(5)
+    d = 4
+    cells = [
+        CellRecord(
+            behavior="b",
+            source_cid="c",
+            target_cid="c",
+            layer=0,
+            c0=rng.standard_normal(d),
+            cplus=rng.standard_normal(d),
+            v0=rng.standard_normal(d),
+            vplus=rng.standard_normal(d),
+            family="c",
+        )
+        for _ in range(8)
+    ]
+    out = fit._panel_baseline_reads(cells)
+    for name in ("M0", "Mplus"):
+        b = out[name]
+        assert b["applicable"] is True
+        assert "heldout_r2" in b and "knn_euclidean" in b and "knn_cosine" in b
+
+
+def test_stage_reused_panel_base_requires_raw_rows(tmp_path, monkeypatch):
+    """The Critical pin (p4-base-raw-rows-missing-crash): a base capture tree
+    whose Hub copy lacks raw_rows.json is a staging FAILURE (fresh capture),
+    never a warn-and-continue; a pers-arm tree keeps raw_rows optional."""
+    import issue1768_capture as cap
+
+    from explore_persona_space.orchestrate import hub as hub_mod
+
+    cfg = cap.Cfg(out_root=tmp_path, phases=())
+    monkeypatch.setattr(cap, "_reused_1586_hub_name", lambda unit: unit)
+    monkeypatch.setattr(cap, "_vintage_ok", lambda commit: True)
+    staged: list[str] = []
+
+    def fake_probe(fn, what=""):
+        return "raw_rows.json" not in what  # Hub carries pooled + manifest only
+
+    def fake_stage(repo, hub_path, dest, repo_type=""):
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(json.dumps({"git_commit": "abc"}))
+        staged.append(hub_path)
+
+    monkeypatch.setattr(hub_mod, "retry_transient", fake_probe)
+    monkeypatch.setattr(hub_mod, "stage_hub_file", fake_stage)
+    # base tree: REQUIRED raw_rows missing on Hub -> False, and nothing staged
+    assert cap._stage_reused_panel(cfg, "capture", "base_syc") is False
+    assert staged == []
+    assert not (tmp_path / "panel_capture" / "base_syc").exists()
+    # pers-arm tree: raw_rows optional -> True (pooled + manifest staged)
+    assert cap._stage_reused_panel(cfg, "capture", "syc-pers-con-lr3e5-s42") is True
+    assert any(p.endswith("pooled.pt") for p in staged)
+    # stale partial base dir (pooled without raw_rows) is dropped, not resumed
+    stale = tmp_path / "panel_capture" / "base_imp"
+    stale.mkdir(parents=True)
+    (stale / "pooled.pt").write_text("x")
+    (stale / "manifest.json").write_text("{}")
+    assert cap._stage_reused_panel(cfg, "capture", "base_imp") is False
+    assert not stale.exists()
+
+
+def test_smoke_forces_smoke_hf_prefix():
+    """--smoke enforces the _smoke upload prefix even under an explicit
+    --hf-prefix (a smoke run must never write the production Hub bucket)."""
+    import issue1768_capture as cap
+
+    cfg, _ = cap.parse_args(
+        ["--out-root", "/tmp/x", "--smoke", "--hf-prefix", "issue1768_mapshift"]
+    )
+    assert cfg.hf_prefix == "issue1768_mapshift_smoke"
+    cfg2, _ = cap.parse_args(["--out-root", "/tmp/x", "--hf-prefix", "issue1768_mapshift"])
+    assert cfg2.hf_prefix == "issue1768_mapshift"
+
+
+def test_barrier_units_p2_has_no_barrier():
+    """Major 5: no p2 wave barrier (base outputs feed p3, not p2 siblings);
+    p4 keeps its base barrier (arm tf units consume base raw rows)."""
+    import issue1768_capture as cap
+
+    assert cap._barrier_units("p2", ["base_content", "base_mk", "arm-a"]) == set()
+    assert cap._barrier_units("p4", ["base:base_syc", "arm:a"]) == {"base:base_syc"}
+
+
+def test_p6_gen_units_ride_p2_queue(tmp_path):
+    """Plan §9 Must-Fix wiring: the p6 GPU legs are p2-queue units, gated on
+    their own arm's corpus unit (merged-dir lifecycle), pending until
+    gen_done.json lands."""
+    import issue1768_capture as cap
+
+    arm_id = next(
+        a.arm_id
+        for a in X.all_arms()
+        if a.kind == "content" and a.ctx_key == "pers" and a.seed == 42
+    )
+    cfg = cap.Cfg(out_root=tmp_path, phases=(), arms=(arm_id,))
+    pend = cap._pending_units(cfg, "p2")
+    assert f"p6g:{arm_id}" in pend and arm_id in pend
+    assert not cap._unit_ready(cfg, "p2", f"p6g:{arm_id}")  # arm corpus not done
+    (tmp_path / "corpus_capture" / arm_id).mkdir(parents=True)
+    (tmp_path / "corpus_capture" / arm_id / "pooled.pt").write_text("x")
+    assert cap._unit_ready(cfg, "p2", f"p6g:{arm_id}")
+    (tmp_path / "rb_plus" / arm_id).mkdir(parents=True)
+    (tmp_path / "rb_plus" / arm_id / "gen_done.json").write_text("{}")
+    assert f"p6g:{arm_id}" not in cap._pending_units(cfg, "p2")
+
+
+def _mk_p6_fixture(n_q=2, n_roll=2, d=4, n_layers=2):
+    """Synthetic rollouts/scores/acts blobs keyed by the REAL enumeration."""
+    import issue779_extract_rb as E
+
+    rollouts = {
+        side: {
+            f"t_{side}_p0": {
+                f"q{j}": [f"resp {side} {j} {r}" for r in range(n_roll)] for j in range(n_q)
+            }
+        }
+        for side in ("pos", "neg")
+    }
+    acts = {"pos": {}, "neg": {}}
+    scores = {"pos": {}, "neg": {}}
+    for side, val, score in (("pos", 1.0, 90.0), ("neg", -1.0, 10.0)):
+        for _p, _q, _question, _ci, _comp, cid in E._iter_rollout_records(rollouts[side]):
+            acts[side][cid] = torch.full((n_layers, d), val, dtype=torch.float16)
+            scores[side][cid] = score
+    scores_blob = {
+        "arms": {
+            s: {"scores": scores[s], "draw_stats": {"n_rollouts_judged": n_q * n_roll}}
+            for s in ("pos", "neg")
+        }
+    }
+    acts_blob = {"layers": list(range(n_layers)), "acts": acts}
+    return rollouts, scores_blob, acts_blob
+
+
+def test_reduce_rb_from_persisted_filter_and_math():
+    """The p6 CPU post-filter: threshold keep, drop-never-coerce, r_B math."""
+    import issue1768_capture as cap
+
+    rollouts, scores_blob, acts_blob = _mk_p6_fixture()
+    # drop one pos rollout (None = judge-dropped) + push one below threshold
+    pos_cids = list(scores_blob["arms"]["pos"]["scores"])
+    scores_blob["arms"]["pos"]["scores"][pos_cids[0]] = None
+    scores_blob["arms"]["pos"]["scores"][pos_cids[1]] = 40.0  # not > 50 -> dropped
+    out = cap.reduce_rb_from_persisted("t", rollouts, scores_blob, acts_blob, smoke=False)
+    a = out["counts"]["arms"]["pos"]
+    assert (a["total"], a["kept"], a["dropped_refusal_or_invalid"]) == (4, 2, 1)
+    assert a["dropped_below_threshold"] == 1
+    np.testing.assert_allclose(np.asarray(out["r_b"]), np.full((2, 4), 2.0))  # +1 - (-1)
+
+
+def test_reduce_rb_zero_kept_production_raises_smoke_falls_back():
+    """Production zero-kept arm fail-louds (yield failure, never fabricated);
+    under --smoke the SAME state keep-all falls back, LABELED (#1345 gate
+    demotion — the production raise is byte-untouched)."""
+    import issue1768_capture as cap
+
+    rollouts, scores_blob, acts_blob = _mk_p6_fixture()
+    for cid in scores_blob["arms"]["neg"]["scores"]:
+        scores_blob["arms"]["neg"]["scores"][cid] = 90.0  # NEG kept needs < 50
+    with pytest.raises(AssertionError, match="zero kept rollouts"):
+        cap.reduce_rb_from_persisted("t", rollouts, scores_blob, acts_blob, smoke=False)
+    out = cap.reduce_rb_from_persisted("t", rollouts, scores_blob, acts_blob, smoke=True)
+    assert out["counts"]["arms"]["neg"]["smoke_keep_all_fallback"] is True
+    assert out["counts"]["arms"]["pos"]["smoke_keep_all_fallback"] is False

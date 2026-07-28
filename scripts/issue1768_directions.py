@@ -105,10 +105,30 @@ def load_rb_tensors(out_root: Path, rb_dir: Path | None = None) -> dict[str, np.
     return out
 
 
+def assert_marker_token(model_path: str, token_id: int) -> None:
+    """In-process marker-id assert (CLAUDE.md marker rule; plan assumption 9).
+
+    The W_U row slice is keyed on a HARD-PINNED id — assert the tokenizer
+    actually maps the leading-space marker text to exactly that id before any
+    read keys on it (round-1 Minor). The marker text is built from the
+    codepoint (U+203B) so no literal transits tool/edit layers.
+    """
+    from transformers import AutoTokenizer
+
+    marker_text = " " + chr(0x203B)  # " ※" leading-space form
+    enc = AutoTokenizer.from_pretrained(model_path).encode(marker_text, add_special_tokens=False)
+    assert enc == [token_id], (
+        f"marker token drift: encode({marker_text!r}) -> {enc}, expected [{token_id}]"
+    )
+
+
 def load_wu_row(model_path: str, token_id: int = X.MARKER_TOKEN_ID) -> np.ndarray:
     """Base `lm_head.weight[token_id]` via a safetensors slice (no full load)."""
     import torch
     from safetensors import safe_open
+
+    if token_id == X.MARKER_TOKEN_ID:
+        assert_marker_token(model_path, token_id)
 
     local = Path(model_path)
     if not local.exists():  # hub repo id: resolve the shard holding lm_head
@@ -227,6 +247,15 @@ def panel_write_legs(out_root: Path, arm: X.Arm, layer: int) -> dict:
         "w_split_half_cos": _cos(vp_A - v0_A, vp_B - v0_B),
         "n_questions": len(v0),
     }
+    # quarter-split of half B for the δ split-half reliability read: the two
+    # δ halves must NOT share one sampled baseline (a shared v0_half_B adds
+    # the same noise vector to both legs and inflates the reliability —
+    # round-1 Minor; selection-symmetric-nulls § Noise-structure symmetry)
+    qs_odd = [q for q in sorted(v0) if q % 2 == 1]
+    b1_rows = [v0[q] for q in qs_odd[0::2]]
+    b2_rows = [v0[q] for q in qs_odd[1::2]]
+    legs["v0_half_B1"] = np.mean(b1_rows, axis=0) if b1_rows else None
+    legs["v0_half_B2"] = np.mean(b2_rows, axis=0) if b2_rows else None
     tf_path = Path(out_root) / "panel_capture_tf" / arm.arm_id / "pooled.pt"
     if tf_path.exists():
         tf_store = _load_store(tf_path)
@@ -237,18 +266,27 @@ def panel_write_legs(out_root: Path, arm: X.Arm, layer: int) -> dict:
     return legs
 
 
-def delta_leg(out_root: Path, arm: X.Arm, layer: int, v0_half_B: np.ndarray, v0_all) -> dict:
+def delta_leg(out_root: Path, arm: X.Arm, layer: int, legs: dict) -> dict:
     tb = _load_store(Path(out_root) / "delta_tf" / arm.arm_id / "tbar.pt")
     tbar = np.asarray(tb["tbar"][layer].float().numpy(), dtype=np.float64)
+    v0_half_B = legs["v0_half_B"]
     out = {
         "delta_primary": tbar - v0_half_B,  # δ leg baseline: half B (Must-Fix)
-        "delta_shared_record_only": tbar - np.asarray(v0_all, dtype=np.float64),
+        "delta_shared_record_only": tbar - np.asarray(legs["v0_all"], dtype=np.float64),
         "n_mix_rows": int(tb["n_rows"]),
     }
     if "tbar_even" in tb and tb["tbar_even"] is not None:
         te = np.asarray(tb["tbar_even"][layer].float().numpy(), dtype=np.float64)
         to = np.asarray(tb["tbar_odd"][layer].float().numpy(), dtype=np.float64)
-        out["delta_split_half_cos"] = _cos(te - v0_half_B, to - v0_half_B)
+        b1, b2 = legs.get("v0_half_B1"), legs.get("v0_half_B2")
+        if b1 is not None and b2 is not None:
+            # disjoint quarter-split baselines per δ half (round-1 Minor: a
+            # shared v0_half_B carries the same noise vector in both legs)
+            out["delta_split_half_cos"] = _cos(te - b1, to - b2)
+            out["delta_split_half_cos_sharedB_record_only"] = _cos(te - v0_half_B, to - v0_half_B)
+        else:  # <2 odd-half questions: shared-B read is an UPPER BOUND, labeled
+            out["delta_split_half_cos"] = _cos(te - v0_half_B, to - v0_half_B)
+            out["delta_split_half_cos_upper_bound_sharedB"] = True
     return out
 
 
@@ -361,23 +399,49 @@ def run_p9(
 ) -> None:
     import issue1768_fit as fit
 
+    import zlib
+
     print("[phase=p9_directions]", flush=True)
     out_root, results_dir = Path(out_root), Path(results_dir)
     arms = _arms_in_scope(smoke, arms_filter)
     rb = load_rb_tensors(out_root, rb_dir)
-    rng = np.random.default_rng(X.FLOOR_SEED)
 
     direction_reads: dict[str, dict] = {}
     gate_reads: dict[str, dict] = {}
     sigma_by_layer = {li: corpus_sigma(out_root, li) for li in layers}
     wu_cache: np.ndarray | None = None
 
+    # per-(arm, layer) persistence + resume (checkpoint-per-phase intra-phase
+    # grain: 56 arms x 3 layers = 168 units > 50; round-1 Major 4). Units are
+    # rng-seeded PER UNIT (deterministic, order-independent) so a resumed run
+    # reproduces a fresh run's draws exactly.
+    unit_dir = results_dir / "p9_units"
+    total = len(arms) * len(layers)
+    k = 0
+    t_phase = time.time()
     for arm in arms:
-        base_store = _load_store(out_root / "panel_capture" / f"base_{arm.beh_key}" / "pooled.pt")
+        base_store = None  # lazy: skipped entirely when every unit resumes
         for layer in layers:
             key = f"{arm.arm_id}_L{layer}"
+            k += 1
+            t0 = time.time()
+            unit_path = unit_dir / f"{key}.json"
+            if unit_path.exists():
+                u = json.loads(unit_path.read_text())
+                if u.get("smoke") == smoke:  # regime key (resume predicate)
+                    direction_reads[key] = u["direction"]
+                    gate_reads[key] = u["gate"]
+                    print(f"[p9] unit {k}/{total} {key} resumed", flush=True)
+                    continue
+            rng = np.random.default_rng(
+                [X.FLOOR_SEED, zlib.crc32(arm.arm_id.encode("utf-8")), layer]
+            )
+            if base_store is None:
+                base_store = _load_store(
+                    out_root / "panel_capture" / f"base_{arm.beh_key}" / "pooled.pt"
+                )
             legs = panel_write_legs(out_root, arm, layer)
-            dleg = delta_leg(out_root, arm, layer, legs["v0_half_B"], legs["v0_all"])
+            dleg = delta_leg(out_root, arm, layer, legs)
             w = legs["w_primary"]
             sigma = sigma_by_layer[layer]
 
@@ -436,6 +500,12 @@ def run_p9(
                 "w_split_half_cos": legs["w_split_half_cos"],
                 "w_tf_split_half_cos": legs.get("w_tf_split_half_cos"),
                 "delta_split_half_cos": dleg.get("delta_split_half_cos"),
+                "delta_split_half_cos_sharedB_record_only": dleg.get(
+                    "delta_split_half_cos_sharedB_record_only"
+                ),
+                "delta_split_half_cos_upper_bound_sharedB": dleg.get(
+                    "delta_split_half_cos_upper_bound_sharedB", False
+                ),
                 "n_mix_rows": dleg["n_mix_rows"],
                 "races": races,
                 "cross_behavior_rb_cos": cross,
@@ -455,7 +525,20 @@ def run_p9(
                 "sigma_shrinkage": SHRINKAGE,
                 "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)",
             }
-            print(f"[p9] {key} done", flush=True)
+            _atomic_json(  # persist the moment the unit completes (Major 4)
+                unit_path,
+                {
+                    "smoke": smoke,
+                    "direction": direction_reads[key],
+                    "gate": gate_reads[key],
+                    **_meta(),
+                },
+            )
+            print(
+                f"[p9] unit {k}/{total} {key} elapsed={time.time() - t0:.0f}s "
+                f"(phase {time.time() - t_phase:.0f}s)",
+                flush=True,
+            )
 
     _atomic_json(
         results_dir / "direction_reads.json",

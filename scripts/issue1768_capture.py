@@ -6,11 +6,18 @@ the SAME code paths, PASS_UNIFIED):
 - p0_registry   arm registry + full 56-arm adapter probe + corpus sample inputs
 - p1_pilot      ONE arm end-to-end at production shape (gate 1 + fp16 probe)
 - p2_corpus     58 corpus on-policy units (vLLM greedy gen -> TF span-means)
+                + the 6 p6 GPU legs (`p6g:<arm>` rollout gen -> text persist ->
+                judge SUBMIT via a detached CPU poller -> per-rollout
+                activation persist) interleaved into the SAME queue (plan §9
+                "p6 Batch-API wait placement" Must-Fix)
 - p3_corpus_tf  56 matched-text units (trained model TF on the base tree rows)
 - p4_panels     panel trees for the 40 non-pers arms (+ staged #1586 reuse)
 - p5_delta      56 base-model TF captures of training-mix positives (t_bar)
-- p6_rb_plus    scoped A4 re-extraction (6 arms; issue779_extract_rb subprocess)
 - p7_upload     HF data-repo upload of every out-root tree + upload_done.json
+- p6_rb_reduce  CPU post-filter over the PERSISTED per-rollout activations
+                (harvest judge scores -> threshold -> r_B); runs AFTER p7 by
+                default so the Batch-API poll overlaps p2..p7 and no GPU
+                phase ever blocks on the judge
 
 Signaling: ``[phase=...]`` log lines + ``status.json`` heartbeat (SLURM-safe;
 plan §9 pins NO /workspace sentinel dependence). Work fans out across every
@@ -1009,32 +1016,58 @@ def _vintage_ok(manifest_commit: str) -> bool:
 
 
 def _stage_reused_panel(cfg: Cfg, tree: str, arm_id: str) -> bool:
-    """Stage one reused #1586 panel dir from the Hub (no layout mapping)."""
+    """Stage one reused #1586 panel dir from the Hub (no layout mapping).
+
+    ``raw_rows.json`` is REQUIRED for ``base_*`` capture trees: the 40
+    non-pers arms' matched-text units hard-read the base panel rows
+    (`_panel_tf_capture`), and the reused #1586 base trees do NOT carry
+    raw_rows.json on the Hub (probed 2026-07-28) — a miss there must route
+    to the fresh base capture, never a warn-and-continue (round-1 Critical
+    ``p4-base-raw-rows-missing-crash``). Pers-arm trees keep raw_rows
+    optional (their raw text is never consumed downstream). Every required
+    file is probed BEFORE any byte is staged so a partial stage can never
+    satisfy the resume predicate without the raw rows.
+    """
     from huggingface_hub import HfApi
 
     from explore_persona_space.orchestrate import hub
 
     dest = cfg.out_root / ("panel_capture" if tree == "capture" else "panel_capture_tf") / arm_id
-    if (dest / "pooled.pt").exists():
+    raw_required = tree == "capture" and arm_id.startswith("base_")
+    files = ["pooled.pt", "manifest.json"] + (["raw_rows.json"] if tree == "capture" else [])
+    required = [f for f in files if f != "raw_rows.json" or raw_required]
+    if all((dest / f).exists() for f in required):
         return True
     hub_name = _reused_1586_hub_name(arm_id)
     if hub_name is None:
         return False
-    files = ["pooled.pt", "manifest.json"] + (["raw_rows.json"] if tree == "capture" else [])
     api = HfApi()
+    present: dict[str, bool] = {}
     for name in files:
         hub_path = f"{REUSED_PANEL_HF_PREFIX}/{tree}/{hub_name}/{name}"
-        present = hub.retry_transient(
+        present[name] = hub.retry_transient(
             lambda p=hub_path: api.file_exists(X.HF_DATA_REPO, p, repo_type="dataset"),
             what=f"panel stage probe {hub_path}",
         )
-        if not present:
-            if name == "raw_rows.json":
-                logger.warning("[p4] %s/%s lacks raw_rows.json on Hub (recorded)", tree, arm_id)
-                continue
-            logger.warning("[p4] reused tree miss %s — falling back to fresh capture", hub_path)
-            return False
-        hub.stage_hub_file(X.HF_DATA_REPO, hub_path, dest / name, repo_type="dataset")
+        if not present[name]:
+            if name in required:
+                logger.warning(
+                    "[p4] reused tree miss %s (required) — falling back to fresh capture",
+                    hub_path,
+                )
+                if dest.exists():  # drop any stale partial so fresh capture re-runs fully
+                    shutil.rmtree(dest)
+                return False
+            logger.warning(
+                "[p4] %s/%s lacks raw_rows.json on Hub (optional: pers-arm raw text is "
+                "never consumed; recorded)",
+                tree,
+                arm_id,
+            )
+    for name in files:
+        if present[name] and not (dest / name).exists():
+            hub_path = f"{REUSED_PANEL_HF_PREFIX}/{tree}/{hub_name}/{name}"
+            hub.stage_hub_file(X.HF_DATA_REPO, hub_path, dest / name, repo_type="dataset")
     man = json.loads((dest / "manifest.json").read_text())
     commit = man.get("git_commit", "")
     if not commit or not _vintage_ok(commit):
@@ -1111,11 +1144,17 @@ def _mix_positive_rows(cfg: Cfg, arm: X.Arm) -> tuple[list[dict], dict]:
     from explore_persona_space.analysis.representation_shift import compute_prompt_spans
     from explore_persona_space.orchestrate import hub
 
+    import hashlib
+
     reg = json.loads((cfg.out_root / "arm_registry.json").read_text())
     src = reg["mix_pos_sources"][arm.arm_id]
     local = cfg.out_root / "delta_tf" / arm.arm_id / Path(src["pos_path"]).name
     if not local.exists():
         hub.stage_hub_file(X.HF_DATA_REPO, src["pos_path"], local, repo_type="dataset")
+    # No pinned train_mix_sha256 exists for the substituted CON pos pools
+    # (round-1 Minor; folded into the po-delta-positives-con-family caveat) —
+    # record the REALIZED staged-file sha so the provenance is auditable.
+    pos_sha256 = hashlib.sha256(local.read_bytes()).hexdigest()
     raw = []
     with local.open(encoding="utf-8") as fh:
         for line in fh:
@@ -1162,7 +1201,12 @@ def _mix_positive_rows(cfg: Cfg, arm: X.Arm) -> tuple[list[dict], dict]:
                 "context_len": context_len,
             }
         )
-    return rows, {"pos_path": src["pos_path"], "layout": src["layout"], "n_rows": len(rows)}
+    return rows, {
+        "pos_path": src["pos_path"],
+        "layout": src["layout"],
+        "n_rows": len(rows),
+        "pos_sha256": pos_sha256,
+    }
 
 
 def run_delta_unit(cfg: Cfg, arm_id: str) -> None:
@@ -1211,9 +1255,21 @@ def run_delta_unit(cfg: Cfg, arm_id: str) -> None:
     os.replace(tmp, out_dir / "tbar.pt")
 
 
-# ── p6: scoped A4 re-extraction (issue779_extract_rb subprocess) ─────────────
+# ── p6: scoped A4 re-extraction (split gen / judge / reduce; plan §9 Must-Fix) ─
+#
+# The persona-vectors recipe body is reused VERBATIM from issue779_extract_rb
+# (prompt render `_build_prompts`, chunked sampling `_vllm_generate_chunked`,
+# text persist `_dump_rollouts`, capture `_response_mean_activation`, reduce
+# `RunningMean`, enumeration `_iter_rollout_records`) but re-sequenced per the
+# plan §9 "p6 Batch-API wait placement" Must-Fix: the GPU leg (gen + capture)
+# rides the p2 fan-out queue, the judge SUBMISSION fires the moment rollouts
+# land (detached CPU poller), the poll overlaps p2..p7, and the post-filter is
+# a CPU reduction over the persisted per-rollout activations after p7.
 
 P6_TRAIT_BY_BEH = {"syc": "sycophancy", "imp": "impolite", "cas": "writing_style"}
+P6_N_PAIRS, P6_N_EXT_Q, P6_N_ROLLOUTS = 5, 20, 10  # persona-vectors recipe (plan §4.4)
+P6_JUDGE_N_DRAWS = 1  # plan §6: N=1 graded draw per rollout at the recipe thresholds
+P6_ACTS_CHECKPOINT_EVERY = 250  # per-rollout capture checkpoint grain (T2 > 50 units)
 
 
 def p6_arm_ids(cfg: Cfg) -> list[str]:
@@ -1258,7 +1314,7 @@ def seed_rb_artifacts(trait: str, cache_path: Path) -> dict:
         "eval_prompt": b.judge_rubric,
         "provenance": {
             "source": f"artifacts.behavior.BEHAVIORS[{trait!r}]",
-            "seeded_by": "issue1768_capture.run_rb_unit",
+            "seeded_by": "issue1768_capture.run_rb_gen_unit",
             "n_pairs": len(ex.prompt_pairs),
             "n_extraction_questions": len(ext_qs),
         },
@@ -1267,43 +1323,448 @@ def seed_rb_artifacts(trait: str, cache_path: Path) -> dict:
     return artifacts
 
 
-def run_rb_unit(cfg: Cfg, arm_id: str) -> None:
-    """p6 unit: persona-vectors re-extraction against the MERGED trained model."""
-    out_dir = cfg.out_root / "rb_plus" / arm_id
-    if (out_dir / "done.json").exists():
+def _p6_dir(cfg: Cfg, arm_id: str) -> Path:
+    return cfg.out_root / "rb_plus" / arm_id
+
+
+def _p6_dims(cfg: Cfg) -> tuple[int, int, int]:
+    """(n_pairs, n_ext_q, n_rollouts): the extractor's own smoke caps under
+    --smoke (issue779_extract_rb main), recipe-verbatim in production."""
+    return (1, 2, 5) if cfg.smoke else (P6_N_PAIRS, P6_N_EXT_Q, P6_N_ROLLOUTS)
+
+
+def _p6_sampling_params(n_rollouts: int):
+    """extract_trait_rb's exact SamplingParams; SimpleNamespace twin off-GPU
+    (the CPU smoke's _HFGenShim reads only n/temperature/top_p/max_tokens)."""
+    kw = {"n": n_rollouts, "temperature": 1.0, "top_p": 0.95, "max_tokens": 1024, "seed": 42}
+    try:
+        from vllm import SamplingParams
+
+        return SamplingParams(**kw)
+    except ImportError:
+        import types
+
+        return types.SimpleNamespace(**kw)
+
+
+def _p6_hf_model(model_path: str):
+    """HF capture model, extractor-parity dtypes (bf16 cuda:0 / fp32 CPU)."""
+    import torch
+    from transformers import AutoModelForCausalLM
+
+    if torch.cuda.is_available():
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, torch_dtype=torch.bfloat16, device_map={"": torch.device("cuda:0")}
+        )
+    else:
+        model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.float32)
+    model.eval()
+    return model
+
+
+def _launch_detached_judge(cfg: Cfg, arm_id: str) -> None:
+    """Fire the judge SUBMISSION the moment the arm's rollouts land (§9 Must-Fix).
+
+    Detached CPU subprocess (survives this unit's exit; CVD cleared — never
+    touches a GPU) running `--unit p6j:<arm>`: submit + poll + harvest through
+    the primary judge_completions_batch path, writing judge_scores.json when
+    done. The poll overlaps the remaining GPU phases; phase_p6_reduce waits on
+    the file, resuming via the SAME #1019 checkpoint if the poller died
+    (recorded batches are re-polled, never re-created)."""
+    out_dir = _p6_dir(cfg, arm_id)
+    if (out_dir / "judge_scores.json").exists():
+        return
+    pid_path = out_dir / "judge_poller.pid"
+    if pid_path.exists():
+        try:
+            pid = int(pid_path.read_text().strip())
+        except ValueError:
+            pid = -1
+        if pid > 0 and Path(f"/proc/{pid}").exists():
+            logger.info(
+                "[p6] %s: judge poller already live (pid %d) — not relaunching", arm_id, pid
+            )
+            return
+    cmd, env = _unit_cmd(cfg, f"p6j:{arm_id}", gpu=cfg.gpu_id)
+    env["CUDA_VISIBLE_DEVICES"] = ""  # CPU + API only
+    log_path = out_dir / "judge.log"
+    with log_path.open("a") as log:
+        proc = subprocess.Popen(
+            cmd,
+            cwd=REPO_ROOT,
+            env=env,
+            stdout=log,
+            stderr=log,
+            stdin=subprocess.DEVNULL,
+            start_new_session=True,  # detach: outlives this unit subprocess
+        )
+    pid_path.write_text(str(proc.pid))
+    logger.info("[p6] %s: judge poller launched (pid %d, log %s)", arm_id, proc.pid, log_path)
+
+
+def run_rb_gen_unit(cfg: Cfg, arm_id: str) -> None:
+    """p6 GPU leg (rides the p2 fan-out queue): gen -> text persist -> judge
+    SUBMIT (detached) -> per-rollout response-avg activation persist.
+
+    ALL rollouts' activations are persisted (fp16, keyed by custom_id) so the
+    post-filter is a pure CPU reduction at phase_p6_reduce — no second GPU
+    pass, no GPU phase blocking on the judge (plan §9 Must-Fix)."""
+    import torch
+
+    import issue779_common as C
+    import issue779_extract_rb as E
+
+    out_dir = _p6_dir(cfg, arm_id)
+    if (out_dir / "gen_done.json").exists():
+        _launch_detached_judge(cfg, arm_id)  # idempotent: re-arm a dead poller
         return
     out_dir.mkdir(parents=True, exist_ok=True)
     arm = {a.arm_id: a for a in X.all_arms()}[arm_id]
     trait = P6_TRAIT_BY_BEH[arm.beh_key]
     seed_rb_artifacts(trait, REPO_ROOT / "data" / "issue_779" / "artifacts" / f"{trait}.json")
+    n_pairs, n_ext_q, n_rollouts = _p6_dims(cfg)
+    artifacts = C.load_extraction_artifacts(trait)
+    pairs = artifacts["instruction"][:n_pairs]
+    ext_q = artifacts["extraction_questions"][:n_ext_q]
+
     model_path, cleanup = _resolve_unit_model(cfg, arm_id)
+    hf_model = None
     try:
-        cmd = [
-            "uv",
-            "run",
-            "python",
-            str(SCRIPTS_DIR / "issue779_extract_rb.py"),
-            "--traits",
-            trait,
-            "--model",
-            model_path,
-            "--out-dir",
-            str(out_dir),
-            "--no-upload",
-        ]
-        log_path = out_dir / "extract_rb.log"
-        with log_path.open("a") as log:
-            rc = subprocess.run(
-                cmd, cwd=REPO_ROOT, env={**os.environ}, stdout=log, stderr=log
-            ).returncode
-        if rc != 0:
-            raise RuntimeError(f"p6 {arm_id}: extract_rb exited rc={rc} (see {log_path})")
-        src = out_dir / "r_b" / f"{trait}.pt"
-        if not src.exists():
-            raise FileNotFoundError(f"p6 {arm_id}: extractor produced no tensor at {src}")
-        _atomic_json(out_dir / "done.json", {"trait": trait, "model_path": model_path, **_meta()})
+        from transformers import AutoTokenizer
+
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        rollouts_path = out_dir / "rollouts.json"
+        if rollouts_path.exists():
+            blob = json.loads(rollouts_path.read_text())
+            rollouts, sysprompt_of = blob["rollouts"], blob["sysprompt_of"]
+        else:
+            sp = _p6_sampling_params(n_rollouts)
+            use_cuda = torch.cuda.is_available()
+            if use_cuda:
+                from explore_persona_space.eval.generation import (
+                    cleanup_vllm,
+                    create_vllm_engine,
+                )
+
+                # extractor-parity engine (issue779_extract_rb main); reaped
+                # BEFORE the HF capture model loads (no co-residency needed —
+                # the capture leg is sequenced after generation)
+                llm = create_vllm_engine(model_path, max_model_len=2048, seed=42)
+            else:  # CPU smoke: the extractor's own HF-generate shim
+                hf_model = _p6_hf_model(model_path)
+                llm = E._HFGenShim(hf_model, tokenizer)
+            rollouts: dict[str, dict[str, dict[str, list[str]]]] = {"pos": {}, "neg": {}}
+            sysprompt_of: dict[str, str] = {}
+            try:
+                for side in ("pos", "neg"):
+                    for pi, pair in enumerate(pairs):
+                        sys_prompt = pair[side]
+                        persona = f"{trait}_{side}_p{pi}"
+                        sysprompt_of[persona] = sys_prompt
+                        prompt_texts = E._build_prompts(tokenizer, sys_prompt, ext_q)
+                        gen = E._vllm_generate_chunked(llm, prompt_texts, sp)
+                        rollouts[side][persona] = dict(zip(ext_q, gen, strict=True))
+            finally:
+                if use_cuda:
+                    cleanup_vllm(llm)
+            sampling = {
+                "n": sp.n,
+                "temperature": sp.temperature,
+                "top_p": sp.top_p,
+                "max_tokens": sp.max_tokens,
+                "seed": getattr(sp, "seed", None),
+                "model": model_path,
+            }
+            rollout_files = {}
+            for side in ("pos", "neg"):
+                dumped = E._dump_rollouts(trait, side, rollouts[side], out_dir, sampling)
+                rollout_files[side] = [p.name for p in dumped]
+            _atomic_json(
+                rollouts_path,
+                {
+                    "trait": trait,
+                    "rollouts": rollouts,
+                    "sysprompt_of": sysprompt_of,
+                    "sampling": sampling,
+                    "rollout_files": rollout_files,
+                    **_meta(),
+                },
+            )
+
+        # judge submission fires the moment the rollouts land — the batch
+        # processes server-side while this unit captures activations and the
+        # rest of the p2..p7 GPU work runs (plan §9 Must-Fix)
+        _launch_detached_judge(cfg, arm_id)
+
+        acts_path = out_dir / "acts.pt"
+        if not acts_path.exists():
+            if hf_model is None:
+                hf_model = _p6_hf_model(model_path)
+            layers = list(range(len(hf_model.model.layers)))
+            partial_path = out_dir / "acts_partial.pt"
+            acts: dict[str, dict[str, torch.Tensor]] = {"pos": {}, "neg": {}}
+            skipped: dict[str, list[str]] = {"pos": [], "neg": []}
+            if partial_path.exists():  # per-unit resume (checkpoint-per-phase)
+                part = torch.load(partial_path, map_location="cpu", weights_only=False)
+                if part.get("layers") == layers:
+                    acts, skipped = part["acts"], part["skipped_empty"]
+            done_cids = {c for side in acts.values() for c in side} | {
+                c for side in skipped.values() for c in side
+            }
+            records = [
+                (side, persona, question, comp, cid)
+                for side in ("pos", "neg")
+                for persona, _q, question, _ci, comp, cid in E._iter_rollout_records(rollouts[side])
+            ]
+            n_new = 0
+            t0 = time.time()
+            for k, (side, persona, question, comp, cid) in enumerate(records):
+                if cid in done_cids:
+                    continue
+                act = E._response_mean_activation(
+                    hf_model, tokenizer, sysprompt_of[persona], question, comp, layers
+                )
+                if act is None:
+                    skipped[side].append(cid)
+                else:
+                    acts[side][cid] = act.to(torch.float16)
+                n_new += 1
+                if n_new % P6_ACTS_CHECKPOINT_EVERY == 0:
+                    tmp = partial_path.with_suffix(".pt.tmp")
+                    torch.save({"layers": layers, "acts": acts, "skipped_empty": skipped}, tmp)
+                    os.replace(tmp, partial_path)
+                    print(
+                        f"[p6g] {arm_id} acts {k + 1}/{len(records)} "
+                        f"elapsed={time.time() - t0:.0f}s",
+                        flush=True,
+                    )
+            tmp = acts_path.with_suffix(".pt.tmp")
+            torch.save(
+                {
+                    "trait": trait,
+                    "layers": layers,
+                    "acts": acts,
+                    "skipped_empty": skipped,
+                    "metadata": _meta(),
+                },
+                tmp,
+            )
+            os.replace(tmp, acts_path)
+            partial_path.unlink(missing_ok=True)
+        _atomic_json(
+            out_dir / "gen_done.json",
+            {
+                "trait": trait,
+                "model_path": model_path,
+                "n_pairs": n_pairs,
+                "n_ext_q": n_ext_q,
+                "n_rollouts": n_rollouts,
+                **_meta(),
+            },
+        )
     finally:
         _cleanup_merged(cleanup)
+
+
+def run_rb_judge(cfg: Cfg, arm_id: str) -> None:
+    """p6 judge leg (CPU + Batch API; runs detached via `--unit p6j:<arm>`).
+
+    N=1 graded draw per rollout at the recipe filter thresholds (plan §6:
+    ~12,600 calls across the 6 arms), max_tokens=300 (llm-judging rule 23),
+    through C.judge_rollouts_n5 -> judge_completions_batch (#1019 resumable
+    checkpoint under rb_plus/<arm>/.judge_dispatch — a killed poller's re-run
+    polls the SAME recorded batches, never re-creates)."""
+    import issue779_common as C
+
+    out_dir = _p6_dir(cfg, arm_id)
+    dest = out_dir / "judge_scores.json"
+    if dest.exists():
+        return
+    blob = json.loads((out_dir / "rollouts.json").read_text())
+    trait = blob["trait"]
+    payload: dict = {"trait": trait, "n_draws": P6_JUDGE_N_DRAWS, "arms": {}}
+    for side in ("pos", "neg"):
+        agg = C.judge_rollouts_n5(
+            trait,
+            blob["rollouts"][side],
+            out_dir / f"judge_{trait}_{side}.json",
+            None,
+            n_draws=P6_JUDGE_N_DRAWS,
+        )
+        scores: dict[str, float | None] = {}
+        n_draws_seen = total_valid = all_dropped = 0
+        for cid, (mean, n_valid, n_draws) in agg.items():
+            scores[cid] = mean
+            n_draws_seen += n_draws
+            total_valid += n_valid
+            all_dropped += int(n_valid == 0)
+        payload["arms"][side] = {
+            "scores": scores,
+            "draw_stats": {  # per-arm drop report (llm-judging rules 9/18)
+                "n_rollouts_judged": len(agg),
+                "n_draws_per_rollout": P6_JUDGE_N_DRAWS,
+                "total_draws": n_draws_seen,
+                "total_valid_draws": total_valid,
+                "total_dropped_draws": n_draws_seen - total_valid,
+                "n_rollouts_all_draws_dropped": all_dropped,
+            },
+        }
+    payload.update(_meta())
+    _atomic_json(dest, payload)
+
+
+def _await_judge_scores(cfg: Cfg, arm_id: str) -> dict:
+    """Block (CPU-only phase; GPUs already released) until judge_scores.json
+    exists — waiting on a LIVE poller, else resuming the judge in-process."""
+    out_dir = _p6_dir(cfg, arm_id)
+    dest = out_dir / "judge_scores.json"
+    pid_path = out_dir / "judge_poller.pid"
+    waited = 0.0
+    while not dest.exists():
+        pid = -1
+        if pid_path.exists():
+            try:
+                pid = int(pid_path.read_text().strip())
+            except ValueError:
+                pid = -1
+        if pid > 0 and Path(f"/proc/{pid}").exists():
+            if waited % 300 < 30:
+                logger.info(
+                    "[p6] %s: waiting on live judge poller (pid %d, %.0fs)", arm_id, pid, waited
+                )
+            time.sleep(30)
+            waited += 30
+            continue
+        logger.info("[p6] %s: judge poller not live — resuming judge in-process", arm_id)
+        run_rb_judge(cfg, arm_id)  # checkpoint resume; raises loud on failure
+    return json.loads(dest.read_text())
+
+
+def run_rb_reduce_unit(cfg: Cfg, arm_id: str) -> dict:
+    """p6 CPU post-filter: threshold the judged scores, reduce the PERSISTED
+    per-rollout activations to r_B (extractor-verbatim math; no GPU pass)."""
+    import torch
+
+    out_dir = _p6_dir(cfg, arm_id)
+    done = out_dir / "done.json"
+    if done.exists():
+        return json.loads(done.read_text())
+    scores_blob = _await_judge_scores(cfg, arm_id)
+    blob = json.loads((out_dir / "rollouts.json").read_text())
+    trait = blob["trait"]
+    acts_blob = torch.load(out_dir / "acts.pt", map_location="cpu", weights_only=False)
+    reduced = reduce_rb_from_persisted(
+        trait, blob["rollouts"], scores_blob, acts_blob, smoke=cfg.smoke
+    )
+    rb_dir = out_dir / "r_b"
+    rb_dir.mkdir(parents=True, exist_ok=True)
+    tmp = rb_dir / f"{trait}.pt.tmp"
+    torch.save(
+        {  # schema parity with issue779_extract_rb (rb_stability reads obj["r_b"])
+            "trait": trait,
+            "r_b": reduced["r_b"],
+            "layers": acts_blob["layers"],
+            "counts": reduced["counts"],
+            "smoke": cfg.smoke,
+            "metadata": _meta(),
+        },
+        tmp,
+    )
+    os.replace(tmp, rb_dir / f"{trait}.pt")
+    _atomic_json(rb_dir / f"{trait}_counts.json", reduced["counts"])
+    gen_meta = json.loads((out_dir / "gen_done.json").read_text())
+    out = {"trait": trait, "model_path": gen_meta["model_path"], **_meta()}
+    _atomic_json(done, out)
+    return out
+
+
+def reduce_rb_from_persisted(
+    trait: str, rollouts: dict, scores_blob: dict, acts_blob: dict, *, smoke: bool
+) -> dict:
+    """Pure CPU reduce: judge-threshold filter (POS>50 keep / NEG<50 keep,
+    None = dropped, never coerced) over the persisted per-rollout activations.
+
+    Smoke-only gate demotion (#1345 gate-calibration rule): a zero-kept arm
+    under --smoke (tiny garbage-weights model) falls back to keep-all,
+    LABELED in counts; the production zero-kept raise is byte-untouched."""
+    import issue779_extract_rb as E
+
+    layers = acts_blob["layers"]
+    hidden = None
+    for side_acts in acts_blob["acts"].values():
+        for t in side_acts.values():
+            hidden = int(t.shape[1])
+            break
+        if hidden is not None:
+            break
+    assert hidden is not None, f"{trait}: acts store has no captured rollouts at all"
+    counts: dict = {"trait": trait, "arms": {}}
+    means: dict[str, E.RunningMean] = {}
+    for side in ("pos", "neg"):
+        scores = scores_blob["arms"][side]["scores"]
+        n_total = n_dropped = n_below = 0
+        kept_cids: list[str] = []
+        for _p, _q, _question, _ci, _comp, cid in E._iter_rollout_records(rollouts[side]):
+            n_total += 1
+            s = scores.get(cid)
+            if s is None:
+                n_dropped += 1
+                continue
+            if side == "pos" and not (s > 50.0):
+                n_below += 1
+                continue
+            if side == "neg" and not (s < 50.0):
+                n_below += 1
+                continue
+            kept_cids.append(cid)
+        smoke_keep_all = False
+        if not kept_cids and smoke:
+            smoke_keep_all = True
+            kept_cids = [cid for *_r, cid in E._iter_rollout_records(rollouts[side])]
+        rm = E.RunningMean(len(layers), hidden)
+        for cid in kept_cids:
+            act = acts_blob["acts"][side].get(cid)
+            if act is not None:
+                rm.add(act.float())
+        means[side] = rm
+        counts["arms"][side] = {
+            "total": n_total,
+            "kept": len(kept_cids),
+            "dropped_refusal_or_invalid": n_dropped,
+            "dropped_below_threshold": n_below,
+            "captured": rm.count,
+            "smoke_keep_all_fallback": smoke_keep_all,
+            "judge_draw_stats": scores_blob["arms"][side]["draw_stats"],
+        }
+    assert means["pos"].count > 0 and means["neg"].count > 0, (
+        f"{trait}: zero kept rollouts in an arm (pos={means['pos'].count}, "
+        f"neg={means['neg'].count}); cannot form r_B — the judge-filter dropped an "
+        "entire arm (report as a yield failure, do NOT fabricate a direction)"
+    )
+    r_b = means["pos"].mean() - means["neg"].mean()
+    assert r_b.shape == (len(layers), hidden), r_b.shape
+    return {"r_b": r_b, "counts": counts}
+
+
+def phase_p6_reduce(cfg: Cfg) -> None:
+    """p6 reduce (CPU; AFTER p7 by default): harvest judge -> filter -> r_B.
+
+    The GPU legs already ran inside the p2 queue; any residual batch wait
+    lands here with every GPU phase complete (plan §9: the p7 window absorbs
+    it — no GPU is held through the poll)."""
+    _phase("p6_rb_reduce")
+    arms = p6_arm_ids(cfg)
+    _status(cfg, "p6_rb_reduce", pending=len(_pending_units(cfg, "p6")))
+    for k, arm_id in enumerate(arms):
+        t0 = time.time()
+        run_rb_reduce_unit(cfg, arm_id)
+        print(
+            f"[p6] unit {k + 1}/{len(arms)} {arm_id} elapsed={time.time() - t0:.0f}s",
+            flush=True,
+        )
+        _status(cfg, "p6_rb_reduce", done=k + 1, total=len(arms))
+    if cfg.upload and arms:
+        _upload_tree(cfg, "rb_plus")  # r_b landed after p7's tree upload
 
 
 # ── p1: pilot (gate 1) ───────────────────────────────────────────────────────
@@ -1393,14 +1854,23 @@ def _pending_units(cfg: Cfg, phase: str) -> list[str]:
             ["base_mk"] if any(a.startswith("mk-") for a in arms) else []
         )
         units = base_units + arms
-        return [u for u in units if not (root / "corpus_capture" / u / "pooled.pt").exists()]
+        pend = [u for u in units if not (root / "corpus_capture" / u / "pooled.pt").exists()]
+        # the 6 p6 GPU legs ride the p2 queue (plan §9 Batch-API wait placement)
+        pend += [
+            f"p6g:{a}"
+            for a in p6_arm_ids(cfg)
+            if not (root / "rb_plus" / a / "gen_done.json").exists()
+        ]
+        return pend
     if phase == "p3":
         return [a for a in arms if not (root / "corpus_capture_tf" / a / "pooled_tf.pt").exists()]
     if phase == "p4":
         out = []
         for kind, unit in panel_units(cfg):
             if kind == "base":
-                if not (root / "panel_capture" / unit / "pooled.pt").exists():
+                d = root / "panel_capture" / unit
+                # base trees need raw_rows.json too (the arm tf units read it)
+                if not ((d / "pooled.pt").exists() and (d / "raw_rows.json").exists()):
                     out.append(f"{kind}:{unit}")
             else:
                 own = (root / "panel_capture" / unit / "pooled.pt").exists()
@@ -1419,7 +1889,10 @@ def run_unit(cfg: Cfg, unit_arg: str) -> None:
     """Subprocess entry: `<phase>:<unit>` (p4 units are `p4:<kind>:<unit>`)."""
     phase, rest = unit_arg.split(":", 1)
     if phase == "p2":
-        run_corpus_unit(cfg, rest)
+        if rest.startswith("p6g:"):
+            run_rb_gen_unit(cfg, rest.split(":", 1)[1])
+        else:
+            run_corpus_unit(cfg, rest)
     elif phase == "p3":
         run_corpus_tf_unit(cfg, rest)
     elif phase == "p4":
@@ -1427,8 +1900,8 @@ def run_unit(cfg: Cfg, unit_arg: str) -> None:
         run_p4_unit(cfg, kind, unit)
     elif phase == "p5":
         run_delta_unit(cfg, rest)
-    elif phase == "p6":
-        run_rb_unit(cfg, rest)
+    elif phase == "p6j":
+        run_rb_judge(cfg, rest)  # the detached CPU judge poller entry
     else:
         raise ValueError(unit_arg)
 
@@ -1480,12 +1953,27 @@ def _merge_slots(cfg: Cfg, width: int) -> int:
 
 
 def _barrier_units(phase: str, queue_units: list[str]) -> set[str]:
-    """Units every later unit must wait for (base rows feed the tf trees)."""
-    if phase == "p2":
-        return {u for u in queue_units if u.split(":")[-1].startswith("base_")}
+    """Units every later unit must wait for. ONLY p4 keeps a barrier (the arm
+    tf units consume the base panels' raw rows). p2 has NO barrier — no p2
+    arm unit consumes base outputs (only p3 does, a later phase), and the
+    round-1 p2 barrier idled up to 7/8 GPUs through base_mk with no data
+    dependency (Major 5; #813 wave-barrier family). Alphabetical sort still
+    dispatches the base_* units first as a preference."""
     if phase == "p4":
         return {u for u in queue_units if u.startswith("base:")}
     return set()
+
+
+def _unit_ready(cfg: Cfg, phase: str, unit_arg: str) -> bool:
+    """Dispatch eligibility beyond queue order: a p6 gen unit waits for its
+    OWN arm's corpus unit — both resolve the same merged dir and each unit
+    deletes it at exit (merge -> consume -> delete lifecycle), so they must
+    never be live concurrently. Work-conserving: a not-ready p6g unit is
+    skipped, never blocks a sibling dispatch."""
+    if phase == "p2" and unit_arg.startswith("p6g:"):
+        arm = unit_arg.split(":", 1)[1]
+        return (cfg.out_root / "corpus_capture" / arm / "pooled.pt").exists()
+    return True
 
 
 def _fanout_phase(cfg: Cfg, phase: str, phase_tag: str) -> None:
@@ -1495,9 +1983,11 @@ def _fanout_phase(cfg: Cfg, phase: str, phase_tag: str) -> None:
     if not units:
         logger.info("[%s] nothing pending", phase)
         return
-    units.sort(key=lambda u: u.split(":")[-1] if ":" in u else u)
+    # p6g legs LAST (their readiness waits on their own arm's corpus unit),
+    # then alphabetical (base_* first among the rest); barrier units first.
+    units.sort(key=lambda u: (u.startswith("p6g:"), u.split(":")[-1] if ":" in u else u))
     barrier = _barrier_units(phase, units)
-    units.sort(key=lambda u: u not in barrier)  # barrier units first
+    units.sort(key=lambda u: u not in barrier)  # barrier units first (stable)
     gpus = _physical_gpus()
     if len(gpus) <= 1:
         for k, u in enumerate(units):
@@ -1527,6 +2017,7 @@ def _fanout_phase(cfg: Cfg, phase: str, phase_tag: str) -> None:
                     for i, ua in enumerate(queue)
                     if (ua in barrier or not barrier_live)
                     and (not _needs_merge(cfg, ua) or active_merges < merge_slots)
+                    and _unit_ready(cfg, phase, ua)
                 ),
                 None,
             )
@@ -1550,6 +2041,19 @@ def _fanout_phase(cfg: Cfg, phase: str, phase_tag: str) -> None:
             if rc != 0:
                 log_path = cfg.out_root / "logs" / f"{phase}_{unit_arg.replace(':', '_')}.log"
                 tail = log_path.read_text()[-4000:] if log_path.exists() else "(no log)"
+                # terminate the sibling subprocesses BEFORE raising — orphaned
+                # children otherwise keep writing shared outputs (round-1
+                # Minor; kill-before-relaunch discipline is the backstop)
+                for sib_proc, sib_arg, _t in running.values():
+                    logger.warning("[%s] terminating sibling %s on failure", phase, sib_arg)
+                    sib_proc.terminate()
+                deadline = time.time() + 15
+                for sib_proc, _sib_arg, _t in running.values():
+                    try:
+                        sib_proc.wait(timeout=max(0.1, deadline - time.time()))
+                    except subprocess.TimeoutExpired:
+                        sib_proc.kill()
+                running.clear()
                 raise RuntimeError(
                     f"[{phase}] unit {unit_arg} exited rc={rc}\n--- log tail ---\n{tail}"
                 )
@@ -1577,6 +2081,27 @@ UPLOAD_TREES = (
 )
 
 
+def _upload_tree(cfg: Cfg, name: str) -> str:
+    """One fail-loud upload_folder commit for one out-root tree (no
+    eligibility filter — every file in the tree uploads)."""
+    from explore_persona_space.orchestrate import hub
+
+    local = cfg.out_root / name
+    if not local.exists():
+        return ""
+    dest = f"{cfg.hf_prefix}/{name}"
+    url = hub._upload(
+        local,
+        repo_id=X.HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=dest,
+        upload_as_file=local.is_file(),
+    )
+    if not url:
+        raise RuntimeError(f"upload of {local} -> {dest} returned no path")
+    return dest
+
+
 def phase_p7(cfg: Cfg) -> None:
     """Whole-tree uploads (one upload_folder commit per tree; no eligibility
     filter — every file in each tree uploads; plan §10 destinations)."""
@@ -1591,20 +2116,9 @@ def phase_p7(cfg: Cfg) -> None:
 
     uploaded = {}
     for name in UPLOAD_TREES:
-        local = cfg.out_root / name
-        if not local.exists():
-            continue
-        dest = f"{cfg.hf_prefix}/{name}"
-        url = hub._upload(
-            local,
-            repo_id=X.HF_DATA_REPO,
-            repo_type="dataset",
-            path_in_repo=dest,
-            upload_as_file=local.is_file(),
-        )
-        if not url:
-            raise RuntimeError(f"p7 upload of {local} -> {dest} returned no path")
-        uploaded[name] = dest
+        dest = _upload_tree(cfg, name)
+        if dest:
+            uploaded[name] = dest
     # exact-set verify on the load-bearing store files (one scoped listing)
     expected = []
     for tree, fname in (
@@ -1646,6 +2160,25 @@ def _import_check() -> int:
     import issue779_ffc_n1m_generate_capture  # noqa: F401
     import issue779_ffc_n50k_generate_capture  # noqa: F401
     import issue779_fitter_fair_comparison  # noqa: F401
+
+    # p6 split-leg deferred imports (gen / judge / reduce; plan §9 Must-Fix)
+    from issue779_common import (  # noqa: F401
+        judge_rollouts_n5,
+        load_extraction_artifacts,
+    )
+    from issue779_extract_rb import (  # noqa: F401
+        RunningMean,
+        _build_prompts,
+        _dump_rollouts,
+        _HFGenShim,
+        _iter_rollout_records,
+        _response_mean_activation,
+        _vllm_generate_chunked,
+    )
+    from explore_persona_space.eval.generation import (  # noqa: F401
+        cleanup_vllm,
+        create_vllm_engine,
+    )
     from explore_persona_space.analysis.representation_shift import (  # noqa: F401
         _build_generation_prompts,
         _generate_responses_vllm,
@@ -1675,7 +2208,9 @@ def _import_check() -> int:
 def parse_args(argv: list[str] | None = None) -> tuple[Cfg, argparse.Namespace]:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out-root", type=Path, required=True)
-    ap.add_argument("--phases", default="p0,p1,p2,p3,p4,p5,p6,p7")
+    # p6 (the CPU reduce) runs AFTER p7 by default: its GPU legs ride the p2
+    # queue and the Batch-API poll overlaps p2..p7 (plan §9 Must-Fix)
+    ap.add_argument("--phases", default="p0,p1,p2,p3,p4,p5,p7,p6")
     ap.add_argument("--smoke", action="store_true", help="pilot arm only, tiny slices")
     ap.add_argument("--arms", default="", help="comma-separated arm-id filter")
     ap.add_argument("--layers", default=",".join(str(x) for x in X.LAYERS))
@@ -1692,6 +2227,14 @@ def parse_args(argv: list[str] | None = None) -> tuple[Cfg, argparse.Namespace]:
     args = ap.parse_args(argv)
     smoke_rows = tuple(int(x) for x in args.smoke_rows.split(","))
     assert len(smoke_rows) == 3, args.smoke_rows
+    # --smoke ALWAYS uploads under a _smoke-suffixed prefix, even with an
+    # explicit --hf-prefix: a smoke run must never write the production Hub
+    # bucket (fired in the round-2 VM smoke — the explicit flag defeated the
+    # default's auto-suffix and 8 smoke trees landed on the production prefix,
+    # hand-cleaned via delete_folder the same hour).
+    hf_prefix = args.hf_prefix or X.HF_PREFIX
+    if args.smoke and not hf_prefix.endswith("_smoke"):
+        hf_prefix = f"{hf_prefix}_smoke"
     cfg = Cfg(
         out_root=args.out_root,
         phases=tuple(p for p in args.phases.split(",") if p),
@@ -1704,13 +2247,15 @@ def parse_args(argv: list[str] | None = None) -> tuple[Cfg, argparse.Namespace]:
         valtest_file=args.valtest_file,
         smoke_rows=smoke_rows,  # type: ignore[arg-type]
         upload=not args.no_upload,
-        hf_prefix=args.hf_prefix or (f"{X.HF_PREFIX}_smoke" if args.smoke else X.HF_PREFIX),
+        hf_prefix=hf_prefix,
         gpu_id=args.gpu_id,
     )
     return cfg, args
 
 
-PHASE_HEADROOM_GB = {"p2": 160.0, "p3": 60.0, "p4": 20.0, "p5": 5.0, "p6": 20.0}
+PHASE_HEADROOM_GB = {"p2": 160.0, "p3": 60.0, "p4": 20.0, "p5": 5.0, "p6": 5.0}
+# p2 covers the p6 GPU legs it now hosts (~0.4 GB acts per arm << the 160 GB
+# corpus budget); p6 itself is the CPU reduce (small r_b writes only).
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1741,7 +2286,7 @@ def main(argv: list[str] | None = None) -> int:
         elif phase == "p5":
             _fanout_phase(cfg, "p5", "p5_delta")
         elif phase == "p6":
-            _fanout_phase(cfg, "p6", "p6_rb_plus")
+            phase_p6_reduce(cfg)
         elif phase == "p7":
             phase_p7(cfg)
         else:
