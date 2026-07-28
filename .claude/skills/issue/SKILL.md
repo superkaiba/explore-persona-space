@@ -7287,6 +7287,13 @@ explicit eval-data path):
    and read its verdict; a CHANGED payload still waits for the live
    run's exit before relaunching.
 
+   `scripts/inline_lint_gate.py` is the ONLY certifying entrypoint —
+   running the component legs by hand (a manual no-flags
+   `workflow_lint.py` + mapped pytest) does NOT write the
+   content-hash cert `guard_root_code_commit.sh` checks, so the commit
+   still blocks (2026-07-28: an inline round ran the components
+   manually and was guard-blocked at commit, ~4 min lost).
+
    ```bash
    # Inline payload lint gate (#1460/#1500) — ONE background Bash (run_in_background=true)
    printf '%s\n' <round's to-be-committed non-artifact paths, repo-relative> \
