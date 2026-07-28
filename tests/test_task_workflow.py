@@ -1059,6 +1059,155 @@ def test_new_plan_version_refuses_to_overwrite_existing_target(
     assert (plans_dir / "v2.md").read_text() == sentinel
 
 
+# ─── Plan header-version auto-alignment (#1745) ───────────────────────────
+
+
+def test_new_plan_version_aligns_stale_header(fake_repo):
+    """A self-declared `# Plan v<X>` first heading is rewritten to the
+    assigned version at persist time (#1745 acceptance criterion 1)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    assert tw.new_plan_version(new_id, "# Plan v1 — foo\n\nbody\n") == 1
+    # Second persist self-declares v1 while the assigned version is 2.
+    v = tw.new_plan_version(new_id, "# Plan v1 — foo\n\nrevised body\n")
+    assert v == 2
+    # Only the header's version digits changed; everything else is verbatim.
+    assert (plans_dir / "v2.md").read_text() == "# Plan v2 — foo\n\nrevised body\n"
+
+
+def test_new_plan_version_leaves_version_neutral_header(fake_repo):
+    """Version-neutral headers (the c40 sanctioned escape) persist
+    byte-identical, modulo the trailing-newline normalization the writer
+    already performs (#1745 acceptance criterion 2)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    neutral = f"# Plan — task #{new_id}: foo\n\nbody"
+    assert tw.new_plan_version(new_id, neutral) == 1
+    assert (plans_dir / "v1.md").read_text() == neutral + "\n"
+    amendment = "# Plan (amendment) — narrower scope\n\nbody\n"
+    assert tw.new_plan_version(new_id, amendment) == 2
+    assert (plans_dir / "v2.md").read_text() == amendment
+
+
+def test_new_plan_version_header_alignment_skips_frontmatter_and_fences(fake_repo):
+    """YAML frontmatter and fenced code blocks are never rewritten; the
+    first REAL heading after them is aligned (#1745 acceptance criterion 3,
+    split_frontmatter + fence-mask parity with verify_plan.py c40)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    plan = (
+        "---\n"
+        "kind: experiment\n"
+        "---\n"
+        "```\n"
+        "# Plan v9 — fenced, must NOT be rewritten\n"
+        "```\n"
+        "# Plan v9 — real heading\n"
+        "\n"
+        "body\n"
+    )
+    assert tw.new_plan_version(new_id, plan) == 1
+    text = (plans_dir / "v1.md").read_text()
+    assert text.startswith("---\nkind: experiment\n---\n")  # frontmatter untouched
+    assert "# Plan v9 — fenced, must NOT be rewritten" in text  # fence untouched
+    assert "# Plan v1 — real heading" in text  # first real heading aligned
+    assert "# Plan v9 — real heading" not in text
+
+
+def test_new_plan_version_header_alignment_case_insensitive_and_idempotent(fake_repo):
+    """The match is case-insensitive with prefix case preserved, and a
+    header already reading v{next_v} persists byte-stable (#1745
+    acceptance criteria 1 + 4)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    # Case-insensitive: `# plan V3` matches; digits rewritten, case preserved.
+    assert tw.new_plan_version(new_id, "# plan V3 — case test\n") == 1
+    assert (plans_dir / "v1.md").read_text() == "# plan V1 — case test\n"
+    # Idempotent: a header already at the assigned version is byte-stable.
+    already = "# Plan v2 — already aligned\n\nbody\n"
+    assert tw.new_plan_version(new_id, already) == 2
+    assert (plans_dir / "v2.md").read_text() == already
+
+
+def _load_verify_plan_module():
+    """Load scripts/verify_plan.py via importlib (the tests/test_verify_plan.py
+    import pattern), reusing an already-loaded instance so the two test files
+    do not double-exec the module inside one pytest session."""
+    import importlib.util
+
+    if "verify_plan" in sys.modules:
+        return sys.modules["verify_plan"]
+    script = Path(__file__).resolve().parents[1] / "scripts" / "verify_plan.py"
+    spec = importlib.util.spec_from_file_location("verify_plan", script)
+    mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+    sys.modules["verify_plan"] = mod
+    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    return mod
+
+
+def test_new_plan_version_output_passes_c40_roundtrip(fake_repo):
+    """#1745 acceptance criterion 5, verified against c40 ITSELF: a plan
+    persisted with a stale self-declared header can no longer WARN on
+    `check_header_version_vs_filename` — run on the persisted v{K}.md AND
+    through the plans/plan.md symlink, plus a YAML-frontmatter variant."""
+    repo, tw = fake_repo
+    vp = _load_verify_plan_module()
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+
+    tw.new_plan_version(new_id, "# Plan v1 — first\n\nbody\n")
+    # Stale header: self-declares v1 while the assigned version is 2.
+    tw.new_plan_version(new_id, "# Plan v1 — stale header\n\nbody\n")
+    for path in (plans_dir / "v2.md", plans_dir / "plan.md"):
+        res = vp.check_header_version_vs_filename(path.read_text(), plan_path=path)
+        assert res.status == "PASS", f"{path.name}: {res.status} — {res.detail}"
+        assert "matches persisted" in res.detail, res.detail
+
+    # YAML-frontmatter variant: the first heading after the frontmatter
+    # self-declares v9 while the assigned version is 3.
+    fm_plan = "---\nkind: experiment\n---\n# Plan v9 — frontmatter variant\n\nbody\n"
+    assert tw.new_plan_version(new_id, fm_plan) == 3
+    res = vp.check_header_version_vs_filename(
+        (plans_dir / "v3.md").read_text(), plan_path=plans_dir / "v3.md"
+    )
+    assert res.status == "PASS", f"v3.md: {res.status} — {res.detail}"
+    assert "matches persisted" in res.detail, res.detail
+
+
+def test_adversarial_planner_skill_documents_header_autoalignment():
+    """Durability pin (#1745): the adversarial-planner SKILL.md 'Log the
+    plan' bullet documents the persist-time header auto-alignment AND the
+    never-re-persist-to-retitle rule (the #1715 churn loop this task
+    closes). Follows tests/test_adversarial_planner_warn_disposition.py's
+    grep-anchored existence-check pattern."""
+    skill = (
+        Path(__file__).resolve().parents[1]
+        / ".claude"
+        / "skills"
+        / "adversarial-planner"
+        / "SKILL.md"
+    )
+    body = skill.read_text(encoding="utf-8")
+    anchor = "**Log the plan.**"
+    assert anchor in body, "adversarial-planner SKILL.md must keep the 'Log the plan' bullet"
+    span = body[body.index(anchor) : body.index(anchor) + 2000]
+    assert "auto-aligns a self-declared" in span, (
+        "The 'Log the plan' bullet must document that the persist "
+        "auto-aligns a self-declared `# Plan v<K>` first-heading version "
+        "to the assigned version (#1745) — without it, sessions keep "
+        "hand-retitling headers to clear c40 WARNs."
+    )
+    assert "Never re-persist a plan solely to retitle its header" in span, (
+        "The 'Log the plan' bullet must ban re-persisting a plan solely "
+        "to retitle its header — that burns a plan version for zero "
+        "content change (the #1715 churn loop)."
+    )
+
+
 # ─── Promotion ───────────────────────────────────────────────────────────
 
 
