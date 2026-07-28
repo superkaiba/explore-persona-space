@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1758,
+  "highest_id": 1759,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5889,6 +5889,13 @@
       "path": "tasks/proposed/1758",
       "status": "proposed",
       "title": "daily-fix: --retry-suspects prints zero-match notice"
+    },
+    "1759": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1759",
+      "status": "proposed",
+      "title": "daily-held: #1689 Phase-D disposition \u2014 descoped CIs + 44h w"
     },
     "176": {
       "has_clean_result": false,
