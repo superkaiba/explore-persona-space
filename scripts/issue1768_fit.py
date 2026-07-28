@@ -291,6 +291,20 @@ def _floor_refit_preds(
     return preds
 
 
+_FLOOR_COND_OFFSET = {"M0": 0, "Mplus": 1}
+
+
+def floor_seed_for(cond: str) -> int:
+    """Deterministic floor-refit seed under the plan §10 seed contract (1768).
+
+    NEVER Python ``hash()`` here: string hashing is PYTHONHASHSEED-randomized
+    per process, so the B floor draws would be non-reproducible across runs
+    and a crash-resumed p8 would seed remaining cells differently from
+    completed ones (round-1 Major 3; verdict-adjacent — floor_p95 feeds D).
+    """
+    return X.FLOOR_SEED + _FLOOR_COND_OFFSET[cond]
+
+
 def _map_change_block(
     cell: dict, m0_payload: dict, mp_payload: dict, lam0: float, dev, smoke: bool
 ) -> dict:
@@ -309,9 +323,7 @@ def _map_change_block(
         "M0": (cell["C0"], cell["V0"]),
         "Mplus": (cell["Cplus"], cell["Vplus"]),
     }.items():
-        preds = _floor_refit_preds(
-            Xd, Yd, tr, C0_te, lam0, n_refits, X.FLOOR_SEED + hash(cond) % 1000, dev
-        )
+        preds = _floor_refit_preds(Xd, Yd, tr, C0_te, lam0, n_refits, floor_seed_for(cond), dev)
         pair_rows = np.linalg.norm(preds[0::2] - preds[1::2], axis=2)  # (B/2, n_te)
         floor_rows_by_cond[cond] = pair_rows
         draws = np.median(pair_rows, axis=1)
@@ -398,6 +410,14 @@ def _transfer_fold(cell: dict, dev) -> dict:
             "n_eval": int(len(ev_dst)),
             "selected_lambda": meta["selected_lambda"],
         }
+    # STATED DEVIATION (round-1 Minor; carried for the analyzer): this fold
+    # evaluates on the dst corpus's TRAIN rows — held out from the src-corpus
+    # fit, but not the pinned "test rows" plan §4.5 names, which are
+    # unsatisfiable as written (the pinned test set is entirely LMSYS-derived).
+    out["note"] = (
+        "eval rows = dst-corpus TRAIN rows (held out from the src fit); plan §4.5 "
+        "'test rows' is unsatisfiable — the pinned test set is all LMSYS-derived"
+    )
     return out
 
 
@@ -520,6 +540,27 @@ def panel_cell_records(out_root: Path, arm_id: str, layer: int, span: str = "con
     return recs
 
 
+def _panel_baseline_reads(cells) -> dict:
+    """Identity+bias baseline + kNN retrieval over the panel cell arrays.
+
+    The standing mapping-baselines pair attached to the panel `fit_cell` maps
+    (plan §6 "both reads attached to EVERY fitted map"; round-1 Major 6) —
+    same c→v spaces as fit_cell's ridge (d_in = d_out), deterministic
+    even/odd-index halves over the ~120 records. `_identity_bias_reads`
+    carries the kNN reads (euclidean + cosine) via `_map_reads`.
+    """
+    C0 = np.stack([c.c0 for c in cells])
+    V0 = np.stack([c.v0 for c in cells])
+    Cp = np.stack([c.cplus for c in cells])
+    Vp = np.stack([c.vplus for c in cells])
+    tr = np.arange(0, len(cells), 2)
+    te = np.arange(1, len(cells), 2)
+    out: dict = {"split": "even-index train / odd-index test (deterministic)"}
+    for name, (Xd, Yd) in {"M0": (C0, V0), "Mplus": (Cp, Vp)}.items():
+        out[name] = _identity_bias_reads(Xd[tr], Yd[tr], Xd[te], Yd[te])
+    return out
+
+
 def panel_fit_for_arm(
     out_root: Path, results_dir: Path, arm_id: str, layer: int, rb_stack: np.ndarray, span: str
 ) -> dict:
@@ -547,6 +588,7 @@ def panel_fit_for_arm(
         "input_span": span,
         "prefix_arm_rank_limited": span == "prefix",  # §4.8 caveat carrier
         "fit_cell": cell_json,
+        "baselines": _panel_baseline_reads(cells),  # identity+bias + kNN (Major 6)
         **_meta(),
     }
     _atomic_json(dest, out)
@@ -565,6 +607,18 @@ def _arms_in_scope(smoke: bool, arms_filter: tuple[str, ...]) -> list[X.Arm]:
     return arms
 
 
+def _gate2_block(out_root: Path, smoke: bool) -> dict | None:
+    """The pilot-recorded (re-anchored) gate-2 threshold, or None (smoke /
+    standalone p8 rerun with no pilot report — logged, not fatal)."""
+    if smoke:
+        return None
+    path = Path(out_root) / "pilot" / "pilot_report.json"
+    if not path.exists():
+        logger.warning("[p8] no pilot_report.json — gate-2 p8 halt not armed")
+        return None
+    return json.loads(path.read_text()).get("gate2")
+
+
 def phase_p8(out_root: Path, results_dir: Path, layers, smoke: bool, arms_filter) -> None:
     _phase("p8_fits")
     arms = _arms_in_scope(smoke, arms_filter)
@@ -572,10 +626,21 @@ def phase_p8(out_root: Path, results_dir: Path, layers, smoke: bool, arms_filter
     total = len(units) * len(layers)
     k = 0
     verdicts = {}
+    gate2 = _gate2_block(out_root, smoke)
+    anchor_layer = 19 if 19 in layers else layers[0]
     for arm_id in units:
         for layer in layers:
             t0 = time.time()
             res = fit_arm_layer(out_root, results_dir, arm_id, layer, smoke)
+            if gate2 is not None and layer == anchor_layer:
+                r2 = res["fits"]["M0"]["heldout_r2"]
+                if r2 < gate2["threshold"]:
+                    # plan §7 gate 2: "Fail at p8 -> halt fits" (round-1 Minor)
+                    raise RuntimeError(
+                        f"[p8] GATE2 halt: {arm_id} L{layer} M0 R2={r2:.3f} < "
+                        f"re-anchored threshold {gate2['threshold']} "
+                        f"(pilot R2={gate2.get('pilot_r2')}) — rig-level regression"
+                    )
             verdicts[f"{arm_id}_L{layer}"] = {
                 "verdict": res["map_change"]["verdict"],
                 "D": res["map_change"]["D"],
@@ -604,7 +669,8 @@ def phase_p8(out_root: Path, results_dir: Path, layers, smoke: bool, arms_filter
     )
     # panel fit_cell continuity (home regime): production dims only — the
     # tiny-model smoke's 16-dim panel cannot satisfy fit_cell's (28, 3584)
-    # r_B contract; the call-shape bind runs in tests/test_issue1768.py.
+    # r_B contract; the call shape below is signature-bound by
+    # tests/test_issue1768.py::test_fit_cell_call_shape_binds (round-2 pin).
     if not smoke:
         import issue1768_directions as dirs
 
