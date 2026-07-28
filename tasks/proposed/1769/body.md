@@ -10,10 +10,15 @@ origin_prompt: 'add these to the existing experiments: 2. Prefill-vs-decode beha
   commitment (~4-8 GPU-h) - the only existing evidence is one hybrid-MoE paper; our
   rig is nearly the instrument.'
 workflow: v1
+goal: 'Determine when behavioral commitment happens in Qwen-2.5-7B-Instruct: does
+  steering a persona-vector direction r_B only during prefill vs only during decode
+  vs both change on-policy judged behavior expression - i.e., is the answer''s behavior
+  already committed in the pre-answer context state, or decided token-by-token during
+  generation?'
 ---
 ## Goal
 
-Determine WHEN behavioral commitment happens in Qwen-2.5-7B-Instruct: does steering a behavior direction (persona-vector r_B) only during PREFILL (context processing) vs only during DECODE (answer generation) vs both change on-policy judged behavior expression — i.e., is the behavior of the answer already committed in the pre-answer context state, or is it decided token-by-token during generation?
+Determine when behavioral commitment happens in Qwen-2.5-7B-Instruct: does steering a persona-vector direction r_B only during prefill vs only during decode vs both change on-policy judged behavior expression - i.e., is the answer's behavior already committed in the pre-answer context state, or decided token-by-token during generation?
 
 ## Overview / Motivation
 

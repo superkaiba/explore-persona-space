@@ -5969,6 +5969,7 @@
       "title": "What fine-tuning a behavior into a context does to the context->answer map (60-arm organism fleet, 15k contexts)"
     },
     "1769": {
+      "goal": "Determine when behavioral commitment happens in Qwen-2.5-7B-Instruct: does steering a persona-vector direction r_B only during prefill vs only during decode vs both change on-policy judged behavior expression - i.e., is the answer's behavior already committed in the pre-answer context state, or decided token-by-token during generation?",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/1769",
