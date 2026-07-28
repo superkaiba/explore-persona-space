@@ -336,6 +336,7 @@ def generate_labeling(
                         "rung": row.get("rung"),
                         "group_key": row.get("group_key"),
                         "rollout_k": k,
+                        "query": row["query"],
                         "prefix_text": prefix_text,
                         "prompt_text": prompt_text,
                         "completion": ro["text"],
