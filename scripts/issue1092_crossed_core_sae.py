@@ -8,12 +8,17 @@ Single dispatcher, phases A-D (phase E figures live in
   A  stage pinned inputs (corpus + own-cell completions @ e5901706, r_B @ 037fcbb,
      SAE @ c37e53c4 via `BatchTopKSAE.ensure_downloaded`), rebuild the dense-core
      rows with the parent's own render/position code (`issue1092_gpu_phase`),
-     teacher-forced bf16 forwards with a LAYER-19 resid_post hook (row-sharded
-     across visible GPUs via CVD-pinned worker subprocesses), per-token SAE encode,
-     per-row sparse summaries (prefix_end / context_end / pooled answer mean-max-frac),
-     reference-semantics fitness gate per arm (FVE >= 0.70 AND 30 <= L0 <= 130;
-     instruct FAIL = K1 halt rc=21, base FAIL = drop + report), upload stores +
-     fitness JSON BEFORE any fit (#825 ordering).
+     SINK/MASSIVE-ACTIVATION MAP pre-pass per cell (v13 addendum: per-position
+     sink identification + per-dim mu/sigma/gamma at layer 19 + sink-direction
+     estimate over a row subsample; the map IS the round's sink-exclusion set,
+     with the per-row 10x-median heuristic kept only as a LABELED fallback when
+     the map yields no sinks), teacher-forced bf16 forwards with a LAYER-19
+     resid_post hook (row-sharded across visible GPUs via CVD-pinned worker
+     subprocesses), per-token SAE encode, per-row sparse summaries (prefix_end /
+     context_end / pooled answer mean-max-frac; PRIMARY pooling excludes the
+     map's sink positions/token-ids), reference-semantics fitness gate per arm
+     (FVE >= 0.70 AND 30 <= L0 <= 130; instruct FAIL = K1 halt rc=21, base FAIL
+     = drop + report), upload stores + fitness JSON BEFORE any fit (#825).
   B  dual/Gram-space ridge maps (context_end->pooled-mean PRIMARY, prefix_end->
      pooled-mean, induced averaged read + independently-fit averaged SECONDARY),
      grouped 6-fold by prefix (seed 0) with inner-grouped-CV lambda selection over
@@ -22,9 +27,13 @@ Single dispatcher, phases A-D (phase E figures live in
      nulls (per-draw re-selected max/top-k persisted); |cos(W_dec, r_B)| join with
      a selection-symmetric max-over-3-random-directions null.
   C  judge labels (level rubric VERBATIM from issue1482_feature_correlates +
-     a NEW persona_related rubric as a SEPARATE call; blind single dispatch over
-     the shuffled union; drop-never-coerce; transport retried via
-     eval.judge_dispatch), dispatched on a thread concurrent with phase B nulls.
+     the v13 speaker_property 5-way rubric as a SEPARATE call — mutually
+     exclusive {language, register_style, identity_disposition, none, unclear};
+     headline contrasts use the identity_disposition SUBSET only, language /
+     register_style reported separately per set, NEVER pooled; blind single
+     dispatch over the shuffled union; drop-never-coerce (out-of-set value =
+     content drop); transport retried via eval.judge_dispatch), dispatched on a
+     thread concurrent with phase B nulls.
   D  per-feature join + headline Delta contrast (bootstrap CI) + digests + upload.
 
 Smoke IS this driver with tiny N through the same entrypoint (PASS_UNIFIED):
@@ -63,6 +72,7 @@ import issue1482_feature_correlates as FC  # noqa: E402  (judge instrument, verb
 from issue1482_sae import (  # noqa: E402
     BOS_OFFSET,
     DICT_SIZE,
+    OUTLIER_NORM_FACTOR,
     BatchTopKSAE,
     pool_answer_features,
     sparsify,
@@ -113,18 +123,34 @@ TAIL_R2_N = 50
 CTRL_MATCH_N = 100
 CTRL_QUERY_N = 100
 
-PERSONA_JUDGE_SYSTEM = (
+# v13 RUBRIC AMENDMENT (user-chat 2026-07-28 20:55Z): the 5-way speaker_property
+# field SUPERSEDES the defective binary persona_related field (the #1482 audit:
+# 20/40 "persona" labels were plain language features, 11 more register/style).
+SPEAKER_CLASSES = ("language", "register_style", "identity_disposition", "none", "unclear")
+SPEAKER_JUDGE_SYSTEM = (
     "You label sparse-autoencoder features from example texts. Given up to 8 assistant "
     "answers where a feature fires strongly, decide what shared property the feature "
-    "detects and whether that property is PERSONA-RELATED. Reason briefly, then output "
-    'ONLY JSON: {"reasoning": "...", "label": "<= 8 words naming the shared property", '
-    '"persona_related": true | false}. '
-    "persona_related=true: the shared property concerns the assistant's persona, "
-    "identity, role, stance, tone toward the user, or a persona/behavior trait "
-    "(e.g. sycophancy, refusal, self-description) — as opposed to topic, task type, "
-    "formatting, or language. persona_related=false: the shared property is topical "
-    "content, task type, formatting, markup, code syntax, or language rather than persona."
+    "detects and classify WHICH KIND of speaker property it is, if any. Reason briefly, "
+    'then output ONLY JSON: {"reasoning": "...", "label": "<= 8 words naming the shared '
+    'property", "speaker_property": "language" | "register_style" | '
+    '"identity_disposition" | "none" | "unclear"}. '
+    "speaker_property is MUTUALLY EXCLUSIVE — choose exactly ONE: "
+    "language = the shared property is which natural language / script the answers are "
+    "written in. "
+    "register_style = the formality, tone, genre, or verbosity register of the answers. "
+    "identity_disposition = who the speaker IS or a stable trait/stance of the speaker — "
+    "self-identification, refusal disposition, sycophancy, persona compliance, "
+    "first-person identity. "
+    "none = the shared property is topical content, task type, formatting, markup, or "
+    "code syntax — nothing about the speaker. "
+    "unclear = no coherent shared property is discernible from the examples."
 )
+
+# Sink/massive-activation map (v13 addendum; thresholds stated in the map JSON)
+SINKMAP_POS_CAP = 64  # per-position stats tracked for absolute positions 0..63
+SINKMAP_MIN_OCC = 20  # min occurrences before a position/token-id can classify as sink
+SINKMAP_MIN_RATE = 0.5  # min fraction of occurrences at sink scale
+SINKMAP_TOP_DIMS = 30  # rogue dims reported per criterion
 PRIOR_ABSTRACTION = PROJECT_ROOT / "eval_results/issue_1482/feature_correlates/abstraction.json"
 
 CELL_MODEL = {
@@ -280,6 +306,46 @@ def delta_bootstrap(
     }
 
 
+def sinkmap_min_occ(n_rows_used: int) -> int:
+    """Occurrence floor for sink classification, derived from REALIZED map rows.
+
+    Production (>=40 rows) uses SINKMAP_MIN_OCC; a tiny smoke subsample scales
+    the floor down (never below 3) so the map stays derivable at smoke n — the
+    gate-calibration / realized-slice-arithmetic discipline (gotchas.md).
+    """
+    return min(SINKMAP_MIN_OCC, max(3, n_rows_used // 2))
+
+
+def derive_sink_sets(
+    pos_occ: np.ndarray,
+    pos_sink: np.ndarray,
+    tok_occ: np.ndarray,
+    tok_sink: np.ndarray,
+    min_occ: int,
+    min_rate: float = SINKMAP_MIN_RATE,
+) -> dict:
+    """Sink-map accumulators -> exclusion sets (v13 addendum).
+
+    A position/token-id classifies as sink when it occurs >= min_occ times AND
+    carries sink-scale norms on >= min_rate of its occurrences. BOTH sets empty
+    => `exclusion_source: heuristic_fallback` (the per-row 10x-median heuristic,
+    LABELED — never silent; plan v13 sink-map bullet).
+    """
+    with np.errstate(invalid="ignore", divide="ignore"):
+        pos_rate = pos_sink / np.maximum(pos_occ, 1)
+        tok_rate = tok_sink / np.maximum(tok_occ, 1)
+    sink_positions = np.where((pos_occ >= min_occ) & (pos_rate >= min_rate))[0].astype(np.int64)
+    sink_token_ids = np.where((tok_occ >= min_occ) & (tok_rate >= min_rate))[0].astype(np.int64)
+    fallback = sink_positions.size == 0 and sink_token_ids.size == 0
+    return {
+        "sink_positions": sink_positions,
+        "sink_token_ids": sink_token_ids,
+        "exclusion_source": "heuristic_fallback" if fallback else "sink_map",
+        "min_occ": int(min_occ),
+        "min_rate": float(min_rate),
+    }
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -302,6 +368,12 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--retest-n", type=int, default=FC.RETEST_N)
     ap.add_argument("--skip-judge", action="store_true", help="skip phase C entirely")
     ap.add_argument("--capture-batch", type=int, default=8)
+    ap.add_argument(
+        "--sinkmap-rows",
+        type=int,
+        default=256,
+        help="row subsample for the sink/massive-activation map (capped at n_rows)",
+    )
     ap.add_argument("--chunk-rows", type=int, default=256, help="rows per persisted chunk")
     ap.add_argument("--fitness-tokens", type=int, default=250_000)
     ap.add_argument("--need-gb", type=float, default=10.0, help="out-root headroom floor")
@@ -310,6 +382,7 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--gate-probes", action="store_true")
     # worker mode (internal fan-out; CVD pinned in the launcher env per cell)
     ap.add_argument("--worker-capture", action="store_true", help=argparse.SUPPRESS)
+    ap.add_argument("--worker-sinkmap", action="store_true", help=argparse.SUPPRESS)
     ap.add_argument("--cell", default="", help=argparse.SUPPRESS)
     ap.add_argument("--rows-file", type=Path, default=None, help=argparse.SUPPRESS)
     ap.add_argument("--row-start", type=int, default=0, help=argparse.SUPPRESS)
@@ -421,6 +494,32 @@ def run_gate_probes() -> None:
         return sae.fve_l0(torch.ones(1, 3))
 
     expect("fve_l0_lt2_inliers", _fve_one_row, exc=ValueError)
+    # v13 additions: sink-map derivation gates + speaker_property validator
+    occ = np.array([30.0, 30.0, 5.0])
+    snk = np.array([30.0, 3.0, 5.0])
+    expect(
+        "sinkmap_sets_derived",
+        lambda: int(
+            derive_sink_sets(occ, snk, np.zeros(4), np.zeros(4), min_occ=20)["sink_positions"].size
+        ),
+    )
+    expect(
+        "sinkmap_empty_heuristic_fallback",
+        lambda: derive_sink_sets(np.zeros(2), np.zeros(2), np.zeros(4), np.zeros(4), min_occ=20)[
+            "exclusion_source"
+        ],
+    )
+    expect("sinkmap_min_occ_smoke_floor", lambda: sinkmap_min_occ(12))
+    expect(
+        "speaker_out_of_set_is_content_drop",
+        lambda: _validate_speaker({"speaker_property": "persona", "label": "x"}),
+    )
+    expect(
+        "speaker_valid_label",
+        lambda: _validate_speaker({"speaker_property": "Identity_Disposition", "label": "x"})[
+            "speaker_property"
+        ],
+    )
     for name, outcome in probes:
         print(f"[gate-probe] {name}: {outcome}", flush=True)
     print(f"[gate-probe] {len(probes)} gates exercised", flush=True)
@@ -690,7 +789,20 @@ def worker_capture(args: argparse.Namespace) -> int:
     ).to(device)
     model.eval()
     sae = BatchTopKSAE.load(k=SAE_K, device=device, cache_dir=args.out_root / "sae_cache")
-    _log(f"[phase=capture cell={cell} {tag}] model+SAE loaded in {time.time() - t0:.0f}s")
+    # v13: the sink-exclusion position/token-id sets come from the sink MAP
+    # (fail-loud if the map phase has not run; heuristic only as the map's
+    # labeled empty-map fallback).
+    sink_tok_set, sink_pos_set, sink_src = load_sink_exclusion(args.out_root, cell)
+    sink_tok_arr = (
+        np.fromiter(sink_tok_set, dtype=np.int64) if sink_tok_set else np.zeros(0, np.int64)
+    )
+    sink_pos_arr = (
+        np.fromiter(sink_pos_set, dtype=np.int64) if sink_pos_set else np.zeros(0, np.int64)
+    )
+    _log(
+        f"[phase=capture cell={cell} {tag}] model+SAE loaded in {time.time() - t0:.0f}s; "
+        f"sink exclusion source={sink_src} (pos={len(sink_pos_set)} tok={len(sink_tok_set)})"
+    )
 
     boundary = parent._boundary_suffix(prompt_format)
     rng = np.random.default_rng(args.seed + 1000 * args.shard_idx)
@@ -769,7 +881,9 @@ def worker_capture(args: argparse.Namespace) -> int:
                         )
                     hook_verified = True
                     _log(f"[phase=capture cell={cell} {tag}] hook==hidden_states[20] verified")
-                for local_i, (pos, r) in enumerate(zip(positions, kept_rows, strict=True)):
+                for local_i, (row_tok_ids, pos, r) in enumerate(
+                    zip(batch_ids, positions, kept_rows, strict=True)
+                ):
                     n_total = pos["n_total"]
                     row_h = h19[local_i, :n_total, :]
                     a0, a1 = pos["answer_start"], pos["answer_end"]
@@ -787,27 +901,40 @@ def worker_capture(args: argparse.Namespace) -> int:
                     )
                     ans_h = row_h[a0:a1, :]
                     ans_f = sae.encode(ans_h)
-                    # v12 taxonomy control (1): exclude attention-sink (massive-norm)
-                    # answer tokens from the PRIMARY pooling (reference 10x-median
-                    # semantics via token_inlier_mask); keep the all-token MEAN as
-                    # the SECONDARY robustness read. BOS never enters the answer
-                    # span (answer_start >> BOS_OFFSET on dense-core rows).
-                    inlier = token_inlier_mask(ans_h)
+                    # v13 sink exclusion (supersedes the v12 per-row heuristic):
+                    # the PRIMARY pooling excludes the sink MAP's position +
+                    # token-id sets; the per-row 10x-median heuristic runs ONLY
+                    # as the map's LABELED empty-map fallback. The all-token
+                    # MEAN stays the SECONDARY robustness read. BOS never
+                    # enters the answer span (answer_start >> BOS_OFFSET).
+                    if sink_src == "heuristic_fallback":
+                        inlier = token_inlier_mask(ans_h)
+                        row_mask = (
+                            token_inlier_mask(row_h[BOS_OFFSET:])
+                            if n_total > BOS_OFFSET + 1
+                            else None
+                        )
+
+                        def _sink_flag(p: int, mask=row_mask) -> bool:
+                            if p < BOS_OFFSET:
+                                return True
+                            return mask is not None and not bool(mask[p - BOS_OFFSET])
+                    else:
+                        ans_ids = np.asarray(row_tok_ids[a0:a1], dtype=np.int64)
+                        sink_np = np.isin(ans_ids, sink_tok_arr) | np.isin(
+                            np.arange(a0, a1, dtype=np.int64), sink_pos_arr
+                        )
+                        inlier = torch.from_numpy(~sink_np).to(ans_f.device)
+
+                        def _sink_flag(p: int, ids=row_tok_ids) -> bool:
+                            return p in sink_pos_set or int(ids[p]) in sink_tok_set
+
                     n_sink = int((~inlier).sum().item())
                     if not bool(inlier.any()):
                         inlier = torch.ones_like(inlier)  # degenerate: keep all (recorded)
                     pooled = pool_answer_features(ans_f[inlier])
                     mean_all = ans_f.mean(0)
                     sp = sparsify(pooled)
-                    # sink-adjacency flags for the end-token reads (counted in phase B)
-                    row_mask = (
-                        token_inlier_mask(row_h[BOS_OFFSET:]) if n_total > BOS_OFFSET + 1 else None
-                    )
-
-                    def _sink_flag(p: int, mask=row_mask) -> bool:
-                        if p < BOS_OFFSET:
-                            return True
-                        return mask is not None and not bool(mask[p - BOS_OFFSET])
 
                     for key, single in (("pe", pe_ce[0]), ("ce", pe_ce[1])):
                         nz = torch.nonzero(single != 0, as_tuple=False).squeeze(-1)
@@ -857,6 +984,7 @@ def worker_capture(args: argparse.Namespace) -> int:
         "fitness_tokens": int(fit_arr.shape[0]),
         "device": device,
         "dtype": args.dtype,
+        "sink_exclusion_source": sink_src,
     }
     done_path.write_text(json.dumps(done, indent=1))
     _log(
@@ -1143,6 +1271,346 @@ def run_fitness_gate(out_root: Path, cell: str, device: str) -> dict:
     _log(f"[phase=fitness cell={cell}] fve={fve:.4f} l0={l0:.1f} pass={verdict} diag={diag}")
     del sae
     return rec
+
+
+# ---------------------------------------------------------------------------
+# Phase A0: sink/massive-activation map (v13 addendum — committed deliverable)
+# ---------------------------------------------------------------------------
+
+
+def sink_map_paths(out_root: Path, cell: str) -> tuple[Path, Path]:
+    """(json, npz) artifact paths for a cell's sink map."""
+    d = out_root / "sink_map"
+    return d / f"sink_map_{cell}.json", d / f"sink_map_{cell}.npz"
+
+
+def load_sink_exclusion(out_root: Path, cell: str) -> tuple[set[int], set[int], str]:
+    """Map-derived sink exclusion sets for the capture workers.
+
+    Fail-loud on a missing map (the sink-map phase MUST precede capture);
+    returns (sink_token_ids, sink_positions, exclusion_source). An
+    `exclusion_source == "heuristic_fallback"` (both sets empty) tells the
+    worker to use the LABELED per-row 10x-median heuristic instead.
+    """
+    json_path, _ = sink_map_paths(out_root, cell)
+    if not json_path.exists():
+        raise RuntimeError(
+            f"sink map missing for {cell} at {json_path} — the sink-map phase must run first"
+        )
+    rec = json.loads(json_path.read_text())
+    return (
+        {int(t) for t in rec["sink_token_ids"]},
+        {int(p) for p in rec["sink_positions"]},
+        str(rec["exclusion_source"]),
+    )
+
+
+def worker_sinkmap(args: argparse.Namespace) -> int:
+    """Sink/massive-activation map over a dense-core row subsample (ONE worker).
+
+    Per row: layer-19 per-token L2 norms; sink = norm > OUTLIER_NORM_FACTOR x
+    post-BOS row-median (reference 10x-median semantics). Batched accumulators:
+    per-ABSOLUTE-POSITION occ/sink/mean-norm (cap SINKMAP_POS_CAP), per-TOKEN-ID
+    occ/sink, per-DIM mu/sigma/|x|max over ALL tokens (gamma = ||mu||/||sigma||),
+    sink-vs-content mean-direction sums, per-SEGMENT (bos/prefix/query/answer)
+    sink rates. Derives the exclusion sets via `derive_sink_sets` (occurrence
+    floor scaled to REALIZED rows via `sinkmap_min_occ`) and writes
+    sink_map_{cell}.npz then .json (json last == map complete; resume key).
+    """
+    import torch
+
+    if args.threads > 0:
+        torch.set_num_threads(args.threads)
+    device = args.device
+    if device == "auto":
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+    dtype = torch.bfloat16 if args.dtype == "bfloat16" else torch.float32
+    cell = args.cell
+    model_name, revision, prompt_format = CELL_MODEL[cell]
+    json_path, npz_path = sink_map_paths(args.out_root, cell)
+    if json_path.exists():
+        _log(f"[phase=sinkmap cell={cell}] map exists — skip")
+        return 0
+    json_path.parent.mkdir(parents=True, exist_ok=True)
+    all_rows = read_rows_file(args.rows_file)
+    take = min(max(1, args.sinkmap_rows), len(all_rows))
+    stride = max(1, len(all_rows) // take)
+    rows = all_rows[::stride][:take]
+
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    t0 = time.time()
+    tokenizer = AutoTokenizer.from_pretrained(model_name, revision=revision)
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name, revision=revision, torch_dtype=dtype, low_cpu_mem_usage=True
+    ).to(device)
+    model.eval()
+    _log(
+        f"[phase=sinkmap cell={cell}] model loaded in {time.time() - t0:.0f}s; "
+        f"rows={len(rows)}/{len(all_rows)} (stride={stride})"
+    )
+    boundary = parent._boundary_suffix(prompt_format)
+    hidden = int(model.config.hidden_size)
+    vocab = int(model.config.vocab_size)
+    pos_occ = np.zeros(SINKMAP_POS_CAP, dtype=np.float64)
+    pos_sink = np.zeros(SINKMAP_POS_CAP, dtype=np.float64)
+    pos_norm_sum = np.zeros(SINKMAP_POS_CAP, dtype=np.float64)
+    tok_occ = np.zeros(vocab, dtype=np.float64)
+    tok_sink = np.zeros(vocab, dtype=np.float64)
+    dim_sum = np.zeros(hidden, dtype=np.float64)
+    dim_sumsq = np.zeros(hidden, dtype=np.float64)
+    dim_absmax = np.zeros(hidden, dtype=np.float64)
+    sink_vec = np.zeros(hidden, dtype=np.float64)
+    content_vec = np.zeros(hidden, dtype=np.float64)
+    n_dim_tokens = 0
+    n_sink_tok = 0
+    n_content_tok = 0
+    seg_stats: dict[str, list[int]] = {s: [0, 0] for s in ("bos", "prefix", "query", "answer")}
+    n_used = 0
+    dropped = 0
+    batch_size = max(1, args.capture_batch)
+    for b_start in range(0, len(rows), batch_size):
+        b_rows = rows[b_start : b_start + batch_size]
+        batch_ids, positions = [], []
+        for r in b_rows:
+            try:
+                row_ids, pos = parent._capture_row_ids_and_positions(
+                    tokenizer,
+                    r["prefix_text"],
+                    r["prompt"],
+                    r["completion"],
+                    boundary,
+                    row_label=r["row_id"],
+                )
+            except ValueError:
+                dropped += 1
+                continue
+            batch_ids.append(row_ids)
+            positions.append(pos)
+        if not batch_ids:
+            continue
+        inputs = tokenizer.pad({"input_ids": batch_ids}, return_tensors="pt", padding=True)
+        input_ids = inputs["input_ids"].to(device)
+        attention_mask = inputs["attention_mask"].to(device)
+        captured: dict = {}
+        with torch.no_grad():
+            _forward_layer19(model, input_ids, attention_mask, captured)
+            h19 = captured["h"]
+            for local_i, (pos, row_ids) in enumerate(zip(positions, batch_ids, strict=True)):
+                n_total = pos["n_total"]
+                row_h = h19[local_i, :n_total, :].to(torch.float32)
+                norms = row_h.norm(dim=-1)
+                med_pool = norms[BOS_OFFSET:] if n_total > BOS_OFFSET + 1 else norms
+                med = float(med_pool.median())
+                sink = (norms > OUTLIER_NORM_FACTOR * med).cpu().numpy()
+                norms_np = norms.cpu().numpy().astype(np.float64)
+                cap = min(n_total, SINKMAP_POS_CAP)
+                pos_occ[:cap] += 1.0
+                pos_sink[:cap] += sink[:cap].astype(np.float64)
+                pos_norm_sum[:cap] += norms_np[:cap]
+                ids_np = np.asarray(row_ids, dtype=np.int64)
+                np.add.at(tok_occ, ids_np, 1.0)
+                np.add.at(tok_sink, ids_np, sink.astype(np.float64))
+                row_np = row_h.cpu().numpy().astype(np.float64)
+                dim_sum += row_np.sum(axis=0)
+                dim_sumsq += (row_np**2).sum(axis=0)
+                dim_absmax = np.maximum(dim_absmax, np.abs(row_np).max(axis=0))
+                n_dim_tokens += int(n_total)
+                if sink.any():
+                    sink_vec += row_np[sink].sum(axis=0)
+                    n_sink_tok += int(sink.sum())
+                if (~sink).any():
+                    content_vec += row_np[~sink].sum(axis=0)
+                    n_content_tok += int((~sink).sum())
+                a0, a1 = pos["answer_start"], pos["answer_end"]
+                segs = {
+                    "bos": (0, min(BOS_OFFSET, n_total)),
+                    "prefix": (min(BOS_OFFSET, n_total), pos["prefix_end"] + 1),
+                    "query": (pos["prefix_end"] + 1, pos["context_end"] + 1),
+                    "answer": (a0, a1),
+                }
+                for name, (s, e) in segs.items():
+                    if e > s:
+                        seg_stats[name][0] += e - s
+                        seg_stats[name][1] += int(sink[s:e].sum())
+                n_used += 1
+        captured.clear()
+        del h19, input_ids, attention_mask
+        _log(
+            f"[phase=sinkmap cell={cell}] rows {min(b_start + batch_size, len(rows))}"
+            f"/{len(rows)} elapsed={time.time() - t0:.0f}s"
+        )
+    if n_used == 0:
+        raise RuntimeError(f"sink map for {cell}: zero usable rows (dropped={dropped})")
+    mu = dim_sum / max(1, n_dim_tokens)
+    var = np.maximum(dim_sumsq / max(1, n_dim_tokens) - mu**2, 0.0)
+    sigma = np.sqrt(var)
+    gamma = float(np.linalg.norm(mu) / max(float(np.linalg.norm(sigma)), 1e-12))
+    min_occ = sinkmap_min_occ(n_used)
+    sets = derive_sink_sets(pos_occ, pos_sink, tok_occ, tok_sink, min_occ=min_occ)
+    ratio = np.abs(mu) / np.maximum(sigma, 1e-12)
+    top_ratio = np.argsort(ratio)[::-1][:SINKMAP_TOP_DIMS]
+    top_absmax = np.argsort(dim_absmax)[::-1][:SINKMAP_TOP_DIMS]
+
+    def _dim_rows(idx: np.ndarray) -> list[dict]:
+        return [
+            {
+                "dim": int(d),
+                "mu": float(mu[d]),
+                "sigma": float(sigma[d]),
+                "absmax": float(dim_absmax[d]),
+            }
+            for d in idx.tolist()
+        ]
+
+    def _unit(v: np.ndarray, n: int) -> tuple[np.ndarray, float] | None:
+        if n <= 0:
+            return None
+        m = v / n
+        nrm = float(np.linalg.norm(m))
+        return m / max(nrm, 1e-12), nrm
+
+    sink_dir = _unit(sink_vec, n_sink_tok)
+    content_dir = _unit(content_vec, n_content_tok)
+    dir_cos = (
+        float(np.dot(sink_dir[0], content_dir[0]))
+        if sink_dir is not None and content_dir is not None
+        else None
+    )
+    tok_rate = tok_sink / np.maximum(tok_occ, 1.0)
+    elig = np.where(tok_occ >= min_occ)[0]
+    tok_order = elig[np.argsort(tok_rate[elig])[::-1]][:50]
+    sink_tok_set = {int(t) for t in sets["sink_token_ids"].tolist()}
+    token_table = [
+        {
+            "token_id": int(t),
+            "occ": int(tok_occ[t]),
+            "sink_rate": float(tok_rate[t]),
+            "piece": repr(tokenizer.decode([int(t)]))[:16],
+            "is_sink": int(t) in sink_tok_set,
+        }
+        for t in tok_order.tolist()
+        if tok_rate[t] > 0
+    ]
+    pos_rate = pos_sink / np.maximum(pos_occ, 1.0)
+    position_table = [
+        {"position": int(p), "occ": int(pos_occ[p]), "sink_rate": float(pos_rate[p])}
+        for p in np.where(pos_rate > 0)[0].tolist()
+    ]
+    if sets["exclusion_source"] == "heuristic_fallback":
+        _log(
+            f"[phase=sinkmap cell={cell}] WARNING: map yielded NO sink positions/token-ids"
+            " — capture uses the LABELED per-row 10x-median heuristic fallback"
+        )
+    payload = {
+        "mu": mu.astype(np.float32),
+        "sigma": sigma.astype(np.float32),
+        "dim_absmax": dim_absmax.astype(np.float32),
+        "pos_occ": pos_occ,
+        "pos_sink": pos_sink,
+        "pos_norm_mean": pos_norm_sum / np.maximum(pos_occ, 1.0),
+        "sink_dir_unit": (
+            sink_dir[0].astype(np.float32) if sink_dir is not None else np.zeros(hidden, np.float32)
+        ),
+        "content_dir_unit": (
+            content_dir[0].astype(np.float32)
+            if content_dir is not None
+            else np.zeros(hidden, np.float32)
+        ),
+        "sink_positions": sets["sink_positions"],
+        "sink_token_ids": sets["sink_token_ids"],
+    }
+    tmp = npz_path.with_name(npz_path.stem + ".tmp.npz")  # suffix stays .npz (savez gotcha)
+    with open(tmp, "wb") as fh:
+        np.savez(fh, **payload)
+    os.replace(tmp, npz_path)
+    rec = {
+        "cell": cell,
+        "n_rows_used": int(n_used),
+        "n_rows_dropped": int(dropped),
+        "n_rows_total_cell": len(all_rows),
+        "n_tokens": int(n_dim_tokens),
+        "gamma_layer19_all_tokens": gamma,
+        "sink_norm_factor": float(OUTLIER_NORM_FACTOR),
+        "min_occ_effective": int(min_occ),
+        "min_rate": float(SINKMAP_MIN_RATE),
+        "sink_positions": [int(p) for p in sets["sink_positions"].tolist()],
+        "sink_token_ids": [int(t) for t in sets["sink_token_ids"].tolist()],
+        "exclusion_source": sets["exclusion_source"],
+        "n_sink_tokens": int(n_sink_tok),
+        "n_content_tokens": int(n_content_tok),
+        "sink_content_dir_cosine": dir_cos,
+        "sink_dir_norm": sink_dir[1] if sink_dir is not None else None,
+        "content_dir_norm": content_dir[1] if content_dir is not None else None,
+        "segment_sink_rates": {
+            k: {"n_tokens": int(v[0]), "sink_rate": (v[1] / v[0]) if v[0] else None}
+            for k, v in seg_stats.items()
+        },
+        "rogue_dims_by_mu_over_sigma": _dim_rows(top_ratio),
+        "rogue_dims_by_absmax": _dim_rows(top_absmax),
+        "top_sink_tokens": token_table,
+        "position_sink_table": position_table,
+        "repro": _repro_meta(),
+    }
+    json_path.write_text(json.dumps(rec, indent=1))
+    _log(
+        f"[phase=sinkmap cell={cell}] done: gamma={gamma:.3f} "
+        f"sink_positions={len(rec['sink_positions'])} sink_token_ids={len(rec['sink_token_ids'])} "
+        f"source={rec['exclusion_source']} ({time.time() - t0:.0f}s)"
+    )
+    return 0
+
+
+def run_sinkmap_subprocess(out_root: Path, cell: str, rows_path: Path, args) -> None:
+    """Sink-map phase as ONE CVD-pinned worker subprocess (mirrors the capture
+    fan-out shape; resume-skipped on the map JSON; fail-loud with a log tail)."""
+    json_path, _ = sink_map_paths(out_root, cell)
+    if json_path.exists():
+        _log(f"[phase=sinkmap cell={cell}] map exists — skip")
+        return
+    gpus = visible_gpu_ids()
+    env = {**os.environ}
+    gpu_flag = -1
+    if gpus:
+        env["CUDA_VISIBLE_DEVICES"] = str(gpus[0])
+        gpu_flag = gpus[0]
+    cmd = [
+        sys.executable,
+        str(Path(__file__).resolve()),
+        "--worker-sinkmap",
+        "--cell",
+        cell,
+        "--rows-file",
+        str(rows_path),
+        "--out-root",
+        str(out_root),
+        "--device",
+        args.device,
+        "--dtype",
+        args.dtype,
+        "--capture-batch",
+        str(args.capture_batch),
+        "--sinkmap-rows",
+        str(args.sinkmap_rows),
+        "--seed",
+        str(args.seed),
+        "--threads",
+        str(args.threads),
+        "--gpu-id",
+        str(gpu_flag),
+    ]
+    log_dir = out_root / "work" / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / f"sinkmap_{cell}.log"
+    with open(log_path, "w") as fh:
+        rc = subprocess.run(cmd, stdout=fh, stderr=subprocess.STDOUT, env=env).returncode
+    if rc != 0:
+        tail = "\n".join(log_path.read_text(errors="replace").split("\n")[-80:])
+        _log(f"[phase=sinkmap cell={cell}] FAILED rc={rc}; log tail:\n{tail}")
+        raise RuntimeError(f"sink-map worker failed for {cell} (rc={rc})")
+    _log(f"[phase=sinkmap cell={cell}] done log={log_path}")
 
 
 # ---------------------------------------------------------------------------
@@ -1587,7 +2055,8 @@ def rb_cosine_join(feats: np.ndarray, out_root: Path, n_draws: int, seed: int, d
 
 
 # ---------------------------------------------------------------------------
-# Phase C: judge (level rubric VERBATIM + persona_related rubric, separate calls)
+# Phase C: judge (level rubric VERBATIM + speaker_property 5-way rubric,
+# separate calls — v13 rubric amendment)
 # ---------------------------------------------------------------------------
 
 
@@ -1595,8 +2064,9 @@ def assert_rubric_parity() -> dict[str, str]:
     """Level rubric byte-parity with the #1482 reference round (import-not-copy).
 
     `FC.JUDGE_SYSTEM` must hash to the reference round's recorded value and the
-    judge model/max_tokens pins must match; the NEW persona rubric records its
-    OWN hash (a stated deviation, one behavior per call — llm-judging rule 8).
+    judge model/max_tokens pins must match; the NEW speaker_property rubric
+    records its OWN hash — no parity claim (a stated deviation, one behavior
+    per call — llm-judging rule 8).
     """
     base = hashlib.sha256(FC.JUDGE_SYSTEM.encode()).hexdigest()[:16]
     prior = json.loads(PRIOR_ABSTRACTION.read_text())
@@ -1604,26 +2074,27 @@ def assert_rubric_parity() -> dict[str, str]:
     assert base == want, f"reference rubric drift: {base} != {want}"
     assert FC.JUDGE_MODEL == prior["judge_model"], "judge model drift"
     assert FC.JUDGE_MAX_TOKENS == prior["max_tokens"], "max_tokens drift"
-    persona = hashlib.sha256(PERSONA_JUDGE_SYSTEM.encode()).hexdigest()[:16]
-    _log(f"[phase=judge] rubric parity OK: level sha16={base} persona sha16={persona}")
-    return {"level_rubric_sha16": base, "persona_rubric_sha16": persona}
+    speaker = hashlib.sha256(SPEAKER_JUDGE_SYSTEM.encode()).hexdigest()[:16]
+    _log(f"[phase=judge] rubric parity OK: level sha16={base} speaker sha16={speaker}")
+    return {"level_rubric_sha16": base, "speaker_rubric_sha16": speaker}
 
 
-def _validate_persona(res: object) -> dict | None:
-    """Drop-never-coerce validator for the persona_related rubric return."""
+def _validate_speaker(res: object) -> dict | None:
+    """Drop-never-coerce validator for the speaker_property rubric return.
+
+    An out-of-set `speaker_property` value is a CONTENT drop (returns None) —
+    never coerced into a class (v13 amendment; llm-judging rule 9).
+    """
     if not isinstance(res, dict) or res.get("error"):
         return None
-    pr = res.get("persona_related")
-    if isinstance(pr, str):
-        norm = pr.strip().lower()
-        if norm in ("true", "false"):
-            pr = norm == "true"
-        else:
-            return None
-    if not isinstance(pr, bool):
+    sp = res.get("speaker_property")
+    if not isinstance(sp, str):
+        return None
+    norm = sp.strip().lower()
+    if norm not in SPEAKER_CLASSES:
         return None
     lab = res.get("label")
-    return {"persona_related": bool(pr), "label": str(lab)[:120] if lab else ""}
+    return {"speaker_property": norm, "label": str(lab)[:120] if lab else ""}
 
 
 def select_judge_sets(
@@ -1775,7 +2246,7 @@ def run_judge_phase(
     out: dict = {"rubric_hashes": hashes, "judge_model": FC.JUDGE_MODEL}
     rubrics = {
         "level": (FC.JUDGE_SYSTEM, FC._validate_level, "level"),
-        "persona": (PERSONA_JUDGE_SYSTEM, _validate_persona, "persona_related"),
+        "speaker": (SPEAKER_JUDGE_SYSTEM, _validate_speaker, "speaker_property"),
     }
     rng = np.random.default_rng(FC.SAMPLE_SEED)
     rt_pick = rng.choice(len(items), size=min(retest_n, len(items)), replace=False)
@@ -2232,8 +2703,10 @@ def _judge_worker(box: dict, sets, feats, y_mean, completions, work, judge_limit
 
 
 def _delta_block(judge_out: dict, sets: dict, feats: np.ndarray, dense_latent, args) -> dict:
-    """Headline Delta contrast (+ dense-latent-excluded variant + query-tail rate)."""
-    labels = judge_out["persona"]["labels"]
+    """Headline Delta on the identity_disposition SUBSET only (v13 amendment)
+    (+ dense-latent-excluded variant + per-class speaker_property rates per set
+    — language and register_style reported separately, NEVER pooled)."""
+    labels = judge_out["speaker"]["labels"]
 
     def _flags(pos_arr: np.ndarray, exclude_dense: bool = False) -> np.ndarray:
         vals = []
@@ -2242,13 +2715,26 @@ def _delta_block(judge_out: dict, sets: dict, feats: np.ndarray, dense_latent, a
                 continue
             lab = labels.get(str(int(feats[int(p)])))
             if lab is not None:
-                vals.append(1.0 if lab["persona_related"] else 0.0)
+                vals.append(1.0 if lab["speaker_property"] == "identity_disposition" else 0.0)
         return np.array(vals, dtype=np.float64)
+
+    def _class_rates(pos_arr: np.ndarray) -> dict:
+        cls = [
+            labels[str(int(feats[int(p)]))]["speaker_property"]
+            for p in pos_arr.tolist()
+            if str(int(feats[int(p)])) in labels
+        ]
+        n = len(cls)
+        return {
+            "n_labeled": n,
+            **{c: (cls.count(c) / n if n else None) for c in SPEAKER_CLASSES},
+        }
 
     tail = _flags(sets["tail_prefix"])
     ctrl = _flags(sets["ctrl_activity_matched"])
     qtail = _flags(sets["ctrl_query_tail"])
     out = {
+        "headline_class": "identity_disposition",
         "delta": delta_bootstrap(tail, ctrl, args.bootstrap_draws, args.seed),
         "delta_dense_latent_excluded": delta_bootstrap(
             _flags(sets["tail_prefix"], exclude_dense=True),
@@ -2256,7 +2742,11 @@ def _delta_block(judge_out: dict, sets: dict, feats: np.ndarray, dense_latent, a
             args.bootstrap_draws,
             args.seed + 1,
         ),
-        "rate_query_tail": float(qtail.mean()) if qtail.size else None,
+        "rate_query_tail_identity": float(qtail.mean()) if qtail.size else None,
+        "per_class_rates": {
+            name: _class_rates(sets[name])
+            for name in ("tail_prefix", "ctrl_activity_matched", "ctrl_query_tail")
+        },
         "n_labeled": {"tail": int(tail.size), "ctrl": int(ctrl.size), "qtail": int(qtail.size)},
     }
     return out
@@ -2335,6 +2825,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.worker_capture:
         return worker_capture(args)
+    if args.worker_sinkmap:
+        return worker_sinkmap(args)
 
     import torch
 
@@ -2360,6 +2852,7 @@ def main(argv: list[str] | None = None) -> int:
     metas: dict[str, dict] = {}
     for cell in cells:
         rows_path, meta = build_rows_file(out_root, stage, cell, args)
+        run_sinkmap_subprocess(out_root, cell, rows_path, args)  # v13: map BEFORE capture
         run_capture_fanout(out_root, cell, rows_path, args)
         shard_dir = out_root / "features" / cell
         n_dropped = sum(
@@ -2375,6 +2868,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     # phase-A upload BEFORE any fit consumes the stores (#825 ordering)
     _upload_tree(out_root, "features", args, "phaseA-stores")
+    _upload_tree(out_root, "sink_map", args, "phaseA-sinkmap")  # v13 committed deliverable
     _upload_tree(out_root, "out", args, "phaseA-fitness")
     if "cell_inst_own" in gate_records and not gate_records["cell_inst_own"]["pass"]:
         _log("[phase=gate] K1 HALT: instruct-arm SAE fitness gate FAILED (values uploaded)")
@@ -2487,11 +2981,24 @@ def main(argv: list[str] | None = None) -> int:
     template = _template_block(out_root, kept, results)
     (out_dir / "template_control.json").write_text(json.dumps(template, indent=1))
 
+    sink_summary: dict[str, dict] = {}
+    for c in cells:
+        jp, _ = sink_map_paths(out_root, c)
+        if jp.exists():
+            m = json.loads(jp.read_text())
+            sink_summary[c] = {
+                "gamma_layer19_all_tokens": m["gamma_layer19_all_tokens"],
+                "exclusion_source": m["exclusion_source"],
+                "min_occ_effective": m["min_occ_effective"],
+                "n_sink_positions": len(m["sink_positions"]),
+                "n_sink_token_ids": len(m["sink_token_ids"]),
+            }
     summary = {
         "cells_requested": cells,
         "cells_kept": kept,
         "gates": {c: {k: gate_records[c][k] for k in ("fve", "l0", "pass")} for c in cells},
         "gamma_layer19": {c: gate_records[c].get("gamma_layer19") for c in cells},
+        "sink_map": sink_summary,
         "headline": labels_payload.get("headline"),
         "wall_s": time.time() - t_run0,
         "args": {

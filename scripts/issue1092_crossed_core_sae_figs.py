@@ -5,13 +5,17 @@ Inputs: the `out/` digest tree the dispatcher wrote (harvested from HF or local
 `data/issue_1092/crossed_core_sae/out`). Outputs: PNG+PDF+meta under
 `figures/issue_1092/crossed_core_sae/` (override with --fig-dir for smoke).
 
-Hero figures (plan section 6): (1) per-feature scatter prefix-share x
-cross-query consistency with judged features colored by persona_related;
-(2) tail-composition bars (persona_related rate per judged set, bootstrap CIs).
-Exploratory dump: share histograms + selection-null lines, per-arm per-feature
-R^2 distributions, four-object matched-table R^2 bars (+ identity+bias line),
-|cos(W_dec, r_B)| tail curves vs the selection-symmetric null (raw + centered),
-induced vs independently-fit averaged comparison.
+Hero figures (plan section 6, v13 rubric amendment): (1) per-feature scatter
+prefix-share x cross-query consistency with judged features colored by
+speaker_property CLASS (5-way); (2) tail-composition bars — per-class
+speaker_property rates per judged set (identity_disposition is the headline
+class; language / register_style shown separately, never pooled), bootstrap
+CIs. Plus the v13 sink/massive-activation map figure (per-position sink rate +
+top rogue dims + gamma). Exploratory dump: share histograms + selection-null
+lines, per-arm per-feature R^2 distributions, four-object matched-table R^2
+bars (+ identity+bias line), |cos(W_dec, r_B)| tail curves vs the
+selection-symmetric null (raw + centered), induced vs independently-fit
+averaged comparison.
 """
 
 from __future__ import annotations
@@ -42,6 +46,17 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
 
 CELLS = ("cell_inst_own", "cell_pre_own")
 
+# ONE color = ONE meaning across every figure: speaker_property class -> palette
+# role (paper_palette_role accepts only accent/baseline/control/neutral/primary).
+SPEAKER_CLASSES = ("identity_disposition", "language", "register_style", "none", "unclear")
+CLASS_ROLE = {
+    "identity_disposition": "accent",
+    "language": "primary",
+    "register_style": "control",
+    "none": "baseline",
+    "unclear": "neutral",
+}
+
 
 def _bootstrap_rate_ci(flags: np.ndarray, n_draws: int = 10_000, seed: int = 0):
     if flags.size < 2:
@@ -60,18 +75,28 @@ def fig_hero_scatter(out_dir: Path, fig_dir: Path, labels: dict, cell: str) -> N
     fin = np.isfinite(sp) & np.isfinite(cq)
     fig, ax = plt.subplots(figsize=(7, 5))
     ax.scatter(sp[fin], cq[fin], s=4, alpha=0.15, color=paper_palette_role("neutral"), lw=0)
-    persona = labels.get("persona", {}).get("labels", {})
-    xs_t, ys_t, xs_f, ys_f = [], [], [], []
+    speaker = labels.get("speaker", {}).get("labels", {})
+    buckets: dict[str, tuple[list, list]] = {c: ([], []) for c in SPEAKER_CLASSES}
     for i in np.where(fin)[0]:
-        lab = persona.get(str(int(feats[i])))
+        lab = speaker.get(str(int(feats[i])))
         if lab is None:
             continue
-        (xs_t if lab["persona_related"] else xs_f).append(float(sp[i]))
-        (ys_t if lab["persona_related"] else ys_f).append(float(cq[i]))
-    ax.scatter(xs_f, ys_f, s=14, color=paper_palette_role("baseline"), label="judged: not persona")
-    ax.scatter(
-        xs_t, ys_t, s=18, color=paper_palette_role("accent"), label="judged: persona-related"
-    )
+        xs, ys = buckets[lab["speaker_property"]]
+        xs.append(float(sp[i]))
+        ys.append(float(cq[i]))
+    for cls in SPEAKER_CLASSES:
+        xs, ys = buckets[cls]
+        if not xs:
+            continue
+        ax.scatter(
+            xs,
+            ys,
+            s=18 if cls == "identity_disposition" else 14,
+            color=paper_palette_role(CLASS_ROLE[cls]),
+            edgecolors="black" if cls == "unclear" else "none",
+            linewidths=0.4 if cls == "unclear" else 0.0,
+            label=f"judged: {cls}",
+        )
     order = np.argsort(np.nan_to_num(sp, nan=-1))[::-1][:5]
     for i in order:
         ax.annotate(str(int(feats[i])), (sp[i], cq[i]), fontsize=6, alpha=0.8)
@@ -84,44 +109,96 @@ def fig_hero_scatter(out_dir: Path, fig_dir: Path, labels: dict, cell: str) -> N
 
 
 def fig_tail_bars(out_dir: Path, fig_dir: Path, labels_payload: dict) -> None:
-    persona = labels_payload.get("persona", {}).get("labels", {})
+    """Per-class speaker_property rates per judged set (grouped bars, bootstrap
+    CIs). identity_disposition is the headline class; language/register_style
+    are shown as their OWN bars, never pooled (v13 rubric amendment)."""
+    speaker = labels_payload.get("speaker", {}).get("labels", {})
     sets = labels_payload.get("sets", {})
     names = [
         ("tail_prefix", "top prefix-share"),
         ("ctrl_activity_matched", "activity-matched"),
         ("ctrl_query_tail", "top query-share"),
     ]
-    rates, los, his, xs = [], [], [], []
+    set_classes: list[tuple[str, list[str]]] = []
     for key, disp in names:
-        fids = sets.get(key, [])
-        flags = np.array(
-            [1.0 if persona[str(f)]["persona_related"] else 0.0 for f in fids if str(f) in persona]
-        )
-        if flags.size == 0:
-            continue
-        lo, hi = _bootstrap_rate_ci(flags)
-        rates.append(float(flags.mean()))
-        los.append(max(0.0, float(flags.mean()) - lo) if np.isfinite(lo) else 0.0)
-        his.append(max(0.0, hi - float(flags.mean())) if np.isfinite(hi) else 0.0)
-        xs.append(f"{disp}\n(n={flags.size})")
-    if not rates:
+        cls = [speaker[str(f)]["speaker_property"] for f in sets.get(key, []) if str(f) in speaker]
+        if cls:
+            set_classes.append((f"{disp}\n(n={len(cls)})", cls))
+    if not set_classes:
         return
-    fig, ax = plt.subplots(figsize=(6, 4))
-    colors = [
-        paper_palette_role("accent"),
-        paper_palette_role("control"),
-        paper_palette_role("baseline"),
-    ][: len(rates)]
-    ax.bar(xs, rates, yerr=[los, his], capsize=4, color=colors)
+    fig, ax = plt.subplots(figsize=(8.5, 4.2))
+    n_sets = len(set_classes)
+    width = 0.8 / len(SPEAKER_CLASSES)
+    xbase = np.arange(n_sets)
+    for j, cls_name in enumerate(SPEAKER_CLASSES):
+        rates, los, his = [], [], []
+        for _, cls in set_classes:
+            flags = np.array([1.0 if c == cls_name else 0.0 for c in cls])
+            r = float(flags.mean())
+            lo, hi = _bootstrap_rate_ci(flags)
+            rates.append(r)
+            los.append(max(0.0, r - lo) if np.isfinite(lo) else 0.0)
+            his.append(max(0.0, hi - r) if np.isfinite(hi) else 0.0)
+        ax.bar(
+            xbase + (j - (len(SPEAKER_CLASSES) - 1) / 2) * width,
+            rates,
+            width=width * 0.95,
+            yerr=[los, his],
+            capsize=2,
+            color=paper_palette_role(CLASS_ROLE[cls_name]),
+            label=cls_name,
+        )
+    ax.set_xticks(xbase)
+    ax.set_xticklabels([lbl for lbl, _ in set_classes], fontsize=8)
     hl = labels_payload.get("headline") or {}
     d = (hl.get("delta") or {}).get("delta")
     ci = (hl.get("delta") or {}).get("ci95")
     sub = (
-        f"Delta={d:.3f} CI95={ci}" if isinstance(d, float) and ci else "Delta: insufficient labels"
+        f"identity_disposition Delta={d:.3f} CI95={ci}"
+        if isinstance(d, float) and ci
+        else "identity_disposition Delta: insufficient labels"
     )
-    ax.set_ylabel("persona_related rate")
+    ax.set_ylabel("speaker_property class rate")
     ax.set_title(f"judged tail composition — {sub}")
+    ax.legend(fontsize=7, ncol=2)
     savefig_paper(fig, "hero_tail_composition", dir=fig_dir)
+    plt.close(fig)
+
+
+def fig_sink_map(sinkmap_root: Path, fig_dir: Path, cell: str) -> None:
+    """v13 sink/massive-activation map figure: per-position sink rate + top
+    rogue dims by |x|max, gamma in the title. Skips (with a print) when the
+    cell's map artifacts are absent."""
+    npz_path = sinkmap_root / f"sink_map_{cell}.npz"
+    json_path = sinkmap_root / f"sink_map_{cell}.json"
+    if not npz_path.exists() or not json_path.exists():
+        print(f"[figs] sink map absent for {cell} under {sinkmap_root} — skipped", flush=True)
+        return
+    z = np.load(npz_path, allow_pickle=True)
+    rec = json.loads(json_path.read_text())
+    fig, axes = plt.subplots(1, 2, figsize=(11, 3.8))
+    rate = z["pos_sink"] / np.maximum(z["pos_occ"], 1.0)
+    axes[0].bar(np.arange(rate.size), rate, color=paper_palette_role("primary"), width=1.0)
+    for p in rec["sink_positions"]:
+        if p < rate.size:
+            axes[0].axvline(p, color=paper_palette_role("accent"), lw=0.6, alpha=0.6)
+    axes[0].set_xlabel("absolute token position")
+    axes[0].set_ylabel("sink rate (norm > 10x row median)")
+    axes[0].set_title(
+        f"per-position sink rate (accent = map sink set, n={len(rec['sink_positions'])})"
+    )
+    absmax = z["dim_absmax"]
+    top = np.argsort(absmax)[::-1][:20]
+    axes[1].bar([str(int(d)) for d in top], absmax[top], color=paper_palette_role("control"))
+    axes[1].tick_params(axis="x", rotation=70, labelsize=6)
+    axes[1].set_xlabel("hidden dim (top 20 by |x| max)")
+    axes[1].set_ylabel("max |activation| (layer 19)")
+    axes[1].set_title(f"massive-activation dims — gamma={rec['gamma_layer19_all_tokens']:.3f}")
+    fig.suptitle(
+        f"{cell}: sink/massive-activation map (exclusion source: {rec['exclusion_source']})",
+        fontsize=9,
+    )
+    savefig_paper(fig, f"sink_map_{cell}", dir=fig_dir)
     plt.close(fig)
 
 
@@ -234,9 +311,16 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--in-root", type=Path, default=Path("data/issue_1092/crossed_core_sae/out"))
     ap.add_argument("--fig-dir", type=Path, default=Path("figures/issue_1092/crossed_core_sae"))
+    ap.add_argument(
+        "--sinkmap-root",
+        type=Path,
+        default=None,
+        help="sink-map artifact dir (default: <in-root>/../sink_map)",
+    )
     args = ap.parse_args(argv)
     set_paper_style()
     args.fig_dir.mkdir(parents=True, exist_ok=True)
+    sinkmap_root = args.sinkmap_root or (args.in_root.parent / "sink_map")
     maps = json.loads((args.in_root / "maps_summary.json").read_text())
     labels_payload = json.loads((args.in_root / "feature_labels.json").read_text())
     for cell in CELLS:
@@ -248,7 +332,8 @@ def main(argv: list[str] | None = None) -> int:
         fig_r2_perfeature(args.in_root, args.fig_dir, cell)
         fig_rb_tails(args.in_root, args.fig_dir, cell)
         fig_averaged_compare(args.fig_dir, maps, cell)
-    if "persona" in labels_payload:
+        fig_sink_map(sinkmap_root, args.fig_dir, cell)
+    if "speaker" in labels_payload:
         fig_tail_bars(args.in_root, args.fig_dir, labels_payload)
     print(f"[figs] wrote figures to {args.fig_dir}", flush=True)
     return 0
