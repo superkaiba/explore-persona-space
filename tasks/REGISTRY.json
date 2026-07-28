@@ -5830,8 +5830,8 @@
     "1750": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1750",
-      "status": "planning",
+      "path": "tasks/approved/1750",
+      "status": "approved",
       "title": "daily-fix: pod-side descope posts marker + rewrites handle"
     },
     "1751": {
