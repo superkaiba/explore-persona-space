@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1764,
+  "highest_id": 1766,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5879,8 +5879,8 @@
     "1757": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1757",
-      "status": "running",
+      "path": "tasks/completed/1757",
+      "status": "completed",
       "title": "daily-fix: act on consistency edit-locus WARN vs live siblin"
     },
     "1758": {
@@ -5921,23 +5921,37 @@
     "1762": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1762",
-      "status": "reviewing",
+      "path": "tasks/completed/1762",
+      "status": "completed",
       "title": "daily-fix: inline dispatch arms detached handoff by default"
     },
     "1763": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1763",
-      "status": "reviewing",
+      "path": "tasks/completed/1763",
+      "status": "completed",
       "title": "daily-fix: Step 10d merge-SHA check fetches before compare"
     },
     "1764": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1764",
-      "status": "running",
+      "path": "tasks/reviewing/1764",
+      "status": "reviewing",
       "title": "daily-fix: sudo tail for root-owned GCE workload log probes"
+    },
+    "1765": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/1765",
+      "status": "reviewing",
+      "title": "workflow-fix: gotchas entry \u2014 chained waves on a detached-spawn launcher fan out concurrently"
+    },
+    "1766": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/1766",
+      "status": "running",
+      "title": "daily-fix: fix red main: test_issue1417_render.py::test_render_config_hash_pin \u2014 reconcile the issue-1417 render-config h"
     },
     "18": {
       "has_clean_result": false,
