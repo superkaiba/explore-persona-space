@@ -1,0 +1,752 @@
+#!/usr/bin/env python3
+"""#1775 P4: rank-r bilinear interaction on the stitch input + interpretation.
+
+Model (plan section 4 P4; DMDc arXiv:1409.6358 + low-rank bilinear
+arXiv:1610.04325):  a_hat = W [p; q] + sum_i (u_i^T p)(v_i^T q) w_i + b,
+p = prefix_end (3584), q = bare_query (3584), target = pooled pca48 (headline)
+with an ambient companion at r in {0, r*}. Fit: warm-start W at the per-fold
+stitch-ridge solution (``fit_h.ridge_fit_predict_fast_layer_batched``
+``return_weights=True`` — same standardize/center conventions), then joint
+full-batch Adam with DECOUPLED per-group weight decay (AdamW semantics with a
+per-group wd — wd in {0, 1e-4, 1e-2} rides the group batch), early-stopped on
+a group-respecting inner validation split. Groups (seeds x wd) train as ONE
+batched einsum loop per (scheme, fold, r) — no serial per-fit loop.
+
+r in {0,1,2,4,8,16,32,64}; r = 0 is the GD-refit de-regularization null
+(same optimizer/wd/early-stop, NO interaction): Delta_named = R2(r*) - R2(r=0);
+R2(r=0) - R2(stitch PRESS-ridge) reported separately. r* selected on inner
+validation over r >= 1 (frozen before outer test; the outer-test r-curve is
+labeled exploratory). delta_beyond = R2(stitch-MLP, P3) - R2(bilinear r*).
+All lattice CIs are paired CLUSTER bootstraps (group = the fold scheme's
+unit; two-way for the doubly-novel read).
+
+Interpretation: interaction projections onto answer PCs + the 3-trait r_B
+dictionary vs TWO nulls (matched-norm isotropic + covariance-matched from the
+train-fold answer covariance; 1000 batched draws; max-selection applied per
+draw). Bilinear-residual HSIC re-test reuses the P2 machinery — the "named"
+verdict co-signature.
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+import sys
+import time
+from pathlib import Path
+
+for _k in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+    os.environ.setdefault(_k, "8")
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+# #847: caps + .env bind BEFORE the heavy imports (tests/test_shared_vm_thread_caps.py).
+load_dotenv()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+
+from issue1092_fit_grid import _project_rb_to_basis  # noqa: E402
+from issue1775_common import (  # noqa: E402
+    CELL_PRIMARY,
+    HF_DATA_REPO,
+    LAYER_PRIMARY,
+    _basis_targets_with_info,
+    _r2,
+    append_unit,
+    atomic_write_json,
+    build_arm_data,
+    build_dependence_matrices,
+    cluster_bootstrap_delta_r2,
+    eval_dir,
+    fold_pairs,
+    hsic_statistic,
+    inner_val_split,
+    load_units,
+    null_stats_batched,
+    observed_stats,
+    p_value,
+    resolve_store_dir,
+    restrict_pairs,
+    result_meta,
+    tensors_dir,
+    unit_key,
+    upload_phase_tensors,
+)
+from issue1775_detection import SCHEMES as DETECT_SCHEMES  # noqa: E402
+from issue1775_detection import complete_dense_block  # noqa: E402
+
+from explore_persona_space.experiments.issue_779.fit_h import (  # noqa: E402
+    ridge_fit_predict_fast_layer_batched,
+)
+from explore_persona_space.orchestrate import hub  # noqa: E402
+
+R_GRID = (0, 1, 2, 4, 8, 16, 32, 64)
+WD_GRID = (0.0, 1e-4, 1e-2)
+BILIN_LR = 1e-3  # ungrounded — needs smoke-test (plan section 11); validated by the
+# r=0 refit reproducing the stitch-ridge R2 (warm start + early stop, see smoke)
+BILIN_MAX_EPOCHS = 500
+BILIN_PATIENCE = 30
+REGIME_KEYS = ("scheme", "fold", "r", "basis", "smoke", "row_limit")
+RB_TRAITS = ("evil", "hallucination", "sycophancy")
+RB_HF_PREFIX = "issue779_monitoring/r_b"
+N_PROJ_DRAWS = 1000
+
+
+def _standardize_train(X: np.ndarray, tr: np.ndarray):
+    mu = X[tr].mean(0)
+    sd = X[tr].std(0) + 1e-9
+    return (X - mu) / sd
+
+
+def bilinear_fit_batched(
+    Xn: np.ndarray,
+    Y: np.ndarray,
+    tr: np.ndarray,
+    te: np.ndarray,
+    groups: np.ndarray,
+    *,
+    r: int,
+    seeds: list[int],
+    device: str,
+    max_epochs: int = BILIN_MAX_EPOCHS,
+    patience: int = BILIN_PATIENCE,
+    lr: float = BILIN_LR,
+) -> dict:
+    """One (fold, r): all (seed x wd) variants as ONE batched Adam loop with
+    decoupled per-group weight decay. Xn = standardized stitch input (n, 7168)."""
+    dev = torch.device(device)
+    d_in = Xn.shape[1]
+    d_half = d_in // 2
+    d_out = Y.shape[1]
+    # warm start: per-fold stitch ridge in the SAME standardized space
+    # (the helper standardizes internally with the identical population-std
+    # convention; we feed the already-standardized Xn so its internal mu~0/sd~1).
+    _preds, W0 = ridge_fit_predict_fast_layer_batched(
+        Xn[tr][None], Y[tr][None], Xn[te][None], device=device, return_weights=True
+    )
+    W0 = torch.from_numpy(W0[0]).to(dev, torch.float32)  # (d_in, d_out)
+    ymu0 = torch.from_numpy(Y[tr].mean(0)).to(dev, torch.float32)
+    itr, ival = inner_val_split(tr, groups, seed=1234 + r)
+    Xt = torch.from_numpy(Xn).to(dev, torch.float32)
+    Yt = torch.from_numpy(Y).to(dev, torch.float32)
+    variants = [(s, wd) for s in seeds for wd in WD_GRID]
+    G = len(variants)
+    W = W0.T[None].repeat(G, 1, 1).contiguous()  # (G, d_out, d_in)
+    b = ymu0[None].repeat(G, 1).contiguous()
+    U = torch.zeros((G, max(r, 1), d_half), device=dev)
+    V = torch.zeros((G, max(r, 1), d_half), device=dev)
+    Wv = torch.zeros((G, max(r, 1), d_out), device=dev)
+    for gi, (s, _wd) in enumerate(variants):
+        g = torch.Generator(device="cpu").manual_seed(int(s) + 7)
+        if r > 0:
+            U[gi] = (torch.randn((r, d_half), generator=g) * 0.02).to(dev)
+            V[gi] = (torch.randn((r, d_half), generator=g) * 0.02).to(dev)
+            Wv[gi] = (torch.randn((r, d_out), generator=g) * 0.02).to(dev)
+    params = [W, b] + ([U, V, Wv] if r > 0 else [])
+    for p_ in params:
+        p_.requires_grad_(True)
+    opt = torch.optim.Adam(params, lr=lr)  # decay applied manually (per-group AdamW)
+    wd_vec = torch.tensor([wd for _s, wd in variants], device=dev, dtype=torch.float32)
+    itr_t = torch.from_numpy(itr).to(dev)
+    ival_t = torch.from_numpy(ival).to(dev)
+    te_t = torch.from_numpy(te).to(dev)
+
+    def forward(idx: torch.Tensor) -> torch.Tensor:
+        Xb = Xt[idx]
+        out = torch.einsum("nd,god->gno", Xb, W) + b[:, None, :]
+        if r > 0:
+            A = torch.einsum("np,grp->gnr", Xb[:, :d_half], U)
+            Bq = torch.einsum("nq,grq->gnr", Xb[:, d_half:], V)
+            out = out + torch.einsum("gnr,gro->gno", A * Bq, Wv)
+        return out
+
+    best_val = torch.full((G,), float("inf"), device=dev)
+    bad = torch.zeros(G, dtype=torch.long, device=dev)
+    frozen = torch.zeros(G, dtype=torch.bool, device=dev)
+    best_state: list[tuple | None] = [None] * G
+    epochs_ran = np.zeros(G, dtype=int)
+    Ytr_i = Yt[itr_t]
+    Yva_i = Yt[ival_t]
+    for ep in range(max_epochs):
+        opt.zero_grad(set_to_none=True)
+        pred = forward(itr_t)
+        loss_g = ((pred - Ytr_i[None]) ** 2).mean(dim=(1, 2))
+        (loss_g * (~frozen).float()).sum().backward()
+        opt.step()
+        with torch.no_grad():
+            decay = (1.0 - lr * wd_vec).clamp(min=0.0)
+            W.mul_(decay[:, None, None])
+            if r > 0:
+                U.mul_(decay[:, None, None])
+                V.mul_(decay[:, None, None])
+                Wv.mul_(decay[:, None, None])
+            val_g = ((forward(ival_t) - Yva_i[None]) ** 2).mean(dim=(1, 2))
+        improved = (val_g < best_val - 1e-7) & (~frozen)
+        for gi in torch.nonzero(improved).ravel().tolist():
+            best_state[gi] = tuple(t[gi].detach().clone().cpu() for t in (W, b, U, V, Wv))
+        best_val = torch.where(improved, val_g, best_val)
+        bad = torch.where(improved, torch.zeros_like(bad), bad + (~frozen).long())
+        frozen |= (bad >= patience) & (~frozen)
+        epochs_ran[(~frozen).cpu().numpy()] = ep + 1
+        if frozen.all():
+            break
+    out: dict = {"variants": [], "epochs_ran": epochs_ran.tolist()}
+    with torch.no_grad():
+        for gi, (s, wd) in enumerate(variants):
+            st = best_state[gi] or tuple(t[gi].detach().cpu() for t in (W, b, U, V, Wv))
+            Wg, bg, Ug, Vg, Wvg = (t.to(dev) for t in st)
+            Xe = Xt[te_t]
+            pe = Xe @ Wg.T + bg
+            if r > 0:
+                A = (Xe[:, :d_half] @ Ug.T) * (Xe[:, d_half:] @ Vg.T)
+                pe = pe + A @ Wvg
+            out["variants"].append(
+                {
+                    "seed": s,
+                    "wd": wd,
+                    "inner_val_mse": float(best_val[gi].item()),
+                    "pred_te": pe.cpu().numpy(),
+                    "params": {
+                        "W": st[0].numpy().astype(np.float16),
+                        "b": st[1].numpy().astype(np.float32),
+                        "U": st[2].numpy().astype(np.float32) if r > 0 else None,
+                        "V": st[3].numpy().astype(np.float32) if r > 0 else None,
+                        "Wv": st[4].numpy().astype(np.float32) if r > 0 else None,
+                    },
+                }
+            )
+    # locals free at return (no `del` of closure-captured names — ruff F821)
+    if dev.type == "cuda":
+        torch.cuda.empty_cache()
+    return out
+
+
+def two_way_cluster_bootstrap_delta_r2(
+    Y, pred_a, pred_b, covered, prefix_ids, query_ids, *, n_draws=2000, seed=0
+) -> dict:
+    """Two-way (prefix x query) cluster bootstrap for the doubly-novel read:
+    row weight per draw = (multiplicity of its prefix) x (multiplicity of its query)."""
+    idx = np.nonzero(covered)[0]
+    y = Y[idx]
+    mu = y.mean(axis=0, keepdims=True)
+    se_a = ((y - pred_a[idx]) ** 2).sum(axis=1)
+    se_b = ((y - pred_b[idx]) ** 2).sum(axis=1)
+    st = ((y - mu) ** 2).sum(axis=1)
+    up, pi = np.unique(prefix_ids[idx], return_inverse=True)
+    uq, qi = np.unique(query_ids[idx], return_inverse=True)
+    rng = np.random.default_rng(seed)
+    P, Q = len(up), len(uq)
+    deltas = np.empty(n_draws)
+    for bdx in range(n_draws):
+        wp = np.bincount(rng.integers(0, P, size=P), minlength=P).astype(np.float64)
+        wq = np.bincount(rng.integers(0, Q, size=Q), minlength=Q).astype(np.float64)
+        w = wp[pi] * wq[qi]
+        T = float(w @ st)
+        deltas[bdx] = ((w @ se_b) - (w @ se_a)) / max(T, 1e-300)
+    point = float((se_b.sum() - se_a.sum()) / max(st.sum(), 1e-300))
+    return {
+        "delta_r2": point,
+        "ci95_two_way_cluster": [
+            float(np.quantile(deltas, 0.025)),
+            float(np.quantile(deltas, 0.975)),
+        ],
+        "n_prefix_groups": int(P),
+        "n_query_groups": int(Q),
+        "n_rows": int(idx.size),
+        "n_draws": int(n_draws),
+    }
+
+
+def load_rb_dictionary(store: Path, layer: int) -> dict[str, np.ndarray]:
+    """The 3-trait r_B dictionary at the requested layer (Hub-fetched .pt files;
+    schema introspected fail-loud — plan A9)."""
+    out = {}
+    for trait in RB_TRAITS:
+        target = store / "rb_cache" / f"{trait}.pt"
+        if not target.exists():
+            hub.stage_hub_file(
+                HF_DATA_REPO, f"{RB_HF_PREFIX}/{trait}.pt", target, repo_type="dataset"
+            )
+        d = torch.load(target, map_location="cpu", weights_only=False)
+        if isinstance(d, dict):
+            rb = d.get("r_b", d.get("rb", d.get("directions")))
+            layers = d.get("layers")
+            if rb is None:
+                raise ValueError(f"r_B bundle {trait}.pt keys {sorted(d)} — no r_b field")
+            rb = np.asarray(rb, dtype=np.float64)
+            if rb.ndim == 2:
+                li = list(layers).index(layer) if layers is not None else layer
+                rb = rb[li]
+        else:
+            rb = np.asarray(d, dtype=np.float64)
+            if rb.ndim == 2:
+                rb = rb[layer]
+        assert rb.shape == (3584,), f"r_B {trait} shape {rb.shape} != (3584,)"
+        out[trait] = rb
+    return out
+
+
+def _unit_norm(x: np.ndarray) -> np.ndarray:
+    return x / (np.linalg.norm(x, axis=-1, keepdims=True) + 1e-12)
+
+
+def projection_analysis(
+    params_at_rstar: list[dict],
+    basis_info: dict,
+    Y_train: np.ndarray,
+    X_p_train: np.ndarray,
+    X_q_train: np.ndarray,
+    rb: dict[str, np.ndarray],
+    *,
+    n_draws: int = N_PROJ_DRAWS,
+    seed: int = 0,
+) -> tuple[dict, dict[str, np.ndarray]]:
+    """Cosines of interaction directions vs answer PCs + r_B, against TWO nulls
+    (matched-norm isotropic; covariance-matched), max-selection applied per draw."""
+    rng = np.random.default_rng(seed)
+    W_list = [p["params"]["Wv"] for p in params_at_rstar if p["params"]["Wv"] is not None]
+    U_list = [p["params"]["U"] for p in params_at_rstar if p["params"]["U"] is not None]
+    V_list = [p["params"]["V"] for p in params_at_rstar if p["params"]["V"] is not None]
+    if not W_list:
+        return {"note": "r*=0 — no interaction terms to project"}, {}
+    Wv = _unit_norm(np.concatenate(W_list, axis=0).astype(np.float64))  # (T, d_out)
+    U = _unit_norm(np.concatenate(U_list, axis=0).astype(np.float64))  # (T, 3584)
+    V = _unit_norm(np.concatenate(V_list, axis=0).astype(np.float64))
+    d_out = Wv.shape[1]
+    # output-side reference axes: answer PCs (pca48 coords = identity axes) + r_B rows
+    rb_out = np.stack(
+        [_unit_norm(_project_rb_to_basis(rb[t], basis_info, expected_dim=d_out)) for t in RB_TRAITS]
+    )
+    rb_in = np.stack([_unit_norm(rb[t]) for t in RB_TRAITS])
+    obs = {
+        "w_vs_pc_abscos_max": float(np.max(np.abs(Wv))),
+        "w_vs_rb_abscos_max": float(np.max(np.abs(Wv @ rb_out.T))),
+        "u_vs_rb_abscos_max": float(np.max(np.abs(U @ rb_in.T))),
+        "v_vs_rb_abscos_max": float(np.max(np.abs(V @ rb_in.T))),
+        "n_terms_pooled": int(Wv.shape[0]),
+    }
+    T = Wv.shape[0]
+    # null (i): matched-norm isotropic (unit vectors are norm-matched after normalization)
+    nulls: dict[str, np.ndarray] = {}
+    iso_out = _unit_norm(rng.standard_normal((n_draws, T, d_out)))
+    nulls["iso_w_vs_pc_max"] = np.abs(iso_out).max(axis=(1, 2))
+    nulls["iso_w_vs_rb_max"] = np.abs(iso_out @ rb_out.T).max(axis=(1, 2))
+    iso_in = _unit_norm(rng.standard_normal((n_draws, T, 3584)))
+    nulls["iso_u_vs_rb_max"] = np.abs(iso_in @ rb_in.T).max(axis=(1, 2))
+
+    # null (ii): covariance-matched (train-fold answer covariance / input covariances)
+    def _cov_draws(M: np.ndarray, dim: int) -> np.ndarray:
+        Mc = M - M.mean(0, keepdims=True)
+        cap = min(4000, Mc.shape[0])
+        sub = Mc[rng.choice(Mc.shape[0], size=cap, replace=False)]
+        _u_, s_, vt_ = np.linalg.svd(sub, full_matrices=False)
+        scale = s_ / np.sqrt(cap)
+        z = rng.standard_normal((n_draws, T, len(s_)))
+        return _unit_norm(z @ (vt_ * scale[:, None]))
+
+    cov_out = _cov_draws(Y_train, d_out)
+    nulls["cov_w_vs_pc_max"] = np.abs(cov_out).max(axis=(1, 2))
+    nulls["cov_w_vs_rb_max"] = np.abs(cov_out @ rb_out.T).max(axis=(1, 2))
+    cov_in_p = _cov_draws(X_p_train, 3584)
+    nulls["cov_u_vs_rb_max"] = np.abs(cov_in_p @ rb_in.T).max(axis=(1, 2))
+    report = {
+        "observed": obs,
+        "nulls_p": {
+            "w_vs_pc_max": {
+                "iso": p_value(nulls["iso_w_vs_pc_max"], obs["w_vs_pc_abscos_max"]),
+                "cov_matched": p_value(nulls["cov_w_vs_pc_max"], obs["w_vs_pc_abscos_max"]),
+            },
+            "w_vs_rb_max": {
+                "iso": p_value(nulls["iso_w_vs_rb_max"], obs["w_vs_rb_abscos_max"]),
+                "cov_matched": p_value(nulls["cov_w_vs_rb_max"], obs["w_vs_rb_abscos_max"]),
+            },
+            "u_vs_rb_max": {
+                "iso": p_value(nulls["iso_u_vs_rb_max"], obs["u_vs_rb_abscos_max"]),
+                "cov_matched": p_value(nulls["cov_u_vs_rb_max"], obs["u_vs_rb_abscos_max"]),
+            },
+        },
+        "note": (
+            "max-selection over (terms x traits/PCs) applied IDENTICALLY per null draw "
+            "(selection-symmetric); dictionary-alignment narration keys on the "
+            "covariance-matched null; 3-trait dictionary — answer-PC projections carry "
+            "the breadth (plan section 10)"
+        ),
+    }
+    return report, nulls
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="#1775 P4 rank-r bilinear + interpretation")
+    ap.add_argument("--device", default="cuda")
+    ap.add_argument("--seeds", default="0,1,2")
+    ap.add_argument("--smoke", action="store_true")
+    ap.add_argument("--row-limit", type=int, default=None)
+    ap.add_argument("--r-grid", default=",".join(str(r) for r in R_GRID))
+    ap.add_argument("--schemes", default=None, help="csv override (e.g. 'doubly' for the r* pass)")
+    ap.add_argument("--num-shards", type=int, default=1)
+    ap.add_argument("--shard-index", type=int, default=0)
+    ap.add_argument(
+        "--assemble-only",
+        action="store_true",
+        help="skip fits; assemble ALL shards' unit JSONLs + interpretation",
+    )
+    args = ap.parse_args()
+    if args.device == "cuda" and not torch.cuda.is_available():
+        args.device = "cpu"
+    args.seeds = [int(s) for s in args.seeds.split(",") if s.strip()]
+    r_grid = [int(r) for r in args.r_grid.split(",") if r.strip()]
+    if args.smoke:
+        if args.row_limit is None:
+            args.row_limit = 600
+        r_grid = [0, 1]
+        args.seeds = args.seeds[:1]
+    out_dir = eval_dir("bilinear")
+    store = resolve_store_dir()
+    ad = build_arm_data(
+        store,
+        CELL_PRIMARY,
+        LAYER_PRIMARY,
+        arms=("prefix_end", "bare_query", "stitch", "context_end"),
+        row_limit=args.row_limit,
+    )
+    X = ad.X["stitch"]
+    if args.schemes:
+        schemes = [s.strip() for s in args.schemes.split(",") if s.strip()]
+    else:
+        schemes = ["prefix"] if args.smoke else ["prefix", "query"]
+    units_path = out_dir / f"units_shard{args.shard_index}.jsonl"
+    done = {unit_key(d, REGIME_KEYS) for d in load_units(units_path)}
+    # target bases
+    Yp, info_p = _basis_targets_with_info(
+        ad.Y_stacked,
+        "pca48",
+        hidden_dim=3584,
+        targets=["t1", "t2", "t3"],
+        projection_target="t1",
+    )
+    Yp = np.ascontiguousarray(Yp, dtype=np.float64)
+    unit_list = [
+        {"scheme": sch, "fold": f, "r": r, "basis": "pca48"}
+        for sch in schemes
+        for r in r_grid
+        for f in range(6)
+    ]
+    unit_list = [u for i, u in enumerate(unit_list) if i % args.num_shards == args.shard_index]
+    if args.assemble_only:
+        unit_list = []
+    pairs_by_scheme = {
+        sch: restrict_pairs(fold_pairs(ad.rows, len(ad.rows), sch), ad.arm_row_mask["stitch"])
+        for sch in ("prefix", "query", "doubly")
+    }
+    params_dir = tensors_dir("bilinear_params")
+    t0 = time.monotonic()
+    n_done = 0
+    for u in unit_list:
+        u["smoke"] = bool(args.smoke)
+        u["row_limit"] = args.row_limit
+        if unit_key(u, REGIME_KEYS) in done:
+            continue
+        pairs = pairs_by_scheme[u["scheme"]]
+        if u["fold"] >= len(pairs):
+            continue
+        tr, te = pairs[u["fold"]]
+        groups = ad.prefix_ids if u["scheme"] != "query" else ad.query_ids
+        Xn = _standardize_train(X, tr)
+        res = bilinear_fit_batched(
+            Xn,
+            Yp,
+            tr,
+            te,
+            groups,
+            r=u["r"],
+            seeds=args.seeds,
+            device=args.device,
+            max_epochs=40 if args.smoke else BILIN_MAX_EPOCHS,
+        )
+        rec = {**u, "epochs_ran": res["epochs_ran"], "variants": []}
+        for var in res["variants"]:
+            r2_te = _r2(Yp[te], var["pred_te"])
+            rec["variants"].append(
+                {
+                    "seed": var["seed"],
+                    "wd": var["wd"],
+                    "inner_val_mse": var["inner_val_mse"],
+                    "r2_te": r2_te,
+                }
+            )
+            np.save(
+                params_dir
+                / (f"pred_{u['scheme']}_f{u['fold']}_r{u['r']}_s{var['seed']}_wd{var['wd']:g}.npy"),
+                var["pred_te"].astype(np.float16),
+            )
+            torch.save(
+                {k: v for k, v in var["params"].items()},
+                params_dir
+                / (
+                    f"params_{u['scheme']}_f{u['fold']}_r{u['r']}_s{var['seed']}_wd{var['wd']:g}.pt"
+                ),
+            )
+        np.save(params_dir / f"te_{u['scheme']}_f{u['fold']}.npy", te)
+        append_unit(units_path, rec)
+        n_done += 1
+        print(
+            f"[bilinear] unit {n_done}/{len(unit_list)} scheme={u['scheme']} "
+            f"fold={u['fold']} r={u['r']} elapsed={time.monotonic() - t0:.0f}s",
+            flush=True,
+        )
+    if args.num_shards > 1 and not args.assemble_only:
+        print("[bilinear] shard done (assembly = separate --assemble-only pass)", flush=True)
+        return 0
+    # ---- assembly (single-shard runs and --assemble-only both land here) ----
+    all_units: list[dict] = []
+    for sp in sorted(out_dir.glob("units_shard*.jsonl")):
+        all_units.extend(load_units(sp))
+    assembled = assemble(
+        all_units, ad, Yp, info_p, X, pairs_by_scheme, args, out_dir, params_dir, store
+    )
+    atomic_write_json(out_dir / "bilinear_fits.json", assembled["fits"])
+    atomic_write_json(out_dir / "interaction_projections.json", assembled["projections"])
+    upload_phase_tensors("bilinear_params", smoke=args.smoke)
+    print(f"[bilinear] done in {(time.monotonic() - t0) / 60:.1f} min", flush=True)
+    return 0
+
+
+def _best_variant(variants: list[dict], seed: int) -> dict:
+    """Per-seed wd selection on inner val (nested tuning)."""
+    cand = [v for v in variants if v["seed"] == seed]
+    return min(cand, key=lambda v: v["inner_val_mse"])
+
+
+def _pooled_pred(
+    units: list[dict],
+    params_dir: Path,
+    scheme: str,
+    r: int,
+    seeds: list[int],
+    n_rows: int,
+    d_out: int,
+    pairs,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Mean-over-seeds held-out prediction (per-seed wd selected on inner val)."""
+    pred = np.zeros((n_rows, d_out))
+    covered = np.zeros(n_rows, dtype=bool)
+    for f, (_tr, te) in enumerate(pairs):
+        recs = [u for u in units if u["scheme"] == scheme and u["fold"] == f and u["r"] == r]
+        if not recs:
+            continue
+        acc = np.zeros((len(te), d_out))
+        for s in seeds:
+            v = _best_variant(recs[0]["variants"], s)
+            p = params_dir / f"pred_{scheme}_f{f}_r{r}_s{s}_wd{v['wd']:g}.npy"
+            acc += np.load(p).astype(np.float64)
+        pred[te] = acc / len(seeds)
+        covered[te] = True
+    return pred, covered
+
+
+def assemble(units, ad, Yp, info_p, X, pairs_by_scheme, args, out_dir, params_dir, store):
+    seeds = args.seeds
+    n, d_out = Yp.shape
+    fits: dict = {
+        "meta": result_meta(smoke=args.smoke, r_grid=sorted({u["r"] for u in units})),
+        "schemes": {},
+    }
+    projections: dict = {"meta": fits["meta"]}
+    r_values = sorted({u["r"] for u in units})
+    for scheme in sorted({u["scheme"] for u in units}):
+        pairs = pairs_by_scheme[scheme]
+        groups = ad.prefix_ids if scheme != "query" else ad.query_ids
+        # inner-val r* selection over r >= 1 (mean over folds x seeds of best-wd val mse)
+        inner: dict[int, list[float]] = {r: [] for r in r_values}
+        r2_curve: dict[int, float] = {}
+        for r in r_values:
+            for f in range(len(pairs)):
+                recs = [
+                    u for u in units if u["scheme"] == scheme and u["fold"] == f and u["r"] == r
+                ]
+                if recs:
+                    for s in seeds:
+                        inner[r].append(_best_variant(recs[0]["variants"], s)["inner_val_mse"])
+            pred_r, cov_r = _pooled_pred(units, params_dir, scheme, r, seeds, n, d_out, pairs)
+            if cov_r.any():
+                r2_curve[r] = _r2(Yp[cov_r], pred_r[cov_r])
+        cand = [r for r in r_values if r >= 1 and inner[r]]
+        r_star = min(cand, key=lambda r: float(np.mean(inner[r]))) if cand else None
+        sch_out: dict = {
+            "r_star_inner_val": r_star,
+            "inner_val_mse_by_r": {str(r): float(np.mean(v)) for r, v in inner.items() if v},
+            "outer_r2_curve_EXPLORATORY": {str(r): float(v) for r, v in r2_curve.items()},
+        }
+        if r_star is not None and 0 in r_values:
+            pred_star, cov_star = _pooled_pred(
+                units, params_dir, scheme, r_star, seeds, n, d_out, pairs
+            )
+            pred_0, cov_0 = _pooled_pred(units, params_dir, scheme, 0, seeds, n, d_out, pairs)
+            both = cov_star & cov_0
+            if scheme == "doubly":
+                boot = two_way_cluster_bootstrap_delta_r2(
+                    Yp,
+                    pred_star,
+                    pred_0,
+                    both,
+                    ad.prefix_ids,
+                    ad.query_ids,
+                    n_draws=200 if args.smoke else 2000,
+                )
+            else:
+                boot = cluster_bootstrap_delta_r2(
+                    Yp,
+                    pred_star,
+                    pred_0,
+                    both,
+                    groups,
+                    n_draws=200 if args.smoke else 2000,
+                )
+            sch_out["delta_named"] = boot
+            # de-regularization component vs the P1 stitch PRESS-ridge
+            ridge_p = (
+                tensors_dir("heldout_preds")
+                / f"{CELL_PRIMARY}_L{LAYER_PRIMARY:02d}_stitch_perrow_pca48_{scheme}_ridge.npy"
+            )
+            if ridge_p.exists():
+                rpred = np.load(ridge_p).astype(np.float64)
+                rmask = np.load(ridge_p.with_name(ridge_p.stem + "_mask.npy"))
+                b2 = both & rmask
+                sch_out["dereg_component_r0_minus_ridge"] = cluster_bootstrap_delta_r2(
+                    Yp, pred_0, rpred, b2, groups, n_draws=200 if args.smoke else 2000
+                )
+                sch_out["interaction_gap_fraction"] = _gap_fraction(
+                    units, ad, Yp, pred_star, rpred, b2, scheme
+                )
+            # delta_beyond vs the P3 stitch-MLP (same folds, same input)
+            mlp_preds = []
+            for s in seeds:
+                mp = (
+                    tensors_dir("heldout_preds")
+                    / f"{CELL_PRIMARY}_L{LAYER_PRIMARY:02d}_stitch_perrow_pca48_{scheme}_mlp_s{s}.npy"
+                )
+                if mp.exists():
+                    mlp_preds.append(np.load(mp).astype(np.float64))
+            if mlp_preds:
+                mpred = np.mean(mlp_preds, axis=0)
+                mmask = np.load(
+                    (
+                        tensors_dir("heldout_preds")
+                        / f"{CELL_PRIMARY}_L{LAYER_PRIMARY:02d}_stitch_perrow_pca48_{scheme}_mlp_s{seeds[0]}_mask.npy"
+                    )
+                )
+                b3 = both & mmask
+                sch_out["delta_beyond_mlp_minus_bilinear"] = cluster_bootstrap_delta_r2(
+                    Yp, mpred, pred_star, b3, groups, n_draws=200 if args.smoke else 2000
+                )
+            else:
+                sch_out["delta_beyond_mlp_minus_bilinear"] = (
+                    "stitch-MLP predictions absent (P3 pending or Gate-B skipped)"
+                )
+            # bilinear-residual HSIC re-test (P2 machinery) on the dense block
+            if scheme == "prefix":
+                sch_out["bilinear_residual_hsic"] = _residual_retest(
+                    ad, X, Yp, pred_star, cov_star, args
+                )
+                # interpretation at r*
+                params_star = _collect_params(units, params_dir, scheme, r_star, seeds)
+                tr0 = pairs[0][0]
+                proj, proj_nulls = projection_analysis(
+                    params_star,
+                    info_p,
+                    Yp[tr0],
+                    ad.X["prefix_end"][tr0],
+                    ad.X["bare_query"][tr0],
+                    load_rb_dictionary(store, LAYER_PRIMARY),
+                    n_draws=50 if args.smoke else N_PROJ_DRAWS,
+                )
+                projections[scheme] = proj
+                nd = tensors_dir("null_matrices")
+                for k, v in proj_nulls.items():
+                    np.save(nd / f"proj_null_{k}.npy", v.astype(np.float32))
+        fits["schemes"][scheme] = sch_out
+    # doubly-novel robustness read at {0, r*} runs as a separate dispatcher pass
+    # (--r-grid "0,<r*>" over scheme doubly); assembled here when present.
+    return {"fits": fits, "projections": projections}
+
+
+def _gap_fraction(units, ad, Yp, pred_bilin, rpred_stitch, mask, scheme) -> dict:
+    ctx = (
+        tensors_dir("heldout_preds")
+        / f"{CELL_PRIMARY}_L{LAYER_PRIMARY:02d}_context_end_perrow_pca48_prefix_ridge.npy"
+    )
+    if not ctx.exists():
+        return {"note": "context ridge preds absent"}
+    cpred = np.load(ctx).astype(np.float64)
+    cmask = np.load(ctx.with_name(ctx.stem + "_mask.npy"))
+    m = mask & cmask
+    r2_b = _r2(Yp[m], pred_bilin[m])
+    r2_s = _r2(Yp[m], rpred_stitch[m])
+    r2_c = _r2(Yp[m], cpred[m])
+    denom = r2_c - r2_s
+    return {
+        "r2_bilinear": r2_b,
+        "r2_stitch_ridge": r2_s,
+        "r2_context_ridge": r2_c,
+        "fraction": (r2_b - r2_s) / denom if abs(denom) > 1e-9 else None,
+        "note": "secondary read; denominator = this plan's own fits (plan section 4 P4)",
+    }
+
+
+def _collect_params(units, params_dir, scheme, r_star, seeds) -> list[dict]:
+    out = []
+    for u in units:
+        if u["scheme"] != scheme or u["r"] != r_star:
+            continue
+        for s in seeds:
+            v = _best_variant(u["variants"], s)
+            p = params_dir / f"params_{scheme}_f{u['fold']}_r{r_star}_s{s}_wd{v['wd']:g}.pt"
+            if p.exists():
+                d = torch.load(p, map_location="cpu", weights_only=False)
+                out.append(
+                    {
+                        "params": {
+                            k: (np.asarray(x) if x is not None else None) for k, x in d.items()
+                        }
+                    }
+                )
+    return out
+
+
+def _residual_retest(ad, X, Yp, pred_star, covered, args) -> dict:
+    grid, _p, _q = complete_dense_block(ad.rows)
+    flat = grid.reshape(-1)
+    if not covered[flat].all() or not ad.arm_row_mask["stitch"][flat].all():
+        return {"note": "dense block not fully covered by bilinear predictions"}
+    R = Yp[flat] - pred_star[flat]
+    Xb = X[flat]
+    mats = build_dependence_matrices(Xb, R, device=args.device)
+    obs = observed_stats(mats)
+    ref = hsic_statistic(Xb, R)
+    assert abs(obs["hsic"] - ref) <= 1e-8 * max(1.0, abs(ref))
+    out = {"observed": obs, "schemes": {}}
+    from issue1775_common import crossed_permutations
+
+    P, Q = grid.shape
+    for scheme in DETECT_SCHEMES:
+        perms = crossed_permutations(P, Q, scheme, 20 if args.smoke else 1000, seed=5)
+        ns = null_stats_batched(mats, perms)
+        out["schemes"][scheme] = {
+            "p_hsic": p_value(ns["hsic"], obs["hsic"]),
+            "p_dcor": p_value(ns["dcor"], obs["dcor"]),
+        }
+    out["note"] = (
+        "the 'named' verdict co-signature: bilinear-residual dependence must drop "
+        "toward the null (plan section 3)"
+    )
+    return out
+
+
+if __name__ == "__main__":
+    rc = main()
+    sys.stdout.flush()
+    sys.stderr.flush()
+    sys.exit(rc)
