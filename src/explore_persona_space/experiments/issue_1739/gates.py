@@ -124,66 +124,48 @@ def rb_bank_probe(*, revision: str = RB_REVISION) -> dict:
 
 
 def gate3_staged_layout_probe(local_dir: Path | str, *, revision: str = STORE_REVISION) -> dict:
-    """Gate 3: staged-layout probe — stage the SMALLEST row_index + summary
-    files and open them through the CONSUMER loaders (artifact-reuse check
-    (h)(iv): the staged tree must open via the consumer's own reader).
+    """Gate 3: staged-layout probe through the REAL U-store mapping.
+
+    Stages a 1-shard-per-kind slice of the production mapping — the
+    ``U_STORE_CELL`` dir's canonical-kind shards FLATTENED + the corpus
+    ``manifest.jsonl`` as row metadata (``store_io.stage_u_store``) — then
+    opens it through the PRODUCTION consumer path the fits CLI runs
+    (``store_io.load_summaries`` -> ``store_io.fit_pool_mask``) with shape
+    asserts (artifact-reuse check (h)(iv): the staged tree must open via the
+    consumer's own reader, in the layout production consumes).
     """
-    import numpy as np
-
-    entries = _scoped_tree(STORE_PREFIX, revision)
-    sized = [(e.path, e.size) for e in entries if getattr(e, "size", None) is not None]
-    row_index_files = sorted(
-        (s, p) for p, s in sized if p.rsplit("/", 1)[-1].startswith("row_index")
-    )
-    summary_files = sorted(
-        (s, p)
-        for p, s in sized
-        if p.endswith(".npy")
-        and any(p.rsplit("/", 1)[-1].startswith(f"{k}_L") for k in SUMMARY_KINDS)
-    )
-    if not row_index_files or not summary_files:
-        raise AssertionError(
-            f"gate3 FAIL: row_index files={len(row_index_files)} summary files="
-            f"{len(summary_files)} under {HF_DATA_REPO}@{revision}:{STORE_PREFIX}"
-        )
+    n_probe = 16
+    layers = (0,)
     local_dir = Path(local_dir)
-    root = STORE_PREFIX.rstrip("/") + "/"
-
-    def _stage(repo_path: str) -> Path:
-        rel = repo_path[len(root) :] if repo_path.startswith(root) else repo_path
-        return hub.stage_hub_file(
-            HF_DATA_REPO, repo_path, local_dir / rel, repo_type="dataset", revision=revision
-        )
-
-    ri_size, ri_path = row_index_files[0]
-    su_size, su_path = summary_files[0]
-    ri_local = _stage(ri_path)
-    su_local = _stage(su_path)
-
-    # Consumer-loader opens (store_io._iter_jsonl / np.load — the same readers
-    # load_summaries uses), not ad-hoc parsing.
-    rows = store_io._iter_jsonl(ri_local)
-    if not rows or not all(isinstance(r, dict) for r in rows):
-        raise AssertionError(f"gate3 FAIL: row_index {ri_path} unparseable via consumer loader")
-    n_with_eval_key = sum(1 for r in rows if "is_eval_only" in r)
-    arr = np.load(su_local)
-    if arr.ndim != 2 or arr.shape[1] != HIDDEN_DIM:
-        raise AssertionError(
-            f"gate3 FAIL: summary {su_path} shape {arr.shape} != (n, {HIDDEN_DIM})"
-        )
+    staged_root = store_io.stage_u_store(
+        local_dir, SUMMARY_KINDS, layers, revision=revision, max_shards_per_kind=1
+    )
+    arrays, meta = store_io.load_summaries(staged_root, SUMMARY_KINDS, layers, n_rows=n_probe)
+    shapes: dict[str, list[int]] = {}
+    for (kind, layer), arr in arrays.items():
+        if arr.ndim != 2 or arr.shape[1] != HIDDEN_DIM:
+            raise AssertionError(
+                f"gate3 FAIL: {kind}_L{layer:02d} shape {arr.shape} != (n, {HIDDEN_DIM})"
+            )
+        shapes[f"{kind}_L{layer:02d}"] = list(arr.shape)
+    if not meta or not all(isinstance(r, dict) for r in meta):
+        raise AssertionError("gate3 FAIL: corpus manifest rows unparseable via consumer loader")
+    mask = store_io.fit_pool_mask(meta)  # fails loud on zero fit rows
+    manifest_rows = store_io._iter_jsonl(local_dir / "manifest.jsonl")
+    n_with_eval_key = sum(1 for r in manifest_rows if "is_eval_only" in r)
     report = {
         "gate": "gate3_staged_layout_probe",
         "repo": HF_DATA_REPO,
         "revision": revision,
-        "row_index_file": {"path": ri_path, "size": ri_size, "n_rows": len(rows)},
-        "row_index_first_row_keys": sorted(rows[0].keys()),
+        "prefix": STORE_PREFIX,
+        "staged_root": str(staged_root),
+        "kinds": list(SUMMARY_KINDS),
+        "n_probe_rows": int(n_probe),
+        "summary_shapes": shapes,
+        "manifest_n_rows": len(manifest_rows),
+        "manifest_first_row_keys": sorted(manifest_rows[0].keys()),
         "n_rows_with_is_eval_only_key": n_with_eval_key,
-        "summary_file": {
-            "path": su_path,
-            "size": su_size,
-            "shape": list(arr.shape),
-            "dtype": str(arr.dtype),
-        },
+        "fit_pool_kept_of_probe": int(mask.sum()),
         "verdict": "PASS",
     }
     logger.info("[gate3] PASS: %s", report)

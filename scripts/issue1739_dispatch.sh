@@ -126,6 +126,24 @@ stage_corpus(b, 'eval', cap, 0)
       # Matched-budget arm grid per behavior (both prefix+context variants).
       # The smoke slice threads through EPM_I1739_LIMIT exactly like the
       # earlier phases (smoke IS the production path with tiny caps).
+      # Pre-step: stage the #1092 U-pool (cell_inst_own shards flattened +
+      # corpus manifest.jsonl as row metadata — the realized cell_* dirs
+      # carry NO row_index files). Idempotent; issue1739_fits.py re-ensures
+      # the same regime before loading (belt-and-suspenders).
+      echo "[phase=${phase}] staging #1092 U-store (idempotent)"
+      U_LAYERS=()
+      if [ -n "${EPM_I1739_LIMIT:-}" ]; then U_LAYERS=(0 1 2); fi
+      "${CAPS[@]}" uv run python -c "
+import sys
+from explore_persona_space.orchestrate.env import load_dotenv
+load_dotenv()
+from pathlib import Path
+from explore_persona_space.experiments.issue_1739 import store_io
+from explore_persona_space.experiments.issue_1739.constants import N_LAYERS
+layers = tuple(int(x) for x in sys.argv[1:]) if len(sys.argv) > 1 else tuple(range(N_LAYERS))
+store_io.stage_u_store(Path('data/issue_1739/hf_dl/u_store'), layers=layers)
+print(f'[fits] u_store staged/verified: layers={len(layers)}', flush=True)
+" "${U_LAYERS[@]}"
       for b in $BEHAVIORS_RUN; do
         echo "[phase=${phase}] fits behavior=${b}"
         FITS_ARGS=(--behavior "$b"

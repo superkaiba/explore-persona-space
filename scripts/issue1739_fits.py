@@ -251,6 +251,10 @@ def _run_real(args: argparse.Namespace) -> int:
     )
     dim = y_ans_raw.shape[-1]
 
+    # Stage the #1092 U-pool slice on demand (idempotent: a dest that is
+    # already loadable for the requested (kinds x layers) regime — incl. a
+    # LOCAL capture-store stand-in — short-circuits without network).
+    store_io.stage_u_store(Path(args.u_store), ("prefix_end", "context_end", "t1"), tuple(layers))
     u_arrays, u_meta = store_io.load_summaries(
         args.u_store, ("prefix_end", "context_end", "t1"), tuple(layers), hidden_dim=dim
     )

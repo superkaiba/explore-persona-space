@@ -485,10 +485,18 @@ def phase_gates12(behaviors: tuple[str, ...], limit: int) -> None:
 
 
 def phase_realstore() -> None:
-    """REAL #1092 store read: stage a small slice at the pinned revision and
-    run the production consumer path (load_summaries -> fit_pool_mask ->
-    whitening -> linear map) at the production 3584 dim; then the REAL r_B
-    bank through its consumer loader."""
+    """REAL #1092 store read through the PRODUCTION layout-mapping adapter:
+
+    (a) dynamics_instruct leg — canonical kind names (context_end/t1) resolve
+        via the realized aliases (context_k/answer_k_t1) + per-kind row_index
+        stems inside ``store_io.load_summaries`` (the composite consumer),
+        then whitening + linear map at the production 3584 dim;
+    (b) U-store cell leg — the PRODUCTION fits mapping:
+        ``store_io.stage_u_store`` (cell_inst_own shards flattened + corpus
+        manifest.jsonl as row metadata, 1-shard probe slice) ->
+        ``load_summaries`` -> ``fit_pool_mask``;
+    (c) the REAL r_B bank through its consumer loader.
+    """
     import numpy as np
 
     from explore_persona_space.experiments.issue_1739 import fits, store_io
@@ -496,44 +504,26 @@ def phase_realstore() -> None:
         HIDDEN_DIM,
         N_LAYERS,
         RB_N_TRAITS,
+        SUMMARY_KINDS,
     )
 
     local = Path("data/issue_1739/hf_dl/real_store_slice")
     t0 = time.time()
-    # Realized-layout finding (round C2 smoke): the MAIN cell_* dirs carry
-    # (prefix_end/context_end/t1..t3) npys but NO row_index sidecars; the
-    # row_index-bearing dirs (dynamics_*/bare_*) use DIFFERENT kind names.
-    # dynamics_instruct's (context_k -> answer_k_t1) is the true
-    # context->answer pairing, so the real-dim leg reads THAT layout.
-    # NOTE (realized layout, this leg's own finding): dynamics_* carries
-    # PER-KIND row_index stems (row_index_context_k_shard*.jsonl), which the
-    # composite load_summaries (hardcoded "row_index" stem) cannot open —
-    # so this leg reads through the same production PRIMITIVES it composes
-    # (_load_summary / _index_rows / fit_pool_mask). The u-store layout
-    # mapping is raised as a concern for the production fits wiring.
-    kinds = ("context_k", "answer_k_t1")
+    # (a) dynamics leg: request CANONICAL kinds; the adapter maps them to the
+    # realized names + per-kind row_index stems (round-C2 findings, now wired).
+    kinds = ("context_end", "t1")
     staged = store_io.stage_store_slice(kinds, (0,), 64, local, cell="dynamics_instruct")
     print(f"[smoke-realstore] staged {len(staged)} files in {time.time() - t0:.0f}s", flush=True)
-    root = local / "dynamics_instruct"
-    arrays = {(k, 0): store_io._load_summary(root, k, 0) for k in kinds}
-    meta_x = store_io._index_rows(root, stem=f"row_index_{kinds[0]}")
-    meta_y = store_io._index_rows(root, stem=f"row_index_{kinds[1]}")
-    assert arrays[(kinds[0], 0)].shape[1] == HIDDEN_DIM, arrays[(kinds[0], 0)].shape
-    assert len(meta_x) == arrays[(kinds[0], 0)].shape[0], (
-        len(meta_x),
-        arrays[(kinds[0], 0)].shape,
-    )
-    row_keys = sorted(meta_x[0])
+    arrays, meta = store_io.load_summaries(local, kinds, (0,), cell="dynamics_instruct", n_rows=64)
+    row_keys = sorted(meta[0])
     print(
-        f"[smoke-realstore] rows: x={len(meta_x)} y={len(meta_y)} row_index keys: {row_keys}",
+        f"[smoke-realstore] dynamics rows: n={len(meta)} row_index keys: {row_keys}",
         flush=True,
     )
-    meta = meta_x[:64]
-    arrays = {key: arr[:64] for key, arr in arrays.items()}
     mask = store_io.fit_pool_mask(meta)
     rows = np.flatnonzero(mask)
-    x_u = np.stack([arrays[(kinds[0], 0)][rows].astype(np.float64)])
-    y_u = np.stack([arrays[(kinds[1], 0)][rows].astype(np.float64)])
+    x_u = np.stack([arrays[("context_end", 0)][rows].astype(np.float64)])
+    y_u = np.stack([arrays[("t1", 0)][rows].astype(np.float64)])
     wh = fits.fit_whitening(x_u, device="cpu")
     mapfit = fits.fit_linear_map(
         fits.apply_whitening(x_u, wh), fits.apply_whitening(y_u, wh), device="cpu"
@@ -543,9 +533,29 @@ def phase_realstore() -> None:
         f"diag_keys={sorted(mapfit.diagnostics)[:6]}",
         flush=True,
     )
+    # (b) U-store cell leg — the exact mapping production fits consumes.
+    u_local = Path("data/issue_1739/hf_dl/u_store_probe")
+    u_root = store_io.stage_u_store(u_local, SUMMARY_KINDS, (0,), max_shards_per_kind=1)
+    u_arrays, u_meta = store_io.load_summaries(u_root, SUMMARY_KINDS, (0,), n_rows=16)
+    u_mask = store_io.fit_pool_mask(u_meta)
+    u_shapes = {f"{k}_L{ly:02d}": list(a.shape) for (k, ly), a in u_arrays.items()}
+    n_manifest = len(store_io._iter_jsonl(u_local / "manifest.jsonl"))
+    print(
+        f"[smoke-realstore] u_store cell leg OK: shapes={u_shapes} "
+        f"manifest_rows={n_manifest} fit_kept={int(u_mask.sum())}/16 "
+        f"meta_keys={sorted(u_meta[0])}",
+        flush=True,
+    )
+    # (c) r_B bank through its consumer loader.
     bank, names = store_io.load_rb_bank()
     assert bank.shape == (N_LAYERS, RB_N_TRAITS, HIDDEN_DIM), bank.shape
     print(f"[smoke-realstore] r_B bank OK: shape={bank.shape} traits={names}", flush=True)
+    print(
+        "REALSTORE SMOKE: PASS shapes="
+        f"dynamics(n={len(meta)},d={HIDDEN_DIM}),u_store={u_shapes},"
+        f"manifest_rows={n_manifest},rb={list(bank.shape)}",
+        flush=True,
+    )
     print("[smoke-realstore] done", flush=True)
 
 

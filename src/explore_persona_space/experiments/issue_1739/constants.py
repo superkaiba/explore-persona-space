@@ -20,6 +20,17 @@ SUMMARY_KINDS = ("prefix_end", "context_end", "t1")
 # battery rows carry is_eval_only=True -> 18,793 fit rows (plan v3 / #1092).
 STORE_TOTAL_ROWS = 21_193
 STORE_FIT_ROWS = 18_793
+# U-pool source cell in the REALIZED store (gate0 finding: main cell_* dirs
+# carry canonical kinds but NO row_index files). cell_inst_own = the instruct
+# model on its own text — #1092's B0 reference cell (issue1092_fit_grid
+# B0_CELLS / CELL_MODEL_TYPE).
+U_STORE_CELL = "cell_inst_own"
+# The cell dirs' row metadata is the #1092 corpus manifest (issue1092_fit_grid
+# reads `corpus_dir / "manifest.jsonl"`). Pinned at #1092's OWN corpus pin
+# (scripts/issue1092_prefixend_monitoring.py CORPUS_REV) — the manifest content
+# the summaries were captured under; row count must equal STORE_TOTAL_ROWS.
+CORPUS_MANIFEST_PATH = "issue1092_realistic_crossing/corpus/manifest.jsonl"
+CORPUS_MANIFEST_REVISION = "7ef5523673d64697ab497577dbc5b9270c39f020"
 
 # --- #779 r_B trait-direction bank ---
 RB_REVISION = "037fcbb"  # #779 r_B bank pin
