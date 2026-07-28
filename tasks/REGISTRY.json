@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1744,
+  "highest_id": 1745,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5791,6 +5791,13 @@
       "path": "tasks/proposed/1744",
       "status": "proposed",
       "title": "daily-fix: implementer pin-sweep deleted-literal own substep"
+    },
+    "1745": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1745",
+      "status": "proposed",
+      "title": "daily-fix: pre-persist plan header retitle stops c40 churn"
     },
     "176": {
       "has_clean_result": false,
