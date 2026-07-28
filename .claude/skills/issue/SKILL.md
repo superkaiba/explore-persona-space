@@ -10166,7 +10166,7 @@ A behind-`main` `issue-<N>` branch can carry stale copies of OTHER tasks'
 `tasks/` state, a crash between merge and a status flip can strand a
 task at the wrong status, AND a branch based on another still-unmerged
 `issue-<M>` branch will replay `#M`'s old commits onto `main` if blindly
-rebase-merged. Three guards:
+rebase-merged. Five guards:
 
 1. **Foreign-`tasks/` guard (strip whole foreign task folders before the
    merge).** `git diff --name-only "$MAIN_SHA"...HEAD -- tasks/` — the
@@ -10579,21 +10579,35 @@ rebase-merged. Three guards:
      Sequenced AFTER Guard 0's agent-memory commit (run the idempotent
      Guard 0 block first if not yet run this invocation).
      `git -C "$WT" fetch origin main --quiet`, then probe for the
-     predicted conflict without touching the working tree, version-aware
-     (this VM runs git 2.34.1): on git ≥ 2.38 use
-     `git -C "$WT" merge-tree --write-tree origin/main HEAD` (non-zero
-     exit / conflict listing = real conflict); on older git use the legacy
-     read-only three-arg form —
-     `git -C "$WT" merge-tree "$(git -C "$WT" merge-base HEAD origin/main)" HEAD origin/main`
-     — and detect a real conflict with `grep -qE '<<<<<<<|^removed in'`
-     over its output (build-time smoke on git 2.34.1: the `<<<<<<<`
-     marker catches same-hunk textual conflicts, `^removed in` catches
-     the delete/modify conflicts the marker grep misses, and neither
-     fires on a clean merge); ambiguous or unavailable probe output →
-     treat the candidate as conflicted — fail toward the proactive
-     resolve, never toward a doomed server-side refusal. CLEAN probe →
-     proceed exactly as today (Guards 0-4 + the normal merge form;
-     experiment branches keep `--rebase`). CONFLICTED → resolve
+     predicted conflict without touching the working tree, PATH-SCOPED
+     to each candidate note's own `path=<file>` field (dedup paths
+     across notes; a candidate note MISSING its `path=` field → treat
+     as conflicted — the degrade below). Per path, materialize the
+     three blob versions and run read-only three-way `git merge-file`
+     (ancient, version-portable plumbing — no git-version branch
+     needed; `-p` writes the merged result to stdout, inputs untouched):
+
+     ```bash
+     MB=$(git -C "$WT" merge-base HEAD origin/main)
+     git -C "$WT" show "$MB:<file>"          > /tmp/issue-<N>-mh-base   # any show failing
+     git -C "$WT" show "HEAD:<file>"         > /tmp/issue-<N>-mh-ours   # (added/deleted/renamed
+     git -C "$WT" show "origin/main:<file>"  > /tmp/issue-<N>-mh-theirs # on a side) -> CONFLICTED
+     git merge-file -p /tmp/issue-<N>-mh-ours /tmp/issue-<N>-mh-base /tmp/issue-<N>-mh-theirs \
+       > /dev/null 2>&1
+     # rc 0 = clean; rc > 0 (= conflict count) = CONFLICTED; rc < 0 (shell: 255) = error -> CONFLICTED
+     ```
+
+     (A whole-tree probe — legacy `git merge-tree <mb> HEAD origin/main`,
+     or the modern `--write-tree` form — is deliberately NOT used: on
+     this repo it reads CONFLICTED on essentially every real merge,
+     because main's constant `tasks/` folder git-mvs print `removed in`
+     stanzas and events.jsonl notes quoting conflict markers trip a
+     `<<<<<<<` grep, making the clean path unreachable.) Ambiguous or
+     unavailable probe output → treat the candidate as conflicted — fail
+     toward the proactive resolve, never toward a doomed server-side
+     refusal. ALL probed paths clean → proceed exactly as today
+     (Guards 0-4 + the normal merge form; experiment branches keep
+     `--rebase`). Any path CONFLICTED → resolve
      proactively IN THE WORKTREE via the EXISTING merge-conflict recovery
      machinery (capture ONE `MAIN_SHA`, `git -C "$WT" merge "$MAIN_SHA"`,
      the mechanical foreign-tasks/figures passes + residual-conflict

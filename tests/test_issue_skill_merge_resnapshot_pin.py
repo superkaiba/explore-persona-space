@@ -471,9 +471,9 @@ def test_merge_hold_tokens_present():
     """#1757 durability pin: (i) Step 2b records an edit-locus consistency
     WARN vs a live sibling as a machine-scannable `merge-hold-candidate`
     events note; (ii) the merge-guards region carries Guard 5 — the bounded
-    sibling hold (2700 s cap, one 45-min gate cycle), the `merge-tree`
-    pre-resolution probe, and the `merge_hold:` / `pre_resolve:` disposition
-    tokens on the merged/merge-failed note."""
+    sibling hold (2700 s cap, one 45-min gate cycle), the path-scoped
+    `merge-file` pre-resolution probe, and the `merge_hold:` / `pre_resolve:`
+    disposition tokens on the merged/merge-failed note."""
     text = _skill_text()
 
     step2b = _step2b_region(text)
@@ -490,6 +490,6 @@ def test_merge_hold_tokens_present():
     assert "pre_resolve:" in guards, (
         "Guard 5 must record the pre_resolve: disposition on the merged/merge-failed note"
     )
-    assert "merge-tree" in guards, (
-        "Guard 5 must probe the predicted conflict up front via git merge-tree"
+    assert "merge-file" in guards, (
+        "Guard 5 must probe the predicted conflict up front via path-scoped git merge-file"
     )
