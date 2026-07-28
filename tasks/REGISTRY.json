@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1742,
+  "highest_id": 1743,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5777,6 +5777,13 @@
       "path": "tasks/proposed/1742",
       "status": "proposed",
       "title": "daily-fix: Step 9c urgent-park emission made mechanical"
+    },
+    "1743": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1743",
+      "status": "proposed",
+      "title": "daily-fix: code-reviewer verdict post via --file + read-back"
     },
     "176": {
       "has_clean_result": false,
