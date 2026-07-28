@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1738,
+  "highest_id": 1739,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5741,6 +5741,14 @@
       "path": "tasks/planning/1738",
       "status": "planning",
       "title": "Multi-turn prefix-arm map at 100k: build the multi-turn n1M analogue, fit prefix+context arms, characterize both arms' prediction error"
+    },
+    "1739": {
+      "goal": "Determine whether applying the learned context->answer map before projecting the persona vector predicts on-policy behavior expression (evil, trait sycophancy, hallucination) better than context-side projection and direct regression at matched (unlabeled, labeled) data budgets, and whether that advantage grows across a real-data distribution-shift ladder.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1739",
+      "status": "proposed",
+      "title": "Behavior prediction through the context->answer map: does applying the map before persona-vector projection beat context-side projection and direct regression, and how does the advantage scale with labels and distribution shift?"
     },
     "174": {
       "has_clean_result": false,
