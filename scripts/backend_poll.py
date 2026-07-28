@@ -501,6 +501,13 @@ def _save_gpu_idle_state(path: Path, payload: dict[str, str]) -> None:
 # #1033: the GPU-idle advisory/escalation keys scoped to ONE instance
 # incarnation on the GCP lane. Kept in lockstep with the idle subset of
 # ``poll_pipeline._RUN_SCOPED_STATE_KEYS`` (the RunPod-lane sibling clear set).
+#
+# #1752: ``gpu_idle_escalation_counts`` is deliberately NOT in this set (nor
+# in the RunPod-lane sibling): the per-phase escalation count must survive
+# BOTH the attempt-id scoping below AND the run-scope reset — the repeat
+# pathology it detects (#1689: an identical [gpu-idle-escalation] re-fired
+# forever) only manifests ACROSS relaunches / attempt incarnations. Pinned by
+# tests/test_backend_poll_gpu_idle.py.
 _IDLE_ADVISORY_STATE_KEYS: tuple[str, ...] = (
     "gpu_idle_since_epoch",
     "gpu_idle_advised_phases",
@@ -4675,6 +4682,7 @@ def main(argv: list[str] | None = None) -> int:
             _maybe_post_gpu_idle_advisory,
             _maybe_post_gpu_width_advisory,
             _run_launched_age_sec,
+            _serialize_escalation_counts,
             _tripwire_run_scope,
         )
 
@@ -4718,15 +4726,17 @@ def main(argv: list[str] | None = None) -> int:
             prev_state=tripwire_state,
             now_epoch=now_epoch,
         )
-        escalated_phases, gcp_gpu_idle_escalation_posted = _maybe_escalate_gpu_idle(
-            issue=args.issue,
-            pod=pod,
-            status="running",
-            gpu_util=gpu_util,
-            current_phase=current_phase,
-            idle_since_epoch=idle_since,
-            prev_state=tripwire_state,
-            now_epoch=now_epoch,
+        escalated_phases, escalation_counts, gcp_gpu_idle_escalation_posted = (
+            _maybe_escalate_gpu_idle(
+                issue=args.issue,
+                pod=pod,
+                status="running",
+                gpu_util=gpu_util,
+                current_phase=current_phase,
+                idle_since_epoch=idle_since,
+                prev_state=tripwire_state,
+                now_epoch=now_epoch,
+            )
         )
         # ── #873 m-of-N GPU-width advisory (GCP mirror of the RunPod call) ─
         # Same imported wiring fn, same inputs, same sibling state file —
@@ -4749,6 +4759,14 @@ def main(argv: list[str] | None = None) -> int:
                 "gpu_idle_since_epoch": str(idle_since),
                 "gpu_idle_advised_phases": ",".join(sorted(advised_phases)),
                 "gpu_idle_escalated_phases": ",".join(sorted(escalated_phases)),
+                # #1752: per-phase escalation COUNT across relaunches / attempt
+                # incarnations (phase:count pairs; serializer imported from
+                # poll_pipeline — same format as the RunPod lane). Read from
+                # the SCOPED tripwire_state and deliberately NOT in
+                # _IDLE_ADVISORY_STATE_KEYS nor _RUN_SCOPED_STATE_KEYS: both
+                # are blacklist-clears, so the count survives both resets by
+                # default — cross-relaunch survival is the point (#1689).
+                "gpu_idle_escalation_counts": _serialize_escalation_counts(escalation_counts),
                 # #873 width keys + the run-scope anchor (AC #6 mirrored).
                 "gpu_width_since_epoch": str(gcp_width_since),
                 "gpu_width_idle_set": ",".join(str(i) for i in gcp_width_idle_set),

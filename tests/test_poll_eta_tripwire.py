@@ -405,6 +405,23 @@ def test_run_scope_clears_idle_keys_on_new_run() -> None:
     assert set(idle_keys) <= set(pp._RUN_SCOPED_STATE_KEYS)
 
 
+def test_run_scope_keeps_escalation_counts_key() -> None:
+    """#1752: ``gpu_idle_escalation_counts`` is deliberately NOT in
+    ``_RUN_SCOPED_STATE_KEYS`` — the per-phase escalation count must SURVIVE
+    the fresh-run reset (the repeat pathology it detects only manifests
+    ACROSS run epochs, #1689) while the idle span/dedup keys clear."""
+    assert "gpu_idle_escalation_counts" not in pp._RUN_SCOPED_STATE_KEYS
+    now = 1_000_000
+    prev = {
+        "gpu_idle_escalated_phases": "workload",
+        "gpu_idle_escalation_counts": "workload:2",
+        "tripwire_run_epoch": "1000",
+    }
+    state, _epoch = pp._tripwire_run_scope(prev, run_age_sec=120.0, now_epoch=now)
+    assert "gpu_idle_escalated_phases" not in state  # dedup re-armed
+    assert state["gpu_idle_escalation_counts"] == "workload:2"  # count survives
+
+
 def test_run_scope_keeps_idle_keys_same_run() -> None:
     """#1033 fail-safes pinned: a same-run anchor (within the 60s jitter
     tolerance) AND an unknown run age (missing/unreadable marker) BOTH keep

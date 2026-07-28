@@ -4151,6 +4151,13 @@ _TRIPWIRE_STATE_KEYS: tuple[str, ...] = (
 # "543 min" / #810 "486 min" on ~17-min-old instances, where the phase name
 # matched the stored one so the per-phase reset never fired). The pre-#1033
 # "idle keys untouched by the run-scope reset" contract was the bug.
+#
+# #1752: ``gpu_idle_escalation_counts`` is deliberately NOT in this set. The
+# #1033 rationale (a stale idle-minutes DISPLAY inherited across relaunches)
+# does not apply to a pure per-phase count, and SURVIVING relaunches is the
+# point — the repeat pathology (an identical escalation re-fired forever)
+# only manifests ACROSS run epochs (#1689). Pinned by
+# tests/test_poll_eta_tripwire.py.
 _RUN_SCOPED_STATE_KEYS: tuple[str, ...] = (
     *_TRIPWIRE_STATE_KEYS,
     "gpu_idle_since_epoch",
@@ -4232,6 +4239,59 @@ if 0 < _GPU_IDLE_ESCALATION_MIN_RAW < GPU_IDLE_ADVISORY_MIN:
     GPU_IDLE_ESCALATION_MIN = GPU_IDLE_ADVISORY_MIN
 else:
     GPU_IDLE_ESCALATION_MIN = _GPU_IDLE_ESCALATION_MIN_RAW
+
+# #1752: the per-phase escalation COUNT (inclusive) at which the escalation
+# switches KIND from the identical ``[gpu-idle-escalation]`` note to the
+# distinct ``[gpu-idle-width-reeval]`` note + width-re-eval push. The count is
+# tracked ACROSS run epochs / relaunches (state key
+# ``gpu_idle_escalation_counts``, deliberately NOT run-scope-cleared) because
+# the repeat pathology only manifests across relaunches: the #1033 run-scope
+# reset re-arms the per-phase dedup on every fresh ``epm:run-launched``, so a
+# phase idle across relaunches re-fires a byte-identical note forever (#1689:
+# ``fit_ladder`` escalated identically twice around a relaunch and rode ~14h
+# at 0% GPU). Under the default N=3 the switch comes on the THIRD fire —
+# one-more-chance semantics, intended. ``<= 0`` disables the width-re-eval
+# variant (identical notes forever, pre-#1752 behavior); 1/2 are honored
+# (escalate-in-kind sooner).
+GPU_IDLE_WIDTH_REEVAL_N = int(os.environ.get("EPM_GPU_IDLE_WIDTH_REEVAL_N", "3"))
+
+
+def _parse_escalation_counts(raw: str) -> dict[str, int]:
+    """Parse the ``gpu_idle_escalation_counts`` state value (#1752).
+
+    Format: comma-joined ``phase:count`` pairs (phase names match ``PHASE_RE``
+    ``[a-z0-9_]+``, so ``:`` / ``,`` are safe separators). Malformed entries
+    (missing ``:``, empty phase, non-integer / non-positive count) are DROPPED
+    — never raises into the poll tick: an unparsable count simply restarts at
+    0 for its phase (the cheap failure direction — one extra identical note,
+    never a suppressed one).
+    """
+    counts: dict[str, int] = {}
+    for entry in (raw or "").split(","):
+        entry = entry.strip()
+        if not entry or ":" not in entry:
+            continue
+        phase, _, count_raw = entry.rpartition(":")
+        if not phase:
+            continue
+        try:
+            count = int(count_raw)
+        except ValueError:
+            continue
+        if count > 0:
+            counts[phase] = count
+    return counts
+
+
+def _serialize_escalation_counts(counts: dict[str, int]) -> str:
+    """Serialize per-phase escalation counts to the comma-joined state value.
+
+    Inverse of :func:`_parse_escalation_counts`; sorted for a deterministic
+    state file. Shared by ``poll_once`` and the GCP mirror in
+    ``scripts/backend_poll.py`` (import-not-extract reuse, #730).
+    """
+    return ",".join(f"{phase}:{count}" for phase, count in sorted(counts.items()))
+
 
 # Phase-name substrings that mark a phase as GPU-REQUIRED (NOT escalated). The
 # escalation fails toward over-notifying (a loud notice is cheap; a missed leak
@@ -4377,25 +4437,36 @@ def _maybe_escalate_gpu_idle(
     idle_since_epoch: int,
     prev_state: dict[str, str],
     now_epoch: int,
-) -> tuple[set[str], bool]:
+) -> tuple[set[str], dict[str, int], bool]:
     """Escalation wiring for ``poll_once``: parse state, decide, maybe escalate.
 
     Called RIGHT AFTER ``_maybe_post_gpu_idle_advisory`` (so the advisory always
     fires first on the same span) and fed that pass's resolved
     ``idle_since_epoch`` so both tiers read the ONE shared span. Returns
-    ``(escalated_phases, escalated)`` for the caller to persist via
-    ``_save_state``.
+    ``(escalated_phases, escalation_counts, escalated)`` for the caller to
+    persist via ``_save_state`` / the GCP sibling state file.
 
-    On ``should_escalate``: post a LOUD ``[gpu-idle-escalation]`` ``epm:progress``
-    marker (``gpu_idle_escalation=True`` extra) AND fire a best-effort Telegram
-    push. NOTHING is stopped — the note states so explicitly. A marker-post
-    failure is logged and the phase is NOT recorded as escalated (next tick
-    retries), exactly like the advisory; a push failure is fail-soft and does
-    NOT block recording the escalation (the marker is the durable record).
+    On ``should_escalate``: post a LOUD ``epm:progress`` marker AND fire a
+    best-effort Telegram push. Escalations 1..N-1 for a phase (counted ACROSS
+    run epochs via ``gpu_idle_escalation_counts``, which deliberately survives
+    the #1033 run-scope reset) post the byte-identical ``[gpu-idle-escalation]``
+    note (``gpu_idle_escalation=True`` extra); the Nth
+    (N = ``GPU_IDLE_WIDTH_REEVAL_N``, default 3) and later switch KIND to a
+    distinct ``[gpu-idle-width-reeval]`` note naming the concrete downsize
+    recipe (extras ``gpu_idle_escalation=True`` + ``gpu_idle_width_reeval=True``
+    + ``escalation_repeat=n``) with a width-re-eval-worded push (#1752/#1689).
+    NOTHING is stopped on either form — the notes state so explicitly. A
+    marker-post failure is logged and NEITHER the phase NOR the count is
+    recorded (next tick retries), exactly like the advisory; a push failure is
+    fail-soft and does NOT block recording the escalation (the marker is the
+    durable record).
     """
     escalated_phases = {
         p for p in (prev_state.get("gpu_idle_escalated_phases", "") or "").split(",") if p
     }
+    escalation_counts = _parse_escalation_counts(
+        prev_state.get("gpu_idle_escalation_counts", "") or ""
+    )
     update = _gpu_idle_escalation_update(
         status=status,
         gpu_util=gpu_util,
@@ -4406,18 +4477,46 @@ def _maybe_escalate_gpu_idle(
         escalation_min=GPU_IDLE_ESCALATION_MIN,
     )
     if not update.should_escalate:
-        return escalated_phases, False
+        return escalated_phases, escalation_counts, False
     n_gpus = len([tok for tok in gpu_util.split(",") if tok.strip()])
     idle_min = update.idle_span_sec // 60
-    note = (
-        f"[gpu-idle-escalation] all {n_gpus} GPUs <= {GPU_IDLE_UTIL_THRESHOLD}% util for "
-        f"{idle_min} min on a MULTI-GPU pod in an upload/CPU-only phase "
-        f"(phase={current_phase}, gpu_util={gpu_util}). This is the #664 spend-leak class "
-        f"(an 8xH200 idle in a terminal upload phase burns ~$44/hr). REMEDY: route the "
-        f"upload off-pod / release the GPUs after a checkpoint — the FINAL upload phase is "
-        f"itself CPU-only (CLAUDE.md: CPU-only phases don't hold GPU pods). NOTHING was "
-        f"stopped — surfacing the spend leak for action."
-    )
+    n = escalation_counts.get(current_phase, 0) + 1
+    width_reeval = GPU_IDLE_WIDTH_REEVAL_N > 0 and n >= GPU_IDLE_WIDTH_REEVAL_N
+    extra: dict[str, Any] = {"gpu_idle_escalation": True}
+    if width_reeval:
+        note = (
+            f"[gpu-idle-width-reeval] escalation #{n} for phase={current_phase} counted "
+            f"ACROSS relaunches: all {n_gpus} GPUs <= {GPU_IDLE_UTIL_THRESHOLD}% util for "
+            f"{idle_min} min on a MULTI-GPU pod in an upload/CPU-only phase "
+            f"(gpu_util={gpu_util}). The identical [gpu-idle-escalation] note has produced "
+            f"no action {n - 1} time(s) — RE-EVALUATE the pod WIDTH instead: persist resume "
+            f"state / store off-pod -> terminate the wide pod -> re-provision narrow (the "
+            f"CLAUDE.md GPU-WIDTH right-sizing carve-out), or route the CPU phase off-pod "
+            f"entirely. NOTHING was stopped — the poller never stops the pod; this is a "
+            f"louder surfacing tier only."
+        )
+        extra["gpu_idle_width_reeval"] = True
+        extra["escalation_repeat"] = n
+        push_msg = (
+            f"[#{issue}] GPU-idle WIDTH RE-EVAL (escalation #{n} across relaunches): "
+            f"{n_gpus} GPUs idle {idle_min} min in phase={current_phase} on {pod} — "
+            f"persist off-pod, terminate the wide pod, re-provision narrow / route the "
+            f"CPU phase off-pod (nothing stopped)."
+        )
+    else:
+        note = (
+            f"[gpu-idle-escalation] all {n_gpus} GPUs <= {GPU_IDLE_UTIL_THRESHOLD}% util for "
+            f"{idle_min} min on a MULTI-GPU pod in an upload/CPU-only phase "
+            f"(phase={current_phase}, gpu_util={gpu_util}). This is the #664 spend-leak class "
+            f"(an 8xH200 idle in a terminal upload phase burns ~$44/hr). REMEDY: route the "
+            f"upload off-pod / release the GPUs after a checkpoint — the FINAL upload phase is "
+            f"itself CPU-only (CLAUDE.md: CPU-only phases don't hold GPU pods). NOTHING was "
+            f"stopped — surfacing the spend leak for action."
+        )
+        push_msg = (
+            f"[#{issue}] GPU-idle escalation: {n_gpus} GPUs idle {idle_min} min in "
+            f"phase={current_phase} on {pod} (#664 spend-leak class; nothing stopped)."
+        )
     try:
         post_event(
             issue,
@@ -4426,26 +4525,27 @@ def _maybe_escalate_gpu_idle(
             note=note,
             phase=current_phase,
             pod=pod,
-            gpu_idle_escalation=True,
+            **extra,
         )
     except Exception as exc:
         log.error("gpu-idle escalation post failed (next tick will retry): %s", exc)
-        return escalated_phases, False
+        return escalated_phases, escalation_counts, False
     # Fail-soft phone push — never blocks recording the escalation.
-    _telegram_push(
-        f"[#{issue}] GPU-idle escalation: {n_gpus} GPUs idle {idle_min} min in "
-        f"phase={current_phase} on {pod} (#664 spend-leak class; nothing stopped)."
-    )
+    _telegram_push(push_msg)
     log.warning(
-        "ESCALATED gpu-idle for #%d: %d GPUs idle %d min in upload/CPU phase=%s (pod=%s)",
+        "ESCALATED gpu-idle for #%d (repeat %d%s): %d GPUs idle %d min in "
+        "upload/CPU phase=%s (pod=%s)",
         issue,
+        n,
+        ", width-reeval" if width_reeval else "",
         n_gpus,
         idle_min,
         current_phase,
         pod,
     )
+    escalation_counts[current_phase] = n
     escalated_phases.add(current_phase)
-    return escalated_phases, True
+    return escalated_phases, escalation_counts, True
 
 
 # Minimum cumulative CPU-seconds delta between consecutive ticks before
@@ -5619,15 +5719,17 @@ def poll_once(
     # pod). Reads the SAME idle span the advisory just resolved
     # (gpu_idle_since_epoch) — no second idle clock — and the SAME
     # run-scoped tripwire_state (#1033).
-    gpu_idle_escalated_phases, gpu_idle_escalation_posted = _maybe_escalate_gpu_idle(
-        issue=issue,
-        pod=pod,
-        status=status,
-        gpu_util=gpu_util,
-        current_phase=current_phase,
-        idle_since_epoch=gpu_idle_since_epoch,
-        prev_state=tripwire_state,
-        now_epoch=now_epoch,
+    gpu_idle_escalated_phases, gpu_idle_escalation_counts, gpu_idle_escalation_posted = (
+        _maybe_escalate_gpu_idle(
+            issue=issue,
+            pod=pod,
+            status=status,
+            gpu_util=gpu_util,
+            current_phase=current_phase,
+            idle_since_epoch=gpu_idle_since_epoch,
+            prev_state=tripwire_state,
+            now_epoch=now_epoch,
+        )
     )
 
     # ── #873 m-of-N GPU-width advisory ───────────────────────────────────
@@ -5808,6 +5910,13 @@ def poll_once(
             # #664 escalation tier per-phase de-dup (shares the idle span
             # above). Same comma-join contract as the advised set.
             "gpu_idle_escalated_phases": ",".join(sorted(gpu_idle_escalated_phases)),
+            # #1752: per-phase escalation COUNT across run epochs
+            # (phase:count pairs). Deliberately NOT in
+            # _RUN_SCOPED_STATE_KEYS: the #1033 rationale (stale
+            # idle-minutes DISPLAY) does not apply to a pure count, and
+            # cross-relaunch survival is the point — the repeat pathology
+            # (#1689) only manifests across run epochs.
+            "gpu_idle_escalation_counts": _serialize_escalation_counts(gpu_idle_escalation_counts),
             # Persist the current CPU sample (observability) so the JSON
             # line / next tick can read the latest probe. Stored as the
             # literal probe string (``"unknown"`` or a float-as-string) so
