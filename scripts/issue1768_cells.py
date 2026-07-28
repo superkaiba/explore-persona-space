@@ -65,10 +65,51 @@ LR_BY_TAG = {"lr5e6": 5e-6, "lr1e5": 1e-5, "lr3e5": 3e-5, "lr1e4": 1e-4}
 BASE_UNITS = ("base_content", "base_mk")
 PILOT_ARM = "imp-pers-con-lr3e5-s42"  # plan gate 1 (the #1586-reused imp pers cell)
 
+# ── full-FT arms (plan §4.1 USER AMENDMENT, marker 2026-07-28T20:36:21Z) ─────
+# The 16 #1586 matched-install full-fine-tune cells join the fleet as
+# CAPTURE-ONLY arms (method axis: LoRA vs full-FT at corpus scale). Identity =
+# the #1586 `issue1586_methodgen/selection/` Hub records; checkpoints live on
+# the PRIVATE overflow repo (full models — no adapter, no merge).
+FT_OVERFLOW_REPO = "superkaiba1/explore-persona-space-overflow"
+FT_SELECTION_HF_PREFIX = "issue1586_methodgen/selection"
+FT_CKPT_HUB_PREFIX = "issue1586"  # overflow-repo prefix (#1586 p4_persist)
+FT_REUSED_CELL = "syc-pers-ft-con-s42"  # the #1112-reused cell (issue1586_cells)
+FT_REUSED_SUBFOLDER = "issue1112/s3_fullft_neg/checkpoint-8"
+FT_BEH_KEYS = ("cas", "imp", "mk", "syc")
+FT_LR = 5e-6  # #1586 executed-grid full-FT lr (issue_1112 FT_LR/MARKER_FT_LR)
+
+# Code-pinned selected (step, metric, in_band) per ft cell — pinned VERBATIM
+# from the Hub selection records (`selection.json` step/metric/in_band fields,
+# fetched + verified 2026-07-28) and RE-verified against those records at p0
+# (`_probe_ft_checkpoints` fails loud on drift). The 4 mk cells are
+# closest_approach fallbacks BELOW the ΔG window (in_band=False) — a #1586
+# selection finding carried here as an analysis caveat, never a drop. The
+# reused syc-con-s42 record carries no metric field (nan; its committed
+# selection is the #1112 s3_fullft_neg record).
+FT_SELECTED: dict[str, tuple[int, float, bool]] = {
+    "cas-pers-ft-con-s42": (10, 0.67, True),
+    "cas-pers-ft-con-s137": (12, 0.79, True),
+    "cas-pers-ft-po-s42": (10, 0.72, True),
+    "cas-pers-ft-po-s137": (10, 0.68, True),
+    "imp-pers-ft-con-s42": (14, 0.64, True),
+    "imp-pers-ft-con-s137": (12, 0.6326530612244898, True),
+    "imp-pers-ft-po-s42": (12, 0.67, True),
+    "imp-pers-ft-po-s137": (12, 0.6262626262626263, True),
+    "mk-pers-ft-con-s42": (6, 2.1477094650268556, False),
+    "mk-pers-ft-con-s137": (6, 2.4166744232177733, False),
+    "mk-pers-ft-po-s42": (6, 3.148651885986328, False),
+    "mk-pers-ft-po-s137": (6, 2.923549461364746, False),
+    "syc-pers-ft-con-s42": (8, float("nan"), True),
+    "syc-pers-ft-con-s137": (24, 0.61, True),
+    "syc-pers-ft-po-s42": (6, 0.8, True),
+    "syc-pers-ft-po-s137": (6, 0.76, True),
+}
+
 
 @dataclasses.dataclass(frozen=True)
 class Arm:
-    """One trained checkpoint of the 56-arm fleet (40 content + 16 marker)."""
+    """One trained checkpoint of the 72-arm fleet (40 content + 16 marker LoRA
+    + 16 full-FT; plan §4.1 amendment)."""
 
     arm_id: str
     kind: str  # "content" | "marker"
@@ -79,6 +120,7 @@ class Arm:
     lr: float
     step: int
     selection_read: float  # content: judged rate; marker: delta_logp_mean
+    method: str = "lora"  # "lora" | "ft" (the amendment's method axis)
 
 
 def _load_manifest() -> dict:
@@ -149,12 +191,43 @@ def marker_arms(manifest: dict | None = None) -> list[Arm]:
     return out
 
 
+def ft_arms() -> list[Arm]:
+    """The 16 #1586 full-FT arms (plan §4.1 amendment; identity pinned above)."""
+    out = []
+    for beh in FT_BEH_KEYS:
+        for regime in REGIMES:
+            for seed in SEEDS:
+                arm_id = f"{beh}-pers-ft-{regime}-s{seed}"
+                step, metric, _in_band = FT_SELECTED[arm_id]
+                out.append(
+                    Arm(
+                        arm_id=arm_id,
+                        kind="marker" if beh == "mk" else "content",
+                        beh_key=beh,
+                        ctx_key="pers",
+                        regime=regime,
+                        seed=seed,
+                        lr=FT_LR,
+                        step=step,
+                        selection_read=metric,
+                        method="ft",
+                    )
+                )
+    assert len(out) == 16, len(out)
+    return out
+
+
 def all_arms(manifest: dict | None = None) -> list[Arm]:
     man = manifest or _load_manifest()
-    arms = content_arms(man) + marker_arms(man)
-    assert len(arms) == 56, len(arms)
-    assert len({a.arm_id for a in arms}) == 56, "duplicate arm ids"
+    arms = content_arms(man) + marker_arms(man) + ft_arms()
+    assert len(arms) == 72, len(arms)  # 56 LoRA + 16 full-FT (plan §4.1)
+    assert len({a.arm_id for a in arms}) == 72, "duplicate arm ids"
     return arms
+
+
+def arm_method(arm_id: str) -> str:
+    """'lora' | 'ft' for a registry arm id (base units are not arms)."""
+    return {a.arm_id: a.method for a in all_arms()}[arm_id]
 
 
 def reused_1586_arm(arm_id: str):
@@ -167,13 +240,16 @@ def reused_1586_arm(arm_id: str):
 
 
 def adapter_subfolder(arm: Arm) -> str:
-    """Model-repo subfolder holding the arm's selected checkpoint (plan §4.1).
+    """Model-repo subfolder holding a LORA arm's selected checkpoint (§4.1).
 
     Resolution order: (1) issue1586_cells.REUSED_LORA_ARMS code-pinned
     subfolder (16 pers arms); (2) issue1481_cells reused-arm registries
     (fu4/fu5/fu7 con arms); (3) cas seed-42 reused-#1434 ladders; (4) fresh
     #1481 run convention (`issue1481[/marker]/<arm_id>/checkpoint-<step>`).
+    A full-FT arm has NO adapter — resolve via `ft_ckpt_subfolder` instead.
     """
+    if arm.method != "lora":
+        raise ValueError(f"{arm.arm_id} is a {arm.method} arm — no adapter subfolder")
     reused = reused_1586_arm(arm.arm_id)
     if reused is not None:
         return reused.subfolder
@@ -191,6 +267,33 @@ def adapter_subfolder(arm: Arm) -> str:
         )
         return f"issue1434/{run_id}/checkpoint-{arm.step}"
     return f"issue1481/{arm.arm_id}/checkpoint-{arm.step}"
+
+
+def ft_ckpt_subfolder(arm: Arm) -> str:
+    """Overflow-repo path of a ft arm's selected FULL checkpoint (plan §4.1).
+
+    Path symmetry with #1586's `_ckpt_persist_prefix` (`issue1586/<cell>/
+    checkpoint-<step>`); the reused #1112 cell keeps its original overflow
+    path. All 16 probed resolving on the Hub 2026-07-28; p0 re-probes.
+    """
+    assert arm.method == "ft", arm.arm_id
+    if arm.arm_id == FT_REUSED_CELL:
+        return FT_REUSED_SUBFOLDER
+    return f"{FT_CKPT_HUB_PREFIX}/{arm.arm_id}/checkpoint-{arm.step}"
+
+
+def delta_arm_for(arm: Arm) -> str:
+    """The arm whose p5 δ cell this arm READS (plan §4.1 amendment).
+
+    ft arms' δ cells COINCIDE with the 16 pers-LoRA cells — the #1586 ft
+    cells trained on the SAME #1481 mixes at matched (beh, regime, seed) —
+    so t̄_{C,B} is shared and p5 adds NO new cells; a LoRA arm owns its own.
+    """
+    if arm.method != "ft":
+        return arm.arm_id
+    import issue1586_cells as g1586
+
+    return g1586.LORA_ARM_BY_CELL[f"{arm.beh_key}-pers-lora-{arm.regime}-s{arm.seed}"].run_id
 
 
 def base_unit_for(arm_id: str) -> str:

@@ -3,16 +3,22 @@
 Phases (all through this one entrypoint; ``--smoke`` = the pilot arm through
 the SAME code paths, PASS_UNIFIED):
 
-- p0_registry   arm registry + full 56-arm adapter probe + corpus sample inputs
+- p0_registry   arm registry + full 72-arm resolution probe (56 LoRA adapters
+                + 16 full-FT overflow checkpoints, identity re-verified against
+                the #1586 selection records) + corpus sample inputs
 - p1_pilot      ONE arm end-to-end at production shape (gate 1 + fp16 probe)
-- p2_corpus     58 corpus on-policy units (vLLM greedy gen -> TF span-means)
+- p2_corpus     74 corpus on-policy units (72 trained arms + 2 base decode
+                variants; vLLM greedy gen -> TF span-means)
                 + the 6 p6 GPU legs (`p6g:<arm>` rollout gen -> text persist ->
                 judge SUBMIT via a detached CPU poller -> per-rollout
                 activation persist) interleaved into the SAME queue (plan §9
                 "p6 Batch-API wait placement" Must-Fix)
-- p3_corpus_tf  56 matched-text units (trained model TF on the base tree rows)
-- p4_panels     panel trees for the 40 non-pers arms (+ staged #1586 reuse)
-- p5_delta      56 base-model TF captures of training-mix positives (t_bar)
+- p3_corpus_tf  72 matched-text units (trained model TF on the base tree rows)
+- p4_panels     panel trees for the 40 non-pers arms (+ staged #1586 reuse —
+                the 16 pers-LoRA AND 16 full-FT capture{,_tf} trees)
+- p5_delta      56 base-model TF captures of training-mix positives (t_bar;
+                ft arms SHARE the matched pers-LoRA cells' t̄ — same #1481
+                mixes, no new cells; plan §4.1 amendment)
 - p7_upload     HF data-repo upload of every out-root tree + upload_done.json
 - p6_rb_reduce  CPU post-filter over the PERSISTED per-rollout activations
                 (harvest judge scores -> threshold -> r_B); runs AFTER p7 by
@@ -79,7 +85,7 @@ class Cfg:
     out_root: Path
     phases: tuple[str, ...]
     smoke: bool = False
-    arms: tuple[str, ...] = ()  # empty -> all 56 (smoke -> pilot arm only)
+    arms: tuple[str, ...] = ()  # empty -> all 72 (smoke -> pilot arm only)
     layers: tuple[int, ...] = X.LAYERS
     tf_batch: int = X.TF_BATCH_SIZE
     model_override: str | None = None  # production-legal local snapshot override
@@ -146,6 +152,17 @@ def _dtype():
     return torch.bfloat16 if torch.cuda.is_available() else torch.float32
 
 
+_FULL_ARM_INDEX: dict[str, X.Arm] | None = None
+
+
+def _full_arm_index() -> dict[str, X.Arm]:
+    """All 72 arms by id (cached — the manifest is immutable within a run)."""
+    global _FULL_ARM_INDEX
+    if _FULL_ARM_INDEX is None:
+        _FULL_ARM_INDEX = {a.arm_id: a for a in X.all_arms()}
+    return _FULL_ARM_INDEX
+
+
 def _arm_index(cfg: Cfg) -> dict[str, X.Arm]:
     arms = X.all_arms()
     if cfg.smoke and not cfg.arms:
@@ -202,13 +219,91 @@ def _merge_adapter(cfg: Cfg, arm: X.Arm) -> Path:
     return merged_dir
 
 
+def _ft_ckpt_incomplete_reason(d: Path) -> str | None:
+    """None when a staged full-FT checkpoint dir carries the load-bearing set
+    (config.json + EVERY index-listed weight shard, else >=1 .safetensors);
+    else the reason string. A config-only partial passes bare presence checks
+    and hands consumers a shard-less checkpoint (#1586 fu r7)."""
+    if not (d / "config.json").exists():
+        return "config.json missing"
+    idx = d / "model.safetensors.index.json"
+    if idx.exists():
+        shards = sorted(set(json.loads(idx.read_text())["weight_map"].values()))
+        missing = [s for s in shards if not (d / s).exists()]
+        if missing:
+            return f"{len(missing)}/{len(shards)} weight shards missing (e.g. {missing[0]})"
+    elif not list(d.glob("*.safetensors")):
+        return "no weight shards"
+    return None
+
+
+def _ensure_ft_tokenizer(ckpt: Path) -> None:
+    """Trainer checkpoints can lack tokenizer files (#1112) — repair from base."""
+    if (ckpt / "tokenizer_config.json").exists():
+        return
+    from transformers import AutoTokenizer
+
+    logger.info("[ft-stage] %s: tokenizer files absent — saving base tokenizer", ckpt)
+    AutoTokenizer.from_pretrained(X.BASE_MODEL).save_pretrained(ckpt)
+
+
+def _ft_ckpt_dirs(cfg: Cfg, arm: X.Arm) -> tuple[Path, Path]:
+    """(cleanup_root, checkpoint_dir) for a ft arm's staged full checkpoint.
+
+    `hub.stage_hub_prefix` writes a VERBATIM prefix mirror (files land at
+    dest/<full repo path>), so the loadable checkpoint dir is
+    `<root>/<overflow subfolder>` under the per-arm cleanup root.
+    """
+    root = cfg.out_root / "ft_ckpt" / arm.arm_id
+    return root, root / X.ft_ckpt_subfolder(arm)
+
+
+def _stage_ft_checkpoint(cfg: Cfg, arm: X.Arm) -> tuple[Path, Path]:
+    """Stage a ft arm's selected FULL checkpoint from the overflow repo.
+
+    Returns (cleanup_root, checkpoint_dir) — the ft sibling of
+    `_merge_adapter`'s merge -> consume -> delete lifecycle (stage ->
+    consume -> delete; the caller reaps the ~15 GB root at unit exit).
+    Staging rides `hub.stage_hub_prefix` (#1402 canonical helper: scoped
+    listing, one resolved revision, retried per-file downloads). An
+    INCOMPLETE dir is removed before restage (#1586 fu r7: a partial dir
+    must never satisfy the reuse predicate), completeness is re-verified
+    fail-loud after staging, and missing tokenizer files are repaired from
+    the base tokenizer (#1112).
+    """
+    from explore_persona_space.orchestrate import hub
+
+    root, ckpt = _ft_ckpt_dirs(cfg, arm)
+    if ckpt.exists():
+        reason = _ft_ckpt_incomplete_reason(ckpt)
+        if reason is None:
+            logger.info("[ft-stage] %s: complete staged checkpoint reused", arm.arm_id)
+            _ensure_ft_tokenizer(ckpt)
+            return root, ckpt
+        logger.info("[ft-stage] %s: removing incomplete %s (%s)", arm.arm_id, ckpt, reason)
+        shutil.rmtree(root)  # fail-loud: no ignore_errors
+    sub = X.ft_ckpt_subfolder(arm)
+    logger.info("[ft-stage] %s <- %s/%s", arm.arm_id, X.FT_OVERFLOW_REPO, sub)
+    hub.stage_hub_prefix(X.FT_OVERFLOW_REPO, sub, root, repo_type="model")
+    reason = _ft_ckpt_incomplete_reason(ckpt)
+    if reason is not None:
+        raise RuntimeError(
+            f"[ft-stage] {arm.arm_id}: staged checkpoint incomplete under {ckpt} ({reason})"
+        )
+    _ensure_ft_tokenizer(ckpt)
+    return root, ckpt
+
+
 def _resolve_unit_model(cfg: Cfg, unit_id: str) -> tuple[str, Path | None]:
-    """(model_path, merged_dir_to_cleanup) for one unit."""
+    """(model_path, local_model_dir_to_cleanup) for one unit."""
     if cfg.model_override:
         return cfg.model_override, None
     if unit_id.startswith("base_"):
         return X.BASE_MODEL, None
-    arm = _arm_index(cfg).get(unit_id) or {a.arm_id: a for a in X.all_arms()}[unit_id]
+    arm = _arm_index(cfg).get(unit_id) or _full_arm_index()[unit_id]
+    if arm.method == "ft":  # full model: stage, never merge (plan §4.1 amendment)
+        root, ckpt = _stage_ft_checkpoint(cfg, arm)
+        return str(ckpt), root
     merged = _merge_adapter(cfg, arm)
     return str(merged), merged
 
@@ -222,7 +317,7 @@ def _cleanup_merged(cleanup: Path | None) -> None:
 
 
 def _probe_adapters(arms: list[X.Arm]) -> list[dict]:
-    """Full 56-arm `file_exists` probe; FAIL LOUD listing every miss (#503)."""
+    """Full 56-adapter `file_exists` probe (LoRA arms); FAIL LOUD on any miss (#503)."""
     from huggingface_hub import HfApi
 
     from explore_persona_space.orchestrate import hub
@@ -247,13 +342,68 @@ def _probe_adapters(arms: list[X.Arm]) -> list[dict]:
     return rows
 
 
+def _probe_ft_checkpoints(arms: list[X.Arm]) -> list[dict]:
+    """p0 identity + resolution probe for the 16 full-FT arms (plan §4.1
+    amendment). Identity = the #1586 `selection/` Hub records: each record's
+    selected step must MATCH the code pin, and the selected checkpoint's
+    config.json must resolve on the overflow repo. FAIL LOUD listing every
+    miss / drift (#503)."""
+    from huggingface_hub import HfApi, hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
+
+    api = HfApi()
+    rows, misses = [], []
+    for a in arms:
+        assert a.method == "ft", a.arm_id
+        sel_path = f"{X.FT_SELECTION_HF_PREFIX}/{a.arm_id}/selection.json"
+        local = hub.retry_transient(
+            lambda p=sel_path: hf_hub_download(X.HF_DATA_REPO, p, repo_type="dataset"),
+            what=f"ft selection fetch {sel_path}",
+        )
+        sel = json.loads(Path(local).read_text())
+        if int(sel["step"]) != a.step:
+            misses.append(f"{a.arm_id}: selection step {sel['step']} != pinned {a.step}")
+            continue
+        sub = X.ft_ckpt_subfolder(a)
+        ok = hub.retry_transient(
+            lambda p=f"{sub}/config.json": api.file_exists(
+                X.FT_OVERFLOW_REPO, p, repo_type="model"
+            ),
+            what=f"ft ckpt probe {sub}",
+        )
+        rows.append(
+            {
+                **dataclasses.asdict(a),
+                "subfolder": sub,
+                "ckpt_repo": X.FT_OVERFLOW_REPO,
+                "adapter_resolves": bool(ok),  # shared registry column name
+                "selection_in_band": sel.get("in_band"),
+                "selection_fallback": sel.get("fallback"),
+                "selection_metric": sel.get("metric"),
+            }
+        )
+        if not ok:
+            misses.append(f"{a.arm_id} -> {X.FT_OVERFLOW_REPO}/{sub}")
+    if misses:
+        raise RuntimeError(
+            f"p0 ft-checkpoint probe: {len(misses)}/{len(arms)} selected full-FT "
+            f"checkpoints missing/drifted:\n  " + "\n  ".join(misses)
+        )
+    return rows
+
+
 def _assert_marker_gauge(arms: list[X.Arm]) -> dict:
-    """W_U frozen by construction: one marker adapter_config excludes lm_head."""
+    """W_U frozen by construction: one marker adapter_config excludes lm_head.
+
+    LoRA arms only — a full-FT marker arm TRAINS W_U (no gauge freeze); its
+    Q4 read keeps the BASE W_U row as a fixed reference, annotated in p9.
+    """
     from huggingface_hub import hf_hub_download
 
     from explore_persona_space.orchestrate import hub
 
-    mk = next(a for a in arms if a.kind == "marker")
+    mk = next(a for a in arms if a.kind == "marker" and a.method == "lora")
     sub = X.adapter_subfolder(mk)
     cfg_path = hub.retry_transient(
         lambda: hf_hub_download(X.HF_MODEL_REPO, f"{sub}/adapter_config.json", repo_type="model"),
@@ -411,10 +561,14 @@ def phase_p0(cfg: Cfg) -> None:
     _phase("p0_registry")
     _status(cfg, "p0_registry")
     arms = list(_arm_index(cfg).values())
-    full = X.all_arms()
-    rows = _probe_adapters(full)  # ALWAYS the full 56-arm probe (plan §4.1)
-    gauge = _assert_marker_gauge(full)
-    mixes = _probe_mix_sources(full)
+    full = X.all_arms()  # ALWAYS the full 72-arm probe (plan §4.1 + amendment)
+    lora = [a for a in full if a.method == "lora"]
+    fts = [a for a in full if a.method == "ft"]
+    rows = _probe_adapters(lora) + _probe_ft_checkpoints(fts)
+    gauge = _assert_marker_gauge(lora)
+    # ft arms SHARE the pers-LoRA cells' mixes/t̄ (delta_arm_for) — probing the
+    # 56 LoRA arms covers every p5 delta cell (plan §4.1 amendment).
+    mixes = _probe_mix_sources(lora)
     _atomic_json(
         cfg.out_root / "arm_registry.json",
         {
@@ -1023,10 +1177,12 @@ def _stage_reused_panel(cfg: Cfg, tree: str, arm_id: str) -> bool:
     (`_panel_tf_capture`), and the reused #1586 base trees do NOT carry
     raw_rows.json on the Hub (probed 2026-07-28) — a miss there must route
     to the fresh base capture, never a warn-and-continue (round-1 Critical
-    ``p4-base-raw-rows-missing-crash``). Pers-arm trees keep raw_rows
-    optional (their raw text is never consumed downstream). Every required
-    file is probed BEFORE any byte is staged so a partial stage can never
-    satisfy the resume predicate without the raw rows.
+    ``p4-base-raw-rows-missing-crash``). ARM trees (pers-LoRA AND the
+    amendment's ft cells) keep raw_rows optional — their raw text is never
+    consumed downstream (`_panel_tf_capture` reads the BASE tree's rows; p9
+    reads pooled.pt only). Every required file is probed BEFORE any byte is
+    staged so a partial stage can never satisfy the resume predicate without
+    the raw rows.
     """
     from huggingface_hub import HfApi
 
@@ -1078,10 +1234,14 @@ def _stage_reused_panel(cfg: Cfg, tree: str, arm_id: str) -> bool:
 
 
 def _reused_1586_hub_name(unit_id: str) -> str | None:
-    """The #1586 capture-tree dir for this unit (base_<beh>, or the reused
-    pers arm's CELL name `<beh>-pers-lora-<regime>-s<seed>`), else None."""
+    """The #1586 capture-tree dir for this unit (base_<beh>, a reused pers
+    LoRA arm's CELL name `<beh>-pers-lora-<regime>-s<seed>`, or — plan §4.1
+    amendment — a ft ARM ID, which IS its #1586 cell/tree name), else None."""
     if unit_id.startswith("base_"):
         return unit_id
+    arm = _full_arm_index().get(unit_id)
+    if arm is not None and arm.method == "ft":
+        return unit_id  # ft cells are the #1586 capture{,_tf}/<cell> dir names
     reused = X.reused_1586_arm(unit_id)
     return reused.cell if reused is not None else None
 
@@ -1219,7 +1379,8 @@ def run_delta_unit(cfg: Cfg, arm_id: str) -> None:
     if (out_dir / "tbar.pt").exists():
         return
     out_dir.mkdir(parents=True, exist_ok=True)
-    arm = {a.arm_id: a for a in X.all_arms()}[arm_id]
+    arm = _full_arm_index()[arm_id]
+    assert arm.method == "lora", (arm_id, "δ units are the delta-arm (LoRA) set")
     rows, meta = _mix_positive_rows(cfg, arm)
     if cfg.smoke:
         rows = rows[:4]
@@ -1273,10 +1434,11 @@ P6_ACTS_CHECKPOINT_EVERY = 250  # per-rollout capture checkpoint grain (T2 > 50 
 
 
 def p6_arm_ids(cfg: Cfg) -> list[str]:
-    """{cas,imp,syc} x {con,po} x seed 42 x pers (plan §4.4 p6)."""
+    """{cas,imp,syc} x {con,po} x seed 42 x pers, LoRA only (plan §4.4 p6 —
+    the amendment adds NO p6 units: the A4 re-extraction stays 6 arms)."""
     out = []
     for a in _arm_index(cfg).values():
-        if a.kind == "content" and a.ctx_key == "pers" and a.seed == 42:
+        if a.kind == "content" and a.ctx_key == "pers" and a.seed == 42 and a.method == "lora":
             out.append(a.arm_id)
     return sorted(out)
 
@@ -1879,7 +2041,11 @@ def _pending_units(cfg: Cfg, phase: str) -> list[str]:
                     out.append(f"{kind}:{unit}")
         return out
     if phase == "p5":
-        return [a for a in arms if not (root / "delta_tf" / a / "tbar.pt").exists()]
+        # ft arms map onto the matched pers-LoRA cells' t̄ (plan §4.1
+        # amendment): the δ unit set is the DELTA-ARM set, so no ft arm ever
+        # adds a p5 cell and an ft-only scope still stages its paired cell.
+        delta_units = sorted({X.delta_arm_for(a) for a in _arm_index(cfg).values()})
+        return [u for u in delta_units if not (root / "delta_tf" / u / "tbar.pt").exists()]
     if phase == "p6":
         return [a for a in p6_arm_ids(cfg) if not (root / "rb_plus" / a / "done.json").exists()]
     raise ValueError(phase)
@@ -1937,11 +2103,16 @@ def _unit_cmd(cfg: Cfg, unit_arg: str, gpu: int) -> tuple[list[str], dict]:
 
 
 def _needs_merge(cfg: Cfg, unit_arg: str) -> bool:
+    """~15 GB local model materialization pending (LoRA merge OR ft stage) —
+    the disk-clamp predicate `_merge_slots` gates on (plan §4.4)."""
     if cfg.model_override:
         return False
     unit = unit_arg.split(":")[-1]
     if unit.startswith("base_"):
         return False
+    arm = _full_arm_index().get(unit)
+    if arm is not None and arm.method == "ft":
+        return _ft_ckpt_incomplete_reason(_ft_ckpt_dirs(cfg, arm)[1]) is not None
     return not (cfg.out_root / "merged" / unit / "config.json").exists()
 
 
@@ -2191,6 +2362,7 @@ def _import_check() -> int:
         _upload,
         retry_transient,
         stage_hub_file,
+        stage_hub_prefix,
         verify_repo_paths_uploaded,
     )
     from explore_persona_space.orchestrate.preflight import (  # noqa: F401
@@ -2253,9 +2425,11 @@ def parse_args(argv: list[str] | None = None) -> tuple[Cfg, argparse.Namespace]:
     return cfg, args
 
 
-PHASE_HEADROOM_GB = {"p2": 160.0, "p3": 60.0, "p4": 20.0, "p5": 5.0, "p6": 5.0}
-# p2 covers the p6 GPU legs it now hosts (~0.4 GB acts per arm << the 160 GB
-# corpus budget); p6 itself is the CPU reduce (small r_b writes only).
+PHASE_HEADROOM_GB = {"p2": 175.0, "p3": 68.0, "p4": 20.0, "p5": 5.0, "p6": 5.0}
+# p2 covers the p6 GPU legs it now hosts (~0.4 GB acts per arm << the corpus
+# budget); p6 itself is the CPU reduce (small r_b writes only). p2/p3 carry
+# the amendment's +16 ft units (~+22 GB run-wide against the declared 250 GB
+# RunPod volume / 400 GB GCP disk — plan §9 amendment costing).
 
 
 def main(argv: list[str] | None = None) -> int:
