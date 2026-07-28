@@ -1,0 +1,3129 @@
+{
+ "n_sampled": 300,
+ "n_labeled": 300,
+ "drops": {
+  "content": 0,
+  "transport_or_error": 0
+ },
+ "test_retest": {
+  "n": 60,
+  "kappa_level": 0.6190476190476191
+ },
+ "judge_model": "claude-sonnet-4-5-20250929",
+ "max_tokens": 400,
+ "rubric_sha256_system": "f2a26b7e81fd00f7",
+ "sample_seed": 14822026,
+ "per_level": {
+  "low": {
+   "n": 98,
+   "median_r2": 0.1356651835129113,
+   "median_r2_ci95": [
+    0.1088995141834565,
+    0.1737200961380011
+   ],
+   "median_activity": 0.14954583333333332,
+   "median_consistency": 0.0065665882123405
+  },
+  "high": {
+   "n": 157,
+   "median_r2": 0.1563236808141929,
+   "median_r2_ci95": [
+    0.12582652414498685,
+    0.1957003762651497
+   ],
+   "median_activity": 0.13606666666666667,
+   "median_consistency": 0.008430951151080862
+  },
+  "unclear": {
+   "n": 45,
+   "median_r2": 0.09848040184800522,
+   "median_r2_ci95": [
+    0.06709262288744311,
+    0.15996805450771623
+   ],
+   "median_activity": 0.23235,
+   "median_consistency": 0.007607299328333319
+  }
+ },
+ "mannwhitney_high_vs_low": {
+  "U": 8023.0,
+  "p": 0.5652059114335635
+ },
+ "spearman_highlevel_vs_r2": 0.03614139052821566,
+ "partial_spearman_highlevel_r2_given_activity": 0.054353974800585445,
+ "spearman_highlevel_vs_consistency": 0.1558460567322754,
+ "within_activity_decile": [
+  {
+   "decile": 0,
+   "n_low": 11,
+   "n_high": 17,
+   "median_r2_low": 0.13975995856860413,
+   "median_r2_high": 0.10933841877705441
+  },
+  {
+   "decile": 1,
+   "n_low": 9,
+   "n_high": 19,
+   "median_r2_low": 0.05819072269588155,
+   "median_r2_high": 0.11298731442641596
+  },
+  {
+   "decile": 2,
+   "n_low": 13,
+   "n_high": 16,
+   "median_r2_low": 0.11938900980473632,
+   "median_r2_high": 0.10275018976445544
+  },
+  {
+   "decile": 3,
+   "n_low": 5,
+   "n_high": 21,
+   "median_r2_low": 0.035841973585884035,
+   "median_r2_high": 0.17510162628091497
+  },
+  {
+   "decile": 4,
+   "n_low": 11,
+   "n_high": 16,
+   "median_r2_low": 0.13101650130148257,
+   "median_r2_high": 0.16505770497143601
+  },
+  {
+   "decile": 5,
+   "n_low": 11,
+   "n_high": 16,
+   "median_r2_low": 0.17776577242833402,
+   "median_r2_high": 0.1395451924341118
+  },
+  {
+   "decile": 6,
+   "n_low": 14,
+   "n_high": 11,
+   "median_r2_low": 0.14133462135499997,
+   "median_r2_high": 0.17344637076009806
+  },
+  {
+   "decile": 7,
+   "n_low": 7,
+   "n_high": 16,
+   "median_r2_low": 0.1737200961380011,
+   "median_r2_high": 0.2021188503141617
+  },
+  {
+   "decile": 8,
+   "n_low": 4,
+   "n_high": 17,
+   "median_r2_low": 0.28985223508483837,
+   "median_r2_high": 0.2004913284740547
+  },
+  {
+   "decile": 9,
+   "n_low": 13,
+   "n_high": 8,
+   "median_r2_low": 0.28608996344525217,
+   "median_r2_high": 0.3100031715661829
+  }
+ ],
+ "features": [
+  {
+   "feat_id": 832,
+   "level": "low",
+   "label": "token or prefix cons",
+   "r2": 0.1868452739332288,
+   "activity": 0.18111666666666668,
+   "consistency": 0.005512101654406578,
+   "decile": 6,
+   "tercile": 1
+  },
+  {
+   "feat_id": 2036,
+   "level": "high",
+   "label": "correctness and proper behavior concepts",
+   "r2": 0.06172499123078656,
+   "activity": 0.09005,
+   "consistency": 0.0035672984298855733,
+   "decile": 0,
+   "tercile": 1
+  },
+  {
+   "feat_id": 2083,
+   "level": "unclear",
+   "label": "unclear property",
+   "r2": 0.19303181810706949,
+   "activity": 0.5060583333333334,
+   "consistency": 0.011969882755215782,
+   "decile": 9,
+   "tercile": 0
+  },
+  {
+   "feat_id": 2654,
+   "level": "high",
+   "label": "professional meeting or visit arrangements",
+   "r2": 0.14154586904657107,
+   "activity": 0.12716666666666668,
+   "consistency": 0.01126121168524066,
+   "decile": 3,
+   "tercile": 1
+  },
+  {
+   "feat_id": 4152,
+   "level": "unclear",
+   "label": "no coherent shared property detected",
+   "r2": 0.07695575727249948,
+   "activity": 0.23888333333333334,
+   "consistency": 0.009849846791399337,
+   "decile": 7,
+   "tercile": 0
+  },
+  {
+   "feat_id": 4172,
+   "level": "high",
+   "label": "repetitive text patterns and looping behavior",
+   "r2": 0.39206506634233407,
+   "activity": 0.14311666666666667,
+   "consistency": 0.021191665842214647,
+   "decile": 4,
+   "tercile": 2
+  },
+  {
+   "feat_id": 4278,
+   "level": "unclear",
+   "label": "no coherent shared property",
+   "r2": 0.15996805450771623,
+   "activity": 0.344725,
+   "consistency": 0.014933685275807317,
+   "decile": 8,
+   "tercile": 1
+  },
+  {
+   "feat_id": 4962,
+   "level": "high",
+   "label": "mathematical calculations and numerical operations",
+   "r2": 0.08274378935578741,
+   "activity": 0.09146666666666667,
+   "consistency": 0.0049152791326317075,
+   "decile": 1,
+   "tercile": 1
+  },
+  {
+   "feat_id": 5300,
+   "level": "high",
+   "label": "measured responsible assistant responses",
+   "r2": 0.19942820616821044,
+   "activity": 0.3756583333333333,
+   "consistency": 0.005419792195263877,
+   "decile": 8,
+   "tercile": 1
+  },
+  {
+   "feat_id": 5659,
+   "level": "low",
+   "label": "single word or short token responses",
+   "r2": 0.05457256758617268,
+   "activity": 0.5013333333333333,
+   "consistency": 0.008544007752169954,
+   "decile": 9,
+   "tercile": 0
+  },
+  {
+   "feat_id": 5768,
+   "level": "high",
+   "label": "explanatory metaphors and analogies",
+   "r2": 0.12325535579212366,
+   "activity": 0.11709166666666666,
+   "consistency": 0.00776739380434479,
+   "decile": 3,
+   "tercile": 1
+  },
+  {
+   "feat_id": 6118,
+   "level": "low",
+   "label": "tokens starting with Qu",
+   "r2": -0.05034001199301419,
+   "activity": 0.0981,
+   "consistency": 0.0044056532377294245,
+   "decile": 1,
+   "tercile": 0
+  },
+  {
+   "feat_id": 6277,
+   "level": "low",
+   "label": "non-English language text",
+   "r2": 0.37520283854124403,
+   "activity": 0.27089166666666664,
+   "consistency": 0.010440136515218117,
+   "decile": 7,
+   "tercile": 2
+  },
+  {
+   "feat_id": 6381,
+   "level": "unclear",
+   "label": "unclear property across diverse responses",
+   "r2": 0.015612260107116915,
+   "activity": 0.08670833333333333,
+   "consistency": 0.003616286263564411,
+   "decile": 0,
+   "tercile": 0
+  },
+  {
+   "feat_id": 6979,
+   "level": "high",
+   "label": "business and financial terminology definitions",
+   "r2": 0.09050765420773732,
+   "activity": 0.10338333333333333,
+   "consistency": 0.019878514443753745,
+   "decile": 2,
+   "tercile": 1
+  },
+  {
+   "feat_id": 7117,
+   "level": "unclear",
+   "label": "unclear pattern across diverse responses",
+   "r2": 0.06934984595940485,
+   "activity": 0.12216666666666667,
+   "consistency": 0.0049016296782239885,
+   "decile": 3,
+   "tercile": 1
+  },
+  {
+   "feat_id": 7530,
+   "level": "low",
+   "label": "letter D token",
+   "r2": 0.06375225021587694,
+   "activity": 0.47355,
+   "consistency": 0.010690591757624688,
+   "decile": 9,
+   "tercile": 0
+  },
+  {
+   "feat_id": 7779,
+   "level": "low",
+   "label": "semicolon in code",
+   "r2": 0.4198805368006695,
+   "activity": 0.11026666666666667,
+   "consistency": 0.012516323859919371,
+   "decile": 2,
+   "tercile": 2
+  },
+  {
+   "feat_id": 7880,
+   "level": "high",
+   "label": "explanatory or demonstrative discourse",
+   "r2": 0.019203603644797562,
+   "activity": 0.10221666666666666,
+   "consistency": 0.004158913243678,
+   "decile": 2,
+   "tercile": 0
+  },
+  {
+   "feat_id": 8232,
+   "level": "high",
+   "label": "regulations compliance safety standards restrictions",
+   "r2": 0.6069052628383369,
+   "activity": 0.4165,
+   "consistency": 0.010311458586883239,
+   "decile": 9,
+   "tercile": 2
+  },
+  {
+   "feat_id": 9024,
+   "level": "unclear",
+   "label": "no coherent property detected",
+   "r2": 0.08401160645596284,
+   "activity": 0.2747833333333333,
+   "consistency": 0.010230473667435616,
+   "decile": 7,
+   "tercile": 0
+  },
+  {
+   "feat_id": 9035,
+   "level": "low",
+   "label": "code syntax and programming constructs",
+   "r2": 0.447148709616206,
+   "activity": 0.13718333333333332,
+   "consistency": 0.004790070018969914,
+   "decile": 4,
+   "tercile": 2
+  },
+  {
+   "feat_id": 9256,
+   "level": "high",
+   "label": "meta-textual instructions or AI detection commentary",
+   "r2": 0.2004913284740547,
+   "activity": 0.393275,
+   "consistency": 0.017598337447441454,
+   "decile": 8,
+   "tercile": 1
+  },
+  {
+   "feat_id": 9266,
+   "level": "high",
+   "label": "informational explanatory text",
+   "r2": 0.06504686324151121,
+   "activity": 0.14823333333333333,
+   "consistency": 0.012755970432700965,
+   "decile": 4,
+   "tercile": 0
+  },
+  {
+   "feat_id": 9325,
+   "level": "low",
+   "label": "token health",
+   "r2": -2.4342581959183316,
+   "activity": 0.11291666666666667,
+   "consistency": 0.008351125893117756,
+   "decile": 2,
+   "tercile": 0
+  },
+  {
+   "feat_id": 9872,
+   "level": "unclear",
+   "label": "unclear or unrelated assistant responses",
+   "r2": 0.06575701678908963,
+   "activity": 0.16153333333333333,
+   "consistency": 0.0035854752182812913,
+   "decile": 5,
+   "tercile": 0
+  },
+  {
+   "feat_id": 10493,
+   "level": "low",
+   "label": "title header label",
+   "r2": 0.30108259137951643,
+   "activity": 0.13594166666666666,
+   "consistency": 0.0038538241615873004,
+   "decile": 4,
+   "tercile": 2
+  },
+  {
+   "feat_id": 10933,
+   "level": "high",
+   "label": "e-commerce product listing titles",
+   "r2": 0.3721980700739588,
+   "activity": 0.08296666666666666,
+   "consistency": 0.009449404183522244,
+   "decile": 0,
+   "tercile": 2
+  },
+  {
+   "feat_id": 10973,
+   "level": "high",
+   "label": "generic category labels and classifications",
+   "r2": -0.0586290101517466,
+   "activity": 0.31324166666666664,
+   "consistency": 0.007767428302457902,
+   "decile": 8,
+   "tercile": 0
+  },
+  {
+   "feat_id": 10974,
+   "level": "high",
+   "label": "software libraries and development tools",
+   "r2": 0.12237625203578562,
+   "activity": 0.10206666666666667,
+   "consistency": 0.006249091891507398,
+   "decile": 2,
+   "tercile": 1
+  },
+  {
+   "feat_id": 11768,
+   "level": "high",
+   "label": "technical specifications and standardized codes",
+   "r2": 0.1404735723579127,
+   "activity": 0.159075,
+   "consistency": 0.005525877554549423,
+   "decile": 5,
+   "tercile": 1
+  },
+  {
+   "feat_id": 11815,
+   "level": "high",
+   "label": "critical evaluation or error identification",
+   "r2": 0.28148079111786584,
+   "activity": 0.118525,
+   "consistency": 0.016533121499114758,
+   "decile": 3,
+   "tercile": 2
+  },
+  {
+   "feat_id": 12003,
+   "level": "high",
+   "label": "relatedness or similarity expressions",
+   "r2": -0.07672375876169979,
+   "activity": 0.09803333333333333,
+   "consistency": 0.0038729495476881935,
+   "decile": 1,
+   "tercile": 0
+  },
+  {
+   "feat_id": 12365,
+   "level": "low",
+   "label": "comma punctuation",
+   "r2": 0.1737200961380011,
+   "activity": 0.251425,
+   "consistency": 0.00470298507137652,
+   "decile": 7,
+   "tercile": 1
+  },
+  {
+   "feat_id": 12691,
+   "level": "unclear",
+   "label": "unclear - heterogeneous text types",
+   "r2": 0.058629819378881565,
+   "activity": 0.17441666666666666,
+   "consistency": 0.005161769345680379,
+   "decile": 5,
+   "tercile": 0
+  },
+  {
+   "feat_id": 12781,
+   "level": "high",
+   "label": "making money or earning income",
+   "r2": 0.11693095787275742,
+   "activity": 0.08853333333333334,
+   "consistency": 0.0172119711536959,
+   "decile": 0,
+   "tercile": 1
+  },
+  {
+   "feat_id": 13009,
+   "level": "high",
+   "label": "stating information needed to complete task",
+   "r2": 0.17344637076009806,
+   "activity": 0.19154166666666667,
+   "consistency": 0.00420398438316546,
+   "decile": 6,
+   "tercile": 1
+  },
+  {
+   "feat_id": 13326,
+   "level": "high",
+   "label": "dramatic departures and adventurous transitions",
+   "r2": 0.25510587586053357,
+   "activity": 0.0954,
+   "consistency": 0.01735860604993286,
+   "decile": 1,
+   "tercile": 2
+  },
+  {
+   "feat_id": 13758,
+   "level": "low",
+   "label": "word 'while'",
+   "r2": -0.02569449168125626,
+   "activity": 0.12235,
+   "consistency": 0.004076704311851519,
+   "decile": 3,
+   "tercile": 0
+  },
+  {
+   "feat_id": 13859,
+   "level": "unclear",
+   "label": "contrastive or corrective discourse markers",
+   "r2": 0.05021459974373477,
+   "activity": 0.14894166666666667,
+   "consistency": 0.004206460383851747,
+   "decile": 4,
+   "tercile": 0
+  },
+  {
+   "feat_id": 14110,
+   "level": "high",
+   "label": "numerical measurements and quantities",
+   "r2": 0.33956165182722065,
+   "activity": 0.15588333333333335,
+   "consistency": 0.009303776883676219,
+   "decile": 5,
+   "tercile": 2
+  },
+  {
+   "feat_id": 14236,
+   "level": "high",
+   "label": "miniature or small-scale objects and concepts",
+   "r2": 0.23444964994369122,
+   "activity": 0.28529166666666667,
+   "consistency": 0.008590782285868312,
+   "decile": 8,
+   "tercile": 1
+  },
+  {
+   "feat_id": 14520,
+   "level": "high",
+   "label": "professional skills or job categories",
+   "r2": 0.3169939263598279,
+   "activity": 0.514375,
+   "consistency": 0.010471294784700403,
+   "decile": 9,
+   "tercile": 1
+  },
+  {
+   "feat_id": 14764,
+   "level": "low",
+   "label": "conditional word if",
+   "r2": 0.046555457824063784,
+   "activity": 0.22064166666666668,
+   "consistency": 0.003992435907576476,
+   "decile": 7,
+   "tercile": 0
+  },
+  {
+   "feat_id": 15405,
+   "level": "high",
+   "label": "tiny beings in confined spaces or proximity",
+   "r2": 0.21014868120776153,
+   "activity": 0.09996666666666666,
+   "consistency": 0.01887751651152089,
+   "decile": 1,
+   "tercile": 2
+  },
+  {
+   "feat_id": 15998,
+   "level": "high",
+   "label": "considerations and preparatory planning for actions",
+   "r2": 0.11906861412386704,
+   "activity": 0.111025,
+   "consistency": 0.010213034115225617,
+   "decile": 2,
+   "tercile": 1
+  },
+  {
+   "feat_id": 16342,
+   "level": "high",
+   "label": "programming code or algorithms",
+   "r2": 0.29160245470118884,
+   "activity": 0.09358333333333334,
+   "consistency": 0.01684061221957525,
+   "decile": 1,
+   "tercile": 2
+  },
+  {
+   "feat_id": 16567,
+   "level": "high",
+   "label": "positive sentiment or evaluation",
+   "r2": 0.46987337805906015,
+   "activity": 0.3860166666666667,
+   "consistency": 0.04877653114124827,
+   "decile": 8,
+   "tercile": 2
+  },
+  {
+   "feat_id": 16740,
+   "level": "high",
+   "label": "disclaiming inability while offering alternative help",
+   "r2": 0.07424498021676607,
+   "activity": 0.08823333333333333,
+   "consistency": 0.009781294333786167,
+   "decile": 0,
+   "tercile": 1
+  },
+  {
+   "feat_id": 17483,
+   "level": "low",
+   "label": "word 'add' or its variants",
+   "r2": -0.004924027670376585,
+   "activity": 0.08338333333333334,
+   "consistency": 0.0035544262393674636,
+   "decile": 0,
+   "tercile": 0
+  },
+  {
+   "feat_id": 18506,
+   "level": "unclear",
+   "label": "unclear mixture technical and item content",
+   "r2": 0.09286928010791762,
+   "activity": 0.19278333333333333,
+   "consistency": 0.0035783138705524275,
+   "decile": 6,
+   "tercile": 0
+  },
+  {
+   "feat_id": 20006,
+   "level": "low",
+   "label": "preposition with",
+   "r2": 0.26217024599488836,
+   "activity": 0.13651666666666668,
+   "consistency": 0.006496987548332601,
+   "decile": 4,
+   "tercile": 2
+  },
+  {
+   "feat_id": 20375,
+   "level": "unclear",
+   "label": "no discernible pattern",
+   "r2": 0.34266350145635704,
+   "activity": 0.8171833333333334,
+   "consistency": 0.02213241577887554,
+   "decile": 9,
+   "tercile": 1
+  },
+  {
+   "feat_id": 20850,
+   "level": "low",
+   "label": "non-Latin scripts or diacritical marks",
+   "r2": 0.132692748235143,
+   "activity": 0.09950833333333334,
+   "consistency": 0.0065907498378768034,
+   "decile": 1,
+   "tercile": 1
+  },
+  {
+   "feat_id": 22811,
+   "level": "unclear",
+   "label": "no coherent shared property",
+   "r2": 0.006594948356948072,
+   "activity": 0.09393333333333333,
+   "consistency": 0.008259056560362037,
+   "decile": 1,
+   "tercile": 0
+  },
+  {
+   "feat_id": 24146,
+   "level": "unclear",
+   "label": "coherent standalone text or proper nouns",
+   "r2": 0.3410358943621754,
+   "activity": 0.37495,
+   "consistency": 0.007554561852211263,
+   "decile": 8,
+   "tercile": 2
+  },
+  {
+   "feat_id": 24354,
+   "level": "unclear",
+   "label": "answer-initial or standalone response tokens",
+   "r2": 0.4585762185985589,
+   "activity": 0.8411416666666667,
+   "consistency": 0.029526225524011643,
+   "decile": 9,
+   "tercile": 2
+  },
+  {
+   "feat_id": 24399,
+   "level": "low",
+   "label": "word personal or translations",
+   "r2": 0.06571538895190743,
+   "activity": 0.130375,
+   "consistency": 0.006484720980484823,
+   "decile": 3,
+   "tercile": 1
+  },
+  {
+   "feat_id": 24831,
+   "level": "high",
+   "label": "web technologies or HTML-related content",
+   "r2": 0.10561303074824002,
+   "activity": 0.13276666666666667,
+   "consistency": 0.0037110584511877813,
+   "decile": 4,
+   "tercile": 1
+  },
+  {
+   "feat_id": 25353,
+   "level": "low",
+   "label": "token Gr at word start",
+   "r2": 0.01922883016239485,
+   "activity": 0.13076666666666667,
+   "consistency": 0.004724142899660319,
+   "decile": 4,
+   "tercile": 0
+  },
+  {
+   "feat_id": 26054,
+   "level": "high",
+   "label": "comparative analysis of alternatives",
+   "r2": 0.36436540563001507,
+   "activity": 0.13115,
+   "consistency": 0.026719798064925707,
+   "decile": 4,
+   "tercile": 2
+  },
+  {
+   "feat_id": 27098,
+   "level": "low",
+   "label": "empty brackets or list syntax",
+   "r2": 0.3921474104826025,
+   "activity": 0.11005833333333333,
+   "consistency": 0.028587473235827495,
+   "decile": 2,
+   "tercile": 2
+  },
+  {
+   "feat_id": 27554,
+   "level": "high",
+   "label": "asking follow-up questions showing conversational interest",
+   "r2": 0.06900126056700784,
+   "activity": 0.23473333333333332,
+   "consistency": 0.0050098405782216925,
+   "decile": 7,
+   "tercile": 0
+  },
+  {
+   "feat_id": 28271,
+   "level": "high",
+   "label": "taxonomic lists within specialized domains",
+   "r2": 0.334172019661351,
+   "activity": 0.159225,
+   "consistency": 0.011124837003597978,
+   "decile": 5,
+   "tercile": 2
+  },
+  {
+   "feat_id": 28474,
+   "level": "low",
+   "label": "numbered lists or structured outline formatting",
+   "r2": 0.3177053058336957,
+   "activity": 0.3661083333333333,
+   "consistency": 0.008217737833340477,
+   "decile": 8,
+   "tercile": 2
+  },
+  {
+   "feat_id": 28647,
+   "level": "high",
+   "label": "refusal of toxic content with prosocial redirection",
+   "r2": 0.1601613388030887,
+   "activity": 0.2467,
+   "consistency": 0.014551295088587733,
+   "decile": 7,
+   "tercile": 1
+  },
+  {
+   "feat_id": 28765,
+   "level": "high",
+   "label": "criticism or negative evaluation of behavior",
+   "r2": 0.10532194530476147,
+   "activity": 0.11601666666666667,
+   "consistency": 0.0077735136131020285,
+   "decile": 3,
+   "tercile": 1
+  },
+  {
+   "feat_id": 29097,
+   "level": "unclear",
+   "label": "no coherent shared property",
+   "r2": 0.2584649027803396,
+   "activity": 0.38516666666666666,
+   "consistency": 0.0066409552164379,
+   "decile": 8,
+   "tercile": 2
+  },
+  {
+   "feat_id": 29152,
+   "level": "high",
+   "label": "harm, risk, or problem mitigation discussion",
+   "r2": 0.03071642961287313,
+   "activity": 0.12395,
+   "consistency": 0.003663860599055668,
+   "decile": 3,
+   "tercile": 0
+  },
+  {
+   "feat_id": 29282,
+   "level": "low",
+   "label": "Token: real",
+   "r2": 0.012433057785462776,
+   "activity": 0.12826666666666667,
+   "consistency": 0.004426946232323835,
+   "decile": 3,
+   "tercile": 0
+  },
+  {
+   "feat_id": 29479,
+   "level": "low",
+   "label": "parentheses and semicolons",
+   "r2": 0.13634232128936496,
+   "activity": 0.10595833333333333,
+   "consistency": 0.004744583276890414,
+   "decile": 2,
+   "tercile": 1
+  },
+  {
+   "feat_id": 29764,
+   "level": "high",
+   "label": "playful cutesy informal tone",
+   "r2": 0.1688397581788943,
+   "activity": 0.15304166666666666,
+   "consistency": 0.004950744074305558,
+   "decile": 5,
+   "tercile": 1
+  },
+  {
+   "feat_id": 30532,
+   "level": "high",
+   "label": "expressions of effort or collaborative action",
+   "r2": 0.025440951418301938,
+   "activity": 0.12145,
+   "consistency": 0.0032036191595587135,
+   "decile": 3,
+   "tercile": 0
+  },
+  {
+   "feat_id": 31215,
+   "level": "high",
+   "label": "formal titles and section headings",
+   "r2": 0.42512028015551295,
+   "activity": 0.092525,
+   "consistency": 0.03756564275258341,
+   "decile": 1,
+   "tercile": 2
+  },
+  {
+   "feat_id": 31297,
+   "level": "high",
+   "label": "Christian or religious topics and discussions",
+   "r2": 0.533994296502184,
+   "activity": 0.14868333333333333,
+   "consistency": 0.025263139183592628,
+   "decile": 4,
+   "tercile": 2
+  },
+  {
+   "feat_id": 31551,
+   "level": "low",
+   "label": "word 'distribute' and variants",
+   "r2": 0.0179357068415249,
+   "activity": 0.08399166666666667,
+   "consistency": 0.0049142587727787875,
+   "decile": 0,
+   "tercile": 0
+  },
+  {
+   "feat_id": 31566,
+   "level": "low",
+   "label": "hash symbol or pound sign",
+   "r2": 0.11938900980473632,
+   "activity": 0.10368333333333334,
+   "consistency": 0.008316889546573248,
+   "decile": 2,
+   "tercile": 1
+  },
+  {
+   "feat_id": 32106,
+   "level": "high",
+   "label": "technical terminology and taxonomies",
+   "r2": 0.1957003762651497,
+   "activity": 0.22325833333333334,
+   "consistency": 0.007496136708807951,
+   "decile": 7,
+   "tercile": 1
+  },
+  {
+   "feat_id": 32704,
+   "level": "unclear",
+   "label": "no discernible shared property",
+   "r2": -0.0113713636670556,
+   "activity": 0.11518333333333333,
+   "consistency": 0.007607299328333319,
+   "decile": 3,
+   "tercile": 0
+  },
+  {
+   "feat_id": 32819,
+   "level": "low",
+   "label": "titles or headings",
+   "r2": 0.23423920299976775,
+   "activity": 0.5673833333333334,
+   "consistency": 0.008971558584224406,
+   "decile": 9,
+   "tercile": 1
+  },
+  {
+   "feat_id": 34153,
+   "level": "high",
+   "label": "request or information-seeking framing",
+   "r2": 0.35138030133459064,
+   "activity": 0.5321166666666667,
+   "consistency": 0.009290034530433661,
+   "decile": 9,
+   "tercile": 2
+  },
+  {
+   "feat_id": 34493,
+   "level": "high",
+   "label": "requests for clarification or more information",
+   "r2": 0.07390130326026689,
+   "activity": 0.17660833333333334,
+   "consistency": 0.004715906624773082,
+   "decile": 5,
+   "tercile": 0
+  },
+  {
+   "feat_id": 34991,
+   "level": "low",
+   "label": "lists or sequences of numbers",
+   "r2": 0.05819072269588155,
+   "activity": 0.100375,
+   "consistency": 0.004509662582251777,
+   "decile": 1,
+   "tercile": 1
+  },
+  {
+   "feat_id": 35054,
+   "level": "high",
+   "label": "explanations of origin or etymology",
+   "r2": 0.12582652414498685,
+   "activity": 0.16541666666666666,
+   "consistency": 0.0063499105727342275,
+   "decile": 5,
+   "tercile": 1
+  },
+  {
+   "feat_id": 35129,
+   "level": "low",
+   "label": "short complete assistant responses",
+   "r2": 0.06571888543213544,
+   "activity": 0.43004166666666666,
+   "consistency": 0.0072275263846654,
+   "decile": 9,
+   "tercile": 0
+  },
+  {
+   "feat_id": 35683,
+   "level": "low",
+   "label": "symbols abbreviations special characters",
+   "r2": 0.05201136585909316,
+   "activity": 0.09815,
+   "consistency": 0.00598136531332997,
+   "decile": 1,
+   "tercile": 0
+  },
+  {
+   "feat_id": 35899,
+   "level": "low",
+   "label": "non-English language text",
+   "r2": 0.1819769582649846,
+   "activity": 0.16163333333333332,
+   "consistency": 0.008070636174191542,
+   "decile": 5,
+   "tercile": 1
+  },
+  {
+   "feat_id": 36407,
+   "level": "low",
+   "label": "comma-separated list items",
+   "r2": 0.10244065803174673,
+   "activity": 0.26989166666666664,
+   "consistency": 0.005073086750983279,
+   "decile": 7,
+   "tercile": 0
+  },
+  {
+   "feat_id": 36447,
+   "level": "unclear",
+   "label": "no coherent pattern",
+   "r2": 0.11966822179039005,
+   "activity": 0.39808333333333334,
+   "consistency": 0.006435048093550221,
+   "decile": 8,
+   "tercile": 0
+  },
+  {
+   "feat_id": 36573,
+   "level": "low",
+   "label": "Chinese characters",
+   "r2": 0.46104653565440756,
+   "activity": 0.19136666666666666,
+   "consistency": 0.015939650438405395,
+   "decile": 6,
+   "tercile": 2
+  },
+  {
+   "feat_id": 36846,
+   "level": "high",
+   "label": "behavioral advice or ethical stance",
+   "r2": 0.04545392723579167,
+   "activity": 0.15421666666666667,
+   "consistency": 0.004527870801981109,
+   "decile": 5,
+   "tercile": 0
+  },
+  {
+   "feat_id": 37767,
+   "level": "unclear",
+   "label": "no coherent property",
+   "r2": 0.3154738957451466,
+   "activity": 0.5935083333333333,
+   "consistency": 0.011300185407581051,
+   "decile": 9,
+   "tercile": 1
+  },
+  {
+   "feat_id": 38836,
+   "level": "high",
+   "label": "Slavic language confirmation and help offers",
+   "r2": 0.3656825064501559,
+   "activity": 0.10164166666666667,
+   "consistency": 0.008729000721758112,
+   "decile": 2,
+   "tercile": 2
+  },
+  {
+   "feat_id": 38928,
+   "level": "low",
+   "label": "spaced or separated individual tokens",
+   "r2": -0.08695519875752855,
+   "activity": 0.09378333333333333,
+   "consistency": 0.009680831794609964,
+   "decile": 1,
+   "tercile": 0
+  },
+  {
+   "feat_id": 39304,
+   "level": "low",
+   "label": "word still",
+   "r2": 0.02889356366592377,
+   "activity": 0.13525833333333334,
+   "consistency": 0.004408439700627429,
+   "decile": 4,
+   "tercile": 0
+  },
+  {
+   "feat_id": 40135,
+   "level": "high",
+   "label": "adequacy or sufficiency assessment",
+   "r2": -0.034134959747678995,
+   "activity": 0.10555833333333334,
+   "consistency": 0.009368592772194343,
+   "decile": 2,
+   "tercile": 0
+  },
+  {
+   "feat_id": 40498,
+   "level": "unclear",
+   "label": "truncated or incomplete responses",
+   "r2": 0.05604175287187141,
+   "activity": 0.20511666666666667,
+   "consistency": 0.00932949354736348,
+   "decile": 6,
+   "tercile": 0
+  },
+  {
+   "feat_id": 41027,
+   "level": "high",
+   "label": "code generation or manipulation responses",
+   "r2": 0.6619039955959233,
+   "activity": 0.12535833333333332,
+   "consistency": 0.027539290575431807,
+   "decile": 3,
+   "tercile": 2
+  },
+  {
+   "feat_id": 41454,
+   "level": "low",
+   "label": "word 'main' or translations",
+   "r2": 0.0486953282156839,
+   "activity": 0.15400833333333333,
+   "consistency": 0.004493611514661859,
+   "decile": 5,
+   "tercile": 0
+  },
+  {
+   "feat_id": 42237,
+   "level": "low",
+   "label": "comma or list enumeration",
+   "r2": 0.13101650130148257,
+   "activity": 0.13596666666666668,
+   "consistency": 0.009024706796326746,
+   "decile": 4,
+   "tercile": 1
+  },
+  {
+   "feat_id": 43852,
+   "level": "unclear",
+   "label": "no coherent property",
+   "r2": 0.03219875215173551,
+   "activity": 0.6384416666666667,
+   "consistency": 0.008207453283243439,
+   "decile": 9,
+   "tercile": 0
+  },
+  {
+   "feat_id": 44134,
+   "level": "low",
+   "label": "copular and linking verb constructions",
+   "r2": 0.017613216872711668,
+   "activity": 0.14184166666666667,
+   "consistency": 0.0033377156639468916,
+   "decile": 4,
+   "tercile": 0
+  },
+  {
+   "feat_id": 44705,
+   "level": "high",
+   "label": "consideration or accounting for information",
+   "r2": 0.015027862072492737,
+   "activity": 0.11738333333333334,
+   "consistency": 0.00487224320770918,
+   "decile": 3,
+   "tercile": 0
+  },
+  {
+   "feat_id": 45206,
+   "level": "low",
+   "label": "contrastive conjunctions or qualifiers",
+   "r2": 0.02647075755298467,
+   "activity": 0.16445833333333335,
+   "consistency": 0.005144034309087598,
+   "decile": 5,
+   "tercile": 0
+  },
+  {
+   "feat_id": 45349,
+   "level": "high",
+   "label": "structured hierarchical content with section headers",
+   "r2": 0.3476845080353266,
+   "activity": 0.37004166666666666,
+   "consistency": 0.018886412367226373,
+   "decile": 8,
+   "tercile": 2
+  },
+  {
+   "feat_id": 45460,
+   "level": "low",
+   "label": "non-English words",
+   "r2": 0.13975995856860413,
+   "activity": 0.08321666666666666,
+   "consistency": 0.004486723841967622,
+   "decile": 0,
+   "tercile": 1
+  },
+  {
+   "feat_id": 45975,
+   "level": "high",
+   "label": "casual conversational tone with exclamations",
+   "r2": 0.0921375639966393,
+   "activity": 0.19544166666666668,
+   "consistency": 0.006650038753212355,
+   "decile": 6,
+   "tercile": 0
+  },
+  {
+   "feat_id": 46023,
+   "level": "high",
+   "label": "verification or correction responses",
+   "r2": 0.2674915790482294,
+   "activity": 0.13694166666666666,
+   "consistency": 0.023534994961637547,
+   "decile": 4,
+   "tercile": 2
+  },
+  {
+   "feat_id": 47250,
+   "level": "high",
+   "label": "conversational engagement or dialogue continuation",
+   "r2": 0.1563236808141929,
+   "activity": 0.49573333333333336,
+   "consistency": 0.008213516523146771,
+   "decile": 9,
+   "tercile": 0
+  },
+  {
+   "feat_id": 47289,
+   "level": "high",
+   "label": "descriptions of systems or capabilities",
+   "r2": 0.10933841877705441,
+   "activity": 0.08535,
+   "consistency": 0.014069655611514579,
+   "decile": 0,
+   "tercile": 1
+  },
+  {
+   "feat_id": 47463,
+   "level": "high",
+   "label": "attributing information to source or context",
+   "r2": 0.023912361837139517,
+   "activity": 0.10715833333333333,
+   "consistency": 0.007108366408757098,
+   "decile": 2,
+   "tercile": 0
+  },
+  {
+   "feat_id": 47849,
+   "level": "unclear",
+   "label": "informative explanatory responses",
+   "r2": 0.10386009476469793,
+   "activity": 0.26855833333333334,
+   "consistency": 0.00625496385306648,
+   "decile": 7,
+   "tercile": 0
+  },
+  {
+   "feat_id": 48108,
+   "level": "low",
+   "label": "hierarchical index or outline structure",
+   "r2": 0.6133619921388453,
+   "activity": 0.621225,
+   "consistency": 0.019252975402768168,
+   "decile": 9,
+   "tercile": 2
+  },
+  {
+   "feat_id": 48730,
+   "level": "low",
+   "label": "can or ability modals",
+   "r2": 0.21191708211050342,
+   "activity": 0.08458333333333333,
+   "consistency": 0.007829133677365157,
+   "decile": 0,
+   "tercile": 2
+  },
+  {
+   "feat_id": 48785,
+   "level": "unclear",
+   "label": "no coherent shared property detected",
+   "r2": 0.14964370832523044,
+   "activity": 0.363125,
+   "consistency": 0.00742887937947381,
+   "decile": 8,
+   "tercile": 1
+  },
+  {
+   "feat_id": 49409,
+   "level": "low",
+   "label": "Greek language text",
+   "r2": 0.38342640189117516,
+   "activity": 0.16583333333333333,
+   "consistency": 0.006029922159472902,
+   "decile": 5,
+   "tercile": 2
+  },
+  {
+   "feat_id": 49636,
+   "level": "high",
+   "label": "explanatory focus or emphasis in responses",
+   "r2": -0.005290602329062866,
+   "activity": 0.08224166666666667,
+   "consistency": 0.003798173159762518,
+   "decile": 0,
+   "tercile": 0
+  },
+  {
+   "feat_id": 49683,
+   "level": "low",
+   "label": "sentence-ending period punctuation",
+   "r2": 0.032651008466176634,
+   "activity": 0.11371666666666666,
+   "consistency": 0.004192825008763014,
+   "decile": 2,
+   "tercile": 0
+  },
+  {
+   "feat_id": 49795,
+   "level": "high",
+   "label": "multi-factor explanations or causal complexity",
+   "r2": 0.12504112349987817,
+   "activity": 0.09448333333333334,
+   "consistency": 0.004120486904271466,
+   "decile": 1,
+   "tercile": 1
+  },
+  {
+   "feat_id": 50252,
+   "level": "low",
+   "label": "formatted lists or enumerated identifiers",
+   "r2": 0.44272989490662706,
+   "activity": 0.9490166666666666,
+   "consistency": 0.22469212336806607,
+   "decile": 9,
+   "tercile": 2
+  },
+  {
+   "feat_id": 50440,
+   "level": "high",
+   "label": "combining or merging different elements",
+   "r2": 0.20200205854750986,
+   "activity": 0.2417,
+   "consistency": 0.005984809806044061,
+   "decile": 7,
+   "tercile": 1
+  },
+  {
+   "feat_id": 50464,
+   "level": "unclear",
+   "label": "no coherent property",
+   "r2": 0.2301586484093101,
+   "activity": 0.6614333333333333,
+   "consistency": 0.013110701633978771,
+   "decile": 9,
+   "tercile": 1
+  },
+  {
+   "feat_id": 50540,
+   "level": "high",
+   "label": "direct task completion and straightforward responses",
+   "r2": -0.06881822265137649,
+   "activity": 0.13606666666666667,
+   "consistency": 0.004342150828348895,
+   "decile": 4,
+   "tercile": 0
+  },
+  {
+   "feat_id": 50570,
+   "level": "unclear",
+   "label": "unclear pattern across heterogeneous texts",
+   "r2": 0.24594026224605992,
+   "activity": 0.19505833333333333,
+   "consistency": 0.005511316020836991,
+   "decile": 6,
+   "tercile": 2
+  },
+  {
+   "feat_id": 51160,
+   "level": "high",
+   "label": "informal casual slang conversational style",
+   "r2": 0.7586273795055092,
+   "activity": 0.2555,
+   "consistency": 0.1845688104940565,
+   "decile": 7,
+   "tercile": 2
+  },
+  {
+   "feat_id": 51206,
+   "level": "high",
+   "label": "step-by-step explanations and problem-solving",
+   "r2": 0.0347395525343992,
+   "activity": 0.15458333333333332,
+   "consistency": 0.00884067777032158,
+   "decile": 5,
+   "tercile": 0
+  },
+  {
+   "feat_id": 51832,
+   "level": "low",
+   "label": "enumerated lists and bullet point formatting",
+   "r2": 0.1499833199923718,
+   "activity": 0.22754166666666667,
+   "consistency": 0.008945697874534787,
+   "decile": 7,
+   "tercile": 1
+  },
+  {
+   "feat_id": 51920,
+   "level": "unclear",
+   "label": "no coherent property",
+   "r2": 0.012725437419390806,
+   "activity": 0.14756666666666668,
+   "consistency": 0.005767261198365664,
+   "decile": 4,
+   "tercile": 0
+  },
+  {
+   "feat_id": 52413,
+   "level": "high",
+   "label": "requesting clarification or additional information",
+   "r2": 0.02366347597189289,
+   "activity": 0.09703333333333333,
+   "consistency": 0.0036749843058820363,
+   "decile": 1,
+   "tercile": 0
+  },
+  {
+   "feat_id": 52657,
+   "level": "high",
+   "label": "code or technical structured content",
+   "r2": 0.21257579206118837,
+   "activity": 0.12828333333333333,
+   "consistency": 0.003822889609260653,
+   "decile": 3,
+   "tercile": 2
+  },
+  {
+   "feat_id": 52689,
+   "level": "high",
+   "label": "code examples and programming explanations",
+   "r2": 0.516269961411014,
+   "activity": 0.122,
+   "consistency": 0.012652242769960497,
+   "decile": 3,
+   "tercile": 2
+  },
+  {
+   "feat_id": 52914,
+   "level": "low",
+   "label": "code snippets or command-line examples",
+   "r2": 0.32898594290463035,
+   "activity": 0.17035,
+   "consistency": 0.011699865970251414,
+   "decile": 5,
+   "tercile": 2
+  },
+  {
+   "feat_id": 52968,
+   "level": "low",
+   "label": "modal verb might expressing possibility",
+   "r2": 0.28608996344525217,
+   "activity": 0.49354166666666666,
+   "consistency": 0.02762958806795931,
+   "decile": 9,
+   "tercile": 1
+  },
+  {
+   "feat_id": 52970,
+   "level": "high",
+   "label": "popularity or widespread use",
+   "r2": 0.24301075684009055,
+   "activity": 0.2809,
+   "consistency": 0.007380073034029153,
+   "decile": 8,
+   "tercile": 1
+  },
+  {
+   "feat_id": 53086,
+   "level": "low",
+   "label": "atic character sequence or suffix",
+   "r2": 0.09532378577906819,
+   "activity": 0.19783333333333333,
+   "consistency": 0.004083126738177897,
+   "decile": 6,
+   "tercile": 0
+  },
+  {
+   "feat_id": 53191,
+   "level": "high",
+   "label": "brief evaluative responses and factual judgments",
+   "r2": 0.10611259420327179,
+   "activity": 0.29105,
+   "consistency": 0.010099695302677859,
+   "decile": 8,
+   "tercile": 0
+  },
+  {
+   "feat_id": 53533,
+   "level": "high",
+   "label": "multiple countries or international scope",
+   "r2": 0.07552583415265357,
+   "activity": 0.220225,
+   "consistency": 0.003687961971141353,
+   "decile": 7,
+   "tercile": 0
+  },
+  {
+   "feat_id": 53618,
+   "level": "high",
+   "label": "informative explanatory content",
+   "r2": 0.142172674542551,
+   "activity": 0.39265,
+   "consistency": 0.010412182608152307,
+   "decile": 8,
+   "tercile": 1
+  },
+  {
+   "feat_id": 53635,
+   "level": "high",
+   "label": "Russian/German text input request responses",
+   "r2": 0.38528738875358937,
+   "activity": 0.09211666666666667,
+   "consistency": 0.008430951151080862,
+   "decile": 1,
+   "tercile": 2
+  },
+  {
+   "feat_id": 54334,
+   "level": "low",
+   "label": "complete statements or informational units",
+   "r2": 0.051483212025783764,
+   "activity": 0.46053333333333335,
+   "consistency": 0.008774766910952782,
+   "decile": 9,
+   "tercile": 0
+  },
+  {
+   "feat_id": 54639,
+   "level": "high",
+   "label": "compass directions and cardinal points",
+   "r2": 0.07500129843980863,
+   "activity": 0.09003333333333334,
+   "consistency": 0.00692466734427516,
+   "decile": 0,
+   "tercile": 1
+  },
+  {
+   "feat_id": 55151,
+   "level": "unclear",
+   "label": "unclear property",
+   "r2": 0.08922086711987531,
+   "activity": 0.21658333333333332,
+   "consistency": 0.008280750970374442,
+   "decile": 7,
+   "tercile": 0
+  },
+  {
+   "feat_id": 55958,
+   "level": "high",
+   "label": "announcing presence or presenting something",
+   "r2": 0.0009556081089701074,
+   "activity": 0.12970833333333334,
+   "consistency": 0.004774489802560583,
+   "decile": 3,
+   "tercile": 0
+  },
+  {
+   "feat_id": 56718,
+   "level": "low",
+   "label": "German language text",
+   "r2": 0.0921736645288187,
+   "activity": 0.113675,
+   "consistency": 0.007137377794672777,
+   "decile": 2,
+   "tercile": 1
+  },
+  {
+   "feat_id": 56876,
+   "level": "high",
+   "label": "mathematical or logical reasoning explanations",
+   "r2": -0.07140322654768783,
+   "activity": 0.10198333333333333,
+   "consistency": 0.005317410450196769,
+   "decile": 2,
+   "tercile": 0
+  },
+  {
+   "feat_id": 58101,
+   "level": "low",
+   "label": "word 'one'",
+   "r2": -0.11466492141239715,
+   "activity": 0.2859,
+   "consistency": 0.005146054380963256,
+   "decile": 8,
+   "tercile": 0
+  },
+  {
+   "feat_id": 59296,
+   "level": "high",
+   "label": "software and technology product names",
+   "r2": 0.19293629796901368,
+   "activity": 0.24359166666666668,
+   "consistency": 0.0052561701712315195,
+   "decile": 7,
+   "tercile": 1
+  },
+  {
+   "feat_id": 59926,
+   "level": "high",
+   "label": "comparisons and similarity assessments",
+   "r2": 0.1287046397165904,
+   "activity": 0.14318333333333333,
+   "consistency": 0.01684445649916212,
+   "decile": 4,
+   "tercile": 1
+  },
+  {
+   "feat_id": 60529,
+   "level": "high",
+   "label": "informational or explanatory text",
+   "r2": 0.06989692535876979,
+   "activity": 0.113825,
+   "consistency": 0.005174799452101,
+   "decile": 2,
+   "tercile": 1
+  },
+  {
+   "feat_id": 61381,
+   "level": "high",
+   "label": "readiness or willingness to act",
+   "r2": 0.14109644422601675,
+   "activity": 0.48160833333333336,
+   "consistency": 0.009285027533653581,
+   "decile": 9,
+   "tercile": 0
+  },
+  {
+   "feat_id": 61386,
+   "level": "unclear",
+   "label": "unclear shared property",
+   "r2": 0.004124096439200531,
+   "activity": 0.1183,
+   "consistency": 0.003471175863159042,
+   "decile": 3,
+   "tercile": 0
+  },
+  {
+   "feat_id": 62231,
+   "level": "high",
+   "label": "local installation or deployment of software",
+   "r2": 0.20245098714606924,
+   "activity": 0.08205,
+   "consistency": 0.00664047368677462,
+   "decile": 0,
+   "tercile": 2
+  },
+  {
+   "feat_id": 62568,
+   "level": "high",
+   "label": "prosocial assistant responses or ethical refusals",
+   "r2": 0.09929897153294331,
+   "activity": 0.11620833333333333,
+   "consistency": 0.010233454808576768,
+   "decile": 3,
+   "tercile": 1
+  },
+  {
+   "feat_id": 64158,
+   "level": "low",
+   "label": "Russian language responses",
+   "r2": 0.3618374033430197,
+   "activity": 0.09856666666666666,
+   "consistency": 0.007246812453413477,
+   "decile": 1,
+   "tercile": 2
+  },
+  {
+   "feat_id": 64935,
+   "level": "high",
+   "label": "structured content organization or chapters",
+   "r2": 0.07855246152980488,
+   "activity": 0.09609166666666667,
+   "consistency": 0.006690773233227278,
+   "decile": 1,
+   "tercile": 1
+  },
+  {
+   "feat_id": 65343,
+   "level": "low",
+   "label": "acronyms with expansions or related terms",
+   "r2": 0.035841973585884035,
+   "activity": 0.12345,
+   "consistency": 0.0039126249529402215,
+   "decile": 3,
+   "tercile": 0
+  },
+  {
+   "feat_id": 65478,
+   "level": "high",
+   "label": "anomalous or placeholder text",
+   "r2": 0.20736226074756237,
+   "activity": 0.16284166666666666,
+   "consistency": 0.0146866655357052,
+   "decile": 5,
+   "tercile": 1
+  },
+  {
+   "feat_id": 66590,
+   "level": "unclear",
+   "label": "formal structured text or instructional content",
+   "r2": 0.026355360389113458,
+   "activity": 0.31511666666666666,
+   "consistency": 0.005680689083096742,
+   "decile": 8,
+   "tercile": 0
+  },
+  {
+   "feat_id": 66721,
+   "level": "low",
+   "label": "non-English European language tokens",
+   "r2": 0.23085737347301727,
+   "activity": 0.21295833333333333,
+   "consistency": 0.006542426586804197,
+   "decile": 6,
+   "tercile": 2
+  },
+  {
+   "feat_id": 67437,
+   "level": "high",
+   "label": "gentle caring or parental nurturing interactions",
+   "r2": 0.28913570946438283,
+   "activity": 0.115175,
+   "consistency": 0.008745277180667206,
+   "decile": 3,
+   "tercile": 2
+  },
+  {
+   "feat_id": 68421,
+   "level": "unclear",
+   "label": "multi-paragraph substantive answer text",
+   "r2": 0.15569645468617943,
+   "activity": 0.11715833333333334,
+   "consistency": 0.012519917080078298,
+   "decile": 3,
+   "tercile": 1
+  },
+  {
+   "feat_id": 68737,
+   "level": "low",
+   "label": "non-English language text",
+   "r2": 0.21634782243885053,
+   "activity": 0.10814166666666666,
+   "consistency": 0.005262800235635117,
+   "decile": 2,
+   "tercile": 2
+  },
+  {
+   "feat_id": 69439,
+   "level": "low",
+   "label": "word without or equivalents across languages",
+   "r2": 0.15620221024025527,
+   "activity": 0.18014166666666667,
+   "consistency": 0.010525982689944613,
+   "decile": 6,
+   "tercile": 1
+  },
+  {
+   "feat_id": 69981,
+   "level": "high",
+   "label": "ongoing instructional or explanatory content",
+   "r2": 0.2055706100745177,
+   "activity": 0.19596666666666668,
+   "consistency": 0.012498799240656057,
+   "decile": 6,
+   "tercile": 1
+  },
+  {
+   "feat_id": 70678,
+   "level": "high",
+   "label": "coherent written assistant responses",
+   "r2": 0.11833033542477067,
+   "activity": 0.2079,
+   "consistency": 0.0053481005582554095,
+   "decile": 6,
+   "tercile": 1
+  },
+  {
+   "feat_id": 71307,
+   "level": "high",
+   "label": "acknowledgment or agreement statements",
+   "r2": 0.09630699146822774,
+   "activity": 0.2855333333333333,
+   "consistency": 0.006814010950997419,
+   "decile": 8,
+   "tercile": 0
+  },
+  {
+   "feat_id": 71318,
+   "level": "high",
+   "label": "positive supportive or collaborative statements",
+   "r2": 0.2650024108784843,
+   "activity": 0.49251666666666666,
+   "consistency": 0.012550371350187089,
+   "decile": 9,
+   "tercile": 1
+  },
+  {
+   "feat_id": 71339,
+   "level": "high",
+   "label": "scientific or technical terminology and definitions",
+   "r2": 0.11298731442641596,
+   "activity": 0.0929,
+   "consistency": 0.00530586081848035,
+   "decile": 1,
+   "tercile": 1
+  },
+  {
+   "feat_id": 71712,
+   "level": "high",
+   "label": "polite cooperative dialogue responses",
+   "r2": 0.12209921732559326,
+   "activity": 0.13551666666666667,
+   "consistency": 0.012594706838296034,
+   "decile": 4,
+   "tercile": 1
+  },
+  {
+   "feat_id": 72952,
+   "level": "high",
+   "label": "descriptive passages about stories or events",
+   "r2": 0.29947410111871176,
+   "activity": 0.228875,
+   "consistency": 0.024137731330242395,
+   "decile": 7,
+   "tercile": 2
+  },
+  {
+   "feat_id": 73374,
+   "level": "high",
+   "label": "rational and evidence-based reasoning",
+   "r2": 0.04831011741091429,
+   "activity": 0.09255833333333334,
+   "consistency": 0.0072436570970956515,
+   "decile": 1,
+   "tercile": 0
+  },
+  {
+   "feat_id": 73411,
+   "level": "high",
+   "label": "explanatory responses defining terms or concepts",
+   "r2": 0.06381260875085726,
+   "activity": 0.10056666666666667,
+   "consistency": 0.006196450665568452,
+   "decile": 1,
+   "tercile": 1
+  },
+  {
+   "feat_id": 73516,
+   "level": "high",
+   "label": "non-English refusal or inability responses",
+   "r2": 0.23164395935412962,
+   "activity": 0.11549166666666667,
+   "consistency": 0.01641764098220474,
+   "decile": 3,
+   "tercile": 2
+  },
+  {
+   "feat_id": 73957,
+   "level": "high",
+   "label": "hedged superlative claims with variability caveats",
+   "r2": 0.22525689886708844,
+   "activity": 0.10555,
+   "consistency": 0.014363490893305072,
+   "decile": 2,
+   "tercile": 2
+  },
+  {
+   "feat_id": 74529,
+   "level": "unclear",
+   "label": "no coherent shared property detected",
+   "r2": 0.010901091557998788,
+   "activity": 0.10528333333333334,
+   "consistency": 0.0037082134969668125,
+   "decile": 2,
+   "tercile": 0
+  },
+  {
+   "feat_id": 75632,
+   "level": "low",
+   "label": "content outlines and tables of contents",
+   "r2": 0.511576593588487,
+   "activity": 0.182775,
+   "consistency": 0.04524168926676087,
+   "decile": 6,
+   "tercile": 2
+  },
+  {
+   "feat_id": 76090,
+   "level": "unclear",
+   "label": "unclear property across diverse examples",
+   "r2": 0.20518279406437445,
+   "activity": 0.4310833333333333,
+   "consistency": 0.009144242229716082,
+   "decile": 9,
+   "tercile": 1
+  },
+  {
+   "feat_id": 76282,
+   "level": "unclear",
+   "label": "unclear pattern across diverse examples",
+   "r2": 0.0036799853644994274,
+   "activity": 0.1919,
+   "consistency": 0.004154766684752983,
+   "decile": 6,
+   "tercile": 0
+  },
+  {
+   "feat_id": 77248,
+   "level": "unclear",
+   "label": "no coherent shared property detected",
+   "r2": 0.06709262288744311,
+   "activity": 0.23235,
+   "consistency": 0.007017591045607573,
+   "decile": 7,
+   "tercile": 0
+  },
+  {
+   "feat_id": 77254,
+   "level": "high",
+   "label": "code examples and technical instructions",
+   "r2": 0.4714834113447631,
+   "activity": 0.12995833333333334,
+   "consistency": 0.011267353961696302,
+   "decile": 3,
+   "tercile": 2
+  },
+  {
+   "feat_id": 77372,
+   "level": "low",
+   "label": "word including",
+   "r2": 0.12708964539523337,
+   "activity": 0.18001666666666666,
+   "consistency": 0.0035765045672122575,
+   "decile": 6,
+   "tercile": 1
+  },
+  {
+   "feat_id": 77703,
+   "level": "high",
+   "label": "polite service or administrative requests",
+   "r2": 0.06656301361698702,
+   "activity": 0.09226666666666666,
+   "consistency": 0.013765665406436589,
+   "decile": 1,
+   "tercile": 1
+  },
+  {
+   "feat_id": 77716,
+   "level": "low",
+   "label": "Chinese language text",
+   "r2": 0.573602513286039,
+   "activity": 0.1051,
+   "consistency": 0.013350704984365476,
+   "decile": 2,
+   "tercile": 2
+  },
+  {
+   "feat_id": 77825,
+   "level": "high",
+   "label": "numerical values and measurements",
+   "r2": 0.24961333628437876,
+   "activity": 0.13458333333333333,
+   "consistency": 0.007164944746176894,
+   "decile": 4,
+   "tercile": 2
+  },
+  {
+   "feat_id": 78594,
+   "level": "high",
+   "label": "analysis of narrative techniques and storytelling",
+   "r2": 0.14574256584503564,
+   "activity": 0.08950833333333333,
+   "consistency": 0.015272855869652272,
+   "decile": 0,
+   "tercile": 1
+  },
+  {
+   "feat_id": 79406,
+   "level": "high",
+   "label": "status position role or place concepts",
+   "r2": 0.028646908743087507,
+   "activity": 0.09746666666666666,
+   "consistency": 0.00488412714526363,
+   "decile": 1,
+   "tercile": 0
+  },
+  {
+   "feat_id": 79673,
+   "level": "high",
+   "label": "informational or technical content",
+   "r2": 0.11580266139145556,
+   "activity": 0.23186666666666667,
+   "consistency": 0.005483930021130264,
+   "decile": 7,
+   "tercile": 0
+  },
+  {
+   "feat_id": 79760,
+   "level": "unclear",
+   "label": "no coherent shared property detected",
+   "r2": 0.09848040184800522,
+   "activity": 0.09635833333333334,
+   "consistency": 0.009257893346641176,
+   "decile": 1,
+   "tercile": 1
+  },
+  {
+   "feat_id": 80841,
+   "level": "high",
+   "label": "contrastive discourse markers or adversative constructions",
+   "r2": 0.05426172822476627,
+   "activity": 0.11335,
+   "consistency": 0.004423931861095544,
+   "decile": 2,
+   "tercile": 0
+  },
+  {
+   "feat_id": 81278,
+   "level": "low",
+   "label": "East Asian language text (Korean/Chinese/Japanese)",
+   "r2": 0.13498804573645762,
+   "activity": 0.0822,
+   "consistency": 0.005378160936892371,
+   "decile": 0,
+   "tercile": 1
+  },
+  {
+   "feat_id": 81829,
+   "level": "high",
+   "label": "current political leaders and succession",
+   "r2": 0.2627212801231109,
+   "activity": 0.10659166666666667,
+   "consistency": 0.011959619233554377,
+   "decile": 2,
+   "tercile": 2
+  },
+  {
+   "feat_id": 81851,
+   "level": "low",
+   "label": "letter n",
+   "r2": 0.05473626532174991,
+   "activity": 0.20966666666666667,
+   "consistency": 0.005986212774376801,
+   "decile": 6,
+   "tercile": 0
+  },
+  {
+   "feat_id": 82020,
+   "level": "high",
+   "label": "accumulation or intensification building toward climax",
+   "r2": -0.07384345820018168,
+   "activity": 0.08224166666666667,
+   "consistency": 0.004155331293806284,
+   "decile": 0,
+   "tercile": 0
+  },
+  {
+   "feat_id": 82040,
+   "level": "high",
+   "label": "elaborative explanation following initial answer",
+   "r2": 0.0207817171512229,
+   "activity": 0.1744,
+   "consistency": 0.0053219222420946176,
+   "decile": 5,
+   "tercile": 0
+  },
+  {
+   "feat_id": 82403,
+   "level": "high",
+   "label": "technical commands and instructions",
+   "r2": 0.18237385988318222,
+   "activity": 0.0859,
+   "consistency": 0.007369614591143323,
+   "decile": 0,
+   "tercile": 2
+  },
+  {
+   "feat_id": 82539,
+   "level": "low",
+   "label": "structured labels or code-like identifiers",
+   "r2": 0.3667234955617359,
+   "activity": 0.6038583333333334,
+   "consistency": 0.011958202982041637,
+   "decile": 9,
+   "tercile": 2
+  },
+  {
+   "feat_id": 83163,
+   "level": "high",
+   "label": "autonomy and self-contained systems or independence",
+   "r2": 0.08531347767294617,
+   "activity": 0.19194166666666668,
+   "consistency": 0.010708966692214533,
+   "decile": 6,
+   "tercile": 0
+  },
+  {
+   "feat_id": 83166,
+   "level": "high",
+   "label": "enumeration of attributes or requirements",
+   "r2": 0.11239825878061616,
+   "activity": 0.17223333333333332,
+   "consistency": 0.012758296810037189,
+   "decile": 5,
+   "tercile": 1
+  },
+  {
+   "feat_id": 83270,
+   "level": "low",
+   "label": "Cyrillic script or Slavic language text",
+   "r2": 0.34743928691753945,
+   "activity": 0.08530833333333333,
+   "consistency": 0.011328094462299413,
+   "decile": 0,
+   "tercile": 2
+  },
+  {
+   "feat_id": 83430,
+   "level": "high",
+   "label": "expressing positive social engagement or affirmation",
+   "r2": 0.11617026564959587,
+   "activity": 0.11960833333333333,
+   "consistency": 0.012478026713858512,
+   "decile": 3,
+   "tercile": 1
+  },
+  {
+   "feat_id": 84182,
+   "level": "high",
+   "label": "hedging or qualifying language in responses",
+   "r2": 0.1538466587796551,
+   "activity": 0.19658333333333333,
+   "consistency": 0.0051297215093440455,
+   "decile": 6,
+   "tercile": 1
+  },
+  {
+   "feat_id": 84471,
+   "level": "high",
+   "label": "setting or environment description",
+   "r2": 0.3135895716193041,
+   "activity": 0.18186666666666668,
+   "consistency": 0.014998082672396013,
+   "decile": 6,
+   "tercile": 2
+  },
+  {
+   "feat_id": 86163,
+   "level": "high",
+   "label": "defining or requesting context clarification",
+   "r2": 0.23502085401220196,
+   "activity": 0.151425,
+   "consistency": 0.008637329824992514,
+   "decile": 5,
+   "tercile": 2
+  },
+  {
+   "feat_id": 86293,
+   "level": "high",
+   "label": "helpful assistant response behavior",
+   "r2": 0.05768507383254007,
+   "activity": 0.18445,
+   "consistency": 0.0038612945579390243,
+   "decile": 6,
+   "tercile": 0
+  },
+  {
+   "feat_id": 86368,
+   "level": "high",
+   "label": "women and femininity",
+   "r2": 0.15305261676819726,
+   "activity": 0.13970833333333332,
+   "consistency": 0.00644609563357077,
+   "decile": 4,
+   "tercile": 1
+  },
+  {
+   "feat_id": 86625,
+   "level": "high",
+   "label": "vehicles and transportation",
+   "r2": 0.11499272532117355,
+   "activity": 0.11325,
+   "consistency": 0.01553492114507073,
+   "decile": 2,
+   "tercile": 1
+  },
+  {
+   "feat_id": 87205,
+   "level": "high",
+   "label": "filtering or conditional selection operations",
+   "r2": 0.1902296926424789,
+   "activity": 0.087075,
+   "consistency": 0.006596103058167994,
+   "decile": 0,
+   "tercile": 2
+  },
+  {
+   "feat_id": 87409,
+   "level": "low",
+   "label": "Russian language text",
+   "r2": 0.6611175736424839,
+   "activity": 0.211825,
+   "consistency": 0.02094096016408307,
+   "decile": 6,
+   "tercile": 2
+  },
+  {
+   "feat_id": 88338,
+   "level": "unclear",
+   "label": "no coherent shared property",
+   "r2": 0.4480686046464102,
+   "activity": 0.1577,
+   "consistency": 0.04365376245897382,
+   "decile": 5,
+   "tercile": 2
+  },
+  {
+   "feat_id": 88702,
+   "level": "high",
+   "label": "superlative or excellence-focused promotional language",
+   "r2": -0.06367743651731517,
+   "activity": 0.15031666666666665,
+   "consistency": 0.005027681063728066,
+   "decile": 4,
+   "tercile": 0
+  },
+  {
+   "feat_id": 89387,
+   "level": "low",
+   "label": "Chinese language text",
+   "r2": 0.7313904960250743,
+   "activity": 0.17139166666666666,
+   "consistency": 0.049723734521562125,
+   "decile": 5,
+   "tercile": 2
+  },
+  {
+   "feat_id": 89655,
+   "level": "high",
+   "label": "apology or acknowledgment of mistakes",
+   "r2": 0.13355566983213762,
+   "activity": 0.14710833333333334,
+   "consistency": 0.015194260485886865,
+   "decile": 4,
+   "tercile": 1
+  },
+  {
+   "feat_id": 90161,
+   "level": "high",
+   "label": "factually incorrect or hallucinated content",
+   "r2": 0.198145039659545,
+   "activity": 0.12846666666666667,
+   "consistency": 0.008188134162736544,
+   "decile": 3,
+   "tercile": 2
+  },
+  {
+   "feat_id": 91738,
+   "level": "high",
+   "label": "detailed visual object descriptions",
+   "r2": 0.5760358322974204,
+   "activity": 0.17746666666666666,
+   "consistency": 0.005640518230929758,
+   "decile": 5,
+   "tercile": 2
+  },
+  {
+   "feat_id": 92061,
+   "level": "unclear",
+   "label": "no coherent property detected",
+   "r2": 0.003825083693421827,
+   "activity": 0.08609166666666666,
+   "consistency": 0.0035861804309697642,
+   "decile": 0,
+   "tercile": 0
+  },
+  {
+   "feat_id": 92075,
+   "level": "low",
+   "label": "very short minimal responses",
+   "r2": 0.11748349335652064,
+   "activity": 0.159725,
+   "consistency": 0.015627036614865086,
+   "decile": 5,
+   "tercile": 1
+  },
+  {
+   "feat_id": 92469,
+   "level": "low",
+   "label": "non-English or multilingual text",
+   "r2": 0.15557959731476656,
+   "activity": 0.182325,
+   "consistency": 0.005526053904942203,
+   "decile": 6,
+   "tercile": 1
+  },
+  {
+   "feat_id": 92557,
+   "level": "low",
+   "label": "the word where",
+   "r2": 0.01675257440208966,
+   "activity": 0.09864166666666667,
+   "consistency": 0.00347693026685187,
+   "decile": 1,
+   "tercile": 0
+  },
+  {
+   "feat_id": 92706,
+   "level": "high",
+   "label": "discussing differences or distinctions between things",
+   "r2": 0.20223564208081357,
+   "activity": 0.25455,
+   "consistency": 0.016329414240544182,
+   "decile": 7,
+   "tercile": 1
+  },
+  {
+   "feat_id": 93226,
+   "level": "high",
+   "label": "sliding door hardware and mechanical components",
+   "r2": 0.13861681251031088,
+   "activity": 0.15915,
+   "consistency": 0.005858046507408437,
+   "decile": 5,
+   "tercile": 1
+  },
+  {
+   "feat_id": 93768,
+   "level": "low",
+   "label": "the definite article the",
+   "r2": 0.07652003360183601,
+   "activity": 0.18725,
+   "consistency": 0.004138243224921097,
+   "decile": 6,
+   "tercile": 0
+  },
+  {
+   "feat_id": 94347,
+   "level": "high",
+   "label": "definitional explanations of concepts",
+   "r2": 0.24883899382157204,
+   "activity": 0.17894166666666667,
+   "consistency": 0.007319961790877961,
+   "decile": 6,
+   "tercile": 2
+  },
+  {
+   "feat_id": 94575,
+   "level": "high",
+   "label": "file operations and file-related concepts",
+   "r2": 0.21612529646167966,
+   "activity": 0.08165,
+   "consistency": 0.01118797422745053,
+   "decile": 0,
+   "tercile": 2
+  },
+  {
+   "feat_id": 94619,
+   "level": "unclear",
+   "label": "",
+   "r2": 0.03415947285613585,
+   "activity": 0.143025,
+   "consistency": 0.0108836164064968,
+   "decile": 4,
+   "tercile": 0
+  },
+  {
+   "feat_id": 96163,
+   "level": "high",
+   "label": "motivation and incentive systems",
+   "r2": 0.06678514100109789,
+   "activity": 0.10525833333333333,
+   "consistency": 0.009630506012806104,
+   "decile": 2,
+   "tercile": 1
+  },
+  {
+   "feat_id": 96229,
+   "level": "high",
+   "label": "female or feminine references",
+   "r2": 0.6938685453677924,
+   "activity": 0.30135,
+   "consistency": 0.05969577900808632,
+   "decile": 8,
+   "tercile": 2
+  },
+  {
+   "feat_id": 96397,
+   "level": "low",
+   "label": "truncated or incomplete response text",
+   "r2": 0.261999164335981,
+   "activity": 0.3040583333333333,
+   "consistency": 0.014804312714122376,
+   "decile": 8,
+   "tercile": 2
+  },
+  {
+   "feat_id": 96975,
+   "level": "high",
+   "label": "personal or character names",
+   "r2": 0.2228460729410111,
+   "activity": 0.088275,
+   "consistency": 0.006665607827992432,
+   "decile": 0,
+   "tercile": 2
+  },
+  {
+   "feat_id": 97251,
+   "level": "high",
+   "label": "non-English language responses",
+   "r2": 0.021397123322955958,
+   "activity": 0.12695833333333334,
+   "consistency": 0.005422961676672399,
+   "decile": 3,
+   "tercile": 0
+  },
+  {
+   "feat_id": 97388,
+   "level": "low",
+   "label": "brief acknowledgment or confirmation responses",
+   "r2": 0.17776577242833402,
+   "activity": 0.15775,
+   "consistency": 0.01391098765047278,
+   "decile": 5,
+   "tercile": 1
+  },
+  {
+   "feat_id": 97661,
+   "level": "high",
+   "label": "term definition or explanation structure",
+   "r2": 0.17422939107032265,
+   "activity": 0.09795833333333333,
+   "consistency": 0.010503709777676264,
+   "decile": 1,
+   "tercile": 2
+  },
+  {
+   "feat_id": 97802,
+   "level": "low",
+   "label": "Korean or Japanese script text",
+   "r2": 0.3475834489519075,
+   "activity": 0.09624166666666667,
+   "consistency": 0.017368334156577746,
+   "decile": 1,
+   "tercile": 2
+  },
+  {
+   "feat_id": 98006,
+   "level": "high",
+   "label": "formal academic or scientific explanatory writing",
+   "r2": 0.28131082518911166,
+   "activity": 0.2262,
+   "consistency": 0.008457140693473423,
+   "decile": 7,
+   "tercile": 2
+  },
+  {
+   "feat_id": 98317,
+   "level": "low",
+   "label": "word whisper or whispers",
+   "r2": 0.10915022622938086,
+   "activity": 0.13005,
+   "consistency": 0.0049148028773496385,
+   "decile": 3,
+   "tercile": 1
+  },
+  {
+   "feat_id": 98593,
+   "level": "high",
+   "label": "Romance language text or responses",
+   "r2": 0.34087048837474954,
+   "activity": 0.10004166666666667,
+   "consistency": 0.007147845006495503,
+   "decile": 1,
+   "tercile": 2
+  },
+  {
+   "feat_id": 98642,
+   "level": "low",
+   "label": "period ending conclusion section",
+   "r2": 0.3477843415948405,
+   "activity": 0.31614166666666665,
+   "consistency": 0.005522741591304758,
+   "decile": 8,
+   "tercile": 2
+  },
+  {
+   "feat_id": 99531,
+   "level": "high",
+   "label": "continuity and fault tolerance mechanisms",
+   "r2": 0.002660101132705983,
+   "activity": 0.09901666666666667,
+   "consistency": 0.008762916397354133,
+   "decile": 1,
+   "tercile": 0
+  },
+  {
+   "feat_id": 101285,
+   "level": "high",
+   "label": "descriptive narrative with sensory physical details",
+   "r2": 0.7054858538522907,
+   "activity": 0.22593333333333335,
+   "consistency": 0.02165132238647515,
+   "decile": 7,
+   "tercile": 2
+  },
+  {
+   "feat_id": 101335,
+   "level": "high",
+   "label": "numerical data and quantified facts",
+   "r2": 0.2675071870628045,
+   "activity": 0.132425,
+   "consistency": 0.005654176946448812,
+   "decile": 4,
+   "tercile": 2
+  },
+  {
+   "feat_id": 101624,
+   "level": "high",
+   "label": "lists of related technical domain terms",
+   "r2": 0.10385212998402849,
+   "activity": 0.3011333333333333,
+   "consistency": 0.005766055582370382,
+   "decile": 8,
+   "tercile": 0
+  },
+  {
+   "feat_id": 101828,
+   "level": "high",
+   "label": "requesting clarification for ambiguous queries",
+   "r2": 0.12070182119370876,
+   "activity": 0.315725,
+   "consistency": 0.007529954872269287,
+   "decile": 8,
+   "tercile": 0
+  },
+  {
+   "feat_id": 102347,
+   "level": "low",
+   "label": "complete assistant responses or document excerpts",
+   "r2": 0.04479657932652248,
+   "activity": 0.402425,
+   "consistency": 0.005147216931796682,
+   "decile": 9,
+   "tercile": 0
+  },
+  {
+   "feat_id": 104201,
+   "level": "low",
+   "label": "word background or \u80cc\u666f",
+   "r2": 0.1684433616960226,
+   "activity": 0.08394166666666666,
+   "consistency": 0.00486302562779139,
+   "decile": 0,
+   "tercile": 2
+  },
+  {
+   "feat_id": 104675,
+   "level": "low",
+   "label": "parenthetical expressions or open parenthesis",
+   "r2": 0.035125552686260275,
+   "activity": 0.16625833333333334,
+   "consistency": 0.003455097230417281,
+   "decile": 5,
+   "tercile": 0
+  },
+  {
+   "feat_id": 104735,
+   "level": "unclear",
+   "label": "declarative statements or assertions",
+   "r2": 0.30244595746572034,
+   "activity": 0.18510833333333335,
+   "consistency": 0.016372410614476664,
+   "decile": 6,
+   "tercile": 2
+  },
+  {
+   "feat_id": 104997,
+   "level": "high",
+   "label": "communication norms and respectful interaction guidance",
+   "r2": 0.14374789612591388,
+   "activity": 0.22720833333333335,
+   "consistency": 0.006229132598591533,
+   "decile": 7,
+   "tercile": 1
+  },
+  {
+   "feat_id": 105183,
+   "level": "high",
+   "label": "affirmative agreement or certainty expressions",
+   "r2": 0.2650468191669024,
+   "activity": 0.16390833333333332,
+   "consistency": 0.006094598777414526,
+   "decile": 5,
+   "tercile": 2
+  },
+  {
+   "feat_id": 105958,
+   "level": "high",
+   "label": "simple declarative statements or descriptions",
+   "r2": 0.3085232565145527,
+   "activity": 0.22061666666666666,
+   "consistency": 0.006879062426363115,
+   "decile": 7,
+   "tercile": 2
+  },
+  {
+   "feat_id": 106019,
+   "level": "low",
+   "label": "punctuation marks",
+   "r2": 0.10961454301549045,
+   "activity": 0.10416666666666667,
+   "consistency": 0.00402181625366211,
+   "decile": 2,
+   "tercile": 1
+  },
+  {
+   "feat_id": 106020,
+   "level": "low",
+   "label": "code block formatting or delimiters",
+   "r2": 0.154708105263066,
+   "activity": 0.13801666666666668,
+   "consistency": 0.0066719495102829755,
+   "decile": 4,
+   "tercile": 1
+  },
+  {
+   "feat_id": 106174,
+   "level": "high",
+   "label": "conversational follow-up questions and continuers",
+   "r2": 0.19111994899137252,
+   "activity": 0.14211666666666667,
+   "consistency": 0.0035122437117540697,
+   "decile": 4,
+   "tercile": 1
+  },
+  {
+   "feat_id": 106720,
+   "level": "low",
+   "label": "non-English language response",
+   "r2": 0.3988754015832878,
+   "activity": 0.250525,
+   "consistency": 0.009000098130717485,
+   "decile": 7,
+   "tercile": 2
+  },
+  {
+   "feat_id": 106909,
+   "level": "low",
+   "label": "comma-separated lists or enumerated items",
+   "r2": 0.6949606240899318,
+   "activity": 0.113425,
+   "consistency": 0.030233306035560372,
+   "decile": 2,
+   "tercile": 2
+  },
+  {
+   "feat_id": 107293,
+   "level": "high",
+   "label": "informative or explanatory discourse",
+   "r2": 0.02130272169700609,
+   "activity": 0.08728333333333334,
+   "consistency": 0.009256147851191884,
+   "decile": 0,
+   "tercile": 0
+  },
+  {
+   "feat_id": 107345,
+   "level": "high",
+   "label": "ornate or purple prose style",
+   "r2": 0.5079870529536281,
+   "activity": 0.3196833333333333,
+   "consistency": 0.01366784141158282,
+   "decile": 8,
+   "tercile": 2
+  },
+  {
+   "feat_id": 107678,
+   "level": "high",
+   "label": "evaluation or assessment",
+   "r2": 0.018325684583425317,
+   "activity": 0.16163333333333332,
+   "consistency": 0.00408444431153099,
+   "decile": 5,
+   "tercile": 0
+  },
+  {
+   "feat_id": 107936,
+   "level": "low",
+   "label": "structured data delimiters and formatting characters",
+   "r2": 0.10864880213753214,
+   "activity": 0.1849,
+   "consistency": 0.004251544230990481,
+   "decile": 6,
+   "tercile": 1
+  },
+  {
+   "feat_id": 108611,
+   "level": "high",
+   "label": "programming tutorial or code example responses",
+   "r2": 0.6217609236690897,
+   "activity": 0.23246666666666665,
+   "consistency": 0.004731001640617386,
+   "decile": 7,
+   "tercile": 2
+  },
+  {
+   "feat_id": 108920,
+   "level": "high",
+   "label": "factual informational responses",
+   "r2": 0.3128446144644036,
+   "activity": 0.5368583333333333,
+   "consistency": 0.010726276291594877,
+   "decile": 9,
+   "tercile": 1
+  },
+  {
+   "feat_id": 109888,
+   "level": "unclear",
+   "label": "unclear pattern across diverse content",
+   "r2": 0.1605757341496885,
+   "activity": 0.38116666666666665,
+   "consistency": 0.007923204032520984,
+   "decile": 8,
+   "tercile": 1
+  },
+  {
+   "feat_id": 110636,
+   "level": "high",
+   "label": "geographic locations and regional descriptions",
+   "r2": 0.2433004096317518,
+   "activity": 0.1169,
+   "consistency": 0.013520943734392265,
+   "decile": 3,
+   "tercile": 2
+  },
+  {
+   "feat_id": 111626,
+   "level": "high",
+   "label": "technical identifiers and formal labels",
+   "r2": 0.17706279317467477,
+   "activity": 0.146725,
+   "consistency": 0.006117567060319679,
+   "decile": 4,
+   "tercile": 1
+  },
+  {
+   "feat_id": 112896,
+   "level": "high",
+   "label": "affirmative compliance preambles",
+   "r2": 0.39064189485613776,
+   "activity": 0.3231,
+   "consistency": 0.005509137197211346,
+   "decile": 8,
+   "tercile": 2
+  },
+  {
+   "feat_id": 112940,
+   "level": "low",
+   "label": "word during",
+   "r2": 0.03446500357638238,
+   "activity": 0.08918333333333334,
+   "consistency": 0.004949004109652995,
+   "decile": 0,
+   "tercile": 0
+  },
+  {
+   "feat_id": 112983,
+   "level": "unclear",
+   "label": "unclear semantic or syntactic property",
+   "r2": 0.21344266315358307,
+   "activity": 0.314175,
+   "consistency": 0.004797133231763166,
+   "decile": 8,
+   "tercile": 1
+  },
+  {
+   "feat_id": 113048,
+   "level": "low",
+   "label": "affirmative opening acknowledgment token",
+   "r2": 0.23770608409435234,
+   "activity": 0.225725,
+   "consistency": 0.008092700442668585,
+   "decile": 7,
+   "tercile": 2
+  },
+  {
+   "feat_id": 113382,
+   "level": "unclear",
+   "label": "unclear shared property",
+   "r2": 0.38681710898105937,
+   "activity": 0.6273833333333333,
+   "consistency": 0.01187143171770655,
+   "decile": 9,
+   "tercile": 2
+  },
+  {
+   "feat_id": 113882,
+   "level": "low",
+   "label": "security token",
+   "r2": 0.16985791241511783,
+   "activity": 0.088325,
+   "consistency": 0.007627843494561047,
+   "decile": 0,
+   "tercile": 2
+  },
+  {
+   "feat_id": 113948,
+   "level": "high",
+   "label": "explanatory descriptions of system components or functions",
+   "r2": 0.23645773159900074,
+   "activity": 0.20814166666666667,
+   "consistency": 0.018677818778517936,
+   "decile": 6,
+   "tercile": 2
+  },
+  {
+   "feat_id": 114197,
+   "level": "low",
+   "label": "Russian/Cyrillic text",
+   "r2": 0.4735015568037355,
+   "activity": 0.145525,
+   "consistency": 0.013873744910643804,
+   "decile": 4,
+   "tercile": 2
+  },
+  {
+   "feat_id": 115017,
+   "level": "low",
+   "label": "non-English or multilingual text",
+   "r2": -0.03064573452140884,
+   "activity": 0.10633333333333334,
+   "consistency": 0.003112724245902513,
+   "decile": 2,
+   "tercile": 0
+  },
+  {
+   "feat_id": 115140,
+   "level": "low",
+   "label": "code identifiers and JSON keys",
+   "r2": 0.031278191439295666,
+   "activity": 0.10206666666666667,
+   "consistency": 0.007678249083181988,
+   "decile": 2,
+   "tercile": 0
+  },
+  {
+   "feat_id": 115606,
+   "level": "low",
+   "label": "agreement or classification statements with are/both",
+   "r2": 0.1017284653319539,
+   "activity": 0.21274166666666666,
+   "consistency": 0.004948556033278694,
+   "decile": 6,
+   "tercile": 1
+  },
+  {
+   "feat_id": 116556,
+   "level": "unclear",
+   "label": "varied or test content patterns",
+   "r2": 0.21683564091737517,
+   "activity": 0.21585833333333335,
+   "consistency": 0.008810639330785127,
+   "decile": 7,
+   "tercile": 1
+  },
+  {
+   "feat_id": 117273,
+   "level": "low",
+   "label": "non-English text or multilingual content",
+   "r2": 0.0643229245771777,
+   "activity": 0.13365833333333332,
+   "consistency": 0.008730721938966093,
+   "decile": 4,
+   "tercile": 0
+  },
+  {
+   "feat_id": 117467,
+   "level": "high",
+   "label": "creative fictional narrative storytelling",
+   "r2": 0.7163777879997231,
+   "activity": 0.19408333333333333,
+   "consistency": 0.01198596266422624,
+   "decile": 6,
+   "tercile": 2
+  },
+  {
+   "feat_id": 117800,
+   "level": "low",
+   "label": "Korean and Japanese text",
+   "r2": 0.43807858721955595,
+   "activity": 0.09091666666666667,
+   "consistency": 0.023398716661713736,
+   "decile": 1,
+   "tercile": 2
+  },
+  {
+   "feat_id": 117842,
+   "level": "high",
+   "label": "direct assistant answer responses",
+   "r2": 0.3071617286679622,
+   "activity": 0.41063333333333335,
+   "consistency": 0.01647666791728085,
+   "decile": 9,
+   "tercile": 1
+  },
+  {
+   "feat_id": 118231,
+   "level": "low",
+   "label": "list items with initial capitalization",
+   "r2": 0.14974842447141556,
+   "activity": 0.08158333333333333,
+   "consistency": 0.008666127353937073,
+   "decile": 0,
+   "tercile": 1
+  },
+  {
+   "feat_id": 118387,
+   "level": "unclear",
+   "label": "",
+   "r2": -0.13334254294368075,
+   "activity": 0.3123666666666667,
+   "consistency": 0.007057608414225486,
+   "decile": 8,
+   "tercile": 0
+  },
+  {
+   "feat_id": 119255,
+   "level": "high",
+   "label": "acknowledging positive aspects before balanced critique",
+   "r2": 0.07190520835958802,
+   "activity": 0.082025,
+   "consistency": 0.018513060773907426,
+   "decile": 0,
+   "tercile": 1
+  },
+  {
+   "feat_id": 119709,
+   "level": "high",
+   "label": "multiplication operations or mathematical expressions",
+   "r2": 0.12495209787955575,
+   "activity": 0.09730833333333333,
+   "consistency": 0.011113508766293884,
+   "decile": 1,
+   "tercile": 1
+  },
+  {
+   "feat_id": 120323,
+   "level": "high",
+   "label": "neutral or mundane sentiment",
+   "r2": 0.2389769500861113,
+   "activity": 0.24373333333333333,
+   "consistency": 0.01698995311489773,
+   "decile": 7,
+   "tercile": 2
+  },
+  {
+   "feat_id": 120566,
+   "level": "low",
+   "label": "comma-separated sequences or lists",
+   "r2": 0.4072169708928365,
+   "activity": 0.543625,
+   "consistency": 0.012836492480999247,
+   "decile": 9,
+   "tercile": 2
+  },
+  {
+   "feat_id": 121733,
+   "level": "high",
+   "label": "programming and code-related responses",
+   "r2": 0.17510162628091497,
+   "activity": 0.11708333333333333,
+   "consistency": 0.007781439608102167,
+   "decile": 3,
+   "tercile": 1
+  },
+  {
+   "feat_id": 122661,
+   "level": "high",
+   "label": "decline reduction loss negative change",
+   "r2": -0.09651011115012342,
+   "activity": 0.0895,
+   "consistency": 0.0057512928875686955,
+   "decile": 0,
+   "tercile": 0
+  },
+  {
+   "feat_id": 122692,
+   "level": "high",
+   "label": "superlative factual answers or records",
+   "r2": 0.30416295378812663,
+   "activity": 0.10865,
+   "consistency": 0.005495289092891182,
+   "decile": 2,
+   "tercile": 2
+  },
+  {
+   "feat_id": 122904,
+   "level": "low",
+   "label": "non-English languages",
+   "r2": 0.4972890762977319,
+   "activity": 0.15923333333333334,
+   "consistency": 0.012804143768687465,
+   "decile": 5,
+   "tercile": 2
+  },
+  {
+   "feat_id": 123221,
+   "level": "low",
+   "label": "ack or similar phonetic token pattern",
+   "r2": 0.0024149288323495055,
+   "activity": 0.08913333333333333,
+   "consistency": 0.004806150316567945,
+   "decile": 0,
+   "tercile": 0
+  },
+  {
+   "feat_id": 124795,
+   "level": "unclear",
+   "label": "multilingual or non-English responses",
+   "r2": 0.17202089904951445,
+   "activity": 0.4230833333333333,
+   "consistency": 0.009630254490393833,
+   "decile": 9,
+   "tercile": 0
+  },
+  {
+   "feat_id": 126307,
+   "level": "unclear",
+   "label": "unclear shared property",
+   "r2": 0.1251483126150249,
+   "activity": 0.26711666666666667,
+   "consistency": 0.006055583776534812,
+   "decile": 7,
+   "tercile": 1
+  },
+  {
+   "feat_id": 126415,
+   "level": "low",
+   "label": "comma-separated list items",
+   "r2": 0.5163672896516717,
+   "activity": 0.936875,
+   "consistency": 0.04694437502436249,
+   "decile": 9,
+   "tercile": 2
+  },
+  {
+   "feat_id": 126472,
+   "level": "high",
+   "label": "humorous or joking content",
+   "r2": 0.1935520033559982,
+   "activity": 0.11120833333333334,
+   "consistency": 0.012350039948413058,
+   "decile": 2,
+   "tercile": 2
+  },
+  {
+   "feat_id": 127201,
+   "level": "high",
+   "label": "professional or formal language register",
+   "r2": 0.09181574349507327,
+   "activity": 0.33118333333333333,
+   "consistency": 0.004586935667247502,
+   "decile": 8,
+   "tercile": 0
+  },
+  {
+   "feat_id": 128171,
+   "level": "low",
+   "label": "lists or enumerations of related items",
+   "r2": 0.3653696306270555,
+   "activity": 0.4135333333333333,
+   "consistency": 0.006850971226997382,
+   "decile": 9,
+   "tercile": 2
+  },
+  {
+   "feat_id": 129339,
+   "level": "low",
+   "label": "parenthetical clarifications and supplementary information",
+   "r2": 0.020303431521134896,
+   "activity": 0.18628333333333333,
+   "consistency": 0.003993103049186876,
+   "decile": 6,
+   "tercile": 0
+  },
+  {
+   "feat_id": 129484,
+   "level": "high",
+   "label": "Mixed or conflicting emotional states",
+   "r2": 0.27713053898345685,
+   "activity": 0.11440833333333333,
+   "consistency": 0.013352011703456757,
+   "decile": 3,
+   "tercile": 2
+  },
+  {
+   "feat_id": 130068,
+   "level": "low",
+   "label": "word 'range'",
+   "r2": 0.12562065678023782,
+   "activity": 0.15356666666666666,
+   "consistency": 0.004909668513174452,
+   "decile": 5,
+   "tercile": 1
+  },
+  {
+   "feat_id": 130069,
+   "level": "high",
+   "label": "helpful informative response providing requested information",
+   "r2": 0.21591120329279212,
+   "activity": 0.28913333333333335,
+   "consistency": 0.013310285106023006,
+   "decile": 8,
+   "tercile": 1
+  },
+  {
+   "feat_id": 130524,
+   "level": "low",
+   "label": "structured text with separators or delimiters",
+   "r2": 0.1141144808081721,
+   "activity": 0.14278333333333335,
+   "consistency": 0.00501243216829733,
+   "decile": 4,
+   "tercile": 1
+  }
+ ]
+}
