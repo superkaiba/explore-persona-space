@@ -912,9 +912,15 @@ def _ladder_pair_core_torch(
             "rung_names": rung_names,
             "r2_matrix": bootstrap_r2_matrix.tolist(),
             "rung_reached_per_draw": bootstrap_rung_reached.tolist(),
-            "rung_reached_median": float(np.median(bootstrap_rung_reached)),
-            "rung_reached_p025": float(np.percentile(bootstrap_rung_reached, 2.5)),
-            "rung_reached_p975": float(np.percentile(bootstrap_rung_reached, 97.5)),
+            "rung_reached_median": float(np.median(bootstrap_rung_reached))
+            if n_bootstrap_draws > 0
+            else float("nan"),
+            "rung_reached_p025": float(np.percentile(bootstrap_rung_reached, 2.5))
+            if n_bootstrap_draws > 0
+            else float("nan"),
+            "rung_reached_p975": float(np.percentile(bootstrap_rung_reached, 97.5))
+            if n_bootstrap_draws > 0
+            else float("nan"),
         },
         "matched_capacity_null": {
             "n_draws": int(n_null_draws),
@@ -1098,9 +1104,15 @@ def _run_ladder_pair(
             "rung_names": rung_names,
             "r2_matrix": bootstrap_r2_matrix.tolist(),
             "rung_reached_per_draw": bootstrap_rung_reached.tolist(),
-            "rung_reached_median": float(np.median(bootstrap_rung_reached)),
-            "rung_reached_p025": float(np.percentile(bootstrap_rung_reached, 2.5)),
-            "rung_reached_p975": float(np.percentile(bootstrap_rung_reached, 97.5)),
+            "rung_reached_median": float(np.median(bootstrap_rung_reached))
+            if n_bootstrap_draws > 0
+            else float("nan"),
+            "rung_reached_p025": float(np.percentile(bootstrap_rung_reached, 2.5))
+            if n_bootstrap_draws > 0
+            else float("nan"),
+            "rung_reached_p975": float(np.percentile(bootstrap_rung_reached, 97.5))
+            if n_bootstrap_draws > 0
+            else float("nan"),
         },
         "matched_capacity_null": {
             "n_draws": int(n_null_draws),
@@ -1122,6 +1134,28 @@ def _pair_ckpt_meta(model_slug: str, layer: int, n_bootstrap_draws: int, n_null_
         "threshold": float(RUNG_REACHED_THRESHOLD),
         "seed": 42,
     }
+
+
+def _ckpt_meta_satisfies(prior: dict | None, want: dict) -> bool:
+    """A checkpoint satisfies the requested regime when every key matches
+    EXCEPT the draw counts, where a SUPERSET (prior >= want) is acceptable:
+    a 200/40-draw checkpoint carries strictly more information than a 0/40
+    request, so recomputing it would only discard CIs (2026-07-28 user-chat
+    descope: BOOT 200 -> 0 mid-run; the 51 completed full-CI pairs must
+    RESUME, not recompute). A 10/2 smoke checkpoint still never satisfies a
+    production request (10 < 200, and 10 < 40-null production floors)."""
+    if not isinstance(prior, dict):
+        return False
+    for k, v in want.items():
+        if k in ("n_bootstrap_draws", "n_null_draws"):
+            try:
+                if int(prior.get(k, -1)) < int(v):
+                    return False
+            except (TypeError, ValueError):
+                return False
+        elif prior.get(k) != v:
+            return False
+    return True
 
 
 def run_all_pairs(
@@ -1190,14 +1224,16 @@ def run_all_pairs(
         pair_key = f"{src}__{tgt}"
         ckpt_path = checkpoint_dir / f"{pair_key}.json" if checkpoint_dir is not None else None
 
-        # Resume predicate — keyed on the FULL regime meta (a 10/2-draw smoke
-        # checkpoint never satisfies a 200/40 production run).
+        # Resume predicate — keyed on the regime meta with a draw-count
+        # SUPERSET accepted (a 10/2-draw smoke checkpoint never satisfies a
+        # 200/40 production run, but a 200/40 checkpoint satisfies a 0/40
+        # descope re-run — _ckpt_meta_satisfies).
         if ckpt_path is not None and ckpt_path.exists():
             try:
                 prior = json.loads(ckpt_path.read_text())
             except (json.JSONDecodeError, OSError):
                 prior = None
-            if prior is not None and prior.get("meta") == meta:
+            if prior is not None and _ckpt_meta_satisfies(prior.get("meta"), meta):
                 out["pairs"][pair_key] = prior["arms"]
                 print(
                     f"[fit_ladder]   pair {i + 1}/{n_shard}: {src} -> {tgt} RESUME (checkpoint)",
@@ -1279,7 +1315,7 @@ def merge_pair_checkpoints(
             missing.append(pair_key)
             continue
         d = json.loads(p.read_text())
-        if d.get("meta") != meta:
+        if not _ckpt_meta_satisfies(d.get("meta"), meta):
             mismatched.append(pair_key)
             continue
         out["pairs"][pair_key] = d["arms"]
