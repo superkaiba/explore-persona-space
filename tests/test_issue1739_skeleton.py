@@ -84,22 +84,29 @@ def test_registry_unknown_key_raises():
         corpus_registry.get_spec("marker", "train")
 
 
-def test_stage_corpus_is_round_b_stub():
-    with pytest.raises(NotImplementedError, match="round B"):
-        corpus_registry.stage_corpus("evil", "train", 8_000, 0)
+def test_stage_corpus_arg_validation():
+    # Round B rewired the round-A stub to delegate to corpus_staging; the
+    # argument-validation contract is unchanged (staging behavior is covered
+    # by test_issue1739_dataplane.py against synthetic fixtures).
     with pytest.raises(ValueError):
         corpus_registry.stage_corpus("evil", "train", 0, 0)
     with pytest.raises(TypeError):
         corpus_registry.stage_corpus("evil", "train", None, "0")
+    with pytest.raises(KeyError):
+        corpus_registry.stage_corpus("evil", "nonsense", None, 0)
 
 
-def test_gates_1_2_are_round_b_stubs():
+def test_gates_1_2_implemented_round_b():
+    # Round B replaced the round-A NotImplementedError stubs with report
+    # functions (behavioral coverage in test_issue1739_dataplane.py).
     from explore_persona_space.experiments.issue_1739 import gates
 
-    with pytest.raises(NotImplementedError):
-        gates.gate1_yield_pilot()
-    with pytest.raises(NotImplementedError):
-        gates.gate2_spread_floor()
+    report = gates.gate1_yield_report(
+        [{"context_id": "c0", "dv": 50.0}], behavior="sycophancy", n_pilot=1
+    )
+    assert report["verdict"] in ("PASS", "FAIL")
+    report2 = gates.gate2_spread_floor([{"context_id": "c0", "dv": 50.0}], behavior="sycophancy")
+    assert report2["verdict"] == "FAIL"  # < 2 DVs: spread undefined
 
 
 def _run_dispatch(args: list[str], tmp_path: Path) -> subprocess.CompletedProcess:

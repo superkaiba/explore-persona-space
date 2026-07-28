@@ -167,21 +167,22 @@ def get_spec(behavior: str, split: str) -> CorpusSpec:
     return REGISTRY[key]
 
 
-def stage_corpus(behavior: str, split: str, cap: int | None, seed: int):
-    """ROUND-B STUB — validate arguments, then refuse.
+def stage_corpus(behavior: str, split: str, cap: int | None, seed: int, **kwargs):
+    """Validate arguments, then DELEGATE to ``corpus_staging.stage_corpus``.
 
-    Round B implements the actual staging (bounded tiny-real streaming probe
-    with per-filter reject counters, checkpoint-per-chunk + fingerprint-gated
-    resume, group-level sampling under ``cap`` at ``seed``). Round A keeps the
-    registry as data only.
+    Round B rewired the round-A stub to the real implementation (streaming HF
+    loads with per-filter reject counters, checkpoint-per-chunk +
+    fingerprint-gated resume, group sampling under ``cap`` at ``seed``,
+    train/eval near-dup disjointness). ``kwargs`` pass through
+    (``out_dir``, ``stream_cap``). The registry itself stays data-only.
     """
     spec = get_spec(behavior, split)  # arg validation (raises on unknown keys)
     if cap is not None and cap < 1:
         raise ValueError(f"cap must be >= 1 or None, got {cap}")
     if not isinstance(seed, int):
         raise TypeError(f"seed must be int, got {type(seed).__name__}")
-    raise NotImplementedError(
-        f"stage_corpus({spec.behavior!r}, {spec.split!r}) is a round-A stub: "
-        "corpus staging lands in round B alongside generation (streaming probe, "
-        "reject counters, chunk checkpoints, group sampling)."
+    from explore_persona_space.experiments.issue_1739.corpus_staging import (
+        stage_corpus as _stage,
     )
+
+    return _stage(spec.behavior, spec.split, cap, seed, **kwargs)

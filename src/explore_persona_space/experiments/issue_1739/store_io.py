@@ -177,19 +177,21 @@ def load_summaries(
     *,
     cell: str | None = None,
     n_rows: int | None = None,
+    hidden_dim: int = HIDDEN_DIM,
 ) -> tuple[dict[tuple[str, int], np.ndarray], list[dict]]:
     """Load staged summaries + row metadata.
 
-    Returns ``({(kind, layer): (n, HIDDEN_DIM) array}, meta_rows)``; arrays keep
+    Returns ``({(kind, layer): (n, hidden_dim) array}, meta_rows)``; arrays keep
     the stored dtype (fp16). Asserts row-count consistency across kinds and vs
-    the row_index sidecar.
+    the row_index sidecar. ``hidden_dim`` defaults to the production pin;
+    tiny-real store tests override it.
     """
     root = Path(local_dir) / cell if cell else Path(local_dir)
     out: dict[tuple[str, int], np.ndarray] = {}
     for kind in kinds:
         for layer in layers:
             arr = _load_summary(root, kind, layer)
-            assert arr.ndim == 2 and arr.shape[1] == HIDDEN_DIM, (kind, layer, arr.shape)
+            assert arr.ndim == 2 and arr.shape[1] == hidden_dim, (kind, layer, arr.shape)
             out[(kind, layer)] = arr[:n_rows] if n_rows else arr
     meta = _index_rows(root)
     if n_rows:

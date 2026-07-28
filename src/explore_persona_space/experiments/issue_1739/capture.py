@@ -462,6 +462,8 @@ def teacher_forced_ln_logp(
         for prompt, completion in batch:
             prompt_ids = _token_ids(tokenizer, prompt)
             completion_ids = _token_ids(tokenizer, completion)
+            if not prompt_ids:
+                raise ValueError("empty prompt in teacher_forced_ln_logp pair")
             if not completion_ids:
                 raise ValueError("empty completion in teacher_forced_ln_logp pair")
             row_ids = prompt_ids + completion_ids
