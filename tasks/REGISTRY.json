@@ -5858,8 +5858,8 @@
     "1754": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1754",
-      "status": "proposed",
+      "path": "tasks/planning/1754",
+      "status": "planning",
       "title": "daily-fix: recursion guard \u2014 briefs must not ban candidates"
     },
     "1755": {
