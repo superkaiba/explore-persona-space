@@ -7,6 +7,8 @@ uploads) are covered by the round's driver smoke, not here.
 
 from __future__ import annotations
 
+import argparse
+import inspect
 import json
 import re
 import subprocess
@@ -212,3 +214,98 @@ def test_h1_depth_stratified_verdict_lattice():
     ]
     h1n = EL._h1_depth_stratified(rows_null, 300, np.random.default_rng(2))
     assert h1n["verdict"] == "null-persists"
+
+
+def test_descope_floor_keeps_post_carve_tr_above_d():
+    """Concern earlylayer-descope-carve-underdetermined (r2): the recomputed floor
+    guarantees post-carve ridge-train rows STRICTLY > d on the widest design for
+    ANY realized descope; below the floor the phase exits loud (RC_THROUGHPUT)."""
+    assert EL.D_WIDEST_DESIGN == 16_384  # 2 x prod max_features_in
+    assert EL.PROD_VAL_CARVE == 2_000
+    assert EL.DESCOPE_FLOOR_CONTEXTS == 22_982  # ceil((16,384 + 2,000 + 1) / 0.8)
+    n_total = 90_000  # envelope large enough that a sub-1/3-tps descope is feasible
+    tps_at = EL.TPS_BASIS * (EL.DESCOPE_FLOOR_CONTEXTS + 0.5) / n_total
+    d = EL.descope_plan(tps_at, n_total, val_carve=EL.PROD_VAL_CARVE)
+    assert d is not None and d["n_fit"] == 18_385 and d["n_score"] == 22_982 - 18_385
+    assert d["effective_tr"] == 16_385 > EL.D_WIDEST_DESIGN
+    # one context below the floor -> SystemExit(RC_THROUGHPUT), never an
+    # under-determined ridge
+    tps_below = EL.TPS_BASIS * (EL.DESCOPE_FLOOR_CONTEXTS - 0.5) / n_total
+    with pytest.raises(SystemExit) as ei:
+        EL.descope_plan(tps_below, n_total, val_carve=EL.PROD_VAL_CARVE)
+    assert ei.value.code == EL.RC_THROUGHPUT
+    # production envelope (30k): ANY sub-kill-floor tps descopes below the floor
+    # -> halt-loud (the plan §7 kill shape)
+    with pytest.raises(SystemExit) as ei2:
+        EL.descope_plan(1000.0, 30_000, val_carve=EL.PROD_VAL_CARVE)
+    assert ei2.value.code == EL.RC_THROUGHPUT
+    # tps at/above the kill floor -> no descope at all
+    assert EL.descope_plan(EL.TPS_BASIS * EL.TPS_KILL_FRAC, 30_000, val_carve=2_000) is None
+    # sweep the whole feasible descope band: every returned plan keeps tr > d
+    for n_desc in range(EL.DESCOPE_FLOOR_CONTEXTS, 30_000, 137):
+        tps = EL.TPS_BASIS * (n_desc + 0.5) / n_total
+        dd = EL.descope_plan(tps, n_total, val_carve=EL.PROD_VAL_CARVE)
+        assert dd is not None and dd["effective_tr"] > EL.D_WIDEST_DESIGN, n_desc
+    # an oversized CLI --val-carve breaches the floor's guarantee -> fail-loud
+    with pytest.raises(AssertionError):
+        EL.descope_plan(tps_at, n_total, val_carve=8_000)
+
+
+def test_estimator_validity_guard_lattice():
+    """_e3_prep's realized-width backstop: production trips at tr <= d; the smoke
+    shape is exempt (deliberate under-determined regime)."""
+    EL._assert_estimator_validity(16_385, 16_384, smoke=False)  # passes: tr > d
+    with pytest.raises(AssertionError):
+        EL._assert_estimator_validity(16_384, 16_384, smoke=False)  # tr == d trips
+    EL._assert_estimator_validity(10, 16_384, smoke=True)  # smoke exempt
+
+
+def test_primary_perfeature_resolves_gate_chosen_k(tmp_path):
+    """Concern gatebe-warn-escalation-not-threaded (r2): gate record chosen_k=128
+    => the primary L3 source resolves to the k128 npz; 64 -> the k64 default;
+    anything else fails loud. E5 tail selection + E6 H1 join route through the
+    helper (no bare k64 literal left on the label-keyed paths)."""
+    ns = argparse.Namespace(out_eval=tmp_path)
+    (tmp_path / "early_pilot.json").write_text(json.dumps({"chosen_k": 128}))
+    assert EL._primary_l3_perfeature(ns) == "perfeature_l3_k128"
+    (tmp_path / "early_pilot.json").write_text(json.dumps({"chosen_k": 64}))
+    assert EL._primary_l3_perfeature(ns) == "perfeature_l3_default"
+    (tmp_path / "early_pilot.json").write_text(json.dumps({"chosen_k": 32}))
+    with pytest.raises(AssertionError):
+        EL._primary_l3_perfeature(ns)
+    for fn in (EL.phase_judge, EL._pooled_h1_rows):
+        src = inspect.getsource(fn)
+        assert "_primary_l3_perfeature" in src, fn.__name__
+        assert '"perfeature_l3_default.npz"' not in src, fn.__name__
+
+
+COMMITTED_EXTREMES = REPO / "eval_results" / "issue_1482" / "feature_extremes" / "extremes.json"
+
+
+@pytest.mark.skipif(
+    not COMMITTED_EXTREMES.exists(), reason="sparse checkout without issue_1482 cone"
+)
+def test_pooled_h1_rows_join_escalated_primary(tmp_path):
+    """Functional E6 pin: chosen_k=128 => _pooled_h1_rows joins labels against the
+    k128 npz r2 (the k64 npz's value for a different feature never rides in)."""
+    (tmp_path / "early_pilot.json").write_text(json.dumps({"chosen_k": 128}))
+    judge = tmp_path / "judge"
+    judge.mkdir()
+    (judge / "labels.json").write_text(
+        json.dumps({"labels": {"7": {"level": "high"}, "9": {"level": "low"}}})
+    )
+    np.savez(
+        tmp_path / "perfeature_l3_k128.npz",
+        feat_ids=np.asarray([7], np.int64),
+        r2=np.asarray([0.5]),
+        activity=np.asarray([0.1]),
+    )
+    np.savez(
+        tmp_path / "perfeature_l3_default.npz",
+        feat_ids=np.asarray([9], np.int64),
+        r2=np.asarray([0.9]),
+        activity=np.asarray([0.1]),
+    )
+    rows = EL._pooled_h1_rows(argparse.Namespace(out_eval=tmp_path))
+    l3 = [r for r in rows if r["depth"] == 3]
+    assert l3 == [{"feat_id": 7, "depth": 3, "level": "high", "r2": 0.5}]

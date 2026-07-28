@@ -93,10 +93,18 @@ G2E_FLAT_COS_MIN = 0.995
 PREFIX_CONSTANCY_COS_MIN = EA.PREFIX_CONSTANCY_COS_MIN  # 0.9999 (parent A4 convention)
 # E0 pilot-throughput kill (plan §7): < 1/3 of the measured 5,471.5 tok/s basis makes
 # the 30k envelope infeasible in the 4 GPU-h approval -> proportional descope with a
-# hard floor of 20,500 contexts (n_fit 16,400 > d 16,384 estimator-validity bound).
+# hard floor. Floor arithmetic (concern earlylayer-descope-carve-underdetermined, r2):
+# the estimator-validity bound binds on the POST-CARVE ridge-train rows, not n_fit —
+# _e3_prep carves min(val_carve=2,000, n_fit//6) fit rows for lambda selection, so the
+# floor must satisfy int(N * 0.8) - 2,000 > d_widest = 2 * max_features_in = 16,384:
+# floor N = ceil((16,384 + 2,000 + 1) / 0.8) = 22,982 -> n_fit 18,385, tr 16,385 > d.
+# (The prior floor 20,500 gave n_fit 16,400 but post-carve tr 14,400 < d.)
 TPS_BASIS = 5471.5
-TPS_KILL_FRac = 1.0 / 3.0
-DESCOPE_FLOOR_CONTEXTS = 20_500
+TPS_KILL_FRAC = 1.0 / 3.0
+PROD_MAX_FEATURES_IN = 8_192  # single source for prod_defaults max_features_in
+PROD_VAL_CARVE = 2_000  # single source for prod_defaults val_carve (plan §4 E3)
+D_WIDEST_DESIGN = 2 * PROD_MAX_FEATURES_IN  # ctx design: psi_mean ++ psi_last
+DESCOPE_FLOOR_CONTEXTS = (5 * (D_WIDEST_DESIGN + PROD_VAL_CARVE + 1) + 3) // 4  # 22,982
 RC_GATE_BE = 22  # mirrors EA.RC_GATE_B (Gate HALT class)
 RC_G2E = 24  # capture-convention identity FAIL (never fit past it)
 RC_THROUGHPUT = 25  # pilot-throughput kill (approval infeasible at the floor)
@@ -201,6 +209,66 @@ def gate_be_verdict(fve64: float, fve128: float) -> tuple[str, int]:
     if fve64 >= GATE_BE_HALT:
         return "WARN", (128 if fve128 >= GATE_BE_PASS else 64)
     return "HALT", 64
+
+
+def descope_plan(tps: float, n_total: int, val_carve: int) -> dict | None:
+    """Pure E0 throughput-descope arithmetic (plan §7). Returns None when tps
+    clears the 1/3-basis kill floor; else a proportional-descope dict. Raises
+    SystemExit(RC_THROUGHPUT) when the descope falls below DESCOPE_FLOOR_CONTEXTS
+    (the caller writes the typed sentinel before re-raising). Any RETURNED descope
+    keeps the post-carve ridge-train rows n_fit - min(val_carve, n_fit // 6)
+    STRICTLY > D_WIDEST_DESIGN — asserted here, so an oversized --val-carve fails
+    loud instead of shipping an under-determined ridge (concern
+    earlylayer-descope-carve-underdetermined). Pure + unit-probed."""
+    if tps >= TPS_BASIS * TPS_KILL_FRAC:
+        return None
+    n_desc = int(n_total * (tps / TPS_BASIS))
+    if n_desc < DESCOPE_FLOOR_CONTEXTS:
+        raise SystemExit(RC_THROUGHPUT)
+    n_fit = int(n_desc * 0.8)
+    eff_tr = n_fit - min(val_carve, max(1, n_fit // 6))
+    assert eff_tr > D_WIDEST_DESIGN, (
+        f"descope n_fit={n_fit} leaves post-carve tr={eff_tr} <= d={D_WIDEST_DESIGN} "
+        f"(val_carve={val_carve}; estimator-validity bound)"
+    )
+    return {
+        "n_fit": n_fit,
+        "n_score": n_desc - n_fit,
+        "reason": f"tokens/s {tps:.0f} < 1/3 basis {TPS_BASIS}",
+        "effective_tr": eff_tr,
+    }
+
+
+def _assert_estimator_validity(n_tr: int, d_widest: int, smoke: bool) -> None:
+    """Production-only post-carve well-posedness backstop (concern
+    earlylayer-descope-carve-underdetermined): the REALIZED ridge-train rows must
+    strictly exceed the widest realized design width — catches a coverage
+    shortfall or CLI-oversized --val-carve that the descope-floor arithmetic
+    cannot see. A smoke run is a deliberate under-determined shape and is exempt
+    (the standing estimator-validity smoke carve-out)."""
+    if smoke:
+        return
+    assert n_tr > d_widest, (
+        f"effective ridge-train rows {n_tr} <= widest design d={d_widest} "
+        "(post-carve estimator validity; concern earlylayer-descope-carve-underdetermined)"
+    )
+
+
+def _primary_l3_perfeature(args) -> str:
+    """Primary L3 per-feature source, keyed to the Gate B-e verdict's chosen_k
+    persisted in early_pilot.json at E0 (concern gatebe-warn-escalation-not-threaded):
+    chosen_k=64 -> perfeature_l3_default; chosen_k=128 (WARN escalation) ->
+    perfeature_l3_k128, the k64 arm then serving as the robustness twin. Every
+    LABEL-KEYED downstream consumer resolves through this helper (E5 tail
+    selection, E6 H1 pooled rows, the hero L3 ECDF). The k64-POSITIONALLY-ALIGNED
+    diagnostics stay keyed to perfeature_l3_default regardless of chosen_k —
+    covariates_l3.npz / the sinkmask twin / the shuffle-null band are computed
+    over the k64 f_out restriction, so a positional join against the k128 arm
+    would misalign."""
+    pilot = json.loads((args.out_eval / "early_pilot.json").read_text())
+    k = int(pilot["chosen_k"])
+    assert k in (64, 128), f"unexpected chosen_k in early_pilot.json: {k}"
+    return "perfeature_l3_default" if k == 64 else "perfeature_l3_k128"
 
 
 def _early_hf_prefix(args) -> str:
@@ -430,6 +498,9 @@ def _stored_cx19_for(args, chunk_name: str, cis: list[int]) -> dict[int, torch.T
     return out
 
 
+# PHASE_IDEMPOTENCY_EXEMPT: E0 re-runs unconditionally BY PLAN DESIGN — it IS the
+# per-pod gate + throughput measurement (tokens/s, Gate B-e, G2-e must re-measure
+# on every dispatch pod; ~0.2 h), so no output-exists resume skip is wired.
 def phase_pilot(args) -> None:
     """E0: throughput + Gate B-e + hook-alignment + prefix constancy + G2-e +
     fit-kernel pilot. Gates are computed identically under --smoke but demoted
@@ -553,25 +624,21 @@ def phase_pilot(args) -> None:
     gemm_s = time.time() - t_g
     del g, xb, yb
 
-    # throughput kill / descope arithmetic (plan §7)
+    # throughput kill / descope arithmetic (plan §7; pure fn descope_plan carries
+    # the post-carve estimator-validity floor — concern
+    # earlylayer-descope-carve-underdetermined)
     descope = None
-    tps_floor = TPS_BASIS * TPS_KILL_FRac
-    if not args.smoke and tps < tps_floor:
-        n_total = args.n_fit + args.n_score
-        scale = tps / TPS_BASIS
-        n_desc = int(n_total * scale)
-        if n_desc < DESCOPE_FLOOR_CONTEXTS:
+    if not args.smoke:
+        try:
+            descope = descope_plan(tps, args.n_fit + args.n_score, args.val_carve)
+        except SystemExit:
+            n_desc = int((args.n_fit + args.n_score) * (tps / TPS_BASIS))
             _sentinel(
                 "throughput-halt",
-                f"pilot tokens/s {tps:.0f} < {tps_floor:.0f} and descope {n_desc} < "
-                f"floor {DESCOPE_FLOOR_CONTEXTS} — approval infeasible",
+                f"pilot tokens/s {tps:.0f} < {TPS_BASIS * TPS_KILL_FRAC:.0f} and descope "
+                f"{n_desc} < floor {DESCOPE_FLOOR_CONTEXTS} — approval infeasible",
             )
-            raise SystemExit(RC_THROUGHPUT)
-        descope = {
-            "n_fit": int(n_desc * 0.8),
-            "n_score": n_desc - int(n_desc * 0.8),
-            "reason": f"tokens/s {tps:.0f} < 1/3 basis {TPS_BASIS}",
-        }
+            raise
 
     doc = {
         "tokens_per_s": round(tps, 1),
@@ -621,7 +688,6 @@ def phase_pilot(args) -> None:
                 f"G2-e identity gate FAILED early={g2e_early_min:.6f} flat={g2e_flat_min:.6f}",
             )
             raise SystemExit(RC_G2E)
-        assert cos_min_prefix >= PREFIX_CONSTANCY_COS_MIN or True, "recorded below"
         if cos_min_prefix < PREFIX_CONSTANCY_COS_MIN:
             # design branch, NOT a halt (plan §7): the prefix arm runs as a full
             # mapping arm; record the branch for E3 + the clean-result.
@@ -841,8 +907,8 @@ def phase_capture(args) -> None:
         n_done += len(rec["row_idx"])
         el = time.time() - t_loop
         print(
-            f"[e1] unit {k_chunk + 1} chunk={Path(name).stem} rows={len(rec['row_idx'])} "
-            f"total={n_done} tok={tok_count} elapsed={el:.0f}s",
+            f"[e1] unit {k_chunk + 1}/{len(names)} chunk={Path(name).stem} "
+            f"rows={len(rec['row_idx'])} total={n_done} tok={tok_count} elapsed={el:.0f}s",
             flush=True,
         )
     logger.info("[e1] capture done: %d contexts, %d tokens", n_done, tok_count)
@@ -1165,6 +1231,9 @@ def _e3_prep(args) -> argparse.Namespace:
         ("f_in19", f_in19),
     ):
         assert len(f) >= 1, f"{nm} empty after restriction"
+    # post-carve well-posedness on the REALIZED widths (descope-floor backstop:
+    # covers coverage shortfall + CLI val_carve overrides the floor cannot see)
+    _assert_estimator_validity(len(tr), 2 * max(len(f_in), len(f_in19)), args.smoke)
     logger.info(
         "[e3] restrictions: f_out=%d f_in=%d f_out128=%d f_out19=%d f_in19=%d (n_fit=%d)",
         len(f_out),
@@ -1879,7 +1948,11 @@ def phase_judge(args) -> None:
         args.store.mkdir(parents=True, exist_ok=True)
         for p in staged.glob("*.npz"):
             shutil.copy2(p, args.store / p.name)
-    z = np.load(args.out_eval / "perfeature_l3_default.npz")
+    # primary source keyed to the Gate B-e chosen_k (WARN escalation -> k128;
+    # concern gatebe-warn-escalation-not-threaded)
+    primary_name = _primary_l3_perfeature(args)
+    logger.info("[e5] primary per-feature source: %s", primary_name)
+    z = np.load(args.out_eval / f"{primary_name}.npz")
     com = {
         "feat_ids": np.asarray(z["feat_ids"], np.int64),
         "r2": np.asarray(z["r2"], np.float64),
@@ -1963,6 +2036,7 @@ def phase_judge(args) -> None:
         "n_draws": 1,
         "rubric_sha256_system": hashes["extended_sha16"],
         "rubric_sha256_reference_prefix": hashes["reference_prefix_sha16"],
+        "perfeature_source": primary_name,
         "neuronpedia": np_summary,
         "selection": {k: sel[k] for k in ("n_union",)},
         "layer": L_EARLY,
@@ -1997,7 +2071,9 @@ def _pooled_h1_rows(args) -> list[dict]:
     preferring extremes). Each row: {feat_id, depth, level, r2}."""
     rows: list[dict] = []
     labels = json.loads((args.out_eval / "judge" / "labels.json").read_text())["labels"]
-    z = np.load(args.out_eval / "perfeature_l3_default.npz")
+    # label-keyed join -> the PRIMARY arm (chosen_k); labels were E5-selected on
+    # the same arm, so joining any other npz would silently drop/mismap rows
+    z = np.load(args.out_eval / f"{_primary_l3_perfeature(args)}.npz")
     r2_of = {int(f): float(r) for f, r in zip(z["feat_ids"], z["r2"], strict=True)}
     for fid_s, lab in labels.items():
         fid = int(fid_s)
@@ -2096,6 +2172,10 @@ def phase_analyze(args) -> None:
 
     set_paper_style()
     rng = np.random.default_rng(BOOT_PERM_SEED)
+    # Gate B-e chosen_k threading (concern gatebe-warn-escalation-not-threaded):
+    # label-keyed reads (H1 rows, hero L3 ECDF) use the primary arm; the
+    # k64-positionally-aligned diagnostics stay on perfeature_l3_default.
+    primary_name = _primary_l3_perfeature(args)
     rows = _pooled_h1_rows(args)
     assert rows, "no pooled judged rows for H1"
     h1 = _h1_depth_stratified(rows, args.n_perm, rng)
@@ -2153,15 +2233,18 @@ def phase_analyze(args) -> None:
     cov_doc: dict = {}
     for depth in (3, 19):
         cz = np.load(args.out_eval / f"covariates_l{depth}.npz")
-        pz = np.load(
-            args.out_eval
-            / ("perfeature_l3_default.npz" if depth == 3 else "perfeature_l19_matched_ctx.npz")
-        )
+        # the depth-3 join stays on the k64 arm REGARDLESS of chosen_k:
+        # covariates_l3.npz is computed over the k64 f_out restriction (same
+        # ordering), so only the k64 per-feature npz aligns POSITIONALLY here
+        # (see _primary_l3_perfeature); under escalation this battery reads the
+        # robustness twin and cov_doc records the source arm.
+        pz_name = "perfeature_l3_default" if depth == 3 else "perfeature_l19_matched_ctx"
+        pz = np.load(args.out_eval / f"{pz_name}.npz")
         r2 = np.asarray(pz["r2"], np.float64)
         ok = np.isfinite(r2)
         act = np.asarray(cz["activity"], np.float64)[ok]
         cons = np.asarray(cz["consistency"], np.float64)[ok]
-        d: dict = {"n": int(ok.sum())}
+        d: dict = {"n": int(ok.sum()), "perfeature_source": pz_name}
         r2v = r2[ok]
         for nm, v in (
             ("activity", act),
@@ -2192,6 +2275,7 @@ def phase_analyze(args) -> None:
     h_doc = {
         "h1_pooled_depth_stratified": h1,
         "h2_within_l3_tail_contrast": h2,
+        "primary_perfeature_l3": primary_name,
         "covariates": cov_doc,
         "pooled_r2": summary.get("pooled_r2", {}),
         "seeds": {"perm_boot": BOOT_PERM_SEED, "n_perm": args.n_perm, "n_boot": args.n_boot},
@@ -2203,11 +2287,18 @@ def phase_analyze(args) -> None:
     figs.mkdir(parents=True, exist_ok=True)
     col = {3: paper_palette(2)[0], 19: paper_palette(2)[1]}  # ONE color per depth
 
-    # hero: joint depth x level x predictability profile
+    # hero: joint depth x level x predictability profile. The L3 ECDF reads the
+    # PRIMARY arm (chosen_k — matches the H1/label narrative); z3 stays the k64
+    # default arm for every POSITIONAL join below (covariates / sinkmask / null).
     fig, axes = plt.subplots(1, 2, figsize=(9.2, 3.6), layout="constrained")
     z3 = np.load(args.out_eval / "perfeature_l3_default.npz")
+    z3p = (
+        z3
+        if primary_name == "perfeature_l3_default"
+        else np.load(args.out_eval / f"{primary_name}.npz")
+    )
     z19 = np.load(args.out_eval / "perfeature_l19_matched_ctx.npz")
-    for depth, z in ((3, z3), (19, z19)):
+    for depth, z in ((3, z3p), (19, z19)):
         r2 = np.asarray(z["r2"], np.float64)
         r2 = r2[np.isfinite(r2)]
         xs = np.sort(np.clip(r2, -1, 1))
@@ -2465,10 +2556,10 @@ def main() -> int:
         "max_chunks": 0,
         "n_fit": 24_000,
         "n_score": 6_000,
-        "val_carve": 2_000,
+        "val_carve": PROD_VAL_CARVE,
         "gen_batch": 8,
         "pilot_n": 500,
-        "max_features_in": 8_192,
+        "max_features_in": PROD_MAX_FEATURES_IN,
         "max_features_out": 16_384,
         "parent_shards": 0,
         "judge_limit": 0,
