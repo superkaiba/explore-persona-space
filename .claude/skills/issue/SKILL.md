@@ -2231,7 +2231,7 @@ Brief passed to the implementer:
   (`selector-universe` | `repo-wide` — the REALIZED universe; #1651)
   — never a count-only or glob-family summary (#1494;
   >20 files → fenced block under the Gate-scope line).
-  Belt-and-suspenders on `implementer.md` § After Implementation item 1,
+  Belt-and-suspenders on `implementer.md` § After Implementation items 1 + 1a,
   so round briefs surface the duty without the implementer having to
   recall its agent spec (the #509 precedent).
 - **Marker-version discipline — a brief NEVER instructs a literal marker

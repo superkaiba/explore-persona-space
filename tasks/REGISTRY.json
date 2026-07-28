@@ -5781,36 +5781,36 @@
     "1743": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1743",
-      "status": "running",
+      "path": "tasks/reviewing/1743",
+      "status": "reviewing",
       "title": "daily-fix: code-reviewer verdict post via --file + read-back"
     },
     "1744": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1744",
-      "status": "reviewing",
+      "path": "tasks/completed/1744",
+      "status": "completed",
       "title": "daily-fix: implementer pin-sweep deleted-literal own substep"
     },
     "1745": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1745",
-      "status": "running",
+      "path": "tasks/reviewing/1745",
+      "status": "reviewing",
       "title": "daily-fix: pre-persist plan header retitle stops c40 churn"
     },
     "1746": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1746",
-      "status": "running",
+      "path": "tasks/reviewing/1746",
+      "status": "reviewing",
       "title": "daily-fix: step9c gate degrade on collection ImportError"
     },
     "1747": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1747",
-      "status": "proposed",
+      "path": "tasks/running/1747",
+      "status": "running",
       "title": "daily-fix: Step 5a spec-freshness syncs local main (stale)"
     },
     "1748": {
