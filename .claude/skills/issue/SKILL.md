@@ -413,7 +413,12 @@ The helper (a) builds the canonical string via
 ONLY place the format lives — (b) writes a self-report file at
 `~/.eps-autonomous/issue-progress/<N>.json` (atomic temp+rename) with the
 canonical text + UTC `ts`, and (c) PRINTS the canonical string to stdout.
-Capture that stdout and pass it verbatim to `mcp__happy__change_title`.
+Capture that stdout and pass it verbatim to `mcp__happy__change_title` —
+a deferred MCP tool, NOT a skill: load it via
+`ToolSearch("select:mcp__happy__change_title")`, then call with
+`{"title": <captured string>}` (`title` is REQUIRED — an empty `{}` is an
+MCP -32602 error, and `Skill(happy:change_title)` is "Unknown skill";
+both misfires occurred 2026-07-27).
 The 5-minute `session_summarize.py` cron reads the self-report first and
 reuses its `text` as the cache `summary` (`source="self"`) when fresh,
 skipping the Haiku call entirely — so the dashboard's progress column is
@@ -10509,6 +10514,11 @@ workflow-surface file (status M ⇒ `ADDED_ONLY=no`) is deliberately not
 fast-pathed; it takes the ordinary `$MERGE_FORM` merge.
 
 #### Pre-push workflow-lint gate (runs before every merge form lands)
+
+The gate is an INLINE recipe (the fenced blocks in this subsection, run via
+bg-Bash) — there is NO helper script; do not compose a
+`.claude/skills/issue/step10d_lint_gate.sh` (or similar) path, it does not
+exist (#1720's session invoked exactly that phantom path, 2026-07-27).
 
 #931 (2026-07-04) merged a workflow-lint offender to `main`, breaking
 `tests/test_workflow_lint.py` on pristine trunk fleet-wide for most of a day
