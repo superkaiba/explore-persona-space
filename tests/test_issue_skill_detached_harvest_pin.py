@@ -26,7 +26,11 @@ paths-triggered mirror duty-lists):
 4. both mirror duty-lists (`.claude/rules/code-style.md` +
    `.claude/rules/vectorize-many-cell-fits.md`) carry the `harvest=` token,
    so a future edit cannot silently regress a mirror back to three fields
-   (the #957 criterion-1b shape).
+   (the #957 criterion-1b shape);
+5. (#1764) the GCE root-owned workload-log probe prescription: the Successor /
+   re-entry rule carries the GCE log-read note (`sudo -n tail` retry on a
+   `Permission denied` content read, never misclassified as a dead/frozen
+   phase), and the Long-phase heartbeat duty step 2(i) references it.
 
 Prose assertions run on whitespace-NORMALIZED text (the file wraps prose
 mid-phrase, so a required phrase can span lines).
@@ -45,6 +49,8 @@ VECTORIZE_MD = REPO_ROOT / ".claude" / "rules" / "vectorize-many-cell-fits.md"
 DETACHED_HEADING = "**Detached VM-side long compute phases"
 SUCCESSOR_HEADING = "**Successor / re-entry rule"
 GUARD_HEADING = "**Checkable guard rule"
+HEARTBEAT_HEADING = "**Long-phase heartbeat duty"
+REVIVAL_HEADING = "Revival trigger for the deferred watcher-side option"
 
 
 def _norm(text: str) -> str:
@@ -103,6 +109,33 @@ def test_compute_character_statement_names_harvest() -> None:
     )
     assert "harvest contract" in region, (
         "9a-ter compute-character detached sentence does not name the harvest contract"
+    )
+
+
+def test_gce_sudo_tail_probe_prescribed() -> None:
+    """#1764: GCE root-owned log content reads are retried with sudo -n tail.
+
+    (a) The Successor / re-entry rule carries the GCE log-read note — the
+    `sudo -n tail` retry prescription for a `Permission denied` content read,
+    plus the never-misclassify clause (an EACCES is a probe artifact, not a
+    dead/frozen phase). (b) The Long-phase heartbeat duty step 2(i) evidence
+    list references the same rule, so a Permission-denied `tail` is never
+    treated as verify-FAIL evidence.
+    """
+    text = _skill_text()
+    successor = _norm(_region(text, SUCCESSOR_HEADING, GUARD_HEADING))
+    assert "sudo -n tail" in successor, (
+        "Successor rule lacks the GCE sudo -n tail retry prescription (#1764)"
+    )
+    assert "Permission denied" in successor or "EACCES" in successor, (
+        "Successor rule GCE log-read note lacks the Permission-denied/EACCES trigger"
+    )
+    assert "probe artifact" in successor, (
+        "Successor rule GCE log-read note lacks the never-misclassify (probe artifact) clause"
+    )
+    heartbeat = _norm(_region(text, HEARTBEAT_HEADING, REVIVAL_HEADING))
+    assert "sudo -n tail" in heartbeat or "GCE log-read note" in heartbeat, (
+        "Long-phase heartbeat step 2(i) does not reference the GCE log-read note (#1764)"
     )
 
 

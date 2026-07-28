@@ -5000,7 +5000,10 @@ live-escalation debounce covers it.)
    cadence): verify, then heartbeat + refresh.** (i) VERIFY the awaited
    work is alive with cheap evidence — `ps -p <pid> -o args=` identity
    match, breadcrumb `log=` mtime advanced, a Batch-API status read, a
-   poll-tick JSON line; (ii) post the heartbeat marker, evidence in the
+   poll-tick JSON line (GCE content reads: a Permission-denied `tail` is a
+   probe artifact — root-owned workload log; retry `sudo -n tail` per the
+   § Successor / re-entry rule GCE log-read note, never a verify-FAIL);
+   (ii) post the heartbeat marker, evidence in the
    note:
 
        uv run python scripts/task.py post-marker <N> epm:progress \
@@ -6547,7 +6550,17 @@ relaunch). Alive AND args match the distinctive invocation → the phase is IN
 FLIGHT regardless of breadcrumb age (a detached multi-hour phase posts no
 markers while computing): RE-ATTACH — poll the pid, `tail` the breadcrumb's
 `log=` for real progress (alive ≠ progressing; the log is the progress
-signal), post a liveness `epm:progress` note — never relaunch. Dead — or an
+signal), post a liveness `epm:progress` note — never relaunch. GCE log-read
+note (#1764): on a GCE instance the workload log is root-owned (the
+startup-script workload runs as root; the OS-Login SSH user is in
+`google-sudoers`, so passwordless `sudo -n` is available — `backends/gcp.py`
+`_drain_sentinels` docstring, the #608 sentinel pull's own `sudo -n cat`
+precedent), so a bare `tail`/`cat` CONTENT read fails `Permission denied` —
+retry it as `sudo -n tail -50 <log>` (fallback `sudo -n cat <log> | tail -50`).
+An EACCES is a probe artifact, NEVER evidence the log is frozen/missing or the
+phase dead; mtime/`stat` probes need no read permission and are unaffected.
+RunPod pods SSH as root, so the class is GCE-specific (incident #1738: the
+manifest-build diagnostic fell back to pid/CPU-only liveness). Dead — or an
 args MISMATCH (recycled pid: treat as dead) — with completion output present
 at the breadcrumb's `harvest=` path (§ Harvest contract; pre-contract
 breadcrumbs lack the token — fall back to log-tail + known output dirs) →
