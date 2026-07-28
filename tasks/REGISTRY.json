@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1770,
+  "highest_id": 1771,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5982,6 +5982,13 @@
       "path": "tasks/approved/1770",
       "status": "approved",
       "title": "fix main-red test_no_new_torch_before_dotenv_vm_entrypoints: issue1481_coverage_fig + issue779_scaling_curve_fig import order"
+    },
+    "1771": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1771",
+      "status": "proposed",
+      "title": "Remove (or neutralise) the Step-2c 100 GPU-h autonomous plan-approval gate"
     },
     "18": {
       "has_clean_result": false,
