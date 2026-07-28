@@ -449,6 +449,7 @@ def fit_arm_layer(out_root: Path, results_dir: Path, arm_id: str, layer: int, sm
     )
     result = {
         "arm_id": arm_id,
+        "method": X.arm_method(arm_id),  # lora | ft — the amendment's grouping column
         "layer": layer,
         "n_rows": int(len(cell["sha"])),
         "n_train": int(len(tr)),
@@ -643,6 +644,7 @@ def phase_p8(out_root: Path, results_dir: Path, layers, smoke: bool, arms_filter
                     )
             verdicts[f"{arm_id}_L{layer}"] = {
                 "verdict": res["map_change"]["verdict"],
+                "method": res.get("method", X.arm_method(arm_id)),  # analyzer method split
                 "D": res["map_change"]["D"],
                 "D_ci95": res["map_change"]["D_ci95"],
                 "m0_r2": res["fits"]["M0"]["heldout_r2"],

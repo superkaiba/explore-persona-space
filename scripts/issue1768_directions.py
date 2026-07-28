@@ -267,13 +267,17 @@ def panel_write_legs(out_root: Path, arm: X.Arm, layer: int) -> dict:
 
 
 def delta_leg(out_root: Path, arm: X.Arm, layer: int, legs: dict) -> dict:
-    tb = _load_store(Path(out_root) / "delta_tf" / arm.arm_id / "tbar.pt")
+    # ft arms READ the matched pers-LoRA cell's t̄ (same #1481 mix — the δ
+    # cells COINCIDE; plan §4.1 amendment). LoRA arms read their own.
+    delta_arm = X.delta_arm_for(arm)
+    tb = _load_store(Path(out_root) / "delta_tf" / delta_arm / "tbar.pt")
     tbar = np.asarray(tb["tbar"][layer].float().numpy(), dtype=np.float64)
     v0_half_B = legs["v0_half_B"]
     out = {
         "delta_primary": tbar - v0_half_B,  # δ leg baseline: half B (Must-Fix)
         "delta_shared_record_only": tbar - np.asarray(legs["v0_all"], dtype=np.float64),
         "n_mix_rows": int(tb["n_rows"]),
+        "delta_arm": delta_arm,
     }
     if "tbar_even" in tb and tb["tbar_even"] is not None:
         te = np.asarray(tb["tbar_even"][layer].float().numpy(), dtype=np.float64)
@@ -412,7 +416,7 @@ def run_p9(
     wu_cache: np.ndarray | None = None
 
     # per-(arm, layer) persistence + resume (checkpoint-per-phase intra-phase
-    # grain: 56 arms x 3 layers = 168 units > 50; round-1 Major 4). Units are
+    # grain: 72 arms x 3 layers = 216 units > 50; round-1 Major 4). Units are
     # rng-seeded PER UNIT (deterministic, order-independent) so a resumed run
     # reproduces a fresh run's draws exactly.
     unit_dir = results_dir / "p9_units"
@@ -486,6 +490,12 @@ def run_p9(
                 if "w_tf_primary" in legs:
                     entry["cos_w_tf"] = _cos(legs["w_tf_primary"], cand)
                 races[cname] = entry
+            if arm.kind == "marker" and arm.method == "ft" and "W_U_marker_row" in races:
+                # full-FT trains W_U (no LoRA gauge freeze) — the Q4 candidate
+                # stays the BASE row as a FIXED reference; analyzer caveat.
+                races["W_U_marker_row"]["wu_row_source"] = (
+                    "base model (ft arm trains W_U; base row kept as fixed Q4 reference)"
+                )
             cross = {
                 other: _cos(w, rb[other][layer])
                 for other in rb
@@ -493,6 +503,7 @@ def run_p9(
             }
             direction_reads[key] = {
                 "arm_id": arm.arm_id,
+                "method": arm.method,  # lora | ft — the amendment's grouping column
                 "layer": layer,
                 "src_ctx": legs["src_ctx"],
                 "n_panel_questions": legs["n_questions"],
@@ -507,6 +518,7 @@ def run_p9(
                     "delta_split_half_cos_upper_bound_sharedB", False
                 ),
                 "n_mix_rows": dleg["n_mix_rows"],
+                "delta_arm": dleg["delta_arm"],  # != arm_id on ft arms (shared t̄)
                 "races": races,
                 "cross_behavior_rb_cos": cross,
                 "A5_scalar_fit": scalar_fit_residual(w, dleg["delta_primary"]),
@@ -518,6 +530,7 @@ def run_p9(
             c_src = np.mean(list(c_src_rows.values()), axis=0)
             gate_reads[key] = {
                 "arm_id": arm.arm_id,
+                "method": arm.method,
                 "layer": layer,
                 "on_policy": gate_read(cell["C0"], delta_v, c_src, w, sigma),
                 "matched_text": gate_read(cell["C0"], delta_v_tf, c_src, w, sigma),

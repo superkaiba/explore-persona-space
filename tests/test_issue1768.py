@@ -28,9 +28,12 @@ torch = pytest.importorskip("torch")
 
 def test_arm_counts_and_marker_lowest_lr_selection():
     arms = X.all_arms()
-    assert len(arms) == 56
-    content = [a for a in arms if a.kind == "content"]
-    marker = [a for a in arms if a.kind == "marker"]
+    assert len(arms) == 72  # 56 LoRA + 16 full-FT (plan §4.1 amendment)
+    lora = [a for a in arms if a.method == "lora"]
+    ft = [a for a in arms if a.method == "ft"]
+    assert len(lora) == 56 and len(ft) == 16
+    content = [a for a in lora if a.kind == "content"]
+    marker = [a for a in lora if a.kind == "marker"]
     assert len(content) == 40 and len(marker) == 16
     # marker rule: lowest-LR in-window rung per (ctx, regime, seed) — the
     # lr5e-6 rungs are in-window everywhere on the committed manifest
@@ -38,6 +41,38 @@ def test_arm_counts_and_marker_lowest_lr_selection():
     assert all(a.arm_id.startswith("mk-") for a in marker)
     # every content arm is in-band with a judged rate
     assert all(0.0 < a.selection_read <= 1.0 for a in content)
+
+
+def test_ft_arm_registry_identity_and_delta_mapping():
+    """Plan §4.1 amendment: 16 ft arms, overflow-ckpt identity, shared δ cells."""
+    arms = {a.arm_id: a for a in X.all_arms()}
+    ft = [a for a in arms.values() if a.method == "ft"]
+    assert len(ft) == 16
+    assert all(a.ctx_key == "pers" for a in ft)
+    assert sum(1 for a in ft if a.kind == "marker") == 4
+    # decode-cap + base-unit routing: mk-ft arms take the 2048 marker cap
+    assert X.base_unit_for("mk-pers-ft-con-s42") == "base_mk"
+    assert X.max_new_tokens_for("mk-pers-ft-con-s42") == X.MAX_NEW_MARKER
+    assert X.max_new_tokens_for("cas-pers-ft-po-s137") == X.MAX_NEW_CONTENT
+    # checkpoint identity: overflow paths; the reused #1112 cell is the exception
+    assert (
+        X.ft_ckpt_subfolder(arms["imp-pers-ft-con-s42"])
+        == "issue1586/imp-pers-ft-con-s42/checkpoint-14"
+    )
+    assert X.ft_ckpt_subfolder(arms["syc-pers-ft-con-s42"]) == X.FT_REUSED_SUBFOLDER
+    with pytest.raises(AssertionError):
+        X.ft_ckpt_subfolder(arms["imp-pers-con-lr3e5-s42"])  # LoRA arm misuse
+    with pytest.raises(ValueError):
+        X.adapter_subfolder(arms["imp-pers-ft-con-s42"])  # ft arm has no adapter
+    # δ cells COINCIDE with the pers-LoRA cells: every ft arm maps to a
+    # registry LoRA pers arm at matched (beh, regime, seed); LoRA arms -> self
+    for a in ft:
+        d = X.delta_arm_for(a)
+        assert d in arms and arms[d].method == "lora" and arms[d].ctx_key == "pers", (a.arm_id, d)
+        assert (arms[d].beh_key, arms[d].regime, arms[d].seed) == (a.beh_key, a.regime, a.seed)
+    assert X.delta_arm_for(arms[X.PILOT_ARM]) == X.PILOT_ARM
+    assert X.arm_method("imp-pers-ft-con-s42") == "ft"
+    assert X.arm_method(X.PILOT_ARM) == "lora"
 
 
 def test_marker_selection_prefers_lowest_lr_synthetic():
@@ -587,6 +622,109 @@ def test_p6_gen_units_ride_p2_queue(tmp_path):
     (tmp_path / "rb_plus" / arm_id).mkdir(parents=True)
     (tmp_path / "rb_plus" / arm_id / "gen_done.json").write_text("{}")
     assert f"p6g:{arm_id}" not in cap._pending_units(cfg, "p2")
+
+
+def test_p5_pending_maps_ft_onto_lora_cells_and_p6_excludes_ft(tmp_path):
+    """Amendment: ft arms add NO p5 cells (shared t̄ via delta_arm_for) and NO
+    p6 units; an ft-only scope still stages its paired LoRA cell."""
+    import issue1768_capture as cap
+
+    cfg = cap.Cfg(out_root=tmp_path, phases=(), arms=("imp-pers-ft-con-s42", X.PILOT_ARM))
+    assert cap._pending_units(cfg, "p5") == [X.PILOT_ARM]  # ft pair == pilot cell
+    cfg_ft_only = cap.Cfg(out_root=tmp_path, phases=(), arms=("mk-pers-ft-con-s42",))
+    assert cap._pending_units(cfg_ft_only, "p5") == ["mk-pers-con-lr5e6-s42"]
+    cfg_all = cap.Cfg(out_root=tmp_path, phases=())
+    p6 = cap.p6_arm_ids(cfg_all)
+    assert len(p6) == 6 and all("-ft-" not in a for a in p6)
+    # p2/p3 unit counts carry the 16 ft arms: 74 = 2 base + 72 trained
+    p2 = cap._pending_units(cfg_all, "p2")
+    assert len([u for u in p2 if not u.startswith("p6g:")]) == 74
+    assert len(cap._pending_units(cfg_all, "p3")) == 72
+
+
+def test_ft_resolution_plumbing(tmp_path):
+    """_needs_merge / _reused_1586_hub_name / _ft_ckpt_incomplete_reason on ft arms."""
+    import issue1768_capture as cap
+
+    cfg = cap.Cfg(out_root=tmp_path, phases=())
+    arm = {a.arm_id: a for a in X.all_arms()}["imp-pers-ft-con-s42"]
+    # ft staging pending counts as merge-bearing for the disk clamp
+    assert cap._needs_merge(cfg, "p2:imp-pers-ft-con-s42")
+    _root, ckpt = cap._ft_ckpt_dirs(cfg, arm)
+    assert ckpt == tmp_path / "ft_ckpt" / arm.arm_id / X.ft_ckpt_subfolder(arm)
+    ckpt.mkdir(parents=True)
+    (ckpt / "config.json").write_text("{}")
+    # config-only partial is INCOMPLETE (never satisfies the reuse predicate)
+    assert cap._ft_ckpt_incomplete_reason(ckpt) == "no weight shards"
+    assert cap._needs_merge(cfg, "p2:imp-pers-ft-con-s42")
+    (ckpt / "model.safetensors").write_bytes(b"00")
+    assert cap._ft_ckpt_incomplete_reason(ckpt) is None
+    assert not cap._needs_merge(cfg, "p2:imp-pers-ft-con-s42")
+    # index-bearing dir: every index-listed shard must be present
+    idx = {
+        "weight_map": {
+            "a": "model-00001-of-00002.safetensors",
+            "b": "model-00002-of-00002.safetensors",
+        }
+    }
+    (ckpt / "model.safetensors.index.json").write_text(json.dumps(idx))
+    assert "2/2 weight shards missing" in cap._ft_ckpt_incomplete_reason(ckpt)
+    # p4 reuse: ft arm ids ARE the #1586 capture-tree dir names
+    assert cap._reused_1586_hub_name("imp-pers-ft-con-s42") == "imp-pers-ft-con-s42"
+    assert cap._reused_1586_hub_name(X.PILOT_ARM) == "imp-pers-lora-con-s42"
+    assert cap._reused_1586_hub_name("base_mk") == "base_mk"
+
+
+def test_stage_ft_checkpoint_restages_partial_and_repairs_tokenizer(tmp_path, monkeypatch):
+    """Production-body test of _stage_ft_checkpoint: partial dir removed
+    before restage (#1586 fu r7), staged tree completeness re-verified, base
+    tokenizer repaired (#1112). Fakes ONLY at the network boundary
+    (hub.stage_hub_prefix / AutoTokenizer.from_pretrained), signature-mirrored."""
+    import issue1768_capture as cap
+
+    from explore_persona_space.orchestrate import hub
+
+    cfg = cap.Cfg(out_root=tmp_path, phases=())
+    arm = {a.arm_id: a for a in X.all_arms()}["imp-pers-ft-con-s42"]
+    root, ckpt = cap._ft_ckpt_dirs(cfg, arm)
+    ckpt.mkdir(parents=True)
+    (ckpt / "config.json").write_text("{}")  # config-only partial -> restage
+
+    staged = []
+
+    def fake_stage_hub_prefix(
+        repo_id, prefix, dest_dir, *, repo_type="dataset", revision=None, token=None, max_workers=6
+    ):
+        staged.append((repo_id, prefix, repo_type))
+        d = Path(dest_dir) / prefix  # verbatim prefix mirror (real helper layout)
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "config.json").write_text("{}")
+        (d / "model.safetensors").write_bytes(b"00")
+        return [d / "config.json", d / "model.safetensors"]
+
+    class _FakeTokSave:
+        def save_pretrained(self, d):
+            (Path(d) / "tokenizer_config.json").write_text("{}")
+
+    import transformers
+
+    monkeypatch.setattr(hub, "stage_hub_prefix", fake_stage_hub_prefix)
+    monkeypatch.setattr(
+        transformers.AutoTokenizer,
+        "from_pretrained",
+        classmethod(lambda _c, *a, **k: _FakeTokSave()),
+    )
+    got_root, got_ckpt = cap._stage_ft_checkpoint(cfg, arm)
+    assert (got_root, got_ckpt) == (root, ckpt)
+    assert staged == [(X.FT_OVERFLOW_REPO, "issue1586/imp-pers-ft-con-s42/checkpoint-14", "model")]
+    assert (ckpt / "model.safetensors").exists()  # partial replaced by staged tree
+    assert (ckpt / "tokenizer_config.json").exists()  # tokenizer repaired from base
+    # _resolve_unit_model routes ft arms here and returns the staged ckpt +
+    # the cleanup root (stage -> consume -> delete lifecycle)
+    model_path, cleanup = cap._resolve_unit_model(cfg, arm.arm_id)
+    assert model_path == str(ckpt) and cleanup == root
+    cap._cleanup_merged(cleanup)
+    assert not root.exists()
 
 
 def _mk_p6_fixture(n_q=2, n_roll=2, d=4, n_layers=2):
