@@ -5816,8 +5816,8 @@
     "1748": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1748",
-      "status": "proposed",
+      "path": "tasks/planning/1748",
+      "status": "planning",
       "title": "daily-fix: trigger-dense datagen first-pass decomposition"
     },
     "1749": {
