@@ -5760,8 +5760,8 @@
     "1740": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1740",
-      "status": "proposed",
+      "path": "tasks/planning/1740",
+      "status": "planning",
       "title": "daily-fix: planner.md 40900B over 40000 ratchet \u2014 main red"
     },
     "1741": {
