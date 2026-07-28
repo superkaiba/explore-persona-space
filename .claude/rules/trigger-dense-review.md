@@ -1,5 +1,5 @@
 ---
-description: Reviewing trigger-dense / security-adjacent artifacts (guard hooks, destructive-command test fixtures, refusal/jailbreak corpora) without filter kills — findings by reference, durable verdict first, windowed reads + brief composition for such targets (first-pass #1503, revision-round #1413; findings by reference); orchestrator poll/forensics turns ingest run-failure text as structural digests (#1546); orchestrator ordinary turns on guard-surface rounds keep authored text + own reads digest-only (#1563). Prevention-side sibling of CLAUDE.md § Spurious usage-policy refusals (recovery). Origin incidents #1058, #1152.
+description: Reviewing trigger-dense / security-adjacent artifacts (guard hooks, destructive-command test fixtures, refusal/jailbreak corpora) without filter kills — findings by reference, durable verdict first, windowed reads + brief composition for such targets (first-pass #1503, revision-round #1413; findings by reference); orchestrator poll/forensics turns ingest run-failure text as structural digests (#1546); orchestrator ordinary turns on guard-surface rounds keep authored text + own reads digest-only (#1563); real-corpus datagen briefs start from the #1739 content-risk decomposition (#1748). Prevention-side sibling of CLAUDE.md § Spurious usage-policy refusals (recovery). Origin incidents #1058, #1152.
 paths:
   - ".claude/hooks/*.sh"
   - "scripts/guard_*.sh"
@@ -31,7 +31,9 @@ artifacts (§ Orchestrator ordinary turns, #1563). Recognition heuristic
   command shapes (fixture lists of banned invocations, hook-bypass probes);
 - refusal / jailbreak / harmful-content corpora and question banks (reads
   already digest-only per the `guard_harmful_bank_read.sh` hook +
-  code-reviewer.md § Harmful-content corpora digest note; #866, #1073);
+  code-reviewer.md § Harmful-content corpora digest note; #866, #1073),
+  incl. unscreened real-world corpora (LMSYS/WildChat-class) whose rows
+  routinely carry in-corpus jailbreak/explicit text (#1073, #1739);
 - the diff or plan under review EDITS any of the above, or a verdict body
   you must adjudicate QUOTES such content (the reconciler case).
 
@@ -163,6 +165,53 @@ briefs — first-pass fact-checkers/critics paged whole guard files and
 were filter-killed before any recovery rung fired (2026-07-17: 4 kills
 across #1436/#1443 — fact-checker ×2, Alternatives critic ×2 — ~35+ min
 recovered via rung (b2)).
+
+Datagen sibling: an implementer / experimenter brief for a DATAGEN
+pipeline that ingests a real-world corpus or a harmful-content bank ALSO
+starts from § Real-corpus datagen briefs — first-pass decomposition
+default (#1748) below — the round decomposition duties 1–5 here compose
+with.
+
+## Real-corpus datagen briefs — first-pass decomposition default (#1748)
+
+Fires for the ORCHESTRATOR composing implementer / experimenter briefs
+for a DATAGEN pipeline that INGESTS a real-world corpus
+(LMSYS/WildChat-class unscreened user text — the recognition heuristic's
+corpora bullet) or a harmful-content bank. The four-part round structure
+below is the FIRST-PASS default — the starting decomposition, never a
+fallback ladder reached only after dead spawns:
+
+- (a) **Data-plane code rounds stream ZERO real-corpus text.** All
+  pipeline code — loaders, filters, staging, generation/capture
+  entrypoints — is written and tested against synthetic fixtures only;
+  the brief states "no real-data/network execution this round" (#1739
+  round B1's marker-recorded brief line, `epm:progress` v5/v6).
+- (b) **Bounded ingestion probes ship as content-opaque CLIs the
+  ORCHESTRATOR runs** — counts-only stdout (kept / per-filter rejection
+  counters per dataset), fail-loud on kept=0; real corpus text never
+  enters ANY agent context. (The gotchas.md tiny-real ingestion-probe
+  class still binds — this clause routes WHO runs the probe and WHAT it
+  prints, not whether it runs.)
+- (c) **Micro-scoped rounds sized to survive autocompact thrash** — the
+  #1090 sequential split (skeleton/loaders round, data-plane round,
+  fits/figures/report round), each a self-contained commit-manifest
+  unit on the DEFAULT session model.
+- (d) **Report markers orchestrator-composed from durable evidence** —
+  smoke logs, commit subjects, round manifests in `epm:progress` —
+  pre-authorized for the report stage of such rounds, not an escalation
+  reached only after dead report-stage spawns (CLAUDE.md refusal
+  rung (c) is the recovery-side sibling).
+
+Incident (#1739, 2026-07-28): a real-corpus datagen pipeline converged
+on exactly (a)-(d) only after repeated spawn attrition. Marker-recorded
+on #1739's events: an implementer thrash death at 11 tool calls (v3),
+the round-B sonnet-respawn thrash death at 5 calls (v5), the C2
+report-stage refusal at 127 calls + C2b thrash at 21 calls (v9); the
+fuller tally — ~9 dead spawns over ~5h, incl. two planner refusal kills
+and a consistency-checker thrash death — is transcript-mined (session
+`bae92cbd`), not marker-recorded. Rounds B1/C1 then ran clean under
+(a)-(c) (markers v6/v8), and (d) closed the report stage after two
+agent attempts had died there (v9).
 
 ## Revision-round briefs (composition-side, #1413)
 
@@ -342,7 +391,9 @@ replaced, + 3 brief kills from inlined hook-BLOCKED text —
 § Orchestrator poll/forensics turns + § First-pass briefs item 5,
 #1546), #1538 (2 orchestrator sessions refusal-wedged on ordinary turns
 of a guard-hook grep-pattern round — § Orchestrator ordinary turns,
-#1563).
+#1563), #1739 (repeated refusal + thrash spawn deaths on a real-corpus
+datagen pipeline before converging on the (a)-(d) first-pass
+decomposition — § Real-corpus datagen briefs, #1748).
 Enforcing pointers:
 `.claude/agents/code-reviewer.md` § Context budget (READ FIRST);
 `.claude/agents/reconciler.md` § Rules (Rule 11);
