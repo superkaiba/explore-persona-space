@@ -1805,6 +1805,26 @@ normally. The `plan_pending` flip below still happens only AFTER the
 checker's FINAL verdict is folded in (adversarial-planner SKILL.md
 § Park order) — never on its interim ack.
 
+**Edit-locus WARN → merge-hold record (#1757).** When the WARN body names a
+same-file EDIT-LOCUS conflict with a live sibling task at status `reviewing`
+or later, ALSO post one `epm:progress` note per named sibling (idempotent
+per (sibling, path) — grep the events file first, the
+`followup-parked-by-cap` convention; reuse `epm:progress`, never a new
+marker kind):
+
+```bash
+uv run python scripts/task.py post-marker <N> epm:progress \
+  --note 'merge-hold-candidate sibling=<M> path=<file> source=consistency-warn — Step 10d Guard 5 orders this task landing behind sibling #<M> (bounded, one 45-min gate cycle) and pre-resolves the predicted conflict in-worktree (#1757)'
+```
+
+Auto-continue — never a gate, never blocks planning; a WARN naming no live
+sibling (or a sibling below `reviewing`) records nothing. The trigger is
+mechanical: the WARN body must BOTH name a concrete sibling task id at
+status `reviewing` or later AND name a same-file/same-region edit conflict
+(the checker's own vocabulary: "edit locus", "same file", "same
+block/region", a TEXTUAL/EDIT-LOCUS conflict finding). A generic WARN (seed
+drift, baseline caveat) records nothing.
+
 Then post the plan as `epm:plan v1` with the consistency results
 appended.
 
@@ -10146,7 +10166,7 @@ A behind-`main` `issue-<N>` branch can carry stale copies of OTHER tasks'
 `tasks/` state, a crash between merge and a status flip can strand a
 task at the wrong status, AND a branch based on another still-unmerged
 `issue-<M>` branch will replay `#M`'s old commits onto `main` if blindly
-rebase-merged. Three guards:
+rebase-merged. Five guards:
 
 1. **Foreign-`tasks/` guard (strip whole foreign task folders before the
    merge).** `git diff --name-only "$MAIN_SHA"...HEAD -- tasks/` — the
@@ -10513,6 +10533,94 @@ rebase-merged. Three guards:
    Non-workflow-surface files stay covered by Guards 1-3 alone; Guard 4
    focuses the scan on the files whose silent-revert blast radius is
    fleet-wide.
+
+5. **Sibling merge-sequencing hold + proactive pre-resolution (#1757).**
+   Runs ONCE per Step 10d invocation (never inside per-attempt retry
+   shapes). Half (i) runs at Step 10d entry; half (ii) runs AFTER Guard 0
+   (the agent-memory pathspec commit) — a dirty tree aborts an in-worktree
+   merge (the exact #906 shape Guard 0 exists to clean), so (ii) first runs
+   the idempotent Guard 0 block, then merges. Scan this task's events for
+   `merge-hold-candidate` notes (the Step 2b edit-locus WARN record):
+
+   ```bash
+   grep -F 'merge-hold-candidate' "$(uv run python scripts/task.py find <N>)/events.jsonl"
+   ```
+
+   No candidate note → Guard 5 is a no-op (one grep). Otherwise, per named
+   sibling `<M>` (dedup):
+
+   - **(i) Bounded hold.** Read live state via `task.py view <M> --json`.
+     No hold when: its events carry `epm:merged` (any form —
+     `artifact_confirmed` counts); OR its status is in {completed,
+     archived, blocked, on_hold} (a parked/blocked sibling is not landing
+     soon); OR its state is UNREADABLE (`task.py find <M>` fails — treat
+     as no-hold, never a 45-min no-op); OR a PRIOR `merge_hold` disposition
+     note for `<M>` with `outcome=cap-expired` exists on this task's
+     events (sticky — a stuck sibling never re-triggers the hold on
+     re-entry). Otherwise (live at `reviewing`-or-later, unmerged): post
+     ONE `[long-phase-heartbeat] step10d-merge hold sibling=<M> (#1757)`
+     progress note, then wait via the sanctioned `Monitor` until-loop
+     shape (load the deferred schema first — `ToolSearch("select:Monitor")`),
+     elapsed-capped at 2700 s (one 45-min gate cycle), re-resolving the
+     sibling's folder each poll (status moves relocate it):
+
+     ```bash
+     until grep -qF '"epm:merged"' "$(uv run python scripts/task.py find <M> 2>/dev/null)/events.jsonl" 2>/dev/null \
+           || [ $SECONDS -gt 2700 ]; do sleep 60; done
+     ```
+
+     (NEVER a foreground Bash sleep-loop — the 600 s tool cap kills it and
+     the sleep-chain shapes are hook-blocked; Monitor is the sanctioned
+     poll carrier here.) On expiry, record `outcome=cap-expired` and
+     proceed — the hold is bounded by construction; a mutual hold (two
+     siblings each naming the other) resolves at cap expiry on both sides.
+   - **(ii) Proactive pre-resolution (the load-bearing half — fires with
+     any candidate note, INCLUDING when the sibling already merged).**
+     Sequenced AFTER Guard 0's agent-memory commit (run the idempotent
+     Guard 0 block first if not yet run this invocation).
+     `git -C "$WT" fetch origin main --quiet`, then probe for the
+     predicted conflict without touching the working tree, PATH-SCOPED
+     to each candidate note's own `path=<file>` field (dedup paths
+     across notes; a candidate note MISSING its `path=` field → treat
+     as conflicted — the degrade below). Per path, materialize the
+     three blob versions and run read-only three-way `git merge-file`
+     (ancient, version-portable plumbing — no git-version branch
+     needed; `-p` writes the merged result to stdout, inputs untouched):
+
+     ```bash
+     MB=$(git -C "$WT" merge-base HEAD origin/main)
+     git -C "$WT" show "$MB:<file>"          > /tmp/issue-<N>-mh-base   # any show failing
+     git -C "$WT" show "HEAD:<file>"         > /tmp/issue-<N>-mh-ours   # (added/deleted/renamed
+     git -C "$WT" show "origin/main:<file>"  > /tmp/issue-<N>-mh-theirs # on a side) -> CONFLICTED
+     git merge-file -p /tmp/issue-<N>-mh-ours /tmp/issue-<N>-mh-base /tmp/issue-<N>-mh-theirs \
+       > /dev/null 2>&1
+     # rc 0 = clean; rc > 0 (= conflict count) = CONFLICTED; rc < 0 (shell: 255) = error -> CONFLICTED
+     ```
+
+     (A whole-tree probe — legacy `git merge-tree <mb> HEAD origin/main`,
+     or the modern `--write-tree` form — is deliberately NOT used: on
+     this repo it reads CONFLICTED on essentially every real merge,
+     because main's constant `tasks/` folder git-mvs print `removed in`
+     stanzas and events.jsonl notes quoting conflict markers trip a
+     `<<<<<<<` grep, making the clean path unreachable.) Ambiguous or
+     unavailable probe output → treat the candidate as conflicted — fail
+     toward the proactive resolve, never toward a doomed server-side
+     refusal. ALL probed paths clean → proceed exactly as today
+     (Guards 0-4 + the normal merge form; experiment branches keep
+     `--rebase`). Any path CONFLICTED → resolve
+     proactively IN THE WORKTREE via the EXISTING merge-conflict recovery
+     machinery (capture ONE `MAIN_SHA`, `git -C "$WT" merge "$MAIN_SHA"`,
+     the mechanical foreign-tasks/figures passes + residual-conflict
+     subagent dispatch, commit, post-resolution certification), then
+     re-run the pre-push workflow-lint gate (the SHA-bound verdict
+     re-binds to the post-merge tip — the #1753 recovery ordering) and
+     take the `--squash` merge form (the branch now carries a merge
+     commit — Known failure shape 1).
+   - Record the disposition in the `epm:merged` / `epm:merge-failed` note:
+     `merge_hold: sibling=<M> waited=<mins> outcome=<sibling-merged|cap-expired|no-hold>`
+     and `pre_resolve: <clean|conflicted-resolved|probe-unavailable>`
+     (omit both lines when no candidate note exists). Same behavior in
+     interactive and autonomous sessions; auto-continue, never a gate.
 
 #### Fast-path routing pre-check (workflow-fix / small-ADDED-diff far-behind branches)
 
