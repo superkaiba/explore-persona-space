@@ -14,6 +14,8 @@ goal: Determine whether applying the learned context->answer map before projecti
   hallucination) better than context-side projection and direct regression at matched
   (unlabeled, labeled) data budgets, and whether that advantage grows across a real-data
   distribution-shift ladder.
+relates_to:
+- spec-context-as-vector
 ---
 # Behavior prediction through the context→answer map
 
