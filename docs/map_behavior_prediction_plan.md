@@ -214,7 +214,7 @@ a strength of the behavior-agnostic claim, but state it rather than let it be di
 | Behavior | Train | OOD eval | Real topic control |
 |---|---|---|---|
 | **Evil** | `TrustAIRLab/in-the-wild-jailbreak-prompts` (1,405 scraped Reddit/Discord) × `TrustAIRLab/forbidden_question_set` (390 = 13 scenarios × 30) | `Anthropic/hh-rlhf` **red-team-attempts** (38,961 multi-turn dialogues, paid crowdworkers, 2022, ships per-dialogue harmfulness ratings) | ToxicChat's **542 toxic-but-not-jailbreaking** rows + the in-the-wild corpus's own "regular" prompts (5.7K / 13.7K) |
-| **Sycophancy (trait)** | a real advice corpus outside ELEPHANT's four upstream sources — affordance from platform membership, no labeling. **Corpus pending availability survey**; fallback SyPr with a synthetic caveat (see below) | **ELEPHANT AITA-YTA** (2,000 real Reddit posts, CC0). *Not* AITA-NTA-FLIP (LLM-generated), *not* OEQ (availability), *not* PRISM (no affordance guarantee) | ELEPHANT's non-affording items; WildChat technical turns |
+| **Sycophancy (trait)** | `HuggingFaceGECLM/REDDIT_submissions`, splits **`relationship_advice`** (3.3M posts, ~68% usable, median 1,393 chars) + **`socialskills`** (260.4K, ~48% usable) — affordance from platform membership, zero labeling. Independence check: **Value-Trade-off-in-Reddit-Dilemmas** (5,728; MIT) | **ELEPHANT AITA-YTA** (2,000 real Reddit posts, CC0). *Not* AITA-NTA-FLIP (LLM-generated), *not* OEQ (availability), *not* PRISM (no affordance guarantee) | ELEPHANT's non-affording items; WildChat technical turns |
 | **Hallucination** | **TriviaQA** `rc.nocontext` (138.4K/17.9K/17.2K; trivia-enthusiast authored) | **NQ-Open** (87.9K/3.6K; real Google queries, cc-by-sa-3.0). Secondary: **SimpleQA** (4.3K, MIT) | answerable-and-known subset |
 
 Independence rationale per pair — mechanism, authorship, and era all differ: forum-shared
@@ -236,11 +236,56 @@ of implementation**; validation folds into the gate-1 calibration pilot. **Becau
 ours, it is a labeling artifact the predictors can learn** — multi-signal quotas (never one
 composite score), keep the high-screen/low-judged disagreements as hard negatives, and report
 ρ(screen, judged sycophancy); near 1.0 means the training set cannot separate the two.
-**Preferred alternative to building the screen: let PLATFORM MEMBERSHIP carry the affordance.**
-Posting to an advice forum is self-selection into advice-seeking, so a corpus whose *source*
-guarantees the affordance needs no per-item labeling at all. Train on a real advice corpus drawn
-from sources outside ELEPHANT's four upstream papers; evaluate on AITA-YTA. *Corpus selection
-pending an availability survey.*
+**Resolved: PLATFORM MEMBERSHIP carries the affordance — no screen needed.** Posting to an advice
+forum is self-selection into advice-seeking, so a corpus whose *source* guarantees the affordance
+needs no per-item labeling. `HuggingFaceGECLM/REDDIT_submissions` ships **one split per
+subreddit**, so selecting the split IS the filter. Verified: anonymous HTTP 200 + parquet magic
+(ungated), organic PushShift submissions 2006–2023, 65 columns (`selftext`, `title`, `score`,
+`num_comments`, `created_utc`), no sycophancy labels. Sampled usable-text rates (n=400/split,
+removed/deleted/short stripped): `relationship_advice` 68% (median 1,393 chars) → ~2.2M usable;
+`socialskills` 48% (median 720) → ~125K. Vast headroom over a 16k axis. **Drop the `LifeProTips`
+split** — the one ELEPHANT-overlapping subreddit in the collection.
+
+**ELEPHANT's exclusion set is SIX components, not four.** Beyond OEQ's four upstream papers
+(r/advice 158, 10 magazine columns 39, r/relationships 983, r/LifeProTips 1,847) and AITA (4,000),
+the **SS split is 3,777 items from ConvoKit's r/Advice corpus** — so r/Advice is used twice and the
+ConvoKit Reddit family is contaminated for that sub. Full exclusion set: **r/AmITheAsshole,
+r/advice, r/relationships, r/LifeProTips, and the ten magazine columns.**
+
+**Disqualified by that set — the near-miss worth recording:** `mbkim/LifeTox` (84.5K rows, MIT,
+a perfect-looking card) is scraped from r/LifeProTips + r/UnethicalLifeProTips per its paper's
+Dataset Construction section. r/LifeProTips is AdvisorQA's subreddit = ELEPHANT's OEQ source.
+**The HF card never names the source; only the paper does** — this is exactly the silent
+contamination that would have been reported as an OOD result. Also disqualified: AdvisorQA itself
+(same subreddit); `yonatanko/Relationship_Advice` (400 rows, dead on size).
+
+**Independence caveat — required in the writeup.** r/relationship_advice and ELEPHANT's
+r/relationships are different subreddits with no item-level overlap (confirmed against hou2024's
+PDF, where the string `r/relationship_advice` never appears). Independence is therefore real at
+the **community and item level but NOT at the platform/genre level** — both are English Reddit
+personal-advice posts from the same broad population and era. Two residual risks: (a) users
+cross-post the same dilemma to both subs, and we **cannot** dedup against ELEPHANT's 983
+r/relationships items because that slice is not public; (b) mitigation — **weight `socialskills`
+up**, since social-skills advice is the more clearly independent of the two splits, and use the
+Value-Trade-off corpus as the clean check (its four subs — r/AskWomenAdvice 3,095, r/CareerAdvice
+1,760, r/FriendshipAdvice 484, r/AskMenAdvice 389 — touch none of ELEPHANT's sources).
+
+**Licensing decision.** `REDDIT_submissions` states **no license** on its card. Reddit-derived
+research data is normalized in this literature — ELEPHANT is itself Reddit-scraped and released
+CC0 — so the plan uses it and cites that precedent. Fully-licensed fallback if a venue objects:
+Value-Trade-off (MIT, 5,728) + Stack Exchange advice sites (CC-BY-SA-4.0; interpersonal 3,954,
+parenting 7,045, workplace 32,926), at the cost of capping the scaling axis near 5–6k and, for the
+SE portion, a materially weaker affordance (SE answerability moderation strips the emotional /
+validation-seeking register).
+
+**Implementation traps.** In Value-Trade-off, the `selftext` column is the literal string
+`"REDACTED"` in all 5,728 rows — use **`content`** (median 1,112 chars). Ruled out on measured
+grounds, not guessed: `counsel-chat` has only 940 *unique* questions (2,775 rows) despite
+excellent affordance; Yahoo Answers Family & Relationships has ~140K items and maximal
+independence but median 66-char questions with 31% title-only, so the affordance is nominal.
+
+**Fallback if the Reddit route is rejected outright:** SyPr as train with a stated
+synthetic-prompt scope caveat (see below).
 
 **Disqualified train candidates — recorded so they are not re-proposed:**
 - **SycophancyEval `feedback`** — fails twice. (i) Provenance: the 8,500 rows are 1,700 unique
@@ -422,7 +467,11 @@ every rung. Held out by **conversation**, not turn.
    `sycophancy_claims_v1`, `sycophancy_neutral_v1/v2`, `fact_questions_v1`.
 4. **Access.** Verified open on `superkaiba1`: LMSYS-Chat-1M, WildChat-1M, PRISM,
    in-the-wild-jailbreak-prompts, forbidden_question_set, hh-rlhf, ToxicChat, TriviaQA, NQ-Open,
-   SimpleQA. Optional: WildChat-1M-Full (manual approval + written justification).
+   SimpleQA. Verified ungated anonymously: `HuggingFaceGECLM/REDDIT_submissions` (HTTP 200 +
+   parquet magic on a range-GET). Ungated via GitHub: Value-Trade-off-in-Reddit-Dilemmas (MIT),
+   Social Sycophancy Scale items (OSF `r8gys`, CC-BY-4.0). ELEPHANT AITA-YTA is CC0 but the full
+   data sits behind an OSF link — confirm the AITA slice downloads before planning on it.
+   Optional: WildChat-1M-Full (manual approval + written justification).
 
 ---
 
