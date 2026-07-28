@@ -5921,8 +5921,8 @@
     "1762": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1762",
-      "status": "proposed",
+      "path": "tasks/planning/1762",
+      "status": "planning",
       "title": "daily-fix: inline dispatch arms detached handoff by default"
     },
     "1763": {
