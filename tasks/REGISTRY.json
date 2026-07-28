@@ -5767,8 +5767,8 @@
     "1741": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1741",
-      "status": "planning",
+      "path": "tasks/approved/1741",
+      "status": "approved",
       "title": "daily-fix: sweep park predicate misses URGENT-PARK notes"
     },
     "176": {
