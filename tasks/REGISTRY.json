@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1760,
+  "highest_id": 1761,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5910,6 +5910,13 @@
       "path": "tasks/proposed/1760",
       "status": "proposed",
       "title": "daily-held: #1719 autonomous reset --hard + force-push revie"
+    },
+    "1761": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1761",
+      "status": "proposed",
+      "title": "daily-held: untracked scripts/issue823_single_split_protocol"
     },
     "18": {
       "has_clean_result": false,
