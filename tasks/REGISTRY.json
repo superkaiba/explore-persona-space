@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1737,
+  "highest_id": 1738,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5733,6 +5733,13 @@
       "path": "tasks/proposed/1737",
       "status": "proposed",
       "title": "daily-held: should /daily cap its nightly route-2 filing vol"
+    },
+    "1738": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1738",
+      "status": "proposed",
+      "title": "Multi-turn prefix-arm map at 100k: build the multi-turn n1M analogue, fit prefix+context arms, characterize both arms' prediction error"
     },
     "174": {
       "has_clean_result": false,
