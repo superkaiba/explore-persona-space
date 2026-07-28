@@ -1,2 +1,0 @@
-{"ts": "2026-07-28T21:10:53Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
-{"ts": "2026-07-28T21:11:15Z", "kind": "epm:progress", "version": 1, "by": "spawn_session-stop", "note": "deliberate-stop pid=n/a target=happy-session:cms55hodqwxzywc0uzbufu5rl reason=operator stop via spawn_session.py stop"}

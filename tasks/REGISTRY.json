@@ -5993,8 +5993,8 @@
     "1772": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1772",
-      "status": "proposed",
+      "path": "tasks/archived/1772",
+      "status": "archived",
       "title": "workflow-fix: red main \u2014 add load_dotenv before heavy import in two figure scripts"
     },
     "18": {
