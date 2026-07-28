@@ -1365,3 +1365,88 @@ def test_tg_leg_node_grain_subtraction():
         assert (
             "[ -s /tmp/issue-<N>-tg-new.txt ] || [ -s /tmp/issue-<N>-tg-new-nodes.txt ]" in block
         ), "the verdict must OR the node-grain file beside the file-grain hit set"
+
+
+# --------------------------------------------------------------------------
+# Task #1753 — landing-union overlay (generalizes #1456 to every payload
+# path), Guard-4 recovery ordering, landing-bytes cap-bump rule
+# --------------------------------------------------------------------------
+
+
+def _overlay_loop_region(text: str) -> str:
+    """The payload-overlay loop slice of the pre-push gate: from the
+    LANDING-UNION comment to the LINT-VINTAGE block that follows it."""
+    gate = _gate_region(text)
+    start = gate.index("LANDING-UNION OVERLAY (#1753")
+    end = gate.index("LINT-VINTAGE 3-WAY MERGE", start)
+    return gate[start:end]
+
+
+def test_union_overlay_present():
+    """#1753: the overlay loop 3-way-merges both-sides-modified payload
+    paths (branch HEAD (ours) + merge-base + archived origin/main (theirs))
+    so the gated legs certify the LANDING content — an in-loop
+    `git merge-file -p` inside the overlay region, ahead of the #1456
+    LINT-VINTAGE block (#1721: a branch-tip planner.md passed at 39,371 B
+    while the squash union landed 40,900 B > the 40,000 cap)."""
+    region = _overlay_loop_region(_skill_text())
+    assert "git merge-file -p" in region
+    assert "done < /tmp/issue-<N>-overlay-files.txt" in region
+
+
+def test_workflow_lint_excluded_from_union_loop():
+    """#1753: scripts/workflow_lint.py stays EXCLUDED from the union loop —
+    the dedicated #1456 block below merges it; a double merge would feed
+    the already-merged union back into merge-file as "ours"."""
+    region = _overlay_loop_region(_skill_text())
+    assert '[ "$p" != "scripts/workflow_lint.py" ]' in region
+
+
+def test_union_fallback_is_loud():
+    """#1753: a conflicted/failed per-path union merge falls back to the
+    BRANCH copy with a loud per-path WARN + a counted fallback — never a
+    crash (the real merge surfaces the conflict as shape 2)."""
+    region = _overlay_loop_region(_skill_text())
+    assert "landing-union 3-way merge conflicted/failed" in region
+    assert "UNION_FALLBACK=$((UNION_FALLBACK + 1))" in region
+
+
+def test_union_echo_breadcrumb():
+    """#1753: the merged/fallback counters are echoed as a breadcrumb the
+    `epm:merged` / `epm:merge-failed` note copies (alongside the lint/tg
+    tails those notes already record)."""
+    region = _gate_region(_skill_text())
+    assert "[step10d] landing-union overlay:" in region
+
+
+def test_guard4_recovery_ordering_present():
+    """#1753 (incident #1727): Guard 4 documents commit-before-re-gate for
+    the merge-of-origin/main recovery — staged-but-uncommitted merge
+    content reads as dropped under the guard's `git show HEAD:"$P"`
+    predicate (a false lost-update / STILL-UNMERGED read)."""
+    text = _skill_text()
+    start = text.index("**Lost-update refusal (shared workflow-surface files).**")
+    end = text.index("#### Fast-path routing pre-check", start)
+    region = text[start:end]
+    assert "Recovery ordering (#1753" in region
+    assert "staged-but-uncommitted" in region
+
+
+def test_landing_bytes_cap_rule_present():
+    """#1753 (incident #1727): the gate section documents that size-ratchet
+    cap bumps are computed from landing/union bytes, never branch-tip bytes
+    (#1727: cap 130,000 from a pre-merge 128,507 B tip failed post-merge)."""
+    region = _gate_region(_skill_text())
+    assert "Size-ratchet cap bumps are computed from landing bytes (#1753)" in region
+
+
+def test_mergefile_block_untouched_order():
+    """#1753 ordering pin: the #1456 LINT-VINTAGE 3-WAY MERGE block still
+    FOLLOWS the overlay loop's `done` line (complements
+    tests/test_issue_skill_lint_gate_mergefile.py's ordering pin, which
+    anchors on the #1456-specific `git merge-file -p
+    "$GT/scripts/workflow_lint.py"` invocation)."""
+    gate = _gate_region(_skill_text())
+    done_idx = gate.index("done < /tmp/issue-<N>-overlay-files.txt")
+    lint_vintage_idx = gate.index("LINT-VINTAGE 3-WAY MERGE")
+    assert done_idx < lint_vintage_idx

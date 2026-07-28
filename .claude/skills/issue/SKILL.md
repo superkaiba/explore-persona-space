@@ -10474,6 +10474,19 @@ rebase-merged. Three guards:
    fi
    ```
 
+   **Recovery ordering (#1753; incident #1727).** When recovering via a
+   merge of `origin/main` INTO the branch (instead of the rebase form),
+   COMMIT the staged merge BEFORE re-running this guard or the pre-push
+   lint gate — the guard's predicate reads `git show HEAD:"$P"` and the
+   gate sha-binds its verdict to HEAD, so staged-but-uncommitted merge
+   content still reads as dropped (the #1727 false lost-update / "STILL
+   UNMERGED" read).
+   And any size-ratchet cap the recovery re-writes is computed from the
+   POST-merge (landing) bytes, never the pre-merge branch tip (#1727:
+   cap 130,000 written from pre-merge 128,507 B failed post-merge when
+   main's additions stacked; re-bumped to 132,500 — see the
+   landing-bytes bullet in the gate section below).
+
    Non-workflow-surface files stay covered by Guards 1-3 alone; Guard 4
    focuses the scan on the files whose silent-revert blast radius is
    fleet-wide.
@@ -10788,14 +10801,49 @@ tests BEFORE anything lands:
       rm -f /tmp/issue-<N>-lint-main-copy.py
       cp "$GT/scripts/workflow_lint.py" /tmp/issue-<N>-lint-main-copy.py || true
     fi
+    # LANDING-UNION OVERLAY (#1753, generalizing #1456; closes residual (d)
+    # for the lint legs): each payload path lands in the gate tree as the
+    # content a squash/rebase would land on trunk — a 3-way merge (branch
+    # HEAD (ours) + merge-base + archived origin/main (theirs)) whenever
+    # BOTH sides modified the path since the merge-base; the branch copy
+    # verbatim when only the branch touched it; removal for branch-deleted /
+    # renamed-away paths. scripts/workflow_lint.py is EXCLUDED here — its
+    # dedicated #1456 block below merges it (double-merging would feed the
+    # union back as "ours"). A conflicted/failed merge falls back to the
+    # BRANCH copy with a loud per-path WARN — never a crash: the real merge
+    # surfaces the conflict as shape 2. Incidents: #1721 (branch-tip
+    # planner.md passed; the squash union landed 40900 B > the 40000 cap,
+    # main red ~17h), #1719 (a stale sync snapshot false-NEW-blocked 3 gate
+    # runs; a stale sync copy 3-way-merges clean with archived origin/main).
+    MB_OVERLAY=$(git -C "$WT" merge-base origin/main HEAD 2>/dev/null) || MB_OVERLAY=""
+    UNION_MERGED=0; UNION_FALLBACK=0
+    rm -f /tmp/issue-<N>-union-base.tmp /tmp/issue-<N>-union-ours.tmp /tmp/issue-<N>-union-merged.tmp
     while IFS= read -r p; do
       if git -C "$WT" cat-file -e "HEAD:$p" 2>/dev/null; then
-        { mkdir -p "$GT/$(dirname "$p")" \
-          && git -C "$WT" show "HEAD:$p" > "$GT/$p"; } || GT_RC=1
+        mkdir -p "$GT/$(dirname "$p")" || GT_RC=1
+        if [ "$p" != "scripts/workflow_lint.py" ] && [ -n "$MB_OVERLAY" ] && [ -f "$GT/$p" ] \
+           && git -C "$WT" show "$MB_OVERLAY:$p" > /tmp/issue-<N>-union-base.tmp 2>/dev/null \
+           && ! cmp -s /tmp/issue-<N>-union-base.tmp "$GT/$p"; then
+          # both-sides-modified: certify the union, not the branch copy
+          if git -C "$WT" show "HEAD:$p" > /tmp/issue-<N>-union-ours.tmp \
+             && git merge-file -p /tmp/issue-<N>-union-ours.tmp \
+                  /tmp/issue-<N>-union-base.tmp "$GT/$p" \
+                  > /tmp/issue-<N>-union-merged.tmp 2>/dev/null; then
+            mv /tmp/issue-<N>-union-merged.tmp "$GT/$p" || GT_RC=1
+            UNION_MERGED=$((UNION_MERGED + 1))
+          else
+            git -C "$WT" show "HEAD:$p" > "$GT/$p" || GT_RC=1
+            UNION_FALLBACK=$((UNION_FALLBACK + 1))
+            echo "WARN: landing-union 3-way merge conflicted/failed for $p — gated legs run the BRANCH copy for it (residual (d) narrows to this path; the real merge surfaces the conflict as shape 2)"
+          fi
+        else
+          git -C "$WT" show "HEAD:$p" > "$GT/$p" || GT_RC=1
+        fi
       else
         rm -f "$GT/$p" || GT_RC=1   # branch-deleted / renamed-away path: absent from the landing tree
       fi
     done < /tmp/issue-<N>-overlay-files.txt
+    echo "[step10d] landing-union overlay: merged=$UNION_MERGED fallback=$UNION_FALLBACK"
     # LINT-VINTAGE 3-WAY MERGE (#1456; incidents #1366/#1411): when the own
     # diff touches scripts/workflow_lint.py, the loop above overlaid the
     # BRANCH's lint copy, whose ratchet constants
@@ -11046,7 +11094,11 @@ tests BEFORE anything lands:
   `[step10d] lint-gate earlyoom protection choom=...` breadcrumb line into
   the `epm:merged` / `epm:merge-failed` note (alongside the lint/tg tails
   those notes already record) so a crash-verdict post-mortem can tell a
-  protected kill from an unprotected one.
+  protected kill from an unprotected one. Likewise copy the
+  `[step10d] landing-union overlay: merged=<n> fallback=<m>` echo into the
+  same note (#1753) — a nonzero `fallback=` names how many payload paths
+  the gated legs ran as branch copies, the first thing a post-merge lint
+  divergence should be triaged against.
 
 - **Mapped invariant-test leg (#1147).** A second, trigger-gated leg of the
   SAME gate: when the payload (the own-diff / additive list) matches the
@@ -11223,6 +11275,16 @@ tests BEFORE anything lands:
   never files or spawns the fix itself. Non-workflow-surface
   pre-existing red keeps the report-and-continue disposition
   unchanged.
+- **Size-ratchet cap bumps are computed from landing bytes (#1753).** A
+  payload that raises a size-cap constant (e.g.
+  `AGENT_SPEC_SIZE_GRANDFATHER`) computes the new cap from the LANDING
+  content — the gate tree's 3-way-merged copy of the capped file (or a
+  local merge of fresh `origin/main` into the branch) — never from
+  branch-tip bytes: main-side additions stack at merge time (#1727: a
+  cap of 130,000 written from the pre-merge 128,507 B branch tip failed
+  post-merge; re-bumped to 132,500). With the landing-union overlay the
+  gate catches an under-computed cap fail-CLOSED (verdict `block`)
+  pre-merge, instead of post-merge main-red.
 - **Baseline semantics per binding form (the baseline is ALWAYS a
   payload-free tree).** The mapped invariant-TEST legs (#1147) keep the
   ORIGINAL per-form placement (gated = the `$WT` copy on the branch-tip /
@@ -11305,14 +11367,19 @@ tests BEFORE anything lands:
   gated-only red in a rules-mentioning test the family does not cover)
   and (β) the `explore_persona_space.workflow` seam, both with the same
   remedy (rebase onto origin/main / cross-check at the repo root); the
-  trunk pytest remains their backstop; (d) a
-  lint-scanned file BOTH main and the branch modified post-fork lints as
-  the BRANCH's copy (the overlay takes branch-HEAD wholesale; EXCEPT
-  `scripts/workflow_lint.py` itself, which is 3-way-merged per #1456 —
-  its residual is the merge-failure fallback in residual (a)), a narrow
-  window in either direction that is strictly smaller than the old
-  whole-tree divergence — the form-(ii) recovery covers the conflict case
-  and trunk lint backstops the clean-rebase case; (e) same-issue
+  trunk pytest remains their backstop; (d) both-sides-modified
+  overlay paths are now 3-WAY-MERGED on the gated legs (the landing-union
+  overlay, #1753, generalizing #1456 to every payload path;
+  `scripts/workflow_lint.py` keeps its dedicated #1456 block) — the
+  residual NARROWS to (i) the per-path conflict-fallback window (loud
+  WARN + branch copy; the real merge surfaces the conflict as shape 2
+  anyway — and the `fallback=` counter also counts non-conflict failures,
+  e.g. a failed `git show`, so never read `fallback=` as a pure conflict
+  count), (ii) an add/add path absent at the merge-base (no base to
+  merge; branch copy, rare), and (iii) the clean-merge-to-wrong-content
+  window — a main-side REVERT (post-sync) of a hunk the branch's sync
+  copy carries merges CLEANLY to non-main content, the same class as
+  residual (a)'s semantically-broken-clean-merge window; (e) same-issue
   concurrent gate runs would share one `$GT` (a phase-flip race) —
   excluded by the Step 0 single-orchestrator guard + the pre-dispatch
   dedup, with the #911 janitor reaping any crash leftovers.
