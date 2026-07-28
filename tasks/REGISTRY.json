@@ -5979,8 +5979,8 @@
     "1770": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1770",
-      "status": "reviewing",
+      "path": "tasks/completed/1770",
+      "status": "completed",
       "title": "fix main-red test_no_new_torch_before_dotenv_vm_entrypoints: issue1481_coverage_fig + issue779_scaling_curve_fig import order"
     },
     "1771": {
