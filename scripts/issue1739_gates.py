@@ -61,7 +61,28 @@ def main() -> int:
         default="eval_results/issue_1739/gates/phase0_gate_report.json",
         help="gate report JSON output path (use a scratch path for smokes)",
     )
+    parser.add_argument("--behavior", default=None, help="behavior for gates 1-2")
+    parser.add_argument(
+        "--dv-json",
+        default=None,
+        help="dv_build labeling.json path (gates 1-2 report mode over existing DV rows)",
+    )
+    parser.add_argument(
+        "--run-pilot",
+        action="store_true",
+        help="gate 1 full pilot driver (staging -> generation -> judging; GPU+API — round C)",
+    )
+    parser.add_argument("--n-pilot", type=int, default=None)
+    parser.add_argument("--staged-dir", default="data/issue_1739/staged")
+    parser.add_argument("--out-root", default="eval_results/issue_1739")
+    parser.add_argument("--stream-cap", type=int, default=None)
+    parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
+
+    def _dv_rows() -> list[dict]:
+        if not args.dv_json:
+            parser.error("--dv-json is required for gate 1/2 report mode")
+        return json.loads(Path(args.dv_json).read_text())["rows"]
 
     reports: dict[str, dict] = {}
     if args.gate in ("0", "all"):
@@ -73,9 +94,27 @@ def main() -> int:
             Path(args.local_dir), revision=args.store_revision
         )
     if args.gate == "1":
-        gates.gate1_yield_pilot()  # round-B stub: raises NotImplementedError
+        if not args.behavior:
+            parser.error("--behavior is required for gate 1")
+        if args.run_pilot:
+            pilot_kwargs = {} if args.n_pilot is None else {"n_pilot": args.n_pilot}
+            reports["gate1_pilot"] = gates.run_gate1_pilot(
+                args.behavior,
+                out_root=args.out_root,
+                staged_dir=args.staged_dir,
+                seed=args.seed,
+                stream_cap=args.stream_cap,
+                **pilot_kwargs,
+            )
+        else:
+            report_kwargs = {} if args.n_pilot is None else {"n_pilot": args.n_pilot}
+            reports["gate1"] = gates.gate1_yield_report(
+                _dv_rows(), behavior=args.behavior, **report_kwargs
+            )
     if args.gate == "2":
-        gates.gate2_spread_floor()  # round-B stub: raises NotImplementedError
+        if not args.behavior:
+            parser.error("--behavior is required for gate 2")
+        reports["gate2"] = gates.gate2_spread_floor(_dv_rows(), behavior=args.behavior)
 
     payload = {
         "issue": 1739,
