@@ -11966,8 +11966,15 @@ uv run python scripts/task.py post-marker <N> epm:progress \
 ```
 
 - **Success:** post `epm:merged v1` VIA THE `--file` CHANNEL — never `--note`
-  — with a scratch file at `/tmp/issue-<N>-merged-note.md` (written in the
-  SAME shell block immediately before the post-marker call) carrying the SHA
+  — with a scratch file at `/tmp/issue-<N>-merged-note.md` (composed VIA
+  THE WRITE TOOL immediately before the post-marker call — NEVER a Bash
+  heredoc or printf/echo redirect: the note body then rides the Bash argv,
+  and the #1058 strip_heredoc_bodies() pre-pass is fail-closed — the common
+  merged-note shape (unquoted <<EOF tag + $( ) expansion in the body)
+  REFUSES the strip, so git-verb prose in the note blocks the whole call
+  (2026-07-27 heredoc variant, #1756). Resolve dynamic values — SHAs,
+  counts — in PRIOR Bash calls and embed them as literals in the Write
+  content) carrying the SHA
   list plus `merge_form: squash|rebase` and `merge_attempts: <n>` (note-token
   convention — no schema change, #1288). The `--file` channel bypasses the
   argv-prose scan `guard_repo_root_branch.sh` runs on `--note`; merge-recovery
@@ -11994,15 +12001,35 @@ uv run python scripts/task.py post-marker <N> epm:progress \
   2026-07-26 session `06447a89`: the tip read #1692's SHA while
   posting the #1691 merge marker).
 
-  **Pre-post commit-subject cross-check (#1722).** Before posting
-  `epm:merged v1`, verify the derived commit's subject names THIS task —
-  `SUBJECT=$(git -C "$REPO_ROOT" log -1 --format='%s' "$MERGE_SHA")` —
-  and confirm `task #<N>` (or the issue-branch name `issue-<N>`) appears
-  in `$SUBJECT`. On a mismatch, ABORT the post and re-derive from
-  `gh pr view <PR> --json mergeCommit` (the null case from a not-yet-merged
-  PR also fails this check: `git log -1 --format=%s null` errors, so a
-  premature call is caught here rather than shipping `null` in the marker).
-  A foreign SHA is caught at post time rather than by eye after the fact.
+  **Pre-post commit-subject cross-check (#1722; object-availability
+  hardened #1763).** Before posting `epm:merged v1`, verify the derived
+  commit's subject names THIS task. The merge commit was created
+  SERVER-SIDE by `gh pr merge` and exists locally only after a fetch —
+  the #1725 pre-marker sync is fail-soft AND single-flight (exit 0 can
+  mean "another sync in flight, no pull ran"), and the
+  merge-conflict-recovery path has no pre-marker sync at all — so
+  ensure the object is local FIRST; a MISSING object is
+  staleness/transport, never a MISMATCH (incident #1735, 2026-07-27: a
+  pre-fetch `git log -1` read `fatal: bad object` and the false
+  MISMATCH aborted the `epm:merged` post one round):
+
+      git -C "$REPO_ROOT" rev-parse --verify --quiet "$MERGE_SHA^{commit}" >/dev/null \
+        || timeout --kill-after=30s 120s git -C "$REPO_ROOT" fetch origin main --quiet || true
+      SUBJECT=$(git -C "$REPO_ROOT" log -1 --format='%s' "$MERGE_SHA" 2>/dev/null) \
+        || SUBJECT=$(gh api "repos/{owner}/{repo}/commits/$MERGE_SHA" --jq '.commit.message' | head -1)
+
+  The `gh api` fallback reads the subject from the REMOTE commit (no
+  local object needed; the `{owner}/{repo}` placeholders resolve from
+  the current repo), so a failed/raced fetch degrades to a remote read
+  instead of a false MISMATCH. Then confirm `task #<N>` (or the
+  issue-branch name `issue-<N>`) appears in `$SUBJECT`. Only a
+  RESOLVED-but-foreign subject is a MISMATCH: ABORT the post and
+  re-derive from `gh pr view <PR> --json mergeCommit`. The null case
+  from a not-yet-merged PR still fails loud (`git log -1 --format=%s
+  null` errors locally AND the remote read 404s → empty `$SUBJECT`);
+  an EMPTY `$SUBJECT` after both reads is an ABORT (cannot certify),
+  never a silent post. A foreign SHA is caught at post time rather
+  than by eye after the fact.
 
   Note. A merged diff that touches `scripts/*guard*.sh`, `.claude/hooks/*`, or
   any workflow-surface content that the session's own remaining Bash calls
@@ -12411,8 +12438,9 @@ Decision tree:
 
   Then post
   `epm:merged v1` VIA THE `--file` CHANNEL — never `--note` — with a
-  scratch file at `/tmp/issue-<N>-merged-note.md` (written in the SAME
-  shell block immediately before the post-marker call) carrying fields
+  scratch file at `/tmp/issue-<N>-merged-note.md` (composed via the
+  Write tool immediately before the post-marker call — never a Bash
+  heredoc/printf; see the safe-case Success bullet, #1756) carrying fields
   `{artifact_confirmed: true, full_rebase_deferred: true, reason:
   "<the tripped guard-3 condition: based on <PARENT> (not on mainline)
   | own commits touch foreign / out-of-scope paths: <paths>>",
@@ -12867,8 +12895,9 @@ Decision tree:
   ```
 
   Then post `epm:merged v1` VIA THE `--file` CHANNEL — never `--note` —
-  with a scratch file at `/tmp/issue-<N>-merged-note.md` (written in
-  the SAME shell block immediately before the post-marker call)
+  with a scratch file at `/tmp/issue-<N>-merged-note.md` (composed via
+  the Write tool immediately before the post-marker call — never a
+  Bash heredoc/printf; see the safe-case Success bullet, #1756)
   carrying `{artifact_confirmed: true, full_rebase_deferred: true,
   surgical_checkout: true, files: [...]}`. Same `--file` rationale as
   the safe-case Success bullet above — the argv-prose scan on `--note`
