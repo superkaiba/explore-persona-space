@@ -47,6 +47,8 @@
 
 ## Launch mechanics (nohup, SSH, wrappers)
 
+- [Detached-spawn launchers cannot be &&-chained into waves](feedback_detached_spawn_launcher_cannot_chain_waves.md) — a fan-out script that setsid-detaches shards (reparented to init) exits after its spawn loop; chaining wave2 && wave3 && wave4 runs ALL waves concurrently (16 shards/8 GPUs) and can wedge the MooseFS mount; grep the script SOURCE for a wait/poll loop before chaining — the brief's "waits on its shard pids" claim is a paraphrase, not ground truth (#1738)
+
 - [GCP reconnect to phase=done zombie](feedback_gcp_reconnect_to_completed_phasedone_instance.md) — router `reason: reconnect` to a RUNNING-but-done instance does NOT dispatch workload; probe `eps/phase` guest-attr + workload proc before epm:run-launched, else epm:failure infra (#634)
 - [SSH timeout ≠ child dead — pgrep before relaunch](feedback_ssh_bash_lc_backgrounding.md) — bash -lc nohup timeouts background successfully; blind relaunch races dispatchers + cascade-kills vLLM; use the launcher-script pattern (#383, #399)
 - [GCP-lane: dispatch exit-4 TimeoutExpired ≠ launch failure](feedback_gcp_dispatch_exit4_timeout_instance_pending.md) — `dispatch_issue.py launch` 300s subprocess cap fires on FLEX_START queueing while the create succeeds server-side; `gcloud instances list` BEFORE treating as failure or relaunching (would race the PENDING instance). GCP-lane analogue of "SSH timeout ≠ child dead" (#658)
