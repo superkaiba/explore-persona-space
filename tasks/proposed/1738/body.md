@@ -29,6 +29,8 @@ goal: 'Build the multi-turn analogue of the #779 fitter-fair-comparison-n1m corp
   inner loops). Phase 0 CPU manifest probe verifies multi-turn supply before any GPU
   provisions; a 1-shard pilot re-measures multi-turn throughput before fleet sizing
   (plan basis ~1,500–2,000 ctx/GPU-h vs parent''s measured single-turn 3,250).'
+relates_to:
+- spec-context-as-vector
 ---
 # Multi-turn prefix-arm map at 100k: build the multi-turn analogue of the n1M corpus, fit prefix+context arms, characterize both arms' prediction error
 
