@@ -5774,8 +5774,8 @@
     "1742": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1742",
-      "status": "reviewing",
+      "path": "tasks/completed/1742",
+      "status": "completed",
       "title": "daily-fix: Step 9c urgent-park emission made mechanical"
     },
     "1743": {
