@@ -20,8 +20,10 @@ mandated Step 5a spec-freshness sync. Two-check diagnostic:
    `git commit -m` line of its era. Step 5a is MANDATORY ("Spec-freshness
    check first ... applies at EVERY ensemble/agent fan-out") and does exactly
    `git checkout origin/main -- $SAFE_SPECS` over the workflow surface
-   (`.claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md`;
-   sourced from local `main` before #1747).
+   (the SKILL.md `SPECS=` list — `.claude/agents .claude/skills .claude/rules
+   .claude/workflow.yaml CLAUDE.md` plus the #1560/#1714 lint/guard family
+   entries; read the live list from Step 5a; sourced from local `main` before
+   #1747).
 2. **Direction of the change.** Prefer the whole-file check against
    `origin/main:<file>`: blob-sha equality
    (`git rev-parse origin/main:<path>` == `git rev-parse HEAD:<path>`, or an
