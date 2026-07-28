@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1764,
+  "highest_id": 1765,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5938,6 +5938,13 @@
       "path": "tasks/running/1764",
       "status": "running",
       "title": "daily-fix: sudo tail for root-owned GCE workload log probes"
+    },
+    "1765": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1765",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas entry \u2014 chained waves on a detached-spawn launcher fan out concurrently"
     },
     "18": {
       "has_clean_result": false,
