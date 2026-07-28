@@ -5802,8 +5802,8 @@
     "1746": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1746",
-      "status": "running",
+      "path": "tasks/reviewing/1746",
+      "status": "reviewing",
       "title": "daily-fix: step9c gate degrade on collection ImportError"
     },
     "1747": {
