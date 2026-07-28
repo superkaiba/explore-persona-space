@@ -5809,8 +5809,8 @@
     "1747": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1747",
-      "status": "running",
+      "path": "tasks/reviewing/1747",
+      "status": "reviewing",
       "title": "daily-fix: Step 5a spec-freshness syncs local main (stale)"
     },
     "1748": {
