@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1746,
+  "highest_id": 1747,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5805,6 +5805,13 @@
       "path": "tasks/proposed/1746",
       "status": "proposed",
       "title": "daily-fix: step9c gate degrade on collection ImportError"
+    },
+    "1747": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1747",
+      "status": "proposed",
+      "title": "daily-fix: Step 5a spec-freshness syncs local main (stale)"
     },
     "176": {
       "has_clean_result": false,
