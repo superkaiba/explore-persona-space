@@ -109,19 +109,23 @@ def test_gates_1_2_implemented_round_b():
 
 
 def _run_dispatch(args: list[str], tmp_path: Path) -> subprocess.CompletedProcess:
+    # Strip any ambient EPM_I1739_* (a shell that just ran the smoke chain
+    # would otherwise flip the dispatcher into SMOKE mode mid-test).
+    env = {k: v for k, v in os.environ.items() if not k.startswith("EPM_I1739_")}
+    env.update({"OUT_ROOT": str(tmp_path), "REPO_ROOT": str(REPO_ROOT)})
     return subprocess.run(
         ["bash", str(DISPATCH), *args],
         capture_output=True,
         text=True,
         check=False,
-        env={**os.environ, "OUT_ROOT": str(tmp_path), "REPO_ROOT": str(REPO_ROOT)},
+        env=env,
     )
 
 
 def test_dispatch_help_exits_zero(tmp_path):
     proc = _run_dispatch(["--help"], tmp_path)
     assert proc.returncode == 0, proc.stderr
-    assert "gates extract capture judge fits figures" in proc.stdout
+    assert "gates extract upload_raw capture judge fits figures results" in proc.stdout
 
 
 def test_dispatch_unknown_phase_exits_two(tmp_path):
@@ -130,10 +134,17 @@ def test_dispatch_unknown_phase_exits_two(tmp_path):
 
 
 def test_dispatch_fits_phase_fails_loud_without_staged_inputs(tmp_path):
-    # Round C1 implemented `fits`: with no staged stores the phase must FAIL
-    # LOUD at the loader (never a silent ok sentinel; no network touched —
-    # the crash is a local FileNotFoundError before any Hub call).
+    # Round C1 implemented `fits`: with no staged inputs the phase must FAIL
+    # LOUD (round 2: the feature-builder pre-step is the first consumer of
+    # the staged corpus and SystemExits before any Hub call). Never a silent
+    # ok sentinel; no [phase=done] terminal line on a crash.
     proc = _run_dispatch(["--phase", "fits"], tmp_path)
     assert proc.returncode != 0, (proc.stdout, proc.stderr)
-    assert "no context_end shards" in proc.stderr or "FileNotFoundError" in proc.stderr, proc.stderr
-    assert not (tmp_path / "issue-1739-fits.json").exists()  # no ok sentinel on crash
+    assert (
+        "no staged contexts" in proc.stderr
+        or "no contexts jsonl matched" in proc.stderr
+        or "no context_end shards" in proc.stderr
+        or "FileNotFoundError" in proc.stderr
+    ), proc.stderr
+    assert not list(tmp_path.glob("issue-1739-epm_progress-fits-*.json"))  # no ok sentinel
+    assert "[phase=done]" not in proc.stdout  # the terminal line is reserved for success

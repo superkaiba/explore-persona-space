@@ -50,7 +50,9 @@ def main() -> int:
         "--k-rollouts", type=int, default=None, help="labeling rollouts per context"
     )
     parser.add_argument("--n-rollouts", type=int, default=None, help="extraction rollouts per job")
-    parser.add_argument("--max-contexts", type=int, default=None, help="smoke slice cap")
+    parser.add_argument(
+        "--max-contexts", type=int, default=None, help="smoke slice cap PER (split, rung)"
+    )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--temperature", type=float, default=None)
     parser.add_argument("--max-new-tokens", type=int, default=None)
@@ -63,7 +65,14 @@ def main() -> int:
         for path in args.contexts_jsonl:
             contexts.extend(read_jsonl(Path(path)))
         if args.max_contexts is not None:
-            contexts = contexts[: args.max_contexts]
+            # Smoke cap PER (split, rung) group — a global first-N over the
+            # sorted glob starves whole splits (eval files sort before train),
+            # and the round-2 config_a/config_b fits filter needs BOTH splits
+            # represented in every smoke.
+            grouped: dict[tuple, list[dict]] = {}
+            for c in contexts:
+                grouped.setdefault((c.get("split"), c.get("rung")), []).append(c)
+            contexts = [c for grp in grouped.values() for c in grp[: args.max_contexts]]
         kwargs: dict = {}
         if args.k_rollouts is not None:
             kwargs["k_rollouts"] = args.k_rollouts

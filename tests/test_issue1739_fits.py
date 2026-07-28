@@ -114,17 +114,72 @@ def test_ridge_return_weights_roundtrip():
     assert np.allclose(preds, manual, atol=1e-8)
 
 
-def test_apply_map_matches_helper_holdout():
+def test_apply_map_matches_full_pool_refit():
+    # Round-2 contract: diagnostics come from the 80/20 split fit, but the
+    # FROZEN weights are refit on the FULL U pool (review minor: effective U
+    # must equal the nominal rung). apply_map must reproduce a direct helper
+    # fit on the full pool EXACTLY.
     rng = np.random.default_rng(4)
     x = rng.normal(size=(2, 40, 6))
     y = 0.5 * x + 0.1 * rng.normal(size=x.shape)
     m = fits.fit_linear_map(x, y, seed=5)
-    # apply_map on the SAME holdout the fit used reproduces its diagnostics R2.
-    perm = np.random.default_rng([1739, 4, 5]).permutation(40)
-    hold = perm[: max(2, round(0.2 * 40))]
-    pred = fits.apply_map(x[:, hold], m)
-    for li, row in enumerate(m.diagnostics["per_layer"]):
-        assert np.isclose(fits.r2_pooled(pred[li], y[li][hold]), row["r2_map"], atol=1e-8)
+    assert m.diagnostics["w_refit_on_full_u"] is True
+    assert m.diagnostics["w_fit_rows"] == 40
+    x_new = rng.normal(size=(2, 7, 6))
+    _preds, w_full = fits.ridge_layer_batched_auto(x, y, x_new, return_weights=True)
+    manual = ((x_new - x.mean(axis=1, keepdims=True)) / (x.std(axis=1, keepdims=True) + 1e-9)) @ (
+        w_full
+    ) + y.mean(axis=1, keepdims=True)
+    assert np.allclose(fits.apply_map(x_new, m), manual, atol=1e-8)
+
+
+def test_primal_dual_ridge_parity():
+    # M6: the primal (d x d Gram) twin must reproduce the parent dual helper
+    # bit-close — preds, weights, AND the per-slice GCV lambda selection —
+    # at a shape where both branches run (n_tr > d so primal is the router
+    # choice; the dual helper still accepts it).
+    from explore_persona_space.experiments.issue_779.fit_h import (
+        ridge_fit_predict_fast_layer_batched,
+    )
+
+    rng = np.random.default_rng(11)
+    x_tr = rng.normal(size=(3, 60, 8))
+    y_tr = 0.4 * x_tr + 0.2 * rng.normal(size=(3, 60, 8))
+    x_ev = rng.normal(size=(3, 9, 8))
+    lam = np.asarray(fits.RIDGE_LAMBDAS, dtype=np.float64)
+    p_dual, w_dual = ridge_fit_predict_fast_layer_batched(
+        x_tr, y_tr, x_ev, lambdas=lam, return_weights=True
+    )
+    p_prim, w_prim = fits.ridge_fit_predict_primal_layer_batched(
+        x_tr, y_tr, x_ev, lambdas=lam, return_weights=True, layer_chunk=2
+    )
+    assert np.allclose(p_prim, p_dual, atol=1e-8), np.max(np.abs(p_prim - p_dual))
+    assert np.allclose(w_prim, w_dual, atol=1e-8), np.max(np.abs(w_prim - w_dual))
+    # Router: n_tr > d -> primal; n_tr <= d -> dual (delegation returns the
+    # dual helper's own output verbatim).
+    p_auto = fits.ridge_layer_batched_auto(x_tr, y_tr, x_ev, lambdas=lam)
+    assert np.allclose(p_auto, p_prim, atol=1e-12)
+    x_small = x_tr[:, :6]
+    y_small = y_tr[:, :6]
+    p_auto_small = fits.ridge_layer_batched_auto(x_small, y_small, x_ev, lambdas=lam)
+    p_dual_small = ridge_fit_predict_fast_layer_batched(x_small, y_small, x_ev, lambdas=lam)
+    assert np.allclose(p_auto_small, p_dual_small, atol=1e-12)
+
+
+def test_matched_pair_split_weights_reproduce_extract():
+    # The row-weight refactor (E2/E2p over flat per-rollout store rows) must
+    # reproduce extract_rb_matched exactly on random data, incl. NaN drops.
+    rng = np.random.default_rng(12)
+    acts = rng.normal(size=(9, 5, 2, 4))
+    scores = rng.uniform(0, 100, size=(9, 5))
+    scores[rng.random(size=(9, 5)) < 0.2] = np.nan
+    scores[0] = 50.0  # one non-qualifying (flat) context
+    for pooled in (False, True):
+        rb_ref, n_ref = fits.extract_rb_matched(acts, scores, spread_min=15.0, pooled=pooled)
+        w_hi, w_lo, n_w = fits.matched_pair_split_weights(scores, spread_min=15.0, pooled=pooled)
+        rb_w = np.einsum("ck,ckld->ld", w_hi - w_lo, acts)
+        assert n_w == n_ref
+        assert np.allclose(rb_w, rb_ref, atol=1e-12)
 
 
 def test_extract_rb_e1_and_matched():
@@ -243,10 +298,48 @@ def test_split_half_ceiling_item_aligned():
     assert res["scheme"].startswith("item-aligned")
 
 
-def test_arm9_l0_degeneracy_assert():
-    feats = RNG.normal(size=(7, 8))
-    rb = RNG.normal(size=8)
-    arms.verify_arm9_l0_degeneracy(feats, rb)  # must not raise
+def test_arm9_l0_gate_flips_on_perturbation(monkeypatch):
+    # M1: the gate runs the REAL arm-9 alpha + residual-ridge path, so a
+    # residual-assembly bug (simulated by corrupting the ridge slice pool the
+    # arm-9 path consumes) MUST flip it — the round-1 tautology could not.
+    data, _groups = _synthetic_cell_data()
+    arms.verify_arm9_l0_degeneracy(data)  # real path: must not raise
+
+    real_solve = arms._solve_ridge_slices
+
+    def corrupted(slices, **kw):
+        return {k: v + 0.5 for k, v in real_solve(slices, **kw).items()}
+
+    monkeypatch.setattr(arms, "_solve_ridge_slices", corrupted)
+    with pytest.raises(AssertionError, match="arm9 L2-SP"):
+        arms.verify_arm9_l0_degeneracy(data)
+
+
+def test_map_identity_reduces_arm6_to_arm3():
+    # The plan's OWN arm-9 sanity (§5 arm_09_map_identity): under M = I with
+    # y_mu = the learned bias b, arm 6 (map-then-project) must equal arm 3
+    # (identity+learned-bias). Exact when (z_ans - z_ctx) is CONSTANT across
+    # rows, so every fold's train-mean bias equals the global bias.
+    rng = np.random.default_rng(21)
+    n_layers, n, d = 2, 24, 6
+    z = rng.normal(size=(n_layers, n, d))
+    bias = rng.normal(size=(n_layers, 1, d))
+    za = z + bias  # constant difference => per-fold b == global b
+    rb = rng.normal(size=(n_layers, d))
+    dv = rng.uniform(0, 100, size=n)
+    ident = np.stack([np.eye(d)] * n_layers)
+    mapfit = fits.MapFit(
+        w=ident,
+        x_mu=np.zeros((n_layers, 1, d)),
+        x_sd=np.ones((n_layers, 1, d)),
+        y_mu=bias,
+        diagnostics={},
+    )
+    data = arms.CellData(z_ctx=z, dv=dv, rb=rb, z_ans=za, mapfit=mapfit, layers=(0, 1))
+    cell = fits.realize_budget_cell([f"g{i}" for i in range(n)], budget_l=n, draw=0, seed=0)
+    scores, skipped = arms.run_cell(data, cell, arms=["arm3_identity_bias", "arm6_map_proj_e1"])
+    assert not skipped
+    assert np.allclose(scores["arm6_map_proj_e1"], scores["arm3_identity_bias"], atol=1e-8)
 
 
 # ---------------------------------------------------------------------------
@@ -273,6 +366,22 @@ def test_run_cell_all_arms_shapes_and_fold_sharing():
     }
     assert rho["arm11_oracle_proj"] > 0.4
     assert rho["arm11_oracle_proj"] > rho["arm13_shuffled_map"]
+
+
+def test_run_cell_arm5_fold_floor_skip():
+    # Degenerate-input probe for the data-dependent MLP fold floor (the
+    # callee's `n - max_fold >= 2` ddof-1 assert): below it, arm 5 records a
+    # SKIP reason (never a grid-killing crash); a 1-fold cell fails LOUD.
+    data, _groups = _synthetic_cell_data()
+    tight = fits.realize_budget_cell(["gA", "gA", "gA", "gB"], budget_l=4, draw=0, seed=0)
+    scores, skipped = arms.run_cell(
+        data, tight, arms=["arm1_ctx_e1", "arm5_mlp_ctx"], mlp_kwargs={"max_epochs": 2}
+    )
+    assert "arm5_mlp_ctx" in skipped and "fold floor" in skipped["arm5_mlp_ctx"]
+    assert "arm1_ctx_e1" in scores  # the rest of the matched-budget cell still runs
+    one_fold = fits.realize_budget_cell(["gA", "gA", "gA"], budget_l=3, draw=0, seed=0)
+    with pytest.raises(RuntimeError, match=">=2 group folds"):
+        arms.run_cell(data, one_fold, arms=["arm1_ctx_e1"])
 
 
 def test_run_cell_skips_without_optional_inputs():
@@ -309,9 +418,18 @@ def test_run_grid_checkpoint_resume_and_summary(tmp_path):
     assert len(recs) == 2
     percell = tmp_path / "percell" / "cells.jsonl"
     assert percell.exists() and len(percell.read_text().strip().splitlines()) == 2
-    recs2 = arms.run_grid(data, groups, **kw)  # resume: everything skips
-    assert recs2 == []
-    out = arms.write_summary(recs, tmp_path / "all_arms_spearman.json", meta={"mode": "test"})
+    # M3b: a resumed run SKIPS the compute but still returns the stored
+    # records, so a crash+resume summary aggregates every cell.
+    recs2 = arms.run_grid(data, groups, **kw)
+    assert len(recs2) == 2
+    assert [r["unit_key"] for r in recs2] == [r["unit_key"] for r in recs]
+    assert len(percell.read_text().strip().splitlines()) == 2  # no re-run, no dup rows
+    # M3a: an output-affecting flag change (n_boot here) changes the unit key,
+    # so the resume predicate can never serve the other regime's cached rows.
+    recs3 = arms.run_grid(data, groups, **{**kw, "n_boot": 30})
+    assert len(recs3) == 2
+    assert len(percell.read_text().strip().splitlines()) == 4
+    out = arms.write_summary(recs2, tmp_path / "all_arms_spearman.json", meta={"mode": "test"})
     payload = json.loads(out.read_text())
     assert payload["n_cells"] == 2 and payload["n_arm_rows"] == 6
     row = payload["arm_rows"][0]

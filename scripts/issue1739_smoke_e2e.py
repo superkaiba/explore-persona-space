@@ -19,15 +19,25 @@ external boundaries:
   ``corpus_staging._hf_stream`` (the real corpora are probe-verified
   separately by the orchestrator's bounded ingestion probes).
 
-The gates / fits / figures phases run through the REAL dispatcher
-(``bash scripts/issue1739_dispatch.sh --phase <p>`` with ``EPM_I1739_LIMIT``)
-— no fakes there. The #1092 HF STORE read is REAL: ``--phase realstore``
-stages a small slice at the pinned revision through
-``store_io.stage_store_slice`` and runs the production consumer loaders +
-whitening/map path at the production 3584 dim.
+The gates / upload_raw / fits / figures / results phases run through the
+REAL dispatcher (``bash scripts/issue1739_dispatch.sh --phase <p>`` with
+``EPM_I1739_LIMIT`` + ``EPM_I1739_SMOKE_ROOT``) — the Hub/git stages
+dry-run there (sanctioned remote-boundary fake). The #1092 HF STORE read is
+REAL: ``--phase realstore`` stages a small slice at the pinned revision
+through ``store_io.stage_store_slice`` and runs the production consumer
+loaders + whitening/map path at the production 3584 dim.
 
-Run from a SCRATCH repo root (symlink farm over the worktree) so smoke
-outputs never touch committed ``eval_results/`` / ``figures/``:
+SMOKE-ROOT DIVERSION (round-2 M4): every OUTPUT this driver writes — staged
+corpora, rollout text, capture stores, DV datasets, the tiny u-store/E1
+STAND-INS — lands under ``EPM_I1739_SMOKE_ROOT`` (default
+``/tmp/i1739-smoke``), matching the dispatcher's own smoke roots, so a
+smoke can NEVER write a canonical ``eval_results/`` / ``figures/`` /
+``data/issue_1739/`` path (in particular the tiny 64-dim u-store stand-in
+must never satisfy the canonical path's loadable predicate — production
+would silently consume it). The realstore legs' download caches
+(``data/issue_1739/hf_dl/real_store_slice`` / ``u_store_probe``) stay
+canonical: they stage the REAL pinned parent inputs, identically in both
+modes.
 
     uv run python scripts/issue1739_smoke_e2e.py --phase extract
     uv run python scripts/issue1739_smoke_e2e.py --phase capture
@@ -45,6 +55,7 @@ import argparse  # noqa: E402
 import glob  # noqa: E402
 import hashlib  # noqa: E402
 import json  # noqa: E402
+import os  # noqa: E402
 import sys  # noqa: E402
 import time  # noqa: E402
 from pathlib import Path  # noqa: E402
@@ -63,6 +74,14 @@ _REPO_ROOT = _ensure_repo_root_on_syspath()
 
 BEHAVIORS = ("evil", "sycophancy", "hallucination")
 DEFAULT_LIMIT = 25
+SMOKE_ROOT = Path(os.environ.get("EPM_I1739_SMOKE_ROOT", "/tmp/i1739-smoke"))
+STAGED_ROOT = SMOKE_ROOT / "data/issue_1739/staged"
+RAW_ROOT = SMOKE_ROOT / "raw_completions/issue_1739"
+STORE_ROOT = SMOKE_ROOT / "data/issue_1739/store"
+RESULTS_ROOT = SMOKE_ROOT / "eval_results/issue_1739"
+FIGURES_ROOT = SMOKE_ROOT / "figures/issue_1739"
+USTORE_STANDIN = SMOKE_ROOT / "data/issue_1739/hf_dl/u_store"
+E1_INPUTS = SMOKE_ROOT / "data/issue_1739/inputs"
 
 # ---------------------------------------------------------------------------
 # synthetic HF stream fixtures (schemas mirror the real datasets-server rows)
@@ -334,8 +353,8 @@ def phase_extract(behaviors: tuple[str, ...], limit: int) -> None:
     with mock.patch.object(corpus_staging, "_hf_stream", synthetic_hf_stream):
         for b in behaviors:
             print(f"[smoke-extract] staging behavior={b}", flush=True)
-            stage_corpus(b, "train", limit, 0)
-            stage_corpus(b, "eval", limit, 0)
+            stage_corpus(b, "train", limit, 0, out_dir=STAGED_ROOT / b)
+            stage_corpus(b, "eval", limit, 0, out_dir=STAGED_ROOT / b)
     with (
         mock.patch.object(generation, "_default_vllm_generate", stub_vllm_generate),
         mock.patch.object(
@@ -344,7 +363,7 @@ def phase_extract(behaviors: tuple[str, ...], limit: int) -> None:
     ):
         for b in behaviors:
             print(f"[smoke-extract] labeling generation behavior={b}", flush=True)
-            ctx_glob = sorted(glob.glob(f"data/issue_1739/staged/{b}/{b}_*_*.contexts.jsonl"))
+            ctx_glob = sorted(glob.glob(f"{STAGED_ROOT}/{b}/{b}_*_*.contexts.jsonl"))
             assert ctx_glob, b
             _run_cli_main(
                 "scripts.issue1739_generate",
@@ -356,7 +375,7 @@ def phase_extract(behaviors: tuple[str, ...], limit: int) -> None:
                     "--contexts-jsonl",
                     *ctx_glob,
                     "--out-root",
-                    "raw_completions/issue_1739",
+                    str(RAW_ROOT),
                     "--max-contexts",
                     str(limit),
                 ],
@@ -370,9 +389,9 @@ def phase_extract(behaviors: tuple[str, ...], limit: int) -> None:
                     "--behavior",
                     b,
                     "--out-root",
-                    "raw_completions/issue_1739",
+                    str(RAW_ROOT),
                     "--inputs-dir",
-                    "data/issue_1739/inputs",
+                    str(E1_INPUTS),
                     "--n-rollouts",
                     "2",
                 ],
@@ -391,11 +410,9 @@ def phase_capture(behaviors: tuple[str, ...], limit: int) -> None:
                 "scripts.issue1739_capture",
                 [
                     "--rollout-dir",
-                    f"raw_completions/issue_1739/labeling/{b}",
+                    f"{RAW_ROOT}/labeling/{b}",
                     "--store-dir",
-                    f"data/issue_1739/store/{b}_labeling",
-                    "--limit",
-                    str(limit),
+                    f"{STORE_ROOT}/{b}_labeling",
                     "--device",
                     "cpu",
                     "--dtype",
@@ -407,11 +424,9 @@ def phase_capture(behaviors: tuple[str, ...], limit: int) -> None:
                 "scripts.issue1739_capture",
                 [
                     "--rollout-dir",
-                    f"raw_completions/issue_1739/extraction/{b}",
+                    f"{RAW_ROOT}/extraction/{b}",
                     "--store-dir",
-                    f"data/issue_1739/store/{b}_extraction",
-                    "--limit",
-                    str(limit),
+                    f"{STORE_ROOT}/{b}_extraction",
                     "--device",
                     "cpu",
                     "--dtype",
@@ -426,11 +441,11 @@ def phase_capture(behaviors: tuple[str, ...], limit: int) -> None:
             "scripts.issue1739_capture",
             [
                 "--rollout-dir",
-                "raw_completions/issue_1739/labeling/sycophancy",
+                f"{RAW_ROOT}/labeling/sycophancy",
                 "--store-dir",
-                "data/issue_1739/hf_dl/u_store",
+                str(USTORE_STANDIN),
                 "--limit",
-                str(4 * limit),
+                str(10 * limit),
                 "--device",
                 "cpu",
                 "--dtype",
@@ -453,13 +468,11 @@ def phase_judge(behaviors: tuple[str, ...], limit: int) -> None:
                     "--behavior",
                     b,
                     "--rollout-dir",
-                    f"raw_completions/issue_1739/labeling/{b}",
+                    f"{RAW_ROOT}/labeling/{b}",
                     "--out-dir",
-                    f"eval_results/issue_1739/judge/{b}",
+                    f"{RESULTS_ROOT}/judge/{b}",
                     "--dv-out-root",
-                    "eval_results/issue_1739",
-                    "--limit",
-                    str(limit),
+                    str(RESULTS_ROOT),
                 ],
             )
     print("[smoke-judge] done", flush=True)
@@ -469,10 +482,10 @@ def phase_gates12(behaviors: tuple[str, ...], limit: int) -> None:
     """Gates 1-2 (production gate functions) over the smoke DV datasets."""
     from explore_persona_space.experiments.issue_1739 import gates
 
-    out_dir = Path("eval_results/issue_1739/gate12_smoke")
+    out_dir = RESULTS_ROOT / "gate12_smoke"
     out_dir.mkdir(parents=True, exist_ok=True)
     for b in behaviors:
-        dv = json.loads(Path(f"eval_results/issue_1739/dv_dataset/{b}/labeling.json").read_text())
+        dv = json.loads((RESULTS_ROOT / f"dv_dataset/{b}/labeling.json").read_text())
         g1 = gates.gate1_yield_report(dv["rows"], behavior=b, n_pilot=limit)
         g2 = gates.gate2_spread_floor(dv["rows"], behavior=b)
         (out_dir / f"{b}.json").write_text(json.dumps({"gate1": g1, "gate2": g2}, indent=2))
@@ -564,7 +577,7 @@ def phase_figcheck() -> None:
     import numpy as np
     from PIL import Image
 
-    pngs = sorted(Path("figures/issue_1739").rglob("*.png"))
+    pngs = sorted(FIGURES_ROOT.rglob("*.png"))
     assert pngs, "no figure PNGs rendered"
     checked = 0
     for png in pngs:

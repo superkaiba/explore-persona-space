@@ -160,45 +160,77 @@ def _solve_ridge_slices(
     """Solve many (X_tr, Y_tr, X_ev) ridge problems in shape-bucketed batches.
 
     Each slice is ``(key, X_tr (ntr,din), Y_tr (ntr,dout), X_ev (nev,din))``.
-    Slices sharing a shape are stacked into ONE
-    ``ridge_fit_predict_fast_layer_batched`` call (GCV lambda per slice);
-    ``max_slice_elems`` chunks a bucket only to bound memory.
+    Slices sharing a shape are stacked into ONE batched ridge call
+    (:func:`fits.ridge_layer_batched_auto` — primal d x d Gram when
+    ntr > din, else the parent dual helper; GCV lambda per slice);
+    ``max_slice_elems`` chunks a bucket only to bound memory. The per-slice
+    memory bound includes the min(ntr, din)^2 Gram + eigenvector cost of
+    whichever branch the router picks (the M6 fix: at L=16k budgets the
+    dual n_tr x n_tr Gram would be ~1.3 GB fp64 PER SLICE; the router takes
+    the primal d x d branch there instead).
     """
-    from explore_persona_space.experiments.issue_779.fit_h import (
-        ridge_fit_predict_fast_layer_batched,
-    )
+    from explore_persona_space.experiments.issue_1739.fits import ridge_layer_batched_auto
 
     out: dict[tuple, np.ndarray] = {}
     buckets: dict[tuple, list] = {}
     for key, xt, yt, xe in slices:
         yt2 = yt if yt.ndim == 2 else yt[:, None]
         buckets.setdefault((xt.shape, yt2.shape[1], xe.shape[0]), []).append((key, xt, yt2, xe))
-    lam = np.asarray(lambdas, dtype=np.float64)
     for ((ntr, din), dout, nev), items in buckets.items():
-        per_slice = ntr * din + ntr * dout + nev * din + nev * dout
+        gram_side = min(ntr, din)  # the router's Gram is (gram_side, gram_side)
+        per_slice = ntr * din + ntr * dout + nev * din + nev * dout + 3 * gram_side * gram_side
         chunk = max(1, min(len(items), int(max_slice_elems // max(per_slice, 1))))
         for i in range(0, len(items), chunk):
             part = items[i : i + chunk]
             x = np.stack([p[1] for p in part]).astype(np.float64)
             y = np.stack([p[2] for p in part]).astype(np.float64)
             xe = np.stack([p[3] for p in part]).astype(np.float64)
-            preds = ridge_fit_predict_fast_layer_batched(x, y, xe, lambdas=lam, device=device)
+            preds = ridge_layer_batched_auto(x, y, xe, lambdas=lambdas, device=device)
             for (key, *_), pred in zip(part, preds, strict=True):
                 out[key] = pred
     return out
 
 
-def verify_arm9_l0_degeneracy(feats: np.ndarray, rb: np.ndarray) -> None:
-    """Plan §4 #31 hard sanity check: arm 9 at L=0 IS arm 6 exactly.
+def verify_arm9_l0_degeneracy(data: CellData, *, device: str = "cpu", n_rows: int = 24) -> None:
+    """Plan §4 #31 hard sanity gate — run the REAL arm-9 path at its L->0 limit.
 
-    With zero labeled rows the L2-SP prior pins w = r_B (alpha = 1, no
-    residual fit), so the arm-9 score reduces to the arm-6 projection.
-    Asserted on the first layer slice (cheap, structural).
+    Builds a tiny probe cell (first <= ``n_rows`` labeled rows, first layer
+    only) whose dv IS the arm-6 projection ``r_B^T M(x)``: on that cell the
+    arm-9 L2-SP path must realize alpha == 1 exactly (cov == var bitwise) and
+    a residual target of exactly 0 (whose ridge readout predicts 0) — the
+    L->0 degenerate limit where the prior pins the readout to the pretrained
+    direction, so arm-9 == arm-6. Unlike the round-1 tautology this executes
+    run_cell's ACTUAL alpha-estimation + residual-ridge code: perturbing the
+    alpha formula or the residual assembly flips the gate (pinned by
+    ``tests/test_issue1739_fits.py::test_arm9_l0_gate_flips_on_perturbation``).
+    Raises AssertionError on divergence.
     """
-    s6 = np.einsum("nd,d->n", feats, rb)
-    alpha, resid = 1.0, np.zeros_like(s6)  # the L=0 path: no train rows anywhere
-    s9 = alpha * s6 + resid
-    assert np.allclose(s9, s6), "arm9 L2-SP must degenerate to arm6 at L=0"
+    assert data.mapfit is not None, "arm9 gate needs a fitted map"
+    n = min(int(n_rows), data.z_ctx.shape[1])
+    sub_map = MapFit(
+        w=data.mapfit.w[:1],
+        x_mu=data.mapfit.x_mu[:1],
+        x_sd=data.mapfit.x_sd[:1],
+        y_mu=data.mapfit.y_mu[:1],
+        diagnostics={},
+    )
+    z_sub = np.asarray(data.z_ctx[:1, :n], dtype=np.float64)
+    rb_sub = np.asarray(data.rb[:1], dtype=np.float64)
+    dv_probe = _proj(apply_map(z_sub, sub_map), rb_sub)[0]  # dv == arm-6 scores
+    sub = CellData(
+        z_ctx=z_sub, dv=dv_probe, rb=rb_sub, mapfit=sub_map, layers=(data.layers or (0,))[:1]
+    )
+    cell = realize_budget_cell([f"g{i:03d}" for i in range(n)], budget_l=n, draw=0, seed=0)
+    scores, skipped = run_cell(
+        sub, cell, arms=["arm6_map_proj_e1", "arm9_pretrain_ft"], device=device
+    )
+    assert not skipped, f"arm9 gate: unexpected skips {skipped}"
+    s6, s9 = scores["arm6_map_proj_e1"][0], scores["arm9_pretrain_ft"][0]
+    assert np.allclose(s9, s6, atol=1e-8), (
+        "arm9 L2-SP must degenerate to arm6 at the L->0 limit "
+        f"(max abs diff {float(np.max(np.abs(s9 - s6))):.3e})"
+    )
+    logger.info("[arms] arm9 L->0 degeneracy gate PASS (n=%d probe rows)", n)
 
 
 def run_cell(  # noqa: C901 — deliberate single dispatch block over the 16 plan-§5 arms
@@ -220,6 +252,11 @@ def run_cell(  # noqa: C901 — deliberate single dispatch block over the 16 pla
     want = list(ARM_REGISTRY) if arms is None else list(arms)
     idx, folds = cell.row_idx, cell.fold_ids
     n_l, n_folds = len(idx), cell.n_folds
+    if n_folds < 2:
+        raise RuntimeError(
+            f"matched-budget OOF needs >=2 group folds; cell L={cell.budget_l} realized "
+            f"{n_folds} fold(s) over {n_l} rows (labeled table too small / one group)"
+        )
     z = np.asarray(data.z_ctx[:, idx], dtype=np.float64)  # (Ly, n_l, d)
     dv = np.asarray(data.dv[idx], dtype=np.float64)
     rb = np.asarray(data.rb, dtype=np.float64)
@@ -244,7 +281,6 @@ def run_cell(  # noqa: C901 — deliberate single dispatch block over the 16 pla
     if mp is not None:
         if "arm6_map_proj_e1" in want:
             scores["arm6_map_proj_e1"] = _proj(mp, rb)
-            verify_arm9_l0_degeneracy(mp[0], rb[0])  # plan §4 #31 assertion
         if "arm13_shuffled_map" in want:
             w_shuf = (
                 data.w_shuffled
@@ -435,7 +471,17 @@ def run_cell(  # noqa: C901 — deliberate single dispatch block over the 16 pla
         scores["arm10_stacked"] = out10
 
     # ---- arm 5: batched group-fold MLP over all layers ----
-    if "arm5_mlp_ctx" in want:
+    if "arm5_mlp_ctx" in want and (n_l - int(ev_masks.sum(axis=1).max())) < 2:
+        # The callee's own ddof-1 floor (vectorized_mlp_skill: n - max_fold
+        # >= 2). Unreachable at production budgets (L >= 250); at degenerate
+        # tiny cells the arm records a SKIP reason instead of crashing the
+        # whole matched-budget grid (drop-never-silent).
+        _skip(
+            "arm5_mlp_ctx",
+            f"mlp fold floor: largest fold holds {int(ev_masks.sum(axis=1).max())} "
+            f"of {n_l} rows (< 2 train rows)",
+        )
+    elif "arm5_mlp_ctx" in want:
         from explore_persona_space.analysis.vectorized_mlp_skill import (
             MLPGroup,
             fit_batched_loco_mlp_multihead,
@@ -530,11 +576,13 @@ def make_bootstrap_idx(n: int, *, n_boot: int = N_BOOT, seed: int = 0) -> np.nda
 def permutation_null_max(
     scores: np.ndarray, dv: np.ndarray, *, n_perm: int = N_PERM, seed: int = 0
 ) -> dict:
-    """Selection-symmetric permutation null for the max-over-arms headline.
+    """Selection-symmetric permutation null for the max-over-rows headline.
 
-    ``scores`` (A, n) = one frozen-layer score row per arm. DV ranks are
-    permuted (B, n); the selection (max over arms) RIDES PER DRAW
-    (selection-symmetric-nulls.md). One GEMM: standardized score ranks (A, n)
+    ``scores`` (R, n) = one row PER SELECTION CANDIDATE — the caller passes
+    every (arm x layer) row the observed max selects over (M2: frozen-layer
+    rows alone would be selection-asymmetric on the layer axis). DV ranks are
+    permuted (B, n); the selection (max over rows) RIDES PER DRAW
+    (selection-symmetric-nulls.md). One GEMM: standardized score ranks (R, n)
     @ standardized permuted dv ranks (n, B).
     """
     scores = np.atleast_2d(scores)
@@ -719,18 +767,33 @@ def evaluate_cell(
             ],
             "n_boot": int(idx.shape[0]),
         }
-    if frozen_scores:
-        mat = np.stack([frozen_scores[s] for s in sorted(frozen_scores)])
-        result["max_over_arms_null"] = permutation_null_max(
-            mat, dv, n_perm=n_perm, seed=cell.seed + 100 * cell.draw
-        )
+    if scores_by_arm:
+        # M2 (selection symmetry on BOTH free axes): the observed headline max
+        # is selected over every (arm, layer) row — each arm's frozen layer is
+        # itself an argmax over layers — so the null draws must ride the SAME
+        # (arm x layer) selection. Feeding frozen-layer rows only would give
+        # the observed max ~A*Ly chances vs A per null draw
+        # (selection-symmetric-nulls.md; round-1 review M2).
+        rows = np.concatenate([np.atleast_2d(scores_by_arm[s]) for s in sorted(scores_by_arm)])
+        null = permutation_null_max(rows, dv, n_perm=n_perm, seed=cell.seed + 100 * cell.draw)
+        null["selection_axes"] = "arm x layer"
+        null["n_rows"] = int(rows.shape[0])
+        null["n_arms"] = len(scores_by_arm)
+        result["max_over_arms_null"] = null
     if per_rollout is not None:
         result["split_half"] = split_half_ceiling(per_rollout)
     return result
 
 
-def _unit_key(provenance: dict, budget_l: int, draw: int, seed: int) -> str:
-    payload = {**provenance, "budget_l": budget_l, "draw": draw, "seed": seed}
+def _unit_key(provenance: dict, budget_l: int, draw: int, seed: int, regime_extra: dict) -> str:
+    """Resume key carrying EVERY output-affecting regime field (M3a / #722-r3).
+
+    ``regime_extra`` folds in the run flags the round-1 key omitted — arm
+    subset, layer subset, n_boot/n_perm, mlp overrides — so a partial-arm or
+    smoke-scale run into the same out-root can never satisfy a production
+    cell's resume predicate.
+    """
+    payload = {**provenance, "budget_l": budget_l, "draw": draw, "seed": seed, **regime_extra}
     return json.dumps(payload, sort_keys=True)
 
 
@@ -748,31 +811,48 @@ def run_grid(
     mlp_kwargs: dict | None = None,
     n_boot: int = N_BOOT,
     n_perm: int = N_PERM,
+    context_ids: list[str] | np.ndarray | None = None,
 ) -> list[dict]:
     """Run every (L, draw, seed) cell of one variant slice; checkpoint per unit.
 
     Per completed cell: ONE JSONL line (O_APPEND) under
     ``out_dir/percell/cells.jsonl`` + one stdout progress line
-    (``[fits] unit k/N <key> elapsed=..s``). Resume: cells whose provenance
-    key already exists in the JSONL are SKIPPED (the key carries every
-    output-affecting regime field passed via ``provenance``).
+    (``[fits] unit k/N <key> elapsed=..s``) + (when ``context_ids`` is given)
+    a per-context frozen-layer prediction sidecar
+    ``out_dir/percell/preds/<sha1(unit_key)>.npz`` so post-hoc within-stratum
+    reads stay recomputable (round-1 "Unaddressed Cases"). Resume: cells
+    whose unit key already exists in the JSONL are SKIPPED **and their stored
+    records are loaded into the returned list** (M3b — a crash+resume run's
+    summary aggregates every cell, not just the current process's). The key
+    carries every output-affecting regime field (provenance + arms/layers/
+    n_boot/n_perm/mlp overrides — M3a).
     """
     out_dir = Path(out_dir)
     percell = out_dir / "percell" / "cells.jsonl"
     percell.parent.mkdir(parents=True, exist_ok=True)
-    done: set[str] = set()
+    done: dict[str, dict] = {}
     if percell.exists():
         with percell.open(encoding="utf-8") as fh:
             for line in fh:
                 if line.strip():
                     rec = json.loads(line)
-                    done.add(rec["unit_key"])
+                    done[rec["unit_key"]] = rec
+    regime_extra = {
+        "arms_subset": sorted(arms) if arms is not None else "all",
+        "layers_subset": [int(x) for x in (data.layers or ())],
+        "n_boot": int(n_boot),
+        "n_perm": int(n_perm),
+        "mlp_kwargs": {k: mlp_kwargs[k] for k in sorted(mlp_kwargs)} if mlp_kwargs else {},
+    }
+    if data.mapfit is not None:
+        verify_arm9_l0_degeneracy(data, device=device)  # plan §4 #31 gate (once per grid)
     units = [(lb, dr, sd) for lb in budgets for dr in draws for sd in seeds]
     results: list[dict] = []
     t0 = time.time()
     for k, (budget_l, draw, seed) in enumerate(units):
-        key = _unit_key(provenance, budget_l, draw, seed)
+        key = _unit_key(provenance, budget_l, draw, seed, regime_extra)
         if key in done:
+            results.append(done[key])  # M3b: resumed cells still reach the summary
             print(
                 f"[fits] unit {k + 1}/{len(units)} SKIP (resume) {budget_l}/{draw}/{seed}",
                 flush=True,
@@ -793,6 +873,10 @@ def run_grid(
         )
         rec["unit_key"] = key
         rec["skipped_arms"] = skipped
+        if context_ids is not None:
+            rec["preds_npz"] = _save_cell_preds(
+                out_dir / "percell" / "preds", key, rec, scores, cell, context_ids, data.dv
+            )
         line = json.dumps(rec, sort_keys=True) + "\n"
         with percell.open("a", encoding="utf-8") as fh:  # single-line O_APPEND write
             fh.write(line)
@@ -804,6 +888,52 @@ def run_grid(
             flush=True,
         )
     return results
+
+
+def _save_cell_preds(
+    preds_dir: Path,
+    unit_key: str,
+    rec: dict,
+    scores: dict[str, np.ndarray],
+    cell: BudgetCell,
+    context_ids: list[str] | np.ndarray,
+    dv: np.ndarray,
+) -> str:
+    """Persist per-context frozen-layer predicted scores for one cell (npz).
+
+    Keeps within-stratum / per-context reads recomputable post-hoc (e.g. the
+    evil harmful-vs-benign split) without re-running the fits: one fp32 row
+    per arm at that arm's frozen layer + the cell's dv + context ids.
+    Atomic write; the sidecar is HF-bound (npz is gitignored repo-wide) via
+    the dispatcher's results phase. Returns the relative filename.
+    """
+    import hashlib
+
+    preds_dir.mkdir(parents=True, exist_ok=True)
+    frozen = {
+        row["arm"]: int(
+            np.nanargmax([r if np.isfinite(r) else -np.inf for r in row["rho_per_layer"]])
+        )
+        if len(row["rho_per_layer"]) > 1
+        else 0
+        for row in rec.get("arms", [])
+    }
+    name = hashlib.sha1(unit_key.encode()).hexdigest()[:16] + ".npz"
+    payload = {
+        "row_idx": cell.row_idx.astype(np.int64),
+        "context_ids": np.asarray([str(context_ids[i]) for i in cell.row_idx]),
+        "dv": np.asarray(dv[cell.row_idx], dtype=np.float32),
+        "unit_key": np.asarray(unit_key),
+    }
+    for slug, fl in frozen.items():
+        sc = scores.get(slug)
+        if sc is not None:
+            payload[f"pred__{slug}"] = np.asarray(sc[min(fl, sc.shape[0] - 1)], dtype=np.float32)
+    tmp = preds_dir / (name + ".tmp.npz")  # np.savez appends .npz to non-.npz names (#1092)
+    with tmp.open("wb") as fh:
+        np.savez(fh, **payload)
+    os.replace(tmp, preds_dir / name)
+    return name
 
 
 def write_summary(records: list[dict], out_path: Path | str, *, meta: dict) -> Path:

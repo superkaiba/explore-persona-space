@@ -173,7 +173,10 @@ def gate3_staged_layout_probe(local_dir: Path | str, *, revision: str = STORE_RE
 
 
 GATE1_N_PILOT = 300  # pilot contexts per behavior (plan v3 Gate 1)
-GATE1_KEEP_RATE_FLOOR = 0.5  # below this the behavior's judged yield is a FAIL
+# Plan-pinned yield floor: §8 pre-registers "<20% kept rollouts" as the yield
+# risk trigger, so the gate FAILs below a 0.2 keep rate (the round-1 0.5 was
+# an undocumented tightening — round-1 review Minor).
+GATE1_KEEP_RATE_FLOOR = 0.2
 GATE2_SD_FLOOR = 10.0  # inter-context SD floor on the 0-100 scale (plan v3 Gate 2)
 GATE2_BOTTOM_BIN_MAX_FRAC = 0.80  # >= 80% of contexts in the bottom bin = floor-collapsed
 GATE2_BOTTOM_BIN_EDGE = 10.0  # the bottom histogram bin is [0, 10)

@@ -172,6 +172,27 @@ def _index_rows_for(root: Path, resolved_kinds: list[str]) -> list[dict]:
         counts = {rk: len(rows) for rk, rows in per_kind.items()}
         if len(set(counts.values())) != 1:
             raise ValueError(f"per-kind row_index counts disagree under {root}: {counts}")
+        # Row-ID alignment across kinds where ids exist (round-1 review Minor:
+        # a bare count match cannot prove the kinds index the SAME rows).
+        first = resolved_kinds[0]
+        id_key = next(
+            (
+                k
+                for k in ("context_id", "row_id", "turn_identifier")
+                if per_kind[first] and k in per_kind[first][0]
+            ),
+            None,
+        )
+        if id_key is not None:
+            ref = [r.get(id_key) for r in per_kind[first]]
+            for rk in resolved_kinds[1:]:
+                other = [r.get(id_key) for r in per_kind[rk]]
+                if other != ref:
+                    bad = next(i for i, (a, b) in enumerate(zip(ref, other, strict=True)) if a != b)
+                    raise ValueError(
+                        f"per-kind row_index {id_key} misaligned under {root}: "
+                        f"{first}[{bad}]={ref[bad]!r} vs {rk}[{bad}]={other[bad]!r}"
+                    )
         return per_kind[resolved_kinds[0]]
     manifest = root / "manifest.jsonl"
     if manifest.exists():

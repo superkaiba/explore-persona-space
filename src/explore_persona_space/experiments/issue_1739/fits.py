@@ -272,6 +272,59 @@ def extract_rb_e1(pos: np.ndarray, neg: np.ndarray) -> np.ndarray:
     return pos.mean(axis=0) - neg.mean(axis=0)
 
 
+def matched_pair_split_weights(
+    scores: np.ndarray,
+    *,
+    spread_min: float,
+    pooled: bool = False,
+) -> tuple[np.ndarray, np.ndarray, int]:
+    """Row weights realizing the E2 / E2p contrast as ONE weighted sum.
+
+    ``scores`` (n_ctx, K) with NaN = dropped draw. Returns
+    ``(w_hi, w_lo, n_qualifying)`` with shapes (n_ctx, K) such that
+    ``rb = sum_ck w_hi[c,k] * acts[c,k] - sum_ck w_lo[c,k] * acts[c,k]``
+    reproduces :func:`extract_rb_matched` exactly (weights fold the
+    per-context normalization + the mean over qualifying contexts), which
+    lets the fits CLI compute E2/E2p directions from the per-ROLLOUT store
+    rows via one mask-GEMM per layer — no (n_ctx, K, Ly, d) materialization.
+
+    E2 (``pooled=False``): a context QUALIFIES when it has >= 2 kept draws
+    AND its within-context score spread (max - min of the KEPT per-rollout
+    scores) >= ``spread_min`` (the plan §4 selection is on the per-rollout
+    K-sample scores; the split point is the context's own midpoint). E2p
+    (``pooled=True``): one global midpoint split over ALL kept answers
+    (topic-confounded by design — plan §5 ``pv_e2p``).
+    """
+    scores = np.asarray(scores, dtype=np.float64)
+    n_ctx, _k = scores.shape
+    kept = np.isfinite(scores)
+    if pooled:
+        flat = scores[kept]
+        if flat.size < 2:
+            raise ValueError("E2p: fewer than 2 kept answers")
+        mid = 0.5 * (np.nanmax(scores) + np.nanmin(scores))
+        hi = kept & (scores >= mid)
+        lo = kept & (scores < mid)
+        if hi.sum() == 0 or lo.sum() == 0:
+            raise ValueError("E2p: degenerate global split (no spread)")
+        return hi / hi.sum(), lo / lo.sum(), int(n_ctx)
+
+    smax = np.where(kept, scores, -np.inf).max(axis=1)
+    smin = np.where(kept, scores, np.inf).min(axis=1)
+    qual = (kept.sum(axis=1) >= 2) & ((smax - smin) >= spread_min)
+    if not qual.any():
+        raise ValueError(f"E2: zero qualifying contexts at spread_min={spread_min}")
+    mid = 0.5 * (smax + smin)  # (n_ctx,)
+    hi = kept & (scores >= mid[:, None]) & qual[:, None]
+    lo = kept & (scores < mid[:, None]) & qual[:, None]
+    n_qual = int(qual.sum())
+    hi_n = np.maximum(hi.sum(axis=1), 1)[:, None]
+    lo_n = np.maximum(lo.sum(axis=1), 1)[:, None]
+    w_hi = hi / (hi_n * n_qual)
+    w_lo = lo / (lo_n * n_qual)
+    return w_hi, w_lo, n_qual
+
+
 def extract_rb_matched(
     acts: np.ndarray,
     scores: np.ndarray,
@@ -287,40 +340,16 @@ def extract_rb_matched(
     hi/lo means, average over qualifying contexts. E2p (``pooled=True``):
     one global midpoint split over ALL kept answers (topic-confounded by
     design — plan §5 ``pv_e2p``). Returns ((Ly, d), n_qualifying_contexts).
+    The split weights live in :func:`matched_pair_split_weights` so the
+    fits CLI can apply the same contrast to flat per-rollout store rows.
     """
     acts = np.asarray(acts, dtype=np.float64)
     scores = np.asarray(scores, dtype=np.float64)
     n_ctx, k, _n_layers, _d = acts.shape
     assert scores.shape == (n_ctx, k), (scores.shape, (n_ctx, k))
-    kept = np.isfinite(scores)
-    if pooled:
-        flat = scores[kept]
-        if flat.size < 2:
-            raise ValueError("E2p: fewer than 2 kept answers")
-        mid = 0.5 * (np.nanmax(scores) + np.nanmin(scores))
-        hi = kept & (scores >= mid)
-        lo = kept & (scores < mid)
-        if hi.sum() == 0 or lo.sum() == 0:
-            raise ValueError("E2p: degenerate global split (no spread)")
-        hi_mean = np.einsum("ck,ckld->ld", hi.astype(np.float64), acts) / hi.sum()
-        lo_mean = np.einsum("ck,ckld->ld", lo.astype(np.float64), acts) / lo.sum()
-        return hi_mean - lo_mean, int(n_ctx)
-
-    smax = np.where(kept, scores, -np.inf).max(axis=1)
-    smin = np.where(kept, scores, np.inf).min(axis=1)
-    qual = (kept.sum(axis=1) >= 2) & ((smax - smin) >= spread_min)
-    if not qual.any():
-        raise ValueError(f"E2: zero qualifying contexts at spread_min={spread_min}")
-    mid = 0.5 * (smax + smin)  # (n_ctx,)
-    hi = kept & (scores >= mid[:, None]) & qual[:, None]
-    lo = kept & (scores < mid[:, None]) & qual[:, None]
-    hi_n = np.maximum(hi.sum(axis=1), 1)[:, None, None]
-    lo_n = np.maximum(lo.sum(axis=1), 1)[:, None, None]
-    hi_mean = np.einsum("ck,ckld->cld", hi.astype(np.float64), acts) / hi_n
-    lo_mean = np.einsum("ck,ckld->cld", lo.astype(np.float64), acts) / lo_n
-    per_ctx = hi_mean - lo_mean  # (n_ctx, Ly, d); zero rows for non-qualifying
-    rb = per_ctx[qual].mean(axis=0)
-    return rb, int(qual.sum())
+    w_hi, w_lo, n_qual = matched_pair_split_weights(scores, spread_min=spread_min, pooled=pooled)
+    rb = np.einsum("ck,ckld->ld", w_hi - w_lo, acts, optimize=True)
+    return rb, n_qual
 
 
 # ---------------------------------------------------------------------------
@@ -389,6 +418,130 @@ def map_diagnostics(
     return {"per_layer": per_layer, "knn_ks": list(knn_ks)}
 
 
+def ridge_fit_predict_primal_layer_batched(
+    x_train: np.ndarray,
+    y_train: np.ndarray,
+    x_eval: np.ndarray,
+    *,
+    lambdas: np.ndarray | tuple[float, ...] = RIDGE_LAMBDAS,
+    device: str = "cpu",
+    return_weights: bool = False,
+    layer_chunk: int = 4,
+) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+    """PRIMAL (feature-space) twin of ``fit_h.ridge_fit_predict_fast_layer_batched``.
+
+    Same recipe per slice — standardize-X on train stats (train mean,
+    population std + 1e-9), center-Y, GCV lambda selected PER SLICE over
+    ``lambdas``, un-centered predictions, float64 — solved in the d x d
+    FEATURE Gram instead of the n_tr x n_tr dual Gram.
+
+    Memory arithmetic (the M6 / `dual-gram-full-u-compute-shape` fix): at the
+    production full-U regime (n_tr ~= 15,034 of the 18,793-row fit pool after
+    the 20% diagnostics holdout; d = 3584; 28 layers) the DUAL Gram is
+    28 x 15,034^2 x 8 B ~= 50.6 GB fp64 before eigh workspace — far over the
+    plan §9 RAM row — while the PRIMAL Gram is 3584^2 x 8 B ~= 0.103 GB per
+    layer (~2.9 GB for all 28), and this function keeps only ``layer_chunk``
+    layers resident at once (Gram + eigenvectors + A ~= 3 x 0.103 GB per
+    layer). The realized U ladder tops out at the store's 18,793 fit rows
+    (the plan's nominal 50k rung exceeds the realized #1092 pool).
+
+    GCV parity with the dual helper is exact algebra: the nonzero eigenvalues
+    of Z Z^T and Z^T Z coincide; ``dof(lam) = sum_i s_i/(s_i+lam)`` is
+    identical on both sides (zero eigenvalues contribute 0), and the dual rss
+    identity ``rss = tot - sum_k (2 f_k - f_k^2) ||V^T Yc||_k^2`` maps to
+    ``rss = tot - sum_i ||A_i||^2 (s_i + 2 lam)/(s_i + lam)^2`` with
+    ``A = V_p^T Z^T Yc`` (division-free in s). Weights are the ridge normal
+    equations ``W = V_p diag(1/(s+lam)) A`` — the same W the dual
+    reconstructs. Parity is pinned by
+    ``tests/test_issue1739_fits.py::test_primal_dual_ridge_parity``.
+    """
+    import torch
+
+    x = np.asarray(x_train, dtype=np.float64)
+    y = np.asarray(y_train, dtype=np.float64)
+    xe = np.asarray(x_eval, dtype=np.float64)
+    assert x.ndim == 3 and y.ndim == 3 and xe.ndim == 3, (x.shape, y.shape, xe.shape)
+    n_slices, ntr, d = x.shape
+    lam_grid = np.asarray(lambdas, dtype=np.float64)
+    dev = torch.device(device)
+    preds = np.empty((n_slices, xe.shape[1], y.shape[2]))
+    w_out = np.empty((n_slices, d, y.shape[2])) if return_weights else None
+    for lo in range(0, n_slices, layer_chunk):
+        sl = slice(lo, min(lo + layer_chunk, n_slices))
+        xtr = torch.as_tensor(x[sl], device=dev)
+        ytr = torch.as_tensor(y[sl], device=dev)
+        xev = torch.as_tensor(xe[sl], device=dev)
+        xmu = xtr.mean(dim=1, keepdim=True)
+        xsd = xtr.std(dim=1, unbiased=False, keepdim=True) + 1e-9  # population std (twin parity)
+        xn = (xtr - xmu) / xsd
+        xen = (xev - xmu) / xsd
+        ymu = ytr.mean(dim=1, keepdim=True)
+        yc = ytr - ymu
+        gram = xn.transpose(1, 2) @ xn  # (c, d, d)
+        s, v = _eigh_robust(gram)
+        s = torch.clamp(s, min=0.0)  # (c, d)
+        a = v.transpose(1, 2) @ (xn.transpose(1, 2) @ yc)  # (c, d, d_out)
+        sq_a = (a**2).sum(dim=2)  # (c, d)
+        tot = (yc**2).sum(dim=(1, 2))  # (c,)
+        gcv = torch.empty((s.shape[0], len(lam_grid)), dtype=torch.float64, device=dev)
+        for li, lam in enumerate(lam_grid):
+            lam_f = float(lam)
+            rss = tot - (sq_a * (s + 2.0 * lam_f) / (s + lam_f) ** 2).sum(dim=1)
+            dof = (s / (s + lam_f)).sum(dim=1)
+            denom = (ntr - dof) ** 2
+            gcv[:, li] = torch.where(denom > 1e-12, rss / denom, torch.full_like(rss, float("inf")))
+        best = gcv.argmin(dim=1)
+        best_lam = torch.as_tensor(lam_grid, device=dev)[best]  # (c,)
+        w = v @ (a / (s + best_lam[:, None])[:, :, None])  # (c, d, d_out)
+        preds[sl] = (xen @ w + ymu).cpu().numpy()
+        if w_out is not None:
+            w_out[sl] = w.cpu().numpy()
+    if return_weights:
+        return preds, w_out
+    return preds
+
+
+def ridge_layer_batched_auto(
+    x_train: np.ndarray,
+    y_train: np.ndarray,
+    x_eval: np.ndarray,
+    *,
+    lambdas: np.ndarray | tuple[float, ...] = RIDGE_LAMBDAS,
+    device: str = "cpu",
+    return_weights: bool = False,
+) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+    """Route a batched ridge solve to the cheaper Gram: primal iff n_tr > d.
+
+    n_tr <= d delegates to the parent dual helper
+    (``fit_h.ridge_fit_predict_fast_layer_batched``, n_tr x n_tr Gram);
+    n_tr > d runs the primal twin above (d x d Gram). Both implement the
+    identical standardize/GCV/predict recipe (parity test-pinned), so the
+    branch is a memory/throughput routing decision, never a semantic one.
+    """
+    from explore_persona_space.experiments.issue_779.fit_h import (
+        ridge_fit_predict_fast_layer_batched,
+    )
+
+    n_tr, d = np.asarray(x_train).shape[1], np.asarray(x_train).shape[2]
+    if n_tr > d:
+        return ridge_fit_predict_primal_layer_batched(
+            x_train,
+            y_train,
+            x_eval,
+            lambdas=lambdas,
+            device=device,
+            return_weights=return_weights,
+        )
+    return ridge_fit_predict_fast_layer_batched(
+        x_train,
+        y_train,
+        x_eval,
+        lambdas=np.asarray(lambdas, dtype=np.float64),
+        device=device,
+        return_weights=return_weights,
+    )
+
+
 def fit_linear_map(
     x_u: np.ndarray,
     y_u: np.ndarray,
@@ -401,16 +554,16 @@ def fit_linear_map(
 ) -> MapFit:
     """Fit the batched context->answer ridge map on the U pool + diagnostics.
 
-    One ``ridge_fit_predict_fast_layer_batched`` call over ALL layers
-    (``return_weights=True`` -> W (Ly, d, d)); GCV lambda per layer over
-    ``lambdas``. Standardization params are replicated with the helper's own
-    convention (train mean, population std + 1e-9, float64) so the frozen map
-    applies to new x exactly as the helper would have.
+    Diagnostics (held-out R^2 + mapping-baselines pair) come from an
+    80/20-split fit; the FROZEN map weights are then REFIT on the FULL U pool
+    (so a U-ladder rung's nominal budget is its effective fit size — the
+    round-1 review minor: W trained on 0.8 x nominal distorted the ladder
+    semantics). Both fits route through :func:`ridge_layer_batched_auto`
+    (primal d x d Gram when n_tr > d, else the parent dual helper); GCV
+    lambda per layer over ``lambdas``. Standardization params replicate the
+    helper's own convention (train mean, population std + 1e-9, float64) so
+    the frozen map applies to new x exactly as the helper would have.
     """
-    from explore_persona_space.experiments.issue_779.fit_h import (
-        ridge_fit_predict_fast_layer_batched,
-    )
-
     x = np.asarray(x_u, dtype=np.float64)
     y = np.asarray(y_u, dtype=np.float64)
     assert x.shape == y.shape and x.ndim == 3, (x.shape, y.shape)
@@ -423,24 +576,27 @@ def fit_linear_map(
         raise ValueError(f"fit_linear_map: too few train rows ({len(tr)})")
 
     x_tr, y_tr, x_ho, y_ho = x[:, tr], y[:, tr], x[:, hold], y[:, hold]
-    preds_hold, w = ridge_fit_predict_fast_layer_batched(
-        x_tr,
-        y_tr,
-        x_ho,
-        lambdas=np.asarray(lambdas, dtype=np.float64),
-        device=device,
-        return_weights=True,
-    )
-    x_mu = x_tr.mean(axis=1, keepdims=True)
-    x_sd = x_tr.std(axis=1, keepdims=True) + 1e-9  # population std (helper parity)
-    y_mu = y_tr.mean(axis=1, keepdims=True)
+    preds_hold = ridge_layer_batched_auto(x_tr, y_tr, x_ho, lambdas=lambdas, device=device)
     diagnostics = map_diagnostics(preds_hold, x_ho, y_ho, x_tr, y_tr, knn_ks=knn_ks)
     diagnostics["n_train"], diagnostics["n_holdout"] = len(tr), int(n_hold)
+    # Frozen-map refit on the FULL U rung (diagnostics stay honest held-out
+    # reads from the split fit above; the weights consume the whole budget).
+    _preds_dummy, w = ridge_layer_batched_auto(
+        x, y, x[:, :2], lambdas=lambdas, device=device, return_weights=True
+    )
+    x_mu = x.mean(axis=1, keepdims=True)
+    x_sd = x.std(axis=1, keepdims=True) + 1e-9  # population std (helper parity)
+    y_mu = y.mean(axis=1, keepdims=True)
+    diagnostics["w_fit_rows"] = int(n)
+    diagnostics["w_refit_on_full_u"] = True
+    diagnostics["solver"] = "primal" if n > x.shape[2] else "dual"
     logger.info(
-        "[fits] linear map fit: Ly=%d n_tr=%d n_hold=%d mean r2_map=%.4f",
+        "[fits] linear map fit: Ly=%d n_tr=%d n_hold=%d w_fit_rows=%d solver=%s mean r2_map=%.4f",
         n_layers,
         len(tr),
         n_hold,
+        n,
+        diagnostics["solver"],
         float(np.mean([r["r2_map"] for r in diagnostics["per_layer"]])),
     )
     return MapFit(w=w, x_mu=x_mu, x_sd=x_sd, y_mu=y_mu, diagnostics=diagnostics)
