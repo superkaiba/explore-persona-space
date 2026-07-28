@@ -5851,8 +5851,8 @@
     "1753": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1753",
-      "status": "proposed",
+      "path": "tasks/planning/1753",
+      "status": "planning",
       "title": "daily-fix: Step 10d checks the LANDING tree; sync attributio"
     },
     "1754": {
