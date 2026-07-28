@@ -5964,8 +5964,8 @@
       "goal": "Characterise what fine-tuning a behavior into a specific context does to the context->answer mapping in activation space, on the model-organism fleet: whether the context vector moves, whether the map itself changes, whether the answer vector moves, what shape the write has and whether it is predictable ahead of time (delta vs r_B vs the marker unembedding row), and which of theory assumptions A7-A11 hold.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/1768",
-      "status": "planning",
+      "path": "tasks/approved/1768",
+      "status": "approved",
       "title": "What fine-tuning a behavior into a context does to the context->answer map (60-arm organism fleet, 15k contexts)"
     },
     "18": {
