@@ -11858,8 +11858,15 @@ uv run python scripts/task.py post-marker <N> epm:progress \
 ```
 
 - **Success:** post `epm:merged v1` VIA THE `--file` CHANNEL — never `--note`
-  — with a scratch file at `/tmp/issue-<N>-merged-note.md` (written in the
-  SAME shell block immediately before the post-marker call) carrying the SHA
+  — with a scratch file at `/tmp/issue-<N>-merged-note.md` (composed VIA
+  THE WRITE TOOL immediately before the post-marker call — NEVER a Bash
+  heredoc or printf/echo redirect: the note body then rides the Bash argv,
+  and the #1058 strip_heredoc_bodies() pre-pass is fail-closed — the common
+  merged-note shape (unquoted <<EOF tag + $( ) expansion in the body)
+  REFUSES the strip, so git-verb prose in the note blocks the whole call
+  (2026-07-27 heredoc variant, #1756). Resolve dynamic values — SHAs,
+  counts — in PRIOR Bash calls and embed them as literals in the Write
+  content) carrying the SHA
   list plus `merge_form: squash|rebase` and `merge_attempts: <n>` (note-token
   convention — no schema change, #1288). The `--file` channel bypasses the
   argv-prose scan `guard_repo_root_branch.sh` runs on `--note`; merge-recovery
@@ -12303,8 +12310,9 @@ Decision tree:
 
   Then post
   `epm:merged v1` VIA THE `--file` CHANNEL — never `--note` — with a
-  scratch file at `/tmp/issue-<N>-merged-note.md` (written in the SAME
-  shell block immediately before the post-marker call) carrying fields
+  scratch file at `/tmp/issue-<N>-merged-note.md` (composed via the
+  Write tool immediately before the post-marker call — never a Bash
+  heredoc/printf; see the safe-case Success bullet, #1756) carrying fields
   `{artifact_confirmed: true, full_rebase_deferred: true, reason:
   "<the tripped guard-3 condition: based on <PARENT> (not on mainline)
   | own commits touch foreign / out-of-scope paths: <paths>>",
@@ -12759,8 +12767,9 @@ Decision tree:
   ```
 
   Then post `epm:merged v1` VIA THE `--file` CHANNEL — never `--note` —
-  with a scratch file at `/tmp/issue-<N>-merged-note.md` (written in
-  the SAME shell block immediately before the post-marker call)
+  with a scratch file at `/tmp/issue-<N>-merged-note.md` (composed via
+  the Write tool immediately before the post-marker call — never a
+  Bash heredoc/printf; see the safe-case Success bullet, #1756)
   carrying `{artifact_confirmed: true, full_rebase_deferred: true,
   surgical_checkout: true, files: [...]}`. Same `--file` rationale as
   the safe-case Success bullet above — the argv-prose scan on `--note`
