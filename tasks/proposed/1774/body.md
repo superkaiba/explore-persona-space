@@ -14,6 +14,9 @@ goal: Characterize the fitted linear context→answer operators across the four 
   per-arm channel structure and trait tables, null-space ceilings with causal-inertness
   tests, and gate-conditional endomorphism reads (decoded SVD, eigen/copying, preservation
   map, trait gain matrix, fixed point) — all noise-ceiling-gated, per Task A of docs/ideas/2026-07-28-four-arm-map-theoretical-analysis-plan.md
+relates_to:
+- spec-context-as-vector
+- leak-predictor
 ---
 # Linear/operator characterization of the four context→answer map arms
 
