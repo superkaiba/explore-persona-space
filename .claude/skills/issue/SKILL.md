@@ -1200,7 +1200,7 @@ or empty body.** These are recoverable; do NOT exit. Run Step 0b instead.
 **Worktree spec-freshness BEFORE arming (sessions whose cwd is an issue
 worktree).** A worktree pins the entire workflow surface at branch-fork
 time, so the skill/cron prescriptions you are reading may be stale —
-run the Step 5a spec-freshness sync (surgical `git checkout main -- `
+run the Step 5a spec-freshness sync (surgical `git checkout origin/main -- `
 of the workflow-surface specs, with the branch-side-feature-edit guard)
 FIRST, and resolve workflow-helper scripts (`verify_task_body.py`,
 `post_step_completed.py`, ...) from the MAIN checkout (`"$REPO_ROOT"/scripts/...`),
@@ -2328,22 +2328,35 @@ workflow-surface fix never inherits it — so subagents silently run stale
 specs for the worktree's lifetime (incident #557 r2, 2026-06-10: a
 pre-hardening `codex-code-reviewer.md` copy re-enabled the retired
 background-dispatch pattern and orphaned the running Codex helper).
-Before dispatching, sync the worktree's workflow surface from local
-`main` (the canonical commit target on this VM — fresher than
-`origin/main`, no fetch needed; the check self-no-ops when the session
-already runs on `main`):
+Before dispatching, sync the worktree's workflow surface from FETCHED
+`origin/main` (local `main` routinely lags origin on the shared root
+under fleet load — #1724 synced regressed spec bytes from a lagging
+local `main`; #1747 migrated the source ref, mirroring the landed
+Step 10d re-sync recipe. The sync is worktree-only: it skips
+explicitly when the session already runs on `main`):
 
 ```bash
 # Step 5a WANTS the WORKTREE root (that is where the spec-freshness sync writes)
 # — NOT the #506 path-doubling bug; do NOT change to --git-common-dir here. The
-# self-no-op case (session already on main) is why show-toplevel is correct.
+# on-main skip case (session already on main) is why show-toplevel is correct.
 WT=$(git rev-parse --show-toplevel)
+# On-main skip (#1747): with FETCHED origin/main as the sync source the old
+# "diff against local main is vacuous on a main checkout" self-no-op is GONE —
+# a repo-root session whose local main lags origin would check out origin/main
+# content into the SHARED root working tree and commit on main (a
+# concurrent-committer hazard, CLAUDE.md § Concurrent repo-root committers).
+# Skip the ENTIRE sync body — pass-1 dirty-family scan included (its MB..HEAD
+# output on an ahead-of-origin root would print spurious dirty-family
+# warnings) — when the session's branch is main.
+if [ "$(git -C "$WT" rev-parse --abbrev-ref HEAD)" = "main" ]; then
+  echo "[step5a] session on main (repo root) — spec-freshness sync is worktree-only; skipping"
+else
 # Lint/guard family rides the sync (#1560): the specs synced below are budget-
 # checked by workflow_lint.py constants, enforced by .claude/hooks/, and pinned
 # by the test_workflow_lint*/test_guard_* pin tests — syncing
 # specs without their enforcing family creates the #1489/#1482/#1417 vintage
 # skew. `:(glob)` is a git pathspec (never shell-expands: no path starts with
-# ":(glob)"), so `git checkout main --` matches main-NEW pin tests too. The
+# ":(glob)"), so `git checkout origin/main --` matches main-NEW pin tests too. The
 # per-file branch-side-edit guard's skip grain is PER-ITEM: a branch editing
 # ONE pin test skips the whole `:(glob)` family entry (fail-safe — status-quo
 # staleness for those files, never a clobber).
@@ -2384,7 +2397,11 @@ FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
 # own family key (set below in the pass-1 loop by defaulting to its own path).
 
 SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py"
-MB=$(git -C "$WT" merge-base HEAD main)
+# Bounded freshness fetch (#1747 — the #1289/#1714 shape): local main can lag
+# origin on the shared root; a failed fetch degrades to last-fetched
+# origin/main — never a wedge, never a fallback to local main.
+timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet || true
+MB=$(git -C "$WT" merge-base HEAD origin/main)
 
 # Pass 1: detect dirty family keys. A family is DIRTY if ANY member has
 # branch-side commits (subject-scoped exclusion for prior spec-freshness
@@ -2405,7 +2422,7 @@ for f in $SPECS; do
     # or whether the branch-side touch is a global revert/port that has
     # ALREADY landed on main — in which case the skip is a false alarm
     # and the orchestrator can drop those files from the skip set by
-    # hand (e.g. `git -C "$WT" checkout main -- .claude/agents/*.md`
+    # hand (e.g. `git -C "$WT" checkout origin/main -- .claude/agents/*.md`
     # after confirming the branch-side commit's content is a subset of
     # main's current state). Without these commit titles printed, the
     # operator cannot tell a legitimate branch deliverable (#535
@@ -2428,18 +2445,19 @@ for f in $SPECS; do
   # membership declared above)
 done
 
-if [ -n "$SAFE_SPECS" ] && ! git -C "$WT" diff --quiet main -- $SAFE_SPECS; then
-  git -C "$WT" checkout main -- $SAFE_SPECS    # surgical refresh: workflow surface only
+if [ -n "$SAFE_SPECS" ] && ! git -C "$WT" diff --quiet origin/main -- $SAFE_SPECS; then
+  git -C "$WT" checkout origin/main -- $SAFE_SPECS    # surgical refresh: workflow surface only
   git -C "$WT" diff --quiet HEAD -- $SAFE_SPECS || \
-    git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from main (spec-freshness)" -- $SAFE_SPECS
+    git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from origin/main (spec-freshness)" -- $SAFE_SPECS
 fi
 # Observability echo (Decision 4, #1714): show the operator what changed at a
 # glance. This is NOT a gate — family-atomic skip + git checkout's own semantics
 # handle the 139-line-revert prevention (see plan §4.1 Decision 4 for the full
 # rationale).
 if [ -n "$SAFE_SPECS" ]; then
-  echo "[step5a] synced from main:"
+  echo "[step5a] synced from origin/main:"
   git -C "$WT" diff --stat HEAD^ HEAD -- $SAFE_SPECS 2>/dev/null || echo "  (no commit — no drift)"
+fi
 fi
 ```
 
@@ -2462,7 +2480,7 @@ branch-side commit titles so the orchestrator can tell a legitimate
 branch deliverable (the #535 case) from a stale port/revert whose
 content has already landed on main (in which case the orchestrator can
 safely override the skip for those specific files with a manual
-`git -C "$WT" checkout main -- <paths>`).
+`git -C "$WT" checkout origin/main -- <paths>`).
 
 **The sync scope is specs + the spec-coupled lint/guard family — do NOT
 extend it further into `scripts/`, `tests/`, or `src/`.** The family
@@ -10320,16 +10338,19 @@ rebase-merged. Three guards:
 
    Before judging a workflow-surface path out-of-scope, EXCLUDE files whose ONLY
    branch-side touch is a Step-5a `spec-freshness` sync (the mandated
-   `git checkout main -- $SAFE_SPECS` from `main`, NOT a branch deliverable).
+   `git checkout origin/main -- $SAFE_SPECS` from fetched `origin/main`, NOT a
+   branch deliverable).
    This mirrors Step 5a's own intent (line ~1925): a file that has NO non-sync
    branch-side commit is content imported FROM `main`, so it is never an
    out-of-scope regression. Match on the commit SUBJECT line ONLY — a `--grep`
    over subject+body would wrongly exclude a genuine branch edit whose commit
    BODY happens to mention "spec-freshness" (documentation, a retrospective),
-   silently dropping a real branch touch. The two Step-5a sync SUBJECT variants
-   both carry the token (`issue-<N>: sync workflow-surface specs from main
-   (spec-freshness)`; `chore(issue-<N>): spec-freshness sync workflow surface
-   from main`).
+   silently dropping a real branch touch. The Step-5a sync SUBJECT variants all
+   carry the token: the current `issue-<N>: sync workflow-surface specs from
+   origin/main (spec-freshness)` (#1747), the historical `issue-<N>: sync
+   workflow-surface specs from main (spec-freshness)` (pre-#1747 commits keep
+   the old title), and the legacy `chore(issue-<N>): spec-freshness sync
+   workflow surface from main`.
 
    ```bash
    # For each workflow-surface path $f in the own-diff: does it have any
@@ -11301,8 +11322,10 @@ tests BEFORE anything lands:
   stale-verdict `rm -f` above and after the executable gate block has
   returned pass):
     1. `timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet || true`
-    2. Run the Step 5a family-atomic block (§ Step 5a) once with source
-       `origin/main` (every `main` ref replaced by `origin/main`),
+    2. Run the Step 5a family-atomic block (§ Step 5a) once — it already
+       sources fetched `origin/main` as of #1747 (no ref substitution
+       needed; its on-main skip guard rides along harmlessly here, since
+       `$WT` is on `issue-<N>` the guard evaluates false) —
        against the ALREADY-BOUND `$WT` — the merge flow bound
        `WT="$REPO_ROOT/.claude/worktrees/issue-<N>"` in the guards
        block, so DROP the Step 5a block's own
@@ -11449,7 +11472,8 @@ else
     # window. Uses the ALREADY-BOUND $WT (do NOT re-derive from cwd; a
     # repo-root cwd would rebind to the shared root).
     timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet || true
-    # --- inline Step 5a family-atomic block (main -> origin/main) ---
+    # --- inline Step 5a family-atomic block (origin/main source, same as
+    # Step 5a itself as of #1747; WT pre-bound, no on-main skip needed) ---
     declare -A FAMILY_OF
     FAMILY_OF[".claude/workflow.yaml"]="workflow"
     FAMILY_OF[".claude/skills"]="workflow"
