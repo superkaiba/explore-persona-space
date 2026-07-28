@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1766,
+  "highest_id": 1767,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5952,6 +5952,13 @@
       "path": "tasks/reviewing/1766",
       "status": "reviewing",
       "title": "daily-fix: fix red main: test_issue1417_render.py::test_render_config_hash_pin \u2014 reconcile the issue-1417 render-config h"
+    },
+    "1767": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1767",
+      "status": "proposed",
+      "title": "workflow-fix: width justification must bind to wall-dominant GPU-bound phases"
     },
     "18": {
       "has_clean_result": false,
