@@ -5844,8 +5844,8 @@
     "1752": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1752",
-      "status": "running",
+      "path": "tasks/reviewing/1752",
+      "status": "reviewing",
       "title": "daily-fix: gpu-idle escalation consequence after N repeats"
     },
     "1753": {
