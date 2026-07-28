@@ -59,11 +59,19 @@ HALLU_ABSTAIN_RUBRIC = (
 HALLU_FABRICATED_THRESHOLD = 50.0
 
 
+# Anthropic Batch custom_id grammar: ^[a-zA-Z0-9_-]{1,64}$ (the '~' separator
+# 400'd every submit on 2026-07-28 — invalid_request_error on requests.0).
+_CUSTOM_ID_OK = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-")
+
+
 def rollout_item_id(context_id: str, k: int) -> str:
     """Stable judge item id for (context, rollout k); custom_id-grammar safe."""
     if "__" in context_id:
         raise ValueError(f"context_id must not contain '__': {context_id!r}")
-    item_id = f"{context_id}~k{k:02d}"
+    item_id = f"{context_id}_k{k:02d}"
+    if not set(item_id) <= _CUSTOM_ID_OK:
+        bad = "".join(sorted(set(item_id) - _CUSTOM_ID_OK))
+        raise ValueError(f"item_id {item_id!r} has chars outside [a-zA-Z0-9_-]: {bad!r}")
     if len(item_id) > MAX_ITEM_ID_LEN:
         raise ValueError(
             f"item_id {item_id!r} is {len(item_id)} chars > {MAX_ITEM_ID_LEN} "

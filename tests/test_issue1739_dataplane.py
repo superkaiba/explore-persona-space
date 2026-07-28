@@ -253,15 +253,15 @@ def test_parse_item_id_roundtrip():
 def test_build_labeling_dv_drop_semantics():
     scores = {
         # ctx A: 3 kept rollouts + 1 all-draws-dropped (None) -> mean of kept.
-        "ctx-a~k00": 80.0,
-        "ctx-a~k01": 60.0,
-        "ctx-a~k02": 100.0,
-        "ctx-a~k03": None,
+        "ctx-a_k00": 80.0,
+        "ctx-a_k01": 60.0,
+        "ctx-a_k02": 100.0,
+        "ctx-a_k03": None,
         # ctx B: every rollout dropped -> dv None (reported, never coerced).
-        "ctx-b~k00": None,
-        "ctx-b~k01": None,
+        "ctx-b_k00": None,
+        "ctx-b_k01": None,
     }
-    transport = {"ctx-a~k01": 2, "ctx-b~k00": 1}
+    transport = {"ctx-a_k01": 2, "ctx-b_k00": 1}
     rows = dv_build.build_labeling_dv(
         scores,
         k_rollouts=5,
@@ -279,15 +279,15 @@ def test_build_labeling_dv_drop_semantics():
     assert by_id["ctx-b"]["n_rollouts_kept"] == 0
     assert by_id["ctx-b"]["n_transport_lost_draws"] == 1
     with pytest.raises(ValueError):
-        dv_build.build_labeling_dv({f"ctx-c~k{i:02d}": 1.0 for i in range(6)}, k_rollouts=5)
+        dv_build.build_labeling_dv({f"ctx-c_k{i:02d}": 1.0 for i in range(6)}, k_rollouts=5)
 
 
 def test_build_three_way_dv_excludes_unjudged():
     three_way = {
-        "ctx-h~k00": "correct",
-        "ctx-h~k01": "fabricated",
-        "ctx-h~k02": "abstained",
-        "ctx-h~k03": "unjudged",
+        "ctx-h_k00": "correct",
+        "ctx-h_k01": "fabricated",
+        "ctx-h_k02": "abstained",
+        "ctx-h_k03": "unjudged",
     }
     rows = dv_build.build_three_way_dv(three_way)
     (row,) = rows
@@ -303,7 +303,7 @@ def test_tf_pool_freeze_and_margin(tmp_path):
     for i in range(6):
         cid = f"ctx-{i:03d}"
         for k in range(2):
-            item_id = f"{cid}~k{k:02d}"
+            item_id = f"{cid}_k{k:02d}"
             score = 90.0 if (i + k) % 2 == 0 else 10.0
             scores[item_id] = score
             rollouts.append(
@@ -346,7 +346,7 @@ def test_tf_pool_freeze_and_margin(tmp_path):
 
 def test_tf_pool_zero_side_fails_loud(tmp_path):
     rollouts = [{"context_id": "c0", "rollout_k": 0, "completion": "only positive text"}]
-    scores = {"c0~k00": 95.0}
+    scores = {"c0_k00": 95.0}
     with pytest.raises(RuntimeError, match="zero neg candidates"):
         dv_build.build_tf_pools(
             rollouts, scores, behavior="sycophancy", pool_path=tmp_path / "p.json"
@@ -392,8 +392,8 @@ def test_split_hallucination_items_judges_only_incorrect():
         },
     ]
     correct, items = judging.split_hallucination_items(rollouts)
-    assert correct == {"hal-ctx-0~k00": True, "hal-ctx-0~k01": False}
-    assert [i[0] for i in items] == ["hal-ctx-0~k01"]
+    assert correct == {"hal-ctx-0_k00": True, "hal-ctx-0_k01": False}
+    assert [i[0] for i in items] == ["hal-ctx-0_k01"]
     with pytest.raises(ValueError, match="answer_aliases"):
         judging.split_hallucination_items(
             [{"context_id": "c", "rollout_k": 0, "query": "q", "completion": "x"}]

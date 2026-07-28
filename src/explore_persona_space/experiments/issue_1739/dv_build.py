@@ -46,7 +46,7 @@ TF_POOL_PER_SIDE = 20
 
 def parse_item_id(item_id: str) -> tuple[str, int]:
     """Invert ``judging.rollout_item_id`` -> (context_id, rollout_k)."""
-    context_id, _, k_part = item_id.rpartition("~k")
+    context_id, _, k_part = item_id.rpartition("_k")
     if not context_id or not k_part.isdigit():
         raise ValueError(f"malformed rollout item id: {item_id!r}")
     return context_id, int(k_part)
@@ -62,7 +62,7 @@ def build_labeling_dv(
 ) -> list[dict]:
     """Judged per-rollout scores -> per-context graded DV rows.
 
-    ``scores`` maps ``{context_id}~k{NN}`` -> mean-over-kept-draws score or
+    ``scores`` maps ``{context_id}_k{NN}`` -> mean-over-kept-draws score or
     None (all draws content-dropped). Per context: DV = mean over rollouts
     with a kept score; ``dv`` is None when EVERY rollout dropped (reported,
     never coerced). Transport losses are summed per context and kept separate
@@ -237,7 +237,7 @@ def build_tf_pools(
     fixed_set = set(fixed_contexts)
     candidates: dict[str, list[dict]] = {"pos": [], "neg": []}
     for payload in rollouts:
-        item_id = f"{payload['context_id']}~k{int(payload['rollout_k']):02d}"
+        item_id = f"{payload['context_id']}_k{int(payload['rollout_k']):02d}"
         if payload["context_id"] not in fixed_set:
             continue
         score = scores.get(item_id)

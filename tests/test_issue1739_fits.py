@@ -455,7 +455,7 @@ def test_run_grid_checkpoint_resume_and_summary(tmp_path):
 
 def test_gate2_accepts_fabrication_fraction_rows():
     three_way = {
-        f"ctx{i:02d}~k{k:02d}": ("fabricated" if (i + k) % 3 == 0 else "correct")
+        f"ctx{i:02d}_k{k:02d}": ("fabricated" if (i + k) % 3 == 0 else "correct")
         for i in range(12)
         for k in range(3)
     }
