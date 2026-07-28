@@ -808,6 +808,13 @@ failing_test: <ONE pytest node id, e.g. tests/test_x.py::test_y>
 wf_fix: true|false   # target_file on the workflow surface, or not
 ```
 
+The parking session leads the candidate marker note with `URGENT-PARK`
+(or a `parked (urgent): ...` lead) so pre-#1741 sweep copies in stale
+worktrees also match; the #1741 predicate
+(`scripts/sweep_parked_wf_candidates.py`) accepts either surface — the
+leading token or the in-block `urgency: main-red` field (incident #1718:
+a token-less urgent park was invisible to the sweep for ~16 h).
+
 Labeling is not routing: the parking session still NEVER files or spawns.
 The watcher's urgent-park router pass (`autonomous_session_watch.py`
 `urgent_wf_park_pass`, every 10 min — an independent, non-guarded actor)
