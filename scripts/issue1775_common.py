@@ -260,6 +260,53 @@ def load_units(path: Path) -> list[dict]:
     return out
 
 
+def load_units_validated(path: Path, incomplete_reason) -> list[dict]:
+    """Resume-load with a completeness gate (#1775 P3 crash-fix).
+
+    ``incomplete_reason(row) -> str | None`` names why a row is NOT a full
+    result payload (None = complete). Incomplete rows — and unparseable
+    lines from a mid-write kill — are IGNORED for the resume done-set AND
+    PURGED: the JSONL is atomically rewritten without them, one loud line
+    per purge, so a stub can never mark its unit done on a later resume.
+    """
+    if not path.exists():
+        return []
+    valid: list[dict] = []
+    bad: list[str] = []
+    with open(path, encoding="utf-8") as f:
+        for ln, line in enumerate(f, 1):
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                bad.append(f"line {ln}: unparseable JSON (mid-write kill?)")
+                continue
+            why = incomplete_reason(row)
+            if why is None:
+                valid.append(row)
+            else:
+                bad.append(
+                    f"line {ln}: {why} "
+                    f"[{row.get('arm')}/{row.get('grain')}/{row.get('scheme')}"
+                    f"/{row.get('rung')} seed={row.get('seed')}]"
+                )
+    if bad:
+        print(
+            f"[resume] PURGING {len(bad)} invalid/partial row(s) from {path} "
+            "(they will re-run, never resume-skip):",
+            flush=True,
+        )
+        for b in bad:
+            print(f"[resume]   {b}", flush=True)
+        tmp = path.with_name(path.name + ".tmp")
+        with open(tmp, "w", encoding="utf-8") as f:
+            for row in valid:
+                f.write(json.dumps(row, default=_json_default) + "\n")
+        os.replace(tmp, path)
+    return valid
+
+
 def unit_key(d: dict, keys: tuple[str, ...]) -> tuple:
     """Resume key over EVERY output-affecting regime field (never a subset)."""
     return tuple(str(d.get(k)) for k in keys)
@@ -303,6 +350,52 @@ def stage_store_if_needed(store: Path, *, cells: list[str], layers: list[int]) -
             continue
         hub.stage_hub_file(HF_DATA_REPO, f"{STORE_HF_PREFIX}/{rel}", target, repo_type="dataset")
         print(f"[stage] fetched {rel}", flush=True)
+
+
+def prefetch_p3_inputs() -> None:
+    """Stage the P1/P2 artifacts a STANDALONE P3 run reads (``--phases=p3``
+    on a fresh instance): ``linear_fits.json`` (final-payload context),
+    the P2 detection JSON (gate-B input to the nonlinear unit grid), and
+    the P1 per-row ridge preds+masks ``assemble_gains`` compares against.
+
+    Local copies win (same-instance resume; the ``--phases=p3`` smoke against
+    a prior full ``--smoke`` out-root); a Hub miss of a required input fails
+    LOUD — a silent miss would empty ``gains_vs_ridge`` / mis-size the grid.
+    """
+    api = HfApi()
+    for sub, name in (("ladder", "linear_fits.json"), ("detection", "hsic_dcor.json")):
+        target = eval_dir(sub) / name
+        if target.exists():
+            print(f"[prefetch-p3] {sub}/{name} present locally — kept", flush=True)
+            continue
+        hub.stage_hub_file(
+            HF_DATA_REPO, f"{OUT_HF_PREFIX}/eval_json/{sub}/{name}", target, repo_type="dataset"
+        )
+        print(f"[prefetch-p3] fetched eval_json/{sub}/{name}", flush=True)
+    dest = tensors_dir("heldout_preds")
+    have = {p.name for p in dest.glob("*_ridge*.npy")}
+    prefix = f"{OUT_HF_PREFIX}/analysis_tensors/heldout_preds"
+    entries = hub.retry_transient(
+        lambda: list(hub.list_hf_files_under_path(api, HF_DATA_REPO, prefix, repo_type="dataset")),
+        what=f"list {prefix}",
+    )
+    ridge = [e for e in entries if Path(e).name.endswith(".npy") and "_ridge" in Path(e).name]
+    if not ridge and not have:
+        raise RuntimeError(
+            f"p3 prefetch: no per-row ridge preds locally at {dest} nor on the Hub "
+            f"under {prefix} — run (or upload) p1 first"
+        )
+    fetched = 0
+    for e in ridge:
+        if Path(e).name in have:
+            continue
+        hub.stage_hub_file(HF_DATA_REPO, e, dest / Path(e).name, repo_type="dataset")
+        fetched += 1
+    print(
+        f"[prefetch-p3] ridge preds ready: {len(have)} local + {fetched} fetched "
+        f"(Hub lists {len(ridge)})",
+        flush=True,
+    )
 
 
 def load_manifest_rows(store: Path) -> list[dict]:

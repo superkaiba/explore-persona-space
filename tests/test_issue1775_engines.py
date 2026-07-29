@@ -137,6 +137,91 @@ def test_gate_c_constants_pin_battery_excluded_artifact():
         assert i1775.GATE_C[basis] == expected, (basis, i1775.GATE_C[basis], expected)
 
 
+def _nl_row_base():
+    return dict(
+        cell="cell_inst_own",
+        layer=14,
+        arm="prefix_end",
+        grain="perrow",
+        scheme="prefix",
+        phase="nonlinear",
+        smoke=False,
+        row_limit=None,
+        basis="both",
+    )
+
+
+def test_resume_skips_only_complete_rows_and_purges_partials(tmp_path):
+    """#1775 P3 crash-fix regression: 1 valid + 1 partial row in the shard
+    JSONL -> exactly 1 unit resume-skipped, and the partial row is PURGED."""
+    import json
+
+    ladder = pytest.importorskip("issue1775_ladder")
+    valid = {
+        **_nl_row_base(),
+        "rung": "krr",
+        "seed": 0,
+        "per_fold": [
+            {
+                "fold": f,
+                "gamma_mult": 1.0,
+                "lambda": 1e-3,
+                "sigma0": 1.0,
+                "r2_fold": {"pca48": 0.2},
+            }
+            for f in range(5)
+        ],
+        "r2": {"pca48": 0.2},
+        "wall_s": 1.0,
+    }
+    # the crashed-run shape: rff stub with per_fold {fold, lambda, seed} only,
+    # no top-level r2 / wall_s — must NOT mark its unit done
+    partial = {
+        **_nl_row_base(),
+        "rung": "rff",
+        "seed": 1,
+        "per_fold": [{"fold": 0, "lambda": 1e-3, "seed": 1}],
+    }
+    p = tmp_path / "units_nonlinear_shard0.jsonl"
+    p.write_text("".join(json.dumps(r) + "\n" for r in (valid, partial)))
+    rows = i1775.load_units_validated(p, ladder.unit_row_incomplete)
+    done = {i1775.unit_key(d, ladder.REGIME_KEYS) for d in rows}
+    units = ladder.nonlinear_units(False, [0, 1, 2], set())
+    for u in units:
+        u["smoke"] = False
+        u["row_limit"] = None
+    todo = [u for u in units if i1775.unit_key(u, ladder.REGIME_KEYS) not in done]
+    assert len(units) - len(todo) == 1  # ONLY the valid krr row resume-skips
+    kept = [json.loads(ln) for ln in p.read_text().splitlines() if ln.strip()]
+    assert len(kept) == 1 and kept[0]["rung"] == "krr"  # partial row purged
+
+
+def test_nonlinear_group_sharding_keeps_rung_order():
+    """#1775 P3 crash-fix: nonlinear shards at the (arm, grain, scheme) group
+    grain — every rff/mlp unit's krr sibling precedes it ON THE SAME SHARD
+    (rff/mlp read the krr gamma record; the index-interleave raced it)."""
+    ladder = pytest.importorskip("issue1775_ladder")
+    units = ladder.nonlinear_units(False, [0, 1, 2], set())
+    for u in units:
+        u["smoke"] = False
+        u["row_limit"] = None
+    seen: list[tuple] = []
+    sizes = []
+    for si in (0, 1):
+        shard = ladder.shard_units(units, "nonlinear", 2, si)
+        ladder.verify_shard_rung_order(shard)  # must not raise
+        seen.extend(i1775.unit_key(u, ladder.REGIME_KEYS) for u in shard)
+        sizes.append(len(shard))
+    # exact partition: no unit lost, none duplicated; groups balance the load
+    assert len(seen) == len(set(seen)) == len(units)
+    assert min(sizes) > 0 and abs(sizes[0] - sizes[1]) <= 5
+    # the pre-fix index-interleave violates the invariant (odd shard has rff
+    # units whose krr sibling landed on the even shard)
+    interleaved = [u for i, u in enumerate(units) if i % 2 == 1]
+    with pytest.raises(RuntimeError, match="shard ordering violation"):
+        ladder.verify_shard_rung_order(interleaved)
+
+
 def test_doubly_fold_pairs_disjoint():
     _X, _Y, rows = _toy(n=90)
     pairs = i1775.fold_pairs(rows, len(rows), "doubly", n_folds=3)
