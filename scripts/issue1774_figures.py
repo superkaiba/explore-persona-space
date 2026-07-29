@@ -50,6 +50,29 @@ ARM_LABELS = {
 TRAIT_LABELS = {"evil": "Evil", "sycophancy": "Sycophancy", "hallucination": "Hallucination"}
 
 
+def _steer_cond_label(cond: str) -> str:
+    """Plain-English x-label for a steering condition slug (interp-critique r1 item 5).
+
+    ``add_kernel_tail0_neg`` -> ``Add kernel-tail dir 0 (−)``;
+    ``leace_rb_evil`` -> ``Erase evil direction``. Unknown slugs pass through.
+    """
+    import re
+
+    m = re.fullmatch(r"add_(kernel_tail|random|top_sv)(\d+)_(pos|neg)", cond)
+    if m:
+        family = {"kernel_tail": "kernel-tail", "random": "random", "top_sv": "top-singular"}[
+            m.group(1)
+        ]
+        sign = "+" if m.group(3) == "pos" else "−"
+        return f"Add {family} dir {m.group(2)} ({sign})"
+    m = re.fullmatch(r"leace_rb_(\w+)", cond)
+    if m:
+        return f"Erase {m.group(1)} direction"
+    if cond == "steer_base":
+        return "Unsteered base"
+    return cond
+
+
 def _read(path: Path) -> dict | None:
     return json.loads(path.read_text()) if path.exists() else None
 
@@ -265,7 +288,13 @@ def fig_causal_shift(eval_root: Path, fig_dir: Path) -> str | None:
         ax.legend(fontsize=8)
     elif band.get("pooled_p90") is not None:
         ax.axhline(float(band["pooled_p90"]), color="grey", linestyle="--", linewidth=0.8)
-    ax.set_xticks(range(len(names)), names, rotation=45, ha="right", fontsize=7)
+    ax.set_xticks(
+        range(len(names)),
+        [_steer_cond_label(n) for n in names],
+        rotation=45,
+        ha="right",
+        fontsize=7,
+    )
     ax.set_ylabel("‖Δt1‖ (hook-free re-capture)")
     ax.set_title("Causal state shift per steering condition")
     savefig_paper(fig, "causal_state_shift", dir=fig_dir)
