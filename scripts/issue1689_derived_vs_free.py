@@ -847,7 +847,11 @@ def cmd_stage(args) -> int:
             flush=True,
         )
         return 0
-    st = os.statvfs(args.store_root if args.store_root.exists() else args.store_root.parent)
+    # Fresh lane clones have no data/ tree at all (#1689 fellows crash: statvfs
+    # raised FileNotFoundError before staging could create anything) — create
+    # the destination first, then probe the filesystem it actually lands on.
+    args.store_root.mkdir(parents=True, exist_ok=True)
+    st = os.statvfs(args.store_root)
     free_gb = st.f_bavail * st.f_frsize / 1e9
     need_gb = args.stage_headroom_gb
     if free_gb < need_gb:
