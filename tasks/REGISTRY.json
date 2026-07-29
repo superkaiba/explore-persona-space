@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1786,
+  "highest_id": 1787,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6098,6 +6098,13 @@
       "path": "tasks/proposed/1786",
       "status": "proposed",
       "title": "daily-fix: WARN when dispatch handle points at dead attempt"
+    },
+    "1787": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1787",
+      "status": "proposed",
+      "title": "daily-fix: pin prefix-less c43 escape in sync test"
     },
     "18": {
       "has_clean_result": false,
