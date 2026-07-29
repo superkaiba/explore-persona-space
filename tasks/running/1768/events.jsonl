@@ -83,3 +83,4 @@
 {"ts": "2026-07-29T19:39:24Z", "kind": "epm:progress", "version": 40, "by": "unknown", "note": "MILESTONE: p2 complete at ~24h (77/78 units; 73/74 manifests); p3 TF tree started (1/72). Remaining: p3 -> p4/p5/p6-reduce -> p7 upload -> p8/p9 fits."}
 {"ts": "2026-07-29T20:37:18Z", "kind": "epm:progress", "version": 41, "by": "unknown", "note": "[long-phase-heartbeat] p3 TF tree in progress (~25.5h total); ticks healthy."}
 {"ts": "2026-07-29T21:15:54Z", "kind": "epm:progress", "version": 42, "by": "unknown", "note": "[long-phase-heartbeat] p3 TF tree (~27h total); ticks healthy."}
+{"ts": "2026-07-29T21:55:27Z", "kind": "epm:progress", "version": 43, "by": "unknown", "note": "[long-phase-heartbeat] p3 TF tree (~28.5h total); ticks healthy."}
