@@ -51,10 +51,25 @@ def _stage_if_missing(local_dir: Path, hub_prefix: str, allow_stage: bool) -> Pa
         return local_dir
     if not allow_stage:
         raise FileNotFoundError(f"{local_dir} missing and --no-hf-stage set")
+    import shutil
+
     from explore_persona_space.orchestrate import hub
 
     print(f"[p6] staging {hub_prefix} -> {local_dir}")
-    hub.stage_hub_prefix(c.DATA_REPO, hub_prefix, local_dir, repo_type="dataset")
+    # stage_hub_prefix lands files at dest/<repo-relative path> (verbatim prefix
+    # mirror, #1402) — stage into a sibling mirror root, then move the leaf into
+    # the consumed layout (the att-20260729-033609 P0 crash class, check (h)(iv)).
+    mirror = local_dir.parent / f".hfstage_{local_dir.name}"
+    if mirror.exists():
+        shutil.rmtree(mirror)
+    hub.stage_hub_prefix(c.DATA_REPO, hub_prefix, mirror, repo_type="dataset")
+    staged_leaf = mirror / hub_prefix
+    assert staged_leaf.is_dir() and any(staged_leaf.iterdir()), (
+        f"verbatim mirror leaf missing/empty after staging: {staged_leaf}"
+    )
+    local_dir.parent.mkdir(parents=True, exist_ok=True)
+    staged_leaf.rename(local_dir)
+    shutil.rmtree(mirror, ignore_errors=True)
     return local_dir
 
 

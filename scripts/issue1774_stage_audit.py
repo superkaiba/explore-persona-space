@@ -89,6 +89,24 @@ def _consumed_files() -> list[tuple[str, Path]]:
     return out
 
 
+def _mirror_root() -> Path:
+    """The dest root for ``stage_hub_prefix``'s VERBATIM PREFIX MIRROR (#1402).
+
+    ``stage_hub_prefix`` lands every file at ``dest / <repo-relative path>`` —
+    passing the FINAL consumed path as dest nests the whole hub prefix under it
+    (``corpus/issue1092_realistic_crossing/corpus/manifest.jsonl``), which is the
+    att-20260729-033609 GCE P0 crash (artifact-reuse check (h)(iv); the restage
+    path never ran on the VM because the store pre-existed there). The mirror
+    root must satisfy ``root / STORE_PREFIX == stage_dir()``.
+    """
+    sd = c.stage_dir()
+    assert sd.name == Path(c.STORE_PREFIX).name, (
+        f"stage dir {sd} must end with the store-prefix leaf {c.STORE_PREFIX!r} "
+        "for the verbatim prefix mirror to land at the consumed layout"
+    )
+    return sd.parent
+
+
 def verify_or_stage_store(spot_n: int, apply_restage: bool) -> dict:
     """Per-file size + sha256 spot-check vs get_paths_info at the pinned rev."""
     from huggingface_hub import HfApi
@@ -99,31 +117,22 @@ def verify_or_stage_store(spot_n: int, apply_restage: bool) -> dict:
     missing = [(rel, p) for rel, p in files if not p.exists()]
     if missing and apply_restage:
         print(f"[stage] {len(missing)} consumed files missing; staging from HF @ {c.STORE_REV}")
-        hub.stage_hub_prefix(
-            c.DATA_REPO,
+        root = _mirror_root()  # dest/<repo-relative path> == stage_dir()/<local rel>
+        for prefix in (
             f"{c.STORE_PREFIX}/analysis_tensors/summaries/{c.CELL}",
-            c.stage_dir() / "analysis_tensors/summaries" / c.CELL,
-            repo_type="dataset",
-            revision=c.STORE_REV,
-        )
-        hub.stage_hub_prefix(
-            c.DATA_REPO,
             f"{c.STORE_PREFIX}/analysis_tensors/summaries/bare_instruct",
-            c.stage_dir() / "analysis_tensors/summaries/bare_instruct",
-            repo_type="dataset",
-            revision=c.STORE_REV,
-        )
-        hub.stage_hub_prefix(
-            c.DATA_REPO,
             f"{c.STORE_PREFIX}/corpus",
-            c.stage_dir() / "corpus",
-            repo_type="dataset",
-            revision=c.STORE_REV,
-        )
+        ):
+            hub.stage_hub_prefix(
+                c.DATA_REPO, prefix, root, repo_type="dataset", revision=c.STORE_REV
+            )
         files = _consumed_files()
         missing = [(rel, p) for rel, p in files if not p.exists()]
     if missing:
         raise FileNotFoundError(f"{len(missing)} consumed store files missing: {missing[:3]}")
+    # fix-engaged signal (att-20260729-033609): only reachable once the restage
+    # lands the files at the CONSUMED layout (pre-fix, the raise above fired here).
+    print(f"[stage] consumed-file set verified: {len(files)} files under {c.stage_dir()}")
 
     # sha spot-check: deterministic sample of spot_n consumed files
     rng = np.random.default_rng(0)
