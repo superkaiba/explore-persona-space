@@ -7230,6 +7230,36 @@ def test_render_startup_script_hydra_only_byte_identical_to_pre_change_snapshot(
 
 
 # ---------------------------------------------------------------------------
+# issue #1794 — persist uv on the default PATH for non-login/sudo/setsid shells
+# ---------------------------------------------------------------------------
+
+
+def test_startup_script_persists_uv_path() -> None:
+    """#1794 (founding incident #1739 exit-127): after the uv-install block the
+    startup script symlinks uv (+ uvx when present) into ``/usr/local/bin`` —
+    which is on the default PATH of non-login shells AND in sudo's
+    ``secure_path`` — and writes an ``/etc/profile.d/eps-uv-path.sh`` drop-in
+    for login shells. The block lives in the SHARED render body, so both the
+    hydra and workload_cmd branches carry it."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    install_marker = "# === Install uv if missing + sync env ==="
+    assert install_marker in script
+    tail = script[script.index(install_marker) :]
+    # /usr/local/bin symlink leg (the non-login/sudo/setsid-covering leg).
+    assert 'ln -sf "$UV_BIN" /usr/local/bin/uv' in tail
+    assert "/usr/local/bin/uvx" in tail
+    # profile.d drop-in leg (login shells): single-quoted printf format so
+    # $HOME/$PATH land UNEXPANDED in the drop-in file.
+    assert (
+        "printf 'export PATH=\"$HOME/.local/bin:$PATH\"\\n' > /etc/profile.d/eps-uv-path.sh"
+    ) in tail
+    # Ordering: the persistence block follows the install block (uv exists by then).
+    assert tail.index('ln -sf "$UV_BIN" /usr/local/bin/uv') > tail.index(
+        "curl -LsSf https://astral.sh/uv/install.sh"
+    )
+
+
+# ---------------------------------------------------------------------------
 # #750 — kernel OOM-kill guard on the success path (incident #744)
 # ---------------------------------------------------------------------------
 

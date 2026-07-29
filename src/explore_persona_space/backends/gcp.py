@@ -2945,6 +2945,19 @@ def render_startup_script(
         "  curl -LsSf https://astral.sh/uv/install.sh | sh",
         '  export PATH="$HOME/.local/bin:$PATH"',
         "fi",
+        "# Persist uv on the default PATH for later non-login/sudo/setsid shells",
+        "# (#1794; founding incident #1739 exit-127). /usr/local/bin is on the",
+        "# default PATH incl. sudo secure_path — mirrors the pod-side b3d2dfbf1d",
+        "# pattern; the profile.d drop-in additionally covers login shells.",
+        'UV_BIN="$(command -v uv 2>/dev/null || true)"',
+        '[ -z "$UV_BIN" ] && [ -x "${HOME:-/root}/.local/bin/uv" ]'
+        ' && UV_BIN="${HOME:-/root}/.local/bin/uv"',
+        'if [ -n "$UV_BIN" ]; then',
+        '  ln -sf "$UV_BIN" /usr/local/bin/uv',
+        '  [ -x "$(dirname "$UV_BIN")/uvx" ]'
+        ' && ln -sf "$(dirname "$UV_BIN")/uvx" /usr/local/bin/uvx || true',
+        "fi",
+        "printf 'export PATH=\"$HOME/.local/bin:$PATH\"\\n' > /etc/profile.d/eps-uv-path.sh",
         'cd "$WORKLOAD_ROOT"',
         # Pin the interpreter: the DLVM's system python is 3.10 (below
         # requires-python >=3.11), so an unpinned `uv sync` fetches the
