@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1794,
+  "highest_id": 1795,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6154,6 +6154,13 @@
       "path": "tasks/proposed/1794",
       "status": "proposed",
       "title": "daily-fix: persist uv PATH for non-login shells (GCE + pod)"
+    },
+    "1795": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1795",
+      "status": "proposed",
+      "title": "daily-fix: validate batch-judge custom_id grammar pre-submit"
     },
     "18": {
       "has_clean_result": false,
