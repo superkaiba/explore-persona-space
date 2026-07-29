@@ -430,7 +430,10 @@ def cmd_refit_split(args) -> int:
         tr, val, te = np.arange(2000), np.arange(2000, 2300), np.arange(2300, 2600)
     else:
         ns = argparse.Namespace(
-            pass_b=args.pass_b,
+            # N1M contract (N1G._load_pass_b_bundle): pass_b must be a real Path
+            # (None -> AttributeError at .exists()). Crash-fix r7: resolve the
+            # CLI's default=None to the reused module's own constant.
+            pass_b=args.pass_b if args.pass_b is not None else N1M.N1G.PASS_B_LOCAL,
             out_dir=args.assemble_out_dir,
             manifest_from_hf=True,
             manifest_hf_prefix="issue779_monitoring/fitter-fair-comparison-n1m",
@@ -441,12 +444,21 @@ def cmd_refit_split(args) -> int:
             hf_prefix=f"{N1M.N1G.HF_PREFIX}/final_token_capture",
             n1m_capture_dir=None,
             mm_dir=args.mm_dir,
-            orig_dir=None,
+            # N1M contract (N50._pinned_original_shas): orig_dir must be a real dir
+            # holding the original round's fair_comparison.json. Crash-fix r7
+            # (att-20260729-060640): None crashed `None / "fair_comparison.json"`.
+            orig_dir=N1M.DEFAULT_ORIG_DIR,
             fresh_stream=False,
             prefetch=2,
             max_chunks=None,
         )
-        per_layer, prov, _orig, val, te, _split = N1M.assemble_multilayer(ns, [C76.READOUT_LAYER])
+        # BOTH layers, matching the comparator's completed memmap cursor
+        # (layers==[14,19]): a [19]-only request MISMATCHES the cursor
+        # (issue779_ffc_n1m_fits.py L632-641) and silently WIPES + re-streams
+        # all 1920 chunks (~hours), destroying the shared memmap phase5 then
+        # re-streams AGAIN. Crash-fix r7 assemble-ns audit.
+        layers = [C76.SOURCE_LAYER, C76.READOUT_LAYER]
+        per_layer, prov, _orig, val, te, _split = N1M.assemble_multilayer(ns, layers)
         x, y = per_layer[C76.READOUT_LAYER]  # cx_last(19) -> v(19): the shipped-M family
         assert x.shape[1] == C.EXPECTED_HIDDEN == h, (x.shape, h)
         tr = CF.select_train_rows(prov, val, te, args.n_train, args.seed, False)

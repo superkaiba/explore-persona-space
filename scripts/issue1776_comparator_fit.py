@@ -212,7 +212,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--hf-prefix", default=f"{N1M.N1G.HF_PREFIX}/final_token_capture")
     ap.add_argument("--n1m-capture-dir", type=Path, default=None)
     ap.add_argument("--mm-dir", type=Path, default=C76.DATA_DIR / "n1m_mm")
-    ap.add_argument("--orig-dir", type=Path, default=None)
+    # N1M contract (issue779_ffc_n1m_fits.py L840 -> N50._pinned_original_shas):
+    # orig_dir MUST be a real dir holding the ORIGINAL round's fair_comparison.json
+    # (committed at eval_results/issue_779/fitter-fair-comparison/, repo-relative on
+    # the pod clone). Crash-fix r7 (att-20260729-060640 attempt 3): default=None
+    # crashed `None / "fair_comparison.json"` — reuse the module's own constant.
+    ap.add_argument("--orig-dir", type=Path, default=N1M.DEFAULT_ORIG_DIR)
     ap.add_argument("--fresh-stream", action="store_true")
     ap.add_argument("--prefetch", type=int, default=2)
     ap.add_argument("--max-chunks", type=int, default=None)
