@@ -6019,7 +6019,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1775",
       "status": "interpreting",
-      "title": "Nonlinearity of the four-arm context\u2192answer maps: rank-r bilinear interaction vs kernel/MLP gain"
+      "title": "A low-rank bilinear prefix\u2013query interaction closes most but not all of the context\u2192answer map's nonlinear gap (MODERATE confidence)"
     },
     "1776": {
       "goal": "Compute the averaged causal Jacobian J_{C\u2192A} on the #779 corpus; measure what fraction of the fitted ridge map M's predictive power is causal; test which map predicts steered-generation interventions and off-distribution transfer; and test whether the context\u2192answer channel reads from / writes into the J-space verbalizable workspace (Anthropic 2026), all phases unconditional.",

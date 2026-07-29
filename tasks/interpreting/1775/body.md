@@ -1,6 +1,6 @@
 ---
-title: 'Nonlinearity of the four-arm context→answer maps: rank-r bilinear interaction
-  vs kernel/MLP gain'
+title: A low-rank bilinear prefix–query interaction closes most but not all of the
+  context→answer map's nonlinear gap (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-28T21:36:04Z'
