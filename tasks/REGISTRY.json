@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1818,
+  "highest_id": 1819,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6336,6 +6336,13 @@
       "path": "tasks/proposed/1818",
       "status": "proposed",
       "title": "daily-fix: clamp composed poll sleeps below the Bash cap"
+    },
+    "1819": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1819",
+      "status": "proposed",
+      "title": "daily-held: 70.9MB npz in git eval_results \u2014 size-cap decisi"
     },
     "182": {
       "has_clean_result": true,
