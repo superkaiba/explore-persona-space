@@ -74,57 +74,132 @@ def _unit_r2(u: dict, basis: str) -> float | None:
     return None
 
 
-def hero_ladder(linear: dict, nonlinear: dict, out: Path) -> None:
+ARM_LABELS = {
+    "prefix_end": "prefix\nend-state",
+    "query_averaged": "prefix-averaged\ncontext state",
+    "bare_query": "bare query\nstate",
+    "stitch": "prefix + query\nstitch",
+    "context_end": "full context\n(linear ref.)",
+}
+RUNG_LABELS = {
+    "ridge": "ridge (linear)",
+    "krr": "RBF kernel",
+    "rff": "random features",
+    "mlp": "MLP",
+}
+
+
+def _primary_units(units: list[dict]) -> list[dict]:
+    """Primary-combo per-row units only (L14, instruct cell) — drops the L19 bridge
+    + pretrained-cell expansion rows that share arm/scheme/rung keys."""
+    return [
+        u
+        for u in units
+        if u.get("grain") == "perrow" and u.get("layer") == 14 and u.get("cell") == "cell_inst_own"
+    ]
+
+
+def _seed_mean(vals: list[float]) -> float | None:
+    return float(np.mean(vals)) if vals else None
+
+
+def hero_ladder(linear: dict, nonlinear: dict, refit: dict | None, out: Path) -> None:
+    """2-panel estimation-ladder bars (pca48, per-row grain), novel-prefix +
+    novel-query folds. The doubly-novel scheme has NO ladder fits by design and
+    gets no panel. The prefix-averaged context-state arm's PRESS ridge is
+    degenerate (R2 ~ -8, every fold); its linear bar is the group-respecting
+    inner-val lambda refit (query_averaged_refit.json), hatched + legended, and
+    its nonlinear whiskers use the refit's gain CIs."""
     basis = "pca48"
-    units = (linear.get("units", []) if linear else []) + (
-        nonlinear.get("units", []) if nonlinear else []
+    from explore_persona_space.analysis.paper_plots import savefig_paper
+
+    units = _primary_units(
+        (linear.get("units", []) if linear else [])
+        + (nonlinear.get("units", []) if nonlinear else [])
     )
     gains = (nonlinear or {}).get("gains_vs_ridge", {})
-    schemes = sorted({u["scheme"] for u in units if u.get("grain") == "perrow"})
-    fig, axes = plt.subplots(
-        1, max(len(schemes), 1), figsize=(5.2 * max(len(schemes), 1), 3.6), squeeze=False
-    )
-    for si, scheme in enumerate(schemes):
+    refit_gains = (refit or {}).get("gains_vs_innerval_ridge", {})
+    refit_ridge = (refit or {}).get("pooled_r2", {}).get(basis)
+
+    panels = [
+        ("prefix", "Novel-prefix folds", ARM_ORDER),
+        ("query", "Novel-query folds", ("bare_query", "stitch")),
+    ]
+    palette = {"ridge": "#8888aa", "krr": "#3366cc", "rff": "#66aadd", "mlp": "#cc3333"}
+    fig, axes = plt.subplots(1, 2, figsize=(10.6, 3.9), squeeze=False)
+
+    def _rung_value(arm: str, scheme: str, rung: str) -> float | None:
+        cand = [u for u in units if u["arm"] == arm and u["scheme"] == scheme and u["rung"] == rung]
+        if rung == "ridge":
+            cand = [u for u in cand if u.get("engine") == "press"]
+        if not cand:
+            return None
+        vals = [v for v in (_unit_r2(u, basis) for u in cand) if v is not None]
+        return _seed_mean(vals)
+
+    def _gain_ci(arm: str, scheme: str, rung: str) -> tuple[float, list[float]] | None:
+        src = refit_gains if (arm == "query_averaged" and scheme == "prefix") else gains
+        boot_key = "bootstrap_vs_innerval_ridge" if src is refit_gains else None
+        for suffix in ("", "|s0", "|s1", "|s2"):
+            g = src.get(f"{arm}|perrow|{scheme}|{rung}|{basis}{suffix}")
+            if g:
+                b = g.get(boot_key, g) if boot_key else g
+                return float(b["delta_r2"]), [float(c) for c in b["ci95_cluster"]]
+        return None
+
+    for si, (scheme, title, arms) in enumerate(panels):
         ax = axes[0][si]
-        labels, vals, errs_lo, errs_hi, colors = [], [], [], [], []
-        palette = {"ridge": "#8888aa", "krr": "#3366cc", "rff": "#66aadd", "mlp": "#cc3333"}
-        for arm in ARM_ORDER:
-            for rung in RUNG_ORDER:
-                cand = [
-                    u
-                    for u in units
-                    if u.get("arm") == arm
-                    and u.get("scheme") == scheme
-                    and u.get("grain") == "perrow"
-                    and u.get("rung") == rung
-                ]
-                if not cand:
+        arms = [a for a in arms if any(u["arm"] == a and u["scheme"] == scheme for u in units)]
+        width = 0.19
+        for ri, rung in enumerate(RUNG_ORDER):
+            xs, vals, errs_lo, errs_hi, hatches = [], [], [], [], []
+            for ai, arm in enumerate(arms):
+                degenerate = arm == "query_averaged" and scheme == "prefix" and rung == "ridge"
+                v = refit_ridge if degenerate else _rung_value(arm, scheme, rung)
+                if v is None:
                     continue
-                r2 = _unit_r2(cand[0], basis)
-                if r2 is None:
-                    continue
-                labels.append(f"{arm}\n{rung}")
-                vals.append(r2)
-                gk = f"{arm}|perrow|{scheme}|{rung}|{basis}"
-                g = gains.get(gk) or gains.get(gk + "|s0")
-                if g and rung != "ridge":
-                    lo, hi = _err_offsets(g["delta_r2"], g["ci95_cluster"])
+                xs.append(ai + (ri - 1.5) * width)
+                vals.append(v)
+                hatches.append("//" if degenerate else "")
+                g = _gain_ci(arm, scheme, rung) if rung != "ridge" else None
+                if g:
+                    lo, hi = _err_offsets(g[0], g[1])
                     errs_lo.append(lo)
                     errs_hi.append(hi)
                 else:
                     errs_lo.append(0.0)
                     errs_hi.append(0.0)
-                colors.append(palette[rung])
-        x = np.arange(len(labels))
-        ax.bar(x, vals, color=colors)
-        ax.errorbar(x, vals, yerr=[errs_lo, errs_hi], fmt="none", ecolor="black", capsize=2, lw=0.8)
-        ax.set_xticks(x)
-        ax.set_xticklabels(labels, rotation=60, fontsize=6, ha="right")
-        ax.set_ylabel(f"held-out R2 ({basis})")
-        ax.set_title(f"{scheme}-novel folds")
-    fig.suptitle("#1775 per-arm estimation ladder (CI whiskers = cluster-bootstrap gain CI)")
+            if not xs:
+                continue
+            bars = ax.bar(
+                xs,
+                vals,
+                width=width,
+                color=palette[rung],
+                label=RUNG_LABELS[rung] if si == 0 else None,
+            )
+            for b, h in zip(bars, hatches):
+                if h:
+                    b.set_hatch(h)
+                    b.set_edgecolor("white")
+            ax.errorbar(
+                xs, vals, yerr=[errs_lo, errs_hi], fmt="none", ecolor="black", capsize=2, lw=0.9
+            )
+        ax.axhline(0.0, color="black", lw=0.8)
+        ax.set_xticks(range(len(arms)))
+        ax.set_xticklabels([ARM_LABELS[a] for a in arms], fontsize=8)
+        ax.set_ylim(-0.42, 1.0)
+        ax.set_ylabel("held-out R2 (48-PC target space)" if si == 0 else "")
+        ax.set_title(title, fontsize=10)
+    hatch_proxy = plt.Rectangle(
+        (0, 0), 1, 1, facecolor=palette["ridge"], hatch="//", edgecolor="white"
+    )
+    handles, labels = axes[0][0].get_legend_handles_labels()
+    handles.append(hatch_proxy)
+    labels.append("ridge, inner-val lambda refit\n(PRESS selection degenerate)")
+    axes[0][0].legend(handles, labels, fontsize=6.5, loc="upper left", framealpha=0.9)
     fig.tight_layout()
-    fig.savefig(out / "hero_ladder_bars.png", dpi=200)
+    savefig_paper(fig, "hero_ladder_bars", dir=out)
     plt.close(fig)
 
 
@@ -255,10 +330,11 @@ def main() -> int:
     out = fig_dir()
     linear = _load(eval_dir("ladder") / "linear_fits.json")
     nonlinear = _load(eval_dir("ladder") / "nonlinear_fits.json")
+    refit = _load(eval_dir("ladder") / "query_averaged_refit.json")
     detection = _load(eval_dir("detection") / "hsic_dcor.json")
     bilinear = _load(eval_dir("bilinear") / "bilinear_fits.json")
     fold_check = _load(eval_dir("fold_check") / "n50k_overlap.json")
-    hero_ladder(linear or {}, nonlinear or {}, out)
+    hero_ladder(linear or {}, nonlinear or {}, refit, out)
     hero_gap_closure(linear or {}, bilinear or {}, out)
     exploratory(linear, nonlinear, detection, bilinear, fold_check, out)
     made = sorted(p.name for p in out.glob("*.png"))
