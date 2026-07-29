@@ -97,6 +97,8 @@ from scripts.issue1689_common import (  # noqa: E402
     CONDITION_TABLE,
     HEADLINE_LAYER,
     HF_DATA_PREFIX,
+    LAMBDA_LOG_MAX,
+    LAMBDA_LOG_MIN,
     enumerate_pair_set,
 )
 from scripts.issue1689_fit_ladder import (  # noqa: E402
@@ -178,7 +180,7 @@ def _metadata(args: argparse.Namespace) -> dict:
         "layer": args.layer,
         "n_null_draws": args.null_draws,
         "engine": ENGINE_TAG,
-        "lambda_grid": {"log_min": -2.0, "log_max": 4.0, "size": len(LAMBDAS)},
+        "lambda_grid": {"log_min": LAMBDA_LOG_MIN, "log_max": LAMBDA_LOG_MAX, "size": len(LAMBDAS)},
         "fit_convention": (
             "per-CELL ridge (Y ~ X @ W + b) on ALL cell rows; inner-group-cv lambda over the"
             " ladder LAMBDAS grid with conv-grouped inner folds"
@@ -403,8 +405,11 @@ def build_null_bank(
         m = (s_t @ e @ s_t.T).numpy()  # (C, C): [i, j] = s_i^T E s_j
         vals[k] = m / denom
         if (k + 1) % 25 == 0 or k + 1 == args.null_draws:
+            # tmp already ends .npz, so np.savez(path) appends nothing and
+            # opens/closes the handle itself (code-review v15 Minor: no
+            # refcount-reliant flush before os.replace).
             tmp = bank_path.with_name(bank_path.stem + ".tmp.npz")
-            np.savez(tmp.open("wb"), vals=vals, done_draws=np.int64(k + 1))
+            np.savez(tmp, vals=vals, done_draws=np.int64(k + 1))
             os.replace(tmp, bank_path)
         print(
             f"[nullbank] draw {k + 1}/{args.null_draws} elapsed={time.time() - t0:.2f}s",
@@ -455,7 +460,17 @@ def run_pair_battery(
     out: dict[str, list[dict]] = {m: [] for m in model_tags}
     for m in model_tags:
         jsonl = pairs_dir / f"{m}.jsonl"
-        done = {(r["a"], r["b"], r["arm"]): r for r in _read_jsonl(jsonl)}
+        # Resume key includes the null-draw regime (code-review v15 Major,
+        # concern procrustes-pairs-resume-null-draws — the #722 r3 class): a
+        # cached row computed at a DIFFERENT --null-draws is ignored here and
+        # recomputed+appended; the dict keeps the LAST matching row per key.
+        # Skipped rows carry no null stats (draw-count-independent) and stay
+        # reusable at any draw count.
+        done = {
+            (r["a"], r["b"], r["arm"]): r
+            for r in _read_jsonl(jsonl)
+            if "skipped_reason" in r or r.get("n_null_draws") == args.null_draws
+        }
         n_units = len(unordered) * len(arms)
         unit = 0
         for a_slug, b_slug in unordered:
@@ -593,6 +608,15 @@ def assemble_outputs(
                 if "skipped_reason" in r:
                     rec["skipped_reason"] = r["skipped_reason"]
                 else:
+                    # Belt for the resume-key fix (code-review v15 Major): a
+                    # row carrying a different draw count than this run's
+                    # metadata claims must never ship.
+                    if r["n_null_draws"] != args.null_draws:
+                        raise RuntimeError(
+                            f"stale battery row for {m} {src}~{tgt}/{arm}: "
+                            f"n_null_draws={r['n_null_draws']} != --null-draws "
+                            f"{args.null_draws} (resume-regime violation)"
+                        )
                     rec.update(
                         {
                             k: r[k]
