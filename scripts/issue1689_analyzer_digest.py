@@ -157,4 +157,14 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    import os
+    import sys
+
+    rc = main()
+    # C-extension interpreter-shutdown-race workaround; see the corresponding
+    # block in scripts/issue1689_gen_corpus.py for the full rationale +
+    # gotchas.md § PyGILState_Release SIGABRT pointer. The CSV is written via
+    # a closed file handle before return; atexit is safely skipped.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(rc if isinstance(rc, int) else 0)
