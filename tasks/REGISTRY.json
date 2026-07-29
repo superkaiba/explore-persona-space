@@ -6200,8 +6200,8 @@
     "1800": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1800",
-      "status": "proposed",
+      "path": "tasks/planning/1800",
+      "status": "planning",
       "title": "daily-fix: WARN when GCP workload chain has no persist phase"
     },
     "1801": {
