@@ -141,6 +141,56 @@ def test_finalize_coverage_assert_fires_on_missing_cell(tiny_roots, tmp_path):
     assert manifest["n_cells"] == 14
 
 
+def _k2_cells(cfg, n_coherent_both: int):
+    cells = {}
+    for grp in run.enumerate_groups(cfg):
+        for qid in range(cfg.n_questions):
+            cid = run.cell_id(grp["trait"], grp["arm"], grp["alpha"], qid)
+            nc = n_coherent_both if grp["arm"] == "both" else cfg.n_draws
+            cells[cid] = {"n_coherent": nc, "n_draws": cfg.n_draws, "shard": 0}
+    return cells
+
+
+def test_k2_fires_only_when_all_trait_alphas_below_gate(tmp_path):
+    cfg = run.RunConfig(tiny=False, out_root=tmp_path, bulk_root=tmp_path / "b")
+    k2 = run.evaluate_k2(cfg, _k2_cells(cfg, n_coherent_both=0))  # 0% coherent
+    assert k2["fired"] is True
+    assert len(k2["both_arm_coherence_rates"]) == 9  # 3 traits x 3 alphas
+    # ONE (trait, alpha) at the gate (>= 50%) keeps the ladder alive.
+    cells = _k2_cells(cfg, n_coherent_both=0)
+    for qid in range(cfg.n_questions):
+        cells[run.cell_id("evil", "both", 1.0, qid)]["n_coherent"] = cfg.n_draws // 2
+    assert run.evaluate_k2(cfg, cells)["fired"] is False
+
+
+def test_k2_gate_halts_rc9_at_production_shape_and_demotes_under_tiny(tmp_path):
+    prod = run.RunConfig(tiny=False, out_root=tmp_path, bulk_root=tmp_path / "b")
+    fired = {"fired": True, "both_arm_coherence_rates": {"evil/a1": 0.1}}
+    with pytest.raises(SystemExit) as exc:
+        run.enforce_k2_gate(prod, fired)
+    assert exc.value.code == run.RC_K2_GATE == 9
+    tiny = run.tiny_config(tmp_path, tmp_path / "b")
+    run.enforce_k2_gate(tiny, fired)  # demoted: no raise
+    run.enforce_k2_gate(prod, {"fired": False})  # not fired: no raise
+
+
+def test_judge_refuses_fired_k2(tiny_roots, tmp_path):
+    """The J phase never submits 30k calls against a fired K2 (plan §7)."""
+    import shutil
+
+    import issue1769_judge as judge
+
+    out_root, _ = tiny_roots
+    j_root = tmp_path / "out"
+    j_root.mkdir()
+    shutil.copy2(out_root / "cells_manifest.json", j_root / "cells_manifest.json")
+    (j_root / "k2_report.json").write_text(json.dumps({"fired": True}))
+    with pytest.raises(AssertionError, match="K2 dose-ladder coherence gate FIRED"):
+        judge.load_manifest(j_root)
+    (j_root / "k2_report.json").write_text(json.dumps({"fired": False}))
+    assert judge.load_manifest(j_root)["n_cells"] == 14
+
+
 def test_expected_cells_production_grid_is_600():
     cfg = run.RunConfig(tiny=False, out_root=Path("unused"), bulk_root=Path("unused"))
     cells = run.expected_cells(cfg)

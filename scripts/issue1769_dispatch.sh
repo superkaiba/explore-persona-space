@@ -122,13 +122,23 @@ if [ -z "$KILL_HALT" ]; then
   done
   if [ "$GRID_FAIL" -ne 0 ]; then exit 6; fi
 
-  # ── finalize: coverage + manifest + upload verify ────────────────
+  # ── finalize: coverage + manifest + upload verify + K2 gate ──────
   echo "[phase=finalize]"
-  "${DRIVER[@]}" --phase finalize > "$LOG_DIR/issue-${ISSUE}-finalize.log" 2>&1 || {
-    echo "[phase=finalize_failed] see $LOG_DIR/issue-${ISSUE}-finalize.log" >&2
+  set +e
+  "${DRIVER[@]}" --phase finalize > "$LOG_DIR/issue-${ISSUE}-finalize.log" 2>&1
+  FIN_RC=$?
+  set -e
+  if [ "$FIN_RC" -eq 9 ]; then
+    # Designed artifact-routed HALT (k2_report.json + rc=9): the dose ladder
+    # sits wholly outside the coherent regime — the judge phase must not run
+    # (plan §7 kill criterion 2; the alpha-sub-grid retry is orchestrator-owned).
+    echo "[phase=k2_halt] K2 dose-ladder coherence gate fired (see $OUT_ROOT/k2_report.json)"
+    KILL_HALT="k2_dose_ladder"
+  elif [ "$FIN_RC" -ne 0 ]; then
+    echo "[phase=finalize_failed] rc=$FIN_RC — see $LOG_DIR/issue-${ISSUE}-finalize.log" >&2
     tail -n 60 "$LOG_DIR/issue-${ISSUE}-finalize.log" >&2
     exit 8
-  }
+  fi
 fi
 
 # ── commit the phase-G metadata to the issue branch (production only:
@@ -178,14 +188,19 @@ eval_paths = sorted(
         "pilot.json",
         "pilot_gate_report.json",
         "cells_manifest.json",
+        "k2_report.json",
     )
     for p in Path(out_root).glob(pat)
 )
 summary = "issue-1769 phase-G GPU run complete (P0 + G0 pilot + 600-cell grid + finalize)"
 if kill_halt:
+    report = {
+        "pilot_gate": "pilot_gate_report.json",
+        "k2_dose_ladder": "k2_report.json",
+    }[kill_halt]
     summary = (
-        f"issue-1769 phase-G HALTED by the pre-registered G0 pilot gate; "
-        f"see {out_root}/pilot_gate_report.json"
+        f"issue-1769 phase-G HALTED by the pre-registered gate ({kill_halt}); "
+        f"see {out_root}/{report}"
     )
 note = {
     "summary": summary,

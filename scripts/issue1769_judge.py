@@ -91,6 +91,14 @@ def load_manifest(out_root: Path) -> dict:
     p = out_root / "cells_manifest.json"
     assert p.exists(), f"cells_manifest.json missing at {p} — run the driver finalize phase first"
     manifest = json.loads(p.read_text())
+    k2_path = out_root / "k2_report.json"
+    if k2_path.exists():
+        k2 = json.loads(k2_path.read_text())
+        assert not k2.get("fired"), (
+            "K2 dose-ladder coherence gate FIRED (plan §7 kill criterion 2) — refusing to "
+            f"submit the 30k-call judge phase; see {k2_path} (the alpha-sub-grid retry is "
+            "orchestrator-owned)"
+        )
     grid = manifest["grid"]
     n_expected = 0
     for _trait in grid["traits"]:
