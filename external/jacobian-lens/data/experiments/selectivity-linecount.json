@@ -1,0 +1,74 @@
+{
+  "explicit_q": "After reading it, continue the passage for three more lines, maintaining the exact same line-wrapping pattern. Output the continuation only — no preamble.",
+  "conditions": {
+    "none": {
+      "question": "",
+      "prefill": " The first line has"
+    },
+    "direct": {
+      "question": "How many characters are in the first line?",
+      "prefill": " The first line has"
+    },
+    "letter": {
+      "question": "What is the first letter of the number of characters in the first line, if you were to write it out?",
+      "prefill": " The first letter is"
+    }
+  },
+  "passages": [
+    {
+      "tag": "gettysburg",
+      "width": 40,
+      "text": "Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal."
+    },
+    {
+      "tag": "bridge",
+      "width": 26,
+      "text": "The old stone bridge across the river had been standing for generations and locals walked across it every morning on their way to the market square in town."
+    },
+    {
+      "tag": "garden",
+      "width": 30,
+      "text": "Behind the house there was a small vegetable garden where tomatoes and beans grew in neat rows along a wooden fence painted white last summer."
+    },
+    {
+      "tag": "library",
+      "width": 34,
+      "text": "The municipal library on the corner of Oak Street stayed open late on Thursdays so that students could study after their evening classes finished."
+    },
+    {
+      "tag": "bakery",
+      "width": 38,
+      "text": "Every morning before sunrise the baker would light the ovens and begin kneading dough for the loaves that would fill the shelves by opening time."
+    },
+    {
+      "tag": "harbor",
+      "width": 42,
+      "text": "Fishing boats returned to the harbor each afternoon with their catch and the gulls would circle overhead waiting for scraps thrown from the deck."
+    },
+    {
+      "tag": "trail",
+      "width": 46,
+      "text": "The hiking trail wound through dense forest before emerging onto a ridge with views of the valley below and distant mountains capped with snow."
+    },
+    {
+      "tag": "workshop",
+      "width": 50,
+      "text": "In the back of the workshop the carpenter kept a collection of hand tools that had belonged to his grandfather and were still sharp enough to use daily."
+    },
+    {
+      "tag": "concert",
+      "width": 54,
+      "text": "The orchestra rehearsed in the empty hall while stagehands adjusted the lighting and arranged chairs in preparation for the evening performance. Musicians tuned their instruments with practiced care and the conductor reviewed his notes one final time before stepping onto the podium to begin the run-through."
+    },
+    {
+      "tag": "ferry",
+      "width": 58,
+      "text": "Passengers boarded the ferry at the southern dock and found seats along the railing where they could watch the shoreline recede as the engines started. A crew member coiled the heavy rope on the deck while gulls wheeled overhead, and the captain sounded the horn twice to signal departure into the open channel."
+    },
+    {
+      "tag": "observatory",
+      "width": 62,
+      "text": "The observatory on the hilltop opened to visitors after dark when the telescopes could be aimed at planets and distant galaxies on clear nights. Docents handed out star charts and pointed visitors toward the main dome, where a queue had already formed for a glimpse of Saturn through the largest instrument."
+    }
+  ]
+}
