@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1791,
+  "highest_id": 1792,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6133,6 +6133,13 @@
       "path": "tasks/proposed/1791",
       "status": "proposed",
       "title": "daily-fix: --map-files misuse OSError before #1613 guard"
+    },
+    "1792": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1792",
+      "status": "proposed",
+      "title": "daily-fix: scratch-worktree cone + empty-dir residue fixes"
     },
     "18": {
       "has_clean_result": false,
