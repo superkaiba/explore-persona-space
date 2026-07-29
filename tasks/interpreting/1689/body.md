@@ -1,6 +1,6 @@
 ---
 title: Changing surface framing costs the context-to-answer map far more than changing
-  speaker identity, and changing both costs no more than framing alone (LOW confidence)
+  speaker identity, and changing both adds little beyond framing's cost (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-25T18:54:59Z'
