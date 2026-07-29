@@ -203,7 +203,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "--manifest-hf-prefix", default="issue779_monitoring/fitter-fair-comparison-n1m"
     )
-    ap.add_argument("--hf-prefix", default="issue779_monitoring/fitter-fair-comparison-n1m")
+    # N1M contract (issue779_ffc_n1m_fits.py L949-953 + its own CLI default):
+    # --hf-prefix is the CAPTURE prefix <round-root>/final_token_capture — the chunk
+    # stream reads <hf_prefix>/shardNN_chunkNNNN.pt directly — while
+    # --manifest-hf-prefix is the ROUND ROOT (N1G._resolve_manifest_dir appends
+    # sampling_manifest itself). Crash-fix r6 (att-20260729-082617): a round-root
+    # default here 404'd the first chunk on the pod.
+    ap.add_argument("--hf-prefix", default=f"{N1M.N1G.HF_PREFIX}/final_token_capture")
     ap.add_argument("--n1m-capture-dir", type=Path, default=None)
     ap.add_argument("--mm-dir", type=Path, default=C76.DATA_DIR / "n1m_mm")
     ap.add_argument("--orig-dir", type=Path, default=None)

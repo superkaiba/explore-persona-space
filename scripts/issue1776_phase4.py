@@ -434,7 +434,11 @@ def cmd_refit_split(args) -> int:
             out_dir=args.assemble_out_dir,
             manifest_from_hf=True,
             manifest_hf_prefix="issue779_monitoring/fitter-fair-comparison-n1m",
-            hf_prefix="issue779_monitoring/fitter-fair-comparison-n1m",
+            # N1M contract (issue779_ffc_n1m_fits.py L949-953): ns.hf_prefix is the
+            # CAPTURE prefix (the chunk stream flat-joins <hf_prefix>/<name>.pt);
+            # only manifest_hf_prefix is the round root. Crash-fix r6 — same
+            # wrong-prefix class as the comparator p0 404 (att-20260729-082617).
+            hf_prefix=f"{N1M.N1G.HF_PREFIX}/final_token_capture",
             n1m_capture_dir=None,
             mm_dir=args.mm_dir,
             orig_dir=None,

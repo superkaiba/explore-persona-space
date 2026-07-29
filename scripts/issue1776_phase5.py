@@ -444,7 +444,13 @@ def assemble_test_leg_and_anchors(args) -> tuple[Path, Path]:
         out_dir=args.assemble_out_dir,
         manifest_from_hf=True,
         manifest_hf_prefix=args.manifest_hf_prefix,
-        hf_prefix=args.manifest_hf_prefix,
+        # N1M contract (issue779_ffc_n1m_fits.py L949-953): ns.hf_prefix is the
+        # CAPTURE prefix <round-root>/final_token_capture — the chunk stream reads
+        # <hf_prefix>/shardNN_chunkNNNN.pt directly; only manifest_hf_prefix is
+        # the round root. Crash-fix r6: same wrong-prefix class as the comparator
+        # p0 404 (att-20260729-082617); the capture-prefix fix also keeps the
+        # memmap fingerprint aligned with the comparator's stream (mm reuse).
+        hf_prefix=f"{args.manifest_hf_prefix}/final_token_capture",
         n1m_capture_dir=None,
         mm_dir=args.mm_dir,
         orig_dir=None,
