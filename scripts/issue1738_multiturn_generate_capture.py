@@ -1612,11 +1612,15 @@ def run_bare_capture(args) -> int:
             parity,
         )
         if not args.no_upload:
+            # upload_as_file=True uses path_in_repo as the FULL FILE destination
+            # (hub._upload file branch: `path_in_repo or local_path.name`) — passing
+            # the bare prefix here created a FILE at `<prefix>` that 400-blocked
+            # every later `<prefix>/capture/*` chunk commit (fu1 B1 incident).
             url = hub._upload(
                 out,
                 repo_id=C.HF_DATA_REPO,
                 repo_type="dataset",
-                path_in_repo=up,
+                path_in_repo=f"{up}/{CAPTURE_SUBDIR}/bare_pilot_meta.json",
                 upload_as_file=True,
             )
             if not url:
