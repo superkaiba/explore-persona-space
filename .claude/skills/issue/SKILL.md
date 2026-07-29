@@ -2097,7 +2097,11 @@ absolute path once with the #506-safe
 `REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")`
 recipe (as above) — NOT `git rev-parse --show-toplevel`, which from a
 worktree cwd returns the worktree root and doubles the path — and reuse
-`$WORKTREE` / `$REPO_ROOT` in every subsequent command.
+`$WORKTREE` / `$REPO_ROOT` in every subsequent command. Corollary: this
+issue's experiment files (scripts, configs, plan-referenced code) exist
+ONLY in the worktree until Step 10d merges — a repo-root-relative
+read/exec of `scripts/issue<N>_*.py` misses them (~5 failed tool calls in
+one #1739 session, 2026-07-28); always prefix with `$WORKTREE/`.
 
 **Open the draft PR only if the branch is ahead of fetched `origin/main`.** `gh pr create` errors with `No commits between main and issue-<N>` when the branch has no commits yet (the common case before the implementer has run). Pre-check first (bounded fetch + `origin/main`-anchored aheadness):
 ```bash
@@ -2432,8 +2436,11 @@ for f in $SPECS; do
   # EXCLUDING prior spec-freshness sync commits (which legitimately
   # touch spec paths — without the exclusion, the first sync's own
   # commit would poison every later freshness check on the branch).
+  # The exclusion matches the prescribed sync-subject SHAPE, not the
+  # bare "spec-freshness" token, so a deliverable commit whose subject
+  # names the mechanism is never misread as a sync commit (#1789).
   bs_commits=$(git -C "$WT" log --format='%H %s' "$MB"..HEAD -- "$f" \
-    | awk 'index($0, "spec-freshness") == 0')
+    | awk 'index($0, "sync workflow-surface specs from") == 0')
   if [ -n "$bs_commits" ]; then
     fam="${FAMILY_OF[$f]:-$f}"    # default: singleton family = own path
     DIRTY_FAMILIES[$fam]=1
@@ -6496,6 +6503,12 @@ RESULTS. Every detached launch declares its harvest path at launch time:
 
 The contract costs one token + a path choice at launch — never a new gate.
 
+**Monitor-filter hygiene (async-dispatch chains).** A crash-pattern
+Monitor/until-loop over a detached phase's log should EXCLUDE known
+benign teardown lines (`aclose()`, `Event loop is closed` — vLLM/httpx
+shutdown noise) from its error pattern, or it fires spurious wakes on a
+healthy phase end (2 spurious wakes, #1773 Phase 4, 2026-07-28).
+
 **Earlyoom protection is REQUIRED on the verified phase (#957; incident #811).**
 The shared VM runs `earlyoom` with `--prefer '(^|/)(pytest|python3?)$'` (+300
 badness to every python process), so a long detached fit is the designated
@@ -7354,6 +7367,11 @@ explicit eval-data path):
      --payload-file /tmp/issue-<N>-inline-payload.txt
    ```
 
+   (/tmp hygiene: on a long-lived follow-up issue, ROUND-SCOPE tmp
+   artifact names — `/tmp/issue-<N>-r<round>-<label>` — a bare
+   `/tmp/issue-<N>-<label>` persists from prior rounds/sessions and trips
+   Write-before-Read collisions; 2 collisions on 2026-07-28.)
+
    The helper mechanizes both legs (no-flags `workflow_lint.py`;
    `select_step9c_tests.py --map-files` → mapped pytest at the #1046
    timeout formula) and the verdict semantics below, persists the leg
@@ -7816,7 +7834,10 @@ split in two:
   `epm:methodology-doc-generated v1` marker — posted only when the
   link line lands (the step is only "done" then). If the background
   agent has not returned yet at this point, WAIT for it here
-  (TaskOutput / completion notification) before running the join.
+  (TaskOutput / completion notification) before running the join — load
+  the deferred schema first (`ToolSearch("select:TaskOutput")`): an
+  unloaded direct call fails with InputValidationError (2 firings,
+  2026-07-28).
 
 The early spawn needs no extra gating relative to upload verification:
 the agent's artifact reads are worktree-local, and the late join
@@ -10372,7 +10393,7 @@ rebase-merged. Five guards:
    MB=$(git -C "$WT" merge-base HEAD origin/main)
    # is the merge-base reachable on origin/main's first-parent mainline?
    ON_MAINLINE=$(git -C "$WT" rev-list --first-parent origin/main \
-     | grep -Fxq "$MB" && echo yes || echo no)
+     | grep -Fxq -- "$MB" && echo yes || echo no)
    ```
 
    The branch is **unsafe to blind-rebase** if EITHER `ON_MAINLINE=no`
@@ -10408,22 +10429,32 @@ rebase-merged. Five guards:
    branch-side commit is content imported FROM `main`, so it is never an
    out-of-scope regression. Match on the commit SUBJECT line ONLY — a `--grep`
    over subject+body would wrongly exclude a genuine branch edit whose commit
-   BODY happens to mention "spec-freshness" (documentation, a retrospective),
-   silently dropping a real branch touch. The Step-5a sync SUBJECT variants all
-   carry the token: the current `issue-<N>: sync workflow-surface specs from
-   origin/main (spec-freshness)` (#1747), the historical `issue-<N>: sync
-   workflow-surface specs from main (spec-freshness)` (pre-#1747 commits keep
-   the old title), and the legacy `chore(issue-<N>): spec-freshness sync
-   workflow surface from main`.
+   BODY happens to mention the sync-subject phrase (documentation, a
+   retrospective), silently dropping a real branch touch. The exclusion keys
+   on the prescribed sync-subject SHAPE `sync workflow-surface specs from` —
+   NOT the bare `spec-freshness` token, which a deliverable commit ABOUT the
+   sync machinery legitimately carries in its subject (#1789: such a
+   deliverable read as CLEAN and the post-gate re-sync would have clobbered
+   it). The anchor is carried by the current `issue-<N>: sync
+   workflow-surface specs from origin/main (spec-freshness)` (#1747) and the
+   historical `issue-<N>: sync workflow-surface specs from main
+   (spec-freshness)` (pre-#1747 commits keep the old title). The legacy
+   `chore(issue-<N>): spec-freshness sync workflow surface from main` variant
+   does NOT carry the anchor and now reads as a branch-side edit — the
+   fail-SAFE direction (family dirty → sync skipped / Guard-3 conservative;
+   status-quo staleness, never a clobber). Residual: a future deliverable
+   subject QUOTING the exact anchor phrase verbatim would still be excluded —
+   do not quote it in commit subjects.
 
    ```bash
    # For each workflow-surface path $f in the own-diff: does it have any
-   # branch-side commit whose SUBJECT does NOT contain "spec-freshness"?
+   # branch-side commit whose SUBJECT does NOT contain the prescribed
+   # sync-subject anchor "sync workflow-surface specs from"?
    # Emit "<sha> <subject>" per own-commit touching $f, then keep only the
    # non-sync ones. If none remain, the file's only branch-side touches are
    # spec-freshness syncs => imported from main => NON-blocking for Guard 3.
    non_sync=$(git -C "$WT" log --format='%H %s' "$MB"..HEAD -- "$f" \
-     | awk 'index($0, "spec-freshness") == 0')
+     | awk 'index($0, "sync workflow-surface specs from") == 0')
    # $non_sync empty   => file imported via spec-freshness sync only => treat as
    #                      NON-blocking (in-scope, imported from main).
    # $non_sync nonempty => a genuine branch-side edit (its subject is not a sync)
@@ -10431,9 +10462,10 @@ rebase-merged. Five guards:
    ```
 
    (`git log --format='%H %s'` prints `<sha> <subject>` per commit — the `awk
-   index()` keeps only lines whose subject lacks the token; the sha is a hex
-   string that never contains "spec-freshness", so the match is effectively
-   subject-scoped. Equivalently `git log --format='%s' … | grep -v spec-freshness`.)
+   index()` keeps only lines whose subject lacks the anchor phrase; the sha is
+   a hex string that never contains "sync workflow-surface specs from", so the
+   match is effectively subject-scoped. Equivalently
+   `git log --format='%s' … | grep -vF 'sync workflow-surface specs from'`.)
 
    UNSAFE if the own-diff — after the spec-freshness exclusion above — touches
    any foreign `tasks/` path (under `tasks/` but outside `tasks/*/<N>/`) or files
@@ -10481,7 +10513,7 @@ rebase-merged. Five guards:
    `origin/main` ADDED since the merge-base (post-merge-base additions
    only — never `main`'s own pre-fork content), then check whether each
    such line is present in the branch's current version of that file
-   (`grep -Fxq` — full-line, fixed-string, so quoting or partial
+   (`grep -Fxq --` — full-line, fixed-string, so quoting or partial
    substring matches cannot mask a drop). A missing line is by
    definition a main-side addition the branch's snapshot silently
    REVERTED — a legitimate branch DELETION of a pre-existing function
@@ -10507,7 +10539,7 @@ rebase-merged. Five guards:
              while IFS= read -r ADD_LINE; do
                [ -z "$ADD_LINE" ] && continue
                if ! git -C "$WT" show HEAD:"$P" 2>/dev/null \
-                    | grep -Fxq "$ADD_LINE"; then
+                    | grep -Fxq -- "$ADD_LINE"; then
                  MISSING_ON_BRANCH=$((MISSING_ON_BRANCH + 1))
                fi
              done < /tmp/1713-main-adds.txt
@@ -11131,9 +11163,9 @@ tests BEFORE anything lands:
       # baseline map, so its failures are NEW by construction (correct —
       # block; same doctrine as the branch-new scan-test note above).
       for leg in baseline gated; do
+        # msg-strip caveat: a literal ' - ' INSIDE a param id truncates here;
+        # a same-prefix dash-bearing sibling collision fails toward pass (narrow doc-only residual, #1573)
         grep -E '^(FAILED|ERROR) ' "/tmp/issue-<N>-tg-$leg.txt" \
-          # msg-strip caveat: a literal ' - ' INSIDE a param id truncates here;
-          # a same-prefix dash-bearing sibling collision fails toward pass (narrow doc-only residual, #1573)
           | sed -E 's/^(FAILED|ERROR) //; s/ - .*$//' \
           | sort -u > "/tmp/issue-<N>-tg-$leg-nodes.txt" || true
       done
@@ -11708,7 +11740,7 @@ else
     declare -A DIRTY_FAMILIES_10D
     for f in $SPECS_10D; do
       bs_commits=$(git -C "$WT" log --format='%H %s' "$MB_10D"..HEAD -- "$f" \
-        | awk 'index($0, "spec-freshness") == 0')
+        | awk 'index($0, "sync workflow-surface specs from") == 0')
       if [ -n "$bs_commits" ]; then
         fam="${FAMILY_OF[$f]:-$f}"
         DIRTY_FAMILIES_10D[$fam]=1
@@ -12699,9 +12731,9 @@ Decision tree:
     # as the shared gate's executable block (sed msg-suffix strip, NOT awk
     # field-2: space-bearing string param ids must survive intact):
     for leg in baseline gated; do
+      # msg-strip caveat: a literal ' - ' INSIDE a param id truncates here;
+      # a same-prefix dash-bearing sibling collision fails toward pass (narrow doc-only residual, #1573)
       grep -E '^(FAILED|ERROR) ' "/tmp/issue-<N>-tg-$leg.txt" \
-        # msg-strip caveat: a literal ' - ' INSIDE a param id truncates here;
-        # a same-prefix dash-bearing sibling collision fails toward pass (narrow doc-only residual, #1573)
         | sed -E 's/^(FAILED|ERROR) //; s/ - .*$//' \
         | sort -u > "/tmp/issue-<N>-tg-$leg-nodes.txt" || true
     done
@@ -13015,7 +13047,7 @@ elif ! git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main \
 # this arm never opens a delete of the canonical folder. Only a
 # still-absent CANON takes the branch — terminal echo + false, nothing
 # deleted.
-elif ! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt \
+elif ! grep -qxF -- "$CANON" /tmp/issue-<N>-postmerge-lstree.txt \
     && { for _ in 1 2; do
            uv run python "$REPO_ROOT/scripts/sync_repo_root.py"
            NEW_CANON=$(realpath --relative-to="$REPO_ROOT" \
@@ -13024,10 +13056,10 @@ elif ! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt \
            git -C "$REPO_ROOT" fetch origin main --quiet \
              && git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main \
                 > /tmp/issue-<N>-postmerge-lstree.txt \
-             && grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt \
+             && grep -qxF -- "$CANON" /tmp/issue-<N>-postmerge-lstree.txt \
              && break
          done
-         ! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt; }; then
+         ! grep -qxF -- "$CANON" /tmp/issue-<N>-postmerge-lstree.txt; }; then
   echo "post-merge stale-task-folder guard: canonical folder $CANON still ABSENT from origin/main after 2 root syncs — cannot classify duplicates (removing origin's only copy would leave ZERO folders for task <N>)"
   false
 # Work arm: every committed task-<N> folder on origin/main (matches
@@ -13050,8 +13082,11 @@ elif mapfile -t DUPES < <(grep -E "^tasks/[^/]+/<N>$" \
   # worktree needs no local-root state (the duplicate exists there BY
   # CONSTRUCTION), stages in its OWN index (no concurrent-session staging
   # races), and every command is `git -C`-scoped (the hook's designed
-  # override). Sparse cone = the duplicates only: a FULL checkout is
-  # ~7.7 GB / ~100k files on the shared VM root disk.
+  # override). Sparse cone = the duplicates + scripts/hooks (the commit's
+  # own pre-commit gitleaks hook runs `bash scripts/hooks/gitleaks_scoped.sh`
+  # worktree-root-relative with always_run — exit 127 without it, #1780;
+  # toplevel .gitleaks.toml/.gitleaksignore ride cone mode automatically):
+  # a FULL checkout is ~7.7 GB / ~100k files on the shared VM root disk.
   SCRATCH=/tmp/issue-<N>-postmerge-scratch
   # Pre-clean a scratch leaked by an earlier crashed run. Failure here is
   # tolerable (nothing to clean): the worktree add below is the loud gate.
@@ -13064,7 +13099,7 @@ elif mapfile -t DUPES < <(grep -E "^tasks/[^/]+/<N>$" \
   # --no-checkout` is load-bearing for a bare copy of the add line.
   if ! { git -C "$REPO_ROOT" worktree add --detach --no-checkout "$SCRATCH" origin/main \
          && git -C "$SCRATCH" sparse-checkout init --cone \
-         && git -C "$SCRATCH" sparse-checkout set "${DUPES[@]}" \
+         && git -C "$SCRATCH" sparse-checkout set "${DUPES[@]}" scripts/hooks \
          && git -C "$SCRATCH" checkout --detach origin/main \
          && git -C "$SCRATCH" rm -r -q "${DUPES[@]}" \
          && git -C "$SCRATCH" commit -q -m "post-merge: remove stale task #<N> folder(s) imported by Step 10d merge
@@ -13125,6 +13160,20 @@ merge commit and would be read as a live task by the session watcher
       uv run python "$REPO_ROOT/scripts/sync_repo_root.py"
       STALE_LOCAL=$(cd "$REPO_ROOT" && ls -d "${DUPES[@]}" 2>/dev/null || true)
     fi
+    # Empty-dir residue (#1780 -> #1792): the sync's checkout removes
+    # tracked FILES but an untracked empty leftover dir is invisible to
+    # git — no number of root syncs clears it. Zero-content dirs (no
+    # files, no symlinks — the JOINT probe over ALL persisting paths)
+    # are rmdir'd depth-first (rmdir refuses non-empty dirs; inert to
+    # git state), then STALE_LOCAL is RE-DERIVED — never blind-cleared —
+    # so late-arriving content or a failed rmdir still fails loud
+    # below. $STALE_LOCAL is deliberately unquoted: multi-path
+    # word-split over `ls -d` output (task paths carry no whitespace).
+    if [ -n "$STALE_LOCAL" ] \
+       && [ "$(cd "$REPO_ROOT" && find $STALE_LOCAL \( -type f -o -type l \) 2>/dev/null | wc -l)" -eq 0 ]; then
+      (cd "$REPO_ROOT" && find $STALE_LOCAL -depth -type d -exec rmdir {} \; 2>/dev/null) || true
+      STALE_LOCAL=$(cd "$REPO_ROOT" && ls -d "${DUPES[@]}" 2>/dev/null || true)
+    fi
     if [ -n "$STALE_LOCAL" ]; then
       echo "post-merge stale-task-folder guard: LOCAL stale copy/copies persist after 2 root syncs: $STALE_LOCAL — origin/main is clean but the local root still carries the folder(s)"
       false
@@ -13162,7 +13211,10 @@ not the local root has pulled the merge (the root-`git rm` pathspec
 failure that drove the #1253 improvised, hook-blocked checkout-pathspec
 fallback). The local-residue tail converges the local root via
 `scripts/sync_repo_root.py`, with the existence re-check as the arbiter
-(the helper's exit 0 alone does not prove the pull ran).
+(the helper's exit 0 alone does not prove the pull ran). Zero-content
+leftover dirs (no files, no symlinks) are rmdir'd depth-first before the
+loud failure (#1780) — untracked empty dirs are invisible to git and no
+sync can clear them; non-empty residue still fails loud.
 
 #### Terminal teardown (code-change path only; runs AFTER `epm:merged v1` has been posted)
 
