@@ -149,3 +149,4 @@
 - [Companion-stat drop-class semantics](feedback_companion_stat_drop_class_semantics.md) — zero split-half floors at early positions are a named non-fatal exclusion, never an integrity-guard trip (#1415)
 - [Smoke per class×regime](feedback_smoke_class_regime_coverage.md) — multi-class dispatchers smoke ≥1 cell per realized behavior-class × regime (#1586)
 - [real-corpus exact dupes break sha-keyed samples](feedback_real_corpus_exact_dupes_sha_sample.md) — dedup in-draw with pinned-row priority; measure a frozen pinned split before asserting global sha-uniqueness (#1768)
+- [cross-machine input staging](feedback_cross_machine_input_staging.md) — VM-produced inputs need producer HF-upload + consumer launcher staging on git-clone lanes (#1773)
