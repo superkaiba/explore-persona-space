@@ -15,10 +15,17 @@ import csv
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+# CRITICAL: load_dotenv() BEFORE importing numpy/matplotlib — the shared-VM
+# thread caps (#847) bind in-process only when set before the first BLAS/
+# torch import freezes the pools.
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_blog,
     savefig_paper,
     set_paper_style,

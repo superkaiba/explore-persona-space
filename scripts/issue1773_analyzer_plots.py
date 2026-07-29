@@ -22,9 +22,16 @@ import math
 from collections import Counter
 from pathlib import Path
 
-import numpy as np
+# CRITICAL: load_dotenv() BEFORE importing numpy/matplotlib — the shared-VM
+# thread caps (#847) bind in-process only when set before the first BLAS/
+# torch import freezes the pools.
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style
+load_dotenv()
+
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 VAL = ROOT / "eval_results" / "issue_1773" / "validation"
