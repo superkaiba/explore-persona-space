@@ -248,20 +248,85 @@ def hero_gap_closure(linear: dict, bilinear: dict, out: Path) -> None:
     plt.close(fig)
 
 
-def exploratory(linear, nonlinear, detection, bilinear, fold_check, out: Path) -> None:
-    # per-fold R2 scatter
+def projection_cosines(projections: dict | None, out: Path) -> None:
+    """Observed max-abs-cosine of the fitted interaction components against the
+    train-fold answer PCs and the 3-trait persona-vector dictionary; the two
+    permutation-null p-values ride the caption/body (no in-figure annotations)."""
+    if not projections or "prefix" not in projections:
+        return
+    from explore_persona_space.analysis.paper_plots import savefig_paper
+
+    obs = projections["prefix"]["observed"]
+    reads = [
+        ("w_vs_pc_abscos_max", "output directions\nvs answer PCs"),
+        ("w_vs_rb_abscos_max", "output directions\nvs trait dictionary"),
+        ("u_vs_rb_abscos_max", "prefix-side inputs\nvs trait dictionary"),
+        ("v_vs_rb_abscos_max", "query-side inputs\nvs trait dictionary"),
+    ]
+    fig, ax = plt.subplots(figsize=(5.4, 3.2))
+    xs = np.arange(len(reads))
+    ax.bar(xs, [obs[k] for k, _ in reads], color="#446688", width=0.55)
+    ax.set_xticks(xs)
+    ax.set_xticklabels([lbl for _, lbl in reads], fontsize=8)
+    ax.set_ylabel("max abs cosine (pooled 576 terms)")
+    ax.set_ylim(0, 1.0)
+    ax.set_title("Bilinear interaction components: strongest alignment per read", fontsize=10)
+    fig.tight_layout()
+    savefig_paper(fig, "expl_projection_cosines", dir=out)
+    plt.close(fig)
+
+
+def exploratory(linear, nonlinear, detection, bilinear, fold_check, out: Path, refit=None) -> None:
+    # per-fold R2 scatter — the low-level per-unit view behind the ladder bars
     if linear:
-        fig, ax = plt.subplots(figsize=(5.6, 3.2))
-        for u in linear.get("units", []):
-            if u.get("basis") != "pca48" or "r2_folds" not in u:
-                continue
-            xs = np.full(len(u["r2_folds"]), len(ax.lines))
-            ax.plot(xs, u["r2_folds"], "o", ms=3, label=f"{u['arm']}/{u['scheme']}")
-        ax.set_ylabel("per-fold held-out R2 (pca48)")
-        ax.set_xticks([])
-        ax.legend(fontsize=5, ncol=3)
+        from explore_persona_space.analysis.paper_plots import savefig_paper
+
+        units = [
+            u
+            for u in _primary_units(linear.get("units", []))
+            if u.get("basis") == "pca48" and "r2_folds" in u and u.get("engine") == "press"
+        ]
+        scheme_label = {"prefix": "novel-prefix", "query": "novel-query", "doubly": "doubly-novel"}
+        groups = [
+            (u, f"{ARM_LABELS[u['arm']]}\n({scheme_label[u['scheme']]})".replace("\n(", " ("))
+            for u in units
+        ]
+        fig, ax = plt.subplots(figsize=(7.8, 3.6))
+        for gi, (u, lbl) in enumerate(groups):
+            ys = u["r2_folds"]
+            ax.plot(np.full(len(ys), gi), ys, "o", ms=4, color="#8888aa")
+        rf = (refit or {}).get("per_fold")
+        if rf:
+            qa_idx = [
+                gi
+                for gi, (u, _) in enumerate(groups)
+                if u["arm"] == "query_averaged" and u["scheme"] == "prefix"
+            ]
+            if qa_idx:
+                ys = [f["fold_r2"]["pca48"] for f in rf]
+                ax.plot(
+                    np.full(len(ys), qa_idx[0]),
+                    ys,
+                    "o",
+                    ms=5,
+                    mfc="none",
+                    mec="#cc3333",
+                    mew=1.2,
+                    label="inner-val lambda refit (per fold)",
+                )
+                ax.legend(fontsize=7, loc="center right")
+        ax.axhline(0.0, color="black", lw=0.8)
+        ax.set_xticks(range(len(groups)))
+        ax.set_xticklabels(
+            [lbl.replace("\n", " ") for _, lbl in groups],
+            fontsize=6.5,
+            rotation=40,
+            ha="right",
+        )
+        ax.set_ylabel("per-fold held-out R2\n(48-PC target space)")
+        ax.set_title("Linear (PRESS ridge) fits: all 6 folds per arm", fontsize=10)
         fig.tight_layout()
-        fig.savefig(out / "expl_per_fold_r2.png", dpi=160)
+        savefig_paper(fig, "expl_per_fold_r2", dir=out)
         plt.close(fig)
         # lambda-sensitivity table (rendered as figure text for the dump)
         rows = []
@@ -334,9 +399,11 @@ def main() -> int:
     detection = _load(eval_dir("detection") / "hsic_dcor.json")
     bilinear = _load(eval_dir("bilinear") / "bilinear_fits.json")
     fold_check = _load(eval_dir("fold_check") / "n50k_overlap.json")
+    projections = _load(eval_dir("bilinear") / "interaction_projections.json")
     hero_ladder(linear or {}, nonlinear or {}, refit, out)
     hero_gap_closure(linear or {}, bilinear or {}, out)
-    exploratory(linear, nonlinear, detection, bilinear, fold_check, out)
+    projection_cosines(projections, out)
+    exploratory(linear, nonlinear, detection, bilinear, fold_check, out, refit=refit)
     made = sorted(p.name for p in out.glob("*.png"))
     atomic_write_json(
         out / "meta.json",
