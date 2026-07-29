@@ -6452,8 +6452,8 @@
     "1833": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1833",
-      "status": "reviewing",
+      "path": "tasks/completed/1833",
+      "status": "completed",
       "title": "workflow-fix: gotchas entry \u2014 out-arg FILE-vs-DIR kind; misnested deliverables pass .exists() checks"
     },
     "1834": {
