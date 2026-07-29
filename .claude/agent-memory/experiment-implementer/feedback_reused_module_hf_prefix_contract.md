@@ -1,6 +1,6 @@
 ---
 name: reused-module-hf-prefix-contract
-description: Sibling reused modules can give the SAME flag name OPPOSITE semantics (round root vs capture prefix) — read the CONSUMING function's path join before wiring defaults, then class-sweep every caller of the same consumer (issue #1776 crash-fix cycle 2)
+description: Reused-module wiring contract — flags can carry OPPOSITE semantics across sibling modules AND a wrapper's re-declared args/namespaces must be audited FIELD-BY-FIELD against the consumer's reads (never default=None for a dereferenced field; call args like a layers list can silently wipe resume state) (issue #1776 crash-fix cycles 2+3)
 type: feedback
 ---
 
@@ -29,3 +29,15 @@ prefix (`N50._remote_index(prefix)` non-empty).
 bg job 404'd on `.../fitter-fair-comparison-n1m/shard00_chunk0000.pt`; fix
 commit `fe7ef9977b12e6db5f525cf5b9cecbf1516f4533` corrected all three callers;
 17-path Hub audit all-PASS post-fix.)
+
+**WIDENED (cycle 3, same class, ARG side):** the trap is not only Hub paths —
+a wrapper that re-declares a reused module's CLI surface (or hand-builds its
+`argparse.Namespace`) must audit EVERY field against the consumer's ACTUAL
+reads and copy the module's OWN defaults: (v) never `default=None` for a field
+the consumer dereferences (`orig_dir` → `None / "file"` TypeError; `pass_b` →
+`.exists()` AttributeError one line earlier); (vi) audit CALL ARGUMENTS too — a
+`layers=[19]` request mismatching the resume cursor's `[14,19]` silently WIPES
++ re-streams hours of memmap work (N1M cursor check); (vii) one-field fixes
+miss siblings — sweep the WHOLE namespace × every caller ONCE (cycle 3 audited
+36 field-caller cells, fixed 6). (Cycle 3: pod-1776 comparator-join TypeError;
+fix commit `e2dd82440ee6a902dbe9df3abe43830f389a249b`.)
