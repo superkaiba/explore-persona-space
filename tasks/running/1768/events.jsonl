@@ -68,3 +68,4 @@
 {"ts": "2026-07-29T08:31:33Z", "kind": "epm:progress", "version": 26, "by": "unknown", "note": "[long-phase-heartbeat] fleet capture ongoing, ~6h into the phase; every compact tick healthy (status=running, workload pid identity-verified by the poller each tick)."}
 {"ts": "2026-07-29T09:20:08Z", "kind": "epm:progress", "version": 27, "by": "unknown", "note": "[long-phase-heartbeat] fleet capture ~7.5h in; ticks healthy."}
 {"ts": "2026-07-29T10:07:57Z", "kind": "epm:progress", "version": 28, "by": "unknown", "note": "[long-phase-heartbeat] fleet capture ~9h in; ticks healthy (status=running each tick)."}
+{"ts": "2026-07-29T11:24:50Z", "kind": "epm:progress", "version": 29, "by": "unknown", "note": "[long-phase-heartbeat] fleet capture ~11h in; ticks healthy. Wall is running past the plan's 10-11.5h ceiling estimate — expected direction given the corrected TF-only basis (realized 50-75 GPU-h band); no ETA-deviation marker from the poller yet."}
