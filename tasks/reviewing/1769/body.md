@@ -24,6 +24,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1769.md](https://github.com/superkaiba/explore-persona-space/blob/846787c0c6c0b83977cbfae9ac4fa6bb13704818/docs/methodology/issue_1769.md) · [gist](https://gist.github.com/superkaiba/388947d3302f3a5cb0e9fc9a4be8dd68)
+
 ## Takeaways
 
 - At α=2, evil (f_d=1.008–1.072) and sycophancy (f_d=0.928–0.936) stay decode-driven under all three CJK-intrusion treatments; evil sits near scale-top (both-arm mean 86.03, ceiling check fired).
