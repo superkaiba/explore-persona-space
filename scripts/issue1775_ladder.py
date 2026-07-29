@@ -74,7 +74,7 @@ from issue1775_common import (  # noqa: E402
     fit_press_pairs,
     fold_pairs,
     inner_val_split,
-    load_units,
+    load_units_validated,
     mean_cosine,
     per_fit_baselines,
     resolve_store_dir,
@@ -108,6 +108,10 @@ REGIME_KEYS = (
 )
 PILOT_BOOKED_WALL_H = {"linear": 1.0, "nonlinear": 2.5}  # plan section 9 rows
 PILOT_GATE_RC = 7
+# Designed halt: the final-JSON assembly refuses to write a PARTIAL payload
+# (planned units missing a completed row) — the P3 crash-fix class where
+# 3/38 units would otherwise assemble into nonlinear_fits.json silently.
+ASSEMBLY_INCOMPLETE_RC = 23
 
 
 def _device(arg: str) -> str:
@@ -670,6 +674,80 @@ def gate_b_skips(detection_json: Path) -> set[str]:
     return skips
 
 
+def unit_row_incomplete(d: dict) -> str | None:
+    """Reason a persisted unit row is NOT a complete result (None = complete).
+
+    A unit counts as done ONLY when its JSONL row carries the full result
+    payload the assembly reads (#1775 P3 crash-fix): a stub / truncated /
+    older-schema row must re-run, never resume-skip. NOTE: rff per-fold
+    entries carry {fold, lambda, seed} BY DESIGN (no per-fold r2 — fold R2
+    lives in the persisted preds); rff completeness keys on the top-level
+    ``r2`` + ``wall_s``, not on a krr-shaped per_fold.
+    """
+    for k in REGIME_KEYS:
+        if k not in d:
+            return f"missing regime key {k!r}"
+    if "wall_s" not in d:
+        return "missing wall_s (unit never completed)"
+    rung = d.get("rung")
+    if rung == "mlp":
+        if not d.get("r2_by_seed") or "r2_seed_mean" not in d:
+            return "mlp row without r2_by_seed/r2_seed_mean"
+    elif rung in ("krr", "rff"):
+        pf = d.get("per_fold")
+        if not isinstance(pf, list) or not pf:
+            return f"{rung} row without per_fold"
+        if rung == "krr" and any("r2_fold" not in e for e in pf):
+            return "krr row with per_fold entries missing r2_fold"
+        if rung == "rff" and any("lambda" not in e for e in pf):
+            return "rff row with per_fold entries missing lambda"
+        if not isinstance(d.get("r2"), dict) or not d["r2"]:
+            return f"{rung} row without top-level r2"
+    elif "r2" not in d:  # linear ridge rows
+        return "ridge row without r2"
+    return None
+
+
+def shard_units(units: list[dict], phase: str, num_shards: int, shard_index: int) -> list[dict]:
+    """Shard assignment. NONLINEAR shards at the (arm, grain, scheme) GROUP
+    grain: every rung of one group lands on ONE shard, in the enumeration's
+    krr -> rff -> mlp order, because rff/mlp READ the krr gamma record — the
+    index-interleaved split raced the record across concurrent shards and
+    crashed both (the P3 production crash). Groups round-robin over shards
+    (production: 8 groups -> 2 shards x 4 groups, identical rung mix).
+    LINEAR keeps the index grain (its units are independent).
+    """
+    if phase != "nonlinear" or num_shards <= 1:
+        return [u for i, u in enumerate(units) if i % num_shards == shard_index]
+    group_order: list[tuple] = []
+    for u in units:
+        g = (u["arm"], u["grain"], u["scheme"])
+        if g not in group_order:
+            group_order.append(g)
+    gidx = {g: i for i, g in enumerate(group_order)}
+    return [
+        u for u in units if gidx[(u["arm"], u["grain"], u["scheme"])] % num_shards == shard_index
+    ]
+
+
+def verify_shard_rung_order(units: list[dict]) -> None:
+    """Fail-loud invariant on a shard's PLANNED unit list: every rff/mlp
+    unit's (arm, grain, scheme) krr sibling PRECEDES it on the SAME shard
+    (rff/mlp read the krr gamma record written when the krr unit runs)."""
+    seen_krr: set[tuple] = set()
+    for u in units:
+        if u.get("phase") != "nonlinear":
+            continue
+        g = (u["arm"], u["grain"], u["scheme"])
+        if u["rung"] == "krr":
+            seen_krr.add(g)
+        elif g not in seen_krr:
+            raise RuntimeError(
+                f"shard ordering violation: {u['rung']} unit for {g} has no "
+                "preceding krr sibling on this shard (cross-shard gamma race)"
+            )
+
+
 # ── pred persistence ─────────────────────────────────────────────────────────────
 
 
@@ -987,22 +1065,34 @@ def main() -> int:
         )
     out_dir = eval_dir("ladder")
     units_path = out_dir / f"units_{args.phase}_shard{args.shard_index}.jsonl"
-    done = {unit_key(d, REGIME_KEYS) for d in load_units(units_path)}
+    done = {unit_key(d, REGIME_KEYS) for d in load_units_validated(units_path, unit_row_incomplete)}
     if args.phase == "linear":
-        units = linear_units(cells, args.smoke)
+        planned = linear_units(cells, args.smoke)
     else:
         skips = gate_b_skips(eval_dir("detection") / "hsic_dcor.json")
-        units = nonlinear_units(args.smoke, args.seeds, skips)
-    for u in units:
+        planned = nonlinear_units(args.smoke, args.seeds, skips)
+    for u in planned:
         u["smoke"] = bool(args.smoke)
         u["row_limit"] = args.row_limit
-    units = [u for i, u in enumerate(units) if i % args.num_shards == args.shard_index]
+    units = shard_units(planned, args.phase, args.num_shards, args.shard_index)
+    if args.phase == "nonlinear":
+        verify_shard_rung_order(units)
     todo = [] if args.assemble_only else [u for u in units if unit_key(u, REGIME_KEYS) not in done]
-    print(
-        f"[ladder/{args.phase}] shard {args.shard_index}/{args.num_shards}: "
-        f"{len(todo)}/{len(units)} units to run (resume skipped {len(units) - len(todo)})",
-        flush=True,
-    )
+    if args.assemble_only:
+        # NOT the resume line: unit fits are skipped BY FLAG here — the old
+        # shared print read "0/N units to run (resume skipped N)" and was
+        # misdiagnosed as a resume-predicate bug on the P3 crash retry.
+        print(
+            f"[ladder/{args.phase}] shard {args.shard_index}/{args.num_shards}: "
+            "assemble-only — unit fits skipped by flag (not a resume verdict)",
+            flush=True,
+        )
+    else:
+        print(
+            f"[ladder/{args.phase}] shard {args.shard_index}/{args.num_shards}: "
+            f"{len(todo)}/{len(units)} units to run (resume skipped {len(units) - len(todo)})",
+            flush=True,
+        )
     data_cache: dict = {}
     t_all = time.monotonic()
     pilot_done = False
@@ -1054,9 +1144,31 @@ def main() -> int:
     if args.num_shards > 1 and not args.assemble_only:
         print(f"[ladder/{args.phase}] shard {args.shard_index} done (assembly separate)")
         return 0
-    all_units = []
+    raw_units = []
     for sp in sorted(out_dir.glob(f"units_{args.phase}_shard*.jsonl")):
-        all_units.extend(load_units(sp))
+        raw_units.extend(load_units_validated(sp, unit_row_incomplete))
+    by_key: dict[tuple, dict] = {}
+    for r in raw_units:
+        by_key[unit_key(r, REGIME_KEYS)] = r  # last row wins (purged+rerun units append anew)
+    # completeness gate: the final JSON must cover the FULL planned grid across
+    # ALL shards — a partial assembly otherwise masquerades as a completed
+    # phase (the P3 crash retry would have assembled 3/38 units silently).
+    missing = [u for u in planned if unit_key(u, REGIME_KEYS) not in by_key]
+    if missing:
+        print(
+            f"[ladder/{args.phase}] ASSEMBLY INCOMPLETE: {len(missing)}/{len(planned)} planned "
+            "units have no completed row — refusing to write a partial final JSON (rc=23)",
+            flush=True,
+        )
+        for u in missing[:25]:
+            print(
+                f"[ladder/{args.phase}]   missing "
+                f"{u['arm']}/{u['grain']}/{u['scheme']}/{u['rung']} seed={u['seed']}",
+                flush=True,
+            )
+        return ASSEMBLY_INCOMPLETE_RC
+    # exactly the planned rows, in planned order (stale extra rows dropped)
+    all_units = [by_key[unit_key(u, REGIME_KEYS)] for u in planned]
     payload: dict = {
         "meta": result_meta(phase=args.phase, smoke=args.smoke, device=args.device),
         "units": all_units,
@@ -1074,7 +1186,15 @@ def main() -> int:
         )
         out_json = out_dir / "linear_fits.json"
     else:
-        payload["gains_vs_ridge"] = assemble_gains(all_units, data_cache, args)
+        gains = assemble_gains(all_units, data_cache, args)
+        if not gains and any(u["grain"] == "perrow" for u in all_units):
+            print(
+                "[ladder/nonlinear] ASSEMBLY ERROR: gains_vs_ridge empty though perrow "
+                "units exist — ridge preds missing? run (or prefetch) p1 first (rc=23)",
+                flush=True,
+            )
+            return ASSEMBLY_INCOMPLETE_RC
+        payload["gains_vs_ridge"] = gains
         out_json = out_dir / "nonlinear_fits.json"
     atomic_write_json(out_json, payload)
     print(

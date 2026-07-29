@@ -3,7 +3,11 @@
 #
 # Modes: --all (production) | --smoke (SAME chain, 1 arm x 1 fold x 1 rung x
 # r in {0,1} x B=20, scratch out-root — smoke IS the sweep, PASS_UNIFIED) |
-# --from-phase pN (resume; per-unit JSONL resume inside each phase too).
+# --from-phase pN (resume; per-unit JSONL resume inside each phase too) |
+# --phases=<csv> (targeted: run EXACTLY the listed phases, each with its
+# assembly + eval-JSON upload + .done sentinel; mutually exclusive with
+# --from-phase; a standalone p3 prefetches its P1/P2 inputs from the Hub —
+# staged stores + linear_fits.json + detection JSON + per-row ridge preds).
 #
 # Sharding: launch width re-derived from the REALIZED GPU count (nvidia-smi);
 # 2+ GPUs -> 2 shards per GPU phase, CUDA_VISIBLE_DEVICES pinned in the
@@ -27,18 +31,34 @@ if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
 
 MODE=""
 FROM_PHASE="p1"
+FROM_PHASE_EXPLICIT=""
+PHASES=""
 for arg in "$@"; do
   case "$arg" in
     --all) MODE="all" ;;
     --smoke) MODE="smoke" ;;
-    --from-phase=*) FROM_PHASE="${arg#--from-phase=}" ;;
-    p1|p2|p3|p4) FROM_PHASE="$arg" ;;
+    --from-phase=*) FROM_PHASE="${arg#--from-phase=}"; FROM_PHASE_EXPLICIT=1 ;;
+    --phases=*) PHASES="${arg#--phases=}" ;;
+    p1|p2|p3|p4) FROM_PHASE="$arg"; FROM_PHASE_EXPLICIT=1 ;;
     *) echo "[dispatch] unknown arg: $arg" >&2; exit 2 ;;
   esac
 done
 if [ -z "$MODE" ]; then
-  echo "usage: issue1775_run.sh --all|--smoke [--from-phase=pN]" >&2
+  echo "usage: issue1775_run.sh --all|--smoke [--from-phase=pN | --phases=pN[,pM...]]" >&2
   exit 2
+fi
+if [ -n "$PHASES" ] && [ -n "$FROM_PHASE_EXPLICIT" ]; then
+  echo "[dispatch] --phases and --from-phase are mutually exclusive" >&2
+  exit 2
+fi
+if [ -n "$PHASES" ]; then
+  for p in ${PHASES//,/ }; do
+    case "$p" in
+      p1|p2|p3|p4) ;;
+      *) echo "[dispatch] --phases: unknown phase token '$p' (want p1..p4)" >&2; exit 2 ;;
+    esac
+  done
+  echo "[dispatch] TARGETED mode: phases=$PHASES"
 fi
 
 SMOKE_FLAG=""
@@ -73,6 +93,7 @@ echo "[dispatch] realized gpus=$NGPU -> shards=$SHARDS device=$DEVICE"
 # on a --from-phase resume whose earlier outputs legitimately occupy the disk).
 NEED_GB=30
 [ "$FROM_PHASE" != "p1" ] && NEED_GB=15
+[ -n "$PHASES" ] && NEED_GB=15   # targeted re-run: resume-like footprint
 [ "$MODE" = "smoke" ] && NEED_GB=2
 # shared helper (mount-binding rule): statvfs floor + posix_fallocate EDQUOT canary
 uv run python -c "
@@ -84,6 +105,18 @@ print(f'[headroom] {free:.1f} GB free at $OUT_ROOT_RESOLVED (need >= $NEED_GB)')
 phase_order() { case "$1" in p1) echo 1 ;; p2) echo 2 ;; p3) echo 3 ;; p4) echo 4 ;; *) echo 9 ;; esac; }
 FROM_N="$(phase_order "$FROM_PHASE")"
 T_START=$(date +%s)
+
+phase_selected() {
+  # Targeted mode: exact membership in --phases; else the --from-phase order.
+  local p="$1"
+  if [ -n "$PHASES" ]; then
+    case ",$PHASES," in
+      *",$p,"*) return 0 ;;
+      *) return 1 ;;
+    esac
+  fi
+  [ "$(phase_order "$p")" -ge "$FROM_N" ]
+}
 
 run_sharded() {
   # run_sharded <script> <extra args...>: fan out SHARDS subprocesses, one per
@@ -127,6 +160,7 @@ route_rc() {
     7) echo "[dispatch] $phase PILOT-GATE deviation halt (rc=7; see pilot_gate_report.json)" >&2 ;;
     21) echo "[dispatch] $phase GATE-C reproduction failure (rc=21; see gate_c_failure.json)" >&2 ;;
     22) echo "[dispatch] $phase POWER-CHECK failure (rc=22 — detection instrument bug)" >&2 ;;
+    23) echo "[dispatch] $phase ASSEMBLY-INCOMPLETE (rc=23 — planned units missing a completed row; see log)" >&2 ;;
     *) echo "[dispatch] $phase crashed rc=$rc" >&2 ;;
   esac
   exit "$rc"
@@ -144,8 +178,24 @@ print('[stage] store ready at', resolve_store_dir())
 " || OK="rc=$?"
 [ "$OK" = yes ] || { echo "[dispatch] store staging failed ($OK)" >&2; exit 4; }
 
+# ── standalone-P3 input prefetch (targeted mode without its producers) ────────
+# P3 reads P1's linear_fits.json + per-row ridge preds (assemble_gains) and
+# P2's detection JSON (gate-B unit grid). On a fresh instance those exist only
+# on the Hub (eval_json/* + analysis_tensors/heldout_preds); local copies win.
+if [ -n "$PHASES" ] && phase_selected p3 && ! phase_selected p1; then
+  echo "[phase=p3_prefetch]"
+  OK=yes
+  uv run python -c "
+import sys
+sys.path.insert(0, 'scripts')
+from issue1775_common import prefetch_p3_inputs
+prefetch_p3_inputs()
+" || OK="rc=$?"
+  [ "$OK" = yes ] || { echo "[dispatch] p3 input prefetch failed ($OK)" >&2; exit 6; }
+fi
+
 # ── P1 linear ─────────────────────────────────────────────────────────────────
-if [ "$FROM_N" -le 1 ]; then
+if phase_selected p1; then
   echo "[phase=p1_linear]"
   OK=yes
   run_sharded issue1775_ladder.py --phase linear $SMOKE_FLAG || OK="rc=$?"
@@ -161,7 +211,7 @@ if [ "$FROM_N" -le 1 ]; then
 fi
 
 # ── P2 detection (single GPU; batched draws) ─────────────────────────────────
-if [ "$FROM_N" -le 2 ]; then
+if phase_selected p2; then
   echo "[phase=p2_detection]"
   OK=yes
   CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1775_detection.py $SMOKE_FLAG \
@@ -171,7 +221,7 @@ if [ "$FROM_N" -le 2 ]; then
 fi
 
 # ── P3 nonlinear ladder ───────────────────────────────────────────────────────
-if [ "$FROM_N" -le 3 ]; then
+if phase_selected p3; then
   echo "[phase=p3_nonlinear]"
   OK=yes
   run_sharded issue1775_ladder.py --phase nonlinear $SMOKE_FLAG || OK="rc=$?"
@@ -187,7 +237,7 @@ if [ "$FROM_N" -le 3 ]; then
 fi
 
 # ── P4 bilinear + doubly pass + interpretation ────────────────────────────────
-if [ "$FROM_N" -le 4 ]; then
+if phase_selected p4; then
   echo "[phase=p4_bilinear]"
   OK=yes
   run_sharded issue1775_bilinear.py $SMOKE_FLAG || OK="rc=$?"
