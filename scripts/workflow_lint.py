@@ -12005,10 +12005,14 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 46,187 B post-#1082 (negative-existence search recipe),
     # 43,500 / 40,990 B)
     "research-pm.md": 47_000,
-    # measured 50,741 B post-#1535 (Step 2.7 declared-off-pod outputs
+    # measured 51,638 B post-#1834 (marker-materialized producer-schema
+    # rule bullet: remediation naming the producer-schema duty +
+    # schema-mismatched canonical file is a GAP/FAIL — plan-mandated
+    # growth; cap = measured + ~1.2 KB. Prior: 51,500 — measured
+    # 50,741 B post-#1535 (Step 2.7 declared-off-pod outputs
     # sub-rule + Step 2.8 off_pod_phases reads arm — plan-mandated growth;
     # cap = measured + ~0.8 KB. Prior: 47,800 — measured 46,830 B post-#1115)
-    "upload-verifier.md": 51_500,
+    "upload-verifier.md": 52_800,
 }
 
 
