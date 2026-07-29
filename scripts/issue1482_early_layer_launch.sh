@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
-# Issue #1482 early-layer-arm pod launcher (plan v16 §4 item 3).
+# Issue #1482 early-layer-arm pod launcher (plan v17 §4 item 3).
 #
 # Usage: bash scripts/issue1482_early_layer_launch.sh --full|--smoke
 #   --full : smoke leg FIRST (same driver, per-leg out-roots), then the
 #            production leg. The full leg's first phase reaps the DERIVED
 #            sibling smoke root (chained-legs gotcha; reap lives in the driver).
 #   --smoke: the smoke leg alone.
+#
+# Pod phases are E0-E4 (pilot..upload2) only. The off-pod VM legs are
+# `--phase evidence` (E5-evidence) + `--phase analyze` (E6 mechanical): judged
+# labelling is FROZEN per plan v17 §0.-1 (`--phase judge` is a hard exit,
+# RC_JUDGE_FROZEN) — labels come later from #1773's validated instrument.
 #
 # Exit-path spec (plan §4): set -euo pipefail COMPATIBLE — a single linear
 # sequence of `uv run python ... --phase <p>` calls, each with explicit rc

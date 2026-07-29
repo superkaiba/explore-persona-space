@@ -1,8 +1,10 @@
-"""Pins for the #1482 early-layer-arm round driver (plan v16).
+"""Pins for the #1482 early-layer-arm round driver (plan v17).
 
 Fast, CPU-only, network-free: committed-literal pins + pure-function lattice
-checks + the launcher's exit-path shape. The heavy paths (capture, fits,
-uploads) are covered by the round's driver smoke, not here.
+checks + the launcher's exit-path shape + the v17 §0.-1 judged-label-freeze
+gating (--phase judge hard exit; evidence-packet schema; label-free
+mech_tests). The heavy paths (capture, fits, uploads) are covered by the
+round's driver smoke, not here.
 """
 
 from __future__ import annotations
@@ -263,8 +265,8 @@ def test_estimator_validity_guard_lattice():
 def test_primary_perfeature_resolves_gate_chosen_k(tmp_path):
     """Concern gatebe-warn-escalation-not-threaded (r2): gate record chosen_k=128
     => the primary L3 source resolves to the k128 npz; 64 -> the k64 default;
-    anything else fails loud. E5 tail selection + E6 H1 join route through the
-    helper (no bare k64 literal left on the label-keyed paths)."""
+    anything else fails loud. E5-evidence tail selection + E6 H1 join route
+    through the helper (no bare k64 literal left on the label-keyed paths)."""
     ns = argparse.Namespace(out_eval=tmp_path)
     (tmp_path / "early_pilot.json").write_text(json.dumps({"chosen_k": 128}))
     assert EL._primary_l3_perfeature(ns) == "perfeature_l3_k128"
@@ -273,7 +275,7 @@ def test_primary_perfeature_resolves_gate_chosen_k(tmp_path):
     (tmp_path / "early_pilot.json").write_text(json.dumps({"chosen_k": 32}))
     with pytest.raises(AssertionError):
         EL._primary_l3_perfeature(ns)
-    for fn in (EL.phase_judge, EL._pooled_h1_rows):
+    for fn in (EL.phase_evidence, EL._pooled_h1_rows):
         src = inspect.getsource(fn)
         assert "_primary_l3_perfeature" in src, fn.__name__
         assert '"perfeature_l3_default.npz"' not in src, fn.__name__
@@ -286,14 +288,11 @@ COMMITTED_EXTREMES = REPO / "eval_results" / "issue_1482" / "feature_extremes" /
     not COMMITTED_EXTREMES.exists(), reason="sparse checkout without issue_1482 cone"
 )
 def test_pooled_h1_rows_join_escalated_primary(tmp_path):
-    """Functional E6 pin: chosen_k=128 => _pooled_h1_rows joins labels against the
-    k128 npz r2 (the k64 npz's value for a different feature never rides in)."""
+    """Functional E6 pin (the #1773 resume leg): chosen_k=128 => _pooled_h1_rows
+    joins the provided labels against the k128 npz r2 (the k64 npz's value for a
+    different feature never rides in)."""
     (tmp_path / "early_pilot.json").write_text(json.dumps({"chosen_k": 128}))
-    judge = tmp_path / "judge"
-    judge.mkdir()
-    (judge / "labels.json").write_text(
-        json.dumps({"labels": {"7": {"level": "high"}, "9": {"level": "low"}}})
-    )
+    labels = {"7": {"level": "high"}, "9": {"level": "low"}}
     np.savez(
         tmp_path / "perfeature_l3_k128.npz",
         feat_ids=np.asarray([7], np.int64),
@@ -306,6 +305,149 @@ def test_pooled_h1_rows_join_escalated_primary(tmp_path):
         r2=np.asarray([0.9]),
         activity=np.asarray([0.1]),
     )
-    rows = EL._pooled_h1_rows(argparse.Namespace(out_eval=tmp_path))
+    rows = EL._pooled_h1_rows(argparse.Namespace(out_eval=tmp_path), labels)
     l3 = [r for r in rows if r["depth"] == 3]
     assert l3 == [{"feat_id": 7, "depth": 3, "level": "high", "r2": 0.5}]
+
+
+def test_phase_judge_frozen_hard_exit():
+    """v17 §0.-1 freeze pin: --phase judge is a hard exit (RC_JUDGE_FROZEN) that
+    dispatches NOTHING — an old invocation can never silently judge — and the
+    stub names the freeze + the #1773 resume."""
+    with pytest.raises(SystemExit) as ei:
+        EL.phase_judge(argparse.Namespace())
+    assert ei.value.code == EL.RC_JUDGE_FROZEN
+    src = inspect.getsource(EL.phase_judge)
+    assert "FROZEN" in src and "#1773" in src
+    assert "dispatch_judge_items" not in src, "no judge dispatch may remain in the stub"
+    # the evidence replacement leg is wired into the phase dispatcher
+    main_src = inspect.getsource(EL.main)
+    assert '"evidence"' in main_src and '"--labels-file"' in main_src
+    assert "dispatch_judge_items" not in inspect.getsource(EL.phase_evidence)
+
+
+def test_evidence_entries_required_keys():
+    """Evidence-packet schema pin (v17 §0.-1 clauses (a)-(e)): every selected
+    feature carries {selection, top_answers, coact_neighbors, footprint_tokens,
+    covariates}; the k128-escalation branch records the covariate-battery
+    dictionary mismatch instead of a mis-joined k64 row."""
+    sel = {
+        "features": [
+            {
+                "feat_id": 7,
+                "restricted_idx": 1,
+                "r2": 0.5,
+                "activity": 0.2,
+                "decile": 3,
+                "a_best": True,
+                "a_worst": False,
+                "b_best": False,
+                "b_worst": True,
+            }
+        ]
+    }
+    top = {"7": [[3.0, 100, 0], [2.0, 102, 2]]}
+    neighbors = [[[5, 1, 0.5], [9, 1, 0.5]]]
+    fp_tokens = [[[11, " the", 4.2]]]
+    cov = {7: {"activity": 0.2, "consistency": 0.7, "dense_flag": 0}}
+    ent = EL._evidence_entries(
+        sel, top, neighbors, fp_tokens, [7], cov, {7: 40}, 512, "perfeature_l3_default", 64
+    )
+    e = ent["7"]
+    assert set(e) == {
+        "selection",
+        "top_answers",
+        "coact_neighbors",
+        "footprint_tokens",
+        "covariates",
+    }
+    assert e["selection"]["set_b_worst"] is True and e["selection"]["r2_rank_asc"] == 40
+    assert e["selection"]["source_arm"] == "perfeature_l3_default"
+    assert e["top_answers"] == top["7"] and e["covariates"]["consistency"] == 0.7
+    # escalation branch: no k64 covariate row may be joined onto a k128 feature
+    ent128 = EL._evidence_entries(
+        sel, top, neighbors, fp_tokens, [7], None, {7: 40}, 512, "perfeature_l3_k128", 128
+    )
+    assert "note" in ent128["7"]["covariates"] and "k64" in ent128["7"]["covariates"]["note"]
+
+
+def test_evidence_scan_and_coact_topk(tmp_path):
+    """Body-executing pin for the E5-evidence shard scan: FIT-rows-only top-8
+    ranking with [val, ci, row_idx] ids (no text), and the co-activation
+    neighbour GEMM (E3 matrix semantics, self excluded)."""
+    np.savez(
+        tmp_path / "pooled_l3_shard00_chunk0000.npz",
+        row_idx=np.asarray([0, 1, 2], np.int64),
+        set_tag=np.asarray([1, 0, 1], np.int8),  # row 1 is HOLDOUT — excluded
+        ci=np.asarray([100, 101, 102], np.int64),
+        idx_off=np.asarray([2, 1, 2], np.int64),
+        ans_idx=np.asarray([5, 7, 5, 7, 9], np.int64),
+        ans_max=np.asarray([1.0, 3.0, 9.0, 2.0, 0.5], np.float32),
+    )
+    feat_ids = np.asarray([5, 7, 9], np.int64)
+    top, a, col_of = EL._evidence_scan(
+        [tmp_path / "pooled_l3_shard00_chunk0000.npz"],
+        [7],
+        feat_ids,
+        ("idx_off", "ans_idx", "ans_max"),
+    )
+    # the 9.0 holdout firing (row 1) must NOT appear; fit rows rank 3.0 > 2.0
+    assert top == {"7": [[3.0, 100, 0], [2.0, 102, 2]]}
+    assert a.shape == (2, 3)  # 2 FIT rows x 3 restricted features
+    ucols = col_of[np.asarray([7], np.int64)]
+    nb = EL._coact_topk(a, feat_ids, ucols, topk=10)
+    assert len(nb) == 1
+    assert sorted(t[0] for t in nb[0]) == [5, 9]  # self (7) excluded
+    for _fid, count, frac in nb[0]:
+        assert count == 1 and frac == 0.5  # C[7,g]=1 over C[7,7]=2
+
+
+def test_mech_doc_label_free_and_deferred_stanza(tmp_path):
+    """mech_tests pin (v17 §0.-1): the mechanical doc carries the depth profile /
+    null band / twin agreement / baselines and NO label-dependent field; the
+    deferred stanza names #1773 + the --labels-file resume."""
+    rng = np.random.default_rng(3)
+
+    def _pf(name, n=8):
+        np.savez(
+            tmp_path / f"{name}.npz",
+            feat_ids=np.arange(n, dtype=np.int64),
+            r2=rng.normal(0.1, 0.2, n),
+            activity=rng.uniform(0.01, 0.9, n),
+        )
+
+    for name in (
+        "perfeature_l3_default",
+        "perfeature_l19_matched_ctx",
+        "perfeature_l3_sinkmask",
+        "perfeature_l3_k128",
+    ):
+        _pf(name)
+    np.savez(tmp_path / "shuffle_null_l3.npz", r2=rng.normal(0.0, 0.05, 160))
+    (tmp_path / "early_summary.json").write_text(
+        json.dumps(
+            {
+                "baselines": {"l3_identity_bias": {"n_shared_ids": 0}},
+                "knn": {"l3_sae_ctx": {"euclidean": {"acc@1": 0.5}}},
+                "pooled_r2": {"perfeature_l3_default": 0.2},
+            }
+        )
+    )
+    doc = EL._mech_doc(argparse.Namespace(out_eval=tmp_path), "perfeature_l3_default")
+    assert set(doc) == {
+        "depth_profile_matched_n",
+        "shuffle_null",
+        "twin_agreement",
+        "baselines_identity",
+        "knn_retrieval",
+        "pooled_r2",
+    }
+    dp = doc["depth_profile_matched_n"]
+    assert set(dp) == {"l3_primary", "l19_matched_ctx", "l3_sinkmask_twin", "l3_k128_twin"}
+    assert "frac_above_shuffle_null_p97_5" in dp["l3_primary"]
+    assert doc["twin_agreement"]["n_paired"] == 8
+    # NO judged-label field may enter the mechanical doc
+    assert not any("h1" in k or "h2" in k or "level" in k for k in doc)
+    stanza = EL._deferred_stanza()
+    assert "#1773" in json.dumps(stanza) and "--labels-file" in stanza["resume"]
+    assert stanza["h1_pooled_depth_stratified"].startswith("deferred")

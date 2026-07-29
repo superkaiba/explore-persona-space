@@ -1,4 +1,4 @@
-"""Issue #1482 — early-layer-arm round driver (plan v16): the layer-3 token-stratum arm.
+"""Issue #1482 — early-layer-arm round driver (plan v17): the layer-3 token-stratum arm.
 
 ONE new variable vs the parent battery: the SAE layer/stratum (layer 3, k=64
 trainer_1 primary / k=128 trainer_2 robustness). Everything else — corpus, split,
@@ -6,7 +6,16 @@ capture convention, SAE suite, pooling recipe, fit machinery, judge instrument �
 is inherited from `issue1482_error_analysis` (EA) / `issue1482_feature_extremes`
 (FE) / `issue1482_feature_correlates` (FC) / `issue779_ffc_n1m_fits` (N1M).
 
-Phases (plan v16 §4; smoke IS this driver with tiny args — PASS_UNIFIED):
+JUDGED-LABEL FREEZE (plan v17 §0.-1; user directive epm:progress v101,
+2026-07-28): NO judged feature-labelling runs this round — the E5 judge leg is
+REPLACED by E5-evidence (mechanical selection + per-feature evidence packet for
+the #1773 labelling resume) and the E6 H1/H2 judged-label permutation legs are
+DEFERRED behind --labels-file. Label schema note for the resume: #1773's
+instrument uses the THREE-WAY speaker_property field (language / register_style
+/ identity_disposition) per the v98 persona-field retraction — NOT the retracted
+binary persona_related field.
+
+Phases (plan v17 §4 + §0.-1; smoke IS this driver with tiny args — PASS_UNIFIED):
   pilot    E0: 1 raw chunk through the FULL production path — tokens/s, Gate B-e
            (L3 FVE/L0 k64+k128 vs published-offset thresholds), hook-alignment
            probes (L3 SAE on h1/h5), prefix-end constancy @L3, G2-e two-bar
@@ -23,12 +32,19 @@ Phases (plan v16 §4; smoke IS this driver with tiny args — PASS_UNIFIED):
            covariate battery + mapping baselines (identity+bias on the aligned
            feature-id intersection; kNN retrieval per arm).
   upload2  E4: eval outputs -> HF + the poller results sentinel.
-  judge    E5 (off-pod VM): FE._select tails at L3 -> top-8 firing answers by
-           pooled ans_max -> extended rubric VERBATIM (byte-parity gate) ->
-           dispatch_judge_items sync, 1 draw temp default + 60 retest.
-  analyze  E6 (off-pod VM): H1 depth-stratified pooled permutation + H2
-           decile-stratified within-L3 tail contrast + covariate battery +
-           figures (savefig_paper).
+  evidence E5-evidence (off-pod VM, 0 GPU, ZERO judge calls): FE._select tails
+           at L3 (mechanical, no labels) -> per-feature evidence packet — top-8
+           firing answer ROW IDS by the primary arm's pooled max ranking (text
+           stays on HF), top-10 co-activation neighbour ids, top-20 direct-logit
+           footprint tokens, covariate row, selection provenance ->
+           eval_results/issue_1482/early_layer/evidence/evidence.json.
+           --phase judge is a hard exit (RC_JUDGE_FROZEN).
+  analyze  E6 (off-pod VM): mechanical depth x predictability profile ->
+           mech_tests.json (depth descriptives at matched n, covariate
+           correlations + partials, sink/k128 twin agreement, shuffle-null band,
+           identity+kNN baselines); the registered §3 H1/H2 permutation recipes
+           are PRESERVED VERBATIM and run ONLY under --labels-file (the #1773
+           resume) — absent labels a `deferred` stanza is emitted instead.
 
 Pod-side contract: sentinels under /workspace/logs/issue-1482-*.json ONLY (never
 task.py); [phase=...] log lines come from the launcher
@@ -108,6 +124,7 @@ DESCOPE_FLOOR_CONTEXTS = (5 * (D_WIDEST_DESIGN + PROD_VAL_CARVE + 1) + 3) // 4  
 RC_GATE_BE = 22  # mirrors EA.RC_GATE_B (Gate HALT class)
 RC_G2E = 24  # capture-convention identity FAIL (never fit past it)
 RC_THROUGHPUT = 25  # pilot-throughput kill (approval infeasible at the floor)
+RC_JUDGE_FROZEN = 26  # --phase judge under the plan v17 §0.-1 judged-label freeze
 # Committed split-sha literals (the PDSHRINK_COMMITTED_SPLIT_SHAS pattern): pinned from
 # the git-committed eval_results/issue_1482/split_1482.json @ origin/main. E1 asserts
 # the STAGED split_indices.npz pools hash to these BEFORE subsampling, so a drifted /
@@ -126,6 +143,8 @@ RB_HF_REVISION = "037fcbb"
 RB_TRAITS = ("evil", "sycophancy", "hallucination")
 # Extended-rubric byte-parity pin (plan §11 R6): sha16 of FE.JUDGE_SYSTEM_EXT as the
 # feature-extremes round recorded it (extremes.json judge.rubric_sha256_system).
+# KEPT UNUSED under the v17 judged-label freeze — the #1773 labelling resume
+# re-engages the rubric-parity machinery against this pin.
 RUBRIC_SHA16_EXTENDED = "2774598533dbdcc3"
 COMMITTED_EXTREMES = PROJECT_ROOT / "eval_results/issue_1482/feature_extremes/extremes.json"
 COMMITTED_ABSTRACTION = PROJECT_ROOT / "eval_results/issue_1482/feature_correlates/abstraction.json"
@@ -1018,7 +1037,8 @@ def _results_sentinel(args, logs_dir: Path | None = None) -> None:
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "note": ("SMOKE leg — not the production result. " if args.smoke else "")
         + "issue-1482 early-layer-arm pod phases E0-E4 complete "
-        "(E5 judge + E6 analysis run off-pod)",
+        "(E5-evidence + E6 mechanical analysis run off-pod; judged labelling "
+        "FROZEN per plan v17 §0.-1 — deferred to #1773)",
         "eval_numbers": {
             "gate_be": pilot["gate_be"],
             "chosen_k": pilot["chosen_k"],
@@ -1037,6 +1057,10 @@ def _results_sentinel(args, logs_dir: Path | None = None) -> None:
             "summary": str(summary_path),
             "perfeature": str(args.out_eval),
             "store_hf_prefix": f"{_early_hf_prefix(args)}/store",
+            # declared OFF-POD destinations (plan v17 §6.5) — produced AFTER this
+            # sentinel by the VM-side E5-evidence / E6 phases, committed to git
+            "evidence_offpod_dest": str(args.out_eval / "evidence" / "evidence.json"),
+            "mech_tests_offpod_dest": str(args.out_eval / "mech_tests.json"),
         },
         "reproducibility_card": {
             **C.reproducibility_metadata(),
@@ -1781,7 +1805,7 @@ def _covariates_unit(args, prep, summary: dict) -> None:
         torch.cuda.empty_cache()
 
 
-# ── E5: judge (off-pod VM) ────────────────────────────────────────────────────────
+# ── E5-evidence (off-pod VM; judged labelling FROZEN — plan v17 §0.-1) ─────────────
 
 
 def _select_tails(com: dict[str, np.ndarray], n_tail: int, n_decile_tail: int) -> dict:
@@ -1836,41 +1860,212 @@ def _select_tails(com: dict[str, np.ndarray], n_tail: int, n_decile_tail: int) -
     }
 
 
-def _scan_top_contexts(args, union_fids: set[int]) -> dict[str, list]:
-    """Top-8 firing answers per union feature from the L3 pooled ``ans_max``
-    ranking over FIT rows (plan §4 E5; the extremes evidence convention with the
-    plan-named ans_max ranking). Returns {str(fid): [[val, ci], ...]}."""
+def _evidence_scan(
+    shard_paths: list[Path],
+    union_fids: list[int],
+    feat_ids: np.ndarray,
+    keys: tuple[str, str, str],
+) -> tuple[dict[str, list], np.ndarray, np.ndarray]:
+    """ONE streaming pass over the pooled shards (FIT rows, set_tag == 1):
+    (a) top-8 firing answers per union feature by the PRIMARY arm's pooled max
+        ranking -> {str(fid): [[val, ci, row_idx], ...]} — ids into the parent
+        raw_completions chunks; answer TEXT is never read or stored (v17 freeze);
+    (b) the binary row-level answer-activity matrix over the primary arm's
+        restricted features (fp16; the E3 co-activation matrix semantics).
+    ``keys`` = (offset, index, value) shard keys — (idx_off, ans_idx, ans_max)
+    for k=64, (k128_off, k128_idx, k128_max) under Gate B-e escalation, so the
+    ranking + neighbours always match the SELECTED dictionary.
+    Returns (top, a (n_fit_rows, n_feat) fp16, col_of id->column map)."""
+    import heapq
+
     import issue1482_feature_correlates as FC
 
-    cand: dict[int, list[tuple[float, int]]] = {f: [] for f in union_fids}
-    shards = sorted(args.store.glob("pooled_l3_*.npz"))
-    assert shards, f"no L3 pooled shards under {args.store} (stage from HF first)"
-    for k_sh, p in enumerate(shards):
+    key_off, key_idx, key_val = keys
+    fids = np.asarray(feat_ids, np.int64)
+    col_of = np.full(int(fids.max()) + 1, -1, dtype=np.int64)
+    col_of[fids] = np.arange(len(fids))
+    union = {int(f) for f in union_fids}
+    heaps: dict[int, list[tuple[float, int, int]]] = {f: [] for f in union}
+    rows_a: list[np.ndarray] = []
+    for k_sh, p in enumerate(sorted(shard_paths)):
         part = dict(np.load(p, allow_pickle=False))
-        offs = np.concatenate([[0], np.cumsum(part["idx_off"])])
+        offs = np.concatenate([[0], np.cumsum(part[key_off])])
         for i, r in enumerate(part["row_idx"]):
-            if int(part["set_tag"][i]) != 1:  # evidence from FIT rows only
+            if int(part["set_tag"][i]) != 1:  # evidence + coact from FIT rows only
                 continue
             sl = slice(offs[i], offs[i + 1])
-            fidx = part["ans_idx"][sl].astype(np.int64)
-            vals = part["ans_max"][sl].astype(np.float64)
+            fidx = part[key_idx][sl].astype(np.int64)
+            keep = fidx < len(col_of)
+            cols = col_of[fidx[keep]]
+            cols = cols[cols >= 0]
+            row = np.zeros(len(fids), dtype=np.float16)
+            row[cols] = 1.0
+            rows_a.append(row)
+            vals = part[key_val][sl].astype(np.float64)
             ci = int(part["ci"][i])
             for f, v in zip(fidx, vals, strict=True):
-                if int(f) in cand:
-                    cand[int(f)].append((float(v), ci))
+                fi = int(f)
+                if fi in union:
+                    item = (float(v), ci, int(r))
+                    h = heaps[fi]
+                    if len(h) < FC.TOP_K_CONTEXTS:
+                        heapq.heappush(h, item)
+                    else:
+                        heapq.heappushpop(h, item)
         if (k_sh + 1) % 200 == 0:
-            print(f"[e5-scan] shard {k_sh + 1}/{len(shards)}", flush=True)
-    top = {}
-    for f, lst in cand.items():
-        lst.sort(key=lambda t: -t[0])
-        top[str(f)] = [[v, ci] for v, ci in lst[: FC.TOP_K_CONTEXTS]]
-    return top
+            print(f"[e5-scan] shard {k_sh + 1}/{len(shard_paths)}", flush=True)
+    top = {
+        str(f): [[v, ci, r] for v, ci, r in sorted(h, key=lambda t: -t[0])]
+        for f, h in heaps.items()
+    }
+    a = np.stack(rows_a) if rows_a else np.zeros((0, len(fids)), np.float16)
+    return top, a, col_of
+
+
+def _coact_topk(
+    a: np.ndarray, feat_ids: np.ndarray, ucols: np.ndarray, topk: int = 10
+) -> list[list[list]]:
+    """Top-``topk`` co-activation neighbours per union feature (plan v17 §0.-1
+    clause (b); the E3 matrix semantics — C = A^T A over binary fit-row answer
+    activity, self excluded, neighbours drawn from the primary arm's restricted
+    feature set). Per union column: [[neighbour_fid, co_count, co_frac], ...]
+    with co_frac = C[f,g] / max(C[f,f], 1). Row-chunked GEMM (fp32)."""
+    n_u, n_feat = len(ucols), a.shape[1]
+    c_u = np.zeros((n_u, n_feat), dtype=np.float32)
+    for s0 in range(0, a.shape[0], 4096):
+        blk = a[s0 : s0 + 4096].astype(np.float32)
+        c_u += blk[:, ucols].T @ blk
+    out: list[list[list]] = []
+    for j, uc in enumerate(ucols):
+        diag = float(c_u[j, uc])
+        row = c_u[j].copy()
+        row[uc] = -np.inf
+        k = min(topk, n_feat - 1)
+        if k <= 0:
+            out.append([])
+            continue
+        nb = np.argpartition(-row, k - 1)[:k]
+        nb = nb[np.argsort(-row[nb], kind="stable")]
+        out.append([[int(feat_ids[g]), int(row[g]), float(row[g] / max(diag, 1.0))] for g in nb])
+    return out
+
+
+def _load_wu_norm(args) -> tuple[torch.Tensor, torch.Tensor, object]:
+    """(W_U, final RMSNorm weight, tokenizer) for the footprint-token evidence.
+
+    --tiny-model (smoke carve-out): rebuilds the SAME from-config model the smoke
+    capture used (EA._load_model_tok, seed 0). Production (off-pod VM): selective
+    safetensors fetch of lm_head.weight + model.norm.weight ONLY — ~1-2 GB RSS vs
+    ~15 GB for a full CPU model load (E5-evidence is 0-GPU / shared-VM by
+    contract, so the full-model load is deliberately avoided)."""
+    if args.tiny_model:
+        model, tok = EA._load_model_tok(args)
+        return model.lm_head.weight.detach(), model.model.norm.weight.detach(), tok
+    from huggingface_hub import hf_hub_download
+    from safetensors import safe_open
+    from transformers import AutoTokenizer
+
+    from explore_persona_space.orchestrate import hub
+
+    model_id = "Qwen/Qwen2.5-7B-Instruct"
+    tok = hub.retry_transient(
+        lambda: AutoTokenizer.from_pretrained(model_id), what=f"tokenizer fetch ({model_id})"
+    )
+    idx_path = hub.retry_transient(
+        lambda: hf_hub_download(model_id, "model.safetensors.index.json"),
+        what="safetensors index fetch",
+    )
+    wmap = json.loads(Path(idx_path).read_text())["weight_map"]
+    # Qwen2.5-7B-Instruct is untied (lm_head.weight present); the embed fallback
+    # covers a tied checkpoint, where W_U IS the embedding matrix.
+    wu_name = "lm_head.weight" if "lm_head.weight" in wmap else "model.embed_tokens.weight"
+    tensors: dict[str, torch.Tensor] = {}
+    for name in (wu_name, "model.norm.weight"):
+        assert name in wmap, f"{name} missing from the safetensors weight map"
+        shard = hub.retry_transient(
+            lambda n=name: hf_hub_download(model_id, wmap[n]),
+            what=f"safetensors shard fetch ({wmap[name]})",
+        )
+        with safe_open(shard, framework="pt", device="cpu") as f:
+            tensors[name] = f.get_tensor(name)
+    return tensors[wu_name], tensors["model.norm.weight"], tok
+
+
+def _footprint_tokens(w_u, g, dec_u, tok, topk: int = 20) -> list[list[list]]:
+    """Top-``topk`` direct-logit footprint tokens per union feature (plan v17
+    §0.-1 clause (c); the E3 footprint formula l_f = W_U (g ⊙ d_f) mean-centered
+    over the vocab — computed here on the PRIMARY dictionary's selected decoders
+    so the tokens match the to-be-labelled features under either chosen_k).
+    Per feature: [[token_id, token_str, centered_logit], ...] ranked by |logit|."""
+    w = w_u.to(dtype=torch.float32)
+    gg = g.to(dtype=torch.float32)
+    logit = w @ (dec_u.to(dtype=torch.float32) * gg[:, None])  # (V, n_union)
+    logit = logit - logit.mean(0, keepdim=True)
+    k = min(topk, logit.shape[0])
+    _vals, ids = torch.topk(logit.abs(), k=k, dim=0)
+    out: list[list[list]] = []
+    for j in range(logit.shape[1]):
+        out.append([[int(t), tok.decode([int(t)]), float(logit[t, j])] for t in ids[:, j].tolist()])
+    return out
+
+
+def _evidence_entries(
+    sel: dict,
+    top: dict[str, list],
+    neighbors: list[list[list]],
+    fp_tokens: list[list[list]],
+    union_sorted: list[int],
+    cov_by_fid: dict[int, dict] | None,
+    rank_of: dict[int, int],
+    n_ranked: int,
+    source_arm: str,
+    chosen_k: int,
+) -> dict[str, dict]:
+    """Assemble the per-feature evidence packet (plan v17 §0.-1 clauses (a)-(e)).
+    Pure function — unit-pinned by tests/test_issue1482_early_layer.py; the
+    required keys per feature are {selection, top_answers, coact_neighbors,
+    footprint_tokens, covariates}."""
+    u_pos = {int(f): j for j, f in enumerate(union_sorted)}
+    out: dict[str, dict] = {}
+    for row in sel["features"]:
+        fid = int(row["feat_id"])
+        j = u_pos[fid]
+        if cov_by_fid is None:
+            cov: dict = {
+                "note": f"chosen_k={chosen_k} — the covariate battery is k64-based; "
+                "no dictionary-aligned row for an escalated-arm feature"
+            }
+        else:
+            cov = cov_by_fid[fid]
+        out[str(fid)] = {
+            "selection": {
+                "set_a_best": bool(row["a_best"]),
+                "set_a_worst": bool(row["a_worst"]),
+                "set_b_best": bool(row["b_best"]),
+                "set_b_worst": bool(row["b_worst"]),
+                "decile": int(row["decile"]),
+                "r2": float(row["r2"]),
+                "activity": float(row["activity"]),
+                "r2_rank_asc": int(rank_of[fid]),
+                "n_ranked": int(n_ranked),
+                "source_arm": source_arm,
+                "chosen_k": int(chosen_k),
+            },
+            "top_answers": top.get(str(fid), []),
+            "coact_neighbors": neighbors[j],
+            "footprint_tokens": fp_tokens[j],
+            "covariates": cov,
+        }
+    return out
 
 
 def _neuronpedia_early(args, union_fids: set[int]) -> dict:
     """Attempt the layer-3 Neuronpedia auto-interp source (A9): naming pattern
     ``3-resid-post-aa``. On absence the judge runs on top-firing answers alone
-    and the instrument deviation is STATED (returned in the summary)."""
+    and the instrument deviation is STATED (returned in the summary).
+
+    RETAINED UNUSED under the v17 judged-label freeze — aux auto-interp evidence
+    belongs to the #1773 labelling resume, which re-engages this helper."""
     import gzip
     import re
     import urllib.error
@@ -1926,15 +2121,29 @@ def _neuronpedia_early(args, union_fids: set[int]) -> dict:
 
 
 def phase_judge(args) -> None:
-    """E5 (off-pod VM): tail selection -> evidence scan -> texts -> extended
-    rubric VERBATIM (byte-parity gate) -> sync dispatch, 1 draw + 60 retest,
-    drop-never-coerce with the rule-24 transport/content split."""
+    """FROZEN (plan v17 §0.-1; user directive epm:progress v101, 2026-07-28):
+    judged feature-labelling is paused on this task until #1773 delivers its
+    validated auto-interp instrument. NO judge calls may be dispatched — not the
+    ~360 items, not the 60 retest, not in smokes. Hard exit so a stale
+    invocation can never silently judge; run --phase evidence to (re)persist the
+    labelling inputs instead."""
+    del args  # nothing may run under this phase
+    logger.error(
+        "[e5] --phase judge is FROZEN (plan v17 §0.-1 judged-label freeze): judged "
+        "labelling is deferred to #1773's validated instrument; run --phase evidence "
+        "to persist the labelling inputs instead"
+    )
+    raise SystemExit(RC_JUDGE_FROZEN)
+
+
+def phase_evidence(args) -> None:
+    """E5-evidence (off-pod VM, 0 GPU, ZERO judge calls — plan v17 §0.-1 freeze):
+    mechanical tail selection (FE._select VERBATIM at production shape) + the
+    per-feature evidence packet, persisted so #1773's validated instrument can
+    label these features later with NO GPU re-run — the directive's clause (d),
+    the one leg that must not be skipped."""
     t0 = time.time()
-    import issue1482_analysis as A
-    import issue1482_feature_correlates as FC
     import issue1482_feature_extremes as FE
-    from explore_persona_space.eval.batch_judge import is_transport_error_dict
-    from explore_persona_space.eval.judge_dispatch import dispatch_judge_items
 
     args.work.mkdir(parents=True, exist_ok=True)
     # stage the L3 store from HF when absent locally (VM production run; the
@@ -1950,8 +2159,10 @@ def phase_judge(args) -> None:
             shutil.copy2(p, args.store / p.name)
     # primary source keyed to the Gate B-e chosen_k (WARN escalation -> k128;
     # concern gatebe-warn-escalation-not-threaded)
+    pilot = json.loads((args.out_eval / "early_pilot.json").read_text())
+    chosen_k = int(pilot["chosen_k"])
     primary_name = _primary_l3_perfeature(args)
-    logger.info("[e5] primary per-feature source: %s", primary_name)
+    logger.info("[e5] primary per-feature source: %s (chosen_k=%d)", primary_name, chosen_k)
     z = np.load(args.out_eval / f"{primary_name}.npz")
     com = {
         "feat_ids": np.asarray(z["feat_ids"], np.int64),
@@ -1967,110 +2178,127 @@ def phase_judge(args) -> None:
     else:
         sel = FE._select(com)  # instrument parity by construction (extremes recipe)
     (args.work / "selection.json").write_text(json.dumps(sel, indent=1))
-    union_fids = {int(com["feat_ids"][i]) for i in sel["idx"]["union"]}
-    logger.info("[e5] union size %d", len(union_fids))
-    np_summary = _neuronpedia_early(args, union_fids)
-    top = _scan_top_contexts(args, union_fids)
-    (args.work / "sample_top_contexts.json").write_text(json.dumps(top))
-    FE.phase_texts(argparse.Namespace(work=args.work))  # seeded, chunk-checkpointed
-    items = FC._judge_items(argparse.Namespace(work=args.work))
-    if args.judge_limit > 0:
-        items = items[: args.judge_limit]
-    hashes = FE._assert_rubric_parity()
-    assert hashes["extended_sha16"] == RUBRIC_SHA16_EXTENDED, (
-        f"extended rubric drift: {hashes['extended_sha16']} != {RUBRIC_SHA16_EXTENDED}"
+    union_sorted = sorted(int(com["feat_ids"][i]) for i in sel["idx"]["union"])
+    logger.info("[e5] union size %d", len(union_sorted))
+    # ascending R2 rank over the finite selection universe (0 = worst-predicted)
+    asc = np.argsort(np.argsort(com["r2"], kind="stable"), kind="stable")
+    rank_of = {int(f): int(asc[i]) for i, f in enumerate(com["feat_ids"])}
+
+    keys = (
+        ("idx_off", "ans_idx", "ans_max")
+        if chosen_k == 64
+        else ("k128_off", "k128_idx", "k128_max")
     )
-    logger.info("[e5] %d judge items (extended rubric, byte-parity OK)", len(items))
+    shard_paths = sorted(args.store.glob("pooled_l3_*.npz"))
+    assert shard_paths, f"no L3 pooled shards under {args.store} (stage from HF first)"
+    top, a, col_of = _evidence_scan(shard_paths, union_sorted, com["feat_ids"], keys)
+    # the #1773 resume input for FE.phase_texts (its 2-element [[val, ci], ...]
+    # contract is preserved verbatim; row_idx is evidence-packet-only)
+    (args.work / "sample_top_contexts.json").write_text(
+        json.dumps({f: [[v, ci] for v, ci, _r in lst] for f, lst in top.items()})
+    )
+    ucols = col_of[np.asarray(union_sorted, np.int64)]
+    assert (ucols >= 0).all(), "selected feature missing from the primary restriction"
+    neighbors = _coact_topk(a, com["feat_ids"], ucols)
+    del a
 
-    def _run(tag: str, its):
-        return dispatch_judge_items(
-            its,
-            judge_model=FC.JUDGE_MODEL,
-            judge_system_prompt=FE.JUDGE_SYSTEM_EXT,
-            max_tokens=FC.JUDGE_MAX_TOKENS,
-            checkpoint_dir=args.work / f"dispatch_{tag}",
-            error_dict_factory=lambda reason: {"error": True, "reason": reason},
-        )
+    sae = S.BatchTopKSAE.load(k=chosen_k, device="cpu", cache_dir=args.sae_dir, layer=L_EARLY)
+    dec_u = sae.w_dec[:, torch.as_tensor(union_sorted, dtype=torch.long)].detach()
+    w_u, g, tok = _load_wu_norm(args)
+    fp_tokens = _footprint_tokens(w_u, g, dec_u, tok)
+    del sae, dec_u, w_u
 
-    def _collect(results: dict) -> tuple[dict, dict]:
-        labels: dict[str, dict] = {}
-        drops = {"content": 0, "transport": 0}
-        for cid, res in results.items():
-            if isinstance(res, dict) and res.get("error"):
-                drops["transport" if is_transport_error_dict(res) else "content"] += 1
-                continue
-            lab = FE._validate_labels(res)
-            if lab is None:
-                drops["content"] += 1
-                continue
-            reason = res.get("reasoning") if isinstance(res, dict) else None
-            labels[cid] = {**lab, "reasoning": str(reason)[:400] if reason else ""}
-        return labels, drops
-
-    raw_main, drops = _collect(_run("main_early", items))
-    labels = {cid.removeprefix("feat"): v for cid, v in raw_main.items()}
-    rng = np.random.default_rng(FC.SAMPLE_SEED)
-    rt_n = min(FC.RETEST_N, len(items))
-    rt_pick = rng.choice(len(items), size=rt_n, replace=False)
-    rt_items = [(f"rt_{items[i][0]}", *items[i][1:]) for i in rt_pick]
-    rt_labels, rt_drops = _collect(_run("retest_early", rt_items))
-    pairs: dict[str, tuple[list[str], list[str]]] = {"level": ([], []), "persona_related": ([], [])}
-    for i in rt_pick:
-        cid = items[i][0]
-        first = labels.get(cid.removeprefix("feat"))
-        second = rt_labels.get(f"rt_{cid}")
-        if first and second:
-            for field, (aa, bb) in pairs.items():
-                aa.append(first[field])
-                bb.append(second[field])
-    kappa = A._cohens_kappa(*pairs["level"])
-    kappa_persona = A._cohens_kappa(*pairs["persona_related"])
+    cov_by_fid: dict[int, dict] | None = None
+    if chosen_k == 64:  # the covariate battery is k64-based (E3 convention)
+        cz = np.load(args.out_eval / "covariates_l3.npz")
+        pos = {int(f): i for i, f in enumerate(np.asarray(cz["feat_ids"], np.int64))}
+        cov_by_fid = {}
+        for fid in union_sorted:
+            i = pos[fid]
+            cov_by_fid[fid] = {
+                "activity": float(cz["activity"][i]),
+                "consistency": float(cz["consistency"][i]),
+                "footprint_conc": float(cz["footprint_conc"][i]),
+                "footprint_norm": float(cz["footprint_norm"][i]),
+                "coact": float(cz["coact"][i]),
+                "dense_flag": int(cz["dense_flag"][i]),
+                "top_decile_flag": int(cz["top_decile_flag"][i]),
+                "rb_raw_maxabs": float(cz["rb_raw_maxabs"][i]),
+                "rb_centered_maxabs": float(cz["rb_centered_maxabs"][i]),
+            }
+    features = _evidence_entries(
+        sel,
+        top,
+        neighbors,
+        fp_tokens,
+        union_sorted,
+        cov_by_fid,
+        rank_of,
+        n_ranked=int(len(com["feat_ids"])),
+        source_arm=primary_name,
+        chosen_k=chosen_k,
+    )
     doc = {
-        "n_items": len(items),
-        "n_labeled": len(labels),
-        "drops": drops,
-        "retest_drops": rt_drops,
-        "judge_model": FC.JUDGE_MODEL,
-        "max_tokens": FC.JUDGE_MAX_TOKENS,
-        "temperature": "API default",
-        "n_draws": 1,
-        "rubric_sha256_system": hashes["extended_sha16"],
-        "rubric_sha256_reference_prefix": hashes["reference_prefix_sha16"],
-        "perfeature_source": primary_name,
-        "neuronpedia": np_summary,
-        "selection": {k: sel[k] for k in ("n_union",)},
+        "schema_version": 1,
+        "task_id": TASK_ID,
+        "round": "early-layer-arm",
         "layer": L_EARLY,
-        "test_retest": {
-            "n": len(pairs["level"][0]),
-            "kappa_level": kappa,
-            "kappa_persona_related": kappa_persona,
+        "freeze": "judged feature-labelling FROZEN this round (plan v17 §0.-1; user "
+        "directive epm:progress v101, 2026-07-28) — labels are DEFERRED to #1773's "
+        "validated auto-interp instrument; this packet is the labelling input",
+        "label_schema_note": "#1773's label schema uses the THREE-WAY speaker_property "
+        "field (language / register_style / identity_disposition) per the v98 "
+        "persona-field retraction — NOT the retracted binary persona_related field",
+        "perfeature_source": primary_name,
+        "chosen_k": chosen_k,
+        "selection": {
+            "recipe": (
+                "smoke _select_tails(n_tail=3, n_decile_tail=1)"
+                if args.smoke
+                else "FE._select (extremes recipe VERBATIM: Set A 150+150 global, "
+                "Set B decile-matched 15+15 x 10, deduped)"
+            ),
+            "n_union": int(sel["n_union"]),
+            "n_tail": int(sel["n_tail"]),
+            "n_decile_tail": int(sel["n_decile_tail"]),
         },
-        "labels": labels,
+        "l19": {
+            "selected": False,
+            "note": "no fresh L19 tail selection this round — the committed L19 judged "
+            "sets (extremes union + correlates sample) already carry labels",
+        },
+        "top_answers_note": "[pooled max activation, ci, row_idx] — ids into the parent "
+        "raw_completions chunks (HF, parent pin); answer TEXT is not stored here",
+        "reproducibility": C.reproducibility_metadata(),
+        "features": features,
     }
-    judge_dir = args.out_eval / "judge"
-    judge_dir.mkdir(parents=True, exist_ok=True)
-    _write_json(judge_dir / "labels.json", doc)
-    logger.info(
-        "[e5] done: %d/%d labeled, drops=%s (retest %s), kappa_level=%.3f kappa_persona=%.3f",
-        len(labels),
-        len(items),
-        drops,
-        rt_drops,
-        kappa,
-        kappa_persona,
-    )
-    _record_phase_time(args, "judge", time.time() - t0)
+    ev_dir = args.out_eval / "evidence"
+    ev_dir.mkdir(parents=True, exist_ok=True)
+    _write_json(ev_dir / "evidence.json", doc)
+    logger.info("[e5] evidence packet: %d features -> %s", len(features), ev_dir / "evidence.json")
+    _record_phase_time(args, "evidence", time.time() - t0)
 
 
 # ── E6: analysis + figures (off-pod VM) ───────────────────────────────────────────
 
 
-def _pooled_h1_rows(args) -> list[dict]:
-    """Pooled judged-feature rows: this round's L3 labels + the committed L19
+def _load_labels(args) -> dict | None:
+    """#1773-resume judged labels (--labels-file; plan v17 §0.-1): accepts the
+    labels.json envelope ({"labels": {fid: {...}}}) or a bare fid->record map.
+    None when the flag is absent (the deferred default this round)."""
+    if args.labels_file is None:
+        return None
+    doc = json.loads(Path(args.labels_file).read_text())
+    labels = doc.get("labels", doc) if isinstance(doc, dict) else None
+    assert isinstance(labels, dict) and labels, f"empty/malformed labels file: {args.labels_file}"
+    return labels
+
+
+def _pooled_h1_rows(args, labels: dict) -> list[dict]:
+    """Pooled judged-feature rows: the resume-round L3 labels + the committed L19
     judged sets (extremes union 358 + correlates sample 300, deduped by feat_id
     preferring extremes). Each row: {feat_id, depth, level, r2}."""
     rows: list[dict] = []
-    labels = json.loads((args.out_eval / "judge" / "labels.json").read_text())["labels"]
     # label-keyed join -> the PRIMARY arm (chosen_k); labels were E5-selected on
     # the same arm, so joining any other npz would silently drop/mismap rows
     z = np.load(args.out_eval / f"{_primary_l3_perfeature(args)}.npz")
@@ -2153,9 +2381,92 @@ def _bootstrap_ci(vals_fn, n_boot: int, rng: np.random.Generator) -> list[float]
     return [float(np.percentile(draws[ok], 2.5)), float(np.percentile(draws[ok], 97.5))]
 
 
+def _deferred_stanza() -> dict:
+    """The v17 §0.-1 freeze's E6 deferral record (mech_tests.json `deferred` key):
+    the registered H1/H2 judged-label legs await #1773's validated labels."""
+    return {
+        "h1_pooled_depth_stratified": "deferred: awaiting #1773 labels",
+        "h2_within_l3_tail_contrast": "deferred: awaiting #1773 labels",
+        "resume": "re-run --phase analyze --labels-file <labels.json from #1773's "
+        "validated instrument>: the registered plan §3 H1/H2 permutation recipes run "
+        "UNCHANGED against the persisted per-feature arrays + evidence packet",
+    }
+
+
+def _depth_descriptives(r2: np.ndarray, null_hi: float | None = None) -> dict:
+    """Label-free per-arm descriptives over finite per-feature held-out R2."""
+    r = np.asarray(r2, np.float64)
+    r = r[np.isfinite(r)]
+    d: dict = {
+        "n_finite": int(len(r)),
+        "median_r2": float(np.median(r)) if len(r) else None,
+        "q25_r2": float(np.percentile(r, 25)) if len(r) else None,
+        "q75_r2": float(np.percentile(r, 75)) if len(r) else None,
+        "frac_r2_positive": float((r > 0).mean()) if len(r) else None,
+    }
+    if null_hi is not None and len(r):
+        d["frac_above_shuffle_null_p97_5"] = float((r > null_hi).mean())
+    return d
+
+
+def _mech_doc(args, primary_name: str) -> dict:
+    """Label-FREE mechanical reads (plan v17 §0.-1 headline demotion): depth
+    profile descriptives at matched n, sink/k128 twin agreement, shuffle-null
+    band, identity+kNN baselines (the covariate correlations + partials ride
+    phase_analyze's existing battery loop into the same mech_tests doc). NO
+    judged-label field may enter this dict (pinned by
+    tests/test_issue1482_early_layer.py)."""
+    import issue1482_feature_correlates as FC
+
+    nz = np.load(args.out_eval / "shuffle_null_l3.npz")
+    null_hi = float(np.nanpercentile(np.asarray(nz["r2"], np.float64), 97.5))
+    zp = np.load(args.out_eval / f"{primary_name}.npz")
+    z3 = np.load(args.out_eval / "perfeature_l3_default.npz")
+    z19 = np.load(args.out_eval / "perfeature_l19_matched_ctx.npz")
+    zs = np.load(args.out_eval / "perfeature_l3_sinkmask.npz")
+    zk = np.load(args.out_eval / "perfeature_l3_k128.npz")
+    depth_profile = {
+        # the shuffle null is computed on the k64 default arm — attach its band
+        # read only where the feature population matches (positional convention)
+        "l3_primary": {
+            "source": primary_name,
+            **_depth_descriptives(
+                zp["r2"], null_hi if primary_name == "perfeature_l3_default" else None
+            ),
+        },
+        "l19_matched_ctx": _depth_descriptives(z19["r2"]),
+        "l3_sinkmask_twin": _depth_descriptives(zs["r2"]),
+        "l3_k128_twin": _depth_descriptives(zk["r2"]),
+    }
+    # sinkmask twin agreement is a PAIRED read (identical features + score rows);
+    # the k128 twin is a DIFFERENT feature population -> descriptives only
+    r3 = np.asarray(z3["r2"], np.float64)
+    rs = np.asarray(zs["r2"], np.float64)
+    m = np.isfinite(r3) & np.isfinite(rs)
+    twin_agreement = {
+        "sinkmask_paired_spearman": FC._spearman(r3[m], rs[m]) if int(m.sum()) >= 3 else None,
+        "sinkmask_median_abs_delta": float(np.median(np.abs(r3[m] - rs[m]))) if m.any() else None,
+        "n_paired": int(m.sum()),
+        "k128_note": "different feature population (second dictionary) — no pairing; "
+        "see depth_profile_matched_n.l3_k128_twin",
+    }
+    summary = json.loads((args.out_eval / "early_summary.json").read_text())
+    return {
+        "depth_profile_matched_n": depth_profile,
+        "shuffle_null": {"p97_5": null_hi, "n_seeds": len(SHUFFLE_SEEDS)},
+        "twin_agreement": twin_agreement,
+        "baselines_identity": summary.get("baselines", {}),
+        "knn_retrieval": summary.get("knn", {}),
+        "pooled_r2": summary.get("pooled_r2", {}),
+    }
+
+
 def phase_analyze(args) -> None:
-    """E6 (off-pod VM): H1 + H2 permutations, covariate battery, bootstrap CIs,
-    figures (savefig_paper; hero = joint depth x level x predictability profile)."""
+    """E6 (off-pod VM): mechanical depth x predictability reads + figures ->
+    mech_tests.json (plan v17 §0.-1 headline demotion). The registered §3 H1/H2
+    judged-label permutation legs are PRESERVED VERBATIM but run ONLY under
+    --labels-file (the #1773 resume); absent labels a `deferred` stanza is
+    emitted instead and no feature-label claim is made."""
     t0 = time.time()
     import matplotlib
 
@@ -2176,58 +2487,64 @@ def phase_analyze(args) -> None:
     # label-keyed reads (H1 rows, hero L3 ECDF) use the primary arm; the
     # k64-positionally-aligned diagnostics stay on perfeature_l3_default.
     primary_name = _primary_l3_perfeature(args)
-    rows = _pooled_h1_rows(args)
-    assert rows, "no pooled judged rows for H1"
-    h1 = _h1_depth_stratified(rows, args.n_perm, rng)
-    r2_l3 = np.asarray([r["r2"] for r in rows if r["depth"] == 3 and r["level"] in ("low", "high")])
-    lev_l3 = np.asarray([r["level"] == "high" for r in rows if r["depth"] == 3])
+    labels = _load_labels(args)
+    h1: dict | None = None
+    h2: dict | None = None
+    if labels is not None:  # the #1773 resume path — plan §3 recipes VERBATIM
+        rows = _pooled_h1_rows(args, labels)
+        assert rows, "no pooled judged rows for H1"
+        h1 = _h1_depth_stratified(rows, args.n_perm, rng)
+        r2_l3 = np.asarray(
+            [r["r2"] for r in rows if r["depth"] == 3 and r["level"] in ("low", "high")]
+        )
+        lev_l3 = np.asarray([r["level"] == "high" for r in rows if r["depth"] == 3])
 
-    # H1 bootstrap CI (within-depth feature resample on the pooled Spearman)
-    depth_arr = np.asarray([r["depth"] for r in rows])
-    lev_arr = np.asarray([1.0 if r["level"] == "high" else 0.0 for r in rows])
-    r2_arr = np.asarray([r["r2"] for r in rows], dtype=np.float64)
+        # H1 bootstrap CI (within-depth feature resample on the pooled Spearman)
+        depth_arr = np.asarray([r["depth"] for r in rows])
+        lev_arr = np.asarray([1.0 if r["level"] == "high" else 0.0 for r in rows])
+        r2_arr = np.asarray([r["r2"] for r in rows], dtype=np.float64)
 
-    def _h1_draw(rg: np.random.Generator) -> float:
-        idx_parts = []
-        for d in np.unique(depth_arr):
-            m = np.where(depth_arr == d)[0]
-            idx_parts.append(rg.choice(m, size=len(m), replace=True))
-        idx = np.concatenate(idx_parts)
-        rr = EA._midrank(r2_arr[idx][:, None])[:, 0]
-        a = lev_arr[idx] - lev_arr[idx].mean()
-        b = rr - rr.mean()
-        den = float(np.sqrt((a**2).sum() * (b**2).sum()))
-        return float((a * b).sum() / den) if den > 1e-12 else float("nan")
+        def _h1_draw(rg: np.random.Generator) -> float:
+            idx_parts = []
+            for d in np.unique(depth_arr):
+                m = np.where(depth_arr == d)[0]
+                idx_parts.append(rg.choice(m, size=len(m), replace=True))
+            idx = np.concatenate(idx_parts)
+            rr = EA._midrank(r2_arr[idx][:, None])[:, 0]
+            a = lev_arr[idx] - lev_arr[idx].mean()
+            b = rr - rr.mean()
+            den = float(np.sqrt((a**2).sum() * (b**2).sum()))
+            return float((a * b).sum() / den) if den > 1e-12 else float("nan")
 
-    h1["bootstrap_ci_95"] = _bootstrap_ci(_h1_draw, args.n_boot, rng)
+        h1["bootstrap_ci_95"] = _bootstrap_ci(_h1_draw, args.n_boot, rng)
 
-    # H2 (registered): within-L3 decile-matched tail contrast (Set B convention,
-    # decile-stratified permutation — FE._stratified_perm VERBATIM)
-    sel = json.loads((args.work / "selection.json").read_text())
-    labels = json.loads((args.out_eval / "judge" / "labels.json").read_text())["labels"]
-    fid_to_level = {int(f): v["level"] for f, v in labels.items()}
-    b_rows = [
-        r
-        for r in sel["features"]
-        if (r["b_best"] or r["b_worst"]) and fid_to_level.get(int(r["feat_id"])) in ("low", "high")
-    ]
-    h2: dict = {"n_set_b_labeled": len(b_rows)}
-    if len(b_rows) >= 8:
-        is_high = np.asarray([fid_to_level[int(r["feat_id"])] == "high" for r in b_rows])
-        is_best = np.asarray([bool(r["b_best"]) for r in b_rows])
-        decile = np.asarray([int(r["decile"]) for r in b_rows])
-        h2.update(FE._stratified_perm(is_high, is_best, decile, rng))
+        # H2 (registered): within-L3 decile-matched tail contrast (Set B convention,
+        # decile-stratified permutation — FE._stratified_perm VERBATIM)
+        sel = json.loads((args.work / "selection.json").read_text())
+        fid_to_level = {int(f): v["level"] for f, v in labels.items()}
+        b_rows = [
+            r
+            for r in sel["features"]
+            if (r["b_best"] or r["b_worst"])
+            and fid_to_level.get(int(r["feat_id"])) in ("low", "high")
+        ]
+        h2 = {"n_set_b_labeled": len(b_rows)}
+        if len(b_rows) >= 8:
+            is_high = np.asarray([fid_to_level[int(r["feat_id"])] == "high" for r in b_rows])
+            is_best = np.asarray([bool(r["b_best"]) for r in b_rows])
+            decile = np.asarray([int(r["decile"]) for r in b_rows])
+            h2.update(FE._stratified_perm(is_high, is_best, decile, rng))
 
-        def _h2_draw(rg: np.random.Generator) -> float:
-            idx = rg.choice(len(b_rows), size=len(b_rows), replace=True)
-            hb, bb = is_high[idx], is_best[idx]
-            if bb.sum() == 0 or (~bb).sum() == 0:
-                return float("nan")
-            return float(hb[bb].mean() - hb[~bb].mean())
+            def _h2_draw(rg: np.random.Generator) -> float:
+                idx = rg.choice(len(b_rows), size=len(b_rows), replace=True)
+                hb, bb = is_high[idx], is_best[idx]
+                if bb.sum() == 0 or (~bb).sum() == 0:
+                    return float("nan")
+                return float(hb[bb].mean() - hb[~bb].mean())
 
-        h2["bootstrap_ci_95"] = _bootstrap_ci(_h2_draw, args.n_boot, rng)
-    else:
-        h2["note"] = "fewer than 8 labeled Set-B rows — contrast reported descriptive-only"
+            h2["bootstrap_ci_95"] = _bootstrap_ci(_h2_draw, args.n_boot, rng)
+        else:
+            h2["note"] = "fewer than 8 labeled Set-B rows — contrast reported descriptive-only"
 
     # covariate battery (midrank Spearman + partials; FC helpers)
     cov_doc: dict = {}
@@ -2271,26 +2588,33 @@ def phase_analyze(args) -> None:
         )
         cov_doc[f"L{depth}"] = d
 
-    summary = json.loads((args.out_eval / "early_summary.json").read_text())
-    h_doc = {
-        "h1_pooled_depth_stratified": h1,
-        "h2_within_l3_tail_contrast": h2,
+    mech: dict = {
         "primary_perfeature_l3": primary_name,
+        **_mech_doc(args, primary_name),
         "covariates": cov_doc,
-        "pooled_r2": summary.get("pooled_r2", {}),
         "seeds": {"perm_boot": BOOT_PERM_SEED, "n_perm": args.n_perm, "n_boot": args.n_boot},
     }
-    _write_json(args.out_eval / "h_tests.json", h_doc)
+    if labels is None:
+        # NO label-dependent field enters mech_tests.json this round (v17 freeze)
+        mech["deferred"] = _deferred_stanza()
+    else:
+        mech["h1_pooled_depth_stratified"] = h1
+        mech["h2_within_l3_tail_contrast"] = h2
+        mech["labels_file"] = str(args.labels_file)
+    _write_json(args.out_eval / "mech_tests.json", mech)
 
     # ── figures ──
     figs = args.figures
     figs.mkdir(parents=True, exist_ok=True)
     col = {3: paper_palette(2)[0], 19: paper_palette(2)[1]}  # ONE color per depth
 
-    # hero: joint depth x level x predictability profile. The L3 ECDF reads the
-    # PRIMARY arm (chosen_k — matches the H1/label narrative); z3 stays the k64
-    # default arm for every POSITIONAL join below (covariates / sinkmask / null).
-    fig, axes = plt.subplots(1, 2, figsize=(9.2, 3.6), layout="constrained")
+    # hero (v17 freeze): the MECHANICAL depth x predictability profile — R² ECDF
+    # per depth + dense-flag / footprint strata panels; the judged-level panel is
+    # DEFERRED to the #1773 resume (rendered below only under --labels-file).
+    # The L3 ECDF reads the PRIMARY arm (chosen_k); z3 stays the k64 default arm
+    # for every POSITIONAL join below (covariates / sinkmask / null). Within-L3
+    # strata reuse the L3 depth color (linestyle/alpha encode the stratum) so one
+    # color keeps one meaning (depth) across the figure set.
     z3 = np.load(args.out_eval / "perfeature_l3_default.npz")
     z3p = (
         z3
@@ -2298,59 +2622,102 @@ def phase_analyze(args) -> None:
         else np.load(args.out_eval / f"{primary_name}.npz")
     )
     z19 = np.load(args.out_eval / "perfeature_l19_matched_ctx.npz")
+    cz3 = np.load(args.out_eval / "covariates_l3.npz")
+
+    def _ecdf(ax, vals, **kw):
+        v = np.asarray(vals, np.float64)
+        v = v[np.isfinite(v)]
+        if not len(v):
+            return
+        xs = np.sort(np.clip(v, -1, 1))
+        ax.plot(xs, np.linspace(0, 1, len(xs)), **kw)
+
+    fig, axes = plt.subplots(1, 3, figsize=(12.9, 3.6), layout="constrained")
     for depth, z in ((3, z3p), (19, z19)):
-        r2 = np.asarray(z["r2"], np.float64)
-        r2 = r2[np.isfinite(r2)]
-        xs = np.sort(np.clip(r2, -1, 1))
-        axes[0].plot(
-            xs,
-            np.linspace(0, 1, len(xs)),
-            color=col[depth],
-            label=f"layer {depth} ({len(xs):,} features)",
-        )
+        n = int(np.isfinite(np.asarray(z["r2"], np.float64)).sum())
+        _ecdf(axes[0], z["r2"], color=col[depth], label=f"layer {depth} ({n:,} features)")
     axes[0].set_xlabel("per-feature held-out R² (clipped at −1)")
     axes[0].set_ylabel("ECDF")
     axes[0].set_title("Predictability by depth (matched rows)")
-    axes[0].legend(frameon=False)
-    tail_vals, tail_errs, tail_labels, tail_cols = [], [], [], []
-    for depth in (3, 19):
-        if depth == 3:
-            hb = h2.get("statistic_frac_high_best_minus_worst")
-            fr_best = (
-                float(lev_l3[np.argsort(-r2_l3)[: max(1, len(r2_l3) // 4)]].mean())
-                if len(r2_l3)
-                else np.nan
+    axes[0].legend(frameon=False, fontsize=8)
+    r3d = np.asarray(z3["r2"], np.float64)
+    dense = np.asarray(cz3["dense_flag"], np.int8)
+    for flag, ls, lab in (
+        (0, "-", "sparse (activity ≤ 0.5)"),
+        (1, "--", "dense (activity > 0.5)"),
+    ):
+        m = dense == flag
+        n = int(np.isfinite(r3d[m]).sum())
+        _ecdf(axes[1], r3d[m], color=col[3], ls=ls, label=f"{lab}, n={n:,}")
+    axes[1].set_xlabel("per-feature held-out R² (clipped at −1)")
+    axes[1].set_ylabel("ECDF")
+    axes[1].set_title("Layer-3 R² by dense-latent flag")
+    axes[1].legend(frameon=False, fontsize=8)
+    fpv = np.asarray(cz3["footprint_conc"], np.float64)
+    mf = np.isfinite(fpv) & np.isfinite(r3d)
+    if int(mf.sum()) >= 9:
+        t1, t2 = np.quantile(fpv[mf], [1.0 / 3.0, 2.0 / 3.0])
+        for lab, m, alpha in (
+            ("low", fpv <= t1, 0.35),
+            ("mid", (fpv > t1) & (fpv <= t2), 0.65),
+            ("high", fpv > t2, 1.0),
+        ):
+            _ecdf(
+                axes[2],
+                r3d[m & mf],
+                color=col[3],
+                alpha=alpha,
+                label=f"footprint {lab} tertile",
             )
-            best = fr_best
-            worst = best - hb if hb is not None else np.nan
-        else:
-            ext = json.loads(COMMITTED_EXTREMES.read_text())
-            sb = ext.get("set_b_activity_controlled", {})
-            best = sb.get("frac_high_best")
-            worst = sb.get("frac_high_worst")
-            if best is None:
-                lv = [
-                    (r["level"] == "high", bool(r["b_best"]), bool(r["b_worst"]))
-                    for r in ext["features"]
-                    if r.get("level") in ("low", "high") and (r["b_best"] or r["b_worst"])
-                ]
-                arr = np.asarray(lv)
-                best = float(arr[arr[:, 1] == 1, 0].mean())
-                worst = float(arr[arr[:, 2] == 1, 0].mean())
-        for side, v in (("best", best), ("worst", worst)):
-            if v is None or not np.isfinite(v):
-                continue
-            tail_vals.append(v)
-            tail_errs.append(0.0)
-            tail_labels.append(f"L{depth} {side}")
-            tail_cols.append(col[depth])
-    xpos = np.arange(len(tail_vals))
-    axes[1].bar(xpos, tail_vals, color=tail_cols)
-    axes[1].set_xticks(xpos, tail_labels, rotation=20)
-    axes[1].set_ylabel("judged high-level fraction")
-    axes[1].set_title("High-level share in R² tails (Set B)")
-    savefig_paper(fig, "early_layer_hero_depth_level_profile", dir=figs)
+        axes[2].legend(frameon=False, fontsize=8)
+    axes[2].set_xlabel("per-feature held-out R² (clipped at −1)")
+    axes[2].set_ylabel("ECDF")
+    axes[2].set_title("Layer-3 R² by footprint concentration")
+    savefig_paper(fig, "early_layer_hero_depth_mech_profile", dir=figs)
     plt.close(fig)
+
+    if labels is not None:
+        # the pre-freeze judged-level tails panel — #1773 resume only (deferred
+        # this round; code path preserved verbatim for the resume)
+        tail_vals, tail_labels, tail_cols = [], [], []
+        for depth in (3, 19):
+            if depth == 3:
+                hb = h2.get("statistic_frac_high_best_minus_worst") if h2 else None
+                fr_best = (
+                    float(lev_l3[np.argsort(-r2_l3)[: max(1, len(r2_l3) // 4)]].mean())
+                    if len(r2_l3)
+                    else np.nan
+                )
+                best = fr_best
+                worst = best - hb if hb is not None else np.nan
+            else:
+                ext = json.loads(COMMITTED_EXTREMES.read_text())
+                sb = ext.get("set_b_activity_controlled", {})
+                best = sb.get("frac_high_best")
+                worst = sb.get("frac_high_worst")
+                if best is None:
+                    lv = [
+                        (r["level"] == "high", bool(r["b_best"]), bool(r["b_worst"]))
+                        for r in ext["features"]
+                        if r.get("level") in ("low", "high") and (r["b_best"] or r["b_worst"])
+                    ]
+                    arr = np.asarray(lv)
+                    best = float(arr[arr[:, 1] == 1, 0].mean())
+                    worst = float(arr[arr[:, 2] == 1, 0].mean())
+            for side, v in (("best", best), ("worst", worst)):
+                if v is None or not np.isfinite(v):
+                    continue
+                tail_vals.append(v)
+                tail_labels.append(f"L{depth} {side}")
+                tail_cols.append(col[depth])
+        fig, ax = plt.subplots(figsize=(5.0, 3.6), layout="constrained")
+        xpos = np.arange(len(tail_vals))
+        ax.bar(xpos, tail_vals, color=tail_cols)
+        ax.set_xticks(xpos, tail_labels, rotation=20)
+        ax.set_ylabel("judged high-level fraction")
+        ax.set_title("High-level share in R² tails (Set B)")
+        savefig_paper(fig, "early_layer_level_tails", dir=figs)
+        plt.close(fig)
 
     # companion (mandatory low-level plot): R² vs activity scatter at L3 with the
     # shuffle-null band overlaid
@@ -2448,14 +2815,21 @@ def phase_analyze(args) -> None:
     savefig_paper(fig, "early_layer_k128_replication", dir=figs)
     plt.close(fig)
 
-    logger.info(
-        "[e6] done: H1 %s (obs %.3f, band [%.3f, %.3f]); figures -> %s",
-        h1["verdict"],
-        h1["observed_pooled_spearman"],
-        h1["perm_band_2p5_97p5"][0],
-        h1["perm_band_2p5_97p5"][1],
-        figs,
-    )
+    if h1 is not None:
+        logger.info(
+            "[e6] done (labels resume): H1 %s (obs %.3f, band [%.3f, %.3f]); figures -> %s",
+            h1["verdict"],
+            h1["observed_pooled_spearman"],
+            h1["perm_band_2p5_97p5"][0],
+            h1["perm_band_2p5_97p5"][1],
+            figs,
+        )
+    else:
+        logger.info(
+            "[e6] done (mechanical reads only — judged legs DEFERRED to #1773): "
+            "mech_tests.json + figures -> %s",
+            figs,
+        )
     _record_phase_time(args, "analyze", time.time() - t0)
 
 
@@ -2498,7 +2872,19 @@ def main() -> int:
     ap.add_argument(
         "--phase",
         default="all",
-        choices=["all", "pilot", "capture", "upload1", "fits", "upload2", "judge", "analyze"],
+        # "judge" stays a CHOICE but is a hard exit (RC_JUDGE_FROZEN) — the v17
+        # §0.-1 judged-label freeze; "evidence" is its replacement leg.
+        choices=[
+            "all",
+            "pilot",
+            "capture",
+            "upload1",
+            "fits",
+            "upload2",
+            "evidence",
+            "judge",
+            "analyze",
+        ],
     )
     ap.add_argument("--smoke", action="store_true", help="tiny-N run of the SAME pipeline")
     ap.add_argument("--full", action="store_true", help="explicit production mode (default)")
@@ -2519,6 +2905,14 @@ def main() -> int:
     ap.add_argument("--max-features-out", type=int, default=None)
     ap.add_argument("--parent-shards", type=int, default=None, help="0 = whole parent store")
     ap.add_argument("--judge-limit", type=int, default=None, help="0 = all union items")
+    ap.add_argument(
+        "--labels-file",
+        type=Path,
+        default=None,
+        help="#1773-resume judged labels for E6 (plan v17 §0.-1): the H1/H2 "
+        "permutation legs run ONLY when this is provided; absent, mech_tests.json "
+        "carries a `deferred` stanza instead",
+    )
     ap.add_argument("--n-perm", type=int, default=None)
     ap.add_argument("--n-boot", type=int, default=None)
     ap.add_argument("--seed", type=int, default=0, help="fitter seed (parent MLP seed 0)")
@@ -2610,7 +3004,8 @@ def main() -> int:
         "upload1": phase_upload1,
         "fits": phase_fits,
         "upload2": phase_upload2,
-        "judge": phase_judge,
+        "evidence": phase_evidence,
+        "judge": phase_judge,  # FROZEN — hard exit (plan v17 §0.-1)
         "analyze": phase_analyze,
     }
     if ph == "all":
