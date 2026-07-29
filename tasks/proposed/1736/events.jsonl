@@ -1,2 +1,3 @@
 {"ts": "2026-07-27T07:22:02Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
 {"ts": "2026-07-28T07:05:17Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "still live: /daily 2026-07-27 re-observed this held decision (held-repo-root-stash-triage; now 5 stashes, oldest 2026-07-02); duplicate filing suppressed (#1483)"}
+{"ts": "2026-07-29T07:21:08Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "still live: /daily 2026-07-28 re-observed this held decision (held-stash-backlog-triage; now 21 stashes + 59 rescue-dir entries); duplicate filing suppressed (#1483). Companion escalate-only audit pass filed as #1806."}
