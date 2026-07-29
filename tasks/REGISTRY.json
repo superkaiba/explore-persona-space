@@ -5974,7 +5974,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1769",
       "status": "interpreting",
-      "title": "Prefill-vs-decode behavioral commitment: does r_B steering only during decode change judged behavior expression in a dense full-attention model"
+      "title": "Prefill-only hook causes near-zero change; sycophancy at \u03b1=2 shows decode-driven commitment; evil timing is convention-dependent (MODERATE confidence)"
     },
     "1770": {
       "has_clean_result": false,

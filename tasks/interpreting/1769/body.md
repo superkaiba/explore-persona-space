@@ -1,6 +1,6 @@
 ---
-title: 'Prefill-vs-decode behavioral commitment: does r_B steering only during decode
-  change judged behavior expression in a dense full-attention model'
+title: Prefill-only hook causes near-zero change; sycophancy at α=2 shows decode-driven
+  commitment; evil timing is convention-dependent (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-28T20:23:10Z'
