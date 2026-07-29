@@ -23,7 +23,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # sets shared-VM thread caps BEFORE heavy imports (#847/#1144)
+
+import numpy as np  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Paths
