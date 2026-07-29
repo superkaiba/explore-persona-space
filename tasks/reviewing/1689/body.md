@@ -38,6 +38,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1689.md](https://github.com/superkaiba/explore-persona-space/blob/92b06296183917c5ad37807611341d4c328e19e3/docs/methodology/issue_1689.md) · [gist](https://gist.github.com/superkaiba/7657c786473754563289a0ff7ccb1102)
+
 ## Takeaways
 
 - Into the highest-ceiling target (instruct assistant-chat), full-correction transfers recover median 0.86-0.88 of ceiling for identity-only changes, 0.41-0.47 for framing-only, and 0.28-0.34 for both, so framing, not identity, carries the cost.
