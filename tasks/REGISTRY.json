@@ -6053,8 +6053,8 @@
     "1780": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1780",
-      "status": "approved",
+      "path": "tasks/running/1780",
+      "status": "running",
       "title": "workflow-fix: gitleaks-aware deferred-commit message in task_workflow"
     },
     "1781": {
