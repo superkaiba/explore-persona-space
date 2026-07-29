@@ -292,6 +292,11 @@ def cmd_stream(args) -> int:
 def cmd_capture(args) -> int:
     import issue779_ffc_n1m_generate_capture as N1G
 
+    if not args.no_upload:
+        assert args.hf_prefix, (
+            "--hf-prefix is required unless --no-upload (no implicit issue-prefix "
+            f"fallback, #1005; canonical for THIS issue: {DEFAULT_HF_PREFIX})"
+        )
     rows = N1G._read_jsonl(args.pool)
     assert rows, f"empty pool {args.pool}"
     rows = [r for i, r in enumerate(rows) if i % args.n_shards == args.shard_index]
@@ -1367,7 +1372,12 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--shard-index", type=int, default=0)
     c.add_argument("--n-shards", type=int, default=1)
     c.add_argument("--max-rows", type=int, default=0)
-    c.add_argument("--hf-prefix", default=DEFAULT_HF_PREFIX)
+    c.add_argument(
+        "--hf-prefix",
+        default=None,
+        help=f"REQUIRED unless --no-upload (canonical: {DEFAULT_HF_PREFIX}); no implicit "
+        "issue-prefix fallback — a child issue reusing this script passes its own (#1005)",
+    )
     c.add_argument("--no-upload", action="store_true")
 
     t = sub.add_parser("transfer", help="5a.3 decay read over legs")

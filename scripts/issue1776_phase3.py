@@ -651,7 +651,7 @@ def finalize(args, dirs: dict[str, Path], bank: dict[str, torch.Tensor], manifes
         },
     )
     print(
-        f"[phase3] [phase=done] strata={len(raw_files)} cell_rows={len(all_rows)} "
+        f"[phase3] [phase=phase3_done] strata={len(raw_files)} cell_rows={len(all_rows)} "
         f"-> {dirs['eval']}",
         flush=True,
     )

@@ -270,7 +270,7 @@ def run(args) -> int:
     }
     C76.atomic_write_json(args.out_dir / "judge_scores.json", report)
     print(
-        f"[judge] [phase=done] traits={len(per_arm)} cells={len(per_cell)} "
+        f"[judge] [phase=judge_done] traits={len(per_arm)} cells={len(per_cell)} "
         f"worst_transport_frac={worst_transport_frac:.4f} -> {args.out_dir / 'judge_scores.json'}",
         flush=True,
     )
