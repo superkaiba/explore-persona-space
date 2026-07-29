@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1790,
+  "highest_id": 1791,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6126,6 +6126,13 @@
       "path": "tasks/proposed/1790",
       "status": "proposed",
       "title": "daily-fix: move msg-strip comments out of tg gate pipelines"
+    },
+    "1791": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1791",
+      "status": "proposed",
+      "title": "daily-fix: --map-files misuse OSError before #1613 guard"
     },
     "18": {
       "has_clean_result": false,
