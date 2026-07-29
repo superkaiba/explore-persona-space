@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "git_commit": "f74fdf19341820e7e010fe2c965f9c574dc15192",
+    "timestamp_utc": "2026-07-29T03:22:01.864420+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "python": "3.11.15",
+    "fold_seed": 0,
+    "n_folds": 6,
+    "step": "chunkcheck"
+  },
+  "chunk": "shard00_chunk0000.pt",
+  "n_rows_in_chunk": 500,
+  "ci_min": 0,
+  "ci_max": 499,
+  "n_checked_against_rederived_pool": 500,
+  "n_mismatches": 0,
+  "positional_match_rate": 1.0,
+  "n_in_rederived_pool_set": 500,
+  "index_space": "ci indexes the NEW-only capture manifest (0..n_new-1)"
+}

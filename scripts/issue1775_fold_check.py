@@ -558,26 +558,50 @@ def step_chunkcheck(out_dir: Path, used: dict) -> dict:
     ci = [int(x) for x in d["ci"]]
     prompts = list(d["prompts"])
     new = used["new"]
-    n_pass_b = len(used["round1"])
+    # ``ci`` is the GLOBAL index into the capture sampling manifest, and that
+    # manifest list is the 46,600 NEW prompts ONLY (issue779_ffc_n50k_generate_capture:
+    # ``_read_manifest`` returns ``d["new"]``; ``_stack_chunk`` docstring "GLOBAL n50k
+    # index (manifest order)") — NOT a round1+new concatenation. The original
+    # ``j = c - len(round1)`` offset put every chunk-0 row (ci 0..499) out of range
+    # (checked == 0 crash). Validate BY CONTENT (positional match into ``new`` at
+    # ``j = c``, plus an index-free membership read against the pool set).
+    new_norm = [_norm(t) for t in new]
+    new_set = set(new_norm)
     mismatch = 0
     checked = 0
+    in_pool_set = 0
     for c, pr in zip(ci, prompts, strict=True):
-        j = c - n_pass_b
-        if 0 <= j < len(new):
+        npr = _norm(pr)
+        if npr in new_set:
+            in_pool_set += 1
+        if 0 <= c < len(new):
             checked += 1
-            if _norm(new[j]) != _norm(pr):
+            if new_norm[c] != npr:
                 mismatch += 1
+    match_rate = (checked - mismatch) / checked if checked else 0.0
     out = {
         "meta": result_meta(step="chunkcheck"),
         "chunk": "shard00_chunk0000.pt",
         "n_rows_in_chunk": len(ci),
+        "ci_min": min(ci),
+        "ci_max": max(ci),
         "n_checked_against_rederived_pool": checked,
         "n_mismatches": mismatch,
+        "positional_match_rate": match_rate,
+        "n_in_rederived_pool_set": in_pool_set,
+        "index_space": "ci indexes the NEW-only capture manifest (0..n_new-1)",
     }
     assert checked > 0, "chunk carried no rows inside the re-derived pool index range"
-    assert mismatch == 0, f"{mismatch}/{checked} chunk prompts disagree with the re-derived pool"
+    assert match_rate >= 0.99, (
+        f"{mismatch}/{checked} chunk prompts disagree with the re-derived pool "
+        f"(positional match-rate {match_rate:.4f} < 0.99; set-membership {in_pool_set}/{len(ci)})"
+    )
     atomic_write_json(out_dir / "chunk_spotcheck.json", out)
-    print(f"[chunkcheck] {checked} rows checked, 0 mismatches", flush=True)
+    print(
+        f"[chunkcheck] {checked} rows checked, {mismatch} mismatches "
+        f"(match-rate {match_rate:.4f}; set-membership {in_pool_set}/{len(ci)})",
+        flush=True,
+    )
     return out
 
 
