@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1785,
+  "highest_id": 1786,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6091,6 +6091,13 @@
       "path": "tasks/proposed/1785",
       "status": "proposed",
       "title": "daily-fix: pin #1743 acceptance grep over .claude/agents/"
+    },
+    "1786": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1786",
+      "status": "proposed",
+      "title": "daily-fix: WARN when dispatch handle points at dead attempt"
     },
     "18": {
       "has_clean_result": false,
