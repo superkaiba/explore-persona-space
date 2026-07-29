@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1797,
+  "highest_id": 1798,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6175,6 +6175,13 @@
       "path": "tasks/proposed/1797",
       "status": "proposed",
       "title": "daily-fix: refusal ladder \u2014 goal channel + content-trigger r"
+    },
+    "1798": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1798",
+      "status": "proposed",
+      "title": "daily-fix: plan-compute-sizing \u2014 draws, multipliers, RAM, po"
     },
     "18": {
       "has_clean_result": false,
