@@ -117,7 +117,12 @@ def _reservoir_update(
 
 def pass_select(args) -> int:
     """Pass A: stream shards -> reservoirs -> stratified activating draw +
-    non-activating candidate draw + random directions + inverted index."""
+    non-activating candidate draw + random directions + inverted index.
+    Final act: upload the selection dir to the Hub (Pass B consumes it on a
+    fresh GCE clone — crash-fix r3, #1773). `--upload-only` skips the build
+    and just runs the upload against an existing selection dir."""
+    if args.upload_only:
+        return upload_selection(args.selection_dir)
     rng = np.random.default_rng(CM.SEED)
     com = np.load(CM.PERFEATURE_NPZ, allow_pickle=False)
     fid = np.asarray(com["feat_ids"], dtype=np.int64)
@@ -279,6 +284,107 @@ def pass_select(args) -> int:
         f"[passA] done: {n_feat} features, union_rows={len(union_rows)}, "
         f"act_short={n_short} rss={_rss_gb():.2f}GiB"
     )
+    if not args.no_upload:
+        upload_selection(sel_dir)
+    return 0
+
+
+def upload_selection(sel_dir: Path) -> int:
+    """Upload the Pass-A selection dir to the Hub as ONE bulk `upload_folder`
+    commit (#664/#1547 — never a per-file loop), then verify the EXACT file
+    set with one prefix-scoped listing (fail-loud). Idempotent: when every
+    local file is already present under the prefix, skip the upload (re-runs
+    otherwise overwrite — same paths, content-hash-deduped server-side).
+    Crash-fix r3 (#1773): Pass B runs on GCE, which materializes only the git
+    clone (`data/` is gitignored) — the selection MUST live on the Hub or the
+    pilot dies at input load (the #734/#1434 cross-machine-input class)."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    done = sel_dir / "DONE.json"
+    assert done.exists(), f"selection upload requires a completed Pass A ({done} missing)"
+    local = sorted(
+        p for p in sel_dir.iterdir() if p.is_file() and not p.name.startswith((".tmp_", ".hfstage"))
+    )
+    assert local, f"no selection files under {sel_dir}"
+    expected = sorted(f"{CM.HF_SELECTION_PREFIX}/{p.name}" for p in local)
+    api = HfApi()
+    missing = hub.verify_repo_paths_uploaded(
+        api, CM.HF_DATA_REPO, expected, path_in_repo=CM.HF_SELECTION_PREFIX, repo_type="dataset"
+    )
+    if not missing:
+        _log(f"[passA] selection already on Hub ({len(expected)} files) — skip upload")
+        return 0
+    t0 = time.time()
+    hub.retry_transient(
+        lambda: api.upload_folder(
+            folder_path=str(sel_dir),
+            repo_id=CM.HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=CM.HF_SELECTION_PREFIX,
+            ignore_patterns=[".tmp_*", ".hfstage*"],
+        ),
+        what=f"selection upload ({len(local)} files)",
+    )
+    still = hub.verify_repo_paths_uploaded(
+        api, CM.HF_DATA_REPO, expected, path_in_repo=CM.HF_SELECTION_PREFIX, repo_type="dataset"
+    )
+    if still:
+        raise RuntimeError(
+            f"[passA] selection upload verify FAILED: {len(still)} missing, "
+            f"e.g. {sorted(still)[:5]}"
+        )
+    _log(
+        f"[passA] selection uploaded: {len(local)} files -> "
+        f"{CM.HF_DATA_REPO}:{CM.HF_SELECTION_PREFIX} in {time.time() - t0:.1f}s"
+    )
+    return 0
+
+
+def stage_selection(args) -> int:
+    """Stage the Pass-A selection from the Hub into the consumer-FLAT SEL_DIR
+    layout (crash-fix r3, #1773 — the fix-engaged `[stage] selection staged:`
+    line). Idempotent: a locally-present inverted_index.npz skips the network
+    entirely. Scoped listing + per-file retried atomic staging at ONE resolved
+    revision (the #833 recipe via hub.stage_hub_file — NEVER snapshot_download
+    against the ~1M-file data repo); files land FLAT at sel_dir/<name>, the
+    consumer's own layout (artifact-reuse (h)(iv) — a verbatim prefix mirror
+    would bury them under issue1773_featurepipeline/selection/). The
+    passA_ckpt_* resume checkpoint is deliberately not staged (no Pass-B
+    consumer reads it; ~218 MB saved per fresh instance). Fail-loud on an
+    empty prefix."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    sel_dir = args.selection_dir
+    marker = sel_dir / "inverted_index.npz"
+    if marker.exists():
+        _log(f"[stage] selection present locally -> {sel_dir} (skip staging)")
+        return 0
+    api = HfApi()
+    info = hub.retry_transient(
+        lambda: api.repo_info(CM.HF_DATA_REPO, repo_type="dataset"),
+        what=f"repo_info({CM.HF_DATA_REPO})",
+    )
+    rev = str(info.sha)
+    files = hub.list_hf_files_under_path(
+        api, CM.HF_DATA_REPO, CM.HF_SELECTION_PREFIX, repo_type="dataset", revision=rev
+    )
+    files = sorted(f for f in files if not Path(f).name.startswith("passA_ckpt_"))
+    if not files:
+        raise FileNotFoundError(
+            f"no selection files under {CM.HF_DATA_REPO}:{CM.HF_SELECTION_PREFIX} — "
+            "run Pass A (or `--pass select --upload-only`) first"
+        )
+    sel_dir.mkdir(parents=True, exist_ok=True)
+    for f in files:
+        hub.stage_hub_file(
+            CM.HF_DATA_REPO, f, sel_dir / Path(f).name, repo_type="dataset", revision=rev
+        )
+    assert marker.exists(), f"staging did not produce {marker}"
+    _log(f"[stage] selection staged: {len(files)} files -> {sel_dir}")
     return 0
 
 
@@ -934,6 +1040,8 @@ def _import_check() -> int:
         S.token_inlier_mask,
         hub.retry_transient,
         hub.stage_hub_prefix,
+        hub.stage_hub_file,
+        hub.list_hf_files_under_path,
         hub.verify_repo_paths_uploaded,
     ):
         assert callable(sym), sym
@@ -943,10 +1051,17 @@ def _import_check() -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--pass", dest="pass_name", choices=("select", "windows", "assemble"))
+    ap.add_argument(
+        "--pass", dest="pass_name", choices=("select", "windows", "assemble", "stage-selection")
+    )
     ap.add_argument("--import-check", action="store_true")
+    ap.add_argument(
+        "--upload-only",
+        action="store_true",
+        help="Pass A: skip the build; upload an existing --selection-dir to the Hub",
+    )
     ap.add_argument("--store", type=Path, default=CM.STORE_DEFAULT)
-    ap.add_argument("--selection-dir", type=Path, default=CM.WORK_DEFAULT / "selection")
+    ap.add_argument("--selection-dir", type=Path, default=CM.SEL_DIR_DEFAULT)
     ap.add_argument("--out-dir", type=Path, default=CM.WORK_DEFAULT / "raw_windows")
     ap.add_argument("--evidence-dir", type=Path, default=CM.WORK_DEFAULT / "evidence")
     ap.add_argument("--phase0-dir", type=Path, default=CM.OUT_EVAL / "phase0")
@@ -984,6 +1099,8 @@ def main() -> int:
         rc = pass_windows(args)
     elif args.pass_name == "assemble":
         rc = pass_assemble(args)
+    elif args.pass_name == "stage-selection":
+        rc = stage_selection(args)
     else:
         ap.error("--pass required (or --import-check)")
         return 2

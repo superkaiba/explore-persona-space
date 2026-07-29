@@ -422,6 +422,7 @@ def test_tiny_real_cpu_e2e_evidence_builder(tmp_path):
         feature_limit=0,
         pilot=False,
         upload_every=20,
+        upload_only=False,
         no_upload=True,
         fetch_missing=False,
         no_resume=False,
@@ -535,6 +536,155 @@ def test_passB_launcher_cvd_pins_workers():
         if line.strip().startswith("#"):
             continue
         assert "task.py" not in line, f"pod-side task.py shellout: {line!r}"
+
+
+# ── crash-fix r3: selection upload + cross-machine staging (#1773) ───────────
+
+
+def _stage_args(sel_dir: Path):
+    import argparse
+
+    return argparse.Namespace(selection_dir=sel_dir)
+
+
+def test_stage_selection_flat_layout_skip_and_ckpt_filter(tmp_path, monkeypatch):
+    """stage_selection places Hub files FLAT at sel_dir/<name> (artifact-reuse
+    (h)(iv) — never the verbatim prefix mirror the Hub layout would imply),
+    filters the passA_ckpt_* resume checkpoint, and skips the network entirely
+    when inverted_index.npz is already present. Hub boundary faked with
+    signature-conformant defs (code-style #906); the real end-to-end path is
+    covered by the live staging probe recorded in the r3 smoke."""
+    from types import SimpleNamespace
+
+    import issue1773_evidence_builder as EB
+
+    from explore_persona_space.orchestrate import hub
+
+    prefix = CM.HF_SELECTION_PREFIX
+    listed = [
+        f"{prefix}/DONE.json",
+        f"{prefix}/inverted_index.npz",
+        f"{prefix}/passA_ckpt_deadbeef.npz",
+        f"{prefix}/random_directions.npz",
+        f"{prefix}/selection.shard00.jsonl",
+    ]
+    staged: list[Path] = []
+
+    def fake_retry(fn, *, what="", **kw):
+        assert "repo_info" in what
+        return SimpleNamespace(sha="abc123")
+
+    def fake_list(api, repo_id, path, *, repo_type="model", revision=None):
+        assert path == prefix and revision == "abc123"
+        return list(listed)
+
+    def fake_stage(
+        repo_id,
+        path_in_repo,
+        target,
+        *,
+        repo_type="dataset",
+        revision=None,
+        token=None,
+        overwrite=False,
+    ):
+        target = Path(target)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(b"x")
+        staged.append(target)
+        return target
+
+    monkeypatch.setattr(hub, "retry_transient", fake_retry)
+    monkeypatch.setattr(hub, "list_hf_files_under_path", fake_list)
+    monkeypatch.setattr(hub, "stage_hub_file", fake_stage)
+
+    sel = tmp_path / "sel"
+    assert EB.stage_selection(_stage_args(sel)) == 0
+    names = sorted(p.name for p in staged)
+    assert names == [
+        "DONE.json",
+        "inverted_index.npz",
+        "random_directions.npz",
+        "selection.shard00.jsonl",
+    ]  # passA_ckpt_* filtered
+    assert all(p.parent == sel for p in staged), staged  # FLAT consumer layout
+    assert (sel / "inverted_index.npz").exists()
+    staged.clear()
+    assert EB.stage_selection(_stage_args(sel)) == 0  # idempotent skip
+    assert staged == []
+
+
+def test_stage_selection_empty_prefix_fails_loud(tmp_path, monkeypatch):
+    """An empty Hub prefix (Pass A upload never ran) is a fail-loud
+    FileNotFoundError, never a silent empty stage."""
+    from types import SimpleNamespace
+
+    import issue1773_evidence_builder as EB
+
+    from explore_persona_space.orchestrate import hub
+
+    monkeypatch.setattr(
+        hub, "retry_transient", lambda fn, *, what="", **kw: SimpleNamespace(sha="a")
+    )
+    monkeypatch.setattr(
+        hub,
+        "list_hf_files_under_path",
+        lambda api, repo_id, path, *, repo_type="model", revision=None: [],
+    )
+    with pytest.raises(FileNotFoundError, match="no selection files"):
+        EB.stage_selection(_stage_args(tmp_path / "sel"))
+
+
+def test_upload_selection_done_gate_skip_and_verify_fail(tmp_path, monkeypatch):
+    """upload_selection: DONE.json gate; transient .tmp_* files excluded from
+    the expected set; already-on-Hub -> skip without uploading; a post-upload
+    verify miss -> fail-loud RuntimeError."""
+    import issue1773_evidence_builder as EB
+
+    from explore_persona_space.orchestrate import hub
+
+    sel = tmp_path / "sel"
+    sel.mkdir()
+    with pytest.raises(AssertionError, match="completed Pass A"):
+        EB.upload_selection(sel)
+    (sel / "DONE.json").write_text("{}")
+    (sel / "inverted_index.npz").write_bytes(b"x")
+    (sel / ".tmp_partial.npz").write_bytes(b"x")
+
+    calls = {"verify": [], "upload": 0}
+    returns = [set()]  # first verify: nothing missing -> skip path
+
+    def fake_verify(api, repo_id, expected, *, path_in_repo, repo_type):
+        calls["verify"].append(sorted(expected))
+        return returns.pop(0)
+
+    def fake_retry(fn, *, what="", **kw):
+        calls["upload"] += 1
+        return None
+
+    monkeypatch.setattr(hub, "verify_repo_paths_uploaded", fake_verify)
+    monkeypatch.setattr(hub, "retry_transient", fake_retry)
+    assert EB.upload_selection(sel) == 0
+    assert calls["upload"] == 0  # skip path uploads nothing
+    exp = calls["verify"][0]
+    assert f"{CM.HF_SELECTION_PREFIX}/inverted_index.npz" in exp
+    assert not any(".tmp_" in e for e in exp)  # transient files excluded
+
+    returns.extend([{"m"}, {"m"}])  # missing before AND after upload
+    with pytest.raises(RuntimeError, match="verify FAILED"):
+        EB.upload_selection(sel)
+    assert calls["upload"] == 1  # one bulk upload attempt via retry_transient
+
+
+def test_passB_launcher_stages_selection_before_pilot():
+    """The staging phase (producer of the fix-engaged `[stage] selection
+    staged:` line) runs BEFORE the pilot and tees into the pilot log —
+    crash-fix r3 ordering pin (the r3 crash was the pilot reading a
+    never-staged selection on a fresh GCE clone)."""
+    sh = (REPO / "scripts" / "issue1773_passB_launch.sh").read_text()
+    i_stage = sh.index("--pass stage-selection")
+    i_pilot = sh.index("[phase=passB_pilot]")
+    assert sh.index("[phase=passB_stage_selection]") < i_stage < i_pilot
 
 
 @pytest.mark.slow

@@ -25,11 +25,26 @@ mkdir -p "$LOG_DIR" "$OUT_DIR" "$SCRATCH"
 echo "[phase=passB_import_check]"
 uv run python scripts/issue1773_evidence_builder.py --import-check
 
+# Stage the Pass-A selection from HF when absent (crash-fix r3: the GCE lane
+# materializes only the git clone — data/ is gitignored, so the selection MUST
+# be staged from issue1773_featurepipeline/selection/ before the pilot; the
+# `[stage] selection staged:` line below is the fix-engaged signal). Idempotent:
+# a locally-present inverted_index.npz makes this a no-op skip. Tee'd into the
+# pilot log (created here; pilot appends) so the relaunch asserts one file.
+echo "[phase=passB_stage_selection]"
+uv run python scripts/issue1773_evidence_builder.py --pass stage-selection \
+  --selection-dir "$SEL_DIR" 2>&1 | tee "$LOG_DIR/issue-1773-passB-pilot.log"
+STAGE_RC=${PIPESTATUS[0]}
+if [ "$STAGE_RC" -ne 0 ]; then
+  echo "[phase=passB_stage_failed] rc=$STAGE_RC"
+  exit "$STAGE_RC"
+fi
+
 echo "[phase=passB_pilot]"
 CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1773_evidence_builder.py \
   --pass windows --pilot --worker 0 --n-workers "$N_WORKERS" --gpu-id 0 \
   --device cuda --selection-dir "$SEL_DIR" --out-dir "$OUT_DIR" \
-  --scratch "$SCRATCH" 2>&1 | tee "$LOG_DIR/issue-1773-passB-pilot.log"
+  --scratch "$SCRATCH" 2>&1 | tee -a "$LOG_DIR/issue-1773-passB-pilot.log"
 PILOT_RC=${PIPESTATUS[0]}
 if [ "$PILOT_RC" -ne 0 ]; then
   echo "[phase=passB_pilot_failed] rc=$PILOT_RC"

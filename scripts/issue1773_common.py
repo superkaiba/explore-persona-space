@@ -17,6 +17,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 import sys
 from pathlib import Path
 
@@ -42,6 +43,17 @@ OUT_FIGS = PROJECT_ROOT / "figures/issue_1773"
 WORK_DEFAULT = Path("/mnt/eps-data/thomasjiralerspong/issue1773_evidence")
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 HF_PREFIX = "issue1773_featurepipeline"
+HF_SELECTION_PREFIX = f"{HF_PREFIX}/selection"
+# Canonical Pass-A selection dir (crash-fix r3 path unification, #1773): ONE
+# repo-relative constant every consumer (pass_select / pass_windows / the Pass-B
+# launcher) reads, overridable via EPM_1773_SEL_DIR. Reconciles the plan's
+# `data/issue_1773/evidence/selection/` prose, the launcher's
+# `$REPO_ROOT/data/issue_1773/selection`, and the old argparse default
+# WORK_DEFAULT/selection (where the 2026-07-28 VM Pass-A run actually wrote —
+# point EPM_1773_SEL_DIR there to consume that copy).
+SEL_DIR_DEFAULT = Path(
+    os.environ.get("EPM_1773_SEL_DIR", str(PROJECT_ROOT / "data" / "issue_1773" / "selection"))
+)
 
 # ── evidence design (plan §11, Sources: arXiv 2410.13928 / Delphi / 2605.12874) ──
 N_ACT_BINS = 10  # quantile bins over the feature's own ans_max distribution
@@ -440,8 +452,6 @@ def repro_meta() -> dict:
     """Reproducibility metadata for result JSONs (commit, versions, ts)."""
     import datetime
     import subprocess
-
-    import os
 
     out = subprocess.run(
         ["git", "rev-parse", "HEAD"],
