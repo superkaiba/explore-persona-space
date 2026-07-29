@@ -355,12 +355,26 @@ run_phase_derived_vs_free() {
     # --- Cross-model same-condition pairs (item 9): full ladder + battery ---
     echo "[phase=xm_ladder]"
     local xm_ladder_json="$xm_root/ladder_crossmodel_L19.json"
-    "${cvd0[@]}" timeout --kill-after=60s "$fence" uv run python \
-        scripts/issue1689_fit_ladder.py --store-root "$dvf_store" \
+    # Pair-sharded across every visible GPU (plan §9 C7 — the 84-unit ladder
+    # must not run single-process on GPU 0 while siblings idle): shard workers
+    # persist per-pair checkpoints only; the --merge pass assembles the final
+    # JSON fail-loud on any missing/regime-mismatched pair. nsh=1 (CPU or one
+    # GPU) takes run_sharded's single-process branch, which writes the JSON
+    # directly — no merge pass needed.
+    run_sharded scripts/issue1689_fit_ladder.py \
+        --store-root "$dvf_store" \
         --model-slug Qwen_Qwen2.5-7B-Instruct --layer 19 \
         --out "$xm_ladder_json" --pairs-file "$xm_pairs" \
         --checkpoint-dir "$xm_root/xpairs_L19" \
-        --engine torch --device "$device" "${xm_ladder_draws[@]}"
+        --engine torch "${xm_ladder_draws[@]}"
+    if [ "$nsh" -gt 1 ]; then
+        timeout --kill-after=60s "$fence" uv run python \
+            scripts/issue1689_fit_ladder.py --store-root "$dvf_store" \
+            --model-slug Qwen_Qwen2.5-7B-Instruct --layer 19 \
+            --out "$xm_ladder_json" --pairs-file "$xm_pairs" \
+            --checkpoint-dir "$xm_root/xpairs_L19" \
+            --engine torch --device cpu --merge "${xm_ladder_draws[@]}"
+    fi
     echo "[phase=xm_pairs]"
     run_sharded scripts/issue1689_derived_vs_free.py --phase pairs \
         --store-root "$dvf_store" --out-root "$xm_root" \

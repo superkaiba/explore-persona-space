@@ -428,3 +428,67 @@ def test_prepped_inner_cv_matches_plain():
         assert lam0 == lam1
         np.testing.assert_allclose(W0.numpy(), W1.numpy(), atol=1e-12)
         np.testing.assert_allclose(b0.numpy(), b1.numpy(), atol=1e-12)
+
+
+def test_cmd_nulls_draw_count_upgrade_updates_metadata(tmp_path):
+    """A draw-count-upgrade rerun recomputes the null battery AND rewrites the
+    persisted regime metadata — a setdefault'd n_draws would leave the unit
+    claiming the OLD draw count after the 200-draw recompute (r-v17 minor)."""
+    store = tmp_path / "store"
+    _write_synth_store(store, "mA", ["assistant_chat", "assistant_naturalistic"])
+    pf = tmp_path / "pairs.json"
+    pf.write_text(json.dumps([[["mA", "assistant_chat"], ["mA", "assistant_naturalistic"]]]))
+    out_root = tmp_path / "out"
+    common = dict(
+        layer=19,
+        lambda_grid="ladder13",
+        seed=42,
+        device="cpu",
+        row_limit=None,
+        dim_limit=None,
+        pairs_file=pf,
+        default_model=None,
+        pair_set="within-model",
+        models="mA",
+        out_root=out_root,
+        store_root=store,
+        num_shards=1,
+        shard_index=0,
+    )
+    assert dvf.cmd_pairs(argparse.Namespace(**common, rotation_draws=2)) == 0
+    assert dvf.cmd_nulls(argparse.Namespace(**common, rotation_draws=2)) == 0
+    unit_paths = sorted((out_root / "pairs").glob("*.json"))
+    assert unit_paths
+    for p in unit_paths:
+        assert json.loads(p.read_text())["operator_read"]["rotation_null"]["n_draws"] == 2
+    # Upgrade 2 -> 4 draws: the skip predicate re-includes every unit; the
+    # persisted metadata must read 4 afterwards (pre-fix: setdefault kept 2).
+    assert dvf.cmd_nulls(argparse.Namespace(**common, rotation_draws=4)) == 0
+    for p in unit_paths:
+        unit = json.loads(p.read_text())
+        nul = unit["operator_read"]["rotation_null"]
+        assert nul["n_draws"] == 4
+        assert nul["seed"] == 42
+        with np.load(out_root / "bundles" / f"{unit['unit_key']}.npz") as z:
+            draw_keys = [k for k in z.files if k.startswith("rotation_draws_")]
+            assert draw_keys
+            for k in draw_keys:
+                assert z[k].shape[0] == 4
+
+
+def test_rung78_degenerate_split_raises_in_production_shape():
+    """fit_rung78_corrections_t: a degenerate conv-grouped split RAISES in
+    production shape (row_limit/dim_limit both None); the train==test fallback
+    is confined to the explicit smoke regime (r-v17 minor)."""
+    rng = np.random.default_rng(3)
+    n, d = 3, 6  # 3 convs over 5 folds -> train fold has 2 rows (< 3): degenerate
+    x = rng.standard_normal((n, d))
+    y = x @ rng.standard_normal((d, d))
+    source = _synthetic_cell(rng, n, d, x, y)
+    target = _synthetic_cell(rng, n, d, x + 0.1, y + 0.1)
+    with pytest.raises(RuntimeError, match="degenerate conv-grouped split"):
+        fl.fit_rung78_corrections_t(source, target, arm="context")
+    # Explicit smoke regime (row_limit set): fallback proceeds, train==test.
+    corr = fl.fit_rung78_corrections_t(source, target, arm="context", row_limit=n)
+    assert "error" not in corr
+    np.testing.assert_array_equal(corr["train_idx"], corr["test_idx"])

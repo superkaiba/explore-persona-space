@@ -610,9 +610,14 @@ def cmd_nulls(args) -> int:
             upath, bpath, unit, _ = loaded[idx]
             arr = draws[:, col]
             nul_block = unit["operator_read"].setdefault("rotation_null", {}) or {}
-            nul_block.setdefault("n_draws", int(args.rotation_draws))
-            nul_block.setdefault("seed", int(args.seed))
-            nul_block.setdefault("convention", "parent-9a-ter svec reduction (E = P*R^T)")
+            # Direct assignment, NOT setdefault: on a draw-count-upgrade rerun
+            # (stored n_draws < --rotation-draws) the whole draw battery is
+            # recomputed above, so the persisted regime metadata must reflect
+            # the ACTUAL draw count/seed used — a stale n_draws would leave the
+            # skip predicate + downstream consumers reading the old regime.
+            nul_block["n_draws"] = int(args.rotation_draws)
+            nul_block["seed"] = int(args.seed)
+            nul_block["convention"] = "parent-9a-ter svec reduction (E = P*R^T)"
             nul_block[cmp_name] = {
                 "null_mean": float(arr.mean()),
                 "null_std": float(arr.std()),

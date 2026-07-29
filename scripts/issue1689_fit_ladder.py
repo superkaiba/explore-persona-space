@@ -1684,6 +1684,17 @@ def fit_rung78_corrections_t(
     train_idx = np.where(folds != 0)[0]
     test_idx = np.where(folds == 0)[0]
     if len(train_idx) < 3 or len(test_idx) < 1:
+        # train==test is a leakage-by-construction fallback tolerable ONLY in
+        # the explicit smoke regime (row_limit/dim_limit are the documented
+        # smoke-scale knobs; production passes both as None). In production
+        # shape a degenerate conv-grouped split means the pair's data is
+        # broken — fail loud instead of silently scoring on the train fold.
+        if row_limit is None and dim_limit is None:
+            raise RuntimeError(
+                f"degenerate conv-grouped split in production shape (arm={arm}: "
+                f"train={len(train_idx)}, test={len(test_idx)}, n_common={n}) — "
+                "refusing the train==test smoke fallback"
+            )
         train_idx = np.arange(n)
         test_idx = np.arange(n)
     train_conv_ids = common[train_idx]
