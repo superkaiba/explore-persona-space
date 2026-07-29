@@ -621,30 +621,42 @@ recorded a negative finding).
 table (no GPU-bound components). For those, write "N/A — no
 compute-bound components" and move on.
 
-### Off-pod phase declaration (`off_pod_phases:`) — reads enumerated, outputs pre-declared (#1535)
+### Cross-phase reads declaration (`off_pod_phases:`) — reads enumerated, outputs pre-declared (#1535, #1773)
 
-REQUIRED only when the plan has a pod/backend dispatch AND ≥1 subsequent
-off-pod phase (a VM / cpu-small / cpu-mid / cpu-bigmem / Batch-API judge or
-analysis phase). Pod-free plans and single-machine runs OMIT this block
-entirely — no boilerplate, no escape line needed. Two incidents it closes:
+REQUIRED whenever ANY dispatched phase reads ANOTHER phase's outputs —
+BOTH directions: (a) a pod/backend dispatch with ≥1 subsequent off-pod
+phase (a VM / cpu-small / cpu-mid / cpu-bigmem / Batch-API judge or
+analysis phase) consuming pod outputs — the original #1482/#1426
+direction; AND (b) any pod-gpu / GCE / SLURM phase consuming another
+phase's outputs, including VM-PRODUCED inputs — the #1773 inverse seam:
+the git-clone lanes stage ONLY the pushed branch (`data/` is gitignored,
+the #734/#1434 class), and the #1469 carry-over gate glob-skips
+phase-output globs, so no mechanical gate covers that seam. Pod-free
+plans and single-machine runs OMIT this block
+entirely — no boilerplate, no escape line needed. Three incidents it closes:
 #1482 (the off-pod P5 judge died at VM launch loading pod-only
 `scratch/{split_indices.npz,row_ci.npy,prov.npy}` never in the P4 upload
 set — the pod was already terminated; recovery needed a sha-anchored
-reconstruction) and #1426 (a planned VM-side phase FAILed the verifier's
+reconstruction), #1426 (a planned VM-side phase FAILed the verifier's
 initial r1 BY CONSTRUCTION — the verifier expected its outputs on the pod;
 the follow-up round's verifier then IMPROVISED "DEFERRED + gap-listed" rows
 for the same phase — live precedent for the deferral grammar this block
-mechanizes). This is the plan-time mechanization of the `gotchas.md`
-off-pod upload-set bullet (#1526, rules (i)-(iv)).
+mechanizes), and #1773 (the inverse direction: Pass B on GCE crashed
+`FileNotFoundError` loading Pass A's VM-produced selection outputs — never
+HF-uploaded, no launcher staging step; one 4×A100 GCE provision+boot cycle
+burned, att-20260729-010419). This is the plan-time mechanization of the
+`gotchas.md` cross-machine upload-set bullet (#1526, rules (i)-(iv)).
 
-Render as a fenced YAML block, one entry per off-pod phase:
+Render as a fenced YAML block, one entry per phase that reads another
+phase's outputs (the block NAME stays `off_pod_phases:` for back-compat
+with in-flight plans and the c39 satisfier):
 
 ```yaml
 off_pod_phases:
   - phase: <verbatim §9 phase name, e.g. "P5 judge (VM, post-termination)">
-    runs_on: vm | cpu-small | cpu-mid | cpu-bigmem | batch-api
+    runs_on: vm | cpu-small | cpu-mid | cpu-bigmem | batch-api | pod-gpu | gce | slurm
     reads:
-      - path: <path the off-pod loader opens/fetches>
+      - path: <path the phase's loader opens/fetches>
         produced_by: <producing phase, e.g. "P4 (pod)">
         source: hf-data-repo | git-issue-branch | vm-resident-by-construction
     outputs:
@@ -654,13 +666,33 @@ off_pod_phases:
 
 Rules:
 
-- **Every `reads[].path` must resolve at a permanent source the off-pod
+- **Every `reads[].path` must resolve at a permanent source the CONSUMING
   machine can fetch** — an HF data-repo path, a git-issue-branch path, or
   `vm-resident-by-construction` with a one-line basis (e.g. "arrives with
-  the git clone"). A read that exists only as pod-side scratch is a design
+  the git clone"). A read that exists only as one machine's local scratch
+  (pod-side OR VM-side) is a design
   defect: add it to the producing phase's upload set (KB–tens-of-MB scratch
   metadata — split indices, provenance arrays, configs — uploads
   UNCONDITIONALLY; the large-tensor discard economy never applies to it).
+- **`vm-resident-by-construction` is keyed on EXECUTION LOCUS, not the
+  literal `runs_on: vm` enum value:** legal only for VM-EXECUTING phases —
+  `vm`, and `batch-api` (a Batch-API judge's driver runs VM-side and
+  legitimately opens VM-resident inputs; live precedent: #1776 plan v4's
+  `runs_on: batch-api` rows with `source: vm-resident-by-construction`).
+  ILLEGAL for dispatched git-clone / staged lanes (`pod-gpu | gce | slurm`
+  and the `cpu-*` lanes) — those machines stage only the pushed branch, so
+  a VM-resident file is simply not there; use `hf-data-repo` or
+  `git-issue-branch`. Blocks in plans persisted before this change are
+  never retro-invalidated (critic item 10 pressure is forward-only).
+- **A VM-PRODUCED read consumed by a git-clone-lane phase (`pod-gpu | gce
+  | slurm` — the #1773 direction) names BOTH transport halves:** the
+  PRODUCING phase ends with a fail-loud bulk `upload_folder` of its
+  outputs to the issue HF prefix, AND the CONSUMING launcher stages the
+  missing inputs via scoped `list_repo_tree` + per-file download (never
+  `snapshot_download` on the ~1M-file data repo — gotchas.md #833),
+  logging a `[stage] <input> staged: N files` line usable as the
+  crash-fix fix-engaged signal (mirrors the implementer-side memory
+  `feedback_cross_machine_input_staging.md`).
 - **`outputs[]` is scoped to files the declared off-pod phase ITSELF
   writes** — it must NOT sweep in any pod-side phase's deliverables (no
   over-broad globs like `eval_results/issue_<N>/**` when a pod phase also
@@ -674,18 +706,26 @@ Rules:
   the exact upload command), and Step 2.7 enumerates a declared phase's
   OUTPUTS at the declared `dest` — or records them deferred when the phase
   is sequenced after pod termination — instead of FAILing on pod-absence.
-- **Derive `reads[]` from the off-pod loader's ACTUAL open/fetch set**
-  (its argument list + `open()`/`snapshot_download` calls), not from
-  memory of the design — an omitted read reproduces #1482 despite the
-  block; state the derivation basis in one line when the loader exists at
-  plan time.
+- **Derive `reads[]` from EACH DECLARED PHASE'S loader ACTUAL open/fetch
+  set** (its argument list + `open()` and staging calls), direction-agnostic,
+  not from memory of the design — an omitted read reproduces #1482/#1773
+  despite the block (the #1773 plan HAD a block; the intermediate
+  passA→passB read was omitted because reads were derived only for the
+  final off-pod loader); state the derivation basis in one line per phase
+  when the loader exists at plan time.
 - **§6.5 interaction:** a `primary_deliverable:` row produced by a declared
   off-pod phase is enumerated at that phase's declared `dest` (Step 2.7
   sub-rule), not on the pod; keep the §6.5 row — the block does not
   replace it.
 - **Escape:** a plan whose prose trips the off-pod vocabulary check
-  (`verify_plan.py` c39) but genuinely has no off-pod phase declares the
+  (`verify_plan.py` c39) but genuinely has no cross-phase read declares the
   standalone line `N/A — no off-pod phase`.
+- **Known mechanical residual (direction (b)):** c39's trigger vocabulary
+  (`off-pod` / `vm-side`) does not fire on inverse-direction prose (a
+  pod/GCE/SLURM phase reading VM-produced inputs), so direction (b) is
+  enforced by this section + critic Methodology item 10 only — a c39
+  vocabulary extension is a semantics change deliberately out of scope
+  (parked candidate on #1782's events).
 
 Worked example (#1482's design, as it should have been declared):
 
@@ -702,6 +742,23 @@ off_pod_phases:
         source: git-issue-branch
     outputs:
       - path: eval_results/issue_1482/judge/*.json
+        dest: git-issue-branch
+```
+
+Second worked example (#1773's design — the inverse direction, as it
+should have been declared: Pass A produces on the VM, Pass B consumes on
+a git-clone lane):
+
+```yaml
+off_pod_phases:
+  - phase: Pass B scoring (GCE, consumes Pass A selection outputs)
+    runs_on: gce
+    reads:
+      - path: issue1773_slug/selection/inverted_index.npz
+        produced_by: Pass A selection (VM)
+        source: hf-data-repo
+    outputs:
+      - path: eval_results/issue_1773/passB/*.json
         dest: git-issue-branch
 ```
 
