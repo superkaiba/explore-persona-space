@@ -36,6 +36,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1738.md](https://github.com/superkaiba/explore-persona-space/blob/9a1f82d92355804082f4915665394449e4744024/docs/methodology/issue_1738.md) · [gist mirror](https://gist.github.com/superkaiba/974da25791408751959e3910e386d371)
+
 ## Takeaways
 
 - Conversation history alone predicts the upcoming answer state at scale: prefix-arm held-out R² 0.379 (layer 19, ridge, n=9,941) clears the 0.11 single-turn reference by 0.269 (95% CI 0.264–0.275).
