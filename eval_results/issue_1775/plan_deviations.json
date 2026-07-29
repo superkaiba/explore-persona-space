@@ -1,0 +1,14 @@
+{
+  "issue": 1775,
+  "note": "Materialized from the epm:results markers' plan_deviations field (2026-07-29T10:45:24Z run-1 marker @ code 3177139d0a2bc09d1ecc8a6e95ff13e92817ec6e; 2026-07-29T17:27:32Z run-2/P3-re-run marker @ code 856e9a2d58b0623641cb446252db6358a683cf41). Both runs declared the identical single deviation.",
+  "deviations": [
+    {
+      "deviation": "pca48 basis PCs fit on the full fit-population (parent #1092 parity, Gate C comparability)",
+      "rationale": "plan section 4 says train-fold-only; the parent's banked 0.914 read uses population PCs — parity wins; per-fold-PC sensitivity check listed as follow-up",
+      "declared_in_runs": [
+        {"marker_ts": "2026-07-29T10:45:24Z", "code_sha": "3177139d0a2bc09d1ecc8a6e95ff13e92817ec6e"},
+        {"marker_ts": "2026-07-29T17:27:32Z", "code_sha": "856e9a2d58b0623641cb446252db6358a683cf41"}
+      ]
+    }
+  ]
+}
