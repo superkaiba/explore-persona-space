@@ -777,6 +777,29 @@ def load_ridge_pred(u: dict, basis: str) -> tuple[np.ndarray, np.ndarray] | None
     return None
 
 
+def expected_ridge_pred_files(smoke: bool) -> dict[str, tuple[Path, Path]]:
+    """(pred, mask) file pairs assemble_gains will query, keyed arm|grain|scheme|basis.
+
+    Round-3 Minor (#1775): the full expected per-row ridge-pred set for every
+    planned PERROW nonlinear combo x basis, resolved through the SAME
+    ``pred_path`` mapping ``load_ridge_pred`` uses. Gate-B skips only remove
+    MLP rungs — the krr/rff siblings of a skipped arm still need the same
+    files, so ``gate_b_skip=set()`` is the correct enumeration here.
+    """
+    out: dict[str, tuple[Path, Path]] = {}
+    for u in nonlinear_units(smoke, [0], set()):
+        if u["grain"] != "perrow":
+            continue
+        bases = ["pca48"] if (smoke or u["rung"] == "mlp") else ["ambient", "pca48"]
+        for b in bases:
+            key = f"{u['arm']}|{u['grain']}|{u['scheme']}|{b}"
+            if key in out:
+                continue
+            p = pred_path({**u, "rung": "ridge"}, basis=b)
+            out[key] = (p, p.with_name(p.stem + "_mask.npy"))
+    return out
+
+
 # ── main phases ──────────────────────────────────────────────────────────────────
 
 

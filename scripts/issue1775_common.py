@@ -352,7 +352,7 @@ def stage_store_if_needed(store: Path, *, cells: list[str], layers: list[int]) -
         print(f"[stage] fetched {rel}", flush=True)
 
 
-def prefetch_p3_inputs() -> None:
+def prefetch_p3_inputs(smoke: bool = False) -> None:
     """Stage the P1/P2 artifacts a STANDALONE P3 run reads (``--phases=p3``
     on a fresh instance): ``linear_fits.json`` (final-payload context),
     the P2 detection JSON (gate-B input to the nonlinear unit grid), and
@@ -361,6 +361,9 @@ def prefetch_p3_inputs() -> None:
     Local copies win (same-instance resume; the ``--phases=p3`` smoke against
     a prior full ``--smoke`` out-root); a Hub miss of a required input fails
     LOUD — a silent miss would empty ``gains_vs_ridge`` / mis-size the grid.
+    ``smoke`` selects the expected enumeration for the coverage assert at the
+    end (round-3 Minor: a PARTIAL Hub set must fail loud HERE — assemble_gains
+    deliberately skips missing preds, so only the fully-empty case was guarded).
     """
     api = HfApi()
     for sub, name in (("ladder", "linear_fits.json"), ("detection", "hsic_dcor.json")):
@@ -396,6 +399,25 @@ def prefetch_p3_inputs() -> None:
         f"(Hub lists {len(ridge)})",
         flush=True,
     )
+    assert_p3_ridge_pred_coverage(smoke)
+
+
+def assert_p3_ridge_pred_coverage(smoke: bool) -> None:
+    """Round-3 Minor set-diff assert: every expected per-row ridge pred+mask pair
+    (per planned perrow arm|grain|scheme|basis) must exist locally after prefetch;
+    a PARTIAL set raises naming the missing keys (assemble_gains would otherwise
+    silently skip them and thin gains_vs_ridge)."""
+    from issue1775_ladder import expected_ridge_pred_files  # lazy: ladder imports common
+
+    expected = expected_ridge_pred_files(smoke)
+    missing = [k for k, (p, m) in expected.items() if not (p.exists() and m.exists())]
+    if missing:
+        raise RuntimeError(
+            f"p3 prefetch: ridge-pred set INCOMPLETE — {len(missing)}/{len(expected)} expected "
+            "(arm|grain|scheme|basis) pred+mask pair(s) absent after prefetch: "
+            + ", ".join(sorted(missing))
+        )
+    print(f"[prefetch-p3] ridge-pred coverage OK ({len(expected)} pred+mask pairs)", flush=True)
 
 
 def load_manifest_rows(store: Path) -> list[dict]:

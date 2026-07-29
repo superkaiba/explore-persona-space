@@ -222,6 +222,57 @@ def test_nonlinear_group_sharding_keeps_rung_order():
         ladder.verify_shard_rung_order(interleaved)
 
 
+def test_bilinear_resume_purges_partials_and_gate_flags_missing(tmp_path):
+    """#1775 P4 port of the P3 crash-fix (r3 persisted concern
+    p4-bilinear-raw-resume-no-completeness-gate): 1 valid + 1 partial row in
+    the shard JSONL -> only the valid row resume-skips, the partial is PURGED,
+    and the assembly completeness gate flags exactly the partial's unit."""
+    import json
+
+    bilin = pytest.importorskip("issue1775_bilinear")
+    base = dict(scheme="prefix", r=0, basis="pca48", smoke=False, row_limit=None)
+    valid = {
+        **base,
+        "fold": 0,
+        "epochs_ran": 12,
+        "variants": [{"seed": 0, "wd": 0.0, "inner_val_mse": 0.1, "r2_te": 0.2}],
+    }
+    # crash-shaped stub: row appended schema-incomplete (no epochs_ran/variants)
+    partial = {**base, "fold": 1}
+    p = tmp_path / "units_shard0.jsonl"
+    p.write_text("".join(json.dumps(r) + "\n" for r in (valid, partial)))
+    rows = i1775.load_units_validated(p, bilin.bilinear_row_incomplete)
+    by_key = {i1775.unit_key(r, bilin.REGIME_KEYS): r for r in rows}
+    planned = [{**base, "fold": f} for f in (0, 1)]
+    missing = [u for u in planned if i1775.unit_key(u, bilin.REGIME_KEYS) not in by_key]
+    assert len(rows) == 1 and rows[0]["fold"] == 0  # only the complete row resumes
+    assert [u["fold"] for u in missing] == [1]  # the gate flags exactly the stub's unit
+    kept = [json.loads(ln) for ln in p.read_text().splitlines() if ln.strip()]
+    assert len(kept) == 1 and kept[0]["fold"] == 0  # partial row purged from disk
+
+
+def test_prefetch_ridge_coverage_fails_loud_on_partial_set(tmp_path, monkeypatch):
+    """#1775 round-3 Minor: a PARTIAL ridge-pred set (one expected pred+mask pair
+    absent) raises naming the missing key; the complete set passes."""
+    ladder = pytest.importorskip("issue1775_ladder")
+    monkeypatch.setenv("I1775_OUT_ROOT", str(tmp_path))
+    expected = ladder.expected_ridge_pred_files(False)
+    # production enumeration: 6 perrow combos x {ambient, pca48}
+    assert len(expected) == 12
+    assert len(ladder.expected_ridge_pred_files(True)) == 1  # smoke: stitch|perrow|prefix|pca48
+    items = sorted(expected.items())
+    for _key, (pred, mask) in items[:-1]:
+        pred.write_bytes(b"")
+        mask.write_bytes(b"")
+    missing_key, (pred, mask) = items[-1]
+    with pytest.raises(RuntimeError, match="INCOMPLETE") as ei:
+        i1775.assert_p3_ridge_pred_coverage(False)
+    assert missing_key in str(ei.value)  # the missing (arm|grain|scheme|basis) key is named
+    pred.write_bytes(b"")
+    mask.write_bytes(b"")
+    i1775.assert_p3_ridge_pred_coverage(False)  # complete set: must not raise
+
+
 def test_doubly_fold_pairs_disjoint():
     _X, _Y, rows = _toy(n=90)
     pairs = i1775.fold_pairs(rows, len(rows), "doubly", n_folds=3)
