@@ -1574,15 +1574,27 @@ def test_skillmd_canonical_escapes_sync_with_docstring():
     # docstring phrase must keep the double-backtick wrapping + the
     # `N/A —` / `Durability pin: N/A` prefix convention, or it evades
     # extraction here (the floor catches shrinkage, not a never-extracted
-    # phrase).
+    # phrase). ONE registered carve-out: c43's deliberately PREFIX-LESS
+    # phrase (`no sentinel dependence — auto-safe`, #1787) has its own
+    # explicit extraction below; any future prefix-less phrase needs its
+    # own extraction line here too — it is invisible to the alternation.
     doc = verify_plan.__doc__
     section = doc[doc.index("Canonical N/A escape phrases") : doc.index("WARN semantics")]
     phrases = re.findall(r"``((?:N/A —|Durability pin: N/A)[^`]+?)``", section)
     # Extraction guard (never-self-escapes precedent, :1232): 29 phrases at
-    # pin time. A shrinking count means the docstring format drifted and the
-    # parser silently under-covers — fix the regex; never lower this floor
-    # except for a deliberate check retirement (state which check).
+    # pin time (39 as of #1787). A shrinking count means the docstring format
+    # drifted and the parser silently under-covers — fix the regex; never
+    # lower this floor except for a deliberate check retirement (state which
+    # check).
     assert len(phrases) >= 29, (len(phrases), phrases)  # c4 registered (#1277)
+    # Prefix-less canonical escape (c43, #1787): registered standalone
+    # WITHOUT the N/A prefix, so the prefixed alternation above never
+    # extracts it. Extract it from the docstring (ground truth) so the
+    # wrapped-presence loop below pins its SKILL.md registration too; a
+    # future prefix-less phrase needs its own extraction line here.
+    prefixless = re.findall(r"``(no sentinel dependence[^`]+?)``", section)
+    assert prefixless, "c43 prefix-less escape phrase missing from docstring registration"
+    phrases += prefixless
     # Code->docstring leg: every `_standalone_na_declared` call-site tail must
     # match somewhere in the docstring section, so a new check's recognizer
     # cannot land unregistered (the SKILL.md asserts below then propagate the
