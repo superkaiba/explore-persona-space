@@ -8371,6 +8371,86 @@ def test_c39_fenced_na_escape_does_not_satisfy():
     assert _status(plan, "c39_off_pod_phase_declaration") == "WARN"
 
 
+# ─── Check 39 — inverse-direction trigger widening (#1796) ─────────────────
+# The #1773 class: a dispatched (pod/GCE/SLURM) phase consuming VM-produced
+# inputs. Corpus-calibrated 2026-07-29 over 3,004 persisted plan-versions
+# (see the calibration comment above _C39_TRIGGER_RE); no in-corpus
+# non-compliant positive control exists for `vm-produced` (#1773's own
+# occurrences are inside its fenced off_pod_phases: block), so the WARN
+# tests below are the synthetic positive controls (the c38 convention).
+
+C39_INVERSE_PROSE = (
+    GOOD_PLAN + "\nPhase P6 (GCE ridge fit) consumes the VM-produced probe JSONs at boot.\n"
+)
+
+
+def test_c39_inverse_direction_trigger_warns():
+    # Inverse-direction prose with NO `off-pod` / `vm-side` token anywhere
+    # → the widened trigger fires; same WARN text (satisfiers unchanged).
+    _, by_id = _run(C39_INVERSE_PROSE)
+    r = by_id["c39_off_pod_phase_declaration"]
+    assert r.status == "WARN"
+    assert "off_pod_phases:" in r.detail  # names the missing block
+    assert "N/A — no off-pod phase" in r.detail  # teaches the escape
+
+
+def test_c39_inverse_produced_on_the_vm_trigger_warns():
+    # Durability pin for the second SHIPPED token (exact string, the c33
+    # per-token pin style): `produced on the vm`, case-insensitive.
+    plan = GOOD_PLAN + "\nThe probe bank is produced on the VM before the pod phase loads it.\n"
+    assert _status(plan, "c39_off_pod_phase_declaration") == "WARN"
+
+
+def test_c39_inverse_fenced_vocabulary_only_skips():
+    # Inverse vocabulary ONLY inside a fence (the #1773 shape: `VM-produced`
+    # in a fenced off_pod_phases-adjacent note) — the trigger scans STRIPPED
+    # prose, so a fence-only occurrence never fires.
+    plan = GOOD_PLAN + "\n```\nnote: VM-produced (enumerated at git dest)\n```\n"
+    assert _status(plan, "c39_off_pod_phase_declaration") == "SKIP"
+
+
+def test_c39_inverse_trigger_block_satisfies():
+    # Inverse trigger + the fenced off_pod_phases: block → PASS (satisfiers
+    # unchanged by #1796; the schema is direction-agnostic since #1782).
+    _, by_id = _run(C39_INVERSE_PROSE + C39_BLOCK)
+    r = by_id["c39_off_pod_phase_declaration"]
+    assert r.status == "PASS"
+    assert "off_pod_phases" in r.detail
+
+
+def test_c39_inverse_kind_exempt_skips():
+    # An infra plan carrying the new token (e.g. a workflow-fix plan
+    # discussing this very seam — #1782/#1796 are the calibration cases)
+    # stays kind-exempt.
+    assert _status(C39_INVERSE_PROSE, "c39_off_pod_phase_declaration", kind="infra") == "SKIP"
+
+
+def test_c39_forward_staging_prose_does_not_trigger():
+    # Negative pin (plan #1796 §3 rejected `stages ... from HF` at plan
+    # time): FORWARD-direction staging prose is the normal, pervasive
+    # direction in compliant plans and must never fire the trigger.
+    plan = (
+        GOOD_PLAN
+        + "\nPhase P2 stages the training mix from the HF data repo at boot.\n"
+        + "\nThe probe bank is staged from the HF data repo before training.\n"
+    )
+    assert _status(plan, "c39_off_pod_phase_declaration") == "SKIP"
+
+
+def test_c39_dropped_tokens_do_not_trigger():
+    # Negative durability pin for the calibration-DROPPED tokens:
+    # `git-clone lane` (irreducible nuisance class — artifact-reuse
+    # boilerplate + compliant staging prose) and `vm-built`/`vm-generated`
+    # (zero corpus recall). A future re-add must re-run the corpus scan
+    # per the calibration comment's re-scan gate.
+    plan = (
+        GOOD_PLAN
+        + "\nThe git-clone lane stages committed eval JSONs by construction.\n"
+        + "\nA VM-built index and a VM-generated cache are consumed later.\n"
+    )
+    assert _status(plan, "c39_off_pod_phase_declaration") == "SKIP"
+
+
 # ─── Check 41 — regression-anchor test executed or gate-selected ───────────
 # Fixture strategy (plan #1551 §6, the c34 pattern): monkeypatch
 # verify_plan._C41_REPO_ROOT to a tmp fixture tree; the REAL selector
