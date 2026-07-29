@@ -1,6 +1,7 @@
 ---
-title: Prefill-only hook causes near-zero change; sycophancy at α=2 shows decode-driven
-  commitment; evil timing is convention-dependent (MODERATE confidence)
+title: Decode-driven behavioral commitment at α=2 is convention-robust for evil and
+  sycophancy; hallucination flips to mixed under intrusion-robust scoring (MODERATE
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-28T20:23:10Z'

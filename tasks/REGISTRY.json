@@ -5974,7 +5974,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1769",
       "status": "interpreting",
-      "title": "Prefill-only hook causes near-zero change; sycophancy at \u03b1=2 shows decode-driven commitment; evil timing is convention-dependent (MODERATE confidence)"
+      "title": "Decode-driven behavioral commitment at \u03b1=2 is convention-robust for evil and sycophancy; hallucination flips to mixed under intrusion-robust scoring (MODERATE confidence)"
     },
     "1770": {
       "has_clean_result": false,
