@@ -123,6 +123,17 @@ PILOT_VIOLATION_RATE_MAX = 0.005  # G1: strict-token-prefix violations <= 0.5%
 PILOT_PREFIX_COS_MAX = 0.999  # G1/K1: min pairwise px cos must be BELOW this
 KRESAMPLE_SEEDS = (43, 44, 45, 46)
 
+# Engine-cap invariant (r5 crash fix): a budget-admitted prompt + max generation
+# always fits the engine, so gating admission at PROMPT_TOKEN_BUDGET is what
+# keeps llm_engine.add_request from ever seeing > MAX_MODEL_LEN. The attempt-3
+# kresample crash was an UNGATED 14,217-token subsample row vs max_model_len
+# 8,192 — engine-fatal instead of skip+record.
+assert PROMPT_TOKEN_BUDGET + GEN_MAX_TOKENS <= MAX_MODEL_LEN, (
+    PROMPT_TOKEN_BUDGET,
+    GEN_MAX_TOKENS,
+    MAX_MODEL_LEN,
+)
+
 
 def _depth_band(depth: int) -> str:
     for lo, hi in DEPTH_BANDS:
@@ -1154,6 +1165,122 @@ def _filter_rows_overlength(
     return kept, skipped
 
 
+def _gen_render_len(tok):
+    """Token-length fn of the EXACT generation render (add_generation_prompt=True,
+    tokenized with add_special_tokens=False) — the ONE budget arithmetic shared by
+    the capture over-length filter and the kresample admission gate (r5 fix: a
+    single source, so a K-draw's conditioning context can never be budgeted under
+    a different convention than the primary draw's)."""
+
+    def _n_tokens(messages: list[dict]) -> int:
+        return len(
+            tok(
+                _render_messages(tok, messages, add_generation_prompt=True),
+                add_special_tokens=False,
+            )["input_ids"]
+        )
+
+    return _n_tokens
+
+
+def _kresample_admission_gate(
+    rows: list[dict], tok_len_fn, primary_cis: set[int] | None
+) -> tuple[list[dict], list[dict]]:
+    """Capture-parity admission for K-resample rows (the r5 crash fix).
+
+    The subsample is drawn from the SPLIT-time holdout ci list, which predates
+    Phase-2 capture — it can contain rows capture SKIPPED as over-length (5 of
+    2,000; ci 98764 renders to 14,217 tok > max_model_len 8,192 and killed the
+    engine at add_request) and rows with NO primary seed-42 draw in y_holdout
+    (7 of 2,000; the pilot-era partial-chunk gap), which would trip the floor
+    phase's designed rc-23 join gate. A row is admitted iff (a) its EXACT
+    generation render fits PROMPT_TOKEN_BUDGET and (b) it has a primary draw
+    when ``primary_cis`` is provided. Skips are RECORDED (ci + n_tokens +
+    reasons; never text) — never engine-fatal. Returns (kept, skipped)."""
+    kept, skipped = [], []
+    for r in rows:
+        ci = int(r["i"])
+        n_tok = int(tok_len_fn(r["messages"]))
+        reasons = []
+        if n_tok > PROMPT_TOKEN_BUDGET:
+            reasons.append("overlength")
+        if primary_cis is not None and ci not in primary_cis:
+            reasons.append("no_primary_draw")
+        if reasons:
+            skipped.append({"ci": ci, "n_tokens": n_tok, "reasons": reasons})
+        else:
+            kept.append(r)
+    return kept, skipped
+
+
+def _kresample_primary_cis(args) -> set[int] | None:
+    """Resolve the primary-draw ci set (y_holdout membership) for the kresample
+    admission gate. ``--kresample-primary-ci``: 'hf' (default) stages
+    {hf_prefix}/analysis_tensors/y_holdout/L14.npz from the data repo and reads
+    its 'ci' array (identical across L14/L19/L26 — verified 2026-07-28); a local
+    path reads an .npz with a 'ci' array or a JSON list / {"ci": [...]} doc;
+    'none' DISABLES the gate (loud warning — deliberate override only)."""
+    spec = str(args.kresample_primary_ci)
+    if spec == "none":
+        logger.warning(
+            "[kresample] primary-draw gate DISABLED (--kresample-primary-ci none) — "
+            "contexts without a seed-42 primary draw will be generated and later "
+            "fail the floor phase's rc-23 join gate"
+        )
+        return None
+    if spec == "hf":
+        dest = args.out_dir / "kresample" / "y_holdout_L14.npz"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        if not dest.exists():
+            hub.stage_hub_file(
+                C.HF_DATA_REPO,
+                f"{args.hf_prefix}/analysis_tensors/y_holdout/L14.npz",
+                dest,
+                repo_type="dataset",
+            )
+        path = dest
+    else:
+        path = Path(spec)
+    if path.suffix == ".npz":
+        cis = {int(c) for c in np.load(path)["ci"]}
+    else:
+        doc = json.loads(path.read_text())
+        cis = {int(c) for c in (doc["ci"] if isinstance(doc, dict) else doc)}
+    assert cis, f"primary-draw ci set from {path} is empty"
+    logger.info("[kresample] primary-draw gate ON: %d cis from %s", len(cis), path.name)
+    return cis
+
+
+def _write_kresample_skipped(scratch: Path, args, skipped: list[dict]) -> None:
+    """Kresample admission-gate record (capture-sidecar sibling): over-length +
+    no-primary-draw skips, ci + token counts + reasons only (never text).
+    Written + uploaded BEFORE generation so the record survives a later crash."""
+    skip_name = f"kresample_shard{args.shard_index:02d}_skipped.json"
+    C.write_json_atomic(
+        scratch / skip_name,
+        {
+            "shard_index": int(args.shard_index),
+            "num_shards": int(args.num_shards),
+            "prompt_token_budget": PROMPT_TOKEN_BUDGET,
+            "primary_gate": str(args.kresample_primary_ci) != "none",
+            "n_skipped": len(skipped),
+            "skipped": skipped,
+        },
+    )
+    if args.no_upload:
+        return
+    url = hub._upload_folder_filtered(
+        scratch,
+        repo_id=C.HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{args.hf_prefix}/{KRESAMPLE_SUBDIR}",
+        allow_patterns=[skip_name],
+        expected_repo_paths=[f"{args.hf_prefix}/{KRESAMPLE_SUBDIR}/{skip_name}"],
+    )
+    if not url:
+        raise RuntimeError(f"kresample skipped-sidecar upload of {skip_name} returned no URL")
+
+
 def _generate_multiturn(llm, tok, messages_list: list[list[dict]], *, seed: int = 42) -> list[str]:
     """1 rollout per multi-turn context under the parent decoding recipe
     (temp 1.0, top_p 0.95, max 1024 tok, engine/request seed). CPU-smoke path
@@ -1268,16 +1395,11 @@ def run_capture(args) -> int:
             name = f"shard{args.shard_index:02d}_chunk{ci_idx:04d}.pt"
             raw_name = f"shard{args.shard_index:02d}_chunk{ci_idx:04d}.json"
             chunk = shard_pool[s : s + args.shard_size]
-            # over-length filter on the EXACT generation render (parent mechanism)
+            # over-length filter on the EXACT generation render (parent mechanism;
+            # r5: shared _gen_render_len — the kresample admission gate uses the
+            # SAME arithmetic, single source)
             kept_rows, skipped = _filter_rows_overlength(
-                chunk,
-                lambda m: len(
-                    tok(
-                        _render_messages(tok, m, add_generation_prompt=True),
-                        add_special_tokens=False,
-                    )["input_ids"]
-                ),
-                PROMPT_TOKEN_BUDGET,
+                chunk, _gen_render_len(tok), PROMPT_TOKEN_BUDGET
             )
             skipped_all.extend(skipped)
             if skipped:
@@ -1527,6 +1649,26 @@ def run_kresample(args) -> int:
 
     C.phase("load_model")
     tok, hf = _load_models(args)
+    # r5 admission gate (BEFORE the engine build): capture-parity over-length
+    # skip + primary-draw membership — skip+record, never engine-fatal.
+    primary_cis = _kresample_primary_cis(args)
+    rows, gate_skipped = _kresample_admission_gate(rows, _gen_render_len(tok), primary_cis)
+    _write_kresample_skipped(scratch, args, gate_skipped)
+    if gate_skipped:
+        logger.warning(
+            "[kresample] skipped %d rows (%d over-length > %d tok, %d no-primary-draw); cis=%s",
+            len(gate_skipped),
+            sum(1 for d in gate_skipped if "overlength" in d["reasons"]),
+            PROMPT_TOKEN_BUDGET,
+            sum(1 for d in gate_skipped if "no_primary_draw" in d["reasons"]),
+            [d["ci"] for d in gate_skipped],
+        )
+    if not rows:
+        logger.warning(
+            "[kresample] shard %d kept 0 contexts after admission gate", args.shard_index
+        )
+        C.phase("done")
+        return 0
     llm = N1M._build_capture_engine(args) if args.device == "cuda" else None
     h_dim = int(hf.config.hidden_size)
 
@@ -1658,6 +1800,12 @@ def _smoke(args) -> int:
     long_row = _synth_conv(9999, 2)
     long_row["conversation"][0]["content"] = "x " * 15_000  # 30k chars > MAX_CONTEXT_CHARS
     smoke_lmsys.append(long_row)  # over_length_chars reject branch must fire
+    # r5: an over-length-TOKENS row UNDER the 26k-char manifest prefilter — it
+    # survives the build and must be caught by the generation-time budget gates
+    # (capture filter + kresample admission gate; the ci-98764 crash class).
+    long_tok_row = _synth_conv(8888, 2)
+    long_tok_row["conversation"][0]["content"] = " ".join(f"q{i}x" for i in range(1800))
+    smoke_lmsys.append(long_tok_row)
     ns = argparse.Namespace(**{**vars(args), "no_upload": True, "n_target": 500, "probe_rows": 100})
     meta = build_manifest(ns, smoke_lmsys=smoke_lmsys, smoke_wildchat=smoke_wc)
     # r3 routing pin (#1738 c-dev): "auto" MUST resolve the PRODUCTION screen to the
@@ -1798,16 +1946,29 @@ def _smoke(args) -> int:
         cap2, reason2 = _capture_context_and_prefix(hf, tok, row["messages"], [0, 1])
     assert cap2 is None and reason2 == "prefix_token_mismatch", reason2
 
-    # (6) kresample path on the tiny model (stub generation, 2 contexts, K=2).
+    # (6) kresample path on the tiny model (stub generation, K=2), r5 shape:
+    # 2 admitted contexts + 1 over-length-TOKENS row (the ci-98764 crash class)
+    # + 1 no-primary-draw row — the admission gate must SKIP+RECORD both, never
+    # hand them to the engine.
+    long_tok_ci = next(
+        int(r["i"]) for r in pool if any(len(m["content"]) > 8_000 for m in r["messages"])
+    )
+    keep_cis = [int(pool[0]["i"]), int(pool[1]["i"])]
+    gate_out_ci = next(int(r["i"]) for r in pool if int(r["i"]) not in {*keep_cis, long_tok_ci})
     sub_doc = ns.out_dir / "kresample_subsample.json"
-    sub_cis = [int(pool[0]["i"]), int(pool[1]["i"])]
+    sub_cis = [*keep_cis, long_tok_ci, gate_out_ci]
     N1M._atomic_write_json(
         sub_doc, {"ci": sub_cis, "seed": 173801, "sha256": _sha_int_list(sub_cis)}
     )
+    # primary-draw set: everything EXCEPT gate_out_ci (long_tok_ci included, so
+    # its skip is attributable to "overlength" alone).
+    primary_npz = ns.out_dir / "kresample_primary.npz"
+    np.savez(primary_npz, ci=np.asarray([*keep_cis, long_tok_ci], dtype=np.int64))
     kargs = argparse.Namespace(
         **{
             **vars(cargs),
             "kresample_subsample": str(sub_doc),
+            "kresample_primary_ci": str(primary_npz),
             "seeds": "43,44",
             "num_shards": 1,
             "shard_index": 0,
@@ -1823,10 +1984,31 @@ def _smoke(args) -> int:
         raise AssertionError("kresample subsample sha gate did not refuse")
     except SystemExit as e:
         assert "sha mismatch" in str(e.code), e.code
+    # degenerate probe (r5 kept-0 gate): a subsample whose rows are ALL gated out
+    # exits 0 with the skip record written and NO shard tensor.
+    zero_doc = ns.out_dir / "kresample_subsample_zero.json"
+    N1M._atomic_write_json(
+        zero_doc, {"ci": [gate_out_ci], "seed": 173801, "sha256": _sha_int_list([gate_out_ci])}
+    )
+    rc = run_kresample(argparse.Namespace(**{**vars(kargs), "kresample_subsample": str(zero_doc)}))
+    assert rc == 0
+    assert not (ns.out_dir / "kresample" / "kresample_shard00.pt").exists(), (
+        "kept-0 kresample run must not write a shard tensor"
+    )
+    zrec = json.loads((ns.out_dir / "kresample" / "kresample_shard00_skipped.json").read_text())
+    assert zrec["n_skipped"] == 1 and zrec["skipped"][0]["reasons"] == ["no_primary_draw"], zrec
+    # main run: 2 admitted, 2 skipped (1 overlength, 1 no_primary_draw).
     rc = run_kresample(kargs)
     assert rc == 0
     kb = torch.load(ns.out_dir / "kresample" / "kresample_shard00.pt", weights_only=False)
     assert kb["V"].shape[:2] == (2, 2) and kb["seeds"] == [43, 44], kb["V"].shape
+    assert kb["ci"] == keep_cis, (kb["ci"], keep_cis)
+    krec = json.loads((ns.out_dir / "kresample" / "kresample_shard00_skipped.json").read_text())
+    by_reason = {tuple(d["reasons"]): d for d in krec["skipped"]}
+    assert krec["n_skipped"] == 2 and krec["prompt_token_budget"] == PROMPT_TOKEN_BUDGET, krec
+    assert by_reason[("overlength",)]["ci"] == long_tok_ci, krec
+    assert by_reason[("overlength",)]["n_tokens"] > PROMPT_TOKEN_BUDGET, krec
+    assert by_reason[("no_primary_draw",)]["ci"] == gate_out_ci, krec
 
     logger.info("[smoke] OK — manifest/allocation/carve/gate/capture-indexing/kresample")
     return 0
@@ -1868,6 +2050,13 @@ def main() -> int:
     ap.add_argument("--pilot-cap", type=int, default=0, help="G1 pilot: cap this shard's contexts")
     ap.add_argument("--kresample", action="store_true", help="K-resample fresh-draw capture mode")
     ap.add_argument("--kresample-subsample", default="", help="path to kresample_subsample.json")
+    ap.add_argument(
+        "--kresample-primary-ci",
+        default="hf",
+        help="primary-draw ci source for the kresample admission gate: 'hf' (stage "
+        "y_holdout L14.npz from the data repo; production default), a local .npz/JSON "
+        "path, or 'none' (disable — loud override)",
+    )
     ap.add_argument("--seeds", default=",".join(str(s) for s in KRESAMPLE_SEEDS))
     ap.add_argument(
         "--tiny-model", action="store_true", help="SMOKE ONLY: 2-layer from-config model"
