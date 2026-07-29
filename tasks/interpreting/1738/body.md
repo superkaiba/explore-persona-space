@@ -4,7 +4,7 @@ title: Conversation history alone carries about half the full-context answer-sta
 kind: experiment
 tags: []
 created_at: '2026-07-28T00:42:49Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1482
 origin_prompt: 'run for 100k as much in parallel and vectorized as possible. [context:
   user approved option R3(b) from chat — ''new capture: build the multi-turn analogue
