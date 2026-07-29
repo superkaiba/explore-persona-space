@@ -1,14 +1,10 @@
-{
-  "issue": 1775,
-  "note": "Materialized from the epm:results markers' plan_deviations field (2026-07-29T10:45:24Z run-1 marker @ code 3177139d0a2bc09d1ecc8a6e95ff13e92817ec6e; 2026-07-29T17:27:32Z run-2/P3-re-run marker @ code 856e9a2d58b0623641cb446252db6358a683cf41). Both runs declared the identical single deviation.",
-  "deviations": [
-    {
-      "deviation": "pca48 basis PCs fit on the full fit-population (parent #1092 parity, Gate C comparability)",
-      "rationale": "plan section 4 says train-fold-only; the parent's banked 0.914 read uses population PCs — parity wins; per-fold-PC sensitivity check listed as follow-up",
-      "declared_in_runs": [
-        {"marker_ts": "2026-07-29T10:45:24Z", "code_sha": "3177139d0a2bc09d1ecc8a6e95ff13e92817ec6e"},
-        {"marker_ts": "2026-07-29T17:27:32Z", "code_sha": "856e9a2d58b0623641cb446252db6358a683cf41"}
-      ]
-    }
-  ]
-}
+[
+  {
+    "deviation": "pca48 basis PCs fit on the full fit-population (parent #1092 parity, Gate C comparability)",
+    "rationale": "plan section 4 says train-fold-only; the parent's banked 0.914 read uses population PCs — parity wins; per-fold-PC sensitivity check listed as follow-up"
+  },
+  {
+    "deviation": "fast-engine parity gate FAILED on-run (parity_gate.json max_rel_diff 1.76 vs tol 1e-4) but the plan's registered fall-back-to-PRESS clause was not executed during the run; the 9 engine:fast expanded linear rows (L19 bridge + cell_pre_own) are quarantined secondary-only at analysis, PRESS refit filed as a free-analysis follow-up",
+    "rationale": "recorded post-hoc at analysis (2026-07-29): no lattice-feeding or headline number consumes ridge_fit_predict_fast — RFF/KRR/MLP use their own Gram-space solvers and the bilinear warm start is shared by both sides of the paired delta contrast"
+  }
+]
