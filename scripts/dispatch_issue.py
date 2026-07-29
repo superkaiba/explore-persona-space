@@ -1020,6 +1020,116 @@ def _warn_workload_cmd_inline_interpreter_and_flag_marker(
     )
 
 
+#: First committed driver-script token in a ``--workload-cmd`` string
+#: (``bash scripts/<driver>.sh`` / ``uv run python scripts/<x>.py``) —
+#: the resolution anchor for the #1800 persist-evidence lint.
+_WORKLOAD_CMD_SCRIPT_TOKEN_RE = re.compile(r"scripts/[A-Za-z0-9_.\-/]+\.(?:sh|py)\b")
+
+
+def _resolve_workload_driver_script(
+    workload_cmd: str, repo_branch: str | None
+) -> tuple[str | None, str | None]:
+    """Fail-soft driver-script text resolution for the #1800 persist lint.
+
+    Extracts the FIRST ``scripts/<x>.sh|.py`` token from the workload
+    command and resolves its text in ladder order: ``git show
+    origin/<repo_branch>:<path>`` (the ref the gcp/runpod lanes actually
+    clone), the local ``<repo_branch>`` ref, then the invoking working
+    tree. Returns ``(path, text)``; ``(path, None)`` when the token
+    resolved NOWHERE (caller skips the lint with ONE note); ``(None,
+    None)`` when the command names no script token at all. Never raises —
+    an unresolvable script must never block a launch.
+    """
+    m = _WORKLOAD_CMD_SCRIPT_TOKEN_RE.search(workload_cmd or "")
+    if m is None:
+        return None, None
+    path = m.group(0)
+    refs = [f"origin/{repo_branch}", repo_branch] if repo_branch else []
+    for ref in refs:
+        try:
+            proc = subprocess.run(
+                ["git", "show", f"{ref}:{path}"],
+                capture_output=True,
+                text=True,
+                timeout=15,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if proc.returncode == 0 and proc.stdout:
+            return path, proc.stdout
+    try:
+        p = Path(path)
+        if p.is_file():
+            return path, p.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        pass
+    return path, None
+
+
+def _warn_workload_cmd_persist_and_flag_marker(
+    spec: Any, marker_poster: Callable[..., None]
+) -> Callable[..., None]:
+    """WARN-only #1800 arm of the workload-cmd lint family. Never blocks.
+
+    Flags a workload chain with ZERO persist-evidence tokens (per
+    ``lint_workload_cmd_persist_evidence``) across the command + the
+    resolved driver-script text — the #1739 class: a run completes every
+    phase with no upload step wired anywhere and leaves zero artifacts on
+    HF. Fail-soft: an unresolvable driver script skips the lint with ONE
+    stderr note, never a refusal. Own kill switch
+    ``EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT=1``. No strict upgrade:
+    ``--strict-workload-cmd-env`` is lane-env-scoped by contract (the
+    #1576 precedent) — this arm has NO refusal path at all. Hydra
+    launches (no ``--workload-cmd``) are exempt: ``train.py`` carries
+    built-in upload paths.
+    """
+    from explore_persona_space.backends.issue_dispatch import (
+        PERSIST_EVIDENCE_TOKENS,
+        lint_workload_cmd_persist_evidence,
+    )
+
+    if not spec.workload_cmd:
+        return marker_poster
+    log = logging.getLogger("dispatch_issue")
+    if os.environ.get("EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT") == "1":
+        log.info(
+            "EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT=1 — workload-cmd persist-evidence "
+            "lint (#1800) skipped."
+        )
+        return marker_poster
+    script_path, script_text = _resolve_workload_driver_script(
+        spec.workload_cmd, (spec.extra or {}).get("repo_branch")
+    )
+    lint = lint_workload_cmd_persist_evidence(spec.workload_cmd, script_text)
+    if lint.skipped:
+        log.info(
+            "workload-cmd persist-evidence lint (#1800) skipped — driver script %s "
+            "unresolvable (git show origin/<branch> / local branch / working tree). "
+            "Step 8 upload-verification remains the hard persist gate.",
+            script_path or "<none named in --workload-cmd>",
+        )
+        return marker_poster
+    if not lint.flagged:
+        return marker_poster
+    log.warning(
+        "--workload-cmd chain carries NO persist-evidence token (%s) in the command "
+        "or the resolved driver script %s — the #1739 class: the run can complete "
+        "every phase and leave ZERO artifacts on HF, forcing improvised recovery "
+        "uploads against the poweroff clock. Wire an upload/persist step (Upload "
+        "Policy: raw completions MUST upload before teardown; #779 "
+        "persist-by-default), or a plan-NAMED off-pod harvest+upload step. Launch "
+        "continues; epm:backend-selected carries "
+        "extra.workload_cmd_no_persist_evidence. Silence with "
+        "EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT=1.",
+        ", ".join(PERSIST_EVIDENCE_TOKENS),
+        script_path,
+    )
+    return _wrap_marker_poster_with_override_flag(
+        marker_poster, {"workload_cmd_no_persist_evidence": True}
+    )
+
+
 def _workload_cmd_env_lint_gate(
     args: argparse.Namespace, spec: Any
 ) -> tuple[Any, dict[str, Any] | None]:
@@ -1651,7 +1761,11 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
     # inline-interpreter one-liner body (python -c / stdin heredoc; the
     # sanctioned write_completion_sentinel append is exempt) via the
     # marker-poster decoration below — never a refusal, and
-    # --strict-workload-cmd-env does NOT upgrade it.
+    # --strict-workload-cmd-env does NOT upgrade it. A THIRD, WARN-only
+    # arm (#1800, incident #1739) flags a chain with NO persist-evidence
+    # token in the command + the resolved driver script (kill switch:
+    # EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT=1; unresolvable script → lint
+    # skipped with one note; never a refusal, no strict upgrade).
     env_lint, env_refusal = _workload_cmd_env_lint_gate(args, spec)
     if env_refusal is not None:
         print(json.dumps(env_refusal, sort_keys=True))
@@ -1660,6 +1774,7 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
     deps = backends_factory()
     marker_poster = _warn_workload_cmd_env_and_flag_marker(env_lint, deps["marker_poster"])
     marker_poster = _warn_workload_cmd_inline_interpreter_and_flag_marker(spec, marker_poster)
+    marker_poster = _warn_workload_cmd_persist_and_flag_marker(spec, marker_poster)
     marker_poster = _check_runpod_override_frontmatter(int(args.issue), args.backend, marker_poster)
     marker_poster = _warn_default_boot_disk_ft_intent(spec, int(args.issue), marker_poster)
     try:
