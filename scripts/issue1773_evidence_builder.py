@@ -994,16 +994,17 @@ def pass_assemble(args) -> int:
 
         from explore_persona_space.orchestrate import hub
 
-        hub.assert_hub_dir_filecounts(
-            ev_dir, f"{CM.HF_PREFIX}/evidence", allow_patterns=["**/*.jsonl", "**/*.json"]
-        )
+        # fnmatch `**/*.json` requires a `/`, so top-level files (completeness_report.json,
+        # ASSEMBLY_DONE.json) need the bare `*.json` pattern too (#825 eligibility class).
+        ev_pats = ["**/*.jsonl", "**/*.json", "*.json"]
+        hub.assert_hub_dir_filecounts(ev_dir, f"{CM.HF_PREFIX}/evidence", allow_patterns=ev_pats)
         hub.retry_transient(
             lambda: HfApi().upload_folder(
                 folder_path=str(ev_dir),
                 repo_id=CM.HF_DATA_REPO,
                 repo_type="dataset",
                 path_in_repo=f"{CM.HF_PREFIX}/evidence",
-                allow_patterns=["**/*.jsonl", "**/*.json"],
+                allow_patterns=ev_pats,
             ),
             what="evidence manifests upload",
         )
