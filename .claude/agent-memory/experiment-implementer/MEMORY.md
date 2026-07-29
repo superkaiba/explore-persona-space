@@ -152,3 +152,4 @@
 - [real-corpus exact dupes break sha-keyed samples](feedback_real_corpus_exact_dupes_sha_sample.md) — dedup in-draw with pinned-row priority; measure a frozen pinned split before asserting global sha-uniqueness (#1768)
 - [cross-machine input staging](feedback_cross_machine_input_staging.md) — VM-produced inputs need producer HF-upload + consumer launcher staging on git-clone lanes (#1773)
 - [stage_hub_prefix dest is a mirror ROOT](feedback_stage_hub_prefix_dest_is_mirror_root.md) — dest/<repo-relative path> layout; pass root satisfying root/<prefix>==consumed path + (h)(iv) consumer-open probe (#1774)
+- [Subsample re-admission filter](feedback_subsample_readmission_filter.md) — re-apply the producer's admission filter before consuming split-time id lists (#1738 r5)
