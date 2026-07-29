@@ -6137,8 +6137,8 @@
     "1792": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1792",
-      "status": "proposed",
+      "path": "tasks/planning/1792",
+      "status": "planning",
       "title": "daily-fix: scratch-worktree cone + empty-dir residue fixes"
     },
     "1793": {
