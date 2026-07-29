@@ -6186,8 +6186,8 @@
     "1799": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1799",
-      "status": "proposed",
+      "path": "tasks/planning/1799",
+      "status": "planning",
       "title": "daily-fix: gcp crash-persist rc=120 under OOM \u2014 harden"
     },
     "18": {
