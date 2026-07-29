@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1811,
+  "highest_id": 1812,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6287,6 +6287,13 @@
       "path": "tasks/proposed/1811",
       "status": "proposed",
       "title": "daily-fix: implementer memory \u2014 self-reports need evidence"
+    },
+    "1812": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1812",
+      "status": "proposed",
+      "title": "daily-fix: 9a-ter \u2014 instrument supersession + addenda charac"
     },
     "182": {
       "has_clean_result": true,
