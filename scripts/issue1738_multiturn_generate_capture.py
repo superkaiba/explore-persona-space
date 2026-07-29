@@ -1490,6 +1490,7 @@ def run_bare_capture(args) -> int:
     ALL manifest rows (parent over-length skips included — bare renders are
     short); no generation, no vLLM. Uploads ride ``--upload-prefix`` (default =
     ``--hf-prefix``) so the parent capture prefix is never clobbered."""
+    # UPLOAD_PREFIX_EXEMPT: default = this issue's own --hf-prefix (issue1738_multiturn); the bare round passes --upload-prefix so the parent capture prefix is never written (plan v6 §4.1.4)
     up = args.upload_prefix or args.hf_prefix
     manifest_dir = _resolve_manifest_dir(args)  # manifest rides --hf-prefix (parent)
     pool, _meta = N1M.read_manifest_pool(manifest_dir)
@@ -1705,6 +1706,7 @@ def run_bare_capture(args) -> int:
                     _flush_pending()  # persist completed chunks before the halt
                     if not args.no_upload:
                         try:  # artifact-first halt routing: rc survives an upload failure
+                            # UPLOAD_LOOP_EXEMPT: single bare_fence_report.json file uploaded ONCE at the designed rc-25 fence halt (report-first routing), not a per-file loop
                             url = hub._upload(
                                 args.out_dir / "bare_fence_report.json",
                                 repo_id=C.HF_DATA_REPO,
@@ -1927,6 +1929,7 @@ def _write_sidecar(
     (ci + counts only, never text). Uploaded beside raw_completions. ``prefix``
     overrides the upload prefix (the bare arm's ``--upload-prefix``; default =
     ``args.hf_prefix``, the parent behavior)."""
+    # UPLOAD_PREFIX_EXEMPT: default = this issue's own --hf-prefix (issue1738_multiturn, parent behavior); bare arm passes an explicit prefix (plan v6 §4.1.4)
     up = prefix or args.hf_prefix
     skip_name = f"shard{args.shard_index:02d}_skipped.json"
     C.write_json_atomic(
@@ -1943,6 +1946,7 @@ def _write_sidecar(
     )
     if args.no_upload:
         return
+    # UPLOAD_PREFIX_EXEMPT: dest defaults to this issue's own --hf-prefix (issue1738_multiturn, parent behavior); the bare arm passes an explicit prefix (plan v6 §4.1.4)
     url = hub._upload_folder_filtered(
         scratch,
         repo_id=C.HF_DATA_REPO,

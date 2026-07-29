@@ -86,9 +86,11 @@ def _upload_summary_jsons(args, paths: list[Path], *, best_effort: bool = False)
     if not present:
         return
     rel = sorted(str(p.relative_to(args.out_eval)) for p in present)
+    # UPLOAD_PREFIX_EXEMPT: default = this issue's own --hf-prefix (issue1738_multiturn); a child issue reusing this driver must pass --upload-prefix explicitly (plan v6 §4.3)
     up = getattr(args, "upload_prefix", "") or args.hf_prefix
     dest = f"{up}/{FT.ANALYSIS_TENSORS_SUBDIR}/summaries/characterize"
     try:
+        # UPLOAD_PREFIX_EXEMPT: dest defaults to this issue's own --hf-prefix (issue1738_multiturn); child reuse must pass --upload-prefix (plan v6 §4.3)
         url = hub._upload_folder_filtered(
             args.out_eval,
             repo_id=C.HF_DATA_REPO,

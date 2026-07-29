@@ -941,12 +941,14 @@ def _upload_analysis_tensors(args, entries: list[tuple[str, Path, list[str] | No
     unverified commit (the per-cell exact-set contract, upload-policy.md).
     Uploads ride ``--upload-prefix`` when set (the bare round's
     issue1738_multiturn/bare_query; default = ``--hf-prefix``, plan §4.2)."""
+    # UPLOAD_PREFIX_EXEMPT: default = this issue's own --hf-prefix (issue1738_multiturn); child reuse must pass --upload-prefix (plan v6 §4.2 dual-write)
     up = getattr(args, "upload_prefix", "") or args.hf_prefix
     for sub, local, files in entries:
         if files is None:
             files = sorted(str(p.relative_to(local)) for p in local.rglob("*") if p.is_file())
         if not files:
             continue
+        # UPLOAD_PREFIX_EXEMPT: dest defaults to this issue's own --hf-prefix (issue1738_multiturn); child reuse must pass --upload-prefix (plan v6 §4.2 dual-write)
         url = hub._upload_folder_filtered(
             local,
             repo_id=C.HF_DATA_REPO,
@@ -1013,6 +1015,7 @@ def _stage_analysis_subdir(args, sub: str) -> Path:
         d = Path(args.local_analysis_dir) / sub
         assert d.is_dir(), f"--local-analysis-dir missing subdir {d}"
         return d
+    # UPLOAD_PREFIX_EXEMPT: default = this issue's own --hf-prefix (issue1738_multiturn); child reuse must pass --upload-prefix (plan v6 §4.2)
     up = getattr(args, "upload_prefix", "") or args.hf_prefix
     prefix = f"{up}/{ANALYSIS_TENSORS_SUBDIR}/{sub}"
     dest = Path(args.out_local) / "rebuild_stage"
