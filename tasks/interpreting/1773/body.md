@@ -1,6 +1,7 @@
 ---
-title: 'SAE feature description + categorization pipeline: evidence builder, five
-  judged axes, and validation harness'
+title: SAE feature descriptions detect held-out activations but cannot pick a feature
+  out from its neighbours, leaving all five judged axes usable as a search index only
+  (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-28T21:22:22Z'
