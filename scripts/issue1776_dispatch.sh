@@ -41,9 +41,12 @@
 #                        ops (M' x50k/lmsys50k, shipped-M reference if resolvable)
 #                        + J arms over lmsys_test1000 + wildchat_fresh (P2c + P5)
 #   p5b_leakage          phase5 leakage re-read (CPU; inputs all local by now —
-#                        §9 lists this off-pod (p7); run here since the dispatcher
-#                        stages centroids + builds the L21 dict anyway; deviation
-#                        noted in the final sentinel)
+#                        §9 lists this off-pod (p7); POD-side is the default here
+#                        since the dispatcher stages centroids + builds the L21
+#                        dict anyway; EPS_1776_P5B_OFFPOD=1 skips it for the
+#                        plan-literal off-pod lane (invocation documented in the
+#                        final sentinel offpod_handoffs.p5b_leakage); deviation +
+#                        rationale recorded in the final sentinel)
 #   p_results_commit     git add/commit/push eval JSONs + rev-list push-verify +
 #                        per-file ls-tree artifact-presence assert (#1205/#1325)
 #   p_final              epm:results (or epm:smoke-result) sentinel, then
@@ -51,9 +54,10 @@
 #
 # OFF-POD (excluded here; named in the final sentinel note):
 #   p6 graded judge  — Batch API on the VM after release (issue1776_judge.py).
-#     Pricing note: the judge DEFAULT scores the control strata under ALL 3
-#     rubrics (~30k x 5 calls) vs §9's 16k x 5 one-rubric-per-completion
-#     costing — trim via --control-rubrics if the budget binds.
+#     Pricing note: the judge DEFAULT is the plan-§9-priced contrast policy
+#     (trait strata under own rubric; baseline under every trait rubric;
+#     w1_mprime/random one rubric per context, round-robin — ~18k x 5 calls);
+#     the all-rubrics mode (~30k x 5) is opt-in via --all-control-rubrics.
 #   p7 final analyses — VM, 0 GPU (5c/5d lens reads etc.).
 #
 # Engineering-gate exit codes (plan §7): 8 = G-PARITY / G-LENS / G-NONZERO
@@ -78,11 +82,13 @@ set -euo pipefail
 MODE="full"
 DRY=0
 NGPU_OVERRIDE=""
+ALLOW_MISSING_REF=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --mode) MODE="$2"; shift 2 ;;
     --dry-run) DRY=1; shift ;;
     --gpus) NGPU_OVERRIDE="$2"; shift 2 ;;
+    --allow-missing-reference-arm) ALLOW_MISSING_REF=1; shift ;;
     *) echo "unknown arg: $1" >&2; exit 2 ;;
   esac
 done
@@ -826,9 +832,32 @@ phase_end "p2_upload"
 #    the later p5_transfer reference row). ───────────────────────────────────
 phase_begin "p2c_battery"
 mkdir -p "$EVAL_DIR/phase2"
+# Shipped-M resolution (concern shipped-m-l19-glob-fallback): the EXACT staged
+# path is primary — plan §10 pins the layout weights_dir/L{layer}/{fitter}.pt
+# (issue779_n1m_readout.py:201); the basename/path glob is FALLBACK only. An
+# unresolved reference arm FAILS LOUD unless --allow-missing-reference-arm was
+# passed, in which case the omission is recorded in the eval-results JSON set
+# (committed at p_results_commit) + the final sentinel — never silent.
 SHIPPED_M=""
-if [[ $DRY == 0 && -d "$WEIGHTS_DIR" ]]; then
-  SHIPPED_M="$(find "$WEIGHTS_DIR" -name '*l19*.pt' -o -name '*layer19*.pt' 2>/dev/null | sort | head -1 || true)"
+SHIPPED_M_EXACT="$WEIGHTS_DIR/L19/ridge.pt"
+if [[ $DRY == 0 ]]; then
+  if [[ -f "$SHIPPED_M_EXACT" ]]; then
+    SHIPPED_M="$SHIPPED_M_EXACT"
+  elif [[ -d "$WEIGHTS_DIR" ]]; then
+    SHIPPED_M="$(find "$WEIGHTS_DIR" \( -ipath '*l19*.pt' -o -iname '*l19*.pt' -o -iname '*layer19*.pt' \) 2>/dev/null | sort | head -1 || true)"
+    [[ -n "$SHIPPED_M" ]] && echo "[dispatch] NOTE: shipped-M resolved via GLOB FALLBACK: $SHIPPED_M (exact $SHIPPED_M_EXACT missing)"
+  fi
+  if [[ -z "$SHIPPED_M" ]]; then
+    if [[ $ALLOW_MISSING_REF == 1 ]]; then
+      OMIT_JSON="$EVAL_DIR/phase2/shipped_m_reference_omitted.json"
+      printf '{"omitted_arm": "m_shipped (labeled reference — plan §4 H3 decay table)", "expected_path": "%s", "allow_missing_reference_arm": true, "ts": "%s"}\n' \
+        "$SHIPPED_M_EXACT" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$OMIT_JSON"
+      echo "[dispatch] WARNING: shipped-M reference arm UNRESOLVED — omission AUTHORIZED (--allow-missing-reference-arm) and recorded at $OMIT_JSON" >&2
+    else
+      echo "[dispatch] FATAL: shipped-M labeled-reference weights unresolved (expected $SHIPPED_M_EXACT; glob fallback empty under $WEIGHTS_DIR). The plan §4 H3 decay table + p2c cross-slot spectrum row require the m_shipped arm — pass --allow-missing-reference-arm to run without it (omission then recorded, never silent)." >&2
+      exit 1
+    fi
+  fi
 fi
 B_ARGS=(uv run python scripts/issue1776_phase2_battery.py
   --jlast "$FULL_ROOT/merged/J_last.pt" --mprime-weights "$COMP_DIR/m_ridge_x50k.pt"
@@ -837,7 +866,7 @@ B_ARGS=(uv run python scripts/issue1776_phase2_battery.py
 if [[ -n "$SHIPPED_M" ]]; then
   B_ARGS+=(--shipped-m "$SHIPPED_M")
 else
-  echo "[dispatch] NOTE: shipped-M reference not resolved under $WEIGHTS_DIR — battery runs without the cross-slot spectrum row"
+  echo "[dispatch] NOTE: battery runs without the cross-slot spectrum row (shipped-M arm omitted — dry-run, or authorized via --allow-missing-reference-arm)"
 fi
 run p2c_battery env CUDA_VISIBLE_DEVICES=0 "${B_ARGS[@]}" ${BATTERY_EXTRA[@]+"${BATTERY_EXTRA[@]}"}
 phase_end "p2c_battery"
@@ -950,15 +979,25 @@ T_ARGS=(uv run python scripts/issue1776_phase5.py transfer --assemble
 if [[ -n "$SHIPPED_M" ]]; then
   T_ARGS+=(--op "m_shipped=$SHIPPED_M=19")
 else
-  echo "[dispatch] NOTE: shipped-M reference weights not resolved under $WEIGHTS_DIR (recorded in final sentinel)"
+  echo "[dispatch] NOTE: transfer runs without the m_shipped reference arm (dry-run, or omission authorized via --allow-missing-reference-arm — recorded in phase2/shipped_m_reference_omitted.json + final sentinel)"
 fi
 run p5_transfer env CUDA_VISIBLE_DEVICES=0 "${T_ARGS[@]}" ${ASSEMBLE_EXTRA[@]+"${ASSEMBLE_EXTRA[@]}"}
 phase_end "p5_transfer"
 
-# ── p5b_leakage (CPU; §9 lists this off-pod — run here since every input is
-#    already staged/built; deviation recorded in the final sentinel) ───────────
+# ── p5b_leakage (CPU; plan §9 schedules this re-read OFF-POD at p7 — the
+#    POD-side default here is a recorded deviation: every input (centroids +
+#    L21 dict) is already staged/built on this pod, so running it here avoids
+#    a second staging pass. Either lane works (concern
+#    p5b-podside-vs-offpod-deviation): set EPS_1776_P5B_OFFPOD=1 to skip the
+#    pod-side leg and run the documented off-pod invocation carried in the
+#    final sentinel's offpod_handoffs.p5b_leakage entry. Deviation + rationale
+#    recorded in the final sentinel plan_deviation note; the analyzer carries
+#    it as an ops/scope caveat. ────────────────────────────────────────────────
+P5B_OFFPOD="${EPS_1776_P5B_OFFPOD:-0}"
 phase_begin "p5b_leakage"
-if [[ $LENS_OK -eq 1 ]]; then
+if [[ "$P5B_OFFPOD" == "1" ]]; then
+  run p5b_leakage echo "SKIPPED (EPS_1776_P5B_OFFPOD=1 — run off-pod per the final sentinel offpod_handoffs.p5b_leakage entry)"
+elif [[ $LENS_OK -eq 1 ]]; then
   run p5b_leakage uv run python scripts/issue1776_phase5.py leakage \
     --centroids "$CENTROIDS" --dict "$DICT_DIR/dictionary_l21.pt" \
     --n-boot "$NBOOT" --out "$EVAL_DIR/phase5/leakage_reread.json"
@@ -1010,7 +1049,8 @@ if [[ $LENS_OK -eq 0 ]]; then
   GATE_HALTED=1  # designed halt (G-LENS), not a crash — the EXIT trap stays quiet
 fi
 uv run python - "$ISSUE" "$LOG_DIR" "$MODE" "$DRY" "$EVAL_DIR" "$REPO_ROOT" \
-  "$HF_PREFIX_EFF" "$LENS_OK" "$SHIPPED_M" "$NGPU" <<'PY'
+  "$HF_PREFIX_EFF" "$LENS_OK" "$SHIPPED_M" "$NGPU" "$P5B_OFFPOD" "$ALLOW_MISSING_REF" \
+  "$CENTROIDS" "$DICT_DIR" "$NBOOT" <<'PY'
 """Terminal results sentinel (§10 structured fields: eval paths, HF prefixes,
 off-pod handoffs; no training this run -> no adapter/wandb-run fields)."""
 
@@ -1024,6 +1064,8 @@ from pathlib import Path
 issue, log_dir, mode, dry = sys.argv[1], Path(sys.argv[2]), sys.argv[3], sys.argv[4] == "1"
 eval_dir, repo_root = Path(sys.argv[5]), Path(sys.argv[6])
 hf_prefix, lens_ok, shipped_m, ngpu = sys.argv[7], sys.argv[8] == "1", sys.argv[9], sys.argv[10]
+p5b_offpod, allow_missing_ref = sys.argv[11] == "1", sys.argv[12] == "1"
+centroids, dict_dir, nboot = sys.argv[13], sys.argv[14], sys.argv[15]
 smoke_like = dry or mode == "smoke"
 kind = "epm:smoke-result" if smoke_like else "epm:results"
 try:
@@ -1052,10 +1094,24 @@ note = {
         "raw_completions_steered": f"{hf_prefix}/raw_completions/steered",
         "wildchat_fresh": f"{hf_prefix}/wildchat_fresh",
     },
-    "shipped_m_reference": shipped_m or "NOT RESOLVED under n1m_readout/weights (transfer ran without the reference row)",
+    "shipped_m_reference": shipped_m or (
+        "(dry-run: not staged)"
+        if dry
+        else "OMITTED — authorized via --allow-missing-reference-arm; omission recorded at "
+        "phase2/shipped_m_reference_omitted.json (transfer + battery ran without the "
+        "m_shipped reference arm)"
+    ),
     "plan_deviation": (
-        "(a) p5b leakage re-read ran POD-side (plan §9 lists it off-pod p7): all inputs "
-        "were staged/built here; (b) 5c lens-vocab + 5d chain reads moved OFF-POD to the "
+        (
+            "(a) p5b leakage re-read SKIPPED pod-side (EPS_1776_P5B_OFFPOD=1) — run "
+            "off-pod per offpod_handoffs.p5b_leakage, matching plan §9's p7 placement; "
+            if p5b_offpod
+            else "(a) p5b leakage re-read ran POD-side (plan §9 lists it off-pod p7): all "
+            "inputs (centroids + L21 dict) were staged/built here, avoiding a second "
+            "staging pass — env-flag EPS_1776_P5B_OFFPOD=1 selects the plan-literal "
+            "off-pod lane instead; analyzer carries this as an ops/scope caveat; "
+        )
+        + "(b) 5c lens-vocab + 5d chain reads moved OFF-POD to the "
         "p7 handoff (plan §9 lists chain_composition.json as a pod p5 output) — lens + "
         "dictionaries are on HF, the reads are 0-GPU"
     ),
@@ -1066,10 +1122,26 @@ note = {
             "--out-dir eval_results/issue_1776/phase3/judge. Pass --include-allpos "
             "to ALSO judge the exploratory all_positions strata (wired in this "
             "run: 50-context subset; judged rows add ~5 strata x 50 ctx x K=5). "
-            "PRICING: the default "
-            "judges the control strata under ALL 3 rubrics (~30k x 5 calls) vs plan "
-            "S9's 16k x 5 one-rubric-per-completion costing - trim via "
-            "--control-rubrics (e.g. --control-rubrics evil) if the budget binds."
+            "PRICING: the DEFAULT is the plan-S9-priced contrast policy (trait "
+            "strata under their own rubric; baseline under every trait rubric — "
+            "the a=0 term of each registered contrast; w1_mprime/random contexts "
+            "one rubric each, round-robin ~= 18k x 5 calls). Opt into the "
+            "all-rubrics mode (~30k x 5) via --all-control-rubrics; an explicit "
+            "--control-rubrics list still overrides."
+        ),
+        "p5b_leakage": (
+            (
+                "OFF-POD (VM, 0 GPU — pod-side leg was SKIPPED via EPS_1776_P5B_OFFPOD=1): "
+                if p5b_offpod
+                else "ALREADY RAN POD-SIDE (default; recorded deviation above). Off-pod "
+                "equivalent, either lane works: "
+            )
+            + "uv run python scripts/issue1776_phase5.py leakage "
+            f"--centroids <staged {centroids}> --dict <staged {dict_dir}/dictionary_l21.pt> "
+            f"--n-boot {nboot} --out eval_results/issue_1776/phase5/leakage_reread.json "
+            "(inputs: centroids bundle sha-pinned via issue483_canonical_persona_pool/"
+            "centroids_v1_L21.pt; L21 dictionary uploaded under "
+            f"{hf_prefix}/analysis_tensors)"
         ),
         "p7_final_analyses": "OFF-POD (VM, 0 GPU): 5c word tables + 5d chain reads (lens + dictionaries on HF)",
     },
@@ -1130,6 +1202,10 @@ note = final["note"]
 for key in ("eval_json_paths", "hf_prefixes", "offpod_handoffs", "gates", "wandb", "git_commit"):
     assert key in note, f"final sentinel note missing §10 field: {key}"
 assert "control-rubrics" in note["offpod_handoffs"]["p6_judge"], "judge pricing handoff missing"
+assert "issue1776_phase5.py leakage" in note["offpod_handoffs"]["p5b_leakage"], (
+    "p5b off-pod invocation handoff missing"
+)
+assert "p5b" in note["plan_deviation"], "p5b deviation note missing"
 print(f"DRY-RUN-OK: {len(trace)} phases in §9 order; {len(sents)} sentinels parse "
       f"({sum(kinds.values())} total: {kinds})")
 PY

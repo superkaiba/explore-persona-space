@@ -10,15 +10,22 @@ per llm-judging rule 23) over ``judge_completions_batch`` →
 plan §9 API estimate; sync below the threshold).
 
 Rubric mapping (one behavior per call — llm-judging rule 8; one
-``judge_rollouts_n5`` call per trait rubric):
+``judge_rollouts_n5`` call per trait rubric). DEFAULT = the plan-§9-priced
+``contrast`` policy (concern judge-control-rubrics-pricing):
   - a trait-named direction stratum (evil/sycophancy/hallucination) is judged
     under its MATCHED rubric only;
-  - baseline / w1_mprime / random strata are judged under every rubric in
-    ``--control-rubrics`` (default = all ``--traits``; the α=0 contrast +
-    controls need each trait's scale). NOTE for the round-D report: the plan
-    §9 estimate (16,000 completions × 5) prices ONE rubric per completion;
-    this default judges the 7 control strata under all 3 rubrics (≈30k × 5).
-    Trim via --control-rubrics if the plan budget binds.
+  - the ``baseline`` stratum is judged under EVERY ``--traits`` rubric — it is
+    the α=0 term of every registered per-trait contrast (plan §6 PRIMARY DV
+    ``steered − α=0 baseline``), i.e. the rubric of each direction it is
+    contrasted with;
+  - ``w1_mprime`` / ``random`` strata: each CONTEXT is judged under exactly
+    ONE rubric, assigned deterministically round-robin over ``--traits`` in
+    the stratum's persisted context order — one rubric per completion (plan
+    §9 pricing), with every trait panel keeping a control line at ~n/3
+    contexts. Total ≈ 18k × 5 calls vs ~30k × 5 under all-rubrics.
+  Opt-in modes: ``--all-control-rubrics`` judges every control stratum under
+  every ``--traits`` rubric (~30k × 5 — the pre-round-3 default); an explicit
+  ``--control-rubrics a,b`` list still overrides (stratum-level, as before).
 
 Accounting (llm-judging rules 9/23/24): per (trait, stratum) the report splits
 CONTENT drops (REFUSAL / malformed / out-of-range — real judgments, dropped
@@ -65,14 +72,38 @@ def load_strata(raw_dir: Path, *, include_allpos: bool = False) -> dict[str, dic
 
 
 def rubrics_for(direction: str, traits: list[str], control_rubrics: list[str]) -> list[str]:
+    """Stratum-level rubric list (``explicit`` / ``all`` policies)."""
     if direction in traits:
         return [direction]
     assert direction in CONTROL_DIRECTIONS, direction
     return control_rubrics
 
 
+def _context_indices_for(
+    trait: str, traits: list[str], direction: str, n_contexts: int, policy: str
+) -> set[int] | None:
+    """Which context indices of a stratum this trait rubric judges (None = all).
+
+    ``contrast`` policy (default; plan-§9 one-rubric-per-completion pricing):
+    trait strata + baseline -> all contexts (baseline is the α=0 term of every
+    per-trait contrast); w1_mprime/random -> deterministic round-robin over
+    ``traits`` in the stratum's persisted context order (disjoint + covering,
+    exactly one rubric per completion). Other policies: stratum-level (None).
+    """
+    if policy != "contrast" or direction in traits or direction == "baseline":
+        return None
+    assert direction in CONTROL_DIRECTIONS, direction
+    ti = traits.index(trait)
+    return {i for i in range(n_contexts) if i % len(traits) == ti}
+
+
 def build_rollouts(
-    strata: dict[str, dict], trait: str, traits: list[str], control_rubrics: list[str]
+    strata: dict[str, dict],
+    trait: str,
+    traits: list[str],
+    control_rubrics: list[str],
+    *,
+    policy: str = "explicit",
 ) -> tuple[dict[str, dict[str, list[str]]], dict[str, dict]]:
     """batch_judge {persona: {question: [completions]}} for ONE trait rubric.
 
@@ -80,13 +111,23 @@ def build_rollouts(
     ride only the custom_id, never the judged text), question = the raw user
     prompt (the judge sees it verbatim in format_user_msg). Empty completions
     are skipped (recorded per persona) — the capture rig drops them too.
+    ``policy`` selects the control-rubric assignment (module docstring).
     """
     rollouts: dict[str, dict[str, list[str]]] = {}
     meta: dict[str, dict] = {}
     for key, raw in strata.items():
-        if trait not in rubrics_for(raw["direction"], traits, control_rubrics):
-            continue
-        for c in raw["contexts"]:
+        direction = raw["direction"]
+        if policy == "contrast":
+            if direction in traits and direction != trait:
+                continue
+            wanted = _context_indices_for(trait, traits, direction, len(raw["contexts"]), policy)
+        else:
+            if trait not in rubrics_for(direction, traits, control_rubrics):
+                continue
+            wanted = None
+        for ci, c in enumerate(raw["contexts"]):
+            if wanted is not None and ci not in wanted:
+                continue
             persona = f"{key}::{c['context_id']}"
             assert persona not in meta, persona
             kept = [(i, s) for i, s in enumerate(c["samples"]) if s.strip()]
@@ -218,8 +259,11 @@ def run(args) -> int:
     args.out_dir.mkdir(parents=True, exist_ok=True)
     per_arm: dict[str, dict[str, dict]] = {}
     per_cell: list[dict] = []
+    print(f"[judge] control-rubric policy: {args.control_rubric_policy}", flush=True)
     for trait in args.traits:
-        rollouts, meta = build_rollouts(strata, trait, args.traits, args.control_rubrics)
+        rollouts, meta = build_rollouts(
+            strata, trait, args.traits, args.control_rubrics, policy=args.control_rubric_policy
+        )
         n_comps = sum(len(comps) for qmap in rollouts.values() for comps in qmap.values())
         print(
             f"[judge] trait={trait}: {n_comps} completions × N={args.n_draws} draws "
@@ -261,7 +305,8 @@ def run(args) -> int:
         "n_draws": args.n_draws,
         "max_tokens": 300,
         "traits": args.traits,
-        "control_rubrics": args.control_rubrics,
+        "control_rubric_policy": args.control_rubric_policy,
+        "control_rubrics": args.control_rubrics or None,
         "per_arm": per_arm,
         "steered_minus_baseline": deltas,
         "per_cell": per_cell,
@@ -390,7 +435,10 @@ def smoke(args) -> int:
     try:
         args.raw_dir = raw_dir
         args.traits = ["evil"]  # real in-repo rubric artifacts (no cache needed)
-        args.control_rubrics = ["evil"]
+        # Exercise the DEFAULT contrast policy (round-robin over 1 trait == all
+        # contexts -> counts identical to the pre-policy smoke expectations).
+        args.control_rubric_policy = "contrast"
+        args.control_rubrics = []
         args.n_draws = 5
         rc = run(args)
     finally:
@@ -421,7 +469,47 @@ def smoke(args) -> int:
         if isinstance(p0["messages"][0]["content"], str)
         else p0["messages"][0]["content"][0]["text"]
     )
-    print("[judge] [phase=smoke_done] PASS (35 wire calls; splits exact)", flush=True)
+    # Contrast-policy partition check (pure python, ZERO wire calls): under the
+    # default policy each w1_mprime/random context is judged under EXACTLY one
+    # of 3 rubrics (disjoint + covering, deterministic) while baseline is
+    # judged under EVERY rubric (the α=0 term of each per-trait contrast).
+    t3 = ["evil", "sycophancy", "hallucination"]
+    fake = {
+        key: {
+            "stratum": key,
+            "direction": direction,
+            "alpha": alpha,
+            "mode": "prefill",
+            "contexts": [
+                {"context_id": f"{key}-c{i}", "user": f"q{i}", "samples": ["x"]}
+                for i in range(n_ctx)
+            ],
+        }
+        for key, direction, alpha, n_ctx in [
+            ("random_a1", "random", 1.0, 7),
+            ("baseline_a0", "baseline", 0.0, 2),
+        ]
+    }
+    assigned: dict[str, str] = {}
+    base_hits = 0
+    for _pass in range(2):  # second pass: determinism (identical assignment)
+        for tr in t3:
+            _ro, me = build_rollouts(fake, tr, t3, [], policy="contrast")
+            for p in me:
+                if p.startswith("random_a1::"):
+                    if _pass == 0:
+                        assert p not in assigned, (p, tr)
+                        assigned[p] = tr
+                    else:
+                        assert assigned[p] == tr, (p, tr)
+                elif _pass == 0:
+                    base_hits += 1
+    assert len(assigned) == 7 and base_hits == 2 * 3, (len(assigned), base_hits)
+    print(
+        "[judge] [phase=smoke_done] PASS (35 wire calls; splits exact; contrast "
+        "partition disjoint+covering+deterministic)",
+        flush=True,
+    )
     return 0
 
 
@@ -437,7 +525,14 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "--control-rubrics",
         default=None,
-        help="rubrics for baseline/w1_mprime/random strata (default: all --traits)",
+        help="EXPLICIT stratum-level rubric list for baseline/w1_mprime/random strata "
+        "(overrides the default contrast policy)",
+    )
+    ap.add_argument(
+        "--all-control-rubrics",
+        action="store_true",
+        help="opt-in: judge every control stratum under every --traits rubric (~30k x 5 "
+        "calls vs the plan-priced contrast default; module docstring)",
     )
     ap.add_argument("--n-draws", type=int, default=C.JUDGE_N_DRAWS)
     ap.add_argument("--include-allpos", action="store_true")
@@ -445,11 +540,15 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
     args.traits = [t for t in str(args.traits).split(",") if t]
-    args.control_rubrics = (
-        [t for t in str(args.control_rubrics).split(",") if t]
-        if args.control_rubrics
-        else list(args.traits)
-    )
+    if args.control_rubrics:
+        args.control_rubric_policy = "explicit"
+        args.control_rubrics = [t for t in str(args.control_rubrics).split(",") if t]
+    elif args.all_control_rubrics:
+        args.control_rubric_policy = "all"
+        args.control_rubrics = list(args.traits)
+    else:  # DEFAULT: plan-§9-priced contrast policy (module docstring)
+        args.control_rubric_policy = "contrast"
+        args.control_rubrics = []
     if args.mode == "smoke":
         return smoke(args)
     assert args.raw_dir is not None, "--raw-dir is required for run"

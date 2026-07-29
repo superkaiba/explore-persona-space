@@ -29,6 +29,7 @@ CPU smoke (``--smoke``): planted identical-operator pair reads raw cosine
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -120,7 +121,41 @@ def battery(
     return out
 
 
+def _regime_inputs(args) -> dict:
+    """Output-affecting regime keys — the fingerprint manifest the skip keys on
+    (sibling convention: jacobian try_resume / phase3 manifest, #722 r3 rule)."""
+    return {
+        "jlast": str(args.jlast),
+        "mprime_weights": str(args.mprime_weights),
+        "acts14": str(args.acts14),
+        "shipped_m": str(args.shipped_m) if args.shipped_m else None,
+        "n_pcs": args.n_pcs,
+        "n_draws": args.n_draws,
+        "seed": args.seed,
+    }
+
+
 def run(args) -> int:
+    # Idempotency (concern p2c-battery-no-idempotency-skip): skip when the
+    # output exists with a MATCHING regime fingerprint; --force recomputes;
+    # a mismatched/unreadable prior output is recomputed (never mixed).
+    fp = _regime_inputs(args)
+    if args.out.exists() and not args.force:
+        try:
+            prior = json.loads(args.out.read_text()).get("inputs")
+        except (json.JSONDecodeError, OSError):
+            prior = None
+        if prior == fp:
+            print(
+                f"[phase2-battery] output exists with MATCHING fingerprint — skip "
+                f"(resume; --force to recompute): {args.out}",
+                flush=True,
+            )
+            return 0
+        print(
+            "[phase2-battery] output exists but fingerprint MISMATCH/unreadable -> recompute",
+            flush=True,
+        )
     j_obj = torch.load(args.jlast, map_location="cpu", weights_only=True)
     # weights_only=False: sha-pinned SELF/parent-produced ridge payloads whose
     # metadata carries non-primitives (the documented carve-out; #1073 entry).
@@ -143,14 +178,7 @@ def run(args) -> int:
         seed=args.seed,
         beta_shipped=beta_shipped,
     )
-    report["inputs"] = {
-        "jlast": str(args.jlast),
-        "mprime_weights": str(args.mprime_weights),
-        "acts14": str(args.acts14),
-        "shipped_m": str(args.shipped_m) if args.shipped_m else None,
-        "n_draws": args.n_draws,
-        "seed": args.seed,
-    }
+    report["inputs"] = fp  # the regime fingerprint the resume skip keys on
     report["repro"] = C76.repro_meta()
     C76.atomic_write_json(args.out, report)
     obs = report["raw_cosine_with_rotation_null"]
@@ -192,9 +220,43 @@ def smoke(args) -> int:
         raise RuntimeError("non-square J must be refused")
     except AssertionError as e:
         assert "FULL-RANK" in str(e)
+    # Idempotency leg (run()-level, real files): fresh run writes; matching
+    # re-run SKIPS (mtime unchanged); --force recomputes; a regime-key change
+    # (n_draws) recomputes (fingerprint MISMATCH branch).
+    import tempfile
+
+    with tempfile.TemporaryDirectory(prefix="i1776_battery_smoke.") as td:
+        tdp = Path(td)
+        torch.save({"J": w.to(torch.float32)}, tdp / "J_last.pt")
+        torch.save(payload_m, tdp / "m.pt")
+        torch.save(acts, tdp / "acts14.pt")
+        rargs = argparse.Namespace(
+            jlast=tdp / "J_last.pt",
+            mprime_weights=tdp / "m.pt",
+            acts14=tdp / "acts14.pt",
+            shipped_m=None,
+            n_pcs=4,
+            n_draws=8,
+            seed=0,
+            out=tdp / "operator_battery.json",
+            force=False,
+        )
+        assert run(rargs) == 0
+        m1 = rargs.out.stat().st_mtime_ns
+        assert run(rargs) == 0  # MATCH -> skip
+        assert rargs.out.stat().st_mtime_ns == m1, "skip branch rewrote the output"
+        rargs.force = True
+        assert run(rargs) == 0  # --force -> recompute
+        m2 = rargs.out.stat().st_mtime_ns
+        assert m2 != m1, "--force did not recompute"
+        rargs.force = False
+        rargs.n_draws = 9
+        assert run(rargs) == 0  # regime-key change -> MISMATCH recompute
+        assert rargs.out.stat().st_mtime_ns != m2, "fingerprint mismatch did not recompute"
+        assert json.loads(rargs.out.read_text())["inputs"]["n_draws"] == 9
     print(
         "[phase2-battery] [phase=smoke_done] PASS (identical >> null; independent in band; "
-        "non-square-J refusal)",
+        "non-square-J refusal; resume skip/--force/mismatch exercised)",
         flush=True,
     )
     return 0
@@ -210,6 +272,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--n-draws", type=int, default=100)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", type=Path, default=None)
+    ap.add_argument("--force", action="store_true", help="recompute even if output exists")
     ap.add_argument("--smoke", action="store_true")
     args = ap.parse_args(argv)
     if args.smoke:
