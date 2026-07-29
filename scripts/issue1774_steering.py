@@ -44,7 +44,8 @@ import torch  # noqa: E402
 import issue1774_common as c  # noqa: E402
 
 GEN_TEMPERATURE = 0.7  # plan §4 P3 (matched across every condition incl. steer_base)
-GEN_MAX_TOKENS = 256
+# 256 per plan §4 P3; env override exists ONLY for the tiny-model CPU smoke.
+GEN_MAX_TOKENS = int(os.environ.get("I1774_GEN_MAX_TOKENS", "256"))
 GEN_BATCH = 16
 N_STEER_CONTEXTS = 60
 FLUENCY_PILOT_GENS = 10
@@ -177,8 +178,11 @@ def load_directions(out_root: str | None) -> dict:
     assert p.exists(), f"missing {p} — run P2 --step directions first"
     payload = torch.load(p, map_location="cpu", weights_only=False)
     dirs = payload["directions"]
-    for k, v in dirs.items():
-        assert v.shape == (c.HIDDEN_DIM,), (k, v.shape)
+    assert dirs, f"{p} carries no directions"
+    dims = {tuple(v.shape) for v in dirs.values()}
+    assert len(dims) == 1 and all(len(s) == 1 for s in dims), f"inconsistent shapes: {dims}"
+    # The binding dim invariant is direction-dim == model hidden size, asserted
+    # against the LOADED model in main() (production: 3584; tiny-model smoke: its dim).
     return payload
 
 
@@ -201,6 +205,9 @@ def fit_leace_erasers(
         x_ctx = x_ctx[:500]
     out: dict[str, tuple[np.ndarray, np.ndarray]] = {}
     for name, v in trait_dirs.items():
+        assert v.shape[0] == x_ctx.shape[1], (
+            f"{name}: direction dim {v.shape[0]} != context-state dim {x_ctx.shape[1]}"
+        )
         e0 = x_ctx @ v.double().numpy()
         eraser = fit_leace(x_ctx, e0)
         out[name] = (eraser.mean_x, eraser.P)
@@ -382,37 +389,70 @@ def run_pilot(model, tok, ctxs, my_conds, directions, alpha0, paths, shard_tag) 
             alpha_by_dir[name] = alpha
         print(f"[p3-pilot] {name} alpha={alpha:.3f} degenerate={frac:.2f}", flush=True)
 
-    # assumption-11 rig-sanity: a large-a ADD hook must shift the LIVE-captured t1 along v.
+    # assumption-11 rig-sanity, refined (found by the tiny-model smoke, 2026-07-29):
+    # transformers 4.53+ collects output_hidden_states via PREPENDED recorder hooks,
+    # so the RECORDED entry at the hooked block's own index shows the PRE-hook output
+    # (verified on 4.57.6: delta 0.000 at the hook index while the next layer's INPUT
+    # and every downstream recorded index carry the shift). The intervention is real
+    # for the computation (what generation uses); only a naive recorded-t1 read AT the
+    # hook index is structurally blind. So assert TWO things instead:
+    #   (a) a LATER-registered explicit capture hook at the module boundary sees the
+    #       +alpha*v shift (replace semantics chain to later hooks — the compose), and
+    #   (b) the recorded t1 at a DOWNSTREAM layer (L18) moves vs base (propagation
+    #       into the stream the DV reads).
     if add_dirs:
         name = add_dirs[0]
         v = directions[name].float()
-        v_hat = (v / (v.norm() + 1e-8)).numpy()
+        v_hat = (v / (v.norm() + 1e-8)).numpy().astype(np.float64)
         row = dict(ctxs[0])
         row["draws"] = ["Rig-sanity fixed completion for the assumption-11 check."]
-        base_t1 = draws._capture_t1([row], 0, model, tok, str(model.device))
-        handle = _register_hook(model, make_add_hook(directions[name].float(), 0.0))
-        handle.remove()  # zero-alpha register/remove sanity (handle lifecycle)
+        boundary: dict[str, np.ndarray] = {}
+
+        def _boundary_capture(_m, _i, out):
+            hs = out[0] if isinstance(out, tuple) else out
+            boundary["mean"] = hs.detach().to(torch.float32).mean(dim=(0, 1)).cpu().numpy()
+            return None
+
+        h_cap = _register_hook(model, _boundary_capture)
+        try:
+            base_t1 = draws._capture_t1([row], 0, model, tok, str(model.device))
+        finally:
+            h_cap.remove()
+        boundary_base = boundary["mean"].astype(np.float64)
         alpha_big = RIG_SANITY_ALPHA_MULT * alpha0
-        handle = _register_hook(model, make_add_hook(directions[name].float(), alpha_big))
+        h_add = _register_hook(model, make_add_hook(v / (v.norm() + 1e-8), alpha_big))
+        h_cap = _register_hook(model, _boundary_capture)  # AFTER the ADD hook
         try:
             hooked_t1 = draws._capture_t1([row], 0, model, tok, str(model.device))
         finally:
-            handle.remove()
-        li = c.LAYERS.index(c.HEADLINE_LAYER)
-        delta = (hooked_t1[0, li].astype(np.float64) - base_t1[0, li].astype(np.float64)) / (
-            v.norm().item() + 1e-8
+            h_add.remove()
+            h_cap.remove()
+        boundary_hooked = boundary["mean"].astype(np.float64)
+        along_v = float((boundary_hooked - boundary_base) @ v_hat)
+        li_down = c.LAYERS.index(18)
+        down_delta = float(
+            np.linalg.norm(
+                hooked_t1[0, li_down].astype(np.float64) - base_t1[0, li_down].astype(np.float64)
+            )
         )
-        along_v = float(delta @ v_hat)
         report["rig_sanity"] = {
             "direction": name,
             "alpha": alpha_big,
-            "along_v": along_v,
-            "delta_norm": float(np.linalg.norm(delta)),
-            "note": "LIVE-captured copy — rig-sanity ONLY, never the DV (plan §4 P3)",
+            "boundary_along_v": along_v,
+            "downstream_L18_delta_norm": down_delta,
+            "note": (
+                "LIVE-captured copies — rig-sanity ONLY, never the DV (plan §4 P3). "
+                "Recorded t1 AT the hooked index is pre-hook on transformers>=4.53 "
+                "(prepended recorder hooks); compose verified at the module boundary."
+            ),
         }
-        assert along_v > 0, (
-            f"assumption-11 rig-sanity FAILED: ADD hook at alpha={alpha_big} moved captured "
-            f"t1 by {along_v:.4f} along v (expected > 0) — hook/capture compose is broken"
+        assert along_v > 0.5 * alpha_big, (
+            f"assumption-11 rig-sanity FAILED: boundary capture moved {along_v:.3f} along v "
+            f"(expected ~{alpha_big}) — the ADD-then-capture hook compose is broken"
+        )
+        assert down_delta > 0, (
+            "assumption-11 rig-sanity FAILED: downstream recorded t1 (L18) did not move — "
+            "the intervention is not propagating into the captured stream"
         )
         np.save(paths["summaries"] / f"rig_sanity_t1_base_{shard_tag}.npy", base_t1)
         np.save(paths["summaries"] / f"rig_sanity_t1_hooked_{shard_tag}.npy", hooked_t1)
@@ -688,6 +728,11 @@ def main(argv: list[str] | None = None) -> int:
 
     device = "cuda:0" if draws._cuda_ok() else "cpu"
     model, tok = draws._load_hf_model(device)
+    d_dir = next(iter(directions.values())).shape[0]
+    assert d_dir == model.config.hidden_size, (
+        f"direction dim {d_dir} != model hidden size {model.config.hidden_size} — "
+        "directions.pt and the generation model must share the residual-stream space"
+    )
 
     leace_dirs = {x.direction: directions[x.direction] for x in my_conds if x.kind == "leace"}
     erasers = fit_leace_erasers(leace_dirs, args.out_root, args.smoke) if leace_dirs else {}
@@ -696,7 +741,12 @@ def main(argv: list[str] | None = None) -> int:
     # drop this shard's unusable ADD conditions (recorded in the pilot report + merge)
     live = [x for x in my_conds if x.kind != "add" or x.direction in alpha_by_dir]
     run_gen(model, tok, ctxs, live, directions, alpha_by_dir, erasers, paths)
-    run_upload(paths)  # completions to HF BEFORE the re-capture consumer (store-first)
+    if args.smoke:
+        # smoke legs never write the production HF prefix (dispatch skips P1
+        # uploads for the same reason); the hub path runs on the production leg.
+        print("[p3-upload] SKIPPED (smoke — production HF prefix untouched)")
+    else:
+        run_upload(paths)  # completions to HF BEFORE the re-capture consumer (store-first)
     run_recapture(model, tok, live, paths)
     # merge runs on whichever shard finishes last (deterministic content; atomic write;
     # merge itself excludes pilot-dropped directions + re-checks completeness)

@@ -50,10 +50,16 @@ FIT_SMOKE_ARGS=()
 STEER_SMOKE_ARGS=()
 P0_SMOKE_ARGS=()
 if [ -n "$SMOKE" ]; then
-  DRAW_SMOKE_ARGS=(--limit "$SMOKE_LIMIT")
-  FIT_SMOKE_ARGS=(--smoke)
-  STEER_SMOKE_ARGS=(--smoke)
-  P0_SMOKE_ARGS=(--smoke)
+  # Per-leg out-root isolation (#1333/#1586): a smoke leg must never leave its
+  # regime/rows in the production roots a later full run resumes from (the P3
+  # regime guard fail-louds on exactly that collision). Registry + all smoke
+  # outputs land under this root; the shared staged STORE stays read-only.
+  SMOKE_OUT_ROOT="${I1774_SMOKE_OUT_ROOT:-/tmp/issue1774-smoke}"
+  echo "[dispatch] smoke out-root: $SMOKE_OUT_ROOT (per-leg isolation)"
+  DRAW_SMOKE_ARGS=(--limit "$SMOKE_LIMIT" --out-root "$SMOKE_OUT_ROOT")
+  FIT_SMOKE_ARGS=(--smoke --out-root "$SMOKE_OUT_ROOT")
+  STEER_SMOKE_ARGS=(--smoke --out-root "$SMOKE_OUT_ROOT")
+  P0_SMOKE_ARGS=(--smoke --out-root "$SMOKE_OUT_ROOT")
 fi
 
 phase_sentinel() {  # $1 = phase slug (p1|p2|p3), $2 = note
@@ -93,7 +99,10 @@ ensure_p0() {
 run_p1() {
   echo "[phase=p1_pilot]"
   local rc=0
-  CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1774_draws.py --stage pilot || rc=$?
+  # DRAW_SMOKE_ARGS threads the smoke out-root: the pilot must read the SAME
+  # registry root the P0 smoke restage wrote (per-leg isolation, #1333).
+  CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1774_draws.py --stage pilot \
+    "${DRAW_SMOKE_ARGS[@]}" || rc=$?
   if [ "$rc" -eq 7 ]; then
     # artifact-routed gate refusal (identity gate; report JSON already written)
     echo "[dispatch] p1 pilot IDENTITY GATE refusal (rc=7) — halting, see pilot_gate_report.json" >&2
@@ -117,9 +126,16 @@ run_p1() {
     uv run python scripts/issue1774_draws.py --stage gen --shard 0/1 "${DRAW_SMOKE_ARGS[@]}"
   fi
 
-  # persist-first: raw completion TEXT to HF BEFORE the capture consumer
+  # persist-first: raw completion TEXT to HF BEFORE the capture consumer.
+  # Smoke legs never write the production HF prefix (their files share names
+  # with production uploads — a smoke push would be superseded but can strand
+  # stale-shard orphans); the hub boundary is exercised by the production run.
   echo "[phase=p1_upload_text]"
-  uv run python scripts/issue1774_draws.py --stage upload
+  if [ -n "$SMOKE" ]; then
+    echo "[dispatch] p1 upload SKIPPED (smoke — production HF prefix untouched)"
+  else
+    uv run python scripts/issue1774_draws.py --stage upload
+  fi
 
   echo "[phase=p1_capture]"
   if [ "$N_GPUS" -ge 2 ]; then
@@ -136,7 +152,11 @@ run_p1() {
   fi
 
   echo "[phase=p1_upload_summaries]"
-  uv run python scripts/issue1774_draws.py --stage upload
+  if [ -n "$SMOKE" ]; then
+    echo "[dispatch] p1 summaries upload SKIPPED (smoke — production HF prefix untouched)"
+  else
+    uv run python scripts/issue1774_draws.py --stage upload
+  fi
   phase_sentinel p1 "P1 draws+capture+upload complete (smoke=${SMOKE:-0})"
 }
 

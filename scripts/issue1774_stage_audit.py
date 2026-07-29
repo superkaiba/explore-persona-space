@@ -81,6 +81,11 @@ def _consumed_files() -> list[tuple[str, Path]]:
             rel = p.relative_to(c.stage_dir())
             out.append((f"{c.STORE_PREFIX}/{rel}", p))
     out.append((f"{c.STORE_PREFIX}/corpus/manifest.jsonl", c.manifest_path()))
+    # P1/P3 prompt rendering (_render_rows -> issue1092_gpu_phase.load_store) consumes
+    # the prefix/query stores too; a partially-staged tree (manifest present, stores
+    # absent) must FAIL the audit here, not crash mid-phase (found by the P3 smoke).
+    for store in ("prefix_store.jsonl", "query_store.jsonl"):
+        out.append((f"{c.STORE_PREFIX}/corpus/{store}", c.stage_dir() / "corpus" / store))
     return out
 
 
