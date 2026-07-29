@@ -6046,8 +6046,8 @@
     "1779": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1779",
-      "status": "proposed",
+      "path": "tasks/planning/1779",
+      "status": "planning",
       "title": "workflow-fix: planner \u00a710 \u2014 text/JSON outputs on ephemeral lanes need an HF dest, git-only banned"
     },
     "18": {
