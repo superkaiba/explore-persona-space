@@ -10390,7 +10390,7 @@ rebase-merged. Five guards:
    MB=$(git -C "$WT" merge-base HEAD origin/main)
    # is the merge-base reachable on origin/main's first-parent mainline?
    ON_MAINLINE=$(git -C "$WT" rev-list --first-parent origin/main \
-     | grep -Fxq "$MB" && echo yes || echo no)
+     | grep -Fxq -- "$MB" && echo yes || echo no)
    ```
 
    The branch is **unsafe to blind-rebase** if EITHER `ON_MAINLINE=no`
@@ -10499,7 +10499,7 @@ rebase-merged. Five guards:
    `origin/main` ADDED since the merge-base (post-merge-base additions
    only — never `main`'s own pre-fork content), then check whether each
    such line is present in the branch's current version of that file
-   (`grep -Fxq` — full-line, fixed-string, so quoting or partial
+   (`grep -Fxq --` — full-line, fixed-string, so quoting or partial
    substring matches cannot mask a drop). A missing line is by
    definition a main-side addition the branch's snapshot silently
    REVERTED — a legitimate branch DELETION of a pre-existing function
@@ -10525,7 +10525,7 @@ rebase-merged. Five guards:
              while IFS= read -r ADD_LINE; do
                [ -z "$ADD_LINE" ] && continue
                if ! git -C "$WT" show HEAD:"$P" 2>/dev/null \
-                    | grep -Fxq "$ADD_LINE"; then
+                    | grep -Fxq -- "$ADD_LINE"; then
                  MISSING_ON_BRANCH=$((MISSING_ON_BRANCH + 1))
                fi
              done < /tmp/1713-main-adds.txt
@@ -13033,7 +13033,7 @@ elif ! git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main \
 # this arm never opens a delete of the canonical folder. Only a
 # still-absent CANON takes the branch — terminal echo + false, nothing
 # deleted.
-elif ! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt \
+elif ! grep -qxF -- "$CANON" /tmp/issue-<N>-postmerge-lstree.txt \
     && { for _ in 1 2; do
            uv run python "$REPO_ROOT/scripts/sync_repo_root.py"
            NEW_CANON=$(realpath --relative-to="$REPO_ROOT" \
@@ -13042,10 +13042,10 @@ elif ! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt \
            git -C "$REPO_ROOT" fetch origin main --quiet \
              && git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main \
                 > /tmp/issue-<N>-postmerge-lstree.txt \
-             && grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt \
+             && grep -qxF -- "$CANON" /tmp/issue-<N>-postmerge-lstree.txt \
              && break
          done
-         ! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt; }; then
+         ! grep -qxF -- "$CANON" /tmp/issue-<N>-postmerge-lstree.txt; }; then
   echo "post-merge stale-task-folder guard: canonical folder $CANON still ABSENT from origin/main after 2 root syncs — cannot classify duplicates (removing origin's only copy would leave ZERO folders for task <N>)"
   false
 # Work arm: every committed task-<N> folder on origin/main (matches
