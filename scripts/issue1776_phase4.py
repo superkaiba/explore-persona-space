@@ -234,6 +234,14 @@ def energy_read(
     name: str, X: torch.Tensor, D: torch.Tensor, args, cov_half: torch.Tensor | None
 ) -> dict:
     """Observed + 3-family null bands for one probe set (both projectors)."""
+    # crash-fix r11: named-tensor same-device guard immediately ahead of the mm
+    # chain (pursuit + the cov null's ``z @ cov_half.T`` in null_probe_rows) —
+    # any residual mismatch fail-louds HERE naming the offending tensor, not
+    # deep in torch mm internals ("mat2 is on cuda:0 ... on cpu").
+    devices = {"x_probe": X.device, "dict_rows": D.device}
+    if cov_half is not None:
+        devices["cov_half"] = cov_half.device
+    assert len({str(d) for d in devices.values()}) == 1, f"energy_read device mismatch: {devices}"
     n = X.shape[0]
     obs_pur, obs_span = pursuit_energies(X, D, args.k, chunk=args.chunk)
     rec: dict = {
@@ -300,6 +308,24 @@ def measured_shifts(phase3_root: Path) -> dict[str, torch.Tensor]:
     return out
 
 
+def _to_device_sets(sets: dict[str, torch.Tensor], device: str) -> dict[str, torch.Tensor]:
+    """TOTAL device placement for probe sets (crash-fix r11, att-20260729-060640).
+
+    Every matmul participant of ``energy_read`` joins the dictionaries + cov
+    factors on the ONE device resolved at ``cmd_energy`` entry (``args.device``).
+    All four probe producers load on CPU by design (``map_location="cpu"``:
+    ``_svd_w``, the ``_load_j`` SVD, ``P3.load_directions``,
+    ``measured_shifts``); ``pursuit_energies`` tolerates that (it chunks probes
+    onto ``D.device``), but the cov null family matmuls X-keyed draws against
+    ``cov_half`` (``null_probe_rows``: ``z @ cov_half.T`` with ``z`` on
+    ``X.device``), so a CPU probe set against a cuda ``cov_half`` dies in
+    wrapper_CUDA_mm — a branch structurally unexercisable on the CPU-only VM
+    smoke, where every tensor is cpu by construction. float32 matches what
+    ``pursuit_energies`` casts per chunk anyway.
+    """
+    return {k: v.to(device, torch.float32) for k, v in sets.items()}
+
+
 def cmd_energy(args) -> int:
     dev = args.device
     d14 = load_dict(args.dict14, dev)
@@ -345,6 +371,10 @@ def cmd_energy(args) -> int:
         write_shift_names = []
 
     assert read_sets or write_sets, "nothing to read — pass probe-set inputs"
+    # crash-fix r11: the SINGLE move-to-device site for every probe tensor —
+    # see _to_device_sets. Placed after ALL producers, before any energy_read.
+    read_sets = _to_device_sets(read_sets, dev)
+    write_sets = _to_device_sets(write_sets, dev)
     report: dict = {
         "k": args.k,
         "n_draws": args.n_draws,
