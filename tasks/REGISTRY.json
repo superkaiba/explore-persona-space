@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1808,
+  "highest_id": 1809,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6259,6 +6259,13 @@
       "path": "tasks/proposed/1808",
       "status": "proposed",
       "title": "daily-fix: driver sha-scan exempts item's own fingerprint"
+    },
+    "1809": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1809",
+      "status": "proposed",
+      "title": "daily-fix: chat claims \u2014 sweeps, counts, sunk compute, doc f"
     },
     "181": {
       "has_clean_result": false,
