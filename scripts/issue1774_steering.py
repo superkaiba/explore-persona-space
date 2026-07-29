@@ -498,27 +498,38 @@ def run_gen(model, tok, ctxs, my_conds, directions, alpha_by_dir, erasers, paths
         )
 
 
-def run_upload(paths: dict[str, Path]) -> None:
-    """Upload raw completions to HF the moment generation ends (fail-loud verify)."""
+def _upload_dir_verified(local_dir: Path, sub: str, pattern: str) -> None:
+    """Upload one steering artifact dir to HF + exact-set verify (fail loud)."""
     from huggingface_hub import HfApi
 
     from explore_persona_space.orchestrate import hub
 
-    gen_files = sorted(paths["gen"].glob("gen_*.jsonl"))
-    assert gen_files, f"no steering generation files under {paths['gen']}"
+    files = sorted(local_dir.glob(pattern))
+    assert files, f"no {pattern} files under {local_dir}"
     hub._upload(
-        paths["gen"],
+        local_dir,
         repo_id=c.DATA_REPO,
         repo_type="dataset",
-        path_in_repo=f"{c.HF_UPLOAD_PREFIX}/raw_completions/steering",
+        path_in_repo=f"{c.HF_UPLOAD_PREFIX}/{sub}",
     )
-    expected = [f"{c.HF_UPLOAD_PREFIX}/raw_completions/steering/{p.name}" for p in gen_files]
+    expected = [f"{c.HF_UPLOAD_PREFIX}/{sub}/{p.name}" for p in files]
     missing = hub.verify_repo_paths_uploaded(
         HfApi(), c.DATA_REPO, expected, path_in_repo=c.HF_UPLOAD_PREFIX, repo_type="dataset"
     )
     if missing:
         raise RuntimeError(f"p3 upload verify missing {len(missing)}: {sorted(missing)[:5]}")
-    print(f"[p3-upload] verified {len(expected)} completion files on {c.DATA_REPO}")
+    print(f"[p3-upload] verified {len(expected)} files at {c.HF_UPLOAD_PREFIX}/{sub}")
+
+
+def run_upload(paths: dict[str, Path]) -> None:
+    """Upload raw completions to HF the moment generation ends (fail-loud verify)."""
+    _upload_dir_verified(paths["gen"], "raw_completions/steering", "gen_*.jsonl")
+
+
+def run_upload_summaries(paths: dict[str, Path]) -> None:
+    """Upload the hook-free re-captured t1 summaries + rig-sanity copies (plan §4 P3
+    Persist line; ~40 MB — persist-by-default, mirrors the P1 summaries leg)."""
+    _upload_dir_verified(paths["summaries"], "steering/summaries", "*")
 
 
 def run_recapture(model, tok, my_conds, paths) -> None:
@@ -554,6 +565,48 @@ def run_recapture(model, tok, my_conds, paths) -> None:
             f"draws={cond.k_draws} elapsed={time.time() - t0:.0f}s",
             flush=True,
         )
+
+
+MAX_ROW_ID_LEN = 53  # judge custom_id budget (issue1774_judge.py MAX_ITEM_ID_LEN)
+
+
+def build_judge_rows(
+    gen_rows_by_cond: dict[str, list[dict]], query_text_by_mi: dict[int, str]
+) -> list[dict]:
+    """P3->P5 interface rows (issue1774_judge.py::load_manifest_rows contract):
+    one row per (condition, context, draw) with a unique row_id (<=53 chars, no
+    '__'), the bare user QUESTION text (rubric {question} slot), and the draw's
+    completion. Baseline draws are included (the judge scores them too)."""
+    rows: list[dict] = []
+    seen: set[str] = set()
+    for cond_id in sorted(gen_rows_by_cond):
+        for r in gen_rows_by_cond[cond_id]:
+            mi = int(r["manifest_index"])
+            for k, draw in enumerate(r["draws"]):
+                rid = f"{cond_id}-{mi}-d{k}"
+                assert "__" not in rid and len(rid) <= MAX_ROW_ID_LEN, rid
+                assert rid not in seen, f"duplicate row_id {rid}"
+                seen.add(rid)
+                rows.append(
+                    {
+                        "row_id": rid,
+                        "condition": cond_id,
+                        "manifest_index": mi,
+                        "question": query_text_by_mi[mi],
+                        "completion": draw,
+                    }
+                )
+    assert rows, "no judge rows built from the generation files"
+    return rows
+
+
+def _query_texts_for(manifest_indices: list[int]) -> dict[int, str]:
+    """Bare user-query text per manifest index (the judge rubric {question} slot)."""
+    from issue1092_gpu_phase import _query_text, load_store
+
+    rows = c.load_manifest()
+    query_store = load_store(c.stage_dir() / "corpus", "query_store.jsonl")
+    return {mi: _query_text(query_store[str(rows[mi]["query_id"])]) for mi in set(manifest_indices)}
 
 
 def merge_state_shift(all_conds: list[Condition], paths: dict[str, Path], smoke: bool) -> bool:
@@ -656,7 +709,20 @@ def merge_state_shift(all_conds: list[Condition], paths: dict[str, Path], smoke:
             f"[p3-merge] CALIBRATION FAILURE: {n_usable} usable directions < "
             f"{MIN_USABLE_DIRECTIONS} — state-shift-only read (judge skipped), per plan §7"
         )
-    print(f"[p3-merge] wrote state_shift.json ({len(conditions)} intervention conditions)")
+    # P3->P5 interface: fold the judge rows into the manifest the judge reads
+    # (issue1774_judge.py --manifest default = this file's `rows` key).
+    gen_rows_by_cond = {x.cond_id: c.jsonl_rows(_gen_file(paths, x.cond_id)) for x in all_conds}
+    all_mis = [int(r["manifest_index"]) for rows_ in gen_rows_by_cond.values() for r in rows_]
+    judge_rows = build_judge_rows(gen_rows_by_cond, _query_texts_for(all_mis))
+    manifest_p = paths["eval"] / "manifest.json"
+    manifest = json.loads(manifest_p.read_text())
+    manifest["rows"] = judge_rows
+    manifest["judge_skip"] = judge_skip
+    c.write_json_atomic(manifest_p, manifest)
+    print(
+        f"[p3-merge] wrote state_shift.json ({len(conditions)} intervention conditions) "
+        f"+ {len(judge_rows)} judge rows into manifest.json"
+    )
     return True
 
 
@@ -748,6 +814,11 @@ def main(argv: list[str] | None = None) -> int:
     else:
         run_upload(paths)  # completions to HF BEFORE the re-capture consumer (store-first)
     run_recapture(model, tok, live, paths)
+    if args.smoke:
+        print("[p3-upload] summaries SKIPPED (smoke — production HF prefix untouched)")
+    else:
+        # plan §4 P3 Persist: hook-free re-captured t1 summaries + rig-sanity copies
+        run_upload_summaries(paths)
     # merge runs on whichever shard finishes last (deterministic content; atomic write;
     # merge itself excludes pilot-dropped directions + re-checks completeness)
     merged = merge_state_shift(all_conds, paths, args.smoke)

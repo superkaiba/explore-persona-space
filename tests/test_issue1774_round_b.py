@@ -171,7 +171,39 @@ def _write_t1(paths: dict[str, Path], cond_id: str, k: int, arr: np.ndarray, mis
         idx_p.write_text(json.dumps({"manifest_indices": list(mis)}))
 
 
-def test_merge_state_shift_band_and_dt1(tmp_path: Path) -> None:
+def _write_gen(paths: dict[str, Path], cond_id: str, mis, k_draws: int) -> None:
+    with (paths["gen"] / f"gen_{cond_id}.jsonl").open("w") as fh:
+        for mi in mis:
+            fh.write(
+                json.dumps(
+                    {
+                        "manifest_index": mi,
+                        "prefix_id": f"p{mi}",
+                        "query_id": f"q{mi}",
+                        "prefix_text": "pfx",
+                        "prompt": "prompt",
+                        "draws": [f"completion {cond_id} {mi} d{k}" for k in range(k_draws)],
+                    }
+                )
+                + "\n"
+            )
+
+
+def _merge_fixture(paths: dict[str, Path], conds, mis, monkeypatch) -> None:
+    """Gen files + manifest.json + a signature-conformant query-text fake for merge."""
+    for cond in conds:
+        _write_gen(paths, cond.cond_id, mis, cond.k_draws)
+    (paths["eval"] / "manifest.json").write_text(
+        json.dumps({"meta": {}, "conditions": [], "alpha0": 1.0})
+    )
+
+    def fake_query_texts(manifest_indices: list[int]) -> dict[int, str]:
+        return {int(mi): f"question {mi}" for mi in manifest_indices}
+
+    monkeypatch.setattr(st, "_query_texts_for", fake_query_texts)
+
+
+def test_merge_state_shift_band_and_dt1(tmp_path: Path, monkeypatch) -> None:
     paths = {
         "gen": tmp_path / "gen",
         "summaries": tmp_path / "summaries",
@@ -186,6 +218,7 @@ def test_merge_state_shift_band_and_dt1(tmp_path: Path) -> None:
         st.Condition("steer_base", "base", "", 0, 2),
         st.Condition("add_top_sv0_pos", "add", "top_sv0", 1, 1),
     ]
+    _merge_fixture(paths, conds, mis, monkeypatch)
     base = np.zeros((n_ctx, n_layers, d), dtype=np.float16)
     base_k1 = base.copy()
     base_k1[:, li, 0] = 1.0  # draw distance 1.0 within every context
@@ -204,9 +237,25 @@ def test_merge_state_shift_band_and_dt1(tmp_path: Path) -> None:
     assert abs(cond["median_dt1"] - 3.0) < 1e-3
     assert set(cond["per_context_dt1"]) == {"11", "22"}
     assert out["n_usable_directions"] == 1 and out["judge_skip"] is False
+    # P3->P5 interface: judge rows landed in manifest.json (2 base draws + 1 add) x 2 ctx
+    manifest = json.loads((paths["eval"] / "manifest.json").read_text())
+    rows = manifest["rows"]
+    assert len(rows) == 2 * 2 + 1 * 2 and manifest["judge_skip"] is False
+    assert {r["row_id"] for r in rows} == {
+        "steer_base-11-d0",
+        "steer_base-11-d1",
+        "steer_base-22-d0",
+        "steer_base-22-d1",
+        "add_top_sv0_pos-11-d0",
+        "add_top_sv0_pos-22-d0",
+    }
+    for r in rows:
+        assert r["question"] == f"question {r['manifest_index']}"
+        assert r["completion"].startswith(f"completion {r['condition']}")
+        assert "__" not in r["row_id"] and len(r["row_id"]) <= st.MAX_ROW_ID_LEN
 
 
-def test_merge_excludes_pilot_dropped_directions(tmp_path: Path) -> None:
+def test_merge_excludes_pilot_dropped_directions(tmp_path: Path, monkeypatch) -> None:
     paths = {
         "gen": tmp_path / "gen",
         "summaries": tmp_path / "summaries",
@@ -219,6 +268,7 @@ def test_merge_excludes_pilot_dropped_directions(tmp_path: Path) -> None:
         st.Condition("add_random0_pos", "add", "random0", 1, 1),  # dropped: no t1 files
     ]
     mis = [5]
+    _merge_fixture(paths, [conds[0]], mis, monkeypatch)  # dropped cond has no gen file
     arr = np.zeros((1, len(c.LAYERS), 3), dtype=np.float16)
     _write_t1(paths, "steer_base", 0, arr, mis)
     _write_t1(paths, "steer_base", 1, arr, mis)
