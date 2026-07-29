@@ -1426,3 +1426,49 @@ def test_multiorg_reduce_flags_transport_dispatch_results(monkeypatch):
     assert results["cid_term"]["error"] is True
     assert "transport" not in results["cid_term"]
     assert results["cid_ok"] == {"aligned": 90, "coherent": 95, "reasoning": "ok"}
+
+
+# ── custom_id grammar validation at dispatch entry (#1795) ───────────────────
+
+
+def test_tilde_custom_id_raises_at_entry():
+    """The #1739 regression shape: a `~`-bearing id fails loud at ENTRY.
+
+    dry_run=True means the raise must precede any routing probe / client
+    construction — zero API calls by construction.
+    """
+    items = [("ctx~k00", "q", "c", "u")]
+    with pytest.raises(ValueError, match=r"ctx~k00"):
+        dispatch(items, dry_run=True)
+
+
+def test_overlong_custom_id_raises():
+    items = [("a" * 65, "q", "c", "u")]
+    with pytest.raises(ValueError, match="violate the Anthropic Batch API"):
+        dispatch(items, dry_run=True)
+
+
+def test_empty_custom_id_raises():
+    items = [("", "q", "c", "u")]
+    with pytest.raises(ValueError, match="violate the Anthropic Batch API"):
+        dispatch(items, dry_run=True)
+
+
+def test_non_str_custom_id_raises():
+    from explore_persona_space.eval.judge_dispatch import _validate_custom_ids
+
+    with pytest.raises(ValueError, match="123"):
+        _validate_custom_ids([(123, "q", "c", "u")])
+
+
+def test_valid_custom_ids_pass_validation():
+    from explore_persona_space.eval.judge_dispatch import _validate_custom_ids
+
+    _validate_custom_ids([("a-b_C0", "q", "c", "u"), ("a" * 64, "q", "c", "u")])
+
+
+def test_custom_id_grammar_matches_batch_judge():
+    """Single-grammar invariant: the duplicated literal never drifts from batch_judge."""
+    from explore_persona_space.eval import judge_dispatch
+
+    assert judge_dispatch._CUSTOM_ID_RE.pattern == batch_judge._CUSTOM_ID_RE.pattern

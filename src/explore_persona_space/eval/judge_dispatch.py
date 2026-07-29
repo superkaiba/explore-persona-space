@@ -92,6 +92,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import time
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
@@ -217,6 +218,34 @@ def _parsed_with_raw(parsed: dict | None, text: str) -> dict | None:
 
 # Item: same 4-tuple already used by batch_judge.
 JudgeItem = tuple[str, str, str, str]  # (custom_id, question, completion, user_msg)
+
+# Kept a literal here (not imported from batch_judge) to avoid the
+# judge_dispatch -> batch_judge -> alignment -> judge_dispatch cycle;
+# tests/test_judge_dispatch.py locks it equal to batch_judge._CUSTOM_ID_RE.
+_CUSTOM_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")
+
+
+def _validate_custom_ids(items: list[JudgeItem]) -> None:
+    """Fail loud pre-submit on Batch-API custom_id grammar violations (#1795).
+
+    A malformed custom_id is a deterministic HTTP 400 invalid_request_error
+    mid-wave (llm-judging rule 24(iii): neither retried nor dropped — a
+    pipeline bug). Validate at dispatch entry so BOTH routing outcomes fail
+    at construction time (#1739: a `~`-bearing id killed a detached judge
+    wave). batch_judge.make_custom_id is the sanctioned sanitizer.
+    """
+    bad = [
+        cid for cid, _q, _c, _u in items if not isinstance(cid, str) or not _CUSTOM_ID_RE.match(cid)
+    ]
+    if bad:
+        shown = ", ".join(repr(b) for b in bad[:5])
+        raise ValueError(
+            f"{len(bad)} judge item custom_id(s) violate the Anthropic Batch API "
+            f"grammar ^[a-zA-Z0-9_-]{{1,64}}$ (first {min(len(bad), 5)}: {shown}). "
+            "Fix the caller's id construction or route ids through "
+            "batch_judge.make_custom_id()."
+        )
+
 
 # Routing constants (user-decided, plan §11; configurable per call).
 DEFAULT_THRESHOLD_BASE = 2_000
@@ -1470,6 +1499,7 @@ async def dispatch_judge_items_async(  # noqa: C901  # Phase 5 added one routing
         error_dict_factory = _default_error_dict
 
     n_items = len(items)
+    _validate_custom_ids(items)  # #1795: fail loud pre-submit, both routes
 
     # Step 1: routing inputs. Dry-run NEVER probes; probe only near the boundary.
     if dry_run:
