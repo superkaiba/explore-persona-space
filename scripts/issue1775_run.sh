@@ -13,6 +13,12 @@
 # Self-resolving REPO_ROOT (no bare $WORKLOAD_ROOT — the #825/#1329 class);
 # conditional .env sourcing (GCE has no .env — tokens ride instance metadata).
 # Designed halts keep their distinct rc: 7=pilot-gate, 21=gate-C, 22=power.
+#
+# Durability (#825 class, round-2 Major-2): each phase script uploads its
+# eval JSONs to HF (issue1775_nonlinearity/eval_json/<phase>/, non-LFS text
+# path) in the same per-phase upload step as its analysis tensors
+# (upload_phase_eval_json in issue1775_common) — the crash-survivable channel
+# on the auto-DELETE GCP lane; the finalize/results-sentinel pull stays as-is.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -68,12 +74,11 @@ echo "[dispatch] realized gpus=$NGPU -> shards=$SHARDS device=$DEVICE"
 NEED_GB=30
 [ "$FROM_PHASE" != "p1" ] && NEED_GB=15
 [ "$MODE" = "smoke" ] && NEED_GB=2
+# shared helper (mount-binding rule): statvfs floor + posix_fallocate EDQUOT canary
 uv run python -c "
-import os, sys
-st = os.statvfs('$OUT_ROOT_RESOLVED')
-free_gb = st.f_bavail * st.f_frsize / 1e9
-print(f'[headroom] {free_gb:.1f} GB free at $OUT_ROOT_RESOLVED (need >= $NEED_GB)')
-sys.exit(0 if free_gb >= $NEED_GB else 1)
+from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
+free = assert_out_root_headroom('$OUT_ROOT_RESOLVED', $NEED_GB, phase='dispatch')
+print(f'[headroom] {free:.1f} GB free at $OUT_ROOT_RESOLVED (need >= $NEED_GB)')
 " || { echo "[dispatch] FATAL: insufficient disk headroom" >&2; exit 3; }
 
 phase_order() { case "$1" in p1) echo 1 ;; p2) echo 2 ;; p3) echo 3 ;; p4) echo 4 ;; *) echo 9 ;; esac; }

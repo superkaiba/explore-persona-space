@@ -73,6 +73,7 @@ from issue1775_common import (  # noqa: E402
     result_meta,
     tensors_dir,
     unit_key,
+    upload_phase_eval_json,
     upload_phase_tensors,
 )
 from issue1775_detection import SCHEMES as DETECT_SCHEMES  # noqa: E402
@@ -336,6 +337,8 @@ def projection_analysis(
     nulls["iso_w_vs_rb_max"] = np.abs(iso_out @ rb_out.T).max(axis=(1, 2))
     iso_in = _unit_norm(rng.standard_normal((n_draws, T, 3584)))
     nulls["iso_u_vs_rb_max"] = np.abs(iso_in @ rb_in.T).max(axis=(1, 2))
+    iso_in_v = _unit_norm(rng.standard_normal((n_draws, T, 3584)))
+    nulls["iso_v_vs_rb_max"] = np.abs(iso_in_v @ rb_in.T).max(axis=(1, 2))
 
     # null (ii): covariance-matched (train-fold answer covariance / input covariances)
     def _cov_draws(M: np.ndarray, dim: int) -> np.ndarray:
@@ -352,6 +355,9 @@ def projection_analysis(
     nulls["cov_w_vs_rb_max"] = np.abs(cov_out @ rb_out.T).max(axis=(1, 2))
     cov_in_p = _cov_draws(X_p_train, 3584)
     nulls["cov_u_vs_rb_max"] = np.abs(cov_in_p @ rb_in.T).max(axis=(1, 2))
+    # v projects the QUERY side: its cov-matched null draws from X_q_train (round-2 Minor-a)
+    cov_in_q = _cov_draws(X_q_train, 3584)
+    nulls["cov_v_vs_rb_max"] = np.abs(cov_in_q @ rb_in.T).max(axis=(1, 2))
     report = {
         "observed": obs,
         "nulls_p": {
@@ -366,6 +372,10 @@ def projection_analysis(
             "u_vs_rb_max": {
                 "iso": p_value(nulls["iso_u_vs_rb_max"], obs["u_vs_rb_abscos_max"]),
                 "cov_matched": p_value(nulls["cov_u_vs_rb_max"], obs["u_vs_rb_abscos_max"]),
+            },
+            "v_vs_rb_max": {
+                "iso": p_value(nulls["iso_v_vs_rb_max"], obs["v_vs_rb_abscos_max"]),
+                "cov_matched": p_value(nulls["cov_v_vs_rb_max"], obs["v_vs_rb_abscos_max"]),
             },
         },
         "note": (
@@ -510,6 +520,7 @@ def main() -> int:
     atomic_write_json(out_dir / "bilinear_fits.json", assembled["fits"])
     atomic_write_json(out_dir / "interaction_projections.json", assembled["projections"])
     upload_phase_tensors("bilinear_params", smoke=args.smoke)
+    upload_phase_eval_json("bilinear", smoke=args.smoke)
     print(f"[bilinear] done in {(time.monotonic() - t0) / 60:.1f} min", flush=True)
     return 0
 
@@ -667,13 +678,124 @@ def assemble(units, ad, Yp, info_p, X, pairs_by_scheme, args, out_dir, params_di
                 nd = tensors_dir("null_matrices")
                 for k, v in proj_nulls.items():
                     np.save(nd / f"proj_null_{k}.npy", v.astype(np.float32))
+                # plan-named AMBIENT companion at r in {0, r*} (round-2 Major-3).
+                # Persisted to its OWN JSON and loaded when present: the p4 chain
+                # re-enters assemble() up to three times (main run, unconditional
+                # --assemble-only pass, doubly override pass) and must fit the
+                # 224x ambient head exactly ONCE.
+                import json as _json
+
+                amb_p = out_dir / "ambient_companion.json"
+                if amb_p.exists():
+                    sch_out["ambient_companion"] = _json.loads(amb_p.read_text())
+                elif args.schemes is None:
+                    amb = ambient_companion(ad, X, pairs, r_star, args, params_dir)
+                    amb["meta"] = result_meta(smoke=args.smoke, r_star=int(r_star))
+                    atomic_write_json(amb_p, amb)
+                    sch_out["ambient_companion"] = amb
+                else:
+                    sch_out["ambient_companion"] = (
+                        "absent — scheme-override pass ran before the main pass recorded it"
+                    )
         fits["schemes"][scheme] = sch_out
     # doubly-novel robustness read at {0, r*} runs as a separate dispatcher pass
     # (--r-grid "0,<r*>" over scheme doubly); assembled here when present.
     return {"fits": fits, "projections": projections}
 
 
+def ambient_companion(ad, X, pairs, r_star, args, params_dir) -> dict:
+    """P4 AMBIENT-target companion at r in {0, r*} (plan section 4 P4; round-2 Major-3).
+
+    Same protocol as the pca48 sweep — warm-start stitch ridge, wd grid, seed
+    ensemble, IDENTICAL folds — with ambient targets; r* is INHERITED from the
+    pca48 inner-val selection (not re-selected). Scoping: PREFIX fold scheme
+    only (recorded in the output; the pca48 primary carries the doubly/query
+    robustness reads).
+    """
+    Ya, _info_a = _basis_targets_with_info(
+        ad.Y_stacked,
+        "ambient",
+        hidden_dim=3584,
+        targets=["t1", "t2", "t3"],
+        projection_target="t1",
+    )
+    Ya = np.ascontiguousarray(Ya, dtype=np.float64)
+    n, d_out = Ya.shape
+    groups = ad.prefix_ids
+    # smoke slice: the ambient head (d_out=10752) is 224x the pca48 head — cover
+    # the code path on 2 folds (>= 2 test-row groups per fold, bootstrap fine);
+    # production runs ALL folds (geometry byte-untouched).
+    if args.smoke:
+        pairs = pairs[:2]
+    preds: dict[int, np.ndarray] = {}
+    covers: dict[int, np.ndarray] = {}
+    t0 = time.monotonic()
+    n_fits_total = 2 * len(pairs)
+    n_fits_done = 0
+    for r in (0, int(r_star)):
+        pred = np.zeros((n, d_out))
+        cov = np.zeros(n, dtype=bool)
+        for f, (tr, te) in enumerate(pairs):
+            Xn = _standardize_train(X, tr)
+            res = bilinear_fit_batched(
+                Xn,
+                Ya,
+                tr,
+                te,
+                groups,
+                r=r,
+                seeds=args.seeds,
+                device=args.device,
+                max_epochs=40 if args.smoke else BILIN_MAX_EPOCHS,
+            )
+            acc = np.zeros((len(te), d_out))
+            for s in args.seeds:
+                acc += _best_variant(res["variants"], s)["pred_te"].astype(np.float64)
+            pred[te] = acc / len(args.seeds)
+            cov[te] = True
+            np.save(params_dir / f"pred_ambient_prefix_f{f}_r{r}.npy", pred[te].astype(np.float16))
+            n_fits_done += 1
+            elapsed = time.monotonic() - t0
+            print(
+                f"[bilinear/ambient] r={r} fold={f} fit {n_fits_done}/{n_fits_total} "
+                f"elapsed={elapsed:.0f}s",
+                flush=True,
+            )
+            if n_fits_done == 1:
+                # in-run pilot projection (plan section 9 P4 pilot spirit): the
+                # ambient head is 224x the pca48 head, so surface the projected
+                # companion wall loudly for the poller/orchestrator.
+                print(
+                    f"[bilinear/ambient] PILOT: first fit {elapsed:.0f}s -> projected "
+                    f"companion wall ~{elapsed * n_fits_total / 3600:.2f}h "
+                    f"({n_fits_total} fits, epochs_ran={res['epochs_ran']})",
+                    flush=True,
+                )
+        preds[r] = pred
+        covers[r] = cov
+    both = covers[0] & covers[int(r_star)]
+    boot = cluster_bootstrap_delta_r2(
+        Ya, preds[int(r_star)], preds[0], both, groups, n_draws=200 if args.smoke else 2000
+    )
+    return {
+        "r_star_from_pca48": int(r_star),
+        "delta_named_ambient": boot,
+        "r2_ambient_by_r": {
+            str(r): _r2(Ya[covers[r]], preds[r][covers[r]]) for r in (0, int(r_star))
+        },
+        "scoping": (
+            "prefix fold scheme only; r in {0, r*} with r* inherited from the pca48 "
+            "inner-val selection; same protocol (warm start, wd grid, seed ensemble)"
+        ),
+    }
+
+
 def _gap_fraction(units, ad, Yp, pred_bilin, rpred_stitch, mask, scheme) -> dict:
+    if scheme != "prefix":
+        # round-2 Minor-d: the context-ridge preds below are PREFIX-fold-scheme
+        # artifacts; computing the fraction under another scheme mixes fold
+        # protocols — restrict to one scheme, never mix.
+        return {"note": f"computed under the prefix scheme only (requested: {scheme})"}
     ctx = (
         tensors_dir("heldout_preds")
         / f"{CELL_PRIMARY}_L{LAYER_PRIMARY:02d}_context_end_perrow_pca48_prefix_ridge.npy"

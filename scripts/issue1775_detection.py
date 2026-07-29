@@ -62,6 +62,7 @@ from issue1775_common import (  # noqa: E402
     resolve_store_dir,
     result_meta,
     tensors_dir,
+    upload_phase_eval_json,
     upload_phase_tensors,
 )
 
@@ -306,6 +307,7 @@ def main() -> int:
         np.save(nd / "detection_nulls.npy", np.stack(null_rows, axis=0).astype(np.float32))
         atomic_write_json(nd / "detection_nulls_index.json", {"rows": null_names})
     upload_phase_tensors("null_matrices", smoke=args.smoke)
+    upload_phase_eval_json("detection", smoke=args.smoke)
     print(f"[detect] done in {(time.monotonic() - t0) / 60:.1f} min", flush=True)
     return 0
 
@@ -362,13 +364,19 @@ def _full_corpus_companion(ad, args) -> dict:
         ),
         "arms": {},
     }
+    skipped: dict[str, str] = {}
     for arm in ad.X:
         try:
             Rfull, mask = load_residual(arm, "pca48", Yb)
         except FileNotFoundError:
+            # round-2 Minor-e: loud logged skip + JSON field, never silent
+            skipped[arm] = "residual preds absent (P1 pending or arm not persisted)"
+            print(f"[detect/full-corpus] SKIP arm={arm}: residuals absent", flush=True)
             continue
         keep = mask[rows] & ad.arm_row_mask[arm][rows]
         if not keep.all():
+            skipped[arm] = f"{int((~keep).sum())}/{keep.size} sampled rows masked out"
+            print(f"[detect/full-corpus] SKIP arm={arm}: {skipped[arm]}", flush=True)
             continue
         mats = build_dependence_matrices(ad.X[arm][rows], Rfull[rows], device=args.device)
         obs = observed_stats(mats)
@@ -379,6 +387,7 @@ def _full_corpus_companion(ad, args) -> dict:
             "p_hsic": p_value(ns["hsic"], obs["hsic"]),
             "p_dcor": p_value(ns["dcor"], obs["dcor"]),
         }
+    out["arms_skipped"] = skipped
     return out
 
 
