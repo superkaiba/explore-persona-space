@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1819,
+  "highest_id": 1820,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6350,6 +6350,13 @@
       "path": "tasks/completed/182",
       "status": "completed",
       "title": "Persona-CoT REVERSES ARC-C asst-aligned advantage on Qwen2.5-7B-Instruct; truncation \u00d7 tag-injection is the dominant suspect (LOW confidence)"
+    },
+    "1820": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1820",
+      "status": "proposed",
+      "title": "daily-held: add task.py set-backend (public API change)"
     },
     "183": {
       "has_clean_result": true,
