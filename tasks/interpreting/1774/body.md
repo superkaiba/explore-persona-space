@@ -5,7 +5,7 @@ title: Linear maps predict held-out answer states from the full context or the b
 kind: experiment
 tags: []
 created_at: '2026-07-28T21:35:32Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1092
 origin_prompt: 'run both in background with ahppy coder (2026-07-28; two-task split
   per: ''can it not be all one task? Or at least separate the nonlinear out'')'

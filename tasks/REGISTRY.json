@@ -6007,7 +6007,7 @@
     },
     "1774": {
       "goal": "Characterize the fitted linear context\u2192answer operators across the four arms (prefix-end, context, bare-query, query-averaged) as operators \u2014 algebraic consistency, per-arm channel structure and trait tables, null-space ceilings with causal-inertness tests, and gate-conditional endomorphism reads (decoded SVD, eigen/copying, preservation map, trait gain matrix, fixed point) \u2014 all noise-ceiling-gated, per Task A of docs/ideas/2026-07-28-four-arm-map-theoretical-analysis-plan.md",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/1774",
       "status": "interpreting",
