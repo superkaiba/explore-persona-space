@@ -1,5 +1,5 @@
 ---
-description: Retry/crash-fix round contract for implementer agents — failure-lesson block, fix-engaged signal, scope guard, kill-before-relaunch + timeout-bounded smokes; §§1-3 relocated verbatim from experiment-implementer.md (#829); kill-before-relaunch added (#848); relaunch-side fix-commit ancestry + stale-checkpoint hygiene (#1081); step-2 explicit-PID kill (#1198); MooseFS content-read probe on same-pod relaunches (#1112/#1594)
+description: Retry/crash-fix round contract for implementer agents — failure-lesson block, fix-engaged signal, scope guard, kill-before-relaunch + timeout-bounded smokes; §§1-3 relocated verbatim from experiment-implementer.md (#829); kill-before-relaunch added (#848); relaunch-side fix-commit ancestry + stale-checkpoint hygiene (#1081); step-2 explicit-PID kill (#1198); MooseFS content-read probe on same-pod relaunches (#1112/#1594); relaunch compute-character re-statement on engine/device/width/scope changes (#1749)
 paths:
   - "scripts/**/*.py"
   - "src/explore_persona_space/**"
@@ -146,7 +146,11 @@ rounds).
 
 Applies to EVERY re-run of a smoke / launch / dispatch command — crash-fix
 rounds, code-review revision rounds, and same-turn retries after a
-timed-out or abandoned Bash call — on the shared VM and on pods alike. A
+timed-out or abandoned Bash call — AND to any kill targeting a workload
+pattern for any other reason (e.g. cancelling a redundant background
+job of your own, the session `0e2c3b21` 2026-07-26 shape). Applies on
+the shared VM and on pods alike.
+ A
 timed-out / abandoned Bash TOOL call kills the SHELL but ORPHANS the
 python child, which keeps running and writing its output paths;
 relaunching without killing it duplicates load and corrupts shared
@@ -160,10 +164,16 @@ load-186 VM overload).
 1. **Probe** — `pgrep -af 'run_823[.]py --phase 4'`. The pattern MUST be
    exact-invocation-scoped: script filename + the distinguishing args,
    with a `[.]` bracket so the probe's own shell cmdline cannot
-   self-match. The same bracket idiom equally covers OWNERSHIP/liveness
-   probes, including SSH-remote ones — `ssh <host> "pgrep -af ..."`
-   re-materializes the pattern in the remote shell's argv (see the
-   `.claude/rules/gotchas.md` SSH-remote ownership-probe entry).
+   self-match. When the same command line ALSO passes the artifact PATH
+   as an argument, or uses MULTIPLE alternates, the bracket idiom alone
+   does NOT protect: the artifact path / any unbracketed alternate rides
+   the probe's own argv and self-matches — apply the self-exclusion filter
+   / per-pid iteration recipes in `.claude/rules/gotchas.md` (SSH-remote
+   ownership-probe entry) alongside the bracket. The same bracket idiom
+   equally covers OWNERSHIP/liveness probes, including SSH-remote ones —
+   `ssh <host> "pgrep -af ..."` re-materializes the pattern in the remote
+   shell's argv (see the `.claude/rules/gotchas.md` SSH-remote
+   ownership-probe entry).
    Run the probe (and any pkill) in its OWN Bash call — the
    harness wrapper embeds the full compound-command text in its own
    cmdline, so a probe sharing a call with text spelling the raw
@@ -420,6 +430,49 @@ the relaunch ran the pre-fix commit, checkpointed garbage — val R²
    `issueN_partial/`, a data-repo checkpoint prefix) still needs the
    declared disposition — prefer a fresh resume prefix / `--no-resume`
    threaded into the workload cmd over mutating remote copies.
+3. **Compute-character re-statement (fires when the fix — or the relaunch
+   configuration — changes the workload's compute shape; #1749).** When the
+   relaunch differs from the approved plan §9 / the prior recorded launch in
+   ENGINE (e.g. torch↔numpy, vLLM↔HF `generate`, batched↔serial inner
+   loop), DEVICE ROUTING (GPU→CPU or CPU→GPU), PARALLEL WIDTH (fleet width,
+   per-pod GPU width, worker count), or PER-UNIT SCOPE (cells / draws /
+   rungs per unit), the relauncher re-states the compute character BEFORE
+   dispatch — the canonical five-element statement (SKILL.md Step 9a-ter
+   § Compute-character pre-launch statement) scoped to the delta:
+   (i) the new ops arithmetic (units × per-unit cost → projected wall) with
+   a MEASURED per-unit basis at the NEW shape — a 1-unit pilot through the
+   production entrypoint, or the run's own live-measured figure; an
+   asserted / guessed per-unit cost is never a sizing basis
+   (`.claude/rules/plan-compute-sizing.md` § Per-cell fit phases);
+   (ii) the engine + device routing named (the batched helper implementing
+   the inner loop, or why the work is genuinely not batchable);
+   (iii) GPU-width vs pod width — a CPU-bound or width-1 relaunch on a
+   multi-GPU pod triggers the width re-evaluation below AND the CLAUDE.md
+   "CPU-only phases don't hold GPU pods" release/downsize duty (stop or
+   downsize the pod while the CPU work runs — never bill a multi-GPU pod
+   at ~0% through a serial CPU fit).
+   When the delta MOVES work onto the shared VM or adds ≥ ~5 GB of
+   staging, the canonical statement's elements (4) (projected peak RSS /
+   off-VM routing) and (5) (staging path + the filesystem it resolves to,
+   off-`/` routing) apply too — SKILL.md Step 9a-ter carries both.
+   The statement rides the relaunch record: the fresh `epm:run-launched`
+   note (or the `epm:compute-deviation` re-post when one is being posted
+   anyway) — the same note-token convention as `fix_sha=`, no
+   marker-schema change. Pod-side hotfix relaunches are NOT exempt: any
+   relaunch must re-post `epm:run-launched` (SKILL.md Step 6d.2 "Any
+   relaunch must re-post epm:run-launched"), and the compute-character
+   statement rides that same marker. A same-shape relaunch (identical
+   engine/device/width/scope — the common crash-fix case) states nothing
+   new; this duty fires only on the delta. (Incident #1689 r15b,
+   2026-07-27/28: an unrecorded pod-side hotfix relaunch swapped the
+   Phase-D fit to serial numpy on CPU at width 1; the 4×H100 pod billed
+   ~0% GPU for ~14 h before a mid-run measurement — ratio 32×, v4
+   corrected to 11× — surfaced it; the R16 port measured numpy 648.5 s vs
+   torch/cuda 66 s per pair. Compliance residual: r15b's relauncher ALSO
+   skipped the pre-existing Step 6d.2 `epm:run-launched` re-post duty, so
+   this duty inherits the same compliance dependency — the watcher's
+   gpu-idle escalation and the `epm:compute-deviation` mid-run measurement
+   remain the detection backstop.)
 
 **Width re-evaluation rides every relaunch of an embarrassingly-parallel
 unit grid** (`code` and `infra` rows alike): before re-dispatching at the
@@ -453,3 +506,58 @@ mid-run rebase of `issue-<N>` re-opens the gap there (out of scope
 here, noted for the record). The implementer's
 own same-pod smoke-slice confirmation (element 2) is UNCHANGED and is
 not a "relaunch" under this section.
+
+### Crash-fix rounds: symbol-rename whole-tree grep duty (REQUIRED — every retry round; #1728)
+
+Any crash-fix round (or ordinary round) whose diff RENAMES a
+MODULE-EXPORTED SYMBOL — a class / top-level function / top-level
+dataclass / top-level module-level constant / package-exported name in an
+`__init__.py` — MUST, in the SAME round, before its
+`epm:experiment-implementation` marker, run
+
+```bash
+grep -rn '<old_name>' scripts/ src/
+```
+
+for each renamed symbol and EITHER fix every hit to the new name OR
+explicitly disposition each hit (e.g. "hit is a comment referencing the
+old API history — leave"; "hit is under `external/` — out of scope"; "hit
+is a test that pins the pre-rename shape as a regression fixture —
+leave"). The grep command AND its per-hit disposition are recorded in the
+implementer's `epm:experiment-implementation` marker under a top-level
+`### Symbol-rename grep` section. A round that renames >1 symbol records
+one grep + disposition block per symbol; a round with NO
+module-exported symbol rename records NO block (auditable-N/A convention,
+same as Step 0.68's `N/A — no fit-loop`).
+
+**Scope-limit — module-exported symbols only.** This duty fires on renames of
+names any OTHER file in `scripts/` or `src/` can `import`, `from ... import`,
+or textually reference by identifier: a class, a top-level `def`, a top-level
+dataclass, a top-level module-level constant (SCREAMING_SNAKE / literal
+assignment at module scope), or an `__init__.py` re-export. It does NOT fire
+on renames of LOCAL variables inside a function body (`data → payload` inside
+a function), private helpers whose name starts with `_` AND that no other
+file imports (verify by the grep itself returning ≤ ~1 hit — self-file only),
+loop counters, or parameter names in an internal signature no external caller
+threads. When in doubt, run the grep: an over-fire produces one extra grep
+command in the marker (cost: seconds); an under-fire is the incident this
+duty exists to prevent.
+
+**Cross-round rename discipline.** A rename in ROUND R that missed a sibling
+hit at time R and was caught in ROUND R' by an import-time crash does NOT
+retroactively excuse round R — round R''s marker MUST record the grep + fix
+for the missed hit, tagged `(carrying #<R>'s rename)`. This closes the gap
+that "the rename shipped in an earlier round, so it's not my rename" would
+otherwise open.
+
+(Incident #1728 × session `5c5a89e8` 2026-07-26T06:35:50Z: round R5 renamed
+`DispatchCall → DispatchItem` in `scripts/issue1689_haiku_u2_gen.py` but
+left `scripts/issue1689_gen_onpolicy.py:297` importing the old name. Phase
+B relaunched, reached the sibling script's import, and the vLLM engine
+core died: `ImportError: cannot import name 'DispatchCall' from
+'explore_persona_space.llm.api_dispatch'`. The implementer's own
+`epm:failure-lesson` (`generalizes: yes`) named the exact rule this section
+now durablizes: *"grep the whole scripts/ tree for the old name in the
+same round and fix every hit — sibling scripts drift until the next phase
+invokes them."* Cost: full crash-fix round R9, ~20 min, plus a wasted pod
+launch cycle.)

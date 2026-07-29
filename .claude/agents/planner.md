@@ -167,6 +167,21 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    plan, then reuse.
    (Relocated verbatim from this spec, #829.)
 
+   **Call-shape bind for reused fit / analysis helpers (added #1728).**
+   In addition to (a)-(l), for EVERY reused fit / analysis helper the plan
+   would call with kwargs, the plan §10 (Reproducibility Card) records the
+   exact kwargs at their exact values the new caller will pass and STATES
+   that a runtime call at smoke shape (not a signature-membership test)
+   binds against the callee's body. A `grep -n 'assert\|raise
+   NotImplementedError\|raise ValueError' <reused helper>` for guards
+   naming any of those kwargs is the cheap companion; a hit whose predicate
+   contradicts the new caller's value REQUIRES engaging the guard's stated
+   alternative (or a `Source:` justification in §11) BEFORE the plan is
+   returned. Rationale + incident: `.claude/rules/artifact-reuse.md`
+   check (l) "Call-shape bind" clause. This item MIRRORS the fitness-check
+   self-attestation above; it is enforced downstream by `critic.md`
+   Methodology lens item 9 (REVISE) alongside the (a)-(l) check.
+
    **Live-sibling sweep — check CONCURRENT in-flight work before designing
    any new module/helper build (#1394).** The searches above cover merged
    code, HF artifacts, and PAST parent/sibling issue branches; a concurrent
@@ -263,72 +278,24 @@ What exists in the codebase and literature? What approaches have been tried? Wha
 ### 3. Hypothesis
 Specific, falsifiable predictions. State what would confirm and what would falsify. Include quantitative thresholds where possible.
 
-**Registered verdict lattice — declare it in the machine-checkable form.** A plan
-REGISTERS a verdict lattice when it pre-defines outcome labels (Confirmed /
-Falsified / H-slots / pass-fail-inconclusive grids) as interval predicates over
-the same point estimates and CIs. `scripts/verify_plan.py` check 20
-(`check_verdict_lattice_coherence`) verifies the labels PARTITION the outcome
-space: two labels co-firing on one sign/CI cell, or a cell no label covers,
-FAILs a `kind: experiment` plan (WARNs `analysis`) at Phase 1.5.0 and on every
-critic re-verify (incident: #923 v4/v5). c20 verifies the partition IN FORM
-ONLY — whether each predicate is the scientifically right boundary stays with
-the Statistics critic. Declare the partition as ONE non-fenced line inside the
-section that defines the labels (any heading matching
-hypothes|success|kill|decision|verdict|gate — §3 here is the natural home):
-`DISJOINT and exhaustive: <label> ⇔ <predicate>; <label> ⇔ <predicate>; <label> ⇔ otherwise.`
-Live-verified worked example (#923 plan v6 §3 is the corpus exemplar):
-`DISJOINT and exhaustive: Confirmed ⇔ Δ > 0 AND Δ's 95% CI excludes 0 on the positive side; Falsified ⇔ Δ's 95% CI is wholly below 0; Inconclusive ⇔ otherwise.`
-Parser constraints (c20 tier 1): clauses `;`-separated on the SAME line; each
-label ≤80 chars with no `;`/`⇔`; predicates built from `<qty> ≥/>/≤/< 0` sign
-atoms and CI idioms ("CI excludes 0 on the positive side", "CI wholly below 0",
-"CI straddles 0", "paired-diff CI strictly positive") joined only by AND / OR /
-with; close with an `⇔ otherwise` clause (covers every residual cell by
-construction). Per-label prose without this line is tier-2: co-fires still FAIL
-and anything the parser can't read degrades the whole lattice to WARN — prefer
-tier 1. No lattice in the plan → declare the byte-exact standalone line
-`N/A — no registered verdict lattice` (never alongside a real lattice: c20
-WARNs on the co-occurrence instead of silently skipping verification — #1223).
+**Registered verdict lattice (verify_plan.py check 20):** a plan that
+pre-defines outcome labels (Confirmed / Falsified / H-slots / pass-fail
+grids) declares the partition as ONE non-fenced machine-checkable line —
+`DISJOINT and exhaustive: <label> ⇔ <predicate>; …; <label> ⇔ otherwise.`
+— inside the section that defines the labels (§3 is the natural home). No
+lattice in the plan → declare the byte-exact standalone line
+`N/A — no registered verdict lattice`.
 
-**Registered paired contrast — declare per-arm Row-coverage in the SAME draft.**
-A plan REGISTERS a paired contrast when a non-fenced line inside a
-registration-family H2+ section (any heading matching hypothes | success /
-acceptance criteri | decision rule/gate | kill / abort / stop criteri |
-evaluation | nulls | statistic — §3 here is the natural home) carries "paired"
-plus registration vocabulary or an enumerated pair count ("7 pairs").
-`scripts/verify_plan.py` check 18 (`check_paired_contrast_source_coverage`)
-then REQUIRES a per-arm row-coverage declaration — FAIL for `kind: experiment`
-(WARN `analysis`) at Phase 1.5.0 and on every critic re-verify (incidents:
-#810 v13 — 2 of 9 registered rows missing from the named full side; #1112
-amendment drafts v4 AND v7 — one mechanical bounce each, same omission).
-Every `plans/v{K}.md` is verified STANDALONE: an amendment / delta /
-follow-up draft that registers or carries forward a paired contrast
-RE-declares Row-coverage in its own text — the parent version's declaration
-does not carry over (#1112's exact failure mode). Satisfy with ONE of (all
-non-fenced; live-verified corpus exemplar: #1112 plan v8's `Row-coverage:`
-line):
-- **D1, named-source form** — ONE line starting `Row-coverage:` naming, for
-  BOTH arms, which per-context store/file supplies every registered row; an
-  artifact token (a `.pt/.json/.jsonl/.npz/…` filename or an `eval_results/…`
-  / `analysis_tensors…/` / `raw_completions/…` path) must sit on the line or
-  within the next 3 non-fenced lines:
-  `Row-coverage: both arms' registered rows are supplied per-context by analysis_tensors/capture/<cell>/pooled.pt (trained arm) and eval_results/issue_<N>/base_rows.json (base arm).`
-- **D1, by-construction form** — affirmative present tense ONLY (a negation /
-  modal / deferral token near the clause — "will produce", "once implemented",
-  "does not yet produce" — disqualifies it):
-  `Row-coverage: the plan's own fits produce every registered row on each arm.`
-- **D2, driver-assert form** — a subset expression + row/pair vocab +
-  coverage/source/keys/assert vocab together on ONE line:
-  `Row-coverage assert: the driver set-checks the registered pair rows ⊆ both named sources' row_meta keys before the statistic is computed.`
-No paired contrast in the plan → declare the byte-exact standalone line
-`N/A — no paired contrast` (never alongside a real registration: c18 WARNs
-on the co-occurrence instead of silently passing — #1258). Keep every
-declaration line free of cross-issue
-citations — a `#<M>` token on the line DISQUALIFIES it (quote sibling
-exemplars elsewhere) — and fill the `<…>` placeholders with THIS plan's
-actual stores. c18 verifies the declaration IN FORM only; whether the named
-sources truly contain every registered row on both arms stays with the
-fact-checker. Guidance-shape pinned by
-`tests/test_planner_row_coverage_guidance.py`.
+**Registered paired contrast (verify_plan.py check 18):** a plan
+registering a paired contrast declares per-arm Row-coverage in the SAME
+draft — every `plans/v{K}.md` is verified STANDALONE, so an
+amendment/delta draft re-declares its own Row-coverage line. No paired
+contrast → declare the byte-exact standalone line
+`N/A — no paired contrast`.
+
+Full declaration recipes + parser constraints + worked example lines:
+`.claude/rules/planner-section-reference.md` § 3. Hypothesis — read that
+section (grep the heading, chunked Read) BEFORE writing this section.
 
 ### 4. Design
 
@@ -342,7 +309,10 @@ recipe (overrides parent parity) · persona-vectors extraction recipe ·
 multi-arm resolution-band designs · few-shot / ICL demonstration content ·
 smoke/sweep architectural parity · no all-or-nothing eligibility gates ·
 equalize-down on per-unit N · baseline propensity on BOTH sides ·
-generation-and-reduce stages persist their rollout TEXT.
+generation-and-reduce stages persist their rollout TEXT ·
+**symbol-existence grep-at-plan-time** — every `module.symbol` (function / class / subcommand) in plan pseudocode is confirmed by a recorded `grep -rn 'def <symbol>' src/ scripts/`; deferring a grep-answerable check to the implementer is banned. ·
+**pre-return self-check** — enumerate every file + section the TASK BODY names as a required edit; assert each appears in §4 Design; a deliberate omission carries a one-line reason. ·
+**embedded-shell exit-path trace** — for every failure arm in embedded shell, trace the exit path; a bare `false` inside a branch does NOT halt a sibling block. Prose-only clause (critic-catch, no mechanical gate); recipe: `.claude/rules/planner-section-reference.md` § 4.
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
 § 4. Design — read that section (grep the heading, chunked Read) BEFORE writing
@@ -403,6 +373,8 @@ construct, jointly satisfiable, and coherent with its own cited precedents
 (each band recomputed on the precedent values it cites lands in the branch
 the prose assigns — see the reference §7).
 
+**Per-criterion §4-mechanism binding.** State, per acceptance criterion, WHICH §4 mechanism measures it AND what it compares (count / equality / presence). The L602 Self-count rule covers count-style criteria only.
+
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
 § 7. Decision Gates — read that section (grep the heading, chunked Read) BEFORE writing
 this section.
@@ -443,6 +415,16 @@ Compute-sizing recipes: `.claude/rules/plan-compute-sizing.md`
 (on-demand); phase placement + GPU-width right-sizing are always-on in
 CLAUDE.md § Pods.
 
+Phase-output declaration (idempotency gate at code review): a plan whose §9
+per-component compute-projection table lists MORE THAN ONE phase MUST carry a
+fenced `phase_outputs:` map in this section — per phase: `sentinel` (the
+completion-sentinel path the phase writes atomically at end) OR `outputs`
+(the primary output artifact(s) the phase produces). This gives the
+code-reviewer's Step 0.69 (Phase-idempotency + inter-phase-contract gate) a
+concrete artifact to grep the dispatcher against; a single-phase run omits the
+block entirely. Template + worked example:
+`.claude/rules/planner-section-reference.md` § 9 (phase_outputs).
+
 Phase-ORDER expensive-intermediate persistence: the §9 phase sequence names
 the upload point of every regeneration-costly intermediate (extraction /
 activation store, capture, rollout set) BEFORE — or detached-concurrent
@@ -453,19 +435,28 @@ upload` is the #825 stranding order (a hung serial fit left the turnstore
 off HF; recovery = a fresh GPU re-extraction). Full rule:
 `.claude/rules/upload-policy.md` expensive-store-before-long-fit bullet.
 
-Off-pod phase declaration + reads enumeration (#1482/#1426): a plan with a
-pod/backend dispatch AND ≥1 subsequent off-pod phase (VM / cpu-lane /
-Batch-API judge or analysis) MUST carry a fenced `off_pod_phases:` block in
+Cross-phase reads declaration (#1482/#1426/#1773): a plan in which ANY
+dispatched phase reads ANOTHER phase's outputs — a pod/backend dispatch
+with ≥1 subsequent off-pod phase (VM / cpu-lane / Batch-API judge or
+analysis), AND equally a pod-gpu/GCE/SLURM phase consuming VM-produced
+inputs (git-clone lanes stage only the pushed branch — the #1773 inverse
+seam) — MUST carry a fenced `off_pod_phases:` block in
 this section — per phase: `runs_on`, `reads` (each path + producing phase +
-permanent source) and `outputs` (each path + off-pod dest). Every read must
-be in the pod's upload set or vm-resident-by-construction (the gotchas.md
-off-pod bullet, mechanized at plan time); the declaration is what lets
+permanent source the CONSUMING machine can fetch) and `outputs` (each path
++ dest). Every read must
+be in the producing phase's upload set or vm-resident-by-construction
+(legal only for VM-EXECUTING phases — the gotchas.md
+cross-machine bullet, mechanized at plan time); a VM-produced →
+git-clone-lane read additionally names the producer's fail-loud bulk
+upload step + the consumer launcher's scoped staging step (§9 rules
+bullet). The declaration is what lets
 upload-verifier Step 2.8 gate the READS before termination (#1482) and
 Step 2.7 reconcile the OUTPUTS at the off-pod destination instead of
 FAILing r1 by construction (#1426). Pod-free / single-machine plans omit
 the block entirely; an off-pod phase named in prose without the block draws
 the verifier's `off-pod-phase-spec-absent` WARN + `verify_plan.py` c39
-WARN. Template + worked example:
+WARN (c39's trigger vocabulary does not fire on inverse-direction prose —
+that direction is planner+critic-enforced). Template + worked examples:
 `.claude/rules/planner-section-reference.md` § 9 (off_pod_phases).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
@@ -491,7 +482,13 @@ declared boundary, the new regime read against it, and the engaged
 mitigation or stated justification) · per-stage
 output-artifact destinations (`raw_completions/<stage>/`,
 `analysis_tensors/`) (a declared off-pod phase's outputs carry their
-OFF-POD dest — mirror §9's off_pod_phases block) · the `discarded_artifacts:` slot
+OFF-POD dest — mirror §9's off_pod_phases block) — and for any stage whose
+§9 lane is EPHEMERAL (GCE DELETE-on-exit, RunPod terminate-on-verify),
+every text/JSON output row MUST name an HF (non-LFS) dest; "git issue
+branch" alone is legal only for VM-resident stages or with a named
+pre-teardown harvest phase (#1738: two summary JSONs declared git-only
+on the DELETE-on-exit GCE lane were lost at reap) ·
+the `discarded_artifacts:` slot
 ({name, reason, regen_recipe}; text/JSON is NEVER a valid discard).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
@@ -508,6 +505,8 @@ parity · reused input-data artifacts get a `Source:` + target-backend
 fetchability line · repo-new model id ⇒ CPU-side `AutoConfig` smoke before
 provisioning.
 
+- **Tool-behavior claims carry the same `Source:` bar** (extended from hyperparameters). Any assertion about what a repo script / lint / CLI / helper DOES carries a `Source:` naming the grep / `file:line` READ at plan time; ungrounded ⇒ `Source: ungrounded — verify at implementation`.
+
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
 § 11. Decision Rationale — read that section (grep the heading, chunked Read) BEFORE writing
 this section.
@@ -523,6 +522,7 @@ For each assumption, state:
 - **Confidence:** High / Medium / Low
 - **Source:** Read from code / Read from results / Read from docs / Guessed
 - **How to verify:** What file to read or command to run
+- **Line-number assumptions quote `grep -n` output VERBATIM** (number + text as printed) — never a bare "at line 142"; the verbatim line self-verifies across edits.
 
 Be exhaustive. Wrong assumptions are the #1 cause of wasted GPU time.
 
@@ -544,6 +544,8 @@ zero-response arm, 825,591 B defeats the 262,144 B read cap). Artifact
 aged off disk → trace the incident's recorded measurements at Medium
 confidence; prospective guard with no incident artifact → state that in
 the row.
+
+Full template + worked examples: `.claude/rules/planner-section-reference.md` § 12. Assumptions — read that section BEFORE writing.
 
 ## Goal-currency guard (re-read the Goal before returning — #922)
 

@@ -180,7 +180,12 @@ cannot repeat that divergence.
 
 The single standing deviation from the paper: replace the GPT-4.1-mini
 logit-weighted top-20-token trait scoring with the project judge
-`claude-sonnet-4-5-20250929` (plain integer 0–100, threshold 50). Reason:
+`claude-sonnet-4-5-20250929` (plain integer 0–100, threshold 50). The
+deviation is the judge MODEL only — the trait JSON's `eval_prompt` RUBRIC is
+part of the recipe and stays verbatim; swapping in a different judging
+scheme/rubric is a recipe deviation, not covered by this carve-out
+(2026-07-28: a planning chat swapped the rubric and had to be reverted —
+"no we want to use the same judges as persona vector"). Reason:
 CLAUDE.md's "Critical Rules" pin ONE consistent judge across the project
 (`claude-sonnet-4-5-20250929`) for EVERY judged behavior; introducing a second
 judge (GPT-4.1-mini) for one recipe fragments the judge surface and breaks

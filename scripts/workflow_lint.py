@@ -129,6 +129,16 @@ Behaviours:
   normalized to ``|`` first. The
   ``.claude/hooks/guard_piped_git_push.sh`` PreToolUse hook covers the
   inline ad-hoc commands that never reach a committed script (#1048).
+* ``--check-agents-note-argv-verdict`` (also bundled into the no-flags
+  default run): walk every ``*.md`` under ``.claude/agents/`` and FAIL on
+  any line prescribing an argv-prose ``--note`` verdict/marker post via a
+  command substitution — the pattern task #1743 banned from agent specs
+  (merged 99af2fbb0d) and rewrote to the ``post-marker --file`` channel;
+  the standing pin is #1785 (#1722/#1756 argv-substitution incident
+  family). The sanctioned variable form (resolve every command
+  substitution into a shell variable FIRST, then pass the variable as the
+  note) never matches. No waiver: reword prose that would match (the
+  #1743 r2 precedent).
 * ``--check-push-failure-swallow`` (also bundled into the no-flags default
   run): walk every ``*.sh`` under ``scripts/`` and FAIL on any logical
   line where a ``git push`` is followed ON THE SAME LINE by ``|| echo`` /
@@ -11639,6 +11649,131 @@ def check_lessons_index(  # noqa: C901 -- flat failure-mode ladder (index parity
     return errors
 
 
+# `--check-inline-round-duty-mirror` (#1701): the three "Inline
+# estimator-validity + record-integrity duties" sentences mirror byte-for-byte
+# between CLAUDE.md § "User-chat inline free analysis" and
+# .claude/skills/issue/SKILL.md Step 9a-ter. A future editor who updates one
+# location and forgets the other silently drifts the mirror; a count-only
+# check would slip past a mid-sentence text edit that keeps the anchor
+# prefix. Two-part invariant: (a) each of three anchor prefixes appears
+# exactly once in EACH file, (b) the full sentence starting at each anchor
+# prefix is BYTE-IDENTICAL across the two files.
+
+_INLINE_ROUND_DUTY_ANCHORS: tuple[str, ...] = (
+    "(1) BEFORE any ridge",
+    "(2) BEFORE launching any re-implemented",
+    "(3) When a round REFUTES",
+)
+
+
+def _extract_inline_round_duty_sentence(text: str, anchor: str) -> str | None:
+    """Extract the full sentence starting at ``anchor`` through the next
+    terminator: the first ``. `` (period + whitespace) OR ``.\\n`` OR a bare
+    newline. Returns None if the anchor is not present.
+
+    In-line ``.`` inside a backtick-quoted span does not terminate — e.g.
+    ``scripts/issue1345_operator_comparison`` has no closing period. The
+    canonical anchor sentences end with ``.`` followed by whitespace or a
+    newline; the terminator scan walks past backtick spans.
+    """
+    idx = text.find(anchor)
+    if idx == -1:
+        return None
+    n = len(text)
+    i = idx
+    in_backtick = False
+    while i < n:
+        ch = text[i]
+        if ch == "`":
+            in_backtick = not in_backtick
+        elif ch == "\n" and not in_backtick:
+            return text[idx:i]
+        elif ch == "." and not in_backtick and i + 1 < n:
+            nxt = text[i + 1]
+            if nxt.isspace():
+                return text[idx : i + 1]
+        i += 1
+    return text[idx:n]
+
+
+def check_inline_round_duty_mirror(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the three "Inline estimator-validity + record-integrity
+    duties" anchor sentences drift between CLAUDE.md and
+    .claude/skills/issue/SKILL.md.
+
+    Two-part invariant per anchor prefix:
+      (a) COUNT: the anchor prefix appears exactly once in EACH file
+          (locates the sentence unambiguously — zero hits means the block
+          was deleted; more than one means an editor duplicated it).
+      (b) BYTE-EQUALITY: the full sentence (anchor prefix through next
+          terminator — see ``_extract_inline_round_duty_sentence``) is
+          byte-identical across the two files.
+
+    ``repo_root`` is a unit-test override hook; production callers pass
+    None. Bundled into the no-flags default run.
+    """
+    import os as _os
+
+    if repo_root is not None:
+        root = repo_root
+    else:
+        # Env-override so BEHAVIORAL subprocess tests can point the check
+        # at a tmp corpus without also having to relocate every other
+        # bundled check. Absent: the production _REPO_ROOT.
+        env_root = _os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    claude_path = root / "CLAUDE.md"
+    skill_path = root / ".claude" / "skills" / "issue" / "SKILL.md"
+    errors: list[str] = []
+    try:
+        claude_text = claude_path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        errors.append(f"check-inline-round-duty-mirror: {claude_path} not found")
+        return errors
+    try:
+        skill_text = skill_path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        errors.append(f"check-inline-round-duty-mirror: {skill_path} not found")
+        return errors
+
+    claude_rel = claude_path.relative_to(root) if claude_path.is_relative_to(root) else claude_path
+    skill_rel = skill_path.relative_to(root) if skill_path.is_relative_to(root) else skill_path
+
+    for anchor in _INLINE_ROUND_DUTY_ANCHORS:
+        claude_count = claude_text.count(anchor)
+        skill_count = skill_text.count(anchor)
+        if claude_count != 1:
+            errors.append(
+                f"check-inline-round-duty-mirror: {claude_rel} has {claude_count} "
+                f"occurrence(s) of anchor {anchor!r}, expected exactly 1 "
+                "(part (a) count invariant)"
+            )
+        if skill_count != 1:
+            errors.append(
+                f"check-inline-round-duty-mirror: {skill_rel} has {skill_count} "
+                f"occurrence(s) of anchor {anchor!r}, expected exactly 1 "
+                "(part (a) count invariant)"
+            )
+        if claude_count != 1 or skill_count != 1:
+            continue  # cannot compare byte-equality without unambiguous anchors
+        claude_sent = _extract_inline_round_duty_sentence(claude_text, anchor)
+        skill_sent = _extract_inline_round_duty_sentence(skill_text, anchor)
+        if claude_sent is None or skill_sent is None:
+            errors.append(
+                f"check-inline-round-duty-mirror: could not extract anchor sentence "
+                f"for {anchor!r} (part (b) byte-equality invariant)"
+            )
+            continue
+        if claude_sent != skill_sent:
+            errors.append(
+                f"check-inline-round-duty-mirror: anchor sentence for {anchor!r} "
+                f"drifted between {claude_rel} and {skill_rel} "
+                "(part (b) byte-equality invariant); the three duty sentences "
+                "must stay byte-identical across the two files"
+            )
+    return errors
+
+
 # `--check-rule-frontmatter-parses` (#1385, from #1348): a `.claude/rules/*.md`
 # rule on-demand-loads ONLY through its frontmatter `paths:` globs. A YAML
 # parse failure (e.g. an unquoted `description:` containing ': ') silently
@@ -11763,16 +11898,46 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 109,583 B post-#1449 (Step 0.65 plan-glob vs
-    # uploader-eligibility parity sub-check — plan-mandated growth; cap =
-    # measured + ~0.7 KB. Prior: 108,000 — measured 106,853 B post-#1397
-    # (Step 2 fit-loop batched-helper naming paragraph), 105,000 — measured
-    # 104,235 B post-#1317 (Step 4.6 Gate-scope line verification), 101,500 —
-    # measured 100,555 B post-#1254 (Step 3.9 degenerate-statistic check,
-    # observed-vs-null reads), 99,000 — measured 98,126 B post-#1230 (Step 6
-    # durability-pin shipping duty), 97,000 — measured 96,072 B post-#1119,
-    # 95,000 — measured 94,126 B post-#1115)
-    "code-reviewer.md": 110_300,
+    # measured 133,188 B post-#1743 (task-bound verdict post switched to
+    # the --file channel + MANDATORY exact-kind read-back duty —
+    # plan-mandated growth; cap = measured + ~1.0 KB.
+    # Prior:
+    # 132_500 — measured 131,378 B post-Step-10d-merge (task #1727 Step
+    # 0.70 smoke-variable gating gate + task #1716 Step 4 ruff-policy pin
+    # + L99 style-bullet + Step 0.5 pin-invocation marker-shape check —
+    # both landings STACKED at Step 10d merge),
+    # 130_000 — measured 128,507 B post-#1727 unmerged (Step 0.70
+    # alone atop pre-#1716 base — trigger + sub-checks (1)/(2)/(3) +
+    # waiver form + verdict routing with the smoke-var-ungated /
+    # smoke-var-orphan-full FAIL tags),
+    # 128_000 — measured 127,227 B post-#1716 (Step 4 ruff-policy pin
+    # + L99 style-bullet clause + Step 0.5 pin-invocation marker-shape
+    # check — plan-mandated growth atop main's #1728 Step 3.75 grep
+    # verification + #1726 Step 3.6 T2-trigger),
+    # 125_500 — measured 124,356 B post-merge (main #1726 Step 3.6
+    # T2-trigger additions + #1728 Step 3.75 symbol-rename grep
+    # verification — plan-mandated growth binding both the
+    # crash-fix-rounds symbol-rename whole-tree grep duty at
+    # code-review AND main's per-unit progress-line verdict-routing),
+    # 124_400 — measured 123,275 B post-#1728 unmerged (Step 3.75 alone),
+    # 122_400 — measured 121,782 B post-#1726 unmerged (Step 3.6 T2 count
+    # trigger + 3-part Check incl. per-unit progress-line item 3 +
+    # verdict-routing rewrite),
+    # 121_300 — measured 120,709 B post-#1693 (Step 0.69 phase-idempotency
+    # + inter-phase-contract gate atop #1692's Step 0.55 SHAPE-check
+    # binding), 112,500 — measured 112,177 B post-#1692 (Step 0.55
+    # SHAPE-check binding: per-arm attestation-row consistency +
+    # import-resolution three-shape gate for the smoke-architecture-check
+    # marker), 110,300 — measured 109,583 B post-#1449 (Step 0.65 plan-glob
+    # vs uploader-eligibility parity sub-check), 108,000 — measured
+    # 106,853 B post-#1397 (Step 2 fit-loop batched-helper naming
+    # paragraph), 105,000 — measured 104,235 B post-#1317 (Step 4.6
+    # Gate-scope line verification), 101,500 — measured 100,555 B
+    # post-#1254 (Step 3.9 degenerate-statistic check, observed-vs-null
+    # reads), 99,000 — measured 98,126 B post-#1230 (Step 6 durability-pin
+    # shipping duty), 97,000 — measured 96,072 B post-#1119, 95,000 —
+    # measured 94,126 B post-#1115)
+    "code-reviewer.md": 134_200,
     # measured 74,082 B post-#1447 (family-enumeration sync: the two
     # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
     # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
@@ -11782,31 +11947,49 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # 72,229 B post-#1056, 72,000 post-#1050 r2, 71,000 post-#1050 r1,
     # 60,554 B pre-#1050)
     "codex-clean-result-critic.md": 75_200,
+    # measured 59,576 B post-#1693 (Step 0.69 mirror paragraph pointing at
+    # code-reviewer.md's phase-idempotency + inter-phase-contract gate —
+    # plan-mandated growth; cap = measured + ~1.2 KB. Prior: 59,200 —
     # measured 58,271 B post-#1438 (Step 0.9 copy-list bullet + inlined-
-    # rubric 0.9 slot + Blocker-tags data-access-blocked entry —
-    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 56,800 —
-    # measured 55,870 B post-#1380 (Step 4.6 copy-list bullet +
+    # rubric 0.9 slot + Blocker-tags data-access-blocked entry),
+    # 56,800 — measured 55,870 B post-#1380 (Step 4.6 copy-list bullet +
     # inlined-rubric 4.6 slot + Blocker-tags 4.6-presence), 53,300 —
     # measured 52,361 B post-#1254, 51,600 — measured 50,642 B post-#948,
     # 47,930 B post-#881)
-    "codex-code-reviewer.md": 59_200,
-    # measured 74,240 B post-#1682 (Report Format SHA-verbatim rule —
-    # plan-mandated growth; cap = measured + ~0.26 KB.
-    # Prior: 74,000 — measured 73,554 B post-#1572 (step-10 staged-index
-    # verification pointer), 73,000 — measured 72,240 B post-#1449
-    # (After-implementation step-7 plan-glob parity self-check), 72,000 —
+    "codex-code-reviewer.md": 60_800,
+    # measured 76,274 B post-#1692 (item 5 Axis 1 import-resolution leg,
+    # Axis 2 per-arm resolution attestation, PASS_PARTIAL verdict +
+    # post-marker template extension — plan-mandated growth; cap =
+    # measured + ~0.23 KB, with condensing sweep across older Rationale
+    # / incident prose to stay near budget. Prior: 74,500 — measured
+    # 74,240 B post-#1682 (Report Format SHA-verbatim rule), 74,000 —
+    # measured 73,554 B post-#1572 (step-10 staged-index verification
+    # pointer), 73,000 — measured 72,240 B post-#1449 (After-
+    # implementation step-7 plan-glob parity self-check), 72,000 —
     # measured 71,114 B post-#1409 (data-dependent-gates smoke duty in
     # checklist item 3 + item-5 cross-ref), 69,800 — measured 68,888 B
     # post-#1384 (per-arm-class smoke-coverage clause), 67,900 — measured
     # 67,472 B post-#1363, 67,400 — measured 66,574 B post-#1349,
     # 66,300 — measured 65,548 B post-#1311)
-    "experiment-implementer.md": 74_500,
-    # measured 66,921 B post-#1416 (Pre-Launch step 9 foreign-tenant
-    # memory.used read — plan-mandated growth; cap = measured + ~0.6 KB.
-    # Prior: 66,500 — measured 65,540 B post-#1081 r2 (D3
-    # crash-fix-relaunch addendum: disposition-conditional resume-glob
-    # confirm), 65,500 — measured 62,672 B)
-    "experimenter.md": 67_500,
+    "experiment-implementer.md": 80_500,
+    # measured 79,611 B post-#1720 (§ Local runs pre-emptive NOT-RUN escape
+    # for Step 9c-selected slow tests — mirrors implementer.md L174; ~500 B
+    # growth; cap = measured + ~0.9 KB. Prior: 79_500 —
+    # measured 74,867 B post-#1702 (Responsibility 2 --env-pin composition
+    # sub-bullet threading --env-pin KEY=VALUE on --workload-cmd launches,
+    # #1669 channel merge + #1586 wedge-failover WandB incident — plan-
+    # mandated growth on top of #1698; cap = measured + ~0.53 KB. Prior:
+    # 74,400 — measured 73,872 B post-#1698 (Contract scope H2 — the
+    # already-bootstrapped-pod 60s budget + fresh-provision refusal;
+    # fence-field derivation recipe — gcloud maxRunDuration + RunPod
+    # audit-cron ttl_days disclosure — with poller_timeout= separated
+    # from fence= in the epm:run-launched marker template; #1689 R8
+    # launch-path fixes 3 + 4), 67,500 — measured 66,921 B post-#1416
+    # (Pre-Launch step 9 foreign-tenant memory.used read), 66,500 —
+    # measured 65,540 B post-#1081 r2 (D3 crash-fix-relaunch addendum:
+    # disposition-conditional resume-glob confirm), 65,500 — measured
+    # 62,672 B)
+    "experimenter.md": 75_400,
     # measured 49,740 B post-#1115 (read-hygiene context-budget section —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
     # measured 48,197 B post-#1102)
@@ -12474,6 +12657,72 @@ def check_skill_bang_backtick(*, claude_dir: Path | None = None) -> list[str]:
     return errors
 
 
+# ── --check-agents-note-argv-verdict (#1743/#1785) ───────────────────────────
+# Both banned-pattern strings are built by FRAGMENT CONCATENATION so this
+# module's own source never carries the exact matched literal — a future
+# `grep scripts/` sweep for either pattern stays clean (the same self-match
+# avoidance the guard hooks use).
+_NOTE_ARGV_VERDICT_P1 = 'note "$(' + "cat"  # the #1743 acceptance-grep pattern
+_NOTE_ARGV_VERDICT_P2 = "--note " + '"$('  # the #1743 reviewer's broader variant
+
+
+def check_agents_note_argv_verdict(*, agents_dir: Path | None = None) -> list[str]:
+    """Walk every ``*.md`` under ``.claude/agents/`` and FAIL on any line
+    prescribing an argv-prose ``--note`` verdict/marker post opened as a
+    command substitution — the pattern task #1743 (merged 99af2fbb0d)
+    banned from agent specs and rewrote to the ``post-marker --file``
+    channel; #1785 pins that acceptance grep as this standing check.
+
+    Two literal substrings are flagged (built by fragment concatenation
+    above so this module's own source never carries either matched
+    literal): P1 — the #1743 acceptance-grep pattern (a note flag whose
+    body opens as a substitution around ``cat``); P2 — the #1743
+    reviewer's broader variant (any note flag opening directly into a
+    command substitution). Rationale (the #1722/#1756 incident family): a
+    command substitution nested inside an already-double-quoted note
+    argument collapses backslash-escaped inner quotes (git reads them
+    literal, silently yielding empty output and a blank field in the
+    durable marker), and the PreToolUse guards scan the whole Bash argv —
+    heredoc bodies included — so a spec PRESCRIBING the argv shape steers
+    every future agent into the very block the ``--file`` channel exists
+    to avoid.
+
+    Deliberately NOT matched — do not "fix" this check into flagging it:
+    the sanctioned variable form (resolve every command substitution into
+    a shell variable FIRST, then pass the variable as the note argument)
+    has no substitution opener adjacent to the note token, so it passes
+    by construction.
+
+    Plain substring match; no allowlist and no comment/fence skipping —
+    agent specs are prose, and the #1743 r2 precedent is to REWORD a line
+    that would match (a warning can describe the ban without carrying the
+    literal).
+
+    ``agents_dir`` is an override hook for unit tests; production callers
+    pass None and the function walks the canonical
+    ``<repo_root>/.claude/agents`` tree. Bundled into the no-flags default
+    run (same policy as ``check_piped_git_push``).
+    """
+    root = agents_dir if agents_dir is not None else _REPO_ROOT / ".claude" / "agents"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for md in sorted(root.rglob("*.md")):
+        if not md.is_file():
+            continue
+        lines = md.read_text(encoding="utf-8").splitlines()
+        for lineno, line in enumerate(lines, start=1):
+            if _NOTE_ARGV_VERDICT_P1 not in line and _NOTE_ARGV_VERDICT_P2 not in line:
+                continue
+            rel = md.relative_to(_REPO_ROOT) if agents_dir is None else md
+            errors.append(
+                f"{rel}:{lineno}: agent spec prescribes an argv-prose --note "
+                f"verdict/marker post (the pattern #1743 banned; use the "
+                f"--file channel)"
+            )
+    return errors
+
+
 def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispatch ladder; one branch per check flag, extracting it would just relocate the ladder
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -12843,6 +13092,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "#739) indexes exactly the set of .claude/rules/*.md files — a rule "
         "with no index row would re-open the #722 plan-time load-timing gap. "
         "Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-inline-round-duty-mirror",
+        action="store_true",
+        help="Verify the three 'Inline estimator-validity + record-integrity "
+        "duties' anchor sentences are mirrored byte-identically between "
+        "CLAUDE.md § 'User-chat inline free analysis' and "
+        ".claude/skills/issue/SKILL.md Step 9a-ter (#1701). Two-part "
+        "invariant: (a) each anchor prefix appears exactly once in each "
+        "file; (b) the full anchor sentence is byte-identical across the "
+        "two files. Bundled into the no-flags default run.",
     )
     parser.add_argument(
         "--check-rule-frontmatter-parses",
@@ -13248,6 +13508,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "2026-07-10). '$!' shell-pid prose is exempt. No waiver: reword "
         "instead. Bundled into the no-flags default run.",
     )
+    parser.add_argument(
+        "--check-agents-note-argv-verdict",
+        action="store_true",
+        help="FAIL on any .claude/agents/**/*.md line prescribing an "
+        "argv-prose --note verdict/marker post opened as a command "
+        "substitution — the pattern #1743 banned and rewrote to the "
+        "post-marker --file channel (#1722/#1756 argv-substitution "
+        "incident family; pinned by #1785). The sanctioned "
+        "resolve-into-a-shell-variable-first form never matches. No "
+        "waiver: reword instead (the #1743 r2 precedent). Bundled into "
+        "the no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     if args.regen_hf_routing_snapshot:
@@ -13308,6 +13580,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_no_repo_root_worktree_revert
         or args.check_gate_ids_unique
         or args.check_lessons_index
+        or args.check_inline_round_duty_mirror
         or args.check_rule_frontmatter_parses
         or args.check_compute_shape_review_lens
         or args.check_long_loop_restartability_review_lens
@@ -13337,6 +13610,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_marker_scalar_integrity
         or args.check_poller_marker_consumers
         or args.check_skill_bang_backtick
+        or args.check_agents_note_argv_verdict
     )
 
     errors: list[str] = []
@@ -13431,6 +13705,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_gate_ids_unique(workflow))
     if args.check_lessons_index or no_flags:
         errors.extend(check_lessons_index())
+    if args.check_inline_round_duty_mirror or no_flags:
+        errors.extend(check_inline_round_duty_mirror())
     if args.check_rule_frontmatter_parses or no_flags:
         errors.extend(check_rule_frontmatter_parses())
     if args.check_agent_spec_size or no_flags:
@@ -13485,6 +13761,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_asw_docstring_pass_count())
     if args.check_skill_bang_backtick or no_flags:
         errors.extend(check_skill_bang_backtick())
+    if args.check_agents_note_argv_verdict or no_flags:
+        errors.extend(check_agents_note_argv_verdict())
 
     if errors:
         for err in errors:

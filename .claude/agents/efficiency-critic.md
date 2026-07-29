@@ -227,13 +227,21 @@ mechanical-contract, never stripped by the orchestrator's Step 5c-bis).
    (c) HF `model.generate()` where vLLM applies; (d) per-row
    compression/serialization/upload inside the inner loop when it dominates row
    wall-time (#813).
-8. **Long-loop restartability (Step 3.6).** A loop over independent units whose
-   projected wall exceeds ~1h MUST persist each completed unit durably (atomic
-   append / per-unit file + sentinel, NOT in-memory accumulate-and-write-at-end) AND
-   skip completed units on resume, keyed on every output-affecting regime key.
-   Either missing with no plan-stated justification → Major `substantive` (#823:
-   ~20h of serial ridge fits forfeited on restart across 5 PASSed rounds). Unverifiable
-   in an imported helper → CONCERNS, persisted via `task.py raise-concern`.
+8. **Long-loop restartability + progress-line liveness (Step 3.6).** A loop
+   over independent units that trips EITHER trigger — (T1) projected wall
+   > ~1h, OR (T2) unit count > ~50 (readable straight off the diff, no
+   sizing estimate needed) — MUST (a) persist each completed unit durably
+   (atomic append / per-unit file + sentinel, NOT in-memory
+   accumulate-and-write-at-end), (b) skip completed units on resume keyed
+   on every output-affecting regime key, AND (c) emit one stdout line per
+   completed unit carrying at minimum the unit index/total, a stable unit
+   key, and elapsed seconds (canonical shape `[<phase>] unit k/N <key>
+   elapsed=<s>s`, flushed). Any of the three missing with no plan-stated
+   justification → Major `substantive` (#823: ~20h of serial ridge fits
+   forfeited on restart across 5 PASSed rounds; #1689: 5 h 14 m at 0% GPU
+   with zero per-unit output after `[phase=fit_ladder]`, 252-unit loop
+   accumulated one in-memory dict). Unverifiable in an imported helper →
+   CONCERNS, persisted via `task.py raise-concern`.
 
 **IMPLEMENTATION-MODE verdict + tags.** PASS / CONCERNS / FAIL, with the blocker
 tags `compute-shape-mismatch` / `hollow-verification-gate` / `substantive` (all

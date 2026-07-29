@@ -1670,20 +1670,42 @@ markers:
           same dispatcher and subprocess shape end-to-end, AND the
           cell-subset parameterization threads through EVERY phase the
           dispatcher executes (train, eval enumeration, anchor/analyze
-          tolerance). A subset honored by the train loop only, with a
-          downstream phase re-enumerating the full registered grid, is
-          FAIL_NO_CANARY (incident #546 round 1, 2026-06-10: PASS_UNIFIED
-          train + full-grid cross-eval → HF 404 on never-trained
-          adapters; the smoke could never pass by construction).
-          Non-cell smoke axes (questions/rows/steps/draws) sized below a
-          downstream phase's minimum-N assert are likewise FAIL_NO_CANARY
-          — the smoke crashes by construction (incident #1315 r4); the
-          notes: line names the floor per sliced axis.
+          tolerance), AND every planned arm's per-arm-resolution row
+          reads REAL or N/A, AND the Axis 1 import-resolution leg passed
+          on the REAL branch. A subset honored by the train loop only,
+          with a downstream phase re-enumerating the full registered
+          grid, is FAIL_NO_CANARY (incident #546 round 1, 2026-06-10:
+          PASS_UNIFIED train + full-grid cross-eval → HF 404 on
+          never-trained adapters; the smoke could never pass by
+          construction). Non-cell smoke axes (questions/rows/steps/draws)
+          sized below a downstream phase's minimum-N assert are likewise
+          FAIL_NO_CANARY — the smoke crashes by construction (incident
+          #1315 r4); the notes: line names the floor per sliced axis.
+          The notes: MUST also carry an `import-resolution: <cmd>` line
+          (Axis 1, experiment-implementer.md item 5) and a
+          `per-arm-resolution:` sub-block with one row per plan-named
+          arm (Axis 2); a `kind: infra` plan whose §4 names no arms
+          writes `per-arm-resolution: N/A — no plan-named arms`.
         `verdict: PASS_CANARY canary_cell=<cell_id>` — paths diverge
           (e.g., smoke uses in-process train, sweep uses subprocess
           wrapper) AND the plan §4 Design section justified the
           divergence in two sentences AND named the canary cell that
-          exercises the sweep path during smoke.
+          exercises the sweep path during smoke. Same per-arm invariant
+          as PASS_UNIFIED — every per-arm row reads REAL or N/A; a
+          FALLBACK row under PASS_CANARY is a marker-shape violation.
+        `verdict: PASS_PARTIAL arms_stubbed=<comma-list>` — phase
+          coverage holds AND the Axis 1 import-resolution leg passed
+          BUT ≥1 planned arm's per-arm-resolution row reads FALLBACK
+          (a stub / bias-refit / early-return in place of the arm's
+          production computation path). The `arms_stubbed` set MUST
+          equal the names of every FALLBACK-rowed arm verbatim. SKILL.md
+          Step 6d.0 gate (inline gates id=10) refuses to dispatch
+          experimenter on PASS_PARTIAL — bounces to planner to either
+          resolve the stubbed arms in the diff or re-authorize the stubs
+          in §4 Design (canary-like exception, v1.1). Closes the #1689
+          rounds-2/3/4 false-pass class where literal fallback stubs
+          satisfied phase coverage but delivered arms of the wrong
+          science.
         `verdict: FAIL_NO_CANARY` — paths diverge without the §4
           justification + canary; implementer also emits a
           `workflow-fix-candidate v1` suggesting re-architect toward
@@ -3294,7 +3316,7 @@ workflow_fix_on_bug:
   spawn_command: "uv run python scripts/spawn_session.py spawn-issue --issue <N> --auto"
   orchestrator_actions:
     - "If running under the recursion guard (workflow_fix_target Provenance line OR EPM_WORKFLOW_FIX_SESSION=1): LOG epm:workflow-fix-candidate v1 (note: parked — EPM_WORKFLOW_FIX_SESSION), notify, STOP (do NOT file/spawn)"
-    - "Grep the workflow surface for the pattern; populate target_file (comma-separated list or glob when uniform); record the grep cmd + hit count for the body's verified-at-filing: line — BINDING (#1307): per-target hits for each named target_file (a presence claim with a 0-hit named target is a mis-target: re-grep repo-wide + correct target_file first); a nonexistence claim records a repo-wide relocation grep; an ABSENCE claim about a text-matching guard (substring list / regex classifier / transient-error predicate) additionally needs a semantic probe (run the predicate against the claimed text and/or grep fragments/substrings of it repo-wide) + a landed-fix history check (git log --oneline --since='7 days ago' -- <target_file>) — a verbatim-literal 0-hit grep alone is not absence evidence (#1386/#1360); a presence hit binds only after its surrounding lines are READ (context consistency, #1383) — a hit whose context already implements the proposed change is a landed fix → dedup/archive, never a new filing (#1330/#1309); every hex token cited as a commit is rev-parse-verified at compose time — a non-resolving token is cited as a transcript/session reference, never a commit (#1467); an artifact-state absence claim (tag/field absent from a cited task's artifact read as 'dropped at filing') binds only after the task folder's git history shows the value was never applied — git log --follow --format='%h %s' -- <body.md> at compose time (path via task.py find <M>; --follow traces the status git mvs; task.py commits are self-describing: create/add-tag/remove-tag) — a remove-tag commit explaining the absence, or a create-commit diff carrying the value, refutes the drop claim (#1497)"
+    - "Grep the workflow surface for the pattern; populate target_file (comma-separated list or glob when uniform); record the grep cmd + hit count for the body's verified-at-filing: line — BINDING (#1307): per-target hits for each named target_file (a presence claim with a 0-hit named target is a mis-target: re-grep repo-wide + correct target_file first); a nonexistence claim records a repo-wide relocation grep; an ABSENCE claim about a text-matching guard (substring list / regex classifier / transient-error predicate) additionally needs a semantic probe (run the predicate against the claimed text and/or grep fragments/substrings of it repo-wide) + a landed-fix history check (git log --oneline --since='7 days ago' -- <target_file>) — a verbatim-literal 0-hit grep alone is not absence evidence (#1386/#1360); a presence hit binds only after its surrounding lines are READ (context consistency, #1383) — a hit whose context already implements the proposed change is a landed fix → dedup/archive, never a new filing (#1330/#1309); every hex token cited as a commit is rev-parse-verified at compose time — a non-resolving token is cited as a transcript/session reference, never a commit (#1467); an artifact-state absence claim (tag/field absent from a cited task's artifact read as 'dropped at filing') binds only after the task folder's git history shows the value was never applied — git log --follow --format='%h %s' -- <body.md> at compose time (path via task.py find <M>; --follow traces the status git mvs; task.py commits are self-describing: create/add-tag/remove-tag) — a remove-tag commit explaining the absence, or a create-commit diff carrying the value, refutes the drop claim (#1497); a \"no marker posted / no record exists\" claim on task #M's events is verified at compose time with uv run python scripts/task.py view <M> --json | jq '.events' (or a kind+sentinel filter) — a found marker refutes the claim, the real defect is a triage/read-back miss (#1667, clause (f)); before naming target_file, trace the failing behavior ONE call-hop past the observed symptom (grep -rn '<wrong-value-field>' src/ scripts/) to name the site that CONSTRUCTS the wrong value, not the caller that consumes/propagates it — record both sites, re-run the dedup fingerprint against the corrected target (#1669, clause (g)); a \"candidate/park/record was dropped or lost\" claim binds only after enumerating the downstream tool's documented suppression predicates (grep -n 'suppress\\|skip\\|dedup\\|routed' <tool>) and checking each against the specific record — a correctly-suppressed record refutes the claim, the real gap is observability, not \"record lost\" (#1680, clause (h))"
     - "Compute fp = task_workflow.wf_fix_fingerprint(proposed_change, bug_observed)"
     - "DEDUP: if task_workflow.is_open_workflow_fix_task(target_file, fp) returns an id, log epm:workflow-fix-candidate v1 (note: deduped against #M), continue — do NOT double-file (a same-file DIFFERENT-fp candidate is NOT a dup, file it)"
     - "Post epm:workflow-fix-candidate v1 to the PARENT task's events.jsonl (or .claude/cache/workflow-fix-events.jsonl if no task) with candidate fields + routing decision inline"

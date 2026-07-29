@@ -413,7 +413,12 @@ The helper (a) builds the canonical string via
 ONLY place the format lives — (b) writes a self-report file at
 `~/.eps-autonomous/issue-progress/<N>.json` (atomic temp+rename) with the
 canonical text + UTC `ts`, and (c) PRINTS the canonical string to stdout.
-Capture that stdout and pass it verbatim to `mcp__happy__change_title`.
+Capture that stdout and pass it verbatim to `mcp__happy__change_title` —
+a deferred MCP tool, NOT a skill: load it via
+`ToolSearch("select:mcp__happy__change_title")`, then call with
+`{"title": <captured string>}` (`title` is REQUIRED — an empty `{}` is an
+MCP -32602 error, and `Skill(happy:change_title)` is "Unknown skill";
+both misfires occurred 2026-07-27).
 The 5-minute `session_summarize.py` cron reads the self-report first and
 reuses its `text` as the cache `summary` (`source="self"`) when fresh,
 skipping the Haiku call entirely — so the dashboard's progress column is
@@ -1195,7 +1200,7 @@ or empty body.** These are recoverable; do NOT exit. Run Step 0b instead.
 **Worktree spec-freshness BEFORE arming (sessions whose cwd is an issue
 worktree).** A worktree pins the entire workflow surface at branch-fork
 time, so the skill/cron prescriptions you are reading may be stale —
-run the Step 5a spec-freshness sync (surgical `git checkout main -- `
+run the Step 5a spec-freshness sync (surgical `git checkout origin/main -- `
 of the workflow-surface specs, with the branch-side-feature-edit guard)
 FIRST, and resolve workflow-helper scripts (`verify_task_body.py`,
 `post_step_completed.py`, ...) from the MAIN checkout (`"$REPO_ROOT"/scripts/...`),
@@ -1610,6 +1615,50 @@ Invoke the `adversarial-planner` skill with the task body + clarifier
 output as the task. The skill runs planner -> fact-checker -> critic
 -> revise internally.
 
+**Minimum plan-review floor (binds even on `kind: infra` workflow-surface edits).**
+The CLAUDE.md "Every new experiment MUST go through `/adversarial-planner`" bullet
+carries a `"re-runs with different seeds, monitoring, syncing, bug fixes, or
+explicit override skip it"` carve-out; that carve-out does NOT reach `kind: infra`
+workflow-fix tasks (`wf-fix` tag OR title prefix in `WF_FIX_TITLE_PREFIXES` —
+`workflow-fix:` / `daily-fix:` — `task_workflow.is_workflow_fix_session`). Even a
+1-line prose edit runs, at minimum:
+
+1. **Persist a plan version** via `uv run python scripts/task.py new-plan-version <N>` —
+   plans are `tasks/<status>/<N>/plans/v{K}.md`, never `Write`-authored in-place
+   (a `Write`-authored plan is invisible to `verify_plan.py --issue <N>` and to
+   the dashboard). The plan may be a two-file prose edit's shape; it just has to
+   exist as a versioned artifact.
+2. **Run `verify_plan.py` and post `epm:plan-verify`** — the mechanical
+   pre-pass (seconds, no agent spawn) per `adversarial-planner` SKILL.md
+   § Phase 1.5.0. The marker records `verdict / n_fail / n_warn / failed check
+   ids / plan version`; without it there is no durable proof the pre-pass ran.
+3. **Spawn at minimum ONE Claude `critic`** (Methodology lens is the usual
+   choice on a workflow-surface edit; Alternatives is the second candidate).
+   Codex-only is not sufficient — the `code-reviewer` ensemble at Step 5
+   already runs Claude+Codex on the diff, so the plan-review stage adds
+   Claude by default; a Codex-only round can be added on top when the plan
+   is trigger-dense. #1692's single critic returned REVISE with two Must-Fix
+   findings on a same-class task; one critic is not nothing.
+
+The floor is a MINIMUM — sessions that judge the full stack proportionate
+(fact-checker + full 6-critic ensemble + consistency-checker) are unaffected.
+The floor is what stops the floor from sinking to zero.
+
+**Same-issue follow-up rounds inherit the floor** (`followups_running`, Step 9b) —
+the same three legs bind on every follow-up round's plan revision. The cheap-band
+auto-run (`0 < est_gpu_hours < 20`) does not bypass the floor.
+
+**Recorded-skip contract.** Any leg SKIPPED below the full stack (fact-checker,
+consistency-checker, additional critic lenses) is recorded in the `epm:plan`
+note with a one-line reason, in the shape #1709 used:
+
+> `"Bug-fix category (CLAUDE.md /adversarial-planner carve-out) — direct plan drafted for a 1-line SPECS widen + a 1-line pin-test update; no critic ensemble needed for a data-widen with pre-existing coverage."`
+
+The recorded reason is auditable rather than invisible. The three floor legs
+above are NEVER a recorded-skip candidate — a skip below the floor is a
+substantive bug, not an audit entry. Recording the skip is the orchestrator's
+duty (the same post that already carries `gpu_hours_total=<X>` per L1690).
+
 **Required sections in the final plan (enforced by this skill — reject
 plans missing any):**
 - Goal + hypothesis (experiments) or requirement + acceptance criteria (code changes)
@@ -1720,6 +1769,23 @@ be folded in BEFORE posting the plan as `epm:plan`. It receives:
 - The `epm:plan` and `epm:results` markers from those related tasks
   (read via `task.py latest-marker` + `task.py view --json`)
 
+**Skipped branch (parentless non-experiment, added #1732).** When the
+invoking task is `kind: infra | batch | survey` with no `parent_id`
+AND no unrun `epm:followup-scope v1` marker on this issue, the
+`consistency-checker` spawn is SKIPPED entirely (no experimental recipe
+for the five checks below to bind to; see
+`.claude/agents/consistency-checker.md` § Rules). The orchestrator
+posts the marker VM-side —
+`uv run python scripts/task.py post-marker <N> epm:consistency --note '<PASS-skipped body>'` —
+where the note body is an `<!-- epm:consistency v1 -->` block with
+`**Verdict: PASS**` whose first line reads
+`Skipped: kind:<X>, no parent experiment` (X = the actual `kind`:
+`infra`, `batch`, or `survey`) and whose rows read
+`N/A — <reason>`. The plan-approval gate then proceeds as if PASS.
+`kind: experiment` with no parent runs the checker against the standard
+baseline (Qwen-2.5-7B + standard eval suite) as today; same-issue
+follow-ups still diff against the issue's own prior run.
+
 The consistency checker verifies:
 
 | Check | Violation action |
@@ -1738,6 +1804,26 @@ WARN, append warnings to the `epm:plan` event note. On PASS, proceed
 normally. The `plan_pending` flip below still happens only AFTER the
 checker's FINAL verdict is folded in (adversarial-planner SKILL.md
 § Park order) — never on its interim ack.
+
+**Edit-locus WARN → merge-hold record (#1757).** When the WARN body names a
+same-file EDIT-LOCUS conflict with a live sibling task at status `reviewing`
+or later, ALSO post one `epm:progress` note per named sibling (idempotent
+per (sibling, path) — grep the events file first, the
+`followup-parked-by-cap` convention; reuse `epm:progress`, never a new
+marker kind):
+
+```bash
+uv run python scripts/task.py post-marker <N> epm:progress \
+  --note 'merge-hold-candidate sibling=<M> path=<file> source=consistency-warn — Step 10d Guard 5 orders this task landing behind sibling #<M> (bounded, one 45-min gate cycle) and pre-resolves the predicted conflict in-worktree (#1757)'
+```
+
+Auto-continue — never a gate, never blocks planning; a WARN naming no live
+sibling (or a sibling below `reviewing`) records nothing. The trigger is
+mechanical: the WARN body must BOTH name a concrete sibling task id at
+status `reviewing` or later AND name a same-file/same-region edit conflict
+(the checker's own vocabulary: "edit locus", "same file", "same
+block/region", a TEXTUAL/EDIT-LOCUS conflict finding). A generic WARN (seed
+drift, baseline caveat) records nothing.
 
 Then post the plan as `epm:plan v1` with the consistency results
 appended.
@@ -2011,17 +2097,50 @@ absolute path once with the #506-safe
 `REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")`
 recipe (as above) — NOT `git rev-parse --show-toplevel`, which from a
 worktree cwd returns the worktree root and doubles the path — and reuse
-`$WORKTREE` / `$REPO_ROOT` in every subsequent command.
+`$WORKTREE` / `$REPO_ROOT` in every subsequent command. Corollary: this
+issue's experiment files (scripts, configs, plan-referenced code) exist
+ONLY in the worktree until Step 10d merges — a repo-root-relative
+read/exec of `scripts/issue<N>_*.py` misses them (~5 failed tool calls in
+one #1739 session, 2026-07-28); always prefix with `$WORKTREE/`.
 
-**Open the draft PR only if the branch is ahead of `main`.** `gh pr
-create` errors with `No commits between main and issue-<N>` when the
-branch has no commits yet (the common case before the implementer has
-run). Pre-check first:
+**Open the draft PR only if the branch is ahead of fetched `origin/main`.** `gh pr create` errors with `No commits between main and issue-<N>` when the branch has no commits yet (the common case before the implementer has run). Pre-check first (bounded fetch + `origin/main`-anchored aheadness):
 ```bash
-if [ "$(git -C "$REPO_ROOT" rev-list --count main..issue-<N>)" -gt 0 ]; then
-  gh pr create --draft --head issue-<N> --body "Closes task #<N>."
+# Base ref is FETCHED origin/main — new_worktree.sh cuts branches from
+# refs/remotes/origin/main, and the repo root's local `main` routinely lags it.
+# NEVER pipe this block — guard_piped_git_push.sh blocks a piped `gh pr create`
+# (CLAUDE.md § Concurrent repo-root committers): a pipe masks the exit code.
+timeout --kill-after=30s 120s git -C "$REPO_ROOT" fetch origin main --quiet || true
+# Root-divergence probe (#1725, defense-in-depth): the shared repo root's
+# local `main` and fetched `origin/main` are usually one strict-ancestor
+# of the other (either lagging or ahead). Mutually non-ancestral = genuine
+# divergence — a subsequent root-side call (git push origin main, another
+# site's sync_repo_root.py) will need to reconcile it. Handle it proactively
+# via the sanctioned single-flight helper; still-diverged after one sync is
+# surfaced (never stepped over silently). 2>/dev/null silences the exit-128
+# stderr on a missing ref (transient fetch failure at L2022, fresh clone):
+# both --is-ancestor legs then return "not ancestor" and the probe fires a
+# no-op sync via the idempotent single-flight helper. The downstream
+# rev-list --count origin/main..issue-<N> pre-check below is unaffected
+# either way — it reads origin/main directly, not local main.
+if ! git -C "$REPO_ROOT" merge-base --is-ancestor origin/main main 2>/dev/null \
+   && ! git -C "$REPO_ROOT" merge-base --is-ancestor main origin/main 2>/dev/null; then
+  echo "[step4a] shared root diverged (local main and origin/main mutually non-ancestral) — running sanctioned sync"
+  uv run python "$REPO_ROOT/scripts/sync_repo_root.py" || \
+    echo "[step4a] sync_repo_root.py exited non-zero; proceeding — the pre-check below reads origin/main directly and is unaffected"
+  # Re-probe once: sync exit 0 includes in-flight state (docstring: single-flight
+  # returns 0 on concurrent caller), so confirm convergence via the same
+  # ancestry test rather than the exit code.
+  if ! git -C "$REPO_ROOT" merge-base --is-ancestor origin/main main 2>/dev/null \
+     && ! git -C "$REPO_ROOT" merge-base --is-ancestor main origin/main 2>/dev/null; then
+    echo "[step4a] shared root STILL diverged after one sync — proceeding (downstream sanctioned recoveries are the fallback; do not block Step 4)"
+  fi
+fi
+if [ "$(git -C "$REPO_ROOT" rev-list --count origin/main..issue-<N>)" -gt 0 ]; then
+  gh pr create --draft --head issue-<N> \
+    --title "issue-<N>: <task title>" \
+    --body "Closes task #<N>."
 else
-  echo "issue-<N> has no commits ahead of main yet; skipping draft PR (open it after the implementer commits)."
+  echo "issue-<N> has no commits ahead of origin/main yet; skipping draft PR (open it after the implementer commits)."
 fi
 ```
 
@@ -2116,12 +2235,18 @@ Brief passed to the implementer:
   persisted concerns, not (d) prose", so round-N briefs surface the
   duty without the implementer having to recall its agent spec.
 - The brief MUST also carry the gate-scope verification duty (#1288):
-  before posting the report marker, the implementer enumerates the Step
+  before posting the report marker, the implementer **commits their edits
+  first** — the selector diffs COMMITTED state against fetched
+  `origin/main`, so uncommitted edits silently degrade to the
+  invariant-only set (#1717 defect (d)) — then enumerates the Step
   9c selection from the worktree — `uv run python
-  scripts/select_step9c_tests.py --json`, the DEFAULT invocation (the
-  base defaults to FETCHED `origin/main` per #1289; `--base main` exists
-  only to deliberately diff against the local ref, per Step 9c step 1a —
-  never for this duty) — pin-sweeps the enumerated test files for every
+  scripts/select_step9c_tests.py --json 2>/dev/null` (stderr routed off
+  stdout so the JSON stays parseable — the informational NOTE / WARN /
+  sizing lines go to stderr BY DESIGN; #1717 defect (b)), the DEFAULT
+  invocation (the base defaults to FETCHED `origin/main` per #1289;
+  `--base main` exists only to deliberately diff against the local ref,
+  per Step 9c step 1a — never for this duty) — pin-sweeps the enumerated
+  test files for every
   literal / command fragment / symbol the diff changed or deleted, and
   runs the diff-linked + pin-hit subset locally, deferring only the
   invariant-only remainder to the gate (which remains the backstop),
@@ -2130,7 +2255,7 @@ Brief passed to the implementer:
   (`selector-universe` | `repo-wide` — the REALIZED universe; #1651)
   — never a count-only or glob-family summary (#1494;
   >20 files → fenced block under the Gate-scope line).
-  Belt-and-suspenders on `implementer.md` § After Implementation item 1,
+  Belt-and-suspenders on `implementer.md` § After Implementation items 1 + 1a,
   so round briefs surface the duty without the implementer having to
   recall its agent spec (the #509 precedent).
 - **Marker-version discipline — a brief NEVER instructs a literal marker
@@ -2227,57 +2352,139 @@ workflow-surface fix never inherits it — so subagents silently run stale
 specs for the worktree's lifetime (incident #557 r2, 2026-06-10: a
 pre-hardening `codex-code-reviewer.md` copy re-enabled the retired
 background-dispatch pattern and orphaned the running Codex helper).
-Before dispatching, sync the worktree's workflow surface from local
-`main` (the canonical commit target on this VM — fresher than
-`origin/main`, no fetch needed; the check self-no-ops when the session
-already runs on `main`):
+Before dispatching, sync the worktree's workflow surface from FETCHED
+`origin/main` (local `main` routinely lags origin on the shared root
+under fleet load — #1724 synced regressed spec bytes from a lagging
+local `main`; #1747 migrated the source ref, mirroring the landed
+Step 10d re-sync recipe. The sync is worktree-only: it skips
+explicitly when the session already runs on `main`):
 
 ```bash
 # Step 5a WANTS the WORKTREE root (that is where the spec-freshness sync writes)
 # — NOT the #506 path-doubling bug; do NOT change to --git-common-dir here. The
-# self-no-op case (session already on main) is why show-toplevel is correct.
+# on-main skip case (session already on main) is why show-toplevel is correct.
 WT=$(git rev-parse --show-toplevel)
+# On-main skip (#1747): with FETCHED origin/main as the sync source the old
+# "diff against local main is vacuous on a main checkout" self-no-op is GONE —
+# a repo-root session whose local main lags origin would check out origin/main
+# content into the SHARED root working tree and commit on main (a
+# concurrent-committer hazard, CLAUDE.md § Concurrent repo-root committers).
+# Skip the ENTIRE sync body — pass-1 dirty-family scan included (its MB..HEAD
+# output on an ahead-of-origin root would print spurious dirty-family
+# warnings) — when the session's branch is main.
+if [ "$(git -C "$WT" rev-parse --abbrev-ref HEAD)" = "main" ]; then
+  echo "[step5a] session on main (repo root) — spec-freshness sync is worktree-only; skipping"
+else
 # Lint/guard family rides the sync (#1560): the specs synced below are budget-
 # checked by workflow_lint.py constants, enforced by .claude/hooks/, and pinned
-# by the test_workflow_lint*/test_guard_lessons_edit pin tests — syncing
+# by the test_workflow_lint*/test_guard_* pin tests — syncing
 # specs without their enforcing family creates the #1489/#1482/#1417 vintage
 # skew. `:(glob)` is a git pathspec (never shell-expands: no path starts with
-# ":(glob)"), so `git checkout main --` matches main-NEW pin tests too. The
+# ":(glob)"), so `git checkout origin/main --` matches main-NEW pin tests too. The
 # per-file branch-side-edit guard's skip grain is PER-ITEM: a branch editing
 # ONE pin test skips the whole `:(glob)` family entry (fail-safe — status-quo
 # staleness for those files, never a clobber).
-SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py :(glob)tests/test_workflow_lint*.py"
-MB=$(git -C "$WT" merge-base HEAD main)
-SAFE_SPECS=""
+# Step 5a family-atomic sync (#1714 — supersedes #1560's per-item skip
+# for coupled specs, while preserving the fail-safe direction: any dirty
+# member widens the skip to the whole family, never narrows it into a
+# clobber; #535).
+#
+# 3 coupled families exist in SPECS:
+#   FAMILY_workflow: .claude/workflow.yaml <-> .claude/skills/markers.md
+#     (markers.md's marker-kinds + active-statuses tables are GENERATED
+#     from workflow.yaml via `workflow_lint.py --emit-tables`; syncing
+#     one without the other creates a stale-derived tree — the 0e2c3b21
+#     incident, 2026-07-26)
+#   FAMILY_lint: scripts/workflow_lint.py <-> :(glob)tests/test_workflow_lint*.py
+#     plus tests/test_workflow_yaml.py and tests/test_autonomous_session_watch.py
+#     (pin tests import symbols from workflow_lint.py; syncing new pin
+#     tests against a stale linter is a collection ImportError — the
+#     2de5253e incident, 2026-07-26)
+#   FAMILY_guard: .claude/hooks <-> :(glob)tests/test_guard_*.py
+#                                <-> tests/test_guard_lessons_edit.py
+#     (guard tests exercise the hook implementations; syncing tests
+#     against stale hooks fails behaviorally)
+#
+# Everything else in SPECS is a singleton (its own family, no coupling):
+# .claude/agents, .claude/rules, CLAUDE.md.
+declare -A FAMILY_OF
+FAMILY_OF[".claude/workflow.yaml"]="workflow"
+FAMILY_OF[".claude/skills"]="workflow"    # contains markers.md, the derived table target
+FAMILY_OF["tests/test_workflow_yaml.py"]="workflow"    # imports render_*_table from workflow_lint AND reads workflow.yaml data via load_workflow_yaml — a workflow-data behavioral test
+FAMILY_OF["scripts/workflow_lint.py"]="lint"
+FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"
+FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"    # test_codex_outage_docstring_pass_count_lint_stays_green imports check_asw_docstring_pass_count from workflow_lint
+FAMILY_OF[".claude/hooks"]="guard"
+FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
+FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
+# Singletons: .claude/agents, .claude/rules, CLAUDE.md — each is its
+# own family key (set below in the pass-1 loop by defaulting to its own path).
+
+SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py"
+# Bounded freshness fetch (#1747 — the #1289/#1714 shape): local main can lag
+# origin on the shared root; a failed fetch degrades to last-fetched
+# origin/main — never a wedge, never a fallback to local main.
+timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet || true
+MB=$(git -C "$WT" merge-base HEAD origin/main)
+
+# Pass 1: detect dirty family keys. A family is DIRTY if ANY member has
+# branch-side commits (subject-scoped exclusion for prior spec-freshness
+# commits, as in #1560).
+declare -A DIRTY_FAMILIES
 for f in $SPECS; do
   # Branch-side feature edits = commits since merge-base touching $f,
   # EXCLUDING prior spec-freshness sync commits (which legitimately
   # touch spec paths — without the exclusion, the first sync's own
   # commit would poison every later freshness check on the branch).
+  # The exclusion matches the prescribed sync-subject SHAPE, not the
+  # bare "spec-freshness" token, so a deliverable commit whose subject
+  # names the mechanism is never misread as a sync commit (#1789).
   bs_commits=$(git -C "$WT" log --format='%H %s' "$MB"..HEAD -- "$f" \
-    | awk 'index($0, "spec-freshness") == 0')
-  if [ -z "$bs_commits" ]; then
-    SAFE_SPECS="$SAFE_SPECS $f"
-  else
+    | awk 'index($0, "sync workflow-surface specs from") == 0')
+  if [ -n "$bs_commits" ]; then
+    fam="${FAMILY_OF[$f]:-$f}"    # default: singleton family = own path
+    DIRTY_FAMILIES[$fam]=1
     # Print the offending commits so the orchestrator can decide whether
     # to reconcile (cherry-pick main's drift on top of the branch edits)
     # or whether the branch-side touch is a global revert/port that has
     # ALREADY landed on main — in which case the skip is a false alarm
     # and the orchestrator can drop those files from the skip set by
-    # hand (e.g. `git -C "$WT" checkout main -- .claude/agents/*.md`
+    # hand (e.g. `git -C "$WT" checkout origin/main -- .claude/agents/*.md`
     # after confirming the branch-side commit's content is a subset of
     # main's current state). Without these commit titles printed, the
     # operator cannot tell a legitimate branch deliverable (#535
     # incident) from a stale port/revert that needs no protection.
-    echo "spec-freshness: $f carries branch-side feature edits — skipping blind sync; reconcile manually."
+    echo "spec-freshness: $f carries branch-side feature edits — marking family '$fam' dirty; skipping blind sync for the whole family; reconcile manually."
     echo "  branch-side commits:"
     echo "$bs_commits" | sed 's/^/    /'
   fi
 done
-if [ -n "$SAFE_SPECS" ] && ! git -C "$WT" diff --quiet main -- $SAFE_SPECS; then
-  git -C "$WT" checkout main -- $SAFE_SPECS    # surgical refresh: workflow surface only
+
+# Pass 2: filter SAFE_SPECS to items in a NON-dirty family.
+SAFE_SPECS=""
+for f in $SPECS; do
+  fam="${FAMILY_OF[$f]:-$f}"
+  if [ -z "${DIRTY_FAMILIES[$fam]}" ]; then
+    SAFE_SPECS="$SAFE_SPECS $f"
+  fi
+  # else: skipped by family transitivity (message already printed in pass 1
+  # for the offending member; skipped-siblings are covered by the family
+  # membership declared above)
+done
+
+if [ -n "$SAFE_SPECS" ] && ! git -C "$WT" diff --quiet origin/main -- $SAFE_SPECS; then
+  git -C "$WT" checkout origin/main -- $SAFE_SPECS    # surgical refresh: workflow surface only
   git -C "$WT" diff --quiet HEAD -- $SAFE_SPECS || \
-    git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from main (spec-freshness)" -- $SAFE_SPECS
+    git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from origin/main (spec-freshness)" -- $SAFE_SPECS
+fi
+# Observability echo (Decision 4, #1714): show the operator what changed at a
+# glance. This is NOT a gate — family-atomic skip + git checkout's own semantics
+# handle the 139-line-revert prevention (see plan §4.1 Decision 4 for the full
+# rationale).
+if [ -n "$SAFE_SPECS" ]; then
+  echo "[step5a] synced from origin/main:"
+  git -C "$WT" diff --stat HEAD^ HEAD -- $SAFE_SPECS 2>/dev/null || echo "  (no commit — no drift)"
+fi
 fi
 ```
 
@@ -2300,12 +2507,12 @@ branch-side commit titles so the orchestrator can tell a legitimate
 branch deliverable (the #535 case) from a stale port/revert whose
 content has already landed on main (in which case the orchestrator can
 safely override the skip for those specific files with a manual
-`git -C "$WT" checkout main -- <paths>`).
+`git -C "$WT" checkout origin/main -- <paths>`).
 
 **The sync scope is specs + the spec-coupled lint/guard family — do NOT
 extend it further into `scripts/`, `tests/`, or `src/`.** The family
 exception (#1560: `scripts/workflow_lint.py`, `.claude/hooks`,
-`tests/test_guard_lessons_edit.py`, `:(glob)tests/test_workflow_lint*.py`)
+`:(glob)tests/test_guard_*.py`, `:(glob)tests/test_workflow_lint*.py`)
 exists because those files execute FROM the worktree tree on four
 surfaces — the Step 10d TG legs, worktree pytest / Step 9c, the hooks'
 own-tree `workflow_lint` import, and the inline gate invoked in a
@@ -2319,7 +2526,17 @@ imports are from the low-churn `explore_persona_space.workflow` module
 residual: a synced family file ImportError-ing on that module means
 branch-era `src/explore_persona_space/workflow.py` skew (rebase onto
 origin/main, or cross-check at the repo root; module stable since
-2026-06-13). Everything ELSE keeps the original rationale: workflow-
+2026-06-13). Family atomicity (#1714): within the spec-coupled
+lint/guard family, the per-item branch-side-edit skip is transitive —
+a branch-side edit on ANY family member widens the skip to the WHOLE
+family (never narrows it). Three families are declared: workflow
+(`.claude/workflow.yaml` + `.claude/skills` where the derived
+`markers.md` and SKILL.md generated tables live), lint
+(`scripts/workflow_lint.py` + `:(glob)tests/test_workflow_lint*.py`
+plus the explicit importers `tests/test_workflow_yaml.py` and
+`tests/test_autonomous_session_watch.py`), and guard (`.claude/hooks`
++ `:(glob)tests/test_guard_*.py` + `tests/test_guard_lessons_edit.py`).
+Everything else in SPECS is a singleton (its own family). Everything ELSE keeps the original rationale: workflow-
 helper SCRIPTS are already resolved from the MAIN checkout (Step 0
 § worktree spec-freshness: `"$REPO_ROOT"/scripts/...`), and blind-
 syncing broader `tests/` is actively unsafe — main's newer workflow
@@ -2760,11 +2977,23 @@ judgment, just structural presence:
   When the blocker names `epm:smoke-architecture-check` (Step 0.55): a
   separate `epm:smoke-architecture-check` events row exists in canonical task
   state with a `verdict:` line matching `PASS_UNIFIED` | `PASS_CANARY
-  canary_cell=<id>` | `FAIL_NO_CANARY` — present + parseable → STRIP (a
-  stale-worktree false absence); absent or verdict-less → leave the FAIL in
-  place (the gate is doing its job; do NOT check the implementation marker's
-  H3s for this sub-case — they can be conforming while the separate row is
-  missing, which is exactly incident #811).
+  canary_cell=<id>` | `PASS_PARTIAL arms_stubbed=<comma-list>` |
+  `FAIL_NO_CANARY` — present + parseable → STRIP (a stale-worktree false
+  absence); absent or verdict-less → leave the FAIL in place (the gate is
+  doing its job; do NOT check the implementation marker's H3s for this
+  sub-case — they can be conforming while the separate row is missing, which
+  is exactly incident #811). **Discriminator (#1692):** the strip fires
+  ONLY when the blocker names ABSENCE (the marker is missing / verdict-less)
+  and the canonical marker is actually PRESENT with a valid verdict — the
+  blocker body then reads like "no `epm:smoke-architecture-check` events
+  row" / "marker missing" / "verdict-less". A SHAPE-VIOLATION blocker
+  (marker present, verdict parseable, but internal-shape inconsistent —
+  e.g. "PASS_UNIFIED verdict but arm foo reads FALLBACK", "per-arm-resolution
+  row missing for plan-named arm bar", "import-resolution shape unrecognized")
+  is `substantive`-adjacent: the strip does NOT fire and the FAIL stands.
+  Distinguish by the blocker body phrasing (absence vocabulary → strip
+  when marker present; verdict-vs-rows / row-missing / import-shape vocabulary
+  → leave in place).
   When the blocker names `Gate-scope check` (Step 4.6 presence): the `(c)`
   section of the highest-version `epm:results` marker in canonical task
   state carries a `Gate-scope check` line — present → STRIP (a
@@ -3581,7 +3810,30 @@ project stop landing in WandB's global default `huggingface` project
 follow-up r1 landed there silently). An inline `WANDB_PROJECT=...`
 prefix on the workload command — or the workload setting its own
 project internally — still wins (`:-` fills only unset/empty); hydra
-launches are unaffected (project comes from Hydra config).
+launches are unaffected (project comes from Hydra config). (j) **Launch
+env pins on `--workload-cmd` launches — thread `--env-pin KEY=VALUE`
+when the plan's Reproducibility Card declares one** — the `--env-pin`
+channel (`dispatch_issue.py launch --env-pin KEY=VALUE`, repeatable;
+merged in #1669) persists an env export to `spec.extra["env_pins"]` →
+the handle sidecar → every lane's workload-cmd launcher (GCE startup
+script's workload branch, SLURM custom stage, RunPod launcher), AND the
+async failover reconstructors (`backend_poll._runspec_from_gcp_handle` /
+`_runspec_from_runpod_handle`) re-export the pins onto the fresh pod,
+so a wedge-failover pod's runs land in the plan-declared destination
+instead of the generic `issue<N>` fallback (rule (i) above — incident
+#1586: a wedge-failover pod rebooted with only the generic WandB
+default and its runs landed in the wrong project). KEY is restricted to
+`backends.base.ENV_PIN_ALLOWED_KEYS` (secret KEY names are
+unrepresentable by construction); consult that frozenset for the current
+set. `--env-pin` REQUIRES a non-empty `--workload-cmd` (parse-time
+refusal, exit 2 — every renderer insertion point is a workload-cmd
+branch; a hydra launch has no pin consumer). ADOPTION (the
+`--boot-disk-gb` pattern above): launch composers pass
+`--env-pin WANDB_PROJECT=<declared project>` (and any other
+`ENV_PIN_ALLOWED_KEYS` value the plan's Repro Card declares) on every
+`--workload-cmd` launch — including relaunches after a code-fix
+round — whenever the plan declares a non-default value; a flag-less
+launch keeps today's behavior.
 SLURM custom stages are
 render-tested only as of #588 (never live-run).
 (Incident #571, 2026-06-11: auto routing sent a dispatch-script
@@ -3901,8 +4153,9 @@ Verdict routing:
 
 | `verdict` | Action |
 |---|---|
-| `PASS_UNIFIED` | Advance to Step 6d.1 — smoke IS sweep with one cell; the architecture is unified end-to-end. |
+| `PASS_UNIFIED` | Advance to Step 6d.1 — smoke IS sweep with one cell; the architecture is unified end-to-end AND every planned arm resolved REAL or N/A. |
 | `PASS_CANARY canary_cell=<id>` | Advance to Step 6d.1 — paths diverge but the plan §4 Design justifies the divergence in two sentences AND names the canary cell that exercised the sweep path during smoke. Log to chat: `divergence accepted; canary cell <id> exercised the subprocess path during smoke`. |
+| `PASS_PARTIAL arms_stubbed=<comma-list>` | **REFUSE to dispatch.** Bounce back to status:planning; re-invoke `/adversarial-planner` with pivot scope: "arms {arms_stubbed} resolved to fallback/stub in smoke — phase coverage + import-resolution passed BUT ≥1 planned arm is not exercising its production computation path; resolve them in the diff, OR re-authorize the stubs in §4 Design (canary-like exception, not yet wired)." Round counter does NOT increment (strategy pivot, mirroring `FAIL_NO_CANARY`). |
 | `FAIL_NO_CANARY` | **REFUSE to dispatch.** Bounce back to status:planning; re-invoke `/adversarial-planner` with pivot scope: "the smoke/sweep architectural divergence has no justification + canary; re-architect toward UNIFICATION (smoke = sweep with one cell), OR add the two-sentence justification + named canary cell to §4 Design." Round counter does NOT increment (this is a strategy pivot, not a fresh review round). |
 | (marker missing) | **REFUSE to dispatch.** Bounce back to implementer with a one-line prompt: `post epm:smoke-architecture-check v1 per the mandatory checklist before code-review-PASS`. |
 
@@ -4045,6 +4298,34 @@ defense caught it.)
 launches post no `stage-dispatch` breadcrumb, so the
 `external-markers triaged:` line goes in an `epm:progress` note posted
 immediately before the experimenter spawn.
+
+**4. Fresh-provision RunPod launches run in orchestrator bg-Bash, NOT in
+the experimenter.** A cold `dispatch_issue.py launch --backend runpod`
+runs 25-50 minutes on the RunPod lane (`podFindAndDeployOnDemand` create
++ `wait_for_ssh` up to ~10 min + `bootstrap_pod.sh`'s 11 steps including
+a 2.8 GB shallow clone through MooseFS + `uv sync --locked` + flash-attn
+build + preflight — the wedge classes in `.claude/rules/gotchas.md`
+document the wall-time). A subagent's turn cannot survive that: a
+`Bash(run_in_background=true)` dispatched inside the experimenter dies
+when the experimenter's ~60 s turn ends (the #1689 R8 failure shape —
+the subagent bg-Bash died mid-bootstrap, steps 5-11 never ran, the pod
+sat on `main` with no `/workspace/logs/` and no workload). So when the
+pod is NOT yet bootstrapped, the orchestrator dispatches
+`scripts/dispatch_issue.py launch` in its OWN
+`Bash(run_in_background=true, timeout=600000, command="uv run python
+scripts/dispatch_issue.py launch --backend runpod ...")` — the harness
+re-invokes the orchestrator when this bg-Bash exits, so the
+orchestrator SURVIVES the 25-50 min wait by design. ONLY after (a) the
+handle sidecar (`.claude/cache/issue-<N>-handle.json`) exists AND (b)
+the `experimenter.md` § "Post-dispatch bootstrap-completeness probe"
+passes on the pod (uv.lock + .venv/ + preflight-OK signals) is the pod
+eligible for a WORKLOAD-launch experimenter spawn (the 60 s
+launch-and-exit contract of `experimenter.md` § "Contract scope —
+already-bootstrapped pod only"). Never brief the experimenter with a
+cold `dispatch_issue.py launch` command; it will refuse and post
+`epm:failure v1 failure_class: infra reason:
+fresh-provision-in-subagent` per that same Contract scope. (Incident
+#1689 R8, 2026-07-26.)
 
 Spawn `experimenter` subagent via `Agent()`. Brief:
 - The plan path (the `plans/plan.md` symlink) + the code-reviewed
@@ -4626,7 +4907,16 @@ transitions:
 
 - at `awaiting_promotion` (Step 9b — the pod was terminated at Step 8 and
   this is a human gate, so no more auto-driving);
-- at `completed` (Step 10 auto-complete);
+- at the Step 10d merge exit (code-change paths only — the auto-merge is
+  the terminal step there, so CRON-TEARDOWN + `set-status completed` +
+  `epm:done` fire AFTER `epm:merged` posts, or in the `epm:merge-failed`
+  terminal-failure branch, instead of at Step 10 auto-complete;
+  #1723 — closes the ~33 min merge window that used to run without
+  `/issue-tick` re-drive coverage and with the durable record already
+  reading `completed`+`epm:done` on an unmerged branch);
+- at `completed` (Step 10 auto-complete on the experiment path, once
+  `epm:merged` is already present from Step 9b — the code-change path
+  reaches `completed` via the Step 10d exit bullet above);
 - at any `set-status <N> blocked` exit in Step 9 / the
   interpretation+review loop;
 - at the `status=stalled` / `status=dead` / unrecognised-gate `blocked`
@@ -4737,7 +5027,10 @@ live-escalation debounce covers it.)
    cadence): verify, then heartbeat + refresh.** (i) VERIFY the awaited
    work is alive with cheap evidence — `ps -p <pid> -o args=` identity
    match, breadcrumb `log=` mtime advanced, a Batch-API status read, a
-   poll-tick JSON line; (ii) post the heartbeat marker, evidence in the
+   poll-tick JSON line (GCE content reads: a Permission-denied `tail` is a
+   probe artifact — root-owned workload log; retry `sudo -n tail` per the
+   § Successor / re-entry rule GCE log-read note, never a verify-FAIL);
+   (ii) post the heartbeat marker, evidence in the
    note:
 
        uv run python scripts/task.py post-marker <N> epm:progress \
@@ -4772,7 +5065,10 @@ Do NOT run CRON-TEARDOWN here. The backstop INTENTIONALLY survives past
 those stages have no other auto-wake, so an interactive per-issue session
 that stalls in them would otherwise go silent forever. The cron is torn
 down only at the true terminal / park transitions: at `awaiting_promotion`
-(Step 9b), at `completed` (Step 10 auto-complete), and at any
+(Step 9b), at the Step 10d exit (code-change paths only — after
+`epm:merged` posts or in the `epm:merge-failed` terminal-failure branch;
+#1723), at `completed` (Step 10 auto-complete on the experiment path,
+`epm:merged` already present from Step 9b), and at any
 `set-status <N> blocked` exit in Step 9 / the interpretation+review loop
 (plus the poll-loop stalled/dead/blocked exits and the Step 6d.4 gate-park
 that already tear it down). The Step 9 idempotency guard (below) bounds the
@@ -4918,8 +5214,9 @@ Gate handlers (one per registered `<name>`):
   v1` marker carries a ranked candidate table (one row per Wikipedia-
   stub fact passing the log-prob band filter, with `id` + summary
   + log-prob). The orchestrator reads the just-posted marker via
-  `task.py latest-marker <N> --kind epm:fact-candidates`, then branches
-  on session mode.
+  `task.py latest-marker <N> --prefix epm:fact-candidates`, then branches
+  on session mode. (The flag is `--prefix`; `latest-marker` has no
+  `--kind` option — see `task.py latest-marker --help`.)
 
   **Interactive mode** (`EPM_AUTONOMOUS_SESSION` unset/falsy): surface
   the table via `AskUserQuestion` <!-- gate: gates.fact_candidates --> and
@@ -6087,7 +6384,10 @@ uv run python - <<'PY'
 from explore_persona_space.task_workflow import (
     list_events, triage_candidates_since_last_dispatch)
 for e in triage_candidates_since_last_dispatch(list_events(<N>)):
-    print(e["ts"], e["kind"], (e.get("note") or "").splitlines()[0][:140])
+    # #1722: total form — an event whose note is "" / None / "\n" makes
+    # the classic ("" or "").splitlines()[0] raise IndexError (three sessions
+    # hit this shape on 2026-07-26 on markers with empty notes).
+    print(e["ts"], e["kind"], (((e.get("note") or "").splitlines()) or [""])[0][:140])
 PY
 ```
 
@@ -6203,6 +6503,12 @@ RESULTS. Every detached launch declares its harvest path at launch time:
 
 The contract costs one token + a path choice at launch — never a new gate.
 
+**Monitor-filter hygiene (async-dispatch chains).** A crash-pattern
+Monitor/until-loop over a detached phase's log should EXCLUDE known
+benign teardown lines (`aclose()`, `Event loop is closed` — vLLM/httpx
+shutdown noise) from its error pattern, or it fires spurious wakes on a
+healthy phase end (2 spurious wakes, #1773 Phase 4, 2026-07-28).
+
 **Earlyoom protection is REQUIRED on the verified phase (#957; incident #811).**
 The shared VM runs `earlyoom` with `--prefer '(^|/)(pytest|python3?)$'` (+300
 badness to every python process), so a long detached fit is the designated
@@ -6277,7 +6583,17 @@ relaunch). Alive AND args match the distinctive invocation → the phase is IN
 FLIGHT regardless of breadcrumb age (a detached multi-hour phase posts no
 markers while computing): RE-ATTACH — poll the pid, `tail` the breadcrumb's
 `log=` for real progress (alive ≠ progressing; the log is the progress
-signal), post a liveness `epm:progress` note — never relaunch. Dead — or an
+signal), post a liveness `epm:progress` note — never relaunch. GCE log-read
+note (#1764): on a GCE instance the workload log is root-owned (the
+startup-script workload runs as root; the OS-Login SSH user is in
+`google-sudoers`, so passwordless `sudo -n` is available — `backends/gcp.py`
+`_drain_sentinels` docstring, the #608 sentinel pull's own `sudo -n cat`
+precedent), so a bare `tail`/`cat` CONTENT read fails `Permission denied` —
+retry it as `sudo -n tail -50 <log>` (fallback `sudo -n cat <log> | tail -50`).
+An EACCES is a probe artifact, NEVER evidence the log is frozen/missing or the
+phase dead; mtime/`stat` probes need no read permission and are unaffected.
+RunPod pods SSH as root, so the class is GCE-specific (incident #1738: the
+manifest-build diagnostic fell back to pid/CPU-only liveness). Dead — or an
 args MISMATCH (recycled pid: treat as dead) — with completion output present
 at the breadcrumb's `harvest=` path (§ Harvest contract; pre-contract
 breadcrumbs lack the token — fall back to log-tail + known output dirs) →
@@ -6866,6 +7182,8 @@ Non-mapping rounds with no figures state nothing — each duty fires only on
 its trigger; routing, auto-continue behavior, and the marker schema are
 unchanged.
 
+**Inline estimator-validity + record-integrity duties (REQUIRED — same rationale: this carve-out skips the planner+critic stack, where the fit-well-posedness / estimator-parity / promoted-body-consistency reviews live):** (1) BEFORE any ridge / linear-map / probe FIT, the dispatch note states `n_train` vs the feature dimension `d`; when `n_train < d` the round REFUSES the fit unless the note explicitly justifies a deliberately under-determined regime (regularization-limit / null-space read / smoke shape) — every held-out R² in the `n_train < d` regime is estimator-degenerate, not a signal read (#1701, sess `dffde9b6`: n=1,877 vs d=3,584 → ceiling 0.099 vs published 0.625). (2) BEFORE launching any re-implemented estimator whose in-repo reference the round can name (a `scripts/issue1345_operator_comparison`-style chain, a canonical `ridge_fit_predict_fast`, a shipped judge/scorer), the dispatch note records the DIFF between the new estimator and the named reference (function + file) — permissiveness-broadening (more inputs absorbed, weaker constraints) is called out explicitly. (3) When a round REFUTES a claim in ANY task's promoted body (its own parent or a sibling), it MUST — in the SAME turn as the result summary — either apply a NON-Takeaway PROSE correction directly to the refuted task's body via `task.py set-body` (typo / caption / fixed numeric value — never `task.py promote` or a `classification` flip; the user-only classification contract is unchanged) OR file a `kind: infra` task via `scripts/file_infra_task.py` naming the refuted issue and the refuting evidence — filing is the presumption for anything touching a bolded Takeaway; a chat-only "I did not fix X" is an INCOMPLETE round (#825's promoted Takeaway was refuted and nothing filed; #1701 origin).
+
 **Pod-safety pre-launch signals (deviation case — a pod on a
 parked/terminal parent).** This step and its user-chat sibling (the
 CLAUDE.md § Routing "User-chat inline free analysis" carve-out) are
@@ -7033,6 +7351,13 @@ explicit eval-data path):
    and read its verdict; a CHANGED payload still waits for the live
    run's exit before relaunching.
 
+   `scripts/inline_lint_gate.py` is the ONLY certifying entrypoint —
+   running the component legs by hand (a manual no-flags
+   `workflow_lint.py` + mapped pytest) does NOT write the
+   content-hash cert `guard_root_code_commit.sh` checks, so the commit
+   still blocks (2026-07-28: an inline round ran the components
+   manually and was guard-blocked at commit, ~4 min lost).
+
    ```bash
    # Inline payload lint gate (#1460/#1500) — ONE background Bash (run_in_background=true)
    printf '%s\n' <round's to-be-committed non-artifact paths, repo-relative> \
@@ -7041,6 +7366,11 @@ explicit eval-data path):
    uv run python scripts/inline_lint_gate.py --issue <N> \
      --payload-file /tmp/issue-<N>-inline-payload.txt
    ```
+
+   (/tmp hygiene: on a long-lived follow-up issue, ROUND-SCOPE tmp
+   artifact names — `/tmp/issue-<N>-r<round>-<label>` — a bare
+   `/tmp/issue-<N>-<label>` persists from prior rounds/sessions and trips
+   Write-before-Read collisions; 2 collisions on 2026-07-28.)
 
    The helper mechanizes both legs (no-flags `workflow_lint.py`;
    `select_step9c_tests.py --map-files` → mapped pytest at the #1046
@@ -7504,7 +7834,10 @@ split in two:
   `epm:methodology-doc-generated v1` marker — posted only when the
   link line lands (the step is only "done" then). If the background
   agent has not returned yet at this point, WAIT for it here
-  (TaskOutput / completion notification) before running the join.
+  (TaskOutput / completion notification) before running the join — load
+  the deferred schema first (`ToolSearch("select:TaskOutput")`): an
+  unloaded direct call fails with InputValidationError (2 firings,
+  2026-07-28).
 
 The early spawn needs no extra gating relative to upload verification:
 the agent's artifact reads are worktree-local, and the late join
@@ -8775,7 +9108,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       uv run python scripts/select_step9c_tests.py   # base defaults to FETCHED origin/main (#1289)
       ```
       It prints the exact gate command —
-      `timeout --kill-after=60s <T>s uv run pytest <files> -v --tb=short`,
+      `timeout --kill-after=60s <T>s uv run pytest <files> --continue-on-collection-errors -v --tb=short`,
       `<T>` sized deterministically from the selection
       (`recommended_timeout_s()`: 120s base + 30s/file + a 2400s surcharge when
       `tests/test_workflow_lint.py` is selected, which alone measured median
@@ -8807,8 +9140,14 @@ suite directly and posts an `epm:test-verdict` event with the result.
       **Single-flight probe (#1606) — run before EVERY gate (re)launch, Step
       9c AND Step 10d alike.** In a SEPARATE FOREGROUND call — never inside
       the launch call itself: the launch command's argv carries the
-      unbracketed junit path and would phantom-match its own shell — probe
-      for a live gate: `pgrep -af 'step9c-junit-issue-<N>[.]xml'` (bracketed
+      unbracketed junit path and would phantom-match its own shell, and the
+      observed consequence is a silent exit-0 skip of the leg that the
+      harness reports as successful completion (2026-07-26 session
+      `2b779905`, 12:24:08Z: the compare leg printed `GATE STILL RUNNING;
+      skip compare`, then `FATAL: compare rc file missing`, and exited 0 — a
+      false DONE in the #825 empty-dir false-DONE class) — probe for a live
+      gate:
+ `pgrep -af 'step9c-junit-issue-<N>[.]xml'` (bracketed
       per the gotchas.md self-match entry; the junit path rides the argv of
       the gate pytest, its `timeout` wrapper, its enclosing background
       shell, AND the 1d compare, so the probe is exact-ISSUE-scoped — a
@@ -8865,7 +9204,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
             /tmp/step9c-pytest-issue-<N>.log   # MANDATORY before EVERY gate pytest invocation
       # ONE background Bash call (run_in_background=true) — the selector-printed
       # command verbatim, with the junit + log + rc-file tail appended:
-      timeout --kill-after=60s <T>s uv run pytest <files> -v --tb=short \
+      timeout --kill-after=60s <T>s uv run pytest <files> --continue-on-collection-errors -v --tb=short \
         --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 \
         ${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p} \
         > /tmp/step9c-pytest-issue-<N>.log 2>&1; echo $? > /tmp/step9c-rc-issue-<N>
@@ -8900,6 +9239,14 @@ suite directly and posts an `epm:test-verdict` event with the result.
       failed `cd` that ran pytest in a directory with no tests (incident:
       issue 745, SHA 91bed41e, 2026-06-30 — the gate reported PASS on
       `no tests ran ... pytest exit: 0` and was silently skipped).
+      Collection errors no longer abort the run (#1746):
+      `--continue-on-collection-errors` lets the surviving files run, pytest
+      exits rc=1, and each broken file's junit `<error>` row classifies via
+      the step-1d compare like any other failure (a KNOWN main-side
+      collection-red file strips as pre-existing; a branch-introduced one
+      blocks as NEW) — so the `collected 0 items` FATAL grep above now fires
+      only when EVERY selected file is collection-red (the workflow-invariant
+      set rides along, making that practically unreachable).
 
       **Recipe exit-code hygiene (every gate call — and every improvised
       monitoring one-liner):** the Bash tool reports the exit code of the
@@ -8937,7 +9284,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       rm -f /tmp/step9c-junit-issue-<N>.xml /tmp/step9c-rc-issue-<N> \
             /tmp/step9c-pytest-issue-<N>.log
       # ONE background Bash call (run_in_background=true):
-      timeout --kill-after=60s 60m uv run pytest tests/ -q \
+      timeout --kill-after=60s 60m uv run pytest tests/ -q --continue-on-collection-errors \
         --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 \
         ${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p} \
         > /tmp/step9c-pytest-issue-<N>.log 2>&1; echo $? > /tmp/step9c-rc-issue-<N>
@@ -9113,6 +9460,32 @@ suite directly and posts an `epm:test-verdict` event with the result.
         && echo "[step9c] ledger refresh detached pid=$REFRESH_PID log=$REPO_ROOT/logs/step9c_baseline_refresh.log choom=ok" \
         || echo "[step9c] ledger refresh detached pid=$REFRESH_PID log=$REPO_ROOT/logs/step9c_baseline_refresh.log choom=failed"
       ```
+   e. Urgent-park duty on stripped workflow-invariant red (#1713/#1742) — a
+      mechanical, trigger-keyed duty inside this step; auto-continue (never a
+      gate/pause). When COMPARE_OUT's `urgent_park_required` list is
+      non-empty — or an `URGENT-PARK-REQUIRED:` line appears in the compare
+      stderr `.err` tail — then IN THE SAME TURN as posting
+      `epm:test-verdict`, for EACH listed `<file>::<name>` node id:
+      (i) bounded dedup grep for an already-routable candidate:
+      ```bash
+      grep -rl -- 'failing_test: <node id>' tasks/*/*/events.jsonl \
+        .claude/cache/workflow-fix-events.jsonl 2>/dev/null
+      ```
+      a hit means a routable candidate already exists — record the pointer
+      (the matching events path), do NOT re-emit; (ii) on no hit, emit the
+      `<!-- workflow-fix-candidate v1 -->` block in the session's
+      return/chat text carrying the #1681 urgent grammar — `urgency:
+      main-red` + `failing_test: <the ONE pytest node id>` +
+      `wf_fix: true|false` — routed/parked by the standard workflow-fix
+      protocol (under the recursion guard the PARK is itself the routable
+      record the watcher's urgent-park router consumes); (iii) record the
+      disposition in the `epm:test-verdict` note: `urgent_park: emitted
+      <id>` | `urgent_park: existing <events path>` (omit the line when
+      `urgent_park_required` is empty). This mechanical trigger covers the
+      selector's WORKFLOW_INVARIANT subset ONLY; the Step 10d broad-glob
+      urgent-park duty (#1713 — ANY workflow-surface pre-existing red) is
+      UNCHANGED for non-invariant reds: "no 1e trigger fired" never waives
+      that duty.
 2. Lint: covered by step 1d `compare` — repo-wide `ruff check` /
    `ruff format --check` are diffed against the LIVE main-root baseline
    (only an INCREASE fails; main carries 2000+ pre-existing ruff errors,
@@ -9132,7 +9505,10 @@ any untested-touched-file WARNs (so the orchestrator surfaces wrong-cwd runs
 and coverage gaps — never silently skipped), and the compare classification
 JSON (new vs known-red-stripped failures with any scan-test / diff-linked
 masking WARNs, the ruff delta vs the live main baseline, the ledger main_sha
-+ age + stale flag, and any dirty-code-path flags), and
++ age + stale flag, and any dirty-code-path flags), and the step-1e
+urgent-park disposition line(s) (`urgent_park: emitted <id>` |
+`urgent_park: existing <events path>`; omitted when `urgent_park_required`
+is empty — #1742), and
 the gate + compare earlyoom-protection state — COPY the `[step9c] gate
 earlyoom protection choom=…` and `[step9c] compare earlyoom protection
 choom=…` breadcrumb lines from the gate and compare calls' transcripts (plus
@@ -9250,21 +9626,54 @@ work* contract.
      user to add one. Do NOT pick a default, and do NOT advance until
      fixed.
 
-6. Run CRON-TEARDOWN before applying the terminal status (fresh
-   `CronList` → `CronDelete` every job in the two-leg match set: the
-   recurring `/issue-tick <N>` tick + stray one-shot `/issue <N>` wakeups;
-   not-found = success; § CRON-TEARDOWN procedure). For an
-   experiment the cron was already torn down at Step 9b
-   (`awaiting_promotion`), so this is an idempotent backstop; for a
-   code-change path arriving via Step 9c PASS it is the teardown site (a
-   code-change task usually never armed a cron, so it no-ops, but running
-   it keeps the "every terminal/park exit tears down" contract uniform).
-   Then apply the chosen status via `task.py set-status` (which performs the
-   `git mv` + commit + folder move):
-   ```bash
-   uv run python scripts/task.py set-status <N> <new-status> \
-     --note "Step 10 auto-complete: <reason>"
-   ```
+6. **Branch on `epm:merged` presence (routing predicate; #1723).** The
+   idempotency signal `epm:merged` is the same one Step 10d itself keys off
+   (Step 10d § Idempotent — "Skip the whole step if `epm:merged` already
+   exists"), so we branch on it here to place the terminal transition
+   AFTER the merge on the code-change path without changing the experiment
+   path's behavior:
+
+   - **If `epm:merged` is ALREADY present** (experiment path — Step 9b
+     auto-merged the worktree while parking at `awaiting_promotion`, so
+     the merge landed BEFORE Step 10 saw the task): run CRON-TEARDOWN as
+     an idempotent backstop (fresh `CronList` → `CronDelete` every job in
+     the two-leg match set: the recurring `/issue-tick <N>` tick + stray
+     one-shot `/issue <N>` wakeups; not-found = success; § CRON-TEARDOWN
+     procedure). The cron was already torn down at Step 9b, so this
+     no-ops in the common case — running it keeps the "every terminal /
+     park exit tears down" contract uniform. Then apply the chosen
+     status via `task.py set-status` (which performs the `git mv` +
+     commit + folder move) and proceed to step 7 below to post the final
+     `epm:done`:
+     ```bash
+     uv run python scripts/task.py set-status <N> <new-status> \
+       --note "Step 10 auto-complete: <reason>"
+     ```
+
+   - **If `epm:merged` is NOT yet present** (code-change path arriving via
+     Step 9c PASS — `kind: infra | batch | analysis | survey`): do NOT
+     tear down the cron here and do NOT apply the terminal status /
+     `epm:done` here. Advance directly to Step 10d — its success path
+     posts `epm:merged` and THEN, in its `#### Terminal teardown
+     (code-change path only)` sub-section, fires CRON-TEARDOWN +
+     `set-status completed` + `epm:done` in that order. Its
+     terminal-failure branch (`epm:merge-failed v1` after every retry
+     surface is exhausted) takes the SAME terminal-teardown sequence,
+     since a code-change task still completes even when the merge
+     terminally failed (the merge retries idempotently on the next
+     `/issue <N>` re-invocation — the resume-semantics table's `completed`
+     + `epm:done` + no `epm:merged` row).
+
+   Rationale: the previous ordering (teardown → `set-status completed` →
+   `epm:done` → Step 10d) left the entire Step 10d merge window (up to
+   ~33 min under fleet churn — recovery cycle + two ~12-min lint-gate
+   waits observed on 2026-07-26) with NO `/issue-tick` re-drive coverage
+   AND with the durable record reading `completed`+`epm:done` on an
+   unmerged branch — the `completed_unmerged_pass` (#1540, #1653) flag
+   class. Moving the terminal transition to AFTER `epm:merged` closes
+   both gaps by construction on the code-change path; the experiment
+   path is untouched (the routing predicate above sees `epm:merged`
+   present and takes the same idempotent-backstop shape as today).
 
 7. Post final event `epm:done v1` (or
    `epm:status-changed` recording the followups_running transition)
@@ -9272,7 +9681,10 @@ work* contract.
    what's next, plus a link to the clean-result write-up location (for
    experiments) AND a list of in-flight child follow-ups (when
    transitioning to `followups_running`). Include the line
-   `Moved to **<status-name>**.`
+   `Moved to **<status-name>**.` — for the experiment path (step 6
+   `epm:merged`-present branch); the code-change path's `epm:done`
+   fires from Step 10d's Terminal-teardown sub-section AFTER
+   `epm:merged v1` has been posted.
 
 8. **LEAVE THE TASK ON DISK.** Tasks are never deleted by the skill.
    Done-ness lives in the parent folder under `tasks/`. The folder is
@@ -9715,6 +10127,29 @@ Inside Step 10d itself, use the full executable blocks below (they wrap
 forms (1)/(3) in the pre-push workflow-lint verdict gate); this subsection
 is the copy source for every OTHER site.
 
+**KEPT-stash surfacing duty (#1751; incident #1716).** Every
+`sync_repo_root.py` invocation this skill prescribes — form (2) above, the
+Step 4a divergence probe, the failure-lesson memory persist, Step 9a-ter
+re-analysis commits, and ALL Step 10d sites (the four pre-marker syncs, the
+post-merge-guard pre-sync, the unpushed-mv recovery, the local-residue
+tail, the surgical push retry) — prints a per-stash report line on its
+stderr report; a report line containing `stash: KEPT` (the emitted line is
+two-space-indented — `  stash: KEPT …` — never anchored at line start)
+means the sync could NOT cleanly re-apply a stash entry and a human owes
+triage (the entry is kept + a rescue patch written — `sync_repo_root.py`'s
+stash pop/keep step, rendered by `_emit_report`). When ANY sync this
+session ran reports `stash: KEPT`: (a) append one line PER KEPT entry — a
+sync reporting several KEPT entries gets one line each — to the round's
+durable marker note: the `epm:merged` note file at merge sites, or one
+adjacent `epm:progress` note where no merged marker fires (Step 4a, the
+failure-lesson persist, 9a-ter), of the form
+`stash-kept: <ref> (<sha12>) rescue=<rescue-patch path> — manual triage owed`;
+(b) carry the same line(s) in the session's end-of-turn wrap-up. NEVER
+summarize a KEPT-reporting sync as "clean" (the #1716 swallow: the flag
+printed, the wrap-up said "Post-merge guard clean", and the stash sat
+unowned). Surface only — the session never pops/drops the stash itself;
+triage stays human.
+
 #### Merge safety guards (run before the merge commands)
 
 Derive the two paths cwd-robustly FIRST — never via `git rev-parse
@@ -9765,7 +10200,7 @@ A behind-`main` `issue-<N>` branch can carry stale copies of OTHER tasks'
 `tasks/` state, a crash between merge and a status flip can strand a
 task at the wrong status, AND a branch based on another still-unmerged
 `issue-<M>` branch will replay `#M`'s old commits onto `main` if blindly
-rebase-merged. Three guards:
+rebase-merged. Five guards:
 
 1. **Foreign-`tasks/` guard (strip whole foreign task folders before the
    merge).** `git diff --name-only "$MAIN_SHA"...HEAD -- tasks/` — the
@@ -9958,7 +10393,7 @@ rebase-merged. Three guards:
    MB=$(git -C "$WT" merge-base HEAD origin/main)
    # is the merge-base reachable on origin/main's first-parent mainline?
    ON_MAINLINE=$(git -C "$WT" rev-list --first-parent origin/main \
-     | grep -Fxq "$MB" && echo yes || echo no)
+     | grep -Fxq -- "$MB" && echo yes || echo no)
    ```
 
    The branch is **unsafe to blind-rebase** if EITHER `ON_MAINLINE=no`
@@ -9988,25 +10423,38 @@ rebase-merged. Three guards:
 
    Before judging a workflow-surface path out-of-scope, EXCLUDE files whose ONLY
    branch-side touch is a Step-5a `spec-freshness` sync (the mandated
-   `git checkout main -- $SAFE_SPECS` from `main`, NOT a branch deliverable).
+   `git checkout origin/main -- $SAFE_SPECS` from fetched `origin/main`, NOT a
+   branch deliverable).
    This mirrors Step 5a's own intent (line ~1925): a file that has NO non-sync
    branch-side commit is content imported FROM `main`, so it is never an
    out-of-scope regression. Match on the commit SUBJECT line ONLY — a `--grep`
    over subject+body would wrongly exclude a genuine branch edit whose commit
-   BODY happens to mention "spec-freshness" (documentation, a retrospective),
-   silently dropping a real branch touch. The two Step-5a sync SUBJECT variants
-   both carry the token (`issue-<N>: sync workflow-surface specs from main
-   (spec-freshness)`; `chore(issue-<N>): spec-freshness sync workflow surface
-   from main`).
+   BODY happens to mention the sync-subject phrase (documentation, a
+   retrospective), silently dropping a real branch touch. The exclusion keys
+   on the prescribed sync-subject SHAPE `sync workflow-surface specs from` —
+   NOT the bare `spec-freshness` token, which a deliverable commit ABOUT the
+   sync machinery legitimately carries in its subject (#1789: such a
+   deliverable read as CLEAN and the post-gate re-sync would have clobbered
+   it). The anchor is carried by the current `issue-<N>: sync
+   workflow-surface specs from origin/main (spec-freshness)` (#1747) and the
+   historical `issue-<N>: sync workflow-surface specs from main
+   (spec-freshness)` (pre-#1747 commits keep the old title). The legacy
+   `chore(issue-<N>): spec-freshness sync workflow surface from main` variant
+   does NOT carry the anchor and now reads as a branch-side edit — the
+   fail-SAFE direction (family dirty → sync skipped / Guard-3 conservative;
+   status-quo staleness, never a clobber). Residual: a future deliverable
+   subject QUOTING the exact anchor phrase verbatim would still be excluded —
+   do not quote it in commit subjects.
 
    ```bash
    # For each workflow-surface path $f in the own-diff: does it have any
-   # branch-side commit whose SUBJECT does NOT contain "spec-freshness"?
+   # branch-side commit whose SUBJECT does NOT contain the prescribed
+   # sync-subject anchor "sync workflow-surface specs from"?
    # Emit "<sha> <subject>" per own-commit touching $f, then keep only the
    # non-sync ones. If none remain, the file's only branch-side touches are
    # spec-freshness syncs => imported from main => NON-blocking for Guard 3.
    non_sync=$(git -C "$WT" log --format='%H %s' "$MB"..HEAD -- "$f" \
-     | awk 'index($0, "spec-freshness") == 0')
+     | awk 'index($0, "sync workflow-surface specs from") == 0')
    # $non_sync empty   => file imported via spec-freshness sync only => treat as
    #                      NON-blocking (in-scope, imported from main).
    # $non_sync nonempty => a genuine branch-side edit (its subject is not a sync)
@@ -10014,9 +10462,10 @@ rebase-merged. Three guards:
    ```
 
    (`git log --format='%H %s'` prints `<sha> <subject>` per commit — the `awk
-   index()` keeps only lines whose subject lacks the token; the sha is a hex
-   string that never contains "spec-freshness", so the match is effectively
-   subject-scoped. Equivalently `git log --format='%s' … | grep -v spec-freshness`.)
+   index()` keeps only lines whose subject lacks the anchor phrase; the sha is
+   a hex string that never contains "sync workflow-surface specs from", so the
+   match is effectively subject-scoped. Equivalently
+   `git log --format='%s' … | grep -vF 'sync workflow-surface specs from'`.)
 
    UNSAFE if the own-diff — after the spec-freshness exclusion above — touches
    any foreign `tasks/` path (under `tasks/` but outside `tasks/*/<N>/`) or files
@@ -10045,6 +10494,178 @@ rebase-merged. Three guards:
    reworked guard twice over: `ON_MAINLINE=no` flags it directly, and
    its `origin/main...HEAD` diff carries the whole `#472` parent
    payload, failing the content check.)
+
+4. **Lost-update refusal (shared workflow-surface files).** A branch
+   whose copy of a SHARED workflow-surface file predates a sibling's
+   already-merged additions can carry a whole-file snapshot that
+   silently DROPS lines that landed on `origin/main` after the branch's
+   merge-base — no conflict, no warning, hard to spot in the diff,
+   catastrophic when it drops a bundled `workflow_lint.py` check or an
+   operational SKILL.md guardrail (incident #1701 → #1698, 2026-07-26:
+   153 lines of `check_inline_round_duty_mirror` deleted 45 min after
+   they landed, breaking full-suite collection fleet-wide for ~15.5 h;
+   #1713 encodes this guard as the mechanical backstop). Refuse the
+   merge with a loud message when the shape is detected.
+
+   Scope: `scripts/workflow_lint.py`, `.claude/skills/**/SKILL.md`,
+   `.claude/rules/*.md`, `.claude/workflow.yaml`, `CLAUDE.md`. Predicate:
+   for every branch-touched path in that scope, enumerate the lines
+   `origin/main` ADDED since the merge-base (post-merge-base additions
+   only — never `main`'s own pre-fork content), then check whether each
+   such line is present in the branch's current version of that file
+   (`grep -Fxq --` — full-line, fixed-string, so quoting or partial
+   substring matches cannot mask a drop). A missing line is by
+   definition a main-side addition the branch's snapshot silently
+   REVERTED — a legitimate branch DELETION of a pre-existing function
+   is NOT this class, because those lines were never main-side
+   additions past the merge-base. Kill switch:
+   `EPM_SKIP_LOST_UPDATE_GUARD=1` (document the reason on the
+   `epm:merged` note when used — e.g. the branch DELIBERATELY reverts
+   a merged sibling per a user directive).
+
+   ```bash
+   if [ -z "${EPM_SKIP_LOST_UPDATE_GUARD:-}" ]; then
+     MB=$(git -C "$WT" merge-base HEAD origin/main)
+     LOST_UPDATE_PATHS=""
+     while IFS= read -r P; do
+       case "$P" in
+         scripts/workflow_lint.py|.claude/skills/*|.claude/rules/*|.claude/workflow.yaml|CLAUDE.md)
+           MAIN_ADDS=$(git -C "$WT" diff --numstat "$MB" origin/main -- "$P" \
+             | awk '{print $1+0}')
+           if [ "${MAIN_ADDS:-0}" -gt 0 ]; then
+             git -C "$WT" diff "$MB" origin/main -- "$P" \
+               | grep -E '^\+[^+]' | sed 's/^\+//' > /tmp/1713-main-adds.txt
+             MISSING_ON_BRANCH=0
+             while IFS= read -r ADD_LINE; do
+               [ -z "$ADD_LINE" ] && continue
+               if ! git -C "$WT" show HEAD:"$P" 2>/dev/null \
+                    | grep -Fxq -- "$ADD_LINE"; then
+                 MISSING_ON_BRANCH=$((MISSING_ON_BRANCH + 1))
+               fi
+             done < /tmp/1713-main-adds.txt
+             if [ "$MISSING_ON_BRANCH" -gt 0 ]; then
+               LOST_UPDATE_PATHS="$LOST_UPDATE_PATHS $P(${MISSING_ON_BRANCH})"
+             fi
+           fi
+           ;;
+       esac
+     done < <(git -C "$WT" diff --name-only "$MB"...HEAD)
+     if [ -n "$LOST_UPDATE_PATHS" ]; then
+       echo "LOST-UPDATE REFUSAL (Guard 4, #1713): branch carries a" \
+            "whole-file snapshot dropping main-side additions on:" \
+            "$LOST_UPDATE_PATHS" >&2
+       echo "Recovery: rebase onto origin/main and re-apply the intended" \
+            "edits by explicit path; post epm:merge-failed v1" \
+            "(reason: lost-update, paths=$LOST_UPDATE_PATHS)."
+       false
+     fi
+   fi
+   ```
+
+   **Recovery ordering (#1753; incident #1727).** When recovering via a
+   merge of `origin/main` INTO the branch (instead of the rebase form),
+   COMMIT the staged merge BEFORE re-running this guard or the pre-push
+   lint gate — the guard's predicate reads `git show HEAD:"$P"` and the
+   gate sha-binds its verdict to HEAD, so staged-but-uncommitted merge
+   content still reads as dropped (the #1727 false lost-update / "STILL
+   UNMERGED" read).
+   And any size-ratchet cap the recovery re-writes is computed from the
+   POST-merge (landing) bytes, never the pre-merge branch tip (#1727:
+   cap 130,000 written from pre-merge 128,507 B failed post-merge when
+   main's additions stacked; re-bumped to 132,500 — see the
+   landing-bytes bullet in the gate section below).
+
+   Non-workflow-surface files stay covered by Guards 1-3 alone; Guard 4
+   focuses the scan on the files whose silent-revert blast radius is
+   fleet-wide.
+
+5. **Sibling merge-sequencing hold + proactive pre-resolution (#1757).**
+   Runs ONCE per Step 10d invocation (never inside per-attempt retry
+   shapes). Half (i) runs at Step 10d entry; half (ii) runs AFTER Guard 0
+   (the agent-memory pathspec commit) — a dirty tree aborts an in-worktree
+   merge (the exact #906 shape Guard 0 exists to clean), so (ii) first runs
+   the idempotent Guard 0 block, then merges. Scan this task's events for
+   `merge-hold-candidate` notes (the Step 2b edit-locus WARN record):
+
+   ```bash
+   grep -F 'merge-hold-candidate' "$(uv run python scripts/task.py find <N>)/events.jsonl"
+   ```
+
+   No candidate note → Guard 5 is a no-op (one grep). Otherwise, per named
+   sibling `<M>` (dedup):
+
+   - **(i) Bounded hold.** Read live state via `task.py view <M> --json`.
+     No hold when: its events carry `epm:merged` (any form —
+     `artifact_confirmed` counts); OR its status is in {completed,
+     archived, blocked, on_hold} (a parked/blocked sibling is not landing
+     soon); OR its state is UNREADABLE (`task.py find <M>` fails — treat
+     as no-hold, never a 45-min no-op); OR a PRIOR `merge_hold` disposition
+     note for `<M>` with `outcome=cap-expired` exists on this task's
+     events (sticky — a stuck sibling never re-triggers the hold on
+     re-entry). Otherwise (live at `reviewing`-or-later, unmerged): post
+     ONE `[long-phase-heartbeat] step10d-merge hold sibling=<M> (#1757)`
+     progress note, then wait via the sanctioned `Monitor` until-loop
+     shape (load the deferred schema first — `ToolSearch("select:Monitor")`),
+     elapsed-capped at 2700 s (one 45-min gate cycle), re-resolving the
+     sibling's folder each poll (status moves relocate it):
+
+     ```bash
+     until grep -qF '"epm:merged"' "$(uv run python scripts/task.py find <M> 2>/dev/null)/events.jsonl" 2>/dev/null \
+           || [ $SECONDS -gt 2700 ]; do sleep 60; done
+     ```
+
+     (NEVER a foreground Bash sleep-loop — the 600 s tool cap kills it and
+     the sleep-chain shapes are hook-blocked; Monitor is the sanctioned
+     poll carrier here.) On expiry, record `outcome=cap-expired` and
+     proceed — the hold is bounded by construction; a mutual hold (two
+     siblings each naming the other) resolves at cap expiry on both sides.
+   - **(ii) Proactive pre-resolution (the load-bearing half — fires with
+     any candidate note, INCLUDING when the sibling already merged).**
+     Sequenced AFTER Guard 0's agent-memory commit (run the idempotent
+     Guard 0 block first if not yet run this invocation).
+     `git -C "$WT" fetch origin main --quiet`, then probe for the
+     predicted conflict without touching the working tree, PATH-SCOPED
+     to each candidate note's own `path=<file>` field (dedup paths
+     across notes; a candidate note MISSING its `path=` field → treat
+     as conflicted — the degrade below). Per path, materialize the
+     three blob versions and run read-only three-way `git merge-file`
+     (ancient, version-portable plumbing — no git-version branch
+     needed; `-p` writes the merged result to stdout, inputs untouched):
+
+     ```bash
+     MB=$(git -C "$WT" merge-base HEAD origin/main)
+     git -C "$WT" show "$MB:<file>"          > /tmp/issue-<N>-mh-base   # any show failing
+     git -C "$WT" show "HEAD:<file>"         > /tmp/issue-<N>-mh-ours   # (added/deleted/renamed
+     git -C "$WT" show "origin/main:<file>"  > /tmp/issue-<N>-mh-theirs # on a side) -> CONFLICTED
+     git merge-file -p /tmp/issue-<N>-mh-ours /tmp/issue-<N>-mh-base /tmp/issue-<N>-mh-theirs \
+       > /dev/null 2>&1
+     # rc 0 = clean; rc > 0 (= conflict count) = CONFLICTED; rc < 0 (shell: 255) = error -> CONFLICTED
+     ```
+
+     (A whole-tree probe — legacy `git merge-tree <mb> HEAD origin/main`,
+     or the modern `--write-tree` form — is deliberately NOT used: on
+     this repo it reads CONFLICTED on essentially every real merge,
+     because main's constant `tasks/` folder git-mvs print `removed in`
+     stanzas and events.jsonl notes quoting conflict markers trip a
+     `<<<<<<<` grep, making the clean path unreachable.) Ambiguous or
+     unavailable probe output → treat the candidate as conflicted — fail
+     toward the proactive resolve, never toward a doomed server-side
+     refusal. ALL probed paths clean → proceed exactly as today
+     (Guards 0-4 + the normal merge form; experiment branches keep
+     `--rebase`). Any path CONFLICTED → resolve
+     proactively IN THE WORKTREE via the EXISTING merge-conflict recovery
+     machinery (capture ONE `MAIN_SHA`, `git -C "$WT" merge "$MAIN_SHA"`,
+     the mechanical foreign-tasks/figures passes + residual-conflict
+     subagent dispatch, commit, post-resolution certification), then
+     re-run the pre-push workflow-lint gate (the SHA-bound verdict
+     re-binds to the post-merge tip — the #1753 recovery ordering) and
+     take the `--squash` merge form (the branch now carries a merge
+     commit — Known failure shape 1).
+   - Record the disposition in the `epm:merged` / `epm:merge-failed` note:
+     `merge_hold: sibling=<M> waited=<mins> outcome=<sibling-merged|cap-expired|no-hold>`
+     and `pre_resolve: <clean|conflicted-resolved|probe-unavailable>`
+     (omit both lines when no candidate note exists). Same behavior in
+     interactive and autonomous sessions; auto-continue, never a gate.
 
 #### Fast-path routing pre-check (workflow-fix / small-ADDED-diff far-behind branches)
 
@@ -10148,6 +10769,11 @@ fast-pathed; it takes the ordinary `$MERGE_FORM` merge.
 
 #### Pre-push workflow-lint gate (runs before every merge form lands)
 
+The gate is an INLINE recipe (the fenced blocks in this subsection, run via
+bg-Bash) — there is NO helper script; do not compose a
+`.claude/skills/issue/step10d_lint_gate.sh` (or similar) path, it does not
+exist (#1720's session invoked exactly that phantom path, 2026-07-27).
+
 #931 (2026-07-04) merged a workflow-lint offender to `main`, breaking
 `tests/test_workflow_lint.py` on pristine trunk fleet-wide for most of a day
 (5 downstream sessions each burned 5-25 min classifying it as pre-existing).
@@ -10170,43 +10796,6 @@ tests BEFORE anything lands:
   `ood_eval_results/`, `raw/`, `data/`, `docs/methodology/`). The lint's
   no-flags default run walks `.claude/**`, `CLAUDE.md`, `scripts/`, and
   `src/`, so any code-bearing payload is in scope.
-- **Pre-gate freshness re-sync (#1560; forms (i)/(ii) — form (iii) operates
-  on the root tree and is exempt).** Step 5a syncs fire at fan-out time, so
-  a branch merged hours later can carry stale spec + lint/guard-family
-  copies that would land regressive content on trunk (a rebase replays the
-  morning copies over evening main) and red the gate (#1489 blockers 1 AND
-  2; #1482; #1417). BEFORE launching the background gate call, run the
-  Step 5a spec-freshness block (§ Step 5a) ONCE with source `origin/main` —
-  **against the ALREADY-BOUND `$WT`**: the merge flow bound
-  `WT="$REPO_ROOT/.claude/worktrees/issue-<N>"` in the guards block, so
-  DROP the Step 5a block's own `WT=$(git rev-parse --show-toplevel)` line —
-  do NOT re-derive `$WT` at Step 10d (a repo-root cwd would rebind it to
-  the SHARED ROOT and either silently no-op the re-sync or check out +
-  commit older origin/main content over newer root-main state). Then: first
-  `timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet || true`,
-  then the rest of the block with every `main` ref replaced by
-  `origin/main`. Same per-file branch-side-edit guard, subject-scoped per
-  the Step 5a block (a branch whose deliverable edits a family file keeps
-  its copies — the gate's #1456 3-way merge covers its lint legs, and its
-  TG legs then run the branch's kept copies plus any main-new synced pin
-  tests: a fail-closed hybrid that mirrors the post-merge trunk state, not
-  a fully coherent pair); same `spec-freshness` commit-subject convention.
-  Commit-message filtering follows the Guard-3 subject-scoped convention —
-  never write a full-message grep-exclusion invocation into this Step 10d
-  gate section (enforcement = the gate-region negative assert in
-  `tests/test_issue_skill_lint_family_sync.py`, whose region spans this
-  pre-push gate section through the auto-merge heading — the Guard-3 pin
-  test's own region ban stops at the fast-path heading and does not reach
-  here). End the re-sync with one echo —
-  `[step10d] pre-gate re-sync: synced <n> files (<sha>) | no drift` — so
-  ran-vs-never-ran is observable in the gate transcript (copy the line
-  into the epm:merged / epm:merge-failed note). Run the re-sync to
-  completion BEFORE the gate's stale-verdict `rm` below, so the verdict
-  sha-binds the synced tip; a no-change re-sync commits nothing and the
-  flow is idempotent. Synced files enter the own-diff (they differ from
-  the merge-base) — harmless by construction: the overlay writes
-  origin/main-identical bytes, and any TG hits they trigger are identical
-  on both legs and subtract to empty.
 - **Run a LANDING-TREE lint copy, both legs — no-flags bundle PLUS the parity leg.**
   The gate builds ONE ephemeral landing tree in /tmp (`git archive
   origin/main` over the lint-scanned cones), runs the BASELINE legs from
@@ -10226,8 +10815,11 @@ tests BEFORE anything lands:
   too — so trunk-pytest parity takes BOTH invocations. Measured wall
   ~4.5-6 min (no-flags) + ~1.4 s (parity leg) + ~1-2 s gate-tree
   construction on the shared VM; WARNs do not fail (PASS = exit 0 on
-  both). The two leg pairs + TG legs total ~9-12+ min, so the executable
-  block below can NEVER fit the 600s foreground Bash tool cap — run it as
+  both). The two leg pairs + TG legs total ~9-12+ min on an IDLE VM, but
+  **30-40 min under typical fleet load (3+ concurrent gates)** — measured
+  2026-07-26: #1690 32 min, #1694 37 min, #1711 ~30 min. Size any
+  wall-time-derived fence off the LOADED range, not the idle one. So the
+  executable block below can NEVER fit the 600s foreground Bash tool cap — run it as
   ONE BACKGROUND Bash call (`run_in_background=true`) with the per-leg
   `timeout` wedge bounds shown (the #991/#996 kill class: wrapping it in
   any ≤600s foreground bound, or running it foreground, SIGKILLs the
@@ -10385,14 +10977,49 @@ tests BEFORE anything lands:
       rm -f /tmp/issue-<N>-lint-main-copy.py
       cp "$GT/scripts/workflow_lint.py" /tmp/issue-<N>-lint-main-copy.py || true
     fi
+    # LANDING-UNION OVERLAY (#1753, generalizing #1456; closes residual (d)
+    # for the lint legs): each payload path lands in the gate tree as the
+    # content a squash/rebase would land on trunk — a 3-way merge (branch
+    # HEAD (ours) + merge-base + archived origin/main (theirs)) whenever
+    # BOTH sides modified the path since the merge-base; the branch copy
+    # verbatim when only the branch touched it; removal for branch-deleted /
+    # renamed-away paths. scripts/workflow_lint.py is EXCLUDED here — its
+    # dedicated #1456 block below merges it (double-merging would feed the
+    # union back as "ours"). A conflicted/failed merge falls back to the
+    # BRANCH copy with a loud per-path WARN — never a crash: the real merge
+    # surfaces the conflict as shape 2. Incidents: #1721 (branch-tip
+    # planner.md passed; the squash union landed 40900 B > the 40000 cap,
+    # main red ~17h), #1719 (a stale sync snapshot false-NEW-blocked 3 gate
+    # runs; a stale sync copy 3-way-merges clean with archived origin/main).
+    MB_OVERLAY=$(git -C "$WT" merge-base origin/main HEAD 2>/dev/null) || MB_OVERLAY=""
+    UNION_MERGED=0; UNION_FALLBACK=0
+    rm -f /tmp/issue-<N>-union-base.tmp /tmp/issue-<N>-union-ours.tmp /tmp/issue-<N>-union-merged.tmp
     while IFS= read -r p; do
       if git -C "$WT" cat-file -e "HEAD:$p" 2>/dev/null; then
-        { mkdir -p "$GT/$(dirname "$p")" \
-          && git -C "$WT" show "HEAD:$p" > "$GT/$p"; } || GT_RC=1
+        mkdir -p "$GT/$(dirname "$p")" || GT_RC=1
+        if [ "$p" != "scripts/workflow_lint.py" ] && [ -n "$MB_OVERLAY" ] && [ -f "$GT/$p" ] \
+           && git -C "$WT" show "$MB_OVERLAY:$p" > /tmp/issue-<N>-union-base.tmp 2>/dev/null \
+           && ! cmp -s /tmp/issue-<N>-union-base.tmp "$GT/$p"; then
+          # both-sides-modified: certify the union, not the branch copy
+          if git -C "$WT" show "HEAD:$p" > /tmp/issue-<N>-union-ours.tmp \
+             && git merge-file -p /tmp/issue-<N>-union-ours.tmp \
+                  /tmp/issue-<N>-union-base.tmp "$GT/$p" \
+                  > /tmp/issue-<N>-union-merged.tmp 2>/dev/null; then
+            mv /tmp/issue-<N>-union-merged.tmp "$GT/$p" || GT_RC=1
+            UNION_MERGED=$((UNION_MERGED + 1))
+          else
+            git -C "$WT" show "HEAD:$p" > "$GT/$p" || GT_RC=1
+            UNION_FALLBACK=$((UNION_FALLBACK + 1))
+            echo "WARN: landing-union 3-way merge conflicted/failed for $p — gated legs run the BRANCH copy for it (residual (d) narrows to this path; the real merge surfaces the conflict as shape 2)"
+          fi
+        else
+          git -C "$WT" show "HEAD:$p" > "$GT/$p" || GT_RC=1
+        fi
       else
         rm -f "$GT/$p" || GT_RC=1   # branch-deleted / renamed-away path: absent from the landing tree
       fi
     done < /tmp/issue-<N>-overlay-files.txt
+    echo "[step10d] landing-union overlay: merged=$UNION_MERGED fallback=$UNION_FALLBACK"
     # LINT-VINTAGE 3-WAY MERGE (#1456; incidents #1366/#1411): when the own
     # diff touches scripts/workflow_lint.py, the loop above overlaid the
     # BRANCH's lint copy, whose ratchet constants
@@ -10536,9 +11163,9 @@ tests BEFORE anything lands:
       # baseline map, so its failures are NEW by construction (correct —
       # block; same doctrine as the branch-new scan-test note above).
       for leg in baseline gated; do
+        # msg-strip caveat: a literal ' - ' INSIDE a param id truncates here;
+        # a same-prefix dash-bearing sibling collision fails toward pass (narrow doc-only residual, #1573)
         grep -E '^(FAILED|ERROR) ' "/tmp/issue-<N>-tg-$leg.txt" \
-          # msg-strip caveat: a literal ' - ' INSIDE a param id truncates here;
-          # a same-prefix dash-bearing sibling collision fails toward pass (narrow doc-only residual, #1573)
           | sed -E 's/^(FAILED|ERROR) //; s/ - .*$//' \
           | sort -u > "/tmp/issue-<N>-tg-$leg-nodes.txt" || true
       done
@@ -10643,7 +11270,11 @@ tests BEFORE anything lands:
   `[step10d] lint-gate earlyoom protection choom=...` breadcrumb line into
   the `epm:merged` / `epm:merge-failed` note (alongside the lint/tg tails
   those notes already record) so a crash-verdict post-mortem can tell a
-  protected kill from an unprotected one.
+  protected kill from an unprotected one. Likewise copy the
+  `[step10d] landing-union overlay: merged=<n> fallback=<m>` echo into the
+  same note (#1753) — a nonzero `fallback=` names how many payload paths
+  the gated legs ran as branch copies, the first thing a post-merge lint
+  divergence should be triaged against.
 
 - **Mapped invariant-test leg (#1147).** A second, trigger-gated leg of the
   SAME gate: when the payload (the own-diff / additive list) matches the
@@ -10796,6 +11427,40 @@ tests BEFORE anything lands:
      an unconditional block-path verdict: fix the crash cause in the
      worktree, re-run the gate ONCE; still crashing → the SAME
      `epm:merge-failed v1` handling as case 1. Never merge/push on `crash`.
+- **Mandatory urgent-park emission on workflow-surface pre-existing red
+  (#1713).** Whenever the gate's `pass` verdict rests on a pre-existing
+  red hit whose file matches the workflow surface (`scripts/`,
+  `.claude/`, `CLAUDE.md`, `docs/`, `tests/`), the session MUST emit —
+  in the same turn as the `epm:merged` (or `epm:progress` completion)
+  note — a `<!-- workflow-fix-candidate v1 -->` block carrying the
+  #1681 urgent grammar: three fields inside the block —
+  `urgency: main-red`, `failing_test: <ONE pytest node id, e.g.
+  tests/test_x.py::test_y>`, and `wf_fix: true|false` (`true` when the
+  offending file itself lives on the workflow surface, `false`
+  otherwise; the parked candidate is still mechanically routable
+  regardless via the watcher's urgent-park router pass). Prose
+  alternatives ("noted for /daily follow-up", "will be picked up
+  later", "leaving for the sweep") are NOT acceptable terminal
+  dispositions — the nightly /daily Step C sweep is the FALLBACK, not
+  the primary route: without the urgent grammar every intervening
+  session's Step 9c gate must re-classify the same pre-existing red
+  (incident #1701 → #1698: the red lived ~15.5 h fleet-wide before
+  #1713 landed the fix). See
+  `.claude/rules/workflow-fix-on-bug.md` § Recursion guard "Urgent
+  fast path" for the router semantics; the parking session STILL
+  never files or spawns the fix itself. Non-workflow-surface
+  pre-existing red keeps the report-and-continue disposition
+  unchanged.
+- **Size-ratchet cap bumps are computed from landing bytes (#1753).** A
+  payload that raises a size-cap constant (e.g.
+  `AGENT_SPEC_SIZE_GRANDFATHER`) computes the new cap from the LANDING
+  content — the gate tree's 3-way-merged copy of the capped file (or a
+  local merge of fresh `origin/main` into the branch) — never from
+  branch-tip bytes: main-side additions stack at merge time (#1727: a
+  cap of 130,000 written from the pre-merge 128,507 B branch tip failed
+  post-merge; re-bumped to 132,500). With the landing-union overlay the
+  gate catches an under-computed cap fail-CLOSED (verdict `block`)
+  pre-merge, instead of post-merge main-red.
 - **Baseline semantics per binding form (the baseline is ALWAYS a
   payload-free tree).** The mapped invariant-TEST legs (#1147) keep the
   ORIGINAL per-form placement (gated = the `$WT` copy on the branch-tip /
@@ -10878,17 +11543,73 @@ tests BEFORE anything lands:
   gated-only red in a rules-mentioning test the family does not cover)
   and (β) the `explore_persona_space.workflow` seam, both with the same
   remedy (rebase onto origin/main / cross-check at the repo root); the
-  trunk pytest remains their backstop; (d) a
-  lint-scanned file BOTH main and the branch modified post-fork lints as
-  the BRANCH's copy (the overlay takes branch-HEAD wholesale; EXCEPT
-  `scripts/workflow_lint.py` itself, which is 3-way-merged per #1456 —
-  its residual is the merge-failure fallback in residual (a)), a narrow
-  window in either direction that is strictly smaller than the old
-  whole-tree divergence — the form-(ii) recovery covers the conflict case
-  and trunk lint backstops the clean-rebase case; (e) same-issue
+  trunk pytest remains their backstop; (d) both-sides-modified
+  overlay paths are now 3-WAY-MERGED on the gated legs (the landing-union
+  overlay, #1753, generalizing #1456 to every payload path;
+  `scripts/workflow_lint.py` keeps its dedicated #1456 block) — the
+  residual NARROWS to (i) the per-path conflict-fallback window (loud
+  WARN + branch copy; the real merge surfaces the conflict as shape 2
+  anyway — and the `fallback=` counter also counts non-conflict failures,
+  e.g. a failed `git show`, so never read `fallback=` as a pure conflict
+  count), (ii) an add/add path absent at the merge-base (no base to
+  merge; branch copy, rare), and (iii) the clean-merge-to-wrong-content
+  window — a main-side REVERT (post-sync) of a hunk the branch's sync
+  copy carries merges CLEANLY to non-main content, the same class as
+  residual (a)'s semantically-broken-clean-merge window; (e) same-issue
   concurrent gate runs would share one `$GT` (a phase-flip race) —
   excluded by the Step 0 single-orchestrator guard + the pre-dispatch
   dedup, with the #911 janitor reaping any crash leftovers.
+- **Post-gate freshness re-sync (#1714; supersedes the #1560 pre-gate
+  placement).** The lint gate builds its landing tree from `git archive
+  origin/main`, so a re-sync AFTER the gate returns does not invalidate
+  the gate verdict — but a re-sync BEFORE a ~30-min gate snapshots
+  origin/main against a tip that will be stale by merge time, and #1476
+  (the 67cf175e session, 2026-07-26T16:25Z) proved that
+  origin/main advances DURING the gate window often enough to break the
+  squash merge with `CONFLICTING`. The re-sync is invoked from the
+  auto-merge subsection below (the H4 heading immediately following
+  this gate section), IMMEDIATELY before `gh pr merge --squash` and
+  AFTER the gate verdict file has been read (i.e. after the
+  stale-verdict `rm -f` above and after the executable gate block has
+  returned pass):
+    1. `timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet || true`
+    2. Run the Step 5a family-atomic block (§ Step 5a) once — it already
+       sources fetched `origin/main` as of #1747 (no ref substitution
+       needed; its on-main skip guard rides along harmlessly here, since
+       `$WT` is on `issue-<N>` the guard evaluates false) —
+       against the ALREADY-BOUND `$WT` — the merge flow bound
+       `WT="$REPO_ROOT/.claude/worktrees/issue-<N>"` in the guards
+       block, so DROP the Step 5a block's own
+       `WT=$(git rev-parse --show-toplevel)` line —
+       do NOT re-derive `$WT` at Step 10d (a repo-root cwd would
+       rebind it to the shared root).
+    3. End with one echo — `[step10d] post-gate re-sync: synced <n> files (<sha>) | no drift` —
+       so ran-vs-never-ran is observable in the merge transcript (copy
+       the line into the `epm:merged` / `epm:merge-failed` note).
+    4. `gh pr merge --squash` — if it returns `CONFLICTING`, fall
+       through to the existing merge-conflict-recovery path
+       (§ Concurrent-committer merge conflicts).
+
+  The Guard-3 subject-scoped commit-subject convention still applies —
+  never write a full-message grep-exclusion invocation into this Step 10d
+  section (enforcement = the gate-region negative assert in
+  `tests/test_issue_skill_lint_family_sync.py`, whose region spans this
+  post-gate section through the auto-merge heading — the Guard-3 pin
+  test's own region ban stops at the fast-path heading and does not
+  reach here).
+
+  Synced files enter the sync commit ONLY if they DIFFER from HEAD
+  (the family-atomic block's `git diff --quiet` gate is what commits;
+  a no-drift re-sync commits nothing and the flow is idempotent). The
+  gate has already verified the landing tree; a post-gate sync of
+  origin/main-identical bytes over the branch tip does not change the
+  landing tree the gate green-lit, because family-atomic skip preserves
+  branch-side content — a branch that edits `workflow.yaml` still
+  merges with its own `workflow.yaml`+ generated `markers.md` after
+  this sync (the family is still dirty), so the gate's #1456 3-way
+  merge of `workflow_lint.py` remains the covering mechanism for that
+  specific file's payload edits, and the merge's own conflict resolution
+  handles the residual.
 
 #### The auto-merge procedure (safe case: guard 3 clean — mainline-based, own commits in scope)
 
@@ -10995,9 +11716,70 @@ else
     if [ "${HS%% *}" = "$TIP" ]; then
       echo "head-sync pre-check: parity at $TIP (mergeable=${HS##* })"
     fi
+    # Post-gate freshness re-sync (#1714): the lint gate has PASSed against
+    # origin/main-as-of-gate-start; origin/main may have advanced during the
+    # ~30-min gate window. Re-run the Step 5a family-atomic block with source
+    # origin/main immediately before the merge to minimize the merge-race
+    # window. Uses the ALREADY-BOUND $WT (do NOT re-derive from cwd; a
+    # repo-root cwd would rebind to the shared root).
+    timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet || true
+    # --- inline Step 5a family-atomic block (origin/main source, same as
+    # Step 5a itself as of #1747; WT pre-bound, no on-main skip needed) ---
+    declare -A FAMILY_OF
+    FAMILY_OF[".claude/workflow.yaml"]="workflow"
+    FAMILY_OF[".claude/skills"]="workflow"
+    FAMILY_OF["tests/test_workflow_yaml.py"]="workflow"
+    FAMILY_OF["scripts/workflow_lint.py"]="lint"
+    FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"
+    FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"
+    FAMILY_OF[".claude/hooks"]="guard"
+    FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
+    FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
+    SPECS_10D=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py"
+    MB_10D=$(git -C "$WT" merge-base HEAD origin/main)
+    declare -A DIRTY_FAMILIES_10D
+    for f in $SPECS_10D; do
+      bs_commits=$(git -C "$WT" log --format='%H %s' "$MB_10D"..HEAD -- "$f" \
+        | awk 'index($0, "sync workflow-surface specs from") == 0')
+      if [ -n "$bs_commits" ]; then
+        fam="${FAMILY_OF[$f]:-$f}"
+        DIRTY_FAMILIES_10D[$fam]=1
+      fi
+    done
+    SAFE_SPECS_10D=""
+    for f in $SPECS_10D; do
+      fam="${FAMILY_OF[$f]:-$f}"
+      if [ -z "${DIRTY_FAMILIES_10D[$fam]}" ]; then
+        SAFE_SPECS_10D="$SAFE_SPECS_10D $f"
+      fi
+    done
+    SYNC_SHA="no-drift"
+    if [ -n "$SAFE_SPECS_10D" ] && ! git -C "$WT" diff --quiet origin/main -- $SAFE_SPECS_10D; then
+      git -C "$WT" checkout origin/main -- $SAFE_SPECS_10D
+      if ! git -C "$WT" diff --quiet HEAD -- $SAFE_SPECS_10D; then
+        git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from origin/main (spec-freshness)" -- $SAFE_SPECS_10D
+        SYNC_SHA=$(git -C "$WT" rev-parse HEAD | head -c 12)
+        # Push the new sync commit so gh pr merge sees it on the PR head ref
+        git -C "$WT" push origin issue-<N> \
+          || { git -C "$WT" pull --rebase=merges --autostash \
+               && git -C "$WT" push origin issue-<N>; }
+      fi
+    fi
+    SYNC_COUNT=$(echo $SAFE_SPECS_10D | wc -w)
+    echo "[step10d] post-gate re-sync: synced $SYNC_COUNT files ($SYNC_SHA) | no drift"
+    # --- end inline Step 5a family-atomic block ---
     gh pr ready <PR>
     if gh pr merge <PR> $MERGE_FORM --delete-branch=false; then
       rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on MERGE SUCCESS — the verdict certified exactly the tip that landed
+      # Root-sync before epm:merged (#1725, safe-case): the just-merged diff is on
+      # origin/main; a workflow-surface fix in it is NOT yet live at the
+      # shared repo root, and the very next call — the epm:merged post —
+      # runs argv-prose guards from the pre-fix root copy (session
+      # 7ce3a81f, 2026-07-26: git-verb note text blocked ~25s post-merge).
+      # sync_repo_root.py is single-flight flock-serialized; fail-soft
+      # (the post-merge-guard pre-sync at the guard block below remains the fallback).
+      uv run python "$REPO_ROOT/scripts/sync_repo_root.py" || \
+        echo "[step10d/safe-case] pre-marker sync failed; post-merge-guard pre-sync remains the fallback"
     else
       echo "MERGE FAILED — classify the gh error text: (0) \"Base branch was modified\" -> transient base-advance (Known failure shape 0 below): wait ~20s via a bounded until-loop or a bg-Bash re-check — NEVER a leading foreground \`sleep\` (harness-blocked; 3 wasted turns on 2026-07-18 alone) — then re-enter this SAME conditional (same tip, verdict still valid; max 2 same-tip retries); (1) \"can't be rebased\" (--rebase form only) -> the #1041 --squash retry (Known failure shape 1 below; SHA-bound verdict remains valid for the SAME tip); (2) \"Pull Request has merge conflicts\" -> the #1128 re-snapshot-and-retry-once (Known failure shape 2 below); (3) \"Head branch is out of date\" -> PR head-sync lag (Known failure shape 3 below): confirm pushed, bounded headRefOid re-poll, close/reopen nudge ONCE if still stale, then re-enter this SAME conditional (same tip, verdict still valid; max 2 same-tip re-entries); (4) anything else -> the Failure bullet (merge-conflict recovery ONCE, then epm:merge-failed). Do NOT hand-write the verdict file."
       false
@@ -11056,7 +11838,18 @@ branch tip is unchanged, so the SHA-bound verdict re-certifies it
 (consume-on-merge-success survives this failure by design; never
 hand-write the verdict file, #1082). Bounded at TWO same-tip retries
 per Step 10d invocation; a third consecutive hit is no longer plausibly
-timing — reclassify by error text per shapes 1/2/3/else. Before #1288
+timing — reclassify by error text per shapes 1/2/3/else.
+
+Before each retried merge call, post an `[long-phase-heartbeat]`
+progress note so the stalled detector, `tick_triage.py`, and downstream
+sessions can tell an in-flight retry from a stranded merge (#1723;
+same long-phase-heartbeat family recognized by
+`autonomous_session_watch._long_phase_heartbeat_reason`):
+
+```bash
+uv run python scripts/task.py post-marker <N> epm:progress \
+  --note "[long-phase-heartbeat] step10d-merge attempt=<k> shape=0"
+``` Before #1288
 this shape fell through to the "anything else" catch-all (then
 numbered (3); now class (4) after #1657 added the head-sync shape) and
 burned a full
@@ -11102,6 +11895,14 @@ commit's replay — the fall-through to the merge-conflict recovery below
 covers it. Even a fresh snapshot can go stale in the seconds between the
 fetch and the server-side merge — this recipe bounds and mechanizes
 recovery; it does not eliminate the race.
+
+Before the re-snapshot-and-retry runs, post an `[long-phase-heartbeat]`
+progress note (#1723; same family as shape 0 above):
+
+```bash
+uv run python scripts/task.py post-marker <N> epm:progress \
+  --note "[long-phase-heartbeat] step10d-merge attempt=<k> shape=2"
+```
 
 ```bash
 # Re-snapshot-and-retry (ONCE per Step 10d invocation) — fires ONLY on
@@ -11200,11 +12001,92 @@ The head-sync pre-check inside the safe-case block above exists to
 keep this shape off the FIRST attempt; this paragraph is the backstop
 when the lag outlasts the pre-check budget.
 
-- **Success:** post `epm:merged v1` with the list of merge SHAs plus
-  `merge_form: squash|rebase` and `merge_attempts: <n>` (note-token
-  convention — no schema change, #1288). Update
-  the chat title with `merged`. Then run the **post-merge stale-task-folder
-  guard** below (it runs on every merge form).
+Before each retried merge call in this shape (each same-tip re-entry
+AND after the close/reopen nudge), post an `[long-phase-heartbeat]`
+progress note (#1723; same family as shapes 0/2 above):
+
+```bash
+uv run python scripts/task.py post-marker <N> epm:progress \
+  --note "[long-phase-heartbeat] step10d-merge attempt=<k> shape=3"
+```
+
+- **Success:** post `epm:merged v1` VIA THE `--file` CHANNEL — never `--note`
+  — with a scratch file at `/tmp/issue-<N>-merged-note.md` (composed VIA
+  THE WRITE TOOL immediately before the post-marker call — NEVER a Bash
+  heredoc or printf/echo redirect: the note body then rides the Bash argv,
+  and the #1058 strip_heredoc_bodies() pre-pass is fail-closed — the common
+  merged-note shape (unquoted <<EOF tag + $( ) expansion in the body)
+  REFUSES the strip, so git-verb prose in the note blocks the whole call
+  (2026-07-27 heredoc variant, #1756). Resolve dynamic values — SHAs,
+  counts — in PRIOR Bash calls and embed them as literals in the Write
+  content) carrying the SHA
+  list plus `merge_form: squash|rebase` and `merge_attempts: <n>` (note-token
+  convention — no schema change, #1288). The `--file` channel bypasses the
+  argv-prose scan `guard_repo_root_branch.sh` runs on `--note`; merge-recovery
+  notes routinely quote `git merge`, `git rebase`, and the pre-fix guard's
+  own blocked argv would fire on any of them (incident session `7ce3a81f`,
+  2026-07-26). Update the chat title with `merged`. Then run the **post-merge
+  stale-task-folder guard** below (it runs on every merge form).
+
+  **Authoritative merge-SHA derivation (#1722).** Read the merge SHA
+  from the PR object itself, AFTER `gh pr merge` reports success:
+  `MERGE_SHA=$(gh pr view <PR> --json mergeCommit -q .mergeCommit.oid)`.
+  This is the shape SKILL.md already uses elsewhere for other PR fields
+  (`state`, `mergeable`, `headRefOid`), and `mergeCommit` is a documented
+  `gh pr view --json` field — it resolves the merge commit for BOTH
+  merge forms (`--squash` returns the single squash commit; `--rebase`
+  returns the tip of the replayed commits; verified live 2026-07-27
+  against PR #1487 (rebase form) → `85db2fba593a1b201175cbb5438568be32ca161f`).
+  A NOT-YET-MERGED PR returns `null` for `.mergeCommit`, so the derivation
+  is ordering-safe as long as it runs AFTER `gh pr merge` reports success.
+  NEVER derive the SHA from the shared `origin/main` tip
+  (e.g. `git log -1 --format=%H origin/main`) — concurrent sessions'
+  merges advance the shared tip between the merge and the read, so a
+  sibling task's merge commit can substitute for yours (incident
+  2026-07-26 session `06447a89`: the tip read #1692's SHA while
+  posting the #1691 merge marker).
+
+  **Pre-post commit-subject cross-check (#1722; object-availability
+  hardened #1763).** Before posting `epm:merged v1`, verify the derived
+  commit's subject names THIS task. The merge commit was created
+  SERVER-SIDE by `gh pr merge` and exists locally only after a fetch —
+  the #1725 pre-marker sync is fail-soft AND single-flight (exit 0 can
+  mean "another sync in flight, no pull ran"), and the
+  merge-conflict-recovery path has no pre-marker sync at all — so
+  ensure the object is local FIRST; a MISSING object is
+  staleness/transport, never a MISMATCH (incident #1735, 2026-07-27: a
+  pre-fetch `git log -1` read `fatal: bad object` and the false
+  MISMATCH aborted the `epm:merged` post one round):
+
+      git -C "$REPO_ROOT" rev-parse --verify --quiet "$MERGE_SHA^{commit}" >/dev/null \
+        || timeout --kill-after=30s 120s git -C "$REPO_ROOT" fetch origin main --quiet || true
+      SUBJECT=$(git -C "$REPO_ROOT" log -1 --format='%s' "$MERGE_SHA" 2>/dev/null) \
+        || SUBJECT=$(gh api "repos/{owner}/{repo}/commits/$MERGE_SHA" --jq '.commit.message' | head -1)
+
+  The `gh api` fallback reads the subject from the REMOTE commit (no
+  local object needed; the `{owner}/{repo}` placeholders resolve from
+  the current repo), so a failed/raced fetch degrades to a remote read
+  instead of a false MISMATCH. Then confirm `task #<N>` (or the
+  issue-branch name `issue-<N>`) appears in `$SUBJECT`. Only a
+  RESOLVED-but-foreign subject is a MISMATCH: ABORT the post and
+  re-derive from `gh pr view <PR> --json mergeCommit`. The null case
+  from a not-yet-merged PR still fails loud (`git log -1 --format=%s
+  null` errors locally AND the remote read 404s → empty `$SUBJECT`);
+  an EMPTY `$SUBJECT` after both reads is an ABORT (cannot certify),
+  never a silent post. A foreign SHA is caught at post time rather
+  than by eye after the fact.
+
+  Note. A merged diff that touches `scripts/*guard*.sh`, `.claude/hooks/*`, or
+  any workflow-surface content that the session's own remaining Bash calls
+  route through is NOT live at the shared repo root the instant `gh pr merge`
+  returns success. `origin/main` carries it; the shared root's working tree
+  does not. The pre-marker `sync_repo_root.py` above closes the window on the
+  `epm:merged` call itself (the fix is live at the root before its own note
+  is scanned by the argv guards). Downstream root-side calls in the same
+  session — for example, a Step-9 or Step-10 chat-line log, a post-completion
+  `epm:progress`, a follow-up-proposer dispatch — still see the pre-fix
+  copy until the post-merge-guard pre-sync (or a fresh `/issue <N>`
+  re-invocation's Step 4 root-divergence probe from #1725) runs.
 - **Failure** (rebase conflict, non-mergeable PR, non-fast-forward): for
   the `Base branch was modified` shape (substring match), run the
   shape-0 wait-and-retry (Known failure shape 0 above, max 2) FIRST; for
@@ -11399,7 +12281,13 @@ fi
 # #1082). The recovery just added a merge commit, so --rebase is
 # documented-doomed here (#1041 — the old flow burned that attempt, then
 # took the --squash substitution). Go straight to --squash for ALL kinds
-# (#1288):
+# (#1288).
+#
+# Before the post-recovery `gh pr merge --squash` retry, post an
+# `[long-phase-heartbeat]` progress note (#1723; same family as shapes
+# 0/2/3 above):
+#   uv run python scripts/task.py post-marker <N> epm:progress \
+#     --note "[long-phase-heartbeat] step10d-merge attempt=<k> shape=conflict-recovery"
 if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/null \
    && [ -n "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" ] \
    && [ "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" = "$(git -C "$WT" rev-parse HEAD)" ]; then
@@ -11574,11 +12462,36 @@ git -C "$REPO_ROOT" ls-tree -r --name-only origin/main -- "figures/issue_<N>/" \
 
 Decision tree:
 
-- **All required deliverables resolve on `origin/main`** -> post
-  `epm:merged v1` with fields `{artifact_confirmed: true,
-  full_rebase_deferred: true, reason: "<the tripped guard-3 condition:
-  based on <PARENT> (not on mainline) | own commits touch foreign /
-  out-of-scope paths: <paths>>", verified_paths: [...]}`.
+- **All required deliverables resolve on `origin/main`** -> BEFORE the
+  `epm:merged v1` post, run the pre-marker root sync (#1725,
+  artifact-confirmed): the deliverables verification above ran
+  `git fetch origin main` at L11869, so `origin/main` is fresh, but the
+  shared root's local `main` is not; a sibling session's just-merged
+  workflow-surface fix is not yet live at the root when the epm:merged
+  post's argv guard scans this session's note.
+
+  ```bash
+  # Root-sync before epm:merged (#1725, artifact-confirmed path): no
+  # gh pr merge fires here (skipped below), so a sibling session's
+  # workflow-surface fix landed on origin/main in the meantime is still
+  # not live at the shared root. sync_repo_root.py is single-flight
+  # flock-serialized; fail-soft (the post-merge-guard pre-sync remains
+  # the fallback).
+  uv run python "$REPO_ROOT/scripts/sync_repo_root.py" || \
+    echo "[step10d/artifact-confirmed] pre-marker sync failed; post-merge-guard pre-sync remains the fallback"
+  ```
+
+  Then post
+  `epm:merged v1` VIA THE `--file` CHANNEL — never `--note` — with a
+  scratch file at `/tmp/issue-<N>-merged-note.md` (composed via the
+  Write tool immediately before the post-marker call — never a Bash
+  heredoc/printf; see the safe-case Success bullet, #1756) carrying fields
+  `{artifact_confirmed: true, full_rebase_deferred: true, reason:
+  "<the tripped guard-3 condition: based on <PARENT> (not on mainline)
+  | own commits touch foreign / out-of-scope paths: <paths>>",
+  verified_paths: [...]}`. Same `--file` rationale as the safe-case
+  Success bullet above — the argv-prose scan on `--note` blocks
+  `reason:` text that quotes git verbs (session `7ce3a81f`).
   Update the chat title with `merged (artifact-confirmed)`. Skip the
   `gh pr merge` call; leave the PR open so a future `/issue <N>`
   re-invocation can retry the full rebase once the parent branch is
@@ -11643,13 +12556,12 @@ Decision tree:
 
   **Single-flight probe (#1606)** first, per the Step 9c 1b statement: a
   separate foreground
-  `pgrep -af 'issue-<N>-surgical-outcome[.]txt|scripts/workflow_lint[.]py'`.
+  `pgrep -af 'issue-<N>-surgical-outcome[.]txt|issue-<N>-lint-gate-tre[e]'`.
   An `issue-<N>`-scoped hit = THIS gate-and-land sequence is still
   running — WAIT for exit, never relaunch into it (the outcome-sentinel
-  `rm -f` below would clobber it, and the root holds ITS staged payload). A
-  `workflow_lint.py`-only hit is AMBIGUOUS (root-copy lint invocations are
-  not issue-scoped in argv — possibly a SIBLING session's root lint or a
-  9a-ter inline gate): WAIT for exit, never kill — the same rule as this
+  `rm -f` below would clobber it, and the root holds ITS staged payload).
+  A residual ambiguous hit that is neither this session's own gate nor a
+  matching sibling gate: WAIT for exit, never kill — the same rule as this
   block's completion-read recovery arm.
 
   Then, from the **repo root on `main`** (never switch the branch
@@ -11819,9 +12731,9 @@ Decision tree:
     # as the shared gate's executable block (sed msg-suffix strip, NOT awk
     # field-2: space-bearing string param ids must survive intact):
     for leg in baseline gated; do
+      # msg-strip caveat: a literal ' - ' INSIDE a param id truncates here;
+      # a same-prefix dash-bearing sibling collision fails toward pass (narrow doc-only residual, #1573)
       grep -E '^(FAILED|ERROR) ' "/tmp/issue-<N>-tg-$leg.txt" \
-        # msg-strip caveat: a literal ' - ' INSIDE a param id truncates here;
-        # a same-prefix dash-bearing sibling collision fails toward pass (narrow doc-only residual, #1573)
         | sed -E 's/^(FAILED|ERROR) //; s/ - .*$//' \
         | sort -u > "/tmp/issue-<N>-tg-$leg-nodes.txt" || true
     done
@@ -11851,15 +12763,58 @@ Decision tree:
   Branch unsafe to blind-rebase: <based on <PARENT> (not on mainline) |
   own commits touch foreign / out-of-scope paths>. Cherry-picked this
   task's own added files only; shared src/ / scripts/ unchanged." --
+    # PARTIAL-APPLY VERIFICATION (this task's Edit A): the branch's own ADDED
+    # files were just staged from the branch tip and committed. Confirm — by
+    # materialize-then-check — that every claimed additive path landed with
+    # content byte-identical to its branch-tip source. The commit message
+    # above asserts a "cherry-picked" apply; verify the assertion before
+    # recording `landed`. Any path whose committed content diverges from its
+    # branch-tip source is a PARTIAL apply (incident 3c24493113, 2026-07-05:
+    # an orchestrator-improvised recovery outside the documented paths
+    # landed the test file but not the extractor half it tested; main red
+    # 20 days until #1683 ported it). Edit A adds the guarantee to the
+    # CURRENT documented template; a future improvised apply is out of
+    # scope here (workflow_lint follow-up).
+    # xargs feeds paths one-per-line (whitespace/glob-safe, matches the
+    # block's convention); stderr is retained so a producer failure
+    # surfaces its cause. The PUSH block below is now gated on
+    # $APPLY_OK — a partial apply short-circuits it (methodology-critic
+    # Must-Fix: bare `false` at the end of an if-branch does NOT halt
+    # subsequent commands in the enclosing block, so a variable-gated
+    # conditional is required).
+    APPLY_OK=yes
+    if ! xargs -r -a /tmp/issue-<N>-additive-files.txt \
+         git -C "$REPO_ROOT" diff --name-only HEAD "issue-<N>" -- \
+         > /tmp/issue-<N>-postapply-diff.txt; then
+      echo "PARTIAL-APPLY VERIFY: diff HEAD vs issue-<N> FAILED — cannot certify apply; refusing to record landed"
+      echo partial-apply-verify-failed > /tmp/issue-<N>-surgical-outcome.txt
+      APPLY_OK=no
+    elif [ -s /tmp/issue-<N>-postapply-diff.txt ]; then
+      # Non-empty diff = one or more claimed paths were NOT byte-identically
+      # applied. Fail LOUD — a claimed clean apply that did not land is the
+      # 3c24493113 shape.
+      echo "PARTIAL-APPLY VERIFY: $(wc -l < /tmp/issue-<N>-postapply-diff.txt) claimed additive path(s) diverge from their branch-tip source:"
+      cat /tmp/issue-<N>-postapply-diff.txt
+      echo "The 'surgical additive checkout' commit above does NOT reflect all claimed content; recording partial-apply outcome, NOT landed."
+      echo partial-apply > /tmp/issue-<N>-surgical-outcome.txt
+      APPLY_OK=no
+    fi
     # Bounded push (the one network op on this arm): a hung push would wedge
     # the background call with the outcome sentinel unwritten. rc 124 takes
     # the push-failed arm — the same degradation as a rejected push (the
     # "Surgical checkout itself fails" bullet / sync-retry below).
-    if timeout --kill-after=30s 300s git push origin main; then
-      echo landed > /tmp/issue-<N>-surgical-outcome.txt
+    # GATED on APPLY_OK: a partial-apply outcome above short-circuits the
+    # push and its `landed` sentinel; the enclosing background call still
+    # exits non-zero via the `false` at the end of the else arm.
+    if [ "$APPLY_OK" = "yes" ]; then
+      if timeout --kill-after=30s 300s git push origin main; then
+        echo landed > /tmp/issue-<N>-surgical-outcome.txt
+      else
+        echo push-failed > /tmp/issue-<N>-surgical-outcome.txt
+        false
+      fi
     else
-      echo push-failed > /tmp/issue-<N>-surgical-outcome.txt
-      false
+      false   # partial-apply / verify-failed sentinel already written above
     fi
   else
     # BLOCKED: the checkout above already staged the A-only paths AND wrote
@@ -11884,19 +12839,51 @@ Decision tree:
   force-stop there is fail-closed: the sentinel stays unwritten). When the
   call completes (the harness notifies), read
   `/tmp/issue-<N>-surgical-outcome.txt` in a fresh FOREGROUND call:
-  - `landed` -> post `epm:merged v1` as below.
+  - `landed` -> BEFORE the `epm:merged v1` post, run the pre-marker root
+    sync (#1725, surgical-additive landed path): the scratch worktree
+    pushed directly to `origin/main` via `git push origin HEAD:main`, so
+    the additive files are live on `origin/main` but the shared repo
+    root's local `main` is still the pre-push snapshot. Same
+    guard-argv rationale as the safe-case B1 site.
+
+    ```bash
+    # Root-sync before epm:merged (#1725; surgical-additive landed path):
+    # the surgical scratch-worktree push landed the additive files on
+    # origin/main, but the shared repo root's local main is still the
+    # pre-push snapshot. sync_repo_root.py is single-flight flock-serialized;
+    # fail-soft (the post-merge-guard pre-sync remains the fallback).
+    uv run python "$REPO_ROOT/scripts/sync_repo_root.py" || \
+      echo "[step10d/surgical-landed] pre-marker sync failed; post-merge-guard pre-sync remains the fallback"
+    ```
+
+    Then post `epm:merged v1` as below.
   - `push-failed` (rejected OR timed-out, rc 124) -> the "Surgical
     checkout itself fails" bullet below (one `sync_repo_root.py` retry).
   - `blocked-cleaned` -> the gate subsection's case-1/3 fix path; read the
     background call's BLOCKED echo, which carries `$GATE_VERDICT`, for
     block-vs-crash attribution.
+  - `partial-apply` -> post `epm:merge-failed v1` with `{reason: "surgical
+    additive checkout — partial apply", diverged_paths: [...]}` (read the
+    diverged file list from `/tmp/issue-<N>-postapply-diff.txt`), name the
+    diverged files in ONE chat line, CONTINUE (idempotent retry on next
+    `/issue <N>`). The task still parks per the standard failure path.
+    (This task's Edit A: closes the false-`landed` gap by refusing to write
+    the `landed` sentinel when the surgical commit's content diverges from
+    the branch-tip source.)
+  - `partial-apply-verify-failed` -> post `epm:merge-failed v1` with
+    `{reason: "surgical additive checkout — apply-verification diff
+    producer failed"}`, name the branch + worktree in ONE chat line,
+    CONTINUE. (This task's Edit A: the diff producer itself errored — a
+    materialize-then-check failure, treated as terminal rather than a
+    false `landed`.)
   - MISSING sentinel -> the sequence died mid-run (tool kill / watcher
     force-stop / wedge-bound kill) and the root may hold staged payload.
     Recover IN THIS ORDER: (1) kill-before-relaunch probe FIRST
-    (`pgrep -af 'scripts/workflow_lint[.]py'` — root-copy invocations are
-    not issue-scoped in argv, so on an ambiguous match WAIT for exit,
-    never kill; the Step 0 single-orchestrator guard excludes same-issue
-    concurrency). (2) Landed/committed classification BEFORE any cleanup —
+    (`pgrep -af 'issue-<N>-lint-gate-tre[e]'` — issue-scoped per the L11949
+    Step 10d single-flight probe; on any residual ambiguous match WAIT for
+    exit, never kill; the Step 0 single-orchestrator guard excludes
+    same-issue concurrency).
+ (2) Landed/committed classification BEFORE any cleanup —
     a shell killed between commit/push success and the sentinel write
     leaves the payload COMMITTED (tracked + clean), which a naive
     contamination probe misreads: check whether the surgical commit is on
@@ -11938,9 +12925,29 @@ Decision tree:
   worktree / `sync_repo_root.py` retry advice and does NOT mention the
   skipped producer — this paragraph is the recovery contract.
 
-  Then post `epm:merged v1` with `{artifact_confirmed: true,
-  full_rebase_deferred: true, surgical_checkout: true, files:
-  [...]}`. Same chat title update as above.
+  BEFORE the `epm:merged v1` post, run the pre-marker root sync
+  (#1725, surgical-additive checkout): the additive files are on
+  `origin/main` via the scratch-worktree push, but the shared repo
+  root's local `main` is still the pre-push snapshot. Same guard-argv
+  rationale as B1/B3.
+
+  ```bash
+  # Root-sync before epm:merged (#1725; surgical-additive checkout path).
+  # sync_repo_root.py is single-flight flock-serialized; fail-soft
+  # (the post-merge-guard pre-sync remains the fallback).
+  uv run python "$REPO_ROOT/scripts/sync_repo_root.py" || \
+    echo "[step10d/surgical-additive] pre-marker sync failed; post-merge-guard pre-sync remains the fallback"
+  ```
+
+  Then post `epm:merged v1` VIA THE `--file` CHANNEL — never `--note` —
+  with a scratch file at `/tmp/issue-<N>-merged-note.md` (composed via
+  the Write tool immediately before the post-marker call — never a
+  Bash heredoc/printf; see the safe-case Success bullet, #1756)
+  carrying `{artifact_confirmed: true, full_rebase_deferred: true,
+  surgical_checkout: true, files: [...]}`. Same `--file` rationale as
+  the safe-case Success bullet above — the argv-prose scan on `--note`
+  fires on git-verb text (session `7ce3a81f`). Same chat title update
+  as above.
 
 - **Surgical checkout itself fails** (file conflicts, or push rejected after
   one `uv run python "$REPO_ROOT/scripts/sync_repo_root.py"` retry — the ONLY
@@ -11986,6 +12993,19 @@ CANON=$(realpath --relative-to="$REPO_ROOT" \
 # check pattern as the pre-push lint-gate trigger diff (#1047). Failure arms
 # are TERMINAL (echo + false — routes to the epm:merge-failed handling
 # above); never proceed believing cleanup ran.
+# PRE-SYNC (this task's Edit B): the local root routinely lags origin/main
+# by a completed-status mv committed locally but not yet pushed (incident
+# #1688, 2026-07-25 18:19:37Z: guard exit 1 with sync_repo_root.py fixing
+# it in one attempt at ahead=8 behind=2). Run the sanctioned root sync
+# UNCONDITIONALLY before the guard's canonical-folder check, so the
+# guard's nonzero exit becomes reserved for genuine drift rather than the
+# expected unpushed-mv state. sync_repo_root.py is single-flight
+# flock-serialized (a concurrent sync returns exit 0 without re-syncing),
+# so this call is idempotent and tolerant of in-flight state. Failure is
+# NON-FATAL — the guard's own unpushed-mv pre-check (#1300) remains the
+# fallback recovery if the sync did not fully converge.
+uv run python "$REPO_ROOT/scripts/sync_repo_root.py" || \
+  echo "post-merge guard pre-sync: sync_repo_root.py exited non-zero; guard's own unpushed-mv pre-check is the fallback"
 if [ -z "$CANON" ]; then
   # task.py find / realpath failed -> empty CANON. Classifying with an empty
   # CANON would mark the CANONICAL folder itself as a duplicate and rm it.
@@ -12027,7 +13047,7 @@ elif ! git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main \
 # this arm never opens a delete of the canonical folder. Only a
 # still-absent CANON takes the branch — terminal echo + false, nothing
 # deleted.
-elif ! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt \
+elif ! grep -qxF -- "$CANON" /tmp/issue-<N>-postmerge-lstree.txt \
     && { for _ in 1 2; do
            uv run python "$REPO_ROOT/scripts/sync_repo_root.py"
            NEW_CANON=$(realpath --relative-to="$REPO_ROOT" \
@@ -12036,10 +13056,10 @@ elif ! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt \
            git -C "$REPO_ROOT" fetch origin main --quiet \
              && git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main \
                 > /tmp/issue-<N>-postmerge-lstree.txt \
-             && grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt \
+             && grep -qxF -- "$CANON" /tmp/issue-<N>-postmerge-lstree.txt \
              && break
          done
-         ! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt; }; then
+         ! grep -qxF -- "$CANON" /tmp/issue-<N>-postmerge-lstree.txt; }; then
   echo "post-merge stale-task-folder guard: canonical folder $CANON still ABSENT from origin/main after 2 root syncs — cannot classify duplicates (removing origin's only copy would leave ZERO folders for task <N>)"
   false
 # Work arm: every committed task-<N> folder on origin/main (matches
@@ -12062,8 +13082,11 @@ elif mapfile -t DUPES < <(grep -E "^tasks/[^/]+/<N>$" \
   # worktree needs no local-root state (the duplicate exists there BY
   # CONSTRUCTION), stages in its OWN index (no concurrent-session staging
   # races), and every command is `git -C`-scoped (the hook's designed
-  # override). Sparse cone = the duplicates only: a FULL checkout is
-  # ~7.7 GB / ~100k files on the shared VM root disk.
+  # override). Sparse cone = the duplicates + scripts/hooks (the commit's
+  # own pre-commit gitleaks hook runs `bash scripts/hooks/gitleaks_scoped.sh`
+  # worktree-root-relative with always_run — exit 127 without it, #1780;
+  # toplevel .gitleaks.toml/.gitleaksignore ride cone mode automatically):
+  # a FULL checkout is ~7.7 GB / ~100k files on the shared VM root disk.
   SCRATCH=/tmp/issue-<N>-postmerge-scratch
   # Pre-clean a scratch leaked by an earlier crashed run. Failure here is
   # tolerable (nothing to clean): the worktree add below is the loud gate.
@@ -12076,7 +13099,7 @@ elif mapfile -t DUPES < <(grep -E "^tasks/[^/]+/<N>$" \
   # --no-checkout` is load-bearing for a bare copy of the add line.
   if ! { git -C "$REPO_ROOT" worktree add --detach --no-checkout "$SCRATCH" origin/main \
          && git -C "$SCRATCH" sparse-checkout init --cone \
-         && git -C "$SCRATCH" sparse-checkout set "${DUPES[@]}" \
+         && git -C "$SCRATCH" sparse-checkout set "${DUPES[@]}" scripts/hooks \
          && git -C "$SCRATCH" checkout --detach origin/main \
          && git -C "$SCRATCH" rm -r -q "${DUPES[@]}" \
          && git -C "$SCRATCH" commit -q -m "post-merge: remove stale task #<N> folder(s) imported by Step 10d merge
@@ -12137,6 +13160,20 @@ merge commit and would be read as a live task by the session watcher
       uv run python "$REPO_ROOT/scripts/sync_repo_root.py"
       STALE_LOCAL=$(cd "$REPO_ROOT" && ls -d "${DUPES[@]}" 2>/dev/null || true)
     fi
+    # Empty-dir residue (#1780 -> #1792): the sync's checkout removes
+    # tracked FILES but an untracked empty leftover dir is invisible to
+    # git — no number of root syncs clears it. Zero-content dirs (no
+    # files, no symlinks — the JOINT probe over ALL persisting paths)
+    # are rmdir'd depth-first (rmdir refuses non-empty dirs; inert to
+    # git state), then STALE_LOCAL is RE-DERIVED — never blind-cleared —
+    # so late-arriving content or a failed rmdir still fails loud
+    # below. $STALE_LOCAL is deliberately unquoted: multi-path
+    # word-split over `ls -d` output (task paths carry no whitespace).
+    if [ -n "$STALE_LOCAL" ] \
+       && [ "$(cd "$REPO_ROOT" && find $STALE_LOCAL \( -type f -o -type l \) 2>/dev/null | wc -l)" -eq 0 ]; then
+      (cd "$REPO_ROOT" && find $STALE_LOCAL -depth -type d -exec rmdir {} \; 2>/dev/null) || true
+      STALE_LOCAL=$(cd "$REPO_ROOT" && ls -d "${DUPES[@]}" 2>/dev/null || true)
+    fi
     if [ -n "$STALE_LOCAL" ]; then
       echo "post-merge stale-task-folder guard: LOCAL stale copy/copies persist after 2 root syncs: $STALE_LOCAL — origin/main is clean but the local root still carries the folder(s)"
       false
@@ -12174,7 +13211,76 @@ not the local root has pulled the merge (the root-`git rm` pathspec
 failure that drove the #1253 improvised, hook-blocked checkout-pathspec
 fallback). The local-residue tail converges the local root via
 `scripts/sync_repo_root.py`, with the existence re-check as the arbiter
-(the helper's exit 0 alone does not prove the pull ran).
+(the helper's exit 0 alone does not prove the pull ran). Zero-content
+leftover dirs (no files, no symlinks) are rmdir'd depth-first before the
+loud failure (#1780) — untracked empty dirs are invisible to git and no
+sync can clear them; non-empty residue still fails loud.
+
+#### Terminal teardown (code-change path only; runs AFTER `epm:merged v1` has been posted)
+
+Fires ONLY on the code-change path (`kind: infra | batch | analysis |
+survey` — the arm that reached Step 10d via Step 10 step 6's
+`epm:merged`-not-yet-present branch, #1723). The experiment path
+already parked at `awaiting_promotion` in Step 9b and its own terminal
+transition to `completed` happens later on user promotion, so this
+sub-section is UNREACHABLE from that arm by design — the routing
+predicate is `kind ∈ {infra, batch, analysis, survey}`.
+
+Runs AFTER `epm:merged v1` has been posted AND AFTER the
+`#### Post-merge stale-task-folder guard` above has finished reconciling
+the shared `main` tree. All four `epm:merged` posting sites reach this
+block on success — the safe-case `gh pr merge $MERGE_FORM` above, the
+merge-conflict-recovery retry, the artifact-confirmed (guard-3-tripped)
+sentinel, and the surgical additive checkout — because the stale-folder
+guard runs on ALL of them ("runs after EVERY merge form lands") and
+this sub-section is its immediate successor. The block below fires
+IDEMPOTENTLY: a re-entry that already sees `status == "completed"` +
+`epm:done` present exits as a no-op (the standard SKILL.md resume
+convention).
+
+1. **Run CRON-TEARDOWN** — fresh `CronList` → `CronDelete` every job in
+   the two-leg match set (the recurring `/issue-tick <N>` tick + stray
+   one-shot `/issue <N>` wakeups; not-found = success; § CRON-TEARDOWN
+   procedure). The `/issue-tick` backstop stayed armed through the
+   entire Step 10d merge window (up to ~33 min under fleet churn — the
+   shape-2 conflict-recovery cycle + two ~12-min lint-gate waits
+   observed on 2026-07-26); a wedged / refused session during the
+   merge would have been re-driven by the tick, and now that
+   `epm:merged` is posted the backstop has done its job. Step 1 is
+   idempotent — a paranoid re-entry that already ran teardown reads
+   both legs empty and no-ops.
+
+2. **Apply the terminal status** via `task.py set-status`:
+   ```bash
+   uv run python scripts/task.py set-status <N> completed \
+     --note "Step 10d auto-complete: merged, terminal teardown"
+   ```
+   `<new-status>` is always `completed` for the code-change kinds —
+   code-change paths never seed `followups_running` (Step 10 step 5's
+   destination logic already selected `completed` for these kinds, and
+   the experiment-path branches — the ones that can pick
+   `awaiting_promotion` / `followups_running` — never reach this
+   sub-section).
+
+3. **Post final event `epm:done v1`** summarizing outcome, key numbers,
+   what's confirmed/falsified, what's next, plus a link to the
+   worktree-side write-up location and the merge SHA(s) recorded on the
+   `epm:merged` note just posted above. Include the line
+   `Moved to **completed**.`
+
+**Terminal-failure branch.** If the merge terminally failed after every
+retry surface exhausted (`epm:merge-failed v1` posted at the safe-case
+Failure bullet, the merge-conflict-recovery Failure arm, the
+artifact-confirmed / new-shared-`src/`-infra refusal, or the surgical
+checkout's `push-failed`/`partial-apply` arms), the code-change task
+still needs to complete (see the Failure bullet's own contract:
+"a code-change task still completes"). Run the SAME three-step sequence
+(CRON-TEARDOWN → `set-status completed` → `epm:done`), but the
+`epm:done` note records `merge_status: failed` and links to the
+`epm:merge-failed v1` marker for the manual-resolution audit trail. The
+merge retries idempotently on the next `/issue <N>` re-invocation
+regardless (per the resume-semantics table's `completed` + `epm:done`
++ no `epm:merged` row above).
 
 ---
 

@@ -89,6 +89,28 @@ A broken triage must fail toward coverage (full re-drive), never toward
 silence — a no-op-on-crash tick would leave the alive-stalled-at-PARK
 class permanently unrecovered.
 
+**Api-error-after-marker screen (#1695).** `tick_triage.py` converts a
+would-be `HEALTHY` to `STALE-REDRIVE` (reason suffix
+`api-error-after-marker`) when this session's transcript tail carries an
+assistant row with `isApiErrorMessage: true` whose ts is NEWER than the
+latest `events.jsonl` marker — a refusal or 529 that killed the driving
+turn is otherwise masked by marker-age freshness (marker-age is measured
+from the LAST event log post, which precedes the dying turn by
+construction; incidents #1687 refusal-killed turn read HEALTHY at ~1 min
+marker age, #1689 first-turn 529 waited ~3h for the refusal-lane
+re-dispatch). The predicate reads the SAME transcript file the
+human-activity screen reads (256 KB tail via
+`_transcript_tail_rows_1629`), only on the HEALTHY-verdict branch — so
+the HEALTHY tick stays ONE Bash call by construction. Fail toward
+today's verdict: any transcript-resolution or classification failure
+suppresses nothing (a spurious STALE-REDRIVE is cheaper than a missed
+one on this predicate; the marker-age STALE-REDRIVE remains the
+backstop). Teardown verdicts (TERMINAL / GATE-TRANSITION) are UNAFFECTED
+— the same posture as the #1629 screen (a refusal after gate-park is
+still a teardown; honoring it here would create an infinite alternation
+between TERMINAL and STALE-REDRIVE). Kill switch:
+`EPM_TICK_API_ERROR_PROBE=0`.
+
 **Human-activity screen (#1629).** `tick_triage.py` converts a would-be
 STALE-REDRIVE to `HEALTHY` (reason prefix `human-active`) when this
 session's transcript tail shows a human (non-cron) user message within
