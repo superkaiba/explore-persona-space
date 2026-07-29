@@ -1,6 +1,6 @@
 {
-  "commit": "052a2c1cb3",
-  "created": "2026-07-29T00:03:24Z",
+  "commit": "bc455ea116",
+  "created": "2026-07-29T00:51:58Z",
   "figsize": [
     13.0,
     5.6
@@ -766,7 +766,7 @@
   "n_series": 12,
   "total_points": 108,
   "text": {
-    "suptitle": "Assistant framing pairs, all 9 rungs (context arm): no rung reaches the 0.90 bar\ninto-story transfers exceed 1.0 only because the story-cell ceiling is near zero",
+    "suptitle": "Assistant framing pairs, all 9 rungs (context arm): base reaches the 0.90 bar at no rung; instruct only at rung 9 (3 of 6 pairs)\ninto-story transfers exceed 1.0 only because the story-cell ceiling is near zero",
     "fig_texts": [],
     "axes": [
       {
