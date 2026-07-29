@@ -6151,8 +6151,8 @@
     "1794": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1794",
-      "status": "proposed",
+      "path": "tasks/planning/1794",
+      "status": "planning",
       "title": "daily-fix: persist uv PATH for non-login shells (GCE + pod)"
     },
     "1795": {
