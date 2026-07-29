@@ -34,7 +34,9 @@ def main(argv: list[str] | None = None) -> int:
     ops, expected = [], []
     for rel, local in pairs:
         p = Path(local)
-        assert p.exists(), f"upload source missing: {p}"
+        # is_file, NOT exists (crash-fix r9): CommitOperationAdd rejects
+        # directories — a DIR here is the misnested-out-arg class.
+        assert p.is_file(), f"upload source missing or not a regular FILE: {p}"
         rp = f"{args.prefix}/{rel}"
         ops.append(CommitOperationAdd(path_in_repo=rp, path_or_fileobj=str(p)))
         expected.append(rp)

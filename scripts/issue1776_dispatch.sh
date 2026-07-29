@@ -507,17 +507,19 @@ upload_batch() {  # upload_batch <log-name> <hub-prefix> <commit-msg> <listfile 
     --prefix "$prefix" --listfile "$listfile" --message "$msg"
 }
 
-list_add() {  # list_add <listfile> <rel> <abs> — include iff the source exists
+list_add() {  # list_add <listfile> <rel> <abs> — include iff a regular FILE exists
   # ONLY for legitimately-conditional artifacts (LENS_OK-gated dicts, glob
   # loops); an expected-present artifact uses list_add_required (#825 class:
-  # the -e guard silently skips a typo'd path — review v1 Critical 3).
-  [[ -e "$3" ]] && echo "$2=$3" >> "$1" || true
+  # the existence guard silently skips a typo'd path — review v1 Critical 3).
+  # -f, NOT -e (crash-fix r9): CommitOperationAdd rejects directories — a DIR
+  # here is the misnested-out-arg class, never a valid upload source.
+  [[ -f "$3" ]] && echo "$2=$3" >> "$1" || true
 }
 
 list_add_required() {  # fail LOUD when an expected-present artifact is missing
   if [[ $DRY == 1 ]]; then list_add "$@"; return 0; fi
-  if [[ ! -e "$3" ]]; then
-    echo "[dispatch] upload-list FATAL: required artifact missing: $3 (rel=$2)" >&2
+  if [[ ! -f "$3" ]]; then
+    echo "[dispatch] upload-list FATAL: required artifact missing or not a regular FILE: $3 (rel=$2)" >&2
     exit 1
   fi
   echo "$2=$3" >> "$1"
@@ -659,8 +661,13 @@ for ((g = 0; g < NGPU; g++)); do
   P3_PIDS+=("$p")
 done
 for p in ${P3_PIDS[@]+"${P3_PIDS[@]}"}; do wait_rc "$p" || exit $?; done
+# --eval-out is the eval DIRECTORY (issue1776_phase3.py mkdirs it and writes
+# steered_shift_summaries.json + raw_completions_manifest.json INSIDE it).
+# Crash-fix r9: the pre-fix invocation passed the deliverable FILE path here,
+# so finalize misnested both outputs one level deep and p3_upload crashed at
+# CommitOperationAdd ("not a file"). phase3 now REFUSES a file-shaped path.
 run p3_finalize env CUDA_VISIBLE_DEVICES=0 "${P3_BASE[@]}" --finalize-only \
-  --eval-out "$EVAL_DIR/phase3/steered_shift_summaries.json" ${P3_EXTRA[@]+"${P3_EXTRA[@]}"}
+  --eval-out "$EVAL_DIR/phase3" ${P3_EXTRA[@]+"${P3_EXTRA[@]}"}
 phase_end "p3_grid"
 
 phase_begin "p3_upload"
@@ -672,11 +679,20 @@ if [[ $DRY == 0 ]]; then
   for f in "$P3_ROOT"/raw_completions/steered/*.json; do
     list_add "$P3_TEXT_LIST" "$(basename "$f")" "$f"
   done
-  for f in "$P3_ROOT"/summaries/*.pt "$P3_ROOT"/raw_completions_manifest.json \
-           "$EVAL_DIR/phase3/steered_shift_summaries.json"; do
+  for f in "$P3_ROOT"/summaries/*.pt; do
     list_add "$P3_TENS_LIST" "phase3/$(basename "$f")" "$f"
   done
 fi
+# Plan-§6.5 deliverable FILES — finalize writes BOTH into $EVAL_DIR/phase3
+# (--eval-out is the DIRECTORY). Crash-fix r9: the pre-fix list (a) pointed
+# the manifest at $P3_ROOT, where nothing is written — list_add's existence
+# guard silently skipped it (the #825 class) — and (b) listed the summaries
+# path while a mis-wired --eval-out had made it a DIRECTORY. Required-present:
+# a missing/dir-shaped deliverable now fails LOUD at list composition.
+list_add_required "$P3_TENS_LIST" "phase3/raw_completions_manifest.json" \
+  "$EVAL_DIR/phase3/raw_completions_manifest.json"
+list_add_required "$P3_TENS_LIST" "phase3/steered_shift_summaries.json" \
+  "$EVAL_DIR/phase3/steered_shift_summaries.json"
 upload_batch p3_upload_text "$HF_PREFIX_EFF/raw_completions/steered" \
   "task #1776: steered rollout text (P3, before reduce/judge)" "$P3_TEXT_LIST"
 upload_batch p3_upload_tens "$HF_PREFIX_EFF/analysis_tensors" \

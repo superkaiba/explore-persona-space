@@ -40,6 +40,7 @@ import argparse
 import hashlib
 import json
 import math
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -592,8 +593,33 @@ def finalize_only(args) -> int:
     return finalize(args, dirs, bank, manifest)
 
 
+def _relocate_misnested_eval_dir(eval_dir: Path, out_root: Path) -> None:
+    """Crash-fix r9: a pre-fix dispatch passed the deliverable FILE path as
+    --eval-out, so finalize wrote eval_dir/steered_shift_summaries.json/ as a
+    DIRECTORY with the real outputs nested one level deep. Relocate EXACTLY
+    that shape into out_root scratch so the corrected FILE write can land
+    (atomic_write_json's os.replace fails on an existing dir). Any OTHER
+    shape at the path fails LOUD — never an unconditional delete under
+    eval_results/. Idempotent: no-op once the dir is gone."""
+    bad = eval_dir / "steered_shift_summaries.json"
+    if not bad.is_dir():
+        return
+    allowed = {"steered_shift_summaries.json", "raw_completions_manifest.json"}
+    inner = {p.name for p in bad.iterdir()}
+    if not inner <= allowed or any(not (bad / n).is_file() for n in inner):
+        raise RuntimeError(
+            f"misnest-repair: unexpected contents at {bad}: {sorted(inner)} "
+            f"(expected regular-file subset of {sorted(allowed)}) — refusing to touch it"
+        )
+    dest = out_root / "misnested_eval_out" / f"steered_shift_summaries.json.{int(time.time())}"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(bad), str(dest))
+    print(f"[phase3] [misnest-repair] relocated pre-fix eval-out DIR {bad} -> {dest}", flush=True)
+
+
 def finalize(args, dirs: dict[str, Path], bank: dict[str, torch.Tensor], manifest: dict) -> int:
     """Aggregate the per-cell tables → steered_shift_summaries.json + raw manifest."""
+    _relocate_misnested_eval_dir(dirs["eval"], args.out_root)
     all_rows: list[dict] = []
     for p in sorted(dirs["cells"].glob("*.jsonl")):
         with open(p) as f:
@@ -652,6 +678,11 @@ def finalize(args, dirs: dict[str, Path], bank: dict[str, torch.Tensor], manifes
             "repro": C76.repro_meta(),
         },
     )
+    # Deliverables must be regular FILES at the plan-§6.5 paths — .exists()
+    # alone is satisfied by the r8 misnested DIRECTORY shape (crash-fix r9).
+    for name in ("steered_shift_summaries.json", "raw_completions_manifest.json"):
+        dp = dirs["eval"] / name
+        assert dp.is_file(), f"phase3 deliverable missing or not a regular FILE: {dp}"
     print(
         f"[phase3] [phase=phase3_done] strata={len(raw_files)} cell_rows={len(all_rows)} "
         f"-> {dirs['eval']}",
@@ -733,8 +764,9 @@ def smoke(args) -> int:
             assert raw["n_hook_edits"] >= 2, (key, raw["n_hook_edits"])  # 1 prefill edit/draw
         st = torch.load(out / "summaries" / f"{key}.pt", map_location="cpu", weights_only=True)
         assert all(v.shape[1] == hidden for v in st["v19"].values())
-    assert (args.eval_out / "steered_shift_summaries.json").exists()
-    assert (args.eval_out / "raw_completions_manifest.json").exists()
+    # is_file, not exists: a misnested DIRECTORY must never satisfy this (r9)
+    assert (args.eval_out / "steered_shift_summaries.json").is_file()
+    assert (args.eval_out / "raw_completions_manifest.json").is_file()
     print("[phase3] [smoke] e2e cell loop PASS (6 rows, hook fired, persists complete)")
 
     # resume MATCH: re-run skips every stratum (state markers persist).
@@ -896,6 +928,14 @@ def main(argv: list[str] | None = None) -> int:
     args.directions = [d for d in str(args.directions).split(",") if d]
     if args.eval_out is None:
         args.eval_out = args.out_root / "eval_results" / "issue_1776" / "phase3"
+    if args.eval_out.suffix == ".json":
+        # Crash-fix r9: a pre-fix dispatch passed the steered_shift_summaries.json
+        # FILE path here; mkdir(parents=True) then misnested both deliverables one
+        # level deep and the upload crashed at CommitOperationAdd ("not a file").
+        ap.error(
+            "--eval-out must be the eval DIRECTORY (deliverable FILEs are written "
+            f"inside it); got file-shaped path: {args.eval_out}"
+        )
     if args.mode == "smoke":
         return smoke(args)
     if args.finalize_only:
