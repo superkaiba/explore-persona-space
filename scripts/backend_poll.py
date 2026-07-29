@@ -679,9 +679,8 @@ def _maybe_warn_stale_handle(
         # ``scripts.poll_pipeline`` resolvable).
         from datetime import UTC, datetime
 
-        from scripts.poll_pipeline import MARKER_PID_RE
-
         from explore_persona_space.task_workflow import list_events
+        from scripts.poll_pipeline import MARKER_PID_RE
 
         rows = [e for e in list_events(int(issue)) if e.get("kind") == "epm:run-launched"]
         if not rows:
