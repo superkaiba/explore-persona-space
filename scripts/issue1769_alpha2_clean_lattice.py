@@ -375,6 +375,17 @@ def main() -> None:
         "fu1: data/issue_1769/raw_completions_fu1)",
     )
     args = ap.parse_args()
+    # Prefix-isolation mirror guard (code-review v3 CONCERN
+    # fu1-lattice-partial-invocation-cjk-noop): a non-parent --judge-scores
+    # with --raw-completions-dir left at the parent default would silently
+    # no-op CJK exclusion via the missing-file WARNING branch. Fail loud
+    # pre-analysis instead; the flag-less parent invocation is unaffected.
+    if (args.judge_scores != GRADED_SCORES) != (args.raw_completions_dir != RAW_COMPLETIONS_DIR):
+        sys.exit(
+            "partial fu1 invocation: pass BOTH --judge-scores and "
+            "--raw-completions-dir (or neither, for the parent run) — a "
+            "mixed invocation silently no-ops CJK exclusion"
+        )
     alpha = args.alpha
     out_path = out_path_for(alpha)
     rng = np.random.default_rng(RNG_SEED)
