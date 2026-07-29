@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1809,
+  "highest_id": 1810,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6273,6 +6273,13 @@
       "path": "tasks/completed/181",
       "status": "completed",
       "title": "Try persona leakage with non persona prompts"
+    },
+    "1810": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1810",
+      "status": "proposed",
+      "title": "daily-fix: pre-split multi-deliverable implementer dispatche"
     },
     "182": {
       "has_clean_result": true,
