@@ -40,11 +40,11 @@ relates_to:
 
 ## Takeaways
 
-- Into the healthiest target (instruct assistant-chat), full-correction transfers recover median 0.86-0.88 of ceiling for identity-only changes, 0.41-0.47 for framing-only, 0.28-0.34 for both — framing dominates.
-- Chat-framing identity swaps reconcile at rung 1 (direct transfer); assistant framing pairs reconcile at no rung in 12 of 12 base and 7 of 12 instruct pair-arms, else rung 9.
-- Real vs haiku-simulated user turns (prefix arm, n=3,800, ceilings 0.41-0.78) reconcile only at rung 6 or deeper, and mostly on the answer side.
-- Measurement validity gates the lattice: 54 of 126 context-arm pairs are construct-degenerate and 31-52 more per model-arm have non-positive ceilings, so the bimodal rung distribution mostly encodes ceiling health.
-- The user-on-policy arm is void: its stored activations duplicate the haiku arm on all shared conversations while the raw on-policy turns differ — duplicated at or before capture.
+- Into the highest-ceiling target (instruct assistant-chat), full-correction transfers recover median 0.86-0.88 of ceiling for identity-only changes, 0.41-0.47 for framing-only, and 0.28-0.34 for both, so framing, not identity, carries the cost.
+- Chat-framing identity swaps reconcile at rung 1 (direct transfer); assistant framing pairs reconcile at no rung in 12 of 12 base and 7 of 12 instruct (pair, arm) combinations; the rest need rung 9.
+- Real vs haiku-simulated user turns (prefix arm, n=3,800, ceilings 0.41-0.78) reconcile only at rung 6 or deeper; the differences are answer-side by construction.
+- Measurement validity restricts the lattice: 54 of 126 context-arm pairs are construct-invalid, 31-52 more per model-arm have non-positive ceilings, and the bimodal rung distribution mostly reflects which targets have usable ceilings.
+- The user-on-policy arm contributes no independent data: its stored activations duplicate the haiku arm on all shared conversations while the raw on-policy turns differ, so the duplication happened at or before capture.
 - All 30 on-policy pools missed the 0.80 yield floor (character-chat 0.04-0.06), leaving character cells small and judge-selected.
 
 ## Goal
@@ -74,7 +74,7 @@ relates_to:
 | Yield floor | 0.80 (missed by all 30 pools) | `issue1689_common.py` `YIELD_FLOOR`; `onpolicy_stats/` |
 | Fit engine | torch fp64 GPU, numpy-equivalence gated at atol 1e-4 (PASS, 4 of 4 pair-arms) | `epm:results` card |
 
-**Evaluation:** For each ordered pair (source S, target T) and arm, the source ridge map is corrected by 9 successively stronger tiers — 1 direct, 2 context offset, 3 answer offset, 4 bias refit, 5 global scale, 6 orthogonal rotation, 7 context-side ridge reparameterization (A-only), 8 answer-side (B-only), 9 full A·M·B — each read as held-out R² on T against the reconciliation bar. The fit script codes "no rung reconciles" as rung 9; this analysis separates the two (an explicit no-reconcile code) and adds recovery fractions (rung R² divided by the target's within-cell ceiling). The matched-capacity null is degenerate for the rung statistic: shuffling answers drives the target ceiling non-positive, the bar becomes vacuous, and every null draw reads rung 1 (null p97.5 = 1.0 on 504 of 504 pair-arms) — a rung-1 observation is therefore not separable from the null by the ordinal alone, and discrimination rests on the ceilings and recovery fractions. Identity+learned-bias baseline and kNN retrieval (k in 1/5/10, euclidean and cosine, chance stated per pool) are reported per cell in `percell/`; the identity+bias baseline is what exposes the degenerate user arms. Robustness limitation: the inner-CV ridge λ selection pinned at the grid ceiling (λ = 10^4) in 265 of 420 layer-19 fold-fits, so the low non-user ceilings — and every rung R² that inherits the same grid — may be partly grid-limited; a wider-λ re-check is an open follow-up. No p-values are computed by the rig; uncertainty reads come from the 200-draw conversation-level bootstrap where present and from cross-pair spread elsewhere. Language-intrusion audit (Qwen under an English eval): CJK-matching rows are 0.4-2.2% of kept completions in the load-bearing assistant/instruct pools, and 6.7-9.4% in base character-chat and base user-on-policy pools (e.g. 50 of 531 HELIOS-chat rows, 34 of 480 user-on-policy-chat rows); no judged-rate headline exists to recount, and the affected pools are already flagged yield-starved.
+**Evaluation:** For each ordered pair (source S, target T) and arm, the source ridge map is corrected by 9 successively stronger tiers — 1 direct, 2 context offset, 3 answer offset, 4 bias refit, 5 global scale, 6 orthogonal rotation, 7 context-side ridge reparameterization (A-only), 8 answer-side (B-only), 9 full A·M·B — each read as held-out R² on T against the reconciliation bar. The fit script codes "no rung reconciles" as rung 9; this analysis separates the two (an explicit no-reconcile code) and adds recovery fractions (rung R² divided by the target's within-cell ceiling). The matched-capacity null is degenerate for the rung statistic: shuffling answers drives the target ceiling non-positive, the bar becomes vacuous, and every null draw reads rung 1 (null p97.5 = 1.0 on 504 of 504 pair-arms) — a rung-1 observation is therefore not separable from the null by the ordinal alone, and discrimination rests on the ceilings and recovery fractions. Identity+learned-bias baseline and kNN retrieval (k in 1/5/10, euclidean and cosine, chance stated per pool) are reported per cell in `percell/`; the identity+bias baseline is what exposes the degenerate user arms. Robustness limitation: the inner-CV ridge λ selection pinned at the grid ceiling (λ = 10^4) in 265 of 420 layer-19 fold-fits, so the low non-user ceilings — and every rung R² that inherits the same grid — may be partly grid-limited; a wider-λ re-check is an open follow-up. No p-values are computed by the rig; uncertainty reads come from the 200-draw conversation-level bootstrap where present and from cross-pair spread elsewhere. Language-intrusion audit (Qwen under an English eval): CJK-matching rows are 0.4-2.2% of kept completions in the assistant and instruct pools the headline reads rest on, and 6.7-9.4% in base character-chat and base user-on-policy pools (e.g. 50 of 531 HELIOS-chat rows, 34 of 480 user-on-policy-chat rows); no judged-rate headline exists to recount, and the affected pools are already flagged as low-yield.
 
 **Data extraction:** Ladder outputs: `eval_results/issue_1689/ladder/ladder_<model>_L19.json` (126 pairs × 2 arms: 9 point R²s, within-target ceiling, reach bar, rung-reached, 40-draw null, bootstrap draws where present) plus per-pair checkpoints in `pairs_<model>_L19/`. Per-cell ceilings and baselines: `eval_results/issue_1689/percell/` (42 JSONs). Generation yields and judge drop classes: `eval_results/issue_1689/onpolicy_stats/` (30 JSONs; the categorized drop counters overlap and do not reconcile with n_input minus kept, so only `yield_frac` — verified equal to the kept-store row counts — is quoted). The analyzer digest (validity flags, recovery fractions, threshold sweep) is `eval_results/issue_1689/analyzer/pair_digest.csv`, produced by `scripts/issue1689_analyzer_digest.py`; figures by `scripts/issue1689_analyzer_figures.py`.
 
@@ -102,7 +102,7 @@ Judge-dropped rows were not persisted (only kept rows ship under `raw_completion
 
 ## Results
 
-### Per-cell ceilings and construct validity gate most of the lattice
+### Per-cell ceilings and construct validity leave most of the lattice uninterpretable
 
 Within-cell held-out R² at layer 19 for all 21 conditions × 2 models × 2 arms, from the per-cell fits; hatched red bars mark arms where the identity+bias baseline reads R² = 1.0 exactly.
 
@@ -110,11 +110,11 @@ Within-cell held-out R² at layer 19 for all 21 conditions × 2 models × 2 arms
 
 > **Figure.** *Most non-user cells have near-zero ceilings; user arms are degenerate self-predictions.* Within-cell held-out R² (L19), prefix (blue) and context (orange) arms per condition; top base, bottom instruct. Hatched red = degenerate arm (user cells: the context span ends where the answer span ends). Value labels per bar; kept rows per cell range 288-11,400.
 
-User-cell context arms (and plain-text user prefix arms) are self-predictions — ceilings 0.92-0.99 on the full 3,800-conversation cells, 0.54-0.87 on the yield-starved user-on-policy cells, kNN retrieval near-ceiling (median rank 2 in pools of 288-11,400 rows; acc@5 = 0.98-1.00, acc@1 = 0 only because a same-conversation duplicate row takes rank 1) — and carry no operator information.
+User-cell context arms (and plain-text user prefix arms) are self-predictions (the predicted user turn is already part of the conditioning context; the two spans end at the same token) — ceilings 0.92-0.99 on the full 3,800-conversation cells, 0.54-0.87 on the low-yield user-on-policy cells, kNN retrieval near-ceiling (median rank exactly 2 in pools of 288-11,400 rows; acc@5 = 0.98-1.00; acc@1 = 0, driven by a same-conversation duplicate row at rank 1 on all 18 arms). They carry no operator information.
 
 Non-user ceilings are low: base 0.00-0.09, instruct 0.01-0.32 (assistant-chat highest). Character-chat cells keep only 417-624 of 11,400 rows after judge filtering; the user-on-policy chat cells keep as few as 288. Every downstream rung read is conditioned on this ceiling heterogeneity.
 
-### The bimodal rung distribution mostly encodes ceiling health
+### The bimodal rung distribution mostly reflects ceiling validity
 
 Rung-reached at the 0.90 bar for all 126 ordered pairs, both arms, with validity overlays: gray d = target ceiling at or below zero (the bar is vacuous, rung 1 trivial), light x = construct-invalid arm, dark red = no rung reconciles.
 
@@ -122,13 +122,13 @@ Rung-reached at the 0.90 bar for all 126 ordered pairs, both arms, with validity
 
 > **Figure.** *Rung-1 and rung-9 modes track validity flags, not operator similarity.* Instruct model, L19: weakest reconciling rung (viridis 1-9) per ordered pair, prefix (left) and context (right). Base-model version: [base heatmap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/089b46a530cce72e7f81aa3e2dd4b757709dc76d/figures/issue_1689/fig1_rung_heatmap_base.png) (deliberate link — the two figures are the same read on the sibling model).
 
-The raw rung distribution is bimodal (base context: 72 of 126 pairs at rung 1, 41 at rung 9), but 54 context-arm pairs are construct-invalid and 31-52 per model-arm are ceiling-degenerate; zero base-context rung-1 pairs survive the validity screen, and most rung-9 codes mean no rung reconciles (36 of 41, base context).
+The raw rung distribution is bimodal (base context: 72 of 126 pairs at rung 1, 41 at rung 9), but 54 context-arm pairs are construct-invalid and 31-52 per model-arm are ceiling-degenerate; zero base-context rung-1 pairs survive the validity screen, and most rung-9 codes mean no rung reconciles rather than reconciliation at rung 9 (36 of 41, base context; the fit script stores both outcomes as rung 9, separated here by the recovery values).
 
-Rung reads are threshold-stable: 1-10 informative pairs per model-arm change rung across bars 0.85/0.90/0.95.
+Across bars 0.85/0.90/0.95, few pairs change rung: 1 of 28 informative pairs (base context), 2 of 50 (base prefix), 3 of 41 (instruct context), and 10 of 65 (instruct prefix).
 
-Arm parity: 76% (base) and 82% (instruct) of pairs agree within 1 rung across prefix/context. Base-instruct parity: 83-86% within 1 rung. Both parities are inflated by shared degeneracies.
+Arm parity: 76% of the 126 pairs (base) and 82% (instruct) agree within 1 rung across prefix/context. Base-instruct parity: 83-86% within 1 rung; both figures are inflated by shared degeneracies.
 
-### Identity changes are cheap where framing changes are expensive
+### Framing changes need much deeper correction than identity changes
 
 Rung-reached distribution by pair class, informative pairs only (construct-invalid arms and degenerate-ceiling targets excluded).
 
@@ -136,11 +136,11 @@ Rung-reached distribution by pair class, informative pairs only (construct-inval
 
 > **Figure.** *Identity pairs reconcile shallowly; framing pairs mostly reconcile at no rung.* Informative ordered pairs per class, colored by weakest reconciling rung (viridis bins; dark red = none); panels are model × arm; counts atop bars.
 
-Within-framing identity pairs reconcile shallowly: all 7 informative instruct chat-framing pairs among assistant, HELIOS, Wren, and Dana sit at rung 1. On the 6 with target ceiling of at least 0.05, direct transfer recovers 1.2-2.9 times the target's own ceiling (the assistant map, fit on 20 times more rows, out-predicts the tiny character cells); the seventh, Wren to Dana, recovers 12.0 times a near-zero 0.005 prefix ceiling. Bootstrap rung ranges stay at 1 on two of the four draw-bearing context pairs, reach rung 3 on the other two; per-pair recovery spans 0.03 to 1.32 for the Dana target (context arm).
+Within-framing identity pairs reconcile shallowly: all 7 informative instruct chat-framing pairs among assistant, HELIOS, Wren, and Dana sit at rung 1. On the 6 with target ceiling of at least 0.05, direct transfer recovers 1.2-2.9 times the target's own ceiling (likely because the assistant map is fit on 20 times more rows than the tiny character cells); the seventh, Wren to Dana, recovers 12.0 times a near-zero 0.005 prefix ceiling. Bootstrap rung ranges stay at 1 on two of the four context pairs with bootstrap draws and reach rung 3 on the other two; per-draw bootstrap recovery spans 0.03 to 1.32 for the Dana target (context arm) — single resamples on these small cells swing widely even where the point estimate sits at rung 1.
 
-Within-identity framing pairs reconcile at no rung in 25 of 30 informative model-arm cases. Both pre-stated directional hypotheses fail at once: framing was predicted shallow and identity deep; the data show the reverse ordering. Identity claims carry the selection caveat above (chat-character cells keep 4-6% of generations).
+Within-identity framing pairs reconcile at no rung in 25 of 30 informative model-arm cases. Both pre-stated directional hypotheses fail: framing was predicted shallow and identity deep, and the data show the reverse ordering. Identity claims carry the selection caveat above (chat-character cells keep 4-6% of generations).
 
-### Assistant framing pairs reconcile only at full reparameterization, when at all
+### Assistant framing pairs reconcile only at full reparameterization, and usually not at all
 
 Per-rung recovery curves for the 6 ordered assistant framing pairs (context arm), the per-pair view behind the framing half of the class summary.
 
@@ -148,11 +148,11 @@ Per-rung recovery curves for the 6 ordered assistant framing pairs (context arm)
 
 > **Figure.** *Base framing transfers reach the bar at no rung; instruct only at rung 9, on 3 of 6 pairs.* Recovery fraction per rung, assistant framing pairs, context arm; base (left), instruct (right); dashed = the 0.90 bar; shared conversations per pair 1,519-2,317.
 
-Story-to-chat transfers onto the healthiest framing targets recover only 0.28-0.45 of ceiling at the strongest correction (95% bootstrap range 0.26-0.47 base, 0.26-0.36 instruct); chat-to-plain reaches 0.64-0.91 (range 0.38-0.92 across the four draw-bearing directions).
+Story-to-chat transfers onto the highest-ceiling framing targets recover only 0.28-0.45 of ceiling at the strongest correction (95% bootstrap range 0.26-0.47 base, 0.26-0.36 instruct); chat-to-plain reaches 0.64-0.91 (range 0.38-0.92 across the four draw-bearing directions).
 
-Across both arms, 12 of 12 base and 7 of 12 instruct pair-arms reconcile at no rung. The 5 instruct reconciliations all need rung 9: four land on story targets with ceilings of 0.013-0.019, where recoveries above 1.0 reflect the near-zero ceiling rather than good transfer, and one is marginal — chat-to-plain, context arm, 0.0693 against a 0.0687 bar. Framing changes stay the deep axis by every continuous read.
+Across both arms, 12 of 12 base and 7 of 12 instruct pair-arms reconcile at no rung. The 5 instruct reconciliations all need rung 9: four land on story targets with ceilings of 0.013-0.019, where recoveries above 1.0 reflect the near-zero ceiling rather than good transfer, and one is marginal — chat-to-plain, context arm, 0.0693 against a 0.0687 bar. On the continuous reads (per-rung recovery fractions and their bootstrap ranges), framing remains the axis needing the deepest correction.
 
-### Crossed transfers cost what framing alone costs
+### Crossed transfers add little beyond framing's cost
 
 Rung-9 recovery fraction for every transfer into the assistant-chat cell (instruct), grouped by whether the source differs in identity only, framing only, or both; user-source pairs excluded (their answer construct is the user turn, not an assistant answer).
 
@@ -160,7 +160,7 @@ Rung-9 recovery fraction for every transfer into the assistant-chat cell (instru
 
 > **Figure.** *Crossed transfers land with framing-only transfers, far below identity-only.* Rung-9 recovery of the assistant-chat ceiling (instruct, L19), context (left) and prefix (right) arms; labeled points = source cells; thick ticks = group medians; dashed = full recovery.
 
-Medians: identity-only 0.86 (context) / 0.88 (prefix); framing-only 0.41 / 0.47; both-changed 0.28 / 0.34 (3 / 2 / 6 source cells per group per arm). Changing both axes costs roughly what framing alone costs — non-additive and framing-dominant.
+Descriptive medians over 3 / 2 / 6 source cells per group per arm (too few cells for group CIs): identity-only 0.86 (context) / 0.88 (prefix); framing-only 0.41 / 0.47; both-changed 0.28 / 0.34. The crossed transfers land nearest the framing-only band, about 0.1 below it and roughly 0.5 below identity-only. At this cell count the crossed medians are consistent with both a framing-dominates account and a simple additive-cost account (additive predicts 0.27 / 0.35); what the data rule out is identity contributing a cost comparable to framing's.
 
 This matches the ordinal pattern of a prior row-paired three-cell contrast measured with an aligned-cosine statistic on a different corpus (identity-only 0.740, framing-only 0.488, both 0.485 — different statistic and rows, not directly comparable). The small identity-source cells bias against identity transfers (noisier source maps), so the ordering is conservative in that respect; the judge-selection caveat still applies.
 
@@ -172,11 +172,11 @@ Context-side-only (rung 7) versus answer-side-only (rung 8) recovery for every i
 
 > **Figure.** *Answer-side correction beats context-side for nearly every pair class.* Rung-7 (x) vs rung-8 (y) recovery fractions, clipped to plus/minus 1.5; base (left), instruct (right); marker = pair class; dashed diagonal = equal recovery.
 
-The stress-tested prior — framing moves the context side, identity moves the answer side — is not supported: most pairs of every class sit above the diagonal, framing pairs included (instruct assistant chat-to-story: context-side recovery −2.7 to −3.3, answer-side 0.50 to 0.62). Only base chat-vs-plain assistant pairs show a mild context-side edge (0.40-0.56 vs 0.29-0.35).
+The pre-stated prior — framing moves the context side, identity moves the answer side — is not supported: most pairs of every class sit above the diagonal, framing pairs included (instruct assistant chat-to-story: context-side recovery −2.7 to −3.3, answer-side 0.50 to 0.62). Only base chat-vs-plain assistant pairs show a mild context-side edge (0.40-0.56 vs 0.29-0.35).
 
-One alternative stays open: the context-side ridge map must be learned from 1,300-2,300 training conversations in 3,584 dimensions, so its failure may be estimation-limited rather than structural.
+One alternative stays open: the context-side ridge map must be learned from 1,300-2,300 training conversations in 3,584 dimensions, so its failure may be estimation-limited.
 
-### Real vs simulated user turns differ by an answer-side transform, not an offset
+### Real and simulated user turns differ by an answer-side transform
 
 Per-rung recovery for the four real-LMSYS vs haiku user-provenance pairs per model, prefix arm — the only construct-valid arm; the prefix text is identical across provenances by design, so all differences are answer-side by construction.
 
@@ -184,9 +184,9 @@ Per-rung recovery for the four real-LMSYS vs haiku user-provenance pairs per mod
 
 > **Figure.** *Real-vs-simulated user turns reconcile only at rotation or deeper.* Recovery fraction per rung, LMSYS-vs-haiku pairs (chat and story framings, both directions), n=3,800 shared conversations each; base (left), instruct (right); dashed = the 0.90 bar.
 
-These are the healthiest reads in the lattice (ceilings 0.41-0.78 on 3,800 conversations). Direct transfer fails outright (recovery −1.2 to −3.9); the answer-mean offset recovers only 0.20-0.34; rotation recovers 0.73-1.10 and answer-side-only reparameterization 0.59-1.23.
+These are the highest-ceiling reads in the design (0.41-0.78 on 3,800 conversations). Direct transfer fails (recovery −1.2 to −3.9); the answer-mean offset recovers only 0.20-0.34; rotation recovers 0.73-1.10 and answer-side-only reparameterization 0.59-1.23 (values above 1.0 mean the corrected transfer beats the target's own held-out fit).
 
-Simulated and real user turns are encoded in measurably different answer-side coordinates related by roughly an orthogonal transform — the provenance-shallowness hypothesis (reconciliation at rung 4 or weaker) fails. Data-realism note: the LMSYS arm is tier-1 real data; the haiku arm is tier-3 LLM-simulated. Haiku-simulated user data is not a drop-in geometric substitute for real user data.
+Simulated and real user turns are encoded in different answer-side coordinates related by roughly an orthogonal transform. The provenance-shallowness hypothesis (reconciliation at rung 4 or weaker) fails. Data-realism note: the LMSYS arm is tier-1 real data; the haiku arm is tier-3 LLM-simulated. Haiku-simulated user data does not substitute for real user data on these reads.
 
 ### The user-on-policy arm duplicates the haiku arm at or before capture
 
@@ -196,7 +196,7 @@ Forward-direction versus reverse-direction rung R² for every user-provenance pa
 
 > **Figure.** *Haiku and on-policy cells hold identical stored data.* Rung R² forward vs reverse per provenance pair family (54 rung values each, clipped to plus/minus 1.2). Haiku-vs-on-policy points sit exactly on the diagonal; LMSYS families scatter off it.
 
-Haiku-vs-on-policy ladder outputs are identical to machine precision in both directions for all 6 framing-model combinations (base chat: ceiling 0.1250491398379796 and every rung R² equal under both orderings), which requires the two cells' stored activations to be identical on shared conversations. Yet the raw on-policy turns differ from haiku's on 160 of 160 shared conversations (SHA-256 text hashes), and the rendered pre-fill rows differ on 3,800 of 3,800 — the on-policy turns were generated, but the data was duplicated at or before capture; the root-cause audit is a follow-up.
+Haiku-vs-on-policy ladder outputs are identical to machine precision in both directions for all 6 framing-model combinations (base chat: ceiling 0.1250491398379796 and every rung R² equal under both orderings), which is only consistent with the two cells' stored activations being identical on shared conversations. Yet the raw on-policy turns differ from haiku's on 160 of 160 shared conversations (SHA-256 text hashes), and the rendered pre-fill rows differ on 3,800 of 3,800. The on-policy turns were generated, but the data was duplicated at or before capture; the root-cause audit is a follow-up.
 
 Every user-on-policy cell is a haiku-arm duplicate on a judge-selected subset; the three-way provenance question collapses to the two-way real-vs-haiku contrast above. Re-capturing the six cells from the persisted on-policy generations would restore the third arm.
 
