@@ -6088,8 +6088,8 @@
     "1785": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1785",
-      "status": "running",
+      "path": "tasks/reviewing/1785",
+      "status": "reviewing",
       "title": "daily-fix: pin #1743 acceptance grep over .claude/agents/"
     },
     "1786": {
