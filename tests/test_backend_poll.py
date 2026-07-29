@@ -4577,3 +4577,234 @@ def test_runspec_from_gcp_handle_forwards_env_pins():
     # Legacy GCP handle (no key) stays byte-identical: no env_pins forwarded.
     legacy_spec = bp._runspec_from_gcp_handle(_gcp_handle(), 659)
     assert "env_pins" not in legacy_spec.extra
+
+
+# ---------------------------------------------------------------------------
+# #1786 — WARN-only handle-staleness flags (handle_stale_vs_live /
+# handle_older_than_relaunch). Pure decision table for _handle_stale_flags,
+# wrapper tests for _maybe_warn_stale_handle (lane-suffix inertness + the
+# fail-soft swallow-to-DEBUG pin), and the normal-tail tick-JSON integration.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _hermetic_task_events(monkeypatch):
+    """Default ``task_workflow.list_events`` to an EMPTY event list.
+
+    #1786: ``main()``'s normal tick-JSON tail now calls
+    ``_maybe_warn_stale_handle`` on EVERY tick, which lazily imports
+    ``task_workflow.list_events`` (the same VM-side read
+    ``_prior_failure_marker_is_cuda_ima`` does). Without this default, every
+    pre-existing tail-path test would read the REAL ``tasks/`` tree for its
+    fake issue number (fail-soft, but nondeterministic + repo-state-coupled —
+    the same hermeticity concern ``_hermetic_runpod_team_list`` closes for
+    the #1490 live-pod snapshot). An empty list leaves the detector inert
+    (no run-launched markers -> ``(False, False)``); the #1786 positive
+    tests override with their own event fakes.
+    """
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "list_events", lambda task_id: [])
+
+
+def _iso_z(epoch: float) -> str:
+    """events.jsonl ``ts`` shape (``task_workflow._utcnow_iso``: %Y-%m-%dT%H:%M:%SZ)."""
+    from datetime import UTC, datetime
+
+    return datetime.fromtimestamp(epoch, tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _run_launched_event(*, ts_epoch: float, note: str) -> dict:
+    return {"kind": "epm:run-launched", "ts": _iso_z(ts_epoch), "note": note}
+
+
+@pytest.mark.parametrize(
+    ("workload_pid", "marker_pid", "expected_stale_vs_live"),
+    [
+        (1234, 1234, False),  # pid match — no fire
+        (1234, 5678, True),  # pid mismatch — the #1689 r15b shape, FIRE
+        (None, 5678, False),  # missing workload_pid (GCP/SLURM lanes) — inert
+        ("n/a", 5678, False),  # unparseable workload_pid — inert
+        (1234, None, False),  # marker carries no pid= — inert
+    ],
+)
+def test_handle_stale_flags_pid_identity_decision_table(
+    workload_pid, marker_pid, expected_stale_vs_live
+):
+    """#1786 pure decision table, pid-identity axis (acceptance criterion 2)."""
+    from scripts.backend_poll import _handle_stale_flags
+
+    stale_vs_live, older = _handle_stale_flags(
+        handle_workload_pid=workload_pid,
+        sidecar_mtime_epoch=20_500.0,  # newer than the newest marker: axis-2 inert
+        run_launched_ts_epochs=[10_000.0, 20_000.0],
+        marker_pid=marker_pid,
+    )
+    assert stale_vs_live is expected_stale_vs_live
+    assert older is False
+
+
+@pytest.mark.parametrize(
+    ("sidecar_mtime", "ts_epochs", "expected_older"),
+    [
+        # Single-marker first launch: no relaunch to compare against — no fire.
+        (5_000.0, [10_000.0], False),
+        # Two-marker never-rewritten handle: mtime predates ts(marker[-2]) by
+        # more than the 600s slack — FIRE.
+        (9_000.0, [10_000.0, 20_000.0], True),
+        # Two-marker compliant rewrite: mtime between ts(marker[-2]) and
+        # ts(marker[-1]) (the dispatch-time rewrite postdates the PREVIOUS
+        # launch's marker) — no fire.
+        (15_000.0, [10_000.0, 20_000.0], False),
+        # mtime newer than the newest marker — no fire.
+        (25_000.0, [10_000.0, 20_000.0], False),
+        # Boundary: mtime + slack == ts(marker[-2]) exactly — strict < — no fire.
+        (9_400.0, [10_000.0, 20_000.0], False),
+        # Three markers: [-2] is the SECOND-newest (20_000), not the first.
+        (19_000.0, [10_000.0, 20_000.0, 30_000.0], True),
+    ],
+)
+def test_handle_stale_flags_mtime_vs_relaunch_decision_table(
+    sidecar_mtime, ts_epochs, expected_older
+):
+    """#1786 pure decision table, mtime-vs-second-newest-marker axis
+    (acceptance criterion 3 — the second-newest comparison is what keeps the
+    compliant re-dispatch path from false-firing on dispatch->marker latency)."""
+    from scripts.backend_poll import _handle_stale_flags
+
+    stale_vs_live, older = _handle_stale_flags(
+        handle_workload_pid=1234,
+        sidecar_mtime_epoch=sidecar_mtime,
+        run_launched_ts_epochs=ts_epochs,
+        marker_pid=1234,  # pids match: axis-1 inert
+    )
+    assert stale_vs_live is False
+    assert older is expected_older
+
+
+def test_handle_stale_flags_positive_control_raises_nothing_on_well_formed_inputs():
+    """#1786 fail-loud pin sibling (acceptance criterion 8): the PURE helper
+    raises nothing across well-formed input combinations — the wrapper's
+    swallow-to-DEBUG is for the IO edges, never a mask over helper bugs."""
+    from scripts.backend_poll import _handle_stale_flags
+
+    for pid in (None, 1234, "1234", "n/a", 12.0):
+        for ts_epochs in ([], [10_000.0], [10_000.0, 20_000.0]):
+            for mtime in (0.0, 9_000.0, 25_000.0):
+                out = _handle_stale_flags(
+                    handle_workload_pid=pid,
+                    sidecar_mtime_epoch=mtime,
+                    run_launched_ts_epochs=ts_epochs,
+                    marker_pid=1234,
+                )
+                assert isinstance(out, tuple) and len(out) == 2
+
+
+def test_handle_stale_wrapper_lane_suffix_forces_inert(tmp_path, monkeypatch):
+    """#1786 acceptance criterion 4: a lane-suffixed poll returns
+    ``(False, False)`` IMMEDIATELY — per-lane sidecar (#934) but per-ISSUE
+    markers means lane A's tick would read lane B's newer marker and
+    false-fire every tick on a healthy handle. The event read must never
+    even run on this path."""
+    import explore_persona_space.task_workflow as tw
+    from scripts import backend_poll as bp
+
+    calls: list[int] = []
+    monkeypatch.setattr(tw, "list_events", lambda task_id: calls.append(task_id) or [])
+    sidecar = tmp_path / "issue-1786-cpu-handle.json"  # deliberately absent
+    handle = _gcp_handle({**_GCP_EXTRA_659, "workload_pid": 1111})
+    assert bp._maybe_warn_stale_handle(
+        issue=1786, sidecar=sidecar, handle=handle, lane_suffix="cpu"
+    ) == (False, False)
+    assert calls == []
+
+
+def test_handle_stale_wrapper_swallows_exceptions_to_debug(tmp_path, monkeypatch, caplog):
+    """#1786 acceptance criteria 6 + 8 (the Fail-loud pin): any exception
+    inside the detector is swallowed to DEBUG and returns ``(False, False)``
+    — the #1156 narrow fail-soft carve-out (WARN-only observability feeding
+    no verdict on the hot shared poll script), never a silent verdict
+    change and never a raised tick."""
+    import logging as _logging
+
+    import explore_persona_space.task_workflow as tw
+    from scripts import backend_poll as bp
+
+    def _boom(task_id):
+        raise RuntimeError("synthetic events-read failure (#1786 fail-soft pin)")
+
+    monkeypatch.setattr(tw, "list_events", _boom)
+    sidecar = tmp_path / "issue-1786-handle.json"
+    write_handle_sidecar(_gcp_handle(), sidecar)
+    with caplog.at_level(_logging.DEBUG):
+        flags = bp._maybe_warn_stale_handle(
+            issue=1786, sidecar=sidecar, handle=_gcp_handle(), lane_suffix=None
+        )
+    assert flags == (False, False)
+    debug_msgs = [
+        r.getMessage()
+        for r in caplog.records
+        if r.levelno == _logging.DEBUG and "handle-staleness detector failed" in r.getMessage()
+    ]
+    assert debug_msgs, "the swallowed exception must be logged at DEBUG"
+    assert not [
+        r
+        for r in caplog.records
+        if r.levelno >= _logging.WARNING and "handle sidecar" in r.getMessage()
+    ], "the exception path must not emit the staleness WARNs"
+
+
+def test_handle_stale_wrapper_fires_both_flags_and_warns(tmp_path, monkeypatch, caplog):
+    """#1786 wrapper positive (executes the REAL body end-to-end, fakes only
+    at the events-read filesystem boundary): a handle whose
+    ``extra.workload_pid`` names the dead prior attempt while the newest
+    marker carries the live relaunch pid, AND whose sidecar mtime predates
+    the second-newest marker by > slack, fires BOTH flags with one WARN
+    each naming the item-1e recovery."""
+    import logging as _logging
+    import os
+
+    import explore_persona_space.task_workflow as tw
+    from scripts import backend_poll as bp
+
+    now = _time.time()
+    events = [
+        {"kind": "epm:progress", "ts": _iso_z(now - 9_000), "note": "unrelated row"},
+        _run_launched_event(ts_epoch=now - 7_200, note="launched pid=1111 pid_file=/x.pid"),
+        _run_launched_event(ts_epoch=now - 60, note="relaunched pid=2222 pid_file=/x.pid"),
+    ]
+    monkeypatch.setattr(tw, "list_events", lambda task_id: list(events))
+    handle = _gcp_handle({**_GCP_EXTRA_659, "workload_pid": 1111})
+    sidecar = tmp_path / "issue-1786-handle.json"
+    write_handle_sidecar(handle, sidecar)
+    old = now - 10_000  # predates ts(marker[-2]) = now-7200 by > 600s slack
+    os.utime(sidecar, (old, old))
+    with caplog.at_level(_logging.WARNING):
+        flags = bp._maybe_warn_stale_handle(
+            issue=1786, sidecar=sidecar, handle=handle, lane_suffix=None
+        )
+    assert flags == (True, True)
+    warnings = [r.getMessage() for r in caplog.records if r.levelno >= _logging.WARNING]
+    assert any("workload_pid" in m and "pod-side-reporting.md item 1e" in m for m in warnings)
+    assert any("SECOND-newest" in m and "pod-side-reporting.md item 1e" in m for m in warnings)
+
+
+def test_poll_tick_json_carries_handle_staleness_flags_default_false(tmp_path, monkeypatch, capsys):
+    """#1786 acceptance criterion 1 (integration): the NORMAL tick-JSON tail
+    carries both flags, default false, alongside the GCP idle keys. The
+    early-return terminal paths are exempt (own payload shapes). Event read
+    is the autouse hermetic empty default -> detector inert."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 30), sidecar)
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=False)),
+    )
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["handle_stale_vs_live"] is False
+    assert out["handle_older_than_relaunch"] is False
+    # The flags never contribute to the verdict keys (acceptance criterion 5).
+    assert out["current_phase"] == "workload"

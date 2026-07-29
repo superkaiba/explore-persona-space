@@ -592,6 +592,154 @@ def _missing_sidecar_json(issue: int, sidecar_path: Path, reason: str) -> dict:
     }
 
 
+#: Slack (seconds) before the handle sidecar's mtime is called stale against
+#: a relaunch marker (#1786). Grounded on the #1156 precedent's slack default
+#: (``EPM_POLL_PID_MARKER_SLACK_SEC`` = 600 in ``scripts/poll_pipeline.py`` —
+#: pod-side-reporting.md § Residual honesty).
+HANDLE_MARKER_SLACK_SEC = 600
+
+
+def _handle_stale_flags(
+    *,
+    handle_workload_pid,
+    sidecar_mtime_epoch: float,
+    run_launched_ts_epochs: list[float],
+    marker_pid: int | None,
+    slack_sec: int = HANDLE_MARKER_SLACK_SEC,
+) -> tuple[bool, bool]:
+    """Pure discriminator (#1786): ``(handle_stale_vs_live, handle_older_than_relaunch)``.
+
+    ``handle_stale_vs_live``: the newest ``epm:run-launched`` marker's ``pid=``
+    and the handle's ``extra.workload_pid`` are BOTH present + parseable ints
+    AND differ. Inert (False) when either side is missing/unparseable — lanes
+    that never populate ``extra.workload_pid`` (GCP/SLURM) are inert by
+    construction.
+
+    ``handle_older_than_relaunch``: >=2 run-launched markers exist AND
+    ``sidecar_mtime_epoch + slack_sec < run_launched_ts_epochs[-2]`` — the
+    SECOND-newest marker, deliberately. A COMPLIANT relaunch rewrites the
+    sidecar at (re)dispatch time, which necessarily POSTDATES the PREVIOUS
+    launch's marker, while a never-rewritten handle's mtime is the original
+    dispatch write, which PREDATES it. Comparing against the NEWEST marker
+    would fire persistently on the compliant re-dispatch path itself (the
+    sidecar is rewritten at dispatch; the fresh marker posts up to ~50 min
+    later on the RunPod lane) — the same dispatch->marker latency that makes
+    the first-launch case undiscriminable. The second-newest comparison is
+    latency-insensitive.
+
+    Pure — no IO; unit-testable with no SSH (mirror of
+    ``poll_pipeline._pid_file_predates_marker``, #1156).
+    """
+    try:
+        handle_pid = int(str(handle_workload_pid))
+    except (TypeError, ValueError):
+        handle_pid = None
+    stale_vs_live = handle_pid is not None and marker_pid is not None and handle_pid != marker_pid
+    older_than_relaunch = (
+        sidecar_mtime_epoch > 0
+        and len(run_launched_ts_epochs) >= 2
+        and sidecar_mtime_epoch + slack_sec < run_launched_ts_epochs[-2]
+    )
+    return stale_vs_live, older_than_relaunch
+
+
+def _maybe_warn_stale_handle(
+    *, issue: int, sidecar: Path, handle, lane_suffix
+) -> tuple[bool, bool]:
+    """#1786 WARN-only handle-staleness detector; returns the two tick-JSON flags.
+
+    Mechanical backstop for the #1750 prose duty (pod-side-reporting.md
+    item 1e: rewrite the handle sidecar on relaunch); incident #1689 r15b:
+    the handle kept pointing at the OLD attempt's completion sentinel, so
+    completion was never observed and nothing warned. WARN-only by contract —
+    neither flag ever contributes to status / stall_reason / verdict /
+    next_interval.
+
+    Returns ``(False, False)`` IMMEDIATELY when ``lane_suffix`` is set: the
+    sidecar is per-LANE (#934) but ``epm:run-launched`` markers are per-ISSUE,
+    so under multi-lane polling lane A's tick would read lane B's newer marker
+    and both checks would false-fire every tick on healthy handles.
+
+    Benign transient window for ``handle_stale_vs_live``: on a COMPLIANT
+    relaunch the fresh marker and the handle rewrite land seconds-to-minutes
+    apart, so the flag may fire for a few ticks in between — acceptable for a
+    WARN that feeds no verdict.
+
+    Fail-soft: any exception is swallowed to DEBUG and returns
+    ``(False, False)`` — the same deliberate, narrow exception to fail-fast as
+    ``poll_pipeline._maybe_warn_stale_pid_file`` (#1156): the flags are
+    observability feeding no verdict, and this hot shared poll script runs on
+    every live poll loop fleet-wide (#1786).
+    """
+    try:
+        if lane_suffix:
+            return (False, False)
+        # Lazy imports — the GCP idle block's precedent (keeps the --help path
+        # fast; the repo-root sys.path bootstrap above makes
+        # ``scripts.poll_pipeline`` resolvable).
+        from datetime import UTC, datetime
+
+        from explore_persona_space.task_workflow import list_events
+        from scripts.poll_pipeline import MARKER_PID_RE
+
+        rows = [e for e in list_events(int(issue)) if e.get("kind") == "epm:run-launched"]
+        if not rows:
+            return (False, False)
+        # events.jsonl is append-only, so file order IS ascending-ts order.
+        ts_epochs: list[float] = []
+        for ev in rows:
+            try:
+                parsed = datetime.fromisoformat(str(ev.get("ts")))
+            except (TypeError, ValueError):
+                continue
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=UTC)
+            ts_epochs.append(parsed.timestamp())
+        m = MARKER_PID_RE.search(str(rows[-1].get("note", "") or ""))
+        marker_pid = int(m.group(1)) if m else None
+        extra = getattr(handle, "extra", None) or {}
+        stale_vs_live, older_than_relaunch = _handle_stale_flags(
+            handle_workload_pid=extra.get("workload_pid"),
+            sidecar_mtime_epoch=float(Path(sidecar).stat().st_mtime),
+            run_launched_ts_epochs=ts_epochs,
+            marker_pid=marker_pid,
+        )
+        if stale_vs_live:
+            logging.warning(
+                "handle sidecar %s for #%d carries extra.workload_pid=%s but the newest "
+                "epm:run-launched marker says pid=%s — the handle points at a PRIOR "
+                "attempt's run-scoped fields (#1689 r15b shape). WARN-only; verdict "
+                "unchanged. Recovery: rewrite the handle sidecar per "
+                ".claude/rules/pod-side-reporting.md item 1e, or re-dispatch through "
+                "dispatch_issue.py so the router rewrites it.",
+                sidecar,
+                issue,
+                extra.get("workload_pid"),
+                marker_pid,
+            )
+        if older_than_relaunch:
+            logging.warning(
+                "handle sidecar %s for #%d was last written before the SECOND-newest "
+                "epm:run-launched marker (mtime + %ds slack < ts(marker[-2])) — a "
+                "relaunch happened without the item-1e handle rewrite (#1786). "
+                "WARN-only; verdict unchanged. Recovery: rewrite the handle sidecar per "
+                ".claude/rules/pod-side-reporting.md item 1e, or re-dispatch through "
+                "dispatch_issue.py so the router rewrites it.",
+                sidecar,
+                issue,
+                HANDLE_MARKER_SLACK_SEC,
+            )
+        return (stale_vs_live, older_than_relaunch)
+    except Exception as exc:
+        logging.debug(
+            "handle-staleness detector failed for #%s (ignored — WARN-only "
+            "observability, #1786/#1156): %s",
+            issue,
+            exc,
+        )
+        return (False, False)
+
+
 def _is_gcp_async_workload_failure(handle, result) -> bool:
     """True ONLY for a GCP handle whose poll surfaced a failover-eligible death (#659, #669).
 
@@ -4782,10 +4930,25 @@ def main(argv: list[str] | None = None) -> int:
             },
         )
 
+    # ── #1786 WARN-only handle-staleness flags (normal tick-JSON tail only) ──
+    # Fail-soft observability alongside the GCP idle flags above: the early-
+    # return terminal JSON paths are EXEMPT (they emit their own payload
+    # shapes and terminate the loop anyway). Runs on every normal-tail tick
+    # unconditionally — WARN-only, so a terminal-phase tick firing the flag is
+    # harmless and still informative.
+    handle_stale_vs_live, handle_older_than_relaunch = _maybe_warn_stale_handle(
+        issue=args.issue,
+        sidecar=Path(sidecar),
+        handle=handle,
+        lane_suffix=args.lane_suffix,
+    )
+
     out = _serialize_poll_result(result)
     out["gcp_gpu_idle_advisory_posted"] = gcp_gpu_idle_advisory_posted
     out["gcp_gpu_idle_escalation_posted"] = gcp_gpu_idle_escalation_posted
     out["gcp_gpu_width_advisory_posted"] = gcp_gpu_width_advisory_posted
+    out["handle_stale_vs_live"] = handle_stale_vs_live
+    out["handle_older_than_relaunch"] = handle_older_than_relaunch
     print(json.dumps(out))
     return 0
 

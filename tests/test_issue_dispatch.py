@@ -1290,6 +1290,11 @@ def test_backend_poll_script_produces_legacy_poll_pipeline_json_shape(
         # (Pin update landed with #909's green-gate pass: #873 added the
         # emitter without updating this shape test — pre-existing on main.)
         "gcp_gpu_width_advisory_posted",
+        # #1786 WARN-only handle-staleness flags — always emitted by
+        # backend_poll.main on the NORMAL tick-JSON tail, default False;
+        # never verdict-bearing (WARN-only observability).
+        "handle_stale_vs_live",
+        "handle_older_than_relaunch",
     }
     # Values were correctly threaded through.
     assert decoded["status"] == "done"
