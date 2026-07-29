@@ -509,6 +509,7 @@ def run_import_check() -> None:
     from huggingface_hub import hf_hub_download, list_repo_tree
 
     inspect.signature(hf_hub_download).bind("repo/id", "file.json", revision="rev")
+    # HUB_VERIFY_RETRY_EXEMPT: signature-bind smoke reference only, no network call made
     inspect.signature(list_repo_tree).bind(
         DATA_REPO, repo_type="dataset", path_in_repo="p", revision="rev"
     )
@@ -2197,6 +2198,7 @@ def _assert_rb_trait_order() -> None:
 
     entries = hub.retry_transient(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: call is materialized inside the hub.retry_transient wrapper
             list_repo_tree(
                 DATA_REPO,
                 repo_type="dataset",
