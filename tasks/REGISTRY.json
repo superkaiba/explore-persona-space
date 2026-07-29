@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1805,
+  "highest_id": 1806,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6238,6 +6238,13 @@
       "path": "tasks/proposed/1805",
       "status": "proposed",
       "title": "daily-fix: review-time no-flags lint on new scripts in diff"
+    },
+    "1806": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1806",
+      "status": "proposed",
+      "title": "daily-fix: escalate-only audit of root stashes + rescue dirs"
     },
     "181": {
       "has_clean_result": false,
