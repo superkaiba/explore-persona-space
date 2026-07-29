@@ -1,0 +1,1 @@
+{"ts": "2026-07-29T15:31:21Z", "event": "raised", "concern_id": "custom-id-validator-trailing-newline-leak", "severity": "CONCERN", "summary": "match() + $-anchored grammar accepts a single-trailing-newline custom_id (Python $ matches before trailing \\n); API would 400. One-token fix: fullmatch().", "raised_by": "code-reviewer", "raised_at_round": 1}
