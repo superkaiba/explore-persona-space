@@ -1,0 +1,232 @@
+{
+  "meta": {
+    "git_commit": "3177139d0a2bc09d1ecc8a6e95ff13e92817ec6e",
+    "timestamp_utc": "2026-07-29T10:18:32.783297+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "python": "3.11.15",
+    "fold_seed": 0,
+    "n_folds": 6,
+    "smoke": false,
+    "r_grid": [
+      0,
+      1,
+      2,
+      4,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  "schemes": {
+    "doubly": {
+      "r_star_inner_val": 32,
+      "inner_val_mse_by_r": {
+        "0": 2.512371063232422,
+        "32": 1.4556165470017328
+      },
+      "outer_r2_curve_EXPLORATORY": {
+        "0": 0.6326471679704764,
+        "32": 0.6609351378134506
+      },
+      "delta_named": {
+        "delta_r2": 0.028287969842974294,
+        "ci95_two_way_cluster": [
+          0.018320661128466618,
+          0.03973223592697123
+        ],
+        "n_prefix_groups": 921,
+        "n_query_groups": 636,
+        "n_rows": 2900,
+        "n_draws": 2000
+      },
+      "dereg_component_r0_minus_ridge": {
+        "delta_r2": 0.23641547889121753,
+        "ci95_cluster": [
+          0.2267350669412115,
+          0.24659742830450576
+        ],
+        "n_groups": 921,
+        "n_rows": 2900,
+        "n_draws": 2000,
+        "ci95_row_level_companion": [
+          0.2260568210459493,
+          0.24764508695580018
+        ]
+      },
+      "interaction_gap_fraction": {
+        "note": "computed under the prefix scheme only (requested: doubly)"
+      },
+      "delta_beyond_mlp_minus_bilinear": "stitch-MLP predictions absent (P3 pending or Gate-B skipped)"
+    },
+    "prefix": {
+      "r_star_inner_val": 32,
+      "inner_val_mse_by_r": {
+        "0": 2.5242362022399902,
+        "1": 1.9924377335442438,
+        "2": 1.8120880590544806,
+        "4": 1.8578370875782437,
+        "8": 1.7757116887304518,
+        "16": 1.6477964652909174,
+        "32": 1.4523989491992526,
+        "64": 1.5558936198552449
+      },
+      "outer_r2_curve_EXPLORATORY": {
+        "0": 0.8604008188197775,
+        "1": 0.8813610819629347,
+        "2": 0.8887230686881995,
+        "4": 0.8940088772799702,
+        "8": 0.8997921782748642,
+        "16": 0.9061658317433855,
+        "32": 0.9097103851923526,
+        "64": 0.9111619133901657
+      },
+      "delta_named": {
+        "delta_r2": 0.04930956637257508,
+        "ci95_cluster": [
+          0.04678723978133473,
+          0.05208539184057201
+        ],
+        "n_groups": 996,
+        "n_rows": 17308,
+        "n_draws": 2000,
+        "ci95_row_level_companion": [
+          0.047318742601829944,
+          0.05127755763415694
+        ]
+      },
+      "dereg_component_r0_minus_ridge": {
+        "delta_r2": 0.011335843001111434,
+        "ci95_cluster": [
+          0.010109075120639438,
+          0.012658044296057646
+        ],
+        "n_groups": 996,
+        "n_rows": 17308,
+        "n_draws": 2000,
+        "ci95_row_level_companion": [
+          0.010204065412740668,
+          0.01253478503509714
+        ]
+      },
+      "interaction_gap_fraction": {
+        "r2_bilinear": 0.9097103851923526,
+        "r2_stitch_ridge": 0.8490649758186659,
+        "r2_context_ridge": 0.9141531678184993,
+        "fraction": 0.9317421103637646,
+        "note": "secondary read; denominator = this plan's own fits (plan section 4 P4)"
+      },
+      "delta_beyond_mlp_minus_bilinear": "stitch-MLP predictions absent (P3 pending or Gate-B skipped)",
+      "bilinear_residual_hsic": {
+        "observed": {
+          "hsic": 0.005229645408689976,
+          "dcor": 0.6872758175013202
+        },
+        "schemes": {
+          "prefix_block": {
+            "p_hsic": 0.000999000999000999,
+            "p_dcor": 0.000999000999000999
+          },
+          "query_block": {
+            "p_hsic": 0.059940059940059943,
+            "p_dcor": 0.11288711288711288
+          },
+          "within_prefix_derangement": {
+            "p_hsic": 0.000999000999000999,
+            "p_dcor": 0.000999000999000999
+          }
+        },
+        "note": "the 'named' verdict co-signature: bilinear-residual dependence must drop toward the null (plan section 3)"
+      },
+      "ambient_companion": {
+        "r_star_from_pca48": 32,
+        "delta_named_ambient": {
+          "delta_r2": 0.0383013298742277,
+          "ci95_cluster": [
+            0.036241295011590166,
+            0.04053145297410654
+          ],
+          "n_groups": 996,
+          "n_rows": 17308,
+          "n_draws": 2000,
+          "ci95_row_level_companion": [
+            0.036848790170438274,
+            0.03971777886932627
+          ]
+        },
+        "r2_ambient_by_r": {
+          "0": 0.7591329124328878,
+          "32": 0.797434242307115
+        },
+        "scoping": "prefix fold scheme only; r in {0, r*} with r* inherited from the pca48 inner-val selection; same protocol (warm start, wd grid, seed ensemble)",
+        "meta": {
+          "git_commit": "3177139d0a2bc09d1ecc8a6e95ff13e92817ec6e",
+          "timestamp_utc": "2026-07-29T10:07:42.144744+00:00",
+          "torch": "2.8.0+cu128",
+          "numpy": "2.2.6",
+          "python": "3.11.15",
+          "fold_seed": 0,
+          "n_folds": 6,
+          "smoke": false,
+          "r_star": 32
+        }
+      }
+    },
+    "query": {
+      "r_star_inner_val": 16,
+      "inner_val_mse_by_r": {
+        "0": 2.318748891353607,
+        "1": 1.9704451428519354,
+        "2": 2.06098343928655,
+        "4": 2.165557404359182,
+        "8": 2.066868636343214,
+        "16": 1.9183354377746582,
+        "32": 1.9593356715308294,
+        "64": 1.9904587401284113
+      },
+      "outer_r2_curve_EXPLORATORY": {
+        "0": 0.6359111628514325,
+        "1": 0.6509901151620991,
+        "2": 0.6566038830165825,
+        "4": 0.658401885436855,
+        "8": 0.6615649636714664,
+        "16": 0.6627481739083225,
+        "32": 0.6660064920060484,
+        "64": 0.6660139653570967
+      },
+      "delta_named": {
+        "delta_r2": 0.026837011056889896,
+        "ci95_cluster": [
+          0.02077820900300358,
+          0.03353698750168271
+        ],
+        "n_groups": 1397,
+        "n_rows": 17308,
+        "n_draws": 2000,
+        "ci95_row_level_companion": [
+          0.02533014264621263,
+          0.028525210664744404
+        ]
+      },
+      "dereg_component_r0_minus_ridge": {
+        "delta_r2": 0.28280728920084786,
+        "ci95_cluster": [
+          0.24747416774958303,
+          0.3200500019728918
+        ],
+        "n_groups": 1397,
+        "n_rows": 17308,
+        "n_draws": 2000,
+        "ci95_row_level_companion": [
+          0.2779335205681142,
+          0.28748836028926766
+        ]
+      },
+      "interaction_gap_fraction": {
+        "note": "computed under the prefix scheme only (requested: query)"
+      },
+      "delta_beyond_mlp_minus_bilinear": "stitch-MLP predictions absent (P3 pending or Gate-B skipped)"
+    }
+  }
+}
