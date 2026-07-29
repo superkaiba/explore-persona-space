@@ -365,9 +365,11 @@ if [[ $DRY == 1 ]]; then
   run p0_comparator echo "comparator x50k + lmsys50k (n_train=$N_TRAIN)"
   COMP_PID=""
 else
-  echo "[dispatch] bg(p0_comparator, CVD=$COMP_GPU): comparator x50k + lmsys50k"
-  CUDA_VISIBLE_DEVICES="$COMP_GPU" comparator_job >> "$PHASE_LOGS/p0_comparator.log" 2>&1 &
-  COMP_PID=$!
+  # bg_run tees to BOTH $PHASE_LOGS/p0_comparator.log AND the crash-persisted
+  # per-phase log (r5 concern comparator-bg-job-not-crash-persisted); BG_PID
+  # stays the payload pid ($! of the backgrounded function call, as before).
+  bg_run p0_comparator "$COMP_GPU" comparator_job
+  COMP_PID="$BG_PID"
 fi
 phase_end "p0_comparator_launch"
 
