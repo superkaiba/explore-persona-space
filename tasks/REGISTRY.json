@@ -6144,8 +6144,8 @@
     "1793": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1793",
-      "status": "approved",
+      "path": "tasks/running/1793",
+      "status": "running",
       "title": "daily-fix: upload-policy \u2014 pack per-rollout file trees to sh"
     },
     "1794": {
