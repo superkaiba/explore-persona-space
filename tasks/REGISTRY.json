@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1831,
+  "highest_id": 1832,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6441,6 +6441,13 @@
       "path": "tasks/proposed/1831",
       "status": "proposed",
       "title": "workflow-fix: pre_reg audit head nouns gain ceiling check/gate family (#1769 escape)"
+    },
+    "1832": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1832",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body WARN for quantitative result sections with zero figures"
     },
     "184": {
       "has_clean_result": false,
