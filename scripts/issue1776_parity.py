@@ -37,6 +37,9 @@ import time
 from pathlib import Path
 
 import issue1776_common as C76
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()  # bind shared-VM thread caps BEFORE numpy/torch import (#847 gate)
 
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
