@@ -156,3 +156,4 @@
 - [Reused-module + cross-script wiring contract](feedback_reused_module_hf_prefix_contract.md) — audit flags AND every arg/ns field vs the consumer's reads (paths, None-defaults, call args); grep callee args. at authoring; smoke-fenced branches need a production-shaped leg (#1776 c2+c3+c6)
 - [sha pins live in a DOMAIN](feedback_sha_pin_domain_mismatch.md) — recompute a reused pin from its producer's recipe before asserting; wrong-domain compare masquerades as data drift (#1776 c4)
 - [out-arg FILE-vs-DIR kind](feedback_out_arg_file_vs_dir_kind.md) — a file path passed as an out-dir arg misnests deliverables while .exists()/-e checks pass; use is_file/-f + argparse kind guards + class-sweep out args (#1776 c5)
+- [CUDA partial device placement](feedback_cuda_device_partial_placement.md) — CPU-only smokes structurally cannot exercise CUDA-divergent branches; one move site at entry + named-tensor same-device asserts (#1776 c7)
