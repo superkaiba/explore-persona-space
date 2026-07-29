@@ -1255,7 +1255,7 @@ def test_post_merge_guard_unpushed_mv_precheck_syncs_before_classify():
     assert len(fences) == 1, "guard region must still carry exactly one fenced bash block"
     fence = fences[0]
 
-    precheck = fence.find('elif ! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt')
+    precheck = fence.find('elif ! grep -qxF -- "$CANON" /tmp/issue-<N>-postmerge-lstree.txt')
     lstree_arm = fence.find('elif ! git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main')
     dupes_arm = fence.find("elif mapfile -t DUPES < <(grep -E")
     assert precheck != -1, "the unpushed-mv pre-check arm must exist (#1300)"
@@ -1284,7 +1284,7 @@ def test_post_merge_guard_unpushed_mv_precheck_syncs_before_classify():
     # (iv) fall-through: the condition list's FINAL command is the
     # still-absent re-test (recovery success -> condition false -> the
     # DUPES arm runs against the regenerated file).
-    assert '! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt; }; then' in arm, (
+    assert '! grep -qxF -- "$CANON" /tmp/issue-<N>-postmerge-lstree.txt; }; then' in arm, (
         "the recovery must live in the arm's CONDITION with the still-absent "
         "re-test as its final command (successful recovery falls through)"
     )
@@ -1450,3 +1450,30 @@ def test_mergefile_block_untouched_order():
     done_idx = gate.index("done < /tmp/issue-<N>-overlay-files.txt")
     lint_vintage_idx = gate.index("LINT-VINTAGE 3-WAY MERGE")
     assert done_idx < lint_vintage_idx
+
+
+def test_guard_greps_carry_end_of_options_separator():
+    """#1788 (incidents #1742/#1758): every VARIABLE-pattern full-line grep in
+    the Step 10d guards carries the `--` end-of-options separator. Without it
+    a main-added line starting with `-` (a markdown bullet — ubiquitous on the
+    workflow surface Guard 4 scans) is parsed as grep OPTIONS ("invalid
+    option", rc=2), which the loop miscounts as MISSING_ON_BRANCH and Guard 4
+    false-fires a LOST-UPDATE refusal on a byte-identical branch."""
+    text = _skill_text()
+    # (a) The separator-bearing forms are present.
+    assert 'grep -Fxq -- "$ADD_LINE"' in text, "Guard-4 membership grep lost its -- separator"
+    assert 'grep -Fxq -- "$MB"' in text, "Guard-3 ON_MAINLINE grep lost its -- separator"
+    # (b) No separator-less VARIABLE-pattern form remains, in EITHER flag
+    # ordering. Literal-pattern greps (e.g. -qxF 'scripts/workflow_lint.py')
+    # are exempt by construction: the regex requires the pattern argument to
+    # start with `"$` (a shell-variable pattern), which only a variable-
+    # pattern site has; the fixed forms carry `-- ` and do not match.
+    offenders = [
+        f"line {i}: {line.strip()}"
+        for i, line in enumerate(text.splitlines(), start=1)
+        if re.search(r'grep -(?:Fxq|qxF) "\$', line)
+    ]
+    assert not offenders, (
+        "separator-less variable-pattern grep -Fxq/-qxF site(s) in SKILL.md "
+        "(add `--` before the pattern): " + "; ".join(offenders)
+    )
