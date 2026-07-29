@@ -60,7 +60,7 @@ import shutil
 import subprocess
 import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -138,6 +138,7 @@ class RunConfig:
     shard: int = 0
     n_shards: int = 1
     upload_mode: str = "hf"  # "hf" | "local-mirror" (tiny default)
+    hf_prefix: str = HF_OUT_PREFIX  # HF data-repo prefix for every upload (fu1 override)
     extra: dict = field(default_factory=dict)
 
 
@@ -559,7 +560,7 @@ def upload_group(cfg: RunConfig, trait: str, filenames: list[str]) -> None:
     ``local-mirror`` (tiny) copies through the IDENTICAL call sequence so the
     control flow never forks (the #1415 pattern)."""
     local_dir = cfg.bulk_root / "raw_completions" / trait
-    path_in_repo = f"{HF_OUT_PREFIX}/raw_completions/{trait}"
+    path_in_repo = f"{cfg.hf_prefix}/raw_completions/{trait}"
     expected = [f"{path_in_repo}/{fn}" for fn in filenames]
     if cfg.upload_mode == "local-mirror":
         for fn in filenames:
@@ -787,7 +788,7 @@ def phase_finalize(cfg: RunConfig) -> dict:
     expected_paths = []
     for cid, rec in cells.items():
         trait = cid.split("/")[0]
-        expected_paths.append(f"{HF_OUT_PREFIX}/raw_completions/{trait}/{rec['completion_file']}")
+        expected_paths.append(f"{cfg.hf_prefix}/raw_completions/{trait}/{rec['completion_file']}")
     if cfg.upload_mode == "local-mirror":
         missing_up = [p for p in expected_paths if not (cfg.bulk_root / "hf_mirror" / p).exists()]
     else:
@@ -799,7 +800,7 @@ def phase_finalize(cfg: RunConfig) -> dict:
             HfApi(),
             HF_DATA_REPO,
             expected_paths,
-            path_in_repo=f"{HF_OUT_PREFIX}/raw_completions",
+            path_in_repo=f"{cfg.hf_prefix}/raw_completions",
             repo_type="dataset",
         )
     assert not missing_up, f"{len(missing_up)} raw-completion uploads missing: {missing_up[:5]}"
@@ -857,6 +858,21 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--out-root", type=Path, default=None, help="metadata root (git)")
     ap.add_argument("--bulk-root", type=Path, default=None, help="raw-completion staging root")
     ap.add_argument(
+        "--alphas",
+        type=float,
+        nargs="+",
+        default=None,
+        help="override alpha ladder (space-separated floats; e.g. --alphas 1.5 3.0)",
+    )
+    # UPLOAD_PREFIX_EXEMPT: plan v10 item 4 pins default=parent constant (byte-identical no-flag parity); fu1 passes an explicit fresh prefix
+    ap.add_argument(
+        "--hf-prefix",
+        type=str,
+        default=HF_OUT_PREFIX,
+        help="HF data-repo prefix for every upload (fu1 passes a fresh prefix so no "
+        "path ever lands under the parent's raw_completions)",
+    )
+    ap.add_argument(
         "--import-check",
         action="store_true",
         help="resolve every deferred import on the real branch, then exit 0 "
@@ -877,6 +893,9 @@ def build_config(args: argparse.Namespace) -> RunConfig:
             default_bulk = Path("data/issue_1769/bulk")
         bulk_root = args.bulk_root or default_bulk
         cfg = RunConfig(tiny=False, out_root=out_root, bulk_root=bulk_root, force=args.force)
+    if args.alphas is not None:
+        cfg = replace(cfg, alphas=tuple(sorted(args.alphas)))
+    cfg.hf_prefix = args.hf_prefix
     cfg.shard = args.shard
     cfg.n_shards = args.n_shards
     assert 0 <= cfg.shard < cfg.n_shards, (cfg.shard, cfg.n_shards)

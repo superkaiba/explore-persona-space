@@ -206,3 +206,41 @@ def test_shard_partition_covers_all_groups_disjointly():
         cfg.shard = shard
         seen.extend((g["trait"], g["arm"], g["alpha"]) for g in run.shard_groups(cfg, groups))
     assert sorted(seen) == sorted((g["trait"], g["arm"], g["alpha"]) for g in groups)
+
+
+def test_fu1_alphas_and_hf_prefix_overrides_thread_into_config(tmp_path):
+    """fu1 (plan v10): --alphas replaces the ladder, --hf-prefix rebinds every
+    upload path; the fu1 grid enumerates 3 traits x (20 neither + 3 arms x
+    2 alphas x 20q) = 420 cells with zero parent-prefix paths reachable."""
+    args = run.parse_args(
+        [
+            "--out-root",
+            str(tmp_path / "o"),
+            "--bulk-root",
+            str(tmp_path / "b"),
+            "--alphas",
+            "3.0",
+            "1.5",
+            "--hf-prefix",
+            "issue1769_prefill_decode/fu1_alpha_subgrid",
+        ]
+    )
+    cfg = run.build_config(args)
+    assert cfg.alphas == (1.5, 3.0)  # sorted
+    assert cfg.hf_prefix == "issue1769_prefill_decode/fu1_alpha_subgrid"
+    assert len(run.expected_cells(cfg)) == 420
+
+
+def test_default_config_parity_without_new_flags(tmp_path):
+    """No --alphas / --hf-prefix => the parent ladder + parent HF prefix,
+    byte-identical defaults (plan v10 acceptance criterion)."""
+    args = run.parse_args(["--out-root", str(tmp_path / "o"), "--bulk-root", str(tmp_path / "b")])
+    cfg = run.build_config(args)
+    assert cfg.alphas == run.ALPHAS == (1.0, 2.0, 4.0)
+    assert cfg.hf_prefix == run.HF_OUT_PREFIX == "issue1769_prefill_decode"
+    tiny_args = run.parse_args(
+        ["--tiny", "--out-root", str(tmp_path / "to"), "--bulk-root", str(tmp_path / "tb")]
+    )
+    tiny_cfg = run.build_config(tiny_args)
+    assert tiny_cfg.alphas == (1.0, 2.0)  # tiny default ladder unchanged
+    assert tiny_cfg.hf_prefix == run.HF_OUT_PREFIX
