@@ -108,12 +108,15 @@ Check catalog (id — classification — kind scope)
       test executed or gate-selected
   c42 cited commit SHA          FAIL, conditional         all kinds
       resolves
+  c43 /workspace sentinels vs   WARN-only, conditional    experiment only
+      unpinned auto lane
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41, 42) also SKIP when their content trigger does not fire.
+37, 38, 39, 40, 41, 42, 43) also SKIP when their content trigger does not
+fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -181,6 +184,12 @@ labeled-line forms):
   - ``N/A — no exit-0 acceptance criterion`` (check 38)
   - ``N/A — no off-pod phase`` (check 39)
   - ``N/A — no regression anchors`` (check 41)
+  - ``no sentinel dependence — auto-safe`` (check 43 — the
+    plan-compute-sizing.md rule's own escape phrase, standalone WITHOUT the
+    N/A prefix; hyphen / en-dash / em-dash variants tolerated; the
+    ``N/A — no sentinel dependence`` form is also accepted via the shared
+    helper. A genuinely sentinel-signaling plan instead pins a
+    /workspace-contract lane: ``backend: gcp`` / ``backend: runpod``)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -7342,6 +7351,112 @@ def check_commit_sha_resolves(plan: str, kind: str) -> CheckResult:
     return _fail(cid, name, detail)
 
 
+# ─── Check 43 — /workspace sentinels need a /workspace-contract lane ───────
+
+# Trigger scans the RAW plan text (NOT strip_fences): sentinel declarations
+# live in fenced ``phase_outputs:`` YAML by design (the c30 convention — the
+# founding #1775 instance declared `/workspace/logs/issue-1775-p*.done`
+# inside a fenced block), so a stripped-prose scan would miss exactly the
+# founding shape. Two arms, same-line co-occurrence for arm (a):
+#   (a) a line carrying "sentinel" (case-insensitive) AND "/workspace/";
+#   (b) a `/workspace/logs/issue-` path (the poll_pipeline.py sentinel
+#       prefix), even with no "sentinel" token on the line.
+_C43_SENTINEL_WORD_RE = re.compile(r"(?i)\bsentinel")
+_C43_WS_LOGS_RE = re.compile(r"/workspace/logs/issue-")
+
+# Satisfier (raw scan too — a dispatch command lives in a fenced block): a
+# /workspace-contract lane pin, `backend: gcp|runpod` (frontmatter / prose
+# line) or a `--backend gcp|runpod` dispatch flag.
+_C43_LANE_PIN_RE = re.compile(r"(?i)(?:\bbackend:\s*|--backend[=\s]+)(?:gcp|runpod)\b")
+
+# The rule's own escape phrase, standalone at line start (leading
+# list/blockquote/bold markers tolerated via the `_standalone_na_declared`
+# lstrip convention; case-insensitivity explicit; hyphen / en-dash /
+# em-dash variants tolerated). A label-prefixed MID-LINE mention (`**Lane /
+# sentinel contract:** no sentinel dependence — auto-safe ...`, the #1738
+# v4 shape) and any backtick/fence-wrapped paste are DELIBERATELY
+# unrecognized (the #1238 anti-paste doctrine) — declare the escape
+# unwrapped on its own line.
+_C43_ESCAPE_RE = re.compile(
+    r"(?i)^no sentinel dependence\s*[-–—]+\s*auto[-–— ]safe\b"  # noqa: RUF001 — real dash variants
+)
+
+
+def _c43_escape_declared(plan: str) -> bool:
+    """Standalone ``no sentinel dependence — auto-safe`` declaration (the
+    plan-compute-sizing.md rule's own phrase, no N/A prefix), or the
+    shared-helper ``N/A — no sentinel dependence`` form. Fenced lines and
+    wrapped pastes never satisfy (see ``_standalone_na_declared``)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced:
+            continue
+        if _C43_ESCAPE_RE.match(line.lstrip(" \t>*-")):
+            return True
+    return _standalone_na_declared(plan, r"no sentinel dependence\b")
+
+
+def check_sentinel_lane(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, experiment-only: a plan that declares
+    ``/workspace/...`` sentinel paths (gate sentinels, ``epm:results``
+    payloads — the pod-side signaling contract) while leaving the backend
+    on the unrestricted auto lane must either pin a /workspace-contract
+    lane (``backend: gcp`` / ``backend: runpod``, or a ``--backend
+    gcp|runpod`` dispatch flag) or declare the rule's own escape ``no
+    sentinel dependence — auto-safe``. Mechanizes
+    ``plan-compute-sizing.md`` § "Sentinel-signaling workloads need a
+    /workspace-contract lane": on auto, a GCP capacity miss falls through
+    to SLURM, where DRAC/Mila compute nodes have no /workspace — the
+    dispatcher dies at ``mkdir -p /workspace/logs`` and burns the
+    submission (#608) — and the fellows rung HAS /workspace, so sentinels
+    get written but nothing drains them (silent marker loss). Founding
+    instance: #1775 plan v3 declared ``/workspace/logs/issue-1775-p*.done``
+    sentinels in a fenced ``phase_outputs`` block while §9 said "no
+    backend pin → auto lane"; only a Methodology critic caught it
+    (Must-Fix M1). NEVER FAILs — the disposition is sometimes legitimately
+    prose-satisfied in different words, and legacy plans must not bounce
+    retroactively (the c39/c31/c34 family convention). kind-exempt outside
+    experiment: infra workflow-fix plans (this check's own plan included)
+    legitimately QUOTE ``/workspace/...`` sentinel paths without
+    dispatching a sentinel-signaling workload. Trigger AND satisfiers scan
+    the RAW plan text (NOT strip_fences): the sentinel declarations and
+    the dispatch command both live in fenced blocks by design (unlike c39,
+    whose trigger is prose vocabulary)."""
+    cid, name = "c43_sentinel_lane", "/workspace sentinels vs unpinned auto lane"
+    if kind != "experiment":
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: sentinel-lane pinning is an experiment-plan (pod-dispatch) shape",
+        )
+    trigger_lines = [
+        ln
+        for ln in plan.splitlines()
+        if _C43_WS_LOGS_RE.search(ln) or ("/workspace/" in ln and _C43_SENTINEL_WORD_RE.search(ln))
+    ]
+    if not trigger_lines:
+        return _skip(cid, name, "no /workspace sentinel paths detected")
+    if _C43_LANE_PIN_RE.search(plan):
+        return _pass(cid, name, "/workspace-contract lane pinned (backend:/--backend gcp|runpod)")
+    if _c43_escape_declared(plan):
+        return _pass(cid, name, "explicit escape declared (no sentinel dependence — auto-safe)")
+    shown = "; ".join(ln.strip()[:70] for ln in trigger_lines[:3])
+    return _warn(
+        cid,
+        name,
+        f"plan declares /workspace sentinel paths ({shown!r}) with no /workspace-contract "
+        "lane pinned — on the auto lane a GCP capacity miss falls through to SLURM, where "
+        "DRAC/Mila compute nodes have no /workspace (the dispatcher dies at `mkdir -p "
+        "/workspace/logs` and burns the submission, #608) and the fellows rung HAS "
+        "/workspace but nothing drains the sentinels (silent marker loss). Pin `backend: "
+        "gcp` or `backend: runpod` (or carry `--backend gcp|runpod` in the dispatch "
+        "command), or declare `no sentinel dependence — auto-safe` on its own line, "
+        "unwrapped (no backticks/quotes), if nothing in the run posts through sentinels "
+        "(plan-compute-sizing.md § Sentinel-signaling workloads)",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -7385,6 +7500,7 @@ CHECKS = [
     check_off_pod_phase_declaration,
     check_regression_anchor_executed,
     check_commit_sha_resolves,
+    check_sentinel_lane,
 ]
 
 
