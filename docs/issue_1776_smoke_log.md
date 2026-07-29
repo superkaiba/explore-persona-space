@@ -106,3 +106,69 @@ Four open persisted CONCERNs closed; no other changes. Verification runs:
 - **`judge-control-rubrics-pricing`:** DEFAULT is now the plan-§9-priced `contrast` policy — trait strata under own rubric; baseline under EVERY trait rubric (the α=0 term of each registered per-trait contrast, plan §6 PRIMARY DV); w1_mprime/random contexts ONE rubric each, deterministic round-robin over `--traits` in persisted context order (≈18k×5 calls ≈ plan's 80k+5k-headroom estimate, vs ~30k×5 before). Opt-in `--all-control-rubrics` restores the all-rubrics mode; explicit `--control-rubrics` still overrides. Report records `control_rubric_policy`. Smoke: `uv run python scripts/issue1776_judge.py --mode smoke --out-dir /tmp/i1776_r3_judge_smoke` → rc=0 `PASS (35 wire calls; splits exact; contrast partition disjoint+covering+deterministic)` — main leg runs under the DEFAULT contrast policy (1-trait == pre-policy counts, 35 wire calls exact) + a zero-wire 3-trait partition check (7 random-stratum contexts → exactly one rubric each, disjoint+covering, identical on a second pass; baseline 2 contexts × 3 rubrics).
 - **`p2c-battery-no-idempotency-skip`:** `run()` now skips when the output exists with a MATCHING regime fingerprint (the `inputs` block: jlast/mprime/acts14/shipped_m paths + n_pcs/n_draws/seed — n_pcs newly added to the manifest), `--force` recomputes, MISMATCH/unreadable prior recomputes (sibling jacobian `try_resume`/phase3-manifest convention, #722 r3 regime-key rule). Smoke: `uv run python scripts/issue1776_phase2_battery.py --smoke` → rc=0 `PASS (… resume skip/--force/mismatch exercised)` — run()-level leg on real tiny .pt fixtures: fresh write → matching re-run leaves mtime_ns unchanged → `--force` rewrites → `n_draws` change rewrites with the new fingerprint persisted.
 - **Lint/gates:** `bash -n issue1776_dispatch.sh` OK; `ruff check` + `ruff format --check` clean on `issue1776_judge.py` + `issue1776_phase2_battery.py`. Pin-sweep: `select_step9c_tests.py --map-files <4 round-3 files>` → 0 hit files (sweep_scope: selector-universe).
+
+## Crash-fix round — p0_stage centroids 404 + heredoc migration (2026-07-29)
+
+Crash under fix: att-20260729-060640 died rc=1 at `phase=p0_stage`, third sub-command (the inline
+stdin-python heredoc staging `centroids_v1_L21.pt`); its stderr lived only under `$PHASE_LOGS`
+($OUT_ROOT/logs), which the GCE crash trap does not persist.
+
+- **Root-cause reproduction (pre-fix rc=1):** heredoc body extracted verbatim
+  (`sed -n '309,347p' issue1776_dispatch.sh`) and run with the dispatcher's exact invocation shape
+  (`uv run python - "$PWD" /tmp/... < body.py`, cwd = repo root, `PYTHONPATH=$PWD/scripts` as the
+  dispatcher exports) → deterministic rc=1 in ~5 s: `huggingface_hub.errors.EntryNotFoundError:
+  404 ... /resolve/main/issue483_canonical_persona_pool/centroids_v1_L21.pt`. The heredoc's Hub
+  path omitted the `centroids/` directory segment — a scoped `list_hf_files_under_path` shows the
+  bundle at `issue483_canonical_persona_pool/centroids/centroids_v1_L21.pt`. (A PYTHONPATH-less
+  first repro instead died `ModuleNotFoundError: issue1776_common` — stdin-mode python resolves
+  repo modules only via the dispatcher's PYTHONPATH export; a second latent hazard of the inline
+  form, though NOT the production killer.)
+- **Fix (structural, per "committed scripts invoked by path, never inline interpreter bodies"):**
+  centroids + trait-artifact staging moved into `issue1776_stage.py`
+  (`--stage-trait-artifacts --stage-centroids --centroids-dest`, corrected `CENTROIDS_HF_PATH`
+  constant, sha-assert unchanged), folded into the single p0_stage stage.py call. The other three
+  repo-import heredocs migrated the same way: `issue1776_jpairs.py` (`build` / `capture-shard` /
+  `merge` — merge included for phase cohesion) + `issue1776_upload_batch.py` (batched
+  create_commit + scoped verify). The three stdlib-only dispatcher-glue heredocs (progress
+  sentinel, final sentinel, trace assert) stay: no repo-import surface, and all three execute in
+  every dry-run.
+- **Post-fix staging smoke (real Hub → /tmp):** `uv run python scripts/issue1776_stage.py
+  --stage-trait-artifacts --stage-centroids --centroids-dest /tmp/issue-1776-smoke/stagepy/centroids_v1_L21.pt
+  --report /tmp/.../stage_report.json` → rc=0; `[stage-extra] centroids staged + sha-verified`;
+  torch.load(mmap) asserts `centroids (186, 3584)`, `layer == 21`; report `centroids_sha256` ==
+  committed meta pin `2c71204d…`.
+- **jpairs smokes:** `build` tiny-real vs the real Hub (staged sampling_manifest, synthetic empty
+  exclusion, `--n-pairs 2`) → rc=0, 2 pairs from 3 lazily-fetched chunks, report + sha written
+  (digest-only; no row text printed). `merge` tiny-real CPU (synthetic 2-shard fixture, H=8) →
+  rc=0, manifest order + shapes asserted. `capture-shard` is GPU-bound (7B bf16 `device_map={"":0}`)
+  — carve-out: `--help` argparse probe rc=0; every deferred import executed
+  (`read_manifest_pool`, `transformers.AutoModelForCausalLM/AutoTokenizer`, `issue779_common`,
+  `issue1776_parity`, `CommitOperationAdd/HfApi`); the dispatcher-composed argv shapes bound
+  through the real parser + dispatch table (handlers no-op'd), incl. `--shard-index 0
+  --num-shards 8`.
+- **upload_batch live probe (scratch prefix, never canonical):** 1-file listfile →
+  `issue1776_jacobian/smoke_probe/crashfix_r1` → rc=0 `[upload] 1 files ... (verified)`; the run
+  also live-exercised `retry_transient` (one 429 on the verify listing, retried, recovered).
+- **Diagnosis-gap fix + SECOND root-caused defect (runner harness):** `run()`/`bg_run()` now tee
+  every sub-command's stdout+stderr to `$LOG_DIR/issue-1776-phase-<phase>.log` (append;
+  `/workspace/logs` is crash-persisted on the GCE lane), payload rc pinned via
+  pipefail+`PIPESTATUS[0]` (foreground) / process substitution (bg, `$!` stays the payload). The
+  harness (functions sed-extracted from the shipped dispatcher — tested bytes are shipped bytes)
+  exposed a PRE-EXISTING launch-killer: `p="$(bg_run ...)"` spawns the bg job inside a
+  command-substitution SUBSHELL, so every later `wait_rc` fails `wait: pid ... is not a child of
+  this shell` (rc=127) at the FIRST fan-out join — reproduced pre-fix (harness leg (c) rc=1).
+  Fix: `bg_run` sets a global `BG_PID` in the current shell; all 11 call sites rewritten
+  (`bg_run ...; p="$BG_PID"`). Post-fix harness → TEE-OK / RC7-OK (distinct gate rc preserved
+  through the pipe) / BG3-OK / FANOUT-OK (parallel joins, mixed rcs 0+8) / DRY-OK (empty BG_PID).
+- **Dispatcher dry-run re-trace:** `bash scripts/issue1776_dispatch.sh --mode full --dry-run` →
+  rc=0, `DRY-RUN-OK: 24 phases in §9 order; 48 sentinels parse`; dry_cmds.txt shows all new
+  by-path commands (stage flags; jpairs build/capture-shard×8/merge; upload_batch). `bash -n` OK.
+- **Lint/gates:** `ruff check` + `ruff format --check` clean on the 3 touched/new .py files;
+  `tests/test_ruff_policy.py::test_live_workflow_helpers_clean_under_full_ruleset` PASS;
+  `workflow_lint.py` (no-flags) PASS. Pin-sweep: `select_step9c_tests.py --map-files <4 diff
+  files>` → 1 hit file `tests/test_shared_vm_thread_caps.py` (19 passed; sweep_scope:
+  selector-universe); deleted/moved-literal grep over tests/ → 0 hits (sweep_scope: repo-wide
+  (grep-only supplement)). Repo-wide invariants union (scripts/** touched):
+  no_direct_task_path + no_pod_side_shellout + no_dollar_caps → 21 passed.
+  `git status --porcelain -- eval_results/ figures/` → empty (all smoke outputs under /tmp;
+  trait-artifact/pin writes land in gitignored data/).

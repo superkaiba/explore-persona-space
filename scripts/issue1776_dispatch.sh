@@ -254,6 +254,12 @@ on_exit() {
 trap on_exit EXIT
 
 # ── runners ───────────────────────────────────────────────────────────────────
+# Each sub-command's stdout+stderr ALSO appends to a per-phase log under
+# $LOG_DIR (/workspace/logs on both lanes), which the GCE crash trap persists
+# to HF issue1776_partial/ — att-20260729-060640's p0_stage stderr lived only
+# under $PHASE_LOGS ($OUT_ROOT/logs) and died with the instance.
+phase_dlog() { echo "$LOG_DIR/issue-${ISSUE}-phase-${CURRENT_PHASE}.log"; }
+
 run() {  # run <log-name> <cmd...>   (foreground, redirected; DRY: trace only)
   local plog="$PHASE_LOGS/$1.log"; shift
   if [[ $DRY == 1 ]]; then
@@ -261,19 +267,29 @@ run() {  # run <log-name> <cmd...>   (foreground, redirected; DRY: trace only)
     return 0
   fi
   echo "[dispatch] run($CURRENT_PHASE): $*"
-  "$@" >> "$plog" 2>&1
+  # Synchronous tee: the crash-persisted per-phase log is complete when the
+  # payload exits. pipefail is set, and PIPESTATUS[0] pins the PAYLOAD rc
+  # (post-pipe $? is the last stage's status — code-style.md).
+  "$@" 2>&1 | tee -a "$plog" >> "$(phase_dlog)"
+  return "${PIPESTATUS[0]}"
 }
 
-bg_run() {  # bg_run <log-name> <cvd> <cmd...> -> echoes pid ('' in DRY)
+bg_run() {  # bg_run <log-name> <cvd> <cmd...> -> sets BG_PID ('' in DRY)
+  # Sets the global BG_PID in the CURRENT shell. NEVER capture via
+  # p="$(bg_run ...)": command substitution forks a subshell, the background
+  # job is the SUBSHELL's child, and the parent's later `wait "$p"` fails
+  # "not a child of this shell" (rc=127) at the first fan-out join — caught
+  # by this round's runner harness before it could burn another GCE cycle.
   local plog="$PHASE_LOGS/$1.log" cvd="$2"; shift 2
+  BG_PID=""
   if [[ $DRY == 1 ]]; then
     echo "DRY: CUDA_VISIBLE_DEVICES=$cvd $*" | tee -a "$OUT_ROOT/dry_cmds.txt" >> "$plog"
-    echo ""
     return 0
   fi
   echo "[dispatch] bg($CURRENT_PHASE, CVD=$cvd): $*" >&2
-  CUDA_VISIBLE_DEVICES="$cvd" "$@" >> "$plog" 2>&1 &
-  echo $!
+  # Process substitution (NOT a pipe) keeps $! = the payload pid for wait_rc.
+  CUDA_VISIBLE_DEVICES="$cvd" "$@" > >(tee -a "$plog" >> "$(phase_dlog)") 2>&1 &
+  BG_PID=$!
 }
 
 wait_rc() {  # wait_rc <pid-or-empty> -> return the pid's rc (0 for DRY '')
@@ -296,61 +312,21 @@ print(f'[headroom] out_root=$OUT_ROOT free_gb={free:.1f} floor=$NEED_GB')
 fi
 
 # ── p0_stage: pin + probes + provenance + reused-artifact staging ─────────────
+# Also stages (gitignored — not in the clone): the #779 trait artifacts for the
+# contexts builder, and the canonical-pool centroids bundle for the 5b leakage
+# leg (sha-asserted in stage.py against the committed bank meta). Formerly an
+# inline heredoc whose wrong Hub path 404-killed att-20260729-060640.
 run p0_stage uv run python scripts/issue1776_stage.py \
   --stage-bundle --stage-weights --stage-rb --stage-manifest \
+  --stage-trait-artifacts --stage-centroids --centroids-dest "$CENTROIDS" \
   --parity-chunks "$PARITY_CHUNKS" --report "$DATA_DIR/stage_report.json"
-
-# Handoffs the phase scripts assume staged (gitignored — not in the clone):
-#  - #779 trait artifacts for the contexts builder (issue779_common
-#    load_extraction_artifacts reads data/issue_779/artifacts/<trait>.json);
-#  - the canonical-pool centroids bundle for the 5b leakage leg (sha-asserted
-#    against the committed bank meta's built_from.centroids_sha256).
-run p0_stage_extra uv run python - "$REPO_ROOT" "$CENTROIDS" <<'PY'
-import hashlib
-import json
-import sys
-from pathlib import Path
-
-import issue1776_common as C76
-from explore_persona_space.orchestrate import hub
-
-repo_root, centroids_dest = Path(sys.argv[1]), Path(sys.argv[2])
-pin = C76.resolve_data_repo_pin()
-
-art_dir = repo_root / "data" / "issue_779" / "artifacts"
-for trait in ("sycophancy", "hallucination"):
-    dest = art_dir / f"{trait}.json"
-    hub.stage_hub_file(
-        C76.HF_DATA_REPO,
-        f"issue779_monitoring/artifacts/{trait}.json",
-        dest,
-        repo_type="dataset",
-        revision=pin,
-    )
-    print(f"[stage-extra] trait artifacts staged: {dest}")
-
-# Centroids bundle lives under a DIFFERENT issue prefix (not covered by the
-# #1776 pin); content identity is the sha pin in the committed bank meta.
-meta = json.loads(
-    (repo_root / "data" / "canonical_persona_pool" / "matrix_v1_L21_raw.json").read_text()
-)
-want_sha = meta["built_from"]["centroids_sha256"]
-hub.stage_hub_file(
-    C76.HF_DATA_REPO,
-    "issue483_canonical_persona_pool/centroids_v1_L21.pt",
-    centroids_dest,
-    repo_type="dataset",
-)
-got = hashlib.sha256(centroids_dest.read_bytes()).hexdigest()
-assert got == want_sha, f"centroids sha mismatch: got {got} want {want_sha}"
-print(f"[stage-extra] centroids staged + sha-verified: {centroids_dest}")
-PY
 phase_end "p0_stage"
 
 # ── p5a stream: CPU/network-bound, concurrent with GPU work (§9) ──────────────
 phase_begin "p5a_stream_launch"
-STREAM_PID="$(bg_run p5a_stream "" uv run python scripts/issue1776_phase5.py stream \
-  --out-dir "$WC_DIR" --n-keep "$WC_KEEP" ${WC_EXTRA[@]+"${WC_EXTRA[@]}"})"
+bg_run p5a_stream "" uv run python scripts/issue1776_phase5.py stream \
+  --out-dir "$WC_DIR" --n-keep "$WC_KEEP" ${WC_EXTRA[@]+"${WC_EXTRA[@]}"}
+STREAM_PID="$BG_PID"
 phase_end "p5a_stream_launch"
 
 # ── p0_parity: G-PARITY (rc=8 -> program halt: everything downstream consumes
@@ -403,10 +379,11 @@ run p0_jlens_prompts uv run python scripts/issue1776_jlens_fit.py build-prompts 
 mkdir -p "$JLENS_DIR"
 JL_PIDS=()
 for ((g = 0; g < NF; g++)); do
-  p="$(bg_run "p0_jlens_fit_shard$g" "$g" uv run python scripts/issue1776_jlens_fit.py fit \
+  bg_run "p0_jlens_fit_shard$g" "$g" uv run python scripts/issue1776_jlens_fit.py fit \
     --prompts "$DATA_DIR/jlens_prompts.jsonl" --out "$JLENS_DIR/shard$g.pt" \
     --shard-index "$g" --n-shards "$NF" --checkpoint "$JLENS_DIR/ckpt_shard$g.pt" \
-    ${JLENS_LIMIT[@]+"${JLENS_LIMIT[@]}"})"
+    ${JLENS_LIMIT[@]+"${JLENS_LIMIT[@]}"}
+  p="$BG_PID"
   JL_PIDS+=("$p")
 done
 for p in ${JL_PIDS[@]+"${JL_PIDS[@]}"}; do wait_rc "$p" || exit $?; done
@@ -449,8 +426,9 @@ if [[ $LENS_OK -eq 1 ]]; then
   D_PIDS=()
   gi=0
   for L in 14 19 21; do
-    p="$(bg_run "p0_dict_l$L" "$((gi % NGPU))" uv run python scripts/issue1776_phase4.py \
-      build-dict --lens "$JLENS_DIR/lens.pt" --layer "$L" --out "$DICT_DIR/dictionary_l$L.pt")"
+    bg_run "p0_dict_l$L" "$((gi % NGPU))" uv run python scripts/issue1776_phase4.py \
+      build-dict --lens "$JLENS_DIR/lens.pt" --layer "$L" --out "$DICT_DIR/dictionary_l$L.pt"
+    p="$BG_PID"
     D_PIDS+=("$p"); gi=$((gi + 1))
   done
   for p in ${D_PIDS[@]+"${D_PIDS[@]}"}; do wait_rc "$p" || exit $?; done
@@ -462,201 +440,22 @@ phase_end "p0_dict"
 # ── p04_pairs: J-pair manifest + sharded teacher-forced capture ───────────────
 phase_begin "p04_pairs"
 mkdir -p "$JPAIRS_DIR"
-run p04_pairs_build uv run python - "$N_PAIRS" "$JPAIRS_DIR" "$MANIFEST_DIR" \
-  "$DATA_DIR/parity/exclusion_list.json" <<'PY'
-"""J-pair manifest (plan §4 P0.4): seeded sample of LMSYS-provenance rows from
-the n1m TRAIN pool (new-capture rows only — val/test are round-1 rows, disjoint
-by construction), text joined from the #779 raw_completions chunks at the pin.
-Chunks are visited in a SEEDED PERMUTATION of the pinned listing (deterministic
-given the pin) and downloaded lazily until the quota is covered. Rows whose ci
-failed the G-PARITY rig are excluded (plan §3 shared exclusion list — applied
-at the CORPUS so BOTH arms, J and M', never see them). Content hygiene: row
-text is never printed; the report carries counts + shas only."""
-
-import json
-import sys
-from hashlib import sha256
-from pathlib import Path
-
-import numpy as np
-
-import issue1776_common as C76
-import issue779_ffc_n1m_generate_capture as N1G
-from huggingface_hub import HfApi
-from explore_persona_space.orchestrate import hub
-
-n_pairs, out_dir, manifest_dir = int(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
-exclusion_path = Path(sys.argv[4])
-assert exclusion_path.exists(), f"G-PARITY exclusion list missing (p0_parity ran?): {exclusion_path}"
-excluded_ci = {int(r["ci"]) for r in json.loads(exclusion_path.read_text())["excluded"]}
-out_path = out_dir / "jpairs.jsonl"
-if out_path.exists():
-    rows = [json.loads(x) for x in out_path.read_text().splitlines() if x.strip()]
-    if len(rows) == n_pairs:
-        print(f"[jpairs] resume: {out_path} already has {n_pairs} pairs; skip")
-        sys.exit(0)
-pin = C76.resolve_data_repo_pin()
-pool, _meta = N1G.read_manifest_pool(manifest_dir)
-lmsys_ci = {int(r["i"]) for r in pool if r.get("corpus") == "lmsys"}
-assert lmsys_ci, "no lmsys rows in the sampling manifest"
-
-api = HfApi()
-base = "issue779_monitoring/fitter-fair-comparison-n1m/raw_completions"
-files = sorted(
-    f
-    for f in hub.list_hf_files_under_path(
-        api, C76.HF_DATA_REPO, base, repo_type="dataset", revision=pin
-    )
-    if f.endswith(".json") and "skipped" not in Path(f).name
-)
-assert files, f"no raw chunks under {base}@{pin}"
-rng = np.random.default_rng(0)
-order = rng.permutation(len(files))
-kept: list[dict] = []
-seen: set[int] = set()
-cache = out_dir / "raw_chunks"
-n_chunks_used = 0
-for oi in order:
-    f = files[int(oi)]
-    local = hub.stage_hub_file(
-        C76.HF_DATA_REPO, f, cache / Path(f).name, repo_type="dataset", revision=pin
-    )
-    n_chunks_used += 1
-    for r in json.loads(Path(local).read_text())["rows"]:
-        ci = int(r["ci"])
-        if ci in excluded_ci:
-            continue  # plan §3: failed-parity rows leave BOTH arms' corpus
-        if ci in lmsys_ci and ci not in seen and r.get("response"):
-            seen.add(ci)
-            kept.append(
-                {
-                    "pair_id": f"ci{ci}",
-                    "prompt": r["prompt"],
-                    "response": r["response"],
-                    "ci": ci,
-                    "chunk": Path(f).name,
-                }
-            )
-    if len(kept) >= n_pairs:
-        break
-assert len(kept) >= n_pairs, f"only {len(kept)} lmsys pairs across {n_chunks_used} chunks"
-idx = np.sort(rng.choice(len(kept), size=n_pairs, replace=False))
-sel = [kept[int(i)] for i in idx]
-tmp = out_path.with_suffix(".jsonl.tmp")
-tmp.write_text("".join(json.dumps(r) + "\n" for r in sel))
-tmp.replace(out_path)
-C76.atomic_write_json(
-    out_dir / "jpairs_build_report.json",
-    {
-        "n_pairs": n_pairs,
-        "n_chunks_visited": n_chunks_used,
-        "n_lmsys_pool": len(lmsys_ci),
-        "n_parity_excluded_ci": len(excluded_ci),
-        "pin": pin,
-        "seed": 0,
-        "note": "seeded chunk-permutation lazy download; sample restricted to visited chunks",
-        "jpairs_sha256": sha256(out_path.read_bytes()).hexdigest(),
-        "repro": C76.repro_meta(),
-    },
-)
-print(f"[jpairs] wrote {n_pairs} pairs from {n_chunks_used} chunks -> {out_path}")
-PY
+run p04_pairs_build uv run python scripts/issue1776_jpairs.py build \
+  --n-pairs "$N_PAIRS" --out-dir "$JPAIRS_DIR" --manifest-dir "$MANIFEST_DIR" \
+  --exclusion "$DATA_DIR/parity/exclusion_list.json"
 
 CAP_PIDS=()
 for ((g = 0; g < NGPU; g++)); do
-  p="$(bg_run "p04_capture_shard$g" "$g" uv run python - "$JPAIRS_DIR/jpairs.jsonl" \
-    "$JPAIRS_DIR/cap_shard$g.pt" "$g" "$NGPU" <<'PY'
-"""Sharded teacher-forced capture of the J pairs via the PRODUCER's rig
-(parity.recompute_row -> issue779_collect capture fns): cx_last@{14,19} + v@19."""
-
-import json
-import sys
-from pathlib import Path
-
-from explore_persona_space.orchestrate.env import load_dotenv
-
-load_dotenv()
-
-import torch  # noqa: E402
-from transformers import AutoModelForCausalLM, AutoTokenizer  # noqa: E402
-
-import issue1776_common as C76  # noqa: E402
-import issue1776_parity as PAR  # noqa: E402
-import issue779_common as C  # noqa: E402
-
-pairs_path, out_path = Path(sys.argv[1]), Path(sys.argv[2])
-shard, n_shards = int(sys.argv[3]), int(sys.argv[4])
-rows = [json.loads(x) for x in pairs_path.read_text().splitlines() if x.strip()]
-rows = rows[shard::n_shards]
-if out_path.exists():
-    have = torch.load(out_path, map_location="cpu", weights_only=True)
-    if list(have["pair_id"]) == [r["pair_id"] for r in rows]:
-        print(f"[p04-capture] shard {shard}: {out_path} complete; skip")
-        sys.exit(0)
-fields = PAR.consumed_fields(C76.SOURCE_LAYER, C76.READOUT_LAYER)
-tok = AutoTokenizer.from_pretrained(C.DEFAULT_MODEL)
-model = (
-    AutoModelForCausalLM.from_pretrained(C.DEFAULT_MODEL, dtype=torch.bfloat16, device_map={"": 0})
-    .eval()
-)
-ids, v19, c14, c19 = [], [], [], []
-for j, r in enumerate(rows):
-    vec = PAR.recompute_row(model, tok, r["prompt"], r["response"], fields)
-    ids.append(r["pair_id"])
-    c14.append(vec[("cx_last", C76.SOURCE_LAYER)].to(torch.float32).cpu())
-    c19.append(vec[("cx_last", C76.READOUT_LAYER)].to(torch.float32).cpu())
-    v19.append(vec[("v_x", C76.READOUT_LAYER)].to(torch.float32).cpu())
-    if (j + 1) % 32 == 0:
-        print(f"[p04-capture] shard {shard}: {j + 1}/{len(rows)}", flush=True)
-tmp = out_path.with_suffix(".pt.tmp")
-torch.save(
-    {
-        "pair_id": ids,
-        "v19": torch.stack(v19),
-        "c14": torch.stack(c14),
-        "c19": torch.stack(c19),
-        "layers": [C76.SOURCE_LAYER, C76.READOUT_LAYER],
-    },
-    tmp,
-)
-tmp.replace(out_path)
-print(f"[p04-capture] shard {shard}: {len(ids)} pairs -> {out_path}")
-PY
-)"
+  bg_run "p04_capture_shard$g" "$g" uv run python scripts/issue1776_jpairs.py \
+    capture-shard --pairs "$JPAIRS_DIR/jpairs.jsonl" --out "$JPAIRS_DIR/cap_shard$g.pt" \
+    --shard-index "$g" --num-shards "$NGPU"
+  p="$BG_PID"
   CAP_PIDS+=("$p")
 done
 for p in ${CAP_PIDS[@]+"${CAP_PIDS[@]}"}; do wait_rc "$p" || exit $?; done
 
-run p04_pairs_merge uv run python - "$JPAIRS_DIR" "$NGPU" <<'PY'
-"""Merge capture shards back into manifest order -> jpair_capture.pt +
-v_pool.pt ({'v': (n,H)} for build-seeds) + acts14/acts19 (phase4 cov null)."""
-
-import json
-import sys
-from pathlib import Path
-
-import torch
-
-jdir, n_shards = Path(sys.argv[1]), int(sys.argv[2])
-rows = [json.loads(x) for x in (jdir / "jpairs.jsonl").read_text().splitlines() if x.strip()]
-by_id: dict[str, tuple] = {}
-for g in range(n_shards):
-    sh = torch.load(jdir / f"cap_shard{g}.pt", map_location="cpu", weights_only=True)
-    for i, pid in enumerate(sh["pair_id"]):
-        by_id[pid] = (sh["v19"][i], sh["c14"][i], sh["c19"][i])
-missing = [r["pair_id"] for r in rows if r["pair_id"] not in by_id]
-assert not missing, f"capture shards missing {len(missing)} pairs (e.g. {missing[:3]})"
-order = [r["pair_id"] for r in rows]
-v = torch.stack([by_id[p][0] for p in order])
-c14 = torch.stack([by_id[p][1] for p in order])
-c19 = torch.stack([by_id[p][2] for p in order])
-torch.save({"pair_id": order, "v19": v, "c14": c14, "c19": c19, "layers": [14, 19]},
-           jdir / "jpair_capture.pt")
-torch.save({"v": v}, jdir / "v_pool.pt")
-torch.save(c14, jdir / "acts14.pt")
-torch.save(c19, jdir / "acts19.pt")
-print(f"[p04-merge] {v.shape[0]} pairs merged (H={v.shape[1]})")
-PY
+run p04_pairs_merge uv run python scripts/issue1776_jpairs.py merge \
+  --jpairs-dir "$JPAIRS_DIR" --num-shards "$NGPU"
 phase_end "p04_pairs"
 
 # ── p1_contexts (needs the staged #779 trait artifacts) ───────────────────────
@@ -674,10 +473,11 @@ run p2a_seeds uv run python scripts/issue1776_jacobian.py build-seeds \
   --out "$SKETCH_ROOT/seeds.pt"
 SK_PIDS=()
 for ((g = 0; g < NGPU; g++)); do
-  p="$(bg_run "p2a_sketch_shard$g" "$g" uv run python scripts/issue1776_jacobian.py run \
+  bg_run "p2a_sketch_shard$g" "$g" uv run python scripts/issue1776_jacobian.py run \
     --mode sketch --pairs "$JPAIRS_DIR/jpairs.jsonl" --seeds-file "$SKETCH_ROOT/seeds.pt" \
     --limit-pairs "$SKETCH_LIMIT" --shard-index "$g" --num-shards "$NGPU" \
-    --out-dir "$SKETCH_ROOT/shard$g")"
+    --out-dir "$SKETCH_ROOT/shard$g"
+  p="$BG_PID"
   SK_PIDS+=("$p")
 done
 SK_RC=0
@@ -701,39 +501,8 @@ phase_end "p1_diag"
 # ── uploads: batched create_commit + scoped post-upload verify ────────────────
 upload_batch() {  # upload_batch <log-name> <hub-prefix> <commit-msg> <listfile rel=abs per line>
   local lname="$1" prefix="$2" msg="$3" listfile="$4"
-  run "$lname" uv run python - "$prefix" "$listfile" "$msg" <<'PY'
-import sys
-from pathlib import Path
-
-import issue1776_common as C76
-from huggingface_hub import CommitOperationAdd, HfApi
-from explore_persona_space.orchestrate import hub
-
-prefix, listfile, msg = sys.argv[1], Path(sys.argv[2]), sys.argv[3]
-pairs = [ln.split("=", 1) for ln in listfile.read_text().splitlines() if ln.strip()]
-ops, expected = [], []
-for rel, local in pairs:
-    p = Path(local)
-    assert p.exists(), f"upload source missing: {p}"
-    rp = f"{prefix}/{rel}"
-    ops.append(CommitOperationAdd(path_in_repo=rp, path_or_fileobj=str(p)))
-    expected.append(rp)
-if not ops:
-    print(f"[upload] nothing to upload for {prefix}")
-    sys.exit(0)
-api = HfApi()
-hub.retry_transient(
-    lambda: api.create_commit(
-        repo_id=C76.HF_DATA_REPO, repo_type="dataset", operations=ops, commit_message=msg
-    ),
-    what=f"create_commit({prefix})",
-)
-missing = hub.verify_repo_paths_uploaded(
-    api, C76.HF_DATA_REPO, expected, path_in_repo=prefix, repo_type="dataset"
-)
-assert not missing, f"post-upload verify FAIL ({len(missing)} missing): {missing[:5]}"
-print(f"[upload] {len(expected)} files -> {C76.HF_DATA_REPO}/{prefix} (verified)")
-PY
+  run "$lname" uv run python scripts/issue1776_upload_batch.py \
+    --prefix "$prefix" --listfile "$listfile" --message "$msg"
 }
 
 list_add() {  # list_add <listfile> <rel> <abs> — include iff the source exists
@@ -799,10 +568,11 @@ phase_begin "p2b_full"
 mkdir -p "$FULL_ROOT"
 F_PIDS=()
 for ((g = 0; g < NGPU; g++)); do
-  p="$(bg_run "p2b_full_shard$g" "$g" uv run python scripts/issue1776_jacobian.py run \
+  bg_run "p2b_full_shard$g" "$g" uv run python scripts/issue1776_jacobian.py run \
     --mode full --pairs "$JPAIRS_DIR/jpairs.jsonl" --m "$FULL_M" \
     --limit-pairs "$FULL_LIMIT" --shard-index "$g" --num-shards "$NGPU" \
-    --out-dir "$FULL_ROOT/shard$g")"
+    --out-dir "$FULL_ROOT/shard$g"
+  p="$BG_PID"
   F_PIDS+=("$p")
 done
 F_RC=0
@@ -881,8 +651,9 @@ run p3_baseline env CUDA_VISIBLE_DEVICES=0 "${P3_BASE[@]}" --baseline-only \
   ${P3_EXTRA[@]+"${P3_EXTRA[@]}"}
 P3_PIDS=()
 for ((g = 0; g < NGPU; g++)); do
-  p="$(bg_run "p3_strata_shard$g" "$g" "${P3_BASE[@]}" \
-    --strata-shard "$g" --strata-num-shards "$NGPU" ${P3_EXTRA[@]+"${P3_EXTRA[@]}"})"
+  bg_run "p3_strata_shard$g" "$g" "${P3_BASE[@]}" \
+    --strata-shard "$g" --strata-num-shards "$NGPU" ${P3_EXTRA[@]+"${P3_EXTRA[@]}"}
+  p="$BG_PID"
   P3_PIDS+=("$p")
 done
 for p in ${P3_PIDS[@]+"${P3_PIDS[@]}"}; do wait_rc "$p" || exit $?; done
@@ -915,20 +686,23 @@ phase_begin "p4_mediation"
 if [[ $LENS_OK -eq 1 ]]; then
   mkdir -p "$EVAL_DIR/phase4"
   P4_PIDS=()
-  p="$(bg_run p4_energy "0" uv run python scripts/issue1776_phase4.py energy \
+  bg_run p4_energy "0" uv run python scripts/issue1776_phase4.py energy \
     --dict14 "$DICT_DIR/dictionary_l14.pt" --dict19 "$DICT_DIR/dictionary_l19.pt" \
     --mprime-weights "$COMP_DIR/m_ridge_x50k.pt" --jlast "$FULL_ROOT/merged/J_last.pt" \
     --rb-dir "$RB_DIR" --phase3-root "$P3_ROOT" \
     --acts14 "$JPAIRS_DIR/acts14.pt" --acts19 "$JPAIRS_DIR/acts19.pt" \
-    --n-draws "$NDRAWS" --out "$EVAL_DIR/phase4/jspace_energy.json")"
+    --n-draws "$NDRAWS" --out "$EVAL_DIR/phase4/jspace_energy.json"
+  p="$BG_PID"
   P4_PIDS+=("$p")
-  p="$(bg_run p4_refit_split "$((NGPU > 1 ? 1 : 0))" uv run python scripts/issue1776_phase4.py \
+  bg_run p4_refit_split "$((NGPU > 1 ? 1 : 0))" uv run python scripts/issue1776_phase4.py \
     refit-split --dict19 "$DICT_DIR/dictionary_l19.pt" --n-train "$N_TRAIN" \
-    --pass-b "$PASS_B" --mm-dir "$MM_DIR" --out "$EVAL_DIR/phase4/refit_split.json")"
+    --pass-b "$PASS_B" --mm-dir "$MM_DIR" --out "$EVAL_DIR/phase4/refit_split.json"
+  p="$BG_PID"
   P4_PIDS+=("$p")
-  p="$(bg_run p4_jdelta_split "$((NGPU > 2 ? 2 : 0))" uv run python scripts/issue1776_phase4.py \
+  bg_run p4_jdelta_split "$((NGPU > 2 ? 2 : 0))" uv run python scripts/issue1776_phase4.py \
     jdelta-split --dict14 "$DICT_DIR/dictionary_l14.pt" --jlast "$FULL_ROOT/merged/J_last.pt" \
-    --phase3-root "$P3_ROOT" --out "$EVAL_DIR/phase4/jdelta_split.json")"
+    --phase3-root "$P3_ROOT" --out "$EVAL_DIR/phase4/jdelta_split.json"
+  p="$BG_PID"
   P4_PIDS+=("$p")
   for p in ${P4_PIDS[@]+"${P4_PIDS[@]}"}; do wait_rc "$p" || exit $?; done
 else
@@ -953,10 +727,11 @@ phase_end "p5a_stream_join"
 phase_begin "p5a_capture"
 C_PIDS=()
 for ((g = 0; g < NGPU; g++)); do
-  p="$(bg_run "p5a_capture_shard$g" "$g" uv run python scripts/issue1776_phase5.py capture \
+  bg_run "p5a_capture_shard$g" "$g" uv run python scripts/issue1776_phase5.py capture \
     --pool "$WC_DIR/wildchat_fresh_pool.jsonl" --out-root "$WC_CAP_ROOT" \
     --shard-index "$g" --n-shards "$NGPU" --hf-prefix "$HF_PREFIX_EFF/wildchat_fresh" \
-    ${CAP_EXTRA[@]+"${CAP_EXTRA[@]}"})"
+    ${CAP_EXTRA[@]+"${CAP_EXTRA[@]}"}
+  p="$BG_PID"
   C_PIDS+=("$p")
 done
 for p in ${C_PIDS[@]+"${C_PIDS[@]}"}; do wait_rc "$p" || exit $?; done

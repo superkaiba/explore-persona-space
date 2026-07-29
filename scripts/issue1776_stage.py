@@ -20,6 +20,8 @@ Exit contract: 0 PASS / nonzero fail-loud (asserts / raised errors).
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 import re
 import sys
@@ -28,6 +30,15 @@ from pathlib import Path
 import issue1776_common as C76
 
 from explore_persona_space.orchestrate import hub  # noqa: E402
+
+# Canonical-pool centroids bundle (5b leakage leg). Lives under a DIFFERENT
+# issue prefix, INSIDE the pool's centroids/ subdir — the att-20260729-060640
+# crash was a heredoc staging the bare `issue483_canonical_persona_pool/
+# centroids_v1_L21.pt` path (no `centroids/` segment): deterministic 404
+# EntryNotFoundError at p0_stage. Content identity is the sha pin in the
+# committed bank meta (CENTROIDS_META_PATH), not the #1776 revision pin.
+CENTROIDS_HF_PATH = "issue483_canonical_persona_pool/centroids/centroids_v1_L21.pt"
+CENTROIDS_META_RELPATH = "data/canonical_persona_pool/matrix_v1_L21_raw.json"
 
 
 def _api():
@@ -166,6 +177,45 @@ def stage_parity_chunks(revision: str, dest_root: Path, n_chunks: int) -> list[s
     return staged
 
 
+def stage_trait_artifacts(revision: str, repo_root: Path) -> list[str]:
+    """Stage the #779 trait artifacts the contexts builder reads (gitignored).
+
+    issue779_common.load_extraction_artifacts reads
+    ``data/issue_779/artifacts/<trait>.json`` relative to the repo root; the
+    files are gitignored, so a fresh clone must stage them from the Hub.
+    """
+    art_dir = repo_root / "data" / "issue_779" / "artifacts"
+    staged: list[str] = []
+    for trait in ("sycophancy", "hallucination"):
+        dest = art_dir / f"{trait}.json"
+        hub.stage_hub_file(
+            C76.HF_DATA_REPO,
+            f"issue779_monitoring/artifacts/{trait}.json",
+            dest,
+            repo_type="dataset",
+            revision=revision,
+        )
+        print(f"[stage-extra] trait artifacts staged: {dest}", flush=True)
+        staged.append(str(dest))
+    return staged
+
+
+def stage_centroids(repo_root: Path, dest: Path) -> str:
+    """Stage + sha-verify the canonical-pool centroids bundle (5b leakage leg).
+
+    Downloads ``CENTROIDS_HF_PATH`` (default branch — the bundle predates and is
+    outside the #1776 revision pin) and asserts its sha256 against the committed
+    bank meta's ``built_from.centroids_sha256``; returns the verified sha.
+    """
+    meta = json.loads((repo_root / CENTROIDS_META_RELPATH).read_text())
+    want_sha = meta["built_from"]["centroids_sha256"]
+    hub.stage_hub_file(C76.HF_DATA_REPO, CENTROIDS_HF_PATH, dest, repo_type="dataset")
+    got = hashlib.sha256(dest.read_bytes()).hexdigest()
+    assert got == want_sha, f"centroids sha mismatch: got {got} want {want_sha}"
+    print(f"[stage-extra] centroids staged + sha-verified: {dest}", flush=True)
+    return got
+
+
 def stage_prefix(revision: str, dest_root: Path, prefix: str) -> int:
     """Stage a whole reused prefix at the pin (weights, r_b, sampling manifest)."""
     got = hub.stage_hub_prefix(
@@ -185,6 +235,22 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--stage-rb", action="store_true", help="stage r_B trait stacks")
     ap.add_argument("--stage-manifest", action="store_true", help="stage the sampling manifest")
     ap.add_argument("--parity-chunks", type=int, default=0, help="stage N parity chunk pairs")
+    ap.add_argument(
+        "--stage-trait-artifacts",
+        action="store_true",
+        help="stage the #779 trait artifact JSONs (contexts-builder input)",
+    )
+    ap.add_argument(
+        "--stage-centroids",
+        action="store_true",
+        help="stage + sha-verify the #483 centroids bundle (5b leakage leg)",
+    )
+    ap.add_argument(
+        "--centroids-dest",
+        type=Path,
+        default=C76.DATA_DIR / "centroids_v1_L21.pt",
+        help="local target for --stage-centroids",
+    )
     ap.add_argument("--skip-provenance", action="store_true")
     ap.add_argument("--report", type=Path, default=C76.DATA_DIR / "stage_report.json")
     args = ap.parse_args(argv)
@@ -211,6 +277,10 @@ def main(argv: list[str] | None = None) -> int:
         report["pass_b_keys"] = verify_pass_b_keys(bundle)
     if args.parity_chunks > 0:
         report["parity_chunks"] = stage_parity_chunks(revision, args.dest, args.parity_chunks)
+    if args.stage_trait_artifacts:
+        report["trait_artifacts"] = stage_trait_artifacts(revision, C76.PROJECT_ROOT)
+    if args.stage_centroids:
+        report["centroids_sha256"] = stage_centroids(C76.PROJECT_ROOT, args.centroids_dest)
 
     C76.atomic_write_json(args.report, report)
     print(f"[stage] [phase=stage_done] report -> {args.report}", flush=True)
