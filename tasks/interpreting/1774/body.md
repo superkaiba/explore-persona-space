@@ -1,6 +1,7 @@
 ---
-title: Linear/operator characterization of the four context→answer map arms (consistency,
-  channels, null spaces, endomorphism reads)
+title: Linear maps predict held-out answer states from the full context or the bare
+  query but not from the genuinely pre-query prefix state, which keeps only persona-average
+  signal (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-28T21:35:32Z'
