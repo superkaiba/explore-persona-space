@@ -6095,8 +6095,8 @@
     "1786": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1786",
-      "status": "approved",
+      "path": "tasks/running/1786",
+      "status": "running",
       "title": "daily-fix: WARN when dispatch handle points at dead attempt"
     },
     "1787": {
