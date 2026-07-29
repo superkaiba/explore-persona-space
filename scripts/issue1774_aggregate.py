@@ -230,10 +230,29 @@ def merge_phase_digests(eval_root: Path, layers: list[int]) -> dict:
         (
             "state_shift",
             eval_root / "steering" / "state_shift.json",
-            ["per_class_shift", "baseline_band"],
+            # REAL merge_state_shift keys (round 2, M3 sibling fix)
+            [
+                "conditions",
+                "steer_base_band",
+                "alpha_by_direction",
+                "n_usable_directions",
+                "judge_skip",
+            ],
         ),
     ]:
         d = _digest_json(path, keys)
+        if d is not None and name == "state_shift":
+            # compact: per-condition headline stats only; band pooled stats only
+            if isinstance(d.get("conditions"), dict):
+                d["conditions"] = {
+                    k: {kk: v.get(kk) for kk in ("median_dt1", "p90_dt1", "n_contexts")}
+                    for k, v in d["conditions"].items()
+                    if isinstance(v, dict)
+                }
+            if isinstance(d.get("steer_base_band"), dict):
+                d["steer_base_band"] = {
+                    k: d["steer_base_band"].get(k) for k in ("pooled_p50", "pooled_p90", "k_draws")
+                }
         if d is None:
             dig["skipped"].append(str(path.relative_to(eval_root)))
         else:

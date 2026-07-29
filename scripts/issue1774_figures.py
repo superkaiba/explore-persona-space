@@ -237,31 +237,37 @@ def fig_cross_arm_angles(eval_root: Path, fig_dir: Path) -> str | None:
 
 
 def fig_causal_shift(eval_root: Path, fig_dir: Path) -> str | None:
+    """Per-condition ||dt1|| points (per-context) + median vs the steered-base
+    cross-draw band. Reads the REAL merge_state_shift schema (round 2, M3):
+    conditions.{cond_id}.{kind,direction,sign,per_context_dt1,median_dt1,
+    p90_dt1,n_contexts} + steer_base_band.{per_context,pooled_p50,pooled_p90}."""
     j = _read(eval_root / "steering" / "state_shift.json")
     if j is None:
         return "missing steering/state_shift.json (P3 lands in a later round)"
-    per = j.get("per_direction_shifts") or j.get("per_class_shift")
-    if not per:
-        return "state_shift.json lacks per_direction_shifts"
+    conds = j.get("conditions")
+    if not conds:
+        return "state_shift.json lacks conditions"
     fig, ax = plt.subplots(figsize=(7.5, 4.0), layout="constrained")
-    names = sorted(per)
+    names = sorted(conds)
     for i, name in enumerate(names):
-        vals = np.asarray(per[name], dtype=float)
-        ax.scatter(np.full(vals.size, i), vals, s=8, alpha=0.6, color=paper_palette(1)[0])
-        ax.scatter([i], [np.median(vals)], marker="_", s=300, color="black", zorder=3)
-    band = j.get("baseline_band")
-    if isinstance(band, dict) and "p90" in band:
-        ax.axhspan(
-            band.get("p10", 0.0),
-            band["p90"],
-            color="grey",
-            alpha=0.25,
-            label="Baseline cross-draw band (p10–p90)",
-        )
+        row = conds[name]
+        vals = np.asarray(list((row.get("per_context_dt1") or {}).values()), dtype=float)
+        if vals.size:
+            ax.scatter(np.full(vals.size, i), vals, s=8, alpha=0.6, color=paper_palette(1)[0])
+        med = row.get("median_dt1")
+        if med is not None:
+            ax.scatter([i], [float(med)], marker="_", s=300, color="black", zorder=3)
+    band = j.get("steer_base_band") or {}
+    pool = [float(v) for draws in (band.get("per_context") or {}).values() for v in draws]
+    if pool:
+        lo, hi = float(np.percentile(pool, 10)), float(np.percentile(pool, 90))
+        ax.axhspan(lo, hi, color="grey", alpha=0.25, label="Steered-base cross-draw band (p10–p90)")
         ax.legend(fontsize=8)
+    elif band.get("pooled_p90") is not None:
+        ax.axhline(float(band["pooled_p90"]), color="grey", linestyle="--", linewidth=0.8)
     ax.set_xticks(range(len(names)), names, rotation=45, ha="right", fontsize=7)
     ax.set_ylabel("‖Δt1‖ (hook-free re-capture)")
-    ax.set_title("Causal state shift per direction class")
+    ax.set_title("Causal state shift per steering condition")
     savefig_paper(fig, "causal_state_shift", dir=fig_dir)
     plt.close(fig)
     return None

@@ -333,7 +333,9 @@ def build_registries(smoke: bool) -> tuple[dict, dict, dict]:
     dense = {}
     for i, r in zip(fit_idx, fit_rows, strict=True):
         dense.setdefault(str(r.get("prefix_id")), []).append(i)
-    core = sorted([p for p, ix in dense.items() if len(ix) >= 15])
+    # >= 20 (round 2 Minor): 20 queries are PICKED per core prefix below — a
+    # 15-19-row prefix under-fills its pick and the n_contexts == 2216 assert fires.
+    core = sorted([p for p, ix in dense.items() if len(ix) >= 20])
     rng.shuffle(core)
     core = core[: (2 if smoke else 99)]
     picked: list[int] = []

@@ -190,6 +190,24 @@ def _capture_t1(gen_rows: list[dict], draw_k: int, model, tok, device: str) -> n
     return kept  # (n, len(LAYERS), D)
 
 
+def _capture_regime_guard(sdir, tag: str, regime: dict) -> None:
+    """Fail-loud resume regime key (#722 r3): row_index + part files are resume
+    state keyed on (limit, shard, k_draws, realized rows) — a re-run with a
+    different ``--limit`` in the SAME out-root must REFUSE, never silently join
+    fresh parts against a stale row_index."""
+    rp = sdir / f"capture_regime_shard{tag}.json"
+    if rp.exists():
+        prior = json.loads(rp.read_text())
+        if prior != regime:
+            raise RuntimeError(
+                f"stage_capture resume regime mismatch in {sdir}: prior={prior} "
+                f"now={regime} — use a fresh --out-root (or clear the stale "
+                "summaries) instead of resuming across regimes"
+            )
+    else:
+        c.write_json_atomic(rp, regime)
+
+
 def stage_capture(args) -> int:
     device = "cuda:0" if _cuda_ok() else "cpu"
     rows = c.load_manifest()
@@ -205,10 +223,26 @@ def stage_capture(args) -> int:
     assert not missing, f"{len(missing)} draw contexts have no generation rows: {missing[:5]}"
     ordered = [by_mi[mi] for mi in indices]
     ordered = _shard(ordered, args.shard)
-    model, tok = _load_hf_model(device)
     sdir = c.data_out(args.out_root) / "draws/summaries"
     sdir.mkdir(parents=True, exist_ok=True)
     tag = args.shard.replace("/", "of")
+    # regime guard BEFORE model init (consumer contracts assert pre-GPU-load)
+    _capture_regime_guard(
+        sdir,
+        tag,
+        {
+            "limit": int(args.limit or 0),
+            "shard": str(args.shard),
+            "k_draws": int(k_draws),
+            "n_rows": len(ordered),
+            "manifest_index_first_last": (
+                [int(ordered[0]["manifest_index"]), int(ordered[-1]["manifest_index"])]
+                if ordered
+                else []
+            ),
+        },
+    )
+    model, tok = _load_hf_model(device)
     t0 = time.time()
     idx_path = sdir / f"row_index_shard{tag}.jsonl"
     if not idx_path.exists():
@@ -245,6 +279,32 @@ def _cuda_ok() -> bool:
     import torch
 
     return torch.cuda.is_available()
+
+
+def _drain_vllm_release(device: str, timeout_s: float = 60.0, frac_free: float = 0.55) -> None:
+    """Bounded post-reap drain verify (gotchas #1090 pattern): wait until the
+    reaped engine's HBM is actually released BEFORE the HF 7B load; engine
+    teardown is async, so a single-shot check races the SIGKILL→driver-release
+    window. Fail loud on timeout naming the residual (an orphaned EngineCore
+    holds ~gpu_memory_utilization of HBM and would OOM the pilot's HF load)."""
+    import torch
+
+    if not device.startswith("cuda"):
+        return
+    idx = torch.device(device).index or 0
+    t0 = time.time()
+    while time.time() - t0 < timeout_s:
+        free, total = torch.cuda.mem_get_info(idx)
+        if free / total >= frac_free:
+            print(f"[p1-pilot] vLLM engine drained: free={free / 2**30:.1f} GiB", flush=True)
+            return
+        time.sleep(2.0)
+    free, total = torch.cuda.mem_get_info(idx)
+    raise RuntimeError(
+        f"vLLM engine memory not released after {timeout_s:.0f}s: "
+        f"free={free / 2**30:.1f}/{total / 2**30:.1f} GiB (< {frac_free:.0%} floor) — "
+        "orphaned EngineCore would OOM the HF pilot load (gotchas: vLLM teardown)"
+    )
 
 
 def stage_pilot(args) -> int:
@@ -289,7 +349,14 @@ def stage_pilot(args) -> int:
         completions = [o.outputs[0].text for o in outs]
         distinct = sum(1 for o in outs if o.outputs[0].text != o.outputs[1].text)
         report["n_distinct_draw_pairs"] = distinct  # asm 10: n=2 draws are independent
+        # M1 (round 2): a bare `del llm` does NOT reap the v1 EngineCore
+        # subprocess — its ~0.5-util KV cache stays pinned into the HF 7B load
+        # (gotchas: vLLM in-process teardown). Reap, then bounded drain verify.
+        from explore_persona_space.analysis.representation_shift import _reap_vllm_engine
+
+        _reap_vllm_engine(llm)
         del llm
+        _drain_vllm_release(device)
     else:
         completions = ["pilot smoke completion." for _ in ctxs]
         report["per_gen_s"] = None
@@ -306,6 +373,11 @@ def stage_pilot(args) -> int:
     # incremental forward at the SAME positions (the generate-time computation).
     from issue1092_gpu_phase import _boundary_suffix, _capture_row_ids_and_positions
 
+    from explore_persona_space.analysis.extraction import _logits_to_keep_kwargs
+
+    # M1 (round 2): the gate never reads logits — skip the full-vocab
+    # (B x T x 152k) lm_head materialization (introspection-guarded, #779).
+    ltk = _logits_to_keep_kwargs(model, return_logits=False)
     spot = ctxs[: min(8, pilot_n)]
     max_abs, cos_min = 0.0, 1.0
     li = c.HEADLINE_LAYER - 1
@@ -315,13 +387,16 @@ def stage_pilot(args) -> int:
         )
         ids = torch.tensor([row_ids], device=device)
         with torch.no_grad():
-            full = model(input_ids=ids, output_hidden_states=True).hidden_states[1:]
+            full = model(input_ids=ids, output_hidden_states=True, **ltk).hidden_states[1:]
             n_prompt = pos["n_prompt"]
-            pre = model(input_ids=ids[:, :n_prompt], use_cache=True, output_hidden_states=True)
+            pre = model(
+                input_ids=ids[:, :n_prompt], use_cache=True, output_hidden_states=True, **ltk
+            )
             inc = model(
                 input_ids=ids[:, n_prompt:],
                 past_key_values=pre.past_key_values,
                 output_hidden_states=True,
+                **ltk,
             ).hidden_states[1:]
         span = slice(pos["answer_start"], pos["answer_end"])
         tf = full[li][0, span, :].float().mean(0)

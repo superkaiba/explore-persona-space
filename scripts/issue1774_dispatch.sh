@@ -76,6 +76,48 @@ wait_all() {  # wait on recorded pids; nonzero if any shard failed
   return "$rc"
 }
 
+push_results() {  # $1 = phase slug. Result-push verification contract (#1205)
+  # + artifact-presence assert (#1325): commit + push the git-destined result
+  # JSONs BEFORE the phase sentinel / [phase=done]; on the GCP lane a clean
+  # completion DELETEs the boot disk, so an unpushed result commit is lost.
+  if [ -n "$SMOKE" ]; then
+    echo "[dispatch] result push SKIPPED (smoke — results under the smoke out-root)"
+    return 0
+  fi
+  local rd="eval_results/issue_1774" branch behind p missing=0
+  branch="$(git rev-parse --abbrev-ref HEAD)"
+  if [ "$branch" = "HEAD" ]; then
+    echo "[dispatch] FATAL: detached HEAD — cannot push results to a branch" >&2
+    exit 86
+  fi
+  if [ -n "$(git status --porcelain -- "$rd")" ]; then
+    git add -- "$rd"
+    git -c user.name="issue1774-dispatch" -c user.email="pod@eps.local" \
+      commit -m "task #1774: pod results ($1)"
+  fi
+  if ! git push origin "HEAD:$branch"; then
+    echo "[dispatch] push failed — retrying once" >&2
+    sleep 10
+    git push origin "HEAD:$branch"
+  fi
+  behind="$(git rev-list --count "origin/$branch..HEAD")"
+  if [ "$behind" -ne 0 ]; then
+    echo "[dispatch] FATAL: $behind unpushed result commit(s) on $branch" >&2
+    exit 86
+  fi
+  # per-file presence in the PUSHED tree (never a bare directory check, #928):
+  # the declared set = on-disk result JSONs under $rd, minus gitignored paths.
+  while IFS= read -r p; do
+    if git check-ignore -q "$p"; then continue; fi
+    if [ -z "$(git ls-tree -r "origin/$branch" --name-only -- "$p")" ]; then
+      echo "[dispatch] FATAL: result file not in pushed tree: $p" >&2
+      missing=1
+    fi
+  done < <(find "$rd" -name '*.json' -type f 2>/dev/null)
+  if [ "$missing" -ne 0 ]; then exit 86; fi
+  echo "[dispatch] result push verified ($1): origin/$branch carries the result tree"
+}
+
 tail_logs_and_die() {  # $1 = glob prefix of inner shard logs
   echo "[dispatch] shard failure — inner log tails follow (#1333 rule)" >&2
   local f
@@ -157,6 +199,7 @@ run_p1() {
   else
     uv run python scripts/issue1774_draws.py --stage upload
   fi
+  push_results p1
   phase_sentinel p1 "P1 draws+capture+upload complete (smoke=${SMOKE:-0})"
 }
 
@@ -164,7 +207,11 @@ run_p2() {
   local armsA="arm_context,arm_bare_query" armsB="arm_prefix_end,arm_query_avg"
   if [ "$N_GPUS" -ge 2 ]; then
     local step
-    for step in fits q3 q4; do
+    # q4 is deliberately NOT in this sharded loop: its cokernel_*.json files are
+    # combined-across-arms writes (a sharded q4 races, C1) — it runs unsharded
+    # at the head of the GPU0 reads chain below (cheap next to fits; the guard
+    # in step_q4 refuses any partial --arms invocation).
+    for step in fits q3; do
       echo "[phase=p2_${step}_sharded]"
       local pids=()
       CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1774_fit_battery.py \
@@ -178,11 +225,13 @@ run_p2() {
       if ! wait_all "${pids[@]}"; then tail_logs_and_die "$SENTINEL_DIR/issue-1774-p2-$step-gpu"; fi
     done
     echo "[phase=p2_reads_sharded]"
-    # GPU0: parity -> q1a -> q1b (L14 reads); GPU1: q3angles -> q5 -> decode ->
-    # directions (operator reads) — work-conserving split, no idle GPU.
+    # GPU0: q4 (unsharded, all arms) -> parity -> q1a -> q1b (L14 reads);
+    # GPU1: q3angles -> q5 -> decode -> directions (operator reads) —
+    # work-conserving split, no idle GPU.
     local rpids=()
     (
-      CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1774_fit_battery.py --step parity "${FIT_SMOKE_ARGS[@]}" &&
+      CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1774_fit_battery.py --step q4 "${FIT_SMOKE_ARGS[@]}" &&
+        CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1774_fit_battery.py --step parity "${FIT_SMOKE_ARGS[@]}" &&
         CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1774_fit_battery.py --step q1a "${FIT_SMOKE_ARGS[@]}" &&
         CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1774_fit_battery.py --step q1b "${FIT_SMOKE_ARGS[@]}"
     ) > "$SENTINEL_DIR/issue-1774-p2-reads-gpu0.log" 2>&1 &
@@ -201,17 +250,30 @@ run_p2() {
   fi
 
   echo "[phase=p2_jensen_refit]"
-  # Q1c mainline (plan §4): re-run the banked MLP Jensen recipe on the instruct
-  # cell only, persisting per-prefix gap vectors to a FRESH issue-1774 out dir
-  # (never overwriting #1092's committed npz — the banked scalar file stays the
-  # norm cross-check reference). CPU torch fit, checkpointed per cell.
-  I1092_STAGE_DIR="$(uv run python -c "import sys; sys.path.insert(0, 'scripts'); import issue1774_common as c; print(c.stage_dir())")"
-  export I1092_STAGE_DIR
-  uv run python scripts/issue1092_mlp_jensen_natural.py \
-    --persist-gap-vectors --cells cell_inst_own \
-    --out-dir "eval_results/issue_1774/jensen_refit"
+  if [ -n "$SMOKE" ]; then
+    # Smoke-gate (v1 Minor): the jensen leg is the FULL 996-prefix #1092 recipe
+    # writing the PRODUCTION jensen_refit dir — no small knob; the reused parent
+    # recipe carries its own #1092 coverage, and the production leg runs it.
+    echo "[dispatch] p2 jensen refit SKIPPED (smoke — full-size recipe, production out-dir)"
+  else
+    # Q1c mainline (plan §4): re-run the banked MLP Jensen recipe on the instruct
+    # cell only, persisting per-prefix gap vectors to a FRESH issue-1774 out dir
+    # (never overwriting #1092's committed npz — the banked scalar file stays the
+    # norm cross-check reference). CPU torch fit, checkpointed per cell.
+    I1092_STAGE_DIR="$(uv run python -c "import sys; sys.path.insert(0, 'scripts'); import issue1774_common as c; print(c.stage_dir())")"
+    export I1092_STAGE_DIR
+    uv run python scripts/issue1092_mlp_jensen_natural.py \
+      --persist-gap-vectors --cells cell_inst_own \
+      --out-dir "eval_results/issue_1774/jensen_refit"
+  fi
 
   echo "[phase=p2_upload]"
+  if [ -n "$SMOKE" ]; then
+    # Same rationale as the p1 upload skips: the heredoc enumerates PRODUCTION
+    # data roots — a post-production smoke re-run would re-upload stale
+    # production operators (v1 Minor smoke-isolation wart).
+    echo "[dispatch] p2 upload SKIPPED (smoke — production HF prefix untouched)"
+  else
   uv run python - <<'PY'
 import sys
 from pathlib import Path
@@ -251,6 +313,8 @@ if missing:
     raise RuntimeError(f"p2 upload verify missing {len(missing)}: {sorted(missing)[:5]}")
 print(f"[p2-upload] verified {len(expected)} paths")
 PY
+  fi
+  push_results p2
   phase_sentinel p2 "P2 fit battery + operators + uploads complete (smoke=${SMOKE:-0})"
 }
 
@@ -275,6 +339,7 @@ run_p3() {
   else
     uv run python scripts/issue1774_steering.py --shard 0/1 "${STEER_SMOKE_ARGS[@]}"
   fi
+  push_results p3
   phase_sentinel p3 "P3 steering + hook-free re-capture complete (smoke=${SMOKE:-0})"
 }
 
@@ -294,7 +359,11 @@ if [ "$PHASE" = "all" ]; then
   if [ -n "$SMOKE" ]; then SMOKE_FLAG=(--smoke); fi
   uv run python scripts/issue1774_common.py \
     --emit-results-sentinel "$SENTINEL_DIR/issue-1774-results.json" \
-    --gpu-hours-used "$GPU_HOURS" "${SMOKE_FLAG[@]}"
+    --gpu-hours-used "$GPU_HOURS" "${SMOKE_FLAG[@]}" \
+    --plan-deviation "q3-angles null: Haar random-subspace band (_angle_null_band) operationalizes the plan's spectrum-matched _procrustes_null_band — for principal angles between top-k singular subspaces of independent spectrum-fixed random maps the left/right singular bases are Haar regardless of spectrum, so the Haar band IS the spectrum-invariant null (recorded, not silent)" \
+    --plan-deviation "kernel-tail directions: step_directions enforces sigma-rank >= 3000 and > k90 but NOT the plan's 'sigma below the permutation-null band' condition — deferred to the P6 verify (per-arm null matrices persisted; null_matrix_present recorded)" \
+    --plan-deviation "P5 evil rubric: the realized design has exactly ONE evil arm (leace_rb_evil; r_B directions are LEACE-only per the 12-ADD/3-LEACE split of plan section 4 P3) while plan P5 says '3 evil arms x 60 x 5' — internally inconsistent; resolved to 1 arm (~300 evil judge calls vs ~900)" \
+    --plan-deviation "q3 channel null: within-test-fold Y-row permutation with train-fold directions FROZEN (conditional permutation, exact for the OOF statistic; same contiguous-from-top count rule per draw) instead of the registered same-lambda refit null — the channel estimator is a per-fold cross-covariance SVD with no lambda (press_mse inapplicable), and a true per-draw refit is ~14.4k dense (r x r) SVDs (200 draws x 6 folds x 4 arms x 3 layers), contradicting plan section 9's own 'one GEMM stack per fold, never per-draw refits' 0.5h sizing"
 fi
 
 echo "[phase=done] issue-1774 dispatch phase=$PHASE rc=0"

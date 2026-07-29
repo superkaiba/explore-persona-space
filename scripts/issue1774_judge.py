@@ -191,12 +191,26 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="force the Batch API path below the sync crossover (live forced-batch smoke)",
     )
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="judge anyway when the manifest carries judge_skip=true (plan §7 kill criterion)",
+    )
     args = ap.parse_args(argv)
 
     steering_root = c.eval_out(args.out_root) / "steering"
     manifest = Path(args.manifest) if args.manifest else steering_root / "manifest.json"
     out_dir = Path(args.out_dir) if args.out_dir else steering_root / "judge"
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # plan §7 kill criterion, made mechanical (round 2): a calibration-failed
+    # steering run marks judge_skip=true — refuse the ~18k-call P5 spend.
+    if json.loads(manifest.read_text()).get("judge_skip") and not args.force:
+        print(
+            "[p5-judge] REFUSED: manifest carries judge_skip=true (steering "
+            "calibration failed — plan §7 kill criterion); pass --force to override"
+        )
+        return 8
 
     rows = load_manifest_rows(manifest)
     if args.limit:

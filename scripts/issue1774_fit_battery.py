@@ -515,6 +515,15 @@ def step_q3(d: Designs, arms: list[str], device: str, out_root: str | None, n_dr
                 "SAME rule per draw -> count-null band; BH companion",
                 "null_convention": "within-test-fold row permutation of Y (pairing "
                 "broken; train-fold directions fixed), 200 draws, seed 1774+layer",
+                "plan_registered_convention": "plan §4 Q3 registers same-lambda "
+                "refit nulls (PressRidge press_mse) — substituted: the channel "
+                "estimator is a per-fold cross-covariance SVD with no lambda "
+                "(press_mse inapplicable), and a true per-draw refit is a dense "
+                "(r x r) SVD per draw x fold x arm x layer (~14.4k factorizations), "
+                "contradicting plan §9's own 'one GEMM stack per fold, never "
+                "per-draw refits' sizing; the conditional test-fold permutation is "
+                "exact for the OOF statistic and keeps the same contiguous-from-top "
+                "rule per draw (recorded in results-sentinel plan_deviations)",
                 "channel_count": count,
                 "count_null_band": band,
                 "bh_companion_count": c.bh_count(r2_obs, r2_null),
@@ -827,6 +836,17 @@ def _k_energy(S: torch.Tensor, frac: float) -> int:
 
 
 def step_q4(d: Designs, arms: list[str], device: str, out_root: str | None) -> None:
+    # C1 guard (round 2): the per-trait cokernel_*.json + cokernel_all_*.json are
+    # COMBINED-across-arms writes — two concurrent sharded invocations would
+    # last-writer-win and silently drop half the Q4 deliverable. Fail LOUD on any
+    # partial arms list; the dispatcher runs q4 unsharded (cheap next to fits).
+    missing_arms = [a for a in c.ARMS if a not in arms]
+    if missing_arms:
+        raise RuntimeError(
+            f"step_q4 must run UNSHARDED over all {len(c.ARMS)} arms (missing "
+            f"{missing_arms}): a sharded --arms invocation races on the combined "
+            "cokernel_*.json writes (last writer wins, arms silently dropped)."
+        )
     rb = c.load_rb_bank(d.layer)
     op_dir = c.data_out(out_root) / "operators"
     out = {"meta": c.repro_meta(), "layer": d.layer, "arms": {}}
