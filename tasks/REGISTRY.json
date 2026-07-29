@@ -6165,8 +6165,8 @@
     "1796": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1796",
-      "status": "approved",
+      "path": "tasks/running/1796",
+      "status": "running",
       "title": "daily-fix: c39 trigger regex misses inverse-direction reads"
     },
     "1797": {
