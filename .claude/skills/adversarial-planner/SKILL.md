@@ -34,7 +34,10 @@ You are the PLANNER. Your job is to design a concrete, detailed plan for the fol
 
 **Canonical Goal (current at spawn; re-read before returning — planner.md
 § Goal-currency guard):** [GOAL TEXT or "no goal: frontmatter — use the
-body's ## Goal H2"]
+body's ## Goal H2"; TRIGGER-DENSE CARVE-OUT: when the Goal itself carries
+trigger-dense phrasing per the CLAUDE.md refusal-ladder clause (e)
+goal-channel clause, fill this slot with the task id + `body.md` path (or a
+mechanistic paraphrase) INSTEAD of the verbatim snapshot text]
 
 **If this is a `type:batch` issue (the body lists N independent items):**
 Structure your plan as N independent sections, one per body item. Each
@@ -84,7 +87,10 @@ the Goal snapshot when you spawn the planner —
 when that is empty (no `goal:` frontmatter — `kind: infra | batch | survey`),
 fall back to the body's `## Goal` H2 text (`jq -r '.body'` + the H2 slice), so
 the gate is non-vacuous on body-Goal tasks too. Inline the snapshot in the
-brief (template above). Immediately BEFORE every
+brief (template above); on a trigger-dense Goal the BRIEF instead renders
+the Goal by reference (the template's Goal-slot carve-out) — `GOAL_SNAP` is
+still captured orchestrator-side and this pre-persist equality gate is
+unchanged. Immediately BEFORE every
 `task.py new-plan-version` persist (Phase 1 initial draft, Phase 1.5.0
 mechanical-bounce redrafts, Phase 3 revisions), re-read the same field and
 compare to the snapshot (plain text equality). On ANY difference — the user
