@@ -17,8 +17,11 @@ The four #787 sub-fixes these tests guard:
    that routes far-behind small ADDED-only workflow-fix branches straight to
    the surgical additive checkout, plus the surgical compute block's
    ADDED-only / three-dot / workflow-surface-pathspec invariants (A3-new).
-4. Guard-3 — the spec-freshness exclusion matches the commit SUBJECT line only
-   (`awk 'index($0, "spec-freshness") == 0'`), never a subject+body `--grep`.
+4. Guard-3 — the spec-freshness exclusion matches the commit SUBJECT line only,
+   keyed on the prescribed sync-subject anchor
+   (`awk 'index($0, "sync workflow-surface specs from") == 0'`, #1789 — never
+   the bare token, which a deliverable subject legitimately carries), never a
+   subject+body `--grep`.
 """
 
 from __future__ import annotations
@@ -316,23 +319,35 @@ def test_new_shared_src_guard_stays_two_dot_and_src_scoped():
 # Sub-fix 4 — Guard-3 spec-freshness subject-line-only exclusion
 # --------------------------------------------------------------------------
 
+# The banned full-message commit-filter literal under the #1789 sync-subject
+# anchor, built by CONCATENATION so this test file itself never carries the
+# form its negative asserts scan for (the test_issue_skill_lint_family_sync.py
+# _FULL_MESSAGE_FILTER convention).
+_FULL_MESSAGE_ANCHOR_FILTER = "--grep=" + "'sync workflow-surface specs from'"
+
 
 def test_guard3_spec_freshness_subject_only_awk_filter():
     text = _skill_text()
-    assert "awk 'index($0, \"spec-freshness\") == 0'" in text, (
+    assert "awk 'index($0, \"sync workflow-surface specs from\") == 0'" in text, (
         "Guard-3 spec-freshness exclusion must match on the SUBJECT line only "
-        "via awk index(), not a subject+body --grep"
+        "via awk index() keyed on the prescribed sync-subject anchor (#1789), "
+        "not a subject+body --grep"
     )
 
 
 def test_guard3_region_does_not_use_grep_spec_freshness():
     """Within the Guard-3 slice, the exclusion must NOT be a `--grep` (which
-    matches the commit BODY too). The Step-5a sync at line ~1925 is a separate
-    region, subject-scoped by #1560 to the same awk index() form (pinned by
+    matches the commit BODY too) — neither the bare-token form nor the #1789
+    anchored form. The Step-5a sync at line ~1925 is a separate region,
+    subject-scoped by #1560 to the same awk index() form (pinned by
     test_step5a_grep_filter_untouched)."""
     region = _guard3_region(_skill_text())
     assert "--grep='spec-freshness'" not in region, (
         "Guard-3 must not use --grep='spec-freshness' (over-matches commit body)"
+    )
+    assert _FULL_MESSAGE_ANCHOR_FILTER not in region, (
+        "Guard-3 must not use the anchored full-message --grep form either "
+        "(over-matches commit body; subject-scoped awk index() only, #1789)"
     )
     assert "%H %s" in region, (
         "Guard-3 must emit '<sha> <subject>' per commit for a subject-scoped filter"
@@ -354,11 +369,15 @@ def test_step5a_grep_filter_untouched():
     assert "--format='%H %s'" in span, (
         "the Step-5a exclusion must emit '<sha> <subject>' (subject-scoped)"
     )
-    assert "awk 'index($0, \"spec-freshness\") == 0'" in span, (
-        "the Step-5a exclusion must filter via the subject-scoped awk index() form"
+    assert "awk 'index($0, \"sync workflow-surface specs from\") == 0'" in span, (
+        "the Step-5a exclusion must filter via the subject-scoped awk index() form "
+        "keyed on the prescribed sync-subject anchor (#1789)"
     )
     assert "--grep='spec-freshness' --invert-grep" not in span, (
         "the Step-5a sync must not use the full-message --grep filter (#1560)"
+    )
+    assert _FULL_MESSAGE_ANCHOR_FILTER + " --invert-grep" not in span, (
+        "the Step-5a sync must not use the anchored full-message --grep filter either (#1789)"
     )
 
 
