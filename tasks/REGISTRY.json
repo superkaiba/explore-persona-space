@@ -6172,8 +6172,8 @@
     "1797": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1797",
-      "status": "running",
+      "path": "tasks/reviewing/1797",
+      "status": "reviewing",
       "title": "daily-fix: refusal ladder \u2014 goal channel + content-trigger r"
     },
     "1798": {
