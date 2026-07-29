@@ -5972,8 +5972,8 @@
       "goal": "Determine when behavioral commitment happens in Qwen-2.5-7B-Instruct: does steering a persona-vector direction r_B only during prefill vs only during decode vs both change on-policy judged behavior expression - i.e., is the answer's behavior already committed in the pre-answer context state, or decided token-by-token during generation?",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/1769",
-      "status": "running",
+      "path": "tasks/verifying/1769",
+      "status": "verifying",
       "title": "Prefill-vs-decode behavioral commitment: does r_B steering only during decode change judged behavior expression in a dense full-attention model"
     },
     "1770": {
