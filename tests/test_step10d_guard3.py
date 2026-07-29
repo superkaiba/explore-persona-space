@@ -1323,6 +1323,68 @@ def test_post_merge_guard_unpushed_mv_precheck_syncs_before_classify():
 
 
 # --------------------------------------------------------------------------
+# Task #1792 — scratch-cone scripts/hooks + empty-dir residue disposition
+# --------------------------------------------------------------------------
+
+
+def test_post_merge_guard_cone_hooks_and_empty_dir_disposition():
+    """#1792: two post-merge-guard recipe fixes (live incident #1780).
+
+    (a) CONE — the scratch worktree's sparse cone must include scripts/hooks
+    alongside the duplicates: the removal commit's own pre-commit gitleaks
+    hook runs `bash scripts/hooks/gitleaks_scoped.sh` worktree-root-relative
+    with always_run, so a duplicates-only cone exits 127 on the FIRST commit
+    attempt every time (#1780; toplevel .gitleaks.toml/.gitleaksignore ride
+    cone mode automatically).
+
+    (b) EMPTY-DIR DISPOSITION — the local-residue tail gains an arm between
+    the second sync attempt and the terminal fail-loud check: when the
+    persisting paths hold ZERO files AND zero symlinks (one JOINT probe over
+    all persisting paths), rmdir them depth-first (rmdir refuses non-empty
+    dirs by construction), then RE-DERIVE STALE_LOCAL via the same
+    `ls -d "${DUPES[@]}"` probe — the re-derive is the arbiter, never a
+    blind clear, so late-arriving content or a failed rmdir still reaches
+    the loud failure. Ordering pinned via find-from-index anchors (the
+    fence carries several `ls -d "${DUPES[@]}"` occurrences). The #1253
+    strong pin (live hook + bash -n on the substituted fence) covers the
+    new arm's executability."""
+    text = _skill_text()
+    region = _post_merge_guard_region(text)
+    fences = re.findall(r"```bash\n(.*?)```", region, re.DOTALL)
+    assert len(fences) == 1, "guard region must still carry exactly one fenced bash block"
+    fence = fences[0]
+
+    # (a) the cone line carries scripts/hooks AFTER the duplicates.
+    assert 'sparse-checkout set "${DUPES[@]}" scripts/hooks' in fence, (
+        "the scratch cone must include scripts/hooks — the removal commit's "
+        "own pre-commit gitleaks hook exits 127 without it (#1780)"
+    )
+
+    # (b) zero-content probe -> depth-first rmdir -> RE-DERIVE -> fail-loud,
+    # in that order (find-from-index disambiguates the repeated probes).
+    probe = fence.find("-type f -o -type l")
+    assert probe != -1, "the zero-content probe must count files AND symlinks"
+    rmdir_idx = fence.find("-depth -type d -exec rmdir {} \\;")
+    assert rmdir_idx != -1, "the depth-first rmdir disposition must exist"
+    assert probe < rmdir_idx, "the zero-content probe must gate the rmdir"
+    rederive = fence.find(
+        'STALE_LOCAL=$(cd "$REPO_ROOT" && ls -d "${DUPES[@]}" 2>/dev/null || true)',
+        rmdir_idx,
+    )
+    assert rederive != -1, (
+        "STALE_LOCAL must be RE-DERIVED via the same ls -d probe AFTER the "
+        "rmdir — never blind-cleared"
+    )
+    fail_loud = fence.find("persist after 2 root syncs")
+    assert fail_loud != -1, "the terminal fail-loud echo must survive"
+    assert rmdir_idx < rederive < fail_loud, (
+        "ordering must be rmdir -> re-derive -> fail-loud (the re-derive is "
+        "the arbiter: real content still reaches the loud failure)"
+    )
+    assert 'STALE_LOCAL=""' not in fence, "the arm must never blind-clear STALE_LOCAL"
+
+
+# --------------------------------------------------------------------------
 # Task #1573 — TG legs: selector-sized timeout + junit-node-grain subtraction
 # --------------------------------------------------------------------------
 
