@@ -6074,8 +6074,8 @@
     "1783": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1783",
-      "status": "proposed",
+      "path": "tasks/planning/1783",
+      "status": "planning",
       "title": "workflow-fix: pre_reg audit misses #1092 bare registered-noun escape set"
     },
     "18": {
