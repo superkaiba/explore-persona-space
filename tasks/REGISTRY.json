@@ -5740,7 +5740,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1738",
       "status": "interpreting",
-      "title": "Multi-turn prefix-arm map at 100k: build the multi-turn n1M analogue, fit prefix+context arms, characterize both arms' prediction error"
+      "title": "Conversation history alone carries about half the full-context answer-state map on 100k real multi-turn conversations (HIGH confidence)"
     },
     "1739": {
       "goal": "Determine whether applying the learned context->answer map before projecting the persona vector predicts on-policy behavior expression (evil, trait sycophancy, hallucination) better than context-side projection and direct regression at matched (unlabeled, labeled) data budgets, and whether that advantage grows across a real-data distribution-shift ladder.",

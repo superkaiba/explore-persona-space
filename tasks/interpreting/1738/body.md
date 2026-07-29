@@ -1,6 +1,6 @@
 ---
-title: 'Multi-turn prefix-arm map at 100k: build the multi-turn n1M analogue, fit
-  prefix+context arms, characterize both arms'' prediction error'
+title: Conversation history alone carries about half the full-context answer-state
+  map on 100k real multi-turn conversations (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-28T00:42:49Z'
