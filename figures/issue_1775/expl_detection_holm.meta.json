@@ -1,0 +1,210 @@
+{
+  "commit": "c6cb2b9a67",
+  "created": "2026-07-29T21:15:49Z",
+  "figsize": [
+    6.4,
+    3.2
+  ],
+  "points": [
+    {
+      "category": "bare_query|prefix_block|dcor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "bare_query|prefix_block|hsic",
+      "Holm-adjusted p": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "bare_query|query_block|dcor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "bare_query|query_block|hsic",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "bare_query|within_prefix_derangement|dcor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "bare_query|within_prefix_derangement|hsic",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "context_end|prefix_block|dcor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "context_end|prefix_block|hsic",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "context_end|query_block|dcor",
+      "Holm-adjusted p": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "context_end|query_block|hsic",
+      "Holm-adjusted p": 0.5144855144855145,
+      "_kind": "bar"
+    },
+    {
+      "category": "context_end|within_prefix_derangement|dcor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "context_end|within_prefix_derangement|hsic",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix_end|prefix_block|dcor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix_end|prefix_block|hsic",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix_end|query_block|dcor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix_end|query_block|hsic",
+      "Holm-adjusted p": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix_end|within_prefix_derangement|dcor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix_end|within_prefix_derangement|hsic",
+      "Holm-adjusted p": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "query_averaged|prefix_block|dcor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "query_averaged|prefix_block|hsic",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "query_averaged|query_block|dcor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "query_averaged|query_block|hsic",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "query_averaged|within_prefix_derangement|dcor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "query_averaged|within_prefix_derangement|hsic",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "stitch|prefix_block|dcor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "stitch|prefix_block|hsic",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "stitch|query_block|dcor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "stitch|query_block|hsic",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "stitch|within_prefix_derangement|dcor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "stitch|within_prefix_derangement|hsic",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "residual dependence (registered 30-test family)",
+        "ylabel": "Holm-adjusted p",
+        "xticklabels": [
+          "bare_query|prefix_block|dcor",
+          "bare_query|prefix_block|hsic",
+          "bare_query|query_block|dcor",
+          "bare_query|query_block|hsic",
+          "bare_query|within_prefix_derangement|dcor",
+          "bare_query|within_prefix_derangement|hsic",
+          "context_end|prefix_block|dcor",
+          "context_end|prefix_block|hsic",
+          "context_end|query_block|dcor",
+          "context_end|query_block|hsic",
+          "context_end|within_prefix_derangement|dcor",
+          "context_end|within_prefix_derangement|hsic",
+          "prefix_end|prefix_block|dcor",
+          "prefix_end|prefix_block|hsic",
+          "prefix_end|query_block|dcor",
+          "prefix_end|query_block|hsic",
+          "prefix_end|within_prefix_derangement|dcor",
+          "prefix_end|within_prefix_derangement|hsic",
+          "query_averaged|prefix_block|dcor",
+          "query_averaged|prefix_block|hsic",
+          "query_averaged|query_block|dcor",
+          "query_averaged|query_block|hsic",
+          "query_averaged|within_prefix_derangement|dcor",
+          "query_averaged|within_prefix_derangement|hsic",
+          "stitch|prefix_block|dcor",
+          "stitch|prefix_block|hsic",
+          "stitch|query_block|dcor",
+          "stitch|query_block|hsic",
+          "stitch|within_prefix_derangement|dcor",
+          "stitch|within_prefix_derangement|hsic"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      }
+    ]
+  }
+}
