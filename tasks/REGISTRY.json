@@ -6158,8 +6158,8 @@
     "1795": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1795",
-      "status": "approved",
+      "path": "tasks/running/1795",
+      "status": "running",
       "title": "daily-fix: validate batch-judge custom_id grammar pre-submit"
     },
     "1796": {
