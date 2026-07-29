@@ -324,12 +324,18 @@ def cmd_energy(args) -> int:
     if args.rb_dir:
         import issue1776_phase3 as P3
 
+        # P3.load_directions contract (crash-fix r10): the TRAIT branch row-selects
+        # the (L, H) stack via args.source_layer (phase3.py L136) and a `random`
+        # stem would read args.random_seed — supply EVERY attr the callee reads,
+        # matching phase3's own parser defaults (C76.SOURCE_LAYER / 1776).
         ns = argparse.Namespace(
-            rb_dir=args.rb_dir, mprime_weights=None, jlast=None, directions=None, tiny=False
+            rb_dir=args.rb_dir,
+            mprime_weights=None,
+            directions=list(_rb_traits(args.rb_dir)),
+            source_layer=C76.SOURCE_LAYER,
+            random_seed=1776,
         )
-        bank, _prov = P3.load_directions(
-            argparse.Namespace(**{**vars(ns), "directions": list(_rb_traits(args.rb_dir))}), h
-        )
+        bank, _prov = P3.load_directions(ns, h)
         read_sets["rb_layer14_rows"] = torch.stack([bank[t] for t in sorted(bank)])
     if args.phase3_root:
         shifts = measured_shifts(args.phase3_root)
@@ -627,6 +633,19 @@ def smoke(args) -> int:
     assert e_span.min() > 0.99, e_span
     assert e_pur.mean() > 0.9, e_pur
 
+    # rb bank leg (crash-fix r10 regression pin): production-shaped #779 per-trait
+    # (L, H) stack so the smoke EXERCISES cmd_energy's rb_dir branch — the
+    # P3.load_directions cross-script namespace seam the r9 launch crashed on
+    # (AttributeError: source_layer). layers must include C76.SOURCE_LAYER.
+    rb_dir = out / "rb"
+    rb_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "r_b": torch.randn(2, h, generator=gen),
+            "layers": [C76.SOURCE_LAYER, C76.READOUT_LAYER],
+        },
+        rb_dir / "evil.pt",
+    )
     ns = argparse.Namespace(
         k=k,
         n_draws=draws,
@@ -639,7 +658,7 @@ def smoke(args) -> int:
         acts19=out / "acts.pt",
         mprime_weights=str(out / "mprime.pt"),
         jlast=str(out / "jlast.pt"),
-        rb_dir=None,
+        rb_dir=rb_dir,
         phase3_root=None,
         topk=5,
         out=out / "jspace_energy.json",
@@ -661,6 +680,7 @@ def smoke(args) -> int:
     assert {r["probe_set"] for r in rep["read_side"]} == {
         "mprime_right_top20",
         "jlast_rowspace_top20",
+        "rb_layer14_rows",
     }
 
     # refit-split round-trip on a planted P_J-subspace map.
