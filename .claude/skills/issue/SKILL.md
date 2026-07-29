@@ -11163,9 +11163,9 @@ tests BEFORE anything lands:
       # baseline map, so its failures are NEW by construction (correct —
       # block; same doctrine as the branch-new scan-test note above).
       for leg in baseline gated; do
+        # msg-strip caveat: a literal ' - ' INSIDE a param id truncates here;
+        # a same-prefix dash-bearing sibling collision fails toward pass (narrow doc-only residual, #1573)
         grep -E '^(FAILED|ERROR) ' "/tmp/issue-<N>-tg-$leg.txt" \
-          # msg-strip caveat: a literal ' - ' INSIDE a param id truncates here;
-          # a same-prefix dash-bearing sibling collision fails toward pass (narrow doc-only residual, #1573)
           | sed -E 's/^(FAILED|ERROR) //; s/ - .*$//' \
           | sort -u > "/tmp/issue-<N>-tg-$leg-nodes.txt" || true
       done
@@ -12731,9 +12731,9 @@ Decision tree:
     # as the shared gate's executable block (sed msg-suffix strip, NOT awk
     # field-2: space-bearing string param ids must survive intact):
     for leg in baseline gated; do
+      # msg-strip caveat: a literal ' - ' INSIDE a param id truncates here;
+      # a same-prefix dash-bearing sibling collision fails toward pass (narrow doc-only residual, #1573)
       grep -E '^(FAILED|ERROR) ' "/tmp/issue-<N>-tg-$leg.txt" \
-        # msg-strip caveat: a literal ' - ' INSIDE a param id truncates here;
-        # a same-prefix dash-bearing sibling collision fails toward pass (narrow doc-only residual, #1573)
         | sed -E 's/^(FAILED|ERROR) //; s/ - .*$//' \
         | sort -u > "/tmp/issue-<N>-tg-$leg-nodes.txt" || true
     done
