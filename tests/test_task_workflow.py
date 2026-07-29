@@ -4344,6 +4344,67 @@ def test_post_event_deferred_commit_returns_payload(fake_repo, monkeypatch, capl
     assert rows[0]["task_id"] == new_id
 
 
+def test_post_event_deferred_commit_gitleaks_note(fake_repo, monkeypatch, caplog):
+    """#1780: a gitleaks-finding deferral extends the ERROR with the
+    .gitleaksignore recipe + the extracted Fingerprint line(s), and the sidecar
+    row carries the two additive gitleaks fields. The fingerprint sits EARLY in
+    the injected stderr, followed by >500 chars of later-hook padding, so it is
+    provably OUTSIDE the recorded 500-char stderr_tail — pinning full-stream
+    detection (the real #1092 row lost the fingerprint from the tail) against a
+    regression to tail-only matching."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    fingerprint = "Fingerprint: tasks/x/events.jsonl:generic-api-key:7"
+    later_hooks = "\n".join(f"later-hook line {i:03d} ................ Passed" for i in range(20))
+    assert len(later_hooks) > 500  # fingerprint provably outside the 500-char tail
+    stderr = f"gitleaks (scoped, staged-only)...........Failed\n{fingerprint}\n{later_hooks}\n"
+
+    def _gitleaks_crash(paths, message):
+        raise subprocess.CalledProcessError(1, ["git", "commit"], output="", stderr=stderr)
+
+    monkeypatch.setattr(tw, "_git_commit", _gitleaks_crash)
+    with caplog.at_level(logging.ERROR, logger="explore_persona_space.task_workflow"):
+        tw.post_event(new_id, "epm:progress", note="gitleaks deferral probe")
+
+    msg = "\n".join(r.getMessage() for r in caplog.records)
+    assert ".gitleaksignore" in msg
+    assert fingerprint in msg
+    rows = _deferred_rows(tw)
+    assert len(rows) == 1
+    assert fingerprint not in rows[0]["stderr_tail"]  # the recorded tail loses it
+    assert rows[0]["gitleaks_finding"] is True
+    assert rows[0]["gitleaks_fingerprints"] == [fingerprint]
+    assert set(rows[0]) == {
+        "ts",
+        "task_id",
+        "op",
+        "paths",
+        "message",
+        "error",
+        "stderr_tail",
+        "gitleaks_finding",
+        "gitleaks_fingerprints",
+    }
+
+
+def test_post_event_deferred_commit_non_gitleaks_no_note(fake_repo, monkeypatch, caplog):
+    """#1780 AC3: a plain lock-collision deferral carries NO .gitleaksignore
+    note in its ERROR and NEITHER additive field in its sidecar row (the
+    message/row stay byte-identical to the pre-#1780 shape)."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    monkeypatch.setattr(tw, "_git_commit", _commit_crash)
+    with caplog.at_level(logging.ERROR, logger="explore_persona_space.task_workflow"):
+        tw.post_event(new_id, "epm:progress", note="plain deferral probe")
+
+    msg = "\n".join(r.getMessage() for r in caplog.records)
+    assert ".gitleaksignore" not in msg
+    rows = _deferred_rows(tw)
+    assert len(rows) == 1
+    assert "gitleaks_finding" not in rows[0]
+    assert "gitleaks_fingerprints" not in rows[0]
+
+
 def test_post_event_append_failure_raises_no_deferred_row(fake_repo, monkeypatch):
     """AC2: an append failure still raises out of post_event — no sidecar
     row, no commit attempt (the deferral covers post-append failures ONLY)."""
