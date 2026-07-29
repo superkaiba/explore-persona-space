@@ -1,0 +1,489 @@
+{
+ "n_boot": 10000,
+ "n_perm": 10000,
+ "bh_q": 0.05,
+ "seed": 1738,
+ "layer": 19,
+ "definition": "adj_i = nerr_i - floor_i/den_i (map error net of answer-sampling variance); contexts resampled JOINTLY per draw; contrast families re-enumerated on the K-resample subsample (topic masks require n>=50 within the subsample)",
+ "inputs": {
+  "floors": "eval_results/issue_1738/kresample/floors_L19.npz",
+  "percontext": "eval_results/issue_1738/percontext/{arm}_L19_ridge.npz",
+  "labels": "eval_results/issue_1738/judge_labels/labels.json"
+ },
+ "arms": {
+  "prefix_L19_ridge": {
+   "n": 1988,
+   "n_joined": 1988,
+   "n_dropped_nonfinite": 0,
+   "family": [
+    "language=en",
+    "topic=factual_qa",
+    "topic=creative_writing",
+    "topic=coding",
+    "topic=advice_howto",
+    "topic=chitchat_social",
+    "topic=translation",
+    "topic=summarization_extraction",
+    "topic=roleplay_persona",
+    "topic=math",
+    "refusal_adjacent=yes",
+    "answer_is_refusal=yes",
+    "format=code",
+    "format=list",
+    "format=prose",
+    "depth=2-2",
+    "depth=3-4",
+    "depth=>=5",
+    "corpus=wildchat"
+   ],
+   "contrasts": [
+    {
+     "contrast": "language=en",
+     "n_group": 1174,
+     "delta_mean_adj_nerr": 0.08649956285464944,
+     "boot_ci": [
+      0.062314507528749015,
+      0.11045581189927137
+     ],
+     "perm_p": 9.999000099990002e-05,
+     "bh_significant": true
+    },
+    {
+     "contrast": "topic=factual_qa",
+     "n_group": 620,
+     "delta_mean_adj_nerr": 0.039816404322210563,
+     "boot_ci": [
+      0.014331398634629941,
+      0.06573242025272528
+     ],
+     "perm_p": 0.0029997000299970002,
+     "bh_significant": true
+    },
+    {
+     "contrast": "topic=creative_writing",
+     "n_group": 333,
+     "delta_mean_adj_nerr": -0.06877634592861376,
+     "boot_ci": [
+      -0.09985074138892858,
+      -0.037281871714213766
+     ],
+     "perm_p": 9.999000099990002e-05,
+     "bh_significant": true
+    },
+    {
+     "contrast": "topic=coding",
+     "n_group": 328,
+     "delta_mean_adj_nerr": -0.012260657588740176,
+     "boot_ci": [
+      -0.04982427023516334,
+      0.026223126922901244
+     ],
+     "perm_p": 0.47105289471052897,
+     "bh_significant": false
+    },
+    {
+     "contrast": "topic=advice_howto",
+     "n_group": 230,
+     "delta_mean_adj_nerr": -0.013521756837796994,
+     "boot_ci": [
+      -0.0536133764744299,
+      0.027795372619604127
+     ],
+     "perm_p": 0.5011498850114988,
+     "bh_significant": false
+    },
+    {
+     "contrast": "topic=chitchat_social",
+     "n_group": 122,
+     "delta_mean_adj_nerr": 0.09132386811727577,
+     "boot_ci": [
+      0.04394078171094719,
+      0.1391820793125016
+     ],
+     "perm_p": 0.0006999300069993001,
+     "bh_significant": true
+    },
+    {
+     "contrast": "topic=translation",
+     "n_group": 82,
+     "delta_mean_adj_nerr": 0.09404145220710292,
+     "boot_ci": [
+      0.03583104101313914,
+      0.15484135360322288
+     ],
+     "perm_p": 0.003999600039996,
+     "bh_significant": true
+    },
+    {
+     "contrast": "topic=summarization_extraction",
+     "n_group": 55,
+     "delta_mean_adj_nerr": 0.01595782410165858,
+     "boot_ci": [
+      -0.04487343329653532,
+      0.07969799763001646
+     ],
+     "perm_p": 0.6772322767723228,
+     "bh_significant": false
+    },
+    {
+     "contrast": "topic=roleplay_persona",
+     "n_group": 53,
+     "delta_mean_adj_nerr": -0.06744091113261697,
+     "boot_ci": [
+      -0.12213663401746029,
+      -0.009344346043402505
+     ],
+     "perm_p": 0.08459154084591541,
+     "bh_significant": false
+    },
+    {
+     "contrast": "topic=math",
+     "n_group": 53,
+     "delta_mean_adj_nerr": 0.012403074672047154,
+     "boot_ci": [
+      -0.06960239515187569,
+      0.10227169600443714
+     ],
+     "perm_p": 0.7546245375462454,
+     "bh_significant": false
+    },
+    {
+     "contrast": "refusal_adjacent=yes",
+     "n_group": 93,
+     "delta_mean_adj_nerr": -0.09726632981056438,
+     "boot_ci": [
+      -0.1468651224389928,
+      -0.048557143457481196
+     ],
+     "perm_p": 0.0018998100189981002,
+     "bh_significant": true
+    },
+    {
+     "contrast": "answer_is_refusal=yes",
+     "n_group": 30,
+     "delta_mean_adj_nerr": -0.05501147025072911,
+     "boot_ci": [
+      -0.16083489836275403,
+      0.04063974776063799
+     ],
+     "perm_p": 0.2896710328967103,
+     "bh_significant": false
+    },
+    {
+     "contrast": "format=code",
+     "n_group": 182,
+     "delta_mean_adj_nerr": 0.014235009994319259,
+     "boot_ci": [
+      -0.0358202903108125,
+      0.06597112443876425
+     ],
+     "perm_p": 0.5095490450954905,
+     "bh_significant": false
+    },
+    {
+     "contrast": "format=list",
+     "n_group": 283,
+     "delta_mean_adj_nerr": 0.03168281900045644,
+     "boot_ci": [
+      -0.0019805739591946528,
+      0.06661289193045342
+     ],
+     "perm_p": 0.07949205079492051,
+     "bh_significant": false
+    },
+    {
+     "contrast": "format=prose",
+     "n_group": 1073,
+     "delta_mean_adj_nerr": -0.01974432260566439,
+     "boot_ci": [
+      -0.04531807343073296,
+      0.005474980067817971
+     ],
+     "perm_p": 0.11958804119588042,
+     "bh_significant": false
+    },
+    {
+     "contrast": "depth=2-2",
+     "n_group": 830,
+     "delta_mean_adj_nerr": 0.043430056099794445,
+     "boot_ci": [
+      0.018192789183044324,
+      0.0692692299403581
+     ],
+     "perm_p": 0.0006999300069993001,
+     "bh_significant": true
+    },
+    {
+     "contrast": "depth=3-4",
+     "n_group": 660,
+     "delta_mean_adj_nerr": -0.017109144402090548,
+     "boot_ci": [
+      -0.04325568954747404,
+      0.00987626592581678
+     ],
+     "perm_p": 0.20877912208779123,
+     "bh_significant": false
+    },
+    {
+     "contrast": "depth=>=5",
+     "n_group": 498,
+     "delta_mean_adj_nerr": -0.03604557994961344,
+     "boot_ci": [
+      -0.061486348861293776,
+      -0.009903593583640562
+     ],
+     "perm_p": 0.012798720127987202,
+     "bh_significant": true
+    },
+    {
+     "contrast": "corpus=wildchat",
+     "n_group": 985,
+     "delta_mean_adj_nerr": -0.11588370409221282,
+     "boot_ci": [
+      -0.1406289431205015,
+      -0.09162408312778257
+     ],
+     "perm_p": 9.999000099990002e-05,
+     "bh_significant": true
+    }
+   ]
+  },
+  "context_L19_ridge": {
+   "n": 1988,
+   "n_joined": 1988,
+   "n_dropped_nonfinite": 0,
+   "family": [
+    "language=en",
+    "topic=factual_qa",
+    "topic=creative_writing",
+    "topic=coding",
+    "topic=advice_howto",
+    "topic=chitchat_social",
+    "topic=translation",
+    "topic=summarization_extraction",
+    "topic=roleplay_persona",
+    "topic=math",
+    "refusal_adjacent=yes",
+    "answer_is_refusal=yes",
+    "format=code",
+    "format=list",
+    "format=prose",
+    "depth=2-2",
+    "depth=3-4",
+    "depth=>=5",
+    "corpus=wildchat"
+   ],
+   "contrasts": [
+    {
+     "contrast": "language=en",
+     "n_group": 1174,
+     "delta_mean_adj_nerr": 0.04365838796119498,
+     "boot_ci": [
+      0.029648738513481286,
+      0.05736480217650217
+     ],
+     "perm_p": 9.999000099990002e-05,
+     "bh_significant": true
+    },
+    {
+     "contrast": "topic=factual_qa",
+     "n_group": 620,
+     "delta_mean_adj_nerr": 0.007332368215274665,
+     "boot_ci": [
+      -0.006683540303622867,
+      0.021769833992480305
+     ],
+     "perm_p": 0.3204679532046795,
+     "bh_significant": false
+    },
+    {
+     "contrast": "topic=creative_writing",
+     "n_group": 333,
+     "delta_mean_adj_nerr": -0.008924234124244507,
+     "boot_ci": [
+      -0.02627710226792954,
+      0.008468287436254362
+     ],
+     "perm_p": 0.32886711328867113,
+     "bh_significant": false
+    },
+    {
+     "contrast": "topic=coding",
+     "n_group": 328,
+     "delta_mean_adj_nerr": 0.020333408076319948,
+     "boot_ci": [
+      0.003028306584412705,
+      0.03767956361810187
+     ],
+     "perm_p": 0.029097090290970903,
+     "bh_significant": false
+    },
+    {
+     "contrast": "topic=advice_howto",
+     "n_group": 230,
+     "delta_mean_adj_nerr": -0.01660324450149861,
+     "boot_ci": [
+      -0.04012681416447031,
+      0.008526243982865703
+     ],
+     "perm_p": 0.12358764123587641,
+     "bh_significant": false
+    },
+    {
+     "contrast": "topic=chitchat_social",
+     "n_group": 122,
+     "delta_mean_adj_nerr": -0.0799746110845368,
+     "boot_ci": [
+      -0.10711088102041506,
+      -0.04875466207407522
+     ],
+     "perm_p": 9.999000099990002e-05,
+     "bh_significant": true
+    },
+    {
+     "contrast": "topic=translation",
+     "n_group": 82,
+     "delta_mean_adj_nerr": 0.05637034036560498,
+     "boot_ci": [
+      0.02862987707650362,
+      0.08610456245382606
+     ],
+     "perm_p": 0.0013998600139986002,
+     "bh_significant": true
+    },
+    {
+     "contrast": "topic=summarization_extraction",
+     "n_group": 55,
+     "delta_mean_adj_nerr": 0.02561870070254041,
+     "boot_ci": [
+      -0.0067596822285422185,
+      0.05857871148047277
+     ],
+     "perm_p": 0.2156784321567843,
+     "bh_significant": false
+    },
+    {
+     "contrast": "topic=roleplay_persona",
+     "n_group": 53,
+     "delta_mean_adj_nerr": 0.027004629771466587,
+     "boot_ci": [
+      -0.023922024160745937,
+      0.08063770628407503
+     ],
+     "perm_p": 0.20767923207679231,
+     "bh_significant": false
+    },
+    {
+     "contrast": "topic=math",
+     "n_group": 53,
+     "delta_mean_adj_nerr": 0.0016537632006240477,
+     "boot_ci": [
+      -0.027433957962186062,
+      0.032737941721880895
+     ],
+     "perm_p": 0.9379062093790621,
+     "bh_significant": false
+    },
+    {
+     "contrast": "refusal_adjacent=yes",
+     "n_group": 93,
+     "delta_mean_adj_nerr": -0.03782943444173634,
+     "boot_ci": [
+      -0.07580881274818384,
+      0.0013882930457165825
+     ],
+     "perm_p": 0.021597840215978402,
+     "bh_significant": false
+    },
+    {
+     "contrast": "answer_is_refusal=yes",
+     "n_group": 30,
+     "delta_mean_adj_nerr": -0.04895120452640406,
+     "boot_ci": [
+      -0.12959461966963387,
+      0.04199769679452936
+     ],
+     "perm_p": 0.0841915808419158,
+     "bh_significant": false
+    },
+    {
+     "contrast": "format=code",
+     "n_group": 182,
+     "delta_mean_adj_nerr": 0.034682104315242546,
+     "boot_ci": [
+      0.010634193778089173,
+      0.05958652025373883
+     ],
+     "perm_p": 0.0059994000599940004,
+     "bh_significant": true
+    },
+    {
+     "contrast": "format=list",
+     "n_group": 283,
+     "delta_mean_adj_nerr": 0.016656793223553373,
+     "boot_ci": [
+      -0.0012952468761889644,
+      0.03534592726399471
+     ],
+     "perm_p": 0.09199080091990801,
+     "bh_significant": false
+    },
+    {
+     "contrast": "format=prose",
+     "n_group": 1073,
+     "delta_mean_adj_nerr": -0.03412669541208055,
+     "boot_ci": [
+      -0.04754247361408842,
+      -0.02056508591050397
+     ],
+     "perm_p": 9.999000099990002e-05,
+     "bh_significant": true
+    },
+    {
+     "contrast": "depth=2-2",
+     "n_group": 830,
+     "delta_mean_adj_nerr": -0.011667844490772128,
+     "boot_ci": [
+      -0.025270341716913083,
+      0.0017063691857724047
+     ],
+     "perm_p": 0.10188981101889812,
+     "bh_significant": false
+    },
+    {
+     "contrast": "depth=3-4",
+     "n_group": 660,
+     "delta_mean_adj_nerr": 0.0017482682215542444,
+     "boot_ci": [
+      -0.012557469464536253,
+      0.01624290601036174
+     ],
+     "perm_p": 0.8103189681031897,
+     "bh_significant": false
+    },
+    {
+     "contrast": "depth=>=5",
+     "n_group": 498,
+     "delta_mean_adj_nerr": 0.013048313957889052,
+     "boot_ci": [
+      -0.002864953965669651,
+      0.029544745169603835
+     ],
+     "perm_p": 0.10278972102789721,
+     "bh_significant": false
+    },
+    {
+     "contrast": "corpus=wildchat",
+     "n_group": 985,
+     "delta_mean_adj_nerr": -0.012915927286683282,
+     "boot_ci": [
+      -0.02685440391615278,
+      0.0006434755797253941
+     ],
+     "perm_p": 0.058194180581941805,
+     "bh_significant": false
+    }
+   ]
+  }
+ }
+}
