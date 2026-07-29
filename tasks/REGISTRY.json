@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1799,
+  "highest_id": 1800,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6196,6 +6196,13 @@
       "path": "tasks/archived/18",
       "status": "archived",
       "title": "[MEDIUM] Aim 3.6: Non-contrastive at A1-matched hyperparameters"
+    },
+    "1800": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1800",
+      "status": "proposed",
+      "title": "daily-fix: WARN when GCP workload chain has no persist phase"
     },
     "181": {
       "has_clean_result": false,
