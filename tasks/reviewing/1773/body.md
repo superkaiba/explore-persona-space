@@ -23,6 +23,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** https://github.com/superkaiba/explore-persona-space/blob/517963d4579c13f4a954cf4c2a1d133559905e00/docs/methodology/issue_1773.md · mirror: https://gist.github.com/superkaiba/a992c5fa4d74432525b1008afd941e40
+
 ## Takeaways
 
 - **All five judged axes read search-index-only on the 16,384-feature restricted layer-19 dictionary: neighbour discrimination 0.322 (n=650 features) against the 0.50 trust bar is the decisive fail.**
