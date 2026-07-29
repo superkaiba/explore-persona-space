@@ -18,7 +18,13 @@ from pathlib import Path
 WT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(WT / "src"))
 
-import matplotlib
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+# #847: .env + shared-VM thread caps bind BEFORE the heavy imports
+# (tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints).
+load_dotenv()
+
+import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402

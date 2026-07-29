@@ -29,10 +29,17 @@ import json
 import sys
 from pathlib import Path
 
-import numpy as np
-
 SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS))
+sys.path.insert(0, str(SCRIPTS.parent / "src"))
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+# #847: .env + shared-VM thread caps bind BEFORE the heavy imports
+# (tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints).
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 from issue1775_common import (  # noqa: E402
     CELL_PRIMARY,
@@ -58,15 +65,20 @@ HF_DL = Path(__file__).resolve().parents[1] / "data" / "issue_1775" / "hf_dl"
 
 
 def _fetch(rel: str) -> Path:
-    """hf_hub_download into the worktree staging dir (idempotent)."""
+    """hf_hub_download into the worktree staging dir (idempotent), transport-retried (#1547)."""
     from huggingface_hub import hf_hub_download
 
+    from explore_persona_space.orchestrate import hub
+
     return Path(
-        hf_hub_download(
-            HF_DATA_REPO,
-            f"{OUT_HF_PREFIX}/analysis_tensors/{rel}",
-            repo_type="dataset",
-            local_dir=HF_DL,
+        hub.retry_transient(
+            lambda: hf_hub_download(
+                HF_DATA_REPO,
+                f"{OUT_HF_PREFIX}/analysis_tensors/{rel}",
+                repo_type="dataset",
+                local_dir=HF_DL,
+            ),
+            what=f"issue1775 delta_beyond staging download {rel}",
         )
     )
 
