@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1840,
+  "highest_id": 1841,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6511,6 +6511,13 @@
       "path": "tasks/proposed/1840",
       "status": "proposed",
       "title": "workflow-fix: persistent-wedge bound on the poller zombie-override veto"
+    },
+    "1841": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1841",
+      "status": "proposed",
+      "title": "workflow-fix: Step 6d.2 tick parse must preserve advisory decision fields"
     },
     "185": {
       "has_clean_result": false,
