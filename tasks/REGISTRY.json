@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1815,
+  "highest_id": 1816,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6315,6 +6315,13 @@
       "path": "tasks/proposed/1815",
       "status": "proposed",
       "title": "daily-fix: queue-vanish guard defeated by stale phase clock"
+    },
+    "1816": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1816",
+      "status": "proposed",
+      "title": "daily-fix: deferred-commit ERROR keeps the failing hook line"
     },
     "182": {
       "has_clean_result": true,
