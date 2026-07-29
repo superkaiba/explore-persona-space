@@ -6060,8 +6060,8 @@
     "1781": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1781",
-      "status": "reviewing",
+      "path": "tasks/completed/1781",
+      "status": "completed",
       "title": "workflow-fix: gotchas entry \u2014 real-corpus exact-dupe sha sampling + frozen-pinned-split uniqueness trap"
     },
     "1782": {
