@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1817,
+  "highest_id": 1818,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6329,6 +6329,13 @@
       "path": "tasks/proposed/1817",
       "status": "proposed",
       "title": "daily-fix: probe real-corpus plan assumptions at smoke time"
+    },
+    "1818": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1818",
+      "status": "proposed",
+      "title": "daily-fix: clamp composed poll sleeps below the Bash cap"
     },
     "182": {
       "has_clean_result": true,
