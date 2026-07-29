@@ -403,17 +403,72 @@ def _r2_boot(pred: np.ndarray, y: np.ndarray, n_boot: int, seed: int) -> dict:
     }
 
 
-def load_leg(path: Path, *, src_layer: int, ro_layer: int) -> dict:
+def _stage_leg_chunks_from_hub(leg_dir: Path, hf_prefix: str) -> list[Path]:
+    """Hub-stage fallback for a purged capture-leg dir (the #1489
+    purge-before-last-consumer class at the p5a_capture -> p5_transfer seam).
+
+    The capture producer uploads each verified chunk batch to
+    ``{hf_prefix}/final_token_capture/`` then PURGES the local copies
+    (``N1G._flush_upload_batch`` — deliberate pod-disk bounding), so a
+    consumer reading the leg dir after capture finds it EMPTY (crash-fix r12,
+    epm:failure v8: ``no capture chunks under .../wildchat_fresh``). Re-stage
+    from the Hub: PREFIX-SCOPED index only (never a full-tree listing on the
+    ~1M-file data repo, #833; ``N50._remote_index`` is the producer's own
+    scoped ``list_repo_tree``), per-file ATOMIC + IDEMPOTENT download
+    (``hub.stage_hub_file`` — an existing target short-circuits), then
+    sha256-verify each staged file against the Hub LFS metadata (the same
+    corruption guard the upload side ran before purging). Returns the sorted
+    local chunk paths; raises when the prefix holds no chunks.
+    """
+    import fnmatch
+
+    import issue779_ffc_n1m_generate_capture as N1G
+
+    from explore_persona_space.orchestrate import hub
+
+    cap_prefix = f"{hf_prefix}/final_token_capture"
+    remote = hub.retry_transient(
+        lambda: N1G.N50._remote_index(cap_prefix), what=f"remote_index({cap_prefix})"
+    )
+    names = sorted(n for n in remote if fnmatch.fnmatch(n, "shard*_chunk*.pt"))
+    assert names, f"Hub-stage fallback found NO capture chunks under {cap_prefix}"
+    leg_dir.mkdir(parents=True, exist_ok=True)
+    print(
+        f"[phase5-transfer] leg dir {leg_dir} has no local chunks; staging {len(names)} "
+        f"from {cap_prefix} (purge-before-last-consumer fallback, #1489 class)",
+        flush=True,
+    )
+    out: list[Path] = []
+    for n in names:
+        target = leg_dir / n
+        hub.stage_hub_file(C.HF_DATA_REPO, f"{cap_prefix}/{n}", target, repo_type="dataset")
+        want = remote[n].get("sha256")
+        if want is not None:
+            got = _sha256_file(target)
+            assert got == want, f"{n}: staged sha256 {got} != Hub LFS {want} — corrupt download"
+        out.append(target)
+    print(f"[phase5-transfer] staged {len(out)} capture chunks -> {leg_dir}", flush=True)
+    return out
+
+
+def load_leg(path: Path, *, src_layer: int, ro_layer: int, hf_prefix: str | None = None) -> dict:
     """A transfer leg: {x_src (n,H), x_ro (n,H), v (n,H)} float32 numpy.
 
     Accepts a capture-chunks DIRECTORY (the ``_stack_chunk`` schema:
     shard*_chunk*.pt with cx_last/v_x (n, n_layers, H) + layers) or a single
-    ``.pt`` with explicit {x14, x19, v19} tensors.
+    ``.pt`` with explicit {x14, x19, v19} tensors. ``hf_prefix`` (threaded via
+    the 3-part ``--leg NAME=PATH=HF_PREFIX`` spec) arms the Hub-stage fallback
+    for a dir whose chunks the capture producer uploaded-then-purged; existing
+    local chunks short-circuit it (idempotent).
     """
-    if path.is_dir():
+    if path.is_dir() or (hf_prefix is not None and not path.exists()):
         xs, xr, vs = [], [], []
-        files = sorted(path.glob("shard*_chunk*.pt"))
-        assert files, f"no capture chunks under {path}"
+        files = sorted(path.glob("shard*_chunk*.pt")) if path.is_dir() else []
+        if not files and hf_prefix is not None:
+            files = _stage_leg_chunks_from_hub(path, hf_prefix)
+        assert files, f"no capture chunks under {path}" + (
+            "" if hf_prefix else " (no HF_PREFIX on the --leg spec — Hub fallback unarmed)"
+        )
         for f in files:
             d = torch.load(f, map_location="cpu", weights_only=True)
             layers = [int(x) for x in d["layers"]]
@@ -542,8 +597,18 @@ def cmd_transfer(args) -> int:
     dev = torch.device("cpu")
     report: dict = {"legs": {}, "anchors": {k: str(args.anchors) for k in ("path",)}}
     for spec in args.legs or []:
-        leg_name, leg_path = spec.split("=", 1)
-        leg = load_leg(Path(leg_path), src_layer=C76.SOURCE_LAYER, ro_layer=C76.READOUT_LAYER)
+        # NAME=PATH[=HF_PREFIX] — the optional 3rd field arms load_leg's
+        # Hub-stage fallback for an uploaded-then-purged chunks dir (r12).
+        parts = spec.split("=", 2)
+        assert len(parts) >= 2, f"--leg spec must be NAME=PATH[=HF_PREFIX]: {spec!r}"
+        leg_name, leg_path = parts[0], parts[1]
+        leg_prefix = parts[2] if len(parts) == 3 else None
+        leg = load_leg(
+            Path(leg_path),
+            src_layer=C76.SOURCE_LAYER,
+            ro_layer=C76.READOUT_LAYER,
+            hf_prefix=leg_prefix,
+        )
         y = leg["v"].astype(np.float64)
         rows: dict[str, dict] = {}
         for name, path, in_layer in ops:
@@ -1139,11 +1204,23 @@ def _smoke_transfer(out: Path) -> None:
     ya = (xa @ w + 0.05 * rng.standard_normal((n, h))).astype(np.float32)
     yb = (xb @ w + 0.5 * rng.standard_normal((n, h))).astype(np.float32)
     (out / "transfer").mkdir(parents=True, exist_ok=True)
-    for tag, x, y in (("lmsys_test1000", xa, ya), ("wildchat_fresh", xb, yb)):
-        torch.save(
-            {"x14": torch.from_numpy(x), "x19": torch.from_numpy(x), "v19": torch.from_numpy(y)},
-            out / "transfer" / f"leg_{tag}.pt",
-        )
+    torch.save(
+        {"x14": torch.from_numpy(xa), "x19": torch.from_numpy(xa), "v19": torch.from_numpy(ya)},
+        out / "transfer" / "leg_lmsys_test1000.pt",
+    )
+    # wildchat_fresh leg as a capture-chunks DIR + 3-part spec (crash-fix r12):
+    # exercises load_leg's dir branch + the NAME=PATH=HF_PREFIX parse; the
+    # planted local chunk short-circuits the Hub-stage fallback (no network).
+    wc_dir = out / "transfer" / "wc_chunks"
+    wc_dir.mkdir(exist_ok=True)
+    torch.save(
+        {
+            "cx_last": torch.from_numpy(np.stack([xb, xb], axis=1)),  # (n, 2 layers, h)
+            "v_x": torch.from_numpy(np.stack([yb, yb], axis=1)),
+            "layers": [C76.SOURCE_LAYER, C76.READOUT_LAYER],
+        },
+        wc_dir / "shard00_chunk0000.pt",
+    )
     op_path = out / "transfer" / "op.pt"
     torch.save(_synth_ridge_payload(rng, h, h, w), op_path)
     j_path = out / "transfer" / "jca_last.pt"
@@ -1171,7 +1248,7 @@ def _smoke_transfer(out: Path) -> None:
         jop=[f"jca_last={j_path}"],
         legs=[
             f"lmsys_test1000={out / 'transfer' / 'leg_lmsys_test1000.pt'}",
-            f"wildchat_fresh={out / 'transfer' / 'leg_wildchat_fresh.pt'}",
+            f"wildchat_fresh={wc_dir}={DEFAULT_HF_PREFIX}",
         ],
         base_leg="lmsys_test1000",
         n_boot=200,
@@ -1474,7 +1551,13 @@ def main(argv: list[str] | None = None) -> int:
     t = sub.add_parser("transfer", help="5a.3 decay read over legs")
     t.add_argument("--op", action="append", help="NAME=PATH=INLAYER (ridge payload)", default=[])
     t.add_argument("--jop", action="append", help="NAME=PATH (J .pt, affine arm)", default=[])
-    t.add_argument("--leg", dest="legs", action="append", help="NAME=PATH (.pt or chunks dir)")
+    t.add_argument(
+        "--leg",
+        dest="legs",
+        action="append",
+        help="NAME=PATH[=HF_PREFIX] (.pt or chunks dir; HF_PREFIX arms the Hub-stage "
+        "fallback when the capture producer uploaded-then-purged the dir's chunks)",
+    )
     t.add_argument("--anchors", type=Path, default=None)
     t.add_argument("--base-leg", default="lmsys_test1000")
     t.add_argument("--n-boot", type=int, default=1000)

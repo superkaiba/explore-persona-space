@@ -766,7 +766,10 @@ T_ARGS=(uv run python scripts/issue1776_phase5.py transfer --assemble
   --jop "J_last=$FULL_ROOT/merged/J_last.pt"
   --jop "J_ctx=$FULL_ROOT/merged/J_ctx.pt"
   --jop "J_prefix=$FULL_ROOT/merged/J_prefix.pt"
-  --leg "wildchat_fresh=$WC_CAP_ROOT"
+  # 3-part leg spec (crash-fix r12): p5a_capture uploads-then-PURGES its local
+  # chunks (N1G._flush_upload_batch disk-bounding), so the consumer carries the
+  # hf-prefix and load_leg Hub-stages the purged chunks back (#1489 class).
+  --leg "wildchat_fresh=$WC_CAP_ROOT=$HF_PREFIX_EFF/wildchat_fresh"
   --n-boot "$NBOOT" --out "$EVAL_DIR/phase5/transfer.json"
   --jvm-heldout-out "$EVAL_DIR/phase2/jvm_heldout.json")
 if [[ -n "$SHIPPED_M" ]]; then
