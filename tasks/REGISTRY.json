@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1814,
+  "highest_id": 1815,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6308,6 +6308,13 @@
       "path": "tasks/proposed/1814",
       "status": "proposed",
       "title": "daily-fix: gotchas \u2014 subsample filters, zones, hub path glob"
+    },
+    "1815": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1815",
+      "status": "proposed",
+      "title": "daily-fix: queue-vanish guard defeated by stale phase clock"
     },
     "182": {
       "has_clean_result": true,
