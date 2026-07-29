@@ -5250,8 +5250,14 @@ def test_render_startup_script_persist_streams_eagerly() -> None:
     stream)."""
     script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
     assert "| cut -c1-2000 | tail -n 20 >&3" not in script
-    # Read-to-EOF reader with trailing-unterminated-line hardening.
-    assert 'while IFS= read -r _l || [ -n "$_l" ]' in script
+    # Read-to-EOF reader with trailing-unterminated-line hardening — the exact
+    # streamer opener, INCLUDING the #1799 in-subshell PIPE re-arm (a pipeline
+    # subshell resets the top-level #607 handler; without the re-arm a dead
+    # fd 3 SIGPIPE-kills the streamer and closes the persist python's stdout).
+    assert (
+        ") 2>&1 | { trap ':' PIPE; _n=0;"
+        ' while IFS= read -r _l || [ -n "$_l" ]; do _n=$((_n + 1));'
+    ) in script
     # Progress bars would spam the now-eager stream.
     assert "HF_HUB_DISABLE_PROGRESS_BARS=1" in script
     # Standing dep A: structural flush=True pin over the extracted heredoc.
@@ -6097,9 +6103,12 @@ def test_render_startup_script_persist_skip_writes_skipped_no_token() -> None:
 def test_render_startup_script_persist_verify_gate_renders() -> None:
     """#1343: the eps/persist=ok honesty gate renders — the rc-3 case arm
     sits between the (0) ok and (124) timeout arms, the heredoc carries the
-    transcript existence probe + sys.exit(3), and the eps/persist
+    transcript existence probe + the guarded rc-3 exit, and the eps/persist
     guest-attribute URL site count stays at 2 (the new value rides the
-    EXISTING final-status write — no new curl; the <=3-writes budget pin)."""
+    EXISTING final-status write — no new curl; the <=3-writes budget pin).
+    #1799: both deliberate exits go through _exit_now (guarded std-stream
+    flushes + os._exit) — a plain sys.exit under a dead stdout pipe would
+    let Py_FinalizeEx rewrite a completed persist's rc to 120."""
     script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
     fn = _extract_persist_function(script)
     assert '(3)   _eps_persist_status "failed_uploads" ;;' in fn
@@ -6112,7 +6121,11 @@ def test_render_startup_script_persist_verify_gate_renders() -> None:
     heredoc = _extract_persist_heredoc(script)
     assert "file_exists(" in heredoc
     assert "crash_persist_transcript.log" in heredoc
-    assert "sys.exit(3)" in heredoc
+    # #1799: the deliberate exits are finalize-proof (guarded flush + os._exit).
+    assert "sys.exit(3)" not in heredoc
+    assert "_exit_now(3)" in heredoc
+    assert "_exit_now(0)" in heredoc
+    assert "os._exit(rc)" in heredoc
     assert script.count("instance/guest-attributes/eps/persist") == 2
 
 
@@ -6627,6 +6640,114 @@ def test_persist_heredoc_probe_raise_semantics(tmp_path) -> None:
     assert proc.returncode == 3, (proc.returncode, proc.stderr)
     assert "VERIFY probe FAILED" in proc.stdout
     assert not any(c["kind"] == "folder" for c in calls)
+
+
+# ---------------------------------------------------------------------------
+# issue #1799 — crash-persist survives a dead stdout/fd-3 pipe (incident #1739:
+# both kernel-OOM crashes exited rc=120 and delivered ZERO diagnostics)
+# ---------------------------------------------------------------------------
+
+
+def test_persist_python_survives_dead_stdout_pipe(tmp_path) -> None:
+    """#1799 (incident #1739): the persist python must survive a DEAD
+    stdout/fd-3 pipe — the kernel-OOM condition where the startup-script
+    runner is gone and the streamer subshell died of SIGPIPE — and still
+    run its full staging path.
+
+    Runs the REAL extracted EPS_PERSIST_PY heredoc with stdout AND stderr
+    wired to a closed-reader pipe (the production shape: ``( ... ) 2>&1 |
+    streamer`` with the streamer dead), against the REAL huggingface_hub
+    pointed at a hermetic non-routable endpoint (instant
+    connection-refused on 127.0.0.1:1 — zero network). Every upload fails
+    -> the #1343 verify gate exits 3 (failed_uploads). PRE-#1799 the
+    first unguarded ``_say`` print raised BrokenPipeError before any
+    staging and the interpreter exited 120 (the canonical Py_FinalizeEx
+    std-stream flush failure; observed rc==120 on the pre-fix render —
+    fails-pre-fix evidence recorded in task #1799's implementation
+    marker). The discriminator is 120 -> 3: "died before any work" ->
+    "ran to completion with uploads refused". The transcript file
+    (per-call append, never the dead pipe) is the observable that the
+    persist body actually executed."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    heredoc = _extract_persist_heredoc(script)
+
+    root = tmp_path / "workload"
+    (root / "eval_results" / "issue_137").mkdir(parents=True)
+    (root / "eval_results" / "issue_137" / "a.json").write_text("{}")
+    crash = tmp_path / "eps-crash-report.json"
+    crash.write_text('{"issue":137,"exit_code":1}\n')
+    log = tmp_path / "workload.log"
+    log.write_text("Traceback (most recent call last): boom\n")
+    transcript = tmp_path / "transcript.log"
+
+    env = dict(os.environ)
+    env.update(
+        {
+            "EPS_HF_DATA_REPO": "fake/fake",
+            "HF_TOKEN": "x",
+            # Hermetic: every hub call gets an instant connection-refused.
+            "HF_ENDPOINT": "http://127.0.0.1:1",
+            "EPS_ISSUE": "137",
+            "EPS_LOG_PATH": str(log),
+            "WORKLOAD_ROOT": str(root),
+            "EPS_PERSIST_TRANSCRIPT": str(transcript),
+            # No 10-20s retry sleeps in-test (the heredoc's own ONE-retry
+            # backoff knob; #1151/#935 sibling).
+            "EPS_PERSIST_RETRY_BACKOFF_S": "0",
+            # Per-test staging isolation (the #885/#1151/#1605 precedent —
+            # production defaults are shared /tmp literals).
+            "EPS_PERSIST_LOG_STAGE_DIR": str(tmp_path / "staged-worker-logs"),
+            "EPS_PERSIST_FIRST_STAGE_DIR": str(tmp_path / "staged-first"),
+            "EPS_PERSIST_FINAL_STAGE_DIR": str(tmp_path / "staged-final"),
+            "EPS_PERSIST_WORKSPACE_LOGS_DIR": str(tmp_path / "workspace-logs"),
+        }
+    )
+    # Dead-reader pipe, constructed deterministically: close the read end
+    # BEFORE exec, so the child's very first stdout write hits EPIPE
+    # (CPython ignores SIGPIPE and raises BrokenPipeError instead).
+    r_fd, w_fd = os.pipe()
+    os.close(r_fd)
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-", "issue137_partial/att-x", str(crash)],
+            input=heredoc,
+            stdout=w_fd,
+            stderr=w_fd,
+            text=True,
+            env=env,
+            timeout=120,
+        )
+    finally:
+        os.close(w_fd)
+    assert proc.returncode == 3, proc.returncode
+    text = transcript.read_text()
+    assert "[crash-persist] BEGIN" in text
+    assert "staged crash_report.json" in text
+    assert "staged workload.log" in text
+
+
+def test_render_startup_script_streamer_installs_pipe_trap() -> None:
+    """#1799 fix A: the streamer pipeline group re-installs ``trap ':' PIPE``
+    — a pipeline subshell RESETS the top-level #607 PIPE handler to default,
+    so without the re-arm an EPIPE'd ``printf >&3`` SIGPIPE-kills the whole
+    streamer (closing the persist python's stdout pipe) instead of degrading
+    to a guarded write error."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "| { trap ':' PIPE; _n=0;" in script
+
+
+def test_render_startup_script_maps_rc120() -> None:
+    """#1799 fix C: the rc-file case table maps 120 (std-stream flush
+    failure at interpreter exit — dead stdout/fd-3 pipe) to the dedicated
+    ``failed_stream_flush`` eps/persist value, before the ``failed_rc<N>``
+    catch-all."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert '(120) _eps_persist_status "failed_stream_flush" ;;' in script
+    catch_all = '(*)   _eps_persist_status "failed_rc${_prc}" ;;'
+    assert catch_all in script
+    assert script.index('(120) _eps_persist_status "failed_stream_flush" ;;') < script.index(
+        catch_all
+    )
 
 
 def _guest_attr_kv(key: str, value: str) -> str:
