@@ -1393,6 +1393,337 @@ def merge_pair_checkpoints(
     return out
 
 
+# ---------------------------------------------------------------------------
+# Cross-model generalized pair addressing (derived-vs-free-answer-map round).
+#
+# EXTENSION CONTRACT (consistency-checker WARN discharge): everything below is
+# ADDITIVE — new functions + a new main() branch gated on the pairs-file
+# schema. The within-model path (enumerate_pair_set -> run_all_pairs ->
+# _run_ladder_pair) is byte-untouched; the generalized runner routes every
+# pair through the SAME _run_ladder_pair, so the fit math is shared, not
+# forked (pinned by tests/test_issue1689_derived_vs_free.py
+# ::test_generalized_runner_matches_run_all_pairs_within_model).
+# ---------------------------------------------------------------------------
+
+PairSpec = tuple[tuple[str, str], tuple[str, str]]  # ((src_model, src_cond), (tgt_model, tgt_cond))
+
+
+def pair_rows_by_conv(
+    conv_S: np.ndarray, conv_T: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Standalone copy of _run_ladder_pair's inline conv-id row pairing.
+
+    Returns (common, s_idx, t_idx): sorted shared conv ids + the FIRST-occurrence
+    row index per conv on each side (identical semantics to the inline code —
+    _run_ladder_pair itself is deliberately left untouched for byte-identity).
+    """
+    common = np.intersect1d(conv_S, conv_T)
+    s_idx = np.array([np.where(conv_S == c)[0][0] for c in common])
+    t_idx = np.array([np.where(conv_T == c)[0][0] for c in common])
+    return common, s_idx, t_idx
+
+
+def parse_pair_specs(entries: list, default_model: str | None = None) -> list[PairSpec]:
+    """Parse pairs-file entries into ((src_model, src_cond), (tgt_model, tgt_cond)) specs.
+
+    Two accepted element shapes (mixable in one file):
+      ["src_cond", "tgt_cond"]              -> within-model (requires default_model)
+      [["m1", "cond_a"], ["m2", "cond_b"]]  -> cross-model (explicit model per side)
+    """
+    specs: list[PairSpec] = []
+    for e in entries:
+        if not (isinstance(e, (list, tuple)) and len(e) == 2):
+            raise ValueError(f"pair entry must have exactly 2 elements: {e!r}")
+        a, b = e
+        if isinstance(a, str) and isinstance(b, str):
+            if default_model is None:
+                raise ValueError(f"string pair {e!r} needs a default model (--model-slug)")
+            specs.append(((default_model, a), (default_model, b)))
+        elif (
+            isinstance(a, (list, tuple))
+            and len(a) == 2
+            and isinstance(b, (list, tuple))
+            and len(b) == 2
+        ):
+            specs.append(((str(a[0]), str(a[1])), (str(b[0]), str(b[1]))))
+        else:
+            raise ValueError(f"unrecognized pair entry shape: {e!r}")
+    return specs
+
+
+def pairs_file_is_generalized(loaded) -> bool:
+    """True when a flat pairs-file list carries >=1 nested [[m,c],[m,c]] entry."""
+    return isinstance(loaded, list) and any(
+        isinstance(e, (list, tuple)) and len(e) == 2 and isinstance(e[0], (list, tuple))
+        for e in loaded
+    )
+
+
+def pair_spec_key(spec: PairSpec) -> str:
+    """Checkpoint key: parent-style 'src__tgt' within-model; 'm@c__m@c' cross-model."""
+    (sm, sc), (tm, tc) = spec
+    if sm == tm:
+        return f"{sc}__{tc}"
+    return f"{sm}@{sc}__{tm}@{tc}"
+
+
+def crossmodel_pair_specs(model_a: str, model_b: str) -> list[PairSpec]:
+    """The 21 same-condition cross-model ordered pairs x 2 directions (scope item 9)."""
+    from scripts.issue1689_common import CONDITION_TABLE
+
+    conds = sorted({c.slug for c in CONDITION_TABLE})
+    specs: list[PairSpec] = []
+    for cond in conds:
+        specs.append(((model_a, cond), (model_b, cond)))
+        specs.append(((model_b, cond), (model_a, cond)))
+    return specs
+
+
+def _pair_ckpt_meta_generalized(
+    spec: PairSpec,
+    layer: int,
+    n_bootstrap_draws: int,
+    n_null_draws: int,
+    lambda_grid: str,
+) -> dict:
+    """Generalized regime key: the within-model meta + per-side model slugs."""
+    (sm, _sc), (tm, _tc) = spec
+    return {
+        "src_model": sm,
+        "tgt_model": tm,
+        "layer": int(layer),
+        "n_bootstrap_draws": int(n_bootstrap_draws),
+        "n_null_draws": int(n_null_draws),
+        "threshold": float(RUNG_REACHED_THRESHOLD),
+        "seed": 42,
+        "lambda_grid": str(lambda_grid),
+    }
+
+
+def run_pairs_generalized(
+    store_root: Path,
+    pair_specs: list[PairSpec],
+    *,
+    layer: int = HEADLINE_LAYER,
+    n_bootstrap_draws: int,
+    n_null_draws: int,
+    engine: str = "numpy",
+    device: str = "cpu",
+    num_shards: int = 1,
+    shard_index: int = 0,
+    checkpoint_dir: Path | None = None,
+    lambda_grid: str = "ladder13",
+) -> dict:
+    """Cross-model-capable sibling of run_all_pairs (same per-pair math).
+
+    Cells address as (model_slug, condition) per SIDE; every pair runs through
+    the SAME _run_ladder_pair as the parent path (fit math shared). Per-pair
+    checkpoints + regime-keyed resume mirror run_all_pairs.
+    """
+    lams = LAMBDAS if lambda_grid == "ladder13" else resolve_lambda_grid(lambda_grid)
+    shard_specs = pair_specs[shard_index::num_shards] if num_shards > 1 else list(pair_specs)
+    out: dict[str, Any] = {
+        "layer": layer,
+        "n_pairs": len(pair_specs),
+        "arms": ["prefix", "context"],
+        "n_bootstrap_draws": n_bootstrap_draws,
+        "n_null_draws": n_null_draws,
+        "lambda_grid": lambda_grid,
+        "generalized": True,
+        "pairs": {},
+    }
+    if checkpoint_dir is not None:
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    n_shard = len(shard_specs)
+    for i, spec in enumerate(shard_specs):
+        (sm, sc), (tm, tc) = spec
+        pair_key = pair_spec_key(spec)
+        meta = _pair_ckpt_meta_generalized(
+            spec, layer, n_bootstrap_draws, n_null_draws, lambda_grid
+        )
+        ckpt_path = checkpoint_dir / f"{pair_key}.json" if checkpoint_dir is not None else None
+        if ckpt_path is not None and ckpt_path.exists():
+            try:
+                prior = json.loads(ckpt_path.read_text())
+            except (json.JSONDecodeError, OSError):
+                prior = None
+            if prior is not None and _ckpt_meta_satisfies(prior.get("meta"), meta):
+                out["pairs"][pair_key] = prior["arms"]
+                print(
+                    f"[fit_ladder]   xpair {i + 1}/{n_shard}: {pair_key} RESUME (checkpoint)",
+                    flush=True,
+                )
+                continue
+            if prior is not None:
+                print(
+                    f"[fit_ladder]   xpair {i + 1}/{n_shard}: {pair_key} "
+                    f"regime-mismatch checkpoint -> recompute",
+                    flush=True,
+                )
+        print(f"[fit_ladder]   xpair {i + 1}/{n_shard}: {pair_key}", flush=True)
+        pair_t0 = time.perf_counter()
+        source = _load_cell_layer(store_root, f"{sm}/{sc}", layer)
+        target = _load_cell_layer(store_root, f"{tm}/{tc}", layer)
+        arms_out: dict[str, Any] = {}
+        for arm in ["prefix", "context"]:
+            arms_out[arm] = _run_ladder_pair(
+                source,
+                target,
+                arm=arm,
+                n_bootstrap_draws=n_bootstrap_draws,
+                n_null_draws=n_null_draws,
+                engine=engine,
+                device=device,
+                lambdas=lams,
+            )
+        out["pairs"][pair_key] = arms_out
+        pair_dt = time.perf_counter() - pair_t0
+        print(
+            f"[fit_ladder]   xpair {i + 1}/{n_shard}: {pair_key} done elapsed={pair_dt:.1f}s",
+            flush=True,
+        )
+        if ckpt_path is not None:
+            tmp_path = ckpt_path.with_name(f".{ckpt_path.name}.tmp")
+            with tmp_path.open("w") as fh:
+                json.dump({"meta": meta, "arms": arms_out}, fh)
+            tmp_path.replace(ckpt_path)
+    return out
+
+
+def merge_pairs_generalized(
+    checkpoint_dir: Path,
+    pair_specs: list[PairSpec],
+    *,
+    layer: int,
+    n_bootstrap_draws: int,
+    n_null_draws: int,
+    lambda_grid: str = "ladder13",
+) -> dict:
+    """Fail-loud merge of generalized per-pair checkpoints (run_pairs_generalized)."""
+    out: dict[str, Any] = {
+        "layer": layer,
+        "n_pairs": len(pair_specs),
+        "arms": ["prefix", "context"],
+        "n_bootstrap_draws": n_bootstrap_draws,
+        "n_null_draws": n_null_draws,
+        "lambda_grid": lambda_grid,
+        "generalized": True,
+        "pairs": {},
+    }
+    missing: list[str] = []
+    mismatched: list[str] = []
+    for spec in pair_specs:
+        pair_key = pair_spec_key(spec)
+        meta = _pair_ckpt_meta_generalized(
+            spec, layer, n_bootstrap_draws, n_null_draws, lambda_grid
+        )
+        p = checkpoint_dir / f"{pair_key}.json"
+        if not p.exists():
+            missing.append(pair_key)
+            continue
+        d = json.loads(p.read_text())
+        if not _ckpt_meta_satisfies(d.get("meta"), meta):
+            mismatched.append(pair_key)
+            continue
+        out["pairs"][pair_key] = d["arms"]
+    if missing or mismatched:
+        raise RuntimeError(
+            f"generalized merge incomplete: {len(missing)} missing, "
+            f"{len(mismatched)} regime-mismatched of {len(pair_specs)} pairs under "
+            f"{checkpoint_dir} (first missing: {missing[:3]}; first mismatched: {mismatched[:3]})"
+        )
+    return out
+
+
+def fit_rung78_corrections_t(
+    source: dict,
+    target: dict,
+    *,
+    arm: str,
+    seed: int = 42,
+    device: str = "cpu",
+    lambdas: np.ndarray | None = None,
+    row_limit: int | None = None,
+    dim_limit: int | None = None,
+) -> dict:
+    """Refit + EXPOSE the parent ladder's rung-7/8 correction operators (item 8).
+
+    Parent conventions preserved EXACTLY (this is the ladder's own math, exposed
+    for in-process consumption instead of being discarded inside
+    _compute_ladder_r2s_t): row-pairing by conv-id intersection, conv-grouped
+    5-fold split (seed 42; train = folds != 0, test = fold 0 — the ladder's
+    point split), W_s fit on ALL common rows (the ladder's registered all-rows
+    convention), A (rung 7): x_T -> x_S on train rows, B (rung 8): y_S -> y_T
+    on train rows; every fit inner-group-cv on the given lambda grid.
+
+    ``row_limit`` / ``dim_limit`` are smoke-scale knobs (slice common convs /
+    leading dims); production leaves both None. Returns numpy operators + the
+    paired arrays + split indices so the rank-k sweep evaluates on the same
+    held-out rows.
+    """
+    import torch
+
+    lams = LAMBDAS if lambdas is None else np.asarray(lambdas, dtype=np.float64)
+    conv_S = source["conv_ids"]
+    conv_T = target["conv_ids"]
+    common, s_idx, t_idx = pair_rows_by_conv(conv_S, conv_T)
+    if row_limit is not None:
+        common = common[:row_limit]
+        s_idx = s_idx[:row_limit]
+        t_idx = t_idx[:row_limit]
+    if len(common) < 3:
+        return {"error": "insufficient shared conv_ids", "n_common": int(len(common))}
+    dsl = slice(None) if dim_limit is None else slice(0, dim_limit)
+    X_S = source[f"X_{arm}"][s_idx][:, dsl]
+    Y_S = source["Y"][s_idx][:, dsl]
+    X_T = target[f"X_{arm}"][t_idx][:, dsl]
+    Y_T = target["Y"][t_idx][:, dsl]
+
+    n = len(common)
+    folds = _conv_grouped_folds(common, n_folds=N_FOLDS, seed=seed)
+    train_idx = np.where(folds != 0)[0]
+    test_idx = np.where(folds == 0)[0]
+    if len(train_idx) < 3 or len(test_idx) < 1:
+        train_idx = np.arange(n)
+        test_idx = np.arange(n)
+    train_conv_ids = common[train_idx]
+
+    dev = torch.device(device)
+    tX_S = torch.from_numpy(np.ascontiguousarray(X_S)).to(dev)
+    tY_S = torch.from_numpy(np.ascontiguousarray(Y_S)).to(dev)
+    tX_T = torch.from_numpy(np.ascontiguousarray(X_T)).to(dev)
+    tY_T = torch.from_numpy(np.ascontiguousarray(Y_T)).to(dev)
+    t_train = torch.from_numpy(train_idx).to(dev)
+
+    # W_s: ALL common rows (parent ladder convention — Gate-1 parity anchors it).
+    W_s, b_s, lam_ws = _fit_ridge_inner_group_cv_t(tX_S, tY_S, common, lams)
+    # Rung-7 correction A: x_T -> x_S on the train fold.
+    A_W, A_b, lam_a = _fit_ridge_inner_group_cv_t(
+        tX_T[t_train], tX_S[t_train], train_conv_ids, lams
+    )
+    # Rung-8 correction B: y_S -> y_T on the train fold.
+    B_W, B_b, lam_b = _fit_ridge_inner_group_cv_t(
+        tY_S[t_train], tY_T[t_train], train_conv_ids, lams
+    )
+    return {
+        "common": common,
+        "train_idx": train_idx,
+        "test_idx": test_idx,
+        "X_S": X_S,
+        "Y_S": Y_S,
+        "X_T": X_T,
+        "Y_T": Y_T,
+        "W_s": W_s.cpu().numpy(),
+        "b_s": b_s.cpu().numpy(),
+        "A_W": A_W.cpu().numpy(),
+        "A_b": A_b.cpu().numpy(),
+        "B_W": B_W.cpu().numpy(),
+        "B_b": B_b.cpu().numpy(),
+        "lambdas_chosen": {"W_s": lam_ws, "A": lam_a, "B": lam_b},
+        "n_common": int(n),
+    }
+
+
 def _compare_pair_results(ref: dict, new: dict, atol: float = 1e-4) -> tuple[bool, list[str]]:
     """Compare numpy-engine vs torch-engine results for one (pair, arm).
 
@@ -1630,9 +1961,21 @@ def main() -> int:
         return _verify_equivalence(args)
 
     pairs_subset = None
+    generalized_specs = None
     if args.pairs_file is not None:
         loaded = json.loads(args.pairs_file.read_text())
-        if isinstance(loaded, dict):
+        if pairs_file_is_generalized(loaded):
+            # Cross-model pair specs ([[model, cond], [model, cond]] entries):
+            # route to the ADDITIVE generalized runner; the within-model path
+            # below stays byte-untouched.
+            generalized_specs = parse_pair_specs(loaded, default_model=args.model_slug)
+            if not generalized_specs:
+                raise ValueError(f"--pairs-file {args.pairs_file} resolves to an EMPTY pair set")
+            print(
+                f"[fit_ladder] GENERALIZED pair specs: {len(generalized_specs)} via --pairs-file",
+                flush=True,
+            )
+        elif isinstance(loaded, dict):
             # affected_pairs.json shape: {model_slug: {arm: [[src, tgt], ...]}}
             if args.model_slug not in loaded:
                 raise ValueError(
@@ -1644,9 +1987,49 @@ def main() -> int:
             )
         else:
             pairs_subset = [tuple(p) for p in loaded]
-        if not pairs_subset:
-            raise ValueError(f"--pairs-file {args.pairs_file} resolves to an EMPTY pair set")
-        print(f"[fit_ladder] pairs restricted to {len(pairs_subset)} via --pairs-file", flush=True)
+        if generalized_specs is None:
+            if not pairs_subset:
+                raise ValueError(f"--pairs-file {args.pairs_file} resolves to an EMPTY pair set")
+            print(
+                f"[fit_ladder] pairs restricted to {len(pairs_subset)} via --pairs-file", flush=True
+            )
+
+    if generalized_specs is not None:
+        if args.all_layers:
+            raise ValueError("--all-layers is not supported with generalized (cross-model) pairs")
+        grid_suffix = "" if args.lambda_grid == "ladder13" else f"_{args.lambda_grid}"
+        ckpt_dir = args.checkpoint_dir or args.out.parent / f"xpairs_L{args.layer}{grid_suffix}"
+        if args.merge:
+            results = merge_pairs_generalized(
+                ckpt_dir,
+                generalized_specs,
+                layer=args.layer,
+                n_bootstrap_draws=args.bootstrap_draws,
+                n_null_draws=args.null_draws,
+                lambda_grid=args.lambda_grid,
+            )
+        else:
+            results = run_pairs_generalized(
+                args.store_root,
+                generalized_specs,
+                layer=args.layer,
+                n_bootstrap_draws=args.bootstrap_draws,
+                n_null_draws=args.null_draws,
+                engine=args.engine,
+                device=args.device,
+                num_shards=args.num_shards,
+                shard_index=args.shard_index,
+                checkpoint_dir=ckpt_dir,
+                lambda_grid=args.lambda_grid,
+            )
+            if args.num_shards > 1:
+                print("[fit_ladder] shard done (generalized); assemble with --merge", flush=True)
+                return 0
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        with args.out.open("w") as fh:
+            json.dump(results, fh, indent=2)
+        print(f"[fit_ladder] wrote {args.out} ({results['n_pairs']} generalized pairs)", flush=True)
+        return 0
 
     layers = list(CAPTURE_LAYERS) if args.all_layers else [args.layer]
     for layer in layers:
