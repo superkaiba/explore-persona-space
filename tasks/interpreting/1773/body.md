@@ -5,7 +5,7 @@ title: SAE feature descriptions detect held-out activations but cannot pick a fe
 kind: experiment
 tags: []
 created_at: '2026-07-28T21:22:22Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1482
 origin_prompt: 'deep literature review on autointerpretability methods to describe
   SAE features -> design a pipeline for describing + categorizing along axes; Batch
