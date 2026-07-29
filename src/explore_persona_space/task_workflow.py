@@ -6741,7 +6741,11 @@ def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: in
     On the PRIMARY checkout the append IS the state (an events/comments/
     concerns row, a created task dir, plans/vN.md); the commit is bookkeeping
     the next successful commit of the same file sweeps up (git commits file
-    STATE, not deltas). Raising makes callers retry the WHOLE mutation and
+    STATE, not deltas). Exception: a gitleaks-finding deferral is never swept —
+    re-commits re-fail the hook until the finding is resolved (or, for a
+    verified false positive, its printed ``Fingerprint:`` line is appended to
+    ``.gitleaksignore``); the ERROR + sidecar row carry the extracted
+    fingerprint line(s) (#1780). Raising makes callers retry the WHOLE mutation and
     duplicate the append — the 2026-07-03 3x-marker incident on a #823 loop
     session; same rc-contract family as ``scripts/task.py::_safe_echo``
     (#537). So a PRE/AT-commit failure after a successful append LOGS AT
@@ -6792,15 +6796,42 @@ def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: in
         if not isinstance(e, CommitHeadGuardError) and _is_routed_root(repo_root()):
             raise  # routed append is NOT durable against the reset --hard re-sync
         stderr_tail = (getattr(e, "stderr", "") or str(e))[-500:]
+        # gitleaks-class deferral (#1780): a pre-commit gitleaks finding makes
+        # the generic "next successful commit sweeps it" recovery FALSE — every
+        # re-commit of the same paths re-fails the hook. Detect on the FULL
+        # captured streams: gitleaks runs FIRST in .pre-commit-config.yaml, so
+        # later hooks push its `Fingerprint:` line out of the 500-char tail
+        # (the recorded #1092 row provably lost it). Detection keys on the
+        # fingerprint SHAPE (`Fingerprint: <path>:<rule>:<line>`), which
+        # gitleaks emits only because scripts/hooks/gitleaks_scoped.sh pins
+        # `--verbose` (that hook is the emitter; not modified here).
+        full_err = "\n".join(
+            s for s in (getattr(e, "output", None), getattr(e, "stderr", None)) if s
+        ) or str(e)
+        gitleaks_fps = [
+            ln.strip()
+            for ln in full_err.splitlines()
+            if re.match(r"Fingerprint:\s+\S+:\S+:\d+", ln.strip())
+        ][:5]
+        gitleaks_note = ""
+        if gitleaks_fps:
+            gitleaks_note = (
+                " NOTE: the commit failed on a gitleaks finding — re-commits of "
+                "these paths will re-fail until the finding is resolved; if it is "
+                "a verified false positive, append the printed fingerprint "
+                "line(s) to .gitleaksignore and commit it together with the "
+                "swept paths (#1092 precedent: be36d6dc6a). " + "; ".join(gitleaks_fps)
+            )
         _log.error(
             "task #%d: %s applied DURABLY (append landed) but the git commit "
             "failed: %s: %s. Do NOT re-run the mutation (it would duplicate the "
-            "append); the next successful commit touching these paths sweeps it. "
+            "append); the next successful commit touching these paths sweeps it.%s "
             "Recorded in %s. Manual sweep: git add -- <paths> && git commit.",
             task_id,
             op,
             type(e).__name__,
             stderr_tail,
+            gitleaks_note,
             DEFERRED_COMMITS_LOG,
         )
         row = {
@@ -6812,6 +6843,9 @@ def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: in
             "error": type(e).__name__,
             "stderr_tail": stderr_tail,
         }
+        if gitleaks_fps:
+            row["gitleaks_finding"] = True
+            row["gitleaks_fingerprints"] = gitleaks_fps
         try:
             _append_jsonl_line(DEFERRED_COMMITS_LOG, row)
         except OSError:
