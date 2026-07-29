@@ -792,6 +792,87 @@ def test_cli_map_files_pairs_suppress_zero_resolution_guard(tmp_path: Path, caps
     assert "looks like a source file" not in captured.err
 
 
+# --- #1791: hostile --map-files content must reach the #1613 diagnostic -------
+# (not crash at a content-derived filesystem probe). The three line shapes:
+# a bare >NAME_MAX prose line (OSError Errno 36 at the guard's exists() scan),
+# an arm-eligible scripts/<300 chars>.py line (OSError at the stem probe,
+# which runs BEFORE the guard), and a scripts/*.py glob-metachar line
+# (ValueError "Invalid pattern" at the content-derived stem glob). The CLI
+# cases use a BARE work root (the test_cli_map_files_missing_test_dropped
+# precedent): the scripts/ lines match the broad scripts/**/*.py scan glob,
+# and against a _make_tree root the resulting pairs would legitimately
+# SUPPRESS the guard (the `all_pairs` conjunct) — the bare root drops those
+# pairs so the guard's verdict is what these cases pin.
+_HOSTILE_LINES = (
+    "lorem ipsum dolor sit amet consectetur adipiscing " * 8,
+    "scripts/" + "x" * 300 + ".py",
+    "scripts/*.py",
+)
+
+
+def test_cli_map_files_hostile_lines_py_argument_exit2(tmp_path: Path, capsys):
+    """A .py-named --map-files arg holding all three hostile line shapes
+    reaches the #1613 source-file ERROR: rc 2, empty stdout, no traceback
+    (an uncaught OSError/ValueError would propagate and fail this test)."""
+    bare = tmp_path / "bare"
+    bare.mkdir()
+    src = tmp_path / "some_module.py"
+    src.write_text("\n".join(_HOSTILE_LINES) + "\n")
+    rc = sel.main(["--map-files", str(src), "--repo-root", str(bare)])
+    assert rc == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "looks like a source file" in captured.err
+
+
+def test_cli_map_files_hostile_lines_list_argument_warns_exit0(tmp_path: Path, capsys):
+    """The same three hostile lines in a .md-named arg take the #1613 hedged
+    WARN branch: rc 0, empty stdout, no traceback."""
+    bare = tmp_path / "bare"
+    bare.mkdir()
+    listing = tmp_path / "notes.md"
+    listing.write_text("\n".join(_HOSTILE_LINES) + "\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(bare)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "ZERO existing repo paths" in captured.err
+    assert "looks like a source file" not in captured.err
+
+
+def test_cli_map_files_binary_argument_exit1(tmp_path: Path, capsys):
+    """A mis-passed BINARY (undecodable) --map-files arg takes the existing
+    rc-1 "cannot read" path — UnicodeDecodeError is a ValueError (#1791) —
+    never an uncaught traceback."""
+    repo = _make_tree(tmp_path, [])
+    blob = tmp_path / "payload.bin"
+    blob.write_bytes(b"\x80\x81\xfe\x00")
+    rc = sel.main(["--map-files", str(blob), "--repo-root", str(repo)])
+    assert rc == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "cannot read --map-files input" in captured.err
+
+
+def test_safe_exists_unstatable_paths_false(tmp_path: Path):
+    """_safe_exists: a >NAME_MAX path reads as absent (no OSError escape);
+    stat-able paths are byte-identical to Path.exists()."""
+    assert sel._safe_exists(tmp_path / ("x" * 300)) is False
+    assert sel._safe_exists(tmp_path / "nul\x00name") is False
+    assert sel._safe_exists(tmp_path) is True
+    assert sel._safe_exists(tmp_path / "absent.txt") is False
+
+
+def test_safe_glob_invalid_pattern_empty(tmp_path: Path):
+    """_safe_glob: a content-derived invalid pattern yields [] (no ValueError
+    escape); a valid pattern returns exactly sorted(root.glob(...))."""
+    (tmp_path / "test_alpha.py").write_text("# stub\n")
+    (tmp_path / "test_beta.py").write_text("# stub\n")
+    assert sel._safe_glob(tmp_path, "test_***.py") == []
+    assert sel._safe_glob(tmp_path, "test_*alpha*.py") == sorted(tmp_path.glob("test_*alpha*.py"))
+    assert sel._safe_glob(tmp_path, "test_*alpha*.py") == [tmp_path / "test_alpha.py"]
+
+
 # --- #1289: diff-base resolution (fetched origin/main default) -----------------
 def _git_out(cwd: Path, *args: str) -> str:
     """Hermetic git runner that RETURNS stdout (rev-parse probes for cases 30-32)."""
