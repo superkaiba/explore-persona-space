@@ -129,6 +129,16 @@ Behaviours:
   normalized to ``|`` first. The
   ``.claude/hooks/guard_piped_git_push.sh`` PreToolUse hook covers the
   inline ad-hoc commands that never reach a committed script (#1048).
+* ``--check-agents-note-argv-verdict`` (also bundled into the no-flags
+  default run): walk every ``*.md`` under ``.claude/agents/`` and FAIL on
+  any line prescribing an argv-prose ``--note`` verdict/marker post via a
+  command substitution — the pattern task #1743 banned from agent specs
+  (merged 99af2fbb0d) and rewrote to the ``post-marker --file`` channel;
+  the standing pin is #1785 (#1722/#1756 argv-substitution incident
+  family). The sanctioned variable form (resolve every command
+  substitution into a shell variable FIRST, then pass the variable as the
+  note) never matches. No waiver: reword prose that would match (the
+  #1743 r2 precedent).
 * ``--check-push-failure-swallow`` (also bundled into the no-flags default
   run): walk every ``*.sh`` under ``scripts/`` and FAIL on any logical
   line where a ``git push`` is followed ON THE SAME LINE by ``|| echo`` /
@@ -11979,7 +11989,11 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 65,540 B post-#1081 r2 (D3 crash-fix-relaunch addendum:
     # disposition-conditional resume-glob confirm), 65,500 — measured
     # 62,672 B)
-    "experimenter.md": 75_400,
+    # measured 76,828 B post-#1800 (Before Running item 4b output-persist
+    # pre-launch gate — the #1739 dispatch-time backstop, output-side
+    # sibling of the item-4 input gate; plan-mandated growth; cap =
+    # measured + ~0.87 KB — LANDING bytes, per #1753.)
+    "experimenter.md": 77_700,
     # measured 49,740 B post-#1115 (read-hygiene context-budget section —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
     # measured 48,197 B post-#1102)
@@ -11991,10 +12005,14 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 46,187 B post-#1082 (negative-existence search recipe),
     # 43,500 / 40,990 B)
     "research-pm.md": 47_000,
-    # measured 50,741 B post-#1535 (Step 2.7 declared-off-pod outputs
+    # measured 51,638 B post-#1834 (marker-materialized producer-schema
+    # rule bullet: remediation naming the producer-schema duty +
+    # schema-mismatched canonical file is a GAP/FAIL — plan-mandated
+    # growth; cap = measured + ~1.2 KB. Prior: 51,500 — measured
+    # 50,741 B post-#1535 (Step 2.7 declared-off-pod outputs
     # sub-rule + Step 2.8 off_pod_phases reads arm — plan-mandated growth;
     # cap = measured + ~0.8 KB. Prior: 47,800 — measured 46,830 B post-#1115)
-    "upload-verifier.md": 51_500,
+    "upload-verifier.md": 52_800,
 }
 
 
@@ -12644,6 +12662,72 @@ def check_skill_bang_backtick(*, claude_dir: Path | None = None) -> list[str]:
                         "hazard, #1243/#1266) — reword: insert a space before "
                         "the backtick or write 'bang-backtick' in prose"
                     )
+    return errors
+
+
+# ── --check-agents-note-argv-verdict (#1743/#1785) ───────────────────────────
+# Both banned-pattern strings are built by FRAGMENT CONCATENATION so this
+# module's own source never carries the exact matched literal — a future
+# `grep scripts/` sweep for either pattern stays clean (the same self-match
+# avoidance the guard hooks use).
+_NOTE_ARGV_VERDICT_P1 = 'note "$(' + "cat"  # the #1743 acceptance-grep pattern
+_NOTE_ARGV_VERDICT_P2 = "--note " + '"$('  # the #1743 reviewer's broader variant
+
+
+def check_agents_note_argv_verdict(*, agents_dir: Path | None = None) -> list[str]:
+    """Walk every ``*.md`` under ``.claude/agents/`` and FAIL on any line
+    prescribing an argv-prose ``--note`` verdict/marker post opened as a
+    command substitution — the pattern task #1743 (merged 99af2fbb0d)
+    banned from agent specs and rewrote to the ``post-marker --file``
+    channel; #1785 pins that acceptance grep as this standing check.
+
+    Two literal substrings are flagged (built by fragment concatenation
+    above so this module's own source never carries either matched
+    literal): P1 — the #1743 acceptance-grep pattern (a note flag whose
+    body opens as a substitution around ``cat``); P2 — the #1743
+    reviewer's broader variant (any note flag opening directly into a
+    command substitution). Rationale (the #1722/#1756 incident family): a
+    command substitution nested inside an already-double-quoted note
+    argument collapses backslash-escaped inner quotes (git reads them
+    literal, silently yielding empty output and a blank field in the
+    durable marker), and the PreToolUse guards scan the whole Bash argv —
+    heredoc bodies included — so a spec PRESCRIBING the argv shape steers
+    every future agent into the very block the ``--file`` channel exists
+    to avoid.
+
+    Deliberately NOT matched — do not "fix" this check into flagging it:
+    the sanctioned variable form (resolve every command substitution into
+    a shell variable FIRST, then pass the variable as the note argument)
+    has no substitution opener adjacent to the note token, so it passes
+    by construction.
+
+    Plain substring match; no allowlist and no comment/fence skipping —
+    agent specs are prose, and the #1743 r2 precedent is to REWORD a line
+    that would match (a warning can describe the ban without carrying the
+    literal).
+
+    ``agents_dir`` is an override hook for unit tests; production callers
+    pass None and the function walks the canonical
+    ``<repo_root>/.claude/agents`` tree. Bundled into the no-flags default
+    run (same policy as ``check_piped_git_push``).
+    """
+    root = agents_dir if agents_dir is not None else _REPO_ROOT / ".claude" / "agents"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for md in sorted(root.rglob("*.md")):
+        if not md.is_file():
+            continue
+        lines = md.read_text(encoding="utf-8").splitlines()
+        for lineno, line in enumerate(lines, start=1):
+            if _NOTE_ARGV_VERDICT_P1 not in line and _NOTE_ARGV_VERDICT_P2 not in line:
+                continue
+            rel = md.relative_to(_REPO_ROOT) if agents_dir is None else md
+            errors.append(
+                f"{rel}:{lineno}: agent spec prescribes an argv-prose --note "
+                f"verdict/marker post (the pattern #1743 banned; use the "
+                f"--file channel)"
+            )
     return errors
 
 
@@ -13432,6 +13516,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "2026-07-10). '$!' shell-pid prose is exempt. No waiver: reword "
         "instead. Bundled into the no-flags default run.",
     )
+    parser.add_argument(
+        "--check-agents-note-argv-verdict",
+        action="store_true",
+        help="FAIL on any .claude/agents/**/*.md line prescribing an "
+        "argv-prose --note verdict/marker post opened as a command "
+        "substitution — the pattern #1743 banned and rewrote to the "
+        "post-marker --file channel (#1722/#1756 argv-substitution "
+        "incident family; pinned by #1785). The sanctioned "
+        "resolve-into-a-shell-variable-first form never matches. No "
+        "waiver: reword instead (the #1743 r2 precedent). Bundled into "
+        "the no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     if args.regen_hf_routing_snapshot:
@@ -13522,6 +13618,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_marker_scalar_integrity
         or args.check_poller_marker_consumers
         or args.check_skill_bang_backtick
+        or args.check_agents_note_argv_verdict
     )
 
     errors: list[str] = []
@@ -13672,6 +13769,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_asw_docstring_pass_count())
     if args.check_skill_bang_backtick or no_flags:
         errors.extend(check_skill_bang_backtick())
+    if args.check_agents_note_argv_verdict or no_flags:
+        errors.extend(check_agents_note_argv_verdict())
 
     if errors:
         for err in errors:

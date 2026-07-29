@@ -435,19 +435,28 @@ upload` is the #825 stranding order (a hung serial fit left the turnstore
 off HF; recovery = a fresh GPU re-extraction). Full rule:
 `.claude/rules/upload-policy.md` expensive-store-before-long-fit bullet.
 
-Off-pod phase declaration + reads enumeration (#1482/#1426): a plan with a
-pod/backend dispatch AND ≥1 subsequent off-pod phase (VM / cpu-lane /
-Batch-API judge or analysis) MUST carry a fenced `off_pod_phases:` block in
+Cross-phase reads declaration (#1482/#1426/#1773): a plan in which ANY
+dispatched phase reads ANOTHER phase's outputs — a pod/backend dispatch
+with ≥1 subsequent off-pod phase (VM / cpu-lane / Batch-API judge or
+analysis), AND equally a pod-gpu/GCE/SLURM phase consuming VM-produced
+inputs (git-clone lanes stage only the pushed branch — the #1773 inverse
+seam) — MUST carry a fenced `off_pod_phases:` block in
 this section — per phase: `runs_on`, `reads` (each path + producing phase +
-permanent source) and `outputs` (each path + off-pod dest). Every read must
-be in the pod's upload set or vm-resident-by-construction (the gotchas.md
-off-pod bullet, mechanized at plan time); the declaration is what lets
+permanent source the CONSUMING machine can fetch) and `outputs` (each path
++ dest). Every read must
+be in the producing phase's upload set or vm-resident-by-construction
+(legal only for VM-EXECUTING phases — the gotchas.md
+cross-machine bullet, mechanized at plan time); a VM-produced →
+git-clone-lane read additionally names the producer's fail-loud bulk
+upload step + the consumer launcher's scoped staging step (§9 rules
+bullet). The declaration is what lets
 upload-verifier Step 2.8 gate the READS before termination (#1482) and
 Step 2.7 reconcile the OUTPUTS at the off-pod destination instead of
 FAILing r1 by construction (#1426). Pod-free / single-machine plans omit
 the block entirely; an off-pod phase named in prose without the block draws
 the verifier's `off-pod-phase-spec-absent` WARN + `verify_plan.py` c39
-WARN. Template + worked example:
+WARN (c39's trigger vocabulary does not fire on inverse-direction prose —
+that direction is planner+critic-enforced). Template + worked examples:
 `.claude/rules/planner-section-reference.md` § 9 (off_pod_phases).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
@@ -473,7 +482,13 @@ declared boundary, the new regime read against it, and the engaged
 mitigation or stated justification) · per-stage
 output-artifact destinations (`raw_completions/<stage>/`,
 `analysis_tensors/`) (a declared off-pod phase's outputs carry their
-OFF-POD dest — mirror §9's off_pod_phases block) · the `discarded_artifacts:` slot
+OFF-POD dest — mirror §9's off_pod_phases block) — and for any stage whose
+§9 lane is EPHEMERAL (GCE DELETE-on-exit, RunPod terminate-on-verify),
+every text/JSON output row MUST name an HF (non-LFS) dest; "git issue
+branch" alone is legal only for VM-resident stages or with a named
+pre-teardown harvest phase (#1738: two summary JSONs declared git-only
+on the DELETE-on-exit GCE lane were lost at reap) ·
+the `discarded_artifacts:` slot
 ({name, reason, regen_recipe}; text/JSON is NEVER a valid discard).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`

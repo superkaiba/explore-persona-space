@@ -154,7 +154,9 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    verify gate passes: the transcript existence probe read True, or ≥1
    `upload_folder` returned success), `failed_uploads` (rc 3 — the
    persist ran to completion but ZERO uploads verifiably succeeded,
-   #1343/#1315), `timeout` (rc 124), `failed_rc<N>` (any other rc). A
+   #1343/#1315), `timeout` (rc 124), `failed_stream_flush` (rc 120 —
+   dead stdout/fd-3 pipe at interpreter exit, #1799),
+   `failed_rc<N>` (any other rc). A
    MISSING rc file deliberately writes NOTHING: the standing `attempted`
    IS the killed-mid-persist signal. A boot-time DELETE clears the key so
    a salvage-relaunch second boot never inherits a prior crash's value.
@@ -179,6 +181,7 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    | `failed_uploads` | absent | the #1315 shape: TOTAL upload failure (dead HF channel / 429 storm / rejected token) previously masked as `ok`; nothing recoverable on HF — recover via serial console / boot-disk surgery |
    | `failed_uploads` | present | late-landing commit(s) — the #1339 gateway-timeout shape: the client logged FAILED, the commit landed server-side after the probe; trust a scoped prefix listing over the breadcrumb |
    | `timeout` | absent/partial | 300s budget exhausted (stalled uploads — the 504 shape). Since #1343, `timeout` can also follow a completed-uploads persist whose verify probe ate the budget tail — a PRESENT HF prefix alongside `timeout` is consistent with a healthy persist SIGTERMed mid-probe |
+   | `failed_stream_flush` | absent | pre-#1799 shape: the persist python died on a dead stdout/fd-3 pipe (runner killed — kernel-OOM unit teardown, #491 scanner overflow) before the first upload (rc 120, the CPython Py_FinalizeEx std-stream flush failure; incident #1739). Post-#1799 the `_say` guard + streamer PIPE re-arm + `os._exit` make this value unreachable — its reappearance means the #1799 guards regressed |
    | `failed_rc<N>` | absent | bootstrap/compound failure (127 = uv missing; 1 = cd short-circuit OR python top-level failure; else python rc) |
 
 **Sweep scope (explicit):** the partial sweep covers exactly the three

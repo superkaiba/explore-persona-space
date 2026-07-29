@@ -34,7 +34,10 @@ You are the PLANNER. Your job is to design a concrete, detailed plan for the fol
 
 **Canonical Goal (current at spawn; re-read before returning — planner.md
 § Goal-currency guard):** [GOAL TEXT or "no goal: frontmatter — use the
-body's ## Goal H2"]
+body's ## Goal H2"; TRIGGER-DENSE CARVE-OUT: when the Goal itself carries
+trigger-dense phrasing per the CLAUDE.md refusal-ladder clause (e)
+goal-channel clause, fill this slot with the task id + `body.md` path (or a
+mechanistic paraphrase) INSTEAD of the verbatim snapshot text]
 
 **If this is a `type:batch` issue (the body lists N independent items):**
 Structure your plan as N independent sections, one per body item. Each
@@ -84,7 +87,10 @@ the Goal snapshot when you spawn the planner —
 when that is empty (no `goal:` frontmatter — `kind: infra | batch | survey`),
 fall back to the body's `## Goal` H2 text (`jq -r '.body'` + the H2 slice), so
 the gate is non-vacuous on body-Goal tasks too. Inline the snapshot in the
-brief (template above). Immediately BEFORE every
+brief (template above); on a trigger-dense Goal the BRIEF instead renders
+the Goal by reference (the template's Goal-slot carve-out) — `GOAL_SNAP` is
+still captured orchestrator-side and this pre-persist equality gate is
+unchanged. Immediately BEFORE every
 `task.py new-plan-version` persist (Phase 1 initial draft, Phase 1.5.0
 mechanical-bounce redrafts, Phase 3 revisions), re-read the same field and
 compare to the snapshot (plain text equality). On ANY difference — the user
@@ -350,12 +356,20 @@ Run the structural verifier against the plan version just persisted:
   invocation), and
   `N/A — no off-pod phase` (check 39 — the off-pod / vm-side vocabulary is
   incidental, not a real off-pod phase of this plan; a plan with a genuine
-  off-pod phase instead declares the fenced `off_pod_phases:` block —
-  planner-section-reference.md § 9), and
+  cross-phase read (an off-pod phase, or a dispatched-lane phase consuming
+  VM-produced inputs, #1773) instead declares the fenced
+  `off_pod_phases:` block — planner-section-reference.md § 9), and
   `N/A — no regression anchors` (check 41 — the anchor/gate vocabulary is
   incidental or quotes a sibling/incident, not this plan's own anchor claim;
   a plan whose anchor is genuinely unexecuted instead names the exact pytest
-  command or maps it from a touched file).
+  command or maps it from a touched file), and
+  `no sentinel dependence — auto-safe` (check 43 — the
+  plan-compute-sizing.md § Sentinel-signaling-workloads escape, declared
+  standalone WITHOUT the N/A prefix; the `N/A — no sentinel dependence`
+  form is also accepted. Use it when the `/workspace/...` sentinel
+  vocabulary is quoted but nothing in the run posts through sentinels; a
+  genuinely sentinel-signaling plan instead pins a /workspace-contract
+  lane — `backend: gcp` / `backend: runpod`).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).

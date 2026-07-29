@@ -1231,6 +1231,9 @@ first (SKILL.md Step 9a-ter § Inline payload lint gate, #1388/#1460/#1500):
   uv run python scripts/inline_lint_gate.py --issue <N> \\
     --payload-file /tmp/issue-<N>-inline-payload.txt     # ONE background Bash (~3-8 min)
 On PASS it certifies each path's exact content; re-run after any further edit.
+If your blocked command COMPOUNDED "git add ... && git commit ...", the add
+never ran either — re-stage before retrying the commit (2026-07-28: a retry
+without the add hit a pathspec error).
 Committing in a WORKTREE instead? Use git -C "\$WT" commit (worktrees are
 gated at Step 10d, not here). NEVER hand-write ${CERT} (#1082 parity).
 Genuinely pre-existing red on a MODIFIED payload file the gate refused, or an
