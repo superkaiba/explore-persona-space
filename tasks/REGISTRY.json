@@ -5972,8 +5972,8 @@
       "goal": "Determine when behavioral commitment happens in Qwen-2.5-7B-Instruct: does steering a persona-vector direction r_B only during prefill vs only during decode vs both change on-policy judged behavior expression - i.e., is the answer's behavior already committed in the pre-answer context state, or decided token-by-token during generation?",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/1769",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/1769",
+      "status": "followups_running",
       "title": "Decode-driven behavioral commitment at \u03b1=2 is convention-robust for evil and sycophancy; hallucination flips to mixed under intrusion-robust scoring (MODERATE confidence)"
     },
     "1770": {
