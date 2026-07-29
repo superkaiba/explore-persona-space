@@ -6052,7 +6052,13 @@ def poll_once(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawTextHelpFormatter
+        description=__doc__,
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog=(
+            "NOTE: this poller is RunPod/SSH-signature (--pod/--log/--pid-file all required).\n"
+            "For GCP / handle-based runs use scripts/backend_poll.py --issue <N>\n"
+            "(reads .claude/cache/issue-<N>-handle.json)."
+        ),
     )
     parser.add_argument("--issue", type=int, required=True, help="Task / issue number.")
     parser.add_argument("--pod", required=True, help="SSH host alias (e.g. epm-issue-137).")
