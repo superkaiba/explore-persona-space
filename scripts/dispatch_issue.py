@@ -1053,6 +1053,7 @@ def _resolve_workload_driver_script(
                 text=True,
                 timeout=15,
                 check=False,
+                env={**os.environ},
             )
         except (OSError, subprocess.SubprocessError):
             continue
