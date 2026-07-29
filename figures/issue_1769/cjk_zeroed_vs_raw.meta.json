@@ -1,0 +1,143 @@
+{
+  "commit": "0712ae5ea1",
+  "created": "2026-07-29T10:00:19Z",
+  "figsize": [
+    10.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.175,
+      "Mean graded score (0-100)": 37.11700167504188,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.825,
+      "Mean graded score (0-100)": 31.66742424242424,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.175,
+      "Mean graded score (0-100)": 3.542713567839196,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.175,
+      "Mean graded score (0-100)": 2.9158249158249157,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.175,
+      "y": 29.61566164154104,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.825,
+      "y": 34.73849999999999,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.175,
+      "y": 0.6591289782244557,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.175,
+      "y": 1.499,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.175,
+      "y": 39.83170103092783,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.825,
+      "y": 46.097807017543865,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.175,
+      "y": 1.0309278350515463,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.175,
+      "y": 0.5263157894736842,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 12,
+  "text": {
+    "suptitle": "Score collapses when CJK-intruded draws are zeroed: convention-dependent verdicts",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Scheming",
+        "ylabel": "Mean graded score (0-100)",
+        "xticklabels": [
+          "Decode only",
+          "Both phases"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ]
+      },
+      {
+        "title_left": "Sycophancy",
+        "xticklabels": [
+          "Decode only",
+          "Both phases"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ]
+      },
+      {
+        "title_left": "Hallucination",
+        "xticklabels": [
+          "Decode only",
+          "Both phases"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ]
+      }
+    ],
+    "series": [
+      "Raw score",
+      "CJK-intruded draws zeroed"
+    ]
+  }
+}
