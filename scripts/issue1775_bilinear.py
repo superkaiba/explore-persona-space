@@ -30,6 +30,7 @@ verdict co-signature.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 import time
@@ -686,8 +687,24 @@ def assemble(units, ad, Yp, info_p, X, pairs_by_scheme, args, out_dir, params_di
                 import json as _json
 
                 amb_p = out_dir / "ambient_companion.json"
-                if amb_p.exists():
-                    sch_out["ambient_companion"] = _json.loads(amb_p.read_text())
+                amb_loaded = _json.loads(amb_p.read_text()) if amb_p.exists() else None
+                if amb_loaded is not None and not (
+                    amb_loaded.get("meta", {}).get("smoke") == bool(args.smoke)
+                    and amb_loaded.get("r_star_from_pca48") == int(r_star)
+                ):
+                    # round-2 Minor-1 regime check: never present a wrong-regime
+                    # companion (e.g. smoke-scale JSON in a production out-root,
+                    # or a stale r*) as current — refit instead of loading.
+                    print(
+                        "[bilinear/ambient] ambient_companion.json regime mismatch "
+                        f"(meta.smoke={amb_loaded.get('meta', {}).get('smoke')} vs "
+                        f"{bool(args.smoke)}; r_star_from_pca48="
+                        f"{amb_loaded.get('r_star_from_pca48')} vs {int(r_star)}) — refitting",
+                        flush=True,
+                    )
+                    amb_loaded = None
+                if amb_loaded is not None:
+                    sch_out["ambient_companion"] = amb_loaded
                 elif args.schemes is None:
                     amb = ambient_companion(ad, X, pairs, r_star, args, params_dir)
                     amb["meta"] = result_meta(smoke=args.smoke, r_star=int(r_star))
@@ -732,10 +749,34 @@ def ambient_companion(ad, X, pairs, r_star, args, params_dir) -> dict:
     t0 = time.monotonic()
     n_fits_total = 2 * len(pairs)
     n_fits_done = 0
+    # round-2 CONCERN ambient-companion-no-intra-loop-resume: per-(f, r) pred
+    # files are durable — resume them on a crash-restart iff the regime sidecar
+    # matches (same smoke mode + r*); else purge stale preds and refit all.
+    regime = {"smoke": bool(args.smoke), "r_star": int(r_star)}
+    regime_p = params_dir / "ambient_pred_regime.json"
+    resume_ok = regime_p.exists() and json.loads(regime_p.read_text()) == regime
+    if not resume_ok:
+        for stale in sorted(params_dir.glob("pred_ambient_prefix_f*_r*.npy")):
+            print(f"[bilinear/ambient] purging non-matching-regime {stale.name}", flush=True)
+            stale.unlink()
+        atomic_write_json(regime_p, regime)
     for r in (0, int(r_star)):
         pred = np.zeros((n, d_out))
         cov = np.zeros(n, dtype=bool)
         for f, (tr, te) in enumerate(pairs):
+            pred_p = params_dir / f"pred_ambient_prefix_f{f}_r{r}.npy"
+            if resume_ok and pred_p.exists():
+                cached = np.load(pred_p)
+                if cached.shape == (len(te), d_out):
+                    pred[te] = cached.astype(np.float64)
+                    cov[te] = True
+                    n_fits_done += 1
+                    print(
+                        f"[bilinear/ambient] RESUME r={r} fold={f}: loaded {pred_p.name} "
+                        f"({n_fits_done}/{n_fits_total}), skipping fit",
+                        flush=True,
+                    )
+                    continue
             Xn = _standardize_train(X, tr)
             res = bilinear_fit_batched(
                 Xn,
@@ -753,7 +794,7 @@ def ambient_companion(ad, X, pairs, r_star, args, params_dir) -> dict:
                 acc += _best_variant(res["variants"], s)["pred_te"].astype(np.float64)
             pred[te] = acc / len(args.seeds)
             cov[te] = True
-            np.save(params_dir / f"pred_ambient_prefix_f{f}_r{r}.npy", pred[te].astype(np.float16))
+            np.save(pred_p, pred[te].astype(np.float16))
             n_fits_done += 1
             elapsed = time.monotonic() - t0
             print(
