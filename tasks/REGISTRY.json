@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1821,
+  "highest_id": 1822,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6364,6 +6364,13 @@
       "path": "tasks/proposed/1821",
       "status": "proposed",
       "title": "daily-fix: bake self-pid exclusion into single-flight probe"
+    },
+    "1822": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1822",
+      "status": "proposed",
+      "title": "daily-held: default chat-drafted programs to advisory readou"
     },
     "183": {
       "has_clean_result": true,
