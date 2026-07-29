@@ -6009,8 +6009,8 @@
       "goal": "Characterize the fitted linear context\u2192answer operators across the four arms (prefix-end, context, bare-query, query-averaged) as operators \u2014 algebraic consistency, per-arm channel structure and trait tables, null-space ceilings with causal-inertness tests, and gate-conditional endomorphism reads (decoded SVD, eigen/copying, preservation map, trait gain matrix, fixed point) \u2014 all noise-ceiling-gated, per Task A of docs/ideas/2026-07-28-four-arm-map-theoretical-analysis-plan.md",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/1774",
-      "status": "interpreting",
+      "path": "tasks/reviewing/1774",
+      "status": "reviewing",
       "title": "Linear maps predict held-out answer states from the full context or the bare query but not from the genuinely pre-query prefix state, which keeps only persona-average signal (HIGH confidence)"
     },
     "1775": {
