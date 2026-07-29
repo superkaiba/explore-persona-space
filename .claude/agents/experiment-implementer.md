@@ -483,17 +483,19 @@ such corpora or banks:
    `sweep_scope:` token on this path is the fixed literal `selector-universe`
    (declared by the tool via its arm exclusions, not by the implementer).
    Run every hit file.
-   Additionally, grep `tests/` for each changed literal (old+new) as a
-   belt-and-suspenders check that catches literals in prose / docstrings /
-   comments the selector arms skip — a grep-only hit that is NOT in the
-   tool's stdout still gets run and added to `(c)`'s ran-locally list, and
-   is called out with `sweep_scope: repo-wide (grep-only supplement)` on a
-   SEPARATE `pin-sweep:` line (never fused with the selector line).
    Experiment kinds skip Step 9c; that merge-gate leg is the backstop.
    Report format: `pin-sweep: <fragments> → <N> hit files: <verbatim
    dedup list from --map-files stdout>; sweep_scope: selector-universe`.
    This adds a report record only, not a `Gate-scope check` line — code-
    reviewer Step 4.6's binding scope (`epm:results` only) is unchanged.
+2b2. **Deleted/moved-literal grep (#1699; own sub-step per #1744).** For
+   each line your diff deletes or moves — and each changed literal — grep
+   `tests/` for its verbatim text (OLD and NEW form): this catches
+   literals in prose / docstrings / comments the selector arms skip. A
+   grep-only hit NOT in the tool's stdout is still run and added to
+   `(c)`'s ran-locally list, called out with `sweep_scope: repo-wide
+   (grep-only supplement)` on a SEPARATE `pin-sweep:` line (never fused
+   with the selector line).
 2c. **Repo-wide invariants in the local union (#1699).** When your diff
    touches any `scripts/*.py` or `src/**` file, ADD these three static
    scans to the local test union regardless of what the touched-file

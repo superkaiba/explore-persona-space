@@ -338,8 +338,15 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
       Sweep-parallelism row — every shard needs the pod at once, which is phases of the SAME width
       run in parallel, NOT a sequence of phases of DIFFERENT widths). Conversely, REVISE a plan
       that leaves a DECLARED shardable axis (>~2 h serial on 1×) on a narrow GCP provision without
-      justification — the width-aware auto lane (#1121) makes `--gpus N` wide provisioning the
-      encouraged default; "GCP only had 1× intents" is no longer a valid reason.
+      a BINDING justification — one that names the wall-dominant GPU-BOUND phase(s) kept narrow and
+      addresses THEIR bottleneck specifically. A true-but-irrelevant bottleneck claim about a
+      DIFFERENT phase (an API-bound judge phase, a CPU Gram-solve / fit, an off-pod analysis) does
+      not justify narrow width for the shardable phase(s) kept narrow (e.g. generation/capture
+      legs, a training fan-out) and is a REVISE exactly as if no justification were stated
+      (incident #1739: a plan kept its wall-dominant, declared-shardable vLLM generation + capture
+      legs at 1×, justified by Anthropic-API + CPU-fit bottlenecks in OTHER phases; leg-1 wall ran
+      ~2-3× longer than a wide dispatch). The width-aware auto lane (#1121) makes `--gpus N` wide
+      provisioning the encouraged default; "GCP only had 1× intents" is no longer a valid reason.
 
     Plan-time scheduling / routing only, never a mid-run cost or disk gate. Not a REVISE when the
     plan declares the phase off-pod on the VM AND its footprint is ≤50 GB (or it streams without
@@ -349,8 +356,9 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     re-provision-cost-vs-idle-$ tradeoff for holding the wide pod, nor a shared-nothing sweep of N
     SAME-width seeds run SIMULTANEOUSLY on one wide pod (which is NOT a sequence of phases of
     DIFFERENT widths). Also REVISE a plan that dispatches a pod AND routes a subsequent phase
-    off-pod without the §9 off_pod_phases declaration (reads + outputs — upload-verifier
-    Steps 2.7/2.8 consume it; #1426/#1482/#1535).
+    off-pod — or that has ANY dispatched phase consuming another phase's outputs (incl.
+    VM-produced inputs on a git-clone lane, #1773) — without the §9 off_pod_phases declaration
+    (reads + outputs — upload-verifier Steps 2.7/2.8 consume it; #1426/#1482/#1535).
 11. **Marker stopping recipe grounded in a non-marker parent (parity is not a Source) +
     runtime-guard smoke-verifiability.** If the plan trains a FRESH marker / behavior-implant
     adapter, the stopping recipe (lr, epochs / steps, checkpoint selection) must be grounded in
@@ -636,27 +644,41 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     also a replication of a named published recipe — do NOT double-bounce with Methodology lens item
     7 (replication fidelity) for the same recipe-fidelity finding; pick this item for
     persona-vectors-specific failures and item 7 only for a broader replication-recipe deviation.
-18. **Persist-by-default — undeclared generation-discard / missing rollout-text persist (verify §10
-    + §4).** If the plan has a GENERATION-AND-REDUCE stage (persona-vector extraction; an
-    online-scored eval reducing completions to a rate; any stream-reduce over model generations),
-    verify §4 lists the rollout TEXT under `raw_completions/<stage>/` and §10 declares any
-    deliberate intermediate-tensor discard in the `discarded_artifacts:` slot with `{name, reason,
-    regen_recipe}` — per CLAUDE.md § Upload Policy persist-by-default and planner.md §10 / §4.
+18. **Persist-by-default — undeclared generation-discard / missing rollout-text persist /
+    ephemeral-lane git-only text-JSON dest (verify §10 + §4 vs the §9 lane).** If the plan has a
+    GENERATION-AND-REDUCE stage (persona-vector extraction; an online-scored eval reducing
+    completions to a rate; any stream-reduce over model generations) OR any text/JSON output row
+    produced on an EPHEMERAL §9 lane (GCE DELETE-on-exit; a RunPod terminate-on-verify pod),
+    verify — for a generation-and-reduce stage — that §4 lists the rollout TEXT under
+    `raw_completions/<stage>/` and §10 declares any deliberate intermediate-tensor discard in the
+    `discarded_artifacts:` slot with `{name, reason, regen_recipe}`, and — for an ephemeral-lane
+    text/JSON output row — that its §10 destination survives the lane's teardown (an HF non-LFS
+    dest, or git with a named pre-teardown harvest phase) — per CLAUDE.md § Upload Policy
+    persist-by-default and planner.md §10 / §4.
     REVISE when (i) a generation-and-reduce stage drops its rollout TEXT with no persist declaration
     (text is non-LFS, KB–MB, and the regenerating minimum — dropping it forces a sibling to
     re-sample), (ii) the plan discards a large intermediate tensor WITHOUT a `discarded_artifacts:`
     entry naming the regen recipe (so the upload-verifier cannot distinguish an intended drop from
-    silent loss and will FAIL at Step 3), or (iii) the plan's `discarded_artifacts:` slot names
+    silent loss and will FAIL at Step 3), (iii) the plan's `discarded_artifacts:` slot names
     model generations / rollout text / any text-JSON artifact — the slot licenses ONLY large
     intermediate-TENSOR discards, and a text-naming entry is an invalid declaration the verifier
-    will FAIL (`generation-discard-declared-invalid`). Conclusion-changing because a follow-up /
+    will FAIL (`generation-discard-declared-invalid`), or (iv) a text/JSON output row produced on
+    an EPHEMERAL lane carries ONLY a git destination with no named pre-teardown harvest phase —
+    the file dies with the disk on a clean exit (#1738: `multiturn_100k_fits.json` +
+    `mapping_baselines.json`, fit-summary JSONs declared git-only on the DELETE-on-exit GCE lane,
+    reaped minutes after exit; 28-min rebuild round). Conclusion-changing because a follow-up /
     sibling arm inherits an unrecoverable gap — #779's extraction rollouts were reduced-and-dropped,
     so arms B/C had to regenerate the rollouts from scratch. Not a REVISE when the plan has no
-    generation-and-reduce stage (§4 "N/A — no generation-and-reduce stage"), when text is persisted
-    + every big-tensor discard is declared with a regen recipe, or for `kind:
-    analysis|infra|batch|survey` plans that produce no model generations. mechanizable: partial — a
+    generation-and-reduce stage (§4 "N/A — no generation-and-reduce stage" — an escape for clauses
+    (i)-(iii) ONLY; clause (iv) binds regardless of generation-and-reduce presence), when text is
+    persisted + every big-tensor discard is declared with a regen recipe, for `kind:
+    analysis|infra|batch|survey` plans that produce no model generations AND no lane-side
+    text/JSON, or — for clause (iv) — when the stage is VM-resident, an HF (non-LFS) dest is
+    named, or a pre-teardown harvest phase is named. mechanizable: partial — a
     future `verify_plan.py` check could assert that a plan naming a generation-and-reduce stage
-    carries a `raw_completions/<stage>/` persist line or a `discarded_artifacts:` entry.
+    carries a `raw_completions/<stage>/` persist line or a `discarded_artifacts:` entry, and a
+    destination-vs-lane check could flag a clause-(iv) ephemeral-lane text/JSON row whose only
+    stated destination is git.
 
 ### Statistics & Measurement lens
 

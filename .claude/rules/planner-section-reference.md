@@ -3,7 +3,7 @@ paths:
   - ".claude/rules/planner-section-reference.md"
 description: >
   Full templates + worked examples for the planner.md plan sections
-  (§0.0 / §0 / §4 / §6 / §6.5 / §7 / §9 / §10 / §11), relocated verbatim from
+  (§0.0 / §0 / §3 / §4 / §6 / §6.5 / §7 / §9 / §10 / §11 / §12), relocated verbatim from
   .claude/agents/planner.md (#838). Loaded ONLY via the explicit pointer lines
   in planner.md — the self-matching `paths:` glob keeps this file out of every
   other agent context (a missing `paths:` key would auto-inject it always-on
@@ -114,6 +114,77 @@ code-enforced gate in `task.py --auto-approve-if-autonomous` already
 decided, and the PreToolUse hook
 <!-- gate: gates.plan_approval --> hard-blocks any `AskUserQuestion` if
 reached.
+
+## 3. Hypothesis
+
+(Relocated verbatim from planner.md §3, #1740.)
+
+**Registered verdict lattice — declare it in the machine-checkable form.** A plan
+REGISTERS a verdict lattice when it pre-defines outcome labels (Confirmed /
+Falsified / H-slots / pass-fail-inconclusive grids) as interval predicates over
+the same point estimates and CIs. `scripts/verify_plan.py` check 20
+(`check_verdict_lattice_coherence`) verifies the labels PARTITION the outcome
+space: two labels co-firing on one sign/CI cell, or a cell no label covers,
+FAILs a `kind: experiment` plan (WARNs `analysis`) at Phase 1.5.0 and on every
+critic re-verify (incident: #923 v4/v5). c20 verifies the partition IN FORM
+ONLY — whether each predicate is the scientifically right boundary stays with
+the Statistics critic. Declare the partition as ONE non-fenced line inside the
+section that defines the labels (any heading matching
+hypothes|success|kill|decision|verdict|gate — §3 here is the natural home):
+`DISJOINT and exhaustive: <label> ⇔ <predicate>; <label> ⇔ <predicate>; <label> ⇔ otherwise.`
+Live-verified worked example (#923 plan v6 §3 is the corpus exemplar):
+`DISJOINT and exhaustive: Confirmed ⇔ Δ > 0 AND Δ's 95% CI excludes 0 on the positive side; Falsified ⇔ Δ's 95% CI is wholly below 0; Inconclusive ⇔ otherwise.`
+Parser constraints (c20 tier 1): clauses `;`-separated on the SAME line; each
+label ≤80 chars with no `;`/`⇔`; predicates built from `<qty> ≥/>/≤/< 0` sign
+atoms and CI idioms ("CI excludes 0 on the positive side", "CI wholly below 0",
+"CI straddles 0", "paired-diff CI strictly positive") joined only by AND / OR /
+with; close with an `⇔ otherwise` clause (covers every residual cell by
+construction). Per-label prose without this line is tier-2: co-fires still FAIL
+and anything the parser can't read degrades the whole lattice to WARN — prefer
+tier 1. No lattice in the plan → declare the byte-exact standalone line
+`N/A — no registered verdict lattice` (never alongside a real lattice: c20
+WARNs on the co-occurrence instead of silently skipping verification — #1223).
+
+**Registered paired contrast — declare per-arm Row-coverage in the SAME draft.**
+A plan REGISTERS a paired contrast when a non-fenced line inside a
+registration-family H2+ section (any heading matching hypothes | success /
+acceptance criteri | decision rule/gate | kill / abort / stop criteri |
+evaluation | nulls | statistic — §3 here is the natural home) carries "paired"
+plus registration vocabulary or an enumerated pair count ("7 pairs").
+`scripts/verify_plan.py` check 18 (`check_paired_contrast_source_coverage`)
+then REQUIRES a per-arm row-coverage declaration — FAIL for `kind: experiment`
+(WARN `analysis`) at Phase 1.5.0 and on every critic re-verify (incidents:
+#810 v13 — 2 of 9 registered rows missing from the named full side; #1112
+amendment drafts v4 AND v7 — one mechanical bounce each, same omission).
+Every `plans/v{K}.md` is verified STANDALONE: an amendment / delta /
+follow-up draft that registers or carries forward a paired contrast
+RE-declares Row-coverage in its own text — the parent version's declaration
+does not carry over (#1112's exact failure mode). Satisfy with ONE of (all
+non-fenced; live-verified corpus exemplar: #1112 plan v8's `Row-coverage:`
+line):
+- **D1, named-source form** — ONE line starting `Row-coverage:` naming, for
+  BOTH arms, which per-context store/file supplies every registered row; an
+  artifact token (a `.pt/.json/.jsonl/.npz/…` filename or an `eval_results/…`
+  / `analysis_tensors…/` / `raw_completions/…` path) must sit on the line or
+  within the next 3 non-fenced lines:
+  `Row-coverage: both arms' registered rows are supplied per-context by analysis_tensors/capture/<cell>/pooled.pt (trained arm) and eval_results/issue_<N>/base_rows.json (base arm).`
+- **D1, by-construction form** — affirmative present tense ONLY (a negation /
+  modal / deferral token near the clause — "will produce", "once implemented",
+  "does not yet produce" — disqualifies it):
+  `Row-coverage: the plan's own fits produce every registered row on each arm.`
+- **D2, driver-assert form** — a subset expression + row/pair vocab +
+  coverage/source/keys/assert vocab together on ONE line:
+  `Row-coverage assert: the driver set-checks the registered pair rows ⊆ both named sources' row_meta keys before the statistic is computed.`
+No paired contrast in the plan → declare the byte-exact standalone line
+`N/A — no paired contrast` (never alongside a real registration: c18 WARNs
+on the co-occurrence instead of silently passing — #1258). Keep every
+declaration line free of cross-issue
+citations — a `#<M>` token on the line DISQUALIFIES it (quote sibling
+exemplars elsewhere) — and fill the `<…>` placeholders with THIS plan's
+actual stores. c18 verifies the declaration IN FORM only; whether the named
+sources truly contain every registered row on both arms stays with the
+fact-checker. Guidance-shape pinned by
+`tests/test_planner_row_coverage_guidance.py`.
 
 ## 4. Design
 
@@ -414,8 +485,12 @@ parallelism axis and pick the spec accordingly:
 State explicitly in the plan: (a) the GPU spec chosen, (b) the parallelism
 axis it exploits, (c) the wall-time delta vs. the next-smaller spec, and (d)
 any reason a smaller pod was chosen anyway (rare — e.g. "data is too small
-to amortize 8× setup"). If the answer is "no parallelism axis applies,"
-say so — silence is not acceptable.
+to amortize 8× setup"). A stay-narrow reason must BIND to the wall-dominant
+GPU-BOUND phase(s) it keeps narrow (name the phase; address ITS bottleneck)
+— a bottleneck claim about a DIFFERENT phase (an API-bound judge, a CPU fit)
+does not justify narrow width for the shardable phase(s) kept narrow (e.g.
+generation/capture legs, a training fan-out) (#1739). If the answer is "no
+parallelism axis applies," say so — silence is not acceptable.
 
 > **Compute-sizing recipes (HBM sizing / merge-disk + ladder-checkpoint
 > retention / Out-root mount binding / sentinel lanes / floor cross-check
@@ -454,6 +529,19 @@ uses the `parallelism` field to compute auto-descope options.
 | (e.g., "smoke-phase per-cell train") | 0.5 | 0.5 | TP=1 | "matched to #382 round-2 trained-on-same-mix wall-time" |
 | (e.g., "sweep all-cells train") | 16 | 64 | 4× H100 ZeRO-3 across 8 cells | "16h × 8 cells / 4 GPU = 32h wall; 16 GPU-hours × 8 = 128 GPU-h" |
 | (e.g., "eval all-cells generation") | 2 | 2 | TP=1 | "vLLM batched, 400 prompts × 4 framings @ ~5s/prompt" |
+
+**Per-phase shardable-axis declaration (REQUIRED, #1739).** For every
+GPU-bound row with `planned_wall_h` > ~2 h, the `parallelism` field names
+the shardable axis (contexts / behaviors / seeds / conditions / cells) or
+states `none — <why>`. When an axis exists, the phase defaults to WIDE
+(`--gpus N`, the #1121 width-aware walk); a stay-narrow choice carries a
+justification binding to THAT phase per the "State explicitly" item (d)
+above. For a row kept narrow, `planned_wall_h` is the serial-on-1× wall,
+so the > ~2 h threshold coincides with the critic's ">~2 h serial on 1×"
+bar (item 10(iv)) by construction. Short phases (< ~2 h), genuinely
+non-shardable workloads, width-required pinned jobs, and the
+re-provision-churn tradeoff for SHORT narrow phases remain valid
+stay-narrow reasons.
 
 **Serial-fit-loop, draw-battery & store-serialization sizing (REQUIRED
 whenever any §9 component loops a fit / solve / factorization / draw — or a
@@ -533,30 +621,42 @@ recorded a negative finding).
 table (no GPU-bound components). For those, write "N/A — no
 compute-bound components" and move on.
 
-### Off-pod phase declaration (`off_pod_phases:`) — reads enumerated, outputs pre-declared (#1535)
+### Cross-phase reads declaration (`off_pod_phases:`) — reads enumerated, outputs pre-declared (#1535, #1773)
 
-REQUIRED only when the plan has a pod/backend dispatch AND ≥1 subsequent
-off-pod phase (a VM / cpu-small / cpu-mid / cpu-bigmem / Batch-API judge or
-analysis phase). Pod-free plans and single-machine runs OMIT this block
-entirely — no boilerplate, no escape line needed. Two incidents it closes:
+REQUIRED whenever ANY dispatched phase reads ANOTHER phase's outputs —
+BOTH directions: (a) a pod/backend dispatch with ≥1 subsequent off-pod
+phase (a VM / cpu-small / cpu-mid / cpu-bigmem / Batch-API judge or
+analysis phase) consuming pod outputs — the original #1482/#1426
+direction; AND (b) any pod-gpu / GCE / SLURM phase consuming another
+phase's outputs, including VM-PRODUCED inputs — the #1773 inverse seam:
+the git-clone lanes stage ONLY the pushed branch (`data/` is gitignored,
+the #734/#1434 class), and the #1469 carry-over gate glob-skips
+phase-output globs, so no mechanical gate covers that seam. Pod-free
+plans and single-machine runs OMIT this block
+entirely — no boilerplate, no escape line needed. Three incidents it closes:
 #1482 (the off-pod P5 judge died at VM launch loading pod-only
 `scratch/{split_indices.npz,row_ci.npy,prov.npy}` never in the P4 upload
 set — the pod was already terminated; recovery needed a sha-anchored
-reconstruction) and #1426 (a planned VM-side phase FAILed the verifier's
+reconstruction), #1426 (a planned VM-side phase FAILed the verifier's
 initial r1 BY CONSTRUCTION — the verifier expected its outputs on the pod;
 the follow-up round's verifier then IMPROVISED "DEFERRED + gap-listed" rows
 for the same phase — live precedent for the deferral grammar this block
-mechanizes). This is the plan-time mechanization of the `gotchas.md`
-off-pod upload-set bullet (#1526, rules (i)-(iv)).
+mechanizes), and #1773 (the inverse direction: Pass B on GCE crashed
+`FileNotFoundError` loading Pass A's VM-produced selection outputs — never
+HF-uploaded, no launcher staging step; one 4×A100 GCE provision+boot cycle
+burned, att-20260729-010419). This is the plan-time mechanization of the
+`gotchas.md` cross-machine upload-set bullet (#1526, rules (i)-(iv)).
 
-Render as a fenced YAML block, one entry per off-pod phase:
+Render as a fenced YAML block, one entry per phase that reads another
+phase's outputs (the block NAME stays `off_pod_phases:` for back-compat
+with in-flight plans and the c39 satisfier):
 
 ```yaml
 off_pod_phases:
   - phase: <verbatim §9 phase name, e.g. "P5 judge (VM, post-termination)">
-    runs_on: vm | cpu-small | cpu-mid | cpu-bigmem | batch-api
+    runs_on: vm | cpu-small | cpu-mid | cpu-bigmem | batch-api | pod-gpu | gce | slurm
     reads:
-      - path: <path the off-pod loader opens/fetches>
+      - path: <path the phase's loader opens/fetches>
         produced_by: <producing phase, e.g. "P4 (pod)">
         source: hf-data-repo | git-issue-branch | vm-resident-by-construction
     outputs:
@@ -566,13 +666,33 @@ off_pod_phases:
 
 Rules:
 
-- **Every `reads[].path` must resolve at a permanent source the off-pod
+- **Every `reads[].path` must resolve at a permanent source the CONSUMING
   machine can fetch** — an HF data-repo path, a git-issue-branch path, or
   `vm-resident-by-construction` with a one-line basis (e.g. "arrives with
-  the git clone"). A read that exists only as pod-side scratch is a design
+  the git clone"). A read that exists only as one machine's local scratch
+  (pod-side OR VM-side) is a design
   defect: add it to the producing phase's upload set (KB–tens-of-MB scratch
   metadata — split indices, provenance arrays, configs — uploads
   UNCONDITIONALLY; the large-tensor discard economy never applies to it).
+- **`vm-resident-by-construction` is keyed on EXECUTION LOCUS, not the
+  literal `runs_on: vm` enum value:** legal only for VM-EXECUTING phases —
+  `vm`, and `batch-api` (a Batch-API judge's driver runs VM-side and
+  legitimately opens VM-resident inputs; live precedent: #1776 plan v4's
+  `runs_on: batch-api` rows with `source: vm-resident-by-construction`).
+  ILLEGAL for dispatched git-clone / staged lanes (`pod-gpu | gce | slurm`
+  and the `cpu-*` lanes) — those machines stage only the pushed branch, so
+  a VM-resident file is simply not there; use `hf-data-repo` or
+  `git-issue-branch`. Blocks in plans persisted before this change are
+  never retro-invalidated (critic item 10 pressure is forward-only).
+- **A VM-PRODUCED read consumed by a git-clone-lane phase (`pod-gpu | gce
+  | slurm` — the #1773 direction) names BOTH transport halves:** the
+  PRODUCING phase ends with a fail-loud bulk `upload_folder` of its
+  outputs to the issue HF prefix, AND the CONSUMING launcher stages the
+  missing inputs via scoped `list_repo_tree` + per-file download (never
+  `snapshot_download` on the ~1M-file data repo — gotchas.md #833),
+  logging a `[stage] <input> staged: N files` line usable as the
+  crash-fix fix-engaged signal (mirrors the implementer-side memory
+  `feedback_cross_machine_input_staging.md`).
 - **`outputs[]` is scoped to files the declared off-pod phase ITSELF
   writes** — it must NOT sweep in any pod-side phase's deliverables (no
   over-broad globs like `eval_results/issue_<N>/**` when a pod phase also
@@ -586,18 +706,26 @@ Rules:
   the exact upload command), and Step 2.7 enumerates a declared phase's
   OUTPUTS at the declared `dest` — or records them deferred when the phase
   is sequenced after pod termination — instead of FAILing on pod-absence.
-- **Derive `reads[]` from the off-pod loader's ACTUAL open/fetch set**
-  (its argument list + `open()`/`snapshot_download` calls), not from
-  memory of the design — an omitted read reproduces #1482 despite the
-  block; state the derivation basis in one line when the loader exists at
-  plan time.
+- **Derive `reads[]` from EACH DECLARED PHASE'S loader ACTUAL open/fetch
+  set** (its argument list + `open()` and staging calls), direction-agnostic,
+  not from memory of the design — an omitted read reproduces #1482/#1773
+  despite the block (the #1773 plan HAD a block; the intermediate
+  passA→passB read was omitted because reads were derived only for the
+  final off-pod loader); state the derivation basis in one line per phase
+  when the loader exists at plan time.
 - **§6.5 interaction:** a `primary_deliverable:` row produced by a declared
   off-pod phase is enumerated at that phase's declared `dest` (Step 2.7
   sub-rule), not on the pod; keep the §6.5 row — the block does not
   replace it.
 - **Escape:** a plan whose prose trips the off-pod vocabulary check
-  (`verify_plan.py` c39) but genuinely has no off-pod phase declares the
+  (`verify_plan.py` c39) but genuinely has no cross-phase read declares the
   standalone line `N/A — no off-pod phase`.
+- **Known mechanical residual (direction (b)):** c39's trigger vocabulary
+  (`off-pod` / `vm-side`) does not fire on inverse-direction prose (a
+  pod/GCE/SLURM phase reading VM-produced inputs), so direction (b) is
+  enforced by this section + critic Methodology item 10 only — a c39
+  vocabulary extension is a semantics change deliberately out of scope
+  (parked candidate on #1782's events).
 
 Worked example (#1482's design, as it should have been declared):
 
@@ -614,6 +742,23 @@ off_pod_phases:
         source: git-issue-branch
     outputs:
       - path: eval_results/issue_1482/judge/*.json
+        dest: git-issue-branch
+```
+
+Second worked example (#1773's design — the inverse direction, as it
+should have been declared: Pass A produces on the VM, Pass B consumes on
+a git-clone lane):
+
+```yaml
+off_pod_phases:
+  - phase: Pass B scoring (GCE, consumes Pass A selection outputs)
+    runs_on: gce
+    reads:
+      - path: issue1773_slug/selection/inverted_index.npz
+        produced_by: Pass A selection (VM)
+        source: hf-data-repo
+    outputs:
+      - path: eval_results/issue_1773/passB/*.json
         dest: git-issue-branch
 ```
 
@@ -699,6 +844,22 @@ upload-verifier treats a `discarded_artifacts:` entry naming generations /
 text as INVALID (FAIL `generation-discard-declared-invalid`), not as a
 license. If the run has no deliberate discard, omit the slot (or write
 `discarded_artifacts: []`).
+
+**Ephemeral-lane text/JSON destinations (destination-vs-lane durability).**
+For any stage whose §9 lane is EPHEMERAL — a GCE instance with
+`--instance-termination-action=DELETE` (the boot disk dies with the run)
+or a RunPod pod on the terminate-on-upload-verify lifecycle; SLURM lanes
+are deliberately NOT in this set (job scratch/project storage persists
+past job end) — every text/JSON output row (summary JSONs, metrics,
+judge outputs, configs) MUST name an HF (non-LFS) destination, e.g. the
+issue data-repo prefix `issue<N>_<slug>/…`. A git-only destination
+("commit to the issue branch") is legal ONLY for a VM-resident stage, or
+when the plan names an explicit pre-teardown HARVEST phase that commits
+the file BEFORE the instance/pod is reaped. Rationale: a clean exit on
+the DELETE-on-exit lane reaps the disk minutes later — #1738's two
+summary JSONs, declared "→ git issue branch" with no harvest phase, were
+lost at reap and cost a 28-min rebuild round. The critic Methodology
+lens item 18 REVISEs violations.
 
 ## 11. Decision Rationale
 
