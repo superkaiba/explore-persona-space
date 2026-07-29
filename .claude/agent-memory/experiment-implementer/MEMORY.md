@@ -154,3 +154,4 @@
 - [stage_hub_prefix dest is a mirror ROOT](feedback_stage_hub_prefix_dest_is_mirror_root.md) — dest/<repo-relative path> layout; pass root satisfying root/<prefix>==consumed path + (h)(iv) consumer-open probe (#1774)
 - [Subsample re-admission filter](feedback_subsample_readmission_filter.md) — re-apply the producer's admission filter before consuming split-time id lists (#1738 r5)
 - [Reused-module wiring contract](feedback_reused_module_hf_prefix_contract.md) — audit flags AND every re-declared arg/ns field against the consumer's reads (paths, None-defaults, call args like layers); sweep whole namespace x all callers (#1776 c2+c3)
+- [sha pins live in a DOMAIN](feedback_sha_pin_domain_mismatch.md) — recompute a reused pin from its producer's recipe before asserting; wrong-domain compare masquerades as data drift (#1776 c4)
