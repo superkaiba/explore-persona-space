@@ -4,6 +4,7 @@ title: Changing surface framing costs the context-to-answer map far more than ch
 kind: experiment
 tags:
 - followup-auto
+- followup-manual
 created_at: '2026-07-25T18:54:59Z'
 has_clean_result: true
 parent_id: 825
