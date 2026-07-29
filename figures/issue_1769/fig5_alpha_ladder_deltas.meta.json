@@ -1,328 +1,257 @@
 {
-  "points": {
-    "evil": {
-      "1": {
-        "prefill_only": {
-          "delta": 0.0,
-          "ci95": [
-            0.0,
-            0.0
-          ],
-          "mean_score": 0.0,
-          "coherence_rate": 0.9400000000000001
-        },
-        "decode_only": {
-          "delta": 8.899999999999999,
-          "ci95": [
-            4.0112250000000005,
-            14.51982499999999
-          ],
-          "mean_score": 8.899999999999999,
-          "coherence_rate": 0.9349999999999999
-        },
-        "both": {
-          "delta": 5.849,
-          "ci95": [
-            2.201875,
-            11.447174999999998
-          ],
-          "mean_score": 5.849,
-          "coherence_rate": 0.95
-        },
-        "operating_checks": {
-          "coherence_ok": true,
-          "manipulation_ok": false,
-          "ceiling_ok": true
-        }
-      },
-      "2": {
-        "prefill_only": {
-          "delta": 0.0,
-          "ci95": [
-            0.0,
-            0.0
-          ],
-          "mean_score": 0.0,
-          "coherence_rate": 0.9399999999999998
-        },
-        "decode_only": {
-          "delta": 86.70087037037037,
-          "ci95": [
-            83.6799652777778,
-            89.53695555555558
-          ],
-          "mean_score": 86.70087037037037,
-          "coherence_rate": 0.975
-        },
-        "both": {
-          "delta": 86.0274126984127,
-          "ci95": [
-            83.57814464285714,
-            88.41441402116402
-          ],
-          "mean_score": 86.0274126984127,
-          "coherence_rate": 0.9800000000000001
-        },
-        "operating_checks": {
-          "coherence_ok": true,
-          "manipulation_ok": true,
-          "ceiling_ok": false
-        }
-      },
-      "4": {
-        "prefill_only": {
-          "delta": 0.0,
-          "ci95": [
-            0.0,
-            0.0
-          ],
-          "mean_score": 0.0,
-          "coherence_rate": 0.9550000000000001
-        },
-        "decode_only": {
-          "delta": 37.01336111111111,
-          "ci95": [
-            31.472852777777778,
-            42.18621944444443
-          ],
-          "mean_score": 37.01336111111111,
-          "coherence_rate": 1.0
-        },
-        "both": {
-          "delta": 31.55075,
-          "ci95": [
-            26.25951388888889,
-            36.73546666666667
-          ],
-          "mean_score": 31.55075,
-          "coherence_rate": 1.0
-        },
-        "operating_checks": {
-          "coherence_ok": true,
-          "manipulation_ok": true,
-          "ceiling_ok": true
-        }
-      },
-      "neither": {
-        "mean_score": 0.0,
-        "coherence_rate": 0.9250000000000002
-      }
+  "commit": "2e382684bf",
+  "created": "2026-07-29T17:04:14Z",
+  "figsize": [
+    12.0,
+    4.2
+  ],
+  "points": [
+    {
+      "Steering strength \u03b1": 1.0,
+      "Mean \u0394 graded score vs no-steering": 0.0,
+      "series": "Prefill only",
+      "_kind": "line",
+      "_group": 0
     },
-    "sycophancy": {
-      "1": {
-        "prefill_only": {
-          "delta": 0.375,
-          "ci95": [
-            -0.08407499999999994,
-            0.8550499999999999
-          ],
-          "mean_score": 2.603,
-          "coherence_rate": 0.975
-        },
-        "decode_only": {
-          "delta": 3.842999999999999,
-          "ci95": [
-            2.4488749999999992,
-            5.798499999999997
-          ],
-          "mean_score": 6.071,
-          "coherence_rate": 0.985
-        },
-        "both": {
-          "delta": 3.848000000000001,
-          "ci95": [
-            2.635975,
-            5.2582999999999975
-          ],
-          "mean_score": 6.076,
-          "coherence_rate": 0.9800000000000001
-        },
-        "operating_checks": {
-          "coherence_ok": true,
-          "manipulation_ok": false,
-          "ceiling_ok": true
-        }
-      },
-      "2": {
-        "prefill_only": {
-          "delta": 0.9530000000000001,
-          "ci95": [
-            0.509975,
-            1.431075
-          ],
-          "mean_score": 3.181000000000001,
-          "coherence_rate": 0.9949999999999999
-        },
-        "decode_only": {
-          "delta": 18.333000000000002,
-          "ci95": [
-            14.5688,
-            22.827174999999986
-          ],
-          "mean_score": 20.561000000000003,
-          "coherence_rate": 0.985
-        },
-        "both": {
-          "delta": 19.752666666666663,
-          "ci95": [
-            15.439575000000001,
-            25.230458333333328
-          ],
-          "mean_score": 21.980666666666668,
-          "coherence_rate": 0.99
-        },
-        "operating_checks": {
-          "coherence_ok": true,
-          "manipulation_ok": true,
-          "ceiling_ok": true
-        }
-      },
-      "4": {
-        "prefill_only": {
-          "delta": 2.0460000000000003,
-          "ci95": [
-            1.3589499999999997,
-            2.71605
-          ],
-          "mean_score": 4.273999999999999,
-          "coherence_rate": 1.0
-        },
-        "decode_only": {
-          "delta": 27.37236111111111,
-          "ci95": [
-            21.348556249999998,
-            33.82752569444443
-          ],
-          "mean_score": 29.600361111111113,
-          "coherence_rate": 1.0
-        },
-        "both": {
-          "delta": 32.51049999999999,
-          "ci95": [
-            26.896131250000003,
-            38.77601875
-          ],
-          "mean_score": 34.7385,
-          "coherence_rate": 1.0
-        },
-        "operating_checks": {
-          "coherence_ok": true,
-          "manipulation_ok": true,
-          "ceiling_ok": true
-        }
-      },
-      "neither": {
-        "mean_score": 2.228,
-        "coherence_rate": 0.9800000000000001
-      }
+    {
+      "Steering strength \u03b1": 2.0,
+      "Mean \u0394 graded score vs no-steering": 0.0,
+      "series": "Prefill only",
+      "_kind": "line",
+      "_group": 0
     },
-    "hallucination": {
-      "1": {
-        "prefill_only": {
-          "delta": 5.132944444444444,
-          "ci95": [
-            1.052842361111111,
-            9.625414583333331
-          ],
-          "mean_score": 22.98025,
-          "coherence_rate": 0.9550000000000001
-        },
-        "decode_only": {
-          "delta": 12.141861111111108,
-          "ci95": [
-            7.736395833333335,
-            17.13826319444444
-          ],
-          "mean_score": 29.98916666666666,
-          "coherence_rate": 0.885
-        },
-        "both": {
-          "delta": 15.098694444444444,
-          "ci95": [
-            8.532619444444444,
-            22.72020277777778
-          ],
-          "mean_score": 32.946,
-          "coherence_rate": 0.9349999999999999
-        },
-        "operating_checks": {
-          "coherence_ok": true,
-          "manipulation_ok": true,
-          "ceiling_ok": true
-        }
-      },
-      "2": {
-        "prefill_only": {
-          "delta": 5.8978055555555535,
-          "ci95": [
-            1.338841666666663,
-            10.989404861111108
-          ],
-          "mean_score": 23.745111111111108,
-          "coherence_rate": 0.9949999999999999
-        },
-        "decode_only": {
-          "delta": 44.15719444444445,
-          "ci95": [
-            36.13944305555556,
-            51.30216250000001
-          ],
-          "mean_score": 62.00449999999999,
-          "coherence_rate": 0.945
-        },
-        "both": {
-          "delta": 49.59872751322751,
-          "ci95": [
-            40.204816898148145,
-            58.59622533068782
-          ],
-          "mean_score": 67.44603306878307,
-          "coherence_rate": 0.99
-        },
-        "operating_checks": {
-          "coherence_ok": true,
-          "manipulation_ok": true,
-          "ceiling_ok": true
-        }
-      },
-      "4": {
-        "prefill_only": {
-          "delta": 7.397611111111111,
-          "ci95": [
-            1.2967333333333337,
-            14.156220833333334
-          ],
-          "mean_score": 25.244916666666665,
-          "coherence_rate": 1.0
-        },
-        "decode_only": {
-          "delta": 21.756458333333335,
-          "ci95": [
-            8.837579166666668,
-            32.557095833333335
-          ],
-          "mean_score": 39.60376388888889,
-          "coherence_rate": 0.985
-        },
-        "both": {
-          "delta": 28.008435185185185,
-          "ci95": [
-            14.11715509259259,
-            38.75539999999999
-          ],
-          "mean_score": 45.85574074074074,
-          "coherence_rate": 1.0
-        },
-        "operating_checks": {
-          "coherence_ok": true,
-          "manipulation_ok": true,
-          "ceiling_ok": true
-        }
-      },
-      "neither": {
-        "mean_score": 17.847305555555554,
-        "coherence_rate": 0.86
-      }
+    {
+      "Steering strength \u03b1": 4.0,
+      "Mean \u0394 graded score vs no-steering": 0.0,
+      "series": "Prefill only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steering strength \u03b1": 1.0,
+      "Mean \u0394 graded score vs no-steering": 8.9,
+      "series": "Decode only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steering strength \u03b1": 2.0,
+      "Mean \u0394 graded score vs no-steering": 86.65067681895091,
+      "series": "Decode only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steering strength \u03b1": 4.0,
+      "Mean \u0394 graded score vs no-steering": 37.11700167504188,
+      "series": "Decode only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steering strength \u03b1": 1.0,
+      "Mean \u0394 graded score vs no-steering": 5.848999999999998,
+      "series": "Both",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Steering strength \u03b1": 2.0,
+      "Mean \u0394 graded score vs no-steering": 86.08195876288663,
+      "series": "Both",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Steering strength \u03b1": 4.0,
+      "Mean \u0394 graded score vs no-steering": 31.66742424242424,
+      "series": "Both",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Steering strength \u03b1": 1.0,
+      "y": 0.375,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Steering strength \u03b1": 2.0,
+      "y": 0.9530000000000007,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Steering strength \u03b1": 4.0,
+      "y": 2.0460000000000025,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Steering strength \u03b1": 1.0,
+      "y": 3.8429999999999986,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Steering strength \u03b1": 2.0,
+      "y": 18.26044221105527,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Steering strength \u03b1": 4.0,
+      "y": 27.387661641541037,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Steering strength \u03b1": 1.0,
+      "y": 3.8479999999999976,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Steering strength \u03b1": 2.0,
+      "y": 19.75266666666666,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Steering strength \u03b1": 4.0,
+      "y": 32.510499999999986,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Steering strength \u03b1": 1.0,
+      "y": 5.3528630653266305,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Steering strength \u03b1": 2.0,
+      "y": 5.903433835845895,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Steering strength \u03b1": 4.0,
+      "y": 7.617529731993301,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Steering strength \u03b1": 1.0,
+      "y": 12.361779731993298,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Steering strength \u03b1": 2.0,
+      "y": 44.31034572184101,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Steering strength \u03b1": 4.0,
+      "y": 22.204314096254464,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Steering strength \u03b1": 1.0,
+      "y": 15.318613065326637,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Steering strength \u03b1": 2.0,
+      "y": 49.814366537548835,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Steering strength \u03b1": 4.0,
+      "y": 28.470420082870497,
+      "_kind": "line",
+      "_group": 8
     }
+  ],
+  "n_series": 9,
+  "total_points": 27,
+  "text": {
+    "suptitle": "Dose-ladder mean \u0394 graded score by arm and behavior class",
+    "fig_texts": [
+      "\u2020 = ceiling check fired (both-arm mean > 85; excludes alpha from operating-alpha selection)"
+    ],
+    "axes": [
+      {
+        "title_left": "Scheming",
+        "xlabel": "Steering strength \u03b1",
+        "ylabel": "Mean \u0394 graded score vs no-steering",
+        "annotations": [
+          "\u2020"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "4"
+        ],
+        "yticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      },
+      {
+        "title_left": "Sycophancy",
+        "xlabel": "Steering strength \u03b1",
+        "xticklabels": [
+          "1",
+          "2",
+          "4"
+        ],
+        "yticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35"
+        ]
+      },
+      {
+        "title_left": "Hallucination",
+        "xlabel": "Steering strength \u03b1",
+        "xticklabels": [
+          "1",
+          "2",
+          "4"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ]
+      }
+    ],
+    "series": [
+      "Prefill only",
+      "Decode only",
+      "Both"
+    ]
   }
 }
