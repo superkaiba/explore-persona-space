@@ -47,6 +47,14 @@ assert SOURCE_LAYER < READOUT_LAYER, "ell_in must sit strictly below L' (MF-1, p
 EXTENDED_LAMBDA_GRID: list[float] = [float(x) for x in np.logspace(-6.0, 8.0, 28)]
 assert len(EXTENDED_LAMBDA_GRID) == 28
 
+# Plan §12 assumption 3: the shipped 963k ridge (lambda=1e-3, layer 19) must
+# reproduce its COMMITTED test_r2 on the pinned test-1000 before any J
+# comparison. Source of the pinned value: eval_results/issue_779/
+# fitter-fair-comparison-n1m/n1m_fits.json -> per_point.mixed_1m.predictors
+# .ridge.whole_map_r2 (n_train=963,444, selected_lambda=0.001), main tree.
+SHIPPED_M_TEST_R2_REF = 0.7541708417500051
+SHIPPED_M_TEST_R2_TOL = 0.005
+
 # Reused #779 HF stems (plan §10 Reproducibility Card), probed AT THE PIN
 # before dispatch — scoped list_repo_tree, >=1 file per stem (#1345).
 PASS_B_HF_PATH = "issue779_monitoring/analysis_tensors/pass_b/train_context_vectors.pt"

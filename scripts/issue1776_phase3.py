@@ -475,9 +475,11 @@ def load_base_means(dirs: dict[str, Path]) -> dict[str, torch.Tensor]:
 
 
 def run(args) -> int:
+    # Cheap-input validation BEFORE the heavy 7B load (review v1 Minor: a bad
+    # --contexts path must fail in seconds, not after model init).
+    contexts = load_contexts(args.contexts, args.limit_contexts)
     model, tok = load_model(args)
     hidden = (model.model if hasattr(model, "model") else model).config.hidden_size
-    contexts = load_contexts(args.contexts, args.limit_contexts)
     bank, dir_prov = load_directions(args, hidden)
     preds, pred_meta = prediction_legs(args, bank, hidden)
 
@@ -779,6 +781,73 @@ def smoke(args) -> int:
     assert rows[0]["n_kept_capture"] == 0 and rows[0]["cos_pred_jlast"] is None
     assert rows[0]["coherence_pass"] is False
     print("[phase3] [smoke] degenerate gates: non-square-J refusal + all-empty cell row")
+
+    # Hook-parity probe (plan §8 risk row 2 + §12 assumptions 18/19; review v1
+    # Major 2): with DeltaHook armed at layer L = source_layer, the block-L
+    # OUTPUT (the cx_last capture slot: blocks[L] output = hidden_states[L+1]
+    # values) shifts by EXACTLY alpha*delta at position T-1 and nowhere else;
+    # block L-1 is byte-untouched; the downstream readout block moves at T-1
+    # only (causality). Measurement note (found BY this probe, transformers
+    # 4.57.6): the output_hidden_states recorder captures each block's output
+    # BEFORE later-registered user forward hooks mutate it, so the post-edit
+    # value must be read by a capture hook registered AFTER the DeltaHook —
+    # the recorder tuple at the EDIT layer keeps the pre-hook value while
+    # every DOWNSTREAM entry carries the propagated edit. Production is
+    # unaffected (all phase-3 captures run UNHOOKED); the probe binds the
+    # MODULE identity + position: DeltaHook edits exactly the tensor the
+    # cx_last(L) convention reads, at exactly T-1.
+    model, tok = load_model(args)  # fresh tiny model (fp32 CPU)
+    ids = tok("What is the capital of France?", return_tensors="pt")["input_ids"]
+    t_len = int(ids.shape[1])
+    with torch.no_grad():
+        ref_hs = model(ids, output_hidden_states=True).hidden_states
+    gp = torch.Generator().manual_seed(11)
+    probe_delta = torch.randn(hidden, generator=gp)
+    probe_alpha = 3.0
+    ls, lr = args.source_layer, args.readout_layer
+    blocks = (model.model if hasattr(model, "model") else model).layers
+    captured: dict[str, torch.Tensor] = {}
+
+    def _cap(name):
+        def _hook(_m, _i, out):
+            t = out[0] if isinstance(out, tuple) else out
+            captured[name] = t.detach().clone()
+
+        return _hook
+
+    with DeltaHook(model, ls, probe_delta, probe_alpha, expected_prompt_len=t_len) as hook:
+        # Registered AFTER DeltaHook -> receives the post-edit block output.
+        h_src = blocks[ls].register_forward_hook(_cap("src"))
+        h_up = blocks[ls - 1].register_forward_hook(_cap("up"))
+        try:
+            with torch.no_grad():
+                hook_hs = model(ids, output_hidden_states=True).hidden_states
+        finally:
+            h_src.remove()
+            h_up.remove()
+    assert hook.n_edits == 1, hook.n_edits
+    # (a) exact edit at the capture slot: post-edit blocks[L] output == ref
+    #     hidden_states[L+1] + alpha*delta at T-1, byte-identical elsewhere.
+    d_src = (captured["src"] - ref_hs[ls + 1])[0]
+    want = (probe_alpha * probe_delta).to(d_src.dtype)
+    assert torch.allclose(d_src[t_len - 1], want, atol=1e-4), float(
+        (d_src[t_len - 1] - want).abs().max()
+    )
+    assert d_src[: t_len - 1].abs().max().item() < 1e-8, "edit leaked off T-1 at the edit layer"
+    # (b) upstream block L-1 byte-untouched — this ALSO re-verifies the slot
+    #     convention in passing: blocks[L-1] output == hidden_states[L] values.
+    assert torch.equal(captured["up"], ref_hs[ls]), "upstream block (L-1) output moved"
+    # (c) downstream readout moved at T-1 ONLY (causality).
+    d_ro = (hook_hs[lr + 1] - ref_hs[lr + 1])[0]
+    assert d_ro[t_len - 1].abs().max().item() > 1e-6, "downstream readout did not move"
+    assert d_ro[: t_len - 1].abs().max().item() < 1e-8, "causality broken (edit moved p < T-1)"
+    recorder_sees_edit = not torch.equal(hook_hs[ls + 1], ref_hs[ls + 1])
+    print(
+        "[phase3] [smoke] hook-parity probe: blocks[L] output (cx_last slot) shifted by "
+        f"exactly alpha*delta at T-1; upstream byte-equal; readout moved at T-1 only; "
+        f"output_hidden_states recorder sees the edit at L: {recorder_sees_edit} "
+        "(False on transformers 4.57.6 — pre-hook recording; captures run unhooked in prod)"
+    )
     print("[phase3] [phase=smoke_done] PASS", flush=True)
     return 0
 

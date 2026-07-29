@@ -142,9 +142,12 @@ if [[ "$MODE" == "smoke" ]]; then
   P1_LIMIT=2;       P1_TOPK=4
   N_TRAIN=3600      # comparator/refit assert n_train > d=3584; round-1 lmsys train pool is 3,600
   CTX_FLAGS=(--smoke)
-  P3_EXTRA=(--limit-contexts 2 --k-samples 1 --k-baseline 1 --alphas 4)
+  # --all-positions-subset 1: the exploratory all_positions arm gets per-arm
+  # smoke coverage (review v1 Major 1; #1090 fu5 per-arm-class rule).
+  P3_EXTRA=(--limit-contexts 2 --k-samples 1 --k-baseline 1 --alphas 4 --all-positions-subset 1)
   WC_KEEP=2;        WC_EXTRA=(--allow-short); CAP_EXTRA=(--max-rows 2)
   NBOOT=50;         NDRAWS=8;      ASSEMBLE_EXTRA=(--max-chunks 1); COMP_EXTRA=(--max-chunks 1)
+  BATTERY_EXTRA=(--n-pcs 4)   # acts14 has N_PAIRS=8 rows; basis needs n_rows > n_pcs
 else
   PARITY_CHUNKS=4;  PARITY_ROWS=200
   JLENS_N=1000;     JLENS_LIMIT=()
@@ -154,9 +157,12 @@ else
   P1_LIMIT=1024;    P1_TOPK=20
   N_TRAIN=50000
   CTX_FLAGS=()
-  P3_EXTRA=()
+  # §4 Phase 3: the all_positions=True persona-vectors variant runs on a
+  # 50-context exploratory subset (review v1 Major 1 — previously unwired).
+  P3_EXTRA=(--all-positions-subset 50)
   WC_KEEP=1000;     WC_EXTRA=();   CAP_EXTRA=()
   NBOOT=1000;       NDRAWS=100;    ASSEMBLE_EXTRA=(); COMP_EXTRA=()
+  BATTERY_EXTRA=()  # n_pcs default 256 (plan §4 2c(ii) on-support restriction)
 fi
 
 # ── shared paths ──────────────────────────────────────────────────────────────
@@ -362,12 +368,16 @@ phase_end "p0_parity"
 phase_begin "p0_comparator_launch"
 COMP_GPU=$((NGPU - 1))
 comparator_job() {
+  # --parity-exclusion: plan §3 — failed-parity cis leave the train pool
+  # (p0_parity runs before this launch; review v1 exclusion-list wiring).
   uv run python scripts/issue1776_comparator_fit.py --tag m_ridge_x50k \
     --n-train "$N_TRAIN" --out-dir "$COMP_DIR" --pass-b "$PASS_B" --mm-dir "$MM_DIR" \
+    --parity-exclusion "$DATA_DIR/parity/exclusion_list.json" \
     ${COMP_EXTRA[@]+"${COMP_EXTRA[@]}"} \
     && uv run python scripts/issue1776_comparator_fit.py --tag m_ridge_lmsys50k \
       --lmsys-only --n-train "$N_TRAIN" --out-dir "$COMP_DIR" --pass-b "$PASS_B" \
-      --mm-dir "$MM_DIR" ${COMP_EXTRA[@]+"${COMP_EXTRA[@]}"}
+      --mm-dir "$MM_DIR" --parity-exclusion "$DATA_DIR/parity/exclusion_list.json" \
+      ${COMP_EXTRA[@]+"${COMP_EXTRA[@]}"}
 }
 if [[ $DRY == 1 ]]; then
   run p0_comparator echo "comparator x50k + lmsys50k (n_train=$N_TRAIN)"
@@ -446,13 +456,16 @@ phase_end "p0_dict"
 # ── p04_pairs: J-pair manifest + sharded teacher-forced capture ───────────────
 phase_begin "p04_pairs"
 mkdir -p "$JPAIRS_DIR"
-run p04_pairs_build uv run python - "$N_PAIRS" "$JPAIRS_DIR" "$MANIFEST_DIR" <<'PY'
+run p04_pairs_build uv run python - "$N_PAIRS" "$JPAIRS_DIR" "$MANIFEST_DIR" \
+  "$DATA_DIR/parity/exclusion_list.json" <<'PY'
 """J-pair manifest (plan §4 P0.4): seeded sample of LMSYS-provenance rows from
 the n1m TRAIN pool (new-capture rows only — val/test are round-1 rows, disjoint
 by construction), text joined from the #779 raw_completions chunks at the pin.
 Chunks are visited in a SEEDED PERMUTATION of the pinned listing (deterministic
-given the pin) and downloaded lazily until the quota is covered. Content
-hygiene: row text is never printed; the report carries counts + shas only."""
+given the pin) and downloaded lazily until the quota is covered. Rows whose ci
+failed the G-PARITY rig are excluded (plan §3 shared exclusion list — applied
+at the CORPUS so BOTH arms, J and M', never see them). Content hygiene: row
+text is never printed; the report carries counts + shas only."""
 
 import json
 import sys
@@ -467,6 +480,9 @@ from huggingface_hub import HfApi
 from explore_persona_space.orchestrate import hub
 
 n_pairs, out_dir, manifest_dir = int(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
+exclusion_path = Path(sys.argv[4])
+assert exclusion_path.exists(), f"G-PARITY exclusion list missing (p0_parity ran?): {exclusion_path}"
+excluded_ci = {int(r["ci"]) for r in json.loads(exclusion_path.read_text())["excluded"]}
 out_path = out_dir / "jpairs.jsonl"
 if out_path.exists():
     rows = [json.loads(x) for x in out_path.read_text().splitlines() if x.strip()]
@@ -502,6 +518,8 @@ for oi in order:
     n_chunks_used += 1
     for r in json.loads(Path(local).read_text())["rows"]:
         ci = int(r["ci"])
+        if ci in excluded_ci:
+            continue  # plan §3: failed-parity rows leave BOTH arms' corpus
         if ci in lmsys_ci and ci not in seen and r.get("response"):
             seen.add(ci)
             kept.append(
@@ -527,6 +545,7 @@ C76.atomic_write_json(
         "n_pairs": n_pairs,
         "n_chunks_visited": n_chunks_used,
         "n_lmsys_pool": len(lmsys_ci),
+        "n_parity_excluded_ci": len(excluded_ci),
         "pin": pin,
         "seed": 0,
         "note": "seeded chunk-permutation lazy download; sample restricted to visited chunks",
@@ -712,19 +731,32 @@ PY
 }
 
 list_add() {  # list_add <listfile> <rel> <abs> — include iff the source exists
+  # ONLY for legitimately-conditional artifacts (LENS_OK-gated dicts, glob
+  # loops); an expected-present artifact uses list_add_required (#825 class:
+  # the -e guard silently skips a typo'd path — review v1 Critical 3).
   [[ -e "$3" ]] && echo "$2=$3" >> "$1" || true
+}
+
+list_add_required() {  # fail LOUD when an expected-present artifact is missing
+  if [[ $DRY == 1 ]]; then list_add "$@"; return 0; fi
+  if [[ ! -e "$3" ]]; then
+    echo "[dispatch] upload-list FATAL: required artifact missing: $3 (rel=$2)" >&2
+    exit 1
+  fi
+  echo "$2=$3" >> "$1"
 }
 
 phase_begin "p_early_upload"
 # §9: regeneration-costly intermediates upload at the END of their producing
 # phase and BEFORE the long P2b sweep (#825) — everything produced so far.
 EARLY_LIST="$OUT_ROOT/upload_early.list"; : > "$EARLY_LIST"
-list_add "$EARLY_LIST" "jlens/lens.pt" "$JLENS_DIR/lens.pt"
+list_add_required "$EARLY_LIST" "jlens/lens.pt" "$JLENS_DIR/lens.pt"
 for L in 14 19 21; do
+  # legitimately-conditional: absent when G-LENS failed (dict legs skipped)
   list_add "$EARLY_LIST" "dictionaries/dictionary_l$L.pt" "$DICT_DIR/dictionary_l$L.pt"
 done
 for t in m_ridge_x50k m_ridge_lmsys50k; do
-  list_add "$EARLY_LIST" "comparator/$t.pt" "$COMP_DIR/$t.pt"
+  list_add_required "$EARLY_LIST" "comparator/$t.pt" "$COMP_DIR/$t.pt"
 done
 if [[ $DRY == 0 ]]; then
   for f in "$COMP_DIR"/*.json "$DATA_DIR/parity"/*.json "$DATA_DIR/stage_report.json" \
@@ -732,19 +764,26 @@ if [[ $DRY == 0 ]]; then
     list_add "$EARLY_LIST" "reports/$(basename "$f")" "$f"
   done
 fi
-list_add "$EARLY_LIST" "jpairs/jpairs.jsonl" "$JPAIRS_DIR/jpairs.jsonl"
-list_add "$EARLY_LIST" "jpairs/jpair_capture.pt" "$JPAIRS_DIR/jpair_capture.pt"
-list_add "$EARLY_LIST" "jpairs/v_pool.pt" "$JPAIRS_DIR/v_pool.pt"
-list_add "$EARLY_LIST" "jpairs/acts14.pt" "$JPAIRS_DIR/acts14.pt"
-list_add "$EARLY_LIST" "jpairs/acts19.pt" "$JPAIRS_DIR/acts19.pt"
-list_add "$EARLY_LIST" "jac_sketch/seeds.pt" "$SKETCH_ROOT/seeds.pt"
+# §4 P0.1 "seeded, persisted" jlens fit corpus + its revision-pinned meta
+# (review v1 Critical 3 (b)).
+list_add_required "$EARLY_LIST" "jlens/jlens_prompts.jsonl" "$DATA_DIR/jlens_prompts.jsonl"
+list_add_required "$EARLY_LIST" "jlens/jlens_prompts.meta.json" "$DATA_DIR/jlens_prompts.meta.json"
+list_add_required "$EARLY_LIST" "jpairs/jpairs.jsonl" "$JPAIRS_DIR/jpairs.jsonl"
+list_add_required "$EARLY_LIST" "jpairs/jpair_capture.pt" "$JPAIRS_DIR/jpair_capture.pt"
+list_add_required "$EARLY_LIST" "jpairs/v_pool.pt" "$JPAIRS_DIR/v_pool.pt"
+list_add_required "$EARLY_LIST" "jpairs/acts14.pt" "$JPAIRS_DIR/acts14.pt"
+list_add_required "$EARLY_LIST" "jpairs/acts19.pt" "$JPAIRS_DIR/acts19.pt"
+list_add_required "$EARLY_LIST" "jac_sketch/seeds.pt" "$SKETCH_ROOT/seeds.pt"
 if [[ $DRY == 0 ]]; then
   for f in "$SKETCH_ROOT/merged"/*; do
     list_add "$EARLY_LIST" "jac_sketch/merged/$(basename "$f")" "$f"
   done
 fi
-list_add "$EARLY_LIST" "contexts/contexts.jsonl" "$CTX_JSONL"
-list_add "$EARLY_LIST" "contexts/meta.json" "$(dirname "$CTX_JSONL")/meta.json"
+list_add_required "$EARLY_LIST" "contexts/contexts.jsonl" "$CTX_JSONL"
+# contexts.py writes <stem>.meta.json — the prior "meta.json" path was a typo
+# the -e guard silently skipped (review v1 Critical 3 (c)).
+list_add_required "$EARLY_LIST" "contexts/contexts.meta.json" \
+  "$(dirname "$CTX_JSONL")/contexts.meta.json"
 upload_batch p_early_upload "$HF_PREFIX_EFF/analysis_tensors" \
   "task #1776: phase0-2a tensors + manifests (pre-P2b, #825 ordering)" "$EARLY_LIST"
 phase_end "p_early_upload"
@@ -781,6 +820,27 @@ fi
 upload_batch p2_upload "$HF_PREFIX_EFF/analysis_tensors" \
   "task #1776: full-rank J + even/odd halves + intercepts (P2b)" "$P2_LIST"
 phase_end "p2_upload"
+
+# ── p2c_battery: §4 P2c(ii) operator battery — §6.5 phase2/operator_battery.json
+#    (review v1 Critical 2). Shipped-M resolution hoisted here (also used by
+#    the later p5_transfer reference row). ───────────────────────────────────
+phase_begin "p2c_battery"
+mkdir -p "$EVAL_DIR/phase2"
+SHIPPED_M=""
+if [[ $DRY == 0 && -d "$WEIGHTS_DIR" ]]; then
+  SHIPPED_M="$(find "$WEIGHTS_DIR" -name '*l19*.pt' -o -name '*layer19*.pt' 2>/dev/null | sort | head -1 || true)"
+fi
+B_ARGS=(uv run python scripts/issue1776_phase2_battery.py
+  --jlast "$FULL_ROOT/merged/J_last.pt" --mprime-weights "$COMP_DIR/m_ridge_x50k.pt"
+  --acts14 "$JPAIRS_DIR/acts14.pt" --n-draws "$NDRAWS"
+  --out "$EVAL_DIR/phase2/operator_battery.json")
+if [[ -n "$SHIPPED_M" ]]; then
+  B_ARGS+=(--shipped-m "$SHIPPED_M")
+else
+  echo "[dispatch] NOTE: shipped-M reference not resolved under $WEIGHTS_DIR — battery runs without the cross-slot spectrum row"
+fi
+run p2c_battery env CUDA_VISIBLE_DEVICES=0 "${B_ARGS[@]}" ${BATTERY_EXTRA[@]+"${BATTERY_EXTRA[@]}"}
+phase_end "p2c_battery"
 
 # ── p3_grid: baseline -> steered strata fan-out -> finalize ───────────────────
 phase_begin "p3_grid"
@@ -850,6 +910,15 @@ phase_end "p4_mediation"
 # ── p5a: WildChat fresh capture (stream join, then sharded gen+capture) ───────
 phase_begin "p5a_stream_join"
 wait_rc "$STREAM_PID" || exit $?
+# §9 phase_outputs.p5_transfer prompt manifest (review v1 Critical 3 (a)):
+# persist the fresh-WildChat pool + meta + stream report BEFORE the GPU
+# capture consumes it (#825 ordering). Text-only — rides the non-LFS path.
+WC_LIST="$OUT_ROOT/upload_wc_pool.list"; : > "$WC_LIST"
+list_add_required "$WC_LIST" "wildchat_fresh_pool.jsonl" "$WC_DIR/wildchat_fresh_pool.jsonl"
+list_add_required "$WC_LIST" "wildchat_fresh_pool.meta.json" "$WC_DIR/wildchat_fresh_pool.meta.json"
+list_add_required "$WC_LIST" "stream_report.json" "$WC_DIR/stream_report.json"
+upload_batch p5a_pool_upload "$HF_PREFIX_EFF/wildchat_fresh" \
+  "task #1776: fresh WildChat prompt pool + stream report (pre-capture)" "$WC_LIST"
 phase_end "p5a_stream_join"
 
 phase_begin "p5a_capture"
@@ -866,11 +935,8 @@ phase_end "p5a_capture"
 
 # ── p5_transfer: P2c reads + P5 decay legs (test-1000 + wildchat_fresh) ───────
 phase_begin "p5_transfer"
-mkdir -p "$EVAL_DIR/phase5"
-SHIPPED_M=""
-if [[ $DRY == 0 && -d "$WEIGHTS_DIR" ]]; then
-  SHIPPED_M="$(find "$WEIGHTS_DIR" -name '*l19*.pt' -o -name '*layer19*.pt' 2>/dev/null | sort | head -1 || true)"
-fi
+mkdir -p "$EVAL_DIR/phase5" "$EVAL_DIR/phase2"
+# SHIPPED_M resolved at p2c_battery (hoisted; same variable reused here).
 T_ARGS=(uv run python scripts/issue1776_phase5.py transfer --assemble
   --pass-b "$PASS_B" --mm-dir "$MM_DIR" --out-dir "$DATA_DIR/transfer"
   --op "mprime_x50k=$COMP_DIR/m_ridge_x50k.pt=14"
@@ -879,7 +945,8 @@ T_ARGS=(uv run python scripts/issue1776_phase5.py transfer --assemble
   --jop "J_ctx=$FULL_ROOT/merged/J_ctx.pt"
   --jop "J_prefix=$FULL_ROOT/merged/J_prefix.pt"
   --leg "wildchat_fresh=$WC_CAP_ROOT"
-  --n-boot "$NBOOT" --out "$EVAL_DIR/phase5/transfer.json")
+  --n-boot "$NBOOT" --out "$EVAL_DIR/phase5/transfer.json"
+  --jvm-heldout-out "$EVAL_DIR/phase2/jvm_heldout.json")
 if [[ -n "$SHIPPED_M" ]]; then
   T_ARGS+=(--op "m_shipped=$SHIPPED_M=19")
 else
@@ -986,12 +1053,20 @@ note = {
         "wildchat_fresh": f"{hf_prefix}/wildchat_fresh",
     },
     "shipped_m_reference": shipped_m or "NOT RESOLVED under n1m_readout/weights (transfer ran without the reference row)",
-    "plan_deviation": "p5b leakage re-read ran POD-side (plan §9 lists it off-pod p7): all inputs were staged/built here",
+    "plan_deviation": (
+        "(a) p5b leakage re-read ran POD-side (plan §9 lists it off-pod p7): all inputs "
+        "were staged/built here; (b) 5c lens-vocab + 5d chain reads moved OFF-POD to the "
+        "p7 handoff (plan §9 lists chain_composition.json as a pod p5 output) — lens + "
+        "dictionaries are on HF, the reads are 0-GPU"
+    ),
     "offpod_handoffs": {
         "p6_judge": (
             "OFF-POD (VM, Batch API): uv run python scripts/issue1776_judge.py "
             f"--raw-dir <staged {hf_prefix}/raw_completions/steered> "
-            "--out-dir eval_results/issue_1776/phase3/judge. PRICING: the default "
+            "--out-dir eval_results/issue_1776/phase3/judge. Pass --include-allpos "
+            "to ALSO judge the exploratory all_positions strata (wired in this "
+            "run: 50-context subset; judged rows add ~5 strata x 50 ctx x K=5). "
+            "PRICING: the default "
             "judges the control strata under ALL 3 rubrics (~30k x 5 calls) vs plan "
             "S9's 16k x 5 one-rubric-per-completion costing - trim via "
             "--control-rubrics (e.g. --control-rubrics evil) if the budget binds."
@@ -1030,8 +1105,8 @@ EXPECTED = [
     "p0_stage", "p5a_stream_launch", "p0_parity", "p0_comparator_launch",
     "p0_jlens", "p0_comparator_join", "p0_dict", "p04_pairs", "p1_contexts",
     "p2a_sketch", "p1_diag", "p_early_upload", "p2b_full", "p2_upload",
-    "p3_grid", "p3_upload", "p4_mediation", "p5a_stream_join", "p5a_capture",
-    "p5_transfer", "p5b_leakage", "p_results_commit", "p_final",
+    "p2c_battery", "p3_grid", "p3_upload", "p4_mediation", "p5a_stream_join",
+    "p5a_capture", "p5_transfer", "p5b_leakage", "p_results_commit", "p_final",
 ]
 trace_path, log_dir, issue = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
 trace = [ln.strip() for ln in trace_path.read_text().splitlines() if ln.strip()]

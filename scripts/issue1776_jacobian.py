@@ -496,7 +496,10 @@ def run(args) -> int:
                 continue
             seed_mat, local_idx = eye[torch.as_tensor(use)], use - lo
         else:
-            seed_mat, local_idx = seeds, shard_seeds - lo
+            # Slice the seed matrix to THIS shard's block: local_idx is shard-sized,
+            # so passing the full matrix crashes index_add_ on any multi-shard run
+            # (code-review v1 Critical 1) and would redo every seed's backward 8x.
+            seed_mat, local_idx = seeds[lo:hi], shard_seeds - lo
         rend = render_pair(tok, row["prompt"], row["response"])
         if rend is None:
             seam_skips.append(str(row["pair_id"]))
@@ -546,14 +549,26 @@ def merge_shards(args) -> int:
             torch.load(d / f"J_{arm}.pt", map_location="cpu", weights_only=True) for d in shard_dirs
         ]
         hidden = parts[0]["half_sums"][0].shape[1]
-        sums = [torch.zeros(hidden, hidden) for _ in range(2)]
-        counts = [torch.zeros(hidden, dtype=torch.long) for _ in range(2)]
+        # Rows = seed count (max hi over shards): hidden in full mode, n_seeds in
+        # sketch mode (a hidden-row sketch merge would wrongly look square and
+        # defeat phase3's sketch-refusal check; review v1 Minor).
+        n_rows = max(int(p["seed_index_range"][1]) for p in parts)
+        sums = [torch.zeros(n_rows, hidden) for _ in range(2)]
+        counts = [torch.zeros(n_rows, dtype=torch.long) for _ in range(2)]
         for p in parts:
             lo, hi = p["seed_index_range"]
             for h in range(2):
                 sums[h][lo:hi] += p["half_sums"][h]
                 counts[h][lo:hi] += p["half_counts"][h]
-        cnt = (counts[0] + counts[1]).clamp(min=1).to(torch.float32)
+        tot = counts[0] + counts[1]
+        # All-rows-covered assert: a missing shard would silently zero its rows
+        # via clamp(min=1) (review v1 Minor — fail loud instead).
+        uncovered = (tot == 0).nonzero().flatten()
+        assert uncovered.numel() == 0, (
+            f"merge_shards[{arm}]: {uncovered.numel()} seed rows have zero count "
+            f"(first: {uncovered[:8].tolist()}) — a shard is missing/incomplete"
+        )
+        cnt = tot.clamp(min=1).to(torch.float32)
         merged = {
             "J": (sums[0] + sums[1]) / cnt[:, None],
             "half_sums": sums,
@@ -575,6 +590,9 @@ def smoke(args) -> int:
     """Full-body CPU smoke on a from-config tiny Qwen2 over the real tokenizer."""
     args.tiny, args.mode, args.m = True, "sketch", 0
     args.source_layer, args.readout_layer = 1, 3
+    # Base legs (1-5) are deterministic single-shard; leg 6 exercises multi-shard
+    # sharding + merge explicitly regardless of the CLI --num-shards value.
+    args.shard_index, args.num_shards = 0, 1
     model, tok = load_model(args)
     hidden = model.model.config.hidden_size
     prompts = ["What is the capital of France?", "Name one prime number."]
@@ -657,6 +675,30 @@ def smoke(args) -> int:
     ok = g_nonzero_gate(_ZeroEst(), tok, fake, deg_dir)
     assert not ok, "zero-field probe must FAIL the G-NONZERO gate"
     print("[jacobian] [smoke] G-NONZERO HALT branch fired on the zero-field probe")
+
+    # 6) multi-shard sketch leg (code-review v1 Critical 1): run the SAME sketch
+    #    as two shards, merge, and assert merged J == single-shard J per arm.
+    shards_root = args.out_dir / "mshard"
+    for si in range(2):
+        sa = argparse.Namespace(**vars(args))
+        sa.shard_index, sa.num_shards = si, 2
+        sa.out_dir = shards_root / f"shard{si}"
+        sa.out_dir.mkdir(parents=True, exist_ok=True)
+        rc = run(sa)
+        assert rc == 0, (si, rc)
+    ma = argparse.Namespace(shards_root=shards_root, out_dir=shards_root / "merged")
+    rc = merge_shards(ma)
+    assert rc == 0, rc
+    for arm in ARMS:
+        single = torch.load(args.out_dir / f"J_{arm}.pt", map_location="cpu", weights_only=True)
+        merged = torch.load(
+            shards_root / "merged" / f"J_{arm}.pt", map_location="cpu", weights_only=True
+        )
+        assert merged["J"].shape == single["J"].shape, (arm, merged["J"].shape, single["J"].shape)
+        diff = float((merged["J"] - single["J"]).abs().max())
+        scale = float(single["J"].abs().max())
+        assert diff <= 1e-6 * max(scale, 1e-12), (arm, diff, scale)
+    print("[jacobian] [smoke] multi-shard (num_shards=2) merge == single-shard J (all arms)")
     print("[jacobian] [phase=smoke_done] PASS", flush=True)
     return 0
 

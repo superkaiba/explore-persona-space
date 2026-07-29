@@ -99,10 +99,16 @@ def build_prompts(args) -> Path:
     external-stream checkpoint presumption (code-style.md).
     """
     from datasets import load_dataset
+    from huggingface_hub import HfApi
 
     out: Path = args.out
     out.parent.mkdir(parents=True, exist_ok=True)
-    ds = load_dataset(args.dataset, args.dataset_config, split="train", streaming=True)
+    # Pin + record the dataset REVISION so the "seeded, persisted" corpus is
+    # regenerable (review v1 Minor: a seed alone does not pin a mutable repo).
+    revision = args.dataset_revision or HfApi().dataset_info(args.dataset).sha
+    ds = load_dataset(
+        args.dataset, args.dataset_config, split="train", streaming=True, revision=revision
+    )
     ds = ds.shuffle(seed=args.seed, buffer_size=args.shuffle_buffer)
     rows: list[dict] = []
     scanned = 0
@@ -125,6 +131,7 @@ def build_prompts(args) -> Path:
     meta = {
         "dataset": args.dataset,
         "dataset_config": args.dataset_config,
+        "dataset_revision": revision,
         "seed": args.seed,
         "n": args.n,
         "min_chars": args.min_chars,
@@ -257,6 +264,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--dataset", default="allenai/c4")
     p.add_argument("--dataset-config", default="en")
+    p.add_argument(
+        "--dataset-revision", default=None, help="pin (default: resolve current sha, recorded)"
+    )
     p.add_argument("--min-chars", type=int, default=600)
     p.add_argument("--max-chars", type=int, default=4000)
     p.add_argument("--shuffle-buffer", type=int, default=10_000)

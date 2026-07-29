@@ -92,12 +92,12 @@ def run(args) -> int:
     report = per_direction_table(args.out_dir, triples)
     report["n_pairs"] = args.limit_pairs or None
     report["elapsed_s"] = time.time() - t0
-    C76.atomic_write_json(args.out_dir / "phase1_table.json", report)
+    C76.atomic_write_json(args.out_dir / "directional_table.json", report)
     top = report["table"][0]
     print(
         f"[phase1] [phase=phase1_done] K={len(report['table'])} "
         f"top: sigma={top['sigma_claimed']:.4f} gain_last={top['gain_last']:.4e} "
-        f"cos_w_last={top['cos_w_last']:.3f} -> {args.out_dir}/phase1_table.json",
+        f"cos_w_last={top['cos_w_last']:.3f} -> {args.out_dir}/directional_table.json",
         flush=True,
     )
     return 0
@@ -135,7 +135,7 @@ def smoke(args) -> int:
     args.topk, args.limit_pairs = 4, 2
     rc = run(args)
     assert rc == 0, rc
-    rep = json.loads((args.out_dir / "phase1_table.json").read_text())
+    rep = json.loads((args.out_dir / "directional_table.json").read_text())
     assert len(rep["table"]) == 4, rep
     for row in rep["table"]:
         assert row["gain_last"] > 0.0, row  # nonzero causal gain on the tiny model

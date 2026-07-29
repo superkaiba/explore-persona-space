@@ -27,6 +27,7 @@ probe (fit_ridge vs fit_ridge_with_weights predictions identical).
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import time
 from pathlib import Path
@@ -54,14 +55,25 @@ def _pooled_r2(pred: np.ndarray, y: np.ndarray) -> float:
 
 
 def select_train_rows(
-    prov: np.ndarray, val: np.ndarray, te: np.ndarray, n_train: int, seed: int, lmsys_only: bool
+    prov: np.ndarray,
+    val: np.ndarray,
+    te: np.ndarray,
+    n_train: int,
+    seed: int,
+    lmsys_only: bool,
+    extra_excluded: np.ndarray | None = None,
 ) -> np.ndarray:
     """Seeded n_train-row draw from the n1m TRAIN pool (all rows minus pinned
-    val/test), optionally restricted to LMSYS-provenance rows (H3 refit)."""
+    val/test), optionally restricted to LMSYS-provenance rows (H3 refit).
+    ``extra_excluded`` (row indices) implements the plan-§3 G-PARITY exclusion:
+    rows failing the parity rig are dropped from the pool (review v1 concern
+    parity-exclusion-list-unconsumed)."""
     n_rows = prov.shape[0]
     held = np.zeros(n_rows, dtype=bool)
     held[np.asarray(val)] = True
     held[np.asarray(te)] = True
+    if extra_excluded is not None and len(extra_excluded):
+        held[np.asarray(extra_excluded)] = True
     pool = np.arange(n_rows)[~held]
     if lmsys_only:
         pool = pool[np.asarray([prov[i] == "lmsys" for i in pool])]
@@ -147,6 +159,19 @@ def smoke_synthetic(args) -> int:
     val = np.arange(2000, 2300)
     te = np.arange(2300, 2600)
     tr = select_train_rows(prov, val, te, args.smoke_n_train, args.seed, args.lmsys_only)
+    # Parity-exclusion branch probe (review v1): excluded rows never enter tr.
+    # (n_train shrunk by the exclusion count — the probe exercises the branch,
+    # not the pool-floor assert, which its own guard covers at production n.)
+    tr_ex = select_train_rows(
+        prov,
+        val,
+        te,
+        args.smoke_n_train - 3,
+        args.seed,
+        args.lmsys_only,
+        extra_excluded=np.asarray([0, 1, 2]),
+    )
+    assert not ({0, 1, 2} & set(tr_ex.tolist())), "parity-excluded rows leaked into train"
     lambdas = C76.EXTENDED_LAMBDA_GRID
     report = fit_comparator(
         x, y, tr, val, te, lambdas, "cpu", 512, tag="smoke_synth", out_dir=args.out_dir
@@ -185,6 +210,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--fresh-stream", action="store_true")
     ap.add_argument("--prefetch", type=int, default=2)
     ap.add_argument("--max-chunks", type=int, default=None)
+    ap.add_argument(
+        "--parity-exclusion",
+        type=Path,
+        default=None,
+        help="G-PARITY exclusion_list.json — failed-parity ci rows leave the train pool (§3)",
+    )
     ap.add_argument("--smoke-synthetic", action="store_true", help="CPU smoke, no staged data")
     ap.add_argument("--smoke-h", type=int, default=64)
     ap.add_argument("--smoke-n-train", type=int, default=2000)
@@ -212,7 +243,30 @@ def main(argv: list[str] | None = None) -> int:
     _, y19 = per_layer[C76.READOUT_LAYER]
     assert x14.shape[1] == C.EXPECTED_HIDDEN and y19.shape == x14.shape, (x14.shape, y19.shape)
     tag = args.tag if not args.lmsys_only else "m_ridge_lmsys50k"
-    tr = select_train_rows(prov, val, te, args.n_train, args.seed, args.lmsys_only)
+    # Plan §3 G-PARITY exclusion (review v1): rows whose ci failed the parity
+    # rig are dropped from the train pool. The ci memmap is the row identity
+    # the assemble pass persists (pass_b head rows carry ci=-1 and can never
+    # match a parity ci — parity samples new-capture chunks only).
+    excl_rows: np.ndarray | None = None
+    n_parity_excluded = 0
+    if args.parity_exclusion is not None:
+        assert args.parity_exclusion.exists(), (
+            f"--parity-exclusion missing: {args.parity_exclusion}"
+        )
+        excluded = json.loads(args.parity_exclusion.read_text())["excluded"]
+        excl_ci = sorted({int(r["ci"]) for r in excluded})
+        if excl_ci:
+            ci = np.load(Path(args.mm_dir) / "ci.npy", mmap_mode="r")[: x14.shape[0]]
+            excl_rows = np.nonzero(np.isin(np.asarray(ci), np.asarray(excl_ci)))[0]
+            n_parity_excluded = int(len(excl_rows))
+        print(
+            f"[comparator] parity exclusion: {len(excl_ci)} ci -> "
+            f"{n_parity_excluded} train-pool rows dropped",
+            flush=True,
+        )
+    tr = select_train_rows(
+        prov, val, te, args.n_train, args.seed, args.lmsys_only, extra_excluded=excl_rows
+    )
     report = fit_comparator(
         x14,
         y19,
@@ -226,6 +280,8 @@ def main(argv: list[str] | None = None) -> int:
         out_dir=args.out_dir,
     )
     report["split"] = split
+    report["n_parity_excluded"] = n_parity_excluded
+    report["parity_exclusion_file"] = str(args.parity_exclusion) if args.parity_exclusion else None
     C76.atomic_write_json(args.out_dir / f"{tag}_report.json", report)
     return 0
 

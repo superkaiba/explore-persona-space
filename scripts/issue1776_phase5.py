@@ -551,7 +551,12 @@ def cmd_transfer(args) -> int:
             rows[name]["mismatched_units"] = "last" not in name  # §6: J_ctx/J_prefix on c_last
         for in_layer in sorted({il for _, _, il in ops} | ({C76.SOURCE_LAYER} if jops else set())):
             x = (leg["x_src"] if in_layer == C76.SOURCE_LAYER else leg["x_ro"]).astype(np.float64)
-            pred = x + (ymu19 - xmu[in_layer])  # identity + learned bias, anchor-train residual
+            # Identity + learned bias: same math as the canonical helper
+            # analysis/mapping_baselines.identity_bias_predict (v̂ = x + b,
+            # b = train-fold mean of y − x), with b computed from the ANCHOR
+            # means (n1m train pool) instead of an in-leg train fold — the
+            # anchors ARE the train-side means here (review v1 style note).
+            pred = x + (ymu19 - xmu[in_layer])
             key = f"identity_bias_l{in_layer}"
             rows[key] = score_predictions(pred, y, n_boot=args.n_boot, seed=args.seed)
             rows[key]["input_layer"] = in_layer
@@ -584,9 +589,70 @@ def cmd_transfer(args) -> int:
                     entry["relative_decay"] = o["r2"] / r["r2"]
                 decay.setdefault(other_name, {})[op_name] = entry
     report["decay_vs_base"] = {"base_leg": args.base_leg, "rows": decay}
+
+    # Plan §12 assumption 3 (review v1 Minor): the shipped 963k ridge must
+    # reproduce its COMMITTED test_r2 on the pinned test-1000 within ±tol.
+    # Recorded + WARNed (never a halt — §7 names no such gate); on a miss the
+    # shipped-M row is labeled reference-not-validated for the analyzer.
+    base = report["legs"].get(args.base_leg, {})
+    shipped = (base.get("operators") or {}).get("m_shipped")
+    if shipped is not None:
+        got = float(shipped["r2"])
+        diff = abs(got - C76.SHIPPED_M_TEST_R2_REF)
+        ok = diff <= C76.SHIPPED_M_TEST_R2_TOL
+        report["shipped_m_reproduction"] = {
+            "ref_r2": C76.SHIPPED_M_TEST_R2_REF,
+            "ref_source": "eval_results/issue_779/fitter-fair-comparison-n1m/n1m_fits.json"
+            " per_point.mixed_1m.predictors.ridge.whole_map_r2",
+            "got_r2": got,
+            "abs_diff": diff,
+            "tol": C76.SHIPPED_M_TEST_R2_TOL,
+            "within_tol": bool(ok),
+        }
+        shipped["reference_validated"] = bool(ok)
+        lvl = "PASS" if ok else "WARN: shipped-M row NOT reference-validated"
+        print(
+            f"[phase5-transfer] shipped-M reproduction {lvl}: got={got:.4f} "
+            f"ref={C76.SHIPPED_M_TEST_R2_REF:.4f} (tol {C76.SHIPPED_M_TEST_R2_TOL})",
+            flush=True,
+        )
+
+    # Plan §3 parity-exclusion domain note (review v1 concern
+    # parity-exclusion-list-unconsumed): the G-PARITY rig samples NEW-capture
+    # (n1m train-pool) rows only; the pinned test-1000 is the round-1 pass_b
+    # head (ci = -1), structurally outside the parity sample, so no exclusion
+    # can apply to this leg. The exclusion list IS consumed where its rows
+    # live: the P0.4 J-pair builder + the comparator train-row selection.
+    report["parity_exclusion"] = {
+        "applies_to_test_leg": False,
+        "reason": "parity samples new-capture (train-pool) rows; test-1000 is pass_b (ci=-1)",
+        "consumers": ["p04 jpairs builder", "comparator select_train_rows"],
+    }
     report["repro"] = C76.repro_meta()
     C76.atomic_write_json(args.out, report)
     print(f"[phase5-transfer] [phase=transfer_done] -> {args.out}", flush=True)
+
+    # §6.5 primary deliverable phase2/jvm_heldout.json (review v1 Critical 2):
+    # the held-out J-vs-M' read on the pinned test-1000 — the lmsys_test1000
+    # block re-emitted at its DECLARED path, with a pointer to the full report.
+    if args.jvm_heldout_out is not None:
+        leg = report["legs"].get(args.base_leg)
+        assert leg is not None, (
+            f"--jvm-heldout-out requires the '{args.base_leg}' leg to have been scored"
+        )
+        C76.atomic_write_json(
+            args.jvm_heldout_out,
+            {
+                "dv": "Held-out reconstruction (J vs M')",
+                "leg": args.base_leg,
+                "n": leg["n"],
+                "operators": leg["operators"],
+                "shipped_m_reproduction": report.get("shipped_m_reproduction"),
+                "full_report": str(args.out),
+                "repro": report["repro"],
+            },
+        )
+        print(f"[phase5-transfer] jvm_heldout -> {args.jvm_heldout_out}", flush=True)
     return 0
 
 
@@ -1082,10 +1148,14 @@ def _smoke_transfer(out: Path) -> None:
         anchors,
     )
     rep_path = out / "transfer" / "transfer.json"
+    jvm_path = out / "transfer" / "jvm_heldout.json"
     ns = argparse.Namespace(
         assemble=False,
         anchors=anchors,
-        op=[f"m_smoke={op_path}=14"],
+        # m_shipped alias exercises the assumption-3 reproduction branch: the
+        # planted map's r2 (>0.9) sits OUTSIDE ref±tol, so the smoke drives the
+        # not-validated WARN path (degenerate-gate coverage, review v1 Minor).
+        op=[f"m_smoke={op_path}=14", f"m_shipped={op_path}=19"],
         jop=[f"jca_last={j_path}"],
         legs=[
             f"lmsys_test1000={out / 'transfer' / 'leg_lmsys_test1000.pt'}",
@@ -1095,6 +1165,7 @@ def _smoke_transfer(out: Path) -> None:
         n_boot=200,
         seed=0,
         out=rep_path,
+        jvm_heldout_out=jvm_path,
     )
     assert cmd_transfer(ns) == 0
     rep = json.loads(rep_path.read_text())
@@ -1104,7 +1175,15 @@ def _smoke_transfer(out: Path) -> None:
     assert a["m_smoke"]["knn"]["euclidean"]["acc_at_k"]["1"] > 0.9, a["m_smoke"]["knn"]
     dec = rep["decay_vs_base"]["rows"]["wildchat_fresh"]["m_smoke"]
     assert "relative_decay" in dec and dec["base_clears_identity_bias"], dec
-    print("[smoke] transfer: PASS (planted map recovered; CI + kNN + decay emitted)")
+    srp = rep["shipped_m_reproduction"]
+    assert srp["within_tol"] is False and a["m_shipped"]["reference_validated"] is False, srp
+    jvm = json.loads(jvm_path.read_text())
+    assert jvm["leg"] == "lmsys_test1000" and "m_shipped" in jvm["operators"], jvm.keys()
+    assert jvm["shipped_m_reproduction"]["within_tol"] is False
+    print(
+        "[smoke] transfer: PASS (planted map recovered; CI + kNN + decay + jvm_heldout "
+        "emitted; shipped-M reproduction WARN branch exercised)"
+    )
 
 
 def _smoke_leakage(out: Path) -> None:
@@ -1396,6 +1475,12 @@ def main(argv: list[str] | None = None) -> int:
     t.add_argument("--mm-dir", type=Path, default=C76.DATA_DIR / "n1m_mm")
     t.add_argument("--max-chunks", type=int, default=None)
     t.add_argument("--out-dir", type=Path, default=C76.DATA_DIR / "transfer")
+    t.add_argument(
+        "--jvm-heldout-out",
+        type=Path,
+        default=None,
+        help="also emit the §6.5 phase2/jvm_heldout.json (base-leg operators block)",
+    )
 
     lk = sub.add_parser("leakage", help="5b retrospective leakage re-read (0 GPU)")
     lk.add_argument(
