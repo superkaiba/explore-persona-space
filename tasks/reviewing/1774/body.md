@@ -26,7 +26,7 @@ relates_to:
 ## Takeaways
 
 - Held-out per-answer R² at layer 14: full context **0.812**, bare query **0.717**, pre-query prefix end 0.02, query-averaged prefix −0.02 — with every trait cell resolved at 11.7–16.8× decode-noise floors.
-- Per-trait content is query-driven: bare query recovers R² 0.74–0.83 vs 0.87–0.92 full-context; pre-query reads ≈0 per answer, and its persona-average skill (0.17/0.57) carries no trait content (−0.13 to +0.16).
+- Per-trait content is query-driven: bare query recovers R² 0.74–0.83 vs 0.87–0.92 full-context; prefix-end persona-average skill (0.17) carries no trait content (−0.13 to +0.16); query-averaged (0.57) stays trait-bearing (0.68–0.78).
 - The joint-fit and separately-fitted prefix operators agree far above chance (cosine 0.47 vs null 0.01) but below fold self-agreement (0.84) — so cross-arm geometry reads stay descriptive.
 - The context map is high-rank: 763–2,932 held-out-validated channels depending on counting convention (at least 700 under the strictest), refuting the expected tens-of-channels picture.
 - Additions (0.92-unit dose) sat at the ≈7.8 no-effect reference (no verdict); erasures moved state 1.8–3.0× and behavior: sycophancy-erase shifts survive matched truncation, hallucination-erase's on-target shift is truncation-sensitive.
@@ -119,17 +119,17 @@ Every cell is resolved — between-context signal is 11.7–16.8× the decode-no
 
 19–27% of each trait direction's answer-side mass lies outside the context map's k90 range (λ-sweep spread 0.06–0.10; evil exactly at the 0.10 stability criterion). This table is per-answer grain; the persona-averaged companion is the next result.
 
-### Pre-query persona-averaged skill carries no trait content
+### Genuinely pre-query (prefix-end) persona-averaged skill carries no trait content
 
 Held-out persona-averaged R² — per-prefix mean targets over 996 held-out prefixes, fold-accumulated — along each trait direction plus the overall read (all 3,584 coordinates), for the four conditioning arms at layer 14.
 
 ![Persona-averaged trait readability heatmap by arm at layer 14](https://raw.githubusercontent.com/superkaiba/explore-persona-space/dd022917bbb7275f76b9a40b456834b6c7c44962/figures/issue_1774/averaged_grain_trait_r2_heatmap.png)
 
-> **Figure.** *What the pre-query state predicts is trait-free.* Cell values: held-out persona-averaged R² along each unit-norm trait direction; bottom row: the overall persona-averaged read. Fold-accumulated over 996 prefixes, layer 14; zero-GPU follow-up round.
+> **Figure.** *What the genuinely pre-query prefix-end state predicts is trait-free.* Cell values: held-out persona-averaged R² along each unit-norm trait direction; bottom row: the overall persona-averaged read. Fold-accumulated over 996 prefixes, layer 14; zero-GPU follow-up round.
 
 Prefix end keeps its modest overall persona-averaged skill (0.174; 0.22–0.25 at layers 18/19) yet reads essentially zero along every trait direction — evil −0.125, sycophancy 0.088, hallucination 0.046, spanning −0.13 to +0.16 across the three layers — so its predictable variance lies off the trait directions. Full context keeps near-per-answer trait readability at this grain (0.847–0.896), with the bare-query and query-averaged arms between (0.60–0.78).
 
-This resolves the scope caveat above and refutes the remaining possibility that the pre-query arms' persona-averaged skill is trait-bearing: what the pre-query state does predict about upcoming answers is trait-free persona-average structure. Row alignment against the committed per-answer table is hard-asserted per arm and layer, and the three persona-averaged anchors reproduce.
+This closes the per-answer table's open grain question and refutes the remaining possibility that the prefix-end arm's persona-averaged skill is trait-bearing: what the genuinely pre-query state does predict about upcoming answers is trait-free persona-average structure. Row alignment against the committed per-answer table is hard-asserted per arm and layer, the three persona-averaged anchors reproduce, and per-fold values sit in the artifact JSON.
 
 ### The joint and separately-fitted prefix operators are related but not one object, and the prefix deficit is not linearly recoverable
 
