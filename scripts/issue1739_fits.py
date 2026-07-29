@@ -657,35 +657,60 @@ def _record_compose_skip(spec: RunSpec, exc: Exception, compose_skips: list[dict
 PILOT_ABORT_RC = 7  # designed-halt rc (never a bare rc=1 — gotchas.md pilot-gate entry)
 
 
+def _map_key(spec: RunSpec) -> tuple:
+    """Whitening/map cache key — regime slices of one (variant, U) share it."""
+    return (spec.variant, spec.u_size, spec.f_u, spec.f_l, spec.budgets, spec.seeds)
+
+
 def compose_pilot_report(
     *,
     n_map_fits: int,
-    n_units: int,
-    n_transfer_units: int,
     map_fit_s: float,
-    unit_s: float,
+    unit_group_walls: dict[int, float],
+    n_plain_groups: dict[int, int],
+    n_compose_units: dict[int, int],
     transfer_s: float,
+    n_pilot_transfer_units: int,
+    n_transfer_units: int,
     plan_wall_h: float,
     abort_mult: float,
+    n_units: int = 0,
 ) -> dict:
     """Pure §9 pilot fence math (unit-tested; the CLI adds provenance fields).
 
-    ``projected_wall_h`` extrapolates the MEASURED single-unit walls across
-    the full grid (conservative: the pilot unit runs at max L / full U);
+    Round-8 semantics: the pilot measures ONE regime-shared unit-GROUP per
+    BUDGET (all regimes of a (variant, U) slice share the ridge/MLP
+    factorizations — ``run_grid_multi``), so the projection prices every
+    (map_key, budget, draw, seed) unit-group at its budget's MEASURED group
+    wall — the old max-L per-unit extrapolation both over-counted the shared
+    work ~n_regimes x AND priced the cheap budgets at the top rung's cost.
+    Composition cells (single-regime groups) are priced at their anchor
+    budget's group wall; their per-cell map fits ride ``n_map_fits``.
+    Transfer projects at the measured per-(unit, regime) average
+    (conservative: the pilot's units share no row set, while the full
+    grid's top-rung units all hit the arm-4 row-set cache).
     ``fence_wall_h`` is the >=2x fence the experimenter sizes timeouts from;
     ``abort`` fires when the projection exceeds ``abort_mult x plan_wall_h``
     (plan §9: 'If any pilot exceeds 3x the estimate above, abort and
     re-size').
     """
-    projected_s = n_map_fits * map_fit_s + n_units * unit_s + n_transfer_units * transfer_s
+    walls = {int(b): float(w) for b, w in unit_group_walls.items()}
+    fallback = max(walls.values()) if walls else 0.0
+    plain_s = sum(n * walls.get(int(b), fallback) for b, n in n_plain_groups.items())
+    compose_s = sum(n * walls.get(int(b), fallback) for b, n in n_compose_units.items())
+    per_transfer = transfer_s / n_pilot_transfer_units if n_pilot_transfer_units else 0.0
+    transfer_total = n_transfer_units * per_transfer
+    projected_s = n_map_fits * map_fit_s + plain_s + compose_s + transfer_total
     projected_h = projected_s / 3600.0
     return {
         "n_map_fits": int(n_map_fits),
+        "map_fit_s": float(map_fit_s),
+        "unit_group_walls_s": {str(b): float(w) for b, w in sorted(walls.items())},
+        "n_plain_groups": {str(int(b)): int(n) for b, n in sorted(n_plain_groups.items())},
+        "n_compose_units": {str(int(b)): int(n) for b, n in sorted(n_compose_units.items())},
         "n_units": int(n_units),
         "n_transfer_units": int(n_transfer_units),
-        "map_fit_s": float(map_fit_s),
-        "unit_s": float(unit_s),
-        "transfer_unit_s": float(transfer_s),
+        "transfer_unit_s": float(per_transfer),
         "projected_wall_h": float(projected_h),
         "fence_wall_h": float(2.0 * projected_h),
         "plan_wall_h": float(plan_wall_h),
@@ -695,6 +720,8 @@ def compose_pilot_report(
 
 
 def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
+    import gc  # noqa: F401 — used by the round-8 memory-scoping frees below
+
     import numpy as np
 
     from explore_persona_space.experiments.issue_1739 import arms, fits, store_io
@@ -762,69 +789,99 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
     )
     print(f"[fits] plan grid: {len(specs)} (variant x U x regime) slices", flush=True)
 
+    # C3 directions UP FRONT, then FREE the fp64 per-rollout answer rows —
+    # round-8 memory scoping: after extraction they are dead weight (~tens of
+    # GiB at production scale) squeezing the arm batteries' headroom.
+    rb_cache: dict[str, np.ndarray] = {}
+    for regime in args.regimes:
+        rb_cache[regime] = _extract_rb(regime, args, tbl, layers, dim)
+        _save_rb(args.tensors_root, args.behavior, regime, rb_cache[regime], layers)
+    if tbl.ans_rows is not None:
+        freed = sum(a.nbytes for a in tbl.ans_rows.values())
+        tbl.ans_rows = tbl.ans_row_ctx = tbl.ans_row_k = None
+        gc.collect()
+        print(
+            f"[fits] freed per-rollout answer rows ({freed / 2**30:.2f} GiB) "
+            "after direction extraction",
+            flush=True,
+        )
+
+    # Group consecutive specs sharing a map_key: the regime slices of one
+    # (variant, U) rung run as ONE run_grid_multi pass (shared whitening/map,
+    # shared whitened labeled arrays, shared ridge/MLP factorizations).
+    groups: list[list[RunSpec]] = []
+    for spec in specs:
+        if groups and _map_key(spec) == _map_key(groups[-1][0]):
+            groups[-1].append(spec)
+        else:
+            groups.append([spec])
+
     all_records: list[dict] = []
     transfer_rows: list[dict] = []
     transfer_skips: list[dict] = []
     diag_out: dict = {}
-    rb_cache: dict[str, np.ndarray] = {}
     compose_skips: list[dict] = []
-    prev_map_key: tuple | None = None
-    wh = mapfit = None  # reused across consecutive same-(variant, U) regime slices
-    z_ev_w = za_ev_w = None  # eval-split arrays, whitened per map_key (transfer leg)
-    for si, spec in enumerate(specs):
-        map_key = (spec.variant, spec.u_size, spec.f_u, spec.f_l, spec.budgets, spec.seeds)
-        if map_key != prev_map_key:
-            try:
-                u_x, u_y, u_label, n_u = _u_pool_for_spec(spec, u_arrays, u_fit_rows, tbl, layers)
-            except (ValueError, RuntimeError) as exc:
-                _record_compose_skip(spec, exc, compose_skips)  # re-raises on a plain rung
-                print(f"[fits] slice {si + 1}/{len(specs)} SKIP compose: {exc}", flush=True)
-                prev_map_key = None
-                continue
-            t_map = time.time()
-            wh = fits.fit_whitening(u_x, device=args.device, seed=args.seeds[0])
-            mapfit = fits.fit_linear_map(
-                fits.apply_whitening(u_x, wh), fits.apply_whitening(u_y, wh), device=args.device
-            )
-            if timings is not None:
-                timings.setdefault("map_fit_s", []).append(time.time() - t_map)
-            del u_x, u_y  # the map + whitening carry everything downstream needs
-            diag_out[f"{spec.variant}|{u_label}"] = mapfit.diagnostics
-            if spec.f_u is None:
-                # C-1: persist the frozen plain-rung map weights (HF-bound via
-                # the tensors upload stage; behavior-independent, idempotent).
-                _save_map(args.tensors_root, spec.variant, u_label, mapfit, layers)
-                if tbl_ev is not None:
-                    z_ev_w = fits.apply_whitening(tbl_ev.z_by_variant[spec.variant], wh)
-                    za_ev_w = (
-                        fits.apply_whitening(tbl_ev.z_ans, wh) if tbl_ev.z_ans is not None else None
-                    )
-            prev_map_key = map_key
-        if spec.regime not in rb_cache:
-            rb_cache[spec.regime] = _extract_rb(spec.regime, args, tbl, layers, dim)
-            _save_rb(args.tensors_root, args.behavior, spec.regime, rb_cache[spec.regime], layers)
-        data = arms.CellData(
-            z_ctx=fits.apply_whitening(tbl.z_by_variant[spec.variant], wh),
-            z_ans=fits.apply_whitening(tbl.z_ans, wh),
-            dv=tbl.dv,
-            rb=np.einsum("ld,lde->le", rb_cache[spec.regime], wh.w),
-            mapfit=mapfit,
-            text_emb=text_emb,
-            text_features=text_features,
-            layers=tuple(layers),
-            per_rollout=tbl.per_rollout,
+    for gi, group in enumerate(groups):
+        spec0 = group[0]
+        try:
+            u_x, u_y, u_label, n_u = _u_pool_for_spec(spec0, u_arrays, u_fit_rows, tbl, layers)
+        except (ValueError, RuntimeError) as exc:
+            _record_compose_skip(spec0, exc, compose_skips)  # re-raises on a plain rung
+            print(f"[fits] group {gi + 1}/{len(groups)} SKIP compose: {exc}", flush=True)
+            continue
+        t_map = time.time()
+        wh = fits.fit_whitening(u_x, device=args.device, seed=args.seeds[0])
+        mapfit = fits.fit_linear_map(
+            fits.apply_whitening(u_x, wh), fits.apply_whitening(u_y, wh), device=args.device
         )
-        provenance = {
-            "behavior": args.behavior,
-            "variant": spec.variant,
-            "regime": spec.regime,
-            "u_rung": int(n_u),
-            "u_rung_label": u_label,
-            "eval_rung": ",".join(tbl.rungs),
-            "config": args.config,
-            "f_u": spec.f_u,
-            "f_l": spec.f_l,
-        }
+        if timings is not None:
+            timings.setdefault("map_fit_s", []).append(time.time() - t_map)
+        del u_x, u_y  # the map + whitening carry everything downstream needs
+        diag_out[f"{spec0.variant}|{u_label}"] = mapfit.diagnostics
+        z_ev_w = za_ev_w = None  # eval-split arrays, whitened per map_key (transfer leg)
+        if spec0.f_u is None:
+            # C-1: persist the frozen plain-rung map weights (HF-bound via
+            # the tensors upload stage; behavior-independent, idempotent).
+            _save_map(args.tensors_root, spec0.variant, u_label, mapfit, layers)
+            if tbl_ev is not None:
+                z_ev_w = fits.apply_whitening(tbl_ev.z_by_variant[spec0.variant], wh)
+                za_ev_w = (
+                    fits.apply_whitening(tbl_ev.z_ans, wh) if tbl_ev.z_ans is not None else None
+                )
+        # ONE whitened fp64 copy per group, SHARED by identity across the
+        # regime slices (the run_cell_multi contract) — the old per-spec
+        # rebuild held n_regimes copies of identical arrays.
+        z_var_w = fits.apply_whitening(tbl.z_by_variant[spec0.variant], wh)
+        za_w = fits.apply_whitening(tbl.z_ans, wh)
+        datas: list[arms.CellData] = []
+        provs: list[dict] = []
+        for spec in group:
+            datas.append(
+                arms.CellData(
+                    z_ctx=z_var_w,
+                    z_ans=za_w,
+                    dv=tbl.dv,
+                    rb=np.einsum("ld,lde->le", rb_cache[spec.regime], wh.w),
+                    mapfit=mapfit,
+                    text_emb=text_emb,
+                    text_features=text_features,
+                    layers=tuple(layers),
+                    per_rollout=tbl.per_rollout,
+                )
+            )
+            provs.append(
+                {
+                    "behavior": args.behavior,
+                    "variant": spec.variant,
+                    "regime": spec.regime,
+                    "u_rung": int(n_u),
+                    "u_rung_label": u_label,
+                    "eval_rung": ",".join(tbl.rungs),
+                    "config": args.config,
+                    "f_u": spec.f_u,
+                    "f_l": spec.f_l,
+                }
+            )
         kwargs = {}
         if args.n_boot:
             kwargs["n_boot"] = args.n_boot
@@ -832,46 +889,58 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
             kwargs["n_perm"] = args.n_perm
         mlp_kwargs = {"max_epochs": args.mlp_epochs} if args.mlp_epochs else None
         t_grid = time.time()
-        recs = arms.run_grid(
-            data,
+        recs_by_regime = arms.run_grid_multi(
+            datas,
+            provs,
             tbl.groups,
-            budgets=list(spec.budgets),
-            draws=list(spec.draws),
-            seeds=list(spec.seeds),
-            provenance=provenance,
+            budgets=list(spec0.budgets),
+            draws=list(spec0.draws),
+            seeds=list(spec0.seeds),
             out_dir=args.out_root / "arm_results",
             arms=args.arms,
             device=args.device,
             mlp_kwargs=mlp_kwargs,
             context_ids=tbl.ctx_order,
+            unit_timings=(timings.setdefault("units", []) if timings is not None else None),
             **kwargs,
         )
         if timings is not None:
             timings.setdefault("grid_s", []).append(time.time() - t_grid)
-        all_records += recs
-        if tbl_ev is not None and spec.f_u is None:
+        for recs in recs_by_regime:
+            all_records += recs
+        if tbl_ev is not None and spec0.f_u is None:
             t_tf = time.time()
-            rows_s, skips_s = _run_transfer_for_spec(
+            rows_g, skips_g = _run_transfer_for_group(
                 args,
-                spec,
-                data,
+                group,
+                datas,
+                provs,
+                recs_by_regime,
                 tbl,
                 tbl_ev,
                 rungs_ev,
                 z_ev_w,
                 za_ev_w,
-                recs,
-                provenance,
                 layers,
             )
-            transfer_rows += rows_s
-            transfer_skips += skips_s
+            transfer_rows += rows_g
+            transfer_skips += skips_g
             if timings is not None:
                 timings.setdefault("transfer_s", []).append(time.time() - t_tf)
         print(
-            f"[fits] slice {si + 1}/{len(specs)} done ({spec.variant}/{u_label}/{spec.regime})",
+            f"[fits] group {gi + 1}/{len(groups)} done ({spec0.variant}/{u_label}/"
+            + "+".join(s.regime for s in group)
+            + ")",
             flush=True,
         )
+        # Round-8 memory scoping: drop the group's whitened fp64 arrays +
+        # release torch's allocator cache before the next group's map fit.
+        del datas, z_var_w, za_w, z_ev_w, za_ev_w, wh, mapfit
+        gc.collect()
+        if str(args.device).startswith("cuda"):
+            import torch
+
+            torch.cuda.empty_cache()
     extra = None
     if tbl_ev is not None:
         extra = {"transfer_rows": transfer_rows, "transfer_skips": transfer_skips}
@@ -955,33 +1024,42 @@ def _u_pool_for_spec(spec: RunSpec, u_arrays, u_fit_rows, tbl: LabeledTable, lay
     return x, y, label, x.shape[1]
 
 
-def _run_transfer_for_spec(
+def _run_transfer_for_group(
     args: argparse.Namespace,
-    spec: RunSpec,
-    data,
+    group: list[RunSpec],
+    datas: list,
+    provs: list[dict],
+    recs_by_regime: list[list[dict]],
     tbl: LabeledTable,
     tbl_ev: LabeledTable,
     rungs_ev,
     z_ev_w,
     za_ev_w,
-    recs: list[dict],
-    provenance: dict,
     layers: list[int],
 ) -> tuple[list[dict], list[dict]]:
-    """Distribution-shift ladder leg for ONE plain-rung spec (round-3 M-A).
+    """Distribution-shift ladder leg for one plain-rung regime GROUP (M-A).
 
-    Per (L, draw, seed) unit: refit the :data:`arms.TRANSFER_ARMS` on the
-    FULL train cell (``run_transfer_cell`` — never on eval DV), score every
-    eval-split context, and emit one row per (arm, eval rung) at the
-    TRAIN-frozen layer, plus one ``train_in_split`` row per arm carrying the
-    unit's own in-split OOF rho (the ladder's in-distribution anchor).
+    Per (L, draw, seed) unit: score every eval-split context with the
+    :data:`arms.TRANSFER_ARMS` fit on the FULL train cell (never on eval
+    DV) and emit one row per (arm, eval rung) at the TRAIN-frozen layer,
+    plus one ``train_in_split`` row per arm (the in-distribution anchor).
+    Round-8 batching, output-identical per (unit, regime): the unit loop
+    runs OUTSIDE the regime loop with two caches — the rb-INDEPENDENT arm-4
+    ridge is fit once per realized ROW SET and shared across regimes /
+    draws / seeds (identical row sets whenever budget_l >= n_ctx: at the
+    top rung all (draw, seed) units share ONE fit), and the rb-dependent
+    projection arms cache per (regime, row set, seed). The discarded
+    reverse-fold ridge fit is skipped via ``ridge_folds=(0,)``.
     Checkpoint-per-unit (JSONL, resume keyed on every output-affecting
-    flag — #722-r3) + one progress line per unit.
+    flag — #722-r3, key grammar UNCHANGED) + one progress line per unit.
     """
+    import hashlib
+
     import numpy as np
 
     from explore_persona_space.experiments.issue_1739 import arms, fits
 
+    spec0 = group[0]
     tpath = args.out_root / "arm_results" / "percell" / "transfer.jsonl"
     tpath.parent.mkdir(parents=True, exist_ok=True)
     tdone: dict[str, dict] = {}
@@ -1000,72 +1078,102 @@ def _run_transfer_for_spec(
         "n_boot": n_boot,
         "layers_subset": [int(x) for x in layers],
     }
-    rec_by_unit: dict[tuple, dict] = {}
-    for rec in recs:
-        rows = rec.get("arms") or []
-        if rows:
-            r0 = rows[0]
-            rec_by_unit[(r0["budget_l"], r0["draw"], r0["seed"])] = rec
-    units = [(b, d, s) for b in spec.budgets for d in spec.draws for s in spec.seeds]
+    rec_by_unit: list[dict[tuple, dict]] = []
+    for recs in recs_by_regime:
+        m: dict[tuple, dict] = {}
+        for rec in recs:
+            rows = rec.get("arms") or []
+            if rows:
+                r0 = rows[0]
+                m[(r0["budget_l"], r0["draw"], r0["seed"])] = rec
+        rec_by_unit.append(m)
+    dv_ev = np.asarray(tbl_ev.dv, dtype=np.float64)
+    rb_dep = [a for a in arms.TRANSFER_ARMS if a != "arm4_ridge_ctx"]
+    units = [(b, d, s) for b in spec0.budgets for d in spec0.draws for s in spec0.seeds]
     rows_all: list[dict] = []
     skips_all: list[dict] = []
+    arm4_cache: dict[str, tuple[dict, dict]] = {}
+    rbdep_cache: dict[tuple, tuple[dict, dict]] = {}
     t0 = time.time()
     for k, (budget_l, draw, seed) in enumerate(units):
-        key = "transfer|" + arms._unit_key(provenance, budget_l, draw, seed, regime_extra)
-        if key in tdone:
-            rows_all += tdone[key]["rows"]
-            skips_all += tdone[key].get("skips", [])
-            print(
-                f"[fits] transfer unit {k + 1}/{len(units)} SKIP (resume) {budget_l}/{draw}/{seed}",
-                flush=True,
-            )
-            continue
-
-        cell = fits.realize_budget_cell(tbl.groups, budget_l=budget_l, draw=draw, seed=seed)
-        rec = rec_by_unit.get((budget_l, draw, seed))
-        if rec is None:
-            raise RuntimeError(
-                f"transfer unit {budget_l}/{draw}/{seed}: no matching train record "
-                "(main grid must run the same units first)"
-            )
-        frozen_by_arm = {
-            row["arm"]: arms.frozen_layer_idx(row["rho_per_layer"]) for row in rec["arms"]
-        }
-        scores_ev, arm_skips = arms.run_transfer_cell(
-            data,
-            cell,
-            z_ev_w,
-            np.asarray(tbl_ev.dv, dtype=np.float64),
-            za_ev=za_ev_w,
-            device=args.device,
-        )
-        rows_u, skips_u = arms.evaluate_transfer(
-            scores_ev,
-            tbl_ev.dv,
-            rungs_ev,
-            frozen_by_arm,
-            provenance=provenance,
-            cell=cell,
-            layers=tuple(layers),
-            n_boot=n_boot,
-            min_n=int(args.transfer_min_n),
-        )
-        skips_u += [
-            {"arm": slug, "reason": reason, "budget_l": budget_l, "draw": draw, "seed": seed}
-            for slug, reason in sorted(arm_skips.items())
-        ]
-        # In-distribution anchor: the unit's own in-split OOF read per ladder arm.
-        for row in rec["arms"]:
-            if row["arm"] in scores_ev:
-                rows_u.append(
-                    {**row, "rung_kind": "train_in_split", "n_eval": int(len(cell.row_idx))}
+        cell = None
+        for r, spec in enumerate(group):
+            key = "transfer|" + arms._unit_key(provs[r], budget_l, draw, seed, regime_extra)
+            if key in tdone:
+                rows_all += tdone[key]["rows"]
+                skips_all += tdone[key].get("skips", [])
+                print(
+                    f"[fits] transfer unit {k + 1}/{len(units)} SKIP (resume) "
+                    f"{budget_l}/{draw}/{seed} regime={spec.regime}",
+                    flush=True,
                 )
-        line = json.dumps({"unit_key": key, "rows": rows_u, "skips": skips_u}, sort_keys=True)
-        with tpath.open("a", encoding="utf-8") as fh:  # single-line O_APPEND write
-            fh.write(line + "\n")
-            fh.flush()
-        rows_all += rows_u
-        skips_all += skips_u
+                continue
+            if cell is None:
+                cell = fits.realize_budget_cell(tbl.groups, budget_l=budget_l, draw=draw, seed=seed)
+            rec = rec_by_unit[r].get((budget_l, draw, seed))
+            if rec is None:
+                raise RuntimeError(
+                    f"transfer unit {budget_l}/{draw}/{seed}: no matching train record "
+                    "(main grid must run the same units first)"
+                )
+            rs_key = hashlib.sha1(cell.row_idx.tobytes()).hexdigest()
+            if rs_key not in arm4_cache:
+                arm4_cache[rs_key] = arms.run_transfer_cell(
+                    datas[r],
+                    cell,
+                    z_ev_w,
+                    dv_ev,
+                    za_ev=za_ev_w,
+                    arms=["arm4_ridge_ctx"],
+                    device=args.device,
+                    ridge_folds=(0,),
+                )
+            ck = (spec.regime, rs_key, int(seed))
+            if ck not in rbdep_cache:
+                rbdep_cache[ck] = arms.run_transfer_cell(
+                    datas[r],
+                    cell,
+                    z_ev_w,
+                    dv_ev,
+                    za_ev=za_ev_w,
+                    arms=rb_dep,
+                    device=args.device,
+                    ridge_folds=(0,),
+                )
+            s4, sk4 = arm4_cache[rs_key]
+            sd, skd = rbdep_cache[ck]
+            scores_ev = {**sd, **s4}
+            arm_skips = {**skd, **sk4}
+            frozen_by_arm = {
+                row["arm"]: arms.frozen_layer_idx(row["rho_per_layer"]) for row in rec["arms"]
+            }
+            rows_u, skips_u = arms.evaluate_transfer(
+                scores_ev,
+                tbl_ev.dv,
+                rungs_ev,
+                frozen_by_arm,
+                provenance=provs[r],
+                cell=cell,
+                layers=tuple(layers),
+                n_boot=n_boot,
+                min_n=int(args.transfer_min_n),
+            )
+            skips_u += [
+                {"arm": slug, "reason": reason, "budget_l": budget_l, "draw": draw, "seed": seed}
+                for slug, reason in sorted(arm_skips.items())
+            ]
+            # In-distribution anchor: the unit's own in-split OOF read per ladder arm.
+            for row in rec["arms"]:
+                if row["arm"] in scores_ev:
+                    rows_u.append(
+                        {**row, "rung_kind": "train_in_split", "n_eval": int(len(cell.row_idx))}
+                    )
+            line = json.dumps({"unit_key": key, "rows": rows_u, "skips": skips_u}, sort_keys=True)
+            with tpath.open("a", encoding="utf-8") as fh:  # single-line O_APPEND write
+                fh.write(line + "\n")
+                fh.flush()
+            rows_all += rows_u
+            skips_all += skips_u
         print(
             f"[fits] transfer unit {k + 1}/{len(units)} L={budget_l} draw={draw} "
             f"seed={seed} elapsed={time.time() - t0:.0f}s",
@@ -1075,16 +1183,22 @@ def _run_transfer_for_spec(
 
 
 def _run_pilot(args: argparse.Namespace) -> int:
-    """§9 pilot gate: ONE production-shape unit through the production path.
+    """§9 pilot gate: one production-shape unit-GROUP PER BUDGET (round 8).
 
-    Runs the max-L / full-U / first-(variant, regime) unit via
-    :func:`_run_real` (same out-root, so the pilot unit RESUMES into the full
-    run), extrapolates the measured walls across the full grid, writes
-    ``pilot_report.json``, and exits :data:`PILOT_ABORT_RC` when the
-    projection exceeds ``--pilot-abort-mult x --plan-wall-h`` (a designed
-    halt with a report artifact — never a bare rc=1).
+    Runs full-U / first-variant / ALL-regime unit-groups at every L budget
+    for (draws[0], seeds[0]) via :func:`_run_real` (same out-root, so the
+    pilot units RESUME into the full run), so the measured per-budget group
+    walls carry BOTH the regime-shared factorizations and every regime's
+    marginal cost — the projection basis of the new
+    :func:`compose_pilot_report`. Writes ``pilot_report.json`` and exits
+    :data:`PILOT_ABORT_RC` when the projection exceeds
+    ``--pilot-abort-mult x --plan-wall-h`` (a designed halt with a report
+    artifact — never a bare rc=1). A fully-RESUMED pilot re-run measures no
+    unit walls (all keys skip) and degrades to a transfer/map-only
+    projection — the gate has then already passed once on this out-root.
     """
     import copy
+    from collections import Counter
 
     u_sizes: list[int | None] = []
     for tok in args.u_sizes:
@@ -1107,18 +1221,24 @@ def _run_pilot(args: argparse.Namespace) -> int:
         f_l_grid=tuple(COMPOSITION_F_L),
     )
     n_units = sum(len(s.budgets) * len(s.draws) * len(s.seeds) for s in full_specs)
-    n_map_fits = len({(s.variant, s.u_size, s.f_u, s.f_l, s.budgets, s.seeds) for s in full_specs})
+    n_map_fits = len({_map_key(s) for s in full_specs})
+    plain_specs = [s for s in full_specs if s.f_u is None]
+    n_plain_map_keys = len({_map_key(s) for s in plain_specs})
+    n_plain_groups = {
+        int(b): n_plain_map_keys * len(args.draws) * len(args.seeds) for b in args.budgets
+    }
+    n_compose_units = dict(Counter(int(s.budgets[0]) for s in full_specs if s.f_u is not None))
     n_transfer = (
-        sum(len(s.budgets) * len(s.draws) * len(s.seeds) for s in full_specs if s.f_u is None)
+        sum(len(s.budgets) * len(s.draws) * len(s.seeds) for s in plain_specs)
         if args.transfer
         else 0
     )
     p = copy.copy(args)
     p.pilot = False
     p.variant = VARIANTS[0] if args.variant == "both" else args.variant
-    p.regimes = [args.regimes[0]]
+    p.regimes = list(args.regimes)
     p.u_sizes = ["full"]
-    p.budgets = [max(args.budgets)]
+    p.budgets = list(args.budgets)
     p.draws = [args.draws[0]]
     p.seeds = [args.seeds[0]]
     p.compose = False
@@ -1126,18 +1246,23 @@ def _run_pilot(args: argparse.Namespace) -> int:
     t0 = time.time()
     rc = _run_real(p, timings=timings)
     pilot_wall = time.time() - t0
-    map_fit_s = float(sum(timings.get("map_fit_s", [0.0])))
-    unit_s = float(sum(timings.get("grid_s", [0.0])))
+    map_walls = timings.get("map_fit_s", [])
+    map_fit_s = float(sum(map_walls) / len(map_walls)) if map_walls else 0.0
+    unit_group_walls = {int(u["budget_l"]): float(u["wall_s"]) for u in timings.get("units", [])}
     transfer_s = float(sum(timings.get("transfer_s", [0.0])))
+    n_pilot_transfer_units = (len(p.budgets) * len(p.regimes)) if args.transfer else 0
     report = compose_pilot_report(
         n_map_fits=n_map_fits,
-        n_units=n_units,
-        n_transfer_units=n_transfer,
         map_fit_s=map_fit_s,
-        unit_s=unit_s,
+        unit_group_walls=unit_group_walls,
+        n_plain_groups=n_plain_groups,
+        n_compose_units=n_compose_units,
         transfer_s=transfer_s,
+        n_pilot_transfer_units=n_pilot_transfer_units,
+        n_transfer_units=n_transfer,
         plan_wall_h=args.plan_wall_h,
         abort_mult=args.pilot_abort_mult,
+        n_units=n_units,
     )
     report.update(
         {
@@ -1145,9 +1270,9 @@ def _run_pilot(args: argparse.Namespace) -> int:
             "pilot_wall_s": float(pilot_wall),
             "pilot_unit": {
                 "variant": p.variant,
-                "regime": p.regimes[0],
+                "regimes": list(p.regimes),
                 "u_size": "full",
-                "budget_l": p.budgets[0],
+                "budgets": [int(b) for b in p.budgets],
                 "transfer": bool(args.transfer),
             },
             "git_commit": _git_commit(),
@@ -1160,8 +1285,9 @@ def _run_pilot(args: argparse.Namespace) -> int:
     import os
 
     os.replace(tmp, out)
+    walls_str = " ".join(f"L{b}={w:.1f}s" for b, w in sorted(unit_group_walls.items()))
     print(
-        f"[fits] pilot: unit_s={unit_s:.1f} map_fit_s={map_fit_s:.1f} "
+        f"[fits] pilot: unit_group_walls[{walls_str}] map_fit_s={map_fit_s:.1f} "
         f"transfer_s={transfer_s:.1f} projected_wall_h={report['projected_wall_h']:.3f} "
         f"fence_wall_h={report['fence_wall_h']:.3f} plan_wall_h={args.plan_wall_h:.3f} "
         f"verdict={'ABORT' if report['abort'] else 'PASS'} -> {out}",

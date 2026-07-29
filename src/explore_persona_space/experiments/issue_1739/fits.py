@@ -542,6 +542,105 @@ def ridge_layer_batched_auto(
     )
 
 
+def ridge_gcv_predict_per_target(
+    x_train: np.ndarray,
+    y_train: np.ndarray,
+    x_evals: list[np.ndarray],
+    *,
+    lambdas: np.ndarray | tuple[float, ...] = RIDGE_LAMBDAS,
+    device: str = "cpu",
+    layer_chunk: int = 4,
+) -> list[np.ndarray]:
+    """Batched ridge with PER-TARGET GCV lambda over ONE shared factorization.
+
+    ``x_train`` (S, ntr, d); ``y_train`` (S, ntr, T) — T independent targets
+    that SHARE the design matrix, so the expensive Gram + eigh is computed
+    once per (slice, fold) and every target only adds cheap spectral algebra.
+    ``x_evals`` is a list of eval matrices (S, nev_i, d); returns one
+    (S, nev_i, T) prediction array per eval matrix.
+
+    Semantics are the EXACT per-target twin of :func:`ridge_layer_batched_auto`
+    at T=1 (same standardize-X train-stats recipe — population std + 1e-9 —
+    center-Y, GCV per target over ``lambdas``, un-centered predictions,
+    float64; primal d x d Gram when ntr > d else the dual n_tr x n_tr Gram);
+    parity is test-pinned by
+    ``tests/test_issue1739_fits.py::test_ridge_gcv_per_target_matches_auto``.
+    This is the cross-arm/cross-regime dedup lever of the #1739 fits round:
+    the old per-(arm, layer, fold) slice pool re-ran one eigh PER TARGET.
+    """
+    import torch
+
+    x = np.asarray(x_train, dtype=np.float64)
+    y = np.asarray(y_train, dtype=np.float64)
+    assert x.ndim == 3 and y.ndim == 3, (x.shape, y.shape)
+    n_slices, ntr, d = x.shape
+    n_t = y.shape[2]
+    assert y.shape[:2] == (n_slices, ntr), (y.shape, x.shape)
+    evs = [np.asarray(e, dtype=np.float64) for e in x_evals]
+    for e in evs:
+        assert e.ndim == 3 and e.shape[0] == n_slices and e.shape[2] == d, (e.shape, x.shape)
+    lam_grid = np.asarray(lambdas, dtype=np.float64)
+    dev = torch.device(device)
+    primal = ntr > d
+    preds = [np.empty((n_slices, e.shape[1], n_t)) for e in evs]
+    for lo in range(0, n_slices, layer_chunk):
+        sl = slice(lo, min(lo + layer_chunk, n_slices))
+        xtr = torch.as_tensor(x[sl], device=dev)
+        ytr = torch.as_tensor(y[sl], device=dev)
+        xmu = xtr.mean(dim=1, keepdim=True)
+        xsd = xtr.std(dim=1, unbiased=False, keepdim=True) + 1e-9  # population std (twin parity)
+        xn = (xtr - xmu) / xsd
+        ymu = ytr.mean(dim=1, keepdim=True)  # (c, 1, T)
+        yc = ytr - ymu
+        tot = (yc**2).sum(dim=1)  # (c, T)
+        if primal:
+            gram = xn.transpose(1, 2) @ xn  # (c, d, d)
+            s, v = _eigh_robust(gram)
+            s = torch.clamp(s, min=0.0)  # (c, d)
+            a = v.transpose(1, 2) @ (xn.transpose(1, 2) @ yc)  # (c, d, T)
+            sq_a = a**2
+        else:
+            gram = xn @ xn.transpose(1, 2)  # (c, ntr, ntr) dual Gram
+            s, v = _eigh_robust(gram)
+            s = torch.clamp(s, min=0.0)  # (c, ntr)
+            a = v.transpose(1, 2) @ yc  # (c, ntr, T)
+            sq_a = a**2
+        c = s.shape[0]
+        gcv = torch.empty((c, len(lam_grid), n_t), dtype=torch.float64, device=dev)
+        for li, lam in enumerate(lam_grid):
+            lam_f = float(lam)
+            if primal:
+                # primal rss identity: rss_t = tot_t - sum_i sq_a[t,i] (s_i+2lam)/(s_i+lam)^2
+                shrink = (s + 2.0 * lam_f) / (s + lam_f) ** 2  # (c, d)
+                rss = tot - torch.einsum("cdt,cd->ct", sq_a, shrink)
+                dof = (s / (s + lam_f)).sum(dim=1)  # (c,)
+            else:
+                # dual rss identity: rss_t = tot_t - sum_k (2 f_k - f_k^2) (V^T Yc)_kt^2
+                filt = s / (s + lam_f)  # (c, ntr)
+                rss = tot - torch.einsum("cnt,cn->ct", sq_a, 2.0 * filt - filt**2)
+                dof = filt.sum(dim=1)
+            denom = (ntr - dof) ** 2  # (c,)
+            gcv[:, li, :] = torch.where(
+                (denom > 1e-12)[:, None], rss / denom[:, None], torch.full_like(rss, float("inf"))
+            )
+        best = gcv.argmin(dim=1)  # (c, T)
+        lam_sel = torch.as_tensor(lam_grid, device=dev)[best]  # (c, T)
+        f_sel = 1.0 / (s[:, :, None] + lam_sel[:, None, :])  # (c, d|ntr, T)
+        if primal:
+            w = v @ (a * f_sel)  # (c, d, T) standardized-space weights
+            for ei, e in enumerate(evs):
+                xen = (torch.as_tensor(e[sl], device=dev) - xmu) / xsd
+                preds[ei][sl] = (xen @ w + ymu).cpu().numpy()
+        else:
+            alpha = v @ (a * f_sel)  # (c, ntr, T) dual coefficients
+            xnt = xn.transpose(1, 2)  # (c, d, ntr)
+            w = xnt @ alpha  # (c, d, T)
+            for ei, e in enumerate(evs):
+                xen = (torch.as_tensor(e[sl], device=dev) - xmu) / xsd
+                preds[ei][sl] = (xen @ w + ymu).cpu().numpy()
+    return preds
+
+
 def fit_linear_map(
     x_u: np.ndarray,
     y_u: np.ndarray,

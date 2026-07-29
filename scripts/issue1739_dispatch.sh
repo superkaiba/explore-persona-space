@@ -183,11 +183,20 @@ run_fits_for_behavior() {
   if [ "$b" = "evil" ]; then
     FITS_ARGS+=(--compose)  # §4b composition: f_U x f_L at the L-anchors (Config A evil)
   fi
-  # §9 pilot gate (round-3 M-B): ONE production-shape unit through the SAME
-  # production entrypoint + args BEFORE the full grid; writes
-  # pilot_report.json under the behavior's out-root and exits rc=7 (designed
-  # halt, never bare rc=1) when projected wall > 3x the plan §9 estimate.
-  # Plan wall: §9 Phase-3 row = 2.0 h across 3 behaviors -> ~0.67 h each.
+  # §9 pilot gate (round-3 M-B): production-shape unit-groups through the SAME
+  # production entrypoint + args BEFORE the full grid — since round 8 one
+  # regime-shared group PER BUDGET (per-budget measured projection basis);
+  # writes pilot_report.json under the behavior's out-root and exits rc=7
+  # (designed halt, never bare rc=1) when projected wall > 3x the plan §9
+  # estimate. Plan wall: §9 Phase-3 row = 2.0 h across 3 behaviors -> ~0.67 h
+  # each. ROUND-8 NOTE: the fence default is DELIBERATELY left at 0.67 h —
+  # the post-fix projection (measured leg-2 pilot components x the exact
+  # regime/arm sharing ratios) is still ~20-25 h per behavior, above the
+  # ~12 h/behavior acceptability ceiling, so per the round-8 brief the fence
+  # is NOT bumped: the gate is EXPECTED to abort rc=7 with the honest
+  # per-budget report, routing the wall decision back to plan §9 re-sizing
+  # (descope draws/seeds, wider fleet, or a re-registered wall) instead of
+  # silently burning a 20 h+ GPU phase.
   echo "[phase=fits] pilot gate behavior=${b}"
   set +e
   "${CAPS[@]}" uv run python scripts/issue1739_fits.py "${FITS_ARGS[@]}" \

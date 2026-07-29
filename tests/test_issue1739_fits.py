@@ -305,12 +305,15 @@ def test_arm9_l0_gate_flips_on_perturbation(monkeypatch):
     data, _groups = _synthetic_cell_data()
     arms.verify_arm9_l0_degeneracy(data)  # real path: must not raise
 
-    real_solve = arms._solve_ridge_slices
+    real_solve = arms._solve_ridge_groups
 
-    def corrupted(slices, **kw):
-        return {k: v + 0.5 for k, v in real_solve(slices, **kw).items()}
+    def corrupted(jobs, **kw):
+        return {
+            key: {name: pred + 0.5 for name, pred in evs.items()}
+            for key, evs in real_solve(jobs, **kw).items()
+        }
 
-    monkeypatch.setattr(arms, "_solve_ridge_slices", corrupted)
+    monkeypatch.setattr(arms, "_solve_ridge_groups", corrupted)
     with pytest.raises(AssertionError, match="arm9 L2-SP"):
         arms.verify_arm9_l0_degeneracy(data)
 
@@ -707,20 +710,29 @@ def test_compose_pilot_report_fence_and_abort():
     cli = _load_fits_cli()
     kw = dict(
         n_map_fits=6,
-        n_units=810,
-        n_transfer_units=810,
         map_fit_s=60.0,
-        unit_s=4.0,
-        transfer_s=1.0,
+        # one measured regime-shared group wall per budget (round-8 basis)
+        unit_group_walls={250: 2.0, 2500: 4.0, 8000: 10.0},
+        n_plain_groups={250: 90, 2500: 90, 8000: 90},
+        n_compose_units={8000: 6, 250: 6},
+        transfer_s=30.0,
+        n_pilot_transfer_units=9,
+        n_transfer_units=810,
         abort_mult=3.0,
+        n_units=828,
     )
-    # projected = (6*60 + 810*4 + 810*1)/3600 = 1.225 h
+    # projected = (6*60 + 90*(2+4+10) + (6*10 + 6*2) + 810*(30/9))/3600
+    #           = (360 + 1440 + 72 + 2700)/3600 = 1.27 h
     rep = cli.compose_pilot_report(plan_wall_h=0.67, **kw)
-    assert rep["projected_wall_h"] == pytest.approx(1.225)
-    assert rep["fence_wall_h"] == pytest.approx(2.45)
-    assert rep["abort"] is False  # 1.225 < 3 x 0.67 = 2.01
+    assert rep["projected_wall_h"] == pytest.approx(4572.0 / 3600.0)
+    assert rep["fence_wall_h"] == pytest.approx(2 * 4572.0 / 3600.0)
+    assert rep["abort"] is False  # 1.27 < 3 x 0.67 = 2.01
     rep2 = cli.compose_pilot_report(plan_wall_h=0.4, **kw)
-    assert rep2["abort"] is True  # 1.225 > 3 x 0.4 = 1.2
+    assert rep2["abort"] is True  # 1.27 > 3 x 0.4 = 1.2
+    assert rep["transfer_unit_s"] == pytest.approx(30.0 / 9.0)
+    # a budget missing from the measured walls falls back to the max wall
+    rep3 = cli.compose_pilot_report(plan_wall_h=0.67, **{**kw, "unit_group_walls": {8000: 10.0}})
+    assert rep3["projected_wall_h"] > rep["projected_wall_h"]
     assert cli.PILOT_ABORT_RC == 7
 
 
@@ -736,3 +748,403 @@ def test_record_compose_skip_reraises_on_plain_rung():
     assert skips == []
     cli._record_compose_skip(comp, ValueError("quota"), skips)
     assert len(skips) == 1 and skips[0]["reason"] == "quota"
+
+
+# ---------------------------------------------------------------------------
+# round-8 batched-engine equivalence gates (serial oracle vs grouped solver)
+# ---------------------------------------------------------------------------
+
+_GATE_LAMBDAS = (0.1, 1.0, 10.0)
+
+
+def _serial_reference_ridge_scores(data, cell, *, lambdas=_GATE_LAMBDAS):
+    """Pre-round-8 serial oracle: ONE single-target ridge call per
+    (arm, layer, fold) — the exact primitive the retired per-slice pool
+    dispatched (`ridge_layer_batched_auto`, unchanged) — plus the old arm-9/14
+    alpha + residual assembly verbatim. Seeded + deterministic; the batched
+    grouped solver must reproduce it within float tolerance
+    (vectorize-many-cell-fits.md item 6)."""
+    lam = np.asarray(lambdas, dtype=np.float64)
+    idx, folds = cell.row_idx, cell.fold_ids
+    n_l, n_folds = len(idx), cell.n_folds
+    z = np.asarray(data.z_ctx[:, idx], dtype=np.float64)
+    dv = np.asarray(data.dv[idx], dtype=np.float64)
+    rb = np.asarray(data.rb, dtype=np.float64)
+    za = np.asarray(data.z_ans[:, idx], dtype=np.float64)
+    mp = fits.apply_map(z, data.mapfit)
+    n_layers = z.shape[0]
+    tr_masks, ev_masks = arms._fold_masks(folds, n_folds)
+    tr_w = tr_masks.astype(np.float64)
+    tr_w /= np.maximum(tr_w.sum(axis=1, keepdims=True), 1.0)
+    ev_rows = [np.flatnonzero(ev_masks[f]) for f in range(n_folds)]
+    tr_rows = [np.flatnonzero(tr_masks[f]) for f in range(n_folds)]
+
+    def solve(xt, yt, xe):
+        preds = fits.ridge_layer_batched_auto(xt[None], yt[None, :, None], xe[None], lambdas=lam)
+        return preds[0][:, 0]
+
+    def scatter(x_tr_src, x_ev_src, target_per_fold_layer=None):
+        arr = np.full((x_tr_src.shape[0], n_l), np.nan)
+        for f in range(n_folds):
+            for li in range(x_tr_src.shape[0]):
+                y = (
+                    dv[tr_rows[f]]
+                    if target_per_fold_layer is None
+                    else target_per_fold_layer[f][li][tr_rows[f]]
+                )
+                arr[li, ev_rows[f]] = solve(x_tr_src[li][tr_rows[f]], y, x_ev_src[li][ev_rows[f]])
+        return arr
+
+    out = {
+        "arm4_ridge_ctx": scatter(z, z),
+        "arm7_map_ridge_pred": scatter(mp, mp),
+        "arm8_map_ridge_true": scatter(za, mp),
+        "arm12_oracle_reg": scatter(za, za),
+        "arm15_text_only": scatter(
+            np.asarray(data.text_emb[idx], dtype=np.float64)[None],
+            np.asarray(data.text_emb[idx], dtype=np.float64)[None],
+        ),
+        "arm16_surface_feat": scatter(
+            np.asarray(data.text_features[idx], dtype=np.float64)[None],
+            np.asarray(data.text_features[idx], dtype=np.float64)[None],
+        ),
+    }
+    # arm 9 / 14: the old closed-form L2-SP assembly, verbatim
+    rng = np.random.default_rng([1739, 6, cell.seed])
+    rb_shuf = np.stack([r[rng.permutation(r.shape[0])] for r in rb])
+    for slug, rb_v in (("arm9_pretrain_ft", rb), ("arm14_shuffled_pt", rb_shuf)):
+        s_dir = arms._proj(mp, rb_v)
+        s_mu = np.einsum("fn,ln->lf", tr_w, s_dir)
+        d_mu = tr_w @ dv
+        cov = np.einsum(
+            "fn,lfn->lf",
+            tr_w,
+            (s_dir[:, None, :] - s_mu[:, :, None]) * (dv[None, None, :] - d_mu[None, :, None]),
+        )
+        var = np.einsum("fn,lfn->lf", tr_w, (s_dir[:, None, :] - s_mu[:, :, None]) ** 2)
+        alpha = np.where(var > 1e-30, cov / np.maximum(var, 1e-30), 0.0)
+        resid_targets = [
+            [dv - alpha[li, f] * s_dir[li] for li in range(n_layers)] for f in range(n_folds)
+        ]
+        resid = scatter(mp, mp, target_per_fold_layer=resid_targets)
+        out[slug] = alpha[:, folds] * s_dir + resid
+    return out
+
+
+def test_run_cell_ridge_arms_match_serial_oracle():
+    """Round-8 equivalence gate: the grouped shared-factorization solver
+    reproduces the serial per-(arm, layer, fold) oracle on 2 small seeded
+    synthetic cells, every ridge-family arm, within float tolerance."""
+    data, groups = _synthetic_cell_data()
+    ridge_arms = [
+        "arm4_ridge_ctx",
+        "arm7_map_ridge_pred",
+        "arm8_map_ridge_true",
+        "arm9_pretrain_ft",
+        "arm12_oracle_reg",
+        "arm14_shuffled_pt",
+        "arm15_text_only",
+        "arm16_surface_feat",
+    ]
+    for budget_l, draw, seed in ((24, 0, 0), (18, 1, 2)):
+        cell = fits.realize_budget_cell(groups, budget_l=budget_l, draw=draw, seed=seed)
+        scores, skipped = arms.run_cell(data, cell, arms=ridge_arms, lambdas=_GATE_LAMBDAS)
+        assert not skipped, skipped
+        ref = _serial_reference_ridge_scores(data, cell)
+        for slug in ridge_arms:
+            assert np.allclose(scores[slug], ref[slug], atol=1e-8, equal_nan=True), (
+                slug,
+                budget_l,
+                float(np.nanmax(np.abs(scores[slug] - ref[slug]))),
+            )
+
+
+def test_run_cell_multi_matches_single_regime_runs():
+    """Regime batching is output-identical: run_cell_multi over 2 rb variants
+    (shared z/za/map by identity) equals the independent per-regime
+    run_cell calls, arm by arm (MLP arm included — same seeds)."""
+    import dataclasses as _dc
+
+    data, groups = _synthetic_cell_data()
+    rng = np.random.default_rng(77)
+    data2 = _dc.replace(data, rb=np.asarray(data.rb) + 0.3 * rng.normal(size=data.rb.shape))
+    cell = fits.realize_budget_cell(groups, budget_l=24, draw=0, seed=0)
+    mlp_kw = {"max_epochs": 2, "hidden": 4}
+    multi = arms.run_cell_multi([data, data2], cell, mlp_kwargs=mlp_kw)
+    for d, (sc_multi, sk_multi) in zip((data, data2), multi, strict=True):
+        sc_single, sk_single = arms.run_cell(d, cell, mlp_kwargs=mlp_kw)
+        assert sk_multi == sk_single
+        assert set(sc_multi) == set(sc_single)
+        for slug in sc_single:
+            assert np.allclose(sc_multi[slug], sc_single[slug], atol=1e-9, equal_nan=True), slug
+
+
+def test_bootstrap_counting_ranks_bitexact_and_headline_reuse():
+    """The counting-sort bootstrap ranks are BIT-IDENTICAL to ranking the
+    drawn values directly (tie-heavy fixture), and evaluate_cell's
+    draws-reuse headline equals the old explicit re-bootstrap."""
+    rng = np.random.default_rng(3)
+    n = 40
+    scores = np.round(rng.normal(size=(3, n)) * 3)  # tie-heavy
+    dv = rng.integers(0, 6, size=n).astype(float)
+    idx = arms.make_bootstrap_idx(n, n_boot=25, seed=1)
+    new = arms.bootstrap_rhos(scores, dv, idx, chunk_draws=7)
+    ref = np.empty((3, 25))
+    for lo in range(0, 25, 7):
+        sl = idx[lo : lo + 7]
+        ref[:, lo : lo + sl.shape[0]] = arms._pearson_rows(
+            arms.rank_rows(scores[:, sl]), arms.rank_rows(dv[sl])[None]
+        )
+    assert np.array_equal(new, ref)
+    # headline draws-reuse: frozen-row delta draws == re-bootstrapped pair rows
+    da = arms.bootstrap_rhos(scores, dv, idx)
+    fa = int(np.nanargmax(arms.spearman_rows(scores, dv)))
+    pair = arms.bootstrap_rhos(np.stack([scores[fa], scores[0]]), dv, idx)
+    assert np.array_equal(da[fa], pair[0]) and np.array_equal(da[0], pair[1])
+
+
+def test_ridge_gcv_per_target_matches_auto():
+    """Per-target GCV over one shared factorization == looping the unchanged
+    single-target auto helper, BOTH branches (primal ntr>d, dual ntr<=d),
+    multiple eval matrices."""
+    rng = np.random.default_rng(5)
+    for ntr, d in ((12, 5), (6, 9)):
+        x = rng.normal(size=(2, ntr, d))
+        y = rng.normal(size=(2, ntr, 3))
+        e1 = rng.normal(size=(2, 4, d))
+        e2 = rng.normal(size=(2, 3, d))
+        preds = fits.ridge_gcv_predict_per_target(x, y, [e1, e2], lambdas=_GATE_LAMBDAS)
+        for t in range(3):
+            for ei, ev in enumerate((e1, e2)):
+                ref = fits.ridge_layer_batched_auto(
+                    x, y[:, :, t : t + 1], ev, lambdas=np.asarray(_GATE_LAMBDAS)
+                )
+                assert np.allclose(preds[ei][:, :, t : t + 1], ref, atol=1e-9), (ntr, d, t, ei)
+
+
+def test_transfer_ridge_folds_skip_is_output_identical():
+    """ridge_folds=(0,) skips ONLY the discarded reverse-fold fit: the
+    returned eval-block transfer scores are identical for every arm."""
+    data, groups = _synthetic_cell_data()
+    rng = np.random.default_rng(9)
+    z_ev = rng.normal(size=(3, 7, 8))
+    za_ev = rng.normal(size=(3, 7, 8))
+    dv_ev = rng.uniform(0, 100, size=7)
+    cell = fits.realize_budget_cell(groups, budget_l=20, draw=0, seed=1)
+    full, sk_full = arms.run_transfer_cell(data, cell, z_ev, dv_ev, za_ev=za_ev)
+    skip, sk_skip = arms.run_transfer_cell(data, cell, z_ev, dv_ev, za_ev=za_ev, ridge_folds=(0,))
+    assert sk_full == sk_skip and set(full) == set(skip)
+    for slug in full:
+        assert np.allclose(full[slug], skip[slug], atol=0, equal_nan=True), slug
+
+
+def test_run_grid_multi_partial_resume(tmp_path):
+    """A regime slice already on disk resumes (records loaded, not recomputed)
+    while the pending sibling regime computes fresh — per-regime unit keys."""
+    import dataclasses as _dc
+
+    data, groups = _synthetic_cell_data()
+    data2 = _dc.replace(data, rb=np.asarray(data.rb) * 0.5)
+    kw = dict(
+        budgets=[18],
+        draws=[0],
+        seeds=[0, 1],
+        out_dir=tmp_path,
+        arms=["arm1_ctx_e1", "arm4_ridge_ctx", "arm6_map_proj_e1", "arm2_ctx_native"],
+        n_boot=20,
+        n_perm=20,
+    )
+    first = arms.run_grid(data, groups, provenance={"regime": "e1"}, **kw)
+    both = arms.run_grid_multi([data, data2], [{"regime": "e1"}, {"regime": "e2"}], groups, **kw)
+    assert [r["unit_key"] for r in both[0]] == [r["unit_key"] for r in first]
+    assert json.dumps(both[0], sort_keys=True) == json.dumps(first, sort_keys=True)
+    assert len(both[1]) == 2 and all("e2" in r["unit_key"] for r in both[1])
+
+
+# ---------------------------------------------------------------------------
+# round-8 tiny-real CLI e2e: pilot -> full real grid -> transfer -> resume
+# ---------------------------------------------------------------------------
+
+
+def _write_tiny_real_inputs(tmp_path, *, d=16, layers=(0, 1, 2), k_rollouts=3, seed=1739):
+    """Complete tiny-real input set for the REAL-mode fits CLI: labeled store
+    (per-rollout rows, both splits), U store (fit-pool mask), E1 store
+    (pos/neg sides), DV labeling.json (splits + groups + rungs + per-rollout
+    scores), and the arms-15/16 features npz."""
+    rng = np.random.default_rng(seed)
+    train_ctx = [f"tr{i:02d}" for i in range(14)]
+    eval_ctx = [f"ev{i:02d}" for i in range(6)]
+
+    def write_store(root, meta_rows):
+        root.mkdir(parents=True, exist_ok=True)
+        n = len(meta_rows)
+        for kind in ("prefix_end", "context_end", "t1"):
+            for ly in layers:
+                np.save(root / f"{kind}_L{ly:02d}.npy", rng.normal(size=(n, d)).astype(np.float16))
+        with (root / "row_index.jsonl").open("w", encoding="utf-8") as fh:
+            for r in meta_rows:
+                fh.write(json.dumps(r) + "\n")
+
+    labeled_rows = [
+        {"context_id": c, "rollout_k": k}
+        for c in (*train_ctx, *eval_ctx)
+        for k in range(k_rollouts)
+    ]
+    write_store(tmp_path / "labeled", labeled_rows)
+    write_store(
+        tmp_path / "ustore",
+        [{"context_id": f"u{i:02d}", "is_eval_only": i >= 30} for i in range(40)],
+    )
+    write_store(
+        tmp_path / "e1",
+        [{"context_id": f"p{i:02d}", "side": "pos" if i < 6 else "neg"} for i in range(12)],
+    )
+    dv_rows = []
+    for i, c in enumerate(train_ctx):
+        dv_rows.append(
+            {
+                "context_id": c,
+                "dv": float(rng.uniform(5, 95)),
+                "split": "train",
+                "group_key": f"g{i % 7}",
+                "rung": "wildchat",
+                "per_rollout_scores": {"k0": 20.0 + i, "k1": 78.0 - i, "k2": 50.0},
+            }
+        )
+    for i, c in enumerate(eval_ctx):
+        dv_rows.append(
+            {
+                "context_id": c,
+                "dv": float(rng.uniform(5, 95)),
+                "split": "eval",
+                "group_key": f"ge{i % 3}",
+                "rung": "lmsys" if i % 2 == 0 else "prism",
+                "per_rollout_scores": {"k0": 30.0 + i, "k1": 70.0 - i, "k2": 45.0},
+            }
+        )
+    dv_json = tmp_path / "labeling.json"
+    dv_json.write_text(json.dumps({"rows": dv_rows}))
+    all_ctx = [*train_ctx, *eval_ctx]
+    feats = tmp_path / "features.npz"
+    np.savez(
+        feats,
+        context_ids=np.asarray(all_ctx),
+        emb=rng.normal(size=(len(all_ctx), 5)),
+        features=rng.normal(size=(len(all_ctx), 3)),
+    )
+    return dv_json, feats
+
+
+def test_real_mode_pilot_full_and_resume_e2e(tmp_path, capsys):
+    """Tiny-real e2e of the restructured CLI: --pilot (per-budget unit-groups,
+    all regimes) -> full real grid (regime groups + composition + transfer)
+    -> idempotent resume. Exercises _run_real / _run_pilot /
+    _run_transfer_for_group + the ans_rows memory-scoping free."""
+    cli = _load_fits_cli()
+    dv_json, feats = _write_tiny_real_inputs(tmp_path)
+    out_root = tmp_path / "out"
+    argv = [
+        "--behavior",
+        "evil",
+        "--labeled-store",
+        str(tmp_path / "labeled"),
+        "--dv-json",
+        str(dv_json),
+        "--u-store",
+        str(tmp_path / "ustore"),
+        "--e1-store",
+        str(tmp_path / "e1"),
+        "--out-root",
+        str(out_root),
+        "--tensors-root",
+        str(tmp_path / "tensors"),
+        "--text-emb",
+        str(feats),
+        "--text-features",
+        str(feats),
+        "--device",
+        "cpu",
+        "--config",
+        "config_a",
+        "--transfer",
+        "--transfer-min-n",
+        "2",
+        "--regimes",
+        "e1",
+        "e2",
+        "e2p",
+        "--u-sizes",
+        "8",
+        "full",
+        "--budgets",
+        "6",
+        "10",
+        "--draws",
+        "0",
+        "1",
+        "--seeds",
+        "0",
+        "--layers",
+        "0",
+        "1",
+        "2",
+        "--mlp-epochs",
+        "2",
+        "--n-boot",
+        "20",
+        "--n-perm",
+        "20",
+        "--compose",
+        "--compose-u-size",
+        "8",
+    ]
+    assert cli.main([*argv, "--pilot", "--plan-wall-h", "100"]) == 0
+    report = json.loads((out_root / "pilot_report.json").read_text())
+    assert report["abort"] is False
+    assert set(report["unit_group_walls_s"]) == {"6", "10"}
+    assert report["n_plain_groups"] == {"6": 8, "10": 8}
+    out1 = capsys.readouterr().out
+    assert "freed per-rollout answer rows" in out1
+    assert "[fits] batched slice:" in out1
+
+    assert cli.main(argv) == 0
+    summary = json.loads((out_root / "arm_results" / "all_arms_spearman.json").read_text())
+    # plain: 2 variants x 2 U x 3 regimes x (2 budgets x 2 draws x 1 seed) = 48
+    # compose: dedup{(0,0),(0.5,0),(0.5,1)} x 2 anchors x 2 variants = 12
+    assert summary["n_cells"] == 60
+    assert summary["transfer_rows"], "transfer ladder rows must land in the summary"
+    cells = (out_root / "arm_results" / "percell" / "cells.jsonl").read_text()
+    n_lines = sum(1 for ln in cells.split("\n") if ln.strip())
+    assert n_lines == 60
+    tlines = (out_root / "arm_results" / "percell" / "transfer.jsonl").read_text()
+    # plain (unit x regime) transfer evaluations: 2 U-keys... transfer runs per
+    # plain group: 2 variants x 2 U x (2 budgets x 2 draws) x 3 regimes = 48
+    assert sum(1 for ln in tlines.split("\n") if ln.strip()) == 48
+    # frozen maps persisted per (variant, plain U label); regime dirs per regime
+    maps = sorted(p.name for p in (tmp_path / "tensors" / "maps").glob("*.npz"))
+    assert len(maps) == 4, maps
+    for regime in ("e1", "e2", "e2p"):
+        assert (tmp_path / "tensors" / f"r_b_{regime}" / "evil.npz").exists()
+
+    # idempotent resume: nothing recomputed, no new rows
+    assert cli.main(argv) == 0
+    cells2 = (out_root / "arm_results" / "percell" / "cells.jsonl").read_text()
+    assert sum(1 for ln in cells2.split("\n") if ln.strip()) == 60
+    out3 = capsys.readouterr().out
+    assert "SKIP (resume)" in out3
+
+
+def test_ridge_device_fanout_threaded_branch_matches_serial(monkeypatch):
+    """Bare 'cuda' fans ridge jobs across all GPUs; pinned devices don't.
+    The THREADED pool branch (exercised here with two 'cpu' workers) must
+    reproduce the serial branch exactly."""
+    assert arms._ridge_devices("cpu") == ["cpu"]
+    assert arms._ridge_devices("cuda:1") == ["cuda:1"]
+    data, groups = _synthetic_cell_data()
+    cell = fits.realize_budget_cell(groups, budget_l=20, draw=0, seed=0)
+    ridge_arms = ["arm4_ridge_ctx", "arm7_map_ridge_pred", "arm12_oracle_reg"]
+    serial, _ = arms.run_cell(data, cell, arms=ridge_arms, lambdas=_GATE_LAMBDAS)
+    monkeypatch.setattr(arms, "_ridge_devices", lambda device: ["cpu", "cpu"])
+    threaded, _ = arms.run_cell(data, cell, arms=ridge_arms, lambdas=_GATE_LAMBDAS)
+    for slug in ridge_arms:
+        assert np.allclose(serial[slug], threaded[slug], atol=1e-12, equal_nan=True), slug

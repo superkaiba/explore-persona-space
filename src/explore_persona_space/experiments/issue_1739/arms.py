@@ -3,19 +3,28 @@
 Design (vectorize-first — the origin directive binds hardest here):
 
 - Projections are single batched einsums over ALL (layer, row) at once.
-- Every fold-fit ridge readout goes through ONE slice pool
-  (:func:`_solve_ridge_slices`) that buckets (arm x layer x fold) problems by
-  shape and solves each bucket with a single
-  ``ridge_fit_predict_fast_layer_batched`` call (chunked only to bound
-  memory — chunking never changes the fit). No python loop over the
-  hundreds of readout cells; the only remaining loops are over the <=5
-  folds (combiner/native-direction assembly) and layer CHUNKS.
+- Every fold-fit ridge readout goes through ONE (source x fold) job pool
+  (:class:`RidgeJob` + :func:`_solve_ridge_groups`): each job's Gram + eigh
+  is factorized ONCE (``fits.ridge_gcv_predict_per_target``) and serves
+  EVERY arm/regime target that shares its design matrix with per-target GCV
+  lambdas — the round-8 dedup (the old per-(arm x layer x fold) slice pool
+  re-ran one eigh per target and pinned ~190 GB of per-slice fp64 copies at
+  L=8000). Jobs shard round-robin across ALL visible GPUs under a bare
+  ``device='cuda'``.
+- Regime slices batch through :func:`run_cell_multi` / :func:`run_grid_multi`
+  (unit loop OUTSIDE the regime loop): rb-independent work — ridge
+  factorizations, the arm-5 MLP, arms 2/4/7/8/12/15/16 and their bootstrap
+  CIs — is computed once per unit and shared across regimes.
 - MLP arms ride ``analysis.vectorized_mlp_skill.fit_batched_loco_mlp_multihead``
-  (group folds == the cell's shared fold ids) with all layers as one batch.
+  (group folds == the cell's shared fold ids) with all layers as one batch,
+  after a ``torch.cuda.empty_cache()`` so the memory-aware chunk cap reads
+  honest free bytes.
 - Metrics: batched Spearman/AUROC (rank GEMMs), paired bootstrap over shared
-  eval contexts (shared index draws -> rank ops batched over draws), and the
-  selection-symmetric permutation null for the max-over-arms headline
-  (selection rides per draw; `.claude/rules/selection-symmetric-nulls.md`).
+  eval contexts (shared index draws -> per-draw ranks via COUNTING SORT over
+  base-rank integer keys, bit-identical to ranking the drawn values —
+  :func:`_rank_keys` / :func:`_counting_ranks`), and the selection-symmetric
+  permutation null for the max-over-arms headline (selection rides per draw;
+  `.claude/rules/selection-symmetric-nulls.md`).
 - Matched budget: every arm consumes the SAME :class:`fits.BudgetCell`
   (identical realized rows + group-level folds per (L, draw, seed)).
 
@@ -166,44 +175,91 @@ def _fold_masks(fold_ids: np.ndarray, n_folds: int) -> tuple[np.ndarray, np.ndar
     return ~ev, ev
 
 
-def _solve_ridge_slices(
-    slices: list[tuple[tuple, np.ndarray, np.ndarray, np.ndarray]],
+@dataclasses.dataclass
+class RidgeJob:
+    """One shared-design ridge solve: (source, fold) with T stacked targets.
+
+    ``src`` is the FULL (S, n, din) float64 source array; ``tr_rows`` selects
+    the fold's train rows (materialized lazily inside the worker so the job
+    list never pins per-(arm x fold) copies — the round-8 resident-memory
+    fix: the old slice pool held one (ntr, d) fp64 copy PER (arm, layer,
+    fold), ~190 GB at L=8000). ``targets`` are (target_key, y_full) pairs
+    with y_full (n,) layer-shared or (S, n) layer-varying; ``evals`` are
+    (name, eval_src, rows) triples predicted with the SAME per-target
+    weights.
+    """
+
+    key: tuple
+    src: np.ndarray
+    tr_rows: np.ndarray
+    targets: list[tuple[object, np.ndarray]]
+    evals: list[tuple[str, np.ndarray, np.ndarray]]
+
+
+def _ridge_devices(device: str) -> list[str]:
+    """Ridge-solver device fan-out: bare 'cuda' shards jobs across ALL GPUs."""
+    if device == "cuda":
+        import torch
+
+        n = torch.cuda.device_count()
+        if n > 1:
+            return [f"cuda:{i}" for i in range(n)]
+    return [device]
+
+
+def _run_ridge_job(
+    job: RidgeJob, *, lambdas: tuple[float, ...], device: str
+) -> tuple[tuple, dict[str, np.ndarray]]:
+    """Materialize + solve one RidgeJob on ``device`` (thread-pool worker)."""
+    from explore_persona_space.experiments.issue_1739.fits import ridge_gcv_predict_per_target
+
+    n_s = job.src.shape[0]
+    n_tr = len(job.tr_rows)
+    x_tr = np.ascontiguousarray(job.src[:, job.tr_rows])
+    cols = []
+    for _tkey, y_full in job.targets:
+        if y_full.ndim == 1:
+            cols.append(np.broadcast_to(y_full[job.tr_rows], (n_s, n_tr)))
+        else:
+            cols.append(y_full[:, job.tr_rows])
+    y = np.stack(cols, axis=2)  # (S, ntr, T)
+    ev_mats = [np.ascontiguousarray(esrc[:, rows]) for _name, esrc, rows in job.evals]
+    preds = ridge_gcv_predict_per_target(x_tr, y, ev_mats, lambdas=lambdas, device=device)
+    return job.key, {name: p for (name, _e, _r), p in zip(job.evals, preds, strict=True)}
+
+
+def _solve_ridge_groups(
+    jobs: list[RidgeJob],
     *,
     lambdas: tuple[float, ...] = RIDGE_LAMBDAS,
     device: str = "cpu",
-    max_slice_elems: int = int(2e8),
-) -> dict[tuple, np.ndarray]:
-    """Solve many (X_tr, Y_tr, X_ev) ridge problems in shape-bucketed batches.
+) -> dict[tuple, dict[str, np.ndarray]]:
+    """Solve the cell's (source x fold) ridge jobs, sharded across GPUs.
 
-    Each slice is ``(key, X_tr (ntr,din), Y_tr (ntr,dout), X_ev (nev,din))``.
-    Slices sharing a shape are stacked into ONE batched ridge call
-    (:func:`fits.ridge_layer_batched_auto` — primal d x d Gram when
-    ntr > din, else the parent dual helper; GCV lambda per slice);
-    ``max_slice_elems`` chunks a bucket only to bound memory. The per-slice
-    memory bound includes the min(ntr, din)^2 Gram + eigenvector cost of
-    whichever branch the router picks (the M6 fix: at L=16k budgets the
-    dual n_tr x n_tr Gram would be ~1.3 GB fp64 PER SLICE; the router takes
-    the primal d x d branch there instead).
+    Each job's Gram + eigh is computed ONCE and serves every stacked target
+    (per-target GCV — :func:`fits.ridge_gcv_predict_per_target`); with >1
+    visible GPU under a bare ``device='cuda'`` the independent jobs
+    round-robin across devices via a thread pool (torch releases the GIL in
+    the C ops). Results: ``{job.key: {eval_name: (S, nev, T)}}``.
     """
-    from explore_persona_space.experiments.issue_1739.fits import ridge_layer_batched_auto
+    devices = _ridge_devices(device)
+    out: dict[tuple, dict[str, np.ndarray]] = {}
+    if len(devices) == 1 or len(jobs) <= 1:
+        for job in jobs:
+            key, preds = _run_ridge_job(job, lambdas=lambdas, device=devices[0])
+            out[key] = preds
+        return out
+    from concurrent.futures import ThreadPoolExecutor
 
-    out: dict[tuple, np.ndarray] = {}
-    buckets: dict[tuple, list] = {}
-    for key, xt, yt, xe in slices:
-        yt2 = yt if yt.ndim == 2 else yt[:, None]
-        buckets.setdefault((xt.shape, yt2.shape[1], xe.shape[0]), []).append((key, xt, yt2, xe))
-    for ((ntr, din), dout, nev), items in buckets.items():
-        gram_side = min(ntr, din)  # the router's Gram is (gram_side, gram_side)
-        per_slice = ntr * din + ntr * dout + nev * din + nev * dout + 3 * gram_side * gram_side
-        chunk = max(1, min(len(items), int(max_slice_elems // max(per_slice, 1))))
-        for i in range(0, len(items), chunk):
-            part = items[i : i + chunk]
-            x = np.stack([p[1] for p in part]).astype(np.float64)
-            y = np.stack([p[2] for p in part]).astype(np.float64)
-            xe = np.stack([p[3] for p in part]).astype(np.float64)
-            preds = ridge_layer_batched_auto(x, y, xe, lambdas=lambdas, device=device)
-            for (key, *_), pred in zip(part, preds, strict=True):
-                out[key] = pred
+    logger.info("[arms] ridge jobs sharded across %s (%d jobs)", devices, len(jobs))
+    with ThreadPoolExecutor(max_workers=len(devices)) as pool:
+        futs = [
+            pool.submit(_run_ridge_job, job, lambdas=lambdas, device=devices[i % len(devices)])
+            for i, job in enumerate(jobs)
+        ]
+        for fut in futs:
+            key, preds = fut.result()
+            out[key] = preds
     return out
 
 
@@ -249,22 +305,41 @@ def verify_arm9_l0_degeneracy(data: CellData, *, device: str = "cpu", n_rows: in
     logger.info("[arms] arm9 L->0 degeneracy gate PASS (n=%d probe rows)", n)
 
 
-def run_cell(  # noqa: C901 — deliberate single dispatch block over the 16 plan-§5 arms
-    data: CellData,
+def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 16 plan-§5 arms
+    datas: list[CellData],
     cell: BudgetCell,
     *,
     arms: list[str] | None = None,
     device: str = "cpu",
     lambdas: tuple[float, ...] = RIDGE_LAMBDAS,
     mlp_kwargs: dict | None = None,
-) -> tuple[dict[str, np.ndarray], dict[str, str]]:
-    """Compute pooled-OOF scores for every requested arm on ONE budget cell.
+    ridge_folds: tuple[int, ...] | None = None,
+) -> list[tuple[dict[str, np.ndarray], dict[str, str]]]:
+    """Pooled-OOF scores for every requested arm, for R regime slices AT ONCE.
 
-    Returns ``(scores, skipped)``: ``scores[slug]`` is (Ly, n_l) for layered
-    arms, (1, n_l) for layer-free arms; ``skipped[slug]`` records why an arm
-    could not run (missing optional input). Every arm consumes the SAME
-    realized rows + folds (matched-budget protocol).
+    ``datas`` share every regime-INDEPENDENT input by object identity
+    (``z_ctx`` / ``z_ans`` / ``dv`` / ``mapfit`` / text features — asserted)
+    and differ only in the regime direction ``rb`` (+ ``w_shuffled``), so the
+    expensive rb-independent work — the ridge Gram+eigh factorizations, the
+    arm-5 MLP fit, arms 2/4/7/8/12/15/16 — is computed ONCE and shared;
+    rb-dependent arms (1/3/6/9/10/11/13/14) are cheap projections/assembly
+    per regime. Returns one ``(scores, skipped)`` pair per data, in order;
+    shared arms reuse the SAME ndarray object across regimes (evaluate-side
+    caches key on identity). ``ridge_folds`` restricts which folds' ridge
+    problems are SOLVED (the transfer leg's discarded-fold skip); non-solved
+    folds' OOF slots stay NaN. Every arm consumes the SAME realized rows +
+    folds (matched-budget protocol).
     """
+    assert datas, "run_cell_multi needs >= 1 CellData"
+    base = datas[0]
+    for d in datas[1:]:
+        assert d.z_ctx is base.z_ctx, "run_cell_multi: datas must share z_ctx (by identity)"
+        assert d.z_ans is base.z_ans, "run_cell_multi: datas must share z_ans"
+        assert d.dv is base.dv, "run_cell_multi: datas must share dv"
+        assert d.mapfit is base.mapfit, "run_cell_multi: datas must share mapfit"
+        assert d.text_emb is base.text_emb and d.text_features is base.text_features
+        assert d.w_shuffled is base.w_shuffled
+    n_r = len(datas)
     want = list(ARM_REGISTRY) if arms is None else list(arms)
     idx, folds = cell.row_idx, cell.fold_ids
     n_l, n_folds = len(idx), cell.n_folds
@@ -273,37 +348,47 @@ def run_cell(  # noqa: C901 — deliberate single dispatch block over the 16 pla
             f"matched-budget OOF needs >=2 group folds; cell L={cell.budget_l} realized "
             f"{n_folds} fold(s) over {n_l} rows (labeled table too small / one group)"
         )
-    z = np.asarray(data.z_ctx[:, idx], dtype=np.float64)  # (Ly, n_l, d)
-    dv = np.asarray(data.dv[idx], dtype=np.float64)
-    rb = np.asarray(data.rb, dtype=np.float64)
+    z = np.asarray(base.z_ctx[:, idx], dtype=np.float64)  # (Ly, n_l, d)
+    dv = np.asarray(base.dv[idx], dtype=np.float64)
+    rbs = [np.asarray(d.rb, dtype=np.float64) for d in datas]
     n_layers = z.shape[0]
-    za = np.asarray(data.z_ans[:, idx], dtype=np.float64) if data.z_ans is not None else None
-    mp = apply_map(z, data.mapfit) if data.mapfit is not None else None
+    za = np.asarray(base.z_ans[:, idx], dtype=np.float64) if base.z_ans is not None else None
+    mp = apply_map(z, base.mapfit) if base.mapfit is not None else None
     tr_masks, ev_masks = _fold_masks(folds, n_folds)  # (F, n_l)
     tr_w = tr_masks.astype(np.float64)
     tr_w /= np.maximum(tr_w.sum(axis=1, keepdims=True), 1.0)
     row_of = np.arange(n_l)
 
-    scores: dict[str, np.ndarray] = {}
-    skipped: dict[str, str] = {}
+    scores: list[dict[str, np.ndarray]] = [{} for _ in range(n_r)]
+    skipped: list[dict[str, str]] = [{} for _ in range(n_r)]
 
     def _skip(slug: str, reason: str) -> None:
         if slug in want:
-            skipped[slug] = reason
+            for sk in skipped:
+                sk[slug] = reason
+
+    def _put_shared(slug: str, arr: np.ndarray) -> None:
+        for sc in scores:  # SAME object per regime — evaluate caches key on id()
+            sc[slug] = arr
 
     # ---- projection arms (constant across folds; OOF == the projection) ----
     if "arm1_ctx_e1" in want:
-        scores["arm1_ctx_e1"] = _proj(z, rb)
+        for r in range(n_r):
+            scores[r]["arm1_ctx_e1"] = _proj(z, rbs[r])
     if mp is not None:
         if "arm6_map_proj_e1" in want:
-            scores["arm6_map_proj_e1"] = _proj(mp, rb)
+            for r in range(n_r):
+                scores[r]["arm6_map_proj_e1"] = _proj(mp, rbs[r])
         if "arm13_shuffled_map" in want:
             w_shuf = (
-                data.w_shuffled
-                if data.w_shuffled is not None
-                else shuffled_map_weights(data.mapfit.w, seed=cell.seed)
+                base.w_shuffled
+                if base.w_shuffled is not None
+                else shuffled_map_weights(base.mapfit.w, seed=cell.seed)
             )
-            scores["arm13_shuffled_map"] = _proj(apply_map(z, data.mapfit, w=w_shuf), rb)
+            mp_shuf = apply_map(z, base.mapfit, w=w_shuf)  # shared (seed-dep only)
+            for r in range(n_r):
+                scores[r]["arm13_shuffled_map"] = _proj(mp_shuf, rbs[r])
+            del mp_shuf
     else:
         for slug in (
             "arm6_map_proj_e1",
@@ -317,7 +402,8 @@ def run_cell(  # noqa: C901 — deliberate single dispatch block over the 16 pla
             _skip(slug, "no mapfit")
     if za is not None:
         if "arm11_oracle_proj" in want:
-            scores["arm11_oracle_proj"] = _proj(za, rb)
+            for r in range(n_r):
+                scores[r]["arm11_oracle_proj"] = _proj(za, rbs[r])
     else:
         for slug in (
             "arm3_identity_bias",
@@ -327,7 +413,7 @@ def run_cell(  # noqa: C901 — deliberate single dispatch block over the 16 pla
         ):
             _skip(slug, "no answer activations")
 
-    # ---- arm 2: context-native direction (per-fold hi/lo diff of means) ----
+    # ---- arm 2: context-native direction (rb-independent — shared) ----
     if "arm2_ctx_native" in want:
         mid = np.array(
             [0.5 * (dv[m].max() + dv[m].min()) if m.any() else 0.0 for m in tr_masks]
@@ -338,155 +424,189 @@ def run_cell(  # noqa: C901 — deliberate single dispatch block over the 16 pla
         lo_w = lo.astype(np.float64) / np.maximum(lo.sum(axis=1, keepdims=True), 1.0)
         direction = np.einsum("fn,lnd->lfd", hi_w - lo_w, z, optimize=True)  # (Ly, F, d)
         s_all = np.einsum("lfd,lnd->lfn", direction, z, optimize=True)  # (Ly, F, n_l)
-        scores["arm2_ctx_native"] = s_all[:, folds, row_of]
+        _put_shared("arm2_ctx_native", s_all[:, folds, row_of])
         if (lo.sum(axis=1) == 0).any():
             logger.warning("[arms] arm2: a fold had zero low-side train rows (flat dv?)")
 
-    # ---- arm 3: identity+learned-bias -> projection readout ----
+    # ---- arm 3: identity+learned-bias (bias shared; projection per regime) ----
     if "arm3_identity_bias" in want and za is not None:
         b = np.einsum("fn,lnd->lfd", tr_w, za - z, optimize=True)  # (Ly, F, d)
-        bias_proj = np.einsum("lfd,ld->lf", b, rb, optimize=True)  # (Ly, F)
-        scores["arm3_identity_bias"] = _proj(z, rb) + bias_proj[:, folds]
+        for r in range(n_r):
+            bias_proj = np.einsum("lfd,ld->lf", b, rbs[r], optimize=True)  # (Ly, F)
+            scores[r]["arm3_identity_bias"] = _proj(z, rbs[r]) + bias_proj[:, folds]
+        del b
 
-    # ---- ridge slice pool (arms 4, 7, 8, 12, 15, 16 + arm-9 residuals) ----
-    slices: list[tuple[tuple, np.ndarray, np.ndarray, np.ndarray]] = []
+    # ---- ridge job pool (arms 4, 7, 8, 12, 15, 16 + per-regime 9/14 residuals) ----
     ev_rows = [np.flatnonzero(ev_masks[f]) for f in range(n_folds)]
     tr_rows = [np.flatnonzero(tr_masks[f]) for f in range(n_folds)]
-
-    def _add_ridge_arm(
-        slug: str, x_tr_src: np.ndarray, x_ev_src: np.ndarray, *, extra_train_preds: bool = False
-    ) -> None:
-        for f in range(n_folds):
-            x_ev = x_ev_src[:, ev_rows[f]]
-            if extra_train_preds:  # arm-10 combiner needs in-sample train preds too
-                x_ev = np.concatenate([x_ev, x_ev_src[:, tr_rows[f]]], axis=1)
-            for li in range(n_layers):
-                slices.append(
-                    ((slug, li, f), x_tr_src[li][tr_rows[f]], dv[tr_rows[f], None], x_ev[li])
-                )
-
+    solve_folds = (
+        list(range(n_folds))
+        if ridge_folds is None
+        else [f for f in range(n_folds) if f in set(ridge_folds)]
+    )
     run_stack = "arm10_stacked" in want and mp is not None
-    if "arm4_ridge_ctx" in want or run_stack:
-        _add_ridge_arm("arm4_ridge_ctx", z, z, extra_train_preds=run_stack)
-    if "arm7_map_ridge_pred" in want and mp is not None:
-        _add_ridge_arm("arm7_map_ridge_pred", mp, mp)
-    if "arm8_map_ridge_true" in want and mp is not None and za is not None:
-        _add_ridge_arm("arm8_map_ridge_true", za, mp)
-    if "arm12_oracle_reg" in want and za is not None:
-        _add_ridge_arm("arm12_oracle_reg", za, za)
+    if run_stack and ridge_folds is not None:
+        raise ValueError("arm10_stacked needs ridge preds on EVERY fold (no ridge_folds subset)")
 
-    # arm 9 / 14: closed-form L2-SP — alpha per (layer, fold) on train rows,
-    # ridge on the residual target over map features (added below), score =
-    # alpha * <M(x), rb> + resid_pred.
-    l2sp: dict[str, tuple[np.ndarray, np.ndarray]] = {}  # slug -> (s_dir (Ly,n), alpha (Ly,F))
+    # arm 9 / 14: closed-form L2-SP — alpha per (regime, layer, fold) on train
+    # rows; the residual targets ride the SHARED mp factorization below.
+    l2sp: list[dict[str, tuple[np.ndarray, np.ndarray]]] = [{} for _ in range(n_r)]
+    resid_full: dict[tuple[int, str], list[np.ndarray]] = {}  # (r, slug) -> per-fold (Ly, n_l)
     if mp is not None:
-        rb_variants = {}
-        if "arm9_pretrain_ft" in want:
-            rb_variants["arm9_pretrain_ft"] = rb
-        if "arm14_shuffled_pt" in want:
-            rng = np.random.default_rng([1739, 6, cell.seed])
-            rb_shuf = np.stack([r[rng.permutation(r.shape[0])] for r in rb])
-            rb_variants["arm14_shuffled_pt"] = rb_shuf
-        for slug, rb_v in rb_variants.items():
-            s_dir = _proj(mp, rb_v)  # (Ly, n_l)
-            # alpha per (Ly, F) from TRAIN rows only: cov(dv, s)/var(s), centered on train means.
-            s_mu = np.einsum("fn,ln->lf", tr_w, s_dir)  # (Ly, F) train mean of s
-            d_mu = tr_w @ dv  # (F,)
-            cov = np.einsum(
-                "fn,lfn->lf",
-                tr_w,
-                (s_dir[:, None, :] - s_mu[:, :, None]) * (dv[None, None, :] - d_mu[None, :, None]),
-            )
-            var = np.einsum("fn,lfn->lf", tr_w, (s_dir[:, None, :] - s_mu[:, :, None]) ** 2)
-            alpha = np.where(var > 1e-30, cov / np.maximum(var, 1e-30), 0.0)  # (Ly, F)
-            l2sp[slug] = (s_dir, alpha)
-            for f in range(n_folds):
-                for li in range(n_layers):
-                    resid_tr = dv[tr_rows[f]] - alpha[li, f] * s_dir[li, tr_rows[f]]
-                    slices.append(
-                        ((slug, li, f), mp[li][tr_rows[f]], resid_tr[:, None], mp[li][ev_rows[f]])
-                    )
+        for r in range(n_r):
+            rb_variants = {}
+            if "arm9_pretrain_ft" in want:
+                rb_variants["arm9_pretrain_ft"] = rbs[r]
+            if "arm14_shuffled_pt" in want:
+                rng = np.random.default_rng([1739, 6, cell.seed])
+                rb_shuf = np.stack([rr[rng.permutation(rr.shape[0])] for rr in rbs[r]])
+                rb_variants["arm14_shuffled_pt"] = rb_shuf
+            for slug, rb_v in rb_variants.items():
+                s_dir = _proj(mp, rb_v)  # (Ly, n_l)
+                s_mu = np.einsum("fn,ln->lf", tr_w, s_dir)  # (Ly, F) train mean of s
+                d_mu = tr_w @ dv  # (F,)
+                cov = np.einsum(
+                    "fn,lfn->lf",
+                    tr_w,
+                    (s_dir[:, None, :] - s_mu[:, :, None])
+                    * (dv[None, None, :] - d_mu[None, :, None]),
+                )
+                var = np.einsum("fn,lfn->lf", tr_w, (s_dir[:, None, :] - s_mu[:, :, None]) ** 2)
+                alpha = np.where(var > 1e-30, cov / np.maximum(var, 1e-30), 0.0)  # (Ly, F)
+                l2sp[r][slug] = (s_dir, alpha)
+                # per-fold residual target (Ly, n_l): dv - alpha_f * s_dir
+                resid_full[(r, slug)] = [
+                    dv[None, :] - alpha[:, f][:, None] * s_dir for f in range(n_folds)
+                ]
 
+    emb = feats = None
     if "arm15_text_only" in want:
-        if data.text_emb is None:
+        if base.text_emb is None:
             _skip("arm15_text_only", "no text embeddings")
         else:
-            emb = np.asarray(data.text_emb[idx], dtype=np.float64)
-            for f in range(n_folds):
-                slices.append(
-                    (
-                        ("arm15_text_only", 0, f),
-                        emb[tr_rows[f]],
-                        dv[tr_rows[f], None],
-                        emb[ev_rows[f]],
-                    )
-                )
+            emb = np.asarray(base.text_emb[idx], dtype=np.float64)[None]  # (1, n_l, e)
     if "arm16_surface_feat" in want:
-        if data.text_features is None:
+        if base.text_features is None:
             _skip("arm16_surface_feat", "no surface features")
         else:
-            feats = np.asarray(data.text_features[idx], dtype=np.float64)
-            for f in range(n_folds):
-                slices.append(
-                    (
-                        ("arm16_surface_feat", 0, f),
-                        feats[tr_rows[f]],
-                        dv[tr_rows[f], None],
-                        feats[ev_rows[f]],
-                    )
+            feats = np.asarray(base.text_features[idx], dtype=np.float64)[None]
+
+    # Build one RidgeJob per (source, fold): ONE Gram+eigh serves every
+    # stacked target (per-target GCV — the batched-slice fix, #1739 round 8).
+    jobs: list[RidgeJob] = []
+    tpos: dict[str, dict[object, int]] = {}  # source -> target_key -> column
+
+    def _job_targets(source: str, targets: list[tuple[object, np.ndarray]]) -> None:
+        tpos[source] = {tkey: i for i, (tkey, _y) in enumerate(targets)}
+
+    want_arm4 = ("arm4_ridge_ctx" in want) or run_stack
+    if want_arm4:
+        _job_targets("z", [("arm4", dv)])
+    mp_targets: list[tuple[object, np.ndarray]] = []
+    if mp is not None:
+        if "arm7_map_ridge_pred" in want:
+            mp_targets.append(("arm7", dv))
+        for (r, slug), _per_fold in sorted(resid_full.items(), key=lambda kv: str(kv[0])):
+            mp_targets.append(((r, slug), np.empty(0)))  # per-fold y resolved below
+        if mp_targets:
+            _job_targets("mp", mp_targets)
+    want_za_ridge = za is not None and (
+        ("arm8_map_ridge_true" in want and mp is not None) or "arm12_oracle_reg" in want
+    )
+    if want_za_ridge:
+        _job_targets("za", [("arm8_12", dv)])
+    if emb is not None:
+        _job_targets("emb", [("arm15", dv)])
+    if feats is not None:
+        _job_targets("feats", [("arm16", dv)])
+
+    for f in solve_folds:
+        if want_arm4:
+            evals = [("ev", z, ev_rows[f])]
+            if run_stack:
+                evals.append(("tr", z, tr_rows[f]))
+            jobs.append(RidgeJob(("z", f), z, tr_rows[f], [("arm4", dv)], evals))
+        if mp is not None and mp_targets:
+            targets_f: list[tuple[object, np.ndarray]] = []
+            for tkey, _i in sorted(tpos["mp"].items(), key=lambda kv: kv[1]):
+                if tkey == "arm7":
+                    targets_f.append(("arm7", dv))
+                else:
+                    r, slug = tkey  # type: ignore[misc]
+                    targets_f.append((tkey, resid_full[(r, slug)][f]))
+            jobs.append(RidgeJob(("mp", f), mp, tr_rows[f], targets_f, [("ev", mp, ev_rows[f])]))
+        if want_za_ridge:
+            evals = []
+            if "arm8_map_ridge_true" in want and mp is not None:
+                evals.append(("mp_ev", mp, ev_rows[f]))
+            if "arm12_oracle_reg" in want:
+                evals.append(("za_ev", za, ev_rows[f]))
+            jobs.append(RidgeJob(("za", f), za, tr_rows[f], [("arm8_12", dv)], evals))
+        if emb is not None:
+            jobs.append(
+                RidgeJob(("emb", f), emb, tr_rows[f], [("arm15", dv)], [("ev", emb, ev_rows[f])])
+            )
+        if feats is not None:
+            jobs.append(
+                RidgeJob(
+                    ("feats", f), feats, tr_rows[f], [("arm16", dv)], [("ev", feats, ev_rows[f])]
                 )
+            )
 
-    solved = _solve_ridge_slices(slices, lambdas=lambdas, device=device) if slices else {}
+    solved = _solve_ridge_groups(jobs, lambdas=lambdas, device=device) if jobs else {}
 
-    def _scatter(slug: str, n_rows_ly: int) -> np.ndarray:
+    def _scatter(source: str, ename: str, tkey: object, n_rows_ly: int) -> np.ndarray:
         arr = np.full((n_rows_ly, n_l), np.nan)
-        for (s, li, f), pred in solved.items():
-            if s != slug:
+        col = tpos[source][tkey]
+        for f in solve_folds:
+            got = solved.get((source, f))
+            if got is None:
                 continue
-            arr[li, ev_rows[f]] = pred[: len(ev_rows[f]), 0]
+            arr[:, ev_rows[f]] = got[ename][:, :, col]
         return arr
 
-    if "arm4_ridge_ctx" in want and any(k[0] == "arm4_ridge_ctx" for k in solved):
-        scores["arm4_ridge_ctx"] = _scatter("arm4_ridge_ctx", n_layers)
-    if "arm7_map_ridge_pred" in want and any(k[0] == "arm7_map_ridge_pred" for k in solved):
-        scores["arm7_map_ridge_pred"] = _scatter("arm7_map_ridge_pred", n_layers)
-    if "arm8_map_ridge_true" in want and any(k[0] == "arm8_map_ridge_true" for k in solved):
-        scores["arm8_map_ridge_true"] = _scatter("arm8_map_ridge_true", n_layers)
-    if "arm12_oracle_reg" in want and any(k[0] == "arm12_oracle_reg" for k in solved):
-        scores["arm12_oracle_reg"] = _scatter("arm12_oracle_reg", n_layers)
-    for slug in ("arm15_text_only", "arm16_surface_feat"):
-        if slug in want and any(k[0] == slug for k in solved):
-            scores[slug] = _scatter(slug, 1)
+    if "arm4_ridge_ctx" in want and want_arm4 and solved:
+        _put_shared("arm4_ridge_ctx", _scatter("z", "ev", "arm4", n_layers))
+    if "arm7_map_ridge_pred" in want and mp is not None and mp_targets:
+        _put_shared("arm7_map_ridge_pred", _scatter("mp", "ev", "arm7", n_layers))
+    if want_za_ridge:
+        if "arm8_map_ridge_true" in want and mp is not None:
+            _put_shared("arm8_map_ridge_true", _scatter("za", "mp_ev", "arm8_12", n_layers))
+        if "arm12_oracle_reg" in want:
+            _put_shared("arm12_oracle_reg", _scatter("za", "za_ev", "arm8_12", n_layers))
+    if emb is not None:
+        _put_shared("arm15_text_only", _scatter("emb", "ev", "arm15", 1))
+    if feats is not None:
+        _put_shared("arm16_surface_feat", _scatter("feats", "ev", "arm16", 1))
 
-    for slug, (s_dir, alpha) in l2sp.items():
-        resid = _scatter(slug, n_layers)
-        scores[slug] = alpha[:, folds] * s_dir + resid
+    for r in range(n_r):
+        for slug, (s_dir, alpha) in l2sp[r].items():
+            resid = _scatter("mp", "ev", (r, slug), n_layers)
+            scores[r][slug] = alpha[:, folds] * s_dir + resid
 
-    # ---- arm 10: stacked 2-feature combiner (arm6 proj + arm4 pred) ----
+    # ---- arm 10: stacked 2-feature combiner (shared p4 preds; s6 per regime) ----
     if run_stack:
-        s6 = scores.get("arm6_map_proj_e1")
-        if s6 is None:  # arm 6 not requested — the combiner still needs its feature
-            s6 = _proj(mp, rb)
-        out10 = np.full((n_layers, n_l), np.nan)
-        for f in range(n_folds):  # <=5 folds; layers batched inside
-            trr, evr = tr_rows[f], ev_rows[f]
-            p4_in = np.stack(
-                [solved[("arm4_ridge_ctx", li, f)][len(evr) :, 0] for li in range(n_layers)]
-            )  # (Ly, n_tr) in-sample train preds
-            p4_oof = np.stack(
-                [solved[("arm4_ridge_ctx", li, f)][: len(evr), 0] for li in range(n_layers)]
-            )
-            a_tr = np.stack(
-                [np.ones((n_layers, len(trr))), s6[:, trr], p4_in], axis=2
-            )  # (Ly, n_tr, 3)
-            ata = a_tr.transpose(0, 2, 1) @ a_tr + 1e-8 * np.eye(3)
-            atb = a_tr.transpose(0, 2, 1) @ dv[trr, None]
-            beta = np.linalg.solve(ata, atb)  # (Ly, 3, 1)
-            a_ev = np.stack([np.ones((n_layers, len(evr))), s6[:, evr], p4_oof], axis=2)
-            out10[:, evr] = (a_ev @ beta)[:, :, 0]
-        scores["arm10_stacked"] = out10
+        p4_col = tpos["z"]["arm4"]
+        for r in range(n_r):
+            s6 = scores[r].get("arm6_map_proj_e1")
+            if s6 is None:  # arm 6 not requested — the combiner still needs its feature
+                s6 = _proj(mp, rbs[r])
+            out10 = np.full((n_layers, n_l), np.nan)
+            for f in range(n_folds):  # <=5 folds; layers batched inside
+                trr, evr = tr_rows[f], ev_rows[f]
+                p4_in = solved[("z", f)]["tr"][:, :, p4_col]  # (Ly, n_tr) in-sample train preds
+                p4_oof = solved[("z", f)]["ev"][:, :, p4_col]
+                a_tr = np.stack(
+                    [np.ones((n_layers, len(trr))), s6[:, trr], p4_in], axis=2
+                )  # (Ly, n_tr, 3)
+                ata = a_tr.transpose(0, 2, 1) @ a_tr + 1e-8 * np.eye(3)
+                atb = a_tr.transpose(0, 2, 1) @ dv[trr, None]
+                beta = np.linalg.solve(ata, atb)  # (Ly, 3, 1)
+                a_ev = np.stack([np.ones((n_layers, len(evr))), s6[:, evr], p4_oof], axis=2)
+                out10[:, evr] = (a_ev @ beta)[:, :, 0]
+            scores[r]["arm10_stacked"] = out10
 
-    # ---- arm 5: batched group-fold MLP over all layers ----
+    # ---- arm 5: batched group-fold MLP (rb-independent — fit ONCE, shared) ----
     if "arm5_mlp_ctx" in want and (n_l - int(ev_masks.sum(axis=1).max())) < 2:
         # The callee's own ddof-1 floor (vectorized_mlp_skill: n - max_fold
         # >= 2). Unreachable at production budgets (L >= 250); at degenerate
@@ -503,6 +623,13 @@ def run_cell(  # noqa: C901 — deliberate single dispatch block over the 16 pla
             fit_batched_loco_mlp_multihead,
         )
 
+        if str(device).startswith("cuda"):
+            # Release allocator-cached ridge blocks BEFORE the MLP resolves its
+            # memory-aware chunk cap — a retained cache shrinks mem_get_info's
+            # free reading and collapses the chunk (#1739 pilot: 4096 -> 20).
+            import torch
+
+            torch.cuda.empty_cache()
         kw = {"hidden": MLP_HIDDEN, "max_epochs": MLP_MAX_EPOCHS, "device": device}
         kw.update(mlp_kwargs or {})
         groups = [
@@ -510,11 +637,34 @@ def run_cell(  # noqa: C901 — deliberate single dispatch block over the 16 pla
             for li in range(n_layers)
         ]
         res = fit_batched_loco_mlp_multihead(groups, row_groups=folds, **kw)
-        scores["arm5_mlp_ctx"] = np.stack(
-            [res.preds_by_key[("arm5", li)][:, 0] for li in range(n_layers)]
+        _put_shared(
+            "arm5_mlp_ctx",
+            np.stack([res.preds_by_key[("arm5", li)][:, 0] for li in range(n_layers)]),
         )
 
-    return scores, skipped
+    return list(zip(scores, skipped, strict=True))
+
+
+def run_cell(
+    data: CellData,
+    cell: BudgetCell,
+    *,
+    arms: list[str] | None = None,
+    device: str = "cpu",
+    lambdas: tuple[float, ...] = RIDGE_LAMBDAS,
+    mlp_kwargs: dict | None = None,
+    ridge_folds: tuple[int, ...] | None = None,
+) -> tuple[dict[str, np.ndarray], dict[str, str]]:
+    """Single-regime wrapper over :func:`run_cell_multi` (same contract)."""
+    return run_cell_multi(
+        [data],
+        cell,
+        arms=arms,
+        device=device,
+        lambdas=lambdas,
+        mlp_kwargs=mlp_kwargs,
+        ridge_folds=ridge_folds,
+    )[0]
 
 
 def run_transfer_cell(
@@ -526,6 +676,7 @@ def run_transfer_cell(
     za_ev: np.ndarray | None = None,
     arms: list[str] | None = None,
     device: str = "cpu",
+    ridge_folds: tuple[int, ...] | None = None,
 ) -> tuple[dict[str, np.ndarray], dict[str, str]]:
     """Frozen-predictor transfer scores for the eval-split ladder (plan §4).
 
@@ -534,9 +685,13 @@ def run_transfer_cell(
     train cell rows, fold 0 = the eval rows — so the returned OOF values at
     the eval positions come from arms fit on the FULL train cell and NEVER
     on eval DV (the plan's train -> eval-rung transfer semantics; the
-    reverse-fold fit is discarded). Default arm roster: :data:`TRANSFER_ARMS`
-    (cheap projection / closed-form / single-ridge arms only). Eval arrays
-    must share the train slice's whitening + layer subset.
+    reverse-fold fit is discarded — pass ``ridge_folds=(0,)`` to SKIP solving
+    it outright: only fold 0's predictions reach the returned eval block, so
+    the outputs are unchanged while the discarded fold-1 ridge fit — a full
+    Gram+eigh on the train block — is never computed). Default arm roster:
+    :data:`TRANSFER_ARMS` (cheap projection / closed-form / single-ridge
+    arms only). Eval arrays must share the train slice's whitening + layer
+    subset.
 
     Returns ``(scores_ev, skipped)``: ``scores_ev[slug]`` is the eval-row
     block ``(rows, n_ev)``.
@@ -566,7 +721,7 @@ def run_transfer_cell(
         seed=cell.seed,
         fold_scheme="transfer-train-vs-eval",
     )
-    scores, skipped = run_cell(comb, cell_t, arms=want, device=device)
+    scores, skipped = run_cell(comb, cell_t, arms=want, device=device, ridge_folds=ridge_folds)
     return {slug: sc[:, n_tr:] for slug, sc in scores.items()}, skipped
 
 
@@ -678,6 +833,62 @@ def auroc_rows(scores: np.ndarray, labels: np.ndarray) -> np.ndarray:
     return (pos_rank_sum - n_pos * (n_pos + 1) / 2.0) / (n_pos * n_neg)
 
 
+def _rank_keys(a: np.ndarray) -> np.ndarray:
+    """Integer resample-rank keys: 2 x average base ranks (half-integers -> ints).
+
+    Ranking is invariant under any strictly-increasing value map that
+    preserves ties, and the base average ranks ARE such a map of the values
+    (equal values share one rank; distinct values order identically) — so
+    ``rank(a[draw]) == rank(keys[draw])`` EXACTLY for every resample draw.
+    Doubling makes the half-integer average ranks exact int64 keys in
+    [2, 2n], enabling the counting-sort ranking below.
+    """
+    return np.rint(2.0 * rank_rows(np.atleast_2d(a))).astype(np.int64)
+
+
+def _counting_ranks(keys: np.ndarray, n_bins: int) -> np.ndarray:
+    """Average ranks along the last axis of int64 ``keys`` via counting sort.
+
+    ``keys`` (R, n) with values in [0, n_bins); returns fp64 average ranks —
+    BIT-IDENTICAL to ``rank_rows`` on the same data (a bin holding c entries
+    ending at cumulative count m occupies ranks m-c+1..m, average
+    m - (c-1)/2; counts/cumsums are exact integers < 2^53). This replaces the
+    per-draw argsort-based rankdata in the bootstrap (~6x wall there:
+    counting sort beats fp64 argsort on resampled integer keys).
+    """
+    r, _n = keys.shape
+    offs = (np.arange(r, dtype=np.int64) * n_bins)[:, None]
+    counts = np.bincount((keys + offs).ravel(), minlength=r * n_bins).reshape(r, n_bins)
+    csum = np.cumsum(counts, axis=1)
+    avg = csum - (counts - 1) / 2.0  # fp64 average rank per occupied bin
+    return np.take_along_axis(avg, keys, axis=1)
+
+
+def _bootstrap_pearson_from_ranks(ranks_s: np.ndarray, ranks_d: np.ndarray) -> np.ndarray:
+    """Pearson of rank rows via the moment identity — BIT-IDENTICAL, fewer passes.
+
+    ``ranks_s`` (S, C, n) x ``ranks_d`` (C, n). Average ranks are exact
+    half-integers, every rank sum is n(n+1)/2, and all moment sums (products
+    are multiples of 0.25, totals < 2^53) are EXACT in fp64 — so
+    ``sum(xy) - (sum x)(sum y)/n`` equals the centered ``sum((x-mx)(y-my))``
+    bitwise (both are exact integers-over-4), and this needs ~3 fused passes
+    where the generic centered path needs ~6 plus three (S, C, n) temporaries.
+    The cross term rides a batched GEMV (BLAS-threaded).
+    """
+    _s_rows, _c, n = ranks_s.shape
+    tot = n * (n + 1) / 2.0  # sum of ANY n-element rank multiset (ties included)
+    mean_term = tot * tot / n
+    sq_s = np.einsum("scn,scn->sc", ranks_s, ranks_s)
+    sq_d = np.einsum("cn,cn->c", ranks_d, ranks_d)
+    num = np.matmul(ranks_s.transpose(1, 0, 2), ranks_d[:, :, None])[:, :, 0].T  # (S, C)
+    cov = num - mean_term
+    var_s = sq_s - mean_term
+    var_d = sq_d - mean_term
+    den = np.sqrt(var_s * var_d[None, :])
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return np.where(den > 0, cov / np.where(den > 0, den, 1.0), np.nan)
+
+
 def bootstrap_rhos(
     scores: np.ndarray,
     dv: np.ndarray,
@@ -688,18 +899,28 @@ def bootstrap_rhos(
     """Paired-bootstrap Spearman: scores (S, n), shared draws idx (B, n) -> (S, B).
 
     The SAME index draws are applied to every score row (paired differences
-    stay valid). Rank + Pearson ops are batched over (row, draw) — the only
-    loop is over draw CHUNKS to bound memory.
+    stay valid). Per-draw ranks are computed by counting sort over the BASE
+    ranks' integer keys (:func:`_rank_keys` / :func:`_counting_ranks`), and
+    the per-draw Pearson uses the exact moment identity
+    (:func:`_bootstrap_pearson_from_ranks`) — BOTH bit-identical to ranking
+    the drawn values + centered-Pearson directly (equivalence test-pinned)
+    while cutting the per-draw argsort and most of the (S, C, n) passes; the
+    only loop is over draw CHUNKS to bound memory.
     """
     scores = np.atleast_2d(scores)
-    s_rows, _n = scores.shape
+    s_rows, n = scores.shape
     n_boot = idx.shape[0]
+    n_bins = 2 * n + 1
+    keys_s = _rank_keys(scores)  # (S, n) int64
+    keys_d = _rank_keys(dv)[0]  # (n,)
     out = np.empty((s_rows, n_boot))
     for lo in range(0, n_boot, chunk_draws):
         sl = idx[lo : lo + chunk_draws]  # (C, n)
-        g_scores = scores[:, sl]  # (S, C, n)
-        g_dv = rank_rows(dv[sl])  # (C, n)
-        out[:, lo : lo + sl.shape[0]] = _pearson_rows(rank_rows(g_scores), g_dv[None])
+        c = sl.shape[0]
+        gk = keys_s[:, sl].reshape(s_rows * c, n)  # (S*C, n)
+        ranks_s = _counting_ranks(gk, n_bins).reshape(s_rows, c, n)
+        ranks_d = _counting_ranks(keys_d[sl], n_bins)  # (C, n)
+        out[:, lo : lo + c] = _bootstrap_pearson_from_ranks(ranks_s, ranks_d)
     return out
 
 
@@ -769,19 +990,28 @@ def nested_layer_selection(
 
 
 def selection_and_frozen_ci(
-    scores: np.ndarray, dv: np.ndarray, idx: np.ndarray, *, chunk_draws: int = 64
+    scores: np.ndarray,
+    dv: np.ndarray,
+    idx: np.ndarray,
+    *,
+    chunk_draws: int = 64,
+    draws: np.ndarray | None = None,
 ) -> dict:
     """Frozen-layer AND selection-inherited bootstrap CIs for one arm.
 
     Frozen: the layer argmax is chosen ONCE on the observed data, its rho
     bootstrapped. Selection-inherited: the argmax over layers is re-taken
     PER DRAW (the selection rides the draw). Both requested by the
-    statistics critic; report both.
+    statistics critic; report both. ``draws`` (Ly, B) short-circuits the
+    bootstrap when the caller already computed it (evaluate_cell reuses one
+    bootstrap per arm for the CI, the headline delta, and the
+    selection-inherited read — previously three separate bootstraps).
     """
     scores = np.atleast_2d(scores)
     rho_obs = spearman_rows(scores, dv)
     frozen = int(np.nanargmax(rho_obs)) if np.isfinite(rho_obs).any() else 0
-    draws = bootstrap_rhos(scores, dv, idx, chunk_draws=chunk_draws)  # (Ly, B)
+    if draws is None:
+        draws = bootstrap_rhos(scores, dv, idx, chunk_draws=chunk_draws)  # (Ly, B)
     frozen_draws = draws[frozen]
     sel_draws = np.nanmax(draws, axis=0)
 
@@ -839,6 +1069,7 @@ def evaluate_cell(
     n_boot: int = N_BOOT,
     n_perm: int = N_PERM,
     headline: tuple[str, str] = HEADLINE_PAIR,
+    _shared_cache: dict | None = None,
 ) -> dict:
     """Metrics for one budget cell: per-arm rows + headline delta + null.
 
@@ -846,18 +1077,41 @@ def evaluate_cell(
     CI, nested-selection rho, rho vs the TF-margin companion. Cross-arm:
     paired bootstrap (SHARED draws) for the pre-selected headline delta
     (frozen AND selection-inherited) + the selection-symmetric permutation
-    null over the max-of-all-arms.
+    null over the max-of-all-arms. The per-arm bootstrap draws are computed
+    ONCE and reused for the headline delta (the paired shared-idx draws of a
+    frozen row equal that row of the full-layer bootstrap, so the values are
+    unchanged). ``_shared_cache`` (run_grid_multi's per-unit cache, keyed on
+    ``(slug, id(scores))``) reuses the rb-independent arms' identical
+    per-arm computations across the unit's regime slices.
     """
     labels = dv >= AUROC_POS_THRESHOLD
     idx = make_bootstrap_idx(len(dv), n_boot=n_boot, seed=cell.seed + 100 * cell.draw)
     arm_rows: list[dict] = []
     frozen_scores: dict[str, np.ndarray] = {}
     frozen_rho: dict[str, float] = {}
+    frozen_idx: dict[str, int] = {}
+    draws_by_arm: dict[str, np.ndarray] = {}
     for slug, sc in sorted(scores_by_arm.items()):
-        rho_layers = spearman_rows(sc, dv)
-        ci = selection_and_frozen_ci(sc, dv, idx)
+        cache_key = (slug, id(sc))
+        cached = _shared_cache.get(cache_key) if _shared_cache is not None else None
+        if cached is None:
+            draws = bootstrap_rhos(sc, dv, idx)  # (Ly, B)
+            rho_layers = spearman_rows(sc, dv)
+            ci = selection_and_frozen_ci(sc, dv, idx, draws=draws)
+            fl = ci["frozen_layer_idx"]
+            sel_scores, sel_layers = nested_layer_selection(sc, dv, cell.fold_ids)
+            cached = {
+                "draws": draws,
+                "rho_layers": rho_layers,
+                "ci": ci,
+                "rho_nested": float(spearman_rows(sel_scores[None], dv)[0]),
+                "sel_layers": sel_layers,
+                "auroc": float(auroc_rows(sc[fl][None], labels)[0]),
+            }
+            if _shared_cache is not None:
+                _shared_cache[cache_key] = cached
+        rho_layers, ci = cached["rho_layers"], cached["ci"]
         fl = ci["frozen_layer_idx"]
-        sel_scores, sel_layers = nested_layer_selection(sc, dv, cell.fold_ids)
         row = {
             "arm": slug,
             "family": ARM_REGISTRY.get(slug, {}).get("family", "unknown"),
@@ -868,9 +1122,9 @@ def evaluate_cell(
             "rho_frozen": ci["rho_frozen"],
             "ci_frozen": ci["ci_frozen"],
             "ci_selection_inherited": ci["ci_selection_inherited"],
-            "rho_nested_selection": float(spearman_rows(sel_scores[None], dv)[0]),
-            "nested_selected_layers": {str(k): int(v) for k, v in sel_layers.items()},
-            "auroc_frozen": float(auroc_rows(sc[fl][None], labels)[0]),
+            "rho_nested_selection": cached["rho_nested"],
+            "nested_selected_layers": {str(k): int(v) for k, v in cached["sel_layers"].items()},
+            "auroc_frozen": cached["auroc"],
             **provenance,
             "budget_l": cell.budget_l,
             "draw": cell.draw,
@@ -883,15 +1137,17 @@ def evaluate_cell(
         arm_rows.append(row)
         frozen_scores[slug] = sc[fl]
         frozen_rho[slug] = ci["rho_frozen"]
+        frozen_idx[slug] = fl
+        draws_by_arm[slug] = cached["draws"]
 
     result: dict = {"arms": arm_rows}
     a, b = headline
     if a in scores_by_arm and b in scores_by_arm:
-        sa = np.concatenate([np.atleast_2d(frozen_scores[a]), np.atleast_2d(frozen_scores[b])])
-        pair_draws = bootstrap_rhos(sa, dv, idx)  # (2, B) paired (shared idx)
-        delta = pair_draws[0] - pair_draws[1]
-        da = bootstrap_rhos(np.atleast_2d(scores_by_arm[a]), dv, idx)
-        db = bootstrap_rhos(np.atleast_2d(scores_by_arm[b]), dv, idx)
+        # Per-row bootstrap draws are row-independent under the SHARED idx, so
+        # the frozen rows' paired draws are exactly the cached full-layer
+        # draws' frozen rows (no re-bootstrap; values unchanged).
+        da, db = draws_by_arm[a], draws_by_arm[b]
+        delta = da[frozen_idx[a]] - db[frozen_idx[b]]
         delta_sel = np.nanmax(da, axis=0) - np.nanmax(db, axis=0)
         result["headline"] = {
             "pair": [a, b],
@@ -933,6 +1189,136 @@ def _unit_key(provenance: dict, budget_l: int, draw: int, seed: int, regime_extr
     return json.dumps(payload, sort_keys=True)
 
 
+def run_grid_multi(
+    datas: list[CellData],
+    provenances: list[dict],
+    group_keys: list[str] | np.ndarray,
+    *,
+    budgets: list[int],
+    draws: list[int],
+    seeds: list[int],
+    out_dir: Path | str,
+    arms: list[str] | None = None,
+    device: str = "cpu",
+    mlp_kwargs: dict | None = None,
+    n_boot: int = N_BOOT,
+    n_perm: int = N_PERM,
+    context_ids: list[str] | np.ndarray | None = None,
+    unit_timings: list[dict] | None = None,
+) -> list[list[dict]]:
+    """Run every (L, draw, seed) cell for R regime slices AT ONCE; checkpoint per unit.
+
+    The unit axis loops OUTSIDE the regime axis so each realized cell's
+    rb-independent work (ridge factorizations, the arm-5 MLP, the shared-arm
+    bootstrap CIs) is computed ONCE and shared across the R regime slices
+    (:func:`run_cell_multi` + evaluate's per-unit ``_shared_cache``) — the
+    #1739 round-8 cross-unit batching. Everything else preserves
+    :func:`run_grid`'s contract per (unit, regime): ONE JSONL line (O_APPEND)
+    under ``out_dir/percell/cells.jsonl`` with the SAME unit-key grammar +
+    one stdout progress line + the per-context prediction sidecar; resumed
+    keys are SKIPPED with their stored records loaded into the returned
+    per-regime lists (M3a/M3b). ``unit_timings`` (optional) collects one
+    ``{budget_l, draw, seed, wall_s, n_regimes}`` row per COMPUTED unit — the
+    per-budget pilot projection basis.
+    """
+    assert len(datas) == len(provenances) and datas, (len(datas), len(provenances))
+    base = datas[0]
+    out_dir = Path(out_dir)
+    percell = out_dir / "percell" / "cells.jsonl"
+    percell.parent.mkdir(parents=True, exist_ok=True)
+    done: dict[str, dict] = {}
+    if percell.exists():
+        with percell.open(encoding="utf-8") as fh:
+            for line in fh:
+                if line.strip():
+                    rec = json.loads(line)
+                    done[rec["unit_key"]] = rec
+    regime_extra = {
+        "arms_subset": sorted(arms) if arms is not None else "all",
+        "layers_subset": [int(x) for x in (base.layers or ())],
+        "n_boot": int(n_boot),
+        "n_perm": int(n_perm),
+        "mlp_kwargs": {k: mlp_kwargs[k] for k in sorted(mlp_kwargs)} if mlp_kwargs else {},
+    }
+    if base.mapfit is not None:
+        verify_arm9_l0_degeneracy(base, device=device)  # plan §4 #31 gate (once per grid)
+    units = [(lb, dr, sd) for lb in budgets for dr in draws for sd in seeds]
+    results: list[list[dict]] = [[] for _ in datas]
+    t0 = time.time()
+    for k, (budget_l, draw, seed) in enumerate(units):
+        keys = [
+            _unit_key(provenances[r], budget_l, draw, seed, regime_extra) for r in range(len(datas))
+        ]
+        pending: list[int] = []
+        for r, key in enumerate(keys):
+            if key in done:
+                results[r].append(done[key])  # M3b: resumed cells still reach the summary
+                print(
+                    f"[fits] unit {k + 1}/{len(units)} SKIP (resume) {budget_l}/{draw}/{seed} "
+                    f"regime={provenances[r].get('regime')}",
+                    flush=True,
+                )
+            else:
+                pending.append(r)
+        if not pending:
+            continue
+        t_unit = time.time()
+        cell = realize_budget_cell(group_keys, budget_l=budget_l, draw=draw, seed=seed)
+        print(
+            f"[fits] batched slice: {len(pending)} regime-unit(s) in one solve "
+            f"L={budget_l} draw={draw} seed={seed}",
+            flush=True,
+        )
+        outs = run_cell_multi(
+            [datas[r] for r in pending], cell, arms=arms, device=device, mlp_kwargs=mlp_kwargs
+        )
+        dv_cell = base.dv[cell.row_idx]
+        margins_cell = base.margins[cell.row_idx] if base.margins is not None else None
+        pr_cell = base.per_rollout[cell.row_idx] if base.per_rollout is not None else None
+        shared_cache: dict = {}
+        for j, r in enumerate(pending):
+            scores, skipped = outs[j]
+            rec = evaluate_cell(
+                scores,
+                dv_cell,
+                cell,
+                provenance=provenances[r],
+                margins=margins_cell,
+                per_rollout=pr_cell,
+                layers=base.layers,
+                n_boot=n_boot,
+                n_perm=n_perm,
+                _shared_cache=shared_cache,
+            )
+            rec["unit_key"] = keys[r]
+            rec["skipped_arms"] = skipped
+            if context_ids is not None:
+                rec["preds_npz"] = _save_cell_preds(
+                    out_dir / "percell" / "preds", keys[r], rec, scores, cell, context_ids, base.dv
+                )
+            line = json.dumps(rec, sort_keys=True) + "\n"
+            with percell.open("a", encoding="utf-8") as fh:  # single-line O_APPEND write
+                fh.write(line)
+                fh.flush()
+            results[r].append(rec)
+            print(
+                f"[fits] unit {k + 1}/{len(units)} L={budget_l} draw={draw} seed={seed} "
+                f"regime={provenances[r].get('regime')} elapsed={time.time() - t0:.0f}s",
+                flush=True,
+            )
+        if unit_timings is not None:
+            unit_timings.append(
+                {
+                    "budget_l": int(budget_l),
+                    "draw": int(draw),
+                    "seed": int(seed),
+                    "wall_s": float(time.time() - t_unit),
+                    "n_regimes": len(pending),
+                }
+            )
+    return results
+
+
 def run_grid(
     data: CellData,
     group_keys: list[str] | np.ndarray,
@@ -949,81 +1335,22 @@ def run_grid(
     n_perm: int = N_PERM,
     context_ids: list[str] | np.ndarray | None = None,
 ) -> list[dict]:
-    """Run every (L, draw, seed) cell of one variant slice; checkpoint per unit.
-
-    Per completed cell: ONE JSONL line (O_APPEND) under
-    ``out_dir/percell/cells.jsonl`` + one stdout progress line
-    (``[fits] unit k/N <key> elapsed=..s``) + (when ``context_ids`` is given)
-    a per-context frozen-layer prediction sidecar
-    ``out_dir/percell/preds/<sha1(unit_key)>.npz`` so post-hoc within-stratum
-    reads stay recomputable (round-1 "Unaddressed Cases"). Resume: cells
-    whose unit key already exists in the JSONL are SKIPPED **and their stored
-    records are loaded into the returned list** (M3b — a crash+resume run's
-    summary aggregates every cell, not just the current process's). The key
-    carries every output-affecting regime field (provenance + arms/layers/
-    n_boot/n_perm/mlp overrides — M3a).
-    """
-    out_dir = Path(out_dir)
-    percell = out_dir / "percell" / "cells.jsonl"
-    percell.parent.mkdir(parents=True, exist_ok=True)
-    done: dict[str, dict] = {}
-    if percell.exists():
-        with percell.open(encoding="utf-8") as fh:
-            for line in fh:
-                if line.strip():
-                    rec = json.loads(line)
-                    done[rec["unit_key"]] = rec
-    regime_extra = {
-        "arms_subset": sorted(arms) if arms is not None else "all",
-        "layers_subset": [int(x) for x in (data.layers or ())],
-        "n_boot": int(n_boot),
-        "n_perm": int(n_perm),
-        "mlp_kwargs": {k: mlp_kwargs[k] for k in sorted(mlp_kwargs)} if mlp_kwargs else {},
-    }
-    if data.mapfit is not None:
-        verify_arm9_l0_degeneracy(data, device=device)  # plan §4 #31 gate (once per grid)
-    units = [(lb, dr, sd) for lb in budgets for dr in draws for sd in seeds]
-    results: list[dict] = []
-    t0 = time.time()
-    for k, (budget_l, draw, seed) in enumerate(units):
-        key = _unit_key(provenance, budget_l, draw, seed, regime_extra)
-        if key in done:
-            results.append(done[key])  # M3b: resumed cells still reach the summary
-            print(
-                f"[fits] unit {k + 1}/{len(units)} SKIP (resume) {budget_l}/{draw}/{seed}",
-                flush=True,
-            )
-            continue
-        cell = realize_budget_cell(group_keys, budget_l=budget_l, draw=draw, seed=seed)
-        scores, skipped = run_cell(data, cell, arms=arms, device=device, mlp_kwargs=mlp_kwargs)
-        rec = evaluate_cell(
-            scores,
-            data.dv[cell.row_idx],
-            cell,
-            provenance=provenance,
-            margins=data.margins[cell.row_idx] if data.margins is not None else None,
-            per_rollout=data.per_rollout[cell.row_idx] if data.per_rollout is not None else None,
-            layers=data.layers,
-            n_boot=n_boot,
-            n_perm=n_perm,
-        )
-        rec["unit_key"] = key
-        rec["skipped_arms"] = skipped
-        if context_ids is not None:
-            rec["preds_npz"] = _save_cell_preds(
-                out_dir / "percell" / "preds", key, rec, scores, cell, context_ids, data.dv
-            )
-        line = json.dumps(rec, sort_keys=True) + "\n"
-        with percell.open("a", encoding="utf-8") as fh:  # single-line O_APPEND write
-            fh.write(line)
-            fh.flush()
-        results.append(rec)
-        print(
-            f"[fits] unit {k + 1}/{len(units)} L={budget_l} draw={draw} seed={seed} "
-            f"elapsed={time.time() - t0:.0f}s",
-            flush=True,
-        )
-    return results
+    """Single-regime wrapper over :func:`run_grid_multi` (same contract/keys)."""
+    return run_grid_multi(
+        [data],
+        [provenance],
+        group_keys,
+        budgets=budgets,
+        draws=draws,
+        seeds=seeds,
+        out_dir=out_dir,
+        arms=arms,
+        device=device,
+        mlp_kwargs=mlp_kwargs,
+        n_boot=n_boot,
+        n_perm=n_perm,
+        context_ids=context_ids,
+    )[0]
 
 
 def _save_cell_preds(
