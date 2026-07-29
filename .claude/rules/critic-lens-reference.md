@@ -356,8 +356,9 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     re-provision-cost-vs-idle-$ tradeoff for holding the wide pod, nor a shared-nothing sweep of N
     SAME-width seeds run SIMULTANEOUSLY on one wide pod (which is NOT a sequence of phases of
     DIFFERENT widths). Also REVISE a plan that dispatches a pod AND routes a subsequent phase
-    off-pod without the §9 off_pod_phases declaration (reads + outputs — upload-verifier
-    Steps 2.7/2.8 consume it; #1426/#1482/#1535).
+    off-pod — or that has ANY dispatched phase consuming another phase's outputs (incl.
+    VM-produced inputs on a git-clone lane, #1773) — without the §9 off_pod_phases declaration
+    (reads + outputs — upload-verifier Steps 2.7/2.8 consume it; #1426/#1482/#1535).
 11. **Marker stopping recipe grounded in a non-marker parent (parity is not a Source) +
     runtime-guard smoke-verifiability.** If the plan trains a FRESH marker / behavior-implant
     adapter, the stopping recipe (lr, epochs / steps, checkpoint selection) must be grounded in
