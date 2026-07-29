@@ -1,0 +1,23 @@
+{
+ "git_commit": "bfd009c70d24a6ae3f207450b07e0af780db13f6",
+ "numpy": "2.2.6",
+ "python": "3.11.15",
+ "timestamp_utc": "2026-07-29T00:48:04.514126+00:00",
+ "task": 1773,
+ "seed": 17732026,
+ "wiring_gate_max_delta": 0.0,
+ "n_fit": 120000,
+ "n_rows": 142000,
+ "n_features": 16384,
+ "max_shards": 0,
+ "massive_dim_pctl": 99.9,
+ "massive_dims": [
+  32,
+  458,
+  608,
+  2570
+ ],
+ "scaffold_rank": 48,
+ "sae_revision": "c37e53c4bb07127ad17ab88f28b93d4e87142e59",
+ "join_smoke_feat_ids_match": true
+}
