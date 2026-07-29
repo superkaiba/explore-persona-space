@@ -6123,8 +6123,8 @@
     "1790": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1790",
-      "status": "proposed",
+      "path": "tasks/planning/1790",
+      "status": "planning",
       "title": "daily-fix: move msg-strip comments out of tg gate pipelines"
     },
     "1791": {
