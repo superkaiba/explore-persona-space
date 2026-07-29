@@ -27,15 +27,15 @@ backend: gcp
 
 - **A rank-32 bilinear prefix–query interaction closes 93% of the additive-stitch → full-context R² gap on novel prefixes** (+0.049 over the matched no-interaction refit; the cluster CI excludes zero).
 - **A small unnamed residual remains, so the verdict is "partially named":** the same-protocol stitch-MLP still beats the bilinear by +0.010 on novel prefixes and +0.064 on novel queries.
-- **Disjoint prefix + query inputs reach R² 0.920 through an MLP, above the full-context linear map's 0.914** — co-attention of prefix and query is not needed to beat the linear read.
-- **Residual structure is detectable almost everywhere (23 of 30 informative tests fire), but the mean-predictable part is small on prefix-input arms** (+0.011 to +0.015)**, modest elsewhere.**
+- **Disjoint prefix + query inputs reach R² 0.920 through an MLP, at or slightly above the full-context linear map's 0.914** (+0.006 margin; no paired CI computed) — consistent with the linear read requiring no co-attention of prefix and query.
+- **Residual structure is detectable almost everywhere (23 of 26 informative tests reject; 4 of 30 cells degenerate), but the mean-predictable part is small on prefix-input arms** (kernel gains +0.011 to +0.015)**, modest elsewhere.**
 - **The banked 50k-train fitter comparison is contaminated** (lexical near-duplicates touch 325 of 1,400 targets); **the deduplicated 1M comparison (≈ +0.056 MLP gain) is the citable context-arm number.**
-- **A follow-up refit shows the prefix-averaged arm is wholly nonlinear per-row:** its best linear map stays below zero R² while kernels and MLPs reach ≈ 0.11, near the between-prefix ceiling.
+- **A follow-up refit shows the prefix-averaged arm is wholly nonlinear per-row:** its best in-grid linear map stays below zero R² while kernels and MLPs reach ≈ 0.11, near the between-prefix ceiling.
 
 ## Goal
 
-- **This experiment in context:** The parent crossed-corpus run ([#1092](https://eps.superkaiba.com/tasks/1092)) established the line's central linear result — context→answer activation maps with held-out R² 0.74–0.91, additive in prefix and query to ≈ 91% — and the banked fitter comparisons ([#779](https://eps.superkaiba.com/tasks/779)) found a ≈ +0.05–0.09 kernel/MLP gain over ridge on the full-context arm. This task pins down what the linear map misses: a fold-hygiene audit of the banked 50k/1M train–test splits; dependence tests for any residual structure per input arm, using the validated HSIC/distance-correlation instruments ([#763](https://eps.superkaiba.com/tasks/763)); a matched kernel/random-features/MLP ladder per arm under identical folds; and the headline test — does a rank-r bilinear prefix×query interaction account for the same gap the black-box fitters close? Noise-ceiling attribution is deferred until the sibling decode-noise-floor task ([#1774](https://eps.superkaiba.com/tasks/1774)) lands.
-- **Broader narrative:** This serves the context-as-vector question (`docs/open_questions.md`, `spec-context-as-vector` and `leak-predictor` anchors): whether the context→answer map's nonlinearity has a named, low-rank compositional form — a prefix×query interaction — or is an unstructured black box, which decides how far linear-map theory can carry the leakage-prediction program.
+- **This experiment in context:** The parent crossed-corpus run ([#1092](https://eps.superkaiba.com/tasks/1092)) established the line's central linear result (context→answer activation maps with held-out R² 0.74–0.91, additive in prefix and query to ≈ 91%), and the banked fitter comparisons ([#779](https://eps.superkaiba.com/tasks/779)) found a ≈ +0.05–0.09 kernel/MLP gain over ridge on the full-context arm. This task measures what the linear map misses: a fold-hygiene audit of the banked 50k/1M train–test splits; dependence tests for any residual structure per input arm, using the validated HSIC/distance-correlation instruments ([#763](https://eps.superkaiba.com/tasks/763)); a matched kernel/random-features/MLP ladder per arm under identical folds; and the headline test — does a rank-r bilinear prefix×query interaction account for the same gap the black-box fitters close? Noise-ceiling attribution is deferred until the sibling decode-noise-floor task ([#1774](https://eps.superkaiba.com/tasks/1774)) lands.
+- **Broader narrative:** This serves the context-as-vector question (`docs/open_questions.md`, `spec-context-as-vector` and `leak-predictor` anchors): whether the context→answer map's nonlinearity has a named, low-rank compositional form (a prefix×query interaction) or is an unstructured black box, which decides how far linear-map theory can carry the leakage-prediction program.
 
 ## Methodology
 
@@ -116,9 +116,9 @@ What is plotted: pooled held-out R² (48 answer PCs, novel-prefix 6-fold, 17,308
 | Ambient-space companion, named gain (r ∈ {0, 32}) | +0.0383 | [0.0362, 0.0405] |
 | Gap fraction closed (bilinear − stitch) / (context − stitch) | 0.932 | — (0.85 of the MLP-reachable gap) |
 
-Both the named gain and the unnamed residual exclude zero, so the verdict lattice lands on "partially named". The de-regularization control is separately small, so the gain is not an optimizer artifact.
+Both the named gain and the unnamed residual exclude zero: on the verdict lattice, this is "partially named". The de-regularization control is separately small (+0.011); the gain is not an optimizer artifact.
 
-The stronger claim — that the nonlinearity IS the interaction — is not licensed: dependence tests on the bilinear's own residuals still fire (distance correlation 0.687, p = 0.001 under prefix-block and within-prefix permutations). And the disjoint-input stitch-MLP (0.920) exceeds the full-context ridge (0.914): what the linear read of the mixed forward state misses is already recoverable from the separate prefix and query states.
+The stronger claim, that the nonlinearity just IS the interaction, is not licensed: dependence tests on the bilinear's own residuals still reject (distance correlation 0.687, p = 0.001 under prefix-block and within-prefix permutations). And the disjoint-input stitch-MLP (0.920) sits at or slightly above the full-context ridge (0.914; a +0.006 margin with no paired CI computed for this specific comparison): what the linear read of the mixed forward state misses is, to within that margin, recoverable from the separate prefix and query states.
 
 ### The verdict survives the rank cap and fold-scheme changes; the unnamed share grows under novel queries
 
@@ -135,9 +135,9 @@ What is plotted: outer-test R² (48-PC space) versus bilinear interaction rank u
 | Unnamed residual, novel-query (stitch-MLP ensemble − bilinear) | +0.0638 | [0.0516, 0.0753] |
 | Exploratory r = 64 point, novel-prefix (implied residual ≈ +0.0089, still positive) | 0.9112 | — |
 
-The named gain is sign-consistent across all three fold schemes, and the verdict is not a rank-cap artifact (the r = 64 point still leaves a positive residual). Under novel queries the unnamed share is much larger — bilinear 0.663 against MLP 0.727 — so the interaction term is least sufficient exactly where query generalization is demanded.
+The named gain is sign-consistent across all three fold schemes, and the verdict is not a rank-cap artifact (the r = 64 point still leaves a positive residual). Under novel queries the unnamed share is much larger (bilinear 0.663 against MLP 0.727). The interaction term is least sufficient exactly where query generalization is demanded.
 
-Two caveats. The doubly-novel residual is unavailable (no stitch-MLP was fit under that scheme — a coverage gap, not a null), with its rank carried over from the prefix scheme. The named gain never touches the PRESS baseline, so the λ-selection collapse documented below cannot contaminate it.
+Two caveats. No stitch-MLP was ever fit under the doubly-novel scheme; that cell's residual is missing, and its rank is carried over from the prefix scheme. The named gain never touches the PRESS baseline, so the λ-selection collapse documented below cannot contaminate it.
 
 ### Per-arm nonlinearity gains are small on prefix-input arms and modest on query-bearing ones
 
@@ -154,7 +154,7 @@ What is plotted: pooled held-out R² per arm × fitter (48-PC space, per-row gra
 | Bare query state | 0.740 | 0.760 | +0.0200 [0.0182, 0.0221] | +0.0407 [0.0375, 0.0444] |
 | Prefix + query stitch | 0.849 | 0.920 | +0.0712 [0.0682, 0.0746] | +0.106 [0.103, 0.110] |
 
-Prefix-end gains are small absolutely but a sizable fraction of that arm's low per-row ceiling (≈ 0.11 between-prefix variance share); its MLP gain is ≈ +0.007 across 3 seeds. Gains run larger in ambient space — the 48-PC compression absorbs part of the residual.
+Prefix-end gains are small absolutely but a sizable fraction of that arm's low per-row ceiling (≈ 0.11 between-prefix variance share); its MLP gain is ≈ +0.007 across 3 seeds. Gains run larger in ambient space; the 48-PC compression absorbs part of the residual.
 
 Under novel-query folds the PRESS baselines collapse (stitch 0.353) because PRESS selects λ on train rows that share queries; against the honest linear reference (the rank-0 refit, 0.636) the nonlinear headroom is ≈ +0.09 (kernel 0.725, MLP 0.727). Per-fold points behind the linear bars appear in the next result.
 
@@ -168,9 +168,9 @@ What is plotted: per-fold held-out R² of every scheduled-PRESS linear fit (48-P
 
 The arm's input — the leave-own-row-out mean of the prefix's other context states — is near-constant within a prefix, so PRESS λ selection over train rows explodes on held-out prefixes. The originally recorded "+8.1–8.3 gains" were recovery from a broken baseline, not nonlinearity.
 
-The refit gives the honest read: the best linear map still sits below zero per-row (−0.280 in 48-PC space / −0.244 ambient, every fold) while kernels and MLPs reach ≈ 0.11 — recomputed gains +0.394 (48-PC) and +0.328 (ambient), cluster CIs in the previous table. The per-row signal is real but entirely nonlinear, saturating near the between-prefix ceiling; averaged-grain reads stay healthy (48-PC ridge 0.877). Scope: the arm reads sibling context states — coarser-grain transport, not pure prefix-only transport.
+The refit gives the corrected read: the best linear map in the λ grid still sits below zero per-row (−0.280 in 48-PC space / −0.244 ambient, every fold) while kernels and MLPs reach ≈ 0.11; the recomputed gains are +0.394 (48-PC) and +0.328 (ambient), cluster CIs in the previous table. The per-row signal is real but entirely nonlinear, saturating near the between-prefix ceiling; averaged-grain reads stay healthy (48-PC ridge 0.877). Scope: the arm reads sibling context states, so it measures transport at a coarser grain than pure prefix-only transport.
 
-### Residual dependence is detectable almost everywhere the instrument can see — 23 of 30 informative tests fire
+### Residual dependence is detectable almost everywhere the instrument can see — 23 of 26 informative tests reject
 
 What is plotted: Holm-adjusted permutation p-values for the 30-test family — 5 arms × 3 block-permutation schemes × 2 statistics (HSIC, distance correlation) — on held-out linear-map residuals; the dashed reference is 0.05. Tick labels read arm, permutation scheme, statistic.
 
@@ -178,9 +178,9 @@ What is plotted: Holm-adjusted permutation p-values for the 30-test family — 5
 
 > **Figure.** *Most residuals carry detectable structure.* 25 of 30 tests reject at the permutation resolution floor (Holm p = 0.030); of those, 2 are degenerate-null artifacts — the prefix-end distance-correlation cells under query-block and derangement, where the null 95th quantile equals the observed statistic to 9 significant figures (0.14883769998510446 vs 0.1488377000037514).
 
-Net accounting: 23 informative rejections, 3 informative non-rejections (bare-query under prefix-block, HSIC; full-context under query-block, both statistics), and 4 degenerate prefix-end cells where the null equals the observed statistic. That arm is informative only under prefix-block, which crosses fold boundaries — its detection stays fold-boundary-dependent rather than established.
+Net accounting: 23 informative rejections, 3 informative non-rejections (bare-query under prefix-block, HSIC; full-context under query-block, both statistics), and 4 degenerate prefix-end cells where the null equals the observed statistic. That arm is informative only under prefix-block, which crosses fold boundaries; treat its detection as fold-boundary-dependent.
 
-The planted-effect power check passed with a measured minimal detectable effect ≈ 0.05 R²-equivalent, so an informative non-rejection reads "no structure above ≈ 0.05", never "the map is linear". Detection is not a gain claim — heteroscedasticity also fires; the prefix-averaged arm fires all 6 of its tests (distance correlation 0.807) with nil per-row linear signal.
+The planted-effect power check passed with a measured minimal detectable effect ≈ 0.05 R²-equivalent, so an informative non-rejection reads "no structure above ≈ 0.05", never "the map is linear". Detection also does not by itself promise a usable gain: heteroscedasticity rejects too, and the prefix-averaged arm rejects on all 6 of its tests (distance correlation 0.807) with nil per-row linear signal.
 
 ### The banked 50k fitter comparison is contaminated; the deduplicated 1M comparison is the citable context-arm gain
 
@@ -190,9 +190,9 @@ What is plotted: histogram (log-count y-axis) of each of the 1,400 banked val/te
 
 > **Figure.** *A heavy right tail sits past the near-duplicate criterion.* 297 exact train↔target duplicates (154 targets) and 35,073 near-duplicate pairs at 5-gram Jaccard ≥ 0.8, touching 325 of 1,400 targets — far above the 14-target (1%) audit threshold; worst-case sensitivity bound ≤ 0.325 of test R².
 
-The audit threshold tripped, so the banked 50k gain is quoted unaudited; the deduplicated 1M comparison carries the citable context-arm gain: ridge 0.754 → MLP 0.810 at L19 (≈ +0.056; 0.671 → 0.759 at L14). The 1M re-verification is clean — 0 exact, 0 residual near-duplicates on the 960,000-prompt manifest pool (the banked fit realized 963,444 rows, a 0.4% scope note).
+The audit threshold tripped: the banked 50k gain is quoted unaudited, and the deduplicated 1M comparison carries the citable context-arm gain instead — ridge 0.754 → MLP 0.810 at L19 (≈ +0.056; 0.671 → 0.759 at L14). The 1M re-verification is clean: 0 exact, 0 residual near-duplicates on the 960,000-prompt manifest pool (the banked fit realized 963,444 rows, a 0.4% scope note).
 
-Two honesty notes: the skipped conditional dedup refit remains runnable — the recorded "infeasible at realized chunk size" is unquantified and the stated fallback trigger (prompts not reconstructible) did not occur (500/500 reconstructed) — so it is filed as a follow-up. And the criterion is lexical only: semantic paraphrases are unscreened.
+Two audit limits. The skipped conditional dedup refit remains runnable (the recorded "infeasible at realized chunk size" is unquantified, and the stated fallback trigger, prompts not reconstructible, did not occur: 500/500 reconstructed), so it is filed as a follow-up. And the criterion is lexical only: semantic paraphrases are unscreened.
 
 ### The interaction writes into the answer manifold's high-variance subspace, with no trait-specific alignment beyond it
 
@@ -202,9 +202,9 @@ What is plotted: the maximum absolute cosine over the 576 fitted interaction ter
 
 > **Figure.** *Output directions align with the answer manifold; input directions align with nothing.* Max abs cosine 0.768 (answer PCs) and 0.699 (trait dictionary) for output directions; 0.066 / 0.054 for input directions. Significance: p ≈ 0.001 vs the matched-norm isotropic null, but p = 1.0 / 0.257 vs the covariance-matched null.
 
-Against the isotropic null the output-direction alignments look strong; under the covariance-matched null (draws from the train-population answer covariance, max-selection applied identically per draw) neither survives. The interaction writes into the answer summary's dominant covariance subspace — as any well-fit component must — with no trait-specific alignment beyond that.
+Against the isotropic null the output-direction alignments look strong; under the covariance-matched null (draws from the train-population answer covariance, max-selection applied identically per draw) neither survives. The interaction writes into the answer summary's dominant covariance subspace, as any well-fit component must, with no trait-specific alignment beyond that.
 
-Input-side projections are indistinguishable from chance under both nulls. The dictionary read is conditional on a 3-trait dictionary; the answer-PC read carries the breadth, and it too is covariance-explainable.
+Input-side projections are indistinguishable from chance under both nulls. The answer-PC read covers the breadth and is likewise covariance-explainable; the dictionary read is conditional on a 3-trait dictionary.
 
 ---
 
