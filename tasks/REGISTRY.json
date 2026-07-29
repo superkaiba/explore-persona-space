@@ -6130,8 +6130,8 @@
     "1791": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1791",
-      "status": "reviewing",
+      "path": "tasks/completed/1791",
+      "status": "completed",
       "title": "daily-fix: --map-files misuse OSError before #1613 guard"
     },
     "1792": {
