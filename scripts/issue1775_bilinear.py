@@ -65,7 +65,7 @@ from issue1775_common import (  # noqa: E402
     fold_pairs,
     hsic_statistic,
     inner_val_split,
-    load_units,
+    load_units_validated,
     null_stats_batched,
     observed_stats,
     p_value,
@@ -92,6 +92,36 @@ BILIN_LR = 1e-3  # ungrounded — needs smoke-test (plan section 11); validated 
 BILIN_MAX_EPOCHS = 500
 BILIN_PATIENCE = 30
 REGIME_KEYS = ("scheme", "fold", "r", "basis", "smoke", "row_limit")
+# Designed halt (mirrors issue1775_ladder.ASSEMBLY_INCOMPLETE_RC; run.sh route_rc
+# names rc=23): the assembly refuses to write a PARTIAL bilinear_fits.json when
+# planned units are missing a completed row — the P3 crash-fix class ported to P4
+# (r3 persisted concern p4-bilinear-raw-resume-no-completeness-gate).
+ASSEMBLY_INCOMPLETE_RC = 23
+
+
+def bilinear_row_incomplete(d: dict) -> str | None:
+    """Reason a persisted bilinear unit row is NOT a complete result (None = complete).
+
+    Mirrors issue1775_ladder.unit_row_incomplete for the P4 row schema: a unit
+    counts as done ONLY when its JSONL row carries the full payload assemble()
+    reads — every REGIME_KEY, ``epochs_ran``, and a non-empty ``variants`` list
+    whose entries carry seed/wd/inner_val_mse/r2_te. A stub / truncated /
+    older-schema row must re-run, never resume-skip.
+    """
+    for k in REGIME_KEYS:
+        if k not in d:
+            return f"missing regime key {k!r}"
+    if "epochs_ran" not in d:
+        return "missing epochs_ran (unit never completed)"
+    v = d.get("variants")
+    if not isinstance(v, list) or not v:
+        return "row without variants"
+    required = {"seed", "wd", "inner_val_mse", "r2_te"}
+    if any(not required <= set(e) for e in v):
+        return "variants entries missing seed/wd/inner_val_mse/r2_te"
+    return None
+
+
 RB_TRAITS = ("evil", "hallucination", "sycophancy")
 RB_HF_PREFIX = "issue779_monitoring/r_b"
 N_PROJ_DRAWS = 1000
@@ -429,7 +459,9 @@ def main() -> int:
     else:
         schemes = ["prefix"] if args.smoke else ["prefix", "query"]
     units_path = out_dir / f"units_shard{args.shard_index}.jsonl"
-    done = {unit_key(d, REGIME_KEYS) for d in load_units(units_path)}
+    done = {
+        unit_key(d, REGIME_KEYS) for d in load_units_validated(units_path, bilinear_row_incomplete)
+    }
     # target bases
     Yp, info_p = _basis_targets_with_info(
         ad.Y_stacked,
@@ -439,25 +471,37 @@ def main() -> int:
         projection_target="t1",
     )
     Yp = np.ascontiguousarray(Yp, dtype=np.float64)
-    unit_list = [
-        {"scheme": sch, "fold": f, "r": r, "basis": "pca48"}
+    enum = [
+        {
+            "scheme": sch,
+            "fold": f,
+            "r": r,
+            "basis": "pca48",
+            "smoke": bool(args.smoke),
+            "row_limit": args.row_limit,
+        }
         for sch in schemes
         for r in r_grid
         for f in range(6)
     ]
-    unit_list = [u for i, u in enumerate(unit_list) if i % args.num_shards == args.shard_index]
+    # shard split over the RAW enumeration (byte-identical shard assignment to the
+    # pre-gate code; assembly dedups by unit key across all shard files either way)
+    unit_list = [u for i, u in enumerate(enum) if i % args.num_shards == args.shard_index]
     if args.assemble_only:
         unit_list = []
     pairs_by_scheme = {
         sch: restrict_pairs(fold_pairs(ad.rows, len(ad.rows), sch), ad.arm_row_mask["stitch"])
         for sch in ("prefix", "query", "doubly")
     }
+    # completeness-gate reference (the P3 crash-fix class ported to P4): the FULL
+    # planned enumeration across ALL shards for THIS invocation's schemes x r_grid;
+    # folds a scheme never realizes (fold >= len(pairs)) skip in the fit loop and
+    # are excluded here too.
+    planned = [u for u in enum if u["fold"] < len(pairs_by_scheme[u["scheme"]])]
     params_dir = tensors_dir("bilinear_params")
     t0 = time.monotonic()
     n_done = 0
     for u in unit_list:
-        u["smoke"] = bool(args.smoke)
-        u["row_limit"] = args.row_limit
         if unit_key(u, REGIME_KEYS) in done:
             continue
         pairs = pairs_by_scheme[u["scheme"]]
@@ -512,12 +556,41 @@ def main() -> int:
         print("[bilinear] shard done (assembly = separate --assemble-only pass)", flush=True)
         return 0
     # ---- assembly (single-shard runs and --assemble-only both land here) ----
-    all_units: list[dict] = []
+    raw_rows: list[dict] = []
     for sp in sorted(out_dir.glob("units_shard*.jsonl")):
-        all_units.extend(load_units(sp))
+        raw_rows.extend(load_units_validated(sp, bilinear_row_incomplete))
+    by_key: dict[tuple, dict] = {}
+    for row in raw_rows:
+        by_key[unit_key(row, REGIME_KEYS)] = row  # last row wins (purged+rerun units append anew)
+    # completeness gate (mirrors ladder.py; run.sh route_rc names rc=23): refuse
+    # a partial bilinear_fits.json when a planned unit has no completed row.
+    # NOTE all_units keeps EVERY valid row, not planned-only — the doubly override
+    # pass re-enters this assembly and must still see the main pass's prefix/query
+    # rows (assemble() covers all schemes present across shard files).
+    missing = [u for u in planned if unit_key(u, REGIME_KEYS) not in by_key]
+    if missing:
+        print(
+            f"[bilinear] ASSEMBLY INCOMPLETE: {len(missing)}/{len(planned)} planned units "
+            "have no completed row — refusing to write a partial bilinear_fits.json (rc=23)",
+            flush=True,
+        )
+        for u in missing[:25]:
+            print(
+                f"[bilinear]   missing scheme={u['scheme']} fold={u['fold']} r={u['r']}",
+                flush=True,
+            )
+        return ASSEMBLY_INCOMPLETE_RC
+    all_units = list(by_key.values())
     assembled = assemble(
         all_units, ad, Yp, info_p, X, pairs_by_scheme, args, out_dir, params_dir, store
     )
+    if planned and not assembled["fits"]["schemes"]:
+        print(
+            "[bilinear] ASSEMBLY ERROR: no scheme entries assembled though planned units "
+            "exist (rc=23)",
+            flush=True,
+        )
+        return ASSEMBLY_INCOMPLETE_RC
     atomic_write_json(out_dir / "bilinear_fits.json", assembled["fits"])
     atomic_write_json(out_dir / "interaction_projections.json", assembled["projections"])
     upload_phase_tensors("bilinear_params", smoke=args.smoke)

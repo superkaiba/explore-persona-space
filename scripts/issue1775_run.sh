@@ -189,7 +189,7 @@ if [ -n "$PHASES" ] && phase_selected p3 && ! phase_selected p1; then
 import sys
 sys.path.insert(0, 'scripts')
 from issue1775_common import prefetch_p3_inputs
-prefetch_p3_inputs()
+prefetch_p3_inputs(smoke=bool('$SMOKE_FLAG'))
 " || OK="rc=$?"
   [ "$OK" = yes ] || { echo "[dispatch] p3 input prefetch failed ($OK)" >&2; exit 6; }
 fi
