@@ -30,6 +30,13 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+# CRITICAL: load_dotenv() BEFORE importing numpy/matplotlib — the shared-VM
+# thread caps (#847) bind in-process only when set before the first BLAS/
+# torch import freezes the pools.
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()
+
 import numpy as np  # noqa: E402
 
 import issue1482_analysis as A82  # noqa: E402
