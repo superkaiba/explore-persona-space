@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1777,
+  "highest_id": 1778,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6035,6 +6035,13 @@
       "path": "tasks/reviewing/1777",
       "status": "reviewing",
       "title": "workflow-fix: verify_plan WARN check for /workspace sentinels on unpinned auto lane"
+    },
+    "1778": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1778",
+      "status": "proposed",
+      "title": "verify_artifacts_exist crashes on planned-output hf:// globs + wrong repo_type (Step 6a.5 gate)"
     },
     "18": {
       "has_clean_result": false,
