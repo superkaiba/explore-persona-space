@@ -788,6 +788,22 @@ text as INVALID (FAIL `generation-discard-declared-invalid`), not as a
 license. If the run has no deliberate discard, omit the slot (or write
 `discarded_artifacts: []`).
 
+**Ephemeral-lane text/JSON destinations (destination-vs-lane durability).**
+For any stage whose §9 lane is EPHEMERAL — a GCE instance with
+`--instance-termination-action=DELETE` (the boot disk dies with the run)
+or a RunPod pod on the terminate-on-upload-verify lifecycle; SLURM lanes
+are deliberately NOT in this set (job scratch/project storage persists
+past job end) — every text/JSON output row (summary JSONs, metrics,
+judge outputs, configs) MUST name an HF (non-LFS) destination, e.g. the
+issue data-repo prefix `issue<N>_<slug>/…`. A git-only destination
+("commit to the issue branch") is legal ONLY for a VM-resident stage, or
+when the plan names an explicit pre-teardown HARVEST phase that commits
+the file BEFORE the instance/pod is reaped. Rationale: a clean exit on
+the DELETE-on-exit lane reaps the disk minutes later — #1738's two
+summary JSONs, declared "→ git issue branch" with no harvest phase, were
+lost at reap and cost a 28-min rebuild round. The critic Methodology
+lens item 18 REVISEs violations.
+
 ## 11. Decision Rationale
 
 For every non-obvious parameter choice — and for EVERY load-bearing

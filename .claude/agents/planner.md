@@ -473,7 +473,13 @@ declared boundary, the new regime read against it, and the engaged
 mitigation or stated justification) · per-stage
 output-artifact destinations (`raw_completions/<stage>/`,
 `analysis_tensors/`) (a declared off-pod phase's outputs carry their
-OFF-POD dest — mirror §9's off_pod_phases block) · the `discarded_artifacts:` slot
+OFF-POD dest — mirror §9's off_pod_phases block) — and for any stage whose
+§9 lane is EPHEMERAL (GCE DELETE-on-exit, RunPod terminate-on-verify),
+every text/JSON output row MUST name an HF (non-LFS) dest; "git issue
+branch" alone is legal only for VM-resident stages or with a named
+pre-teardown harvest phase (#1738: two summary JSONs declared git-only
+on the DELETE-on-exit GCE lane were lost at reap) ·
+the `discarded_artifacts:` slot
 ({name, reason, regen_recipe}; text/JSON is NEVER a valid discard).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
