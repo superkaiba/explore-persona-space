@@ -2097,7 +2097,11 @@ absolute path once with the #506-safe
 `REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")`
 recipe (as above) — NOT `git rev-parse --show-toplevel`, which from a
 worktree cwd returns the worktree root and doubles the path — and reuse
-`$WORKTREE` / `$REPO_ROOT` in every subsequent command.
+`$WORKTREE` / `$REPO_ROOT` in every subsequent command. Corollary: this
+issue's experiment files (scripts, configs, plan-referenced code) exist
+ONLY in the worktree until Step 10d merges — a repo-root-relative
+read/exec of `scripts/issue<N>_*.py` misses them (~5 failed tool calls in
+one #1739 session, 2026-07-28); always prefix with `$WORKTREE/`.
 
 **Open the draft PR only if the branch is ahead of fetched `origin/main`.** `gh pr create` errors with `No commits between main and issue-<N>` when the branch has no commits yet (the common case before the implementer has run). Pre-check first (bounded fetch + `origin/main`-anchored aheadness):
 ```bash
@@ -6496,6 +6500,12 @@ RESULTS. Every detached launch declares its harvest path at launch time:
 
 The contract costs one token + a path choice at launch — never a new gate.
 
+**Monitor-filter hygiene (async-dispatch chains).** A crash-pattern
+Monitor/until-loop over a detached phase's log should EXCLUDE known
+benign teardown lines (`aclose()`, `Event loop is closed` — vLLM/httpx
+shutdown noise) from its error pattern, or it fires spurious wakes on a
+healthy phase end (2 spurious wakes, #1773 Phase 4, 2026-07-28).
+
 **Earlyoom protection is REQUIRED on the verified phase (#957; incident #811).**
 The shared VM runs `earlyoom` with `--prefer '(^|/)(pytest|python3?)$'` (+300
 badness to every python process), so a long detached fit is the designated
@@ -7354,6 +7364,11 @@ explicit eval-data path):
      --payload-file /tmp/issue-<N>-inline-payload.txt
    ```
 
+   (/tmp hygiene: on a long-lived follow-up issue, ROUND-SCOPE tmp
+   artifact names — `/tmp/issue-<N>-r<round>-<label>` — a bare
+   `/tmp/issue-<N>-<label>` persists from prior rounds/sessions and trips
+   Write-before-Read collisions; 2 collisions on 2026-07-28.)
+
    The helper mechanizes both legs (no-flags `workflow_lint.py`;
    `select_step9c_tests.py --map-files` → mapped pytest at the #1046
    timeout formula) and the verdict semantics below, persists the leg
@@ -7816,7 +7831,10 @@ split in two:
   `epm:methodology-doc-generated v1` marker — posted only when the
   link line lands (the step is only "done" then). If the background
   agent has not returned yet at this point, WAIT for it here
-  (TaskOutput / completion notification) before running the join.
+  (TaskOutput / completion notification) before running the join — load
+  the deferred schema first (`ToolSearch("select:TaskOutput")`): an
+  unloaded direct call fails with InputValidationError (2 firings,
+  2026-07-28).
 
 The early spawn needs no extra gating relative to upload verification:
 the agent's artifact reads are worktree-local, and the late join
