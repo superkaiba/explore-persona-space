@@ -155,3 +155,4 @@
 - [Subsample re-admission filter](feedback_subsample_readmission_filter.md) — re-apply the producer's admission filter before consuming split-time id lists (#1738 r5)
 - [Reused-module wiring contract](feedback_reused_module_hf_prefix_contract.md) — audit flags AND every re-declared arg/ns field against the consumer's reads (paths, None-defaults, call args like layers); sweep whole namespace x all callers (#1776 c2+c3)
 - [sha pins live in a DOMAIN](feedback_sha_pin_domain_mismatch.md) — recompute a reused pin from its producer's recipe before asserting; wrong-domain compare masquerades as data drift (#1776 c4)
+- [out-arg FILE-vs-DIR kind](feedback_out_arg_file_vs_dir_kind.md) — a file path passed as an out-dir arg misnests deliverables while .exists()/-e checks pass; use is_file/-f + argparse kind guards + class-sweep out args (#1776 c5)
