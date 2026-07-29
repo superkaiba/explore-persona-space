@@ -85,7 +85,8 @@ def main() -> int:
             "model": "none trained — reads over banked #1092/#779 activation stores",
             "folds": "novel-prefix 6-fold FOLD_SEED=0 + novel-query companion + doubly-novel",
             "layers": {"primary": 14, "bridge": 19},
-            "targets": "pooled t1/t2/t3 stacked ambient + train-population pca48",
+            "targets": "pooled t1/t2/t3 stacked ambient + FULL-fit-population pca48 "
+            "(declared deviation — see plan_deviations)",
             "engines": {
                 "ridge": "issue1092_fit_grid PRESS engine (press_fit_predict) verbatim",
                 "expansion_ridge": "fit_h.ridge_fit_predict_fast (>=3-slice parity-gated)",

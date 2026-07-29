@@ -267,11 +267,27 @@ def recall_check(target_prompts: list[str], *, n_pairs: int = 1000, seed: int = 
     if not bases:
         raise ValueError("no targets long enough for the recall check")
     pairs = []
-    while len(pairs) < n_pairs:
+    # round-2 Minor-f: bounded pair enumeration — _perturb_to_jaccard can miss
+    # [0.6, 0.9] on short/degenerate texts, so an unbounded while loop can spin.
+    max_attempts = 50 * n_pairs
+    attempts = 0
+    while len(pairs) < n_pairs and attempts < max_attempts:
+        attempts += 1
         base = bases[int(rng.integers(0, len(bases)))]
         cand, j = _perturb_to_jaccard(base, rng)
         if 0.6 <= j <= 0.9:
             pairs.append((base, cand, j))
+    if len(pairs) < n_pairs:
+        # fail loud below a usable floor; otherwise proceed with what landed
+        if len(pairs) < max(10, n_pairs // 10):
+            raise RuntimeError(
+                f"recall_check: only {len(pairs)}/{n_pairs} near-threshold pairs "
+                f"after {attempts} attempts — target texts too short/degenerate"
+            )
+        print(
+            f"[recall] WARNING: {len(pairs)}/{n_pairs} pairs after {attempts} attempts",
+            flush=True,
+        )
     sig_a = minhash_signatures([p[0] for p in pairs], tag="/recall-a")
     sig_b = minhash_signatures([p[1] for p in pairs], tag="/recall-b")
     est = (sig_a == sig_b).sum(axis=1).astype(np.float64) / MINHASH_PERMS
@@ -487,6 +503,7 @@ def step_n50k(out_dir: Path, used: dict, *, smoke: bool) -> dict:
             "duplicates remain possible"
         ),
     }
+    gate_a["disposition"] = _gate_a_disposition(gate_a["p0c_triggered"], k, bound)
     out = {
         "meta": result_meta(step="n50k", smoke=smoke),
         "split_diag": {k_: v for k_, v in diag.items() if k_ != "note"},
@@ -577,6 +594,23 @@ def step_recall(out_dir: Path, used: dict, *, smoke: bool) -> dict:
     return out
 
 
+def _gate_a_disposition(triggered: bool, k: int, bound: float) -> str:
+    """Gate A trip path -> the plan section 8 fallback (concern
+    p0c-dedup-refit-deferred): the P0c dedup+refit is infeasible at the
+    realized chunk size (~173 GB staging), so on a trip the deliverable is
+    complete WITHOUT the refit — the n50k gain is quoted unaudited and the
+    n1m gain carries the citable context-arm claim."""
+    if triggered:
+        return (
+            "n50k gain quoted UNAUDITED — n1m is the citable context-arm gain "
+            "(P0c refit infeasible at realized chunk size; plan section 8 fallback)"
+        )
+    return (
+        f"clean — n50k gain citable (contamination {k} <= 14 targets; "
+        f"sensitivity bound {bound:.4f})"
+    )
+
+
 def gate_smoke_probe() -> None:
     """Degenerate-input probes: every data-dependent gate fires its DESIGNED
     handling once, outside the main leg (fold-check gate inventory)."""
@@ -605,6 +639,24 @@ def gate_smoke_probe() -> None:
     except AssertionError as e:
         fired = "fixed_split anchor" in str(e)
     assert fired, "valtest round1-length gate did not fire"
+    # (f) Gate A trip -> plan section 8 fallback disposition (round-2 concern wiring)
+    trip = _gate_a_disposition(True, 20, 0.02)
+    assert "UNAUDITED" in trip and "n1m" in trip, trip
+    assert _gate_a_disposition(False, 3, 0.001).startswith("clean"), "clean branch broke"
+    # (g) bounded recall-pair loop fails loud when perturbation never lands in
+    # [0.6, 0.9] (round-2 Minor-f): force the miss path by rebinding the
+    # perturbation generator to a degenerate J=0 output — the GATE lines
+    # (attempt bound + fail-loud raise) execute for real.
+    orig_perturb = globals()["_perturb_to_jaccard"]
+    globals()["_perturb_to_jaccard"] = lambda t, rng: (t + " zzzzz", 0.0)
+    fired = False
+    try:
+        recall_check(["one two three four five six seven eight"], n_pairs=20, seed=0)
+    except RuntimeError as e:
+        fired = "near-threshold pairs" in str(e)
+    finally:
+        globals()["_perturb_to_jaccard"] = orig_perturb
+    assert fired, "bounded recall loop did not fail loud on degenerate targets"
     print("[gate-probe] all data-dependent gates fired their designed handling", flush=True)
 
 

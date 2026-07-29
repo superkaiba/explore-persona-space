@@ -83,6 +83,7 @@ from issue1775_common import (  # noqa: E402
     stage_store_if_needed,
     tensors_dir,
     unit_key,
+    upload_phase_eval_json,
     upload_phase_tensors,
 )
 
@@ -458,12 +459,29 @@ def fast_ridge_pairs(X, Y, pairs, *, device: str):
     pred = np.zeros_like(Y)
     covered = np.zeros(X.shape[0], dtype=bool)
     fold_r2 = []
+    lambda_info = []
     for tr, te in pairs:
-        pred[te] = ridge_fit_predict_fast(X[tr], Y[tr], X[te], device=device)
+        pred[te], info = ridge_fit_predict_fast(
+            X[tr], Y[tr], X[te], device=device, return_info=True
+        )
         covered[te] = True
         fold_r2.append(_r2(Y[te], pred[te]))
+        lambda_info.append(info)
     cov = np.nonzero(covered)[0]
-    return {"r2": _r2(Y[cov], pred[cov]), "r2_folds": fold_r2}, pred, covered
+    return (
+        {
+            "r2": _r2(Y[cov], pred[cov]),
+            "r2_folds": fold_r2,
+            # round-2 Minor-c: lambda discipline on fast-engine (secondary) units —
+            # per-fold GCV-selected lambda* + df(lambda*); the full per-lambda R2 +
+            # x10 / /10 sensitivity read lives on the PRESS primary combos.
+            "lambda_star_folds": [i["best_lambda"] for i in lambda_info],
+            "df_lambda_star_folds": [i["dof"] for i in lambda_info],
+            "lambda_discipline_note": "GCV-internal engine; +-10x sensitivity reported on PRESS primaries",
+        },
+        pred,
+        covered,
+    )
 
 
 # ── unit enumeration ─────────────────────────────────────────────────────────────
@@ -755,6 +773,11 @@ def _run_parity_gate(ad: ArmData, args) -> dict:
         slices.append((X[tr], Yb[tr], X[te]))
     passed, rep = fast_ridge_parity_gate(slices, args.device)
     print(f"[parity-gate] fast-vs-slow ridge: {rep}", flush=True)
+    # round-2 Minor-b: persist the plan-mandated gate record at gate time —
+    # on the 2-shard path the gate runs per SHARD and the --assemble-only
+    # process never runs a fast unit, so this file is the durable record
+    # linear_fits.json falls back to.
+    atomic_write_json(eval_dir("ladder") / "parity_gate.json", {**rep, "meta": result_meta()})
     return rep
 
 
@@ -1041,8 +1064,13 @@ def main() -> int:
     if args.phase == "linear":
         ad = _arm_data(CELL_PRIMARY, LAYER_PRIMARY, data_cache, args)
         payload["identity_bias_t1_reads"] = _identity_t1_reads(ad, args)
-        payload["parity_gate"] = data_cache.get("parity_gate") or next(
-            (u.get("parity_gate") for u in all_units if u.get("parity_gate")), None
+        gate_json = out_dir / "parity_gate.json"
+        payload["parity_gate"] = (
+            data_cache.get("parity_gate")
+            or next((u.get("parity_gate") for u in all_units if u.get("parity_gate")), None)
+            # 2-shard path: the gate ran per shard and persisted its record at
+            # gate time (round-2 Minor-b) — the assemble-only process reads it.
+            or (json.loads(gate_json.read_text()) if gate_json.exists() else None)
         )
         out_json = out_dir / "linear_fits.json"
     else:
@@ -1055,6 +1083,7 @@ def main() -> int:
         flush=True,
     )
     upload_phase_tensors("heldout_preds", smoke=args.smoke)
+    upload_phase_eval_json("ladder", smoke=args.smoke)
     return 0
 
 

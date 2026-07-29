@@ -119,6 +119,24 @@ def test_err_offsets_never_negative_on_inverted_ci():
     plt.close(fig)
 
 
+def test_gate_c_constants_pin_battery_excluded_artifact():
+    """GATE_C must equal the committed fair_comparison.json battery-EXCLUDED reads.
+
+    Pins the round-2 Critical-1 fix: the coded gate centers on
+    .cells.cell_inst_own.bases.<basis>.single_grain.r2_context_battery_excluded_full
+    (17,308-row population), NOT the battery-INCLUDED banked pair.
+    """
+    import json
+
+    artifact = REPO / "eval_results/issue_1092/inline_fair_comparison/fair_comparison.json"
+    if not artifact.exists():
+        pytest.skip("fair_comparison.json not present (sparse checkout)")
+    bases = json.loads(artifact.read_text())["cells"]["cell_inst_own"]["bases"]
+    for basis in ("ambient", "pca48"):
+        expected = bases[basis]["single_grain"]["r2_context_battery_excluded_full"]
+        assert i1775.GATE_C[basis] == expected, (basis, i1775.GATE_C[basis], expected)
+
+
 def test_doubly_fold_pairs_disjoint():
     _X, _Y, rows = _toy(n=90)
     pairs = i1775.fold_pairs(rows, len(rows), "doubly", n_folds=3)

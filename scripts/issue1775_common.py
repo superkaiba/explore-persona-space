@@ -45,12 +45,33 @@ torch.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", "8")))
 # in plan section 10; main-resident copies are current vs the issue-1092 branch).
 from issue1092_fit_grid import (  # noqa: E402
     FOLD_SEED,
-    _basis_targets_with_info,
     _fit_cv,
     _folds_from_manifest,
     _r2,
 )
+from issue1092_fit_grid import _basis_targets_with_info as _basis_targets_with_info_1092  # noqa: E402
 from issue923_fit_decomposition import RIDGE_LAMBDAS, press_fit_predict  # noqa: E402
+
+
+def _basis_targets_with_info(Y, basis, **kwargs):
+    """Parent #1092 basis constructor + a recorded plan deviation on pca48.
+
+    DECLARED DEVIATION (plan section 4 P1 says "PCs fit on train folds only,
+    per fold"): the parent engine fits the 48 PCs ONCE on the FULL fit
+    population (issue1092_fit_grid._pca_basis on all rows) — the basis the
+    banked Gate C references were computed with, so full-population PCs are
+    the only choice consistent with Gate C comparability (parity wins over
+    the plan's per-fold wording; see record_plan_deviation below).
+    """
+    if basis == "pca48":
+        record_plan_deviation(
+            "pca48 basis PCs fit on the full fit-population "
+            "(parent #1092 parity, Gate C comparability)",
+            "plan section 4 says train-fold-only; the parent's banked 0.914 read uses "
+            "population PCs — parity wins; per-fold-PC sensitivity check listed as follow-up",
+        )
+    return _basis_targets_with_info_1092(Y, basis, **kwargs)
+
 
 from explore_persona_space.analysis.issue_763_nonlinear import (  # noqa: E402
     _double_center,
@@ -104,8 +125,12 @@ ARMS = ("prefix_end", "bare_query", "query_averaged", "context_end", "stitch")
 # the Hub tree 2026-07-28) — arms depending on them are L14 x cell_inst_own only.
 BARE_ARMS = {"bare_query", "stitch"}
 
-# Gate C references (banked battery-excluded context reads; plan section 7 Gate C).
-GATE_C = {"ambient": 0.8043440222361293, "pca48": 0.9103453689185139}
+# Gate C references: banked BATTERY-EXCLUDED context reads (plan section 7 Gate C + A6).
+# Source (verbatim): eval_results/issue_1092/inline_fair_comparison/fair_comparison.json
+#   jq '.cells.cell_inst_own.bases.<basis>.single_grain.r2_context_battery_excluded_full'
+# (NOT .banked_read1_battery_included — that pair is the 19,708-row battery-INCLUDED read;
+#  this task's P1 refit runs on the battery-EXCLUDED 17,308-row population.)
+GATE_C = {"ambient": 0.8141832948824597, "pca48": 0.9141533323752868}
 GATE_C_TOL = 0.02
 # Stitch-ridge secondary reproduction target (battery-EXCLUDED pair, #1092 body; A17).
 STITCH_REPRO_PCA48 = 0.849
@@ -179,6 +204,22 @@ def result_meta(**extra) -> dict:
         "n_folds": N_FOLDS,
         **extra,
     }
+
+
+def record_plan_deviation(deviation: str, rationale: str) -> None:
+    """Append a declared deviation to eval_results/issue_1775/plan_deviations.json.
+
+    Idempotent on the deviation text; issue1775_sentinel.py ships the list in the
+    results payload (the schema the sentinel already reads — round-2 Major-4).
+    """
+    path = eval_dir("") / "plan_deviations.json"
+    entries = json.loads(path.read_text()) if path.exists() else []
+    if any(e.get("deviation") == deviation for e in entries):
+        return
+    entries.append({"deviation": deviation, "rationale": rationale})
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(entries, indent=2), encoding="utf-8")
+    os.replace(tmp, path)
 
 
 def atomic_write_json(path: Path, obj: dict) -> None:
@@ -861,13 +902,8 @@ def holm_correction(pvals: dict[str, float]) -> dict[str, float]:
 # ── phase upload (one upload_folder commit per phase) ────────────────────────────
 
 
-def upload_phase_tensors(sub: str, *, smoke: bool) -> str:
-    """Upload data/issue_1775/analysis_tensors/<sub> as ONE folder commit."""
-    local = tensors_dir(sub)
-    if smoke:
-        print(f"[upload] smoke — skipping HF upload of {local} (scratch out-root)")
-        return ""
-    path_in_repo = f"{OUT_HF_PREFIX}/analysis_tensors/{sub}"
+def _upload_dir_verified(local: Path, path_in_repo: str) -> str:
+    """One fail-loud upload_folder commit of `local` + exact-set verify (#997)."""
     url = hub._upload(
         local,
         repo_id=HF_DATA_REPO,
@@ -889,6 +925,31 @@ def upload_phase_tensors(sub: str, *, smoke: bool) -> str:
         raise RuntimeError(f"upload verify: {len(missing)} missing under {path_in_repo}")
     print(f"[upload] {len(expected)} files verified under {path_in_repo}")
     return url
+
+
+def upload_phase_tensors(sub: str, *, smoke: bool) -> str:
+    """Upload data/issue_1775/analysis_tensors/<sub> as ONE folder commit."""
+    local = tensors_dir(sub)
+    if smoke:
+        print(f"[upload] smoke — skipping HF upload of {local} (scratch out-root)")
+        return ""
+    return _upload_dir_verified(local, f"{OUT_HF_PREFIX}/analysis_tensors/{sub}")
+
+
+def upload_phase_eval_json(sub: str, *, smoke: bool) -> str:
+    """Durable per-phase channel for pod-side eval JSONs (round-2 Major-2, #825 class).
+
+    Uploads eval_results/issue_1775/<sub> to
+    <OUT_HF_PREFIX>/eval_json/<sub>/ (KB-MB text — non-LFS path, unconditional
+    per the Upload Policy) in its own per-phase folder commit. The GCP lane is
+    auto-DELETE, so the finalize tar pull is best-effort — this HF copy is the
+    crash-survivable channel P5/P6 reads can fall back to.
+    """
+    local = eval_dir(sub)
+    if smoke:
+        print(f"[upload] smoke — skipping HF eval-json upload of {local} (scratch out-root)")
+        return ""
+    return _upload_dir_verified(local, f"{OUT_HF_PREFIX}/eval_json/{sub}")
 
 
 def phase_timer() -> float:
