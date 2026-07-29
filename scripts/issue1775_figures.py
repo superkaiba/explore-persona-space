@@ -277,10 +277,10 @@ def projection_cosines(projections: dict | None, out: Path) -> None:
 
 
 def exploratory(linear, nonlinear, detection, bilinear, fold_check, out: Path, refit=None) -> None:
+    from explore_persona_space.analysis.paper_plots import savefig_paper
+
     # per-fold R2 scatter — the low-level per-unit view behind the ladder bars
     if linear:
-        from explore_persona_space.analysis.paper_plots import savefig_paper
-
         units = [
             u
             for u in _primary_units(linear.get("units", []))
@@ -360,14 +360,29 @@ def exploratory(linear, nonlinear, detection, bilinear, fold_check, out: Path, r
     if detection:
         fam = detection.get("holm_adjusted_p", {})
         if fam:
-            fig, ax = plt.subplots(figsize=(6.4, 3.2))
+            plain = {
+                "prefix_end": "prefix end",
+                "query_averaged": "prefix-averaged",
+                "bare_query": "bare query",
+                "context_end": "full context",
+                "stitch": "stitch",
+                "prefix_block": "prefix block",
+                "query_block": "query block",
+                "within_prefix_derangement": "within-prefix shuffle",
+                "hsic": "HSIC",
+                "dcor": "dCor",
+            }
+            fig, ax = plt.subplots(figsize=(7.6, 3.4))
             names = sorted(fam)
+            labels = [" / ".join(plain.get(t, t) for t in n.split("|")) for n in names]
             ax.bar(range(len(names)), [fam[n] for n in names], color="#446688")
             ax.axhline(0.05, color="red", ls="--", lw=0.8)
             ax.set_xticks(range(len(names)))
-            ax.set_xticklabels(names, rotation=80, fontsize=5)
+            ax.set_xticklabels(labels, rotation=80, fontsize=5.5)
             ax.set_ylabel("Holm-adjusted p")
-            ax.set_title("residual dependence (registered 30-test family)")
+            ax.set_title(
+                "residual dependence (30-test family: arm / permutation scheme / statistic)"
+            )
             fig.tight_layout()
             savefig_paper(fig, "expl_detection_holm", dir=out)
             plt.close(fig)
