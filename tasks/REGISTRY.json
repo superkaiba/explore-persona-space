@@ -6179,8 +6179,8 @@
     "1798": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1798",
-      "status": "running",
+      "path": "tasks/reviewing/1798",
+      "status": "reviewing",
       "title": "daily-fix: plan-compute-sizing \u2014 draws, multipliers, RAM, po"
     },
     "1799": {
