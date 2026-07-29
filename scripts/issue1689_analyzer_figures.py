@@ -483,3 +483,37 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+def fig8_provenance_duplication(rows: list[dict]) -> None:
+    """Forward vs reverse rung R^2 for provenance pairs: haiku-vs-onpolicy pairs
+    sit exactly on the diagonal (identical stored data); LMSYS pairs do not."""
+    idx = {(r["model"], r["arm"], r["pair"]): r for r in rows}
+    fig, ax = plt.subplots(figsize=(7.2, 6.4))
+    pal = paper_palette(3)
+    fams = [
+        ("user_haiku", "user_onpolicy", "haiku vs on-policy", 0, "o"),
+        ("user_lmsys", "user_haiku", "LMSYS vs haiku", 1, "s"),
+        ("user_lmsys", "user_onpolicy", "LMSYS vs on-policy", 2, "^"),
+    ]
+    for a, b, lab, ci, mk in fams:
+        xs, ys = [], []
+        for model in ("base", "instruct"):
+            for fr in ("chat", "story", "naturalistic"):
+                k1 = (model, "prefix", f"{a}_{fr}__{b}_{fr}")
+                k2 = (model, "prefix", f"{b}_{fr}__{a}_{fr}")
+                if k1 in idx and k2 in idx:
+                    for i in range(1, 10):
+                        xs.append(np.clip(idx[k1][f"r2_{i}"], -1.2, 1.2))
+                        ys.append(np.clip(idx[k2][f"r2_{i}"], -1.2, 1.2))
+        ax.scatter(xs, ys, s=30, marker=mk, color=pal[ci], alpha=0.75,
+                   label=f"{lab} ({len(xs)} rung values)", zorder=3)
+    ax.plot([-1.2, 1.2], [-1.2, 1.2], color="#999999", lw=0.8, ls="--")
+    ax.set_xlabel("rung R$^2$, forward direction (A to B)")
+    ax.set_ylabel("rung R$^2$, reverse direction (B to A)")
+    ax.set_title("User-provenance pairs, prefix arm: forward vs reverse rung R$^2$\n"
+                 "haiku-vs-on-policy pairs are identical in both directions (stored data duplicated)",
+                 fontsize=10)
+    ax.legend(fontsize=8, loc="upper left")
+    savefig_paper(fig, "fig8_provenance_duplication", dir=FIGDIR)
+    plt.close(fig)
