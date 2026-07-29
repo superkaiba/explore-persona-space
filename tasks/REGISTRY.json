@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1800,
+  "highest_id": 1801,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6203,6 +6203,13 @@
       "path": "tasks/proposed/1800",
       "status": "proposed",
       "title": "daily-fix: WARN when GCP workload chain has no persist phase"
+    },
+    "1801": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1801",
+      "status": "proposed",
+      "title": "daily-fix: llm-judging \u2014 rule-23 point, tally split, rubric "
     },
     "181": {
       "has_clean_result": false,
