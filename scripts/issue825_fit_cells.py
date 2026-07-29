@@ -240,16 +240,38 @@ def _prep_inner_lambda(
     return caches if len(caches) >= 2 else None
 
 
-def _inner_cv_rss_curve(icaches: list[dict], Ytr: torch.Tensor) -> torch.Tensor:
+def _validate_lambda_grid(lams: np.ndarray) -> None:
+    """Fail loud on a malformed caller-supplied lambda grid (#1689).
+
+    The inner-group-cv selection argmin-indexes this grid directly, so a
+    shape/order/sign bug would silently select the wrong lambda. Only custom
+    (non-None) grids are validated; the module LAMBDAS default is untouched.
+    """
+    lams = np.asarray(lams)
+    if lams.ndim != 1 or len(lams) == 0:
+        raise ValueError(f"lambda grid must be 1-D non-empty, got shape {lams.shape}")
+    if not np.all(np.isfinite(lams)) or not np.all(lams > 0):
+        raise ValueError("lambda grid must be finite and strictly positive")
+    if not np.all(np.diff(lams) > 0):
+        raise ValueError("lambda grid must be strictly ascending")
+
+
+def _inner_cv_rss_curve(
+    icaches: list[dict], Ytr: torch.Tensor, lams: np.ndarray | None = None
+) -> torch.Tensor:
     """Summed inner-validation RSS per lambda for ONE train-Y (fp64, device).
 
     Reduced form per inner fold (never materializes per-lambda predictions):
     RSS(lam) = ||Yv_c||^2 - 2 * sum_i q_i c_i + q^T (M o B) q, with
     q_i = 1/(w_i+lam), c_i = sum_d (P^T Yv_c)_{id} VtY_{id}, B = VtY VtY^T.
+    ``lams=None`` (default) scans the module-global ``LAMBDAS`` grid,
+    byte-preserving; a caller threads a custom grid (#1689 wider-lambda
+    follow-up — the same default-preserving-flag pattern as the GCV path).
     """
     dev = Ytr.device
-    lambdas = torch.as_tensor(LAMBDAS, dtype=torch.float64, device=dev)
-    rss = torch.zeros(len(LAMBDAS), dtype=torch.float64, device=dev)
+    grid = LAMBDAS if lams is None else np.asarray(lams, dtype=np.float64)
+    lambdas = torch.as_tensor(grid, dtype=torch.float64, device=dev)
+    rss = torch.zeros(len(grid), dtype=torch.float64, device=dev)
     for ic in icaches:
         Yf = Ytr.index_select(0, ic["fi_idx"])
         Yv = Ytr.index_select(0, ic["va_idx"])
@@ -265,17 +287,22 @@ def _inner_cv_rss_curve(icaches: list[dict], Ytr: torch.Tensor) -> torch.Tensor:
     return rss
 
 
-def _inner_cv_rss_curve_batched(icaches: list[dict], Ytr_b: torch.Tensor) -> torch.Tensor:
+def _inner_cv_rss_curve_batched(
+    icaches: list[dict], Ytr_b: torch.Tensor, lams: np.ndarray | None = None
+) -> torch.Tensor:
     """Batched twin of _inner_cv_rss_curve over a (B, n_tr, D) train-Y tensor.
 
-    Returns (B, len(LAMBDAS)) summed inner-validation RSS. Same reduced form,
+    Returns (B, len(grid)) summed inner-validation RSS. Same reduced form,
     draw axis batched; identical selection opportunity for every null draw
     (selection-symmetric, mirroring the batched GCV scan it replaces).
+    ``lams=None`` (default) scans the module-global ``LAMBDAS`` grid,
+    byte-preserving (#1689 wider-lambda follow-up, mirroring the serial twin).
     """
     dev = Ytr_b.device
     B = Ytr_b.shape[0]
-    lambdas = torch.as_tensor(LAMBDAS, dtype=torch.float64, device=dev)
-    rss = torch.zeros((B, len(LAMBDAS)), dtype=torch.float64, device=dev)
+    grid = LAMBDAS if lams is None else np.asarray(lams, dtype=np.float64)
+    lambdas = torch.as_tensor(grid, dtype=torch.float64, device=dev)
+    rss = torch.zeros((B, len(grid)), dtype=torch.float64, device=dev)
     for ic in icaches:
         Yf = Ytr_b.index_select(1, ic["fi_idx"])  # (B, n_fi, D)
         Yv = Ytr_b.index_select(1, ic["va_idx"])  # (B, n_va, D)
@@ -314,6 +341,8 @@ def _ridge_predict_cached(
     audit — the #931 default-preserving-flag pattern, never a caller-side
     monkey-patch of the module global).
     """
+    if lambdas is not None:
+        _validate_lambda_grid(np.asarray(lambdas))
     lams = LAMBDAS if lambdas is None else np.asarray(lambdas, dtype=np.float64)
     assert lams.ndim == 1 and len(lams) > 0, f"bad lambda grid shape {lams.shape}"
     Ytr = _as_f64_on(Y_train, cache["w"].device)
@@ -323,15 +352,14 @@ def _ridge_predict_cached(
     VtY = V.T @ Ytr_c
     if cache.get("inner"):
         # #1335 r8: inner-group-CV lambda selection (see N_INNER_LAMBDA_FOLDS).
-        # The inner RSS curve scans the module LAMBDAS grid; the #1336 lambdas=
-        # override has no caller in this cross product — fail loud rather than
-        # argmin-index the wrong grid.
-        assert lambdas is None, (
-            "inner-group-cv lambda selection scans the module LAMBDAS grid; "
-            "a custom lambdas= grid is unsupported with an inner cache"
-        )
-        rss_curve = _inner_cv_rss_curve(cache["inner"], Ytr)
-        best_lam = float(LAMBDAS[int(torch.argmin(rss_curve))])
+        # #1689 wider-lambda follow-up: a caller-supplied ``lambdas=`` grid now
+        # threads through the inner RSS scan (this path previously hard-asserted
+        # ``lambdas is None``); the default ``None`` keeps the module ``LAMBDAS``
+        # grid byte-identical, and custom grids were validated above (1-D,
+        # positive, strictly ascending) so the argmin can never index a
+        # malformed grid.
+        rss_curve = _inner_cv_rss_curve(cache["inner"], Ytr, lams=lams)
+        best_lam = float(lams[int(torch.argmin(rss_curve))])
     else:
         sqVtY = (VtY**2).sum(1)
         tot = float((Ytr_c**2).sum())
@@ -384,21 +412,18 @@ def _ridge_predict_cached_batched(
     Ytr_c = Ytr - ymu  # (B,n_tr,D)
     w, V, KevV, ntr = cache["w"], cache["V"], cache["KevV"], cache["ntr"]
     VtY = torch.einsum("ij,bjd->bid", V.transpose(0, 1), Ytr_c)  # (B,n_tr,D)
-    lams = torch.as_tensor(
-        LAMBDAS if lambdas is None else np.asarray(lambdas, dtype=np.float64),
-        dtype=torch.float64,
-        device=dev,
-    )  # (Lm,)
+    if lambdas is not None:
+        _validate_lambda_grid(np.asarray(lambdas))
+    lams_np = LAMBDAS if lambdas is None else np.asarray(lambdas, dtype=np.float64)
+    lams = torch.as_tensor(lams_np, dtype=torch.float64, device=dev)  # (Lm,)
     assert lams.ndim == 1 and len(lams) > 0, f"bad lambda grid shape {tuple(lams.shape)}"
     if cache.get("inner"):
         # #1335 r8: per-draw inner-group-CV selection (selection-symmetric).
-        # Inner RSS curves scan the module LAMBDAS grid — same fail-loud rule
-        # as the serial twin for the callerless lambdas= cross product.
-        assert lambdas is None, (
-            "inner-group-cv lambda selection scans the module LAMBDAS grid; "
-            "a custom lambdas= grid is unsupported with an inner cache"
-        )
-        rss_curve = _inner_cv_rss_curve_batched(cache["inner"], Ytr)  # (B,Lm)
+        # #1689 wider-lambda follow-up: a caller-supplied ``lambdas=`` grid now
+        # threads through the batched inner RSS scan (previously hard-asserted
+        # ``lambdas is None``); default ``None`` keeps module ``LAMBDAS``
+        # byte-identical, custom grids validated above like the serial twin.
+        rss_curve = _inner_cv_rss_curve_batched(cache["inner"], Ytr, lams=lams_np)  # (B,Lm)
         best_l = torch.argmin(rss_curve, dim=1)  # (B,)
     else:
         sqVtY = (VtY**2).sum(2)  # (B,n_tr)
@@ -564,10 +589,13 @@ def heldout_r2_sweep(
         source-module change — the default (False) preserves the committed
         behavior byte-for-byte (same class as the `ns=` parametrization on
         run_power_curve).
-      lambdas: optional GCV grid override threaded to EVERY
+      lambdas: optional lambda-grid override threaded to EVERY
         `_ridge_predict_cached` call (observed AND null draws — selection
         stays symmetric under a widened grid); ``None`` keeps the module
-        ``LAMBDAS`` byte-for-byte (#1336 D1 default-preserving flag).
+        ``LAMBDAS`` byte-for-byte (#1336 D1 default-preserving flag). As of
+        the #1689 wider-lambda follow-up the override is honored under BOTH
+        selection modes (``gcv`` and ``inner-group-cv``; the inner path
+        previously hard-asserted ``lambdas is None``).
     Null draws permute Y ROW-ORDER (whole example rows, seeded) and go through
     the IDENTICAL cached (w, V, Kev) fitting path as the observed fit.
     """
@@ -575,6 +603,9 @@ def heldout_r2_sweep(
         raise ValueError(
             f"unknown lambda_selection {lambda_selection!r} (want {LAMBDA_SELECTIONS})"
         )
+    if lambdas is not None:
+        # Fail loud on a malformed custom grid BEFORE any eigh work (#1689).
+        _validate_lambda_grid(np.asarray(lambdas))
     fl = FROZEN_LAYERS if frozen_layers is None else tuple(int(x) for x in frozen_layers)
     X_layers = np.asarray(X_layers, dtype=np.float32)
     Y_layers = np.asarray(Y_layers, dtype=np.float32)

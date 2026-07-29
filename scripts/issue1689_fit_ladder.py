@@ -57,6 +57,7 @@ from scripts.issue1689_common import (  # noqa: E402
     CAPTURE_LAYERS,
     HEADLINE_LAYER,
     LAMBDA_GRID_SIZE,
+    LAMBDA_GRIDS,
     LAMBDA_LOG_MAX,
     LAMBDA_LOG_MIN,
     N_BOOTSTRAP_DRAWS,
@@ -64,9 +65,13 @@ from scripts.issue1689_common import (  # noqa: E402
     N_REPARAM_NULL_DRAWS,
     RUNG_REACHED_THRESHOLD,
     enumerate_pair_set,
+    resolve_lambda_grid,
 )
 
 # Ridge λ grid: 13 log-spaced values from 1e-2 to 1e4 (plan §11 committed grid).
+# The wider-lambda-ceilings follow-up threads a NAMED alternative grid
+# ("wide19", issue1689_common.LAMBDA_GRIDS) through run_all_pairs; the module
+# default stays byte-identical.
 LAMBDAS: np.ndarray = np.logspace(LAMBDA_LOG_MIN, LAMBDA_LOG_MAX, LAMBDA_GRID_SIZE)
 
 
@@ -800,14 +805,19 @@ def _ladder_pair_core_torch(
     threshold: float,
     seed: int,
     device: str,
+    lambdas: np.ndarray | None = None,
 ) -> dict:
     """Torch-engine core of _run_ladder_pair (point + bootstrap + null).
 
     rng call ORDER is kept identical to the numpy core so resample indices,
     fold splits and permutations are bit-identical across engines.
+    ``lambdas=None`` (default) uses the module ``LAMBDAS`` grid byte-for-byte;
+    the wider-lambda-ceilings follow-up threads a custom grid through every
+    ridge fit (point + bootstrap + null — selection stays symmetric).
     """
     import torch
 
+    lams = LAMBDAS if lambdas is None else np.asarray(lambdas, dtype=np.float64)
     dev = torch.device(device)
     tX_S = torch.from_numpy(np.ascontiguousarray(X_S)).to(dev)
     tY_S = torch.from_numpy(np.ascontiguousarray(Y_S)).to(dev)
@@ -819,10 +829,10 @@ def _ladder_pair_core_torch(
 
     # ---- Point estimate ----
     rung_r2s_point = _compute_ladder_r2s_t(
-        tX_S, tY_S, tX_T, tY_T, t_train, t_test, train_conv_ids, LAMBDAS, full_conv_ids=common
+        tX_S, tY_S, tX_T, tY_T, t_train, t_test, train_conv_ids, lams, full_conv_ids=common
     )
     r2_within, reach_bar = _reach_bar_within_cell_t(
-        tX_T, tY_T, t_train, t_test, train_conv_ids, LAMBDAS, threshold=threshold
+        tX_T, tY_T, t_train, t_test, train_conv_ids, lams, threshold=threshold
     )
     rung_reached_point = _rung_reached_from_r2s(rung_r2s_point, reach_bar)
 
@@ -852,7 +862,7 @@ def _ladder_pair_core_torch(
                 torch.from_numpy(rs_train).to(dev),
                 torch.from_numpy(rs_test).to(dev),
                 train_conv_ids_d,
-                LAMBDAS,
+                lams,
                 full_conv_ids=resample_convs,
             )
         except torch.linalg.LinAlgError:
@@ -865,7 +875,7 @@ def _ladder_pair_core_torch(
             torch.from_numpy(rs_train).to(dev),
             torch.from_numpy(rs_test).to(dev),
             train_conv_ids_d,
-            LAMBDAS,
+            lams,
             threshold=threshold,
         )
         bootstrap_rung_reached[draw_i] = _rung_reached_from_r2s(r2s_draw, reach_bar_d)
@@ -887,7 +897,7 @@ def _ladder_pair_core_torch(
                 t_train,
                 t_test,
                 train_conv_ids,
-                LAMBDAS,
+                lams,
                 full_conv_ids=common,
             )
         except torch.linalg.LinAlgError:
@@ -895,7 +905,7 @@ def _ladder_pair_core_torch(
         for j, name in enumerate(rung_names):
             null_r2_matrix[draw_i, j] = r2s_null[name]
         _, reach_bar_null = _reach_bar_within_cell_t(
-            tX_T, tY_T[t_perm_t], t_train, t_test, train_conv_ids, LAMBDAS, threshold=threshold
+            tX_T, tY_T[t_perm_t], t_train, t_test, train_conv_ids, lams, threshold=threshold
         )
         null_rung_reached[draw_i] = _rung_reached_from_r2s(r2s_null, reach_bar_null)
 
@@ -943,8 +953,13 @@ def _run_ladder_pair(
     seed: int = 42,
     engine: str = "numpy",
     device: str = "cpu",
+    lambdas: np.ndarray | None = None,
 ) -> dict:
     """Run 9 rungs + selection-symmetric bootstrap for one (source, target, arm).
+
+    ``lambdas=None`` (default) keeps the module ``LAMBDAS`` grid byte-for-byte;
+    a custom grid (wider-lambda-ceilings follow-up) threads through BOTH
+    engines' point/bootstrap/null fits identically.
 
     Per plan §5 + .claude/rules/selection-symmetric-nulls.md:
     - Point estimate on the full row-paired conv-id-grouped 80/20 split.
@@ -986,6 +1001,7 @@ def _run_ladder_pair(
         train_idx = np.arange(n)
         test_idx = np.arange(n)
     train_conv_ids = common[train_idx]
+    lams = LAMBDAS if lambdas is None else np.asarray(lambdas, dtype=np.float64)
 
     if engine == "torch":
         return _ladder_pair_core_torch(
@@ -1002,6 +1018,7 @@ def _run_ladder_pair(
             threshold=threshold,
             seed=seed,
             device=device,
+            lambdas=lams,
         )
 
     # ---- Point estimate (numpy reference engine) ----
@@ -1013,11 +1030,11 @@ def _run_ladder_pair(
         train_idx,
         test_idx,
         train_conv_ids,
-        LAMBDAS,
+        lams,
         full_conv_ids=common,
     )
     r2_within, reach_bar = _reach_bar_within_cell(
-        X_T, Y_T, train_idx, test_idx, train_conv_ids, LAMBDAS, threshold=threshold
+        X_T, Y_T, train_idx, test_idx, train_conv_ids, lams, threshold=threshold
     )
     rung_reached_point = _rung_reached_from_r2s(rung_r2s_point, reach_bar)
 
@@ -1050,7 +1067,7 @@ def _run_ladder_pair(
                 rs_train,
                 rs_test,
                 train_conv_ids_d,
-                LAMBDAS,
+                lams,
                 full_conv_ids=resample_convs,
             )
         except np.linalg.LinAlgError:
@@ -1058,7 +1075,7 @@ def _run_ladder_pair(
         for j, name in enumerate(rung_names):
             bootstrap_r2_matrix[draw_i, j] = r2s_draw[name]
         _, reach_bar_d = _reach_bar_within_cell(
-            X_T_d, Y_T_d, rs_train, rs_test, train_conv_ids_d, LAMBDAS, threshold=threshold
+            X_T_d, Y_T_d, rs_train, rs_test, train_conv_ids_d, lams, threshold=threshold
         )
         bootstrap_rung_reached[draw_i] = _rung_reached_from_r2s(r2s_draw, reach_bar_d)
 
@@ -1079,7 +1096,7 @@ def _run_ladder_pair(
                 train_idx,
                 test_idx,
                 train_conv_ids,
-                LAMBDAS,
+                lams,
                 full_conv_ids=common,
             )
         except np.linalg.LinAlgError:
@@ -1087,7 +1104,7 @@ def _run_ladder_pair(
         for j, name in enumerate(rung_names):
             null_r2_matrix[draw_i, j] = r2s_null[name]
         _, reach_bar_null = _reach_bar_within_cell(
-            X_T, Y_T[perm_t], train_idx, test_idx, train_conv_ids, LAMBDAS, threshold=threshold
+            X_T, Y_T[perm_t], train_idx, test_idx, train_conv_ids, lams, threshold=threshold
         )
         null_rung_reached[draw_i] = _rung_reached_from_r2s(r2s_null, reach_bar_null)
 
@@ -1124,8 +1141,19 @@ def _run_ladder_pair(
     }
 
 
-def _pair_ckpt_meta(model_slug: str, layer: int, n_bootstrap_draws: int, n_null_draws: int) -> dict:
-    """Regime key for per-pair checkpoints — every output-affecting knob."""
+def _pair_ckpt_meta(
+    model_slug: str,
+    layer: int,
+    n_bootstrap_draws: int,
+    n_null_draws: int,
+    lambda_grid: str = "ladder13",
+) -> dict:
+    """Regime key for per-pair checkpoints — every output-affecting knob.
+
+    ``lambda_grid`` joined the key with the wider-lambda-ceilings follow-up:
+    a wide19 rerun must never silently resume a ladder13 checkpoint (the
+    resume-metadata rule — every output-affecting regime key is pinned).
+    """
     return {
         "model": model_slug,
         "layer": int(layer),
@@ -1133,6 +1161,7 @@ def _pair_ckpt_meta(model_slug: str, layer: int, n_bootstrap_draws: int, n_null_
         "n_null_draws": int(n_null_draws),
         "threshold": float(RUNG_REACHED_THRESHOLD),
         "seed": 42,
+        "lambda_grid": str(lambda_grid),
     }
 
 
@@ -1143,7 +1172,12 @@ def _ckpt_meta_satisfies(prior: dict | None, want: dict) -> bool:
     request, so recomputing it would only discard CIs (2026-07-28 user-chat
     descope: BOOT 200 -> 0 mid-run; the 51 completed full-CI pairs must
     RESUME, not recompute). A 10/2 smoke checkpoint still never satisfies a
-    production request (10 < 200, and 10 < 40-null production floors)."""
+    production request (10 < 200, and 10 < 40-null production floors).
+
+    Back-compat: parent-round checkpoints predate the ``lambda_grid`` key and
+    were all produced under the ladder13 module default, so a missing key
+    reads as "ladder13" — a ladder13 request still resumes them; a wide19
+    request never does."""
     if not isinstance(prior, dict):
         return False
     for k, v in want.items():
@@ -1152,6 +1186,9 @@ def _ckpt_meta_satisfies(prior: dict | None, want: dict) -> bool:
                 if int(prior.get(k, -1)) < int(v):
                     return False
             except (TypeError, ValueError):
+                return False
+        elif k == "lambda_grid":
+            if prior.get(k, "ladder13") != v:
                 return False
         elif prior.get(k) != v:
             return False
@@ -1171,6 +1208,8 @@ def run_all_pairs(
     num_shards: int = 1,
     shard_index: int = 0,
     checkpoint_dir: Path | None = None,
+    lambda_grid: str = "ladder13",
+    pairs_subset: list[tuple[str, str]] | None = None,
 ) -> dict:
     """Run the pair ladder for one (model, layer). Both arms per pair.
 
@@ -1180,9 +1219,21 @@ def run_all_pairs(
     (code-style.md checkpoint-per-unit: 126 pairs x 2 arms >> the ~50-unit
     trigger; the pre-R16 loop accumulated everything in memory with one
     terminal write). A resume run skips pairs whose checkpoint matches the
-    regime meta (draws/layer/model/threshold/seed).
+    regime meta (draws/layer/model/threshold/seed/lambda_grid).
+
+    wider-lambda-ceilings knobs: ``lambda_grid`` names the ridge grid
+    (issue1689_common.LAMBDA_GRIDS; "ladder13" = the module default,
+    byte-identical); ``pairs_subset`` restricts to a validated subset of
+    ``enumerate_pair_set()`` (the Stage-2 affected-pairs re-read).
     """
     pairs = enumerate_pair_set()
+    if pairs_subset is not None:
+        known = set(pairs)
+        bad = [p for p in pairs_subset if tuple(p) not in known]
+        if bad:
+            raise ValueError(f"pairs_subset contains {len(bad)} unknown pairs (first: {bad[:3]})")
+        pairs = sorted({tuple(p) for p in pairs_subset})
+    lams = LAMBDAS if lambda_grid == "ladder13" else resolve_lambda_grid(lambda_grid)
     if smoke:
         # Smoke: filter pairs to those whose BOTH cells have captured stores;
         # fall back to self-pair on the one available cell.
@@ -1214,9 +1265,10 @@ def run_all_pairs(
         "arms": ["prefix", "context"],
         "n_bootstrap_draws": n_bootstrap_draws,
         "n_null_draws": n_null_draws,
+        "lambda_grid": lambda_grid,
         "pairs": {},
     }
-    meta = _pair_ckpt_meta(model_slug, layer, n_bootstrap_draws, n_null_draws)
+    meta = _pair_ckpt_meta(model_slug, layer, n_bootstrap_draws, n_null_draws, lambda_grid)
     if checkpoint_dir is not None:
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
     n_shard = len(shard_pairs)
@@ -1270,6 +1322,7 @@ def run_all_pairs(
                 n_null_draws=n_null_draws,
                 engine=engine,
                 device=device,
+                lambdas=lams,
             )
         pair_dt = time.perf_counter() - pair_t0
         print(
@@ -1292,11 +1345,22 @@ def merge_pair_checkpoints(
     layer: int,
     n_bootstrap_draws: int,
     n_null_draws: int,
+    lambda_grid: str = "ladder13",
+    pairs_subset: list[tuple[str, str]] | None = None,
 ) -> dict:
     """Assemble the final ladder JSON (same schema as run_all_pairs) from
-    per-pair checkpoints. Fails loud on missing pairs or regime mismatches."""
+    per-pair checkpoints. Fails loud on missing pairs or regime mismatches.
+    ``lambda_grid`` / ``pairs_subset`` mirror run_all_pairs (a wide19 merge
+    only accepts wide19-regime checkpoints; a subset merge only requires the
+    subset's pairs)."""
     pairs = enumerate_pair_set()
-    meta = _pair_ckpt_meta(model_slug, layer, n_bootstrap_draws, n_null_draws)
+    if pairs_subset is not None:
+        known = set(pairs)
+        bad = [p for p in pairs_subset if tuple(p) not in known]
+        if bad:
+            raise ValueError(f"pairs_subset contains {len(bad)} unknown pairs (first: {bad[:3]})")
+        pairs = sorted({tuple(p) for p in pairs_subset})
+    meta = _pair_ckpt_meta(model_slug, layer, n_bootstrap_draws, n_null_draws, lambda_grid)
     out: dict[str, Any] = {
         "model": model_slug,
         "layer": layer,
@@ -1304,6 +1368,7 @@ def merge_pair_checkpoints(
         "arms": ["prefix", "context"],
         "n_bootstrap_draws": n_bootstrap_draws,
         "n_null_draws": n_null_draws,
+        "lambda_grid": lambda_grid,
         "pairs": {},
     }
     missing: list[str] = []
@@ -1517,6 +1582,22 @@ def main() -> int:
         metavar="N_PAIRS",
         help="Run N pairs through BOTH engines at the given draw counts, compare, exit 0/1.",
     )
+    ap.add_argument(
+        "--lambda-grid",
+        choices=sorted(LAMBDA_GRIDS),
+        default="ladder13",
+        help="ridge lambda grid (issue1689_common.LAMBDA_GRIDS); ladder13 = the committed "
+        "module default (byte-identical), wide19 = logspace(-2,7,19) superset "
+        "(wider-lambda-ceilings Stage 2).",
+    )
+    ap.add_argument(
+        "--pairs-file",
+        type=Path,
+        default=None,
+        help="JSON restricting the pair set: either a flat [[src,tgt],...] list or the "
+        "wider-lambda-ceilings affected_pairs.json shape "
+        "({model_slug: {arm: [[src,tgt],...]}} — union over arms for --model-slug).",
+    )
     args = ap.parse_args()
 
     # Smoke defaults: keep bootstrap loop small so the code path executes without hours of compute.
@@ -1548,6 +1629,25 @@ def main() -> int:
     if args.verify_equivalence:
         return _verify_equivalence(args)
 
+    pairs_subset = None
+    if args.pairs_file is not None:
+        loaded = json.loads(args.pairs_file.read_text())
+        if isinstance(loaded, dict):
+            # affected_pairs.json shape: {model_slug: {arm: [[src, tgt], ...]}}
+            if args.model_slug not in loaded:
+                raise ValueError(
+                    f"--pairs-file {args.pairs_file} has no entry for model "
+                    f"{args.model_slug!r} (keys: {sorted(loaded)})"
+                )
+            pairs_subset = sorted(
+                {tuple(p) for arm_pairs in loaded[args.model_slug].values() for p in arm_pairs}
+            )
+        else:
+            pairs_subset = [tuple(p) for p in loaded]
+        if not pairs_subset:
+            raise ValueError(f"--pairs-file {args.pairs_file} resolves to an EMPTY pair set")
+        print(f"[fit_ladder] pairs restricted to {len(pairs_subset)} via --pairs-file", flush=True)
+
     layers = list(CAPTURE_LAYERS) if args.all_layers else [args.layer]
     for layer in layers:
         # Compute the per-layer output path FIRST so we can skip a
@@ -1561,7 +1661,14 @@ def main() -> int:
         else:
             out_path = args.out
 
-        ckpt_dir = args.checkpoint_dir or out_path.parent / f"pairs_{args.model_slug}_L{layer}"
+        # Non-default grids get a suffixed default checkpoint dir so a wide19
+        # run can never land its (regime-mismatching) checkpoints inside the
+        # parent's ladder13 pairs_* dir (parent artifacts never overwritten).
+        grid_suffix = "" if args.lambda_grid == "ladder13" else f"_{args.lambda_grid}"
+        ckpt_dir = (
+            args.checkpoint_dir
+            or out_path.parent / f"pairs_{args.model_slug}_L{layer}{grid_suffix}"
+        )
 
         if args.merge:
             results = merge_pair_checkpoints(
@@ -1570,6 +1677,8 @@ def main() -> int:
                 layer=layer,
                 n_bootstrap_draws=args.bootstrap_draws,
                 n_null_draws=args.null_draws,
+                lambda_grid=args.lambda_grid,
+                pairs_subset=pairs_subset,
             )
             out_path.parent.mkdir(parents=True, exist_ok=True)
             with out_path.open("w") as fh:
@@ -1598,6 +1707,8 @@ def main() -> int:
             num_shards=args.num_shards,
             shard_index=args.shard_index,
             checkpoint_dir=ckpt_dir,
+            lambda_grid=args.lambda_grid,
+            pairs_subset=pairs_subset,
         )
         layer_elapsed = time.perf_counter() - layer_t0
         print(
