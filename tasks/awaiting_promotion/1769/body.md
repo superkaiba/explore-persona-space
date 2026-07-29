@@ -3,7 +3,8 @@ title: Decode-driven behavioral commitment at α=2 is convention-robust for evil
   sycophancy; hallucination flips to mixed under intrusion-robust scoring (MODERATE
   confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-07-28T20:23:10Z'
 has_clean_result: true
 parent_id: 1739
