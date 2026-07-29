@@ -305,22 +305,26 @@ run_phase_derived_vs_free() {
     local unit_wall fence
     unit_wall=$(uv run python -c 'import json,sys; d=json.load(open(sys.argv[1])); t=d.get("timing") or {}; print(max(5.0, float(t.get("battery_unit_wall_s") or 60.0)))' "$dvf_root/gate1_report.json")
     fence=$(uv run python -c 'import sys; w=float(sys.argv[1]); n=int(sys.argv[2]); s=int(sys.argv[3]); print(int(2*w*n/max(s,1)) + 900)' "$unit_wall" 588 "$nsh")
-    echo "[derived_vs_free] gate1 unit_wall=${unit_wall}s fence=${fence}s"
+    # Structure units (item 7 class-null battery + item-8 rank rung) run ~3x a
+    # battery unit — their legs get a 3x fence off the same pilot basis.
+    local cms_fence=$((fence * 3))
+    echo "[derived_vs_free] gate1 unit_wall=${unit_wall}s fence=${fence}s cms_fence=${cms_fence}s"
 
     # run_sharded <script> <args...>: fan out one shard per GPU (CVD pinned in
     # the launcher env per shard — the #545 clobber rule), or 1 CPU process.
     run_sharded() {
+        local leg_fence="${RUN_FENCE:-$fence}"
         local script="$1"; shift
         if [ "$nsh" -le 1 ]; then
             local cvd_prefix=(env)
             [ "$device" = "cuda" ] && cvd_prefix=(env CUDA_VISIBLE_DEVICES=0)
-            timeout --kill-after=60s "$fence" "${cvd_prefix[@]}" \
+            timeout --kill-after=60s "$leg_fence" "${cvd_prefix[@]}" \
                 uv run python "$script" "$@" --device "$device"
             return $?
         fi
         local pids=() i rc=0 p
         for i in $(seq 0 $((nsh - 1))); do
-            env CUDA_VISIBLE_DEVICES="$i" timeout --kill-after=60s "$fence" \
+            env CUDA_VISIBLE_DEVICES="$i" timeout --kill-after=60s "$leg_fence" \
                 uv run python "$script" "$@" --device cuda \
                 --num-shards "$nsh" --shard-index "$i" \
                 > "$LOG_DIR/dvf-shard-$i.log" 2>&1 &
@@ -369,7 +373,7 @@ run_phase_derived_vs_free() {
 
     # --- Context-map structure + rank rung (items 7-8 within; item 9 leg) ---
     echo "[phase=cms_units]"
-    run_sharded scripts/issue1689_context_map_structure.py --phase units \
+    RUN_FENCE="$cms_fence" run_sharded scripts/issue1689_context_map_structure.py --phase units \
         --store-root "$dvf_store" --out-root "$cms_root" \
         "${within_pairs_args[@]}" "${slice_args[@]}" \
         --class-null-draws "$class_draws" --rank-null-draws "$rank_draws"
@@ -378,7 +382,7 @@ run_phase_derived_vs_free() {
     uv run python scripts/issue1689_context_map_structure.py --phase merge \
         --out-root "$cms_root" "${within_pairs_args[@]}"
     echo "[phase=xm_structure]"
-    run_sharded scripts/issue1689_context_map_structure.py --phase units \
+    RUN_FENCE="$cms_fence" run_sharded scripts/issue1689_context_map_structure.py --phase units \
         --store-root "$dvf_store" --out-root "$xms_root" \
         --pairs-file "$xm_pairs" "${slice_args[@]}" \
         --class-null-draws "$class_draws" --rank-null-draws "$rank_draws" \

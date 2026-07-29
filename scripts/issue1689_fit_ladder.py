@@ -1724,6 +1724,129 @@ def fit_rung78_corrections_t(
     }
 
 
+# ---------------------------------------------------------------------------
+# Target-varying inner-group-cv fits with a CACHED X-side eigendecomposition.
+#
+# Matched-capacity null draws permute only the TARGET rows, so the Gram
+# eigendecomposition (a function of X alone) is identical across draws —
+# recomputing it per draw is the #823 "redundant recompute of shareable
+# work" class. These helpers cache the X-side preps ONCE and rerun the
+# EXACT _fit_ridge_inner_group_cv_t math per draw (same eigh, same fold
+# assignment, same lambda argmax tie-breaking; predictions are linear in
+# the centered target). Bit-equivalence is pinned by
+# tests/test_issue1689_derived_vs_free.py::test_prepped_inner_cv_matches_plain.
+# ---------------------------------------------------------------------------
+
+
+def _prep_x_t(X) -> dict:
+    """X-side half of _ridge_eigh_prep_t (no target): mean, centered X, eigh."""
+    n, d = X.shape
+    x_mean = X.mean(dim=0)
+    Xc = X - x_mean
+    dual = n < d
+    S = Xc @ Xc.T if dual else Xc.T @ Xc
+    S = 0.5 * (S + S.T)
+    sigma2, U = _eigh_robust_t(S)
+    sigma2 = sigma2.clamp_min(0.0)
+    return {"x_mean": x_mean, "Xc": Xc, "dual": dual, "U": U, "sigma2": sigma2}
+
+
+def _predict_prepped_t(prepx: dict, Y_tr, X_test, lam: float):
+    """_ridge_predict_from_prep_t with the target supplied per call."""
+    y_mean = Y_tr.mean(dim=0)
+    Yc = Y_tr - y_mean
+    inv_diag = 1.0 / (prepx["sigma2"] + lam)
+    Xtest_c = X_test - prepx["x_mean"]
+    U, Xc = prepx["U"], prepx["Xc"]
+    if prepx["dual"]:
+        UtY = U.T @ Yc
+        alpha = U @ (inv_diag[:, None] * UtY)
+        pred = Xtest_c @ (Xc.T @ alpha)
+    else:
+        XtY = Xc.T @ Yc
+        UtXtY = U.T @ XtY
+        W = U @ (inv_diag[:, None] * UtXtY)
+        pred = Xtest_c @ W
+    return pred + y_mean
+
+
+def _fit_prepped_t(prepx: dict, Y_tr, lam: float):
+    """_ridge_fit_from_prep_t with the target supplied per call -> (W, b)."""
+    y_mean = Y_tr.mean(dim=0)
+    Yc = Y_tr - y_mean
+    inv_diag = 1.0 / (prepx["sigma2"] + lam)
+    U, Xc = prepx["U"], prepx["Xc"]
+    if prepx["dual"]:
+        UtY = U.T @ Yc
+        alpha = U @ (inv_diag[:, None] * UtY)
+        W = Xc.T @ alpha
+    else:
+        XtY = Xc.T @ Yc
+        UtXtY = U.T @ XtY
+        W = U @ (inv_diag[:, None] * UtXtY)
+    b = y_mean - prepx["x_mean"] @ W
+    return W, b
+
+
+def build_inner_cv_cache_t(
+    X_train,
+    train_conv_ids: np.ndarray,
+    n_inner_folds: int = 3,
+    seed: int = 42,
+) -> dict:
+    """Precompute the fold masks + X-side eigh preps _fit_ridge_inner_group_cv_t
+    would build, for reuse across target-varying (null-draw) fits."""
+    import torch
+
+    dev = X_train.device
+    inner_folds = _conv_grouped_folds(train_conv_ids, n_inner_folds, seed=seed)
+    folds = []
+    for fold_i in range(n_inner_folds):
+        te_mask = inner_folds == fold_i
+        tr_mask = ~te_mask
+        if tr_mask.sum() < 3 or te_mask.sum() == 0:
+            folds.append(None)
+            continue
+        tr_idx = torch.from_numpy(np.where(tr_mask)[0]).to(dev)
+        te_idx = torch.from_numpy(np.where(te_mask)[0]).to(dev)
+        folds.append({"tr": tr_idx, "te": te_idx, "prep": _prep_x_t(X_train[tr_idx])})
+    return {
+        "folds": folds,
+        "full": _prep_x_t(X_train),
+        "X": X_train,  # kept by reference for bit-exact X_te slicing
+        "n_inner_folds": n_inner_folds,
+    }
+
+
+def fit_inner_group_cv_cached_t(cache: dict, Y_train, lambdas: np.ndarray):
+    """_fit_ridge_inner_group_cv_t math on a cached X-side prep (target varies).
+
+    Same scores matrix, same nanmean, same argmax tie-breaking, same refit —
+    only the (X-only) eigendecompositions are reused across calls.
+    """
+    n_inner = cache["n_inner_folds"]
+    scores = np.zeros((len(lambdas), n_inner), dtype=np.float64)
+    for fold_i, fold in enumerate(cache["folds"]):
+        if fold is None:
+            scores[:, fold_i] = np.nan
+            continue
+        Y_tr = Y_train[fold["tr"]]
+        Y_te = Y_train[fold["te"]]
+        X_te = cache["X"][fold["te"]]
+        for li, lam in enumerate(lambdas):
+            pred = _predict_prepped_t(fold["prep"], Y_tr, X_te, lam=float(lam))
+            scores[li, fold_i] = _r2_t(Y_te, pred)
+    mean_scores = np.nanmean(scores, axis=1)
+    valid = ~np.isnan(mean_scores)
+    if not valid.any():
+        best_lam = float(lambdas[len(lambdas) // 2])
+    else:
+        best_idx = int(np.argmax(np.where(valid, mean_scores, -np.inf)))
+        best_lam = float(lambdas[best_idx])
+    W, b = _fit_prepped_t(cache["full"], Y_train, best_lam)
+    return W, b, best_lam
+
+
 def _compare_pair_results(ref: dict, new: dict, atol: float = 1e-4) -> tuple[bool, list[str]]:
     """Compare numpy-engine vs torch-engine results for one (pair, arm).
 

@@ -101,12 +101,16 @@ CLASS_ORDER = (
 )
 
 
-def _class_preds_for_split(tX_S, tX_T, tr, te, conv_tr, lams, device) -> tuple[dict, dict]:
+def _class_preds_for_split(
+    tX_S, tX_T, tr, te, conv_tr, lams, device, fit_cache=None
+) -> tuple[dict, dict]:
     """Fit all item-7a classes on tr, predict on te. Returns (preds, ops).
 
     preds: {class: torch (n_te, d)}; ops: canonical operators for 7b/7d
-    (M, a_M, C=M-I SVD factors) — all train-fold-only.
-    """
+    (M, a_M, C=M-I SVD factors) — all train-fold-only. ``fit_cache`` (a
+    fl.build_inner_cv_cache_t over tX_S[tr]) reuses the X-side eighs across
+    target-varying null draws — same math, shared factorization (#823 class;
+    bit-equivalence pinned in tests)."""
     import torch
 
     X_tr, X_te = tX_S[tr], tX_S[te]
@@ -128,7 +132,10 @@ def _class_preds_for_split(tX_S, tX_T, tr, te, conv_tr, lams, device) -> tuple[d
     R = Ur @ Vhr
     preds["trans_rotation"] = (X_te - mu_s) @ R + mu_t
     # full affine (the item-1 estimator: inner-group-cv ridge)
-    M, a_M, lam_m = fl._fit_ridge_inner_group_cv_t(X_tr, T_tr, conv_tr, lams)
+    if fit_cache is not None:
+        M, a_M, lam_m = fl.fit_inner_group_cv_cached_t(fit_cache, T_tr, lams)
+    else:
+        M, a_M, lam_m = fl._fit_ridge_inner_group_cv_t(X_tr, T_tr, conv_tr, lams)
     preds["full_affine"] = X_te @ M + a_M
     # identity + rank-k correction: SVD truncation of C = M - I (first pass)
     d = M.shape[0]
@@ -250,12 +257,18 @@ def run_structure_unit(source, target, spec, arm, args, lams, parent_rung) -> tu
     rng = np.random.default_rng(args.seed + 1)
     null_matrix = np.full((args.class_null_draws, len(CLASS_ORDER)), np.nan)
     null_reached: list[str] = []
+    # X-side eighs are draw-invariant (only the target permutes): share them.
+    null_fit_cache = (
+        fl.build_inner_cv_cache_t(tX_S[tr], conv_tr) if args.class_null_draws > 0 else None
+    )
     for draw_i in range(args.class_null_draws):
         perm = rng.permutation(n)
         t_perm = torch.from_numpy(perm).to(dev)
         X_T_null = tX_T[t_perm]
         try:
-            preds_d, _ops_d = _class_preds_for_split(tX_S, X_T_null, tr, te, conv_tr, lams, dev)
+            preds_d, _ops_d = _class_preds_for_split(
+                tX_S, X_T_null, tr, te, conv_tr, lams, dev, fit_cache=null_fit_cache
+            )
         except torch.linalg.LinAlgError:
             null_reached.append("degenerate")
             continue
@@ -452,6 +465,14 @@ def _rank_rung_unit(source, target, spec, arm, args, lams) -> dict:
     null_k_ans: list[int] = []
     null_mat_ctx = np.full((args.rank_null_draws, len(RANK_GRID)), np.nan)
     null_mat_ans = np.full((args.rank_null_draws, len(RANK_GRID)), np.nan)
+    # X-side eighs are draw-invariant for the W_s fit (X_S fixed) and the
+    # reach fit (X_T fixed); only the permuted-Y B fit needs a fresh eigh.
+    cache_ws = fl.build_inner_cv_cache_t(tX_S, corr["common"]) if args.rank_null_draws > 0 else None
+    cache_reach = fl.build_inner_cv_cache_t(tX_T[tr], conv_tr) if args.rank_null_draws > 0 else None
+    # A (rung-7 ctx correction) is x-only — fixed across draws: SVD it ONCE.
+    A_W_null = torch.from_numpy(corr["A_W"]).to(dev)
+    A_b_null = torch.from_numpy(corr["A_b"]).to(dev)
+    UcA, scA, VhcA = fl._svd_robust_t(A_W_null - eye)
     for draw_i in range(args.rank_null_draws):
         perm_s = rng.permutation(n)
         perm_t = rng.permutation(n)
@@ -459,27 +480,25 @@ def _rank_rung_unit(source, target, spec, arm, args, lams) -> dict:
         tpt = torch.from_numpy(perm_t).to(dev)
         Y_S_d, Y_T_d = tY_S[tps], tY_T[tpt]
         try:
-            W_s_d, b_s_d, _ = fl._fit_ridge_inner_group_cv_t(
-                tX_S, Y_S_d, corr["common"], np.asarray(lams)
-            )
+            W_s_d, b_s_d, _ = fl.fit_inner_group_cv_cached_t(cache_ws, Y_S_d, np.asarray(lams))
             B_W_d, B_b_d, _ = fl._fit_ridge_inner_group_cv_t(
                 Y_S_d[tr], Y_T_d[tr], conv_tr, np.asarray(lams)
             )
         except torch.linalg.LinAlgError:
             continue
-        _rw, bar_d = fl._reach_bar_within_cell_t(
-            tX_T, Y_T_d, tr, te, conv_tr, np.asarray(lams), threshold=RUNG_REACHED_THRESHOLD
+        # reach bar via the cached X_T[tr] prep (same math as _reach_bar_within_cell_t)
+        W_ref, b_ref, _lam_ref = fl.fit_inner_group_cv_cached_t(
+            cache_reach, Y_T_d[tr], np.asarray(lams)
         )
-        # ctx side: A is x-only (unchanged per draw — reuse the observed A).
-        A_W_t = torch.from_numpy(corr["A_W"]).to(dev)
-        A_b_t = torch.from_numpy(corr["A_b"]).to(dev)
-        C = A_W_t - eye
-        Uc, sc, Vhc = fl._svd_robust_t(C)
+        pred_ref = tX_T[te] @ W_ref + b_ref
+        rw_d = fl._r2_t(Y_T_d[te], pred_ref)
+        bar_d = RUNG_REACHED_THRESHOLD * rw_d if rw_d > 0 else float("-inf")
+        # ctx side: A is x-only (unchanged per draw — hoisted SVD above).
         kc = None
         for j, k in enumerate(RANK_GRID):
             kk = min(k, d)
-            xh_te = tX_T[te] + _trunc_apply(tX_T[te], Uc, sc, Vhc, kk) + A_b_t
-            xh_tr = tX_T[tr] + _trunc_apply(tX_T[tr], Uc, sc, Vhc, kk) + A_b_t
+            xh_te = tX_T[te] + _trunc_apply(tX_T[te], UcA, scA, VhcA, kk) + A_b_null
+            xh_tr = tX_T[tr] + _trunc_apply(tX_T[tr], UcA, scA, VhcA, kk) + A_b_null
             pred = (
                 (xh_te @ W_s_d + b_s_d)
                 - (xh_tr @ W_s_d + b_s_d).mean(dim=0)
