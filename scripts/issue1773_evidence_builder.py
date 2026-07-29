@@ -824,6 +824,12 @@ def pass_assemble(args) -> int:
         hub.stage_hub_prefix(
             CM.HF_DATA_REPO, f"{CM.HF_PREFIX}/raw_windows", win_dir, repo_type="dataset"
         )
+        # stage_hub_prefix mirrors the repo-relative prefix verbatim, so files land
+        # NESTED at win_dir/<HF_PREFIX>/raw_windows/ — resolve to that dir when the
+        # flat layout is empty (staged-layout check (h)(iv), #928/#1481).
+        nested = win_dir / CM.HF_PREFIX / "raw_windows"
+        if nested.is_dir() and not list(win_dir.glob("windows_*.jsonl")):
+            win_dir = nested
     sel: dict[int, dict] = {}
     for p in sorted(sel_dir.glob("selection.shard*.jsonl")):
         for r in CM.iter_jsonl(p):
