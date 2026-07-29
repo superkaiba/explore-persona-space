@@ -6039,8 +6039,8 @@
     "1778": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1778",
-      "status": "running",
+      "path": "tasks/reviewing/1778",
+      "status": "reviewing",
       "title": "verify_artifacts_exist crashes on planned-output hf:// globs + wrong repo_type (Step 6a.5 gate)"
     },
     "1779": {
