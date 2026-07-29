@@ -7230,6 +7230,107 @@ def test_render_startup_script_hydra_only_byte_identical_to_pre_change_snapshot(
 
 
 # ---------------------------------------------------------------------------
+# issue #1794 — persist uv on the default PATH for non-login/sudo/setsid shells
+# ---------------------------------------------------------------------------
+
+
+def test_startup_script_persists_uv_path() -> None:
+    """#1794 (founding incident #1739 exit-127): after the uv-install block the
+    startup script symlinks uv (+ uvx when present) into ``/usr/local/bin`` —
+    which is on the default PATH of non-login shells AND in sudo's
+    ``secure_path`` — and writes an ``/etc/profile.d/eps-uv-path.sh`` drop-in
+    for login shells. The block lives in the SHARED render body, so both the
+    hydra and workload_cmd branches carry it.
+
+    Round-2 regression pins (BLOCKER ``gcp-uv-selfsymlink-on-rerun``): the
+    resolution must come from FIXED candidate paths first — never bare
+    ``command -v uv`` as the primary source, which on a startup-script RE-RUN
+    (GCE re-runs on every boot; same-name creates re-attach surviving boot
+    disks, the #779 class) finds the PRIOR run's /usr/local/bin/uv symlink and
+    self-symlinks it into an ELOOP — with the ``command -v`` fallback
+    canonicalized (``readlink -f``) and both legs guarded against a
+    /usr/local/bin self-target."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    install_marker = "# === Install uv if missing + sync env ==="
+    assert install_marker in script
+    tail = script[script.index(install_marker) :]
+    # /usr/local/bin symlink leg (the non-login/sudo/setsid-covering leg).
+    assert 'ln -sf "$UV_BIN" /usr/local/bin/uv' in tail
+    assert "/usr/local/bin/uvx" in tail
+    # profile.d drop-in leg (login shells): single-quoted printf format so
+    # $HOME/$PATH land UNEXPANDED in the drop-in file.
+    assert (
+        "printf 'export PATH=\"$HOME/.local/bin:$PATH\"\\n' > /etc/profile.d/eps-uv-path.sh"
+    ) in tail
+    # Ordering: the persistence block follows the install block (uv exists by then).
+    assert tail.index('ln -sf "$UV_BIN" /usr/local/bin/uv') > tail.index(
+        "curl -LsSf https://astral.sh/uv/install.sh"
+    )
+    # --- #1794 round-2 self-symlink regression pins ---
+    # Primary resolution = FIXED candidate paths (the immune b3d2dfbf1d shape).
+    assert 'for cand in "${HOME:-/root}/.local/bin/uv" /root/.local/bin/uv; do' in tail
+    assert 'if [ -x "$cand" ]; then UV_BIN="$cand"; break; fi' in tail
+    # The old self-symlinkable PRIMARY (bare command -v assignment) must be gone.
+    assert 'UV_BIN="$(command -v uv 2>/dev/null || true)"\n' not in tail
+    # The fallback is canonicalized so a symlink chain resolves to the real file.
+    assert (
+        'UV_BIN="$(readlink -f "$(command -v uv 2>/dev/null || true)" 2>/dev/null || true)"'
+    ) in tail
+    # Fixed candidates are tried BEFORE the command -v fallback.
+    assert tail.index("for cand in") < tail.index("readlink -f")
+    # Self-target guards: neither leg may ever symlink /usr/local/bin onto itself.
+    assert '[ "$UV_BIN" != /usr/local/bin/uv ]' in tail
+    assert '[ "$UVX_BIN" != /usr/local/bin/uvx ]' in tail
+
+
+def test_startup_script_uv_resolution_converges_on_rerun(tmp_path: Path) -> None:
+    """#1794 round 2 (BLOCKER ``gcp-uv-selfsymlink-on-rerun``) behavioral
+    micro-check: execute the rendered uv-resolution stanza in a scratch root
+    with a PRIOR run's /usr/local/bin/uv symlink already present (the
+    startup-script re-run / reused-boot-disk state the reviewer reproduced as
+    ELOOP rc=126). The stanza must exit 0 and leave the symlink pointing at
+    the REAL binary — never at itself."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    start = script.index('UV_BIN=""')
+    end = script.index("printf 'export PATH=", start)
+    stanza = script[start:end]
+    # Rebase the absolute path literals into the scratch root (the logic under
+    # test — candidate order, readlink canonicalization, self-target guards —
+    # is path-shape-independent).
+    fake_home = tmp_path / "home"
+    (fake_home / ".local" / "bin").mkdir(parents=True)
+    usr_local = tmp_path / "usr_local_bin"
+    usr_local.mkdir()
+    root_local = tmp_path / "root_local_bin"
+    root_local.mkdir()
+    real_uv = fake_home / ".local" / "bin" / "uv"
+    real_uv.write_text("#!/bin/sh\necho uv-ok\n")
+    real_uv.chmod(0o755)
+    stanza = stanza.replace("/usr/local/bin", str(usr_local))
+    stanza = stanza.replace("/root/.local/bin", str(root_local))
+    # Simulate the PRIOR run's symlink already resolvable via PATH (re-run state).
+    prior = usr_local / "uv"
+    prior.symlink_to(real_uv)
+    proc = subprocess.run(
+        ["bash", "-euo", "pipefail", "-c", stanza],
+        env={
+            **os.environ,
+            "HOME": str(fake_home),
+            "PATH": f"{usr_local}:{os.environ.get('PATH', '')}",
+        },
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, f"stanza rc={proc.returncode}\nstderr:\n{proc.stderr}"
+    resolved = usr_local / "uv"
+    # Must resolve to the real binary — a self-referential loop raises here.
+    assert resolved.resolve() == real_uv.resolve()
+    out = subprocess.run([str(resolved)], capture_output=True, text=True)
+    assert out.returncode == 0
+    assert "uv-ok" in out.stdout
+
+
+# ---------------------------------------------------------------------------
 # #750 — kernel OOM-kill guard on the success path (incident #744)
 # ---------------------------------------------------------------------------
 
