@@ -61,10 +61,48 @@ import issue1738_multiturn_generate_capture as GG  # noqa: E402
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
+from explore_persona_space.orchestrate import hub  # noqa: E402
+
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", force=True
 )
 logger = logging.getLogger("issue1738_char")
+
+
+def _upload_summary_jsons(args, paths: list[Path], *, best_effort: bool = False) -> None:
+    """r4 persist-by-default belt (#1738 r4 incident): mirror phase summary
+    outputs (KB-scale JSONs + the gitignored per-context floors npz) to the HF
+    data repo under {hf_prefix}/analysis_tensors/summaries/characterize/ IN
+    ADDITION to the git dest, so no phase output depends on a boot disk or a
+    later VM harvest. Skipped under --no-upload (and when a hand-built
+    namespace omits the flag — the smoke path). ``best_effort=True`` is for
+    DESIGNED-halt paths (the rc-23 identity gate): the upload is attempted but
+    a failure is logged loudly instead of masking the designed rc
+    (artifact-first halt routing)."""
+    if getattr(args, "no_upload", True):
+        logger.info("[upload] characterize summaries skipped (no_upload)")
+        return
+    present = [p for p in paths if p.is_file()]
+    if not present:
+        return
+    rel = sorted(str(p.relative_to(args.out_eval)) for p in present)
+    dest = f"{args.hf_prefix}/{FT.ANALYSIS_TENSORS_SUBDIR}/summaries/characterize"
+    try:
+        url = hub._upload_folder_filtered(
+            args.out_eval,
+            repo_id=C.HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=dest,
+            allow_patterns=rel,
+            expected_repo_paths=[f"{dest}/{r}" for r in rel],
+        )
+        if not url:
+            raise RuntimeError(f"characterize summaries upload returned no URL ({rel})")
+    except Exception:
+        if not best_effort:
+            raise
+        logger.exception("[upload] best-effort summaries upload failed (designed rc kept)")
+
 
 JUDGE_MODEL = A82.JUDGE_MODEL  # claude-sonnet-4-5-20250929 (project pin)
 JUDGE_MAX_TOKENS = A82.JUDGE_MAX_TOKENS  # 400 (reason-then-label, rule 23)
@@ -278,6 +316,7 @@ def phase_judge(args) -> None:
     }
     GG.N1M._atomic_write_json(jdir / "labels.json", doc)
     logger.info("[judge] labeled %d/%d (drops=%s)", len(labels), len(items), drops)
+    _upload_summary_jsons(args, [jdir / "labels.json"])
 
 
 # ── P4a: kresample subsample + floor estimator ────────────────────────────────────
@@ -324,6 +363,7 @@ def phase_kresample_subsample(args) -> None:
     logger.info(
         "[kresample-subsample] %d contexts across %d strata -> %s", len(picked), len(keys), out
     )
+    _upload_summary_jsons(args, [out])
 
 
 def _load_kresample_v(args, layers: list[int]) -> tuple[np.ndarray, np.ndarray]:
@@ -445,9 +485,16 @@ def phase_kresample_floor(args) -> None:
     )
     GG.N1M._atomic_write_json(kdir / "gates.json", gates)
     GG.N1M._atomic_write_json(kdir / "floor_summary.json", floor_doc)
+    # r4 dual-write: floors_L*.npz is gitignored (*.npz rule) — HF is its ONLY
+    # durable home; gates/floor_summary ride along (belt on top of git).
+    up = [kdir / "gates.json", kdir / "floor_summary.json"] + [
+        kdir / f"floors_L{li}.npz" for li in layers
+    ]
     if not gates["ok"]:
         logger.error("[kresample-floor] GATE FAILED: %s", gates)
+        _upload_summary_jsons(args, up, best_effort=True)  # designed rc 23 must survive
         sys.exit(23)  # designed halt (gates.json written first — #1482 RC convention)
+    _upload_summary_jsons(args, up)
     logger.info("[kresample-floor] OK: %s", {k: v for k, v in floor_doc["per_layer"].items()})
 
 
@@ -625,6 +672,9 @@ def phase_taxonomy(args) -> None:
     GG.N1M._atomic_write_json(args.out_eval / "taxonomy.json", out)
     GG.N1M._atomic_write_json(args.out_eval / "depth_contrasts.json", depth_doc)
     logger.info("[taxonomy] wrote %d arm tables", len(out["arms"]))
+    _upload_summary_jsons(
+        args, [args.out_eval / "taxonomy.json", args.out_eval / "depth_contrasts.json"]
+    )
 
 
 # ── H1: registered contrast Δ_prefix (batched context bootstrap) ──────────────────
@@ -670,6 +720,7 @@ def phase_h1(args) -> None:
             verdict,
         )
     GG.N1M._atomic_write_json(args.out_eval / "h1_contrast.json", doc)
+    _upload_summary_jsons(args, [args.out_eval / "h1_contrast.json"])
 
 
 # ── per-direction PCA + 38-λ shrinkage control (#1482 stage-10, per arm) ──────────
@@ -807,6 +858,7 @@ def phase_perdirection(args) -> None:
     out = args.out_eval / "perdirection"
     out.mkdir(parents=True, exist_ok=True)
     GG.N1M._atomic_write_json(out / "pdshrink_summary.json", doc)
+    _upload_summary_jsons(args, [out / "pdshrink_summary.json"])
 
 
 # ── figures (hero paired bars + depth curve) ──────────────────────────────────────
@@ -952,6 +1004,7 @@ def _smoke(args) -> int:
             "layers": "19",
             "no_labels": True,
             "kresample_n": 12,
+            "no_upload": True,  # r4: the dual-write belt never fires in smoke
         }
     )
     # (2) subsample (no labels — depth × corpus strata only, flagged)
@@ -1130,6 +1183,7 @@ def main() -> int:
         default="taxonomy",
     )
     ap.add_argument("--out-eval", type=Path, default=DEFAULT_OUT_EVAL)
+    # UPLOAD_PREFIX_EXEMPT: issue 1738's own summaries prefix; a child issue reusing this driver must pass --hf-prefix explicitly (artifact-reuse check (i))
     ap.add_argument("--hf-prefix", default=GG.HF_PREFIX)
     ap.add_argument("--manifest-dir", default="")
     ap.add_argument("--split-file", default="")
@@ -1149,6 +1203,11 @@ def main() -> int:
     ap.add_argument("--kresample-n", type=int, default=KRESAMPLE_N)
     ap.add_argument("--no-labels", action="store_true", help="subsample without judge labels")
     ap.add_argument("--fig-dir", default=str(PROJECT_ROOT / "figures" / "issue_1738"))
+    ap.add_argument(
+        "--no-upload",
+        action="store_true",
+        help="skip the r4 HF dual-write of phase summary JSONs (git dest still written)",
+    )
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--smoke-live-judge", action="store_true", help="smoke: 2 LIVE judge calls")
     args = ap.parse_args()

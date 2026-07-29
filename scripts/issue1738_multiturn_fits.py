@@ -479,6 +479,13 @@ def run_fits(args) -> int:
                 }
                 GG.N1M._atomic_write_json(args.out_eval / "fits" / "fence_report.json", rep)
                 logger.error("[G2] fence tripped: %s", rep)
+                if not args.no_upload:
+                    try:  # r4 belt: persist the report + partial cell JSONs to
+                        # HF, but the DESIGNED rc must survive an upload failure
+                        # (artifact-first halt routing) — hence log-and-exit.
+                        _upload_analysis_tensors(args, [_summary_upload_entry(args)])
+                    except Exception:
+                        logger.exception("[G2] fence-report upload failed (rc %d kept)", RC_FENCE)
                 sys.exit(RC_FENCE)
         X = mm[(("px" if arm == "prefix" else "cx"), li)]
         Y = mm[("vx", li)]
@@ -628,6 +635,41 @@ def run_fits(args) -> int:
             )
 
     C.phase("fits-baselines")
+    baselines = _compute_baselines(mm, tr, ho, cells, pred_dir)
+    GG.N1M._atomic_write_json(args.out_eval / "mapping_baselines.json", baselines)
+
+    C.phase("fits-transfer")
+    transfer = _compute_transfer(mm, ci, arms, split, tr, val, ho, corpus_by_ci, dev, args)
+    summary["lmsys_transfer"] = transfer
+    GG.N1M._atomic_write_json(args.out_eval / "fits" / f"{FIT_POINT}_fits.json", summary)
+
+    if not args.no_upload:
+        C.phase("fits-upload")
+        # percontext/*.npz is a plan §6.5 primary deliverable: gitignored by the
+        # repo-wide *.npz rule (#958 class) and consumed off-pod by Phase 4c, so
+        # it MUST ride the HF analysis_tensors upload (plan §10) — the
+        # DELETE-on-exit GCE lane would otherwise lose it (review Major 2).
+        # r4: the KB-scale summary JSONs ride the same upload (dual-write) —
+        # their git-only destination lost both summaries when the GCE instance
+        # was reaped before any harvest (#1738 r4 incident).
+        _upload_analysis_tensors(
+            args,
+            [
+                ("pred16", args.out_local / "pred16", None),
+                ("y_holdout", args.out_local / "y_holdout", None),
+                ("weights", args.out_local / "weights", None),
+                ("percontext", pc_dir, None),
+                _summary_upload_entry(args),
+            ],
+        )
+    C.phase("done")
+    return 0
+
+
+def _compute_baselines(mm, tr, ho, cells, pred_dir) -> dict:
+    """Standing mapping-baselines pair per (arm, layer): identity+learned-bias
+    holdout R²/cosine + kNN retrieval (identity_bias + retained ridge pred16).
+    Extracted verbatim from run_fits so --rebuild-summaries shares it (r4)."""
     baselines: dict = {"ks": [1, 5, 10], "metrics": ["euclidean", "cosine"], "cells": {}}
     for arm, li in cells:
         X = mm[(("px" if arm == "prefix" else "cx"), li)]
@@ -649,10 +691,13 @@ def run_fits(args) -> int:
             }
         baselines["cells"][f"{arm}_L{li}"] = cellb
         logger.info("[baseline] %s_L%d: identity+bias holdout R2=%.4f", arm, li, r2_ib)
-    GG.N1M._atomic_write_json(args.out_eval / "mapping_baselines.json", baselines)
+    return baselines
 
-    # lmsys_transfer (group-level OOD): ridge, layer 19, both arms — fit on
-    # LMSYS-only train rows, score WildChat holdout rows.
+
+def _compute_transfer(mm, ci, arms, split, tr, val, ho, corpus_by_ci, dev, args) -> dict:
+    """lmsys_transfer (group-level OOD): ridge, layer 19, both arms — fit on
+    LMSYS-only train rows, score WildChat holdout rows. Extracted verbatim from
+    run_fits so --rebuild-summaries shares it (r4)."""
     transfer: dict = {"control": "lmsys_transfer", "layer": 19, "cells": {}}
     if split.get("transfer_descoped"):
         transfer["descoped"] = True
@@ -690,37 +735,285 @@ def run_fits(args) -> int:
                 logger.info("[transfer] %s: wc R2=%.4f lmsys R2=%.4f", arm, r2_wc, r2_lm)
     else:
         transfer["skipped"] = "no --manifest-dir (corpus provenance unavailable)"
+    return transfer
+
+
+def _upload_analysis_tensors(args, entries: list[tuple[str, Path, list[str] | None]]) -> None:
+    """One verified upload_folder commit per entry → {hf_prefix}/analysis_tensors/{sub}.
+
+    entries: (sub, local_dir, rel_files) — rel_files None means every file under
+    local_dir (rglob), else the explicit relative-path subset. Fail-loud on any
+    unverified commit (the per-cell exact-set contract, upload-policy.md)."""
+    for sub, local, files in entries:
+        if files is None:
+            files = sorted(str(p.relative_to(local)) for p in local.rglob("*") if p.is_file())
+        if not files:
+            continue
+        url = hub._upload_folder_filtered(
+            local,
+            repo_id=C.HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=f"{args.hf_prefix}/{ANALYSIS_TENSORS_SUBDIR}/{sub}",
+            allow_patterns=files,
+            expected_repo_paths=[
+                f"{args.hf_prefix}/{ANALYSIS_TENSORS_SUBDIR}/{sub}/{f}" for f in files
+            ],
+        )
+        if not url:
+            raise RuntimeError(f"analysis-tensors upload ({sub}) returned no URL")
+
+
+def _summary_upload_entry(args) -> tuple[str, Path, list[str] | None]:
+    """r4 persist-by-default fix: every small JSON the fits/rebuild phases emit
+    (fits summary, mapping_baselines, per-cell fit_meta records, the G2 fence
+    report) rides the HF analysis_tensors upload IN ADDITION to git — the
+    git-only destination lost multiturn_100k_fits.json + mapping_baselines.json
+    when the DELETE-on-exit GCE instance was reaped before any VM harvest."""
+    cand = [
+        args.out_eval / "mapping_baselines.json",
+        args.out_eval / "fits" / f"{FIT_POINT}_fits.json",
+        args.out_eval / "fits" / "fence_report.json",
+        *sorted((args.out_eval / "fits" / "cells").glob("*.json")),
+        *sorted((args.out_eval / "fits" / "cells_rebuilt").glob("*.json")),
+    ]
+    files = sorted(str(p.relative_to(args.out_eval)) for p in cand if p.is_file())
+    return ("summaries", args.out_eval, files)
+
+
+# ── r4: --rebuild-summaries (summary recovery from the RETAINED HF tensors) ───────
+
+
+REBUILD_PARTIAL_REASON = (
+    "rebuilt from retained fp16 pred16 vs restreamed fp32 capture (#1738 r4 "
+    "summary recovery); test-split predictions, wall clocks and fit_meta lived "
+    "only in the lost git-destined JSONs"
+)
+
+
+def _git_head() -> str:
+    """Reproducibility metadata for the rebuild provenance block: EPM_GIT_COMMIT
+    when the launcher set it (the GCE lane), else the local git HEAD."""
+    import subprocess
+
+    env_sha = os.environ.get("EPM_GIT_COMMIT", "")
+    if env_sha:
+        return env_sha
+    r = subprocess.run(
+        ["git", "-C", str(PROJECT_ROOT), "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True,
+        env={**os.environ},
+    )
+    return r.stdout.strip() if r.returncode == 0 else ""
+
+
+def _stage_analysis_subdir(args, sub: str) -> Path:
+    """Local dir holding {hf_prefix}/analysis_tensors/{sub}/*.
+
+    Production: retried scoped staging via hub.stage_hub_prefix (#1402 —
+    idempotent, existing targets skip; one resolved revision per call).
+    Smoke: --local-analysis-dir/<sub> bypasses the Hub entirely."""
+    if args.local_analysis_dir:
+        d = Path(args.local_analysis_dir) / sub
+        assert d.is_dir(), f"--local-analysis-dir missing subdir {d}"
+        return d
+    prefix = f"{args.hf_prefix}/{ANALYSIS_TENSORS_SUBDIR}/{sub}"
+    dest = Path(args.out_local) / "rebuild_stage"
+    hub.stage_hub_prefix(C.HF_DATA_REPO, prefix, dest, repo_type="dataset")
+    return dest / prefix
+
+
+def run_rebuild(args) -> int:
+    """r4 summary recovery: reconstruct multiturn_100k_fits.json +
+    mapping_baselines.json from the RETAINED HF tensors after the phase-3 GCE
+    boot disk (git-only summary destination) was deleted before any harvest.
+
+    Holdout-side numbers recompute near-exactly: the fp32 capture restream is
+    the same mm the fits saw, and pred16 is the retained prediction (fp16
+    quantization ~1e-6 on holdout R² at n_ho≈10k — the smoke pins <1e-4).
+    Genuinely unrecoverable fields (test-split R², per-cell walls, fit_meta)
+    are emitted as null with partial flags — never fabricated. The
+    lmsys_transfer control is RE-fit (ridge only) on CPU and tagged as such:
+    a fresh deterministic estimate, not a reconstruction of the lost values."""
+    layers = [int(x) for x in args.layers.split(",")]
+    arms = list(ARMS) if args.input_arm == "both" else [args.input_arm]
+    dev = torch.device("cpu")
+    args.mlp_lrs_list = [float(x) for x in args.mlp_lrs.split(",")]
+
+    C.phase("rebuild-stage")
+    pred_dir = _stage_analysis_subdir(args, "pred16")
+    pc_dir = _stage_analysis_subdir(args, "percontext")
+    yh_dir = _stage_analysis_subdir(args, "y_holdout")
+
+    C.phase("rebuild-assemble")
+    mm, ci, ameta = assemble_streams(args, layers)
+    afp = ameta["fingerprint"]
+    split = load_split(Path(args.split_file))
+    sets = split_positions(split, ci)
+    shortfalls = _coverage_shortfalls(sets, split, args.min_split_coverage)
+    if shortfalls:
+        raise SystemExit(
+            f"capture coverage below floor: {'; '.join(shortfalls)} — the rebuild "
+            "restream does not match the phase-3 capture set"
+        )
+    tr, val, te, ho = sets["train"], sets["val"], sets["test"], sets["holdout"]
+    # retained-artifact integrity (the r2 fingerprint-keying, read side): the
+    # y_holdout npz must pair EXACTLY with the restream — same chunk universe
+    # (fingerprint), same holdout rows (ci), same fp16 cast of the same fp32.
+    for li in layers:
+        with np.load(yh_dir / f"L{li}.npz") as z:
+            assert z["fingerprint"].item() == afp, (li, z["fingerprint"].item(), afp)
+            assert np.array_equal(z["ci"], ci[ho]), f"y_holdout ci misalign (L{li})"
+            y16 = np.asarray(mm[("vx", li)][ho], dtype=np.float16)
+            assert np.array_equal(z["y16"], y16), f"y_holdout fp16 content mismatch (L{li})"
+    corpus_by_ci = {}
+    if args.manifest_dir:
+        pool, _m = GG.N1M.read_manifest_pool(Path(args.manifest_dir))
+        corpus_by_ci = {int(r["i"]): r["corpus"] for r in pool}
+
+    layer_order = ([19] if 19 in layers else []) + [x for x in layers if x != 19]
+    arm_order = [a for a in ("context", "prefix") if a in arms]
+    cells = [(a, li) for a in arm_order for li in layer_order]
+    preds_list = [p for p in PREDICTORS if p in args.predictors.split(",")]
+
+    C.phase("rebuild-cells")
+    rcells_dir = args.out_eval / "fits" / "cells_rebuilt"
+    rcells_dir.mkdir(parents=True, exist_ok=True)
+    summary: dict = {
+        "fit_point": FIT_POINT,
+        "layers": layers,
+        "arms": arms,
+        "n_rows_captured": ameta["n_rows"],
+        "split_counts": {k: int(len(v)) for k, v in sets.items()},
+        "split_shas": {k: split["sets"][k]["sha256"] for k in split["sets"]},
+        "lambdas": [float(x) for x in LAMBDAS],
+        "mlp_lr_grid": args.mlp_lrs_list,
+        "krr": {"m_centers": int(args.krr_nystrom_centers), "solver": args.krr_solver},
+        "n_boot": int(args.n_boot),
+        "boot_seed": BOOT_SEED,
+        "cells": {},
+        "git_commit": os.environ.get("EPM_GIT_COMMIT", ""),
+        "torch": torch.__version__,
+        "numpy": np.__version__,
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "rebuilt": {
+            "partial": True,
+            "reason": REBUILD_PARTIAL_REASON,
+            "source": f"{C.HF_DATA_REPO}/{args.hf_prefix}/{ANALYSIS_TENSORS_SUBDIR}/"
+            "{pred16,y_holdout,percontext} + capture restream",
+            "unrecoverable_fields": [
+                "cells.*.test_r2",
+                "cells.*.test_mean_cosine",
+                "cells.*.wall_s",
+                "cells.*.fit_meta (per-cell JSONs)",
+                "cells.*.seed43.lr",
+            ],
+            "recomputed": [
+                "holdout_bootstrap_ci (same seed/draws, from fp16 pred16)",
+                "lmsys_transfer (ridge REFIT on cpu; original fit on cuda)",
+            ],
+            "assembly_fingerprint": afp,
+            "rebuild_git_commit": _git_head(),
+        },
+    }
+    t0 = time.time()
+    n_units = len(cells) * len(preds_list)
+    k = 0
+    for arm, li in cells:
+        Y = mm[("vx", li)]
+        y_ho = np.asarray(Y[ho], dtype=np.float64)
+        for name in preds_list:
+            k += 1
+            key = f"{arm}_L{li}_{name}"
+            rcj = rcells_dir / f"{key}.json"
+            if rcj.exists() and not args.no_resume:
+                doc = json.loads(rcj.read_text())
+                if doc.get("assembly_fingerprint") == afp:
+                    summary["cells"][key] = doc["metrics"]
+                    logger.info("[rebuild] unit %d/%d %s: resume-skip", k, n_units, key)
+                    continue
+            pz = pred_dir / f"{key}.npz"
+            if not pz.exists():
+                raise SystemExit(f"retained pred16 missing for {key}: {pz}")
+            with np.load(pz) as z:
+                assert z["fingerprint"].item() == afp, (key, "pred16 fingerprint")
+                assert np.array_equal(z["ci"], ci[ho]), f"pred16 ci misalign ({key})"
+                pred_ho = z["pred16"].astype(np.float64)
+            r2_ho, cos_ho = F._recon_point(pred_ho, y_ho)
+            ci_boot = _boot_recon_ci_batched(pred_ho, y_ho, args.n_boot, BOOT_SEED)
+            metrics: dict = {
+                "test_r2": None,
+                "test_mean_cosine": None,
+                "holdout_r2": float(r2_ho),
+                "holdout_mean_cosine": float(cos_ho),
+                "holdout_bootstrap_ci": ci_boot,
+                "n_test": int(len(te)),
+                "n_holdout": int(len(ho)),
+                "wall_s": None,
+                "partial": True,
+                "partial_reason": REBUILD_PARTIAL_REASON,
+            }
+            z43p = pred_dir / f"{key}_seed43.npz"
+            if z43p.exists():
+                with np.load(z43p) as z43:
+                    assert z43["fingerprint"].item() == afp, (key, "seed43 fingerprint")
+                    pred43 = z43["pred16"].astype(np.float64)
+                r2_43, cos_43 = F._recon_point(pred43, y_ho)
+                # seed-pair nerr pearson recomputes EXACTLY: both fp32 nerr
+                # arrays were retained verbatim in the percontext npzs.
+                nerr = np.load(pc_dir / f"{key}.npz")["nerr"]
+                nerr43 = np.load(pc_dir / f"{key}_seed43.npz")["nerr"]
+                metrics["seed43"] = {
+                    "seed": 43,
+                    "lr": None,
+                    "holdout_r2": float(r2_43),
+                    "holdout_mean_cosine": float(cos_43),
+                    "seed_pair_nerr_pearson": float(np.corrcoef(nerr, nerr43)[0, 1])
+                    if len(nerr) > 2
+                    else float("nan"),
+                    "partial": True,
+                    "partial_reason": "selected lr lived in the lost fit_meta",
+                }
+            GG.N1M._atomic_write_json(
+                rcj,
+                {
+                    "arm": arm,
+                    "layer": li,
+                    "fitter": name,
+                    "metrics": metrics,
+                    "fit_meta": None,
+                    "rebuilt": True,
+                    "assembly_fingerprint": afp,
+                },
+            )
+            summary["cells"][key] = metrics
+            logger.info(
+                "[rebuild] unit %d/%d %s holdout R2=%.4f elapsed=%.0fs",
+                k,
+                n_units,
+                key,
+                r2_ho,
+                time.time() - t0,
+            )
+
+    C.phase("rebuild-baselines")
+    baselines = _compute_baselines(mm, tr, ho, cells, pred_dir)
+    GG.N1M._atomic_write_json(args.out_eval / "mapping_baselines.json", baselines)
+
+    C.phase("rebuild-transfer")
+    transfer = _compute_transfer(mm, ci, arms, split, tr, val, ho, corpus_by_ci, dev, args)
+    if transfer.get("cells"):
+        transfer["recomputed"] = {
+            "device": "cpu",
+            "note": "ridge REFIT during the r4 rebuild — a fresh deterministic "
+            "estimate; the originally-fitted (cuda) values were lost with the summary",
+        }
     summary["lmsys_transfer"] = transfer
     GG.N1M._atomic_write_json(args.out_eval / "fits" / f"{FIT_POINT}_fits.json", summary)
 
     if not args.no_upload:
-        C.phase("fits-upload")
-        # percontext/*.npz is a plan §6.5 primary deliverable: gitignored by the
-        # repo-wide *.npz rule (#958 class) and consumed off-pod by Phase 4c, so
-        # it MUST ride the HF analysis_tensors upload (plan §10) — the
-        # DELETE-on-exit GCE lane would otherwise lose it (review Major 2).
-        upload_dirs = [
-            ("pred16", args.out_local / "pred16"),
-            ("y_holdout", args.out_local / "y_holdout"),
-            ("weights", args.out_local / "weights"),
-            ("percontext", pc_dir),
-        ]
-        for sub, local in upload_dirs:
-            files = sorted(str(p.relative_to(local)) for p in local.rglob("*") if p.is_file())
-            if not files:
-                continue
-            url = hub._upload_folder_filtered(
-                local,
-                repo_id=C.HF_DATA_REPO,
-                repo_type="dataset",
-                path_in_repo=f"{args.hf_prefix}/{ANALYSIS_TENSORS_SUBDIR}/{sub}",
-                allow_patterns=files,
-                expected_repo_paths=[
-                    f"{args.hf_prefix}/{ANALYSIS_TENSORS_SUBDIR}/{sub}/{f}" for f in files
-                ],
-            )
-            if not url:
-                raise RuntimeError(f"analysis-tensors upload ({sub}) returned no URL")
+        C.phase("rebuild-upload")
+        _upload_analysis_tensors(args, [_summary_upload_entry(args)])
     C.phase("done")
     return 0
 
@@ -831,6 +1124,17 @@ def main() -> int:
     ap.add_argument("--no-resume", action="store_true")
     ap.add_argument("--no-upload", action="store_true")
     ap.add_argument("--allow-underdetermined", action="store_true", help="smoke shape: n_train<d")
+    ap.add_argument(
+        "--rebuild-summaries",
+        action="store_true",
+        help="r4 summary recovery: reconstruct the two summary JSONs from the "
+        "retained HF tensors (no fits; CPU)",
+    )
+    ap.add_argument(
+        "--local-analysis-dir",
+        default="",
+        help="rebuild: local dir holding pred16/, y_holdout/, percontext/ (smoke bypass)",
+    )
     ap.add_argument("--smoke", action="store_true", help="tiny synthetic store, production path")
     args = ap.parse_args()
 
@@ -928,6 +1232,50 @@ def main() -> int:
             for f_ in ("point", "lo", "hi"):
                 assert abs(a[k][f_] - b[k][f_]) < 1e-9, (k, f_, a[k], b[k])
         logger.info("[smoke] batched bootstrap CI == serial reference (200 draws)")
+        # r4 rebuild-equivalence leg: --rebuild-summaries against this smoke
+        # run's own retained artifacts must reproduce its holdout-side numbers
+        # (fp16 pred16 quantization is the only delta) and null the rest.
+        stage = root / "rb_stage"
+        stage.mkdir()
+        (stage / "pred16").symlink_to((args.out_local / "pred16").resolve())
+        (stage / "y_holdout").symlink_to((args.out_local / "y_holdout").resolve())
+        (stage / "percontext").symlink_to((args.out_eval / "percontext").resolve())
+        rb = argparse.Namespace(
+            **{
+                **vars(args),
+                "rebuild_summaries": True,
+                "local_analysis_dir": str(stage),
+                "out_eval": root / "eval_rebuild",
+            }
+        )
+        assert run_rebuild(rb) == 0
+        rsum = json.loads((rb.out_eval / "fits" / f"{FIT_POINT}_fits.json").read_text())
+        assert rsum["rebuilt"]["partial"] is True and rsum["rebuilt"]["assembly_fingerprint"]
+        assert sorted(rsum["cells"]) == sorted(summ["cells"])
+        for key, m in summ["cells"].items():
+            rm = rsum["cells"][key]
+            assert rm["test_r2"] is None and rm["wall_s"] is None and rm["partial"] is True
+            assert abs(rm["holdout_r2"] - m["holdout_r2"]) < 1e-4, (key, rm, m)
+            assert abs(rm["holdout_mean_cosine"] - m["holdout_mean_cosine"]) < 1e-4, key
+            for k_ in ("r2", "mean_cosine"):
+                for f_ in ("lo", "hi"):
+                    da = rm["holdout_bootstrap_ci"][k_][f_] - m["holdout_bootstrap_ci"][k_][f_]
+                    assert abs(da) < 1e-3, (key, k_, f_, da)
+            if "seed43" in m:
+                assert abs(rm["seed43"]["holdout_r2"] - m["seed43"]["holdout_r2"]) < 1e-4, key
+                dp = rm["seed43"]["seed_pair_nerr_pearson"] - m["seed43"]["seed_pair_nerr_pearson"]
+                assert abs(dp) < 1e-9, (key, dp)  # exact: retained fp32 nerr both sides
+                assert rm["seed43"]["lr"] is None
+        rbl = json.loads((rb.out_eval / "mapping_baselines.json").read_text())
+        bl_now = json.loads((args.out_eval / "mapping_baselines.json").read_text())
+        assert rbl == bl_now, "rebuilt mapping_baselines != original (identical inputs)"
+        rtr = rsum["lmsys_transfer"]
+        assert rtr["cells"] and rtr["recomputed"]["device"] == "cpu", rtr
+        for arm_, tcell in summ["lmsys_transfer"]["cells"].items():
+            for f_ in ("transfer_r2_wildchat_holdout", "within_r2_lmsys_holdout"):
+                # smoke fits ran on cpu too -> the refit is draw-identical
+                assert abs(rtr["cells"][arm_][f_] - tcell[f_]) < 1e-9, (arm_, f_)
+        logger.info("[smoke] rebuild-summaries equivalence OK (%d cells)", len(rsum["cells"]))
         logger.info("[smoke] fits OK: %d cells + baselines + transfer", len(summ["cells"]))
     else:
         if args.manifest_from_hf and not args.manifest_dir:
@@ -939,7 +1287,7 @@ def main() -> int:
             if not args.manifest_dir:
                 raise SystemExit("--split-file or --manifest-dir/--manifest-from-hf required")
             args.split_file = str(Path(args.manifest_dir) / "split_1738.json")
-        rc = run_fits(args)
+        rc = run_rebuild(args) if args.rebuild_summaries else run_fits(args)
     sys.stdout.flush()
     sys.stderr.flush()
     sys.exit(rc)
