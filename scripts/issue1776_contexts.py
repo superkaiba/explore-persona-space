@@ -8,9 +8,11 @@ contexts, emitted as ONE pair-manifest-shaped JSONL that ``issue1776_phase3``'s
     round-1 LMSYS re-stream (phase-1 of ``sample_disjoint_n50k``: the first
     5,000 non-empty first-turns) + ``fixed_split(5000,3600,400,1000,42)`` —
     the documented ``_valtest_prompts_from_round1`` path (capture script
-    L186-214; the pass_b bundle is tensors-only). The recovered test-1000 sha
-    is re-asserted against the plan §10 pin. First ``--n-lmsys`` test prompts.
-    Bounded fetch: ~5,000 kept rows, hard scan cap ``--max-scan`` (fail-loud).
+    L186-214; the pass_b bundle is tensors-only). Membership is confirmed in
+    THREE frozen domains (see ``lmsys_contexts``; r8 crash fix — the plan §10
+    pins are fixed_split INDEX-array digests, not prompt digests). First
+    ``--n-lmsys`` test prompts. Bounded fetch: ~5,000 kept rows, hard scan cap
+    ``--max-scan`` (fail-loud).
   - Trait leg: the #779 eval-rig per-trait question banks
     (``load_extraction_artifacts(trait)`` → ``eval_questions`` (20/trait, the
     held-out eval set) then ``extraction_questions``), round-robin across
@@ -34,11 +36,29 @@ import issue1776_common as C76
 
 import issue779_common as C  # noqa: E402
 import issue779_ffc_n1m_generate_capture as GC  # noqa: E402
+import issue779_ffc_n50k_fits as N50F  # noqa: E402
 import issue779_ffc_n50k_generate_capture as N50  # noqa: E402
 
-# Plan §10 pinned test-1000 sha (re-asserted at build).
+# Plan §10 pinned split shas — sha256 digests of the ORIGINAL #779 round's
+# fixed_split(5000, 3600, 400, 1000, 42) int64 INDEX arrays (F._sha_ids: the
+# domain of N50F._pinned_original_shas / n50k_fits.json "pinned_val/test_sha256").
+# NOT prompt-string digests: r1-r7 asserted N10._sha_prompts(prompts) against
+# these and could never pass (r8 crash fix, att-20260729 p1_contexts).
 TEST_1000_SHA = "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d"
 VAL_400_SHA = "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613"
+# Frozen round-1 PROMPT-membership sha (N10._sha_prompts over the 5,000 round-1
+# first-turns) = the #779 n1m sampling manifest's used_shas.round1
+# (issue779_monitoring/fitter-fair-comparison-n1m/sampling_manifest/meta.json,
+# built 2026-07-15). A live re-stream that reproduces it holds EXACTLY the
+# pinned membership; a mismatch means the LMSYS stream drifted and the pinned
+# test-1000 is no longer recoverable from a re-stream.
+ROUND1_PROMPT_SHA = "d40546cd7059780afc50188a0902247a9c2ce49f67ff3d651b87a934a56b8805"
+# Derived prompt-list digests of the pinned val-400 / test-1000 (round1[idx]
+# under the pinned split). Frozen 2026-07-29 from a VM re-stream whose round-1
+# sha matched ROUND1_PROMPT_SHA and whose recomputed split-index shas matched
+# the §10 pins — a tertiary composition check on _valtest_prompts_from_round1.
+TEST_1000_PROMPT_SHA = "bb60a2827bdc11675699414cda787c9be8ad3b836e9f529a528dc59a6726d9ef"
+VAL_400_PROMPT_SHA = "e8c8beb0fed383674c08e19cb6d9a56ca781d5182ba77cab138af33c06aed738"
 
 
 def stream_round1(*, max_scan: int, stream_iter=None) -> list[str]:
@@ -71,17 +91,51 @@ def stream_round1(*, max_scan: int, stream_iter=None) -> list[str]:
 
 
 def lmsys_contexts(args, stream_iter=None) -> list[dict]:
-    """First --n-lmsys prompts of the pinned test-1000 (sha re-asserted)."""
+    """First --n-lmsys prompts of the pinned test-1000, membership confirmed in
+    THREE frozen domains (r8 crash fix).
+
+    r1-r7 asserted the derived PROMPT-STRING digest against the plan §10 pins,
+    which are fixed_split INDEX-array digests (the N50F._pinned_original_shas
+    domain) — a wrong-domain compare that could never pass on any stream. The
+    recovery keeps the documented #779 re-derivation and confirms:
+      1. round-1 prompt MEMBERSHIP: N10._sha_prompts(round1) equals the frozen
+         n1m sampling-manifest ``used_shas.round1`` (ROUND1_PROMPT_SHA) — the
+         real stream-drift guard;
+      2. split identity: the §10 INDEX pins equal the shas recomputed from the
+         committed #779 fair_comparison.json split params (passes by
+         construction unless the split recipe drifts);
+      3. composition: the derived val/test prompt digests equal the frozen
+         TEST_1000_PROMPT_SHA / VAL_400_PROMPT_SHA.
+    """
     round1 = stream_round1(max_scan=args.max_scan, stream_iter=stream_iter)
+    if not args.smoke:
+        got_r1 = N50._sha_ids_or_prompts(round1)
+        assert got_r1 == ROUND1_PROMPT_SHA, (
+            f"round-1 prompt-membership drift: {got_r1} != frozen {ROUND1_PROMPT_SHA} "
+            "(#779 n1m sampling_manifest used_shas.round1) — the LMSYS stream changed; "
+            "the pinned test-1000 cannot be recovered from a re-stream (plan §10)"
+        )
+        pinned = N50F._pinned_original_shas(N50F.DEFAULT_ORIG_DIR)
+        assert pinned["val_sha256"] == VAL_400_SHA and pinned["test_sha256"] == TEST_1000_SHA, (
+            f"plan §10 index-sha pins drifted from the #779 artifact: {pinned} != "
+            f"val {VAL_400_SHA} / test {TEST_1000_SHA}"
+        )
     valtest = GC._valtest_prompts_from_round1(round1, check_ctx0=not args.smoke)
     val, test = valtest[:400], valtest[400:]
     assert len(test) == 1000, len(test)
     if not args.smoke:
         got_val, got_test = N50._sha_ids_or_prompts(val), N50._sha_ids_or_prompts(test)
-        assert got_test == TEST_1000_SHA, (
-            f"test-1000 sha drift: {got_test} != pinned {TEST_1000_SHA} (plan §10)"
+        assert got_test == TEST_1000_PROMPT_SHA, (
+            f"pinned test-1000 prompt-digest drift: {got_test} != {TEST_1000_PROMPT_SHA}"
         )
-        assert got_val == VAL_400_SHA, f"val-400 sha drift: {got_val} != pinned {VAL_400_SHA}"
+        assert got_val == VAL_400_PROMPT_SHA, (
+            f"pinned val-400 prompt-digest drift: {got_val} != {VAL_400_PROMPT_SHA}"
+        )
+        print(
+            "[contexts] pinned-membership confirmed: round1 prompt sha + §10 index pins "
+            "+ val/test prompt digests all match (r8 three-domain check)",
+            flush=True,
+        )
     return [
         {
             "context_id": f"lmsys_test_{i:04d}",
@@ -156,6 +210,15 @@ def main(argv: list[str] | None = None) -> int:
             "n_rows": len(rows),
             "context_order_sha": order_sha,
             "test_1000_sha_pin": None if args.smoke else TEST_1000_SHA,
+            "split_pins": None
+            if args.smoke
+            else {
+                "val_400_index_sha": VAL_400_SHA,
+                "test_1000_index_sha": TEST_1000_SHA,
+                "round1_prompt_sha": ROUND1_PROMPT_SHA,
+                "val_400_prompt_sha": VAL_400_PROMPT_SHA,
+                "test_1000_prompt_sha": TEST_1000_PROMPT_SHA,
+            },
             "traits": list(C.TRAITS),
             "smoke": bool(args.smoke),
             "repro": C76.repro_meta(),
