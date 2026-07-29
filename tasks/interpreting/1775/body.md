@@ -168,7 +168,7 @@ What is plotted: per-fold held-out R² of every scheduled-PRESS linear fit (48-P
 
 The arm's input — the leave-own-row-out mean of the prefix's other context states — is near-constant within a prefix, so PRESS λ selection over train rows explodes on held-out prefixes. The originally recorded "+8.1–8.3 gains" were recovery from a broken baseline, not nonlinearity.
 
-The refit gives the corrected read: the best linear map in the λ grid still sits below zero per-row (−0.280 in 48-PC space / −0.244 ambient, every fold) while kernels and MLPs reach ≈ 0.11; the recomputed gains are +0.394 (48-PC) and +0.328 (ambient), cluster CIs in the previous table. The per-row signal is real but entirely nonlinear, saturating near the between-prefix ceiling; averaged-grain reads stay healthy (48-PC ridge 0.877). Scope: the arm reads sibling context states, so it measures transport at a coarser grain than pure prefix-only transport.
+The corrected read: the best in-grid linear map sits below zero per-row (−0.280 in 48-PC space / −0.244 ambient, every fold) while kernels and MLPs reach ≈ 0.11; recomputed gains are +0.394 (48-PC) and +0.328 (ambient), cluster CIs in the table above. The per-row signal is real but entirely nonlinear, saturating near the between-prefix ceiling; averaged-grain reads stay healthy (48-PC ridge 0.877). Scope: the arm reads sibling context states, a coarser transport grain than pure prefix-only.
 
 ### Residual dependence is detectable almost everywhere the instrument can see — 23 of 26 informative tests reject
 
