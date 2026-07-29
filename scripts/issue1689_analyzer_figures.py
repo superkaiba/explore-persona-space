@@ -28,8 +28,14 @@ import csv
 import math
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+# CRITICAL: load_dotenv() BEFORE importing matplotlib / numpy — shared-VM
+# thread caps (#847) freeze at first BLAS import.
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
 
 from explore_persona_space.analysis.paper_plots import (
     paper_palette,

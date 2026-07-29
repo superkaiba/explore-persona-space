@@ -14,9 +14,17 @@ Usage: uv run python scripts/issue1689_procrustes_figure.py
 from __future__ import annotations
 
 import json
+import os
+import sys
 from pathlib import Path
 
-import matplotlib.pyplot as plt
+# CRITICAL: load_dotenv() BEFORE importing matplotlib / numpy — shared-VM
+# thread caps (#847) freeze at first BLAS import.
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
 
 from explore_persona_space.analysis.paper_plots import (
     paper_palette,
@@ -129,4 +137,11 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    rc = main()
+    # C-extension interpreter-shutdown-race workaround; see the corresponding
+    # block in scripts/issue1689_gen_corpus.py for the full rationale +
+    # gotchas.md § PyGILState_Release SIGABRT pointer. All outputs are
+    # flushed/closed before this point; atexit is safely skipped.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(rc if isinstance(rc, int) else 0)
