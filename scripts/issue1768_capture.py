@@ -532,12 +532,29 @@ def _build_corpus_inputs(cfg: Cfg) -> dict:
 
     tok = AutoTokenizer.from_pretrained(cfg.model_override or X.BASE_MODEL)
     train = X.sample_train_prompts(pool, meta, tok, valtest, n_train=n_train, seed=X.SAMPLE_SEED)
-    rows = (
-        train["rows"]
-        + [{"prompt": p, "corpus": "valtest", "sha": X.prompt_sha(p)} for p in val_prompts]
-        + [{"prompt": p, "corpus": "valtest", "sha": X.prompt_sha(p)} for p in test_prompts]
+    vt_rows = [{"prompt": p, "corpus": "valtest", "sha": X.prompt_sha(p)} for p in val_prompts] + [
+        {"prompt": p, "corpus": "valtest", "sha": X.prompt_sha(p)} for p in test_prompts
+    ]
+    rows = train["rows"] + vt_rows
+    # #1768 crash-fix r4 postcondition: the sampler's taken-set dedup guarantees
+    # train shas are UNIQUE and DISJOINT from the pinned val/test shas — a
+    # violation here is a genuine logic bug. Duplicate shas WITHIN the pinned
+    # val/test set are a FROZEN property of the #779 split (round1 phase 1 never
+    # exact-deduped; measured 1,400 -> 1,318 unique) — recorded, never "fixed"
+    # (dropping pinned rows would break the exact counts + pinned recovery).
+    train_shas = {r["sha"] for r in train["rows"]}
+    vt_shas = {r["sha"] for r in vt_rows}
+    n_vt_dup = len(vt_rows) - len(vt_shas)
+    logger.info(
+        "[p0] dedup: dropped %d duplicate-sha rows during train sampling, topped up to %d "
+        "(valtest internal duplicate shas: %d)",
+        train["n_skipped_dup"],
+        n_train,
+        n_vt_dup,
     )
-    assert len({r["sha"] for r in rows}) == len(rows), "duplicate prompt shas in sample"
+    assert len(train_shas) == n_train == len(train["rows"]), "train sha dedup failed (logic bug)"
+    assert not (train_shas & vt_shas), "train/valtest sha overlap after dedup (logic bug)"
+    assert len(rows) == n_train + n_val + n_test, (len(rows), (n_train, n_val, n_test))
     sample = {
         "rows": rows,
         "n_train": n_train,
@@ -545,6 +562,8 @@ def _build_corpus_inputs(cfg: Cfg) -> dict:
         "n_test": n_test,
         "n_skipped_over_cap": train["n_skipped_over_cap"],
         "n_skipped_valtest": train["n_skipped_valtest"],
+        "n_skipped_dup": train["n_skipped_dup"],
+        "n_valtest_dup_shas": n_vt_dup,
         "proportions": train["proportions"],
         "token_cap": train["token_cap"],
         "sample_seed": X.SAMPLE_SEED,

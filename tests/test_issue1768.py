@@ -169,6 +169,53 @@ def test_sample_train_prompts_stratified_cap_and_valtest_skip():
     assert not prompts & set(valtest)  # exact-text disjoint from val/test
 
 
+def test_sample_train_prompts_dedups_duplicate_shas_and_tops_up():
+    """#1768 crash-fix r4 (production crash: 'duplicate prompt shas in sample').
+
+    The n1M pool holds exact-duplicate prompt texts (within AND across corpora
+    — the #779 near-dupe screen was vs the eval targets, never a within-corpus
+    exact-dedup); the seeded draw must skip already-taken shas, top up from the
+    continuing permutation order, and never collide with the pinned val/test
+    shas. Fails pre-fix: the drawn rows contained duplicate shas.
+    """
+    pool = []
+    for i in range(15):
+        pool.append({"prompt": f"lm text {i}", "corpus": "lmsys"})
+    for i in range(15):  # exact duplicate rows inside the corpus (the crash shape)
+        pool.append({"prompt": f"lm text {i}", "corpus": "lmsys"})
+    for i in range(12):
+        pool.append({"prompt": f"wc text {i}", "corpus": "wildchat"})
+    pool.append({"prompt": "lm text 0", "corpus": "wildchat"})  # cross-corpus dup
+    pool.append({"prompt": "vt text 0", "corpus": "wildchat"})  # pinned val/test text
+    meta = {"n_lmsys": 100, "n_wildchat": 50}
+    valtest = ["vt text 0", "vt text 1"]
+    out = X.sample_train_prompts(
+        pool, meta, _FakeTok(), valtest, n_train=21, seed=42, token_cap=100
+    )
+    rows = out["rows"]
+    assert len(rows) == 21
+    shas = [r["sha"] for r in rows]
+    assert len(set(shas)) == 21  # pre-fix: duplicate shas survive the draw
+    assert out["n_skipped_dup"] >= 1  # the dedup branch actually fired
+    # pinned val/test rows keep priority — train never takes their shas
+    assert not set(shas) & {X.prompt_sha(v) for v in valtest}
+    # deterministic under the seed across two independent runs
+    out2 = X.sample_train_prompts(
+        pool, meta, _FakeTok(), valtest, n_train=21, seed=42, token_cap=100
+    )
+    assert out2["rows"] == rows
+
+
+def test_sample_train_prompts_fails_loud_when_unique_pool_exhausted():
+    """Dedup must not mask pool exhaustion: fewer UNIQUE texts than the quota
+    still fails loud at the per-corpus kept==quota assert (genuine data bug)."""
+    pool = [{"prompt": "same lm text", "corpus": "lmsys"} for _ in range(10)]
+    pool += [{"prompt": f"wc text {i}", "corpus": "wildchat"} for i in range(10)]
+    meta = {"n_lmsys": 10, "n_wildchat": 10}
+    with pytest.raises(AssertionError, match="only 1/5"):
+        X.sample_train_prompts(pool, meta, _FakeTok(), [], n_train=10, seed=1, token_cap=100)
+
+
 # ── loader sha-alignment (synthetic stores, permuted + dropped rows) ─────────
 
 
