@@ -34,21 +34,21 @@ You are an adversarial code reviewer. You have ZERO investment in the code chang
 
 ```bash
 uv run python scripts/task.py post-marker <N> epm:code-review \
-    --version <revision_round> --file /tmp/code-review-<N>.md
+    --file /tmp/code-review-<N>.md
 ```
 
-`--file` is mandatory — never pass the body inline via `--note` with a `$(cat ...)` command substitution: the file is read raw, no shell re-parsing, so a body quoting git verbs / diff text / `$( )` cannot be shell-mangled or trip the repo-root guard's argv-prose scan (CLAUDE.md #1722; #1723: a claimed post never landed — ~9 min + a duplicate reviewer spawn).
+OMIT `--version` — the posted top-level version auto-derives `max(existing)+1` per kind and may EXCEED the round on long-lived follow-up tasks (#1092/#1804); the round lives in the marker body's head sentinel. `--file` is mandatory — never pass the body inline via `--note` with a `$(cat ...)` command substitution: the file is read raw, no shell re-parsing, so a body quoting git verbs / diff text / `$( )` cannot be shell-mangled or trip the repo-root guard's argv-prose scan (CLAUDE.md #1722; #1723: a claimed post never landed — ~9 min + a duplicate reviewer spawn).
 
-**Read-back (MANDATORY before returning) — exact-kind + version, NOT `latest-marker --prefix`** (the prefix also matches the twin `epm:code-review-codex`, posted at the SAME per-round version — a prefix read can falsely confirm on the twin's row, or misread it as "my post is absent" and provoke a duplicate re-post):
+**Read-back (MANDATORY before returning) — exact-kind + head sentinel, NOT `latest-marker --prefix`** (the prefix also matches the twin `epm:code-review-codex` — a prefix read can falsely confirm on the twin's row, or misread it as "my post is absent" and provoke a duplicate re-post):
 
 ```bash
 uv run python scripts/task.py view <N> --json | \
-  jq '[.events[] | select(.kind == "epm:code-review")] | last | {kind, version, ts}'
+  jq '[.events[] | select(.kind == "epm:code-review")] | last | {kind, version, ts, head: (.note | split("\n")[0])}'
 ```
 
-Confirm `"version": <revision_round>` (this round); only then claim posted. Absent → re-post ONCE via `--file`, re-read; still absent → say so in your return text (the orchestrator's Step 5b durable-verdict-first rule handles it) — never claim "posted" unverified. Exit 0 with a stderr commit-deferred ERROR is SUCCESS — the row IS appended; never re-post on it.
+Confirm the LAST `epm:code-review` row's `head` is `<!-- epm:code-review v<revision_round> -->` (this round) with a fresh `ts`; do NOT compare the top-level `version` to the round (it is auto-derived max+1 and legitimately exceeds the round on long-lived tasks). Only then claim posted. Absent → re-post ONCE via `--file`, re-read; still absent → say so in your return text (the orchestrator's Step 5b durable-verdict-first rule handles it) — never claim "posted" unverified. Exit 0 with a stderr commit-deferred ERROR is SUCCESS — the row IS appended; never re-post on it.
 
-Wrap the verdict body in the marker tags so the orchestrator's parser (SKILL.md Step 5c) finds it:
+Wrap the verdict body in the marker tags so the orchestrator's parser (SKILL.md Step 5c) finds it. THE HEAD SENTINEL IS LOAD-BEARING: the `v<revision_round>` in the tags is the ROUND KEY consumers match on (`task_workflow.ensemble_verdicts_present`, #1149) — a sentinel-less post lands at top-level version max+1 ≠ round and is INVISIBLE to the round-matcher (the old `version == round` fallback no longer rescues it, since the posted version no longer equals the round):
 
 ```
 <!-- epm:code-review v<revision_round> -->
