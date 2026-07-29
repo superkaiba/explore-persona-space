@@ -243,6 +243,31 @@ def fig_baselines(mb: dict) -> None:
     plt.close(fig)
 
 
+def fig_perdirection(pd: dict) -> None:
+    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.4), sharey=True)
+    ranks = np.arange(1, pd["topk"] + 1)
+    for ax, arm in zip(axes, ["prefix", "context"]):
+        d = pd["arms"][arm]["per_direction"]
+        c = ARM_COLORS[arm]
+        ax.plot(ranks, d["ridge_shared"], color=c, lw=1.4, label="ridge (shared penalty)")
+        ax.plot(ranks, d["mlp_w8192"], color=c, lw=1.4, ls="--", label="MLP (width 8,192)")
+        ax.plot(
+            ranks,
+            d["ridge_tuned"],
+            color="#555555",
+            lw=1.0,
+            ls=":",
+            label="ridge (per-direction penalty)",
+        )
+        ax.set_xscale("log")
+        ax.set_title(ARM_LABELS[arm], loc="left")
+        ax.set_xlabel("answer-PCA direction rank")
+        ax.legend()
+    axes[0].set_ylabel("per-direction held-out R² (layer 19)")
+    savefig_paper(fig, "issue_1738/perdirection_r2_L19", dir=FIGDIR)
+    plt.close(fig)
+
+
 def main() -> None:
     set_paper_style("blog")
     pal = paper_palette_blog(6)
@@ -254,6 +279,7 @@ def main() -> None:
     fig_scatter()
     fig_forest(_load("taxonomy.json"))
     fig_baselines(_load("mapping_baselines.json"))
+    fig_perdirection(_load("perdirection/pdshrink_summary.json"))
     print("done")
 
 
