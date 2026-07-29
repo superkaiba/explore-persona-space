@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1839,
+  "highest_id": 1840,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6504,6 +6504,13 @@
       "path": "tasks/archived/184",
       "status": "archived",
       "title": "EM collapses persona discrimination while benign SFT preserves it (MODERATE confidence)"
+    },
+    "1840": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1840",
+      "status": "proposed",
+      "title": "workflow-fix: persistent-wedge bound on the poller zombie-override veto"
     },
     "185": {
       "has_clean_result": false,
