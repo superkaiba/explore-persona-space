@@ -6207,8 +6207,8 @@
     "1801": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1801",
-      "status": "planning",
+      "path": "tasks/approved/1801",
+      "status": "approved",
       "title": "daily-fix: llm-judging \u2014 rule-23 point, tally split, rubric "
     },
     "1802": {
