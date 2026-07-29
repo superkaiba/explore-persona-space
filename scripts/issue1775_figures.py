@@ -355,7 +355,7 @@ def exploratory(linear, nonlinear, detection, bilinear, fold_check, out: Path, r
             ax.set_xlabel("r")
             ax.set_ylabel("held-out R2")
             fig.tight_layout()
-            fig.savefig(out / f"expl_rcurve_{scheme}.png", dpi=160)
+            savefig_paper(fig, f"expl_rcurve_{scheme}", dir=out)
             plt.close(fig)
     if detection:
         fam = detection.get("holm_adjusted_p", {})
@@ -369,7 +369,7 @@ def exploratory(linear, nonlinear, detection, bilinear, fold_check, out: Path, r
             ax.set_ylabel("Holm-adjusted p")
             ax.set_title("residual dependence (registered 30-test family)")
             fig.tight_layout()
-            fig.savefig(out / "expl_detection_holm.png", dpi=160)
+            savefig_paper(fig, "expl_detection_holm", dir=out)
             plt.close(fig)
     if fold_check:
         hist = (fold_check.get("battery") or {}).get("per_target_max_est_jaccard_hist")
@@ -383,7 +383,7 @@ def exploratory(linear, nonlinear, detection, bilinear, fold_check, out: Path, r
             ax.set_ylabel("targets (log)")
             ax.set_title("n50k train-vs-target contamination")
             fig.tight_layout()
-            fig.savefig(out / "expl_n50k_contamination.png", dpi=160)
+            savefig_paper(fig, "expl_n50k_contamination", dir=out)
             plt.close(fig)
 
 
