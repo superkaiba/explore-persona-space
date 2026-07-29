@@ -84,8 +84,10 @@ B_BOOTSTRAP = 2000
 RNG_SEED = 42
 
 
-def load_graded_scores() -> dict[str, Any]:
-    with open(GRADED_SCORES) as f:
+def load_graded_scores(path: Path = GRADED_SCORES) -> dict[str, Any]:
+    """Per-item rows from a judge graded_scores.json (default: the parent
+    run's committed scores; fu1 passes its own ``--judge-scores`` path)."""
+    with open(path) as f:
         d = json.load(f)
     items = list(d["per_item"].values())
     return items
@@ -137,11 +139,14 @@ def build_score_arrays(items: list[dict], alpha: float) -> dict[str, dict[str, n
 
 
 def build_cjk_flags(
-    scores: dict[str, dict[str, np.ndarray]], alpha: float
+    scores: dict[str, dict[str, np.ndarray]],
+    alpha: float,
+    raw_dir: Path = RAW_COMPLETIONS_DIR,
 ) -> dict[str, dict[str, np.ndarray]]:
     """
     Load raw completion files for steered arms at the requested alpha and
-    compute CJK flags.
+    compute CJK flags. ``raw_dir`` is the local raw-completions root
+    (default: the parent run's; fu1 passes ``--raw-completions-dir``).
 
     Returns flags[trait][arm] = bool ndarray shape (N_QUESTIONS, N_DRAWS).
     Neither arm: all False (we have no per-alpha raw completions for neither,
@@ -156,7 +161,7 @@ def build_cjk_flags(
 
         for arm in STEERED_ARMS:
             arm_flags = np.zeros((N_QUESTIONS, N_DRAWS), dtype=bool)
-            trait_dir = RAW_COMPLETIONS_DIR / trait
+            trait_dir = raw_dir / trait
             for q in range(N_QUESTIONS):
                 fname = f"{arm}_a{alpha:g}_q{q:02d}_seed42.json"
                 fpath = trait_dir / fname
@@ -355,17 +360,31 @@ def main() -> None:
         default=2.0,
         help="steered-arm alpha dose to analyze (default 2.0 — the parent run's dose)",
     )
+    ap.add_argument(
+        "--judge-scores",
+        type=Path,
+        default=GRADED_SCORES,
+        help="graded_scores.json to read (default: the parent run's committed scores; "
+        "fu1: eval_results/issue_1769/judge_fu1/graded_scores.json)",
+    )
+    ap.add_argument(
+        "--raw-completions-dir",
+        type=Path,
+        default=RAW_COMPLETIONS_DIR,
+        help="local raw-completions root for CJK flags (default: the parent run's; "
+        "fu1: data/issue_1769/raw_completions_fu1)",
+    )
     args = ap.parse_args()
     alpha = args.alpha
     out_path = out_path_for(alpha)
     rng = np.random.default_rng(RNG_SEED)
 
     print("Loading graded scores...", flush=True)
-    items = load_graded_scores()
+    items = load_graded_scores(args.judge_scores)
     scores = build_score_arrays(items, alpha)
 
     print("Computing CJK flags from raw completions...", flush=True)
-    flags = build_cjk_flags(scores, alpha)
+    flags = build_cjk_flags(scores, alpha, args.raw_completions_dir)
 
     results = []
     for trait in TRAITS:

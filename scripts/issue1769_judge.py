@@ -52,6 +52,12 @@ logger = logging.getLogger("issue1769_judge")
 ISSUE = 1769
 HF_DATA_REPO = c779.HF_DATA_REPO
 HF_OUT_PREFIX = "issue1769_prefill_decode"
+# Parent-run default paths (flag defaults — a follow-up round like fu1 rebinds
+# ALL of them together with --hf-prefix; see assert_prefix_isolation).
+PARENT_OUT_ROOT = Path("eval_results/issue_1769/phase_g")
+PARENT_COMPLETIONS_ROOT = Path("data/issue_1769/raw_completions")
+PARENT_WORK_DIR = Path("data/issue_1769/judge_cache")
+PARENT_JUDGE_OUT = Path("eval_results/issue_1769/judge")
 N_JUDGE_DRAWS = 5  # llm-judging rule 4 (plan §6)
 JUDGE_MAX_TOKENS = 300  # reason-then-score budget (rule 23)
 BINARY_THRESHOLD = 50.0  # persona-vectors convention (companion rate)
@@ -111,9 +117,11 @@ def load_manifest(out_root: Path) -> dict:
     return manifest
 
 
-def stage_completions(manifest: dict, completions_root: Path) -> None:
+def stage_completions(manifest: dict, completions_root: Path, hf_prefix: str) -> None:
     """Ensure every manifested completion file is local; stage the whole
-    raw-completions prefix from HF when any is missing (off-pod J phase)."""
+    raw-completions prefix under ``hf_prefix`` from HF when any is missing
+    (off-pod J phase). ``hf_prefix`` is the run's HF artifact prefix (parent:
+    ``HF_OUT_PREFIX``; fu1: ``issue1769_prefill_decode/fu1_alpha_subgrid``)."""
     missing = [
         cid
         for cid, rec in manifest["cells"].items()
@@ -127,11 +135,11 @@ def stage_completions(manifest: dict, completions_root: Path) -> None:
     staged_root = completions_root.parent / "_hf_staged"
     hub.stage_hub_prefix(
         HF_DATA_REPO,
-        f"{HF_OUT_PREFIX}/raw_completions",
+        f"{hf_prefix}/raw_completions",
         staged_root,
         repo_type="dataset",
     )
-    src = staged_root / HF_OUT_PREFIX / "raw_completions"
+    src = staged_root / hf_prefix / "raw_completions"
     assert src.is_dir(), src
     completions_root.mkdir(parents=True, exist_ok=True)
     for trait_dir in src.iterdir():
@@ -251,15 +259,22 @@ def reduce_results(
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--out-root", type=Path, default=Path("eval_results/issue_1769/phase_g"))
+    ap.add_argument("--out-root", type=Path, default=PARENT_OUT_ROOT)
     ap.add_argument(
         "--completions-root",
         type=Path,
-        default=Path("data/issue_1769/raw_completions"),
+        default=PARENT_COMPLETIONS_ROOT,
         help="local raw-completion root ({trait}/{file}.json); staged from HF when missing",
     )
-    ap.add_argument("--work-dir", type=Path, default=Path("data/issue_1769/judge_cache"))
-    ap.add_argument("--judge-out", type=Path, default=Path("eval_results/issue_1769/judge"))
+    ap.add_argument("--work-dir", type=Path, default=PARENT_WORK_DIR)
+    ap.add_argument("--judge-out", type=Path, default=PARENT_JUDGE_OUT)
+    ap.add_argument(
+        "--hf-prefix",
+        default=HF_OUT_PREFIX,
+        help="HF data-repo artifact prefix: raw completions are staged from "
+        "{hf-prefix}/raw_completions and raw judge outputs upload to "
+        "{hf-prefix}/judge_raw (fu1: issue1769_prefill_decode/fu1_alpha_subgrid)",
+    )
     ap.add_argument("--n-draws", type=int, default=N_JUDGE_DRAWS)
     ap.add_argument("--max-tokens", type=int, default=JUDGE_MAX_TOKENS)
     ap.add_argument(
@@ -270,13 +285,44 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return ap.parse_args(argv)
 
 
+def assert_prefix_isolation(args: argparse.Namespace) -> None:
+    """Fail-loud pre-staging / pre-API-spend guard (concern
+    fu1-judge-phase-parent-prefix-residuals): a non-parent ``--hf-prefix``
+    (a follow-up round) MUST rebind every parent-default local path too,
+    or the run reads the parent's cells / clobbers the parent's outputs —
+    the parent ``--out-root`` manifest would judge parent cells, same-named
+    neither-arm completion files under the parent ``--completions-root``
+    would be read instead of the follow-up run's, raw judge outputs +
+    id_map under the parent ``--work-dir`` would overwrite the parent's,
+    and graded_scores.json under the parent ``--judge-out`` would overwrite
+    the parent's committed scores."""
+    if args.hf_prefix == HF_OUT_PREFIX:
+        return
+    residuals = [
+        flag
+        for flag, attr, parent in (
+            ("--out-root", "out_root", PARENT_OUT_ROOT),
+            ("--completions-root", "completions_root", PARENT_COMPLETIONS_ROOT),
+            ("--work-dir", "work_dir", PARENT_WORK_DIR),
+            ("--judge-out", "judge_out", PARENT_JUDGE_OUT),
+        )
+        if getattr(args, attr) == parent
+    ]
+    assert not residuals, (
+        f"--hf-prefix={args.hf_prefix!r} rebinds the HF prefix but these flags still point at "
+        f"the parent run's paths: {residuals} — pass an explicit non-parent value for every "
+        "one (e.g. phase_g_fu1 / raw_completions_fu1 / judge_cache_fu1 / judge_fu1)"
+    )
+
+
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
+    assert_prefix_isolation(args)
     from explore_persona_space.eval import DEFAULT_JUDGE_MODEL
     from explore_persona_space.eval.graded_judge import judge_graded
 
     manifest = load_manifest(args.out_root)
-    stage_completions(manifest, args.completions_root)
+    stage_completions(manifest, args.completions_root, args.hf_prefix)
     by_trait, id_map, cell_meta = build_items(manifest, args.completions_root)
     args.work_dir.mkdir(parents=True, exist_ok=True)
     id_map_path = args.work_dir / "id_map.json"
@@ -345,7 +391,7 @@ def main(argv: list[str] | None = None) -> None:
         raw_dir,
         repo_id=HF_DATA_REPO,
         repo_type="dataset",
-        path_in_repo=f"{HF_OUT_PREFIX}/judge_raw",
+        path_in_repo=f"{args.hf_prefix}/judge_raw",
     )
     if not url:
         raise RuntimeError(f"judge_raw upload returned no path for {raw_dir}")
