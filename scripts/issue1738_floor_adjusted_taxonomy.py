@@ -30,6 +30,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()  # #847: shared-VM thread caps bind BEFORE numpy import
+
 import numpy as np  # noqa: E402
 
 import issue1482_analysis as A82  # noqa: E402

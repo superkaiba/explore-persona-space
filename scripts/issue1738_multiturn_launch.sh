@@ -19,6 +19,9 @@
 #   4. K-RESAMPLE (Phase 4a, one 8-GPU instance):
 #        bash scripts/issue1738_multiturn_launch.sh --kresample --seeds 43,44,45,46 \
 #          --subsample-file eval_results/issue_1738/kresample/kresample_subsample.json
+#   5. BARE-QUERY CAPTURE (follow-up `bare-query` B1, plan §4.1 — forward-only,
+#      uploads to issue1738_multiturn/bare_query, never the parent prefix):
+#        bash scripts/issue1738_multiturn_launch.sh --bare-query --num-shards 8 --shard-offset 0
 #
 # Pod-side: NO VM thread-cap prefix (dedicated GPUs keep full width).
 set -euo pipefail
@@ -42,6 +45,8 @@ PILOT_CAP=0
 DRY_RUN=0
 BUILD_MANIFEST=0
 KRESAMPLE=0
+BARE_QUERY=0
+BARE_UPLOAD_PREFIX="issue1738_multiturn/bare_query"
 SEEDS="43,44,45,46"
 SUBSAMPLE_FILE=""
 EXTRA_ARGS=()
@@ -55,11 +60,18 @@ while [ $# -gt 0 ]; do
     --dry-run) DRY_RUN=1; shift ;;
     --build-manifest) BUILD_MANIFEST=1; shift ;;
     --kresample) KRESAMPLE=1; shift ;;
+    --bare-query) BARE_QUERY=1; shift ;;
+    --bare-upload-prefix) BARE_UPLOAD_PREFIX="$2"; shift 2 ;;
     --seeds) SEEDS="$2"; shift 2 ;;
     --subsample-file) SUBSAMPLE_FILE="$2"; shift 2 ;;
     *) EXTRA_ARGS+=("$1"); shift ;;
   esac
 done
+
+if [ "$BARE_QUERY" -eq 1 ] && [ "$KRESAMPLE" -eq 1 ]; then
+  echo "FATAL: --bare-query and --kresample are mutually exclusive" >&2
+  exit 1
+fi
 
 # ── mode 1: build + upload the sampling manifest (foreground, CPU), then exit ─────
 if [ "$BUILD_MANIFEST" -eq 1 ]; then
@@ -100,6 +112,7 @@ fi
 
 MODE="capture"
 [ "$KRESAMPLE" -eq 1 ] && MODE="kresample"
+[ "$BARE_QUERY" -eq 1 ] && MODE="bare"
 echo "== issue1738 $MODE fan-out: pod owns global shards $SHARD_OFFSET..$LAST of $NUM_SHARDS (G=$GPUS_PER_POD, shard-size=$SHARD_SIZE, pilot-cap=$PILOT_CAP) =="
 
 for g in $(seq 0 $((GPUS_PER_POD - 1))); do
@@ -109,6 +122,11 @@ for g in $(seq 0 $((GPUS_PER_POD - 1))); do
   cmd=(uv run python "$DRIVER" --num-shards "$NUM_SHARDS" --shard-index "$gidx" --device cuda --shard-size "$SHARD_SIZE" --manifest-from-hf)
   if [ "$KRESAMPLE" -eq 1 ]; then
     cmd+=(--kresample --seeds "$SEEDS" --kresample-subsample "$SUBSAMPLE_FILE")
+  fi
+  if [ "$BARE_QUERY" -eq 1 ]; then
+    # plan §4.1.4: bare uploads ride their own prefix; the parent capture
+    # prefix is never written by this mode.
+    cmd+=(--bare-query --upload-prefix "$BARE_UPLOAD_PREFIX")
   fi
   if [ "$PILOT_CAP" -gt 0 ] 2>/dev/null; then
     cmd+=(--pilot-cap "$PILOT_CAP")
