@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1807,
+  "highest_id": 1808,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6252,6 +6252,13 @@
       "path": "tasks/proposed/1807",
       "status": "proposed",
       "title": "daily-fix: Step 10d/9c \u2014 re-sync before SHA-bound gates"
+    },
+    "1808": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1808",
+      "status": "proposed",
+      "title": "daily-fix: driver sha-scan exempts item's own fingerprint"
     },
     "181": {
       "has_clean_result": false,
