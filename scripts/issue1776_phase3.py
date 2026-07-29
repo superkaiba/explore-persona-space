@@ -491,10 +491,17 @@ def run(args) -> int:
 
     manifest = build_manifest(args, contexts, bank)
     check_manifest(out, manifest)
-    torch.save({"bank": bank, "provenance": dir_prov}, out / "directions.pt")
-    torch.save({"preds": preds, "meta": pred_meta}, out / "predictions.pt")
+    # Existence-gated: under --strata-num-shards>1 the concurrent shards would
+    # otherwise race identical NON-atomic torch.save writes (the dispatcher's
+    # single-process --baseline-only pass writes these first).
+    if not (out / "directions.pt").exists():
+        torch.save({"bank": bank, "provenance": dir_prov}, out / "directions.pt")
+    if not (out / "predictions.pt").exists():
+        torch.save({"preds": preds, "meta": pred_meta}, out / "predictions.pt")
 
     # Baseline FIRST (every steered cell's Δv̄ + the judge contrast need it).
+    # Under sharding the dispatcher runs a --baseline-only pass BEFORE the
+    # fan-out; the .done resume file then skips it inside every shard.
     run_stratum(
         model,
         tok,
@@ -508,6 +515,9 @@ def run(args) -> int:
         pred=None,
         base_means=None,
     )
+    if args.baseline_only:
+        print("[phase3] baseline-only pass complete", flush=True)
+        return 0
     base_means = load_base_means(dirs)
 
     strata: list[tuple[str, float, str]] = [
@@ -517,6 +527,19 @@ def run(args) -> int:
         strata += [
             (name, float(a), "all_positions") for name in bank for a in args.all_positions_alphas
         ]
+    if args.strata_num_shards > 1:
+        assert 0 <= args.strata_shard < args.strata_num_shards, (
+            args.strata_shard,
+            args.strata_num_shards,
+        )
+        strata = [
+            s for i, s in enumerate(strata) if i % args.strata_num_shards == args.strata_shard
+        ]
+        print(
+            f"[phase3] shard {args.strata_shard}/{args.strata_num_shards}: {len(strata)} strata "
+            f"{[stratum_key(n, a, m) for n, a, m in strata]}",
+            flush=True,
+        )
     for name, a, mode in strata:
         ctxs = contexts if mode == "prefill" else contexts[: args.all_positions_subset]
         run_stratum(
@@ -533,6 +556,34 @@ def run(args) -> int:
             base_means=base_means,
         )
 
+    if args.strata_num_shards > 1:
+        # Partial cells under this shard — the dispatcher runs --finalize-only
+        # once every shard has exited 0.
+        print(f"[phase3] shard {args.strata_shard} complete (finalize deferred)", flush=True)
+        return 0
+    return finalize(args, dirs, bank, manifest)
+
+
+def finalize_only(args) -> int:
+    """Aggregate an already-sharded out_root (no model load): bank names +
+    manifest come from the run's own persisted directions.pt / manifest.json."""
+    out = args.out_root
+    bank = torch.load(out / "directions.pt", map_location="cpu", weights_only=False)["bank"]
+    manifest = json.loads((out / "manifest.json").read_text())
+    n_strata = len(bank) * len(args.alphas)
+    done = list((out / "state").glob("*.done"))
+    n_expected = 1 + n_strata  # baseline + prefill strata (all_positions extra tolerated)
+    assert len(done) >= n_expected, (
+        f"finalize-only: {len(done)} .done strata < expected {n_expected} — shards incomplete"
+    )
+    dirs = {
+        "raw": out / "raw_completions" / "steered",
+        "summaries": out / "summaries",
+        "cells": out / "cells",
+        "state": out / "state",
+        "eval": args.eval_out,
+    }
+    dirs["eval"].mkdir(parents=True, exist_ok=True)
     return finalize(args, dirs, bank, manifest)
 
 
@@ -763,6 +814,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--limit-contexts", type=int, default=0)
     ap.add_argument("--all-positions-subset", type=int, default=0, help="0 = off (exploratory)")
     ap.add_argument("--all-positions-alphas", default="4")
+    ap.add_argument("--baseline-only", action="store_true", help="run baseline stratum then exit")
+    ap.add_argument("--strata-shard", type=int, default=0, help="steered-strata shard index")
+    ap.add_argument("--strata-num-shards", type=int, default=1, help="per-GPU strata fan-out")
+    ap.add_argument("--finalize-only", action="store_true", help="aggregate a sharded out_root")
     args = ap.parse_args(argv)
     args.alphas = [float(x) for x in str(args.alphas).split(",") if x]
     args.all_positions_alphas = [float(x) for x in str(args.all_positions_alphas).split(",") if x]
@@ -771,6 +826,8 @@ def main(argv: list[str] | None = None) -> int:
         args.eval_out = args.out_root / "eval_results" / "issue_1776" / "phase3"
     if args.mode == "smoke":
         return smoke(args)
+    if args.finalize_only:
+        return finalize_only(args)
     for req in ("contexts", "rb_dir", "mprime_weights", "jlast"):
         assert getattr(args, req) is not None, f"--{req.replace('_', '-')} is required for run"
     return run(args)

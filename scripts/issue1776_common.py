@@ -159,8 +159,10 @@ def resolve_data_repo_pin(pin_file: Path = PIN_FILE, *, refresh: bool = False) -
 
 
 def atomic_write_json(path: Path, obj: dict) -> None:
-    """Atomic JSON write (tmp + os.replace)."""
+    """Atomic JSON write (tmp + os.replace); tmp is PER-PROCESS unique so
+    concurrent shard writers of identical content cannot truncate each other
+    mid-write (the phase-3 multi-shard manifest race)."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp = path.with_suffix(path.suffix + f".tmp.{os.getpid()}")
     tmp.write_text(json.dumps(obj, indent=2))
     os.replace(tmp, path)
