@@ -5,6 +5,7 @@ tags:
 - wf-fix
 - wf-fix-fp:cb0051488fb6
 - daily-auto-filed
+- trigger-dense
 created_at: '2026-07-29T07:10:14Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-28 problem sweep (route 2): Refusal storms cost ~3h
