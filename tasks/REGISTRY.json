@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1782,
+  "highest_id": 1783,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6070,6 +6070,13 @@
       "path": "tasks/proposed/1782",
       "status": "proposed",
       "title": "workflow-fix: direction-agnostic cross-phase reads[] in off_pod_phases (pod reads VM outputs)"
+    },
+    "1783": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1783",
+      "status": "proposed",
+      "title": "workflow-fix: pre_reg audit misses #1092 bare registered-noun escape set"
     },
     "18": {
       "has_clean_result": false,
