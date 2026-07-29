@@ -350,8 +350,9 @@ Run the structural verifier against the plan version just persisted:
   invocation), and
   `N/A — no off-pod phase` (check 39 — the off-pod / vm-side vocabulary is
   incidental, not a real off-pod phase of this plan; a plan with a genuine
-  off-pod phase instead declares the fenced `off_pod_phases:` block —
-  planner-section-reference.md § 9), and
+  cross-phase read (an off-pod phase, or a dispatched-lane phase consuming
+  VM-produced inputs, #1773) instead declares the fenced
+  `off_pod_phases:` block — planner-section-reference.md § 9), and
   `N/A — no regression anchors` (check 41 — the anchor/gate vocabulary is
   incidental or quotes a sibling/incident, not this plan's own anchor claim;
   a plan whose anchor is genuinely unexecuted instead names the exact pytest
