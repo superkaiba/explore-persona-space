@@ -235,7 +235,9 @@ def _validate_custom_ids(items: list[JudgeItem]) -> None:
     wave). batch_judge.make_custom_id is the sanctioned sanitizer.
     """
     bad = [
-        cid for cid, _q, _c, _u in items if not isinstance(cid, str) or not _CUSTOM_ID_RE.match(cid)
+        cid
+        for cid, _q, _c, _u in items
+        if not isinstance(cid, str) or not _CUSTOM_ID_RE.fullmatch(cid)
     ]
     if bad:
         shown = ", ".join(repr(b) for b in bad[:5])

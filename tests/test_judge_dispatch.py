@@ -1472,3 +1472,11 @@ def test_custom_id_grammar_matches_batch_judge():
     from explore_persona_space.eval import judge_dispatch
 
     assert judge_dispatch._CUSTOM_ID_RE.pattern == batch_judge._CUSTOM_ID_RE.pattern
+
+
+def test_trailing_newline_custom_id_raises():
+    """Round-2 regression: Python `$` matches before a trailing newline, so
+    `.match()` accepted `"ctx_k00\n"` — the API would 400. `.fullmatch()` rejects it."""
+    items = [("ctx_k00\n", "q", "c", "u")]
+    with pytest.raises(ValueError, match=r"ctx_k00\\n"):
+        dispatch(items, dry_run=True)
