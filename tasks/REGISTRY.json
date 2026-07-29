@@ -5354,7 +5354,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1689",
       "status": "interpreting",
-      "title": "Controlled 21-condition speaker x framing lattice for the context->answer map, characterized by the full mapping-similarity tier ladder"
+      "title": "Changing surface framing costs the context-to-answer map far more than changing speaker identity, and changing both costs no more than framing alone (LOW confidence)"
     },
     "169": {
       "has_clean_result": false,
