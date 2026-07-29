@@ -11989,7 +11989,11 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 65,540 B post-#1081 r2 (D3 crash-fix-relaunch addendum:
     # disposition-conditional resume-glob confirm), 65,500 — measured
     # 62,672 B)
-    "experimenter.md": 75_400,
+    # measured 76,828 B post-#1800 (Before Running item 4b output-persist
+    # pre-launch gate — the #1739 dispatch-time backstop, output-side
+    # sibling of the item-4 input gate; plan-mandated growth; cap =
+    # measured + ~0.87 KB — LANDING bytes, per #1753.)
+    "experimenter.md": 77_700,
     # measured 49,740 B post-#1115 (read-hygiene context-budget section —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
     # measured 48,197 B post-#1102)
