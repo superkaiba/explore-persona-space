@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1820,
+  "highest_id": 1821,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6357,6 +6357,13 @@
       "path": "tasks/proposed/1820",
       "status": "proposed",
       "title": "daily-held: add task.py set-backend (public API change)"
+    },
+    "1821": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1821",
+      "status": "proposed",
+      "title": "daily-fix: bake self-pid exclusion into single-flight probe"
     },
     "183": {
       "has_clean_result": true,
