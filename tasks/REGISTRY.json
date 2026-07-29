@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1789,
+  "highest_id": 1790,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6119,6 +6119,13 @@
       "path": "tasks/proposed/1789",
       "status": "proposed",
       "title": "daily-fix: spec-freshness awk exclusion keys on subject shap"
+    },
+    "1790": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1790",
+      "status": "proposed",
+      "title": "daily-fix: move msg-strip comments out of tg gate pipelines"
     },
     "18": {
       "has_clean_result": false,
