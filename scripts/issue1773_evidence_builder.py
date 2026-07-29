@@ -834,6 +834,12 @@ def pass_assemble(args) -> int:
     for p in sorted(sel_dir.glob("selection.shard*.jsonl")):
         for r in CM.iter_jsonl(p):
             sel[int(r["feat_id"])] = r
+    if not sel:
+        raise RuntimeError(
+            f"[assemble] no selection.shard*.jsonl under {sel_dir} — point --selection-dir "
+            "(or EPM_1773_SEL_DIR) at the Pass-A output; assembling now would emit 0 packets "
+            "with a vacuous fill=1.0 report"
+        )
     windows: dict[int, dict[str, list[dict]]] = {f: {"act": [], "nonact": []} for f in sel}
     win_files = sorted(win_dir.glob("windows_*.jsonl"))
     if not win_files:
