@@ -67,3 +67,4 @@
 {"ts": "2026-07-29T07:33:36Z", "kind": "epm:progress", "version": 25, "by": "unknown", "note": "[long-phase-heartbeat] p2/p3 fleet capture continues: compact poll ticks all healthy (status=running, 8-GPU util, workload pid alive per poller identity probe). ~4.5h into the fleet phase; projected completion of capture phases within the plan's 10-11.5h wall ceiling."}
 {"ts": "2026-07-29T08:31:33Z", "kind": "epm:progress", "version": 26, "by": "unknown", "note": "[long-phase-heartbeat] fleet capture ongoing, ~6h into the phase; every compact tick healthy (status=running, workload pid identity-verified by the poller each tick)."}
 {"ts": "2026-07-29T09:20:08Z", "kind": "epm:progress", "version": 27, "by": "unknown", "note": "[long-phase-heartbeat] fleet capture ~7.5h in; ticks healthy."}
+{"ts": "2026-07-29T10:07:57Z", "kind": "epm:progress", "version": 28, "by": "unknown", "note": "[long-phase-heartbeat] fleet capture ~9h in; ticks healthy (status=running each tick)."}
