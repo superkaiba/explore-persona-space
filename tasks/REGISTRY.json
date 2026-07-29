@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1802,
+  "highest_id": 1803,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6217,6 +6217,13 @@
       "path": "tasks/proposed/1802",
       "status": "proposed",
       "title": "daily-fix: new_worktree.sh sets upstream for issue branches"
+    },
+    "1803": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1803",
+      "status": "proposed",
+      "title": "daily-fix: env-pin allowlist gains vetted runtime-tuning key"
     },
     "181": {
       "has_clean_result": false,
