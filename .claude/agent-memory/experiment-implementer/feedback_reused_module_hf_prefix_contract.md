@@ -41,3 +41,17 @@ the consumer dereferences (`orig_dir` → `None / "file"` TypeError; `pass_b` �
 miss siblings — sweep the WHOLE namespace × every caller ONCE (cycle 3 audited
 36 field-caller cells, fixed 6). (Cycle 3: pod-1776 comparator-join TypeError;
 fix commit `e2dd82440ee6a902dbe9df3abe43830f389a249b`.)
+
+**WIDENED AGAIN (cycle 6): INTRA-ISSUE cross-SCRIPT calls carry the same
+contract, and a smoke-FENCED branch hides the gap.** A hand-built
+`argparse.Namespace` shim feeding another SCRIPT's function (phase4 →
+phase3.load_directions) must supply every `args.<attr>` the callee reads on
+EVERY reachable branch — grep the callee body for `args\.` at call-site
+authoring time (one level into helpers it forwards args to). And the smoke
+must EXERCISE the branch: cycle 6's crash site was fenced by the smoke's
+`rb_dir=None`, so its first-ever execution was production on 8×H100. Rule
+(viii): when a smoke fences a branch (None-input, tiny-N cut), record the
+fence and add a production-shaped leg for it before the branch's first
+production run. (Cycle 6: fix commit
+`3e576922aea19fc270cab9ea4e4096ffffc9b10f`; the 8-call-site audit found the
+crash site was the only remaining gap.)
