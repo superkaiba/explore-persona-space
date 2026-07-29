@@ -248,6 +248,60 @@ def hero_gap_closure(linear: dict, bilinear: dict, out: Path) -> None:
     plt.close(fig)
 
 
+def perfold_headline_fig(pf: dict | None, out: Path) -> None:
+    """Per-fold companion behind the pooled gap-closure headline (Lens 11).
+
+    One dot per fold x headline level (novel-prefix + novel-query panels),
+    read from eval_results/issue_1775/bilinear/perfold_headline.json
+    (issue1775_perfold_headline.py). Colors match the gap-closure hero:
+    gray = stitch ridge, black = full-context ridge, red = stitch-MLP.
+    """
+    if not pf or "schemes" not in pf:
+        return
+    from explore_persona_space.analysis.paper_plots import savefig_paper
+
+    series = [
+        ("stitch_press_ridge", "additive stitch ridge (PRESS)", "#888888", "o"),
+        ("bilinear_r0", "bilinear r = 0 refit", "#9467bd", "D"),
+        ("bilinear_rstar", "bilinear r = r* (32 prefix / 16 query)", "#1f77b4", "s"),
+        ("stitch_mlp_ensemble", "stitch-MLP ensemble (mean of 3 seeds)", "#cc3333", "^"),
+        ("context_press_ridge", "full-context ridge (PRESS)", "black", "v"),
+    ]
+    panels = [("prefix", "Novel-prefix folds"), ("query", "Novel-query folds")]
+    fig, axes = plt.subplots(1, 2, figsize=(9.6, 3.8), squeeze=False)
+    for si, (scheme, title) in enumerate(panels):
+        ax = axes[0][si]
+        levels = pf["schemes"].get(scheme, {}).get("levels", {})
+        rstar = pf.get("r_star_by_scheme", {}).get(scheme)
+        for li, (key, label, color, marker) in enumerate(series):
+            if scheme == "query" and key == "stitch_press_ridge":
+                # PRESS collapses under shared-query lambda selection (R2 0.26-0.45);
+                # that read has its own per-fold figure (expl_per_fold_r2).
+                continue
+            k = f"bilinear_r{rstar}" if key == "bilinear_rstar" else key
+            vals = (levels.get(k) or {}).get("per_fold")
+            if not vals:
+                continue
+            xs = np.arange(len(vals)) + (li - 2) * 0.12
+            ax.plot(
+                xs,
+                vals,
+                marker,
+                ms=5,
+                color=color,
+                label=label if si == 0 else None,
+            )
+        ax.set_xticks(range(6))
+        ax.set_xlabel("fold index")
+        ax.set_title(title, fontsize=10)
+        ax.set_ylabel("per-fold held-out R2\n(48 answer PCs)" if si == 0 else "")
+    handles, labels = axes[0][0].get_legend_handles_labels()
+    fig.legend(handles, labels, fontsize=6.5, loc="lower center", ncol=3, framealpha=0.9)
+    fig.tight_layout(rect=(0, 0.09, 1, 1))
+    savefig_paper(fig, "hero_gap_closure_perfold", dir=out)
+    plt.close(fig)
+
+
 def projection_cosines(projections: dict | None, out: Path) -> None:
     """Observed max-abs-cosine of the fitted interaction components against the
     train-fold answer PCs and the 3-trait persona-vector dictionary; the two
@@ -405,9 +459,19 @@ def exploratory(linear, nonlinear, detection, bilinear, fold_check, out: Path, r
 def main() -> int:
     ap = argparse.ArgumentParser(description="#1775 P5 figures")
     ap.add_argument("--smoke", action="store_true")
+    ap.add_argument(
+        "--only-perfold",
+        action="store_true",
+        help="render ONLY the per-fold headline companion (no other figure re-rendered)",
+    )
     args = ap.parse_args()
     set_paper_style()
     out = fig_dir()
+    if args.only_perfold:
+        perfold = _load(eval_dir("bilinear") / "perfold_headline.json")
+        perfold_headline_fig(perfold, out)
+        print(f"[figures] wrote hero_gap_closure_perfold to {out}", flush=True)
+        return 0
     linear = _load(eval_dir("ladder") / "linear_fits.json")
     nonlinear = _load(eval_dir("ladder") / "nonlinear_fits.json")
     refit = _load(eval_dir("ladder") / "query_averaged_refit.json")
@@ -418,6 +482,7 @@ def main() -> int:
     hero_ladder(linear or {}, nonlinear or {}, refit, out)
     hero_gap_closure(linear or {}, bilinear or {}, out)
     projection_cosines(projections, out)
+    perfold_headline_fig(_load(eval_dir("bilinear") / "perfold_headline.json"), out)
     exploratory(linear, nonlinear, detection, bilinear, fold_check, out, refit=refit)
     made = sorted(p.name for p in out.glob("*.png"))
     atomic_write_json(
