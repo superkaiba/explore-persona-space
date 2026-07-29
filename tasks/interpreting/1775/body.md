@@ -4,7 +4,7 @@ title: A low-rank bilinear prefix–query interaction closes most but not all of
 kind: experiment
 tags: []
 created_at: '2026-07-28T21:36:04Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1092
 origin_prompt: 'run both in background with ahppy coder (2026-07-28; two-task split
   per: ''can it not be all one task? Or at least separate the nonlinear out'')'
