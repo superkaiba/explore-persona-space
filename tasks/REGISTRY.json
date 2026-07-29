@@ -6109,8 +6109,8 @@
     "1788": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1788",
-      "status": "planning",
+      "path": "tasks/approved/1788",
+      "status": "approved",
       "title": "daily-fix: Guard-4 grep -Fxq needs -- (false LOST-UPDATE)"
     },
     "1789": {
