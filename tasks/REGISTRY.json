@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1793,
+  "highest_id": 1794,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6147,6 +6147,13 @@
       "path": "tasks/proposed/1793",
       "status": "proposed",
       "title": "daily-fix: upload-policy \u2014 pack per-rollout file trees to sh"
+    },
+    "1794": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1794",
+      "status": "proposed",
+      "title": "daily-fix: persist uv PATH for non-login shells (GCE + pod)"
     },
     "18": {
       "has_clean_result": false,
