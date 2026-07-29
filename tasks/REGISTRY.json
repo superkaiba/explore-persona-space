@@ -6017,8 +6017,8 @@
       "goal": "Determine where the linear story of the context\u2192answer map ends: per-arm nonlinearity gain under matched folds (ridge \u2192 RFF/Nystr\u00f6m \u2192 MLP), residual HSIC/dCor detection, fold-structure verification of the banked n50k/n1m fitter comparisons, and the headline test of whether a rank-r bilinear prefix\u00d7query interaction closes the same \u22480.06 R\u00b2 gap the banked 1M nonlinear fits find \u2014 per Task B of docs/ideas/2026-07-28-four-arm-map-theoretical-analysis-plan.md",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/1775",
-      "status": "interpreting",
+      "path": "tasks/reviewing/1775",
+      "status": "reviewing",
       "title": "A low-rank bilinear prefix\u2013query interaction closes most but not all of the context\u2192answer map's nonlinear gap (MODERATE confidence)"
     },
     "1776": {
