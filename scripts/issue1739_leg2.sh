@@ -45,10 +45,11 @@ for b in $BEHAVIORS; do
   [ "$n" -gt 0 ] || { echo "[leg2] FATAL: no labeling rollouts for $b" >&2; exit 1; }
 done
 
-echo "[leg2] step 2: capture stores (sequential tar download -> untar -> rm)"
+echo "[leg2] step 2: capture stores (sequential tar download -> untar -> rm; scoped to BEHAVIORS)"
 mkdir -p "$TARS_DIR" "$STORE_ROOT"
-for name in evil_extraction evil_labeling hallucination_extraction \
-            hallucination_labeling sycophancy_extraction sycophancy_labeling; do
+STORE_NAMES=""
+for b in $BEHAVIORS; do STORE_NAMES="$STORE_NAMES ${b}_extraction ${b}_labeling"; done
+for name in $STORE_NAMES; do
   if [ -d "$STORE_ROOT/$name" ]; then
     echo "[leg2] store $name: already present, skip"
     continue
