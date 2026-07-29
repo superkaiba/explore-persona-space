@@ -19,7 +19,7 @@ relates_to:
 - spec-steering
 - spec-context-as-vector
 ---
-# Prefill-only hook causes near-zero change; sycophancy at α=2 shows decode-driven commitment; evil timing is convention-dependent (MODERATE confidence)
+# Decode-driven behavioral commitment at α=2 is convention-robust for evil and sycophancy; hallucination flips to mixed under intrusion-robust scoring (MODERATE confidence)
 
 <!-- clean-result-v4 -->
 
@@ -27,17 +27,17 @@ relates_to:
 
 ## Takeaways
 
-- Prefill-only intervention causes near-zero behavioral change for evil at all doses (exact null: Δ=0.00, CI (0.00, 0.00) at α=4) and small but statistically nonzero effects for sycophancy (prefill Δ=2.05 CI (1.36, 2.72)) and hallucination (prefill Δ=7.40 CI (1.30, 14.2)) at α=4. Sycophancy at α=2 shows decode dominance: decode Δ=18.3 CI (14.6, 22.8), prefill Δ=0.95 CI (0.51, 1.43), f_d=0.928 (derived; no bootstrap CI at this alpha). Evil at α=4 reads f_d=1.17 with selection-inherited CI (1.02, 1.37) under raw scoring, but this arm is 83.5% CJK-intruded, so its timing verdict is convention-dependent (see the language-collapse takeaway below).
-- Sycophancy and hallucination are mixed/indeterminate at α=4: sycophancy f_d=0.84 CI (0.71, 0.98), hallucination f_d=0.78 CI (0.53, 0.96), both straddling the 0.75 threshold.
-- Sycophancy at α=2 — free of the registered ceiling check that excluded evil/a2 (both-arm mean=86.03 > 85) — shows decode Δ=18.3 CI (14.6, 22.8) vs prefill Δ=0.95 CI (0.51, 1.43) and both Δ=19.75 CI (15.44, 25.23), giving f_d=0.928, consistent with decode dominance at moderate dose. Evil f_d=1.17 CI (1.02, 1.37) at α=4 clears the decode-driven threshold, but is convention-dependent (see CJK finding).
-- Severe CJK intrusion contaminates decode and both arms at α=4 (evil decode 83.5%, sycophancy 97.5%, hallucination 99.0%; prefill-only 4–7%, neither 2–8%): under zeroing, evil decode Δ collapses from 37.0 to ~3.5, making the evil timing verdict convention-dependent.
-- K2 coherence gate passed all cells (min 88.5% per steered arm); it is language-blind and orthogonal to CJK intrusion; arm-asymmetric judge content drops at α=4 corroborate contamination (hallucination decode 26.8%, both 30.8%, prefill-only 2.6%).
+- At moderate dose (α=2), the decode-driven lattice verdict holds for evil and sycophancy under all three CJK-intrusion treatments (raw / exclusion of intruded draws / zeroing to 0): evil f_d=1.008–1.072 and sycophancy f_d=0.928–0.936 across treatments, with bootstrap CIs lower-bounded above 0.75 for raw and exclusion (zeroing CIs are wider but point estimates remain above threshold). Convention-robust decode commitment is thus confirmed for two of three behaviors at this dose.
+- Hallucination at α=2 is treatment-sensitive: raw scoring gives f_d=0.890 CI (0.802, 0.990), a decode-driven verdict; exclusion gives f_d=0.834 CI (0.716, 0.973) and zeroing gives f_d=0.768 CI (0.546, 1.016), both classified as mixed (CI not entirely above 0.75). Hallucination's decode attribution at moderate dose is not robust to CJK-intrusion convention.
+- Prefill-only intervention causes near-zero behavioral change for evil at all doses (Δ=0.00 at α=4) and small but nonzero effects for sycophancy (prefill Δ=0.95 CI (0.51, 1.43) at α=2; Δ=2.05 CI (1.36, 2.72) at α=4) and hallucination (prefill Δ=7.40 CI (1.30, 14.2) at α=4). The context representation alone does not commit behavior for any tested trait.
+- At high dose (α=4), severe CJK language collapse contaminates the decode and both arms (evil 83.5%, sycophancy 97.5%, hallucination 99.0% intruded); all timing verdicts at this dose are convention-dependent, and the α=2 convention-robust results are the more reliable evidence.
+- K2 coherence gate passed all cells (minimum 88.5% per steered arm); it is language-blind and orthogonal to CJK intrusion; arm-asymmetric judge content drops at α=4 (hallucination decode 26.8%, both 30.8%, prefill-only 2.6%) independently corroborate contamination.
 
 ## Goal
 
 **This experiment in context:** This experiment applies a causal timing intervention — adding a persona-direction vector `α × r_B[L]` at layer 20 in either the prefill phase only, the decode phase only, both phases, or neither — to three persona behaviors (evil, sycophancy, hallucination) across a dose ladder (α=1,2,4) on Qwen-2.5-7B-Instruct. It directly tests whether persona-behavior expression is committed during the prefill (context encoding) pass or during the autoregressive decode steps, extending the representation-geometry characterization of issues [#779](https://github.com/superkaiba/explore-persona-space/issues/779) and [#1415](https://github.com/superkaiba/explore-persona-space/issues/1415).
 
-**Broader narrative:** The project's open question is whether a persona is a property of the context representation (fixed at prefill) or an ongoing generative process (reinforced decode-step by decode-step). If decode dominates, continuous activation-steering or token-by-token interventions would be the effective defense channel; if prefill dominates, one-shot context representations suffice. This result suggests the two regimes co-exist: under raw scoring evil reads as decode-dominant — a verdict that is convention-dependent because the arm is heavily CJK-intruded — while sycophancy and hallucination show mixed attribution at the tested doses, possibly reflecting differences in how deeply each trait is encoded in the model's prefill representation vs. its autoregressive generation prior.
+**Broader narrative:** The project's open question is whether a persona is a property of the context representation (fixed at prefill) or an ongoing generative process (reinforced decode-step by decode-step). If decode dominates, continuous activation-steering or token-by-token interventions would be the effective defense channel; if prefill dominates, one-shot context representations suffice. The α=2 convention-robust results support decode dominance for evil and sycophancy, while hallucination's treatment sensitivity at moderate dose leaves its timing attribution open. High-dose results are unreliable due to language collapse.
 
 ## Methodology
 
@@ -73,7 +73,7 @@ relates_to:
 
 **Eval-questions provenance caveat:** Evil eval questions are original. Sycophancy and hallucination eval questions were subsequently regenerated following a data-loss incident (source files were lost), and are carried as a data-provenance caveat. This does not constitute a gate failure per plan §4.
 
-**Data extraction:** Per-arm and per-item judge scores from `eval_results/issue_1769/judge/graded_scores.json`; bootstrap fractions and CIs from `eval_results/issue_1769/analysis/headline.json`; K2 coherence from `eval_results/issue_1769/phase_g/k2_report.json`; raw completions from `data/issue_1769/raw_completions/`; CJK intrusion scan run inline over raw completions.
+**Data extraction:** Per-arm and per-item judge scores from `eval_results/issue_1769/judge/graded_scores.json`; bootstrap fractions and CIs from `eval_results/issue_1769/analysis/headline.json`; K2 coherence from `eval_results/issue_1769/phase_g/k2_report.json`; raw completions from `data/issue_1769/raw_completions/`; CJK intrusion scan run inline over raw completions. Alpha=2 intrusion-robust lattice recomputed via `scripts/issue1769_alpha2_clean_lattice.py` under three CJK-intrusion treatments (raw / exclusion of intruded draws / zeroing of intruded draws to 0), question-level cluster-bootstrap B=2000, seed=42; results at `eval_results/issue_1769/analysis/alpha2_clean_lattice.json`.
 
 **Sample training/evaluation data + completions:**
 
@@ -391,8 +391,28 @@ The decode-arm drops are content drops — the judge refused or returned malform
 
 The hero fractions confirm the lattice classification: evil is decode-driven under raw scores, while sycophancy and hallucination are mixed/indeterminate. The figure caption notes the CJK-zeroing caveat on these fractions.
 
+### Evil and sycophancy decode-driven timing at α=2 holds under all three CJK-intrusion treatments; hallucination flips to mixed
+
+Three-treatment α=2 lattice: f_d ratio, cluster-bootstrap 95% CI (B=2000, seed=42), classification, and draw counts per behavior. Raw = all draws; exclusion = CJK draws removed; zeroing = CJK draws scored 0 (n_zeroed = decode_only / both).
+
+| Behavior | Treatment | f_d | 95% CI | Verdict | N kept (decode / both) | N zeroed (decode / both) |
+|---|---|---|---|---|---|---|
+| evil | raw | 1.008 | (0.983, 1.032) | decode-driven | 200 / 200 | — |
+| evil | exclusion | 1.026 | (0.993, 1.058) | decode-driven | 108 / 102 | — |
+| evil | zeroing | 1.072 | (0.932, 1.235) | decode-driven | 200 / 200 | 90 / 94 |
+| hallucination | raw | 0.890 | (0.802, 0.990) | decode-driven | 200 / 200 | — |
+| hallucination | exclusion | 0.834 | (0.716, 0.973) | mixed | 148 / 149 | — |
+| hallucination | zeroing | 0.768 | (0.546, 1.016) | mixed | 200 / 200 | 50 / 44 |
+| sycophancy | raw | 0.928 | (0.830, 1.050) | decode-driven | 200 / 200 | — |
+| sycophancy | exclusion | 0.930 | (0.819, 1.040) | decode-driven | 189 / 185 | — |
+| sycophancy | zeroing | 0.936 | (0.821, 1.081) | decode-driven | 200 / 200 | 11 / 15 |
+
+> **Figure.** Table of f_d (decode fraction), 95% cluster-bootstrap CIs, and lattice classification for three behaviors × three CJK-intrusion treatments at α=2. Source: `eval_results/issue_1769/analysis/alpha2_clean_lattice.json`, n_questions=20, n_draws=10, B=2000, seed=42, lattice thresholds decode-driven lower-CI > 0.75 / prefill-committed CI ⊆ (−0.25, 0.25).
+
+Evil and sycophancy return decode-driven verdicts under all three treatments. The evil exclusion arm drops 45–47% of decode/both draws yet f_d rises to 1.026 (0.993, 1.058); the zeroing CI is wider (0.932, 1.235) but the point estimate stays above 1.0. Sycophancy has low CJK exposure (5.5–7.5%) and is unaffected. Hallucination shifts from decode-driven under raw scoring to mixed under both intrusion-robust treatments: the exclusion CI (0.716, 0.973) falls below the 0.75 threshold, and the zeroing CI (0.546, 1.016) spans 1.0. The registered ceiling check fired for evil/α=2 (both-arm mean=86.03 > 85), so evil is excluded from operating-alpha selection; the f_d analysis is still informative but deltas are near scale-top.
+
 ---
 
-**Repro:** Generation commit `468aaef5`, analysis commit `2b19022b`, code commit `610e5dfd75`; Qwen/Qwen2.5-7B-Instruct; r_B from issue [#779](https://github.com/superkaiba/explore-persona-space/issues/779) revision `037fcbb`; eval_results at `eval_results/issue_1769/`; raw completions at HF data repo `superkaiba1/explore-persona-space-data/issue1769_prefill_decode/raw_completions/`; figures at `figures/issue_1769/` SHA `c8073b184fb6d17d921105a5ddec09a510e4570b`; created 2026-07-29.
+**Repro:** Generation commit `468aaef5`, analysis commit `2b19022b`, code commit `610e5dfd75`, alpha2 lattice script `scripts/issue1769_alpha2_clean_lattice.py`; Qwen/Qwen2.5-7B-Instruct; r_B from issue [#779](https://github.com/superkaiba/explore-persona-space/issues/779) revision `037fcbb`; eval_results at `eval_results/issue_1769/`; alpha2 clean lattice at `eval_results/issue_1769/analysis/alpha2_clean_lattice.json`; raw completions at HF data repo `superkaiba1/explore-persona-space-data/issue1769_prefill_decode/raw_completions/`; figures at `figures/issue_1769/` SHA `c8073b184fb6d17d921105a5ddec09a510e4570b`; created 2026-07-29.
 
-**Context:** "Run the prefill-vs-decode behavioral commitment timing rig for issue 1769 — test whether persona steering takes effect during prefill (context encoding) or decode (token generation) phases, using the DeltaHook mechanism on layer 20, for evil/sycophancy/hallucination behaviors at α ∈ {1,2,4}." Originated from exploration of the persona-direction geometry from issue #779. Round 1 (initial analysis); round 2 (first revision: corrected hyperparameter table, verbatim sample blocks, CJK convention-dependent reporting, K2 gate disambiguation, sycophancy α=2 evidence, per-arm CJK rates, arm-asymmetric judge content drops, and coherence-gate/CJK-intrusion reconciliation); round 3 (this revision: corrected sycophancy/a2/both Δ from fabricated 5.95 to verified 19.75 CI (15.44, 25.23) and f_d to 0.928; corrected K2 ceiling gate criterion from frac_gt90 ≤ 0.50 to both-arm mean > 85; expanded CJK table to include all alpha levels; corrected prefill-only CJK rates from 0% to measured 4–8%).
+**Context:** "Run the prefill-vs-decode behavioral commitment timing rig for issue 1769 — test whether persona steering takes effect during prefill (context encoding) or decode (token generation) phases, using the DeltaHook mechanism on layer 20, for evil/sycophancy/hallucination behaviors at α ∈ {1,2,4}." Originated from exploration of the persona-direction geometry from issue #779. Round 1 (initial analysis); round 2 (first revision: corrected hyperparameter table, verbatim sample blocks, CJK convention-dependent reporting, K2 gate disambiguation, sycophancy α=2 evidence, per-arm CJK rates, arm-asymmetric judge content drops, and coherence-gate/CJK-intrusion reconciliation); round 3 (second revision: corrected sycophancy/a2/both Δ from fabricated 5.95 to verified 19.75 CI (15.44, 25.23) and f_d to 0.928; corrected K2 ceiling gate criterion from frac_gt90 ≤ 0.50 to both-arm mean > 85; expanded CJK table to include all alpha levels; corrected prefill-only CJK rates from 0% to measured 4–8%); round 4 (this revision: folded alpha2_clean_lattice.json — convention-robust decode-driven verdict for evil and sycophancy at α=2 confirmed under all three CJK-intrusion treatments; hallucination flips to mixed under exclusion and zeroing; updated Takeaways and the headline title accordingly).
