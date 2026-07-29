@@ -6487,8 +6487,8 @@
     "1838": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1838",
-      "status": "proposed",
+      "path": "tasks/planning/1838",
+      "status": "planning",
       "title": "workflow-fix: GCP->RunPod failover provision crash-safe (adopt residue pod)"
     },
     "184": {
