@@ -1,0 +1,53 @@
+{
+  "meta": {
+    "git_commit": "926b322ee9f208ceab23eb5e2493ff09d8585958",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "timestamp_utc": "2026-07-29T05:46:49.754793+00:00",
+    "store_rev": "e590170619e7691c1a95c7b1bb20bda5fd4065ad",
+    "rb_rev": "037fcbb210bc52c459959b0746cc268fe08bae96"
+  },
+  "trait": "sycophancy",
+  "layer": 19,
+  "arms": {
+    "arm_context": {
+      "k50": 0.4452205296349996,
+      "k90": 0.24570135305486218,
+      "df": 0.11243720483309938
+    },
+    "arm_prefix_end": {
+      "k50": 0.6153034358939401,
+      "k90": 0.41347309274418054,
+      "df": 0.27645340309406563
+    },
+    "arm_bare_query": {
+      "k50": 0.6318959750792126,
+      "k90": 0.3525978277773739,
+      "df": 0.14005863260994078
+    },
+    "arm_query_avg": {
+      "k50": 0.49543276480117526,
+      "k90": 0.3284283754431232,
+      "df": 0.19062706858616185
+    }
+  },
+  "context_lambda_sweep_k90": {
+    "lam_100": 0.2205350734930006,
+    "lam_1000": 0.2457013530178962,
+    "lam_10000": 0.30986968743867593
+  },
+  "context_fold_jackknife_k90": [
+    0.24727509488253996,
+    0.2487101767186265,
+    0.24589838582592072,
+    0.24788223104734786,
+    0.24951641375968103,
+    0.2515087575016117
+  ],
+  "flags": {
+    "arm_context": null,
+    "arm_prefix_end": "rank-limited \u2014 estimator kernel \u2287 (d \u2212 n_distinct) unobserved dims",
+    "arm_bare_query": "rank-limited \u2014 estimator kernel \u2287 (d \u2212 n_distinct) unobserved dims",
+    "arm_query_avg": "rank-limited \u2014 estimator kernel \u2287 (d \u2212 n_distinct) unobserved dims"
+  }
+}
