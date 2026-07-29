@@ -73,7 +73,7 @@ def test_crossed_permutations_shapes_and_derangement():
 
 
 def test_cluster_bootstrap_point_identity():
-    X, Y, rows = _toy(n=80)
+    _X, Y, rows = _toy(n=80)
     rng = np.random.default_rng(1)
     pred_a = Y + 0.1 * rng.standard_normal(Y.shape)
     pred_b = Y + 0.4 * rng.standard_normal(Y.shape)
