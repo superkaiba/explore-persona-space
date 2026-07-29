@@ -6137,8 +6137,8 @@
     "1792": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1792",
-      "status": "approved",
+      "path": "tasks/running/1792",
+      "status": "running",
       "title": "daily-fix: scratch-worktree cone + empty-dir residue fixes"
     },
     "1793": {
