@@ -6067,8 +6067,8 @@
     "1782": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1782",
-      "status": "reviewing",
+      "path": "tasks/completed/1782",
+      "status": "completed",
       "title": "workflow-fix: direction-agnostic cross-phase reads[] in off_pod_phases (pod reads VM outputs)"
     },
     "1783": {
