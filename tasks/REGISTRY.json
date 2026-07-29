@@ -6459,8 +6459,8 @@
     "1834": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1834",
-      "status": "planning",
+      "path": "tasks/approved/1834",
+      "status": "approved",
       "title": "workflow-fix: marker-materialized run artifacts must match producer schema"
     },
     "184": {
