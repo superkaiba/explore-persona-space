@@ -305,6 +305,15 @@ def stage_axes(args, packets: dict[int, dict]) -> int:
             (rd / f"{cid}.txt").write_text(f"SYSTEM:\n{CM.AXIS_SYSTEM_PREAMBLE}\n\nUSER:\n{user}")
         _log(f"[axes] render-only: {min(len(items), args.limit)} prompts -> {rd}")
         return 0
+    if args.full and not descriptions:
+        # r1 review Minor: a --full dispatch (409,600 calls) with no
+        # descriptions would silently omit every DESC block — a changed
+        # instrument at full spend. Bounded --limit slices keep the lenient
+        # WARN branch (pilot slice re-runs load descriptions via stage_pilot).
+        raise RuntimeError(
+            f"[axes] --full dispatch with no descriptions at {desc_path}; "
+            "run --stage describe first, or use a bounded --limit slice"
+        )
     if not args.full:
         items = items[: args.limit]
     _log(f"[axes] dispatching {len(items)} items (full={args.full})")

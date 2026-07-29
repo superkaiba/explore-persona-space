@@ -454,6 +454,42 @@ def test_tiny_real_cpu_e2e_evidence_builder(tmp_path):
         rc2 = EB.pass_windows(args)
     assert rc2 == 0
 
+    # --pilot re-run over an already-done pilot chunk (r1 concern
+    # passb-pilot-resume-nameerror): the resume-skip leaves the chunk loop
+    # without processing any chunk; the pilot report must not NameError on
+    # an unbound `rows` (the same-pod launcher relaunch always re-enters the
+    # pilot phase first).
+    args_pilot = argparse.Namespace(**{**vars(args), "pilot": True})
+    with um.patch.object(EA, "_load_model_tok", new=_tiny_load_model_tok):
+        rc3 = EB.pass_windows(args_pilot)
+    assert rc3 == 0
+    assert (out_dir / "pilot_report.json").exists()
+
+    # resume upload reconciliation (r1 review Minor): skipped-but-never-
+    # uploaded chunk files are re-queued from ONE scoped Hub listing.
+    # Boundary fakes only: _upload_pending (network commit) replaced by a
+    # signature-conformant def; hub.verify_repo_paths_uploaded autospec'd.
+    from explore_persona_space.orchestrate import hub as _hub
+
+    args_rec = argparse.Namespace(**{**vars(args), "no_upload": False})
+    uploads: list[list[str]] = []
+
+    def _fake_upload_pending(pending, out_dir_, args_, t_upload_):
+        uploads.append(list(pending))
+        pending.clear()
+
+    missing = [f"{CM.HF_PREFIX}/raw_windows/windows_shard00_chunk0000.jsonl"]
+    fake_verify = um.create_autospec(_hub.verify_repo_paths_uploaded, return_value=missing)
+    with (
+        um.patch.object(EA, "_load_model_tok", new=_tiny_load_model_tok),
+        um.patch.object(EB, "_upload_pending", new=_fake_upload_pending),
+        um.patch.object(_hub, "verify_repo_paths_uploaded", new=fake_verify),
+    ):
+        rc4 = EB.pass_windows(args_rec)
+    assert rc4 == 0
+    fake_verify.assert_called_once()
+    assert any("windows_shard00_chunk0000.jsonl" in batch for batch in uploads)
+
 
 def test_window_record_peak_at_answer_edge():
     """Window extraction at the FIRST and LAST answer token (edge clipping)."""

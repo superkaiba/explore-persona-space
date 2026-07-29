@@ -469,6 +469,12 @@ def pass_windows(args) -> int:
     span_rng = np.random.default_rng(np.random.SeedSequence([CM.SEED, 3, args.worker]))
     rand_top: list[list[tuple[float, dict]]] = [[] for _ in range(len(dirs))]
     pending_upload: list[str] = []
+    skipped_files: list[str] = []
+    # Bind BEFORE the loop: a resume where every chunk skips (done-sentinel
+    # fingerprint match) must not leave `rows` unbound at the --pilot report
+    # (r1 concern passb-pilot-resume-nameerror; rows=0 then means "pilot chunk
+    # already done, nothing re-processed").
+    rows: list[tuple] = []
     t_upload: list[float] = []
     t0 = time.time()
     n_done = 0
@@ -481,6 +487,7 @@ def pass_windows(args) -> int:
             try:
                 if json.loads(done_f.read_text()).get("fingerprint") == fp:
                     _log(f"[evidence] chunk {k_i + 1}/{len(names)} {name} SKIP (done)")
+                    skipped_files.extend([chunk_out.name, done_f.name])
                     continue
             except json.JSONDecodeError:
                 pass
@@ -535,6 +542,30 @@ def pass_windows(args) -> int:
             _upload_pending(pending_upload, out_dir, args, t_upload)
         if args.pilot:
             break
+    if skipped_files and not args.no_upload:
+        # Resume reconciliation (r1 review Minor): a crash between a chunk's
+        # done-sentinel write and the next batched upload leaves local-done
+        # chunks off the Hub; re-queue exactly the missing ones from ONE
+        # scoped listing (never a blanket re-upload of every skipped chunk).
+        from huggingface_hub import HfApi
+
+        from explore_persona_space.orchestrate import hub
+
+        prefix = f"{CM.HF_PREFIX}/raw_windows"
+        missing = hub.verify_repo_paths_uploaded(
+            HfApi(),
+            CM.HF_DATA_REPO,
+            [f"{prefix}/{n}" for n in skipped_files],
+            path_in_repo=prefix,
+            repo_type="dataset",
+        )
+        if missing:
+            requeue = [p.rsplit("/", 1)[1] for p in missing]
+            _log(
+                f"[evidence] resume reconciliation: {len(requeue)} skipped-chunk "
+                "files absent from Hub -> re-queued for upload"
+            )
+            pending_upload.extend(requeue)
     _upload_pending(pending_upload, out_dir, args, t_upload)
 
     # random-direction per-worker top-K (window texts inline — recorded choice)
@@ -692,7 +723,14 @@ def pass_assemble(args) -> int:
         for r in CM.iter_jsonl(p):
             sel[int(r["feat_id"])] = r
     windows: dict[int, dict[str, list[dict]]] = {f: {"act": [], "nonact": []} for f in sel}
-    for p in sorted(win_dir.glob("windows_*.jsonl")):
+    win_files = sorted(win_dir.glob("windows_*.jsonl"))
+    if not win_files:
+        raise RuntimeError(
+            f"[assemble] no windows_*.jsonl under {win_dir} — run --pass windows first "
+            "(or pass --fetch-missing to stage them from the Hub); assembling now would "
+            "emit all-short packets with fill=0.0"
+        )
+    for p in win_files:
         for r in CM.iter_jsonl(p):
             f = int(r["feat_id"])
             if f in windows:
@@ -896,6 +934,7 @@ def _import_check() -> int:
         S.token_inlier_mask,
         hub.retry_transient,
         hub.stage_hub_prefix,
+        hub.verify_repo_paths_uploaded,
     ):
         assert callable(sym), sym
     print("[import-check] OK: all deferred imports + symbols resolve", flush=True)

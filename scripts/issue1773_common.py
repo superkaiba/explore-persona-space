@@ -222,7 +222,7 @@ def validate_axis_label(parsed: object, axis: str) -> str | None:
     return norm if norm in AXES[axis] else None
 
 
-def majority_vote(labels: list[str], n_launched: int = N_DRAWS) -> str:
+def majority_vote(labels: list[str]) -> str:
     """Majority label over SURVIVING draws with >= MAJORITY_FLOOR agreeing votes;
     ties or below-floor -> 'unresolved' (reported, never coerced)."""
     if not labels:
