@@ -6102,8 +6102,8 @@
     "1787": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1787",
-      "status": "approved",
+      "path": "tasks/running/1787",
+      "status": "running",
       "title": "daily-fix: pin prefix-less c43 escape in sync test"
     },
     "1788": {
