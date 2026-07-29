@@ -6081,8 +6081,8 @@
     "1784": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1784",
-      "status": "running",
+      "path": "tasks/reviewing/1784",
+      "status": "reviewing",
       "title": "workflow-fix: gotchas \u2014 stage_hub_prefix dest is a mirror root (caller layout trap)"
     },
     "18": {
