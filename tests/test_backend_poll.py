@@ -651,6 +651,7 @@ def test_gcp_setup_failure_does_not_failover_to_runpod(tmp_path, monkeypatch, ca
 # ---------------------------------------------------------------------------
 
 import time as _time  # noqa: E402  (module-level: the #669 clock tests stamp epoch seconds)
+from datetime import UTC  # noqa: E402  (module-level: the #1838 intent-window tests build ISO ts)
 
 
 def _running_poll(phase: str, *, reachability_alarm: bool) -> PollResult:
@@ -4808,3 +4809,482 @@ def test_poll_tick_json_carries_handle_staleness_flags_default_false(tmp_path, m
     assert out["handle_older_than_relaunch"] is False
     # The flags never contribute to the verdict keys (acceptance criterion 5).
     assert out["current_phase"] == "workload"
+
+
+# ---------------------------------------------------------------------------
+# #1838 — interrupted-failover provision-intent breadcrumb (reap-and-recreate).
+# A poll tick killed mid-RunPod-provision (the #1739 shape: caller timeout
+# between pod-create and lease/handle write) leaves a live pod-<N> the next
+# failover refuses on. The retry now (a) attributes it by POSITIVE evidence
+# (a standing lease intent + the created_at window), (b) terminates it
+# surgically, (c) proceeds to a fresh provision in the SAME attempt — while
+# (d) never terminating a pod lacking our-residue evidence and (e) bounding
+# the reap→kill cycle at _PROVISION_INTENT_MAX_REAPS per episode.
+# ---------------------------------------------------------------------------
+
+
+def _iso_utc(epoch: float) -> str:
+    from datetime import datetime
+
+    return datetime.fromtimestamp(epoch, tz=UTC).isoformat().replace("+00:00", "Z")
+
+
+def _intent_pod(pod_id: str, created_epoch: float, *, name: str = "pod-1116", status="RUNNING"):
+    """A live PodInfo with a real ISO-8601 ``created_at`` (the #1838 window input)."""
+    runpod_api = _import_runpod_api()
+    return runpod_api.PodInfo(
+        pod_id=pod_id,
+        name=name,
+        desired_status=status,
+        ssh_host="1.2.3.4",
+        ssh_port=22001,
+        created_at=_iso_utc(created_epoch),
+    )
+
+
+def _seed_intent(intent_ts: float | None, *, issue: int = 1116, reap_count: int = 0):
+    """Seed the pinned-home ``~/.eps-routing`` lease; ``intent_ts=None`` seeds a
+    bare lease with NO standing intent (the fresh-dispatch shape)."""
+    from explore_persona_space.backends.router import Lease, LeaseStore
+
+    intent = None
+    if intent_ts is not None:
+        intent = {
+            "pod_name": f"pod-{int(issue)}",
+            "issue": int(issue),
+            "ts": float(intent_ts),
+            "token": "tok-seed",
+            "reason": "gcp_queue_vanish_failover_runpod",
+            "reap_count": int(reap_count),
+        }
+    LeaseStore().write(
+        Lease(
+            issue=int(issue),
+            spec_hash="h",
+            attempt_id="att-seed",
+            backend="gcp",
+            job_id="instance-vanish-1",
+            runpod_provision_intent=intent,
+        )
+    )
+
+
+def _lease_intent_on_disk(issue: int):
+    """FLOCK-FREE raw read of the pinned-home lease file's intent field.
+
+    The router holds the per-issue flock ACROSS the launch seam (the sealed
+    double-submit race), so a ``LeaseStore.read`` from inside a fake backend's
+    ``launch`` would deadlock — read the JSON file directly instead."""
+    path = Path.home() / ".eps-routing" / f"issue-{int(issue)}.json"
+    if not path.exists():
+        return None
+    return json.loads(path.read_text()).get("runpod_provision_intent")
+
+
+class _IntentCapturingRunpodBackend(_PassiveRunpodBackend):
+    """Passive backend recording the ON-DISK intent at launch time (the
+    write-before-create ordering witness)."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.intents_at_launch: list = []
+
+    def launch(self, spec):
+        self.intents_at_launch.append(_lease_intent_on_disk(int(spec.issue)))
+        return super().launch(spec)
+
+
+class _IntentCapturingProvisionFailedBackend(_ProvisionFailedRunpodBackend):
+    """Provision-failing backend that ALSO records the on-disk intent at
+    launch time (the cap-hit no-fresh-stamp witness)."""
+
+    def __init__(self, exc: Exception | None = None) -> None:
+        super().__init__(exc)
+        self.intents_at_launch: list = []
+
+    def launch(self, spec):
+        self.intents_at_launch.append(_lease_intent_on_disk(int(spec.issue)))
+        return super().launch(spec)
+
+
+def _unit_reap_rig(tmp_path, monkeypatch, *, intent_ts, reap_count: int = 0, pods, issue=1116):
+    """Direct-unit rig for ``_reap_interrupted_failover_residue``: an injected
+    LeaseStore seeded with a standing intent + scripted live pods + a
+    terminate recorder. Returns ``(store, terminations)``."""
+    from explore_persona_space.backends.router import Lease, LeaseStore
+
+    runpod_api = _import_runpod_api()
+    store = LeaseStore(lease_dir=tmp_path / "eps-routing-unit")
+    store.write(
+        Lease(
+            issue=int(issue),
+            spec_hash="h",
+            attempt_id="att-seed",
+            runpod_provision_intent={
+                "pod_name": f"pod-{int(issue)}",
+                "issue": int(issue),
+                "ts": float(intent_ts),
+                "token": "tok-seed",
+                "reason": "gcp_queue_vanish_failover_runpod",
+                "reap_count": int(reap_count),
+            },
+        )
+    )
+    monkeypatch.setattr(runpod_api, "list_team_pods", lambda: list(pods), raising=False)
+    terminations: list[str] = []
+    monkeypatch.setattr(
+        runpod_api,
+        "terminate_pod",
+        lambda pod_id: terminations.append(pod_id) or True,
+        raising=False,
+    )
+    return store, terminations
+
+
+def test_interrupted_failover_residue_reaped_and_provision_proceeds(tmp_path, monkeypatch, capsys):
+    """#1838 plan test 1 (the headline): a standing intent aged >=120s + ONE
+    live pod-<N> created inside the window -> the retry TERMINATES the orphan,
+    stamps a fresh intent carrying reap_count = prior + 1 BEFORE the launch,
+    and the SAME attempt proceeds to a successful fresh provision (running
+    JSON, no no_compute_available); the successful submit then supersedes the
+    intent (lease reads None)."""
+    now = _time.time()
+    _seed_intent(now - 300)
+    orphan = _intent_pod("podI", now - 240)  # created 60s after the intent stamp
+    runpod_api = _import_runpod_api()
+    # Call 1 = the reap's probe (finds the orphan); call 2 = the #1490 PRE
+    # snapshot (post-reap: empty — the reaped pod never contaminates it).
+    team_list = _ScriptedTeamList([[orphan], []])
+    monkeypatch.setattr(runpod_api, "list_team_pods", team_list, raising=False)
+    terminations: list[str] = []
+    monkeypatch.setattr(
+        runpod_api,
+        "terminate_pod",
+        lambda pod_id: terminations.append(pod_id) or True,
+        raising=False,
+    )
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(_vanish_handle(), sidecar)
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend", lambda name: _PollDouble(_not_found_poll())
+    )
+    rp = _IntentCapturingRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "gcp_queue_vanish_failover_runpod"
+    assert terminations == ["podI"]
+    # Fresh intent was durably on disk BEFORE the launch seam ran, carrying
+    # the incremented reap counter (episode accounting).
+    (intent_at_launch,) = rp.intents_at_launch
+    assert intent_at_launch is not None
+    assert intent_at_launch["reap_count"] == 1
+    assert intent_at_launch["token"] != "tok-seed"
+    # The successful submit SUPERSEDED it (router-side _lease_after_submit).
+    assert _lease_intent_on_disk(1116) is None
+    assert read_handle_sidecar(sidecar).backend == "runpod"
+
+
+def test_residue_no_intent_never_terminated(tmp_path, monkeypatch, capsys):
+    """#1838 plan test 2 (human-pod non-hijack): a live pod-<N> with NO
+    standing intent is NEVER terminated — the refusal path keeps today's
+    re-drivable pre-existing terminal, and the completed attempt leaves no
+    standing intent behind."""
+    now = _time.time()
+    _seed_intent(None)  # bare lease, no intent
+    human_pod = _intent_pod("podH", now - 240)
+    # Reap short-circuits on the absent intent (no probe call); the #1490
+    # pre/post snapshots both see the pod -> outcome pre-existing.
+    team_list = _ScriptedTeamList([[human_pod], [human_pod]])
+    sidecar, _rp, terminations = _reclaim_setup(tmp_path, monkeypatch, team_list=team_list)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["reason"] == "no_compute_available"
+    assert "pre-existing" in out["log_tail_excerpt"]
+    assert terminations == []
+    # MF2i: the completed (refused) attempt cleared its own fresh intent.
+    assert _lease_intent_on_disk(1116) is None
+
+
+def test_residue_created_outside_window_kept(tmp_path, monkeypatch):
+    """#1838 plan test 3: a pod created AFTER the window (T+901s) or BEFORE
+    the clock-skew floor (T-121s) is NOT our residue — no reap, no terminate."""
+    import scripts.backend_poll as bp
+
+    t0 = 1_000_000.0
+    for created in (t0 + 901.0, t0 - 121.0):
+        store, terminations = _unit_reap_rig(
+            tmp_path, monkeypatch, intent_ts=t0, pods=[_intent_pod("podX", created)]
+        )
+        outcome = bp._reap_interrupted_failover_residue(
+            1116, lease_store=store, now_fn=lambda: t0 + 1200.0
+        )
+        assert outcome == ("none", None)
+        assert terminations == []
+
+
+def test_residue_created_at_missing_or_unparseable_kept(tmp_path, monkeypatch):
+    """#1838 plan test 4: a live pod whose ``created_at`` is missing or
+    unparseable cannot be positively attributed — kept (bias safe)."""
+    import scripts.backend_poll as bp
+
+    runpod_api = _import_runpod_api()
+    t0 = 1_000_000.0
+    for created_at in (None, "not-a-timestamp"):
+        pod = runpod_api.PodInfo(
+            pod_id="podU", name="pod-1116", desired_status="RUNNING", created_at=created_at
+        )
+        store, terminations = _unit_reap_rig(tmp_path, monkeypatch, intent_ts=t0, pods=[pod])
+        outcome = bp._reap_interrupted_failover_residue(
+            1116, lease_store=store, now_fn=lambda: t0 + 300.0
+        )
+        assert outcome == ("none", None)
+        assert terminations == []
+
+
+def test_residue_two_same_name_pods_ambiguous_kept(tmp_path, monkeypatch):
+    """#1838 plan test 5: TWO live pod-<N> rows are concurrent-creator
+    ambiguity — never terminate on ambiguity (the #1490 stance)."""
+    import scripts.backend_poll as bp
+
+    t0 = 1_000_000.0
+    pods = [_intent_pod("podA", t0 + 30.0), _intent_pod("podB", t0 + 60.0)]
+    store, terminations = _unit_reap_rig(tmp_path, monkeypatch, intent_ts=t0, pods=pods)
+    outcome = bp._reap_interrupted_failover_residue(
+        1116, lease_store=store, now_fn=lambda: t0 + 300.0
+    )
+    assert outcome == ("none", None)
+    assert terminations == []
+
+
+def test_intent_stamped_before_launch(tmp_path, monkeypatch, capsys):
+    """#1838 plan test 6 (acceptance criterion 4): the provision intent is
+    durably ON DISK before the launch seam runs (crash-ordered
+    write-before-create), with reap_count=0 on a no-prior-intent attempt, and
+    is superseded by the successful submit."""
+    _seed_intent(None)  # bare lease so the stamp has a lease to land on
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(_vanish_handle(), sidecar)
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend", lambda name: _PollDouble(_not_found_poll())
+    )
+    rp = _IntentCapturingRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    (intent_at_launch,) = rp.intents_at_launch
+    assert intent_at_launch is not None, "intent must be on disk BEFORE the launch seam runs"
+    assert intent_at_launch["pod_name"] == "pod-1116"
+    assert intent_at_launch["reap_count"] == 0
+    assert _lease_intent_on_disk(1116) is None  # superseded on submit
+
+
+def test_reap_terminate_failure_degrades_to_today(tmp_path, monkeypatch, capsys):
+    """#1838 plan test 7 (Q5 degrade): a non-not-found terminate error never
+    raises — the attempt proceeds WITHOUT reap, the provision refuses on the
+    still-live pod, and the #1490 classifier keeps today's re-drivable
+    no_compute_available terminal (whose handler clears the intent)."""
+    now = _time.time()
+    _seed_intent(now - 300)
+    pod = _intent_pod("podT", now - 240)
+    # Calls: reap probe / #1490 pre / #1490 post — the pod stays live.
+    team_list = _ScriptedTeamList([[pod], [pod], [pod]])
+    sidecar, rp, _ = _reclaim_setup(tmp_path, monkeypatch, team_list=team_list)
+    runpod_api = _import_runpod_api()
+    attempted: list[str] = []
+
+    def _terminate_boom(pod_id):
+        attempted.append(pod_id)
+        raise runpod_api.RunPodError("HTTP 502 from RunPod: upstream connect error")
+
+    monkeypatch.setattr(runpod_api, "terminate_pod", _terminate_boom, raising=False)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["reason"] == "no_compute_available"
+    assert "pre-existing" in out["log_tail_excerpt"]
+    assert attempted == ["podT"]  # the reap TRIED once, then degraded
+    assert len(rp.launches) == 1  # the launch seam still ran
+    assert _lease_intent_on_disk(1116) is None  # handler cleared on completion
+
+
+def test_wedge_relaunch_reaps_interrupted_residue(tmp_path, monkeypatch):
+    """#1838 plan test 10: the ``_relaunch_fresh_runpod`` funnel (wedge /
+    CUDA-IMA) runs the same reap before its fresh re-provision — an aged
+    intent + in-window orphan is terminated and the relaunch proceeds."""
+    import scripts.backend_poll as bp
+
+    now = _time.time()
+    _seed_intent(now - 300, issue=775)
+    orphan = _intent_pod("podW", now - 240, name="pod-775")
+    runpod_api = _import_runpod_api()
+    monkeypatch.setattr(runpod_api, "list_team_pods", lambda: [orphan], raising=False)
+    terminations: list[str] = []
+    monkeypatch.setattr(
+        runpod_api,
+        "terminate_pod",
+        lambda pod_id: terminations.append(pod_id) or True,
+        raising=False,
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    wedged = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="pod-fake-775",
+        pod_name="pod-775",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-775.log",
+        extra={
+            "issue": 775,
+            "intent": "lora-7b",
+            "workload_cmd": "bash scripts/issue664_dispatch.sh --foo",
+            "hydra_args": [],
+        },
+    )
+    sidecar = tmp_path / "issue-775-handle.json"
+    write_handle_sidecar(wedged, sidecar)
+
+    out = bp._relaunch_fresh_runpod(
+        issue=775,
+        handle=wedged,
+        result=_poll("dead", "terminal_runpod_no_port_wedged"),
+        sidecar=sidecar,
+        stamp_fn=lambda issue, handle: None,
+    )
+    assert out["status"] == "running"
+    assert terminations == ["podW"]
+    assert read_handle_sidecar(sidecar).backend == "runpod"
+    assert len(rp.launches) == 1
+    assert _lease_intent_on_disk(775) is None  # superseded on submit
+
+
+def test_stamp_intent_no_lease_is_noop(tmp_path):
+    """#1838 plan test 11: stamping with NO lease present is a no-crash no-op
+    (no lease is created; the launch proceeds under today's semantics)."""
+    import scripts.backend_poll as bp
+    from explore_persona_space.backends.router import LeaseStore
+
+    store = LeaseStore(lease_dir=tmp_path / "eps-routing-unit")
+    assert bp._stamp_provision_intent(4242, reason="x", lease_store=store) is None
+    assert store.read(4242) is None
+
+
+def test_reap_cap_two_killed_attempts_then_degrade(tmp_path, monkeypatch, capsys):
+    """#1838 plan test 12 (MF1 + critic r2 carry-forward): a standing intent
+    at reap_count=2 with an in-window orphan does NOT reap and does NOT stamp
+    a fresh intent (the launch seam sees the SEEDED intent untouched) — the
+    provision refuses on the live pod, today's re-drivable terminal fires,
+    and the completion handler clears the intent (episode permanently over)."""
+    now = _time.time()
+    _seed_intent(now - 300, reap_count=2)
+    orphan = _intent_pod("podC", now - 240)
+    team_list = _ScriptedTeamList([[orphan], [orphan], [orphan]])
+    rp = _IntentCapturingProvisionFailedBackend()
+    sidecar, rp, terminations = _reclaim_setup(
+        tmp_path, monkeypatch, team_list=team_list, backend=rp
+    )
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["reason"] == "no_compute_available"
+    assert terminations == []  # NO reap at the cap
+    # NO fresh stamp: the launch seam observed the SEEDED intent verbatim
+    # (a fresh stamp would have re-armed the counter at 0 — the banned shape).
+    (intent_at_launch,) = rp.intents_at_launch
+    assert intent_at_launch is not None
+    assert intent_at_launch["token"] == "tok-seed"
+    assert intent_at_launch["reap_count"] == 2
+    # The refusal handler cleared the standing intent — the episode is over.
+    assert _lease_intent_on_disk(1116) is None
+
+
+def test_completed_refusal_clears_intent_then_human_pod_kept(tmp_path, monkeypatch, capsys):
+    """#1838 plan test 13 (MF2): tick 1 completes via the
+    NoComputeAvailableError handler -> the standing intent is CLEARED; a pod
+    created T+30min later matches NOTHING on tick 2 (no intent) AND is
+    independently excluded by the 900s window — both layers asserted."""
+    import scripts.backend_poll as bp
+
+    now = _time.time()
+    intent_ts = now - 3600.0
+    _seed_intent(intent_ts)
+    original_intent = _lease_intent_on_disk(1116)
+    late_pod = _intent_pod("podL", intent_ts + 1800.0)  # created T+30min
+    # Tick 1: reap probe [] / pre [] / post [] (no pod yet).
+    # Tick 2: NO reap probe (intent cleared) / pre [late_pod] / post [late_pod].
+    team_list = _ScriptedTeamList([[], [], [], [late_pod], [late_pod]])
+    sidecar, _rp, terminations = _reclaim_setup(tmp_path, monkeypatch, team_list=team_list)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    assert _last_json_line(capsys)["reason"] == "no_compute_available"
+    assert _lease_intent_on_disk(1116) is None  # MF2i: refusal cleared the intent
+
+    rc2 = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc2 == 0
+    out2 = _last_json_line(capsys)
+    assert out2["reason"] == "no_compute_available"
+    assert "pre-existing" in out2["log_tail_excerpt"]
+    assert terminations == []  # the late (human-shaped) pod was never touched
+
+    # Window layer, independently: even WITH the original intent standing,
+    # a T+30min pod is outside [T-120, T+900] and never matches.
+    assert bp._match_provision_intent_residue(original_intent, [late_pod], now=now) is None
+
+
+def test_intent_younger_than_min_age_not_reaped(tmp_path, monkeypatch):
+    """#1838 plan test 14 (NB conjunct): an intent aged <120s may belong to a
+    LIVE concurrent mid-provision poller — no reap this tick."""
+    import scripts.backend_poll as bp
+
+    t0 = 1_000_000.0
+    store, terminations = _unit_reap_rig(
+        tmp_path, monkeypatch, intent_ts=t0, pods=[_intent_pod("podY", t0 + 10.0)]
+    )
+    outcome = bp._reap_interrupted_failover_residue(
+        1116, lease_store=store, now_fn=lambda: t0 + 30.0
+    )
+    assert outcome == ("none", None)
+    assert terminations == []
+
+
+def test_reap_count_carried_across_stamps(tmp_path, monkeypatch):
+    """#1838 plan test 15: a reap at prior count c returns reap_count=c+1, and
+    the follow-on stamp persists that count with a FRESH ts + token (episode
+    accounting across killed attempts)."""
+    import scripts.backend_poll as bp
+
+    t0 = 1_000_000.0
+    store, terminations = _unit_reap_rig(
+        tmp_path, monkeypatch, intent_ts=t0, reap_count=1, pods=[_intent_pod("podZ", t0 + 60.0)]
+    )
+    outcome, info = bp._reap_interrupted_failover_residue(
+        1116, lease_store=store, now_fn=lambda: t0 + 300.0
+    )
+    assert outcome == "reaped"
+    assert info["reap_count"] == 2
+    assert terminations == ["podZ"]
+
+    stamped = bp._stamp_provision_intent(
+        1116,
+        reason="gcp_queue_vanish_failover_runpod",
+        reap_count=info["reap_count"],
+        lease_store=store,
+    )
+    assert stamped is not None
+    assert stamped["reap_count"] == 2
+    assert stamped["ts"] > t0
+    assert stamped["token"] != "tok-seed"
+    persisted = store.read(1116).runpod_provision_intent
+    assert persisted["reap_count"] == 2

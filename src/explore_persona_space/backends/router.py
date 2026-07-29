@@ -1180,6 +1180,23 @@ class Lease:
     #: fresh host with this field already set routes to terminal
     #: ``failure_class: code``. ``None`` for every non-CUDA-IMA-failover lease.
     runpod_cuda_ima_failover_of: dict[str, Any] | None = None
+    #: DURABLE provision-intent breadcrumb for a RunPod failover provision
+    #: (#1838). Stamped by the poller (``scripts/backend_poll.py``) BEFORE the
+    #: RunPod failover provision leg runs (crash-ordered write-before-create),
+    #: and CLEARED on every attempt COMPLETION: :func:`_lease_after_submit`
+    #: clears it on ANY successful submit (all six call sites / all backends),
+    #: and backend_poll's attempt-completion handlers (the
+    #: ``NoComputeAvailableError`` / ``RunPodWorkloadStartError`` branches of
+    #: both failover funnels) clear it on the failure exits. Only a KILLED
+    #: attempt (the #1739 shape: a poll tick killed between pod-create and
+    #: lease/handle write) leaves it standing — so an unsuperseded intent plus
+    #: a live in-window ``pod-<N>`` is positive interrupted-attempt-residue
+    #: evidence the retry may reap. Shape: ``{"pod_name", "issue", "ts",
+    #: "token", "reason", "reap_count"}``; ``reap_count`` bounds reap cycles
+    #: at 2 per un-cleared-intent episode (backend_poll
+    #: ``_PROVISION_INTENT_MAX_REAPS``). ``None`` for every lease with no
+    #: in-flight failover provision.
+    runpod_provision_intent: dict[str, Any] | None = None
     #: Per-rung consecutive pre-workload boot-death streaks (#1029). Keyed by
     #: the GCP ladder-rung label (e.g. ``"flexstart_l4"``; the poller's
     #: ``"unknown_rung"`` fallback pools pre-#1029 handles that lack the
@@ -1208,6 +1225,7 @@ class Lease:
             "gcp_failover_of": self.gcp_failover_of,
             "runpod_wedge_failover_of": self.runpod_wedge_failover_of,
             "runpod_cuda_ima_failover_of": self.runpod_cuda_ima_failover_of,
+            "runpod_provision_intent": self.runpod_provision_intent,
             "gcp_boot_death_streaks": self.gcp_boot_death_streaks,
         }
 
@@ -1216,6 +1234,7 @@ class Lease:
         raw_failover = payload.get("gcp_failover_of")
         raw_wedge_failover = payload.get("runpod_wedge_failover_of")
         raw_cuda_ima_failover = payload.get("runpod_cuda_ima_failover_of")
+        raw_provision_intent = payload.get("runpod_provision_intent")
         raw_boot_streaks = payload.get("gcp_boot_death_streaks")
         return cls(
             issue=int(payload["issue"]),
@@ -1233,6 +1252,9 @@ class Lease:
             ),
             runpod_cuda_ima_failover_of=(
                 raw_cuda_ima_failover if isinstance(raw_cuda_ima_failover, dict) else None
+            ),
+            runpod_provision_intent=(
+                raw_provision_intent if isinstance(raw_provision_intent, dict) else None
             ),
             gcp_boot_death_streaks=(raw_boot_streaks if isinstance(raw_boot_streaks, dict) else {}),
         )
@@ -5763,6 +5785,11 @@ def _lease_after_submit(
     ``attempt_id`` to THIS launch's id, so preserving it here records the
     id the launch actually used. Absent lease → fresh one with the
     spec's attempt_id (or a freshly minted one if none).
+
+    #1838: ANY successful submit also SUPERSEDES a standing
+    ``runpod_provision_intent`` breadcrumb — the attempt COMPLETED, so the
+    intent must not linger and mis-attribute a later live ``pod-<N>`` as
+    interrupted-attempt residue.
     """
     if lease is None:
         lease = Lease(
@@ -5776,6 +5803,7 @@ def _lease_after_submit(
     lease.cluster = cluster
     lease.job_id = str(handle.job_id)
     lease.submitted_at = float(time.time())  # wall-clock, not monotonic
+    lease.runpod_provision_intent = None  # #1838 supersession on every submit
     return lease
 
 

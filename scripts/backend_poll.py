@@ -49,7 +49,9 @@ import re
 import subprocess
 import sys
 import time
+import uuid
 from dataclasses import dataclass, replace
+from datetime import datetime
 from pathlib import Path
 
 # Repo-root sys.path bootstrap. Invoking this file as a script puts only
@@ -2219,6 +2221,19 @@ def _relaunch_fresh_runpod(
                 f"pre-#689 handle requires manual re-dispatch (CLAUDE.md halt-criterion #2)."
             ),
         )
+    # #1838 interrupted-attempt residue reap + provision-intent stamp (the
+    # wedge/CUDA-IMA sibling of the _failover_gcp_to_runpod insert; log-only —
+    # this funnel has no extra_evidence channel). The wedged pod was already
+    # terminated by the caller, so a residue match here is a PRIOR killed
+    # relaunch attempt's orphan. Cap-hit: NO reap and NO fresh stamp (critic
+    # r2 carry-forward — the standing intent falls at a completion handler).
+    reaped = _reap_and_stamp_provision_intent(issue, reason=str(success_phase))
+    if reaped is not None:
+        logging.warning(
+            "backend_poll: reaped interrupted-relaunch provision residue before the fresh "
+            "re-provision (%s) (#1838)",
+            reaped,
+        )
     # #689 blocker-3: wrap the router launch in try/except NoComputeAvailableError
     # (mirrors the GCP analogue at _failover_dead_gcp_to_runpod). The wedged pod was
     # already terminated by the caller (billing stopped), so a no-capacity RunPod
@@ -2249,6 +2264,10 @@ def _relaunch_fresh_runpod(
         # workload-start leg failed. NOT no_compute_available — that mislabel
         # reads "nothing launched" (false) and invites the watcher's
         # capacity-retry re-drive while the fresh pod bills invisibly.
+        # #1838 belt (MF2i site d): the rung's _lease_after_submit already
+        # cleared the intent unless its lease write failed (EDQUOT); clear so
+        # the diagnosis pod is never matched as residue by a later failover.
+        _clear_provision_intent(issue, site="wedge_relaunch_workload_start")
         partial = getattr(exc, "handle", None)
         if partial is None:
             # Defensive: unreachable via the rung today (a handle-less start
@@ -2293,6 +2312,8 @@ def _relaunch_fresh_runpod(
         # infra JSON with reason=no_compute_available (re-drivable by the watcher's
         # capacity-retry pass). No lease stamp — nothing launched, so a later poll
         # SHOULD retry once a lane frees.
+        # #1838 (MF2i site c): the attempt COMPLETED — clear the intent.
+        _clear_provision_intent(issue, site="wedge_relaunch_no_compute")
         return _terminal_infra_json(
             issue=issue,
             sidecar=sidecar,
@@ -3306,24 +3327,23 @@ _CREATED_THEN_FAILED_MARKERS: tuple[str, ...] = (
 )
 
 
-def _live_runpod_ids_for_issue(issue: int) -> set[str] | None:
-    """Live pod_ids whose name is EXACTLY ``pod-<issue>`` (suffixed pods excluded).
+def _live_runpod_pods_for_issue(issue: int) -> list | None:
+    """Live ``PodInfo`` rows whose name is EXACTLY ``pod-<issue>`` (suffixed pods excluded).
 
-    The attribution probe for the #1490 provision-residue reclaim: called once
-    BEFORE the failover launch (the ``pre`` snapshot) and once in the
-    ``NoComputeAvailableError`` branch (the ``post`` snapshot). Returns
-    ``None`` on ANY API failure (probe-unknown; callers bias SAFE — an unknown
-    snapshot never licenses a terminate). One GraphQL list call per snapshot;
-    GCP→RunPod failovers are rare events. Post-probe listing lag (a
-    just-created pod missing from the team list) reads as no-residue — the
-    #1490 D2 watcher orphan arm catches that leak on a later tick.
+    Generalizes the #1490 id probe (#1838): the interrupted-attempt residue
+    match needs the full ``PodInfo`` rows (``created_at`` / ``desired_status``),
+    so this returns them and :func:`_live_runpod_ids_for_issue` is re-expressed
+    over it — behavior identical. Returns ``None`` on ANY API failure
+    (probe-unknown; callers bias SAFE — an unknown snapshot never licenses a
+    terminate). One GraphQL list call per snapshot; GCP→RunPod failovers are
+    rare events.
     """
     try:
         _ensure_scripts_dir_on_sys_path()
         from runpod_api import list_team_pods  # lazy import (#770/#775 pattern)
 
         name = f"pod-{int(issue)}"
-        return {p.pod_id for p in list_team_pods() if p.name == name}
+        return [p for p in list_team_pods() if p.name == name]
     except Exception as exc:
         logging.warning(
             "backend_poll: provision-residue live-pod probe failed (%s: %s); "
@@ -3332,6 +3352,24 @@ def _live_runpod_ids_for_issue(issue: int) -> set[str] | None:
             exc,
         )
         return None
+
+
+def _live_runpod_ids_for_issue(issue: int) -> set[str] | None:
+    """Live pod_ids whose name is EXACTLY ``pod-<issue>`` (suffixed pods excluded).
+
+    The attribution probe for the #1490 provision-residue reclaim: called once
+    BEFORE the failover launch (the ``pre`` snapshot) and once in the
+    ``NoComputeAvailableError`` branch (the ``post`` snapshot). Returns
+    ``None`` on ANY API failure (probe-unknown; callers bias SAFE — an unknown
+    snapshot never licenses a terminate). Post-probe listing lag (a
+    just-created pod missing from the team list) reads as no-residue — the
+    #1490 D2 watcher orphan arm catches that leak on a later tick. Since #1838
+    a thin id-projection of :func:`_live_runpod_pods_for_issue`.
+    """
+    pods = _live_runpod_pods_for_issue(issue)
+    if pods is None:
+        return None
+    return {p.pod_id for p in pods}
 
 
 def _classify_provision_failure(evidence_text: str, returncode: int | None) -> str:
@@ -3527,6 +3565,316 @@ def _reclaim_failed_runpod_provision(
             "pod_ids": [],
             "detail": f"reclaim error ({type(exc).__name__}: {exc})",
         }
+
+
+# ─── #1838 interrupted-failover provision-intent breadcrumb (reap-and-recreate) ───
+
+#: Attribution window (#1838): a live ``pod-<N>`` whose ``created_at`` falls in
+#: ``[intent.ts - _PROVISION_INTENT_CLOCK_SKEW_SEC, intent.ts + WINDOW]`` is
+#: attributable to the KILLED failover attempt that stamped the intent. 900 s
+#: bounds the stamp→create latency of a killed attempt (the #1739 incident's
+#: create landed ≤~4 min after the failover fired; the killing caller timeout
+#: is 120 s; ``wait_for_ssh``'s 600 s runs AFTER create) while excluding a
+#: later human ``pod.py provision`` (kept — today's refusal path). Too small
+#: degrades to today's keep (safe). Env-overridable.
+RUNPOD_PROVISION_INTENT_WINDOW_SEC = int(
+    os.environ.get("EPM_RUNPOD_PROVISION_INTENT_WINDOW_SEC", "900")
+)
+
+#: VM↔RunPod-API ``createdAt`` clock-skew allowance: a pod created marginally
+#: "before" the intent per the API clock can still be ours (the two clocks are
+#: independent; 120 s generously covers NTP skew).
+_PROVISION_INTENT_CLOCK_SKEW_SEC = 120.0
+
+#: A standing intent younger than one poll tick may belong to a LIVE
+#: mid-provision CONCURRENT poller (the M3b #669 dual-triggerer shape lands
+#: within one tick; the incident's killing caller timeout is 120 s) — it can
+#: never license a reap. A skipped tick just retries next tick.
+_PROVISION_INTENT_MIN_AGE_SEC = 120.0
+
+#: Reap-cycle bound per un-cleared-intent episode (#1838 MF1): a SYSTEMATICALLY
+#: killed provision stops reaping after 2 cycles and degrades to today's
+#: refusal terminal instead of looping create→kill→reap. Deliberately a module
+#: constant, NOT env-tunable — raising it is a plan must-ask.
+_PROVISION_INTENT_MAX_REAPS = 2
+
+
+def _provision_intent_created_at_epoch(created_at) -> float | None:
+    """Epoch seconds for a ``PodInfo.created_at`` ISO-8601 string; ``None`` on
+    any missing / unparseable value (bias safe — an unattributable pod is kept)."""
+    from datetime import UTC  # local import (the in-file lazy-import precedent)
+
+    if not isinstance(created_at, str) or not created_at:
+        return None
+    try:
+        dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=UTC)
+    return dt.timestamp()
+
+
+def _stamp_provision_intent(
+    issue: int, *, reason: str, reap_count: int = 0, lease_store=None
+) -> dict | None:
+    """Stamp the #1838 provision-intent breadcrumb on the durable lease.
+
+    Called BEFORE the RunPod failover provision leg runs (crash-ordered
+    write-before-create), inside a ``LeaseStore`` flock transaction so a
+    concurrent poller never clobbers it with stale data. Cleared on every
+    attempt COMPLETION (``router._lease_after_submit`` on any successful
+    submit; :func:`_clear_provision_intent` at the failure handlers) — only a
+    KILLED attempt leaves it standing. Returns the stamped intent dict, or
+    ``None`` when there is no lease to stamp (a fresh issue with no dispatch
+    record — degrade: the retry then keeps today's refusal behavior) or on any
+    store failure. NEVER raises.
+    """
+    from explore_persona_space.backends.router import LeaseStore
+
+    store = lease_store or LeaseStore()
+    intent = {
+        "pod_name": f"pod-{int(issue)}",
+        "issue": int(issue),
+        "ts": float(time.time()),
+        "token": uuid.uuid4().hex,
+        "reason": str(reason),
+        "reap_count": int(reap_count),
+    }
+    try:
+        with store.transaction(int(issue)) as (lease, write):
+            if lease is None:
+                logging.warning(
+                    "backend_poll: no lease present to stamp runpod_provision_intent for "
+                    "issue %s; a killed provision on this attempt stays unattributable "
+                    "(today's refusal behavior)",
+                    issue,
+                )
+                return None
+            lease.runpod_provision_intent = intent
+            write(lease)
+        return intent
+    except Exception as exc:
+        logging.warning(
+            "backend_poll: provision-intent stamp failed for issue %s (%s: %s); "
+            "degrading to today's behavior (no breadcrumb)",
+            issue,
+            type(exc).__name__,
+            exc,
+        )
+        return None
+
+
+def _clear_provision_intent(issue: int, *, site: str, lease_store=None) -> None:
+    """Clear the #1838 provision-intent breadcrumb at an attempt-COMPLETION exit.
+
+    ``site`` names which completion path cleared (logged for the marker/ops
+    trail). A completed attempt — successful submit (cleared router-side via
+    ``_lease_after_submit``), a ``NoComputeAvailableError`` refusal, or a
+    ``RunPodWorkloadStartError`` — must not leave the intent standing, or a
+    LATER human/foreign pod could be mis-attributed as interrupted-attempt
+    residue. No-op when no lease / no intent. NEVER raises.
+    """
+    from explore_persona_space.backends.router import LeaseStore
+
+    store = lease_store or LeaseStore()
+    try:
+        with store.transaction(int(issue)) as (lease, write):
+            if lease is None or getattr(lease, "runpod_provision_intent", None) is None:
+                return
+            lease.runpod_provision_intent = None
+            write(lease)
+        logging.info(
+            "backend_poll: cleared runpod_provision_intent for issue %s at %s "
+            "(attempt completed; #1838 episode over)",
+            issue,
+            site,
+        )
+    except Exception as exc:
+        logging.warning(
+            "backend_poll: provision-intent clear failed for issue %s at %s (%s: %s); "
+            "the next successful submit clears it via _lease_after_submit",
+            issue,
+            site,
+            type(exc).__name__,
+            exc,
+        )
+
+
+def _match_provision_intent_residue(intent, pods, *, now: float):
+    """Pure #1838 residue predicate — the ``PodInfo`` the standing intent attributes.
+
+    Implements plan-Q4 conjuncts 1/3/4/5 (the reap-cap conjunct 2 lives in the
+    caller so the cap-hit branch can log distinctly):
+
+    1. ``intent`` is a parseable dict with a string ``pod_name`` + float ``ts``
+       (each live pod must match that exact name);
+    3. ``now - intent.ts >= _PROVISION_INTENT_MIN_AGE_SEC`` (a younger intent
+       may belong to a LIVE concurrent mid-provision poller);
+    4. EXACTLY ONE live non-EXITED pod with that name (0 or ≥2 → ambiguity
+       never licenses a reap — the #1490 stance);
+    5. that pod's ``created_at`` parses AND falls in
+       ``[ts - _PROVISION_INTENT_CLOCK_SKEW_SEC, ts + RUNPOD_PROVISION_INTENT_WINDOW_SEC]``.
+
+    Any failed conjunct → ``None`` (keep; today's exact behavior).
+    """
+    if not isinstance(intent, dict):
+        return None
+    pod_name = intent.get("pod_name")
+    try:
+        intent_ts = float(intent.get("ts"))
+    except (TypeError, ValueError):
+        return None
+    if not isinstance(pod_name, str) or not pod_name:
+        return None
+    if now - intent_ts < _PROVISION_INTENT_MIN_AGE_SEC:
+        return None
+    live = [
+        p
+        for p in (pods or [])
+        if p.name == pod_name and str(p.desired_status or "").upper() != "EXITED"
+    ]
+    if len(live) != 1:
+        return None
+    (pod,) = live
+    created_ts = _provision_intent_created_at_epoch(pod.created_at)
+    if created_ts is None:
+        return None
+    lo = intent_ts - _PROVISION_INTENT_CLOCK_SKEW_SEC
+    hi = intent_ts + RUNPOD_PROVISION_INTENT_WINDOW_SEC
+    if not (lo <= created_ts <= hi):
+        return None
+    return pod
+
+
+def _reap_and_stamp_provision_intent(issue: int, *, reason: str) -> dict | None:
+    """The #1838 pre-provision pair BOTH failover funnels run: reap a PRIOR
+    killed attempt's residue, then stamp a fresh intent BEFORE the launch
+    (crash-ordered write-before-create) carrying ``reap_count = prior + 1``.
+
+    On the reap CAP-HIT branch there is NO reap and NO fresh stamp (critic r2
+    carry-forward): the STANDING intent survives until a completion handler
+    clears it, so a systematically-killed provision can never re-arm its own
+    counter. Returns the reap info dict (the GCP funnel records it on the
+    marker evidence) or ``None``. Never raises (both callees never raise).
+    """
+    reap_outcome, reaped = _reap_interrupted_failover_residue(issue)
+    if reap_outcome != "cap-hit":
+        _stamp_provision_intent(
+            issue, reason=reason, reap_count=(reaped["reap_count"] if reaped else 0)
+        )
+    return reaped
+
+
+def _reap_interrupted_failover_residue(
+    issue: int, *, lease_store=None, now_fn=time.time
+) -> tuple[str, dict | None]:
+    """Reap a ``pod-<N>`` a PRIOR killed failover attempt provably created (#1838).
+
+    Runs BEFORE the failover's provision leg (and before the #1490 PRE
+    snapshot, so a reaped pod never contaminates that attribution baseline).
+    TRISTATE outcome (critic round-2 carry-forward — the cap-hit branch must
+    be distinguishable so the caller stamps NO fresh intent there):
+
+    * ``("reaped", info)`` — the full positive-evidence conjunct set matched
+      and the surgical ``terminate_pod`` succeeded (or the pod was already
+      gone — :func:`_terminate_error_is_pod_not_found`); ``info`` carries
+      ``{"pod_id", "intent_ts", "created_at", "reap_count": prior + 1}``.
+    * ``("cap-hit", None)`` — the residue matched but the standing intent's
+      ``reap_count`` already reached :data:`_PROVISION_INTENT_MAX_REAPS`
+      (a systematically-killed provision): NO reap and NO fresh stamp — the
+      standing intent survives until a completion handler clears it, so the
+      episode ends at today's refusal terminal instead of looping.
+    * ``("none", None)`` — every other branch (no lease / no intent /
+      malformed intent / probe unknown / no conjunct match / terminate
+      failed): degrade to today's exact behavior.
+
+    NEVER raises (mirrors :func:`_reclaim_failed_runpod_provision`).
+    """
+    try:
+        from explore_persona_space.backends.router import LeaseStore
+
+        store = lease_store or LeaseStore()
+        try:
+            lease = store.read(int(issue))
+        except OSError as exc:
+            logging.warning(
+                "backend_poll: provision-intent lease read failed for issue %s (%s: %s); "
+                "no reap (bias safe)",
+                issue,
+                type(exc).__name__,
+                exc,
+            )
+            return ("none", None)
+        intent = getattr(lease, "runpod_provision_intent", None) if lease is not None else None
+        if not isinstance(intent, dict):
+            return ("none", None)
+        pods = _live_runpod_pods_for_issue(issue)
+        if pods is None:
+            return ("none", None)  # probe unknown — an unknown snapshot never terminates
+        match = _match_provision_intent_residue(intent, pods, now=float(now_fn()))
+        if match is None:
+            return ("none", None)
+        try:
+            prior_reaps = int(intent.get("reap_count", 0))
+        except (TypeError, ValueError):
+            prior_reaps = 0
+        if prior_reaps >= _PROVISION_INTENT_MAX_REAPS:
+            logging.warning(
+                "backend_poll: interrupted-failover residue pod-%d (%s) matched but the "
+                "reap-cycle cap (%d) is hit — a systematically-killed provision; NO reap, "
+                "NO fresh intent stamp: the provision will refuse on the live pod and the "
+                "refusal terminal ends the episode. Recovery: inspect + `uv run python "
+                "scripts/pod.py terminate --issue %d --yes` (#1838 MF1)",
+                int(issue),
+                match.pod_id,
+                _PROVISION_INTENT_MAX_REAPS,
+                int(issue),
+            )
+            return ("cap-hit", None)
+        try:
+            _ensure_scripts_dir_on_sys_path()
+            from runpod_api import terminate_pod  # lazy import (#770/#775 pattern)
+
+            terminate_pod(match.pod_id)
+        except Exception as exc:
+            if not _terminate_error_is_pod_not_found(exc):
+                logging.warning(
+                    "backend_poll: terminate of interrupted-failover residue pod %s FAILED "
+                    "(%s: %s); proceeding WITHOUT reap — the provision refuses on the "
+                    "still-live pod and the #1490 classifier keeps today's re-drivable "
+                    "terminal (#1838 Q5 degrade)",
+                    match.pod_id,
+                    type(exc).__name__,
+                    exc,
+                )
+                return ("none", None)
+        logging.warning(
+            "backend_poll: reaped interrupted-failover provision residue pod-%d (%s; "
+            "created_at=%s within the intent window) left by a KILLED prior failover "
+            "attempt — billing stopped; proceeding to a fresh provision in the SAME "
+            "attempt (#1838)",
+            int(issue),
+            match.pod_id,
+            match.created_at,
+        )
+        return (
+            "reaped",
+            {
+                "pod_id": match.pod_id,
+                "intent_ts": float(intent["ts"]),
+                "created_at": match.created_at,
+                "reap_count": prior_reaps + 1,
+            },
+        )
+    except Exception as exc:  # NEVER raises — degrade to today's exact behavior
+        logging.warning(
+            "backend_poll: interrupted-failover residue reap errored (%s: %s); "
+            "degrading to today's behavior (no reap)",
+            type(exc).__name__,
+            exc,
+        )
+        return ("none", None)
 
 
 def _terminal_infra_json(*, issue: int, sidecar: Path, reason: str, log_tail: str) -> dict:
@@ -4207,6 +4555,28 @@ def _failover_gcp_to_runpod(
             )
 
     spec = _runspec_from_gcp_handle(handle, issue)
+    # #1838 interrupted-attempt residue reap + provision-intent stamp. A PRIOR
+    # failover tick killed mid-provision (the #1739 shape: the caller's timeout
+    # kills the poll between pod-create and lease/handle write) leaves a live
+    # pod-<N> that sits in the #1490 PRE snapshot with no attribution — the
+    # fresh provision then refuses on our own orphan and mints
+    # no_compute_available while the orphan bills. Reap it FIRST (full
+    # positive-evidence conjunct set; reap cycles bounded at
+    # _PROVISION_INTENT_MAX_REAPS per episode) so it is ABSENT from the PRE
+    # snapshot below and the fresh provision proceeds in the SAME attempt;
+    # then stamp a fresh intent BEFORE the launch (crash-ordered
+    # write-before-create) so THIS attempt's own kill is attributable on the
+    # next retry. Cap-hit: NO reap and NO fresh stamp — the standing intent
+    # survives until a completion handler clears it, so a systematically-
+    # killed provision can never re-arm its own counter (critic r2
+    # carry-forward). A reap is recorded on the marker via extra_evidence;
+    # reaped is None keeps the evidence dict byte-identical to today.
+    reaped = _reap_and_stamp_provision_intent(issue, reason=reason)
+    if reaped is not None:
+        extra_evidence = {
+            **(extra_evidence or {}),
+            "interrupted_provision_residue_reaped": reaped,
+        }
     # #1490 pre-launch attribution snapshot: the live pod_ids named EXACTLY
     # pod-<N> BEFORE the RunPod launch is attempted, so the
     # NoComputeAvailableError branch below can tell a pod THIS failover's
@@ -4254,6 +4624,11 @@ def _failover_gcp_to_runpod(
         # uses, then emit a DISTINCT terminal (NOT no_compute_available — that
         # mislabel invites the watcher's capacity-retry re-drive while the pod
         # bills, the #931 incident).
+        # #1838 belt (MF2i site d): the rung's in-flock _lease_after_submit
+        # already cleared the provision intent UNLESS its lease write failed
+        # (the EDQUOT mode); clear here so the #909 leave-RUNNING-for-diagnosis
+        # pod is never matched by a later failover's residue reap.
+        _clear_provision_intent(issue, site="gcp_core_workload_start")
         partial = getattr(exc, "handle", None)
         if partial is None:
             # Defensive: unreachable via the rung today (a handle-less start
@@ -4282,6 +4657,12 @@ def _failover_gcp_to_runpod(
         # decision table (singleton new id AND positive created-then-failed
         # evidence → surgical terminate; every other cell never terminates).
         evidence_text, returncode = _provision_failure_evidence(exc)
+        # #1838 (MF2i site b): this attempt COMPLETED (refusal / no-capacity /
+        # exit-75-converted) — clear the provision intent so a pod provisioned
+        # LATER (e.g. by a human) is never matched as interrupted-attempt
+        # residue. On the cap-hit path this clear is what permanently ends the
+        # episode (the standing intent falls here).
+        _clear_provision_intent(issue, site="gcp_core_no_compute")
         reclaim = _reclaim_failed_runpod_provision(
             issue=issue,
             pre_ids=pre_provision_ids,
@@ -4354,6 +4735,13 @@ def _failover_gcp_to_runpod(
     # possible across crashes), fall through to the terminal
     # ``sidecar_persistence_failed`` shape exactly as the no-readback case below.
     if already_launched:
+        # #1838 (A7 enumeration): a 2nd-triggerer attempt COMPLETES here
+        # WITHOUT a submit of its own (the concurrent 1st triggerer's submit
+        # is the one that ran _lease_after_submit), so when THIS triggerer's
+        # pre-launch stamp landed AFTER the 1st's clear, its fresh intent
+        # would otherwise stand beside the 1st's HEALTHY pod — exactly the
+        # mis-attribution the completion-clear contract exists to prevent.
+        _clear_provision_intent(issue, site="gcp_core_already_launched")
         try:
             existing = read_handle_sidecar(sidecar)
         except (OSError, json.JSONDecodeError, KeyError, ValueError):
