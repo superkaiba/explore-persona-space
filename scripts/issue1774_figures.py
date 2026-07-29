@@ -473,7 +473,7 @@ def fig_jensen_concentration(fig_dir: Path) -> str | None:
     ax.axhline(0.5, color="grey", linewidth=0.6)
     ax.set_xlabel("Answer-basis coordinate rank (pca48)")
     ax.set_ylabel("Cumulative share")
-    ax.set_title("Jensen-gap direction concentration (H1c)")
+    ax.set_title("Jensen-gap direction concentration")
     ax.legend(fontsize=8)
     savefig_paper(fig, "jensen_gap_concentration", dir=fig_dir)
     plt.close(fig)

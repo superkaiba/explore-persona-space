@@ -1,6 +1,6 @@
 {
-  "commit": "f342cb4161",
-  "created": "2026-07-29T08:06:13Z",
+  "commit": "23356fce6e",
+  "created": "2026-07-29T10:10:15Z",
   "figsize": [
     6.0,
     3.8
@@ -686,7 +686,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Jensen-gap direction concentration (H1c)",
+        "title_left": "Jensen-gap direction concentration",
         "xlabel": "Answer-basis coordinate rank (pca48)",
         "ylabel": "Cumulative share",
         "legend_labels": [
