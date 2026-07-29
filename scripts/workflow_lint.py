@@ -129,6 +129,16 @@ Behaviours:
   normalized to ``|`` first. The
   ``.claude/hooks/guard_piped_git_push.sh`` PreToolUse hook covers the
   inline ad-hoc commands that never reach a committed script (#1048).
+* ``--check-agents-note-argv-verdict`` (also bundled into the no-flags
+  default run): walk every ``*.md`` under ``.claude/agents/`` and FAIL on
+  any line prescribing an argv-prose ``--note`` verdict/marker post via a
+  command substitution — the pattern task #1743 banned from agent specs
+  (merged 99af2fbb0d) and rewrote to the ``post-marker --file`` channel;
+  the standing pin is #1785 (#1722/#1756 argv-substitution incident
+  family). The sanctioned variable form (resolve every command
+  substitution into a shell variable FIRST, then pass the variable as the
+  note) never matches. No waiver: reword prose that would match (the
+  #1743 r2 precedent).
 * ``--check-push-failure-swallow`` (also bundled into the no-flags default
   run): walk every ``*.sh`` under ``scripts/`` and FAIL on any logical
   line where a ``git push`` is followed ON THE SAME LINE by ``|| echo`` /
@@ -11888,11 +11898,14 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 131,378 B post-Step-10d-merge (task #1727 Step 0.70
-    # smoke-variable gating gate + task #1716 Step 4 ruff-policy pin +
-    # L99 style-bullet + Step 0.5 pin-invocation marker-shape check —
-    # both landings STACKED at Step 10d merge; cap = measured + ~1.0 KB.
+    # measured 133,188 B post-#1743 (task-bound verdict post switched to
+    # the --file channel + MANDATORY exact-kind read-back duty —
+    # plan-mandated growth; cap = measured + ~1.0 KB.
     # Prior:
+    # 132_500 — measured 131,378 B post-Step-10d-merge (task #1727 Step
+    # 0.70 smoke-variable gating gate + task #1716 Step 4 ruff-policy pin
+    # + L99 style-bullet + Step 0.5 pin-invocation marker-shape check —
+    # both landings STACKED at Step 10d merge),
     # 130_000 — measured 128,507 B post-#1727 unmerged (Step 0.70
     # alone atop pre-#1716 base — trigger + sub-checks (1)/(2)/(3) +
     # waiver form + verdict routing with the smoke-var-ungated /
@@ -11924,7 +11937,7 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # reads), 99,000 — measured 98,126 B post-#1230 (Step 6 durability-pin
     # shipping duty), 97,000 — measured 96,072 B post-#1119, 95,000 —
     # measured 94,126 B post-#1115)
-    "code-reviewer.md": 132_500,
+    "code-reviewer.md": 134_200,
     # measured 74,082 B post-#1447 (family-enumeration sync: the two
     # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
     # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
@@ -12641,6 +12654,72 @@ def check_skill_bang_backtick(*, claude_dir: Path | None = None) -> list[str]:
                         "hazard, #1243/#1266) — reword: insert a space before "
                         "the backtick or write 'bang-backtick' in prose"
                     )
+    return errors
+
+
+# ── --check-agents-note-argv-verdict (#1743/#1785) ───────────────────────────
+# Both banned-pattern strings are built by FRAGMENT CONCATENATION so this
+# module's own source never carries the exact matched literal — a future
+# `grep scripts/` sweep for either pattern stays clean (the same self-match
+# avoidance the guard hooks use).
+_NOTE_ARGV_VERDICT_P1 = 'note "$(' + "cat"  # the #1743 acceptance-grep pattern
+_NOTE_ARGV_VERDICT_P2 = "--note " + '"$('  # the #1743 reviewer's broader variant
+
+
+def check_agents_note_argv_verdict(*, agents_dir: Path | None = None) -> list[str]:
+    """Walk every ``*.md`` under ``.claude/agents/`` and FAIL on any line
+    prescribing an argv-prose ``--note`` verdict/marker post opened as a
+    command substitution — the pattern task #1743 (merged 99af2fbb0d)
+    banned from agent specs and rewrote to the ``post-marker --file``
+    channel; #1785 pins that acceptance grep as this standing check.
+
+    Two literal substrings are flagged (built by fragment concatenation
+    above so this module's own source never carries either matched
+    literal): P1 — the #1743 acceptance-grep pattern (a note flag whose
+    body opens as a substitution around ``cat``); P2 — the #1743
+    reviewer's broader variant (any note flag opening directly into a
+    command substitution). Rationale (the #1722/#1756 incident family): a
+    command substitution nested inside an already-double-quoted note
+    argument collapses backslash-escaped inner quotes (git reads them
+    literal, silently yielding empty output and a blank field in the
+    durable marker), and the PreToolUse guards scan the whole Bash argv —
+    heredoc bodies included — so a spec PRESCRIBING the argv shape steers
+    every future agent into the very block the ``--file`` channel exists
+    to avoid.
+
+    Deliberately NOT matched — do not "fix" this check into flagging it:
+    the sanctioned variable form (resolve every command substitution into
+    a shell variable FIRST, then pass the variable as the note argument)
+    has no substitution opener adjacent to the note token, so it passes
+    by construction.
+
+    Plain substring match; no allowlist and no comment/fence skipping —
+    agent specs are prose, and the #1743 r2 precedent is to REWORD a line
+    that would match (a warning can describe the ban without carrying the
+    literal).
+
+    ``agents_dir`` is an override hook for unit tests; production callers
+    pass None and the function walks the canonical
+    ``<repo_root>/.claude/agents`` tree. Bundled into the no-flags default
+    run (same policy as ``check_piped_git_push``).
+    """
+    root = agents_dir if agents_dir is not None else _REPO_ROOT / ".claude" / "agents"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for md in sorted(root.rglob("*.md")):
+        if not md.is_file():
+            continue
+        lines = md.read_text(encoding="utf-8").splitlines()
+        for lineno, line in enumerate(lines, start=1):
+            if _NOTE_ARGV_VERDICT_P1 not in line and _NOTE_ARGV_VERDICT_P2 not in line:
+                continue
+            rel = md.relative_to(_REPO_ROOT) if agents_dir is None else md
+            errors.append(
+                f"{rel}:{lineno}: agent spec prescribes an argv-prose --note "
+                f"verdict/marker post (the pattern #1743 banned; use the "
+                f"--file channel)"
+            )
     return errors
 
 
@@ -13429,6 +13508,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "2026-07-10). '$!' shell-pid prose is exempt. No waiver: reword "
         "instead. Bundled into the no-flags default run.",
     )
+    parser.add_argument(
+        "--check-agents-note-argv-verdict",
+        action="store_true",
+        help="FAIL on any .claude/agents/**/*.md line prescribing an "
+        "argv-prose --note verdict/marker post opened as a command "
+        "substitution — the pattern #1743 banned and rewrote to the "
+        "post-marker --file channel (#1722/#1756 argv-substitution "
+        "incident family; pinned by #1785). The sanctioned "
+        "resolve-into-a-shell-variable-first form never matches. No "
+        "waiver: reword instead (the #1743 r2 precedent). Bundled into "
+        "the no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     if args.regen_hf_routing_snapshot:
@@ -13519,6 +13610,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_marker_scalar_integrity
         or args.check_poller_marker_consumers
         or args.check_skill_bang_backtick
+        or args.check_agents_note_argv_verdict
     )
 
     errors: list[str] = []
@@ -13669,6 +13761,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_asw_docstring_pass_count())
     if args.check_skill_bang_backtick or no_flags:
         errors.extend(check_skill_bang_backtick())
+    if args.check_agents_note_argv_verdict or no_flags:
+        errors.extend(check_agents_note_argv_verdict())
 
     if errors:
         for err in errors:

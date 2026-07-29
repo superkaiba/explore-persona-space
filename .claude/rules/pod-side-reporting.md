@@ -1,5 +1,5 @@
 ---
-description: Pod-side dispatcher result-reporting contract (sentinel files, poll_pipeline.py drain, epm:results payload, pod-side sentinel READ-BACK tolerance under the .processed drain-rename (#1311)) + pid-file launch contract (rewrite on EVERY (re)launch, #813) + legacy pod-side preflight gates; relocated verbatim from experiment-implementer.md, #829
+description: Pod-side dispatcher result-reporting contract (sentinel files, poll_pipeline.py drain, epm:results payload, pod-side sentinel READ-BACK tolerance under the .processed drain-rename (#1311)) + pid-file launch contract (rewrite on EVERY (re)launch, #813) + relaunch-descope record & handle-sidecar currency (#1689) + legacy pod-side preflight gates; relocated verbatim from experiment-implementer.md, #829
 paths:
   - "scripts/*dispatch*"
   - "scripts/poll_pipeline.py"
@@ -308,6 +308,42 @@ relaunch, a watch-session correction — not just first launches:
    a stale or transient pid alone cannot mint a false "exited"
    verdict; the pattern probe supplements, never replaces, the pid
    file.
+1e. **Relaunch-descope record + handle-sidecar currency (#1689).** A
+   relaunch that CHANGES the realized recipe (layers / draw counts /
+   cells / models / seeds / scope) or the OUTPUT ROOT relative to the
+   last posted run marker or approved plan is a DESCOPE, not a plain
+   retry. Two duties, both in the SAME relaunch step, binding the
+   VM-side agent performing the relaunch (pod-side code never shells
+   `scripts/task.py`):
+   (i) BEFORE launch, post an `epm:progress` descope note naming
+   old → new per changed axis, the new out-root, the reason, and the
+   launcher path (+ whether it is committed). This is the durable
+   record the analyzer reconciles the realized recipe against — an
+   unmarked descope is clean-result contamination (CIs read as if they
+   came from the documented recipe). The descope note is IN ADDITION
+   to item 2's fresh `epm:run-launched` re-post, never a substitute
+   for it.
+   (ii) In the same relaunch step, rewrite the dispatch handle sidecar
+   `.claude/cache/issue-<N>-handle.json` so its run-scoped fields
+   track the NEW run — `extra.expected_artifacts.sentinel_path`,
+   `log_path`, `extra.pid_file`, `extra.runpod_attempt_id`,
+   `extra.workload_pid` where changed — atomically (tmp+rename,
+   mirroring item 1's atomic rewrite), or re-dispatch through
+   `dispatch_issue.py` so the router rewrites it. Duty (ii) keys on
+   CHANGED run-scoped handle fields, not on the recipe: a SAME-recipe
+   relaunch into a new out-root / attempt also stales `sentinel_path`
+   and gets the rewrite, even though the "descope" naming suggests
+   recipe changes. On the hand-rewrite path, never resurrect a sidecar
+   already retired to `<name>.finalized` (the `dispatch_issue.py`
+   finalize contract) — re-dispatch is the safe default there. A
+   handle pointing at a dead run's completion sentinel is a SILENT
+   poller kill: `backend_poll.py` reads the sidecar every tick, so
+   completion is never observed. Worked example (incident #1689 r15b,
+   2026-07-28): an uncommitted pod-side `launch_issue_1689_r15b.sh`
+   ran L19-only at 10/2 draws vs the marker-documented 4-layer 200/40
+   with NO marker, and the handle kept pointing at the OLD attempt's
+   `.completion-sentinel.json` — both found only by a user-requested
+   manual audit (#1689 epm:progress v64).
 2. **The fresh `epm:run-launched` carries the SAME live pid (`pid=`) AND
    `pid_file=`** (SKILL.md § "Any relaunch must re-post `epm:run-launched`").
    `poll_pipeline.py` computes `pid_alive = pidfile_pid_alive OR

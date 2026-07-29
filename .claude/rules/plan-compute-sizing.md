@@ -1,5 +1,5 @@
 ---
-description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the measured 1-cell fit-pilot basis for per-cell fit / factorization / GD phases (#1060), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), the CPU-phase RAM/RSS routing gate (projected peak RSS per VM-placed phase; ≥~16 GB single-or-summed routes off the shared VM), the dose-ladder checkpoint-retention default (keep dose-selected + latest, clean ruled-out rungs between rungs; size disk to the RETAINED set, #1133), the fan-out end-of-run accumulated footprint rule (#1541, from incident #1481: an N-cell fan-out retaining per-cell outputs sizes the boot disk to the end-of-run SUM of every cell's retained outputs + the transient high-water mark, or declares a driver-side between-phase reap of consumed cell outputs), and costing wall-time against the machine the router will ACTUALLY provision + p90-based fence sizing, and the external-stream >~1h presumption for network-bound streaming/harvest phases (#1092), and the out-root mount-binding contract (#1414, from incident #1333: each disk out-root names its target filesystem/mount; the workload preamble asserts headroom at that mount — resume-aware per #1642, from incident #1586 fu crash 5: phase-entry gates skip or scale need_gb by PENDING cells, never a blanket fresh-run floor on a resume), and the phase-ordering checkpoint high-water requirement (#1612, from incident #1586 r5: the stated ckpt high-water is computed against the IMPLEMENTED phase ordering — every phase accumulating checkpoints without an intervening reap is itself reap-bounded; a downstream-unit reap cannot bound an upstream train-all accumulation), and the multi-arm min-width + stall-time down-width split (#1633, from incident #1112: 1×-runnable arms held ~14 h behind a coupled 4×/8× provision during an A100 drought; a mixed-width multi-arm plan names each arm's MINIMUM runnable width and pre-registers splitting out the narrowest-runnable arms on a ≥ ~1 h sustained capacity stall) (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
+description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the measured 1-cell fit-pilot basis for per-cell fit / factorization / GD phases (#1060; multiplier read off the code, draw-count necessity, superlinear pool-scale pilots, recorded basis updates, output-growth health reads — #1798), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), the CPU-phase RAM/RSS routing gate (projected peak RSS per VM-placed phase; ≥~16 GB single-or-summed routes off the shared VM; largest-cell keying, #1798), the dose-ladder checkpoint-retention default (keep dose-selected + latest, clean ruled-out rungs between rungs; size disk to the RETAINED set, #1133), the fan-out end-of-run accumulated footprint rule (#1541, from incident #1481: an N-cell fan-out retaining per-cell outputs sizes the boot disk to the end-of-run SUM of every cell's retained outputs + the transient high-water mark, or declares a driver-side between-phase reap of consumed cell outputs), and costing wall-time against the machine the router will ACTUALLY provision + p90-based fence sizing, and the external-stream >~1h presumption for network-bound streaming/harvest phases (#1092), and the out-root mount-binding contract (#1414, from incident #1333: each disk out-root names its target filesystem/mount; the workload preamble asserts headroom at that mount — resume-aware per #1642, from incident #1586 fu crash 5: phase-entry gates skip or scale need_gb by PENDING cells, never a blanket fresh-run floor on a resume), and the phase-ordering checkpoint high-water requirement (#1612, from incident #1586 r5: the stated ckpt high-water is computed against the IMPLEMENTED phase ordering — every phase accumulating checkpoints without an intervening reap is itself reap-bounded; a downstream-unit reap cannot bound an upstream train-all accumulation), and the multi-arm min-width + stall-time down-width split (#1633, from incident #1112: 1×-runnable arms held ~14 h behind a coupled 4×/8× provision during an A100 drought; a mixed-width multi-arm plan names each arm's MINIMUM runnable width and pre-registers splitting out the narrowest-runnable arms on a ≥ ~1 h sustained capacity stall) (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
@@ -374,7 +374,38 @@ the machine/device the phase will actually run, executed THROUGH the
 production entrypoint (one full cell/unit end-to-end — every kernel the
 per-cell path touches), OR a cited prior-issue MEASURED figure for the
 SAME kernel + shape. Projected wall = `n_calls × measured_per_call /
-parallelism`, stated in the row. TRIVIALITY EXEMPTION — never
+parallelism`, stated in the row. MULTIPLIER DERIVATION — the multiplier
+product itself (`n_calls` = draws × cells × folds × evals-per-unit × …)
+MUST be DERIVED FROM THE CODE, never assumed arithmetic: count the
+inner-loop iterations at the named production entrypoint (read the loop
+bounds off the fit/driver script, or log a counted 1-unit run) — a
+correctly MEASURED per-call pilot times a WRONG multiplier still
+under-projects by the missing factor (#1689: the pilot-based projection
+under-ran the realized wall because a per-pair evals multiplier was
+assumed rather than read off the fit code; the code-review round later
+projected the same phase's bootstrap battery at ~140 CPU-h). DRAW-COUNT
+NECESSITY — a bootstrap / permutation / null-draw battery projected to
+DOMINATE its phase's wall (≳ half the phase cost) MUST state draw-count
+necessity in the row: what the draws buy (the CI-width / significance
+target), why N draws rather than an order less, and a pre-registered
+DESCOPE lever (reduce N to a stated floor / drop the band) the mid-run
+deviation path may pull without a re-plan (#1689: an N=1000
+selection-symmetric bootstrap projected at ~140 CPU-h dominated the
+fit-ladder phase and was descoped only by user order — "drop bootstrap
+to 0" — cutting the events-recorded remaining ETA of ~38h at 200 draws
+to ~5-6h). POOL-SCALE PILOTS — SHAPE also includes SCALE for kernels
+whose cost scales SUPERLINEARLY in pool size (pairwise similarity /
+near-dupe screens ~ pool²): the pilot runs at production pool scale, OR
+the row states the scaling exponent and extrapolates the pilot by it —
+a below-scale pilot on a quadratic battery under-projects by the square
+of the pool ratio (#1738: the near-dupe screen's pilot ran below the
+production pool; the realized screen ran multi-hour serial at ~100%
+CPU). And health reads of a long serial screen / battery phase key on
+OUTPUT growth (produced files, log advance, `/proc/<pid>/io`
+write_bytes), never CPU% alone — a frozen or quadratically-grinding
+serial screen reads ~100% CPU for hours (#1738's live read needed
+positive forward-progress evidence beyond CPU% exactly because the
+screen phase logs sparsely). TRIVIALITY EXEMPTION — never
 self-certified by an asserted cost: a row may skip the pilot ONLY when
 total_calls ≤ ~500 AND its sub-floor (~15–30 min) projection is computed
 from a MEASURED or prior-issue-CITED per-call figure; an ASSERTED
@@ -408,7 +439,16 @@ row's basis `pilot-gated`. (The in-run pilot measures at the SAME
 execution shape, and its refusal is a DESIGNED artifact-routed halt —
 report JSON + a distinct rc the dispatcher routes like its other stop
 criteria, never a bare rc=1 read as an anonymous crash; worked impl +
-incident: the gotchas.md pilot-gate entry, #1415.) This is the
+incident: the gotchas.md pilot-gate entry, #1415.) BASIS CURRENCY —
+whenever a pilot or realized in-run figure deviates ≥2× (the
+`compute_deviation_over_2x` / `EPM_ETA_DEVIATION_MULT` boundary) from a
+§9 row's approved basis, the owning session posts a RECORDED basis
+update in the same turn — an `epm:compute-deviation` re-post or
+`epm:progress` note re-stating the row's basis (measured per-call ×
+code-derived multiplier), the re-projected wall, and any downstream
+fence/cap re-derived from it; an approved plan's basis is never left
+standing known-stale (#1738: a materially stale capture-cost basis
+stood in the approved plan post-pilot). This is the
 fit-phase twin of the store-heavy
 block's measured one-item rule below. Sizing precedent (#1092 offvm
 battery refit, 2026-07-15): a permutation-null battery at ambient
@@ -464,7 +504,17 @@ in-memory tensor loads"). Any §9 CPU/analysis phase placed on the VM MUST
 state its projected peak RSS in the row's `basis` — a measured one-chunk
 `ru_maxrss` at production shape, or `resident_pool_bytes × live_factor`
 with the live-factor MEASURED, never the explicit-temporary count
-(gotchas.md "Memory caps for torch fit loops"). Route the phase OFF the
+(gotchas.md "Memory caps for torch fit loops"). LARGEST-CELL KEYING —
+this keying duty applies to ANY RAM/RSS projection used for routing or
+machine sizing: the VM-placement gate here AND GPU-lane host-RAM /
+machine-RAM sizing (`--min-ram-gb` / machine choice). Key the
+projection on the LARGEST planned cell/lane/table — the max over lanes
+of the working-set — never an anchor or first-listed unit;
+heterogeneous lanes state per-lane peaks or size to the max (#1739:
+host RAM sized on an anchor behavior's table; a sibling lane's larger
+working set kernel-OOM'd python at anon-rss 163 GiB on a 170 GB-class
+machine, twice — the second lane hit the same kill point hours later;
+the 340 GB relaunch held). Route the phase OFF the
 VM — `cpu-mid` (GCP 32 GB) or `cpu-bigmem` (128 GB) — when projected peak
 RSS ≥ ~16 GB, OR when concurrent VM-resident phases' SUMMED projected RSS
 crosses the same ~16 GB bar (#833: two ~13-15 GB phases concurrently
