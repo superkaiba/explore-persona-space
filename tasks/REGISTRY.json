@@ -6116,8 +6116,8 @@
     "1789": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1789",
-      "status": "approved",
+      "path": "tasks/running/1789",
+      "status": "running",
       "title": "daily-fix: spec-freshness awk exclusion keys on subject shap"
     },
     "1790": {
