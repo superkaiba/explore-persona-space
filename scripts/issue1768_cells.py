@@ -371,12 +371,20 @@ def sample_train_prompts(
 
     Stratified by corpus provenance at the manifest's REALIZED proportions
     (meta n_lmsys / n_wildchat), formatted-prompt token cap enforced at load
-    (skip counts recorded), exact-text disjoint from the pinned val/test set.
-    Returns {rows, n_skipped_over_cap, n_skipped_valtest, proportions}.
+    (skip counts recorded), exact-text disjoint from the pinned val/test set,
+    and sha-DEDUPED (#1768 crash-fix r4): the n1M pool contains exact-duplicate
+    prompt texts (the #779 near-dupe screen was vs its 1,400 eval targets, never
+    a within-corpus exact-dedup), so the seeded draw skips any candidate whose
+    sha is already taken — within a corpus, across corpora, or vs the pinned
+    val/test shas (val/test keep priority; train loses the row) — topping up
+    from the continuing permutation order. Deterministic under ``seed``.
+    Returns {rows, n_skipped_over_cap, n_skipped_valtest, n_skipped_dup,
+    proportions}.
     """
     import numpy as np
 
     vt = set(valtest)
+    taken: set[str] = {prompt_sha(p) for p in valtest}  # pinned rows keep priority
     by_corpus: dict[str, list[dict]] = {"lmsys": [], "wildchat": []}
     for r in pool:
         by_corpus[r["corpus"]].append(r)
@@ -387,6 +395,7 @@ def sample_train_prompts(
     rows: list[dict] = []
     skipped_cap = 0
     skipped_vt = 0
+    skipped_dup = 0
     for corpus, quota in quotas.items():
         cand = by_corpus[corpus]
         order = rng.permutation(len(cand))
@@ -398,17 +407,24 @@ def sample_train_prompts(
             if p in vt:
                 skipped_vt += 1
                 continue
+            sha = prompt_sha(p)
+            if sha in taken:  # duplicate text already drawn (or a pinned row)
+                skipped_dup += 1
+                continue
             if formatted_prompt_token_len(tokenizer, p) > token_cap:
                 skipped_cap += 1
                 continue
-            rows.append({"prompt": p, "corpus": corpus, "sha": prompt_sha(p)})
+            rows.append({"prompt": p, "corpus": corpus, "sha": sha})
+            taken.add(sha)
             kept += 1
         assert kept == quota, f"{corpus}: only {kept}/{quota} rows passed the caps"
     assert len(rows) == n_train, (len(rows), n_train)
+    assert len({r["sha"] for r in rows}) == n_train, "train sha dedup failed (logic bug)"
     return {
         "rows": rows,
         "n_skipped_over_cap": skipped_cap,
         "n_skipped_valtest": skipped_vt,
+        "n_skipped_dup": skipped_dup,
         "proportions": quotas,
         "seed": seed,
         "token_cap": token_cap,
