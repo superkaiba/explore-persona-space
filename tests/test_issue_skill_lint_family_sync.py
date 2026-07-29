@@ -190,8 +190,9 @@ def test_step5a_exclusion_is_subject_scoped():
         "the Step 5a branch-side-edit exclusion must emit '<sha> <subject>' "
         "(subject-scoped, the Guard-3 convention)"
     )
-    assert "awk 'index($0, \"spec-freshness\") == 0'" in span, (
-        "the Step 5a exclusion must filter via the subject-scoped awk index() form"
+    assert "awk 'index($0, \"sync workflow-surface specs from\") == 0'" in span, (
+        "the Step 5a exclusion must filter via the subject-scoped awk index() form "
+        "keyed on the prescribed sync-subject anchor (#1789)"
     )
     assert _FULL_MESSAGE_INVERT not in span, (
         "the Step 5a exclusion must NOT use the full-message form (it would "
