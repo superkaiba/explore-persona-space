@@ -23,6 +23,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1774.md](https://github.com/superkaiba/explore-persona-space/blob/7d96fa14ce0fe5dadf8609129b3c01fae16d0458/docs/methodology/issue_1774.md) · [gist mirror](https://gist.github.com/superkaiba/f6082e8e17a56e383610559cb8ac734a)
+
 ## Takeaways
 
 - Held-out per-answer R² at layer 14: full context **0.812**, bare query **0.717**, pre-query prefix end 0.02, query-averaged prefix −0.02 — with every trait cell resolved at 11.7–16.8× decode-noise floors.
