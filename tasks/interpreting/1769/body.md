@@ -4,7 +4,7 @@ title: Prefill-only hook causes near-zero change; sycophancy at α=2 shows decod
 kind: experiment
 tags: []
 created_at: '2026-07-28T20:23:10Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1739
 origin_prompt: 'add these to the existing experiments: 2. Prefill-vs-decode behavioral
   commitment (~4-8 GPU-h) - the only existing evidence is one hybrid-MoE paper; our
