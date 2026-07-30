@@ -671,6 +671,13 @@ def _save_map(tensors_root: Path, variant: str, u_label: str, mapfit, layers) ->
             return out
         meta["apply"] = "pred = issue779_ffc_n1m_fits.apply_map(payload[layer], x) (whitened space)"
         meta["dtype"] = "per-layer N1M payload tensors (fp32)"
+        # Carry the held-out map-quality diagnostics (per-layer r2_map,
+        # r2_identity_bias, knn{euclidean,cosine}, n_train/n_hold, payload
+        # tags) into the persisted meta so `map_quality.json` is derivable
+        # from the frozen artifact alone — the standing mapping-companion
+        # reads (CLAUDE.md identity+bias / kNN bullet) must survive without
+        # re-running the fit. Linear rungs keep their pre-existing meta.
+        meta["diagnostics"] = mapfit.diagnostics
         tmp = out_dir / (out.name + ".tmp")
         _torch.save({"meta": meta, "payloads": list(mapfit.nl_payloads)}, tmp)
         _os.replace(tmp, out)
