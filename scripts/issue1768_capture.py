@@ -24,6 +24,12 @@ the SAME code paths, PASS_UNIFIED):
                 (harvest judge scores -> threshold -> r_B); runs AFTER p7 by
                 default so the Batch-API poll overlaps p2..p7 and no GPU
                 phase ever blocks on the judge
+- pnf           matched-text capture-noise floor (plan v7 follow-up; OPT-IN
+                via `--phases pnf`, never in the default chain): 2 replicate
+                TF captures x 6 units on a 2,000-row seed-42 TRAIN subsample
+                -> CPU reduce (per-context ||v_r1 - v_r2||, p95 floor, 72-arm
+                shift/floor ratio table, H3 + marker-falsification verdicts)
+                -> noise_floor/ upload
 
 Signaling: ``[phase=...]`` log lines + ``status.json`` heartbeat (SLURM-safe;
 plan §9 pins NO /workspace sentinel dependence). Work fans out across every
@@ -47,9 +53,12 @@ load_dotenv()  # before torch: shared-VM thread caps + HF/W&B credentials
 import argparse  # noqa: E402
 import dataclasses  # noqa: E402
 import gc  # noqa: E402
+import hashlib  # noqa: E402
+import itertools  # noqa: E402
 import json  # noqa: E402
 import logging  # noqa: E402
 import os  # noqa: E402
+import random  # noqa: E402
 import shutil  # noqa: E402
 import subprocess  # noqa: E402
 import time  # noqa: E402
@@ -1220,9 +1229,11 @@ def _stage_reused_panel(cfg: Cfg, tree: str, arm_id: str) -> bool:
     present: dict[str, bool] = {}
     for name in files:
         hub_path = f"{REUSED_PANEL_HF_PREFIX}/{tree}/{hub_name}/{name}"
-        present[name] = hub.retry_transient(  # HUB_VERIFY_RETRY_EXEMPT: wrapped in retry_transient here
-            lambda p=hub_path: api.file_exists(X.HF_DATA_REPO, p, repo_type="dataset"),
-            what=f"panel stage probe {hub_path}",
+        present[name] = (
+            hub.retry_transient(  # HUB_VERIFY_RETRY_EXEMPT: wrapped in retry_transient here
+                lambda p=hub_path: api.file_exists(X.HF_DATA_REPO, p, repo_type="dataset"),
+                what=f"panel stage probe {hub_path}",
+            )
         )
         if not present[name]:
             if name in required:
@@ -1987,7 +1998,9 @@ def phase_p1(cfg: Cfg) -> None:
     if n_dp != 1:
         logger.warning(
             "[p1] prefix-arm degeneracy: n_distinct_prefix=%d (premise said 1; < %d keeps "
-            "the §4.8 drop — recorded as a quantified scope caveat)", n_dp, PREFIX_REOPEN_FLOOR
+            "the §4.8 drop — recorded as a quantified scope caveat)",
+            n_dp,
+            PREFIX_REOPEN_FLOOR,
         )
     # fp16 storage probe (assumption 11): recorded per unit at capture time
     report["fp16_roundtrip_cos_min"] = man["fp16_roundtrip_cos_min"]
@@ -2080,6 +2093,13 @@ def _pending_units(cfg: Cfg, phase: str) -> list[str]:
         return [u for u in delta_units if not (root / "delta_tf" / u / "tbar.pt").exists()]
     if phase == "p6":
         return [a for a in p6_arm_ids(cfg) if not (root / "rb_plus" / a / "done.json").exists()]
+    if phase == "pnf":
+        return [
+            f"{u}:{rep}"
+            for u in _pnf_units(cfg)
+            for rep in PNF_REPLICATES
+            if not (root / "noise_floor" / u / f"pooled_nf_{rep}.pt").exists()
+        ]
     raise ValueError(phase)
 
 
@@ -2347,6 +2367,654 @@ def phase_p7(cfg: Cfg) -> None:
     )
 
 
+# ── pnf: matched-text capture-noise floor (plan v7 follow-up) ────────────────
+
+PNF_UNITS = (
+    "base_content",
+    "cas-pers-con-lr1e5-s42",
+    "imp-pers-con-lr3e5-s42",
+    "syc-pers-con-lr1e5-s42",
+    "mk-pers-con-lr5e6-s42",
+    "imp-pers-ft-con-s42",
+)
+PNF_N_ROWS = 2_000  # seed-42 TRAIN subsample size (plan v7 §4.2)
+PNF_R2_TF_BATCH = 13  # r2 geometry perturbation (plan v7 §4.3; any !=8 suffices)
+PNF_REPLICATES = ("r1", "r2")
+_PNF_BASE_REQUIRED = ("rows_spans.json", "raw_rows.done.json", "pooled.pt", "manifest.json")
+
+
+def _pnf_units(cfg: Cfg) -> list[str]:
+    """pnf unit set (plan v7 §4.1). --smoke = base_content only (§4.4 smoke
+    parity: 1 unit through the SAME entrypoint); --arms filters the TRAINED
+    units (base_* always kept — it is the model-independent control)."""
+    if cfg.arms:
+        keep = set(cfg.arms)
+        return [u for u in PNF_UNITS if u.startswith("base_") or u in keep]
+    if cfg.smoke:
+        return ["base_content"]
+    return list(PNF_UNITS)
+
+
+def _pnf_dir(cfg: Cfg) -> Path:
+    return cfg.out_root / "noise_floor"
+
+
+def _pnf_results_dir(cfg: Cfg) -> Path:
+    """Reduce-output destination. --smoke diverts to a scratch dir under the
+    out-root so smoke outputs never touch committed eval_results (#722)."""
+    if cfg.smoke:
+        return cfg.out_root / "results_smoke"
+    return REPO_ROOT / "eval_results" / "issue_1768"
+
+
+def _pnf_base_incomplete(d: Path) -> str | None:
+    """None when a base tree carries the FULL pnf-consumer file set (rows +
+    spans + pooled store for the same-pass anchor); else the reason. Keying
+    completeness on one proxy file is the #1090/#1315 partial-stage trap."""
+    for f in _PNF_BASE_REQUIRED:
+        if not (d / f).exists():
+            return f"{f} missing"
+    if not list(d.glob("raw_rows_*.jsonl")):
+        return "no raw_rows shards"
+    return None
+
+
+def _pnf_staged_tree_dir(cfg: Cfg, rel_prefix: str, hf_prefix: str | None = None) -> Path:
+    return cfg.out_root / "nf_staging" / (hf_prefix or X.HF_PREFIX) / rel_prefix
+
+
+def _pnf_stage_tree(cfg: Cfg, rel_prefix: str, hf_prefix: str | None = None) -> Path:
+    """Stage `{hf_prefix}/{rel_prefix}` (default: the parent's verified
+    production prefix) via the #1402 canonical helper; returns the CONSUMED
+    dir under the verbatim mirror root (the #1774 dest-is-mirror-root rule:
+    `mirror_root/<hub prefix> == consumed path` by construction, asserted)."""
+    from explore_persona_space.orchestrate import hub
+
+    src_prefix = hf_prefix or X.HF_PREFIX
+    hub.stage_hub_prefix(
+        X.HF_DATA_REPO,
+        f"{src_prefix}/{rel_prefix}",
+        cfg.out_root / "nf_staging",
+        repo_type="dataset",
+    )
+    out = _pnf_staged_tree_dir(cfg, rel_prefix, src_prefix)
+    assert out.exists(), f"pnf staging mirror-root arithmetic broke: {out} absent"
+    return out
+
+
+def _pnf_resolved_base_dir(cfg: Cfg, base_unit: str) -> Path:
+    """The base tree the pnf consumers read: canonical local (same-out-root
+    resume / smoke) else the staged mirror. Raises when neither is complete."""
+    local = cfg.out_root / "corpus_capture" / base_unit
+    if _pnf_base_incomplete(local) is None:
+        return local
+    staged = _pnf_staged_tree_dir(cfg, f"corpus_capture/{base_unit}")
+    reason = _pnf_base_incomplete(staged)
+    if reason is None:
+        return staged
+    raise RuntimeError(f"[pnf] base tree {base_unit} unavailable ({reason}) — run pnf staging")
+
+
+def _pnf_stage(cfg: Cfg) -> dict[str, Path]:
+    """pnf_stage: inputs + arm_registry + base trees, local-else-Hub.
+
+    Sources are the parent run's verified PRODUCTION prefix (`X.HF_PREFIX`) —
+    `cfg.hf_prefix` is the UPLOAD prefix (smoke-suffixed under --smoke) and is
+    never a staging source. arm_registry.json lives at the PREFIX ROOT, not
+    under inputs/ (epm:consistency v2 note 2); the reduce consumes it for the
+    unit-pin identity check. One bounded restage per base tree (plan §7 kill
+    criterion (b) fires as a fail-loud RuntimeError after the retry).
+    """
+    _phase("pnf_stage")
+    _status(cfg, "pnf_stage")
+    from explore_persona_space.orchestrate import hub
+
+    sample_path = cfg.out_root / "inputs" / "corpus_sample.json"
+    if not sample_path.exists():
+        hub.stage_hub_file(X.HF_DATA_REPO, f"{X.HF_PREFIX}/inputs/corpus_sample.json", sample_path)
+    reg_path = cfg.out_root / "arm_registry.json"
+    if not reg_path.exists():
+        hub.stage_hub_file(X.HF_DATA_REPO, f"{X.HF_PREFIX}/arm_registry.json", reg_path)
+    base_dirs: dict[str, Path] = {}
+    for bu in sorted({X.base_unit_for(u) for u in _pnf_units(cfg)}):
+        local = cfg.out_root / "corpus_capture" / bu
+        if _pnf_base_incomplete(local) is None:
+            logger.info("[pnf] %s: complete local base tree reused", bu)
+            base_dirs[bu] = local
+            continue
+        staged = _pnf_stage_tree(cfg, f"corpus_capture/{bu}")
+        reason = _pnf_base_incomplete(staged)
+        if reason is not None:
+            logger.info("[pnf] %s staged tree incomplete (%s) — one restage", bu, reason)
+            staged = _pnf_stage_tree(cfg, f"corpus_capture/{bu}")
+            reason = _pnf_base_incomplete(staged)
+        if reason is not None:
+            raise RuntimeError(f"[pnf] base tree {bu} incomplete after restage: {reason}")
+        base_dirs[bu] = staged
+    _pnf_dir(cfg).mkdir(parents=True, exist_ok=True)
+    _atomic_json(
+        _pnf_dir(cfg) / "staging_done.json",
+        {"base_dirs": {k: str(v) for k, v in base_dirs.items()}, **_meta()},
+    )
+    return base_dirs
+
+
+def _pnf_subsample(cfg: Cfg) -> tuple[list[str], str]:
+    """Deterministic seed-42 TRAIN-sha subsample (plan v7 §4.2).
+
+    Returns (shas in draw order, sha256 of the SORTED sha list — the regime
+    key's subsample fingerprint). Train shas are unique + valtest-disjoint by
+    the parent r4 postcondition; asserted here fail-loud.
+    """
+    sample = X.load_corpus_sample(cfg.out_root)
+    n_train = sample["n_train"]
+    train_rows = sample["rows"][:n_train]
+    n_sub = min(PNF_N_ROWS, n_train)
+    idxs = random.Random(X.SAMPLE_SEED).sample(range(n_train), n_sub)
+    shas = [train_rows[i]["sha"] for i in idxs]
+    assert len(set(shas)) == n_sub, "pnf subsample shas not unique (r4 postcondition violated)"
+    key = hashlib.sha256("\n".join(sorted(shas)).encode("utf-8")).hexdigest()
+    return shas, key
+
+
+def _pnf_regime(cfg: Cfg, unit_id: str, replicate: str, sub_sha: str) -> dict:
+    """The output-affecting resume/regime key (plan v7 §4.3). git_commit is
+    RECORDED in metadata but deliberately EXCLUDED here — a crash-fix commit
+    must not refuse resuming byte-identical completed stores."""
+    r2 = replicate == "r2"
+    return {
+        "unit_id": unit_id,
+        "replicate": replicate,
+        "tf_batch": PNF_R2_TF_BATCH if r2 else cfg.tf_batch,
+        "row_order": f"perm_seed_{X.FLOOR_SEED}" if r2 else "base_tree",
+        "layers": list(cfg.layers),
+        "subsample_sha256": sub_sha,
+    }
+
+
+def _pnf_rows_for_unit(base_dir: Path, shas: list[str]) -> list[dict]:
+    """Base-tree rows (spans re-joined) filtered to the subsample shas.
+
+    Exactly one row per sha: train shas are unique in the base tree and
+    disjoint from the duplicate-bearing pinned valtest block (r4
+    postcondition) — a shortfall is the plan §7 kill criterion (b).
+    """
+    rows = _read_rows_with_spans(base_dir)
+    keep = set(shas)
+    out = [r for r in rows if r["prompt_sha"] in keep]
+    assert len(out) == len(keep) == len({r["prompt_sha"] for r in out}), (
+        f"pnf sha-join incomplete: {len(out)} rows for {len(keep)} subsample shas "
+        f"under {base_dir} (kill criterion b)"
+    )
+    return out
+
+
+def _gpu_name() -> str:
+    import torch
+
+    return torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"
+
+
+def run_noise_floor_unit(
+    cfg: Cfg, unit_id: str, base_dir: Path, shas: list[str], sub_sha: str, tag: str = ""
+) -> list[float]:
+    """TWO replicate teacher-forced captures for one unit (plan v7 §4.3).
+
+    r1 = base-tree row order at the production tf_batch (cfg.tf_batch, default
+    8); r2 = seed-1768 row permutation at tf_batch=13. Byte-identical
+    `_teacher_forced_span_means` kwargs to the parent p3 call except
+    tf_batch_size (plan §10 call-shape bind). Resume is REGIME-KEYED: an
+    existing store is reused only on an exact regime match, refused loud
+    otherwise (#722-r3/#952 stale-resume class). Returns the CAPTURE walls
+    (seconds) of the replicates actually run — model resolution/staging
+    excluded, so kill criterion (a) gates on capture cost, not download cost.
+    """
+    import torch
+
+    unit_dir = _pnf_dir(cfg) / unit_id
+    unit_dir.mkdir(parents=True, exist_ok=True)
+    base_unit = X.base_unit_for(unit_id)
+    pending: list[tuple[str, Path, dict]] = []
+    for rep in PNF_REPLICATES:
+        store_path = unit_dir / f"pooled_nf_{rep}.pt"
+        regime = _pnf_regime(cfg, unit_id, rep, sub_sha)
+        if store_path.exists():
+            # weights_only=False: self-produced sha-pinned store (parent
+            # convention; _meta()'s torch version is a TorchVersion object)
+            meta = torch.load(store_path, map_location="cpu", mmap=True, weights_only=False)[
+                "metadata"
+            ]
+            if meta.get("regime") != regime:
+                raise RuntimeError(
+                    f"[pnf] {store_path} holds a DIFFERENT regime — refusing stale reuse "
+                    f"(#722-r3 class): stored={meta.get('regime')} vs current={regime}"
+                )
+            logger.info("[pnf] %s %s: complete store reused (regime match)", unit_id, rep)
+            continue
+        pending.append((rep, store_path, regime))
+    if not pending:
+        return []
+    rows = _pnf_rows_for_unit(base_dir, shas)
+    from explore_persona_space.analysis.representation_shift import _teacher_forced_span_means
+
+    model_path, cleanup = _resolve_unit_model(cfg, unit_id)
+    walls: list[float] = []
+    try:
+        for rep, store_path, regime in pending:
+            rep_rows = list(rows)
+            if rep == "r2":
+                random.Random(X.FLOOR_SEED).shuffle(rep_rows)
+            t0 = time.time()
+            pooled = _teacher_forced_span_means(
+                model_path,
+                rep_rows,
+                [base_unit],
+                layers=list(cfg.layers),
+                spans=("response",),
+                device=_device(),
+                dtype=_dtype(),
+                tf_batch_size=regime["tf_batch"],
+            )
+            wall = time.time() - t0
+            walls.append(wall)
+            store = {
+                "schema_version": 1,
+                "unit": unit_id,
+                "replicate": rep,
+                "row_sha": [r["prompt_sha"] for r in rep_rows],
+                "row_question_idx": [r["question_idx"] for r in rep_rows],
+                "arms": {
+                    span: {li: t.to(torch.float16) for li, t in per.items()}
+                    for span, per in pooled.items()
+                },
+                "metadata": {
+                    **_meta(),
+                    "regime": regime,
+                    "model_path": model_path,
+                    "gpu_name": _gpu_name(),  # arch-dependent floor (consistency v2 note 1)
+                    "shared_text_from": base_unit,
+                    "spans": ["response"],
+                    "n_rows": len(rep_rows),
+                    "capture_wall_s": wall,
+                    "smoke": cfg.smoke,
+                },
+            }
+            tmp = store_path.with_suffix(".pt.tmp")
+            torch.save(store, tmp)
+            os.replace(tmp, store_path)
+            print(
+                f"[pnf] {tag}{unit_id}:{rep} rows={len(rep_rows)} "
+                f"tf_batch={regime['tf_batch']} capture={wall:.0f}s",
+                flush=True,
+            )
+    finally:
+        _cleanup_merged(cleanup)
+    return walls
+
+
+def _pnf_wall_gate(unit_id: str, wall_s: float, first_wall_s: float) -> None:
+    """Kill criterion (a), plan v7 §7: a unit's CAPTURE wall > 3x the first
+    completed unit's (the first unit IS the in-run pilot). Fail-loud designed
+    halt AFTER the unit's stores persisted — a resume skips completed work.
+    Relative to the first unit at the SAME n, so smoke-scale-safe (#1345)."""
+    if wall_s > 3.0 * first_wall_s:
+        raise RuntimeError(
+            f"[pnf] kill criterion (a): {unit_id} capture wall {wall_s:.0f}s > "
+            f"3x first-unit wall {first_wall_s:.0f}s"
+        )
+
+
+def _pnf_replicate_distances(unit_dir: Path, layers: list[int]):
+    """Per-context replicate distances for one unit: fp32 ||v_r1 - v_r2||_2
+    per layer, rows joined by prompt_sha (r2 is a permutation of r1's rows)."""
+    import torch
+
+    stores = {}
+    for rep in PNF_REPLICATES:
+        s = torch.load(unit_dir / f"pooled_nf_{rep}.pt", map_location="cpu", weights_only=False)
+        stores[rep] = s
+    shas1, shas2 = stores["r1"]["row_sha"], stores["r2"]["row_sha"]
+    assert set(shas1) == set(shas2), (unit_dir, "replicate sha sets differ")
+    pos2 = {s: i for i, s in enumerate(shas2)}
+    idx = torch.tensor([pos2[s] for s in shas1])
+    dists = {}
+    for li in layers:
+        v1 = stores["r1"]["arms"]["response"][li].float()
+        v2 = stores["r2"]["arms"]["response"][li].float()
+        dists[li] = torch.linalg.vector_norm(v1 - v2[idx], dim=1)
+    metas = {rep: stores[rep]["metadata"] for rep in PNF_REPLICATES}
+    return shas1, dists, metas
+
+
+def _pnf_same_pass_anchor(base_dir: Path, layers: list[int]) -> dict:
+    """Zero-GPU sanity anchor (epm:plan-critique v1 concern 2 / brief note 3):
+    the frozen valtest block carries duplicate prompt shas whose rows sit
+    per-row in the parent base store — pairs restricted to BYTE-IDENTICAL
+    response token ids give WITHIN-pass replicate distances. Same-pass +
+    mixed-batch-position only ⇒ a LOWER-bound anchor (under-covers
+    pass-to-pass sources: model reload, kernel algo selection); never a
+    substitute for the replicate floor."""
+    import torch
+
+    rows = _read_shards(base_dir)
+    by_sha: dict[str, list[dict]] = {}
+    for r in rows:
+        by_sha.setdefault(r["prompt_sha"], []).append(r)
+    store = torch.load(base_dir / "pooled.pt", map_location="cpu", weights_only=False)
+    pos = {
+        (s, q): i
+        for i, (s, q) in enumerate(zip(store["row_sha"], store["row_question_idx"], strict=True))
+    }
+    resp = store["arms"]["response"]
+    pair_d: dict[int, list[float]] = {li: [] for li in layers}
+    n_groups = n_pairs = n_text_mismatch = 0
+    for sha, grp in by_sha.items():
+        if len(grp) < 2:
+            continue
+        n_groups += 1
+        for a, b in itertools.combinations(grp, 2):
+            if a["response_token_ids"] != b["response_token_ids"]:
+                n_text_mismatch += 1  # independent generations — measures gen
+                continue  # variability, not capture noise (validity caveat a)
+            ia = pos.get((sha, a["question_idx"]))
+            ib = pos.get((sha, b["question_idx"]))
+            if ia is None or ib is None:
+                continue  # dropped at span time — stays dropped
+            n_pairs += 1
+            for li in layers:
+                d = torch.linalg.vector_norm(resp[li][ia].float() - resp[li][ib].float())
+                pair_d[li].append(float(d))
+    import numpy as np
+
+    per_layer = {
+        str(li): (
+            {
+                "median": float(np.median(pair_d[li])),
+                "p95": float(np.percentile(pair_d[li], 95)),
+                "n_pairs": len(pair_d[li]),
+            }
+            if pair_d[li]
+            else None
+        )
+        for li in layers
+    }
+    return {
+        "kind": "same_pass_mixed_geometry",
+        "validity": (
+            "pairs from ONE production pass (tree order, production tf_batch): same batch "
+            "geometry regime but different batch positions; byte-identical-response pairs "
+            "only (differing-text pairs measure generation variability, not capture noise); "
+            "under-covers pass-to-pass sources (model reload, kernel algo selection) — a "
+            "LOWER-bound anchor for the replicate floor"
+        ),
+        "n_duplicate_sha_groups": n_groups,
+        "n_identical_response_pairs": n_pairs,
+        "n_pairs_response_text_differs": n_text_mismatch,
+        "per_layer": per_layer,
+    }
+
+
+def _pnf_floor_at(per_layer_p95: dict[str, float], layer: int) -> tuple[float, bool]:
+    """(floor_p95, layer_matched). Production layers always match the fits'
+    (14/19/25 both sides); the smoke's tiny-model layers never do — fall back
+    to the max available floor so the reduce path stays fully exercised."""
+    key = str(layer)
+    if key in per_layer_p95:
+        return per_layer_p95[key], True
+    return max(per_layer_p95.values()), False
+
+
+def _pnf_verdict(ratio: float | None) -> str:
+    """Plan v7 §3 disjoint bands on r = shift/floor_p95 (None = zero floor)."""
+    if ratio is None:
+        return "clear-degenerate-floor"
+    if ratio <= 2.0:
+        return "noise-ordered"
+    if ratio < 10.0:
+        return "above-floor"
+    return "clear"
+
+
+def _pnf_primary_layer(arm_id: str) -> int:
+    return 25 if arm_id.startswith("mk-") else 19  # v5 §3: L25 marker / L19 content
+
+
+def noise_floor_reduce(
+    cfg: Cfg, fits_dir: Path | None = None, results_dir: Path | None = None
+) -> dict:
+    """pnf_reduce (CPU): floors + per-context distances + 72-arm ratio table +
+    the H3-clause / marker-falsification verdicts (plan v7 §4.4 + §6)."""
+    _phase("pnf_reduce")
+    _status(cfg, "pnf_reduce")
+    import numpy as np
+
+    fits_dir = fits_dir or (REPO_ROOT / "eval_results" / "issue_1768" / "fits")
+    results_dir = results_dir or _pnf_results_dir(cfg)
+    units = _pnf_units(cfg)
+    layers = list(cfg.layers)
+    shas_sub, sub_sha = _pnf_subsample(cfg)
+
+    percontext_dir = results_dir / "noise_floor_percontext"
+    percontext_dir.mkdir(parents=True, exist_ok=True)
+    floors: dict[str, dict[str, dict]] = {}
+    floors_p95: dict[str, dict[str, float]] = {}
+    gpu_names: dict[str, dict[str, str]] = {}
+    degenerate: list[list] = []
+    for unit in units:
+        shas, dists, metas = _pnf_replicate_distances(_pnf_dir(cfg) / unit, layers)
+        floors[unit], floors_p95[unit] = {}, {}
+        gpu_names[unit] = {rep: metas[rep].get("gpu_name", "?") for rep in PNF_REPLICATES}
+        for li in layers:
+            d = dists[li].numpy()
+            p95, med = float(np.percentile(d, 95)), float(np.median(d))
+            floors[unit][str(li)] = {"p95": p95, "median": med, "n": int(d.size)}
+            floors_p95[unit][str(li)] = p95
+            if p95 == 0.0:
+                degenerate.append([unit, li])
+            _atomic_json(
+                percontext_dir / f"{unit}_L{li}.json",
+                {
+                    "unit": unit,
+                    "layer": li,
+                    "row_sha": list(shas),
+                    "distance": [float(x) for x in d],
+                    "regimes": {rep: metas[rep]["regime"] for rep in PNF_REPLICATES},
+                },
+            )
+    fleet_p95 = {str(li): max(floors_p95[u][str(li)] for u in units) for li in layers}
+    spread = {
+        str(li): {
+            "max_over_min": (
+                max(floors_p95[u][str(li)] for u in units)
+                / max(1e-12, min(floors_p95[u][str(li)] for u in units))
+            ),
+        }
+        for li in layers
+    }
+    for v in spread.values():
+        v["flagged_gt_2x"] = bool(v["max_over_min"] > 2.0)
+
+    # unit-pin identity check against the staged realized arm registry (§4.1)
+    reg_path = cfg.out_root / "arm_registry.json"
+    reg_sha = hashlib.sha256(reg_path.read_bytes()).hexdigest()
+    reg_arms = {r["arm_id"] for r in json.loads(reg_path.read_text())["arms"]}
+    missing_units = [u for u in units if not u.startswith("base_") and u not in reg_arms]
+    assert not missing_units, f"pnf units missing from arm_registry: {missing_units}"
+
+    ratio_rows: list[dict] = []
+    shift_at: dict[tuple[str, int], float] = {}
+    for f in sorted(fits_dir.glob("*_L*.json")):
+        d = json.loads(f.read_text())
+        arm, li = d["arm_id"], int(d["layer"])
+        shift = float(d["decomposition_tf"]["mean_norm_total"])
+        shift_at[(arm, li)] = shift
+        own = arm in floors_p95
+        floor, matched = _pnf_floor_at(floors_p95[arm] if own else fleet_p95, li)
+        ratio = None if floor == 0.0 else shift / floor
+        ratio_rows.append(
+            {
+                "arm_id": arm,
+                "layer": li,
+                "shift_mean_norm_total": shift,
+                "floor_p95": floor,
+                "floor_source": ("own" if own else "fleet")
+                + ("" if matched else "-layer-fallback"),
+                "ratio": ratio,
+                "verdict": _pnf_verdict(ratio),
+            }
+        )
+    arm_ids = sorted({a for a, _ in shift_at})
+
+    # criterion 1 (§6): fraction of arms with shift > fleet floor at the
+    # arm's PRIMARY layer (conservative fleet-max floor)
+    n_above = 0
+    for arm in arm_ids:
+        li = _pnf_primary_layer(arm)
+        shift = shift_at.get((arm, li))
+        assert shift is not None, f"fits missing {arm} at primary layer L{li}"
+        floor, _m = _pnf_floor_at(fleet_p95, li)
+        n_above += int(floor == 0.0 or shift > floor)
+    h3_frac = n_above / len(arm_ids) if arm_ids else 0.0
+
+    # criterion 2 (§6): marker falsification — mk arm's OWN-floor ratio at its
+    # primary layer; fleet read over every marker arm as the companion
+    mk = "mk-pers-con-lr5e6-s42"
+    mk_ratio = None
+    if mk in floors_p95 and (mk, 25) in shift_at:
+        fl, _m = _pnf_floor_at(floors_p95[mk], 25)
+        mk_ratio = None if fl == 0.0 else shift_at[(mk, 25)] / fl
+    marker_ratios = [
+        r["ratio"]
+        for r in ratio_rows
+        if r["arm_id"].startswith("mk-")
+        and r["layer"] == _pnf_primary_layer(r["arm_id"])
+        and r["ratio"] is not None
+    ]
+    out = {
+        "_meta": {
+            **_meta(),
+            "row_basis_note": (
+                "floor measured on the 2,000-row seed-42 TRAIN subsample; the compared shift "
+                "(decomposition_tf.mean_norm_total) was measured on the 1,000 pinned TEST rows "
+                "— registered in plan v7 §4.4 conservatism (b) + assumption 4: both row sets "
+                "are draws from the same corpus distribution and the comparison is a scale "
+                "read, not row-paired"
+            ),
+            "conservatisms": (
+                "(a) shift is a MEAN while the floor is a p95 — floor errs high; (b) the "
+                "shift carries ~sqrt(2)x single-capture noise from two independent captures "
+                "— absorbed inside the 2x falsification band (plan v7 §4.4)"
+            ),
+            "subsample": {"n": len(shas_sub), "seed": X.SAMPLE_SEED, "sha256": sub_sha},
+            "replicate_design": {
+                "r1": f"base-tree row order, tf_batch={cfg.tf_batch} (production geometry)",
+                "r2": f"perm seed {X.FLOOR_SEED}, tf_batch={PNF_R2_TF_BATCH}",
+            },
+            "gpu_names": gpu_names,
+            "arm_registry_sha256": reg_sha,
+            "smoke": cfg.smoke,
+        },
+        "floors": floors,
+        "fleet_floor_p95": fleet_p95,
+        "floor_spread": spread,
+        "degenerate_zero_floors": degenerate,
+        "degenerate_floor_note": (
+            "a floor_p95 of exactly 0 means the replicate pair is bit-identical there; the "
+            "operative floor is then the fp16 storage quantization step (~1e-3 relative) — "
+            "recorded per plan v7 §8, never silently substituted"
+        )
+        if degenerate
+        else None,
+        "ratio_table": ratio_rows,
+        "criteria": {
+            "h3_n_arms": len(arm_ids),
+            "h3_frac_above_fleet_floor_primary": h3_frac,
+            "h3_met": bool(arm_ids) and h3_frac >= 0.90,
+            "mk_own_floor_ratio_primary": mk_ratio,
+            "marker_falsified": (mk_ratio is not None and mk_ratio <= 2.0),
+            "fleet_marker_min_ratio_primary": min(marker_ratios) if marker_ratios else None,
+        },
+        "same_pass_anchor": _pnf_same_pass_anchor(
+            _pnf_resolved_base_dir(cfg, "base_content"), layers
+        ),
+    }
+    _atomic_json(results_dir / "capture_noise_floor.json", out)
+    logger.info(
+        "[pnf] reduce: h3_frac=%.3f mk_ratio=%s degenerate=%d -> %s",
+        h3_frac,
+        f"{mk_ratio:.2f}" if mk_ratio is not None else "n/a",
+        len(degenerate),
+        results_dir / "capture_noise_floor.json",
+    )
+    return out
+
+
+def _pnf_upload(cfg: Cfg) -> None:
+    """pnf_upload: whole noise_floor tree (stores + reduce mirror) in one
+    fail-loud upload_folder commit + exact-set verify (the p7 conventions)."""
+    _phase("pnf_upload")
+    _status(cfg, "pnf_upload")
+    if not cfg.upload:
+        logger.info("[pnf] upload disabled (--no-upload)")
+        return
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    res = _pnf_results_dir(cfg)
+    mirror = _pnf_dir(cfg) / "reduce"
+    mirror.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(res / "capture_noise_floor.json", mirror / "capture_noise_floor.json")
+    shutil.copytree(
+        res / "noise_floor_percontext", mirror / "noise_floor_percontext", dirs_exist_ok=True
+    )
+    dest = _upload_tree(cfg, "noise_floor")
+    expected = [
+        f"{cfg.hf_prefix}/noise_floor/{u}/pooled_nf_{rep}.pt"
+        for u in _pnf_units(cfg)
+        for rep in PNF_REPLICATES
+    ]
+    expected.append(f"{cfg.hf_prefix}/noise_floor/reduce/capture_noise_floor.json")
+    missing = hub.verify_repo_paths_uploaded(
+        HfApi(),
+        X.HF_DATA_REPO,
+        expected,
+        path_in_repo=f"{cfg.hf_prefix}/noise_floor",
+        repo_type="dataset",
+    )
+    assert not missing, f"pnf upload verify: {len(missing)} files missing on Hub: {missing[:5]}"
+    _atomic_json(
+        _pnf_dir(cfg) / "upload_done.json", {"dest": dest, "n_verified": len(expected), **_meta()}
+    )
+
+
+def phase_noise_floor(cfg: Cfg) -> None:
+    """pnf: matched-text capture-noise floor (plan v7 amendment) — stage ->
+    2 replicate TF captures x 6 units (ONE GPU, sequential; §9 deliberate) ->
+    CPU reduce (floor + ratio table + verdicts) -> upload."""
+    _phase("pnf")
+    _status(cfg, "pnf")
+    base_dirs = _pnf_stage(cfg)
+    shas, sub_sha = _pnf_subsample(cfg)
+    units = _pnf_units(cfg)
+    first_wall: float | None = None
+    for k, unit in enumerate(units):
+        t0 = time.time()
+        walls = run_noise_floor_unit(
+            cfg, unit, base_dirs[X.base_unit_for(unit)], shas, sub_sha, tag=f"{k + 1}/{len(units)} "
+        )
+        print(f"[pnf] unit {k + 1}/{len(units)} {unit} elapsed={time.time() - t0:.0f}s", flush=True)
+        _status(cfg, "pnf_capture", done=k + 1, total=len(units))
+        if walls:  # resumed-only units carry no capture wall
+            capture_wall = sum(walls)
+            if first_wall is None:
+                first_wall = capture_wall
+            else:
+                _pnf_wall_gate(unit, capture_wall, first_wall)
+    noise_floor_reduce(cfg)
+    _pnf_upload(cfg)
+
+
 # ── entry ────────────────────────────────────────────────────────────────────
 
 
@@ -2457,7 +3125,10 @@ def parse_args(argv: list[str] | None = None) -> tuple[Cfg, argparse.Namespace]:
     return cfg, args
 
 
-PHASE_HEADROOM_GB = {"p2": 175.0, "p3": 68.0, "p4": 20.0, "p5": 5.0, "p6": 5.0}
+PHASE_HEADROOM_GB = {"p2": 175.0, "p3": 68.0, "p4": 20.0, "p5": 5.0, "p6": 5.0, "pnf": 40.0}
+# pnf: ~2 GB staged base text + one transient merged/ft model <=16 GB + ~0.5 GB
+# stores (plan v7 §9 storage block); resume-aware gate below skips it when all
+# 12 replicate stores are already present.
 # p2 covers the p6 GPU legs it now hosts (~0.4 GB acts per arm << the corpus
 # budget); p6 itself is the CPU reduce (small r_b writes only). p2/p3 carry
 # the amendment's +16 ft units (~+22 GB run-wide against the declared 250 GB
@@ -2495,6 +3166,8 @@ def main(argv: list[str] | None = None) -> int:
             phase_p6_reduce(cfg)
         elif phase == "p7":
             phase_p7(cfg)
+        elif phase == "pnf":
+            phase_noise_floor(cfg)
         else:
             raise ValueError(f"unknown phase {phase}")
     _status(cfg, "done")
