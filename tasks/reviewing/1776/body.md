@@ -24,6 +24,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1776.md](https://github.com/superkaiba/explore-persona-space/blob/65356cd2387e2daf3f658b547db56cdfe41c888e/docs/methodology/issue_1776.md) · [gist mirror](https://gist.github.com/superkaiba/9277587d957fc1d04b73792c7a8c7283)
+
 ## Takeaways
 
 - **Causal fraction ≈ 0: last-token Jacobian held-out R² −0.001 vs 0.681 for the slot-matched fitted map (shipped 0.754, reproduced to 1e-10); Jacobian retrieval at chance.**
