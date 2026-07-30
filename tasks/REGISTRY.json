@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1849,
+  "highest_id": 1850,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6581,6 +6581,13 @@
       "path": "tasks/archived/185",
       "status": "archived",
       "title": "EM destroys persona-coupled markers via catastrophic cliff at 10-25 steps, not gradual forgetting (MODERATE confidence)"
+    },
+    "1850": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1850",
+      "status": "proposed",
+      "title": "daily-fix: remote-landing watches need fence deadline + hear"
     },
     "186": {
       "has_clean_result": true,
