@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1870,
+  "highest_id": 1871,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6742,6 +6742,13 @@
       "path": "tasks/proposed/1870",
       "status": "proposed",
       "title": "daily-fix: sync KEPT-stash outcome gets durable surfacing"
+    },
+    "1871": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1871",
+      "status": "proposed",
+      "title": "daily-fix: judge-monitor reads are digest-grain, never full "
     },
     "188": {
       "has_clean_result": false,
