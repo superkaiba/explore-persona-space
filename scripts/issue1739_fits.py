@@ -725,6 +725,45 @@ def _fit_map(args, x_w, y_w):
 NL_MAP_REUSE_ENV = "EPM_I1739_NL_MAP_REUSE"
 
 
+def _eval_rung_reconstruction(mapfit, z_ev_w, za_ev_w) -> dict:
+    """Per-layer reconstruction R^2 of the map on THIS behavior's eval rung.
+
+    The SECOND of the two map-quality reads the standing mapping-companions
+    rule wants (CLAUDE.md identity+bias / kNN bullet). The payload's own
+    ``diagnostics`` carry the U-pool HOLDOUT R^2, which is behavior-INDEPENDENT;
+    this read scores the SAME shared map against THIS behavior's eval-split
+    answers, so it is behavior-SPECIFIC and belongs in the per-lane
+    ``map_diagnostics.json`` -- never in the shared ``.pt``. Writing it into the
+    payload would make a behavior-independent artifact behavior-dependent and
+    break ``_save_map``'s skip-on-existence sharing (the whole basis of fitting
+    each map once and fanning the scoring out).
+
+    Reuses ``fits.r2_pooled`` -- the SAME estimator ``map_diagnostics`` uses for
+    ``r2_map`` -- so the two reads are directly comparable in the table rather
+    than differing by estimator convention. Expect the eval-rung read to run
+    well BELOW the U-pool read (an off-distribution extrapolation from the
+    #1092 WildChat pool onto behavior eval distributions; strongly negative is
+    a recordable finding, not a bug -- see the #1774 apply-path resolution).
+    """
+    import math
+
+    from explore_persona_space.experiments.issue_1739 import fits
+
+    pred = fits.apply_map(z_ev_w, mapfit)
+    per_layer = [
+        {"layer_idx": li, "r2_eval_rung": float(fits.r2_pooled(pred[li], za_ev_w[li]))}
+        for li in range(pred.shape[0])
+    ]
+    finite = [r["r2_eval_rung"] for r in per_layer if math.isfinite(r["r2_eval_rung"])]
+    return {
+        "per_layer": per_layer,
+        "r2_eval_rung_mean": (sum(finite) / len(finite)) if finite else None,
+        "n_eval_rows": int(z_ev_w.shape[1]),
+        "n_layers": int(pred.shape[0]),
+        "estimator": "fits.r2_pooled (same as r2_map)",
+    }
+
+
 def _load_nl_map(
     tensors_root: Path,
     variant: str,
@@ -1028,6 +1067,13 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
                 za_ev_w = (
                     fits.apply_whitening(tbl_ev.z_ans, wh) if tbl_ev.z_ans is not None else None
                 )
+                if za_ev_w is not None:
+                    # Behavior-SPECIFIC second map-quality read; see
+                    # _eval_rung_reconstruction on why it lands here and not in
+                    # the shared payload.
+                    diag_out[f"{spec0.variant}|{u_label}"]["eval_rung"] = _eval_rung_reconstruction(
+                        mapfit, z_ev_w, za_ev_w
+                    )
         # ONE whitened fp64 copy per group, SHARED by identity across the
         # regime slices (the run_cell_multi contract) — the old per-spec
         # rebuild held n_regimes copies of identical arrays.

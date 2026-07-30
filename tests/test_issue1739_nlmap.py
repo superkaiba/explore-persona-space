@@ -276,3 +276,70 @@ def test_load_nl_map_never_touches_the_linear_path_and_honors_kill_switch(tmp_pa
     F._save_map(tmp_path, "context_end", "probe", fitted, layers)
     monkeypatch.setenv(F.NL_MAP_REUSE_ENV, "0")
     assert F._load_nl_map(tmp_path, "context_end", "probe", "mlp", layers, n_u) is None
+
+
+# --------------------------------------------------------------------------
+# Per-behavior eval-rung reconstruction R2 (the SECOND map-quality read).
+# The payload's own diagnostics carry the U-pool HOLDOUT R2 (behavior-
+# independent); this read scores the same shared map against ONE behavior's
+# eval split, so it must land in the per-lane map_diagnostics.json and never in
+# the shared .pt -- else a behavior-independent artifact becomes
+# behavior-dependent and _save_map's skip-on-existence sharing breaks.
+# --------------------------------------------------------------------------
+
+
+def test_eval_rung_reconstruction_reuses_r2_pooled_estimator():
+    """The two reads must be the SAME estimator, or the table compares apples to oranges."""
+    F = _load_script_module()
+    x, y = _pool()
+    fitted = fits.fit_nonlinear_map(x, y, kind="mlp", device="cpu", seed=0)
+
+    # a distinct "eval rung": same shape, different rows
+    x_ev, y_ev = _pool(n=12, seed=7)
+
+    got = F._eval_rung_reconstruction(fitted, x_ev, y_ev)
+
+    assert got["n_eval_rows"] == x_ev.shape[1]
+    assert got["n_layers"] == x_ev.shape[0]
+    assert len(got["per_layer"]) == x_ev.shape[0]
+    assert got["r2_eval_rung_mean"] is not None
+
+    # bit-for-bit the same estimator map_diagnostics uses for r2_map
+    pred = fits.apply_map(x_ev, fitted)
+    for li, row in enumerate(got["per_layer"]):
+        assert row["layer_idx"] == li
+        assert row["r2_eval_rung"] == pytest.approx(
+            float(fits.r2_pooled(pred[li], y_ev[li])), rel=0, abs=0
+        )
+
+
+def test_eval_rung_reconstruction_is_not_written_into_the_shared_payload(tmp_path):
+    """The shared .pt must stay behavior-INDEPENDENT: no eval_rung inside it."""
+    import torch
+
+    F = _load_script_module()
+    x, y = _pool()
+    fitted = fits.fit_nonlinear_map(x, y, kind="mlp", device="cpu", seed=0)
+    path = F._save_map(tmp_path, "context_end", "probe", fitted, [14, 19])
+
+    meta = torch.load(path, map_location="cpu", weights_only=False)["meta"]
+    diag = meta.get("diagnostics") or {}
+    assert diag.get("per_layer"), "payload lost its U-pool holdout diagnostics"
+    assert "eval_rung" not in diag, "behavior-specific read leaked into the shared payload"
+    assert "eval_rung" not in meta, "behavior-specific read leaked into the shared payload meta"
+
+
+def test_eval_rung_call_site_is_guarded_and_writes_to_diag_out():
+    """Source pin: the call site needs the eval-split guards and the per-lane sink.
+
+    The wiring cannot be executed without a real capture store (GPU-bound-phase
+    carve-out), so pin the guard shape; the production map_diagnostics.json is
+    the end-to-end confirmation.
+    """
+    src = (REPO_ROOT / "scripts" / "issue1739_fits.py").read_text(encoding="utf-8")
+    assert 'diag_out[f"{spec0.variant}|{u_label}"]["eval_rung"] = _eval_rung_reconstruction(' in src
+    # guarded by the eval-split availability, inside the plain-rung branch
+    assert "if za_ev_w is not None:" in src
+    assert "if tbl_ev is not None:" in src
+    # and the per-lane sink is the file the collector merges
+    assert '(args.out_root / "map_diagnostics.json").write_text' in src
