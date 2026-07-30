@@ -652,7 +652,17 @@ def _append_shard(out_dir: Path, rows: list[dict]) -> None:
 
 
 def _generate_rows_vllm(
-    cfg: Cfg, unit_id: str, model_path: str, prompts: list[str], start_idx: int, out_dir: Path
+    cfg: Cfg,
+    unit_id: str,
+    model_path: str,
+    prompts: list[str],
+    start_idx: int,
+    out_dir: Path,
+    *,
+    system: str | None = None,
+    user_wrap: str | None = None,
+    prior_turns: tuple = (),
+    max_model_len: int = X.MAX_MODEL_LEN,
 ) -> None:
     """Chunked vLLM greedy generation (the #664 chunk rule) with shard persist.
 
@@ -660,7 +670,11 @@ def _generate_rows_vllm(
     engine is built ONCE, chunked `generate` calls carry `use_tqdm=False`
     (#613), prefix caching is OFF by default for this real-user corpus
     (gotchas.md pre-launch checklist; EPM_VLLM_DISABLE_PREFIX_CACHING=0
-    re-enables), and teardown rides `_reap_vllm_engine`.
+    re-enables), and teardown rides `_reap_vllm_engine`. The pfx kwargs
+    (system / user_wrap / prior_turns / max_model_len) default to the round-1
+    bare render byte-identically; prefixed units thread the arm's trained
+    context through `_build_generation_prompts` — the ONE message-construction
+    path span computation re-derives (#1112).
     """
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
@@ -678,7 +692,7 @@ def _generate_rows_vllm(
         dtype="bfloat16",
         gpu_memory_utilization=X.GEN_GPU_MEM_UTIL,
         enforce_eager=_vllm_enforce_eager(),
-        max_model_len=X.MAX_MODEL_LEN,
+        max_model_len=max_model_len,
         enable_prefix_caching=os.environ.get("EPM_VLLM_DISABLE_PREFIX_CACHING", "1") == "0",
     )
     params = SamplingParams(temperature=0.0, max_tokens=max_new)
@@ -687,7 +701,13 @@ def _generate_rows_vllm(
         n_chunks = -(-len(prompts) // GEN_CHUNK)
         for ci, s in enumerate(range(0, len(prompts), GEN_CHUNK)):
             chunk = prompts[s : s + GEN_CHUNK]
-            rendered, keys = _build_generation_prompts(tokenizer, {unit_id: None}, chunk)
+            rendered, keys = _build_generation_prompts(
+                tokenizer,
+                {unit_id: system},
+                chunk,
+                user_wraps={unit_id: user_wrap},
+                prior_turns={unit_id: tuple(prior_turns)},
+            )
             t0 = time.time()
             outs = llm.generate(rendered, params, use_tqdm=False)
             rows = []
@@ -728,9 +748,21 @@ def _generate_rows_vllm(
             time.sleep(1.0)
 
 
-def _load_or_generate_rows(cfg: Cfg, out_dir: Path, unit_id: str, model_path: str) -> list[dict]:
-    sample = X.load_corpus_sample(cfg.out_root)
-    prompts = [r["prompt"] for r in sample["rows"]]
+def _load_or_generate_rows(
+    cfg: Cfg,
+    out_dir: Path,
+    unit_id: str,
+    model_path: str,
+    *,
+    prompts: list[str] | None = None,
+    system: str | None = None,
+    user_wrap: str | None = None,
+    prior_turns: tuple = (),
+    max_model_len: int = X.MAX_MODEL_LEN,
+) -> list[dict]:
+    if prompts is None:  # round-1 default: the full 16.4k-row sample
+        sample = X.load_corpus_sample(cfg.out_root)
+        prompts = [r["prompt"] for r in sample["rows"]]
     done = out_dir / "raw_rows.done.json"
     if done.exists():
         rows = _read_shards(out_dir)
@@ -743,7 +775,18 @@ def _load_or_generate_rows(cfg: Cfg, out_dir: Path, unit_id: str, model_path: st
             assert r["question_idx"] == i, (unit_id, i, r["question_idx"])
     remaining = prompts[len(existing) :]
     if remaining:
-        _generate_rows_vllm(cfg, unit_id, model_path, remaining, len(existing), out_dir)
+        _generate_rows_vllm(
+            cfg,
+            unit_id,
+            model_path,
+            remaining,
+            len(existing),
+            out_dir,
+            system=system,
+            user_wrap=user_wrap,
+            prior_turns=prior_turns,
+            max_model_len=max_model_len,
+        )
     rows = _read_shards(out_dir)
     assert len(rows) == len(prompts), (unit_id, len(rows), len(prompts))
     _atomic_json(done, {"n_rows": len(rows), **_meta()})
@@ -751,11 +794,20 @@ def _load_or_generate_rows(cfg: Cfg, out_dir: Path, unit_id: str, model_path: st
 
 
 def _attach_spans(
-    tokenizer, prompts: list[str], rows: list[dict]
+    tokenizer,
+    prompts: list[str],
+    rows: list[dict],
+    *,
+    system: str | None = None,
+    user_wrap: str | None = None,
+    prior_turns: tuple = (),
 ) -> tuple[list[dict], int, dict, int]:
     """Compute prefix/context spans per row; drop invalid rows with counts.
 
-    Returns (kept_rows, n_dropped, seam_counts, n_distinct_prefix).
+    Returns (kept_rows, n_dropped, seam_counts, n_distinct_prefix). The pfx
+    kwargs re-derive the SAME message construction generation used
+    (`_build_generation_prompts` — one construction path, #1112); defaults are
+    the round-1 bare render byte-identically.
     """
     from explore_persona_space.analysis.representation_shift import compute_prompt_spans
 
@@ -770,9 +822,11 @@ def _attach_spans(
         flags: dict[str, bool] = {}
         r["prefix_len"], r["context_len"] = compute_prompt_spans(
             tokenizer,
-            None,
+            system,
             prompts[r["question_idx"]],
             r["prompt_token_ids"],
+            prior_messages=list(prior_turns) or None,
+            user_wrap=user_wrap,
             prefix_end="last_user",
             on_seam="snap",
             seam_flags=flags,
@@ -2100,6 +2154,20 @@ def _pending_units(cfg: Cfg, phase: str) -> list[str]:
             for rep in PNF_REPLICATES
             if not (root / "noise_floor" / u / f"pooled_nf_{rep}.pt").exists()
         ]
+    if phase == "pfx2":
+        units, _ = _pfx_unit_sets(cfg)
+        return [
+            u
+            for u in units
+            if not (root / "on_target" / "corpus_capture" / u / "pooled.pt").exists()
+        ]
+    if phase == "pfx3":
+        _, trained = _pfx_unit_sets(cfg)
+        return [
+            u
+            for u in trained
+            if not (root / "on_target" / "corpus_capture_tf" / u / "pooled_tf.pt").exists()
+        ]
     raise ValueError(phase)
 
 
@@ -2120,6 +2188,10 @@ def run_unit(cfg: Cfg, unit_arg: str) -> None:
         run_delta_unit(cfg, rest)
     elif phase == "p6j":
         run_rb_judge(cfg, rest)  # the detached CPU judge poller entry
+    elif phase == "pfx2":
+        run_pfx_corpus_unit(cfg, rest)
+    elif phase == "pfx3":
+        run_pfx_tf_unit(cfg, rest)
     else:
         raise ValueError(unit_arg)
 
@@ -2159,7 +2231,7 @@ def _needs_merge(cfg: Cfg, unit_arg: str) -> bool:
     the disk-clamp predicate `_merge_slots` gates on (plan §4.4)."""
     if cfg.model_override:
         return False
-    unit = unit_arg.split(":")[-1]
+    unit = unit_arg.split(":")[-1].split("@")[0]  # pfx units carry an @<cond> tag
     if unit.startswith("base_"):
         return False
     arm = _full_arm_index().get(unit)
@@ -3015,6 +3087,638 @@ def phase_noise_floor(cfg: Cfg) -> None:
     _pnf_upload(cfg)
 
 
+# ── pfx: on-target prefixed capture (plan v8 round 3) ────────────────────────
+#
+# pfx0  derived-corpus build (CPU): pfx subsample (3,000 train + pinned
+#       val/test), per-condition manifests + token budgets, and the §4.2
+#       prefix-vs-mix GROUND-TRUTH assert (kill criterion b).
+# pfx1  pilot: the syc pers con s42 arm @ own, full rows, production shape;
+#       gen + TF walls measured separately (kill criterion a).
+# pfx2  prefixed capture (23 units: 12 own + 6 ctrl + 5 base@prefix); spans
+#       {prefix, context, response}; regime-keyed resume.
+# pfx3  matched-text TF trees (18 units) on the SAME-condition base rows.
+# pfx4  on_target/ tree upload + exact-set verify (BEFORE fits; #825).
+
+PFX_BOOKED_UNIT_GPU_H = 1.0  # plan §9 pfx1 row (round-1 measured x4.4/16.4 x1.5 prefix book)
+PFX_PILOT_ARM = "syc-pers-con-lr1e5-s42"  # plan §4.4 pfx1 (smoke: X.PILOT_ARM)
+# ONE sha-pinned training mix per PREFIX family for the §4.2 ground-truth
+# assert (the arm whose registry mix record anchors the family's context).
+PFX_MIX_FAMILY_ARM = {
+    "pers": "syc-pers-con-lr1e5-s42",
+    "conv": "syc-conv-con-lr1e5-s42",
+    "icl_syc": "syc-icl-con-lr1e5-s42",
+}
+PFX_UPLOAD_TREES = (
+    "on_target/inputs",
+    "on_target/pilot",
+    "on_target/corpus_capture",
+    "on_target/corpus_capture_tf",
+)
+PFX_SPANS = ("prefix", "context", "response")  # +prefix vs round 1 (plan §4.4)
+
+
+def _pfx_root(cfg: Cfg) -> Path:
+    return cfg.out_root / "on_target"
+
+
+def _pfx_inputs(cfg: Cfg) -> Path:
+    return _pfx_root(cfg) / "inputs"
+
+
+def _pfx_arms(cfg: Cfg) -> list[str]:
+    """The round's arm scope (plan §4.1 order); --arms filters INSIDE it."""
+    if cfg.arms:
+        want = set(cfg.arms)
+        unknown = want - set(X.PFX_ARMS)
+        assert not unknown, f"--arms outside the pfx arm set: {sorted(unknown)}"
+        return [a for a in X.PFX_ARMS if a in want]
+    if cfg.smoke:
+        return [X.PILOT_ARM]
+    return list(X.PFX_ARMS)
+
+
+def _pfx_conds_for(cfg: Cfg, arm_id: str) -> tuple[str, ...]:
+    # smoke covers ONE trained condition (own); ctrl shares the same code path
+    return ("own",) if cfg.smoke else X.pfx_conditions_for(arm_id)
+
+
+def _pfx_unit_sets(cfg: Cfg) -> tuple[list[str], list[str]]:
+    """(pfx2 unit ids incl. bases, pfx3 trained-unit ids)."""
+    arms = _pfx_arms(cfg)
+    trained = [X.pfx_trained_unit(a, c) for a in arms for c in _pfx_conds_for(cfg, a)]
+    bases = sorted({X.pfx_base_unit(a, c) for a in arms for c in _pfx_conds_for(cfg, a)})
+    if cfg.smoke:
+        # Regime coverage under smoke (plan §4 smoke parity): one PLAIN-TEXT
+        # boundary render (the ICL user_wrap — the #1315 span-seam class) and
+        # one mk-decode unit ride alongside the pilot arm's own condition.
+        for extra in ("base_content@icl_syc", "base_mk@pers"):
+            if extra not in bases:
+                bases.append(extra)
+    return bases + trained, trained
+
+
+def _pfx_condition_ids(cfg: Cfg) -> list[str]:
+    """pfx0 ALWAYS builds the FULL production condition set (cheap CPU-only
+    renders + one small mix file per family), so the §4.2 byte assert covers
+    every family even when --smoke/--arms narrows the capture units."""
+    units, _ = _pfx_unit_sets(cfg)
+    ids = {X.pfx_unit_context_id(u) for u in units}
+    ids.update(X.pfx_unit_context_id(u) for u in X.pfx_base_units())
+    return sorted(ids)
+
+
+def _pfx_prefix_recipe(ctx) -> dict:
+    return {
+        "context_id": ctx.context_id,
+        "system": ctx.system,
+        "prefix_turns": [dict(t) for t in ctx.prefix_turns],
+        "user_wrap": ctx.user_wrap,
+    }
+
+
+def _pfx_prefix_sha(ctx) -> str:
+    """sha256 of the prefix RECIPE (system + prefix turns + user_wrap) — the
+    byte-level content identity every pfx regime key carries."""
+    blob = json.dumps(_pfx_prefix_recipe(ctx), sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def _pfx_stage_inputs(cfg: Cfg) -> None:
+    """Round-1 inputs, local-else-Hub (the pnf staging pattern; the fellows
+    lane rsync-excludes eval_results/, so every repo input rides the Hub
+    mirror — plan §9 lane note)."""
+    from explore_persona_space.orchestrate import hub
+
+    sample_path = cfg.out_root / "inputs" / "corpus_sample.json"
+    if not sample_path.exists():
+        hub.stage_hub_file(X.HF_DATA_REPO, f"{X.HF_PREFIX}/inputs/corpus_sample.json", sample_path)
+    reg_path = cfg.out_root / "arm_registry.json"
+    if not reg_path.exists():
+        hub.stage_hub_file(X.HF_DATA_REPO, f"{X.HF_PREFIX}/arm_registry.json", reg_path)
+
+
+def _build_pfx_sample(cfg: Cfg) -> dict:
+    """Derived pfx sample (plan §4.3): `random.Random(42).sample(range(n_train),
+    3000)` over the r4-deduped train rows + the FULL pinned val/test block —
+    identical shas across every condition/arm by construction (one file).
+    Splits are derived from the Hub-staged corpus_sample.json — NEVER
+    `assert_pinned_split` (plan §9 lane note (ii))."""
+    path = _pfx_inputs(cfg) / "corpus_sample_pfx.json"
+    if path.exists():
+        return X.load_pfx_sample(cfg.out_root)
+    parent = X.load_corpus_sample(cfg.out_root)
+    n_train_p, n_val, n_test = parent["n_train"], parent["n_val"], parent["n_test"]
+    n_sub = min(X.PFX_N_TRAIN, n_train_p)
+    idxs = random.Random(X.SAMPLE_SEED).sample(range(n_train_p), n_sub)
+    rows = [{**parent["rows"][i], "src_qidx": i} for i in idxs]
+    for j in range(n_val + n_test):
+        rows.append({**parent["rows"][n_train_p + j], "src_qidx": n_train_p + j})
+    train_shas = {r["sha"] for r in rows[:n_sub]}
+    assert len(train_shas) == n_sub, "pfx train subsample shas not unique (r4 postcondition)"
+    sub_sha = hashlib.sha256(
+        "\n".join(sorted(r["sha"] for r in rows[:n_sub])).encode("utf-8")
+    ).hexdigest()
+    sample = {
+        "rows": rows,
+        "n_train": n_sub,
+        "n_val": n_val,
+        "n_test": n_test,
+        "parent_n_train": n_train_p,
+        "train_subsample_sha256": sub_sha,
+        "sample_seed": X.SAMPLE_SEED,
+        "smoke": cfg.smoke,
+        **_meta(),
+    }
+    _atomic_json(path, sample)
+    return sample
+
+
+def _pfx_budget(tok, ctx, rows: list[dict]) -> dict:
+    """Per-condition token budgets (plan §4.4 pfx0): realized rendered-prompt
+    token lengths over ALL rows (via the ONE construction path,
+    `_build_generation_prompts`) + `max_new_tokens` per decode class vs
+    MAX_MODEL_LEN. Content overflow FAILS LOUD (re-plan); mk overflow raises
+    to PFX_MAX_MODEL_LEN_RAISED for those units only (recorded deviation)."""
+    from explore_persona_space.analysis.representation_shift import _build_generation_prompts
+
+    prompts = [r["prompt"] for r in rows]
+    rendered, _keys = _build_generation_prompts(
+        tok,
+        {ctx.context_id: ctx.system},
+        prompts,
+        user_wraps={ctx.context_id: ctx.user_wrap},
+        prior_turns={ctx.context_id: tuple(ctx.prefix_turns)},
+    )
+    lens = [len(ids) for ids in tok(rendered, add_special_tokens=False)["input_ids"]]
+    max_prompt = max(lens)
+    budgets = {}
+    for decode, max_new in (("content", X.MAX_NEW_CONTENT), ("mk", X.MAX_NEW_MARKER)):
+        need = max_prompt + max_new
+        mml, raised = X.MAX_MODEL_LEN, False
+        if need > mml:
+            assert decode == "mk", (
+                f"pfx0 content-decode budget overflow under {ctx.context_id}: "
+                f"{need} > {mml} (plan §7 — re-plan, no silent raise)"
+            )
+            mml, raised = X.PFX_MAX_MODEL_LEN_RAISED, True
+            assert need <= mml, (
+                f"pfx0 mk-decode budget overflow even at {mml} under {ctx.context_id}: {need}"
+            )
+            logger.info(
+                "[pfx0] %s mk decode: MAX_MODEL_LEN raised %d -> %d (recorded deviation)",
+                ctx.context_id,
+                X.MAX_MODEL_LEN,
+                mml,
+            )
+        budgets[decode] = {
+            "max_model_len": mml,
+            "raised": raised,
+            "max_prompt_tokens": max_prompt,
+            "max_new_tokens": max_new,
+        }
+    return budgets
+
+
+def _assert_mix_row_matches_context(ctx, msgs: list[dict], tag: str) -> None:
+    """Kill criterion (b): the registry-rendered prefix must equal the TRAINED
+    context embedded in the mix positives — byte equality, never a paraphrase
+    (plan §4.2 ground-truth assert)."""
+    sys_msgs = [m for m in msgs if m["role"] == "system"]
+    mix_system = sys_msgs[0]["content"] if sys_msgs else None
+    assert mix_system == (ctx.system or None), (tag, "system-prompt drift vs registry render")
+    chat = [m for m in msgs if m["role"] != "system"]
+    assert chat and chat[-1]["role"] == "user", (tag, "mix row has no final user turn")
+    prior = [(m["role"], m["content"]) for m in chat[:-1]]
+    want = [(t["role"], t["content"]) for t in ctx.prefix_turns]
+    assert prior == want, (tag, "prefix-turn drift vs registry render", len(prior), len(want))
+    if ctx.user_wrap is not None:
+        head, tail = ctx.user_wrap.split("{q}", 1)
+        content = chat[-1]["content"]
+        assert content.startswith(head) and content.endswith(tail), (
+            tag,
+            "user_wrap drift vs registry render",
+        )
+
+
+def _pfx_prefix_vs_mix_assert(cfg: Cfg) -> dict:
+    """Stage ONE training mix per prefix family and byte-assert the registry
+    render against the context embedded in its positive rows (plan §4.2)."""
+    from explore_persona_space.orchestrate import hub
+
+    reg = json.loads((cfg.out_root / "arm_registry.json").read_text())
+    need = {X.pfx_prefix_tag(cid): cid for cid in _pfx_condition_ids(cfg)}
+    out = {}
+    for tag, cid in sorted(need.items()):
+        fam_arm = PFX_MIX_FAMILY_ARM[tag]
+        src = reg["mix_pos_sources"][fam_arm]
+        local = _pfx_inputs(cfg) / "mix_assert" / tag / Path(src["pos_path"]).name
+        if not local.exists():
+            hub.stage_hub_file(X.HF_DATA_REPO, src["pos_path"], local, repo_type="dataset")
+        pos_sha256 = hashlib.sha256(local.read_bytes()).hexdigest()
+        ctx = X.pfx_resolve_context(cid)
+        checked = 0
+        with local.open(encoding="utf-8") as fh:  # text-mode iteration, never splitlines
+            for line in fh:
+                if not line.strip():
+                    continue
+                r = json.loads(line)
+                if src["layout"] == "marker-mix" and "※" not in _completion_text(r):
+                    continue  # marker mixes interleave negatives; positives only
+                msgs = (
+                    r["prompt"]
+                    if isinstance(r["prompt"], list)
+                    else [{"role": "user", "content": r["prompt"]}]
+                )
+                _assert_mix_row_matches_context(ctx, msgs, f"{tag}/{fam_arm}")
+                checked += 1
+                if checked >= 5:
+                    break
+        assert checked > 0, (tag, src["pos_path"], "no positive rows checked")
+        out[tag] = {
+            "context_id": cid,
+            "family_arm": fam_arm,
+            "pos_path": src["pos_path"],
+            "pos_sha256": pos_sha256,
+            "n_rows_checked": checked,
+        }
+        logger.info("[pfx0] prefix-vs-mix assert PASS: %s (%d rows)", tag, checked)
+    return out
+
+
+def phase_pfx0(cfg: Cfg) -> None:
+    """pfx0: derived corpora + condition manifests + budgets + mix assert."""
+    _phase("pfx0_corpus_build")
+    _status(cfg, "pfx0_corpus_build")
+    from transformers import AutoTokenizer
+
+    done = _pfx_inputs(cfg) / "build_done.json"
+    _pfx_stage_inputs(cfg)
+    sample = _build_pfx_sample(cfg)
+    if done.exists():
+        logger.info("[pfx0] build_done.json present — resume skip")
+        return
+    tok = AutoTokenizer.from_pretrained(cfg.model_override or X.BASE_MODEL)
+    conds: dict[str, dict] = {}
+    for cid in _pfx_condition_ids(cfg):
+        ctx = X.pfx_resolve_context(cid)
+        tag = X.pfx_prefix_tag(cid)
+        budgets = _pfx_budget(tok, ctx, sample["rows"])
+        prefix_tokens = len(
+            tok(ctx.render(tok, ""), add_special_tokens=False)["input_ids"]
+        )  # prefix + template overhead at an empty query (manifest read)
+        rec = {
+            "tag": tag,
+            "context_id": cid,
+            "prefix_sha256": _pfx_prefix_sha(ctx),
+            "recipe": _pfx_prefix_recipe(ctx),
+            "prefix_tokens": prefix_tokens,
+            "message_shape": {
+                "has_system": ctx.system is not None,
+                "n_prefix_turns": len(ctx.prefix_turns),
+                "has_user_wrap": ctx.user_wrap is not None,
+            },
+            "budgets": budgets,
+            "n_rows": len(sample["rows"]),
+        }
+        conds[cid] = rec
+        # The derived per-condition corpus manifest: the ROWS live once in
+        # corpus_sample_pfx.json (identical shas across conditions — paired
+        # design); this file pins the condition's recipe + realized budgets.
+        _atomic_json(
+            _pfx_inputs(cfg) / f"corpus_{tag}.json",
+            {
+                **rec,
+                "rows_sha256": hashlib.sha256(
+                    "\n".join(r["sha"] for r in sample["rows"]).encode("utf-8")
+                ).hexdigest(),
+                **_meta(),
+            },
+        )
+    _atomic_json(_pfx_inputs(cfg) / "conditions.json", {"conditions": conds, **_meta()})
+    mix_rec = _pfx_prefix_vs_mix_assert(cfg)  # kill criterion (b) fires here
+    _atomic_json(_pfx_inputs(cfg) / "prefix_mix_assert.json", {"families": mix_rec, **_meta()})
+    _atomic_json(
+        done,
+        {
+            "n_rows": len(sample["rows"]),
+            "n_train": sample["n_train"],
+            "conditions": sorted(conds),
+            **_meta(),
+        },
+    )
+    logger.info("[pfx0] corpora + budgets + mix assert done (%d conditions)", len(conds))
+
+
+def _pfx_cond_record(cfg: Cfg, context_id: str) -> dict:
+    conds = json.loads((_pfx_inputs(cfg) / "conditions.json").read_text())["conditions"]
+    assert context_id in conds, (context_id, "condition not built at pfx0", sorted(conds))
+    return conds[context_id]
+
+
+def _pfx_regime(cfg: Cfg, unit_id: str, cond_rec: dict, sample: dict, spans: tuple) -> dict:
+    """Output-affecting resume/regime key for a pfx unit (plan §4.4: condition
+    + prefix sha in the key; a mismatch is refused loud — #722-r3 class)."""
+    return {
+        "unit_id": unit_id,
+        "context_id": cond_rec["context_id"],
+        "prefix_sha256": cond_rec["prefix_sha256"],
+        "layers": list(cfg.layers),
+        "tf_batch": cfg.tf_batch,
+        "spans": list(spans),
+        "train_subsample_sha256": sample["train_subsample_sha256"],
+        "n_rows": len(sample["rows"]),
+    }
+
+
+def _pfx_check_regime(unit_dir: Path, regime: dict) -> None:
+    path = unit_dir / "regime.json"
+    if path.exists():
+        stored = json.loads(path.read_text())["regime"]
+        if stored != regime:
+            raise RuntimeError(
+                f"[pfx] {unit_dir} holds a DIFFERENT regime — refusing stale reuse "
+                f"(#722-r3 class): stored={stored} vs current={regime}"
+            )
+        return
+    unit_dir.mkdir(parents=True, exist_ok=True)
+    _atomic_json(path, {"regime": regime, **_meta()})
+
+
+def _pfx_decode_class(unit_id: str) -> str:
+    return "mk" if unit_id.split("@")[0].startswith(("mk-", "base_mk")) else "content"
+
+
+def run_pfx_corpus_unit(cfg: Cfg, unit_id: str) -> None:
+    """pfx2 unit: prefixed greedy gen -> TF span-means (prefix+ctx+resp)."""
+    from transformers import AutoTokenizer
+
+    from explore_persona_space.analysis.representation_shift import _teacher_forced_span_means
+
+    out_dir = _pfx_root(cfg) / "corpus_capture" / unit_id
+    cid = X.pfx_unit_context_id(unit_id)
+    cond_rec = _pfx_cond_record(cfg, cid)
+    sample = X.load_pfx_sample(cfg.out_root)
+    regime = _pfx_regime(cfg, unit_id, cond_rec, sample, PFX_SPANS)
+    if (out_dir / "pooled.pt").exists():
+        _pfx_check_regime(out_dir, regime)  # refuse a stale-regime store loud
+        return
+    _pfx_check_regime(out_dir, regime)
+    ctx = X.pfx_resolve_context(cid)
+    max_model_len = cond_rec["budgets"][_pfx_decode_class(unit_id)]["max_model_len"]
+    prompts = [r["prompt"] for r in sample["rows"]]
+    model_path, cleanup = _resolve_unit_model(cfg, unit_id.split("@")[0])
+    try:
+        t0 = time.time()
+        rows = _load_or_generate_rows(
+            cfg,
+            out_dir,
+            unit_id,
+            model_path,
+            prompts=prompts,
+            system=ctx.system,
+            user_wrap=ctx.user_wrap,
+            prior_turns=tuple(ctx.prefix_turns),
+            max_model_len=max_model_len,
+        )
+        gen_wall = time.time() - t0
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        kept, dropped, seam_counts, n_prefix = _attach_spans(
+            tokenizer,
+            prompts,
+            rows,
+            system=ctx.system,
+            user_wrap=ctx.user_wrap,
+            prior_turns=tuple(ctx.prefix_turns),
+        )
+        valid_frac = len(kept) / max(1, len(rows))
+        assert valid_frac >= 0.95, (unit_id, valid_frac, "plan §6 row-validity criterion")
+        _atomic_json(
+            out_dir / "rows_spans.json",
+            {
+                "rows": [
+                    {
+                        "prompt_sha": r["prompt_sha"],
+                        "question_idx": r["question_idx"],
+                        "prefix_len": r["prefix_len"],
+                        "context_len": r["context_len"],
+                    }
+                    for r in kept
+                ],
+                "n_dropped_empty_response": dropped,
+                "seam_counts": seam_counts,
+                "n_distinct_prefix": n_prefix,
+            },
+        )
+        t1 = time.time()
+        pooled = _teacher_forced_span_means(
+            model_path,
+            kept,
+            [unit_id],
+            layers=list(cfg.layers),
+            spans=PFX_SPANS,
+            device=_device(),
+            dtype=_dtype(),
+            tf_batch_size=cfg.tf_batch,
+        )
+        tf_wall = time.time() - t1
+        fp16_cos = _fp16_roundtrip_cos_min(pooled)
+        _save_pooled(
+            out_dir / "pooled.pt",
+            unit_id,
+            pooled,
+            kept,
+            {
+                "model_path": model_path,
+                "layers": list(cfg.layers),
+                "spans": list(PFX_SPANS),
+                "regime": regime,
+                "condition_tag": cond_rec["tag"],
+                "max_model_len": max_model_len,
+                "max_new_tokens": X.max_new_tokens_for(unit_id.split("@")[0]),
+                "n_rows": len(kept),
+                "n_dropped": dropped,
+                "seam_counts": seam_counts,
+                "n_distinct_prefix": n_prefix,
+                "fp16_roundtrip_cos_min": fp16_cos,
+                "gen_wall_s": gen_wall,
+                "tf_wall_s": tf_wall,
+                "smoke": cfg.smoke,
+            },
+        )
+        _atomic_json(
+            out_dir / "manifest.json",
+            {
+                "unit": unit_id,
+                "context_id": cid,
+                "prefix_sha256": cond_rec["prefix_sha256"],
+                "n_rows": len(kept),
+                "valid_frac": valid_frac,
+                "model_path": model_path,
+                "n_distinct_prefix": n_prefix,
+                "fp16_roundtrip_cos_min": fp16_cos,
+                "gen_wall_s": gen_wall,
+                "tf_wall_s": tf_wall,
+                **_meta(),
+            },
+        )
+    finally:
+        _cleanup_merged(cleanup)
+
+
+def run_pfx_tf_unit(cfg: Cfg, unit_arg: str) -> None:
+    """pfx3 unit (`<arm>@<cond>`): trained model TF on the SAME-condition base
+    tree's rows -> response span-means (the #833 control at the trained
+    context)."""
+    import torch
+
+    from explore_persona_space.analysis.representation_shift import _teacher_forced_span_means
+
+    arm_id, _, cond = unit_arg.partition("@")
+    out_dir = _pfx_root(cfg) / "corpus_capture_tf" / unit_arg
+    cid = X.pfx_unit_context_id(unit_arg)
+    cond_rec = _pfx_cond_record(cfg, cid)
+    sample = X.load_pfx_sample(cfg.out_root)
+    regime = _pfx_regime(cfg, unit_arg, cond_rec, sample, ("response",))
+    if (out_dir / "pooled_tf.pt").exists():
+        _pfx_check_regime(out_dir, regime)
+        return
+    _pfx_check_regime(out_dir, regime)
+    base_unit = X.pfx_base_unit(arm_id, cond)
+    base_dir = _pfx_root(cfg) / "corpus_capture" / base_unit
+    assert (base_dir / "pooled.pt").exists(), f"pfx3 {unit_arg}: base unit {base_unit} not captured"
+    rows = _read_rows_with_spans(base_dir)
+    model_path, cleanup = _resolve_unit_model(cfg, arm_id)
+    try:
+        pooled = _teacher_forced_span_means(
+            model_path,
+            rows,
+            [base_unit],
+            layers=list(cfg.layers),
+            spans=("response",),
+            device=_device(),
+            dtype=_dtype(),
+            tf_batch_size=cfg.tf_batch,
+        )
+        store = {
+            "schema_version": 1,
+            "unit": unit_arg,
+            "row_sha": [r["prompt_sha"] for r in rows],
+            "row_question_idx": [r["question_idx"] for r in rows],
+            "arms": {
+                span: {li: t.to(torch.float16) for li, t in per.items()}
+                for span, per in pooled.items()
+            },
+            "metadata": {
+                **_meta(),
+                "regime": regime,
+                "model_path": model_path,
+                "layers": list(cfg.layers),
+                "spans": ["response"],
+                "shared_text_from": base_unit,
+                "n_rows": len(rows),
+                "smoke": cfg.smoke,
+            },
+        }
+        store_path = out_dir / "pooled_tf.pt"
+        tmp = store_path.with_suffix(".pt.tmp")
+        torch.save(store, tmp)
+        os.replace(tmp, store_path)
+        _atomic_json(
+            out_dir / "manifest.json",
+            {"unit": unit_arg, "n_rows": len(rows), "model_path": model_path, **_meta()},
+        )
+    finally:
+        _cleanup_merged(cleanup)
+
+
+def _pfx_pilot_gate(ratio: float, smoke: bool) -> None:
+    """Kill criterion (a), plan §7: pilot wall > 2x the booked per-unit row =>
+    re-size before fleet launch; > 4x => halt + re-plan. Demoted to a log line
+    under smoke (the #1345 gate-calibration rule — smoke n cannot satisfy a
+    production-scale wall book)."""
+    if smoke:
+        logger.info("[pfx1] smoke: pilot wall ratio %.2f (gate informational)", ratio)
+        return
+    if ratio > 4.0:
+        raise RuntimeError(
+            f"[pfx1] kill criterion (a): pilot wall {ratio:.2f}x the booked "
+            f"{PFX_BOOKED_UNIT_GPU_H} GPU-h/unit — HALT + re-plan (plan §7)"
+        )
+    if ratio > 2.0:
+        raise RuntimeError(
+            f"[pfx1] kill criterion (a): pilot wall {ratio:.2f}x the booked "
+            f"{PFX_BOOKED_UNIT_GPU_H} GPU-h/unit — re-size §9 before fleet launch"
+        )
+
+
+def phase_pfx1(cfg: Cfg) -> None:
+    """pfx1: ONE unit at production shape; gen + TF walls measured separately."""
+    _phase("pfx1_pilot")
+    _status(cfg, "pfx1_pilot")
+    arm = X.PILOT_ARM if cfg.smoke else PFX_PILOT_ARM
+    unit = X.pfx_trained_unit(arm, "own")
+    run_pfx_corpus_unit(cfg, unit)
+    man = json.loads((_pfx_root(cfg) / "corpus_capture" / unit / "manifest.json").read_text())
+    unit_wall_h = (man.get("gen_wall_s", 0.0) + man.get("tf_wall_s", 0.0)) / 3600.0
+    ratio = unit_wall_h / PFX_BOOKED_UNIT_GPU_H
+    _atomic_json(
+        _pfx_root(cfg) / "pilot" / "pilot_report.json",
+        {
+            "unit": unit,
+            "gen_wall_s": man.get("gen_wall_s"),
+            "tf_wall_s": man.get("tf_wall_s"),
+            "unit_wall_h": unit_wall_h,
+            "booked_unit_gpu_h": PFX_BOOKED_UNIT_GPU_H,
+            "ratio": ratio,
+            "smoke": cfg.smoke,
+            **_meta(),
+        },
+    )
+    print(f"[pfx1] pilot {unit} wall={unit_wall_h:.2f}h ratio={ratio:.2f}", flush=True)
+    _pfx_pilot_gate(ratio, cfg.smoke)
+
+
+def phase_pfx4(cfg: Cfg) -> None:
+    """pfx4: on_target tree upload + exact-set verify — BEFORE fits (#825)."""
+    _phase("pfx4_store_upload")
+    _status(cfg, "pfx4_store_upload")
+    if not cfg.upload:
+        logger.info("[pfx4] upload disabled (--no-upload)")
+        return
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    uploaded = {}
+    for name in PFX_UPLOAD_TREES:
+        dest = _upload_tree(cfg, name)
+        if dest:
+            uploaded[name] = dest
+    expected = []
+    for tree, fname in (
+        ("on_target/corpus_capture", "pooled.pt"),
+        ("on_target/corpus_capture_tf", "pooled_tf.pt"),
+    ):
+        local_tree = cfg.out_root / tree
+        if local_tree.exists():
+            for unit_dir in sorted(local_tree.iterdir()):
+                if (unit_dir / fname).exists():
+                    expected.append(f"{cfg.hf_prefix}/{tree}/{unit_dir.name}/{fname}")
+    if expected:
+        missing = hub.verify_repo_paths_uploaded(
+            HfApi(),
+            X.HF_DATA_REPO,
+            expected,
+            path_in_repo=f"{cfg.hf_prefix}/on_target",
+            repo_type="dataset",
+        )
+        assert not missing, f"pfx4 verify: {len(missing)} store files missing on Hub: {missing[:5]}"
+    _atomic_json(
+        _pfx_root(cfg) / "upload_done.json",
+        {"uploaded": uploaded, "n_verified": len(expected), **_meta()},
+    )
+
+
 # ── entry ────────────────────────────────────────────────────────────────────
 
 
@@ -3031,6 +3735,9 @@ def _import_check() -> int:
     import issue779_ffc_n1m_generate_capture  # noqa: F401
     import issue779_ffc_n50k_generate_capture  # noqa: F401
     import issue779_fitter_fair_comparison  # noqa: F401
+
+    # pfx prefix-context resolution (plan v8 §4.2: the #1481 registry render)
+    from issue1090_fu3_worker import ensure_context  # noqa: F401
 
     # p6 split-leg deferred imports (gen / judge / reduce; plan §9 Must-Fix)
     from issue779_common import (  # noqa: F401
@@ -3125,7 +3832,19 @@ def parse_args(argv: list[str] | None = None) -> tuple[Cfg, argparse.Namespace]:
     return cfg, args
 
 
-PHASE_HEADROOM_GB = {"p2": 175.0, "p3": 68.0, "p4": 20.0, "p5": 5.0, "p6": 5.0, "pnf": 40.0}
+PHASE_HEADROOM_GB = {
+    "p2": 175.0,
+    "p3": 68.0,
+    "p4": 20.0,
+    "p5": 5.0,
+    "p6": 5.0,
+    "pnf": 40.0,
+    # pfx (plan v8 §9 storage block): new stores ~10 GB + staged round-1
+    # stores ~18 GB + rollout text ~1.5 GB + <=2 concurrent transient merged
+    # models <=30 GB => driver asserts >=90 GB free at pfx2 entry.
+    "pfx2": 90.0,
+    "pfx3": 40.0,
+}
 # pnf: ~2 GB staged base text + one transient merged/ft model <=16 GB + ~0.5 GB
 # stores (plan v7 §9 storage block); resume-aware gate below skips it when all
 # 12 replicate stores are already present.
@@ -3168,6 +3887,16 @@ def main(argv: list[str] | None = None) -> int:
             phase_p7(cfg)
         elif phase == "pnf":
             phase_noise_floor(cfg)
+        elif phase == "pfx0":
+            phase_pfx0(cfg)
+        elif phase == "pfx1":
+            phase_pfx1(cfg)
+        elif phase == "pfx2":
+            _fanout_phase(cfg, "pfx2", "pfx2_prefixed_capture")
+        elif phase == "pfx3":
+            _fanout_phase(cfg, "pfx3", "pfx3_prefixed_tf")
+        elif phase == "pfx4":
+            phase_pfx4(cfg)
         else:
             raise ValueError(f"unknown phase {phase}")
     _status(cfg, "done")
