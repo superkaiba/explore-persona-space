@@ -4592,32 +4592,31 @@ while True:
     # paragraph in Step 6b for the full rationale + the failure mode
     # the unconditional invocation would trigger (FALSE-POSITIVE
     # `epm:failure v1 missing_handle_sidecar`).
-    # ADAPTIVE POLL INTERVAL (anti-stall redesign §7). Every tick's JSON
-    # line carries a recommended `next_interval` (seconds): 1800 ONLY on
-    # a healthy, quiet, post-early-run `running` tick far from any phase
-    # boundary; 540 otherwise — gate-adjacent, anomalous, early-run
-    # (first ~30 min after launch), and recent-phase-change ticks NEVER
-    # get the long interval, so gates are never delayed. Use the
-    # PREVIOUS tick's emitted value as this tick's sleep; FALL BACK TO
-    # 540 when there is no previous tick yet (first poll after launch)
-    # or the key is absent/unparseable (older poller, garbled JSON
-    # line). NEVER lengthen the sleep on your own initiative: only the
-    # emitted value may raise it above 540, and never after a tick that
-    # reported anything other than healthy-quiet-running. Risk bound: a
-    # stall can now be noticed up to 30 min later in-session — accepted
-    # because the watcher's 10-min passes + the */45 issue-tick cron
-    # bound out-of-session detection independently
-    # (autonomous_session_watch.py / tick_triage.py).
+    # ADAPTIVE POLL INTERVAL (anti-stall redesign §7) — HARD-CLAMPED AT
+    # 540s PER CALL (#1818). Every tick's JSON line still carries a
+    # recommended `next_interval` (seconds): 1800 ONLY on a healthy,
+    # quiet, post-early-run `running` tick far from any phase boundary;
+    # 540 otherwise — gate-adjacent, anomalous, early-run (first ~30 min
+    # after launch), and recent-phase-change ticks never emit the long
+    # value, so gates are never delayed. But the recommendation is
+    # TELEMETRY, not a sleep value: the Bash tool kills ANY call at its
+    # 600000 ms (10-minute) ceiling — background calls included — so a
+    # composed `sleep 1800` dies mid-sleep, the poll never runs, and the
+    # dead call reads as a stale/absent poll on the next wake (#1768,
+    # 2026-07-28). NEVER compose a sleep longer than 540s into a single
+    # background Bash call, here or anywhere in this loop: a longer
+    # cadence is realized only as consecutive ≤540s ticks (or a Monitor
+    # until-loop, the sanctioned long-wait shape — § Long-phase
+    # heartbeat duty). A quiet-tick 1800 recommendation
+    # (POLL_INTERVAL_QUIET_SEC telemetry) is honored AS 540; §7's
+    # turn-savings intent is deferred until a Monitor-based quiet wait
+    # exists.
     #
     # `result` below = the parsed JSON line from the PREVIOUS tick's
     # bg-Bash output (the same `result` the status branch below reads);
-    # it is None on the first iteration — no previous tick yet. The
-    # membership clamp makes the never-lengthen rule MECHANICAL: only
-    # the two known emitted values are honored, anything else (garbled,
-    # bool, surprise number) falls back to 540.
-    interval = 540
-    if result is not None and result.get("next_interval") in (540, 1800):
-        interval = result["next_interval"]
+    # its `next_interval` field is read as telemetry only — it never
+    # sets the sleep.
+    interval = 540  # fixed: both the default AND the per-call MAX (#1818)
     Bash(
         run_in_background=True,
         command=(
@@ -4654,10 +4653,11 @@ while True:
     #                                   signal; see Step 7); run CRON-TEARDOWN
     #                                   (see below); set status:blocked; exit.
     #   status == "running"        -> milestone-already-posted by the poller
-    #                                  if new_milestone was true; loop again,
-    #                                  using result["next_interval"] as the
-    #                                  next sleep (540 fallback — see
-    #                                  ADAPTIVE POLL INTERVAL above).
+    #                                  if new_milestone was true; loop again
+    #                                  with the fixed 540s sleep
+    #                                  (next_interval is telemetry only —
+    #                                  see ADAPTIVE POLL INTERVAL above;
+    #                                  never sleep >540s in one call).
     #                                  If the JSON also has
     #                                  gpu_idle_advisory_posted == true, act
     #                                  per "GPU-idle advisory handling" below
@@ -4678,7 +4678,7 @@ milestone marker like `phase: post_eval`, update the local
 `current_phase` from the milestone before the next tick so the title
 reflects the latest phase.)
 
-The top-of-tick `set_title` refresh plus the ≤30-min clamped interval
+The top-of-tick `set_title` refresh plus the fixed 540s tick interval
 discharge the § Long-phase heartbeat duty (below) for this loop by
 construction; any wait run OUTSIDE this loop shape — a `Monitor`
 until-loop on a VM phase, an ad-hoc bg poll chain, an off-pod Batch-API
@@ -5129,7 +5129,7 @@ deadline-bounded Batch-API poll, a detached VM phase (§ "Detached
 VM-side long compute phases", Step 9 entry guard), or any
 follow-up-round wait at `followups_running` — the orchestrator carries
 BOTH duties below. (The Step 6d.2 polling loop above discharges them by
-construction: the top-of-tick `set_title` refresh + the ≤30-min clamped
+construction: the top-of-tick `set_title` refresh + the fixed 540s
 tick interval. The duty is for every wait that is NOT that loop. A long
 FOREGROUND subagent wait is a named out-of-scope shape — no resumable
 orchestrator turn exists there to discharge the duty; the watcher's K=2
@@ -7468,14 +7468,16 @@ explicit eval-data path):
    read from the file before the push.
 
    **Single-flight probe (#1606)** first, per the Step 9c 1b
-   single-flight statement: in a separate FOREGROUND call — never inside
-   the launch call itself, whose argv carries the unbracketed payload
-   path — probe `pgrep -af 'issue-<N>-inline-payload[.]txt'` (bracketed
-   per the gotchas.md self-match entry; the payload-file path rides the
+   single-flight statement: probe
+   `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --pattern 'issue-<N>-inline-payload\.txt'`
+   (self-/ancestor-excluding — exit 0 = clear, 3 = live foreign match; a
+   separate FOREGROUND call stays preferred as defense-in-depth, but the
+   mechanical pid exclusion — not placement — is what prevents the
+   launch-call self-match, #1742. The payload-file path rides the
    argv of the helper AND its enclosing background shell, and the
    `-inline-payload` suffix anchors the issue number, so the probe is
-   exact-ISSUE-scoped — a sibling issue's gate never matches). A
-   non-empty result = an inline gate for THIS issue is STILL RUNNING:
+   exact-ISSUE-scoped — a sibling issue's gate never matches). Exit 3
+   (a live foreign match) = an inline gate for THIS issue is STILL RUNNING:
    do NOT launch — the `printf` below would rewrite the live run's
    payload file, and the helper's audit files
    (`/tmp/issue-<N>-inline-lint.txt` / `-inline-map.txt`) are
@@ -7483,7 +7485,7 @@ explicit eval-data path):
    audit legs and double-burns the ~2.5-6 min legs. WAIT for exit, or
    reap a wedged run, per the Step 9c 1b statement (crash-fix-rounds
    § Kill-before-relaunch); key any improvised wait on **process
-   exit** (the probe returning empty), never on cert/audit-file
+   exit** (the probe exiting 0 — CLEAR), never on cert/audit-file
    existence (CLAUDE.md § Monitoring re-run discipline). Site nuance:
    the cert is per-content-hash and flock-guarded (#1620), so a live
    run on the SAME payload produces the cert this round needs — wait
@@ -9302,47 +9304,58 @@ suite directly and posts an `epm:test-verdict` event with the result.
       is the selector-printed `timeout --kill-after=60s <T>s` prefix.
 
       **Single-flight probe (#1606) — run before EVERY gate (re)launch, Step
-      9c AND Step 10d alike.** In a SEPARATE FOREGROUND call — never inside
-      the launch call itself: the launch command's argv carries the
-      unbracketed junit path and would phantom-match its own shell, and the
-      observed consequence is a silent exit-0 skip of the leg that the
+      9c AND Step 10d alike.** Probe for a live gate with the self-excluding
+      helper:
+      `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --issue <N>`
+      (exit 0 = CLEAR — safe to launch; exit 3 = a live FOREIGN match, one
+      `pid<TAB>args` line each; exit semantics deliberately INVERTED vs
+      pgrep so `probe && launch` composes). The helper scans
+      `/proc/*/cmdline` for the internally derived pattern
+      `step9c-junit-issue-<N>\.xml` and MECHANICALLY excludes its own pid +
+      full ancestor chain, so it cannot match its own wrapper even when
+      folded into a launch call whose argv carries the unbracketed junit
+      path — the #1742 re-hit of the documented #1606 trap, whose observed
+      consequence was a silent exit-0 skip of the leg that the
       harness reports as successful completion (2026-07-26 session
       `2b779905`, 12:24:08Z: the compare leg printed `GATE STILL RUNNING;
       skip compare`, then `FATAL: compare rc file missing`, and exited 0 — a
-      false DONE in the #825 empty-dir false-DONE class) — probe for a live
-      gate:
- `pgrep -af 'step9c-junit-issue-<N>[.]xml'` (bracketed
-      per the gotchas.md self-match entry; the junit path rides the argv of
+      false DONE in the #825 empty-dir false-DONE class). A separate
+      FOREGROUND call stays PREFERRED as defense-in-depth (it keeps the
+      probe verdict readable on its own), but it is no longer load-bearing:
+      the pid exclusion — not placement discipline — is what prevents the
+      self-match. The junit path rides the argv of
       the gate pytest, its `timeout` wrapper, its enclosing background
       shell, AND the 1d compare, so the probe is exact-ISSUE-scoped — a
       sibling issue's gate never matches, and a recycled pid cannot
-      false-match because pgrep matches live argv, not pid identity). A
-      non-empty result = a gate for THIS issue is STILL RUNNING: do NOT
+      false-match because the probe matches live argv, not pid identity. A
+      LIVE result (exit 3) = a gate for THIS issue is STILL RUNNING: do NOT
       launch — the `rm -f` preamble below would clobber the live run's
       junit/rc mid-run (#1606: a second gate launched into a live one left 4
       live gate pids and fired two fail-CLOSED verdict blocks, ~12 min
       churn). Default to WAITING for exit — the harness notification on your
       own background call, or (bg handle lost, e.g. after a respawn) a
       Monitor until-loop keyed on the probe, elapsed-capped for consistency
-      with the § Long-phase heartbeat 45-min segmentation:
-      `until ! pgrep -f 'step9c-junit-issue-<N>[.]xml' >/dev/null || [ $SECONDS -gt 2700 ]; do sleep 15; done`
-      (a still-non-empty probe at the cap re-arms a fresh segment) — then
+      with the § Long-phase heartbeat 45-min segmentation (the `--issue`
+      form ONLY in until-loops — its derived regex is fixed and valid, so
+      the loop can never spin on a helper usage error):
+      `until uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --issue <N> >/dev/null || [ $SECONDS -gt 2700 ]; do sleep 15; done`
+      (a still-LIVE probe at the cap re-arms a fresh segment) — then
       read the result via the normal completion-read; the in-block
       `timeout` wedge bounds guarantee the wait terminates. Kill FIRST only
       on the recovery arms' TRIGGER — the run's completion signal fired yet
       the rc/verdict file is missing, or the run is wedged past its bound
       (NOT merely "its launching call is dead": post-respawn the launching
       call is dead while the gate is healthy and will still write its rc) —
-      per crash-fix-rounds § Kill-before-relaunch, and re-probe empty before
-      launching. Corollary
+      per crash-fix-rounds § Kill-before-relaunch, and re-probe CLEAR
+      (exit 0) before launching. Corollary
       (CLAUDE.md § Monitoring re-run discipline, restated here because
       #1606's improvised Monitor violated it): any improvised gate wait keys
-      "done" on **process exit** — the probe returning empty —
+      "done" on **process exit** — the probe exiting 0 (CLEAR) —
       NEVER on rc/verdict-file existence alone (the rc file is written
       only at process exit; an existence-keyed Monitor false-fired
       "done" twice mid-run in #1606). The same probe-then-launch rule governs 1c, 1d
       (compare), both Step 10d gate blocks, and the Step 9a-ter § Inline
-      payload lint gate — each names its site pattern in place.
+      payload lint gate — each names its site probe invocation in place.
       ```bash
       # Shell state does NOT persist across Bash calls — hard-guard the cd
       # INSIDE this same background call (never rely on a prior call's cwd;
@@ -9381,7 +9394,10 @@ suite directly and posts an `epm:test-verdict` event with the result.
       pytest exited (tool kill / watcher force-stop, #833): treat as FAIL,
       never a silent PASS, and apply crash-fix-rounds § Kill-before-relaunch
       (probe `pgrep -af '[p]ytest.*step9c-junit-issue-<N>'` — the junit path
-      makes the probe exact-invocation-scoped) before any re-run:
+      makes the probe exact-invocation-scoped; exit-code trap: raw pgrep
+      exits 0 on a LIVE match — INVERTED vs `step9c_baseline.py probe`,
+      whose 0 = clear — this kill-arm keeps pgrep because it wants the pid
+      list to kill) before any re-run:
       ```bash
       if [ ! -f /tmp/step9c-rc-issue-<N> ]; then
         echo "FATAL: gate rc file missing — the background run died before pytest exited. Kill-before-relaunch, then re-run the gate; NEVER record PASS." >&2
@@ -9429,7 +9445,8 @@ suite directly and posts an `epm:test-verdict` event with the result.
    c. Scope override: if the plan-body frontmatter has `test_scope: full` OR a
       `## Test scope` H2 names `full`, run the FULL suite instead — from the
       SAME issue-worktree cwd, in the SAME background + rc-file pattern as 1b
-      — including 1b's **Single-flight probe (#1606)**, foreground-first —
+      — including 1b's **Single-flight probe (#1606)** (the self-excluding
+      helper, `--issue <N>` form) —
       (a 60m run is 6x the foreground tool cap):
       ```bash
       cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
@@ -9517,10 +9534,11 @@ suite directly and posts an `epm:test-verdict` event with the result.
       between them, and a folded call would burn up to ~2 h of
       pristine runs on a run those guards fail in seconds.
 
-      **Single-flight probe (#1606)** first, per the 1b statement: a
-      separate foreground `pgrep -af 'step9c-junit-issue-<N>[.]xml'` — a
-      live match (the 1b/1c pytest still running, or a prior compare still
-      consuming the junit) means WAIT/reap per 1b BEFORE this launch: the
+      **Single-flight probe (#1606)** first, per the 1b statement:
+      `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --issue <N>`
+      (self-/ancestor-excluding; exit 0 = clear) — exit 3, a live foreign
+      match (the 1b/1c pytest still running, or a prior compare still
+      consuming the junit), means WAIT/reap per 1b BEFORE this launch: the
       compare-triplet `rm -f` below would clobber a live compare's outputs,
       and compare must never read a junit a live pytest is still writing.
       ```bash
@@ -9561,7 +9579,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       the FILES. A MISSING rc file means the background compare died before
       exiting (tool kill / watcher force-stop): treat as FAIL/indeterminate,
       never a silent PASS, and apply crash-fix-rounds
-      § Kill-before-relaunch (probe `pgrep -af 'step9c_baseline[.]py compare'`)
+      § Kill-before-relaunch (probe `pgrep -af 'step9c_baseline[.]py compare'` — exit-code trap: raw pgrep exits 0 on a LIVE match — INVERTED vs `step9c_baseline.py probe`, whose 0 = clear — this kill-arm keeps pgrep because it wants the pid list)
       before any re-run:
       ```bash
       if [ ! -f /tmp/step9c-compare-issue-<N>.rc ]; then
@@ -10991,14 +11009,16 @@ tests BEFORE anything lands:
   foreground call from the FILE (completion-read below).
 
   **Single-flight probe (#1606) — before (re)launching this gate, including
-  every "re-run the gate ONCE" recovery path.** In a separate FOREGROUND
-  call: `pgrep -af 'issue-<N>-lint-gate-tre[e]'` (the same bracketed,
-  exact-issue-scoped pattern the completion-read's recovery arm uses — the
-  gate-tree path rides the whole background call's argv). A non-empty
-  result = this issue's gate is STILL RUNNING: do NOT relaunch — the
+  every "re-run the gate ONCE" recovery path.** Probe
+  `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --pattern 'issue-<N>-lint-gate-tree'`
+  (self-/ancestor-excluding — exit 0 = clear, 3 = live foreign match; the
+  gate-tree path rides the whole background call's argv, so the pattern is
+  exact-issue-scoped; the completion-read's recovery arm keeps its
+  bracketed raw-pgrep form — it wants the pid list). Exit 3 = this issue's
+  gate is STILL RUNNING: do NOT relaunch — the
   stale-verdict `rm -f` below would clobber the live run's verdict. WAIT or
   reap per the Step 9c 1b single-flight statement, and key any improvised
-  wait on **process exit** (the probe returning empty), never on
+  wait on **process exit** (the probe exiting 0 — CLEAR), never on
   verdict-file existence alone (CLAUDE.md § Monitoring re-run discipline).
 
   ```bash
@@ -11403,7 +11423,10 @@ tests BEFORE anything lands:
   conditional, NEVER hand-write the verdict (#1082). Apply crash-fix-rounds
   § Kill-before-relaunch (probe `pgrep -af 'issue-<N>-lint-gate-tre[e]'` —
   the gate-tree path in the lint legs' argv makes the probe
-  exact-issue-scoped) before re-running the gate ONCE; still dying ->
+  exact-issue-scoped; exit-code trap: raw pgrep exits 0 on a LIVE match —
+  INVERTED vs `step9c_baseline.py probe`, whose 0 = clear — this kill-arm
+  keeps pgrep because it wants the pid list) before re-running the gate
+  ONCE; still dying ->
   `epm:merge-failed v1` (Verdict bullet case 3). A partial death (killed
   between the verdict write and the sha append) leaves a 1-line file the
   binding sites' line-2 sha check already fails CLOSED on. Worst case —
@@ -12821,10 +12844,10 @@ Decision tree:
   abort line, surface ONE line in chat, CONTINUE — never fall through to
   the checkout/stage/push block, and never post `epm:merged`.
 
-  **Single-flight probe (#1606)** first, per the Step 9c 1b statement: a
-  separate foreground
-  `pgrep -af 'issue-<N>-surgical-outcome[.]txt|issue-<N>-lint-gate-tre[e]'`.
-  An `issue-<N>`-scoped hit = THIS gate-and-land sequence is still
+  **Single-flight probe (#1606)** first, per the Step 9c 1b statement:
+  `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --pattern 'issue-<N>-surgical-outcome\.txt|issue-<N>-lint-gate-tree'`
+  (self-/ancestor-excluding — exit 0 = clear, 3 = live foreign match).
+  An `issue-<N>`-scoped hit (exit 3) = THIS gate-and-land sequence is still
   running — WAIT for exit, never relaunch into it (the outcome-sentinel
   `rm -f` below would clobber it, and the root holds ITS staged payload).
   A residual ambiguous hit that is neither this session's own gate nor a
@@ -13147,7 +13170,10 @@ Decision tree:
     force-stop / wedge-bound kill) and the root may hold staged payload.
     Recover IN THIS ORDER: (1) kill-before-relaunch probe FIRST
     (`pgrep -af 'issue-<N>-lint-gate-tre[e]'` — issue-scoped per the L11949
-    Step 10d single-flight probe; on any residual ambiguous match WAIT for
+    Step 10d single-flight probe; exit-code trap: raw pgrep exits 0 on a
+    LIVE match — INVERTED vs `step9c_baseline.py probe`, whose 0 = clear —
+    this kill-arm keeps pgrep because it wants the pid list; on any
+    residual ambiguous match WAIT for
     exit, never kill; the Step 0 single-orchestrator guard excludes
     same-issue concurrency).
  (2) Landed/committed classification BEFORE any cleanup —

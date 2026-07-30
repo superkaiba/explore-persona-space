@@ -40,13 +40,22 @@ and additive-``add`` preservation of non-inferable prior cones (29).
 Items 30-35 pin the #1214 origin/main branch-base ladder: a fresh branch
 bases on FRESHLY-FETCHED ``origin/main`` — the bare origin is advanced
 out-of-band so a stale-tracking-ref-only implementation fails, and
-``--no-track`` is pinned via the absent upstream (30); no ``origin``
-remote → local HEAD + WARN (31); fetch failure with a previously-fetched
-``origin/main`` → the STALE tracking ref, pushed history only (32); fetch
-failure with NO ``origin/main`` ref → FATAL exit 5 with no worktree /
-branch / registration residue (33); ``--base-local`` skips the fetch
-entirely and bases on LOCAL main even with a broken origin URL (34); and
-the pre-existing-branch resume stays network-independent (35).
+``--no-track`` is pinned via the upstream SHAPE — ``branch.<name>.merge``
+is the branch's OWN name, never ``refs/heads/main`` (30, reformulated by
+#1802); no ``origin`` remote → local HEAD + WARN (31); fetch failure with
+a previously-fetched ``origin/main`` → the STALE tracking ref, pushed
+history only (32); fetch failure with NO ``origin/main`` ref → FATAL exit
+5 with no worktree / branch / registration residue (33); ``--base-local``
+skips the fetch entirely and bases on LOCAL main even with a broken origin
+URL (34); and the pre-existing-branch resume stays network-independent
+(35).
+
+Items 36-39 pin the #1802 ``_ensure_upstream`` config (upstream = the
+branch's OWN name on origin, set at creation AND on reuse — never
+origin/main): no ``origin`` remote → NO ``branch.<name>.*`` config is set
+(36); the exit-0 reuse path idempotently repairs a missing upstream (37);
+a pre-existing DIFFERENT upstream is never clobbered (38); and a failed
+config write WARNs without failing the reuse path (39).
 """
 
 from __future__ import annotations
@@ -1031,7 +1040,9 @@ def test_new_branch_based_on_origin_main_not_local_head(repo: Path, tmp_path: Pa
     after the last push from ``repo``, so the local tracking ref is stale
     until the helper's fetch runs — a stale-ref-only implementation would
     base on the older pushed tip and fail the tip-equality assert. Also
-    pins ``--no-track``: the new branch gains no upstream.
+    pins the #1802 upstream shape (the reformulated ``--no-track`` pin):
+    ``branch.issue-30.merge`` is the branch's OWN name on origin
+    (``refs/heads/issue-30``), never ``refs/heads/main``.
     """
     _add_diverged_origin(repo, tmp_path)
     local_tip = _git(repo, "rev-parse", "main").stdout.strip()
@@ -1051,8 +1062,12 @@ def test_new_branch_based_on_origin_main_not_local_head(repo: Path, tmp_path: Pa
     assert tip == new_origin_tip, "branch must base on the FRESHLY-FETCHED origin tip"
     assert tip != local_tip
     assert (wt / "CLAUDE.md").exists()
-    # --no-track: no upstream configured for the new branch.
-    assert _git(repo, "config", "branch.issue-30.merge", check=False).returncode != 0
+    # #1802 upstream shape: the branch's OWN name on origin — never
+    # refs/heads/main (the reformulated #1214 --no-track protection).
+    merge = _git(repo, "config", "branch.issue-30.merge").stdout.strip()
+    assert merge == "refs/heads/issue-30"
+    assert merge != "refs/heads/main"
+    assert _git(repo, "config", "branch.issue-30.remote").stdout.strip() == "origin"
 
 
 def test_no_origin_remote_falls_back_to_local_head_with_warn(repo: Path, tmp_path: Path) -> None:
@@ -1127,6 +1142,82 @@ def test_existing_branch_resume_needs_no_network(repo: Path, tmp_path: Path) -> 
     res = _run_helper(repo, wt, "issue-35")
     assert res.returncode == 0
     assert _git(wt, "rev-parse", "HEAD").stdout.strip() == pre_tip
+
+
+# --- items 36-39: #1802 upstream = the branch's own name on origin ---------
+
+
+def test_no_origin_remote_sets_no_upstream_config(repo: Path, tmp_path: Path) -> None:
+    """Item 36: no ``origin`` remote → creation succeeds, NO branch config.
+
+    Nothing to track — ``_ensure_upstream`` must skip cleanly on the
+    fixture-repo shape (the item-31 no-origin ladder tier).
+    """
+    wt = tmp_path / "wt-1802-noorigin"
+    res = _run_helper(repo, wt, "issue-36")
+    assert res.returncode == 0
+    assert _git(repo, "config", "branch.issue-36.merge", check=False).returncode != 0
+    assert _git(repo, "config", "branch.issue-36.remote", check=False).returncode != 0
+
+
+def test_reuse_path_repairs_missing_upstream(repo: Path, tmp_path: Path) -> None:
+    """Item 37: the exit-0 reuse path repairs a missing upstream config.
+
+    Simulates a legacy (pre-#1802) worktree by unsetting both branch keys
+    after creation; the reuse run must restore upstream = the branch's OWN
+    name on origin.
+    """
+    _add_diverged_origin(repo, tmp_path)
+    wt = tmp_path / "wt-1802-reuse"
+    _run_helper(repo, wt, "issue-37")
+    _git(repo, "config", "--unset", "branch.issue-37.remote")
+    _git(repo, "config", "--unset", "branch.issue-37.merge")
+    res = _run_helper(repo, wt, "issue-37")
+    assert res.returncode == 0
+    assert "already exists" in res.stdout, "expected the reuse path"
+    assert _git(repo, "config", "branch.issue-37.remote").stdout.strip() == "origin"
+    assert _git(repo, "config", "branch.issue-37.merge").stdout.strip() == "refs/heads/issue-37"
+
+
+def test_preexisting_different_upstream_not_clobbered(repo: Path, tmp_path: Path) -> None:
+    """Item 38: a deliberately-configured DIFFERENT upstream is never clobbered.
+
+    ``branch.<name>.merge`` present ⇒ ``_ensure_upstream`` must not touch
+    either key (a user's hand-set upstream is authoritative).
+    """
+    _add_diverged_origin(repo, tmp_path)
+    wt = tmp_path / "wt-1802-noclobber"
+    _run_helper(repo, wt, "issue-38")
+    _git(repo, "config", "branch.issue-38.remote", "someremote")
+    _git(repo, "config", "branch.issue-38.merge", "refs/heads/other")
+    res = _run_helper(repo, wt, "issue-38")
+    assert res.returncode == 0
+    assert _git(repo, "config", "branch.issue-38.remote").stdout.strip() == "someremote"
+    assert _git(repo, "config", "branch.issue-38.merge").stdout.strip() == "refs/heads/other"
+
+
+def test_failed_upstream_write_warns_without_failing_reuse(repo: Path, tmp_path: Path) -> None:
+    """Item 39: a failed config write WARNs; the reuse path stays exit-0.
+
+    A stale ``.git/config.lock`` makes the shared-config write fail (git
+    refuses to take the lock). A non-``issue-*`` branch name keeps the
+    reuse path free of other config-writing steps (no cone repair), so
+    the lock isolates the ``_ensure_upstream`` write.
+    """
+    _add_diverged_origin(repo, tmp_path)
+    wt = tmp_path / "wt-1802-warn"
+    _run_helper(repo, wt, "wf-1802-warn")
+    _git(repo, "config", "--unset", "branch.wf-1802-warn.remote")
+    _git(repo, "config", "--unset", "branch.wf-1802-warn.merge")
+    lock = repo / ".git" / "config.lock"
+    lock.write_text("")
+    try:
+        res = _run_helper(repo, wt, "wf-1802-warn")
+    finally:
+        lock.unlink()
+    assert res.returncode == 0
+    assert "could not set upstream" in res.stderr
+    assert _git(repo, "config", "branch.wf-1802-warn.merge", check=False).returncode != 0
 
 
 # --- #1530: branch creation never touches the parent checkout's HEAD -------

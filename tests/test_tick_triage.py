@@ -1266,3 +1266,84 @@ def test_debug_telemetry_line(monkeypatch, tmp_path, capsys):
     assert "[human-probe]" in err
     assert path in err and "human=1" in err and "verdict=suppress" in err
     assert secret not in err
+
+
+# ── api-error-after-marker screen (#1695) ───────────────────────────────────
+
+
+def _api_error_row(age_s: float, text: str = "API Error: 500") -> dict:
+    """An `isApiErrorMessage: true` assistant row in the shape Claude Code
+    writes to the session transcript (verified live on #1687/#1689)."""
+    return {
+        "type": "assistant",
+        "isApiErrorMessage": True,
+        "timestamp": _iso_ms(NOW - age_s),
+        "message": {"role": "assistant", "content": [{"type": "text", "text": text}]},
+    }
+
+
+def test_api_error_after_marker_returns_stale_redrive(state_dir, monkeypatch, tmp_path):
+    """#1695 durability pin: a fresh assistant api-error row NEWER than the
+    latest marker converts a would-be HEALTHY to STALE-REDRIVE with the
+    exact `api-error-after-marker` reason substring."""
+    # marker at 300s ago; api-error at 60s ago (newer) — HEALTHY would fire
+    # by default (marker fresh), the api-error screen must flip it.
+    path = _write_transcript(tmp_path, [_api_error_row(60)])
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "running", [_event("epm:progress v1", 300)])
+    verdict, reason = tick_triage.triage(1695, "issue")
+    assert verdict == "STALE-REDRIVE", (verdict, reason)
+    assert "api-error-after-marker" in reason
+
+
+def test_api_error_after_marker_falls_open_on_missing_transcript(state_dir, monkeypatch):
+    """Fail-toward-today: when `_own_session_transcript_path` returns None
+    the predicate returns None and the initial verdict is preserved
+    (HEALTHY on a fresh marker)."""
+    # The autouse fixture already patches _own_session_transcript_path to
+    # return None, but be explicit for the pin.
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: None)
+    _patch_issue_state(monkeypatch, "running", [_event("epm:progress v1", 300)])
+    verdict, _ = tick_triage.triage(1695, "issue")
+    assert verdict == "HEALTHY"
+
+
+def test_api_error_older_than_marker_returns_healthy(state_dir, monkeypatch, tmp_path):
+    """Strict `>`: an api-error row OLDER than the latest marker (a
+    resolved incident whose next successful turn posted a fresh event) is
+    NOT a wedge — HEALTHY stays HEALTHY. Also covers the equal-ts tie
+    (which stays HEALTHY by design; the marker likely followed the row)."""
+    # api-error at 600s ago (older than the 60s-ago marker): the incident
+    # was resolved before the last marker post.
+    path = _write_transcript(tmp_path, [_api_error_row(600)])
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "running", [_event("epm:progress v1", 60)])
+    verdict, _ = tick_triage.triage(1695, "issue")
+    assert verdict == "HEALTHY"
+
+
+def test_api_error_probe_kill_switch(state_dir, monkeypatch, tmp_path):
+    """`EPM_TICK_API_ERROR_PROBE=0` disables the predicate — a HEALTHY tick
+    with a fresh api-error row and stale marker stays HEALTHY (pre-#1695
+    behavior). Confirms the kill switch is honored."""
+    monkeypatch.setenv("EPM_TICK_API_ERROR_PROBE", "0")
+    path = _write_transcript(tmp_path, [_api_error_row(60)])
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "running", [_event("epm:progress v1", 300)])
+    verdict, _ = tick_triage.triage(1695, "issue")
+    assert verdict == "HEALTHY"
+
+
+def test_api_error_probe_incident_1689_content_string(state_dir, monkeypatch, tmp_path):
+    """The verbatim #1689 incident content string (`"API Error: Repeated
+    529 Overloaded errors. The API is at capacity"`) trips the predicate.
+    The strongest "the fix actually addresses the incident that motivated
+    it" invariant — a regression that changes the field or shape the
+    predicate reads would break here."""
+    text = "API Error: Repeated 529 Overloaded errors. The API is at capacity"
+    path = _write_transcript(tmp_path, [_api_error_row(60, text=text)])
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "running", [_event("epm:progress v1", 300)])
+    verdict, reason = tick_triage.triage(1689, "issue")
+    assert verdict == "STALE-REDRIVE", (verdict, reason)
+    assert "api-error-after-marker" in reason

@@ -6,8 +6,14 @@ fallback stream ``.claude/cache/workflow-fix-events.jsonl`` for
 ``epm:workflow-fix-candidate`` rows whose note/``routed`` field marks them
 PARKED — a leading ``parked``, a ``routed:``/``Routing:`` ``parked`` token, a
 bare ``parked: architectural``/``parked: EPM_WORKFLOW_FIX_SESSION``
-routing-decision token, or a mid-note ``parked <punct> ... recursion guard``
-declaration (#1281); casual "parked" mentions do not count — (the
+routing-decision token, a mid-note ``parked <punct> ... recursion guard``
+declaration (#1281), or an URGENT fast-path park (#1741; grammar #1681;
+incident #1718) — a leading ``URGENT-PARK`` token, or an
+``urgency: main-red`` field INSIDE the formal candidate block (the #1681
+grammar never required a "parked" token, so pre-#1741 the emitter and this
+enumerator disagreed on the park surface and the #1718 park was invisible to
+BOTH consumers for ~16 h); casual "parked" mentions — and prose merely
+QUOTING ``urgency: main-red`` outside a formal block — do not count (the
 recursion-guard escape valve,
 ``.claude/rules/workflow-fix-on-bug.md`` § Recursion guard), and prints ONE
 JSON object to stdout listing the candidates no later routed-record has
@@ -96,6 +102,19 @@ entries; ``skipped_rows > len(skipped)`` is the truncation signal. Never a
 crash, never a silent drop. Exit code is 0 always — this is an enumerator,
 not a gate.
 
+Advisory: ``unmatched_record_fps`` (top-level list, #1703) — same-stream
+filed-record fingerprints that match NO enumerated candidate fingerprint
+on the same stream, one entry per (source, unique unmatched fp) as
+``{source, ref, fp}``. This is the DETECTOR for driver
+fingerprint-recomputation drift (the #1630 class): a routed-record
+carrying a real 12-hex fingerprint that matches no candidate fp is
+silent evidence the driver recomputed the fingerprint from
+abridged/synthesized text — the ts-claim fallback (#1680) correctly
+suppressed the park, so nothing else surfaces it. Advisory ONLY: never
+gates, suppresses, or re-enumerates anything; the ts-claim fallback
+remains the load-bearing suppression path. /daily Step C flags a
+non-empty list for investigation.
+
 Usage:
     uv run python scripts/sweep_parked_wf_candidates.py [--window-days 0]
         [--include-routed] [--tasks-root PATH] [--cache-file PATH]
@@ -165,6 +184,19 @@ _PARKED_MIDNOTE_RE = re.compile(
     r"|\bparked\s*(?:—|--|-\s|:)[^\n]{0,160}\brecursion guard\b",
     re.IGNORECASE,
 )
+# URGENT fast-path park arms (#1741; grammar #1681; incident #1718). The
+# urgent grammar (workflow-fix-on-bug.md § Recursion guard "Urgent fast
+# path") prescribes three in-block fields but never required a "parked"
+# token, so the #1718 park (leads `URGENT-PARK`, zero "parked" tokens) was
+# invisible to every arm above for ~16 h while main stayed red. Arm (a):
+# leading `URGENT-PARK` token (used with .match, mirroring _PARKED_LEAD_RE).
+# Arm (b): `urgency: main-red` field INSIDE the _BLOCK_RE-extracted formal
+# candidate block — searched against the block group ONLY, never the whole
+# note, so prose QUOTING the grammar keeps the casual-mention exclusion. A
+# mis-tagged already-ROUTED urgent block is closed by suppression rules 1/2
+# (demonstrated live by the #1718→#1740 record).
+_URGENT_PARK_LEAD_RE = re.compile(r"\s*urgent-park\b", re.IGNORECASE)
+_URGENT_BLOCK_FIELD_RE = re.compile(r"^urgency:\s*main-red\b", re.IGNORECASE | re.MULTILINE)
 _ARCHITECTURAL_RE = re.compile(r"parked:\s*architectural", re.IGNORECASE)
 _BLOCK_RE = re.compile(
     r"<!--\s*workflow-fix-candidate v1\s*-->(.*?)<!--\s*/workflow-fix-candidate\s*-->",
@@ -182,6 +214,12 @@ _ISO_TS_TOKEN_RE = re.compile(
 # _row_kind's dual-key convention: events rows carry "kind", cache rows
 # "marker") so /daily can tell a malformed line of relevant kind from noise.
 _KIND_HINT_RE = re.compile(r'"(?:kind|marker)"\s*:\s*"([^"]+)"')
+# 12-hex fingerprint pattern (matches wf_fix_fingerprint(...)[:12]).
+# Used to extract a filed record's real fp for the unmatched_record_fps
+# advisory (#1703). Word-boundary bracketed so a 12-hex prefix of a
+# longer sha does NOT false-match.
+_FP_HEX_RE = re.compile(r"\b([0-9a-f]{12})\b")
+_FILED_FP_NOTE_RE = re.compile(r"(?:fingerprint:\s*|wf-fix-fp:)([0-9a-f]{12})\b")
 # Emit cap for the structured `skipped` list; `skipped_rows` keeps the TRUE
 # total (skipped_rows > len(skipped) == truncated). Defensive bound for the
 # /daily LLM consumer — the live tree carries ~1 skip.
@@ -267,8 +305,13 @@ def _row_is_parked(row: dict) -> bool:
     Accept paths: a LEADING 'parked' note; 'routed: parked' anywhere; a
     mid-note park DECLARATION (_PARKED_MIDNOTE_RE — 'Routing: parked', the
     bare 'parked: architectural|EPM_WORKFLOW_FIX_SESSION' tokens, or
-    'parked <punct> ... recursion guard'; #1281); or a structured 'routed'
-    field containing 'parked'. Casual mid-note mentions do not count.
+    'parked <punct> ... recursion guard'; #1281); an URGENT fast-path park
+    (#1741; grammar #1681; incident #1718) — a LEADING 'URGENT-PARK' token,
+    or an 'urgency: main-red' field INSIDE the formal candidate block (the
+    block group only, never a whole-note scan); or a structured 'routed'
+    field containing 'parked' (the fallback stays LAST). Casual mid-note
+    mentions — incl. prose quoting 'urgency: main-red' outside a block — do
+    not count.
     """
     note = str(row.get("note") or "")
     if (
@@ -276,6 +319,11 @@ def _row_is_parked(row: dict) -> bool:
         or _PARKED_ROUTED_RE.search(note)
         or _PARKED_MIDNOTE_RE.search(note)
     ):
+        return True
+    if _URGENT_PARK_LEAD_RE.match(note):
+        return True
+    m = _BLOCK_RE.search(note)
+    if m and _URGENT_BLOCK_FIELD_RE.search(m.group(1)):
         return True
     routed = row.get("routed")
     return isinstance(routed, str) and "parked" in routed.lower()
@@ -420,6 +468,28 @@ def _filed_ref(record: dict) -> str:
     if filed:
         return str(filed) if str(filed).startswith("#") else f"#{filed}"
     return str(record.get("ts") or "")
+
+
+def _extract_filed_fp(record: dict) -> str | None:
+    """One 12-hex fingerprint from a filed record, or None (#1703).
+
+    Structured ``record["fingerprint"]`` key wins over note-embedded
+    values. Prose values (``n/a (prose park)``, ``n/a-fp``, empty string)
+    never yield a hit — the 12-hex word-boundary regex requires the exact
+    canonical shape ``wf_fix_fingerprint(...)[:12]`` produces.
+
+    Advisory use only: consumers must never gate on the return value.
+    """
+    raw = record.get("fingerprint")
+    if isinstance(raw, str):
+        m = _FP_HEX_RE.search(raw)
+        if m:
+            return m.group(1)
+    note = str(record.get("note") or "")
+    m = _FILED_FP_NOTE_RE.search(note)
+    if m:
+        return m.group(1)
+    return None
 
 
 def _load_task_bodies(tasks_root: Path) -> list[tuple[int, str, Path, str, dict]]:
@@ -675,6 +745,7 @@ def sweep(
 
     skips: list[dict] = []
     candidates: list[Candidate] = []
+    unmatched_record_fps: list[dict] = []
     now = datetime.now(UTC)
     cutoff = now - timedelta(days=window_days) if window_days > 0 else None
     bodies: list[tuple[int, str, Path, str, dict]] | None = None  # loaded lazily, ONCE
@@ -687,6 +758,7 @@ def sweep(
             rows.extend(path_rows)
             skips.extend(path_skips)
         filed = [(r, ts) for r, ts, _raw in rows if _row_kind(r).startswith(FILED_KIND_PREFIX)]
+        stream_candidate_start = len(candidates)
         for row, ts, ts_raw in rows:
             if not _row_kind(row).startswith(CANDIDATE_KIND_PREFIX):
                 continue
@@ -725,6 +797,39 @@ def sweep(
                 cand.open_wf_fix_on_file = _open_wf_fix_on_file(bodies or [], cand.target_file)
             candidates.append(cand)
 
+        # #1703 unmatched_record_fps advisory: enumerated candidate fps FOR
+        # THIS STREAM (fp-computable candidates only; fp-less prose parks
+        # contribute nothing to the enumerated set). Iterate filed records
+        # and record any real 12-hex fp that matches no enumerated candidate
+        # fp on this stream. This is the driver fingerprint-recomputation
+        # drift detector (#1630 class): the ts-claim fallback (#1680)
+        # correctly suppresses the park, but a recomputed fp is silent
+        # evidence the driver operated on abridged/synthesized origin text.
+        stream_enumerated_fps = {
+            c.fingerprint for c in candidates[stream_candidate_start:] if c.fingerprint is not None
+        }
+        # Track fps we've already emitted for THIS stream so a record-fp that
+        # appears in multiple filed records emits ONCE per stream (advisory
+        # dedup — the /daily consumer wants one investigation entry per
+        # drift, not one per repeated routed-record).
+        seen_unmatched: set[str] = set()
+        for record, _record_ts in filed:
+            rec_fp = _extract_filed_fp(record)
+            if rec_fp is None:
+                continue  # prose-park record / no extractable fp — nothing to detect
+            if rec_fp in stream_enumerated_fps:
+                continue  # matches an enumerated candidate on this stream — normal case
+            if rec_fp in seen_unmatched:
+                continue  # already listed this drift for the stream — dedup within stream
+            seen_unmatched.add(rec_fp)
+            unmatched_record_fps.append(
+                {
+                    "source": source,
+                    "ref": _filed_ref(record),
+                    "fp": rec_fp,
+                }
+            )
+
     candidates.sort(key=lambda c: (c.source, c.ts_raw))
     listed = candidates if include_routed else [c for c in candidates if not c.suppressed]
     return {
@@ -732,6 +837,7 @@ def sweep(
         "window_days": window_days,
         "skipped_rows": len(skips),  # KEPT: the TRUE total, output-compat (#1274 precedent)
         "skipped": skips[:_SKIPPED_EMIT_CAP],  # NEW (#1680): additive structured records
+        "unmatched_record_fps": unmatched_record_fps,  # NEW (#1703): additive advisory
         "candidates": [c.to_json() for c in listed],
     }
 

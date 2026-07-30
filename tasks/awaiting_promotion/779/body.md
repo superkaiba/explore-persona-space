@@ -8,7 +8,6 @@ tags:
 - monitoring
 - context-geometry
 - followup-manual
-- keep-running
 - followup-auto
 created_at: '2026-07-01T00:47:42Z'
 has_clean_result: true

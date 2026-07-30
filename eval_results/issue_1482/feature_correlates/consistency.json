@@ -1,0 +1,116 @@
+{
+ "n_features": 16384,
+ "n_fit_rows": 120000,
+ "activity_wiring_gate_max_abs_delta": 0.0,
+ "spearman": {
+  "consistency_vs_r2": 0.6003225916100939,
+  "activity_vs_r2": 0.29289787909943515,
+  "consistency_vs_activity": 0.1830635693985378,
+  "consistency_n8_vs_r2": 0.6043777865429832,
+  "n_n8": 16384
+ },
+ "partial_spearman_consistency_r2_given_activity": 0.5816083432373523,
+ "within_activity_decile": [
+  {
+   "decile": 0,
+   "n": 1639,
+   "spearman_consistency_r2": 0.5338378460084141,
+   "median_r2_by_consistency_tercile": [
+    0.025155399047120164,
+    0.09302680290054083,
+    0.17817334533329543
+   ]
+  },
+  {
+   "decile": 1,
+   "n": 1638,
+   "spearman_consistency_r2": 0.5605435482112822,
+   "median_r2_by_consistency_tercile": [
+    0.033955273727708235,
+    0.11013193504075575,
+    0.21382685525982859
+   ]
+  },
+  {
+   "decile": 2,
+   "n": 1638,
+   "spearman_consistency_r2": 0.5623952399278027,
+   "median_r2_by_consistency_tercile": [
+    0.035099201954161,
+    0.1105416174572757,
+    0.21368327478154397
+   ]
+  },
+  {
+   "decile": 3,
+   "n": 1639,
+   "spearman_consistency_r2": 0.5540155457572383,
+   "median_r2_by_consistency_tercile": [
+    0.04857292806220487,
+    0.10385707544498529,
+    0.23759239793401832
+   ]
+  },
+  {
+   "decile": 4,
+   "n": 1638,
+   "spearman_consistency_r2": 0.5938888584053048,
+   "median_r2_by_consistency_tercile": [
+    0.05889270846759592,
+    0.11470306343359288,
+    0.24842725907869107
+   ]
+  },
+  {
+   "decile": 5,
+   "n": 1638,
+   "spearman_consistency_r2": 0.6276413739443589,
+   "median_r2_by_consistency_tercile": [
+    0.0648662510015049,
+    0.13039013692507911,
+    0.27367311905901676
+   ]
+  },
+  {
+   "decile": 6,
+   "n": 1639,
+   "spearman_consistency_r2": 0.6184553047214695,
+   "median_r2_by_consistency_tercile": [
+    0.07367532888680162,
+    0.15178571764749083,
+    0.27726703591604873
+   ]
+  },
+  {
+   "decile": 7,
+   "n": 1638,
+   "spearman_consistency_r2": 0.5746176094005033,
+   "median_r2_by_consistency_tercile": [
+    0.1013755443028369,
+    0.1663810945959076,
+    0.28171252881229725
+   ]
+  },
+  {
+   "decile": 8,
+   "n": 1638,
+   "spearman_consistency_r2": 0.5545738981390218,
+   "median_r2_by_consistency_tercile": [
+    0.12397908319238304,
+    0.19486489662927647,
+    0.2869004427153749
+   ]
+  },
+  {
+   "decile": 9,
+   "n": 1639,
+   "spearman_consistency_r2": 0.623081191193812,
+   "median_r2_by_consistency_tercile": [
+    0.17499287060164015,
+    0.26194782339452566,
+    0.40551936835557023
+   ]
+  }
+ ],
+ "definition": "consistency = mean over fit-tagged contexts where the feature is answer-active of ans_frac (fraction of the answer's tokens where the feature is active); n8 variant restricts to contexts with >= 8 answer tokens"
+}

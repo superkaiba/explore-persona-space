@@ -16162,3 +16162,202 @@ def test_context_followup_scope_quoted_note_span_no_c1(monkeypatch):
     r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
     assert r.passed and not r.is_warn, r.detail
     assert "1 follow-up label clause(s) consistent" in r.detail
+
+
+# ─── kind:infra|batch|survey not-applicable short-circuit (task #1724) ────
+#
+# `_kind_short_circuit` returns the kind name when the verifier should
+# print an `OVERALL: N/A` verdict and exit 3, and returns `None` when the
+# body should fall through to the normal check chain. The seven
+# pure-helper cases below cover every branch of the predicate; the
+# subprocess smoke exercises the full main() short-circuit end-to-end
+# against a live in-tree `kind: infra, has_clean_result: false` task
+# discovered at test time.
+
+
+def test_short_circuit_infra_unpromoted():
+    """kind:infra with has_clean_result=False fires the short-circuit."""
+    assert (
+        verify_task_body._kind_short_circuit({"kind": "infra", "has_clean_result": False})
+        == "infra"
+    )
+
+
+def test_short_circuit_batch_unpromoted():
+    """kind:batch with has_clean_result=False fires the short-circuit."""
+    assert (
+        verify_task_body._kind_short_circuit({"kind": "batch", "has_clean_result": False})
+        == "batch"
+    )
+
+
+def test_short_circuit_survey_unpromoted():
+    """kind:survey with has_clean_result=False fires the short-circuit."""
+    assert (
+        verify_task_body._kind_short_circuit({"kind": "survey", "has_clean_result": False})
+        == "survey"
+    )
+
+
+def test_short_circuit_experiment_falls_through():
+    """kind:experiment never short-circuits — it always gets the full check
+    chain against the clean-result spec (a `kind: experiment` body without
+    a promoted clean-result is still a real body to verify).
+    """
+    assert (
+        verify_task_body._kind_short_circuit({"kind": "experiment", "has_clean_result": False})
+        is None
+    )
+
+
+def test_short_circuit_analysis_falls_through():
+    """kind:analysis is DELIBERATELY excluded from the short-circuit set.
+
+    An analysis task with has_clean_result: false and no clean-result body
+    is a LEGITIMATE FAIL — it signals the analyzer hasn't produced a
+    finding yet (SKILL.md § 9a-quater). Silencing that pre-promotion FAIL
+    would defeat the auto-continue pipeline's expectation that the FAIL
+    disappears the moment the analyzer flips `has_clean_result: true`.
+    """
+    assert (
+        verify_task_body._kind_short_circuit({"kind": "analysis", "has_clean_result": False})
+        is None
+    )
+
+
+def test_short_circuit_promoted_infra_falls_through():
+    """A rare mis-filed `kind: infra` task that DOES carry a promoted
+    clean-result (has_clean_result=True) still gets the full check path —
+    the short-circuit only fires on the unpromoted subclass.
+    """
+    assert verify_task_body._kind_short_circuit({"kind": "infra", "has_clean_result": True}) is None
+
+
+def test_short_circuit_kind_absent_falls_through():
+    """No `kind` frontmatter → predicate returns None (safe fallback)."""
+    assert verify_task_body._kind_short_circuit({}) is None
+
+
+def test_short_circuit_infra_unpromoted_string_false():
+    """String-coerced `has_clean_result` values.
+
+    YAML `false` bareword parses to bool False (already covered above).
+    A mis-quoted `has_clean_result: "false"` parses to the STRING
+    "false", which `bool()` reads as truthy — the opposite of the
+    author's intent. `_kind_short_circuit`'s string-coercion branch
+    treats every case-insensitive whitespace-stripped variant of
+    "false" / "no" / "0" / "null" / "none" as falsy, so all four
+    variations still fire the short-circuit; a legitimate truthy string
+    ("yes", "true", any other non-falsy string) leaves it inert.
+    """
+    for hcr in ("false", "FALSE", " False ", "no", "0"):
+        assert (
+            verify_task_body._kind_short_circuit({"kind": "infra", "has_clean_result": hcr})
+            == "infra"
+        ), f"expected string {hcr!r} to be treated as falsy"
+    # A truthy string means the task was promoted (analysis-style
+    # mis-file with a mis-quoted `has_clean_result: "yes"` would run the
+    # full check path, which is the intended behavior).
+    assert (
+        verify_task_body._kind_short_circuit({"kind": "infra", "has_clean_result": "yes"}) is None
+    )
+
+
+def test_short_circuit_infra_has_clean_result_none():
+    """`has_clean_result: null` (YAML null) parses to Python None, which
+    is falsy under `bool(None)` — the short-circuit fires. This is the
+    same branch as `has_clean_result` missing entirely, but exercised
+    explicitly because null values arrive naturally from YAML.
+    """
+    assert (
+        verify_task_body._kind_short_circuit({"kind": "infra", "has_clean_result": None}) == "infra"
+    )
+
+
+def _find_live_infra_task_id() -> int | None:
+    """Locate a live in-tree `kind: infra, has_clean_result: false` task.
+
+    Scans `tasks/proposed/**/body.md` and `tasks/planning/**/body.md` for
+    a body whose YAML frontmatter has `kind: infra` and truthy-falsy
+    `has_clean_result`. Returns the LOWEST task id for determinism
+    across concurrent test runs. Returns ``None`` when no eligible
+    task exists (the subprocess smoke then pytest-skips cleanly).
+    """
+    import yaml
+
+    repo_root = Path(__file__).resolve().parents[1]
+    tasks_root = repo_root / "tasks"
+    candidates: list[int] = []
+    for status_dir in ("proposed", "planning"):
+        status_path = tasks_root / status_dir
+        if not status_path.exists():
+            continue
+        for body_path in status_path.glob("*/body.md"):
+            try:
+                text = body_path.read_text()
+            except OSError:
+                continue
+            # Cheap gate: skip bodies without a YAML front-matter block.
+            if not text.startswith("---\n"):
+                continue
+            rest = text[4:]
+            end = rest.find("\n---\n")
+            if end == -1:
+                continue
+            try:
+                fm = yaml.safe_load(rest[:end]) or {}
+            except yaml.YAMLError:
+                continue
+            if not isinstance(fm, dict):
+                continue
+            if fm.get("kind") != "infra":
+                continue
+            hcr = fm.get("has_clean_result")
+            if isinstance(hcr, str):
+                hcr_bool = hcr.strip().lower() not in {"", "false", "no", "0", "null", "none"}
+            else:
+                hcr_bool = bool(hcr)
+            if hcr_bool:
+                continue
+            # Task id is the directory name (e.g. tasks/proposed/1724/body.md).
+            try:
+                candidates.append(int(body_path.parent.name))
+            except ValueError:
+                continue
+    if not candidates:
+        return None
+    return min(candidates)
+
+
+def test_main_subprocess_kind_infra_returns_exit_3():
+    """End-to-end smoke: `verify_task_body.py --issue <N>` on a live
+    `kind: infra, has_clean_result: false` task returns exit code 3
+    with an `OVERALL: N/A (kind: infra ...)` verdict.
+
+    Uses the LOWEST-numbered eligible in-tree task for determinism.
+    Skips cleanly if no eligible infra task exists (extremely unlikely
+    — the corpus contains hundreds of them). The task's identity is
+    read fresh at test time, so if the picked task is promoted /
+    archived tomorrow the test self-adapts.
+    """
+    task_id = _find_live_infra_task_id()
+    if task_id is None:
+        pytest.skip(
+            "no live kind:infra,has_clean_result:false task under "
+            "tasks/{proposed,planning}/ — nothing to smoke"
+        )
+    repo_root = Path(__file__).resolve().parents[1]
+    result = subprocess.run(
+        ["uv", "run", "python", "scripts/verify_task_body.py", "--issue", str(task_id)],
+        capture_output=True,
+        text=True,
+        cwd=str(repo_root),
+        check=False,
+    )
+    assert result.returncode == 3, (
+        f"expected exit 3, got {result.returncode}\n"
+        f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    )
+    assert "OVERALL: N/A (kind: infra" in result.stdout, (
+        f"expected N/A verdict, got:\n{result.stdout}"
+    )

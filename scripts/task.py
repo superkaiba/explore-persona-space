@@ -948,6 +948,16 @@ def cmd_new_plan_version(args: argparse.Namespace) -> None:
         context="task.py new-plan-version",
     )
     print(f"  ({rel})", file=sys.stderr)
+    # #1745: the writer auto-aligns a self-declared `# Plan v<X>` first-heading
+    # version to the assigned version; surface it when it fired (compare the
+    # persisted bytes to the input, modulo the trailing-newline normalization).
+    persisted = (find_task_path(args.number) / "plans" / f"v{v}.md").read_text()
+    if persisted != (plan_md if plan_md.endswith("\n") else plan_md + "\n"):
+        print(
+            f"  (header version auto-aligned to v{v} — self-declared "
+            f"'Plan v<X>' headers are normalized at persist time; #1745)",
+            file=sys.stderr,
+        )
 
 
 def cmd_find(args: argparse.Namespace) -> None:

@@ -49,7 +49,9 @@ import re
 import subprocess
 import sys
 import time
+import uuid
 from dataclasses import dataclass, replace
+from datetime import datetime
 from pathlib import Path
 
 # Repo-root sys.path bootstrap. Invoking this file as a script puts only
@@ -274,6 +276,33 @@ def _gcp_queue_wait_seconds() -> int:
     except (TypeError, ValueError):
         return GCP_QUEUE_WAIT_SECONDS_DEFAULT
     return val if val > 0 else GCP_QUEUE_WAIT_SECONDS_DEFAULT
+
+
+# The default max create age for the #1815 never-observed-past-pending vanish
+# arm (arm N of ``_vanish_arm_for``). Mirrors the #1029 young-unobserved-death
+# horizon (``EPS_GCP_BOOT_DEATH_MAX_AGE_SECONDS``, 1500 s).
+GCP_QUEUE_VANISH_MAX_AGE_SECONDS_DEFAULT = 1500
+
+
+def _gcp_queue_vanish_max_age_seconds() -> int:
+    """``EPS_GCP_QUEUE_VANISH_MAX_AGE_SECONDS`` (default 1500) — max create age
+    for the never-observed-past-pending vanish arm (#1815).
+
+    Default mirrors the #1029 young-unobserved-death horizon
+    (``EPS_GCP_BOOT_DEATH_MAX_AGE_SECONDS`` 1500 s) and MUST stay well under
+    the #935 done-grace window (90 min): a never-polled COMPLETED run's
+    post-grace poweroff+DELETE reads not-found at age >= ~95 min, so this
+    bound is what keeps it from ever being mislabeled a vanish (a paid RunPod
+    re-run of finished work). Missing / malformed / non-positive -> 1500.
+    """
+    raw = os.environ.get("EPS_GCP_QUEUE_VANISH_MAX_AGE_SECONDS")
+    if raw is None:
+        return GCP_QUEUE_VANISH_MAX_AGE_SECONDS_DEFAULT
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return GCP_QUEUE_VANISH_MAX_AGE_SECONDS_DEFAULT
+    return val if val > 0 else GCP_QUEUE_VANISH_MAX_AGE_SECONDS_DEFAULT
 
 
 # ── GCP pre-workload boot-loop breaker (#1029) ────────────────────────────────
@@ -501,6 +530,13 @@ def _save_gpu_idle_state(path: Path, payload: dict[str, str]) -> None:
 # #1033: the GPU-idle advisory/escalation keys scoped to ONE instance
 # incarnation on the GCP lane. Kept in lockstep with the idle subset of
 # ``poll_pipeline._RUN_SCOPED_STATE_KEYS`` (the RunPod-lane sibling clear set).
+#
+# #1752: ``gpu_idle_escalation_counts`` is deliberately NOT in this set (nor
+# in the RunPod-lane sibling): the per-phase escalation count must survive
+# BOTH the attempt-id scoping below AND the run-scope reset — the repeat
+# pathology it detects (#1689: an identical [gpu-idle-escalation] re-fired
+# forever) only manifests ACROSS relaunches / attempt incarnations. Pinned by
+# tests/test_backend_poll_gpu_idle.py.
 _IDLE_ADVISORY_STATE_KEYS: tuple[str, ...] = (
     "gpu_idle_since_epoch",
     "gpu_idle_advised_phases",
@@ -583,6 +619,154 @@ def _missing_sidecar_json(issue: int, sidecar_path: Path, reason: str) -> dict:
         "reason": "missing_handle_sidecar",
         "issue": int(issue),
     }
+
+
+#: Slack (seconds) before the handle sidecar's mtime is called stale against
+#: a relaunch marker (#1786). Grounded on the #1156 precedent's slack default
+#: (``EPM_POLL_PID_MARKER_SLACK_SEC`` = 600 in ``scripts/poll_pipeline.py`` —
+#: pod-side-reporting.md § Residual honesty).
+HANDLE_MARKER_SLACK_SEC = 600
+
+
+def _handle_stale_flags(
+    *,
+    handle_workload_pid,
+    sidecar_mtime_epoch: float,
+    run_launched_ts_epochs: list[float],
+    marker_pid: int | None,
+    slack_sec: int = HANDLE_MARKER_SLACK_SEC,
+) -> tuple[bool, bool]:
+    """Pure discriminator (#1786): ``(handle_stale_vs_live, handle_older_than_relaunch)``.
+
+    ``handle_stale_vs_live``: the newest ``epm:run-launched`` marker's ``pid=``
+    and the handle's ``extra.workload_pid`` are BOTH present + parseable ints
+    AND differ. Inert (False) when either side is missing/unparseable — lanes
+    that never populate ``extra.workload_pid`` (GCP/SLURM) are inert by
+    construction.
+
+    ``handle_older_than_relaunch``: >=2 run-launched markers exist AND
+    ``sidecar_mtime_epoch + slack_sec < run_launched_ts_epochs[-2]`` — the
+    SECOND-newest marker, deliberately. A COMPLIANT relaunch rewrites the
+    sidecar at (re)dispatch time, which necessarily POSTDATES the PREVIOUS
+    launch's marker, while a never-rewritten handle's mtime is the original
+    dispatch write, which PREDATES it. Comparing against the NEWEST marker
+    would fire persistently on the compliant re-dispatch path itself (the
+    sidecar is rewritten at dispatch; the fresh marker posts up to ~50 min
+    later on the RunPod lane) — the same dispatch->marker latency that makes
+    the first-launch case undiscriminable. The second-newest comparison is
+    latency-insensitive.
+
+    Pure — no IO; unit-testable with no SSH (mirror of
+    ``poll_pipeline._pid_file_predates_marker``, #1156).
+    """
+    try:
+        handle_pid = int(str(handle_workload_pid))
+    except (TypeError, ValueError):
+        handle_pid = None
+    stale_vs_live = handle_pid is not None and marker_pid is not None and handle_pid != marker_pid
+    older_than_relaunch = (
+        sidecar_mtime_epoch > 0
+        and len(run_launched_ts_epochs) >= 2
+        and sidecar_mtime_epoch + slack_sec < run_launched_ts_epochs[-2]
+    )
+    return stale_vs_live, older_than_relaunch
+
+
+def _maybe_warn_stale_handle(
+    *, issue: int, sidecar: Path, handle, lane_suffix
+) -> tuple[bool, bool]:
+    """#1786 WARN-only handle-staleness detector; returns the two tick-JSON flags.
+
+    Mechanical backstop for the #1750 prose duty (pod-side-reporting.md
+    item 1e: rewrite the handle sidecar on relaunch); incident #1689 r15b:
+    the handle kept pointing at the OLD attempt's completion sentinel, so
+    completion was never observed and nothing warned. WARN-only by contract —
+    neither flag ever contributes to status / stall_reason / verdict /
+    next_interval.
+
+    Returns ``(False, False)`` IMMEDIATELY when ``lane_suffix`` is set: the
+    sidecar is per-LANE (#934) but ``epm:run-launched`` markers are per-ISSUE,
+    so under multi-lane polling lane A's tick would read lane B's newer marker
+    and both checks would false-fire every tick on healthy handles.
+
+    Benign transient window for ``handle_stale_vs_live``: on a COMPLIANT
+    relaunch the fresh marker and the handle rewrite land seconds-to-minutes
+    apart, so the flag may fire for a few ticks in between — acceptable for a
+    WARN that feeds no verdict.
+
+    Fail-soft: any exception is swallowed to DEBUG and returns
+    ``(False, False)`` — the same deliberate, narrow exception to fail-fast as
+    ``poll_pipeline._maybe_warn_stale_pid_file`` (#1156): the flags are
+    observability feeding no verdict, and this hot shared poll script runs on
+    every live poll loop fleet-wide (#1786).
+    """
+    try:
+        if lane_suffix:
+            return (False, False)
+        # Lazy imports — the GCP idle block's precedent (keeps the --help path
+        # fast; the repo-root sys.path bootstrap above makes
+        # ``scripts.poll_pipeline`` resolvable).
+        from datetime import UTC, datetime
+
+        from explore_persona_space.task_workflow import list_events
+        from scripts.poll_pipeline import MARKER_PID_RE
+
+        rows = [e for e in list_events(int(issue)) if e.get("kind") == "epm:run-launched"]
+        if not rows:
+            return (False, False)
+        # events.jsonl is append-only, so file order IS ascending-ts order.
+        ts_epochs: list[float] = []
+        for ev in rows:
+            try:
+                parsed = datetime.fromisoformat(str(ev.get("ts")))
+            except (TypeError, ValueError):
+                continue
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=UTC)
+            ts_epochs.append(parsed.timestamp())
+        m = MARKER_PID_RE.search(str(rows[-1].get("note", "") or ""))
+        marker_pid = int(m.group(1)) if m else None
+        extra = getattr(handle, "extra", None) or {}
+        stale_vs_live, older_than_relaunch = _handle_stale_flags(
+            handle_workload_pid=extra.get("workload_pid"),
+            sidecar_mtime_epoch=float(Path(sidecar).stat().st_mtime),
+            run_launched_ts_epochs=ts_epochs,
+            marker_pid=marker_pid,
+        )
+        if stale_vs_live:
+            logging.warning(
+                "handle sidecar %s for #%d carries extra.workload_pid=%s but the newest "
+                "epm:run-launched marker says pid=%s — the handle points at a PRIOR "
+                "attempt's run-scoped fields (#1689 r15b shape). WARN-only; verdict "
+                "unchanged. Recovery: rewrite the handle sidecar per "
+                ".claude/rules/pod-side-reporting.md item 1e, or re-dispatch through "
+                "dispatch_issue.py so the router rewrites it.",
+                sidecar,
+                issue,
+                extra.get("workload_pid"),
+                marker_pid,
+            )
+        if older_than_relaunch:
+            logging.warning(
+                "handle sidecar %s for #%d was last written before the SECOND-newest "
+                "epm:run-launched marker (mtime + %ds slack < ts(marker[-2])) — a "
+                "relaunch happened without the item-1e handle rewrite (#1786). "
+                "WARN-only; verdict unchanged. Recovery: rewrite the handle sidecar per "
+                ".claude/rules/pod-side-reporting.md item 1e, or re-dispatch through "
+                "dispatch_issue.py so the router rewrites it.",
+                sidecar,
+                issue,
+                HANDLE_MARKER_SLACK_SEC,
+            )
+        return (stale_vs_live, older_than_relaunch)
+    except Exception as exc:
+        logging.debug(
+            "handle-staleness detector failed for #%s (ignored — WARN-only "
+            "observability, #1786/#1156): %s",
+            issue,
+            exc,
+        )
+        return (False, False)
 
 
 def _is_gcp_async_workload_failure(handle, result) -> bool:
@@ -690,40 +874,98 @@ def _is_runpod_cuda_ima_failure(handle, result) -> bool:
     )
 
 
-def _read_phase_clock(sidecar: Path) -> tuple[str | None, float | None]:
-    """Read the (last_phase, last_phase_change_ts) staleness clock from the sidecar (#669).
+def _clock_incarnation_for(handle) -> str | None:
+    """Launch-incarnation key for phase-clock records (#1815).
 
-    The clock keys live inside the sidecar JSON's ``extra`` dict (round-trips
-    via ``serialize_handle``'s ``dict(handle.extra)``, so no schema migration).
-    A freshly-dispatched sidecar (pre-this-change handle) has neither key, which
-    reads as ``(None, None)`` → the caller fails toward ``running``, never
-    toward a false wedge. A missing / unreadable / malformed sidecar also reads
-    as ``(None, None)`` — the clock can never crash the poll.
+    job_id-first (the GCE instance id — distinct per create, stable across
+    re-polls of one sidecar); fallback ``f"{attempt_id}:{gcp_launched_ts}"``.
+    attempt_id ALONE is FORBIDDEN (#763: all five creates shared one
+    attempt_id). Mirrors the #1029 boot-death recorder's derivation (this
+    file, the ``_maybe_escalate_gcp_boot_loop`` incarnation block). ``None``
+    on a fully-degenerate handle -> callers skip the check (fail-open).
+    """
+    inc = str(getattr(handle, "job_id", "") or "")
+    if inc:
+        return inc
+    extra = getattr(handle, "extra", None) or {}
+    att = str(extra.get("attempt_id") or "")
+    ts_raw = extra.get("gcp_launched_ts")
+    ts_part = "" if ts_raw in (None, "") else str(ts_raw)
+    if not att and not ts_part:
+        return None
+    return f"{att}:{ts_part}"
+
+
+def _read_phase_clock_record(sidecar: Path) -> tuple[str | None, float | None, str | None]:
+    """Read (last_phase, last_phase_change_ts, last_phase_incarnation) from the sidecar.
+
+    The single parse behind :func:`_read_phase_clock` (the legacy 2-tuple
+    wrapper) and :func:`_read_phase_clock_for` (the #1815 incarnation-checked
+    read). The clock keys live inside the sidecar JSON's ``extra`` dict
+    (round-trips via ``serialize_handle``'s ``dict(handle.extra)``, so no
+    schema migration). A freshly-dispatched sidecar has none of the keys,
+    which reads as ``(None, None, None)`` → callers fail toward ``running``,
+    never toward a false wedge. A missing / unreadable / malformed sidecar
+    also reads as ``(None, None, None)`` — the clock can never crash the poll.
     """
     try:
         payload = json.loads(Path(sidecar).read_text())
     except (OSError, json.JSONDecodeError, ValueError):
-        return None, None
+        return None, None, None
     extra = payload.get("extra") if isinstance(payload, dict) else None
     if not isinstance(extra, dict):
-        return None, None
+        return None, None, None
     last_phase = extra.get("last_phase")
     last_ts = extra.get("last_phase_change_ts")
+    stored_inc = extra.get("last_phase_incarnation")
     last_phase = str(last_phase) if isinstance(last_phase, str) else None
     last_ts = float(last_ts) if isinstance(last_ts, (int, float)) else None
+    stored_inc = str(stored_inc) if isinstance(stored_inc, str) and stored_inc else None
+    return last_phase, last_ts, stored_inc
+
+
+def _read_phase_clock(sidecar: Path) -> tuple[str | None, float | None]:
+    """Read the (last_phase, last_phase_change_ts) staleness clock from the sidecar (#669).
+
+    Legacy 2-tuple wrapper over :func:`_read_phase_clock_record` — kept for
+    direct callers/tests that predate the #1815 incarnation key; escalation
+    sites read through :func:`_read_phase_clock_for` instead.
+    """
+    last_phase, last_ts, _stored_inc = _read_phase_clock_record(sidecar)
     return last_phase, last_ts
 
 
-def _write_phase_clock(sidecar: Path, *, phase: str, ts: float) -> None:
+def _read_phase_clock_for(sidecar: Path, handle) -> tuple[str | None, float | None]:
+    """Incarnation-checked clock read (#1815): a record stamped under a
+    DIFFERENT launch incarnation reads as ABSENT, so a prior attempt's phase
+    can never satisfy (or age) a discriminator for the current one. A LEGACY
+    record with no stored incarnation stays valid (pre-fix in-flight runs keep
+    today's behavior); a handle with no computable incarnation skips the check.
+    """
+    phase, ts, stored = _read_phase_clock_record(sidecar)
+    if phase is None and ts is None:
+        return None, None
+    cur = _clock_incarnation_for(handle)
+    if stored and cur and stored != cur:
+        return None, None
+    return phase, ts
+
+
+def _write_phase_clock(
+    sidecar: Path, *, phase: str, ts: float, incarnation: str | None = None
+) -> None:
     """Persist the staleness clock onto the sidecar's ``extra`` dict, best-effort (#669).
 
-    Mutates ONLY ``extra["last_phase"]`` / ``extra["last_phase_change_ts"]`` on
-    the raw sidecar JSON (every other handle field is preserved verbatim) and
-    rewrites atomically (write-temp + rename). A write failure (EDQUOT /
-    read-only fs) is logged, NOT raised — the next tick simply re-reads stale
-    state and either re-stamps (phase advanced) or re-evaluates the floor. A
-    clock-write failure can NEVER crash the poll or manufacture a wedge (the
-    floor + reachability-alarm conjunction still gates the escalation).
+    Mutates ONLY ``extra["last_phase"]`` / ``extra["last_phase_change_ts"]`` /
+    ``extra["last_phase_incarnation"]`` (#1815 — stamped when ``incarnation``
+    is non-None, POPPED when None so a degenerate-handle stamp never leaves a
+    stale attribution beside a fresh phase) on the raw sidecar JSON (every
+    other handle field is preserved verbatim) and rewrites atomically
+    (write-temp + rename). A write failure (EDQUOT / read-only fs) is logged,
+    NOT raised — the next tick simply re-reads stale state and either
+    re-stamps (phase advanced) or re-evaluates the floor. A clock-write
+    failure can NEVER crash the poll or manufacture a wedge (the floor +
+    reachability-alarm conjunction still gates the escalation).
     """
     try:
         path = Path(sidecar)
@@ -736,6 +978,10 @@ def _write_phase_clock(sidecar: Path, *, phase: str, ts: float) -> None:
             payload["extra"] = extra
         extra["last_phase"] = phase
         extra["last_phase_change_ts"] = float(ts)
+        if incarnation is not None:
+            extra["last_phase_incarnation"] = str(incarnation)
+        else:
+            extra.pop("last_phase_incarnation", None)
         tmp = path.with_suffix(path.suffix + ".tmp")
         tmp.write_text(json.dumps(payload, sort_keys=True, indent=2))
         tmp.replace(path)
@@ -781,10 +1027,16 @@ def _maybe_escalate_gcp_wedge(handle, result, sidecar: Path, *, now: float):
     """
     if getattr(handle, "backend", None) != "gcp" or result.status != "running":
         return result
-    last_phase, last_ts = _read_phase_clock(sidecar)
+    last_phase, last_ts = _read_phase_clock_for(sidecar, handle)
     if last_phase != result.current_phase or last_ts is None:
-        # Phase advanced (or first observation) → re-stamp the clock.
-        _write_phase_clock(sidecar, phase=result.current_phase, ts=now)
+        # Phase advanced (or first observation, or a stale prior-incarnation
+        # record — #1815) → re-stamp the clock under the CURRENT incarnation.
+        _write_phase_clock(
+            sidecar,
+            phase=result.current_phase,
+            ts=now,
+            incarnation=_clock_incarnation_for(handle),
+        )
         return result
     stale_for = now - last_ts
     if stale_for > GCP_STALENESS_FLOOR_SEC and getattr(result, "reachability_alarm", False):
@@ -846,10 +1098,18 @@ def _maybe_escalate_gcp_queue_timeout(handle, result, sidecar: Path, *, now: flo
         return result
     if result.current_phase != GCP_PENDING_PHASE:
         return result
-    last_phase, last_ts = _read_phase_clock(sidecar)
+    last_phase, last_ts = _read_phase_clock_for(sidecar, handle)
     if last_phase != result.current_phase or last_ts is None:
-        # Phase advanced onto pending (or first observation) → re-stamp the clock.
-        _write_phase_clock(sidecar, phase=result.current_phase, ts=now)
+        # Phase advanced onto pending (or first observation, or a stale
+        # prior-incarnation record — #1815: a prior attempt's aged "pending"
+        # stamp can no longer mature the floor for a fresh queued instance) →
+        # re-stamp the clock under the CURRENT incarnation.
+        _write_phase_clock(
+            sidecar,
+            phase=result.current_phase,
+            ts=now,
+            incarnation=_clock_incarnation_for(handle),
+        )
         return result
     queued_for = now - last_ts
     floor = _gcp_queue_wait_seconds()
@@ -905,8 +1165,47 @@ def _is_gcp_queue_timeout(handle, result) -> bool:
     )
 
 
-def _maybe_escalate_gcp_queue_vanish(handle, result, sidecar: Path):
-    """Escalate a GCP instance that VANISHED from the FLEX_START queue (#1116/#1112).
+def _flex_create_never_ran_young(handle, *, now: float) -> bool:
+    """Arm-N predicate (#1815): create DONE (job_id known), FLEX_START
+    provenance, young launch. Every unknown fails SAFE (False -> today's path):
+    a missing/foreign ``provisioning_model``, an empty ``job_id``, and a
+    missing/non-numeric ``gcp_launched_ts`` all decline the arm.
+    """
+    extra = getattr(handle, "extra", None) or {}
+    if extra.get("provisioning_model") != "FLEX_START":
+        return False
+    if not str(getattr(handle, "job_id", "") or ""):
+        return False
+    ts = extra.get("gcp_launched_ts")
+    if not isinstance(ts, (int, float)):
+        return False
+    return (now - float(ts)) < _gcp_queue_vanish_max_age_seconds()
+
+
+def _vanish_arm_for(handle, sidecar: Path, *, now: float) -> tuple[str | None, str | None]:
+    """(arm, last_observed_phase) for the queue-vanish discriminator (#1116/#1815).
+
+    * ``("pending-clock", "pending")`` — the #1116 arm P: a SAME-incarnation
+      (or legacy) clock record last observed ``"pending"``;
+    * ``("never-ran-young-flex", None)`` — the #1815 arm N: no clock record
+      for THIS incarnation (absent, wiped, or stamped by a PRIOR incarnation)
+      AND :func:`_flex_create_never_ran_young` (FLEX_START provenance +
+      create evidence + young launch);
+    * ``(None, <phase>)`` — not a vanish shape: a same-incarnation
+      NON-pending clock means the instance RAN (#659/#1029 own that), and a
+      clock-less non-FLEX / aged / evidence-less handle keeps today's
+      fall-through to the #1029 streak path.
+    """
+    last_phase, _last_ts = _read_phase_clock_for(sidecar, handle)
+    if last_phase == GCP_PENDING_PHASE:
+        return "pending-clock", last_phase
+    if last_phase is None and _flex_create_never_ran_young(handle, now=now):
+        return "never-ran-young-flex", None
+    return None, last_phase
+
+
+def _maybe_escalate_gcp_queue_vanish(handle, result, sidecar: Path, *, now: float | None = None):
+    """Escalate a GCP instance that VANISHED from the FLEX_START queue (#1116/#1112/#1815).
 
     The queue-VANISH sibling of :func:`_maybe_escalate_gcp_queue_timeout`. A
     DWS-queued FLEX_START instance can be dropped SERVER-SIDE (create DONE, no
@@ -918,12 +1217,22 @@ def _maybe_escalate_gcp_queue_vanish(handle, result, sidecar: Path):
     worst — mislabelling a pure CAPACITY event as a boot problem) and
     ``route()`` re-booked the same dead flex rung indefinitely.
 
-    The discriminator is the sidecar phase clock (:func:`_read_phase_clock`):
-    a dead not-found poll whose ``last_phase`` reads ``"pending"`` means the
-    instance was LAST OBSERVED still queued — it never reached a running
-    phase — so the vanish is deterministic capacity evidence, escalated
-    INSTANTANEOUSLY (no aging floor, no streak; the clock is READ-ONLY here —
-    unlike #783 there is nothing to age and unlike #1029 nothing to count).
+    The discriminator is :func:`_vanish_arm_for` — TWO arms (#1815):
+
+    * **Arm P (pending-clock, #1116):** a dead not-found poll whose
+      SAME-incarnation (or legacy) clock last observed ``"pending"`` — the
+      instance was LAST OBSERVED still queued, deterministic capacity
+      evidence, escalated INSTANTANEOUSLY (no aging floor, no streak; the
+      clock is READ-ONLY here). The #1815 incarnation check
+      (:func:`_read_phase_clock_for`) keeps a PRIOR launch's stale record
+      from satisfying (or blocking) this arm for the current one.
+    * **Arm N (never-ran-young-flex, #1815):** NO clock record for THIS
+      incarnation (fresh/reconnect-rewritten sidecar, sparse polling, or a
+      prior incarnation's stale record reading as absent) AND the handle
+      carries FLEX_START provenance + create evidence (``job_id``) + a young
+      ``gcp_launched_ts`` (< ``EPS_GCP_QUEUE_VANISH_MAX_AGE_SECONDS``,
+      default 1500 s) — the #1738 no-fire shape: the instance was created,
+      never observed past the DWS queue, and disappeared young.
 
     Guards, in order (each returns ``result`` unchanged):
 
@@ -931,11 +1240,11 @@ def _maybe_escalate_gcp_queue_vanish(handle, result, sidecar: Path):
     * ``result.current_phase != GCP_INSTANCE_NOT_FOUND_PHASE`` — narrow to
       not-found ONLY: a ``terminal_terminated`` instance still EXISTS
       server-side (a preemption / manual stop), which is NOT the vanish shape;
-    * the sidecar clock's ``last_phase`` is not ``"pending"`` — covers a
-      workload-phase clock (the instance ran, then was deleted: the existing
-      #659/#1029 classifications own that) AND a missing/None clock
-      (fresh-dispatch handle, wiped sidecar — fail-open to today's behavior,
-      which falls through to the #1029 streak path);
+    * :func:`_vanish_arm_for` returns arm ``None`` — a same-incarnation
+      NON-pending clock (the instance ran: #659/#1029 own it), or a
+      clock-less handle failing any arm-N conjunct (non-FLEX / unknown
+      provenance, no create evidence, aged launch) — fail-open to today's
+      behavior, which falls through to the #1029 streak path;
     * :func:`_cpu_intent_blocks_runpod_failover` — the #677/#747 guard gates
       the REWRITE itself (mirroring :func:`_maybe_escalate_gcp_boot_loop`), so
       a ``cpu-bigmem`` vanish keeps its ordinary dead path INCLUDING today's
@@ -946,22 +1255,25 @@ def _maybe_escalate_gcp_queue_vanish(handle, result, sidecar: Path):
     failover fires. The ``main()`` wiring places this BEFORE
     :func:`_maybe_escalate_gcp_boot_loop`, whose heuristic phase set contains
     not-found — the vanish branch's early return is what keeps a capacity miss
-    out of the boot-death streak.
+    out of the boot-death streak. ``now`` is kw-only with a ``time.time()``
+    default so pre-#1815 direct callers keep binding.
     """
     if getattr(handle, "backend", None) != "gcp" or result.status != "dead":
         return result
     if result.current_phase != GCP_INSTANCE_NOT_FOUND_PHASE:
         return result
-    last_phase, _last_ts = _read_phase_clock(sidecar)
-    if last_phase != GCP_PENDING_PHASE:
+    now = time.time() if now is None else now
+    arm, last_phase = _vanish_arm_for(handle, sidecar, now=now)
+    if arm is None:
         return result
     if _cpu_intent_blocks_runpod_failover(handle):
         return result
     logging.warning(
         "backend_poll: GCP instance vanished from the FLEX_START capacity queue "
-        "(dead poll %r with last observed phase %r) — escalating to %s and "
-        "failing over to RunPod (#1116/#1112)",
+        "(dead poll %r, vanish arm %r, last observed phase %r) — escalating to "
+        "%s and failing over to RunPod (#1116/#1112/#1815)",
         result.current_phase,
+        arm,
         last_phase,
         GCP_QUEUE_VANISH_PHASE,
     )
@@ -2064,6 +2376,19 @@ def _relaunch_fresh_runpod(
                 f"pre-#689 handle requires manual re-dispatch (CLAUDE.md halt-criterion #2)."
             ),
         )
+    # #1838 interrupted-attempt residue reap + provision-intent stamp (the
+    # wedge/CUDA-IMA sibling of the _failover_gcp_to_runpod insert; log-only —
+    # this funnel has no extra_evidence channel). The wedged pod was already
+    # terminated by the caller, so a residue match here is a PRIOR killed
+    # relaunch attempt's orphan. Cap-hit: NO reap and NO fresh stamp (critic
+    # r2 carry-forward — the standing intent falls at a completion handler).
+    reaped = _reap_and_stamp_provision_intent(issue, reason=str(success_phase))
+    if reaped is not None:
+        logging.warning(
+            "backend_poll: reaped interrupted-relaunch provision residue before the fresh "
+            "re-provision (%s) (#1838)",
+            reaped,
+        )
     # #689 blocker-3: wrap the router launch in try/except NoComputeAvailableError
     # (mirrors the GCP analogue at _failover_dead_gcp_to_runpod). The wedged pod was
     # already terminated by the caller (billing stopped), so a no-capacity RunPod
@@ -2094,6 +2419,10 @@ def _relaunch_fresh_runpod(
         # workload-start leg failed. NOT no_compute_available — that mislabel
         # reads "nothing launched" (false) and invites the watcher's
         # capacity-retry re-drive while the fresh pod bills invisibly.
+        # #1838 belt (MF2i site d): the rung's _lease_after_submit already
+        # cleared the intent unless its lease write failed (EDQUOT); clear so
+        # the diagnosis pod is never matched as residue by a later failover.
+        _clear_provision_intent(issue, site="wedge_relaunch_workload_start")
         partial = getattr(exc, "handle", None)
         if partial is None:
             # Defensive: unreachable via the rung today (a handle-less start
@@ -2138,6 +2467,8 @@ def _relaunch_fresh_runpod(
         # infra JSON with reason=no_compute_available (re-drivable by the watcher's
         # capacity-retry pass). No lease stamp — nothing launched, so a later poll
         # SHOULD retry once a lane frees.
+        # #1838 (MF2i site c): the attempt COMPLETED — clear the intent.
+        _clear_provision_intent(issue, site="wedge_relaunch_no_compute")
         return _terminal_infra_json(
             issue=issue,
             sidecar=sidecar,
@@ -3151,24 +3482,23 @@ _CREATED_THEN_FAILED_MARKERS: tuple[str, ...] = (
 )
 
 
-def _live_runpod_ids_for_issue(issue: int) -> set[str] | None:
-    """Live pod_ids whose name is EXACTLY ``pod-<issue>`` (suffixed pods excluded).
+def _live_runpod_pods_for_issue(issue: int) -> list | None:
+    """Live ``PodInfo`` rows whose name is EXACTLY ``pod-<issue>`` (suffixed pods excluded).
 
-    The attribution probe for the #1490 provision-residue reclaim: called once
-    BEFORE the failover launch (the ``pre`` snapshot) and once in the
-    ``NoComputeAvailableError`` branch (the ``post`` snapshot). Returns
-    ``None`` on ANY API failure (probe-unknown; callers bias SAFE — an unknown
-    snapshot never licenses a terminate). One GraphQL list call per snapshot;
-    GCP→RunPod failovers are rare events. Post-probe listing lag (a
-    just-created pod missing from the team list) reads as no-residue — the
-    #1490 D2 watcher orphan arm catches that leak on a later tick.
+    Generalizes the #1490 id probe (#1838): the interrupted-attempt residue
+    match needs the full ``PodInfo`` rows (``created_at`` / ``desired_status``),
+    so this returns them and :func:`_live_runpod_ids_for_issue` is re-expressed
+    over it — behavior identical. Returns ``None`` on ANY API failure
+    (probe-unknown; callers bias SAFE — an unknown snapshot never licenses a
+    terminate). One GraphQL list call per snapshot; GCP→RunPod failovers are
+    rare events.
     """
     try:
         _ensure_scripts_dir_on_sys_path()
         from runpod_api import list_team_pods  # lazy import (#770/#775 pattern)
 
         name = f"pod-{int(issue)}"
-        return {p.pod_id for p in list_team_pods() if p.name == name}
+        return [p for p in list_team_pods() if p.name == name]
     except Exception as exc:
         logging.warning(
             "backend_poll: provision-residue live-pod probe failed (%s: %s); "
@@ -3177,6 +3507,24 @@ def _live_runpod_ids_for_issue(issue: int) -> set[str] | None:
             exc,
         )
         return None
+
+
+def _live_runpod_ids_for_issue(issue: int) -> set[str] | None:
+    """Live pod_ids whose name is EXACTLY ``pod-<issue>`` (suffixed pods excluded).
+
+    The attribution probe for the #1490 provision-residue reclaim: called once
+    BEFORE the failover launch (the ``pre`` snapshot) and once in the
+    ``NoComputeAvailableError`` branch (the ``post`` snapshot). Returns
+    ``None`` on ANY API failure (probe-unknown; callers bias SAFE — an unknown
+    snapshot never licenses a terminate). Post-probe listing lag (a
+    just-created pod missing from the team list) reads as no-residue — the
+    #1490 D2 watcher orphan arm catches that leak on a later tick. Since #1838
+    a thin id-projection of :func:`_live_runpod_pods_for_issue`.
+    """
+    pods = _live_runpod_pods_for_issue(issue)
+    if pods is None:
+        return None
+    return {p.pod_id for p in pods}
 
 
 def _classify_provision_failure(evidence_text: str, returncode: int | None) -> str:
@@ -3372,6 +3720,316 @@ def _reclaim_failed_runpod_provision(
             "pod_ids": [],
             "detail": f"reclaim error ({type(exc).__name__}: {exc})",
         }
+
+
+# ─── #1838 interrupted-failover provision-intent breadcrumb (reap-and-recreate) ───
+
+#: Attribution window (#1838): a live ``pod-<N>`` whose ``created_at`` falls in
+#: ``[intent.ts - _PROVISION_INTENT_CLOCK_SKEW_SEC, intent.ts + WINDOW]`` is
+#: attributable to the KILLED failover attempt that stamped the intent. 900 s
+#: bounds the stamp→create latency of a killed attempt (the #1739 incident's
+#: create landed ≤~4 min after the failover fired; the killing caller timeout
+#: is 120 s; ``wait_for_ssh``'s 600 s runs AFTER create) while excluding a
+#: later human ``pod.py provision`` (kept — today's refusal path). Too small
+#: degrades to today's keep (safe). Env-overridable.
+RUNPOD_PROVISION_INTENT_WINDOW_SEC = int(
+    os.environ.get("EPM_RUNPOD_PROVISION_INTENT_WINDOW_SEC", "900")
+)
+
+#: VM↔RunPod-API ``createdAt`` clock-skew allowance: a pod created marginally
+#: "before" the intent per the API clock can still be ours (the two clocks are
+#: independent; 120 s generously covers NTP skew).
+_PROVISION_INTENT_CLOCK_SKEW_SEC = 120.0
+
+#: A standing intent younger than one poll tick may belong to a LIVE
+#: mid-provision CONCURRENT poller (the M3b #669 dual-triggerer shape lands
+#: within one tick; the incident's killing caller timeout is 120 s) — it can
+#: never license a reap. A skipped tick just retries next tick.
+_PROVISION_INTENT_MIN_AGE_SEC = 120.0
+
+#: Reap-cycle bound per un-cleared-intent episode (#1838 MF1): a SYSTEMATICALLY
+#: killed provision stops reaping after 2 cycles and degrades to today's
+#: refusal terminal instead of looping create→kill→reap. Deliberately a module
+#: constant, NOT env-tunable — raising it is a plan must-ask.
+_PROVISION_INTENT_MAX_REAPS = 2
+
+
+def _provision_intent_created_at_epoch(created_at) -> float | None:
+    """Epoch seconds for a ``PodInfo.created_at`` ISO-8601 string; ``None`` on
+    any missing / unparseable value (bias safe — an unattributable pod is kept)."""
+    from datetime import UTC  # local import (the in-file lazy-import precedent)
+
+    if not isinstance(created_at, str) or not created_at:
+        return None
+    try:
+        dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=UTC)
+    return dt.timestamp()
+
+
+def _stamp_provision_intent(
+    issue: int, *, reason: str, reap_count: int = 0, lease_store=None
+) -> dict | None:
+    """Stamp the #1838 provision-intent breadcrumb on the durable lease.
+
+    Called BEFORE the RunPod failover provision leg runs (crash-ordered
+    write-before-create), inside a ``LeaseStore`` flock transaction so a
+    concurrent poller never clobbers it with stale data. Cleared on every
+    attempt COMPLETION (``router._lease_after_submit`` on any successful
+    submit; :func:`_clear_provision_intent` at the failure handlers) — only a
+    KILLED attempt leaves it standing. Returns the stamped intent dict, or
+    ``None`` when there is no lease to stamp (a fresh issue with no dispatch
+    record — degrade: the retry then keeps today's refusal behavior) or on any
+    store failure. NEVER raises.
+    """
+    from explore_persona_space.backends.router import LeaseStore
+
+    store = lease_store or LeaseStore()
+    intent = {
+        "pod_name": f"pod-{int(issue)}",
+        "issue": int(issue),
+        "ts": float(time.time()),
+        "token": uuid.uuid4().hex,
+        "reason": str(reason),
+        "reap_count": int(reap_count),
+    }
+    try:
+        with store.transaction(int(issue)) as (lease, write):
+            if lease is None:
+                logging.warning(
+                    "backend_poll: no lease present to stamp runpod_provision_intent for "
+                    "issue %s; a killed provision on this attempt stays unattributable "
+                    "(today's refusal behavior)",
+                    issue,
+                )
+                return None
+            lease.runpod_provision_intent = intent
+            write(lease)
+        return intent
+    except Exception as exc:
+        logging.warning(
+            "backend_poll: provision-intent stamp failed for issue %s (%s: %s); "
+            "degrading to today's behavior (no breadcrumb)",
+            issue,
+            type(exc).__name__,
+            exc,
+        )
+        return None
+
+
+def _clear_provision_intent(issue: int, *, site: str, lease_store=None) -> None:
+    """Clear the #1838 provision-intent breadcrumb at an attempt-COMPLETION exit.
+
+    ``site`` names which completion path cleared (logged for the marker/ops
+    trail). A completed attempt — successful submit (cleared router-side via
+    ``_lease_after_submit``), a ``NoComputeAvailableError`` refusal, or a
+    ``RunPodWorkloadStartError`` — must not leave the intent standing, or a
+    LATER human/foreign pod could be mis-attributed as interrupted-attempt
+    residue. No-op when no lease / no intent. NEVER raises.
+    """
+    from explore_persona_space.backends.router import LeaseStore
+
+    store = lease_store or LeaseStore()
+    try:
+        with store.transaction(int(issue)) as (lease, write):
+            if lease is None or getattr(lease, "runpod_provision_intent", None) is None:
+                return
+            lease.runpod_provision_intent = None
+            write(lease)
+        logging.info(
+            "backend_poll: cleared runpod_provision_intent for issue %s at %s "
+            "(attempt completed; #1838 episode over)",
+            issue,
+            site,
+        )
+    except Exception as exc:
+        logging.warning(
+            "backend_poll: provision-intent clear failed for issue %s at %s (%s: %s); "
+            "the next successful submit clears it via _lease_after_submit",
+            issue,
+            site,
+            type(exc).__name__,
+            exc,
+        )
+
+
+def _match_provision_intent_residue(intent, pods, *, now: float):
+    """Pure #1838 residue predicate — the ``PodInfo`` the standing intent attributes.
+
+    Implements plan-Q4 conjuncts 1/3/4/5 (the reap-cap conjunct 2 lives in the
+    caller so the cap-hit branch can log distinctly):
+
+    1. ``intent`` is a parseable dict with a string ``pod_name`` + float ``ts``
+       (each live pod must match that exact name);
+    3. ``now - intent.ts >= _PROVISION_INTENT_MIN_AGE_SEC`` (a younger intent
+       may belong to a LIVE concurrent mid-provision poller);
+    4. EXACTLY ONE live non-EXITED pod with that name (0 or ≥2 → ambiguity
+       never licenses a reap — the #1490 stance);
+    5. that pod's ``created_at`` parses AND falls in
+       ``[ts - _PROVISION_INTENT_CLOCK_SKEW_SEC, ts + RUNPOD_PROVISION_INTENT_WINDOW_SEC]``.
+
+    Any failed conjunct → ``None`` (keep; today's exact behavior).
+    """
+    if not isinstance(intent, dict):
+        return None
+    pod_name = intent.get("pod_name")
+    try:
+        intent_ts = float(intent.get("ts"))
+    except (TypeError, ValueError):
+        return None
+    if not isinstance(pod_name, str) or not pod_name:
+        return None
+    if now - intent_ts < _PROVISION_INTENT_MIN_AGE_SEC:
+        return None
+    live = [
+        p
+        for p in (pods or [])
+        if p.name == pod_name and str(p.desired_status or "").upper() != "EXITED"
+    ]
+    if len(live) != 1:
+        return None
+    (pod,) = live
+    created_ts = _provision_intent_created_at_epoch(pod.created_at)
+    if created_ts is None:
+        return None
+    lo = intent_ts - _PROVISION_INTENT_CLOCK_SKEW_SEC
+    hi = intent_ts + RUNPOD_PROVISION_INTENT_WINDOW_SEC
+    if not (lo <= created_ts <= hi):
+        return None
+    return pod
+
+
+def _reap_and_stamp_provision_intent(issue: int, *, reason: str) -> dict | None:
+    """The #1838 pre-provision pair BOTH failover funnels run: reap a PRIOR
+    killed attempt's residue, then stamp a fresh intent BEFORE the launch
+    (crash-ordered write-before-create) carrying ``reap_count = prior + 1``.
+
+    On the reap CAP-HIT branch there is NO reap and NO fresh stamp (critic r2
+    carry-forward): the STANDING intent survives until a completion handler
+    clears it, so a systematically-killed provision can never re-arm its own
+    counter. Returns the reap info dict (the GCP funnel records it on the
+    marker evidence) or ``None``. Never raises (both callees never raise).
+    """
+    reap_outcome, reaped = _reap_interrupted_failover_residue(issue)
+    if reap_outcome != "cap-hit":
+        _stamp_provision_intent(
+            issue, reason=reason, reap_count=(reaped["reap_count"] if reaped else 0)
+        )
+    return reaped
+
+
+def _reap_interrupted_failover_residue(
+    issue: int, *, lease_store=None, now_fn=time.time
+) -> tuple[str, dict | None]:
+    """Reap a ``pod-<N>`` a PRIOR killed failover attempt provably created (#1838).
+
+    Runs BEFORE the failover's provision leg (and before the #1490 PRE
+    snapshot, so a reaped pod never contaminates that attribution baseline).
+    TRISTATE outcome (critic round-2 carry-forward — the cap-hit branch must
+    be distinguishable so the caller stamps NO fresh intent there):
+
+    * ``("reaped", info)`` — the full positive-evidence conjunct set matched
+      and the surgical ``terminate_pod`` succeeded (or the pod was already
+      gone — :func:`_terminate_error_is_pod_not_found`); ``info`` carries
+      ``{"pod_id", "intent_ts", "created_at", "reap_count": prior + 1}``.
+    * ``("cap-hit", None)`` — the residue matched but the standing intent's
+      ``reap_count`` already reached :data:`_PROVISION_INTENT_MAX_REAPS`
+      (a systematically-killed provision): NO reap and NO fresh stamp — the
+      standing intent survives until a completion handler clears it, so the
+      episode ends at today's refusal terminal instead of looping.
+    * ``("none", None)`` — every other branch (no lease / no intent /
+      malformed intent / probe unknown / no conjunct match / terminate
+      failed): degrade to today's exact behavior.
+
+    NEVER raises (mirrors :func:`_reclaim_failed_runpod_provision`).
+    """
+    try:
+        from explore_persona_space.backends.router import LeaseStore
+
+        store = lease_store or LeaseStore()
+        try:
+            lease = store.read(int(issue))
+        except OSError as exc:
+            logging.warning(
+                "backend_poll: provision-intent lease read failed for issue %s (%s: %s); "
+                "no reap (bias safe)",
+                issue,
+                type(exc).__name__,
+                exc,
+            )
+            return ("none", None)
+        intent = getattr(lease, "runpod_provision_intent", None) if lease is not None else None
+        if not isinstance(intent, dict):
+            return ("none", None)
+        pods = _live_runpod_pods_for_issue(issue)
+        if pods is None:
+            return ("none", None)  # probe unknown — an unknown snapshot never terminates
+        match = _match_provision_intent_residue(intent, pods, now=float(now_fn()))
+        if match is None:
+            return ("none", None)
+        try:
+            prior_reaps = int(intent.get("reap_count", 0))
+        except (TypeError, ValueError):
+            prior_reaps = 0
+        if prior_reaps >= _PROVISION_INTENT_MAX_REAPS:
+            logging.warning(
+                "backend_poll: interrupted-failover residue pod-%d (%s) matched but the "
+                "reap-cycle cap (%d) is hit — a systematically-killed provision; NO reap, "
+                "NO fresh intent stamp: the provision will refuse on the live pod and the "
+                "refusal terminal ends the episode. Recovery: inspect + `uv run python "
+                "scripts/pod.py terminate --issue %d --yes` (#1838 MF1)",
+                int(issue),
+                match.pod_id,
+                _PROVISION_INTENT_MAX_REAPS,
+                int(issue),
+            )
+            return ("cap-hit", None)
+        try:
+            _ensure_scripts_dir_on_sys_path()
+            from runpod_api import terminate_pod  # lazy import (#770/#775 pattern)
+
+            terminate_pod(match.pod_id)
+        except Exception as exc:
+            if not _terminate_error_is_pod_not_found(exc):
+                logging.warning(
+                    "backend_poll: terminate of interrupted-failover residue pod %s FAILED "
+                    "(%s: %s); proceeding WITHOUT reap — the provision refuses on the "
+                    "still-live pod and the #1490 classifier keeps today's re-drivable "
+                    "terminal (#1838 Q5 degrade)",
+                    match.pod_id,
+                    type(exc).__name__,
+                    exc,
+                )
+                return ("none", None)
+        logging.warning(
+            "backend_poll: reaped interrupted-failover provision residue pod-%d (%s; "
+            "created_at=%s within the intent window) left by a KILLED prior failover "
+            "attempt — billing stopped; proceeding to a fresh provision in the SAME "
+            "attempt (#1838)",
+            int(issue),
+            match.pod_id,
+            match.created_at,
+        )
+        return (
+            "reaped",
+            {
+                "pod_id": match.pod_id,
+                "intent_ts": float(intent["ts"]),
+                "created_at": match.created_at,
+                "reap_count": prior_reaps + 1,
+            },
+        )
+    except Exception as exc:  # NEVER raises — degrade to today's exact behavior
+        logging.warning(
+            "backend_poll: interrupted-failover residue reap errored (%s: %s); "
+            "degrading to today's behavior (no reap)",
+            type(exc).__name__,
+            exc,
+        )
+        return ("none", None)
 
 
 def _terminal_infra_json(*, issue: int, sidecar: Path, reason: str, log_tail: str) -> dict:
@@ -3577,8 +4235,10 @@ def _failover_boot_looped_gcp_to_runpod(*, issue: int, handle, result, sidecar: 
     )
 
 
-def _failover_vanished_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path) -> dict:
-    """Fail a vanished-while-PENDING GCP instance over to RunPod (#1116/#1112).
+def _failover_vanished_gcp_to_runpod(
+    *, issue: int, handle, result, sidecar: Path, now: float | None = None
+) -> dict:
+    """Fail a vanished-while-PENDING GCP instance over to RunPod (#1116/#1112/#1815).
 
     The queue-VANISH sibling of :func:`_failover_queued_gcp_to_runpod` /
     :func:`_failover_boot_looped_gcp_to_runpod`: a thin wrapper over the SAME
@@ -3591,16 +4251,26 @@ def _failover_vanished_gcp_to_runpod(*, issue: int, handle, result, sidecar: Pat
       server-side (the DWS drop deleted it; that absence IS the trigger), so
       there is nothing to tear down — the #659 stance, NOT #783's (only a
       still-LIVE queued instance needs its capacity request released).
-    * ``extra_evidence`` carrying the last observed phase (``"pending"``, the
-      clock discriminator) + the ladder-rung label, so the
+    * ``extra_evidence`` carrying the ACTUAL last observed phase
+      (``"pending"`` for arm P, ``None`` for the clock-less arm N), the
+      ``vanish_arm`` label (``"pending-clock"`` | ``"never-ran-young-flex"``,
+      #1815 — recomputed here via :func:`_vanish_arm_for`; an arm-``None``
+      recompute, e.g. the age window expired between escalation and failover,
+      records ``"expired-at-failover"`` rather than a bare null and the
+      failover still proceeds — the escalated phase is the trigger, the
+      recompute is evidence-only), and the ladder-rung label, so the
       ``epm:backend-selected`` marker records WHICH rung's queue dropped the
-      request.
+      request and via which arm.
     * ``gcp_ondemand_retry_reason=ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY``
       (#1596) — one of the two queue-loss callers that arm the retry (the
       #1601 queue-timeout wrapper is the other): a capacity-class RunPod
       refusal with CLEAN provision residue retries the GCP ladder's STANDARD
       (on-demand) rungs before minting the terminal (the #1112 manual
       recovery, automated).
+
+    ``now`` is kw-only with a ``time.time()`` default, threaded from the
+    ``main()`` caller (matching the escalation call) so pre-#1815 direct
+    callers keep binding.
     """
     # Lazy import (module convention: backend_poll -> router imports stay inside
     # functions so the --help path is fast and the import direction is one-way).
@@ -3611,6 +4281,14 @@ def _failover_vanished_gcp_to_runpod(*, issue: int, handle, result, sidecar: Pat
 
     extra = getattr(handle, "extra", None) or {}
     rung = str(extra.get("gcp_ladder_rung") or "unknown_rung")
+    now = time.time() if now is None else now
+    arm, last_observed_phase = _vanish_arm_for(handle, sidecar, now=now)
+    if arm is None:
+        # Evidence-only tolerance (#1815): the escalated GCP_QUEUE_VANISH_PHASE
+        # is the trigger; a failover-time recompute that no longer matches an
+        # arm (age-window expiry between the two reads) never blocks the
+        # failover and never records a bare null arm.
+        arm = "expired-at-failover"
     return _failover_gcp_to_runpod(
         issue=issue,
         handle=handle,
@@ -3622,7 +4300,11 @@ def _failover_vanished_gcp_to_runpod(*, issue: int, handle, result, sidecar: Pat
         evidence_source="async_poller_queue_vanish",
         failover_tag="#1116 queue-vanish failover",
         teardown_first=False,
-        extra_evidence={"last_observed_phase": GCP_PENDING_PHASE, "gcp_ladder_rung": rung},
+        extra_evidence={
+            "last_observed_phase": last_observed_phase,
+            "vanish_arm": arm,
+            "gcp_ladder_rung": rung,
+        },
         gcp_ondemand_retry_reason=ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
     )
 
@@ -4052,6 +4734,28 @@ def _failover_gcp_to_runpod(
             )
 
     spec = _runspec_from_gcp_handle(handle, issue)
+    # #1838 interrupted-attempt residue reap + provision-intent stamp. A PRIOR
+    # failover tick killed mid-provision (the #1739 shape: the caller's timeout
+    # kills the poll between pod-create and lease/handle write) leaves a live
+    # pod-<N> that sits in the #1490 PRE snapshot with no attribution — the
+    # fresh provision then refuses on our own orphan and mints
+    # no_compute_available while the orphan bills. Reap it FIRST (full
+    # positive-evidence conjunct set; reap cycles bounded at
+    # _PROVISION_INTENT_MAX_REAPS per episode) so it is ABSENT from the PRE
+    # snapshot below and the fresh provision proceeds in the SAME attempt;
+    # then stamp a fresh intent BEFORE the launch (crash-ordered
+    # write-before-create) so THIS attempt's own kill is attributable on the
+    # next retry. Cap-hit: NO reap and NO fresh stamp — the standing intent
+    # survives until a completion handler clears it, so a systematically-
+    # killed provision can never re-arm its own counter (critic r2
+    # carry-forward). A reap is recorded on the marker via extra_evidence;
+    # reaped is None keeps the evidence dict byte-identical to today.
+    reaped = _reap_and_stamp_provision_intent(issue, reason=reason)
+    if reaped is not None:
+        extra_evidence = {
+            **(extra_evidence or {}),
+            "interrupted_provision_residue_reaped": reaped,
+        }
     # #1490 pre-launch attribution snapshot: the live pod_ids named EXACTLY
     # pod-<N> BEFORE the RunPod launch is attempted, so the
     # NoComputeAvailableError branch below can tell a pod THIS failover's
@@ -4099,6 +4803,11 @@ def _failover_gcp_to_runpod(
         # uses, then emit a DISTINCT terminal (NOT no_compute_available — that
         # mislabel invites the watcher's capacity-retry re-drive while the pod
         # bills, the #931 incident).
+        # #1838 belt (MF2i site d): the rung's in-flock _lease_after_submit
+        # already cleared the provision intent UNLESS its lease write failed
+        # (the EDQUOT mode); clear here so the #909 leave-RUNNING-for-diagnosis
+        # pod is never matched by a later failover's residue reap.
+        _clear_provision_intent(issue, site="gcp_core_workload_start")
         partial = getattr(exc, "handle", None)
         if partial is None:
             # Defensive: unreachable via the rung today (a handle-less start
@@ -4127,6 +4836,12 @@ def _failover_gcp_to_runpod(
         # decision table (singleton new id AND positive created-then-failed
         # evidence → surgical terminate; every other cell never terminates).
         evidence_text, returncode = _provision_failure_evidence(exc)
+        # #1838 (MF2i site b): this attempt COMPLETED (refusal / no-capacity /
+        # exit-75-converted) — clear the provision intent so a pod provisioned
+        # LATER (e.g. by a human) is never matched as interrupted-attempt
+        # residue. On the cap-hit path this clear is what permanently ends the
+        # episode (the standing intent falls here).
+        _clear_provision_intent(issue, site="gcp_core_no_compute")
         reclaim = _reclaim_failed_runpod_provision(
             issue=issue,
             pre_ids=pre_provision_ids,
@@ -4199,6 +4914,13 @@ def _failover_gcp_to_runpod(
     # possible across crashes), fall through to the terminal
     # ``sidecar_persistence_failed`` shape exactly as the no-readback case below.
     if already_launched:
+        # #1838 (A7 enumeration): a 2nd-triggerer attempt COMPLETES here
+        # WITHOUT a submit of its own (the concurrent 1st triggerer's submit
+        # is the one that ran _lease_after_submit), so when THIS triggerer's
+        # pre-launch stamp landed AFTER the 1st's clear, its fresh intent
+        # would otherwise stand beside the 1st's HEALTHY pod — exactly the
+        # mis-attribution the completion-clear contract exists to prevent.
+        _clear_provision_intent(issue, site="gcp_core_already_launched")
         try:
             existing = read_handle_sidecar(sidecar)
         except (OSError, json.JSONDecodeError, KeyError, ValueError):
@@ -4497,24 +5219,32 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(queue_timeout_json))
         return 0
 
-    # #1116 GCP FLEX_START queue-VANISH escalation: a dead not-found poll
-    # (current_phase="terminal_instance not found") whose sidecar phase clock
-    # last observed "pending" means the DWS queue dropped the request
-    # server-side (create DONE, no delete op — #1112) — a CAPACITY miss, failed
-    # over to RunPod on the FIRST occurrence (reason
-    # gcp_queue_vanish_failover_runpod, no daily-attempt burn, no teardown —
-    # the record is already gone). Input-disjoint with the queue-timeout block
-    # above (running/"pending" there vs dead/not-found here) and with the #659
-    # predicate below (not-found vs terminal_workload_failed); MUST run BEFORE
-    # the #1029 boot-loop recorder — not-found is in its heuristic phase set,
-    # and this branch's return is what keeps a pure capacity event from
-    # poisoning the boot-death streak. A no-op on every other case (non-GCP,
-    # not dead, wrong phase, non-pending/missing clock, or a cpu-bigmem
-    # handle, which keeps its ordinary dead path incl. the boot-death record).
-    result = _maybe_escalate_gcp_queue_vanish(handle, result, Path(sidecar))
+    # #1116/#1815 GCP FLEX_START queue-VANISH escalation: a dead not-found poll
+    # (current_phase="terminal_instance not found") that either (arm P) has a
+    # SAME-incarnation/legacy sidecar clock last observing "pending", or
+    # (arm N, #1815) has NO clock record for THIS incarnation while the handle
+    # carries FLEX_START provenance + create evidence + a young launch ts —
+    # both mean the DWS queue dropped the request server-side (create DONE, no
+    # delete op — #1112) — a CAPACITY miss, failed over to RunPod on the FIRST
+    # occurrence (reason gcp_queue_vanish_failover_runpod, no daily-attempt
+    # burn, no teardown — the record is already gone). Input-disjoint with the
+    # queue-timeout block above (running/"pending" there vs dead/not-found
+    # here) and with the #659 predicate below (not-found vs
+    # terminal_workload_failed); MUST run BEFORE the #1029 boot-loop recorder —
+    # not-found is in its heuristic phase set, and this branch's return is what
+    # keeps a pure capacity event from poisoning the boot-death streak. A no-op
+    # on every other case (non-GCP, not dead, wrong phase, a same-incarnation
+    # non-pending clock, a clock-less non-FLEX/aged/evidence-less handle — the
+    # #1029 streak path keeps those — or a cpu-bigmem handle, which keeps its
+    # ordinary dead path incl. the boot-death record).
+    result = _maybe_escalate_gcp_queue_vanish(handle, result, Path(sidecar), now=time.time())
     if _is_gcp_queue_vanish(handle, result):
         queue_vanish_json = _failover_vanished_gcp_to_runpod(
-            issue=args.issue, handle=handle, result=result, sidecar=Path(sidecar)
+            issue=args.issue,
+            handle=handle,
+            result=result,
+            sidecar=Path(sidecar),
+            now=time.time(),
         )
         print(json.dumps(queue_vanish_json))
         return 0
@@ -4675,6 +5405,7 @@ def main(argv: list[str] | None = None) -> int:
             _maybe_post_gpu_idle_advisory,
             _maybe_post_gpu_width_advisory,
             _run_launched_age_sec,
+            _serialize_escalation_counts,
             _tripwire_run_scope,
         )
 
@@ -4718,15 +5449,17 @@ def main(argv: list[str] | None = None) -> int:
             prev_state=tripwire_state,
             now_epoch=now_epoch,
         )
-        escalated_phases, gcp_gpu_idle_escalation_posted = _maybe_escalate_gpu_idle(
-            issue=args.issue,
-            pod=pod,
-            status="running",
-            gpu_util=gpu_util,
-            current_phase=current_phase,
-            idle_since_epoch=idle_since,
-            prev_state=tripwire_state,
-            now_epoch=now_epoch,
+        escalated_phases, escalation_counts, gcp_gpu_idle_escalation_posted = (
+            _maybe_escalate_gpu_idle(
+                issue=args.issue,
+                pod=pod,
+                status="running",
+                gpu_util=gpu_util,
+                current_phase=current_phase,
+                idle_since_epoch=idle_since,
+                prev_state=tripwire_state,
+                now_epoch=now_epoch,
+            )
         )
         # ── #873 m-of-N GPU-width advisory (GCP mirror of the RunPod call) ─
         # Same imported wiring fn, same inputs, same sibling state file —
@@ -4749,6 +5482,14 @@ def main(argv: list[str] | None = None) -> int:
                 "gpu_idle_since_epoch": str(idle_since),
                 "gpu_idle_advised_phases": ",".join(sorted(advised_phases)),
                 "gpu_idle_escalated_phases": ",".join(sorted(escalated_phases)),
+                # #1752: per-phase escalation COUNT across relaunches / attempt
+                # incarnations (phase:count pairs; serializer imported from
+                # poll_pipeline — same format as the RunPod lane). Read from
+                # the SCOPED tripwire_state and deliberately NOT in
+                # _IDLE_ADVISORY_STATE_KEYS nor _RUN_SCOPED_STATE_KEYS: both
+                # are blacklist-clears, so the count survives both resets by
+                # default — cross-relaunch survival is the point (#1689).
+                "gpu_idle_escalation_counts": _serialize_escalation_counts(escalation_counts),
                 # #873 width keys + the run-scope anchor (AC #6 mirrored).
                 "gpu_width_since_epoch": str(gcp_width_since),
                 "gpu_width_idle_set": ",".join(str(i) for i in gcp_width_idle_set),
@@ -4764,10 +5505,25 @@ def main(argv: list[str] | None = None) -> int:
             },
         )
 
+    # ── #1786 WARN-only handle-staleness flags (normal tick-JSON tail only) ──
+    # Fail-soft observability alongside the GCP idle flags above: the early-
+    # return terminal JSON paths are EXEMPT (they emit their own payload
+    # shapes and terminate the loop anyway). Runs on every normal-tail tick
+    # unconditionally — WARN-only, so a terminal-phase tick firing the flag is
+    # harmless and still informative.
+    handle_stale_vs_live, handle_older_than_relaunch = _maybe_warn_stale_handle(
+        issue=args.issue,
+        sidecar=Path(sidecar),
+        handle=handle,
+        lane_suffix=args.lane_suffix,
+    )
+
     out = _serialize_poll_result(result)
     out["gcp_gpu_idle_advisory_posted"] = gcp_gpu_idle_advisory_posted
     out["gcp_gpu_idle_escalation_posted"] = gcp_gpu_idle_escalation_posted
     out["gcp_gpu_width_advisory_posted"] = gcp_gpu_width_advisory_posted
+    out["handle_stale_vs_live"] = handle_stale_vs_live
+    out["handle_older_than_relaunch"] = handle_older_than_relaunch
     print(json.dumps(out))
     return 0
 

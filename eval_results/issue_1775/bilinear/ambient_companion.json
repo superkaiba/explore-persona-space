@@ -1,0 +1,33 @@
+{
+  "r_star_from_pca48": 32,
+  "delta_named_ambient": {
+    "delta_r2": 0.0383013298742277,
+    "ci95_cluster": [
+      0.036241295011590166,
+      0.04053145297410654
+    ],
+    "n_groups": 996,
+    "n_rows": 17308,
+    "n_draws": 2000,
+    "ci95_row_level_companion": [
+      0.036848790170438274,
+      0.03971777886932627
+    ]
+  },
+  "r2_ambient_by_r": {
+    "0": 0.7591329124328878,
+    "32": 0.797434242307115
+  },
+  "scoping": "prefix fold scheme only; r in {0, r*} with r* inherited from the pca48 inner-val selection; same protocol (warm start, wd grid, seed ensemble)",
+  "meta": {
+    "git_commit": "3177139d0a2bc09d1ecc8a6e95ff13e92817ec6e",
+    "timestamp_utc": "2026-07-29T10:07:42.144744+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "python": "3.11.15",
+    "fold_seed": 0,
+    "n_folds": 6,
+    "smoke": false,
+    "r_star": 32
+  }
+}

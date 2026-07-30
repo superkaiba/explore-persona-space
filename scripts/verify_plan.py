@@ -7,7 +7,7 @@ Phase 1.5.0 BEFORE the fact-checker + critic ensemble spawn. The plan-side
 sibling of ``scripts/verify_task_body.py`` (clean-result bodies): pure
 regex / string presence checks, NO LLM calls, no network, no side effects
 (the orchestrator running the adversarial-planner skill posts the
-``epm:plan-verify`` marker — never this script). Four disclosed read-only
+``epm:plan-verify`` marker — never this script). Five disclosed read-only
 exceptions: check 31, when its trigger fires and a pin-form satisfier names
 a ``tests/`` path, existence-``stat()``s the named pin-test file(s) under
 the repo root — read-only, no import, no network (#1557); check 34, when
@@ -16,11 +16,15 @@ the ratcheted workflow files the plan names and lazily imports
 ``scripts/workflow_lint.py`` for their size-cap constants — read-only, no
 writes, still no network; check 37, when its trigger fires, reads
 ``scripts/workflow_lint.py`` SOURCE TEXT to derive main()'s no-flags
-dispatch set — read-only, no import, no network; and check 41, when its
+dispatch set — read-only, no import, no network; check 41, when its
 trigger fires and the cheaper satisfiers leave survivors, path-loads
 ``scripts/select_step9c_tests.py`` and runs its pure selection functions
 over the plan's declared touched files — file reads under ``tests/``, no
-git, no network; measured ~0.7-0.9 s on the live tree.
+git, no network; and check 42, when its trigger fires, invokes
+``git rev-parse --verify --quiet '<sha>^{commit}'`` per unique cited SHA
+— read-only, no network (git-local object DB read; #1683/#1414;
+retries once on a brief ``.git/index.lock`` collision, SKIPs on git
+unavailability); measured ~0.7-0.9 s on the live tree.
 
 Check catalog (id — classification — kind scope)
 ------------------------------------------------
@@ -102,12 +106,17 @@ Check catalog (id — classification — kind scope)
       persisted filename
   c41 regression-anchor named   WARN-only, conditional    infra + batch only
       test executed or gate-selected
+  c42 cited commit SHA          FAIL, conditional         all kinds
+      resolves
+  c43 /workspace sentinels vs   WARN-only, conditional    experiment only
+      unpinned auto lane
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41) also SKIP when their content trigger does not fire.
+37, 38, 39, 40, 41, 42, 43) also SKIP when their content trigger does not
+fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -127,7 +136,9 @@ labeled-line forms):
   - ``N/A — no model training`` / ``N/A — no training hyperparameters``
     (check 1)
   - ``N/A — no behavioral construct`` (check 2)
-  - ``N/A — not a behavior-implantation`` (check 4)
+  - ``N/A — not a behavior-implantation`` /
+    ``N/A — no behavior implantation`` (check 4 — the alias reads more
+    naturally for measurement/geometry plans, #1689/#1700)
   - ``N/A — no artifact reuse`` (check 6)
   - ``N/A — not a replication`` (check 7)
   - ``N/A — no dry-run smoke`` (check 11)
@@ -173,6 +184,12 @@ labeled-line forms):
   - ``N/A — no exit-0 acceptance criterion`` (check 38)
   - ``N/A — no off-pod phase`` (check 39)
   - ``N/A — no regression anchors`` (check 41)
+  - ``no sentinel dependence — auto-safe`` (check 43 — the
+    plan-compute-sizing.md rule's own escape phrase, standalone WITHOUT the
+    N/A prefix; hyphen / en-dash / em-dash variants tolerated; the
+    ``N/A — no sentinel dependence`` form is also accepted via the shared
+    helper. A genuinely sentinel-signaling plan instead pins a
+    /workspace-contract lane: ``backend: gcp`` / ``backend: runpod``)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -214,7 +231,9 @@ import importlib.util
 import json
 import math
 import re
+import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from fractions import Fraction
@@ -739,6 +758,19 @@ def check_data_tier(plan: str, kind: str) -> CheckResult:
 # ─── Check 4 — contrastive negatives (WARN-only, conditional) ──────────────
 
 
+def _c4_na_escape_declared(plan: str) -> bool:
+    """Standalone c4 escape — accepts BOTH the canonical
+    ``N/A — not a behavior-implantation`` AND the measurement-plan alias
+    ``N/A — no behavior implantation`` (#1689/#1700; measurement/geometry
+    plans read awkwardly under the "not a behavior-implantation" wording,
+    so the alias makes the escape naturally discoverable). Both forms route
+    through ``_standalone_na_declared`` so the same anti-paste discipline
+    (standalone line, unwrapped, non-fenced) applies."""
+    return _standalone_na_declared(
+        plan, r"not a behavior[- ]implantation"
+    ) or _standalone_na_declared(plan, r"no behavior[- ]implantation")
+
+
 def check_contrastive_negatives(plan: str, kind: str) -> CheckResult:
     """Behavior-implantation plans must name a contrastive-negative set or
     one of the two named exemptions (.claude/rules/contrastive-negatives.md).
@@ -759,11 +791,12 @@ def check_contrastive_negatives(plan: str, kind: str) -> CheckResult:
             name,
             "not detected as behavior-implantation (no implant/leakage-marker vocabulary)",
         )
-    if _standalone_na_declared(plan, r"not a behavior[- ]implantation"):
+    if _c4_na_escape_declared(plan):
         return _pass(
             cid,
             name,
-            "explicit N/A declared on its own line, unwrapped (not a behavior-implantation)",
+            "explicit N/A declared on its own line, unwrapped "
+            "(not a behavior-implantation | no behavior implantation)",
         )
     if re.search(r"(?i)contrastive[- ]negatives?", text):
         lowered = text.lower()
@@ -790,7 +823,8 @@ def check_contrastive_negatives(plan: str, kind: str) -> CheckResult:
         "behavior-implantation vocabulary detected but no contrastive-negative set or named "
         "exemption — .claude/rules/contrastive-negatives.md (panel + ratio + disjointness); "
         "Methodology critic must gate this; or declare `N/A — not a behavior-implantation` "
-        "on its own line, unwrapped (no backticks/quotes)",
+        "(or `N/A — no behavior implantation` for measurement/geometry plans) on its own "
+        "line, unwrapped (no backticks/quotes)",
     )
 
 
@@ -989,12 +1023,35 @@ def _exempt_tldr_kill_pass(
     cid, name, kind, succ_solid, kill_solid, kill_tldr_hits, carrier_ok, section_name
 ):
     """PASS result for the #1291 exempt-kind acceptance — a kind-exempt plan
-    whose kill family is satisfied by a solid §0.0/TL;DR change-my-mind hit
-    (success family solid, no solid kill outside the TL;DR); None when the
-    acceptance does not apply (check_success_kill falls through to its
-    missing-family verdicts)."""
+    whose kill family is satisfied EITHER by (a) a solid §0.0/TL;DR
+    change-my-mind hit, OR (b) a solid ``acceptance criteri`` success anchor
+    whose enclosing section itself names acceptance criteria (#1668/#1700 —
+    for an infra fix the acceptance-criteria BLOCK IS the revert criterion,
+    even when it lives under §1 Goal / Motivation instead of a dedicated
+    ``## 7. Decision gates, success and kill criteria`` heading).
+    (Success family solid, no solid kill outside the TL;DR.) None when
+    the acceptance does not apply (``check_success_kill`` falls through to
+    its missing-family verdicts). ``kind: experiment`` is BYTE-UNCHANGED:
+    the guard on ``kind not in EXEMPT_KINDS`` gates both branches."""
     if kind not in EXEMPT_KINDS or not succ_solid or kill_solid:
         return None
+    # (b) Acceptance-criteria-block branch (#1668/#1700): iterate ALL solid
+    # success hits — the FIRST hit may sit under a non-acceptance section
+    # (e.g. §2 Design) while a later hit lands under the true acceptance
+    # heading. Fail-closed to the (a) TL;DR path when no hit's enclosing
+    # section names acceptance criteria.
+    for si, sa in succ_solid:
+        sec = section_name(si).lower()
+        if "acceptance criteri" in sec:
+            return _pass(
+                cid,
+                name,
+                f"success anchor {sa!r} in §{section_name(si)!r} — the acceptance-criteria "
+                "block SATISFIES the kill family for kind-exempt plans (the block IS the "
+                "revert criterion for a code/infra change; kind: experiment still requires "
+                "kill criteria outside the TL;DR — #1668/#1700, extending #1291)",
+            )
+    # (a) EXISTING: §0.0 TL;DR change-my-mind path (unchanged).
     tldr_solid = [(i, a) for i, a in kill_tldr_hits if carrier_ok(i)]
     if not tldr_solid:
         return None
@@ -2704,12 +2761,30 @@ def check_paired_contrast_source_coverage(plan: str, kind: str) -> CheckResult:
     triggers = _c18_registered_paired_lines(plan)
     if not triggers:
         return _skip(cid, name, "no registered paired contrast detected")
+    decls = _c18_coverage_declarations(plan)
     if _c18_na_escape_declared(plan):
         # #1258 (the #1223 c20 port): reachable ONLY when a registered paired
         # contrast WAS detected (the no-trigger case SKIPs above) — a PASS
         # here masks the row-coverage verification c18 exists to run (the
         # #810 v13 class). WARN, not FAIL: the trigger harvest may be a false
         # positive on quoted guidance; reviewers adjudicate.
+        #
+        # #1689/#1700 refinement: when a valid Row-coverage declaration ALSO
+        # co-occurs, the coverage decl is the DECISIVE load-bearing assertion
+        # (D1/D2 grammar unchanged; _c18_coverage_declarations gates it), and
+        # the N/A line is a spurious leftover paste — PASS on the coverage
+        # decl. The original masking case (N/A alone, no coverage decl) still
+        # WARNs, preserving c18's original defense.
+        if decls:
+            return _pass(
+                cid,
+                name,
+                f'row-coverage declaration found ("{decls[0][:90]}") — declaration surface '
+                "only; the co-occurring standalone `N/A — no paired contrast` line is "
+                "treated as a spurious leftover, not a masking claim (the coverage decl "
+                "is decisive; #1689/#1700). Whether the named sources truly contain every "
+                "registered row on both arms stays with the fact-checker.",
+            )
         return _warn(
             cid,
             name,
@@ -2722,7 +2797,6 @@ def check_paired_contrast_source_coverage(plan: str, kind: str) -> CheckResult:
             "fence/remove the registration-shaped prose the detector matched "
             "if it is quoted guidance rather than this plan's own registration",
         )
-    decls = _c18_coverage_declarations(plan)
     if decls:
         return _pass(
             cid,
@@ -2969,6 +3043,37 @@ _C20_PRECEDENCE_RE = re.compile(
 _C20_QUANT_RE = re.compile(
     r"(?i)(?:at least\s+\d+|≥\s*\d+|>=\s*\d+)\s*(?:of|/)\s*\d+|\ball\s+\d+\b|\bfor (?:all|each)\b"
 )
+
+# Threshold-form atoms (#1689/#1700 — the tier-1 analogue of _C20_QUANT_RE):
+# ``<qty> <ineq> <nonzero>`` — ``rung ≥ 5``, ``≥ 8/9 pairs``, ``≤ 1 rung``,
+# ``≥ 20 percent``. Deliberately mirrors ``_C20_POINT_RE`` (same qty/cmp
+# capture shape) but the right-hand side captures ANY numeric literal
+# (int / decimal / fraction) — the ``_c20_has_threshold_atom`` filter
+# EXCLUDES ``0``, ``0.xxx`` and ``0/N`` after the fact so the sign-atom
+# scope (``qty ≥/> 0``) stays owned by ``_C20_POINT_RE``.
+_C20_THRESHOLD_RE = re.compile(
+    r"(?P<qty>[^\s,;()]+)\s*(?P<cmp>≥|>=|≤|<=|>|<)\s*(?P<thr>\d+(?:[./]\d+)?)"
+)
+
+
+def _c20_has_threshold_atom(segment: str) -> bool:
+    """True when ``segment`` carries a non-zero threshold-form inequality
+    atom (``rung ≥ 5``, ``≥ 8/9 pairs``, ``≤ 1 rung``). Zero-right-hand-side
+    matches (``qty ≥ 0``, ``qty ≥ 0.5``, ``qty ≥ 0/N``) are EXCLUDED —
+    those are sign atoms and stay with ``_C20_POINT_RE``. This is the
+    tier-1 detector for the #1689 shape (``rung ≥ 5`` / ``≥ 8/9 pairs``);
+    the parser correctly rejects them as outside the v1 cell algebra, so
+    ``_c20_tier1_result`` uses this + an ``⇔ otherwise`` complement to
+    SKIP the whole lattice (mirroring the tier-2 ``_C20_QUANT_RE`` SKIP)."""
+    for m in _C20_THRESHOLD_RE.finditer(segment):
+        thr = m.group("thr")
+        # Sign-atom exclusions (owned by _C20_POINT_RE): bare "0", "0.xxx"
+        # decimals, and "0/N" fractions.
+        if thr == "0" or thr.startswith("0.") or thr.startswith("0/"):
+            continue
+        return True
+    return False
+
 
 # Tier-2 segment machinery: sentence split, →/Consequence truncation, the
 # "confirmed if(f)" selector.
@@ -3323,7 +3428,16 @@ def _c20_find_declaration(sections: list[str]) -> tuple[str, list[tuple[str, str
 
 def _c20_tier1_result(cid: str, name: str, kind: str, sec: str, clauses: list) -> CheckResult:
     """Tier-1 verdict: the plan CLAIMED a partition, so co-fire AND gap are
-    both FAIL-capable (WARN under kind=analysis); unparsed clauses WARN."""
+    both FAIL-capable (WARN under kind=analysis); unparsed clauses WARN.
+    #1689/#1700: when the tier-1 lattice uses THRESHOLD-form inequality
+    predicates (``rung ≥ 5``, ``≥ 8/9 pairs``, ``≤ 1 rung``) AND carries
+    an ``⇔ otherwise`` complement, the partition is exhaustive-by-
+    construction (the otherwise clause covers every residual cell) and
+    the co-fire risk on threshold predicates is Statistics-critic scope,
+    outside the v1 cell algebra — SKIP (mirrors the tier-2
+    ``_C20_QUANT_RE`` SKIP). Threshold-only lattices WITHOUT an
+    ``⇔ otherwise`` complement still route through the normal parse
+    (which correctly WARNs on the unparsed residue)."""
     if len(clauses) < 2:
         return _warn(
             cid,
@@ -3332,6 +3446,19 @@ def _c20_tier1_result(cid: str, name: str, kind: str, sec: str, clauses: list) -
             "`<label> ⇔ <predicate>` clauses parsed from it — the claimed partition is "
             "not machine-checkable; use the canonical form (`DISJOINT and exhaustive: "
             "<label> ⇔ <predicate>; …; <label> ⇔ otherwise`)",
+        )
+    # #1689/#1700: threshold-atoms + ⇔ otherwise ⇒ SKIP (see docstring).
+    has_otherwise = any(_C20_OTHERWISE_RE.search(cpred) for _, cpred in clauses)
+    uses_thresholds = any(_c20_has_threshold_atom(cpred) for _, cpred in clauses)
+    if has_otherwise and uses_thresholds:
+        return _skip(
+            cid,
+            name,
+            f"tier-1 lattice ({len(clauses)} clauses) uses threshold-form inequality "
+            "predicates (e.g. `rung ≥ 5`, `≥ 8/9 pairs`) closed by an `⇔ otherwise` "
+            "complement — the partition is exhaustive-by-construction and the "
+            "co-fire risk on threshold predicates is Statistics-critic scope, out "
+            "of v1 cell algebra (mirrors the tier-2 k-of-n SKIP; #1689/#1700)",
         )
     labels = []
     for clabel, cpred in clauses:
@@ -6587,7 +6714,11 @@ def _c38_repo_wide_cmd(line: str) -> str | None:
     workflow_lint arg tail; a ``.py`` path / ``::`` node id / ``-k``
     filter in the pytest tail; any non-``.`` path token in the ruff tail.
     Arm B (the "no-flags default run" phrase) is suppressed when the line
-    already carries a SCOPED workflow_lint invocation (commentary shape)."""
+    already carries a SCOPED workflow_lint invocation (commentary shape).
+    Pytest arm: the scoped test additionally re-scans the rest of the line
+    past the arg-tail terminator, so a scoping ``::`` node id / ``tests?/…py``
+    path / ``-k`` filter written inside backticks after the word "pytest"
+    does NOT read as unscoped."""
     saw_scoped_lint = False
     for m in _C38_LINT_OCC_RE.finditer(line):
         tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
@@ -6598,8 +6729,13 @@ def _c38_repo_wide_cmd(line: str) -> str | None:
     if not saw_scoped_lint and _C38_NOFLAGS_RUN_RE.search(line):
         return "the workflow_lint no-flags default run"
     for m in _C38_PYTEST_OCC_RE.finditer(line):
-        tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
-        if not _C38_PYTEST_SCOPED_RE.search(tail):
+        rest = line[m.end() :]
+        tail = _C38_TAIL_SPLIT_RE.split(rest, 1)[0]
+        # A scoping token (`::` node id, `tests?/…py` path, or `-k` filter)
+        # may live PAST a backtick that terminates the arg tail — the
+        # ordinary prose shape "Concrete pytest node id: `tests/x.py::y`".
+        # Widen to the rest-of-line so the tail split does not hide it.
+        if not _C38_PYTEST_SCOPED_RE.search(tail) and not _C38_PYTEST_SCOPED_RE.search(rest):
             return "pytest (no path scope)"
     for m in _C38_RUFF_OCC_RE.finditer(line):
         tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
@@ -6629,8 +6765,11 @@ def check_exit0_repo_wide_baseline(plan: str, kind: str) -> CheckResult:
     assertion vocabulary (endemic; partially c37's subject); an
     assertion sentence separated from its fenced command by ≥1 line;
     "full suite" with no literal pytest token. Disclosed over-trigger
-    residual: a prose pytest mention with a non-scoping tail on an
-    assertion-bearing line. Deliberate reading (disclosed,
+    residual (narrowed 2026-07-27 for #1729): a bare unscoped `pytest`
+    assertion whose only nearby scoping token is on an unrelated line.
+    (The backticked-node-id class — a scoping ``::`` / ``tests?/…py`` /
+    ``-k`` token past the arg-tail terminator on the SAME line — is now
+    handled by the pytest arm's rest-of-line rescan.) Deliberate reading (disclosed,
     fact-checker-confirmed correct): an EMPTY arg tail — bare
     `ruff check` / bare `pytest` plus an assertion word — classifies
     REPO-WIDE and WARNs (both default to cwd/repo-wide; `all([]) is
@@ -6698,20 +6837,67 @@ def check_exit0_repo_wide_baseline(plan: str, kind: str) -> CheckResult:
 
 # ─── Check 39 — off-pod phase declaration (reads + outputs) ────────────────
 
-_C39_TRIGGER_RE = re.compile(r"(?i)\boff-pod\b|\bvm-side\b")
+# Calibration (DEVELOPMENT-SET numbers, fitted IN-SAMPLE — the tokens were
+# tuned on the same persisted-plan corpus they were measured on; ANY future
+# c39-regex change re-runs the corpus scan and records the realized numbers
+# here — the c33/c27/c32 gate precedent). Re-scan 2026-07-29 (#1796,
+# implementation-time, AS-SHIPPED regex) over 3,004 persisted plan-versions
+# (tasks/*/*/plans/v*.md, 1,264 distinct issues), mirroring the check's
+# gating exactly (stripped-prose per-line trigger; kind==experiment; raw
+# `off_pod_phases:` satisfier; standalone `N/A — no off-pod phase` escape).
+# Inverse-direction tokens KEPT: `vm-produced` — 5 pv triggered (issues
+# #1782/#1796 only, both kind:infra workflow-fix plans discussing this very
+# seam ⇒ kind-exempt), 0 would-WARN; ZERO in-prose non-compliant hits exist
+# in the corpus (#1773's own `VM-produced` prose lives INSIDE its fenced
+# off_pod_phases: block in already-compliant plans, invisible to the
+# stripped-prose trigger by design), so no in-corpus positive control
+# exists and the token is FORWARD-LOOKING per the c38 positive/negative-
+# control convention — the pinned WARN test is the synthetic positive
+# control. `produced on the vm` — 2 pv triggered (#548 v1, #778 v5), both
+# GENUINE cross-phase-read prose ("The off-pod primary read ... is produced
+# on the VM AFTER pod termination") and both ALREADY would-WARN under the
+# pre-#1796 off-pod/vm-side regex ⇒ 0 NEW would-WARNs, empty nuisance
+# class. Tokens DROPPED: `vm-built` / `vm-generated` — 0 corpus hits;
+# secondary variants gated on demonstrated recall (plan #1796 §3),
+# speculative widening declined. `git-clone lane` — 13 pv / 5 issues,
+# 7 would-WARN, nuisance class irreducible: artifact-reuse fitness-check
+# boilerplate (#1090 v5 "fetchability check (h) passes by construction
+# (git-clone lane, ...)") and COMPLIANT staging prose (#920 v1-v3
+# "committed to the issue branch before dispatch so the git-clone lane
+# stages it" — 3 NEW nuisance would-WARNs); dropped per the plan's
+# drop-by-default posture. Recent-era (issue >= 1000) NEW nuisance WARNs
+# from the SHIPPED tokens: 0. AS-SHIPPED delta confirmation: the widened
+# regex changes ZERO plan-version verdicts across the full corpus (0 newly
+# triggered pv, 0 newly would-WARN pv vs the pre-#1796 regex — every
+# shipped-token hit lives in a plan that already triggers on off-pod /
+# vm-side vocabulary elsewhere), i.e. purely forward-looking widening.
+_C39_TRIGGER_RE = re.compile(r"(?i)\boff-pod\b|\bvm-side\b|\bvm-produced\b|\bproduced on the vm\b")
 
 
 def check_off_pod_phase_declaration(plan: str, kind: str) -> CheckResult:
     """WARN-only, conditional, experiment-only: a plan whose non-fenced
     prose names an off-pod / VM-side phase must either carry the fenced
     ``off_pod_phases:`` declaration block (planner-section-reference.md § 9
-    — per phase: runs_on + reads[] with producing phase + permanent source
-    + outputs[] with off-pod dest; the block upload-verifier Steps 2.7/2.8
+    — since #1782 a direction-agnostic CROSS-PHASE READS rule: per phase
+    that reads another phase's outputs, runs_on + reads[] with producing
+    phase + permanent source the CONSUMING machine can fetch + outputs[]
+    with dest; the block upload-verifier Steps 2.7/2.8
     consume, #1535) or declare the standalone escape
-    ``N/A — no off-pod phase``. Mechanizes the #1526 gotchas.md off-pod
-    upload-set bullet at plan time (incident #1482: an off-pod judge died
+    ``N/A — no off-pod phase``. Mechanizes the #1526 gotchas.md
+    cross-machine upload-set bullet at plan time (incident #1482: an
+    off-pod judge died
     at VM launch on pod-only scratch never in the upload set; incident
-    #1426: a planned VM-side phase FAILed the verifier r1 by construction).
+    #1426: a planned VM-side phase FAILed the verifier r1 by construction;
+    incident #1773 — the inverse direction: a GCE phase crashed loading
+    VM-produced inputs never uploaded/staged). KNOWN MECHANICAL RESIDUAL
+    (narrowed by #1796): the trigger now ALSO fires on the corpus-
+    calibrated inverse-direction tokens (`vm-produced` /
+    `produced on the vm` — a pod/GCE/SLURM phase consuming VM-produced
+    inputs); inverse-direction prose using OTHER vocabulary (calibration
+    dropped `git-clone lane` as irreducibly noisy and `vm-built` /
+    `vm-generated` as zero-recall — see the calibration comment above
+    _C39_TRIGGER_RE) remains enforced by planner §9 + critic Methodology
+    item 10 only.
     NEVER FAILs — the trigger is a vocabulary heuristic (the c31/c34
     family), and legacy plans must not bounce retroactively. kind-exempt
     outside experiment: infra/batch/analysis/survey plans rarely dispatch
@@ -6743,10 +6929,13 @@ def check_off_pod_phase_declaration(plan: str, kind: str) -> CheckResult:
         "`off_pod_phases:` block — without the declaration the phase's READS are not "
         "plan-named (upload-verifier Step 2.8 cannot gate them at the cheap-fix window "
         "before the pod dies; the #1482 class) and its OUTPUTS false-FAIL the pod-side "
-        "Step 2.7 gate by construction (#1426). Add the fenced `off_pod_phases:` block "
-        "(template + worked example: planner-section-reference.md § 9 (off_pod_phases)), "
+        "Step 2.7 gate by construction (#1426). The rule is direction-agnostic (#1773): "
+        "declare EVERY dispatched phase that reads another phase's outputs, incl. a "
+        "pod/GCE/SLURM phase consuming VM-produced inputs. Add the fenced "
+        "`off_pod_phases:` block "
+        "(template + worked examples: planner-section-reference.md § 9 (off_pod_phases)), "
         "or declare `N/A — no off-pod phase` on its own line, unwrapped (no "
-        "backticks/quotes), if the vocabulary is incidental and no phase runs off the pod",
+        "backticks/quotes), if the vocabulary is incidental and no such phase exists",
     )
 
 
@@ -7061,6 +7250,263 @@ def check_regression_anchor_executed(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 42 — cited commit SHA resolves ─────────────────────────────────
+
+_C42_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c34/c41 pattern)
+
+# Cite-as-commit context patterns. Each anchors on a marker BEFORE (or
+# labeled inline with) the 7-40-char hex token — grammar ports from
+# ``.claude/rules/workflow-fix-on-bug.md`` clause (d) + the crash-fix
+# marker-note convention (``fix_sha=`` / ``merge_sha=``,
+# ``.claude/rules/crash-fix-rounds.md`` § fix-engaged signal element 4).
+_C42_CITE_PATTERNS = [
+    # "commit `<sha>`" / "commit <sha>"
+    re.compile(r"(?i)\bcommit\s+`?(?P<sha>[0-9a-f]{7,40})`?\b"),
+    # "landed in `<sha>`" / "landed at `<sha>`"
+    re.compile(r"(?i)\blanded\s+(?:in|at)\s+`?(?P<sha>[0-9a-f]{7,40})`?\b"),
+    # "merge `<sha>`" / "merged in <sha>" / "merged at <sha>"
+    re.compile(r"(?i)\bmerge(?:d)?\s+(?:in\s+|at\s+)?`?(?P<sha>[0-9a-f]{7,40})`?\b"),
+    # "`<sha>` (commit)" / "`<sha>` -- commit" (em/en dash or ASCII hyphen)
+    # / same for "merge". The dash class carries em dash + en dash + ASCII
+    # hyphen; the RUF001 en-dash flag is a false-positive here (the en
+    # dash is REAL plan text -- same rationale as NA_RE, and measurement
+    # plans use these interchangeably).
+    re.compile(
+        r"(?i)`(?P<sha>[0-9a-f]{7,40})`\s*(?:\(commit\)|[—–-]\s*(?:commit|merge))"  # noqa: RUF001
+    ),
+    # "**commit:** <sha>" / "**merge:** <sha>" / "**commit_sha:** <sha>"
+    re.compile(r"(?i)\*\*(?:commit|merge)(?:_sha)?:\*\*\s*`?(?P<sha>[0-9a-f]{7,40})`?\b"),
+    # "fix_sha=<sha>" / "fix_sha: <sha>" / "merge_sha=<sha>" / "merge_sha: <sha>"
+    re.compile(r"(?i)\b(?:fix_sha|merge_sha)\s*[:=]\s*`?(?P<sha>[0-9a-f]{7,40})`?\b"),
+]
+
+# Same-line disqualifiers: a hex captured by cite-context is dropped when
+# the line ALSO carries workflow-fix fingerprint / session-basename / HF
+# revision labels. These are the exclusion classes named in
+# ``.claude/rules/workflow-fix-on-bug.md`` clause (d): "cite the token as
+# what it actually is (transcript/session basename, HF revision,
+# fingerprint), labeled as such."
+_C42_EXCLUDE_LINE_PATTERNS = [
+    re.compile(r"(?i)\bfingerprint\s*[:=]"),
+    re.compile(r"(?i)\bsession(?:_id)?\s*[:=]|session\s+basename"),
+    re.compile(r"(?i)\brevision\s*[:=]|--revision|hf_revision|dataset_revision"),
+]
+
+
+def _c42_rev_parse(sha: str) -> bool | None:
+    """``True`` when ``sha`` resolves under
+    ``git rev-parse --verify --quiet '<sha>^{commit}'``, ``False`` when it
+    does not, ``None`` when git is unavailable (permission / OS / timeout —
+    the check fails OPEN via a caller-side SKIP). Retries ONCE on a
+    transient ``CalledProcessError`` / ``OSError`` after 0.1s (the plan's
+    Methodology-critic concern: a brief ``.git/index.lock`` collision on
+    the concurrent-committer repo root — the shared-VM #1201 shape — must
+    not spuriously fail the check)."""
+    cmd = ["git", "rev-parse", "--verify", "--quiet", f"{sha}^{{commit}}"]
+    for attempt in (1, 2):
+        try:
+            r = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=10,
+                cwd=str(_C42_REPO_ROOT),
+                check=False,
+            )
+            return r.returncode == 0
+        except subprocess.TimeoutExpired:
+            return None  # timeout is not retriable — the git command hung
+        except OSError:
+            if attempt == 1:
+                time.sleep(0.1)
+                continue
+            return None
+    return None  # unreachable (defensive; the loop always returns)
+
+
+def check_commit_sha_resolves(plan: str, kind: str) -> CheckResult:
+    """Every hex token the plan cites AS A COMMIT — ``commit `<sha>```,
+    ``landed in <sha>``, ``**commit:** <sha>``, ``fix_sha=<sha>`` — must
+    resolve under ``git rev-parse --verify --quiet '<sha>^{commit}'``.
+    Mirrors ``.claude/rules/workflow-fix-on-bug.md`` clause (d) on the
+    filing side.
+
+    FAIL (all kinds) — a typo'd commit SHA is a factual defect independent
+    of experiment kind (incident #1683: ``7c7095f40e`` was cited as the
+    fix commit; the real commit was ``7c8095f40e`` and the fact-checker
+    round burned proving the mismatch; #1414: transcript basename
+    ``fc2b61b7`` shipped as "the fix commit"). Bare hex tokens
+    (fingerprints, HF revisions, transcript basenames, arXiv ids) are OUT
+    OF SCOPE — the cite-context grammar in ``_C42_CITE_PATTERNS`` gates
+    entry, and ``_C42_EXCLUDE_LINE_PATTERNS`` drops same-line
+    disqualifiers. Hex tokens inside fenced code blocks are excluded via
+    ``_fence_mask``.
+
+    Fail-open on git unavailability: the check is a mechanical gate, not
+    a hard block on a broken git install / permission failure. A brief
+    ``.git/index.lock`` collision retries ONCE (0.1 s) before SKIPping."""
+    cid, name = "c42_commit_sha_resolves", "cited commit SHA resolves"
+    del kind  # this check is kind-blind — a typo'd commit is a factual defect for all
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    cited: list[tuple[int, str, str]] = []  # (line_idx, sha, matched_context)
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced:
+            continue
+        if any(p.search(line) for p in _C42_EXCLUDE_LINE_PATTERNS):
+            continue
+        for pat in _C42_CITE_PATTERNS:
+            for m in pat.finditer(line):
+                sha = m.group("sha").lower()
+                cited.append((i, sha, m.group(0)))
+    if not cited:
+        return _skip(cid, name, "no hex tokens cited as commits detected")
+    # Deduplicate by SHA (a plan may cite the same commit N times).
+    unique: dict[str, tuple[int, str]] = {}
+    for ln, sha, ctx in cited:
+        unique.setdefault(sha, (ln, ctx))
+    unresolved: list[tuple[str, str]] = []
+    for sha, (_ln, ctx) in unique.items():
+        result = _c42_rev_parse(sha)
+        if result is None:
+            # Fail-open on git unavailability — SKIP the whole check
+            # (rather than mixed-verdict FAIL some / skip others), because
+            # a partial run under a broken git install would mask the very
+            # positives the check is here to catch.
+            return _skip(
+                cid,
+                name,
+                "git rev-parse unavailable (permission / OS / timeout) — check inconclusive",
+            )
+        if not result:
+            unresolved.append((sha, ctx))
+    if not unresolved:
+        return _pass(
+            cid,
+            name,
+            f"all {len(unique)} cited commit SHA(s) resolve (verified via "
+            "`git rev-parse --verify --quiet '<sha>^{commit}'`)",
+        )
+    detail = (
+        f"{len(unresolved)} of {len(unique)} cited commit SHA(s) do NOT resolve as commits: "
+        + "; ".join(f"{sha} (context: {ctx!r})" for sha, ctx in unresolved[:4])
+        + (" …" if len(unresolved) > 4 else "")
+        + ". Remedy: verify the SHA at compose time — "
+        "`git rev-parse --verify --quiet '<sha>^{commit}'` — and re-derive the real "
+        "commit (`git log --oneline --since='14 days ago' -- <touched-file>`) or "
+        "cite the token as what it actually is (an HF revision, transcript basename, "
+        "fingerprint), labeled as such. Mirrors "
+        "`.claude/rules/workflow-fix-on-bug.md` clause (d)."
+    )
+    return _fail(cid, name, detail)
+
+
+# ─── Check 43 — /workspace sentinels need a /workspace-contract lane ───────
+
+# Trigger scans the RAW plan text (NOT strip_fences): sentinel declarations
+# live in fenced ``phase_outputs:`` YAML by design (the c30 convention — the
+# founding #1775 instance declared `/workspace/logs/issue-1775-p*.done`
+# inside a fenced block), so a stripped-prose scan would miss exactly the
+# founding shape. Two arms, same-line co-occurrence for arm (a):
+#   (a) a line carrying "sentinel" (case-insensitive) AND "/workspace/";
+#   (b) a `/workspace/logs/issue-` path (the poll_pipeline.py sentinel
+#       prefix), even with no "sentinel" token on the line.
+_C43_SENTINEL_WORD_RE = re.compile(r"(?i)\bsentinel")
+_C43_WS_LOGS_RE = re.compile(r"/workspace/logs/issue-")
+
+# Satisfier (raw scan too — a dispatch command lives in a fenced block): a
+# /workspace-contract lane pin, `backend: gcp|runpod` (frontmatter / prose
+# line) or a `--backend gcp|runpod` dispatch flag.
+_C43_LANE_PIN_RE = re.compile(r"(?i)(?:\bbackend:\s*|--backend[=\s]+)(?:gcp|runpod)\b")
+
+# The rule's own escape phrase, standalone at line start (leading
+# list/blockquote/bold markers tolerated via the `_standalone_na_declared`
+# lstrip convention; case-insensitivity explicit; hyphen / en-dash /
+# em-dash variants tolerated). A label-prefixed MID-LINE mention (`**Lane /
+# sentinel contract:** no sentinel dependence — auto-safe ...`, the #1738
+# v4 shape) and any backtick/fence-wrapped paste are DELIBERATELY
+# unrecognized (the #1238 anti-paste doctrine) — declare the escape
+# unwrapped on its own line.
+_C43_ESCAPE_RE = re.compile(
+    r"(?i)^no sentinel dependence\s*[-–—]+\s*auto[-–— ]safe\b"  # noqa: RUF001 — real dash variants
+)
+
+
+def _c43_escape_declared(plan: str) -> bool:
+    """Standalone ``no sentinel dependence — auto-safe`` declaration (the
+    plan-compute-sizing.md rule's own phrase, no N/A prefix), or the
+    shared-helper ``N/A — no sentinel dependence`` form. Fenced lines and
+    wrapped pastes never satisfy (see ``_standalone_na_declared``)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced:
+            continue
+        if _C43_ESCAPE_RE.match(line.lstrip(" \t>*-")):
+            return True
+    return _standalone_na_declared(plan, r"no sentinel dependence\b")
+
+
+def check_sentinel_lane(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, experiment-only: a plan that declares
+    ``/workspace/...`` sentinel paths (gate sentinels, ``epm:results``
+    payloads — the pod-side signaling contract) while leaving the backend
+    on the unrestricted auto lane must either pin a /workspace-contract
+    lane (``backend: gcp`` / ``backend: runpod``, or a ``--backend
+    gcp|runpod`` dispatch flag) or declare the rule's own escape ``no
+    sentinel dependence — auto-safe``. Mechanizes
+    ``plan-compute-sizing.md`` § "Sentinel-signaling workloads need a
+    /workspace-contract lane": on auto, a GCP capacity miss falls through
+    to SLURM, where DRAC/Mila compute nodes have no /workspace — the
+    dispatcher dies at ``mkdir -p /workspace/logs`` and burns the
+    submission (#608) — and the fellows rung HAS /workspace, so sentinels
+    get written but nothing drains them (silent marker loss). Founding
+    instance: #1775 plan v3 declared ``/workspace/logs/issue-1775-p*.done``
+    sentinels in a fenced ``phase_outputs`` block while §9 said "no
+    backend pin → auto lane"; only a Methodology critic caught it
+    (Must-Fix M1). NEVER FAILs — the disposition is sometimes legitimately
+    prose-satisfied in different words, and legacy plans must not bounce
+    retroactively (the c39/c31/c34 family convention). kind-exempt outside
+    experiment: infra workflow-fix plans (this check's own plan included)
+    legitimately QUOTE ``/workspace/...`` sentinel paths without
+    dispatching a sentinel-signaling workload. Trigger AND satisfiers scan
+    the RAW plan text (NOT strip_fences): the sentinel declarations and
+    the dispatch command both live in fenced blocks by design (unlike c39,
+    whose trigger is prose vocabulary)."""
+    cid, name = "c43_sentinel_lane", "/workspace sentinels vs unpinned auto lane"
+    if kind != "experiment":
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: sentinel-lane pinning is an experiment-plan (pod-dispatch) shape",
+        )
+    trigger_lines = [
+        ln
+        for ln in plan.splitlines()
+        if _C43_WS_LOGS_RE.search(ln) or ("/workspace/" in ln and _C43_SENTINEL_WORD_RE.search(ln))
+    ]
+    if not trigger_lines:
+        return _skip(cid, name, "no /workspace sentinel paths detected")
+    if _C43_LANE_PIN_RE.search(plan):
+        return _pass(cid, name, "/workspace-contract lane pinned (backend:/--backend gcp|runpod)")
+    if _c43_escape_declared(plan):
+        return _pass(cid, name, "explicit escape declared (no sentinel dependence — auto-safe)")
+    shown = "; ".join(ln.strip()[:70] for ln in trigger_lines[:3])
+    return _warn(
+        cid,
+        name,
+        f"plan declares /workspace sentinel paths ({shown!r}) with no /workspace-contract "
+        "lane pinned — on the auto lane a GCP capacity miss falls through to SLURM, where "
+        "DRAC/Mila compute nodes have no /workspace (the dispatcher dies at `mkdir -p "
+        "/workspace/logs` and burns the submission, #608) and the fellows rung HAS "
+        "/workspace but nothing drains the sentinels (silent marker loss). Pin `backend: "
+        "gcp` or `backend: runpod` (or carry `--backend gcp|runpod` in the dispatch "
+        "command), or declare `no sentinel dependence — auto-safe` on its own line, "
+        "unwrapped (no backticks/quotes), if nothing in the run posts through sentinels "
+        "(plan-compute-sizing.md § Sentinel-signaling workloads)",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -7103,6 +7549,8 @@ CHECKS = [
     check_exit0_repo_wide_baseline,
     check_off_pod_phase_declaration,
     check_regression_anchor_executed,
+    check_commit_sha_resolves,
+    check_sentinel_lane,
 ]
 
 

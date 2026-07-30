@@ -1,0 +1,266 @@
+{
+  "commit": "0712ae5ea1",
+  "created": "2026-07-29T10:00:10Z",
+  "figsize": [
+    10.5,
+    4.0
+  ],
+  "points": [
+    {
+      "Steering alpha": 0.0,
+      "Mean graded score (0-100)": 0.0,
+      "series": "No steering baseline",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steering alpha": 1.0,
+      "Mean graded score (0-100)": 0.0,
+      "series": "No steering baseline",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steering alpha": 1.0,
+      "Mean graded score (0-100)": 8.9,
+      "series": "Decode only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steering alpha": 2.0,
+      "Mean graded score (0-100)": 86.65067681895094,
+      "series": "Decode only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steering alpha": 4.0,
+      "Mean graded score (0-100)": 37.11700167504188,
+      "series": "Decode only",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steering alpha": 1.0,
+      "Mean graded score (0-100)": 5.849,
+      "series": "Both phases",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Steering alpha": 2.0,
+      "Mean graded score (0-100)": 86.0819587628866,
+      "series": "Both phases",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Steering alpha": 4.0,
+      "Mean graded score (0-100)": 31.66742424242424,
+      "series": "Both phases",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Steering alpha": 1.0,
+      "Mean graded score (0-100)": 0.0,
+      "series": "Prefill only",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Steering alpha": 2.0,
+      "Mean graded score (0-100)": 0.0,
+      "series": "Prefill only",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Steering alpha": 4.0,
+      "Mean graded score (0-100)": 0.0,
+      "series": "Prefill only",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Steering alpha": 1.0,
+      "y": 6.071000000000001,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Steering alpha": 2.0,
+      "y": 20.488442211055276,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Steering alpha": 4.0,
+      "y": 29.61566164154104,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Steering alpha": 1.0,
+      "y": 6.0760000000000005,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Steering alpha": 2.0,
+      "y": 21.980666666666664,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Steering alpha": 4.0,
+      "y": 34.7385,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Steering alpha": 1.0,
+      "y": 2.6029999999999998,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Steering alpha": 2.0,
+      "y": 3.181,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Steering alpha": 4.0,
+      "y": 4.274,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Steering alpha": 1.0,
+      "y": 29.989166666666666,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Steering alpha": 2.0,
+      "y": 61.937732656514385,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Steering alpha": 4.0,
+      "y": 39.83170103092784,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Steering alpha": 1.0,
+      "y": 32.946,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Steering alpha": 2.0,
+      "y": 67.44175347222222,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Steering alpha": 4.0,
+      "y": 46.097807017543865,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Steering alpha": 1.0,
+      "y": 22.98025,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Steering alpha": 2.0,
+      "y": 23.530820770519263,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Steering alpha": 4.0,
+      "y": 25.24491666666667,
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 29,
+  "text": {
+    "suptitle": "Behavioral expression by steering arm across alpha values (raw graded scores, N=200 draws/cell)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Scheming",
+        "xlabel": "Steering alpha",
+        "ylabel": "Mean graded score (0-100)",
+        "xticklabels": [
+          "1",
+          "2",
+          "4"
+        ],
+        "yticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      },
+      {
+        "title_left": "Sycophancy",
+        "xlabel": "Steering alpha",
+        "xticklabels": [
+          "1",
+          "2",
+          "4"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40"
+        ]
+      },
+      {
+        "title_left": "Hallucination",
+        "xlabel": "Steering alpha",
+        "xticklabels": [
+          "1",
+          "2",
+          "4"
+        ],
+        "yticklabels": [
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70"
+        ]
+      }
+    ],
+    "series": [
+      "No steering baseline",
+      "Decode only",
+      "Both phases",
+      "Prefill only"
+    ]
+  }
+}

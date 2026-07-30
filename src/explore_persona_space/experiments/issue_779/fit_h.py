@@ -105,7 +105,8 @@ def ridge_fit_predict_fast(
     *,
     lambdas: np.ndarray | None = None,
     device: str = "cpu",
-) -> np.ndarray:
+    return_info: bool = False,
+) -> np.ndarray | tuple[np.ndarray, dict]:
     """Torch-eigh Gram-space ridge — fast APPROXIMATE twin of
     :func:`ridge_fit_predict` (same standardize-X / center-Y / GCV-lambda-select /
     un-center recipe). PARITY IS SIZE-DEPENDENT: the #779 Read-1 gate measured
@@ -155,6 +156,7 @@ def ridge_fit_predict_fast(
     # dof = sum_k f_k (hat-matrix trace); GCV = RSS / (ntr - dof)^2.
     best_lam = float(lambdas[0])
     best_gcv = float("inf")
+    best_dof = float("nan")
     for lam in lambdas:
         filt = w / (w + lam)
         rss = tot - float(((2 * filt - filt**2) * sqVtY).sum())
@@ -164,9 +166,15 @@ def ridge_fit_predict_fast(
         if gcv < best_gcv:
             best_gcv = gcv
             best_lam = float(lam)
+            best_dof = dof
     filt = 1.0 / (w + best_lam)
     pred = (KevV * filt) @ VtY + ymu
-    return pred.cpu().numpy()
+    out = pred.cpu().numpy()
+    if return_info:
+        # additive, backward-compatible: internal GCV selection surfaced for
+        # lambda-discipline reporting (df(lambda*) per fit — #1775 round 2 Minor-c)
+        return out, {"best_lambda": best_lam, "dof": best_dof, "gcv": best_gcv}
+    return out
 
 
 def ridge_fit_predict_fast_layer_batched(

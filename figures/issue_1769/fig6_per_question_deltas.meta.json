@@ -1,0 +1,13 @@
+{
+  "points": {
+    "evil": {
+      "operating_alpha": 4
+    },
+    "sycophancy": {
+      "operating_alpha": 4
+    },
+    "hallucination": {
+      "operating_alpha": 4
+    }
+  }
+}

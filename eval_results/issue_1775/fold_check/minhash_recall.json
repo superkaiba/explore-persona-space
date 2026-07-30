@@ -1,0 +1,25 @@
+{
+  "meta": {
+    "git_commit": "f74fdf19341820e7e010fe2c965f9c574dc15192",
+    "timestamp_utc": "2026-07-29T03:22:04.339966+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "python": "3.11.15",
+    "fold_seed": 0,
+    "n_folds": 6,
+    "step": "recall",
+    "smoke": false
+  },
+  "recall": {
+    "n_pairs": 1000,
+    "true_jaccard_range": [
+      0.6,
+      0.9
+    ],
+    "n_true_above_0p8": 876,
+    "recall_candidates_at_true_ge_0p8": 1.0,
+    "mean_abs_est_error": 0.034399051844947306,
+    "flagged_fraction_all": 0.997,
+    "note": "candidate recall at est>=0.6 among pairs with TRUE J>=0.8 must be ~1.0"
+  }
+}
