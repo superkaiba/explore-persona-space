@@ -17,11 +17,11 @@ Auto-filed by the workflow-fix-on-bug protocol from a prose-surfaced candidate r
 
 ## Goal
 
-Add the local analysis-tensors staging dirs (map payloads, `analysis_tensors/`-destined artifacts) to the GCE crash-persist upload set, and fix the GCE-side credential resolution that blocked the round's rescue upload.
+Add the local analysis-tensors staging dirs (map payloads, `analysis_tensors/`-destined artifacts) to the GCE crash-persist upload set. (SCOPE NARROWED 2026-07-30T19:5xZ: the originally-filed second half — "fix GCE-side credential resolution" — is REFUTED and removed; see Workflow gap.)
 
 ## Workflow gap
 
-- **Bug observed:** the GCE EXIT-trap `_eps_persist_diagnostics` upload set covers `eval_results/issue_<N>`, `data/issue_<N>`, `data/issue<N>`, logs — but NOT the local staging dir for `analysis_tensors/` payloads; a banked 412 MB MLP map fit (0.68 GPU-h, produced 18:44:03Z) died with the auto-DELETEd boot disk when the workload exited rc=7 (a DESIGNED stop). A manual rescue upload was additionally blocked by missing GCE-side credential resolution. unverified hypothesis — verify at plan time: the exact credential failure mode (reported by the emitting agent; not independently reproduced at filing).
+- **Bug observed:** the GCE EXIT-trap `_eps_persist_diagnostics` upload set covers `eval_results/issue_<N>`, `data/issue_<N>`, `data/issue<N>`, logs — but NOT the local staging dir for `analysis_tensors/` payloads; a banked 412 MB MLP map fit (0.68 GPU-h, produced 18:44:03Z) died with the auto-DELETEd boot disk when the workload exited rc=7 (a DESIGNED stop). REFUTED at 19:5xZ (emitting agent's own correction, epm:progress v122 on #1739): the rescue-upload failure was OPERATOR ERROR — the upload was wrapped in `sudo bash -c`, which strips the environment; ambient env credentials (HF_TOKEN etc. via startup metadata) ARE present by design on the GCE lane and the missing .env is the documented expected state (confirmed live by the pvscore instance log at 19:45:29Z). Do NOT hunt a credential defect; the crash-persist upload-set omission is the only gap.
 - **Why it is a workflow gap:** the upload-policy plan §10 class "intermediate analysis tensors referenced as downstream inputs" is exactly what crash-persist exists to save (gcp.py's own docstring at line 1045 names `analysis_tensors/`), yet the persist set at lines ~2269-2271 omits it — so any GCE run staging map/tensor payloads locally loses them on ANY non-zero exit, including designed aborts.
 - **Confidence (emitter):** high (loss realized this round)
 - verified-at-filing: `grep -n "analysis_tensors\|eval_results_issue\|data_issue" src/explore_persona_space/backends/gcp.py` → docstring hit line 1045 names analysis_tensors; persist-set literals lines 2269-2271 carry ONLY eval_results/data dirs, 0 analysis_tensors entries (2026-07-30). Per-target: construction site confirmed in backends/gcp.py.
@@ -31,8 +31,7 @@ Add the local analysis-tensors staging dirs (map payloads, `analysis_tensors/`-d
 + In the _eps_persist_diagnostics dir list (gcp.py ~L2269):
 +   (root / "analysis_tensors" / f"issue_{issue}", f"analysis_tensors_issue_{issue}"),
 +   plus whatever local staging convention the round used (survey call sites).
-+ And resolve/document GCE-side HF credential availability for rescue uploads
-+ (the EXIT-trap path has a token; the interactive rescue path did not).
++ (credential leg REMOVED — refuted as operator error, see Workflow gap)
 
 ## Scope / surfaces
 
