@@ -26,13 +26,36 @@ if ! uv run python scripts/issue1345_prefetch_reuse.py --smoke --stems instruct_
 fi
 echo "[launch-gen] allowlist staged (prefetch_reuse rc=0)"
 
-n_gpu="$(nvidia-smi -L | wc -l)"
+# Device selection (crash-fix 15771): NEVER export absolute CVD indices on a
+# shared SLURM node — charmander has no device confinement, SLURM assigns
+# specific GPUs via a pre-set CUDA_VISIBLE_DEVICES, and absolute 0/1/2
+# clobbered it onto other users' occupied devices (vLLM died at 19 GiB free).
+# Index INTO the pre-set CVD list when present; else fall back to all local
+# GPUs. Either way keep only devices with >= 120000 MiB free (vLLM at 0.85
+# util on H200 needs ~119 GiB); waves absorb a shortfall.
+if [ -n "${CUDA_VISIBLE_DEVICES:-}" ]; then
+  IFS=',' read -ra alloc <<< "$CUDA_VISIBLE_DEVICES"
+else
+  mapfile -t alloc < <(nvidia-smi --query-gpu=index --format=csv,noheader,nounits)
+fi
+DEVICES=()
+for d in "${alloc[@]}"; do
+  free_mib="$(nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits -i "$d" | head -1)"
+  if [ "${free_mib:-0}" -ge 120000 ]; then
+    DEVICES+=("$d")
+  else
+    echo "[launch-gen] skipping device ${d}: only ${free_mib:-?} MiB free" >&2
+  fi
+done
+n_gpu="${#DEVICES[@]}"
+echo "[launch-gen] allocated devices: ${alloc[*]:-none}; usable (>=120 GiB free): ${DEVICES[*]:-none}"
 if [ "$n_gpu" -lt 1 ]; then
-  echo "[launch-gen] no visible GPUs" >&2
+  echo "[launch-gen] no usable GPUs (all below the free-memory floor)" >&2
   exit 3
 fi
 
-arms=(v2 v3 v4)
+# Arms override (partial relaunch after a per-arm failure): EPM_BND_ARMS="v3 v4"
+read -ra arms <<< "${EPM_BND_ARMS:-v2 v3 v4}"
 rc=0
 idx=0
 while [ "$idx" -lt "${#arms[@]}" ]; do
@@ -41,8 +64,9 @@ while [ "$idx" -lt "${#arms[@]}" ]; do
   for g in $(seq 0 $((n_gpu - 1))); do
     [ "$idx" -ge "${#arms[@]}" ] && break
     arm="${arms[$idx]}"
-    echo "[launch-gen] starting arm ${arm} on GPU ${g} ($(date -u +%FT%TZ))"
-    CUDA_VISIBLE_DEVICES="$g" uv run python scripts/issue1345_boundary_ablation_gen.py \
+    dev="${DEVICES[$g]}"
+    echo "[launch-gen] starting arm ${arm} on device ${dev} ($(date -u +%FT%TZ))"
+    CUDA_VISIBLE_DEVICES="$dev" uv run python scripts/issue1345_boundary_ablation_gen.py \
       --arm "$arm" > "logs/i1345_bnd_gen_${arm}.log" 2>&1 &
     pids+=("$!")
     labels+=("$arm")
