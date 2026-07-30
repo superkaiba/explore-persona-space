@@ -6529,8 +6529,8 @@
     "1843": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1843",
-      "status": "proposed",
+      "path": "tasks/archived/1843",
+      "status": "archived",
       "title": "workflow-fix: green test_ruff_policy full-ruleset \u2014 verify_task_body.py:13224 E501"
     },
     "185": {
