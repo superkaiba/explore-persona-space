@@ -1,6 +1,6 @@
 {
- "ts": "2026-07-30T17:39:59Z",
- "git_commit": "ad483a800f04eac61537cc77782e1209ca3fd5d1",
+ "ts": "2026-07-30T18:30:13Z",
+ "git_commit": "2a3a0e253bc6629d760c9dba6c7cf5cea1a8bbbe",
  "torch": "2.8.0+cu128",
  "numpy": "2.2.6",
  "issue": 1768,
@@ -3676,23 +3676,15 @@
   }
  },
  "mlp_leg": {
-  "status": "detached-running-or-pending",
-  "descope": "4 of the 16 cells (recorded below), NOT all 16: at the MEASURED 6.29 s/epoch/group (2-point pilot, 3 vs 12 epochs on a single group) a batched 16-cell x 300-epoch full-dim MLP projects 8.4 h of shared-VM CPU, vs 2.1 h for 4 cells. The linearity question is already answered decisively by KRR at FULL fidelity on all 16 cells (closed-form, +0.008..+0.056 R2 gain), so the MLP is a robustness companion, not the decisive read — same reasoning #1073's analogous inline round recorded.",
-  "cells": [
-   "imp-pers-po-lr1e5-s137|tf (highest tf ridge R2 0.446 + largest imp KRR gain)",
-   "imp-pers-con-lr3e5-s42|op (high-dose on-policy tree: is the op residual nonlinear?)",
-   "syc-conv-po-lr1e5-s137|tf (round-1 Unchanged arm: nonlinear-structure control)",
-   "syc-pers-ft-con-s137|tf (full-FT method axis)"
-  ],
-  "axes_spanned": "tree (op/tf) x behavior (imp/syc) x round-1 verdict x method (LoRA/full-FT)",
-  "pid": "4082277",
-  "log": "logs/issue-1768-write-predictability-mlp.log",
-  "harvest": "eval_results/issue_1768/write_predictability/mlp.json",
-  "measured_per_epoch_s_per_group": 6.29,
-  "measured_per_epoch_s_at_g4": 24.94,
-  "projected_wall_h_at_300_epochs": 2.08,
-  "harvest_command": "OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 uv run python scripts/issue1768_write_predictability.py --phases figs,summary   # re-run AFTER mlp.json lands to fold the MLP column in",
-  "note": "an undertrained MLP R2 is never presented: only the full-fidelity mlp.json feeds figures/summary (mlp_pilot.json is a timing measurement and is excluded by construction). At 12 epochs the pilot still read R2 -5.73, so the full-dim MLP needs many epochs before it is competitive."
+  "status": "pending",
+  "n_cells_with_mlp": 0,
+  "n_cells_total": 16,
+  "device": null,
+  "recipe": null,
+  "per_cell_wall_s": {},
+  "execution": "USER OVERRIDE 'just run on GPU' — the full 16-cell MLP leg ran on a 1-GPU RunPod pod (pod-1768-wp), NOT the CPU-descoped 4-cell contingency the earlier pilot gate had sized. No descope.",
+  "cpu_pilot_basis_superseded": "the shared-VM CPU pilot measured 6.29 s/epoch/group (2-point: 3 vs 12 epochs), projecting 8.4 h for a 16-cell x 300-epoch CPU battery — the reason the GPU override was taken. Recorded for provenance; not the executed path.",
+  "note": "an undertrained MLP R2 is never presented: only the full-fidelity mlp.json feeds figures/summary (mlp_pilot.json is a timing measurement, excluded by construction). The CPU pilot still read R2 -5.73 at 12 epochs, so the full-dim MLP needs many epochs before it is competitive — read epochs_ran per cell before comparing."
  },
  "pilot_walls": {
   "cas-pers-con-lr1e5-s137|op": {
