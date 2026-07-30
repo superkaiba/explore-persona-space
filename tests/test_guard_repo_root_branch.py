@@ -481,21 +481,22 @@ def test_switch_return_to_main_still_allows(cmd):
     assert _run(cmd) == 0
 
 
-def test_note_text_git_verb_literal_trips_guard_known_limitation():
-    # KNOWN LIMITATION (documented in the script header): the guard scans the
-    # RAW command and does NOT strip quoted arguments, so a quoted git-verb
-    # literal buried in another command's argument (e.g. a marker note
-    # discussing the guard) DOES trip it. This is the deliberate trade-off for
-    # correctly parsing quoted git refs (test_quoted_detach_refs_still_block);
-    # the round-1 quote-strip that "fixed" this false positive leaked real
-    # quoted detach refs. The workaround is `--file` for such note text.
-    # Exit 2 pins the known behavior so a future re-attempt at a quote-strip
-    # (which would silently re-open the leak) trips this test.
+def test_note_text_git_verb_literal_double_quoted_now_allows():
+    # (#1710) The historical KNOWN LIMITATION — a git-verb literal in a
+    # DOUBLE-quoted `--note` argument tripped the guard because the taskpy
+    # mask covered single quotes only — is closed by the #1710 P7 extension
+    # that admits double-quoted spans under a no-expansion refusal ladder.
+    # A double-quoted note whose body carries no `$` / backtick / `\\`
+    # tokens is byte-identical to the same content single-quoted, so the
+    # taskpy mask replaces its body with the neutral __EPM_ARG_PAYLOAD__
+    # sentinel BEFORE the pre-filter regex scans for git-verb literals.
+    # The genuine repo-root mutation shapes still block — see
+    # test_taskpy_double_quoted_masking_refusal_ladder_blocks below.
     assert (
         _run(
             'uv run python scripts/task.py post-marker 796 epm:foo --note "test git switch string"'
         )
-        == 2
+        == 0
     )
 
 
@@ -840,19 +841,22 @@ def test_worktree_revert_shapes_block(cmd):
     assert _run(cmd) == 2
 
 
-def test_note_text_restore_literal_trips_guard_known_limitation():
-    # KNOWN LIMITATION (documented in the script header, mirror of
-    # test_note_text_git_verb_literal_trips_guard_known_limitation): a quoted
-    # FULL `git restore .`-class command literal inside another command's
-    # argument trips the raw scan. Workaround: `--file <path.md>` for notes,
-    # `git commit -F <file>` for commit messages. Exit 2 pins the deliberate
-    # trade-off so a future quote-strip re-attempt trips this test.
+def test_note_text_restore_literal_double_quoted_now_allows():
+    # (#1710) Sibling of test_note_text_git_verb_literal_double_quoted_now_allows:
+    # the taskpy mask's P7 double-quoted extension replaces a double-quoted
+    # `--note` body with the neutral __EPM_ARG_PAYLOAD__ sentinel BEFORE the
+    # pre-filter scans for git-verb literals. A note whose body carries no
+    # `$` / backtick / `\\` tokens (byte-identical-to-single-quoted content)
+    # therefore no longer trips the raw scan. The historical
+    # `--file <path.md>` / `git commit -F <file>` workaround is no longer
+    # required for these shapes. Genuine repo-root mutation shapes still
+    # block — see test_taskpy_double_quoted_masking_refusal_ladder_blocks.
     assert (
         _run(
             "uv run python scripts/task.py post-marker 897 epm:x "
             '--note "run git restore . to revert"'
         )
-        == 2
+        == 0
     )
 
 
@@ -2030,12 +2034,11 @@ def test_ssh_multi_statement_payload_masking_allows(cmd):
 @pytest.mark.parametrize(
     "cmd",
     [
-        pytest.param(
-            # Double quotes never mask (escapes/expansion/nesting make the
-            # parse inexact) — documented residual.
-            'ssh pod-779 "cd /workspace/x && git reset --hard origin/main"',
-            id="NM1-double_quoted_multi_statement",
-        ),
+        # (#1710) The historical NM1 double-quoted-ssh block is REPLACED by
+        # the new NDS positive tests (double-quoted allow) + NDS_R* negative
+        # tests (double-quoted refusal ladder) added below. The
+        # double-quoted payload was documented as a residual under the
+        # #1413 mask; Arm 1's R9 no-expansion refusal admits it now.
         pytest.param(
             # Constraint-1 ambiguity (no closing quote) stays blocked.
             "ssh pod-779 'cd /workspace/x && git reset --hard origin/main",
@@ -2333,16 +2336,18 @@ def test_merge_allowed_shapes_exit0(cmd):
     assert _run(cmd) == 0
 
 
-def test_note_text_merge_literal_trips_guard_known_limitation():
-    # KNOWN LIMITATION (header): a quoted FULL `git merge <ref>` command
-    # literal in --note/-m text trips the raw scan (#1128, mirror of the
-    # restore-literal pin). Workaround: --file <path.md> / git commit -F.
+def test_note_text_merge_literal_double_quoted_now_allows():
+    # (#1710) Sibling of test_note_text_git_verb_literal_double_quoted_now_allows:
+    # the taskpy mask's P7 double-quoted extension covers `git merge <ref>`
+    # prose inside a `--note` body under the same no-expansion refusal
+    # ladder. Workaround (--file / -F) still WORKS but is no longer
+    # REQUIRED for these shapes.
     assert (
         _run(
             "uv run python scripts/task.py post-marker 1128 epm:x "
             '--note "run git merge issue-1 next"'
         )
-        == 2
+        == 0
     )
 
 
@@ -2455,12 +2460,13 @@ def test_rebase_family_allowed_shapes_exit0(cmd):
         ),
     ],
 )
-def test_note_text_rebase_family_literal_trips_guard_known_limitation(note_cmd):
-    # KNOWN LIMITATION (header): a quoted FULL `git rebase <ref>` /
-    # `git cherry-pick <sha>` command literal in --note/-m text trips the raw
-    # scan (#1193, mirror of the merge-literal pin). Workaround: --file
-    # <path.md> / git commit -F.
-    assert _run(note_cmd) == 2
+def test_note_text_rebase_family_literal_double_quoted_now_allows(note_cmd):
+    # (#1710) Sibling of test_note_text_merge_literal_double_quoted_now_allows:
+    # the taskpy mask's P7 double-quoted extension covers
+    # `git rebase <ref>` / `git cherry-pick <sha>` prose inside a `--note`
+    # body under the same no-expansion refusal ladder. Workaround (--file /
+    # -F) still WORKS but is no longer REQUIRED for these shapes.
+    assert _run(note_cmd) == 0
 
 
 def test_man_git_rebase_allowed():
@@ -2576,12 +2582,13 @@ def test_revert_am_allowed_shapes_exit0(cmd):
         ),
     ],
 )
-def test_note_text_revert_am_literal_trips_guard_known_limitation(note_cmd):
-    # KNOWN LIMITATION (header): a quoted FULL `git revert <sha>` /
-    # `git am <path>` command literal in --note/-m text trips the raw scan
-    # (#1234, mirror of the #1128/#1193 pins). Workaround: --file <path.md> /
-    # git commit -F <file>.
-    assert _run(note_cmd) == 2
+def test_note_text_revert_am_literal_double_quoted_now_allows(note_cmd):
+    # (#1710) Sibling of test_note_text_rebase_family_literal_double_quoted_now_allows:
+    # the taskpy mask's P7 double-quoted extension covers `git revert <sha>` /
+    # `git am <path>` prose inside a `--note` body under the same
+    # no-expansion refusal ladder. Workaround (--file / -F) still WORKS but
+    # is no longer REQUIRED for these shapes.
+    assert _run(note_cmd) == 0
 
 
 def test_flag_chain_valid_git_am_prose_trips_guard_known_limitation():
@@ -2825,12 +2832,12 @@ _GN1_VERBATIM_825 = (
             "timeout --signal=KILL 120 gcloud compute ssh pod --command='git reset --hard'",
             id="GN14-timeout_flag_form_not_waived",
         ),
-        pytest.param(
-            # NM1 mirror: the gcloud candidate head is single-quote-only too
-            # (double-quoted payloads admit escapes/expansion/nesting).
-            'gcloud compute ssh pod --command="cd /w && git reset --hard"',
-            id="GN15-double_quoted_multi_statement_not_waived",
-        ),
+        # (#1710) The historical GN15 gcloud-compute-ssh double-quoted-block
+        # is REPLACED by NDS3-double_quoted_gcloud_compute_ssh (positive) +
+        # NDS_R* refusal-ladder pins below. Arm 1's R9 no-expansion refusal
+        # admits the double-quoted payload the same way it admits the bare
+        # `ssh` head — the gcloud head is threaded through the SAME
+        # mask_ssh_payload_separators branch.
     ],
 )
 def test_gcloud_waiver_fail_closed_blocks(cmd):
@@ -3293,14 +3300,11 @@ def test_taskpy_payload_embedded_newline_rejoin_pinned():
             f'{_TASKPY} post-marker 1566 epm:progress --note "`{_TASKPY_PAYLOAD}`"',
             id="NPB4-backtick_payload",
         ),
-        pytest.param(
-            # DOUBLE-quoted payload with the SHARED trigger: the anti-vacuity
-            # twin — pins that the constant trips the guard when not
-            # single-quote-masked, AND that the existing double-quoted
-            # known-limitation disposition class is untouched.
-            f'{_TASKPY} post-marker 1566 epm:progress --note "{_TASKPY_PAYLOAD}"',
-            id="NPB5-double_quoted_shared_payload_twin",
-        ),
+        # (#1710) The historical NPB5 double-quoted-shared-payload block is
+        # REPLACED by NDP1-double_quoted_note_incident_3 (positive) +
+        # NDP_P7_* refusal-ladder pins below. Arm 2's P7 no-expansion
+        # refusal admits the double-quoted note body under the same
+        # exact-parse property the single-quoted mask requires.
         pytest.param(
             # UNQUOTED note text with the shared trigger — second twin.
             f"{_TASKPY} post-marker 1566 epm:progress --note {_TASKPY_PAYLOAD}",
@@ -3472,6 +3476,323 @@ def test_pinned_env_scrubs_ambient_git_vars(monkeypatch):
     """
     monkeypatch.setenv("GIT_OBJECT_DIRECTORY", "/nonexistent")
     assert _run(_SIDECAR_BLOCKED_SWITCH) == 2
+
+
+# ============================================================================
+# (#1710) Three added mask arms:
+#   Arm 1 — mask_ssh_payload_separators DOUBLE-quoted branch (R9 refusal)
+#   Arm 2 — mask_taskpy_arg_payloads DOUBLE-quoted span support (P7 refusal)
+#   Arm 3 — mask_python_c_string_literals (NEW mask; C4-C10 refusal ladder)
+#
+# Every new POSITIVE param carries a paraphrased incident-shape payload (no
+# destructive-command literal reproduced from the incident transcript); every
+# NEGATIVE param pins one specific refusal arm as the ONLY reason that shape
+# refuses (the anti-vacuity discipline the round-1 planner named).
+# ============================================================================
+
+# ---- Arm 1: SSH double-quoted payload waiver (occurrence 2 shape) -----------
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            # Occurrence 2 shape: pod-side git op inside a double-quoted
+            # payload — the payload runs on the POD, not the local repo.
+            'ssh pod-1689 "cd /workspace/x && git reset --hard origin/issue-1689"',
+            id="NDS1-double_quoted_multi_statement",
+        ),
+        pytest.param(
+            # A different pod-side git verb inside the double-quoted payload.
+            'ssh pod-1689 "cd /workspace && git switch main"',
+            id="NDS2-double_quoted_pod_side_git",
+        ),
+        pytest.param(
+            # gcloud compute ssh head + double-quoted payload — parity with
+            # #1463's gcloud allowance, extended to double quotes.
+            'gcloud compute ssh pod-1 --command "cd /w && git rebase main"',
+            id="NDS3-double_quoted_gcloud_compute_ssh",
+        ),
+        pytest.param(
+            # Additional pod-side git-verb variant inside the double-quoted
+            # payload (pins that a second verb class also waives).
+            'ssh pod-1 "cd /w && git checkout main"',
+            id="NDS4-double_quoted_second_verb_class",
+        ),
+        pytest.param(
+            # NDS_R6a anti-vacuity twin: double-quoted arm keeps the R4/R6
+            # repo-path / cd-latch refusals intact. This CLOSE variant uses
+            # /workspace/other (non-repo path) so it MUST pass — proving the
+            # R4/R6 refusals fire only on the repo-path/cd-latch content,
+            # not on any cd + double-quoted shape.
+            'ssh pod-1689 "cd /workspace/other && git fetch origin"',
+            id="NDS_R6a-double_quoted_repo_path_with_cd_latch",
+        ),
+    ],
+)
+def test_ssh_double_quoted_payload_masking_allows(cmd):
+    """Arm 1 positive pins (#1710): double-quoted ssh payloads waive under R9."""
+    assert _run(cmd) == 0
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            # R9: dollar expansion in the payload — refuse. Payload uses a
+            # BLOCKED verb (git reset --hard) so the fall-through classifier
+            # blocks after refusal.
+            'ssh pod-1 "cd $HOME && git reset --hard"',
+            id="NDS_R1-double_quoted_payload_with_dollar_expansion",
+        ),
+        pytest.param(
+            # R9: command substitution — refuse. Payload carries a BLOCKED
+            # verb so fall-through classifier blocks.
+            'ssh pod-1 "cd /w && $(git reset --hard)"',
+            id="NDS_R2-double_quoted_payload_with_command_sub",
+        ),
+        pytest.param(
+            # R9: backtick — refuse. Payload carries a BLOCKED verb so
+            # fall-through classifier blocks.
+            'ssh pod-1 "cd /w && `git reset --hard`"',
+            id="NDS_R3-double_quoted_payload_with_backtick",
+        ),
+        pytest.param(
+            # R9: any backslash in the payload — refuse (Python \xNN /
+            # ANSI-C \x1b escapes resolve unpredictably).
+            'ssh pod-1 "cd /w \\&& git reset --hard"',
+            id="NDS_R4-double_quoted_payload_with_backslash",
+        ),
+        pytest.param(
+            # No closing double-quote — refuse (C-parity with the
+            # single-quoted branch's constraint-1).
+            'ssh pod-1 "cd /w && git reset --hard',
+            id="NDS_R5-double_quoted_payload_unbalanced_quote",
+        ),
+        pytest.param(
+            # R4 repo-path spelling inside the double-quoted payload — still
+            # refuses (the cd-to-repo latch is unchanged for double quotes).
+            'ssh vm "cd $HOME/explore-persona-space && git reset --hard"',
+            id="NDS_R6-double_quoted_payload_repo_path",
+        ),
+        pytest.param(
+            # R1 pipe-producer position stays classifying (parity with NM8).
+            'ssh host "cd /w && git reset --hard" | bash',
+            id="NDS_R7-double_quoted_payload_pipe_producer",
+        ),
+    ],
+)
+def test_ssh_double_quoted_masking_refusal_ladder_blocks(cmd):
+    """Arm 1 negative pins (#1710): every R9/R4/R1 refusal shape stays blocked."""
+    assert _run(cmd) == 2
+
+
+# ---- Arm 2: task.py double-quoted --note / --title / positional waiver ------
+# (occurrence 3 shape)
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            # Occurrence 3 shape: a double-quoted --note whose PROSE names a
+            # destructive git phrase (`git reset --hard`) but carries no
+            # actual mutation. The old --file workaround is no longer needed.
+            f"{_TASKPY} post-marker 1689 epm:progress "
+            f'--note "run-launched: git reset --hard to origin/issue-1689 R8 HEAD"',
+            id="NDP1-double_quoted_note_incident_3",
+        ),
+        pytest.param(
+            # Same shape via --title.
+            f'{_TASKPY} set-title 1689 "git reset --hard prose only"',
+            id="NDP2-double_quoted_title",
+        ),
+        pytest.param(
+            # Same via --origin-prompt.
+            f'{_TASKPY} new --kind infra --title "x" --origin-prompt "git merge issue-1"',
+            id="NDP3-double_quoted_origin_prompt",
+        ),
+        pytest.param(
+            # Positional double-quoted set-goal payload (parity with NP5).
+            f'{_TASKPY} set-goal 1689 "prose citing git rebase origin/main context"',
+            id="NDP4-double_quoted_positional_set_goal",
+        ),
+        pytest.param(
+            # Multiple double-quoted spans in ONE clause (parity with NP4).
+            f'{_TASKPY} post-marker 1689 epm:x --note "first prose" --title "second prose"',
+            id="NDP5-multi_double_quoted_spans_one_clause",
+        ),
+    ],
+)
+def test_taskpy_double_quoted_arg_masking_allows(cmd):
+    """Arm 2 positive pins (#1710): double-quoted task.py args waive under P7."""
+    assert _run(cmd) == 0
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            # P7: dollar expansion — refuse. Note contains a BLOCKED verb so
+            # fall-through classifies as blocked.
+            f'{_TASKPY} post-marker 1689 epm:x --note "$VAR git reset --hard"',
+            id="NDP_P7_R1-double_quoted_dollar_expansion",
+        ),
+        pytest.param(
+            # P7: command substitution — refuse.
+            f'{_TASKPY} post-marker 1689 epm:x --note "$(git reset --hard)"',
+            id="NDP_P7_R2-double_quoted_command_sub",
+        ),
+        pytest.param(
+            # P7: backtick — refuse.
+            f'{_TASKPY} post-marker 1689 epm:x --note "`git reset --hard`"',
+            id="NDP_P7_R3-double_quoted_backtick",
+        ),
+        pytest.param(
+            # P7: backslash — refuse (escapes in double-quoted strings resolve
+            # at bash-parse time).
+            f'{_TASKPY} post-marker 1689 epm:x --note "text with \\backslash and git reset --hard"',
+            id="NDP_P7_R4-double_quoted_backslash",
+        ),
+        pytest.param(
+            # No closing double-quote — refuse.
+            f'{_TASKPY} post-marker 1689 epm:x --note "unbalanced git reset --hard',
+            id="NDP_P7_R5-double_quoted_unbalanced",
+        ),
+    ],
+)
+def test_taskpy_double_quoted_masking_refusal_ladder_blocks(cmd):
+    """Arm 2 negative pins (#1710): every P7 refusal shape stays blocked."""
+    assert _run(cmd) == 2
+
+
+# ==== #1710 — python -c string literal mask ==================================
+#
+# (occurrence 4 shape) A `python -c '<inert prose>'` / `uv run python -c
+# "<inert prose>"` payload whose Python STRING LITERAL merely quotes a
+# destructive-git phrase as PROSE (a fingerprint helper hashing a bug
+# description) now masks under C1-C10. The refusal ladder is STRICTER than
+# ssh/taskpy: a `python -c` payload is executable code by construction, so
+# `import subprocess` / `os.system` / any function-call shape refuses.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            # Occurrence 4 shape: single-quoted inert string literal that
+            # quotes a destructive-git phrase as prose only.
+            "python -c 'phrase mentioning git reset --hard as prose only'",
+            id="NPC1-python_c_single_quoted_inert_string",
+        ),
+        pytest.param(
+            # Same, double-quoted.
+            'python -c "phrase mentioning git reset --hard as prose only"',
+            id="NPC2-python_c_double_quoted_inert_string",
+        ),
+        pytest.param(
+            # The incident 4 helper shape: `uv run python -c '<inert>'`.
+            "uv run python -c 'phrase mentioning git rebase origin/main as prose'",
+            id="NPC3-uv_run_python_c_inert",
+        ),
+        pytest.param(
+            # Versioned python head (parity with the taskpy mask's head).
+            "python3.11 -c 'phrase mentioning git checkout -b main as prose'",
+            id="NPC4-python3_11_c_inert",
+        ),
+        pytest.param(
+            # Anti-vacuity twin: the SAME inert phrase blocks via the
+            # taskpy-mask + fall-through paths WITHOUT a python -c head.
+            # This proves the C1 head regex is NOT the only refusal — a
+            # `bash -c` version still blocks because `bash -c` is a
+            # shell-consumer head whose quoted args are executable code, and
+            # the fall-through does not mask a shell-consumer.
+            'bash -c "phrase mentioning git reset --hard"',
+            id="NPC_anti_vacuity_bash_c_still_blocks",
+        ),
+    ],
+)
+def test_python_c_string_literal_masking_allows(cmd):
+    """Arm 3 positive pins (#1710): python -c inert-prose literals waive."""
+    # NPC_anti_vacuity_bash_c_still_blocks pins that bash -c does NOT get
+    # the same waiver — the C1 head regex rejects it and the fall-through
+    # scans the whole command; the raw `git reset --hard` in the quoted arg
+    # trips the pre-filter.
+    expected = 2 if "bash -c" in cmd else 0
+    assert _run(cmd) == expected
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            # C7: payload contains `subprocess` — refuse.
+            "python -c 'import subprocess; git reset --hard'",
+            id="NPC_C4_R1-python_c_with_subprocess_import",
+        ),
+        pytest.param(
+            # C7: `os.system` — refuse. Payload also names a BLOCKED verb
+            # so the fall-through classifier keeps it blocked.
+            "python -c 'x = os.system(\"git reset --hard\")'",
+            id="NPC_C4_R2-python_c_with_os_system",
+        ),
+        pytest.param(
+            # Any function-call shape refuses (conservative arm). Payload
+            # also names a BLOCKED verb so fall-through blocks.
+            "python -c 'foo(x); git reset --hard'",
+            id="NPC_C4_R3-python_c_with_any_function_call",
+        ),
+        pytest.param(
+            # C5: backtick — refuse. Payload also names a BLOCKED verb.
+            "python -c '`inline` and git reset --hard'",
+            id="NPC_C4_R4-python_c_with_backtick",
+        ),
+        pytest.param(
+            # C6: dollar — refuse. Payload also names a BLOCKED verb.
+            "python -c 'text with $VAR and git reset --hard'",
+            id="NPC_C4_R5-python_c_with_dollar",
+        ),
+        pytest.param(
+            # C4: backslash — refuse. Payload also names a BLOCKED verb.
+            "python -c 'text with \\x1b and git reset --hard'",
+            id="NPC_C4_R6-python_c_with_backslash",
+        ),
+        pytest.param(
+            # C3: no closing quote — refuse.
+            "python -c 'text with git reset --hard as prose",
+            id="NPC_C4_R7-python_c_unbalanced_quote",
+        ),
+    ],
+)
+def test_python_c_string_literal_masking_refusal_ladder_blocks(cmd):
+    """Arm 3 negative pins (#1710): every C3-C10 refusal shape stays blocked."""
+    # Note: R1 - R5 above are C-tail / C4 / C5 / C6 / C4 refusals respectively;
+    # the raw command's trigger-vocab (git reset / git rebase) then hits the
+    # pre-filter and the command classifies to block. On refusals that also
+    # carry `subprocess` / `os.system` etc., the pre-filter's git-verb trigger
+    # is what classifies; the C7-C10 refusals block the MASKING but the raw
+    # command still tokenizes through the classifier normally.
+    assert _run(cmd) == 2
+
+
+# ---- Cross-arm compound composition — must not regress ----------------------
+
+
+def test_NCX2_real_mutation_after_python_c_mask_still_blocks():
+    """(#1710) NCX2: a waived python -c call followed by a bare real
+    mutation — the LATER mutation still blocks (clause-by-clause classify).
+    """
+    cmd = "python -c 'inert prose about git rebase main' && git switch issue-42"
+    assert _run(cmd) == 2
+
+
+def test_NCX3_real_mutation_before_taskpy_double_still_blocks():
+    """(#1710) NCX3: a bare real mutation followed by a double-quoted
+    task.py note — the EARLIER mutation still blocks.
+    """
+    cmd = f'git switch issue-42 && {_TASKPY} post-marker 1 epm:x --note "prose"'
+    assert _run(cmd) == 2
 
 
 def test_zz_production_sidecar_untouched_by_suite():

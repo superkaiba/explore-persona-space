@@ -819,6 +819,13 @@ correct lifecycle state:
   (look under `scripts/` or `src/explore_persona_space/experiments/`).
   The script is your source of truth for what was supposed to be
   produced and where it was supposed to go.
+- **Remediation that materializes an artifact from markers must match
+  the producer schema (#1775).** When your Step-6 remediation list has
+  the next actor back-fill a run artifact from markers, name the
+  producer-schema duty (grep the experiment's writer; sidecar
+  `<name>.materialized.json` when unclear). A canonical-path file whose
+  schema mismatches the experiment's own writer is a GAP (FAIL), not a
+  verified artifact.
 
 ## v2 mode (`workflow: v2` tasks)
 

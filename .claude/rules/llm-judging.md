@@ -5,9 +5,9 @@ behavior-expression dependent variable** (sycophancy, refusal, hedging,
 style, trait, alignment/EM verdict — any DV where an LLM scores whether a
 model output expresses a target behavior). The always-on backstop is the
 CLAUDE.md "Measurement validity" bullet + the "LLM judge =
-`claude-sonnet-4-5-20250929`" bullet; this file is the full 23-guideline
-recipe those bullets point at (the 21 judge-scoring guidelines plus the
-two-rule § E2 continuous-companion-DV recipe), in the on-demand register.
+`claude-sonnet-4-5-20250929`" bullet; this file is the full guideline
+recipe those bullets point at (the judge-scoring guidelines plus the
+§ E2 continuous-companion-DV recipe), in the on-demand register.
 
 Cross-links: `.claude/rules/persona-vectors-recipe.md` (the graded-judge
 precedent — its rubric is a 0–100 trait score), CLAUDE.md § Measurement
@@ -196,6 +196,13 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     integer, so the response-token budget must cover the full rationale:
     give any reasoning rubric **≥ ~300 response tokens** (the #1090 recovery
     point); a score-only rubric (bare integer, no rationale) can stay small.
+    The floor is a floor, not a guarantee: #1739's sycophancy wave at
+    `max_tokens=400` (86,521 rollouts × 3 draws) still truncation-censored
+    5.4% of draws — a surgical higher-budget re-judge recovered them to
+    2.3% — so the post-resize per-arm drop re-measure below is the binding
+    check at ANY budget, and a percent-level parse-error residue at an
+    above-floor budget is still a truncation signature to re-judge, never
+    noise.
     An undersized cap fails SILENTLY: the API truncates the response at
     `max_tokens` before the score token is ever emitted, the truncated text
     fails to parse, and rule 9's drop-never-coerce then discards the draw —
@@ -240,6 +247,18 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     re-judge (a miss, never a wrong read). Report the per-arm dropped-draw
     rate + the `max_tokens` used alongside every judged DV (rule 9's
     per-arm dropped count; rule 18's pinned-report list).
+
+25. **Name the confusable neighbor categories in any CATEGORY-axis rubric.**
+    A judged categorical DV (a yes/no or k-way label over units — e.g.
+    `persona_related` over SAE features) names its known confusable neighbor
+    categories in the rubric and instructs the judge how to label them
+    (negatives or a separate label), and the axis is validated by inspecting
+    top-ranked positives for neighbor contamination BEFORE it carries a
+    headline. Incident #1482: 20/40 top "persona" features were bare
+    language-identity features — answer language is near-deterministic given
+    query language, so the unnamed neighbor rode the judged contrast; caught
+    ~2h post-ship, rubric amendments posted in-flight, durable instrument
+    #1773.
 
 ## D. Judge model
 
@@ -435,7 +454,9 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
   rubric-bearing key; the plan names the cache key fields per rule 22.
 - Rule 23 (response-budget sizing) rides the same lens load: a plan whose
   judged DV uses a reason-then-score rubric names its judge `max_tokens`
-  (≥ ~300, or a stated justification) and its per-arm drop-rate report;
+  (≥ ~300, or a stated justification — the floor is a floor, not a
+  guarantee: the post-resize per-arm drop re-measure binds at ANY budget,
+  #1739) and its per-arm drop-rate report;
   the Statistics & Measurement critic REVISEs an unsized reasoning-rubric
   judge. Plan-enforced in v1 — no mechanical lint.
 - Rule 24 (transport-vs-content split) rides the same lens load: a plan whose
@@ -457,6 +478,10 @@ task body #810 (the shared judge-cache rubric-leak incident behind rule 22);
 task body #1090 (the max_tokens truncation-censoring incident behind rule 23
 and the ~2,638 stored API-529 transport-error draws behind rule 24); task
 body #1206 (the transport-vs-content split);
+task body #1739 (the above-floor 400-token truncation residue behind the
+rule-23 measured point and the REFUSAL tally split);
+task body #1482 (the category-axis confusable-neighbor incident behind
+rule 25);
 `.claude/rules/persona-vectors-recipe.md` (the graded-judge precedent +
 judge-filter drop rule); `.claude/rules/marker-leakage-measurement.md` (the
 non-judged marker DV); the enforcing agent files (`planner.md`, `critic.md`,

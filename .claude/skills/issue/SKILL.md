@@ -2190,6 +2190,53 @@ entities before persisting" + "Extract the output-file text via the
 transcript recipe" (#952 v9, #1219; independently rediscovered by sessions
 #1287 + #1288 on 2026-07-13 — the pointer this paragraph exists to spare).
 
+**Pre-split multi-deliverable builds at dispatch (#1810; precedents
+#1090/#1775).** Before composing the brief, count the approved plan's
+distinct planned CODE deliverables — new or substantially-rewritten
+`scripts/` / `src/` / `tests/` files named in the plan's "File paths +
+concrete diffs" section (doc-only files excluded). More than 4 code
+deliverables ⇒ dispatch the build as sequential MICRO-SCOPED units by
+default, never one monolithic brief. Grounding: #1775's 7-deliverable
+build died at the subagent context ceiling after 139 tool calls /
+~63 min (~20 tool calls per code deliverable puts the risk zone at
+~5-6; ≥5 buys margin below the observed death at 7); a lower-count
+build with a comparably large projected build volume (very large
+per-file scope, heavy smoke phases) MAY pre-split by judgment. Unit
+shape: units of ≤3 deliverables each, run sequentially with a fresh
+context per unit, each unit's brief scoped to its own self-contained
+deliverable subset (the #1090 rounds-A/B shape). Marker contract:
+INTERMEDIATE units commit their work by explicit path and RETURN a
+commit manifest with NO implementation marker; ONLY the FINAL unit
+runs the full per-phase `## Smoke run` H2 — covering every pipeline
+phase INCLUDING phases built by earlier units, so the final unit's
+smoke scope exceeds its own unit scope, and its brief states this
+outright — and posts `epm:experiment-implementation` / `epm:results`
+at max+1 per the existing brief contract. Round semantics: all units
+run within ONE review round (no round-counter increment between
+units); the Step 5 code-review ensemble reviews the whole round diff
+once, after the final unit. Model rule: default session model per
+unit — never a smaller-model pin (the Step 5b thrash-inverse rule,
+#1090 forensics). Mid-split resume/idempotency: after each
+INTERMEDIATE unit returns, the orchestrator posts an `epm:progress`
+breadcrumb — `pre-split unit k/M complete: <commit SHAs>; remaining:
+<deliverables>` — and a resuming session that finds the task at
+`running` mid-split scopes its re-dispatch to the REMAINING units
+(derived from the latest such breadcrumb plus the branch's committed
+deliverables), NEVER the monolith and never a unit-1 re-dispatch over
+already-committed files (the remaining-units re-dispatch satisfies
+the resume table's "no implementation marker → re-spawn implementer"
+row). TDD interaction: under `tdd_mode=true` the split applies to the
+POST-approval implementation dispatch — test-authoring is one unit,
+and the final unit posts the marker. Step 9b same-issue follow-up
+rounds inherit this clause via the existing "follows the Step 4b
+brief contract" reference — no separate Step 9b wiring. This clause
+is the dispatch-time application of the Step 5b "Autocompact-thrash
+respawn recipe" split (#1775's recovery applied this same split
+post-death, at ~15 min triage + respawn overhead, when the plan's own
+deliverable count had made it available at dispatch time); the
+Step 5b recipe stays unchanged as the backstop for unforeseen thrash
+deaths.
+
 Brief passed to the implementer:
 - The plan path (the `plans/plan.md` symlink, NOT the body text)
 - Task number + worktree path + branch name
@@ -2855,7 +2902,11 @@ refusal rung (b2) sonnet pin) — they are just not a thrash remedy. The
 micro-scoped respawn IS item 4's one bounded re-spawn where item 4
 applies (same `v<n>`, no round-counter increment); for a multi-unit
 split, the units run sequentially within that same round (#1090: "Same
-round counter (round 1 continues; re-spawns do not increment)").
+round counter (round 1 continues; re-spawns do not increment)"). The
+dispatch-time twin of this split lives at Step 4b ("Pre-split
+multi-deliverable builds at dispatch", #1810) — a KNOWN
+multi-deliverable build is pre-split BEFORE the first spawn; this
+recipe stays the recovery-side backstop for unforeseen deaths.
 
 The existing marker-keyed no-show path — the Codex wrapper POSTING
 `epm:failure v<m>` (`failure_class: codex-output-malformed` or `infra`)
@@ -2897,8 +2948,9 @@ wc -c < "$MB"   # >=50000 -> the existing artifacts-file oversize fallback
 grep -m1 '^\*\*Verdict' "$MB"            # single-verdict sites (5c / 9a / 9a-bis)
 grep -E '^### Proposal|^\*\*Verdict' "$MB"   # 9b VC only: per-proposal verdicts — no -m1
 grep -m1 '^\*\*Blocker tags:' "$MB" || true  # sites that carry it (5c-bis / 9a-bis strips)
-# 4. Post without reading:
-uv run python scripts/task.py post-marker <N> epm:<kind> --version <n> \
+# 4. Post without reading (OMIT --version: it auto-derives max+1; the round
+#    lives in the extracted block's head sentinel the sed extraction keys on):
+uv run python scripts/task.py post-marker <N> epm:<kind> \
   --file "$MB"
 ```
 
@@ -3865,6 +3917,80 @@ exception: the fixed `write_completion_sentinel` append chained onto the
 workload command (`.claude/agents/experimenter.md`) — signature-stable
 and probe-covered by the gotchas #1310 pre-launch discipline, not ad-hoc
 workload logic.
+
+**Hand-composed phase argv dry-run (REQUIRED before any instance-booting
+dispatch of a newly-composed argv; #1738).** Before any
+`dispatch_issue.py launch --workload-cmd '<cmd>'` (any lane) whose inner
+driver argv was hand-composed this session — a NEW phase, a follow-up
+round, a plan-§10 command transcription — dry-run the EXACT production
+argv on the VM first. Re-dispatching a byte-identical, previously-probed
+command whose driver's CLI/validation surface is untouched since that
+probe is exempt. FIRST classify the driver's CLI family
+(`grep -n 'parse_args\|@hydra.main' <script>`): a Hydra driver
+(`@hydra.main` — e.g. `scripts/train.py`, `scripts/eval.py`) is probed
+with Hydra's own compose-only check (append `--cfg job` to the exact
+production overrides; it composes the config and exits without running
+the job) — the argparse probe below validates NOTHING for Hydra. For an
+argparse driver, prefer the driver's own `--dry-run` / parse-only flag
+when one exists; otherwise run the generic bounded probe:
+
+```bash
+# Generic argv dry-run — <script.py> + the EXACT production args.
+# Runs the driver through parse_args AND its early post-parse
+# validation, bounded; the driver's own imports run (torch etc.), so
+# allow ~60s.
+timeout --kill-after=10s 60s uv run python - <script.py> <args...> <<'PY'
+import argparse, runpy, sys
+sys.argv = sys.argv[1:]                    # ['<script.py>', <args...>]
+engaged = []
+_orig = argparse.ArgumentParser.parse_args
+def _probe(self, *a, **k):
+    ns = _orig(self, *a, **k)
+    engaged.append(True)
+    print("ARGV-PARSE-OK:", ns, flush=True)
+    # Do NOT exit here: the repo's dominant convention enforces
+    # required inputs POST-parse via
+    # raise SystemExit("--x or --y required") (44 scripts; incident
+    # #1738: issue1738_multiturn_fits.py:1629, rc=1) — post-parse
+    # validation must execute.
+    return ns
+argparse.ArgumentParser.parse_args = _probe
+runpy.run_path(sys.argv[0], run_name="__main__")
+if not engaged:
+    print("ARGV-PROBE-NEVER-ENGAGED", file=sys.stderr); sys.exit(3)
+PY
+```
+
+Read the outcome by MESSAGE, not rc alone:
+
+| Outcome | Reading |
+|---|---|
+| rc=2 (argparse error: missing-required / unknown flag) | Argv defect — fix it on the VM in seconds instead of after a boot cycle. |
+| rc=1 with a validation message after `ARGV-PARSE-OK` (the `SystemExit("--x or --y required")` class) | Argv defect — the #1738 class (Phase-3 attempt 1 omitted the required `--split-file`/`--manifest-*` flag; the workload died rc=1 ~7 s AFTER a full GCE flexstart boot + venv install). |
+| rc=124 (timeout) with `ARGV-PARSE-OK` printed | PASS — parse + early validation survived the window. The timeout is the deliberate side-effect ceiling: the driver may begin real work (mkdir, HF reads) inside it, so probe BEFORE any out-root state you care about. |
+| rc=137 with `ARGV-PARSE-OK` printed | PASS — the `--kill-after` hard-kill variant of the timeout outcome (the driver ignored SIGTERM); same disposition as rc=124. |
+| Nonzero exit AFTER `ARGV-PARSE-OK` whose message names a VM-only environment gap (a pod/GCE-staged path absent locally, CUDA on a no-GPU VM) | Judged pass — state it in one line in the dispatch note. |
+| rc=0 WITH `ARGV-PARSE-OK` printed | Pass — but the ENTIRE workload ran to completion LOCALLY and succeeded; state explicitly that local execution occurred (vanishingly rare for an instance-booting workload — it usually means the dispatch may not be needed at all). |
+| rc=3 + `ARGV-PROBE-NEVER-ENGAGED` | No argparse parser was reached (Hydra or a bespoke CLI) — NEVER a pass; use the family-appropriate check above. |
+| Any exit with NEITHER sentinel printed (e.g. a parser-less script that `sys.exit(0)`s on its own before the guard runs) | NEVER a pass — treat as never-engaged; every pass row above is sentinel-keyed. Use the family-appropriate check above. |
+
+Notes: (a) a bare `--help` probe validates NOTHING about the composed
+argv (help exits 0 before any validation) — `experimenter.md` item 7's
+flag-presence scan is the COMPLEMENT (bogus flags); this probe is the
+missing-input side. (b) For a wrapper `.sh` dispatcher, probe the INNER
+python driver argv the wrapper composes (plus `bash -n <wrapper>` for
+wrapper syntax). (c) A driver calling `parse_known_args` directly
+bypasses the monkeypatch (one direct caller today:
+`src/explore_persona_space/experiments/factor_screen_365/__main__.py`)
+— the never-engaged guard converts that to rc=3 when the script
+returns; a script that exits on its own shows NEITHER sentinel, which
+the table's neither-sentinel row bars from reading as a pass. The guard DETECTS a
+parser-less run after the fact (the script may have executed fully
+within the timeout window before rc=3 returns); PREVENTION rests on the
+first-step CLI-family grep classification plus the timeout ceiling.
+(d) This is a pre-launch PROBE, not a workload — the "Ad-hoc probe
+workloads" committed-script rule above governs workload bodies, not
+this probe (same class as the gotchas #1310 signature probe).
 
 The handle the dispatch helper returns is persisted to
 `.claude/cache/issue-<N>-handle.json` (the bg-Bash poller reads it
@@ -5961,7 +6087,12 @@ uploaded; a downstream experiment had to re-train two months later. See
 `.claude/agents/upload-verifier.md` § Step 2.5 for the full rationale.
 
 Post `epm:upload-verification v1` event with per-artifact PASS/FAIL +
-URLs.
+URLs. A PASS note MUST carry the literal token `Verdict: PASS` — the
+finalize teardown gate matches `UPLOAD_VERIFICATION_PASS_RE`
+(`task_workflow.py` `re.compile(r"Verdict:\s*PASS\b")`), and a PASS
+note in any other shape is refused as a FAIL at teardown (#1775,
+2026-07-29: a healthy PASS was refused for ~3 min until the regex was
+grepped and the marker reposted).
 
 - **PASS** -> teardown the compute, then move status to `interpreting`
   and proceed to Step 9. (Same-issue follow-up round? At
@@ -6247,7 +6378,11 @@ URLs.
   missing-artifacts list, lifecycle-aware resumes the pod if needed,
   pushes to HF / WandB / git, and posts `epm:upload-fix v1`. After each
   uploader round, re-run `upload-verifier`; it posts a fresh
-  `epm:upload-verification v<N+1>`.
+  `epm:upload-verification v<N+1>`. Any gap-fill (uploader- or
+  orchestrator-side) that MATERIALIZES a missing run artifact from
+  markers must reproduce the experiment writer's exact schema, or write
+  a `<name>.materialized.json` sidecar (#1775; full rule: uploader.md
+  § Rules).
 
   Round outcomes:
   - **uploader COMPLETE + verifier PASS** -> proceed as PASS branch above.
@@ -7184,6 +7319,10 @@ unchanged.
 
 **Inline estimator-validity + record-integrity duties (REQUIRED — same rationale: this carve-out skips the planner+critic stack, where the fit-well-posedness / estimator-parity / promoted-body-consistency reviews live):** (1) BEFORE any ridge / linear-map / probe FIT, the dispatch note states `n_train` vs the feature dimension `d`; when `n_train < d` the round REFUSES the fit unless the note explicitly justifies a deliberately under-determined regime (regularization-limit / null-space read / smoke shape) — every held-out R² in the `n_train < d` regime is estimator-degenerate, not a signal read (#1701, sess `dffde9b6`: n=1,877 vs d=3,584 → ceiling 0.099 vs published 0.625). (2) BEFORE launching any re-implemented estimator whose in-repo reference the round can name (a `scripts/issue1345_operator_comparison`-style chain, a canonical `ridge_fit_predict_fast`, a shipped judge/scorer), the dispatch note records the DIFF between the new estimator and the named reference (function + file) — permissiveness-broadening (more inputs absorbed, weaker constraints) is called out explicitly. (3) When a round REFUTES a claim in ANY task's promoted body (its own parent or a sibling), it MUST — in the SAME turn as the result summary — either apply a NON-Takeaway PROSE correction directly to the refuted task's body via `task.py set-body` (typo / caption / fixed numeric value — never `task.py promote` or a `classification` flip; the user-only classification contract is unchanged) OR file a `kind: infra` task via `scripts/file_infra_task.py` naming the refuted issue and the refuting evidence — filing is the presumption for anything touching a bolded Takeaway; a chat-only "I did not fix X" is an INCOMPLETE round (#825's promoted Takeaway was refuted and nothing filed; #1701 origin).
 
+**Instrument-supersession + scope-extension addenda duties (REQUIRED — same rationale: this carve-out skips the planner+critic stack, where instrument-fitness review and plan-revision re-review live):**
+(1) BEFORE dispatching any stage that spends on a measurement instrument (an LLM-judge rubric, a labeling scheme, a scorer) — and AGAIN the moment such knowledge lands mid-round — the round checks (a bounded check: session knowledge plus a quick task-title scan, never an unbounded fleet-wide search) whether a SUPERSEDING instrument for the same measurement is in flight (a filed / in-progress task building a stronger replacement — the #1773 shape) or the current instrument is known-weak with a named replacement being designed; if so the DEFAULT is to HOLD the spend-bearing stages (Batch-API judge calls, GPU evals) until the superseding instrument lands — recorded as an `epm:progress` hold note naming the superseding task — and proceeding anyway requires the dispatch note to state why the known-weak instrument still serves (needed now / results not superseded / trivially cheap), never leaving the freeze to user vigilance (2026-07-28: three live SAE rounds kept burning Batch-API judge spend on labels #1773 was designed to supersede; frozen only after the user asked twice).
+(2) A mid-round SCOPE-EXTENSION ADDENDUM — a user ask or self-initiated extension adding cells / draws / rows / behaviors / stages to a live inline round — is a DISPATCH for duty purposes (the scope-extension sibling of the compute-character block's "realized implementation later adds a fit/battery" drift sentence): it carries its own compute-character pre-launch statement (ops arithmetic, named batched helper, parallelization width) plus whichever other duty blocks its content triggers (both-arms mapping, figure-sanity, estimator-validity), posted BEFORE the addendum launches (2026-07-28: "parallel + vectorized" had to be re-stated twice before a throughput addendum landed — the statement bound only the original dispatch).
+
 **Pod-safety pre-launch signals (deviation case — a pod on a
 parked/terminal parent).** This step and its user-chat sibling (the
 CLAUDE.md § Routing "User-chat inline free analysis" carve-out) are
@@ -7782,7 +7921,11 @@ spawned for v4. After the 9a-bis PASS the orchestrator:
    — immediately after the `<!-- clean-result-v4 -->` sentinel, before
    `## Takeaways` — linking the GitHub blob (SHA-pinned to the `main`
    commit) and the gist (drop the `· [gist](...)` suffix when the gist
-   fail-softed).
+   fail-softed). `<DOC_SHA>` is ALWAYS taken from command output —
+   `DOC_SHA=$(git rev-parse HEAD)` right after the doc commit — never
+   typed or hand-extended from a short SHA (the never-fabricate-SHAs
+   rule; 2026-07-29 on #1738: a hand-extended short SHA 404'd the blob
+   URL and burned a verifier FAIL round).
 6. Posts `epm:methodology-doc-generated v1` (`doc_path` + `commit` +
    `gist_url`).
 
@@ -9093,7 +9236,25 @@ suite directly and posts an `epm:test-verdict` event with the result.
       on a worktree-based task whose branch HAS commits ahead of the base,
       that NOTE means wrong cwd, re-run from the worktree; from a correct
       worktree with no commits ahead of the base it also fires and is then
-      expected and benign). The selector's diff base defaults to fetched
+      expected and benign).
+
+      Pre-gate spec-freshness re-sync (#1742): AFTER the `cd "$WT"` below
+      and BEFORE invoking the selector, run the Step 5a family-atomic
+      spec-freshness block (§ Step 5a) ONCE from the worktree cwd. This
+      is a BINDING reference — never inline a THIRD `FAMILY_OF` copy
+      here (a third inlined copy would escape
+      `test_step10d_family_atomicity_matches_step5a`'s drift guard). The
+      Step 5a block's own `WT=$(git rev-parse --show-toplevel)`
+      derivation is CORRECT at this call site (step 1a already `cd`s to
+      the worktree), and its on-main skip guard makes the reference safe
+      for repo-root-based tasks (no worktree ⇒ the sync no-ops). A sync
+      commit here is SAFE — no SHA-bound verdict exists at 9c — and it
+      must PRECEDE subset computation: the selector's three-dot diff
+      then simply reflects the freshened files, whose content is main's
+      own, so a freshened pin test runs against the freshened spec
+      instead of failing the gate on the stale worktree copy (the #1742
+      class: a main-side spec fix landing after the Step 5a sync red the
+      gate round). The selector's diff base defaults to fetched
       `origin/main` (#1289: the shared root's local `main` lagged origin on
       2026-07-12 and polluted #1281's gate to 41 files with foreign touched
       files; bounded 120 s fetch — a fetch failure degrades to last-fetched
@@ -9105,6 +9266,9 @@ suite directly and posts an `epm:test-verdict` event with the result.
       WT="$REPO_ROOT/.claude/worktrees/issue-<N>"   # same-issue follow-up rounds use
                                                     # their own issue-<N>-<suffix> worktree
       cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
+      # Pre-gate spec-freshness re-sync (#1742): run the Step 5a
+      # family-atomic block (§ Step 5a) HERE, before the selector —
+      # reference § Step 5a, never a third inlined FAMILY_OF copy.
       uv run python scripts/select_step9c_tests.py   # base defaults to FETCHED origin/main (#1289)
       ```
       It prints the exact gate command —
@@ -11245,13 +11409,24 @@ tests BEFORE anything lands:
   binding sites' line-2 sha check already fails CLOSED on. Worst case —
   every bounded leg wedged — the call runs ~78 min, past the 60-min
   § Long-phase heartbeat boundary (rare; a watcher force-stop there is
-  itself fail-closed: no verdict file gets written).
+  itself fail-closed: no verdict file gets written). Print the
+  diagnostic tails via the canonical fail-soft compound in the block
+  below — this is the Recipe exit-code hygiene class (Step 9c 1b): on a
+  PASS these files are routinely empty or absent, so a bare trailing
+  `grep`/`cat`/`[ -s ]` leg exits non-zero and reads as a tool error;
+  every leg is if-formed and the block ends exit-0 on a healthy read.
 
   ```bash
   if [ ! -f /tmp/issue-<N>-lint-verdict.txt ]; then
     echo "FATAL: verdict file missing — the background gate run died before writing a verdict. Kill-before-relaunch, then re-run the gate ONCE; NEVER record pass." >&2
   else
     cat /tmp/issue-<N>-lint-verdict.txt   # line 1: verdict; line 2: certified sha — the merge conditional below stays the hard stop
+    # Fail-soft diagnostic tails (Recipe exit-code hygiene, Step 9c 1b):
+    # empty/absent on a PASS by design — never a bare trailing grep/cat/
+    # [ -s ] leg here (it would exit 1 and read as a tool error).
+    for f in lint-new lint-owndiff tg-new tg-new-nodes; do
+      if [ -s "/tmp/issue-<N>-$f.txt" ]; then echo "--- $f ---"; head -20 "/tmp/issue-<N>-$f.txt"; fi
+    done; true
   fi
   ```
 
@@ -11388,7 +11563,15 @@ tests BEFORE anything lands:
   fresh gate run regenerates it). A merge that fails for a NON-lint
   transport reason (the #1041 rebase-refusal → `--squash`-retry shape)
   therefore stays certified by the SAME gate run — never hand-recreate the
-  verdict file (#1082). On a `block` (or `crash`) verdict:
+  verdict file (#1082). ONE mechanically-gated exception (#1807): the
+  auto-merge RE-BIND stanza (safe-case block) may rewrite LINE 2 ONLY —
+  line 1 is never touched — after its own `git diff --name-status
+  <certified-sha>..HEAD` probe proves the post-gate sync commit's delta is
+  origin/main-identical `A`/`M`-only; the license covers ONLY that stanza
+  executing over its own probe output — a free-standing "update line 2"
+  move stays banned, and the #1613 empty-commit synchronize explicitly
+  STAYS a stale-verdict → gate-re-run case, never a re-bind. On a `block`
+  (or `crash`) verdict:
   1. An own-diff-named gated failure line exists
      (`/tmp/issue-<N>-lint-owndiff.txt` non-empty) → the payload is the
      offender. Fix it in the worktree (the lint names file + rule),
@@ -11586,9 +11769,26 @@ tests BEFORE anything lands:
     3. End with one echo — `[step10d] post-gate re-sync: synced <n> files (<sha>) | no drift` —
        so ran-vs-never-ran is observable in the merge transcript (copy
        the line into the `epm:merged` / `epm:merge-failed` note).
-    4. `gh pr merge --squash` — if it returns `CONFLICTING`, fall
-       through to the existing merge-conflict-recovery path
-       (§ Concurrent-committer merge conflicts).
+    4. If the re-sync COMMITTED (`<sha>` != `no-drift`), run the verdict
+       RE-BIND stanza (auto-merge subsection, #1807): enumerate the
+       certified-sha..HEAD delta with `git diff --name-status`; every
+       row must be `A`/`M` with content byte-identical to fetched
+       `origin/main` — then line 2 of the verdict file is re-bound to
+       the new tip (line 1 is never touched), because a delta that only
+       adds/overwrites files with main's own bytes cannot change the
+       landing tree the gate certified. ANY other delta — a
+       `D`/`R*`/`C*`/`T`/`U` status row (the sync's
+       `checkout origin/main --` can only add/modify, never delete) or
+       a non-identical file — fails CLOSED: verdict removed, no merge,
+       re-run the gate.
+    5. The head-sync pre-check (#1657) runs AFTER the re-sync +
+       re-bind — it polls PR-object parity against the FINAL tip (a
+       fresh sync push re-introduces exactly the lag the pre-check
+       absorbs; polling before the sync would check the wrong tip).
+    6. `gh pr ready` + `gh pr merge --squash` — if it returns
+       `CONFLICTING`, fall through to the existing
+       merge-conflict-recovery path (§ Concurrent-committer merge
+       conflicts).
 
   The Guard-3 subject-scoped commit-subject convention still applies —
   never write a full-message grep-exclusion invocation into this Step 10d
@@ -11609,7 +11809,11 @@ tests BEFORE anything lands:
   this sync (the family is still dirty), so the gate's #1456 3-way
   merge of `workflow_lint.py` remains the covering mechanism for that
   specific file's payload edits, and the merge's own conflict resolution
-  handles the residual.
+  handles the residual. As of #1807 the verdict-file SHA mechanics AGREE
+  with this landing-tree argument: when step 4's probe mechanically
+  proves the sync commit's delta payload-free, the re-bind stanza moves
+  line 2 to the sync tip instead of forcing a full gate re-run; every
+  unverifiable tip delta still fails CLOSED into a gate re-run.
 
 #### The auto-merge procedure (safe case: guard 3 clean — mainline-based, own commits in scope)
 
@@ -11689,33 +11893,11 @@ else
   # new commits since certification — re-run the gate). The verdict is
   # consumed (rm) only AFTER `gh pr merge` SUCCEEDS: a non-lint transport
   # failure (#1041 rebase refusal) leaves it valid for the same-tip retry
-  # — never hand-write the verdict file (#1082).
+  # — never hand-write the verdict file (#1082; sole exception: the
+  # mechanically-gated RE-BIND stanza below, line 2 only).
   if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/null \
      && [ -n "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" ] \
      && [ "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" = "$(git -C "$WT" rev-parse HEAD)" ]; then
-    # Head-sync pre-check (#1657, READ-ONLY — the tip is untouched, so the
-    # SHA-bound verdict above stays valid): every push this invocation made
-    # (Guard-0/1 commits, the pre-gate spec-freshness commit) races
-    # GitHub's PR-object sync — #1614's attempts 1-2 were refused
-    # 'Head branch is out of date' while the PR object lagged the pushed
-    # tip ~6 min. Poll until the PR object reports the local tip AND a
-    # settled mergeability; a settled CONFLICTING exits too (the merge
-    # attempt then classifies to shape 2 below, unchanged). Check-first
-    # bounded until-loop — never a leading foreground sleep
-    # (harness-blocked; the shape-0 convention).
-    TIP=$(git -C "$WT" rev-parse HEAD); HS_TRIES=0
-    until HS=$(gh pr view <PR> --json headRefOid,mergeable -q '.headRefOid + " " + .mergeable' 2>/dev/null) \
-          && [ "${HS%% *}" = "$TIP" ] && [ "${HS##* }" != "UNKNOWN" ]; do
-      HS_TRIES=$((HS_TRIES + 1))
-      if [ "$HS_TRIES" -ge 6 ]; then
-        echo "head-sync pre-check: PR object still stale after ~2 min (saw: ${HS:-<no read>}; local tip: $TIP) — proceeding; Known failure shape 3 below is the recovery"
-        break
-      fi
-      sleep 20
-    done
-    if [ "${HS%% *}" = "$TIP" ]; then
-      echo "head-sync pre-check: parity at $TIP (mergeable=${HS##* })"
-    fi
     # Post-gate freshness re-sync (#1714): the lint gate has PASSed against
     # origin/main-as-of-gate-start; origin/main may have advanced during the
     # ~30-min gate window. Re-run the Step 5a family-atomic block with source
@@ -11768,20 +11950,98 @@ else
     SYNC_COUNT=$(echo $SAFE_SPECS_10D | wc -w)
     echo "[step10d] post-gate re-sync: synced $SYNC_COUNT files ($SYNC_SHA) | no drift"
     # --- end inline Step 5a family-atomic block ---
-    gh pr ready <PR>
-    if gh pr merge <PR> $MERGE_FORM --delete-branch=false; then
-      rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on MERGE SUCCESS — the verdict certified exactly the tip that landed
-      # Root-sync before epm:merged (#1725, safe-case): the just-merged diff is on
-      # origin/main; a workflow-surface fix in it is NOT yet live at the
-      # shared repo root, and the very next call — the epm:merged post —
-      # runs argv-prose guards from the pre-fix root copy (session
-      # 7ce3a81f, 2026-07-26: git-verb note text blocked ~25s post-merge).
-      # sync_repo_root.py is single-flight flock-serialized; fail-soft
-      # (the post-merge-guard pre-sync at the guard block below remains the fallback).
-      uv run python "$REPO_ROOT/scripts/sync_repo_root.py" || \
-        echo "[step10d/safe-case] pre-marker sync failed; post-merge-guard pre-sync remains the fallback"
+    # Verdict RE-BIND stanza (#1807): a re-sync that COMMITTED moved the tip
+    # past the verdict's certified sha (line 2), so a forced gate re-run
+    # would follow even though the gate's landing tree (git archive
+    # origin/main + own-diff overlay) is unchanged by a payload-free sync
+    # commit. Mechanically verify that: enumerate the cert-sha..HEAD delta
+    # with --name-status, NOT --name-only — a both-sides-absent DELETION (a
+    # stray non-sync commit deleting a branch-added file) exits
+    # `git diff --quiet origin/main HEAD -- <p>` ZERO, reading as
+    # "main-identical" while the certified landing tree CONTAINED the file
+    # via the own-diff overlay. The sync block's
+    # `checkout origin/main -- $SAFE_SPECS_10D` can only add/modify, never
+    # delete, so ANY D/R*/C*/T/U status row is by construction non-sync
+    # output: fail CLOSED unconditionally. A/M rows keep the byte-identity
+    # probe (content == fetched origin/main contributes nothing beyond the
+    # baseline to the landing tree, so the certification is unchanged).
+    # #1082 carve-out, TIGHT: line 1 is NEVER touched; only line 2 moves;
+    # the re-bind is licensed ONLY as executed by THIS stanza over its own
+    # --name-status probe output — a free-standing "update line 2" move
+    # stays banned, and the #1613 empty-commit synchronize explicitly STAYS
+    # a stale-verdict -> gate-re-run case, never hand-re-bound.
+    REBIND_OK=yes
+    if [ "$SYNC_SHA" != "no-drift" ]; then
+      CERT_SHA=$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt)
+      REBIND_OK=no
+      DELTA_OK=yes
+      while IFS=$'\t' read -r st p _rest; do
+        case "$st" in
+          A|M) git -C "$WT" diff --quiet origin/main HEAD -- "$p" || DELTA_OK=no ;;
+          *)   DELTA_OK=no ;;   # D / R* / C* / T / U — never sync output
+        esac
+      done < <(git -C "$WT" diff --name-status "$CERT_SHA" HEAD)
+      if [ "$DELTA_OK" = yes ]; then
+        # Line 1 is COMPOSED from the existing verdict (sed -n 1p), never
+        # typed; only line 2 (the certified sha) moves to the new tip.
+        if { sed -n 1p /tmp/issue-<N>-lint-verdict.txt; git -C "$WT" rev-parse HEAD; } \
+             > /tmp/issue-<N>-lint-verdict.rebind \
+           && mv /tmp/issue-<N>-lint-verdict.rebind /tmp/issue-<N>-lint-verdict.txt; then
+          REBIND_OK=yes
+          echo "[step10d] verdict re-bound to sync tip $(git -C "$WT" rev-parse --short=12 HEAD) (delta = origin/main-identical spec sync only; #1807)"
+        else
+          echo "[step10d] verdict re-bind WRITE failed — fail CLOSED (re-run the gate; the BLOCKED arm below consumes the stale verdict)"
+        fi
+      else
+        echo "[step10d] sync delta NOT verifiable as origin/main-identical A/M-only — verdict stays bound to $CERT_SHA; fail CLOSED (re-run the gate; the BLOCKED arm below consumes the stale verdict)"
+      fi
+    fi
+    if [ "$REBIND_OK" = yes ]; then
+      # Head-sync pre-check (#1657, READ-ONLY — runs AFTER the post-gate
+      # re-sync + re-bind above so it polls PR-object parity against the
+      # FINAL tip; a fresh sync push re-introduces exactly the lag this
+      # check absorbs, so polling before the sync would check the wrong
+      # tip): every push this invocation made (Guard-0/1 commits, the
+      # post-gate re-sync commit just above) races GitHub's PR-object
+      # sync — #1614's attempts 1-2 were refused
+      # 'Head branch is out of date' while the PR object lagged the pushed
+      # tip ~6 min. Poll until the PR object reports the local tip AND a
+      # settled mergeability; a settled CONFLICTING exits too (the merge
+      # attempt then classifies to shape 2 below, unchanged). Check-first
+      # bounded until-loop — never a leading foreground sleep
+      # (harness-blocked; the shape-0 convention).
+      TIP=$(git -C "$WT" rev-parse HEAD); HS_TRIES=0
+      until HS=$(gh pr view <PR> --json headRefOid,mergeable -q '.headRefOid + " " + .mergeable' 2>/dev/null) \
+            && [ "${HS%% *}" = "$TIP" ] && [ "${HS##* }" != "UNKNOWN" ]; do
+        HS_TRIES=$((HS_TRIES + 1))
+        if [ "$HS_TRIES" -ge 6 ]; then
+          echo "head-sync pre-check: PR object still stale after ~2 min (saw: ${HS:-<no read>}; local tip: $TIP) — proceeding; Known failure shape 3 below is the recovery"
+          break
+        fi
+        sleep 20
+      done
+      if [ "${HS%% *}" = "$TIP" ]; then
+        echo "head-sync pre-check: parity at $TIP (mergeable=${HS##* })"
+      fi
+      gh pr ready <PR>
+      if gh pr merge <PR> $MERGE_FORM --delete-branch=false; then
+        rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on MERGE SUCCESS — the verdict certified exactly the tip that landed
+        # Root-sync before epm:merged (#1725, safe-case): the just-merged diff is on
+        # origin/main; a workflow-surface fix in it is NOT yet live at the
+        # shared repo root, and the very next call — the epm:merged post —
+        # runs argv-prose guards from the pre-fix root copy (session
+        # 7ce3a81f, 2026-07-26: git-verb note text blocked ~25s post-merge).
+        # sync_repo_root.py is single-flight flock-serialized; fail-soft
+        # (the post-merge-guard pre-sync at the guard block below remains the fallback).
+        uv run python "$REPO_ROOT/scripts/sync_repo_root.py" || \
+          echo "[step10d/safe-case] pre-marker sync failed; post-merge-guard pre-sync remains the fallback"
+      else
+        echo "MERGE FAILED — classify the gh error text: (0) \"Base branch was modified\" -> transient base-advance (Known failure shape 0 below): wait ~20s via a bounded until-loop or a bg-Bash re-check — NEVER a leading foreground \`sleep\` (harness-blocked; 3 wasted turns on 2026-07-18 alone) — then re-enter this SAME conditional (the verdict still certifies the tip; max 2 re-entries per Step 10d invocation, counted regardless of re-bind — a re-entry may legitimately carry a moved tip via a second sync+re-bind, #1807); (1) \"can't be rebased\" (--rebase form only) -> the #1041 --squash retry (Known failure shape 1 below; SHA-bound verdict remains valid for the SAME tip); (2) \"Pull Request has merge conflicts\" -> the #1128 re-snapshot-and-retry-once (Known failure shape 2 below); (3) \"Head branch is out of date\" -> PR head-sync lag (Known failure shape 3 below): confirm pushed, bounded headRefOid re-poll, close/reopen nudge ONCE if still stale, then re-enter this SAME conditional (the verdict still certifies the tip; max 2 re-entries per Step 10d invocation, counted regardless of re-bind — #1807); (4) anything else -> the Failure bullet (merge-conflict recovery ONCE, then epm:merge-failed). Do NOT hand-write the verdict file."
+        false
+      fi
     else
-      echo "MERGE FAILED — classify the gh error text: (0) \"Base branch was modified\" -> transient base-advance (Known failure shape 0 below): wait ~20s via a bounded until-loop or a bg-Bash re-check — NEVER a leading foreground \`sleep\` (harness-blocked; 3 wasted turns on 2026-07-18 alone) — then re-enter this SAME conditional (same tip, verdict still valid; max 2 same-tip retries); (1) \"can't be rebased\" (--rebase form only) -> the #1041 --squash retry (Known failure shape 1 below; SHA-bound verdict remains valid for the SAME tip); (2) \"Pull Request has merge conflicts\" -> the #1128 re-snapshot-and-retry-once (Known failure shape 2 below); (3) \"Head branch is out of date\" -> PR head-sync lag (Known failure shape 3 below): confirm pushed, bounded headRefOid re-poll, close/reopen nudge ONCE if still stale, then re-enter this SAME conditional (same tip, verdict still valid; max 2 same-tip re-entries); (4) anything else -> the Failure bullet (merge-conflict recovery ONCE, then epm:merge-failed). Do NOT hand-write the verdict file."
+      echo "BLOCKED: verdict re-bind failed — the post-gate sync moved the tip and its delta could not be verified as origin/main-identical A/M-only (or the re-bind write failed): the stale SHA-bound verdict cannot certify the new tip. Re-run the pre-push workflow-lint gate against the new tip, then re-enter this conditional. Do NOT merge; do NOT hand-write the verdict file (#1082)."
+      rm -f /tmp/issue-<N>-lint-verdict.txt   # stale-sha verdict consumed — a fresh gate run regenerates it (the Verdict bullet's stale-sha removal branch)
       false
     fi
   else
@@ -11834,10 +12094,14 @@ transient under fleet marker churn (~100+ tasks/ commits/hr on main):
 no content conflict, nothing to fix. Recovery: wait ~20 s (≈ one churn
 interval, letting gh's mergeability recompute settle), then re-enter
 the SAME gated merge conditional with the SAME `$MERGE_FORM` — the
-branch tip is unchanged, so the SHA-bound verdict re-certifies it
-(consume-on-merge-success survives this failure by design; never
-hand-write the verdict file, #1082). Bounded at TWO same-tip retries
-per Step 10d invocation; a third consecutive hit is no longer plausibly
+failed merge changed nothing locally, so the SHA-bound verdict still
+certifies the tip (consume-on-merge-success survives this failure by
+design; never hand-write the verdict file, #1082); the re-entered
+safe-case block may legitimately MOVE the tip via a second post-gate
+sync + verdict re-bind (#1807). Bounded at TWO re-entries per Step 10d
+invocation, counted per invocation REGARDLESS of re-bind (the bound
+keys on re-entries of this conditional, not on tip identity); a third
+consecutive hit is no longer plausibly
 timing — reclassify by error text per shapes 1/2/3/else.
 
 Before each retried merge call, post an `[long-phase-heartbeat]`
@@ -11983,10 +12247,13 @@ verify the reopen landed (`gh pr view <PR> --json state -q .state` =
 `OPEN`; a crash between close and reopen strands a CLOSED PR — the
 next invocation re-opens it idempotently before re-entering) and
 re-poll once more; (4) re-enter the SAME gated merge conditional
-with the SAME `$MERGE_FORM` — the tip is unchanged, so the SHA-bound
-verdict re-certifies it (consume-on-merge-success survives this
-failure by design; never hand-write the verdict file, #1082). Bounded
-at ONE nudge + TWO same-tip re-entries per Step 10d invocation. STILL
+with the SAME `$MERGE_FORM` — the refusal changed nothing locally, so
+the SHA-bound verdict still certifies the tip (consume-on-merge-success
+survives this failure by design; never hand-write the verdict file,
+#1082); a re-entry may legitimately MOVE the tip via a second post-gate
+sync + verdict re-bind (#1807). Bounded
+at ONE nudge + TWO re-entries per Step 10d invocation, counted per
+invocation regardless of re-bind. STILL
 stale after the nudge re-poll → optional LAST RESORT before the
 Failure bullet, the #1613 empty-commit synchronize:
 `git -C "$WT" commit --allow-empty -m "issue-<N>: force PR synchronize
@@ -12001,7 +12268,7 @@ The head-sync pre-check inside the safe-case block above exists to
 keep this shape off the FIRST attempt; this paragraph is the backstop
 when the lag outlasts the pre-check budget.
 
-Before each retried merge call in this shape (each same-tip re-entry
+Before each retried merge call in this shape (each re-entry
 AND after the close/reopen nudge), post an `[long-phase-heartbeat]`
 progress note (#1723; same family as shapes 0/2 above):
 

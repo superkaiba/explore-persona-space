@@ -34,6 +34,13 @@ artifacts (§ Orchestrator ordinary turns, #1563). Recognition heuristic
   code-reviewer.md § Harmful-content corpora digest note; #866, #1073),
   incl. unscreened real-world corpora (LMSYS/WildChat-class) whose rows
   routinely carry in-corpus jailbreak/explicit text (#1073, #1739);
+- steering / causal-intervention APPLICATION surfaces — steering scripts,
+  intervention configs + hyperparameter blocks — and any surface whose text
+  carries intervention-control phrasing (#1415 brief precedent; #1769,
+  2026-07-28: an owner session was refusal-killed grepping steering-script
+  hyperparameters on an ordinary turn); plain direction-extraction /
+  analysis code with mechanistic vocabulary does NOT match on category
+  alone;
 - the diff or plan under review EDITS any of the above, or a verdict body
   you must adjudicate QUOTES such content (the reconciler case).
 
@@ -71,7 +78,8 @@ reviewers never attempt model pins themselves (pins live on the Agent call).
    verdict body is composed DIRECTLY into its file via the `Write` tool —
    never as inline assistant text or reasoning first — then posted with
    `uv run python scripts/task.py post-marker <N> epm:code-review
-   --version <K> --file <path>` (or the reconciler analogue
+   --file <path>` (OMIT `--version` — it auto-derives max+1; the round
+   lives in the body's head sentinel; #1804) (or the reconciler analogue
    `epm:review-reconcile`; `--file`, never `--note`, because the marker
    body itself is trigger-dense and must ride the file path). The
    reviewer's ordered tool-call sequence on such rounds is `Write` (verdict
