@@ -6228,8 +6228,8 @@
     "1804": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1804",
-      "status": "reviewing",
+      "path": "tasks/completed/1804",
+      "status": "completed",
       "title": "daily-fix: code-reviewer verdict --version collides on long "
     },
     "1805": {
