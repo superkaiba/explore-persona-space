@@ -487,11 +487,17 @@ def run_cells(
         baselines = mapping_baseline_reads(
             xy, n_folds=n_folds, seed=seed, n_boot=n_boot, ridge_pred=pred if li == LAYER else None
         )
+        # Well-posedness companions on the SAME rows/folds as the ambient fit:
+        # the ambient GCV read above is n<d artifact-bearing on this line.
+        companions = wellposed_companions(
+            xy["X"][fitted, li, :], true, conv, n_folds=n_folds, seed=seed
+        )
         cell_json = out_dir / f"cells_{cid}.json"
         payload = json.loads(cell_json.read_text())
         payload["r2_bootstrap_ci_frozen_layers_conv"] = boot
         payload["n_groups"] = len(np.unique(conv))
         payload["mapping_baselines_headline_layer"] = baselines
+        payload["wellposed_companions"] = companions
         payload["bnd_arm"] = cell.get("bnd_arm")
         payload["slot"] = cell.get("slot")
         payload["y_target"] = cell.get("y_target")
@@ -506,6 +512,10 @@ def run_cells(
             "mean_baseline_r2": payload["mean_baseline_r2"].get(str(li)),
             "skill_over_mean": payload["skill_over_mean"].get(str(li)),
             "baselines": baselines,
+            # PRIMARY within-R2 read for the verdict (the ambient `r2` above is
+            # the artifact-bearing continuity companion).
+            "r2_reduced_basis": companions["reduced_basis"]["r2_heldout"],
+            "companions": companions,
         }
         print(
             f"[fits] {cid} done (n={len(conv)}, groups={payload['n_groups']}, "
@@ -540,6 +550,11 @@ def _fit_regime(
             else None
         ),
         "layer": LAYER,
+        # Companion regime (well-posedness reads): a change to the reduced-basis
+        # k rule or the forced-lambda set changes the persisted output, so it is
+        # part of the resume identity — never a silently-reused stale companion.
+        "reduced_k_cap": int(REDUCED_K_CAP),
+        "forced_lambdas": [float(v) for v in FORCED_LAMBDAS],
     }
 
 
@@ -564,6 +579,8 @@ def _resume_cell(out_dir: Path, preds_dir: Path, cid: str, regime: dict) -> dict
         return None
     if "mapping_baselines_headline_layer" not in payload:
         return None
+    if "wellposed_companions" not in payload:
+        return None  # pre-companion cell JSON — refit rather than resume half a cell
     boot = payload.get("r2_bootstrap_ci_frozen_layers_conv", {})
     return {
         "cell": payload.get("cell", {}),
@@ -574,6 +591,8 @@ def _resume_cell(out_dir: Path, preds_dir: Path, cid: str, regime: dict) -> dict
         "mean_baseline_r2": payload.get("mean_baseline_r2", {}).get(str(LAYER)),
         "skill_over_mean": payload.get("skill_over_mean", {}).get(str(LAYER)),
         "baselines": payload.get("mapping_baselines_headline_layer"),
+        "r2_reduced_basis": (payload["wellposed_companions"]["reduced_basis"]["r2_heldout"]),
+        "companions": payload["wellposed_companions"],
         "resumed": True,
     }
 
@@ -588,6 +607,152 @@ def _null_p975(out_dir: Path, cell_id: str, layer: int) -> float | None:
         return None
     col = [row[layer] for row in m if layer < len(row) and row[layer] == row[layer]]
     return float(np.quantile(col, 0.975)) if col else None
+
+
+# ---------------------------------------------------------------------------
+# Well-posedness companions — reduced PCA basis + forced lambda
+#
+# The sibling story-context-info-probe round showed this line's AMBIENT GCV
+# ridge reads are an n<d ESTIMATION ARTIFACT, not an information result: at
+# n_train 1730 < d 3584 GCV selects the lambda-grid FLOOR (0.01) in 5/5 folds on
+# every full-basis story-input leg, and that floor is what produces the negative
+# within-R2. Same rows, same basis, lambda FORCED to 1e3 moves story context ->
+# story answer from -0.306 to +0.408; a per-fold train-only PCA basis moves it to
+# +0.262. Retrieval and R2 DISSOCIATE across lambda (knn@1 falls as R2 rises), so
+# both companions report kNN per lambda.
+#
+# Recipe copied from that round's `ridge_leg_reduced` + forced-single-value-grid
+# legs (scripts/issue1345_story_info_probe.py @ 3ffc51d581) so these numbers are
+# directly comparable to its published values. Cheap by construction: ONE
+# `fc._prep_fold` per (X, fold) serves the GCV read AND every forced lambda
+# (diagonal rescalings of the same cached eigh), and the reduced leg adds one
+# train-only SVD per fold.
+# ---------------------------------------------------------------------------
+REDUCED_K_CAP = 1024
+FORCED_LAMBDAS = (1e2, 1e3, 1e4)
+# Published reference values these companions must be read against (source of
+# record; NOT asserted — different rows/arms, so they are documentation).
+PROBE_REFERENCE = {
+    "source": (
+        "eval_results/issue_1345/story_context_info_probe/"
+        "{summary.json,forced_lambda_probe.json} @ 3ffc51d581 / 9f0fb74d4a"
+    ),
+    "story_vC_to_story_vA": {
+        "ambient_gcv_r2": -0.306,
+        "reduced_basis_r2": 0.262,
+        "forced_lambda_1e2_r2": 0.1605,
+        "forced_lambda_1e3_r2": 0.4075,
+        "forced_lambda_1e4_r2": 0.4180,
+    },
+    "note": (
+        "ambient GCV picks the lambda-grid floor 0.01 in 5/5 folds at n_train<d; "
+        "the committed V1 anchor -0.3056 is the ARTIFACT-BEARING read"
+    ),
+}
+
+
+def reduced_basis_k(n_train: int, d_in: int) -> int:
+    """k for the well-posed companion basis: min(1024, floor(n_train/2), d_in)."""
+    return int(max(1, min(REDUCED_K_CAP, n_train // 2, d_in)))
+
+
+def _pooled_heldout_r2(y_true: np.ndarray, y_pred: np.ndarray, folds: np.ndarray) -> float:
+    """Parent/probe convention: pooled 1 - SSE/SST with the HELD-OUT fold mean as SST."""
+    ss_res = 0.0
+    ss_tot = 0.0
+    for f in np.unique(folds):
+        te = folds == f
+        t = y_true[te].astype(np.float64)
+        ss_res += float(((t - y_pred[te].astype(np.float64)) ** 2).sum())
+        ss_tot += float(((t - t.mean(0)) ** 2).sum())
+    return float(1.0 - ss_res / ss_tot)
+
+
+def _knn_reads(pred: np.ndarray, y: np.ndarray) -> dict:
+    """kNN-through-the-map retrieval, both metrics (the standing mapping read)."""
+    return {
+        m: mb.knn_retrieval(pred, y, ks=list(KNN_KS), metric=m) for m in ("euclidean", "cosine")
+    }
+
+
+def companions_shared_x(
+    x: np.ndarray, ys: dict[str, np.ndarray], conv_ids, *, n_folds: int, seed: int
+) -> dict[str, dict]:
+    """Companion reads for ONE X against MULTIPLE Y targets, X work SHARED.
+
+    The ambient `_prep_fold` (the expensive eigh) and the train-only PCA basis
+    depend ONLY on X, so both are computed once per fold and reused across every
+    Y target — the same "X-side factorizations shared across Y" contract the
+    ambient grid honors. Returns one block per Y name.
+    """
+    x = np.asarray(x)
+    conv = np.asarray([str(v) for v in conv_ids])
+    folds = fc._cv_folds(conv, n_folds, seed)
+    uniq = np.unique(folds)
+    n_tr_min = min(int((folds != f).sum()) for f in uniq)
+    k = reduced_basis_k(n_tr_min, x.shape[1])
+    forced = {
+        name: {lam: np.zeros_like(np.asarray(y), dtype=np.float32) for lam in FORCED_LAMBDAS}
+        for name, y in ys.items()
+    }
+    reduced = {name: np.zeros_like(np.asarray(y), dtype=np.float32) for name, y in ys.items()}
+    reduced_lams: dict[str, list[float]] = {name: [] for name in ys}
+    for f in uniq:
+        te = folds == f
+        tr = ~te
+        # ONE ambient prep per fold — reused across every forced lambda AND every
+        # Y target (lambda enters only as a diagonal rescaling of this eigh).
+        cache = fc._prep_fold(x[tr], x[te])
+        # Reduced basis: per-fold TRAIN-only PCA, centering only (the probe's
+        # recipe; `_prep_fold` then standardizes the PCA coordinates, which is
+        # what the published +0.262 reference measured). X-only => shared.
+        mu = x[tr].mean(0)
+        _, _, vt = np.linalg.svd(x[tr] - mu, full_matrices=False)
+        basis = vt[: min(k, vt.shape[0])]
+        cache_red = fc._prep_fold((x[tr] - mu) @ basis.T, (x[te] - mu) @ basis.T)
+        for name, y_any in ys.items():
+            y = np.asarray(y_any)
+            for lam in FORCED_LAMBDAS:
+                forced[name][lam][te] = np.asarray(
+                    fc._ridge_predict_cached(cache, y[tr], lambdas=[lam]), dtype=np.float32
+                )
+            p_red, lam_red = fc._ridge_predict_cached(cache_red, y[tr], return_lam=True)
+            reduced[name][te] = np.asarray(p_red, dtype=np.float32)
+            reduced_lams[name].append(float(lam_red))
+    out: dict[str, dict] = {}
+    for name, y_any in ys.items():
+        y = np.asarray(y_any)
+        out[name] = {
+            "folds": {"n_folds": int(len(uniq)), "seed": int(seed), "n_train_min": int(n_tr_min)},
+            "d_in": int(x.shape[1]),
+            "underdetermined_ambient": bool(n_tr_min < x.shape[1]),
+            "reduced_basis": {
+                "k": int(k),
+                "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+                "pca_fit": "per-fold TRAIN rows only, centering only (no held-out leakage)",
+                "pca_coords_standardized_by_prep_fold": True,
+                "r2_heldout": _pooled_heldout_r2(y, reduced[name], folds),
+                "gcv_lambda_per_fold": reduced_lams[name],
+                "knn": _knn_reads(reduced[name], y),
+            },
+            "forced_lambda": {
+                f"lambda_{lam:.0e}": {
+                    "lambda": float(lam),
+                    "r2_heldout": _pooled_heldout_r2(y, forced[name][lam], folds),
+                    "knn": _knn_reads(forced[name][lam], y),
+                }
+                for lam in FORCED_LAMBDAS
+            },
+            "probe_reference": PROBE_REFERENCE,
+        }
+    return out
+
+
+def wellposed_companions(
+    x: np.ndarray, y: np.ndarray, conv_ids, *, n_folds: int, seed: int
+) -> dict:
+    """Single-Y wrapper over `companions_shared_x` (ONE companion recipe)."""
+    return companions_shared_x(x, {"y": y}, conv_ids, n_folds=n_folds, seed=seed)["y"]
 
 
 # ---------------------------------------------------------------------------
@@ -731,6 +896,15 @@ def xy_grid(
             for y in bc.Y_SPAN_ORDER:
                 out[f"{slot}|{y}"] = {"skipped": "no usable folds"}
             continue
+        # Well-posedness companions for this slot, X-side work shared across BOTH
+        # Y targets (the ambient reads above are n<d artifact-bearing).
+        comp = companions_shared_x(
+            X.cpu().numpy()[fitted],
+            {y: Y.cpu().numpy()[fitted] for y, Y in Ys.items()},
+            conv[fitted],
+            n_folds=n_folds,
+            seed=seed,
+        )
         for y, Y in Ys.items():
             true = Y.cpu().numpy()[fitted]
             pred = preds[y][fitted]
@@ -772,6 +946,10 @@ def xy_grid(
                         n_boot=n_boot,
                         seed=seed + 700 + si,
                     )
+            rec["companions"] = comp[y]
+            # PRIMARY within-R2 read for this grid point (`r2` above stays as the
+            # artifact-bearing ambient-GCV continuity companion).
+            rec["r2_reduced_basis"] = comp[y]["reduced_basis"]["r2_heldout"]
             out[f"{slot}|{y}"] = rec
     return {
         "store": store_key,
@@ -967,19 +1145,44 @@ def build_verdict(
         "layer": LAYER,
         "n_kept_stories": n_kept,
         "n_intersection_with_v1": n_intersection,
+        # PRIMARY within-R2 read = the REDUCED-BASIS companion. The ambient GCV
+        # value is retained under `*_ambient_gcv_continuity` for continuity with
+        # the published anchor and is ARTIFACT-BEARING at n_train < d (GCV picks
+        # the lambda-grid floor; see PROBE_REFERENCE) — never read it as the
+        # information content of the map.
+        "primary_read": "reduced_basis",
+        "primary_read_note": (
+            "reduced-basis within-R2 is the primary read; ambient GCV is the "
+            "artifact-bearing continuity companion (n_train<d floor-lambda selection)"
+        ),
         "slots": {
             cell_summary[cid]["cell"]["slot"]: {
-                k: cell_summary[cid].get(k) for k in ("r2", "ci", "null_p975", "skill_over_mean")
+                "r2_reduced_basis_primary": cell_summary[cid].get("r2_reduced_basis"),
+                "r2_ambient_gcv_continuity": cell_summary[cid].get("r2"),
+                **{k: cell_summary[cid].get(k) for k in ("ci", "null_p975", "skill_over_mean")},
+                "companions": cell_summary[cid].get("companions"),
             }
             for cid in (grid_cell_id(arm, s, bc.Y_MEAN) for s in bc.BND_SLOT_ORDER)
             if cid in cell_summary and "cell" in cell_summary[cid]
         },
-        "headline": {k: own.get(k) for k in ("r2", "ci", "null_p975", "skill_over_mean")},
+        "headline": {
+            "r2_reduced_basis_primary": own.get("r2_reduced_basis"),
+            "r2_ambient_gcv_continuity": own.get("r2"),
+            **{k: own.get(k) for k in ("ci", "null_p975", "skill_over_mean")},
+            "companions": own.get("companions"),
+        },
         "baselines_headline_slot": own.get("baselines"),
         "vs_v1_anchor_committed": {
             "anchor": anchor,
             "anchor_doc_crosscheck": V1_ANCHOR_DOC["context"],
-            "delta_point": (
+            "anchor_is_artifact_bearing": True,
+            "anchor_note": (
+                "the committed V1 anchor is an AMBIENT-GCV read at n_train<d — an "
+                "estimation artifact, not the map's information content; kept as a "
+                "parity check that this round reproduces the published pipeline, "
+                "NOT as a science reference (PROBE_REFERENCE)"
+            ),
+            "delta_point_ambient_gcv": (
                 (own.get("r2") - anchor["r2"]) if (own.get("r2") is not None and anchor) else None
             ),
             "independent_cis_disjoint": _cis_disjoint(own.get("ci"), anchor),
