@@ -76,6 +76,45 @@ PY
   mark_done p0_stage
 fi
 
+# ── p0_rb: stage the #779 r_B directions (gitignored -> absent from the clone) ─
+# `data/**` is gitignored, so a fresh clone has no `data/issue_779/r_b/*.pt`
+# and phase 0's preflight fails loud on the realized-keys check. They are
+# ~400 KB each and were snapshotted to an ISSUE-OWNED HF prefix (#600 pattern:
+# never consume another task's shared mirror) with sha256 pins asserted here.
+if phase_done p0_rb; then
+  echo "[phase=p0_rb] SKIP (done)"
+else
+  echo "[phase=p0_rb]"
+  uv run python - "$REPO_ROOT" <<'PY'
+import hashlib
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "src")
+sys.path.insert(0, "scripts")
+import issue1773_common as CM  # noqa: E402
+
+from explore_persona_space.orchestrate import hub  # noqa: E402
+
+EXPECTED_SHA256 = {
+    "evil.pt": "65b70c63076b9452c6d1c8a66ee1ed3d403503df936ea1af6fffc353d135aff1",
+    "hallucination.pt": "d643269c9904b99e14968c84c8e3a02cd45d5ed4674621edbeb78950467ccd6d",
+    "sycophancy.pt": "af6d679b59ad02e9e00a26e73ff77c00dda69cb8e2fabd22ea3a3ee28bbdad3d",
+}
+dest = Path(sys.argv[1]) / "data" / "issue_779" / "r_b"
+dest.mkdir(parents=True, exist_ok=True)
+prefix = f"{CM.HF_PREFIX}/inputs/issue_779_r_b"
+for name, want in EXPECTED_SHA256.items():
+    target = dest / name
+    if not target.exists():
+        hub.stage_hub_file(CM.HF_DATA_REPO, f"{prefix}/{name}", target, repo_type="dataset")
+    got = hashlib.sha256(target.read_bytes()).hexdigest()
+    assert got == want, f"r_B sha mismatch for {name}: {got} != {want}"
+    print(f"[stage] r_B staged + sha-verified: {target}", flush=True)
+PY
+  mark_done p0_rb
+fi
+
 # ── p0_phase0: mechanical axes over the full dictionary (GPU) ────────────────
 if phase_done p0_phase0; then
   echo "[phase=p0_phase0] SKIP (done)"
