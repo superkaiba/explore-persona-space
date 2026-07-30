@@ -6389,8 +6389,8 @@
     "1825": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1825",
-      "status": "approved",
+      "path": "tasks/running/1825",
+      "status": "running",
       "title": "workflow-fix: gotchas entry \u2014 reused-module flag contract trap (same flag, opposite semantics)"
     },
     "1826": {
