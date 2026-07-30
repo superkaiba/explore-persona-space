@@ -86,13 +86,19 @@ print(f'[pvscore] staged {len(paths)} pvsynth capture files')
 fi
 
 # stage_hub_prefix lands files at <dest>/<repo-relative path> (a VERBATIM
-# prefix mirror, #928) — NOT flat in <dest>. Resolve the mirrored capture root
-# by locating the flat capture manifest rather than hard-coding the mirrored
-# depth, so a producer-side prefix change cannot silently mis-point us.
+# prefix mirror, #928), so the mirrored capture root is EXACTLY
+# <PVCAP_MIRROR>/<PVCAP_PREFIX>. Derive it from the prefix we staged — do NOT
+# search for a manifest.
 #
-# The capture store is PER BEHAVIOR: the prefix holds evil/ hallucination/
-# sycophancy/ subtrees (173 files each) beside 3 flat manifest files, so a
-# single shared path is never a correct store for a multi-behavior run.
+# Measured real layout (519 files): capture_store/ holds NOTHING but the three
+# per-behavior subtrees (evil/ hallucination/ sycophancy/, 173 files each), and
+# the ONLY _capture_manifest.json files live INSIDE those subtrees — there is no
+# root-level manifest. So `find -name _capture_manifest.json -print -quit`
+# returns a BEHAVIOR dir (evil/, first in traversal order) and its dirname lands
+# the symlink one level too deep, leaving <dest>/evil nonexistent. That was the
+# attempt-2 crash at 20:46:30Z; the synthetic fixture that "verified" the old
+# code had invented a root-level manifest beside empty behavior dirs, a layout
+# that does not exist.
 #
 # We publish the mirrored root AT the layout the scorer's DEFAULT expects
 # (store_root/pvsynth_capture_store/<behavior>) and pass NO --pvsynth-store.
@@ -103,18 +109,28 @@ fi
 # Relying on the default is correct under both, so this caller cannot be
 # re-broken by a future change to that flag's semantics.
 publish_pvcap() {
-  local m root dest
-  m="$(find "$PVCAP_MIRROR" -name '_capture_manifest.json' -print -quit 2>/dev/null || true)"
-  [ -n "$m" ] || { echo "[pvscore] FATAL: _capture_manifest.json not found under $PVCAP_MIRROR" >&2; exit 1; }
-  root="$(dirname "$m")"
+  local root dest b
+  root="$PVCAP_MIRROR/$PVCAP_PREFIX"
+  [ -d "$root" ] || {
+    echo "[pvscore] FATAL: mirrored capture root $root missing (staging layout changed?)" >&2
+    exit 1
+  }
   dest="$STORE_ROOT/pvsynth_capture_store"
+  # A stale symlink from an earlier partial run may point elsewhere; replace it.
+  # A real directory is left alone — the per-behavior assert below validates it.
+  if [ -L "$dest" ] && [ "$(readlink -f "$dest")" != "$(readlink -f "$root")" ]; then
+    rm -f "$dest"
+  fi
   if [ ! -e "$dest" ]; then
     mkdir -p "$STORE_ROOT"
     ln -s "$(cd "$root" && pwd)" "$dest"
   fi
+  # Assert the SAME predicate the scorer's _resolve_pvsynth_store uses
+  # (`(child / CAPTURE_MANIFEST_NAME).is_file()`), not merely dir existence —
+  # so a layout this caller publishes is one the consumer can actually open.
   for b in $BEHAVIORS; do
-    [ -d "$dest/$b" ] || {
-      echo "[pvscore] FATAL: per-behavior capture store $dest/$b missing" >&2
+    [ -f "$dest/$b/_capture_manifest.json" ] || {
+      echo "[pvscore] FATAL: per-behavior capture store $dest/$b missing its _capture_manifest.json" >&2
       exit 1
     }
   done
