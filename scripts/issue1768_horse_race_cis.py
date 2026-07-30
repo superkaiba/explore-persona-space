@@ -91,6 +91,65 @@ def _ci(v: np.ndarray) -> dict:
     return {"ci_lo": lo, "ci_hi": hi, "half_width": (hi - lo) / 2.0}
 
 
+def summarize_primary_layer(cells: dict) -> dict:
+    """Build the plan §6 criterion summary from the per-cell CI table.
+
+    Marker arms race the marker unembedding row under BOTH the ``r_B`` and
+    ``W_U_marker_row`` labels (the fleet two-way-race convention), so the
+    registered three-slot pool counts that race twice; the deduplicated reads
+    drop the duplicated ``r_B`` entry per marker cell (interp-critique round-2
+    Must-Fix). ``criterion_met`` keys on the deduplicated pooled median.
+    Returns the summary dict (caller appends ``bootstrap`` / ``revision``).
+    """
+
+    def prim_layer(arm_id: str) -> int:
+        return 25 if arm_id.startswith("mk") else 19
+
+    hw_all: list[float] = []
+    med: dict[str, dict[str, float]] = {}
+    for cname in ("delta", "r_B", "W_U_marker_row"):
+        med[cname] = {}
+        for tree in ("on_policy", "matched_text"):
+            vals = [
+                c[cname][tree]["half_width"]
+                for c in cells.values()
+                if cname in c and c["layer"] == prim_layer(c["arm_id"])
+            ]
+            med[cname][tree] = float(np.median(vals))
+            hw_all += vals
+    hw_dedup: list[float] = []
+    per_arm: dict[str, list[float]] = {}
+    for c in cells.values():
+        if c["layer"] != prim_layer(c["arm_id"]):
+            continue
+        cands = [k for k in ("delta", "r_B", "W_U_marker_row") if k in c]
+        if "W_U_marker_row" in cands and c["r_B"] == c["W_U_marker_row"]:
+            cands.remove("r_B")  # the marker r_B slot IS the W_U row: one race, two labels
+        hws = [c[k][t]["half_width"] for k in cands for t in ("on_policy", "matched_text")]
+        hw_dedup += hws
+        per_arm.setdefault(c["arm_id"], []).extend(hws)
+    pooled = float(np.median(hw_all))
+    pooled_dedup = float(np.median(hw_dedup))
+    per_arm_dedup = float(np.median([float(np.median(v)) for v in per_arm.values()]))
+    return {
+        "criterion": "plan §6: horse-race CI half-widths <= 0.1 (median across arms)",
+        "primary_layer_median_half_width": {
+            "pooled_all_raced_cosines": pooled,
+            "pooled_deduplicated": pooled_dedup,
+            "per_arm_median_deduplicated": per_arm_dedup,
+            **med,
+        },
+        "n_raced_cosines_primary_layer": len(hw_all),
+        "n_raced_cosines_deduplicated": len(hw_dedup),
+        "criterion_met": bool(pooled_dedup <= 0.1),
+        "criterion_met_note": (
+            "keyed on the deduplicated pooled median (the marker r_B == W_U_marker_row "
+            f"race counted once); the registered three-slot pool reads {pooled:.3f} by "
+            "counting the marker unembedding race under both labels"
+        ),
+    }
+
+
 def main() -> None:
     stage_root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("data/issue_1768/hf_dl")
     results_dir = Path(sys.argv[2]) if len(sys.argv) > 2 else Path("eval_results/issue_1768")
@@ -180,32 +239,12 @@ def main() -> None:
         os.remove(t_path)
         print(f"[hrci] {k}/{len(arms)} {arm.arm_id} done ({time.time() - t0:.0f}s)", flush=True)
 
-    # §6 criterion: median half-width across arms, primary layer, all raced cosines
-    def prim(a: X.Arm) -> int:
-        return 25 if a.beh_key == "mk" else 19
-
-    hw_all: list[float] = []
-    med: dict[str, dict[str, float]] = {}
-    for cname in ("delta", "r_B", "W_U_marker_row"):
-        med[cname] = {}
-        for tree in ("on_policy", "matched_text"):
-            vals = [
-                cells[f"{a.arm_id}_L{prim(a)}"][cname][tree]["half_width"]
-                for a in arms
-                if cname in cells[f"{a.arm_id}_L{prim(a)}"]
-            ]
-            med[cname][tree] = float(np.median(vals))
-            hw_all += vals
-    pooled = float(np.median(hw_all))
-    summary = {
-        "criterion": "plan §6: horse-race CI half-widths <= 0.1 (median across arms)",
-        "bootstrap": f"stratified paired over panel question rows, B={B_DRAWS}, "
-        "even/odd halves resampled independently; candidates fixed (tbar not resampled)",
-        "primary_layer_median_half_width": {"pooled_all_raced_cosines": pooled, **med},
-        "n_raced_cosines_primary_layer": len(hw_all),
-        "criterion_met": pooled <= 0.1,
-        "revision": REV,
-    }
+    summary = summarize_primary_layer(cells)
+    summary["bootstrap"] = (
+        f"stratified paired over panel question rows, B={B_DRAWS}, "
+        "even/odd halves resampled independently; candidates fixed (tbar not resampled)"
+    )
+    summary["revision"] = REV
     D._atomic_json(
         results_dir / "horse_race_cis.json",
         {"summary": summary, "cells": cells, **D._meta()},

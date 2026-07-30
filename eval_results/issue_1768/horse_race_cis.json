@@ -1,9 +1,10 @@
 {
  "summary": {
   "criterion": "plan §6: horse-race CI half-widths <= 0.1 (median across arms)",
-  "bootstrap": "stratified paired over panel question rows, B=2000, even/odd halves resampled independently; candidates fixed (tbar not resampled)",
   "primary_layer_median_half_width": {
    "pooled_all_raced_cosines": 0.09392757062189992,
+   "pooled_deduplicated": 0.10956876322654578,
+   "per_arm_median_deduplicated": 0.11659695121515146,
    "delta": {
     "on_policy": 0.16086524003152883,
     "matched_text": 0.17233960054289466
@@ -18,7 +19,10 @@
    }
   },
   "n_raced_cosines_primary_layer": 328,
-  "criterion_met": true,
+  "n_raced_cosines_deduplicated": 288,
+  "criterion_met": false,
+  "criterion_met_note": "keyed on the deduplicated pooled median (the marker r_B == W_U_marker_row race counted once); the registered three-slot pool reads 0.094 by counting the marker unembedding race under both labels",
+  "bootstrap": "stratified paired over panel question rows, B=2000, even/odd halves resampled independently; candidates fixed (tbar not resampled)",
   "revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7"
  },
  "cells": {
