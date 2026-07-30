@@ -6543,8 +6543,8 @@
     "1845": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1845",
-      "status": "approved",
+      "path": "tasks/running/1845",
+      "status": "running",
       "title": "workflow-fix: gotchas \u2014 batched np.linalg.solve dies on ONE singular slice"
     },
     "1846": {
