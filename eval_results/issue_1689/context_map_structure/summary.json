@@ -26,414 +26,918 @@
  "n_complete": 504,
  "n_failed": 0,
  "n_missing": 0,
+ "n_key_mismatch": 0,
  "failures": [],
  "missing_units": [],
+ "key_mismatch_units": [],
  "weakest_class_counts": {
   "Qwen_Qwen2.5-7B|prefix": {
-   "full_affine": 142,
-   "translation": 102,
-   "rank_128": 2,
-   "rank_64": 2
+   "full_affine": 72,
+   "translation": 52,
+   "rank_128": 1,
+   "rank_64": 1
   },
   "Qwen_Qwen2.5-7B|context": {
-   "full_affine": 168,
-   "translation": 76,
-   "rank_128": 2
-  },
-  "Qwen_Qwen2.5-7B-Instruct|context": {
-   "full_affine": 6
+   "full_affine": 87,
+   "translation": 38,
+   "rank_128": 1
   },
   "Qwen_Qwen2.5-7B-Instruct|prefix": {
-   "translation": 2,
-   "full_affine": 2
+   "full_affine": 76,
+   "translation": 50
+  },
+  "Qwen_Qwen2.5-7B-Instruct|context": {
+   "full_affine": 89,
+   "translation": 36,
+   "trans_scalar": 1
   }
  },
  "rank_reached": {
-  "assistant_chat__assistant_naturalistic__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_chat__assistant_naturalistic__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__assistant_naturalistic__context": {
+  "Qwen_Qwen2.5-7B__assistant_chat__assistant_naturalistic__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__assistant_story__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_chat__assistant_story__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__assistant_story__context": {
+  "Qwen_Qwen2.5-7B__assistant_chat__assistant_story__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__dana_naturalistic__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_chat__dana_naturalistic__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__dana_naturalistic__context": {
+  "Qwen_Qwen2.5-7B__assistant_chat__dana_naturalistic__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__dana_story__context": {
+  "Qwen_Qwen2.5-7B__assistant_chat__dana_story__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__helios_naturalistic__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_chat__helios_naturalistic__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__helios_story__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_chat__helios_story__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__helios_story__context": {
+  "Qwen_Qwen2.5-7B__assistant_chat__helios_story__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__user_haiku_chat__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_chat__user_haiku_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__user_haiku_chat__context": {
+  "Qwen_Qwen2.5-7B__assistant_chat__user_haiku_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__user_haiku_naturalistic__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_chat__user_haiku_naturalistic__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__user_haiku_naturalistic__context": {
+  "Qwen_Qwen2.5-7B__assistant_chat__user_haiku_naturalistic__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__user_haiku_story__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_chat__user_haiku_story__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__user_haiku_story__context": {
+  "Qwen_Qwen2.5-7B__assistant_chat__user_haiku_story__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__user_lmsys_chat__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_chat__user_lmsys_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__user_lmsys_chat__context": {
+  "Qwen_Qwen2.5-7B__assistant_chat__user_lmsys_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__user_lmsys_naturalistic__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_chat__user_lmsys_naturalistic__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__user_lmsys_naturalistic__context": {
+  "Qwen_Qwen2.5-7B__assistant_chat__user_lmsys_naturalistic__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__user_lmsys_story__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_chat__user_lmsys_story__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__user_lmsys_story__context": {
+  "Qwen_Qwen2.5-7B__assistant_chat__user_lmsys_story__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__user_onpolicy_chat__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_chat__user_onpolicy_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__user_onpolicy_chat__context": {
+  "Qwen_Qwen2.5-7B__assistant_chat__user_onpolicy_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__user_onpolicy_naturalistic__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_chat__user_onpolicy_naturalistic__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__user_onpolicy_naturalistic__context": {
+  "Qwen_Qwen2.5-7B__assistant_chat__user_onpolicy_naturalistic__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__user_onpolicy_story__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_chat__user_onpolicy_story__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__user_onpolicy_story__context": {
+  "Qwen_Qwen2.5-7B__assistant_chat__user_onpolicy_story__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__wren_naturalistic__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_chat__wren_naturalistic__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__wren_naturalistic__context": {
+  "Qwen_Qwen2.5-7B__assistant_chat__wren_naturalistic__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_chat__wren_story__context": {
+  "Qwen_Qwen2.5-7B__assistant_chat__wren_story__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_naturalistic__assistant_chat__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_naturalistic__assistant_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_naturalistic__assistant_chat__context": {
+  "Qwen_Qwen2.5-7B__assistant_naturalistic__assistant_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_naturalistic__assistant_story__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_naturalistic__assistant_story__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_naturalistic__assistant_story__context": {
+  "Qwen_Qwen2.5-7B__assistant_naturalistic__assistant_story__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_story__assistant_chat__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_story__assistant_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_story__assistant_chat__context": {
+  "Qwen_Qwen2.5-7B__assistant_story__assistant_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "assistant_story__assistant_naturalistic__prefix": {
+  "Qwen_Qwen2.5-7B__assistant_story__assistant_naturalistic__prefix": {
    "ctx": null,
    "ans": null
   },
-  "assistant_story__assistant_naturalistic__context": {
+  "Qwen_Qwen2.5-7B__assistant_story__assistant_naturalistic__context": {
    "ctx": null,
    "ans": null
   },
-  "dana_naturalistic__assistant_chat__prefix": {
+  "Qwen_Qwen2.5-7B__dana_naturalistic__assistant_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "dana_naturalistic__assistant_chat__context": {
+  "Qwen_Qwen2.5-7B__dana_naturalistic__assistant_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "dana_story__assistant_chat__prefix": {
+  "Qwen_Qwen2.5-7B__dana_story__assistant_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "dana_story__assistant_chat__context": {
+  "Qwen_Qwen2.5-7B__dana_story__assistant_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "dana_story__assistant_story__prefix": {
+  "Qwen_Qwen2.5-7B__dana_story__assistant_story__prefix": {
    "ctx": null,
    "ans": null
   },
-  "dana_story__assistant_story__context": {
+  "Qwen_Qwen2.5-7B__dana_story__assistant_story__context": {
    "ctx": null,
    "ans": null
   },
-  "helios_naturalistic__assistant_chat__prefix": {
+  "Qwen_Qwen2.5-7B__helios_naturalistic__assistant_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "helios_naturalistic__assistant_chat__context": {
+  "Qwen_Qwen2.5-7B__helios_naturalistic__assistant_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "helios_story__assistant_chat__prefix": {
+  "Qwen_Qwen2.5-7B__helios_story__assistant_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "helios_story__assistant_chat__context": {
+  "Qwen_Qwen2.5-7B__helios_story__assistant_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "user_haiku_chat__assistant_chat__prefix": {
+  "Qwen_Qwen2.5-7B__user_haiku_chat__assistant_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_haiku_chat__assistant_chat__context": {
+  "Qwen_Qwen2.5-7B__user_haiku_chat__assistant_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "user_haiku_chat__user_haiku_naturalistic__prefix": {
+  "Qwen_Qwen2.5-7B__user_haiku_chat__user_haiku_naturalistic__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_haiku_chat__user_haiku_story__prefix": {
+  "Qwen_Qwen2.5-7B__user_haiku_chat__user_haiku_story__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_haiku_naturalistic__assistant_chat__prefix": {
+  "Qwen_Qwen2.5-7B__user_haiku_naturalistic__assistant_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_haiku_naturalistic__assistant_chat__context": {
+  "Qwen_Qwen2.5-7B__user_haiku_naturalistic__assistant_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "user_haiku_naturalistic__user_haiku_chat__prefix": {
+  "Qwen_Qwen2.5-7B__user_haiku_naturalistic__user_haiku_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_haiku_naturalistic__user_haiku_story__prefix": {
+  "Qwen_Qwen2.5-7B__user_haiku_naturalistic__user_haiku_story__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_haiku_story__assistant_chat__prefix": {
+  "Qwen_Qwen2.5-7B__user_haiku_story__assistant_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_haiku_story__assistant_chat__context": {
+  "Qwen_Qwen2.5-7B__user_haiku_story__assistant_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "user_haiku_story__user_haiku_chat__prefix": {
+  "Qwen_Qwen2.5-7B__user_haiku_story__user_haiku_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_haiku_story__user_haiku_naturalistic__prefix": {
+  "Qwen_Qwen2.5-7B__user_haiku_story__user_haiku_naturalistic__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_haiku_story__user_lmsys_story__prefix": {
+  "Qwen_Qwen2.5-7B__user_haiku_story__user_lmsys_story__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_lmsys_chat__assistant_chat__prefix": {
+  "Qwen_Qwen2.5-7B__user_lmsys_chat__assistant_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_lmsys_chat__assistant_chat__context": {
+  "Qwen_Qwen2.5-7B__user_lmsys_chat__assistant_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "user_lmsys_chat__user_lmsys_naturalistic__prefix": {
+  "Qwen_Qwen2.5-7B__user_lmsys_chat__user_lmsys_naturalistic__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_lmsys_chat__user_lmsys_story__prefix": {
+  "Qwen_Qwen2.5-7B__user_lmsys_chat__user_lmsys_story__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_lmsys_chat__user_onpolicy_chat__context": {
+  "Qwen_Qwen2.5-7B__user_lmsys_chat__user_onpolicy_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "user_lmsys_naturalistic__assistant_chat__prefix": {
+  "Qwen_Qwen2.5-7B__user_lmsys_naturalistic__assistant_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_lmsys_naturalistic__assistant_chat__context": {
+  "Qwen_Qwen2.5-7B__user_lmsys_naturalistic__assistant_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "user_lmsys_naturalistic__user_lmsys_chat__prefix": {
+  "Qwen_Qwen2.5-7B__user_lmsys_naturalistic__user_lmsys_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_lmsys_naturalistic__user_lmsys_story__prefix": {
+  "Qwen_Qwen2.5-7B__user_lmsys_naturalistic__user_lmsys_story__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_lmsys_story__assistant_chat__prefix": {
+  "Qwen_Qwen2.5-7B__user_lmsys_story__assistant_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_lmsys_story__assistant_chat__context": {
+  "Qwen_Qwen2.5-7B__user_lmsys_story__assistant_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "user_lmsys_story__user_haiku_story__prefix": {
+  "Qwen_Qwen2.5-7B__user_lmsys_story__user_haiku_story__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_lmsys_story__user_lmsys_chat__prefix": {
+  "Qwen_Qwen2.5-7B__user_lmsys_story__user_lmsys_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_lmsys_story__user_lmsys_naturalistic__prefix": {
+  "Qwen_Qwen2.5-7B__user_lmsys_story__user_lmsys_naturalistic__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_lmsys_story__user_onpolicy_story__prefix": {
+  "Qwen_Qwen2.5-7B__user_lmsys_story__user_onpolicy_story__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_onpolicy_chat__user_lmsys_chat__context": {
+  "Qwen_Qwen2.5-7B__user_onpolicy_chat__user_lmsys_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "user_onpolicy_chat__user_onpolicy_naturalistic__prefix": {
+  "Qwen_Qwen2.5-7B__user_onpolicy_chat__user_onpolicy_naturalistic__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_onpolicy_chat__user_onpolicy_naturalistic__context": {
+  "Qwen_Qwen2.5-7B__user_onpolicy_chat__user_onpolicy_naturalistic__context": {
    "ctx": null,
    "ans": null
   },
-  "user_onpolicy_chat__user_onpolicy_story__prefix": {
+  "Qwen_Qwen2.5-7B__user_onpolicy_chat__user_onpolicy_story__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_onpolicy_chat__user_onpolicy_story__context": {
+  "Qwen_Qwen2.5-7B__user_onpolicy_chat__user_onpolicy_story__context": {
    "ctx": null,
    "ans": null
   },
-  "user_onpolicy_naturalistic__assistant_chat__prefix": {
+  "Qwen_Qwen2.5-7B__user_onpolicy_naturalistic__assistant_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_onpolicy_naturalistic__assistant_chat__context": {
+  "Qwen_Qwen2.5-7B__user_onpolicy_naturalistic__assistant_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "user_onpolicy_naturalistic__user_onpolicy_chat__prefix": {
+  "Qwen_Qwen2.5-7B__user_onpolicy_naturalistic__user_onpolicy_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_onpolicy_naturalistic__user_onpolicy_chat__context": {
+  "Qwen_Qwen2.5-7B__user_onpolicy_naturalistic__user_onpolicy_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "user_onpolicy_naturalistic__user_onpolicy_story__prefix": {
+  "Qwen_Qwen2.5-7B__user_onpolicy_naturalistic__user_onpolicy_story__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_onpolicy_naturalistic__user_onpolicy_story__context": {
+  "Qwen_Qwen2.5-7B__user_onpolicy_naturalistic__user_onpolicy_story__context": {
    "ctx": null,
    "ans": null
   },
-  "user_onpolicy_story__assistant_chat__prefix": {
+  "Qwen_Qwen2.5-7B__user_onpolicy_story__assistant_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_onpolicy_story__assistant_chat__context": {
+  "Qwen_Qwen2.5-7B__user_onpolicy_story__assistant_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "user_onpolicy_story__user_lmsys_story__prefix": {
+  "Qwen_Qwen2.5-7B__user_onpolicy_story__user_lmsys_story__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_onpolicy_story__user_onpolicy_naturalistic__prefix": {
+  "Qwen_Qwen2.5-7B__user_onpolicy_story__user_onpolicy_naturalistic__prefix": {
    "ctx": null,
    "ans": null
   },
-  "user_onpolicy_story__user_onpolicy_naturalistic__context": {
+  "Qwen_Qwen2.5-7B__user_onpolicy_story__user_onpolicy_naturalistic__context": {
    "ctx": null,
    "ans": null
   },
-  "wren_naturalistic__assistant_chat__prefix": {
+  "Qwen_Qwen2.5-7B__wren_naturalistic__assistant_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "wren_naturalistic__assistant_chat__context": {
+  "Qwen_Qwen2.5-7B__wren_naturalistic__assistant_chat__context": {
    "ctx": null,
    "ans": null
   },
-  "wren_story__assistant_chat__prefix": {
+  "Qwen_Qwen2.5-7B__wren_story__assistant_chat__prefix": {
    "ctx": null,
    "ans": null
   },
-  "wren_story__assistant_chat__context": {
+  "Qwen_Qwen2.5-7B__wren_story__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__assistant_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__assistant_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__assistant_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__assistant_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__dana_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__dana_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__dana_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__dana_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__helios_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__helios_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__helios_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__helios_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__user_haiku_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__user_haiku_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__user_haiku_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__user_haiku_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__user_haiku_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__user_haiku_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__user_lmsys_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__user_lmsys_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__user_lmsys_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__user_lmsys_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__user_lmsys_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__user_lmsys_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__user_onpolicy_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__user_onpolicy_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__user_onpolicy_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__user_onpolicy_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__user_onpolicy_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__user_onpolicy_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__wren_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__wren_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__wren_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_chat__wren_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_naturalistic__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_naturalistic__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_naturalistic__assistant_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_naturalistic__assistant_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_naturalistic__dana_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_naturalistic__dana_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_naturalistic__helios_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_naturalistic__helios_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_naturalistic__wren_naturalistic__prefix": {
+   "ctx": null,
+   "ans": 16
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_naturalistic__wren_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_story__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_story__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_story__assistant_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_story__assistant_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_story__dana_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__assistant_story__dana_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__dana_naturalistic__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__dana_naturalistic__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__dana_naturalistic__assistant_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__dana_naturalistic__assistant_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__dana_naturalistic__dana_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__dana_story__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__dana_story__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__helios_naturalistic__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__helios_naturalistic__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__helios_naturalistic__assistant_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__helios_naturalistic__assistant_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__helios_naturalistic__helios_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__helios_naturalistic__helios_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__helios_story__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__helios_story__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__helios_story__helios_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__helios_story__helios_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_haiku_chat__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_haiku_chat__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_haiku_chat__user_haiku_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_haiku_chat__user_haiku_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_haiku_chat__user_lmsys_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_haiku_naturalistic__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_haiku_naturalistic__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_haiku_naturalistic__user_haiku_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_haiku_naturalistic__user_haiku_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_haiku_story__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_haiku_story__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_haiku_story__user_haiku_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_haiku_story__user_haiku_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_haiku_story__user_lmsys_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_lmsys_chat__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_lmsys_chat__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_lmsys_chat__user_haiku_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_lmsys_chat__user_lmsys_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_lmsys_chat__user_lmsys_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_lmsys_chat__user_onpolicy_chat__prefix": {
+   "ctx": null,
+   "ans": 64
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_lmsys_chat__user_onpolicy_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_lmsys_naturalistic__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_lmsys_naturalistic__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_lmsys_naturalistic__user_lmsys_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_lmsys_naturalistic__user_lmsys_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_lmsys_story__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_lmsys_story__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_lmsys_story__user_haiku_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_lmsys_story__user_lmsys_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_lmsys_story__user_lmsys_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_lmsys_story__user_onpolicy_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_chat__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_chat__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_chat__user_lmsys_chat__prefix": {
+   "ctx": null,
+   "ans": 16
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_chat__user_lmsys_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_chat__user_onpolicy_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_chat__user_onpolicy_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_chat__user_onpolicy_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_naturalistic__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_naturalistic__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_naturalistic__user_onpolicy_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_naturalistic__user_onpolicy_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_naturalistic__user_onpolicy_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_naturalistic__user_onpolicy_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_story__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_story__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_story__user_lmsys_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_story__user_onpolicy_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_story__user_onpolicy_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_story__user_onpolicy_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__user_onpolicy_story__user_onpolicy_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__wren_naturalistic__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__wren_naturalistic__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__wren_naturalistic__assistant_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__wren_naturalistic__assistant_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__wren_naturalistic__wren_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__wren_story__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct__wren_story__assistant_chat__context": {
    "ctx": null,
    "ans": null
   }
@@ -442,6 +946,6 @@
   "git_commit": "unknown",
   "numpy": "2.2.6",
   "torch": "2.8.0+cu128",
-  "timestamp_utc": "2026-07-30T00:41:39.666487+00:00"
+  "timestamp_utc": "2026-07-30T07:56:34.658366+00:00"
  }
 }

@@ -5,7 +5,7 @@
   "git_commit": "unknown",
   "numpy": "2.2.6",
   "torch": "2.8.0+cu128",
-  "timestamp_utc": "2026-07-29T19:00:17.366022+00:00"
+  "timestamp_utc": "2026-07-30T03:07:07.580995+00:00"
  },
  "parity": {
   "pair": "assistant_chat__assistant_naturalistic",
@@ -26,11 +26,11 @@
   "rung_reached_match": true,
   "n_common_match": true,
   "n_common": 2317,
-  "ladder_unit_wall_s": 410.2,
+  "ladder_unit_wall_s": 406.9,
   "ok": true
  },
  "timing": {
-  "battery_unit_wall_s": 51.3,
+  "battery_unit_wall_s": 50.7,
   "row_limit": null,
   "dim_limit": null,
   "unit_error": null
