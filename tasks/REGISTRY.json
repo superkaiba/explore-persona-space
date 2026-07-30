@@ -5962,11 +5962,11 @@
     },
     "1768": {
       "goal": "Characterise what fine-tuning a behavior into a specific context does to the context->answer mapping in activation space, on the model-organism fleet: whether the context vector moves, whether the map itself changes, whether the answer vector moves, what shape the write has and whether it is predictable ahead of time (delta vs r_B vs the marker unembedding row), and which of theory assumptions A7-A11 hold.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/1768",
       "status": "interpreting",
-      "title": "What fine-tuning a behavior into a context does to the context->answer map (60-arm organism fleet, 15k contexts)"
+      "title": "Behavior fine-tuning changes the context\u2192answer map in rank order with its weights-carried answer shift, with most content arms crossing the refit-noise floor and marker arms staying below it (HIGH confidence)"
     },
     "1769": {
       "goal": "Determine when behavioral commitment happens in Qwen-2.5-7B-Instruct: does steering a persona-vector direction r_B only during prefill vs only during decode vs both change on-policy judged behavior expression - i.e., is the answer's behavior already committed in the pre-answer context state, or decided token-by-token during generation?",
@@ -6361,8 +6361,8 @@
     "1821": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1821",
-      "status": "reviewing",
+      "path": "tasks/completed/1821",
+      "status": "completed",
       "title": "daily-fix: bake self-pid exclusion into single-flight probe"
     },
     "1822": {
@@ -6382,22 +6382,22 @@
     "1824": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1824",
-      "status": "planning",
+      "path": "tasks/reviewing/1824",
+      "status": "reviewing",
       "title": "upload_dir_sharded: batch small-file stores into one upload_folder commit (per-file walk measured ~35 s/file, #1482)"
     },
     "1825": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1825",
-      "status": "approved",
+      "path": "tasks/reviewing/1825",
+      "status": "reviewing",
       "title": "workflow-fix: gotchas entry \u2014 reused-module flag contract trap (same flag, opposite semantics)"
     },
     "1826": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1826",
-      "status": "proposed",
+      "path": "tasks/running/1826",
+      "status": "running",
       "title": "workflow-fix: widen check-28 H-code regex to catch H1c-form hypothesis tags"
     },
     "1827": {

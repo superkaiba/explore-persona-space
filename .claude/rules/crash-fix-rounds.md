@@ -169,7 +169,10 @@ load-186 VM overload).
    does NOT protect: the artifact path / any unbracketed alternate rides
    the probe's own argv and self-matches — apply the self-exclusion filter
    / per-pid iteration recipes in `.claude/rules/gotchas.md` (SSH-remote
-   ownership-probe entry) alongside the bracket. The same bracket idiom
+   ownership-probe entry) alongside the bracket. For the /issue gate
+   single-flight sites the mechanical fix is `scripts/step9c_baseline.py
+   probe` — self- + ancestor-pid excluding, exit 0 = clear (INVERTED vs
+   pgrep); kill-arms keep raw pgrep for the pid list (#1821). The same bracket idiom
    equally covers OWNERSHIP/liveness probes, including SSH-remote ones —
    `ssh <host> "pgrep -af ..."` re-materializes the pattern in the remote
    shell's argv (see the `.claude/rules/gotchas.md` SSH-remote
