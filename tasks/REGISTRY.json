@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1898,
+  "highest_id": 1899,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6945,6 +6945,13 @@
       "path": "tasks/running/1898",
       "status": "running",
       "title": "workflow-fix: fellows sentinel-drain arm \u2014 un-pin sentinel workloads from paid lanes"
+    },
+    "1899": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1899",
+      "status": "proposed",
+      "title": "workflow-fix: fellows QoS fallback ladder (high-eur first, then normal-eur/low-eur)"
     },
     "19": {
       "has_clean_result": false,
