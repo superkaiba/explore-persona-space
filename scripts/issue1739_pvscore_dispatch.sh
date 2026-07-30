@@ -27,7 +27,6 @@ cd "$REPO_ROOT"
 STORE_ROOT="data/issue_1739/store"
 RESULTS_ROOT="eval_results/issue_1739"
 PV_ROOT="$RESULTS_ROOT/pvsynth"
-U_STORE_DIR="data/issue_1739/hf_dl/u_store"
 PVCAP_MIRROR="data/issue_1739/hf_dl/pvcap_mirror"
 DATA_REPO="superkaiba1/explore-persona-space-data"
 PVCAP_PREFIX="issue1739_ctxmap/pvsynth/capture_store"
@@ -67,7 +66,11 @@ if want_phase stage; then
     [ -f "$RESULTS_ROOT/dv_dataset/$b/labeling.json" ] \
       || { echo "[pvscore] FATAL: dv_dataset/$b/labeling.json missing after stage" >&2; exit 1; }
   done
-  [ -d "$U_STORE_DIR" ] || { echo "[pvscore] FATAL: u_store missing after stage" >&2; exit 1; }
+  # NO u_store assert here: leg2.sh does NOT stage the #1092 U pool. In the
+  # nonlinear-map round the FITS SCRIPT self-staged it (store_io.stage_u_store);
+  # here the SCORER does, on demand into <store-root>/u_store (~13 GB) when that
+  # path is not already a loadable store. Asserting it after leg2 fails a
+  # precondition nothing in this phase establishes — the 20:00:25Z rc=1 death.
 
   echo "[pvscore] phase=stage: staging pvsynth capture store ($PVCAP_PREFIX)"
   mkdir -p "$PVCAP_MIRROR"
@@ -88,13 +91,17 @@ fi
 # depth, so a producer-side prefix change cannot silently mis-point us.
 #
 # The capture store is PER BEHAVIOR: the prefix holds evil/ hallucination/
-# sycophancy/ subtrees (173 files each) beside 3 flat manifest files. The
-# scorer resolves it as `--pvsynth-store or store_root/pvsynth_capture_store/
-# <behavior>` — an EXPLICIT --pvsynth-store short-circuits that per-behavior
-# leg, so passing one path with three behaviors both defeats the resolution
-# and trips the scorer's multi-behavior override guard (a2ed97265f, rc=2).
-# So: publish the mirrored root AT the layout the default expects and pass NO
-# --pvsynth-store, letting the scorer append each behavior itself.
+# sycophancy/ subtrees (173 files each) beside 3 flat manifest files, so a
+# single shared path is never a correct store for a multi-behavior run.
+#
+# We publish the mirrored root AT the layout the scorer's DEFAULT expects
+# (store_root/pvsynth_capture_store/<behavior>) and pass NO --pvsynth-store.
+# The default is the stable contract; the meaning of an EXPLICIT flag has
+# already changed across scorer revisions — under a2ed97265f it short-circuits
+# the per-behavior leg and trips the multi-behavior override guard (rc=2),
+# while the later hot-fix reinterprets it as a root to append the behavior to.
+# Relying on the default is correct under both, so this caller cannot be
+# re-broken by a future change to that flag's semantics.
 publish_pvcap() {
   local m root dest
   m="$(find "$PVCAP_MIRROR" -name '_capture_manifest.json' -print -quit 2>/dev/null || true)"
@@ -123,10 +130,12 @@ if want_phase score; then
   # leg resumes rather than recomputing.
   # NO --pvsynth-store: see publish_pvcap — the scorer's default appends the
   # behavior, and an explicit path would short-circuit that for all three.
+  # NO --u-store: pointing it at a path nothing populates DEFEATS the scorer's
+  # own on-demand U-pool staging (an explicit path is taken as already-staged).
+  # Omitting it lets the scorer stage into <store-root>/u_store itself.
   uv run python scripts/issue1739_pvsynth_arms.py \
     --behaviors $BEHAVIORS \
     --store-root "$STORE_ROOT" \
-    --u-store "$U_STORE_DIR" \
     --map-kind "$MAP_KIND" \
     --device "$DEVICE" \
     --out-root "$PV_ROOT"
