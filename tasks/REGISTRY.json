@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1890,
+  "highest_id": 1891,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6889,6 +6889,13 @@
       "path": "tasks/proposed/1890",
       "status": "proposed",
       "title": "workflow-fix: GCE crash-persist omits analysis_tensors staging dirs"
+    },
+    "1891": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1891",
+      "status": "proposed",
+      "title": "workflow-fix: experiment-implementer MEMORY.md exceeds the always-loaded read limit (41KB vs ~24.4KB) \u2014 curate + add size guard"
     },
     "19": {
       "has_clean_result": false,
