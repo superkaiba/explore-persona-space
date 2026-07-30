@@ -586,7 +586,22 @@ both reviewers are graded against the same standard. Read
   pin's literal command + exit code alongside the bare-ruff result; a
   passing bare-ruff with a failing pin is the #1672 shape and blocks the
   round with a `substantive` blocker tag (NOT `marker-shape` — a real
-  lint violation is never strippable by Step 5c-bis).
+  lint violation is never strippable by Step 5c-bis). ALSO INCLUDING the
+  round-new-script no-flags lint duty (#1805): Codex cannot run the lint
+  (no `uv` env), so the composed prompt instructs the STATIC
+  diff-readable adaptation — flag any round-NEW `scripts/**/*.py` diff
+  hunk carrying `list_repo_files` / `list_repo_tree` / `file_exists` in
+  call OR bare-reference form — INCLUDING a `retry_transient(...)`-wrapped
+  call and a bare `inspect.signature(...)` reference (both #1092 incident
+  shapes; wrapping does NOT obviate the waiver) — with no
+  `# HUB_VERIFY_RETRY_EXEMPT: <reason>` waiver on the call's first
+  physical line or the immediately-preceding NON-BLANK line → a Critical
+  tagged `substantive`, with the waiver named as the remedy. The ONLY
+  no-waiver routes are the `orchestrate/hub.py` helper functions used IN
+  PLACE OF the bare target (`verify_repo_paths_uploaded`,
+  `list_hf_files_under_path`, `list_repo_files_complete`). The executable
+  no-flags coverage stays the Claude reviewer's duty (the Step 4.6
+  no-uv-adaptation pattern).
 - "Step 4.5: Regression-test presence for substantive BLOCKER fixes"
   VERBATIM. This is a test-PRESENCE check (grep the worktree for a committed
   pytest pinning the invariant), NOT a test-RUNNING check, so Codex CAN and
