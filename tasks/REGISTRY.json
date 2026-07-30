@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1881,
+  "highest_id": 1882,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6826,6 +6826,13 @@
       "path": "tasks/proposed/1881",
       "status": "proposed",
       "title": "workflow-fix: verify_task_body judge-health drop-line population reconciliation"
+    },
+    "1882": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1882",
+      "status": "proposed",
+      "title": "workflow-fix: TG file-grain gate arm \u2014 tree-prefix normalization + warnings-line exclusion"
     },
     "19": {
       "has_clean_result": false,
