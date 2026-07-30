@@ -3972,6 +3972,7 @@ Read the outcome by MESSAGE, not rc alone:
 | Nonzero exit AFTER `ARGV-PARSE-OK` whose message names a VM-only environment gap (a pod/GCE-staged path absent locally, CUDA on a no-GPU VM) | Judged pass — state it in one line in the dispatch note. |
 | rc=0 WITH `ARGV-PARSE-OK` printed | Pass — but the ENTIRE workload ran to completion LOCALLY and succeeded; state explicitly that local execution occurred (vanishingly rare for an instance-booting workload — it usually means the dispatch may not be needed at all). |
 | rc=3 + `ARGV-PROBE-NEVER-ENGAGED` | No argparse parser was reached (Hydra or a bespoke CLI) — NEVER a pass; use the family-appropriate check above. |
+| Any exit with NEITHER sentinel printed (e.g. a parser-less script that `sys.exit(0)`s on its own before the guard runs) | NEVER a pass — treat as never-engaged; every pass row above is sentinel-keyed. Use the family-appropriate check above. |
 
 Notes: (a) a bare `--help` probe validates NOTHING about the composed
 argv (help exits 0 before any validation) — `experimenter.md` item 7's
@@ -3979,8 +3980,11 @@ flag-presence scan is the COMPLEMENT (bogus flags); this probe is the
 missing-input side. (b) For a wrapper `.sh` dispatcher, probe the INNER
 python driver argv the wrapper composes (plus `bash -n <wrapper>` for
 wrapper syntax). (c) A driver calling `parse_known_args` directly
-bypasses the monkeypatch (0 such scripts today) — the never-engaged
-guard converts that to rc=3, never a false pass. The guard DETECTS a
+bypasses the monkeypatch (one direct caller today:
+`src/explore_persona_space/experiments/factor_screen_365/__main__.py`)
+— the never-engaged guard converts that to rc=3 when the script
+returns; a script that exits on its own shows NEITHER sentinel, which
+the table's neither-sentinel row bars from reading as a pass. The guard DETECTS a
 parser-less run after the fact (the script may have executed fully
 within the timeout window before rc=3 returns); PREVENTION rests on the
 first-step CLI-family grep classification plus the timeout ceiling.
