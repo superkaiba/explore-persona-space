@@ -6242,8 +6242,8 @@
     "1806": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1806",
-      "status": "proposed",
+      "path": "tasks/planning/1806",
+      "status": "planning",
       "title": "daily-fix: escalate-only audit of root stashes + rescue dirs"
     },
     "1807": {
