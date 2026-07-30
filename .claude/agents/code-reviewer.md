@@ -1674,6 +1674,15 @@ uv run ruff format --check path/to/changed/files
 # Ruff-policy pin (#1699 / #1716): when the diff touches any path listed
 # in tests/test_ruff_policy.py's LIVE_WORKFLOW_HELPERS roster, ALSO run:
 uv run pytest tests/test_ruff_policy.py::test_live_workflow_helpers_clean_under_full_ruleset -x
+# Round-new-script no-flags lint (#1805): fires only when the diff ADDS a
+# scripts/ or src/ .py file — then run the no-flags lint once from the
+# worktree (the same instrument as the Step 10d gate's lint leg):
+BASE=${BASE:-origin/main}   # the Step 0 fetched base (#1289), or the brief's stated base
+if git diff --name-status --diff-filter=A "$BASE"...HEAD \
+     | grep -qE $'^A\t(scripts|src)/.*\\.py$'; then
+  timeout --kill-after=30s 540s uv run python scripts/workflow_lint.py \
+    > /tmp/reviewer-lint-<N>.txt 2>&1; echo "no-flags lint rc=$?"
+fi
 ```
 
 **Ruff-policy pin (#1716, mirrors `implementer.md:176`).** Bare `ruff check`
@@ -1694,6 +1703,36 @@ equivalent discriminating one-liner `uv run ruff check <touched files>
 --config 'lint.per-file-ignores = {}'` MAY be documented as a fast local
 probe, but the pin test is the authoritative form — it is what the gate
 runs, and it is the one whose node id the FAIL will name.
+
+**Round-new-script no-flags lint (#1805).** Trigger: the diff ADDS (status
+`A` vs the review base) ≥1 `scripts/**/*.py` or `src/**/*.py` file — the
+executable gate in the block above; prose-only / modify-only rounds skip the
+duty (accepted residual: a modify-only round introducing a fresh bare hub
+call skips it — status-quo latency; the Step 10d gate remains the
+authoritative backstop). Attribution: `workflow_lint:` failure lines naming a
+round-TOUCHED path → a Critical with blocker tag `substantive` (a
+deterministic Step 10d gate blocker caught early — the #1092 shape; NOT
+strippable by /issue Step 5c-bis); failure lines naming only untouched paths
+→ pre-existing red, note-only, NEVER blocks; timeout / crash / zero output →
+INCONCLUSIVE — flag it loudly in the verdict (the tests-not-run convention
+below), never report it as clean, never a blocker by itself.
+
+Remedy guidance for hub-verify hits on genuinely non-network-risky shapes —
+a bare `inspect.signature(...)` reference, or a call the script wraps in
+`hub.retry_transient(...)` itself (BOTH #1092 shapes still require the
+waiver): the fix IS the `# HUB_VERIFY_RETRY_EXEMPT: <reason>` waiver (reason
+≥ 10 chars, on the call's first physical line or the immediately-preceding
+NON-BLANK line) — name it in the finding so the implementer's bounce round
+applies it directly. Routing the listing through the `orchestrate/hub.py`
+helpers (`verify_repo_paths_uploaded`, `list_hf_files_under_path`,
+`list_repo_files_complete`) IN PLACE OF the bare target is the only
+no-waiver alternative. `uv run python scripts/workflow_lint.py
+--check-hub-verify-retry` runs in seconds and MAY be run first as a fast
+probe; the no-flags run is authoritative (it is what the gate runs).
+Stale-family caveat (#1417): a false block naming a ratchet/grandfather size
+cap, or a `workflow_lint` import failure inside the worktree, is the stale
+lint-family class — cross-check at the repo root (post Step-5a sync) before
+attributing it to the payload.
 
 **If `uv run pytest` fails with a read-only-sandbox / cache / tempdir error**
 (e.g. `Read-only file system`, `Permission denied` on `~/.cache/uv`, or a
