@@ -4247,8 +4247,10 @@ _COND_EMPHASIS_RE = re.compile(r"[*_`]")
 _COND_PARENTHETICAL_RE = re.compile(r"\([^)]*\)")
 # Hyphen family + whitespace → one space (name matching is hyphenation- and
 # linebreak-tolerant: plan `No-intervention baseline` matches body
-# `no intervention baseline` and vice versa).
-_COND_HYPHEN_WS_RE = re.compile(r"[-‐‑‒–\s]+")
+# `no intervention baseline` and vice versa). Unicode hyphen/dash variants
+# (U+2010 hyphen, U+2011 non-breaking hyphen, U+2012 figure dash,
+# U+2013 en dash) are spelled as escapes — RUF001 rejects the literals.
+_COND_HYPHEN_WS_RE = re.compile(r"[-\u2010\u2011\u2012\u2013\s]+")
 _MD_TABLE_SEPARATOR_CELL_RE = re.compile(r"^:?-{3,}:?$")
 
 
