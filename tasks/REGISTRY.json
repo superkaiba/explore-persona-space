@@ -6291,8 +6291,8 @@
     "1812": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1812",
-      "status": "running",
+      "path": "tasks/reviewing/1812",
+      "status": "reviewing",
       "title": "daily-fix: 9a-ter \u2014 instrument supersession + addenda charac"
     },
     "1813": {
