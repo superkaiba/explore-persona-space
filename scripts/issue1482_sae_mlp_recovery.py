@@ -37,16 +37,18 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
-import torch
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
+# BEFORE torch/numpy: torch freezes its intra-op thread pool from OMP_NUM_THREADS
+# at import, and load_dotenv() is what setdefaults the shared-VM caps (#847).
 load_dotenv()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 import issue1482_error_analysis as EA  # noqa: E402  (store load, prep, densify, metrics)
 import issue779_ffc_n1m_fits as N1M  # noqa: E402  (PARENT fitter -- reused verbatim)
@@ -299,6 +301,38 @@ def main() -> int:
         act = _block_activity(Z, prep.tr)
         diag = {"act": act}
     act = diag["act"]
+
+    if args.phase == "ridge_matched":
+        # DESIGN-MATCHED linear reference: the banked ridge 0.6901/0.3589/0.5395 was
+        # fitted on ALL 16384 columns, while the repaired MLP sees only the kept
+        # subset -- so the linear-vs-nonlinear read needs ridge on the SAME design.
+        variant = args.select or "v1_activity_floor"
+        keep = _keep_mask(act, n_in, prep.floor, variant)
+        Zk = np.ascontiguousarray(Z[:, keep])
+        tgt = EA._p3_targets(prep, POOLINGS)
+        preds = EA._shared_gram_ridge_multi(
+            Zk, tgt, prep.tr, prep.va, prep.te, N1M.LAMBDAS_N1M, dev, N1M.RIDGE_BLOCK
+        )
+        doc = {
+            "variant": variant,
+            "n_cols_kept": int(keep.sum()),
+            "n_cols_total": int(len(keep)),
+            "note": "ridge on the SAME restricted design the repaired MLP uses "
+            "(the banked ridge reference used all 16384 columns)",
+            "poolings": {},
+        }
+        for pool, (pt, meta) in preds.items():
+            truth = tgt[pool][prep.te]
+            doc["poolings"][pool] = {
+                "pooled_r2": float(PR._pooled_r2(pt, truth)),
+                "splithalf_rank_stability": _splithalf_stability(pt, truth, prep.te),
+                "shuffled_pairing_floor_r2": _shuffle_floor(pt, truth, EA.SPLIT_SEED_1482),
+                "ridge_full_design_reference": REF["ridge_sae_ctx"][pool],
+                **meta,
+            }
+            logger.info("[ridge_matched] %s: %s", pool, json.dumps(doc["poolings"][pool]))
+        EA._write_json(out_dir / "ridge_matched.json", doc)
+        return 0
 
     logger.info("[recovery] densifying targets (mean) ...")
     tgt_mean = EA._p3_targets(prep, ("mean",))["mean"]

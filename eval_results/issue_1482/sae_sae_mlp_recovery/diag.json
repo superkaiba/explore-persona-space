@@ -1,0 +1,52 @@
+{
+  "activity_floor_rows": 1200,
+  "n_train": 120000,
+  "n_holdout": 20000,
+  "n_cols": 16384,
+  "blocks": {
+    "psi_mean": {
+      "n_cols": 8192,
+      "n_below_parent_activity_floor": 0,
+      "frac_below_parent_activity_floor": 0.0,
+      "n_zero_train_variance": 0,
+      "n_zero_train_variance_but_nonzero_holdout": 0,
+      "train_sd_quantiles": {
+        "p00": 0.0024793903752866778,
+        "p01": 0.007885830115336022,
+        "p50": 0.025949908535206793,
+        "p99": 0.4791967218513608
+      },
+      "min_train_nonzero_rows": 8050
+    },
+    "psi_last": {
+      "n_cols": 8192,
+      "n_below_parent_activity_floor": 7930,
+      "frac_below_parent_activity_floor": 0.968017578125,
+      "n_zero_train_variance": 5772,
+      "n_zero_train_variance_but_nonzero_holdout": 62,
+      "train_sd_quantiles": {
+        "p00": 1e-09,
+        "p01": 1e-09,
+        "p50": 1e-09,
+        "p99": 1.348560992809451
+      },
+      "min_train_nonzero_rows": 0
+    }
+  },
+  "max_abs_z_train": {
+    "value": 346.4072587708925,
+    "col": 10805
+  },
+  "max_abs_z_holdout": {
+    "value": 4601562500.0,
+    "col": 12030
+  },
+  "interpretation": "A column with zero TRAIN variance standardizes to (x-mu)/1e-9; any nonzero HOLDOUT value in it is amplified ~1e9x. Ridge zeroes such a column by construction; the MLP keeps random first-layer weights on it, so the blow-up appears only in holdout predictions.",
+  "metadata": {
+    "git_commit": "51a41e99147ad11178cf54904808240c1032c1e7",
+    "timestamp_utc": "2026-07-30T18:29:10.012452Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}
