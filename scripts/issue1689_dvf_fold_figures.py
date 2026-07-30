@@ -60,30 +60,23 @@ def fig11_verdicts(rows: list[dict], out: Path) -> None:
     import matplotlib.pyplot as plt
 
     dvf = [r for r in rows if r["battery"] == "dvf_within"]
-    groups = [
-        (
-            "base | prefix — all computed (121)",
-            lambda r: "Instruct" not in r["model"] and r["arm"] == "prefix",
-        ),
-        (
-            "base | prefix — informative (49)",
-            lambda r: (
-                "Instruct" not in r["model"] and r["arm"] == "prefix" and r["informative"] == "1"
-            ),
-        ),
-        (
-            "base | context — all computed (120)",
-            lambda r: "Instruct" not in r["model"] and r["arm"] == "context",
-        ),
-        (
-            "base | context — informative (26)",
-            lambda r: (
-                "Instruct" not in r["model"] and r["arm"] == "context" and r["informative"] == "1"
-            ),
-        ),
-        ("instruct — the 11 computed units", lambda r: "Instruct" in r["model"]),
-    ]
-    fig, (axL, axR) = plt.subplots(1, 2, figsize=(13.2, 5.2))
+
+    def _pred(model_tag: str, arm: str, inf_only: bool):
+        def pred(r: dict) -> bool:
+            is_instruct = "Instruct" in r["model"]
+            ok = (is_instruct == (model_tag == "instruct")) and r["arm"] == arm
+            return ok and (r["informative"] == "1" if inf_only else True)
+
+        return pred
+
+    groups = []
+    for model_tag in ("base", "instruct"):
+        for arm in ("prefix", "context"):
+            for inf_only, tag in ((False, "all"), (True, "informative")):
+                pred = _pred(model_tag, arm, inf_only)
+                n = sum(1 for r in dvf if pred(r))
+                groups.append((f"{model_tag} | {arm} — {tag} ({n})", pred))
+    fig, (axL, axR) = plt.subplots(1, 2, figsize=(13.2, 6.0))
     ys = np.arange(len(groups))[::-1]
     for y, (label, pred) in zip(ys, groups):
         sub = [r for r in dvf if pred(r)]
@@ -102,9 +95,7 @@ def fig11_verdicts(rows: list[dict], out: Path) -> None:
     axL.set_xlabel("ordered pair-arm units")
     handles = [plt.Rectangle((0, 0), 1, 1, color=VERDICT_COLORS[v]) for v in VERDICT_ORDER]
     axL.legend(handles, [VERDICT_LABELS[v] for v in VERDICT_ORDER], fontsize=8, loc="lower right")
-    axL.set_title(
-        "Verdict counts (per-unit files; instruct within-model battery not run)", fontsize=10
-    )
+    axL.set_title("Verdict counts (per-unit files; full 504-unit coverage)", fontsize=10)
 
     rng = np.random.default_rng(42)
     rho_txt = []
@@ -148,7 +139,7 @@ def fig11_verdicts(rows: list[dict], out: Path) -> None:
         "\n".join(rho_txt) + "\nfilled = informative unit, open = validity-screened", fontsize=9
     )
     fig.suptitle(
-        "Derived shared-readout map vs free map: verdicts and concordance (surviving 252 of 504 planned units)",
+        "Derived shared-readout map vs free map: verdicts and concordance (504 of 504 units, both models)",
         fontsize=11,
     )
     fig.tight_layout(rect=(0, 0, 1, 0.94))
@@ -219,9 +210,7 @@ def fig12_structure(rows: list[dict], out: Path) -> None:
         "Per-unit view: the fitted correction is near-full-rank\n(filled = informative, open = screened)",
         fontsize=9,
     )
-    fig.suptitle(
-        "Context-side transfer-map structure (252 surviving within-model units)", fontsize=11
-    )
+    fig.suptitle("Context-side transfer-map structure (504 of 504 within-model units)", fontsize=11)
     fig.tight_layout(rect=(0, 0, 1, 0.94))
     savefig_paper(fig, "fig12_context_map_structure", dir=out)
     plt.close(fig)
