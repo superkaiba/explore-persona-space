@@ -19,6 +19,9 @@ goal: 'On the model-organism fleet at per-prompt grain (the #1768 16,400-real-us
   is mediated by answer-side similarity; post-FT and delta candidates form a separate
   mechanistic panel, and every similarity candidate is computed against both the training-context-centroid
   and panel-source-context anchors.'
+relates_to:
+- leak-predictor
+- spec-context-as-vector
 ---
 # Leakage-predictor horse race at per-prompt grain: pre-fine-tuning geometry candidates vs base propensity, with an answer-side mediation test
 
