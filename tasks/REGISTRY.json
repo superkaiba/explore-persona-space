@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1843,
+  "highest_id": 1844,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6532,6 +6532,13 @@
       "path": "tasks/archived/1843",
       "status": "archived",
       "title": "workflow-fix: green test_ruff_policy full-ruleset \u2014 verify_task_body.py:13224 E501"
+    },
+    "1844": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1844",
+      "status": "proposed",
+      "title": "workflow-fix: add the expected pair line `tests/test_issue_skill_lint_fami"
     },
     "185": {
       "has_clean_result": false,
