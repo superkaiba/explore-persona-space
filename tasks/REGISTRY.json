@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1882,
+  "highest_id": 1883,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6833,6 +6833,13 @@
       "path": "tasks/proposed/1882",
       "status": "proposed",
       "title": "workflow-fix: TG file-grain gate arm \u2014 tree-prefix normalization + warnings-line exclusion"
+    },
+    "1883": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1883",
+      "status": "proposed",
+      "title": "workflow-fix: add skill-pin family to Step 5a spec-freshness sync (test_issue_skill_* pin tests)"
     },
     "19": {
       "has_clean_result": false,
