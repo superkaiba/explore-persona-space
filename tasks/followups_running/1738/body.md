@@ -277,7 +277,9 @@ Held-out R² (ridge, the crossed round's sole fitter) for the four input arms on
 
 > **Figure.** *With query identity held to a shared 20-question bank, the history arm collapses and the bare arm becomes the query-main-effect read.* Held-out R², ridge; 95% bootstrap CIs. The bare arm's design matrix has rank at most 20 by construction (20 bank queries tiled over rows), so its bar is the query main effect, not a general query map.
 
-The history map reads 0.046 at layer 19 (95% CI 0.043–0.047) versus 0.379 on the main corpus — not a contradiction: there each history has its own final query, so history-end states carry query identity; the shared bank removes exactly that variance. Bare reads 0.627 (95% CI 0.619–0.634) and full context 0.795 (95% CI 0.791–0.799). Identity-plus-bias R² stays negative in every cell; rank-1 retrieval among 10,000 candidates (cosine) reads 26.6% for context vs 0.05% for history — on this grid the per-row history map is barely discriminative. An LMSYS-only fit scores 0.783 (context) and 0.732 (question-averaged) on WildChat holdout rows: the reads transfer across sub-corpora.
+The history map reads 0.046 at layer 19 (95% CI 0.043–0.047) versus 0.379 on the main corpus — not a contradiction: there each history has its own final query, so history-end states carry query identity; the shared bank removes exactly that variance. Bare reads 0.627 (95% CI 0.619–0.634) and full context 0.795 (95% CI 0.791–0.799).
+
+Identity-plus-bias R² stays negative in every cell; rank-1 retrieval among 10,000 candidates (cosine) reads 26.6% for context vs 0.05% for history — on this grid the per-row history map is barely discriminative. An LMSYS-only fit scores 0.783 (context) and 0.732 (question-averaged) on WildChat holdout rows: the reads transfer across sub-corpora.
 
 ### On the crossed grid the final query explains nine times more answer-state variance than the whole history
 
@@ -318,6 +320,7 @@ Follow-up round `sae-arm` (same-issue; user-chat 2026-07-28, verbatim: "yes run 
 Follow-up round `crossed-multiturn-averaged` (same-issue; user-chat 2026-07-28, verbatim: "ok add this: 5,000 prefixes x 20 queries | 100k | ~15.6 GPU-h" — approving the recommended crossed-corpus sizing): builds the crossed companion corpus and the question-averaged arm, completing the four-input-object decomposition. Run 2026-07-30.
 
 Lineage: [#1482](https://eps.superkaiba.com/tasks/1482) — parent (this run applies its error-characterization battery per input arm at multi-turn scale). Created 2026-07-28; run 2026-07-28 → 2026-07-30.
+
 
 
 
