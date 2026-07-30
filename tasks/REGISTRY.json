@@ -6382,8 +6382,8 @@
     "1824": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1824",
-      "status": "planning",
+      "path": "tasks/approved/1824",
+      "status": "approved",
       "title": "upload_dir_sharded: batch small-file stores into one upload_folder commit (per-file walk measured ~35 s/file, #1482)"
     },
     "1825": {
