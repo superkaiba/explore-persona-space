@@ -124,7 +124,28 @@ class Arm:
 
 
 def _load_manifest() -> dict:
-    return json.loads(VERDICT_MANIFEST.read_text())
+    if VERDICT_MANIFEST.exists():
+        return json.loads(VERDICT_MANIFEST.read_text())
+    # Lane-staging fallback (#734/#1434 class): the SLURM lanes rsync-exclude
+    # eval_results/ wholesale, so the #1481 manifest never rides the repo
+    # tree there. A mirror lives at the issue HF prefix (uploaded 2026-07-30);
+    # stage it next to this module so repeat calls read locally.
+    from huggingface_hub import hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
+
+    local = Path(__file__).resolve().parent / ".i1768_verdict_manifest.json"
+    if not local.exists():
+        fetched = hub.retry_transient(
+            lambda: hf_hub_download(
+                HF_DATA_REPO,
+                f"{HF_PREFIX}/inputs/verdict_manifest.json",
+                repo_type="dataset",
+            ),
+            what="verdict manifest fallback fetch (SLURM-lane staging gap)",
+        )
+        local.write_text(Path(fetched).read_text())
+    return json.loads(local.read_text())
 
 
 def content_arms(manifest: dict | None = None) -> list[Arm]:
