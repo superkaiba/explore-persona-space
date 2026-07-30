@@ -39,6 +39,7 @@ CLI:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -323,6 +324,7 @@ def run_cells(
     null_draws: int,
     n_boot: int,
     smoke: bool,
+    resume: bool = True,
 ) -> dict[str, dict]:
     """Fit each cell, persist its JSONs + OOF preds, and attach the baselines.
 
@@ -336,6 +338,15 @@ def run_cells(
         cid = cell["cell_id"]
         bundle = bundles[(cell["model_key"], cell["format_key"])]
         allow = allow_by_cell.get(cid)
+        regime = _fit_regime(
+            cell, allow, n_folds=n_folds, seed=seed, null_draws=null_draws, n_boot=n_boot
+        )
+        if resume:
+            done = _resume_cell(out_dir, preds_dir, cid, regime)
+            if done is not None:
+                summary[cid] = {**done, "cell": cell}
+                print(f"[fits] {cid} RESUMED (regime match) — skipping refit", flush=True)
+                continue
         if smoke:
             xy_probe = fc._apply_row_allowlist(fc._cell_xy(bundle, cell), allow, cid)
             reason = degenerate_fold_reason(xy_probe["conv_ids"], n_folds=n_folds, seed=seed)
@@ -391,6 +402,8 @@ def run_cells(
         payload["mapping_baselines_headline_layer"] = baselines
         payload["bnd_arm"] = cell.get("bnd_arm")
         payload["slot"] = cell.get("slot")
+        payload["y_target"] = cell.get("y_target")
+        payload["bnd_fit_regime"] = regime
         c.write_json(cell_json, payload)
         summary[cid] = {
             "cell": cell,
@@ -408,6 +421,69 @@ def run_cells(
             flush=True,
         )
     return summary
+
+
+def _fit_regime(
+    cell: dict, allow: list[str] | None, *, n_folds: int, seed: int, null_draws: int, n_boot: int
+) -> dict:
+    """Every output-affecting key of one cell fit (the resume identity).
+
+    A resume that ignores ANY of these silently reuses wrong cached rows
+    (code-style.md § Checkpoint per phase, the #722 r3 class): the store, the
+    read position, the Y target, the fold/seed/null/bootstrap dials, and the
+    allowlist the rows were restricted to.
+    """
+    return {
+        "format_key": cell["format_key"],
+        "slot_index": int(cell["slot_index"]),
+        "target_turn_index": int(cell["target_turn_index"]),
+        "n_folds": int(n_folds),
+        "seed": int(seed),
+        "null_draws": int(null_draws),
+        "n_boot": int(n_boot),
+        "n_allowlist": (len(allow) if allow is not None else None),
+        "allowlist_sha": (
+            hashlib.sha256(json.dumps(sorted(str(x) for x in allow)).encode()).hexdigest()[:16]
+            if allow is not None
+            else None
+        ),
+        "layer": LAYER,
+    }
+
+
+def _resume_cell(out_dir: Path, preds_dir: Path, cid: str, regime: dict) -> dict | None:
+    """Reload a completed cell when its persisted regime matches EXACTLY.
+
+    74 grid cells at production n trip both intra-phase checkpoint triggers
+    (>50 units and >1 h projected), so a mid-phase kill must not forfeit the
+    completed cells. `fc.run_cell` already persists cells_/nulls_ JSONs per
+    cell and this driver the preds npz — the missing half was the resume
+    predicate, keyed on the full regime fingerprint.
+    """
+    cell_json = out_dir / f"cells_{cid}.json"
+    npz = preds_dir / f"{cid}_L{LAYER}.npz"
+    if not (cell_json.exists() and npz.exists()):
+        return None
+    try:
+        payload = json.loads(cell_json.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+    if payload.get("bnd_fit_regime") != regime:
+        return None
+    if "mapping_baselines_headline_layer" not in payload:
+        return None
+    boot = payload.get("r2_bootstrap_ci_frozen_layers_conv", {})
+    return {
+        "cell": payload.get("cell", {}),
+        "layer": LAYER,
+        "r2": float(payload["r2_per_layer_obs"][LAYER]),
+        "ci": boot.get(str(LAYER)),
+        "null_p975": _null_p975(out_dir, cid, LAYER),
+        "mean_baseline_r2": payload.get("mean_baseline_r2", {}).get(str(LAYER)),
+        "skill_over_mean": payload.get("skill_over_mean", {}).get(str(LAYER)),
+        "baselines": payload.get("mapping_baselines_headline_layer"),
+        "resumed": True,
+    }
 
 
 def _null_p975(out_dir: Path, cell_id: str, layer: int) -> float | None:
@@ -866,7 +942,11 @@ def main() -> None:
     )
     ap.add_argument("--arms", default=",".join(bg.ARM_SLUG[a] for a in bg.GEN_ARMS))
     ap.add_argument(
-        "--reparam-arms", default=",".join(bg.ARM_SLUG[a] for a in DEFAULT_REPARAM_ARMS)
+        "--reparam-arms",
+        default=None,
+        help="arms whose story<->chat reparam ladder runs (default: every --arms "
+        "member that is in DEFAULT_REPARAM_ARMS; an EXPLICIT arm outside --arms "
+        "fails loud rather than silently doing nothing)",
     )
     ap.add_argument("--turnstore-dir", type=Path, default=c.TURNSTORE_DIR)
     ap.add_argument("--stories-dir", type=Path, default=c.STORIES_DIR)
@@ -877,6 +957,12 @@ def main() -> None:
     ap.add_argument("--null-draws", type=int, default=N_NULL_DRAWS)
     ap.add_argument("--n-boot", type=int, default=c.N_BOOTSTRAP)
     ap.add_argument("--smoke", action="store_true", help="tiny nulls/boot; degenerate-fold skips")
+    ap.add_argument(
+        "--no-resume",
+        action="store_true",
+        help="refit every cell even when a regime-matching persisted result exists "
+        "(default: resume, so a mid-phase kill never forfeits completed cells)",
+    )
     ap.add_argument(
         "--import-check",
         action="store_true",
@@ -891,8 +977,15 @@ def main() -> None:
     bg.assert_round_env()
     arms = [bg.SLUG_ARM.get(a, a) for a in args.arms.split(",") if a]
     assert arms and set(arms) <= set(bg.GEN_ARMS), arms
-    reparam_arms = [bg.SLUG_ARM.get(a, a) for a in args.reparam_arms.split(",") if a]
-    assert set(reparam_arms) <= set(arms), (reparam_arms, arms)
+    if args.reparam_arms is None:
+        # Default INTERSECTS --arms, so narrowing --arms never trips the guard.
+        reparam_arms = [a for a in arms if a in DEFAULT_REPARAM_ARMS]
+    else:
+        reparam_arms = [bg.SLUG_ARM.get(a, a) for a in args.reparam_arms.split(",") if a]
+        assert set(reparam_arms) <= set(arms), (
+            f"--reparam-arms {sorted(reparam_arms)} names arms outside --arms "
+            f"{sorted(arms)} — a ladder needs its arm's store registered"
+        )
     null_draws = SMOKE_NULL_DRAWS if args.smoke else args.null_draws
     n_boot = SMOKE_BOOT if args.smoke else args.n_boot
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -979,6 +1072,7 @@ def main() -> None:
             null_draws=null_draws,
             n_boot=n_boot,
             smoke=args.smoke,
+            resume=not args.no_resume,
         )
         c.write_json(
             args.out_dir / "cell_summary.json",
