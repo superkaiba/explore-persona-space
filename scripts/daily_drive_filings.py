@@ -89,7 +89,9 @@ WARN-only sha-verify backstop right before filing: a SHA-shaped hex token cited 
 commit context that does NOT ``git rev-parse`` as a commit in this repo gains one
 idempotent advisory line under ``## Provenance`` (heading appended when absent; never a
 ``workflow_fix_target:`` line) and is recorded as ``sha_warnings`` on the ``filed``
-ledger row; other non-resolving hex tokens WARN on stderr only. The scan never blocks a
+ledger row; other non-resolving hex tokens WARN on stderr only. The item's own wf-fix
+fp and every ``fingerprint:``-labeled 12-hex token in the body are token-exempt from
+the walk (#1808 — an fp is not a commit). The scan never blocks a
 filing and never changes the exit code (fail-open on git errors); the compose-time
 rev-parse duty (daily SKILL.md route-2 mandate) stays the primary defense.
 
@@ -378,6 +380,11 @@ HAS_HEX_LETTER_RE = re.compile(r"[a-f]")  # all-digit tokens are dates/ids — s
 # Known non-commit hex classes + our own advisory lines: lines matching this are
 # never scanned (fingerprints/wf-fix-fp tags are 12-hex by construction, #1173).
 SHA_EXCLUDE_LINE_RE = re.compile(r"fingerprint:|wf-fix-fp:|drift_hash|sha-verify")
+# #1808: any `fingerprint: <12hex>` label in the body (anchored Provenance bullet OR
+# prose, incl. the #1580 reconcile line's "supersedes body-carried fingerprint: <old>")
+# declares that token fp-class — exempt it from the sha walk EVERYWHERE in the body,
+# not only on its own (already line-excluded) label line.
+FP_LABEL_RE = re.compile(r"fingerprint:\s*`?([0-9a-f]{12})(?![0-9a-f])")
 COMMIT_CONTEXT_RE = re.compile(
     r"(?i)\bcommits?\b|\bsha\b|\bmerged?\b|\blanded\b|cherry.pick|\bfix(ed)?\s+(in|via)\b"
 )
@@ -486,13 +493,18 @@ def _sha_resolves(token: str, root: Path) -> bool:
     return proc.returncode == 0
 
 
-def scan_unresolvable_shas(text: str, root: Path) -> tuple[list[str], list[str]]:
+def scan_unresolvable_shas(
+    text: str, root: Path, *, exempt: frozenset[str] | set[str] = frozenset()
+) -> tuple[list[str], list[str]]:
     """Scan body text for SHA-shaped hex tokens that do not resolve as commits (#1467).
 
     Returns ``(commit_context_offenders, other_nonresolving)`` — deduped, first-seen
     order. Per line: SHA_EXCLUDE_LINE_RE lines (fingerprints, wf-fix-fp tags, drift
     hashes, our own sha-verify advisories) are skipped entirely; HEX_TOKEN_RE matches
-    with no [a-f] letter (dates, numeric ids) are skipped. A token is tier 1 when ANY
+    with no [a-f] letter (dates, numeric ids) are skipped. Tokens in ``exempt``
+    (#1808: the item's own wf-fix fp + ``fingerprint:``-labeled values, via
+    _fp_exempt_tokens) are skipped everywhere, not only on their own label lines.
+    A token is tier 1 when ANY
     line carrying it matches COMMIT_CONTEXT_RE — unless that line also matches
     SELF_REF_LINE_RE (a self-referential quote is not commit context) — else tier 2.
     Resolution is probed once per unique token (rc semantics: _sha_resolves).
@@ -506,6 +518,8 @@ def scan_unresolvable_shas(text: str, root: Path) -> tuple[list[str], list[str]]
             tok = m.group(0)
             if not HAS_HEX_LETTER_RE.search(tok):
                 continue
+            if tok in exempt:
+                continue
             commit_ctx[tok] = commit_ctx.get(tok, False) or in_ctx
     tier1: list[str] = []
     tier2: list[str] = []
@@ -516,8 +530,22 @@ def scan_unresolvable_shas(text: str, root: Path) -> tuple[list[str], list[str]]
     return tier1, tier2
 
 
-def _check_body_shas(item: dict, dirpath: Path, root: Path) -> list[str]:
+def _fp_exempt_tokens(text: str, fp: str | None) -> frozenset[str]:
+    """Token-level exempt set for the #1467 walk (#1808): the item's own computed
+    wf-fix fp plus every ``fingerprint:``-labeled 12-hex token in the body."""
+    toks = set(FP_LABEL_RE.findall(text))
+    if fp:
+        toks.add(fp)
+    return frozenset(toks)
+
+
+def _check_body_shas(item: dict, dirpath: Path, root: Path, *, fp: str | None = None) -> list[str]:
     """WARN-only #1467 backstop: annotate non-resolving commit-context hex tokens.
+
+    ``fp`` (#1808) is the item's own wf-fix fingerprint: it and every
+    ``fingerprint:``-labeled 12-hex token in the body are token-exempt from the
+    scan (an fp is not a commit; the incident shape quoted the own fp bare on a
+    commit-context line and got annotated).
 
     Two tiers, never a refusal: tier 1 (non-resolving token on a commit-context
     line) gets one idempotent advisory line under ``## Provenance`` (heading-less
@@ -534,7 +562,7 @@ def _check_body_shas(item: dict, dirpath: Path, root: Path) -> list[str]:
     try:
         body_path = _resolve_body_path(item, dirpath)
         text = body_path.read_text(encoding="utf-8")
-        tier1, tier2 = scan_unresolvable_shas(text, root)
+        tier1, tier2 = scan_unresolvable_shas(text, root, exempt=_fp_exempt_tokens(text, fp))
         for tok in tier2:
             print(
                 f"WARNING {slug}: hex token `{tok}` does not resolve as a commit in"
@@ -613,17 +641,19 @@ def _filed_ledger_row(
     return row
 
 
-def _dry_run_sha_note(item: dict, dirpath: Path, root: Path) -> str:
+def _dry_run_sha_note(item: dict, dirpath: Path, root: Path, *, fp: str | None = None) -> str:
     """The dry-run mirror of _check_body_shas (#1467): report counts, mutate nothing.
 
     Returns a suffix for the dry-run FILE line — empty when the scan is clean;
     fail-open (a note, never a raise) on git/read OSError, a non-UTF-8 body's
     UnicodeDecodeError, or a hung-git TimeoutExpired, mirroring the real path.
+    ``fp`` (#1808) mirrors _check_body_shas' own-fp exemption.
     """
     try:
-        tier1, tier2 = scan_unresolvable_shas(
-            _resolve_body_path(item, dirpath).read_text(encoding="utf-8"), root
-        )
+        text = _resolve_body_path(item, dirpath).read_text(encoding="utf-8")
+        # #1808: the fp= arm is load-bearing for dry-run parity — no anchored fp line
+        # is injected at dry-run time, so only the param can exempt the item's own fp.
+        tier1, tier2 = scan_unresolvable_shas(text, root, exempt=_fp_exempt_tokens(text, fp))
     except (OSError, UnicodeDecodeError, subprocess.TimeoutExpired) as e:
         return f" [sha-scan skipped: {e.__class__.__name__}]"
     if tier1 or tier2:
@@ -1690,7 +1720,7 @@ def _dry_run_item(
         f" [held dispatch: shares {','.join(hold['shared'])} with {hold['with']}]" if hold else ""
     )
     inject = _dry_run_inject_note(item, dirpath, fp)
-    sha_note = _dry_run_sha_note(item, dirpath, root)
+    sha_note = _dry_run_sha_note(item, dirpath, root, fp=fp)
     print(f"FILE {slug} tags={tags[tags.index('--tag') :]}{pending}{held}{inject}{sha_note}")
     return "skip"
 
@@ -1799,7 +1829,7 @@ def process_item(
     # #1467 WARN-only sha-verify backstop: runs AFTER the Provenance injection (so the
     # advisory lands in the FILED body) and for EVERY route/wf_fix variant — content
     # accuracy is orthogonal to the wf-fix key space. Never blocks; exit code untouched.
-    sha_warnings = _check_body_shas(item, dirpath, root)
+    sha_warnings = _check_body_shas(item, dirpath, root, fp=fp)
     # Two-phase ledger: the `attempting` row (with the recovery id floor) lands BEFORE
     # the filer subprocess — the load-bearing crash-safety ordering.
     append_row(
