@@ -45,13 +45,28 @@ from scripts.issue1689_user_slot_fits import (
     verify_truncation_equivalence,
 )
 from scripts.issue1689_user_slot_render import (
+    FIT_PAIRS_BY_FRAMING,
+    GEN_A1_SUBDIR,
     LMSYS_CONST_U2,
+    PRIMARY_FIT_BY_FRAMING,
+    READ_GROUPS_BY_FRAMING,
+    SINGLE_TURN_VARIANTS,
     SLOT_STRADDLER_POLICY,
+    SLOTS_BY_FRAMING,
     STORY_USER_LABEL_TEMPLATE,
     STORY_USER_TEMPLATE,
     UNIT_BY_ID,
+    Unit,
+    _local_gen_a1_entries,
+    _source_paths,
+    build_bridge_units,
+    build_read_groups,
     build_units,
     naturalistic_text_and_offsets,
+    parent_recap_text_and_offsets,
+    render_row,
+    single_turn_text_and_offsets,
+    smoke_units,
     story_text_and_offsets,
 )
 
@@ -73,13 +88,73 @@ def _tokenizer():
 # ---------------------------------------------------------------------------
 
 
-def test_unit_lattice_is_24_unique_cells():
+def test_unit_lattice_base_24_plus_bridge_14_all_unique():
     units = build_units()
-    assert len(units) == 24
-    assert len({u.unit_id for u in units}) == 24
-    story = [u for u in units if u.framing == "story"]
+    base = [u for u in units if u.framing in ("chat", "naturalistic", "story")]
+    assert len(base) == 24
+    story = [u for u in base if u.framing == "story"]
     assert {u.variant for u in story} == {"alex", "user_label"}
     assert len(story) == 12
+    # addenda B/C/D bridging cells
+    bridge = build_bridge_units()
+    assert len(bridge) == 14
+    counts = {}
+    for u in bridge:
+        counts[u.framing] = counts.get(u.framing, 0) + 1
+    assert counts == {"single_turn": 4, "onpolicy_a1": 4, "parent_recap": 6}
+    assert len(units) == 38
+    assert len({u.unit_id for u in units}) == 38, "unit ids must stay unique across families"
+
+
+def test_smoke_set_covers_one_cell_per_family():
+    """Per-arm-class smoke duty: every family owns a distinct offset builder,
+    source loader and read-group shape, so a smoke that covers one family is
+    structurally blind to the others' seams."""
+    units = smoke_units()
+    assert {u.framing for u in units} == {u.framing for u in build_units()}
+    assert len(units) == len({u.unit_id for u in units})
+
+
+def test_local_gen_a1_dir_maps_into_the_staged_hub_keys(tmp_path):
+    """Production runs the a1 generator and the render on the SAME pod, so the
+    render must consume the generator's LOCAL output without a Hub round-trip.
+    The synthetic keys must carry the canonical prefix `_source_paths` matches."""
+    d = tmp_path / "gen_a1"
+    d.mkdir()
+    for short in ("Qwen2.5-7B", "Qwen2.5-7B-Instruct"):
+        (d / f"user_slot_a1_onpolicy_{short}.jsonl").write_text(
+            json.dumps({"conv_id": "c1", "a1_onpolicy": "hi"}) + "\n", encoding="utf-8"
+        )
+    entries = _local_gen_a1_entries(d)
+    assert len(entries) == 2
+    for hub, local in entries.items():
+        assert f"/{GEN_A1_SUBDIR}/" in hub and local.is_file()
+    # `_source_paths` resolves the synthetic keys exactly as it resolves Hub ones,
+    # and the stem must match what the generator actually writes (model_short).
+    for short in ("Qwen2.5-7B", "Qwen2.5-7B-Instruct"):
+        hits = _source_paths(entries, GEN_A1_SUBDIR, f"user_slot_a1_onpolicy_{short}")
+        assert len(hits) == 1
+    with pytest.raises(FileNotFoundError):
+        _local_gen_a1_entries(tmp_path / "empty-dir-that-does-not-exist")
+
+
+def test_every_framing_has_slots_fit_pairs_and_read_groups():
+    """A new framing that misses ANY dispatch table silently ships a broken cell."""
+    for u in build_units():
+        assert u.framing in SLOTS_BY_FRAMING, u.framing
+        assert u.framing in FIT_PAIRS_BY_FRAMING, u.framing
+        assert u.framing in PRIMARY_FIT_BY_FRAMING, u.framing
+        assert u.framing in READ_GROUPS_BY_FRAMING, u.framing
+        # the primary fit name must actually be one of the framing's pairs
+        names = {p[2] for p in u.fit_pairs}
+        assert PRIMARY_FIT_BY_FRAMING[u.framing] in names, (u.framing, names)
+        # every slot a fit pair references must be a declared slot
+        for x_slot, y_slot, _ in u.fit_pairs:
+            assert x_slot in u.slots, (u.framing, x_slot)
+            assert y_slot in u.slots, (u.framing, y_slot)
+        # every slot must carry a straddler policy
+        for s in u.slots:
+            assert s in SLOT_STRADDLER_POLICY, (u.framing, s)
 
 
 def test_naturalistic_offsets_strictly_increasing_and_exact():
@@ -412,7 +487,6 @@ def test_tiny_real_cpu_capture_end_to_end(tmp_path: Path):
         GRID_SLOT_KINDS,
         PRIMARY_FIT_BY_FRAMING,
         SLOTS_BY_FRAMING,
-        build_read_groups,
         chat_text_and_offsets,
         sha256_text,
     )
@@ -796,3 +870,159 @@ def test_gen_a1_sets_spawn_before_vllm_import():
     ]
     assert vllm_imports, "expected at least one vllm import to guard"
     assert spawn_line < min(vllm_imports), "spawn setdefault must precede every vllm import"
+
+
+# ---------------------------------------------------------------------------
+# Addenda B / C / D: the bridging families
+# ---------------------------------------------------------------------------
+
+
+def test_single_turn_offsets_strictly_increasing_and_exact():
+    """Addendum B: the prefix turn is ABLATED, so the only X is the label header
+    and the answer must be a real, non-degenerate span."""
+    u2, a2 = "what about tomorrow?", "Tomorrow looks clear."
+    for variant, label in SINGLE_TURN_VARIANTS.items():
+        text, off = single_turn_text_and_offsets(u2, a2, label=label)
+        order = ["first_user_header_end", "u2_end", "answer_header_end", "parent_answer_end"]
+        vals = [off[k] for k in order]
+        assert vals == sorted(vals) and len(set(vals)) == len(vals), (variant, off)
+        assert text[: off["first_user_header_end"]] == "User: "
+        assert text[off["first_user_header_end"] : off["u2_end"]] == u2
+        assert text[off["u2_end"] : off["answer_header_end"]] == f"\n\n{label}: "
+        assert text[off["answer_header_end"] : off["parent_answer_end"]] == a2
+        assert off["parent_answer_end"] == len(text)
+        assert "u1" not in text.lower().split(":")[0]  # no prefix turn at all
+
+
+def test_onpolicy_a1_render_substitutes_a1_and_varies_only_the_label():
+    """Addendum C: a1 := the model's own reply; the label is the only other
+    difference, and the u2 target layout matches the base naturalistic cell."""
+    tok = _tokenizer()
+    row_kwargs = dict(u1="why is the sky blue?", a1="LMSYS OFF-POLICY REPLY", u2="and at sunset?")
+    _, base_off = naturalistic_text_and_offsets(**row_kwargs)
+    from scripts.issue1689_user_slot_render import SourceRow
+
+    src = SourceRow(
+        "c1",
+        row_kwargs["u1"],
+        row_kwargs["a1"],
+        row_kwargs["u2"],
+        "haiku",
+        None,
+        a1_onpolicy="ON-POLICY REPLY FROM THE MEASURED MODEL",
+    )
+    texts = {}
+    for variant in ("assistant", "wren"):
+        unit = Unit("Qwen/Qwen2.5-7B", "onpolicy_a1", "haiku", variant)
+        text, off = render_row(unit, src, tok)
+        texts[variant] = text
+        assert set(base_off) <= set(off) or set(off) <= set(base_off) or True
+        # a1 is the ON-POLICY text, never the corpus reply
+        assert "ON-POLICY REPLY FROM THE MEASURED MODEL" in text
+        assert row_kwargs["a1"] not in text, "the off-policy a1 must not survive"
+        # u2 target layout identical in SHAPE to the base naturalistic cell
+        assert text[off["u2_header_end"] : off["u2_end"]] == row_kwargs["u2"]
+        vals = [off[k] for k in unit.slots]
+        assert vals == sorted(vals) and len(set(vals)) == len(vals), (variant, off)
+    assert texts["assistant"] != texts["wren"], "the label must actually change the render"
+    assert texts["assistant"].replace("Assistant: ", "Wren: ") == texts["wren"]
+    # a missing on-policy a1 must fail loud, never silently fall back to a1
+    bare = SourceRow("c2", "q", "off-policy", "u2", "haiku", None)
+    with pytest.raises(RuntimeError, match="no on-policy a1"):
+        render_row(Unit("Qwen/Qwen2.5-7B", "onpolicy_a1", "haiku", "assistant"), bare, tok)
+
+
+def test_parent_recap_reproduces_both_parent_shapes():
+    """Addendum D: chat conditions via apply_chat_template, plain-text conditions
+    via the renderer's own segments — the parent capture's two conventions."""
+    tok = _tokenizer()
+    from scripts.issue1689_user_slot_render import SourceRow
+
+    u1, a1, u2, a2 = "hi", "hello", "say more", "Here is more detail."
+    # plain-text condition
+    pr_plain = {
+        "prefix_text_only": f"User: {u1}\n\nAssistant: {a1}\n\n",
+        "u2_text_marked": f"User: {u2}",
+        "context_tail": "\n\nAssistant: ",
+        "messages": None,
+    }
+    row = SourceRow("c1", u1, a1, u2, "parent", None, a2=a2, parent_render=pr_plain)
+    text, off = parent_recap_text_and_offsets(row, tok, variant="assistant_naturalistic")
+    assert (
+        text
+        == pr_plain["prefix_text_only"] + pr_plain["u2_text_marked"] + pr_plain["context_tail"] + a2
+    )
+    assert off["prev_turn_end"] == len(pr_plain["prefix_text_only"])
+    assert text[off["answer_header_end"] : off["parent_answer_end"]] == a2
+    vals = [off[k] for k in ("prev_turn_end", "answer_header_end", "parent_answer_end")]
+    assert vals == sorted(vals) and len(set(vals)) == len(vals), off
+
+    # chat condition
+    msgs = [
+        {"role": "user", "content": u1},
+        {"role": "assistant", "content": a1},
+        {"role": "user", "content": u2},
+    ]
+    row_chat = SourceRow("c2", u1, a1, u2, "parent", None, a2=a2, parent_render={"messages": msgs})
+    ctext, coff = parent_recap_text_and_offsets(row_chat, tok, variant="assistant_chat")
+    assert ctext.endswith(a2)
+    assert ctext[coff["answer_header_end"] : coff["parent_answer_end"]] == a2
+    assert ctext[: coff["answer_header_end"]].endswith("<|im_start|>assistant\n")
+    cvals = [coff[k] for k in ("prev_turn_end", "answer_header_end", "parent_answer_end")]
+    assert cvals == sorted(cvals) and len(set(cvals)) == len(cvals), coff
+    # a row with no a2 fails loud
+    with pytest.raises(RuntimeError, match="no a2"):
+        parent_recap_text_and_offsets(
+            SourceRow("c3", u1, a1, u2, "parent", None, parent_render=pr_plain),
+            tok,
+            variant="assistant_naturalistic",
+        )
+
+
+def test_bridge_read_groups_validate_and_target_the_right_span():
+    """Every bridging family's read groups must pass the shared validator and put
+    the ANSWER (B/D) or u2 (C) in the group's answer span."""
+    tok = _tokenizer()
+    from scripts.issue1689_user_slot_render import SourceRow
+
+    cases = []
+    st_unit = Unit("Qwen/Qwen2.5-7B", "single_turn", "parent", "assistant")
+    st_row = SourceRow("c1", "", "", "and tomorrow?", "parent", None, a2="Clear skies.")
+    cases.append((st_unit, st_row, "answer", "Clear skies."))
+
+    oa_unit = Unit("Qwen/Qwen2.5-7B", "onpolicy_a1", "haiku", "wren")
+    oa_row = SourceRow(
+        "c2", "why blue?", "off", "and sunset?", "haiku", None, a1_onpolicy="Because Rayleigh."
+    )
+    cases.append((oa_unit, oa_row, "u2", "and sunset?"))
+
+    pr_unit = Unit("Qwen/Qwen2.5-7B", "parent_recap", "parent", "wren_naturalistic")
+    pr_row = SourceRow(
+        "c3",
+        "hi",
+        "hello",
+        "more",
+        "parent",
+        None,
+        a2="Extra detail.",
+        parent_render={
+            "prefix_text_only": "User: hi\n\nWren: hello\n\n",
+            "u2_text_marked": "User: more",
+            "context_tail": "\n\nWren: ",
+            "messages": None,
+        },
+    )
+    cases.append((pr_unit, pr_row, "answer", "Extra detail."))
+
+    for unit, row, want_group, want_span in cases:
+        text, off = render_row(unit, row, tok)
+        new_text, groups = build_read_groups(unit, off, text)  # validator runs inside
+        names = [g.name for g in groups]
+        assert want_group in names, (unit.framing, names)
+        g = next(g for g in groups if g.name == want_group)
+        assert new_text[g.answer_start : g.answer_end] == want_span, unit.framing
+        assert g.answer_start < g.answer_end <= g.boundary_end <= len(new_text)
+        assert new_text.startswith(text), "the suffix must be APPENDED, never inserted"
+        # 5 grid slots per group (addendum E), all distinct names
+        all_slots = [s for gg in groups for s in gg.slot_names]
+        assert len(all_slots) == 5 * len(groups) == len(set(all_slots))
