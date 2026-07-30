@@ -41,10 +41,13 @@ import numpy as np  # noqa: E402
 MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"
 FOOTPRINT_CHUNK = 1024  # feature block for the W_U GEMM (plan §4 table)
 NEIGHBOR_CHUNK = 1024
-# Full-dictionary blocks: the 131,072-feature GEMMs run on GPU (the CPU path is
-# ~266 TFLOP -> thousands of hours at the shared-VM 8-thread rate). Larger blocks
-# amortize the launch overhead; peak transient at 4096 is ~2.1 GiB (neighbours)
-# / ~1.2 GiB (footprint) on top of the ~4 GiB resident weights.
+# Full-dictionary blocks. MEASURED on an H100 at production shape (2026-07-30):
+# neighbours 0.078 s/block x 32 blocks = 2.5 s (123 TFLOP); footprint
+# 0.076 s/block x 64 blocks = 4.9 s (143 TFLOP); peak GPU alloc 4.6 GiB. The
+# same 266 TFLOP is ~4.3 h of pure GEMM at the shared-VM 8-thread numpy rate
+# (~17 GFLOPS effective, from the 16,384-feature run's ~22 TFLOP in ~21 min) —
+# so GPU is the cheap default, but BLOCKING is required independently of speed:
+# a dense 131,072^2 fp32 cosine matrix is ~68 TB and can never be materialized.
 FULLDICT_FOOTPRINT_CHUNK = 2048
 FULLDICT_NEIGHBOR_CHUNK = 4096
 TOP_TOKENS = 10
@@ -320,8 +323,8 @@ def neighbor_table_blocked(
     but the (n x n) Gram is NEVER materialized: only a (chunk, n) query block
     lives at a time and only the top-k per row is kept. At n=131,072 a dense
     fp32 cosine matrix would be ~68 TB, so blocking is the difference between
-    feasible and impossible. Runs on GPU (`device='cuda'`) where the 123 TFLOP
-    of GEMM is minutes rather than the CPU path's thousands of hours.
+    feasible and impossible regardless of device. On GPU the 123 TFLOP of GEMM
+    measured 2.5 s total at production shape (H100, 2026-07-30).
     """
     import torch
 
