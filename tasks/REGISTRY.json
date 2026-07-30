@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1861,
+  "highest_id": 1862,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6672,6 +6672,13 @@
       "path": "tasks/proposed/1861",
       "status": "proposed",
       "title": "daily-fix: repo-root guard recognizes cd-to-worktree via var"
+    },
+    "1862": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1862",
+      "status": "proposed",
+      "title": "daily-fix: detached-VM probe template brackets; choom=failed"
     },
     "187": {
       "has_clean_result": true,
