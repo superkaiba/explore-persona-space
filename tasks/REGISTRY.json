@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1887,
+  "highest_id": 1888,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6868,6 +6868,13 @@
       "path": "tasks/proposed/1887",
       "status": "proposed",
       "title": "harden ridge lambda-selection: inner-group-CV default + GCV dof-cap + n<d degeneracy tripwire + re-read audit of affected published cells"
+    },
+    "1888": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1888",
+      "status": "proposed",
+      "title": "workflow-fix: add lint-family-sync pin test to Step 5a workflow family"
     },
     "19": {
       "has_clean_result": false,
