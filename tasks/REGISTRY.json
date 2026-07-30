@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1862,
+  "highest_id": 1863,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6679,6 +6679,13 @@
       "path": "tasks/proposed/1862",
       "status": "proposed",
       "title": "daily-fix: detached-VM probe template brackets; choom=failed"
+    },
+    "1863": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1863",
+      "status": "proposed",
+      "title": "daily-fix: poll ticks compute rate/ETA on long same-phase ta"
     },
     "187": {
       "has_clean_result": true,
