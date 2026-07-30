@@ -2,7 +2,8 @@
 title: A low-rank bilinear prefix–query interaction closes most but not all of the
   context→answer map's nonlinear gap (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-07-28T21:36:04Z'
 has_clean_result: true
 parent_id: 1092
