@@ -62,6 +62,13 @@ def _basis_targets_with_info(Y, basis, **kwargs):
     banked Gate C references were computed with, so full-population PCs are
     the only choice consistent with Gate C comparability (parity wins over
     the plan's per-fold wording; see record_plan_deviation below).
+
+    NEW mode ``pca48_foldpc`` (follow-up round `dedup-refit-pcfold-doubly`,
+    cell 2 — the deviation's DISCHARGE, so no record_plan_deviation here):
+    fits the 48 PCs on TRAIN-FOLD rows only (kwarg ``train_idx``, an int
+    index array), via the SAME parent ``_pca_basis``; every row is then
+    projected into that fold's basis. Returns (Yp, info) with
+    ``info["train_idx_n"]`` recording the basis-fit row count.
     """
     if basis == "pca48":
         record_plan_deviation(
@@ -70,6 +77,21 @@ def _basis_targets_with_info(Y, basis, **kwargs):
             "plan section 4 says train-fold-only; the parent's banked 0.914 read uses "
             "population PCs — parity wins; per-fold-PC sensitivity check listed as follow-up",
         )
+    if basis == "pca48_foldpc":
+        train_idx = kwargs.pop("train_idx", None)
+        if train_idx is None:
+            raise ValueError("basis 'pca48_foldpc' requires train_idx (the fold's train rows)")
+        train_idx = np.asarray(train_idx, dtype=np.int64)
+        from issue1092_fit_grid import _pca_basis
+
+        # ambient shape/target checks ride the parent constructor (identity path)
+        _Y_amb, info = _basis_targets_with_info_1092(Y, "ambient", **kwargs)
+        mu, v = _pca_basis(np.asarray(Y[train_idx], dtype=np.float64), 48)
+        info["basis"] = "pca48_foldpc"
+        info["v_basis"] = v
+        info["mu_basis"] = mu
+        info["train_idx_n"] = int(train_idx.size)
+        return (np.asarray(Y, dtype=np.float64) - mu) @ v, info
     return _basis_targets_with_info_1092(Y, basis, **kwargs)
 
 
@@ -108,6 +130,9 @@ __all__ = [
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 STORE_HF_PREFIX = "issue1092_realistic_crossing"
 OUT_HF_PREFIX = "issue1775_nonlinearity"
+# Follow-up round `dedup-refit-pcfold-doubly` (plan v8): eval-JSON sub-dir shared
+# by the three follow-up cells + the fu dispatcher/sentinel.
+FU_SUB = "fu_dedup_refit_pcfold_doubly"
 VM_STAGE = Path(
     "/mnt/eps-data/thomasjiralerspong/issue_1092_inline_operator/issue1092_realistic_crossing"
 )
@@ -1017,8 +1042,29 @@ def holm_correction(pvals: dict[str, float]) -> dict[str, float]:
 # ── phase upload (one upload_folder commit per phase) ────────────────────────────
 
 
+def _upload_eligible_relpaths(local: Path) -> list[str]:
+    """Relative paths under ``local`` that ``hub._upload``'s folder branch will
+    actually upload: rglob MINUS the uploader's own excludes. huggingface_hub's
+    ``upload_folder`` ALWAYS appends ``DEFAULT_IGNORE_PATTERNS`` (e.g.
+    ``**/.cache/huggingface/**`` — the per-file metadata
+    a ``local_dir=``-style hub download leaves behind) and ``hub._upload``
+    always adds ``TRAINING_STATE_IGNORE_PATTERNS``. An UNFILTERED rglob as the
+    verify set counts never-uploaded files as missing — a deterministic
+    post-upload RuntimeError (round-1 fu Critical,
+    `fu-arrays-upload-verify-cache-mismatch`)."""
+    from huggingface_hub.utils import DEFAULT_IGNORE_PATTERNS, filter_repo_objects
+
+    rels = sorted(str(p.relative_to(local)) for p in local.rglob("*") if p.is_file())
+    ignore = list(DEFAULT_IGNORE_PATTERNS) + list(hub.TRAINING_STATE_IGNORE_PATTERNS)
+    return list(filter_repo_objects(rels, ignore_patterns=ignore))
+
+
 def _upload_dir_verified(local: Path, path_in_repo: str) -> str:
-    """One fail-loud upload_folder commit of `local` + exact-set verify (#997)."""
+    """One fail-loud upload_folder commit of `local` + exact-set verify (#997).
+
+    The expected set applies the uploader's own eligibility filter
+    (:func:`_upload_eligible_relpaths`), so verify checks exactly what
+    ``upload_folder`` was asked to ship — never uploader-excluded metadata."""
     url = hub._upload(
         local,
         repo_id=HF_DATA_REPO,
@@ -1028,7 +1074,7 @@ def _upload_dir_verified(local: Path, path_in_repo: str) -> str:
     )
     if not url:
         raise RuntimeError(f"upload returned no path for {path_in_repo} — fail loud")
-    expected = [f"{path_in_repo}/{p.relative_to(local)}" for p in local.rglob("*") if p.is_file()]
+    expected = [f"{path_in_repo}/{r}" for r in _upload_eligible_relpaths(local)]
     missing = hub.verify_repo_paths_uploaded(
         HfApi(),
         HF_DATA_REPO,
