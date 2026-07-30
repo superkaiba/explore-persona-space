@@ -192,3 +192,87 @@ def test_synthetic_smoke_runs_for_every_map_kind(tmp_path):
             timeout=900,
         )
         assert proc.returncode == 0, f"{kind} synthetic run failed:\n{proc.stderr[-3000:]}"
+
+
+# --------------------------------------------------------------------------
+# Persisted-map REUSE (_load_nl_map): consume the artifact _save_map writes
+# instead of re-fitting a behavior-independent map per invocation.
+# --------------------------------------------------------------------------
+
+
+def _load_script_module():
+    """Import the CLI entrypoint as a module (its `fits` imports are deferred)."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "_i1739_fits_cli", REPO_ROOT / "scripts" / "issue1739_fits.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+@pytest.mark.parametrize("kind", sorted(fits.NONLINEAR_MAP_KINDS))
+def test_load_nl_map_round_trips_and_matches_the_fitted_map(tmp_path, kind):
+    """A reused map must predict IDENTICALLY to the map that was fit + saved.
+
+    This is the correctness precondition for skipping the re-fit: if the
+    persisted payload applied differently from the in-memory one, reuse would
+    silently change every downstream arm's numbers.
+    """
+    F = _load_script_module()
+    x, y = _pool()
+    layers = [14, 19]
+    n_u = x.shape[1]
+
+    fitted = fits.fit_nonlinear_map(x, y, kind=kind, device="cpu", seed=0)
+    F._save_map(tmp_path, "context_end", "probe", fitted, layers)
+
+    loaded = F._load_nl_map(tmp_path, "context_end", "probe", kind, layers, n_u)
+    assert loaded is not None, "persisted map was not reused"
+    assert loaded.kind == kind
+    assert loaded.w is None and loaded.nl_payloads
+    # the held-out diagnostics must survive, or map_quality.json loses the
+    # standing identity+bias / kNN mapping companions
+    assert loaded.diagnostics.get("per_layer"), "reused map lost its diagnostics"
+
+    np.testing.assert_allclose(
+        fits.apply_nl_map(x, loaded), fits.apply_nl_map(x, fitted), rtol=1e-6, atol=1e-8
+    )
+
+
+def test_load_nl_map_refuses_on_pool_size_or_layer_mismatch(tmp_path):
+    """Guards fail CLOSED (return None -> caller re-fits), never a wrong map."""
+    F = _load_script_module()
+    x, y = _pool()
+    layers = [14, 19]
+    n_u = x.shape[1]
+    fitted = fits.fit_nonlinear_map(x, y, kind="mlp", device="cpu", seed=0)
+    F._save_map(tmp_path, "context_end", "probe", fitted, layers)
+
+    assert F._load_nl_map(tmp_path, "context_end", "probe", "mlp", layers, n_u) is not None
+    # a different U-rung pool size must NOT be served this map
+    assert F._load_nl_map(tmp_path, "context_end", "probe", "mlp", layers, n_u + 1) is None
+    # a different layer stack must NOT be served this map
+    assert F._load_nl_map(tmp_path, "context_end", "probe", "mlp", [1, 2], n_u) is None
+    # absent payload
+    assert F._load_nl_map(tmp_path, "context_end", "missing", "mlp", layers, n_u) is None
+
+
+def test_load_nl_map_never_touches_the_linear_path_and_honors_kill_switch(tmp_path, monkeypatch):
+    """Linear stays byte-identical (pod-1739 runs it); reuse is switch-off-able."""
+    F = _load_script_module()
+    x, y = _pool()
+    layers = [14, 19]
+    n_u = x.shape[1]
+
+    linear = fits.fit_linear_map(x, y, device="cpu")
+    F._save_map(tmp_path, "context_end", "probe", linear, layers)
+    # a linear rung is NEVER reused through this path, even though a payload exists
+    assert F._load_nl_map(tmp_path, "context_end", "probe", "linear", layers, n_u) is None
+
+    fitted = fits.fit_nonlinear_map(x, y, kind="mlp", device="cpu", seed=0)
+    F._save_map(tmp_path, "context_end", "probe", fitted, layers)
+    monkeypatch.setenv(F.NL_MAP_REUSE_ENV, "0")
+    assert F._load_nl_map(tmp_path, "context_end", "probe", "mlp", layers, n_u) is None

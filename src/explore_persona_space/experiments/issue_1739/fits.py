@@ -960,6 +960,12 @@ def _n1m():
         raise RuntimeError(f"repo-root resolution failed: {sentinel} missing")
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
+    # The module lives in scripts/, so ROOT alone does not make it importable —
+    # under script mode sys.path[0] happens to be scripts/ already, which is why
+    # root-only worked there and left in-process callers (pytest) depending on
+    # import-order luck from a sibling test. Insert the dir the sentinel proves.
+    if str(sentinel.parent) not in sys.path:
+        sys.path.insert(0, str(sentinel.parent))
     import issue779_ffc_n1m_fits as n1m
 
     return n1m

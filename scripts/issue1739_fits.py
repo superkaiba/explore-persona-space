@@ -722,6 +722,93 @@ def _fit_map(args, x_w, y_w):
     )
 
 
+NL_MAP_REUSE_ENV = "EPM_I1739_NL_MAP_REUSE"
+
+
+def _load_nl_map(
+    tensors_root: Path,
+    variant: str,
+    u_label: str,
+    kind: str,
+    layers,
+    n_u: int,
+    device: str = "cpu",
+):
+    """Load a persisted NONLINEAR map instead of re-fitting it, or None.
+
+    ``_save_map`` already skips on existence and documents the
+    ``(variant, u_label)`` map as BEHAVIOR-INDEPENDENT (shared #1092 fit pool,
+    shared subsample + whitening seeds) — but only the WRITE was idempotent,
+    never the COMPUTE, so every (behavior x kind) invocation re-fit the
+    identical maps (measured: ~0.68 h per MLP full-U map key x 2 variants x 3 U
+    rungs, ~5.7 h repeated across 3 behaviors vs ~1.7 h fit once). This closes
+    that gap by consuming the artifact the code already writes; it is NOT new
+    fit math.
+
+    NONLINEAR KINDS ONLY — the linear path stays byte-identical (this module's
+    stated invariant, and pod-1739 is running the linear grid). Guarded: the
+    persisted pool size and layer list must match this rung exactly, and the
+    payload must carry the held-out diagnostics (so ``diag_out`` stays an
+    honest read rather than silently losing the map-quality companions). Any
+    mismatch or missing field returns None and the caller re-fits. Kill switch:
+    ``EPM_I1739_NL_MAP_REUSE=0``.
+    """
+    import os
+
+    if kind == "linear" or os.environ.get(NL_MAP_REUSE_ENV, "1") == "0":
+        return None
+    path = Path(tensors_root) / "maps" / f"{variant}__u{u_label}__{kind}.pt"
+    if not path.exists():
+        return None
+
+    import torch
+
+    from explore_persona_space.experiments.issue_1739.fits import MapFit
+
+    blob = torch.load(path, map_location="cpu", weights_only=False)
+    meta = blob.get("meta", {}) or {}
+    payloads = blob.get("payloads") or []
+    want_layers = [int(x) for x in layers]
+    diagnostics = meta.get("diagnostics")
+    reasons = []
+    if meta.get("map_kind") != kind:
+        reasons.append(f"map_kind {meta.get('map_kind')!r} != {kind!r}")
+    if [int(x) for x in meta.get("layers") or []] != want_layers:
+        reasons.append("layer list mismatch")
+    if len(payloads) != len(want_layers):
+        reasons.append(f"n_payloads {len(payloads)} != n_layers {len(want_layers)}")
+    if int(meta.get("w_fit_rows") or -1) != int(n_u):
+        reasons.append(f"w_fit_rows {meta.get('w_fit_rows')} != n_u {n_u}")
+    if not isinstance(diagnostics, dict) or not diagnostics.get("per_layer"):
+        reasons.append("payload carries no per-layer diagnostics")
+    if reasons:
+        logger.warning(
+            "[fits] persisted %s map at %s NOT reused (%s) — re-fitting",
+            kind,
+            path.name,
+            "; ".join(reasons),
+        )
+        return None
+    logger.info(
+        "[fits] reusing persisted %s map %s (w_fit_rows=%d) — skipping re-fit",
+        kind,
+        path.name,
+        int(n_u),
+    )
+    return MapFit(
+        w=None,
+        x_mu=None,
+        x_sd=None,
+        y_mu=None,
+        diagnostics=dict(diagnostics),
+        kind=kind,
+        nl_payloads=tuple(payloads),
+        # apply runs NOW, so honor this process's device rather than whichever
+        # device the original fit happened to use.
+        apply_device=str(device or "cpu"),
+    )
+
+
 def _record_compose_skip(spec: RunSpec, exc: Exception, compose_skips: list[dict]) -> None:
     """Round-3 Minor 1: a ``_u_pool_for_spec`` failure is a recordable skip
     ONLY for a composition spec (a quota that cannot fill); on a PLAIN ladder
@@ -909,11 +996,28 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
             continue
         t_map = time.time()
         wh = fits.fit_whitening(u_x, device=args.device, seed=args.seeds[0])
-        mapfit = _fit_map(args, fits.apply_whitening(u_x, wh), fits.apply_whitening(u_y, wh))
+        # Plain rungs persist a behavior-INDEPENDENT map; consume it when a
+        # sibling invocation already fit it (see _load_nl_map). Nonlinear only.
+        mapfit = (
+            _load_nl_map(
+                args.tensors_root,
+                spec0.variant,
+                u_label,
+                getattr(args, "map_kind", "linear"),
+                layers,
+                n_u,
+                device=args.device,
+            )
+            if spec0.f_u is None
+            else None
+        )
+        map_source = "loaded" if mapfit is not None else "fit"
+        if mapfit is None:
+            mapfit = _fit_map(args, fits.apply_whitening(u_x, wh), fits.apply_whitening(u_y, wh))
         if timings is not None:
             timings.setdefault("map_fit_s", []).append(time.time() - t_map)
         del u_x, u_y  # the map + whitening carry everything downstream needs
-        diag_out[f"{spec0.variant}|{u_label}"] = mapfit.diagnostics
+        diag_out[f"{spec0.variant}|{u_label}"] = {**mapfit.diagnostics, "map_source": map_source}
         z_ev_w = za_ev_w = None  # eval-split arrays, whitened per map_key (transfer leg)
         if spec0.f_u is None:
             # C-1: persist the frozen plain-rung map weights (HF-bound via
