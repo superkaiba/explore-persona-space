@@ -186,7 +186,10 @@ repo root stays on `main`):
    splices `plot_name` -> `### <plot name>`, folds `caption` into that result's
    `**Methodology**` block (after methodology-writer's result-specific recipe
    bullets), and pins the (post-commit SHA-pinned) image URL into the report's
-   `## Results` section.
+   `## Results` section. Only the AGGREGATE view per manifest figure id becomes
+   the body's headline image; EVERY view (aggregate + per-unit + raw +
+   alt-groupings) lands in the detailed companion doc
+   `docs/reports/issue_<N>_detailed.md` with its caption.
 
 3. **Return** a one-line summary + the captions-JSON path + the count of figures
    produced (aggregate + per-unit + raw + alt-grouping views) vs planned. The

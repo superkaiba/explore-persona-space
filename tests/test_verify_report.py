@@ -75,17 +75,30 @@ def _default_sections(*, image: str = _PINNED_IMAGE) -> list[tuple[str, str]]:
     ]
 
 
+# The body's detailed-companion link (two-document output). The default pins
+# the same synthetic SHA as the default image; well-formedness-only check.
+def _detailed_link(issue: int = 5, sha: str = _PIN_SHA) -> str:
+    return (
+        "**Detailed writeup:** "
+        f"https://github.com/o/r/blob/{sha}/docs/reports/issue_{issue}_detailed.md"
+    )
+
+
 def _assemble(
     sections: list[tuple[str, str]],
     *,
     title: str = "does X predict Y?",
     sentinel: bool = True,
     h1_prefix: str = "Experiment: ",
+    detailed_link: str | None = _detailed_link(),
 ) -> str:
     lines = [f"# {h1_prefix}{title}"]
     if sentinel:
         lines.append(verify_report.REPORT_SENTINEL)
     lines.append("")
+    if detailed_link is not None:
+        lines.append(detailed_link)
+        lines.append("")
     for header, content in sections:
         lines.append(header)
         lines.append(content)
@@ -222,10 +235,13 @@ def test_grandfathered_old_results_shape_warns_at_promote(figs_root):
         ("## Results:", old_results),
         ("## Next steps:", "Run more seeds."),
     ]
-    body = _assemble(sections, title="X predicts Y", h1_prefix="Result: ")
+    body = _assemble(sections, title="X predicts Y", h1_prefix="Result: ", detailed_link=None)
     ok, results = _run(body, mode="promote", figs_root=figs_root)
     sub = _by_name(results, "results-subsections")
     assert sub.passed and sub.is_warn and "Methodology" in sub.detail
+    # A grandfathered body has no detailed-companion link either → WARN only.
+    link = _by_name(results, "detailed-writeup-link")
+    assert link.passed and link.is_warn
     assert ok, [r.render() for r in results if not r.passed]
 
 
@@ -250,6 +266,49 @@ def test_takeaways_trailing_colon_form_accepted(figs_root):
         _results_block(_PINNED_IMAGE).replace("**Takeaways**", "**Takeaways:**"),
     )
     ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_missing_detailed_link_fails_generation(figs_root):
+    # The summarized body must link its detailed companion at generation time.
+    ok, results = _run(
+        _assemble(_default_sections(), detailed_link=None), mode="generation", figs_root=figs_root
+    )
+    assert not ok
+    link = _by_name(results, "detailed-writeup-link")
+    assert not link.passed and "Detailed writeup" in link.detail
+
+
+def test_malformed_detailed_link_fails_both_modes(figs_root):
+    # Branch-pinned (not 40-hex) detailed link → FAIL in both modes.
+    bad = "**Detailed writeup:** https://github.com/o/r/blob/main/docs/reports/issue_5_detailed.md"
+    for mode, builder in (("generation", _default_sections), ("promote", _promote_sections)):
+        ok, results = _run(_assemble(builder(), detailed_link=bad), mode=mode, figs_root=figs_root)
+        assert not ok
+        assert not _by_name(results, "detailed-writeup-link").passed
+
+
+def test_detailed_link_issue_mismatch_fails(figs_root):
+    ok, results = _run(
+        _assemble(_default_sections(), detailed_link=_detailed_link(9)),
+        mode="generation",
+        figs_root=figs_root,
+        expect_issue=5,
+    )
+    assert not ok
+    link = _by_name(results, "detailed-writeup-link")
+    assert not link.passed and "expected issue 5" in link.detail
+
+
+def test_detailed_link_raw_url_form_accepted(figs_root):
+    raw = (
+        "**Detailed writeup:** "
+        f"https://raw.githubusercontent.com/o/r/{_PIN_SHA}/docs/reports/issue_5_detailed.md"
+    )
+    ok, results = _run(
+        _assemble(_default_sections(), detailed_link=raw), mode="generation", figs_root=figs_root
+    )
+    assert _by_name(results, "detailed-writeup-link").passed
     assert ok, [r.render() for r in results if not r.passed]
 
 
@@ -709,7 +768,10 @@ def test_issue_resolves_body_via_library(issue_repo):
     task_dir = repo / "tasks" / "proposed" / "777"
     task_dir.mkdir(parents=True)
     # --issue 777 implies expect_issue=777, so the Results pin must name issue_777.
-    body = _assemble(_default_sections(image=_pin(_PIN_SHA, "figures/issue_777/f.png")))
+    body = _assemble(
+        _default_sections(image=_pin(_PIN_SHA, "figures/issue_777/f.png")),
+        detailed_link=_detailed_link(777),
+    )
     (task_dir / "body.md").write_text(body)
     # figures-root defaults to the git-repo root of the resolved body.md.
     (repo / "figures").mkdir()

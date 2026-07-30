@@ -54,6 +54,9 @@ mis-spawned — say so and exit; the v1 critics (`clean-result-critic`,
   `## Methodology (shared)` including its final `**Metrics:**` block, and
   every per-result `**Methodology**` block inside `## Results` — the
   result-specific recipes + what-is-plotted statements are factual claims too).
+- The detailed companion doc the body's `**Detailed writeup:**` link pins
+  (`docs/reports/issue_<N>_detailed.md`) — its Methodology content is the same
+  claim surface; trace anything there that does not appear verbatim in the body.
 - The task plan (`plans/plan.md`) — the Metrics rationale must be grounded in the
   plan / Goal, and the Methodology conditions must match the plan's design.
 - The `planned_manifest.json` — the condition set + metric list the report

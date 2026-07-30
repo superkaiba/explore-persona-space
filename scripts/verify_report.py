@@ -32,6 +32,11 @@ Required structure (both modes):
     a grandfathered body missing it only WARNs in promote mode). The retired
     ``**Plot:**`` label FAILs in generation mode (tolerated at promote for
     grandfathered bodies).
+  - ``detailed-writeup-link``: the body links its detailed companion writeup
+    (``docs/reports/issue_<N>_detailed.md``) via a SHA-pinned GitHub blob /
+    raw URL on a ``**Detailed writeup:**`` line — REQUIRED at generation,
+    WARN-if-absent at promote (grandfathered); well-formedness + issue match
+    only, no repo/network read.
   - Every referenced local image path exists on disk (resolved vs
     ``--figures-root``; default: the git-repo root of ``--file``).
   - Every ``htmlpreview.github.io`` link embeds a full 40-hex SHA/revision
@@ -178,6 +183,13 @@ _RAW_PIN_RE = re.compile(
 )
 # The repo-relative figure path a Results pin must carry.
 _FIGURES_ISSUE_RE = re.compile(r"^figures/issue_(\d+)/")
+# The body's detailed-companion-writeup link line + its SHA-pinned URL forms
+# (GitHub blob or raw.githubusercontent), path docs/reports/issue_<N>_detailed.md.
+_DETAILED_LINE_RE = re.compile(r"^\s*\*\*Detailed writeup:\*\*\s*(\S+)")
+_DETAILED_URL_RE = re.compile(
+    r"^https://(?:github\.com/[^/]+/[^/]+/blob|raw\.githubusercontent\.com/[^/]+/[^/]+)/"
+    r"([0-9a-fA-F]{40})/docs/reports/issue_(\d+)_detailed\.md$"
+)
 
 
 def _git(repo: Path, *args: str) -> tuple[int, str]:
@@ -521,6 +533,59 @@ def check_image_files(body: str, figures_root: Path) -> CheckResult:
             f"missing on disk (root={figures_root}): " + ", ".join(missing),
         )
     return CheckResult("figure-files-exist", True, f"{checked} local image path(s) exist")
+
+
+def check_detailed_writeup_link(
+    blanked_lines: list[str], *, mode: str, expect_issue: int | None
+) -> CheckResult:
+    """``detailed-writeup-link`` (two-document output, 2026-07-30).
+
+    The body is the SUMMARIZED layer and must link its detailed companion
+    writeup (``docs/reports/issue_<N>_detailed.md``) via a SHA-pinned GitHub
+    blob / raw URL on a ``**Detailed writeup:**`` line. REQUIRED at generation
+    (freshly assembled reports follow the current template); a grandfathered
+    body without one only WARNs at promote. Well-formedness + issue-number
+    match only — existence at the pinned SHA is the report-verifier agent's
+    read (same no-network philosophy as ``htmlpreview-sha``).
+    """
+    name = "detailed-writeup-link"
+    match = None
+    for ln in blanked_lines:
+        m = _DETAILED_LINE_RE.match(ln)
+        if m is not None:
+            match = m
+            break
+    if match is None:
+        if mode == "generation":
+            return CheckResult(
+                name,
+                False,
+                "no '**Detailed writeup:**' link line — the summarized body must link "
+                "docs/reports/issue_<N>_detailed.md (SHA-pinned)",
+            )
+        return CheckResult(
+            name,
+            True,
+            "no '**Detailed writeup:**' link (grandfathered pre-2026-07-30 body)",
+            is_warn=True,
+        )
+    url = match.group(1).strip().strip("<>")
+    m = _DETAILED_URL_RE.match(url)
+    if m is None:
+        return CheckResult(
+            name,
+            False,
+            f"'{url}' is not a well-formed SHA-pinned "
+            "github.com/<owner>/<repo>/blob/<40-hex>/docs/reports/issue_<N>_detailed.md "
+            "(or raw.githubusercontent equivalent) link",
+        )
+    if expect_issue is not None and m.group(2) != str(expect_issue):
+        return CheckResult(
+            name,
+            False,
+            f"detailed-writeup link names issue {m.group(2)} != expected issue {expect_issue}",
+        )
+    return CheckResult(name, True, f"SHA-pinned detailed-writeup link (issue {m.group(2)})")
 
 
 def check_htmlpreview(body: str) -> CheckResult:
@@ -883,6 +948,7 @@ def verify_report_text(
     results.append(check_duplicate_sections(blanked_lines))
     results.append(check_results_subsections(sections, mode))
     results.append(check_image_files(blanked_body, figures_root))
+    results.append(check_detailed_writeup_link(blanked_lines, mode=mode, expect_issue=expect_issue))
     results.append(check_htmlpreview(body))
     results.extend(
         check_image_pins(
