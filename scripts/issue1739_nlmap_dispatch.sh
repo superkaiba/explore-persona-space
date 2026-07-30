@@ -148,24 +148,32 @@ fi
 # never a sizing basis). The fits script's own `--pilot` times one cell and
 # projects the grid wall; rc=7 means the projection exceeds PLAN_WALL_H, which
 # this round treats as STOP-and-report, not a silent descope.
+# EVERY (behavior, kind) invocation is gated, not just the first: the grids
+# differ per behavior (sycophancy's top budget is 16000 vs evil's 8000), so one
+# behavior's projection does NOT bound another's. Pilot unit-groups RESUME into
+# the full run, so gating all six costs no extra wall.
 if want_phase pilot; then
-  pb="$(echo "$BEHAVIORS" | awk '{print $1}')"
-  pk="$(echo "$KINDS" | awk '{print $1}')"
-  echo "[nlmap] phase=pilot: $pb/$pk vs plan_wall_h=$PLAN_WALL_H x mult=$PILOT_ABORT_MULT"
-  set +e
-  mapfile -t _pa < <(fits_args "$pb" "$pk")
-  uv run python scripts/issue1739_fits.py "${_pa[@]}" --pilot \
-    --plan-wall-h "$PLAN_WALL_H" --pilot-abort-mult "$PILOT_ABORT_MULT"
-  prc=$?
-  set -e
-  if [ "$prc" -eq 7 ]; then
-    echo "[nlmap] PILOT REFUSED (rc=7): projected wall exceeds" \
-      "${PILOT_ABORT_MULT}x${PLAN_WALL_H}h." >&2
-    echo "[nlmap] STOP — reporting instead of launching (see pilot_report.json)." >&2
-    exit 7
-  fi
-  [ "$prc" -eq 0 ] || { echo "[nlmap] FATAL: pilot exited rc=$prc" >&2; exit "$prc"; }
-  echo "[nlmap] phase=pilot: PASS ($(date -u +%FT%TZ))"
+  for b in $BEHAVIORS; do
+    for kind in $KINDS; do
+      echo "[nlmap] phase=pilot $b/$kind vs plan_wall_h=$PLAN_WALL_H x mult=$PILOT_ABORT_MULT"
+      set +e
+      mapfile -t _pa < <(fits_args "$b" "$kind")
+      uv run python scripts/issue1739_fits.py "${_pa[@]}" --pilot \
+        --plan-wall-h "$PLAN_WALL_H" --pilot-abort-mult "$PILOT_ABORT_MULT"
+      prc=$?
+      set -e
+      if [ "$prc" -eq 7 ]; then
+        echo "[nlmap] PILOT REFUSED (rc=7) at $b/$kind: projected wall exceeds" \
+          "${PILOT_ABORT_MULT}x${PLAN_WALL_H}h (round ceiling ~5 GPU-h / 6 invocations)." >&2
+        echo "[nlmap] STOP — reporting instead of launching the grid;" \
+          "see $NL_ROOT/$b/$kind/pilot_report.json." >&2
+        exit 7
+      fi
+      [ "$prc" -eq 0 ] || { echo "[nlmap] FATAL: pilot $b/$kind exited rc=$prc" >&2; exit "$prc"; }
+      echo "[nlmap] phase=pilot $b/$kind: PASS ($(date -u +%FT%TZ))"
+    done
+  done
+  echo "[nlmap] phase=pilot: ALL PASS ($(date -u +%FT%TZ))"
 fi
 
 # ---- fits ------------------------------------------------------------------
