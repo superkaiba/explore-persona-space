@@ -24,7 +24,7 @@ main) can be probed by threading --ref.
 Lane-aware (#1835): the SLURM lanes materialize via an RSYNC of
 RSYNC_INCLUDE_PATHS (eval_results/ excluded), not a git clone, so
 git-reachability is necessary but NOT sufficient there — under `--lane rsync`
-an in-ref citation NOT covered by RSYNC_INCLUDE_PATHS ∪ `--extra-sync-path`
+an in-ref citation NOT covered by RSYNC_INCLUDE_PATHS + `--extra-sync-path`
 downgrades to FAIL(rsync-lane-not-synced), remediated by re-dispatching with
 the covering `--extra-sync-path` on BOTH this gate and `dispatch_issue.py
 launch`. The default `--lane clone` is byte-identical to pre-#1835 behavior.
@@ -352,7 +352,7 @@ def run_check(plan_text: str, *, repo_root: Path, issue: int, check_ref: str) ->
 
 
 def rsync_cover_set(extra_paths: list[str] | None) -> list[str]:
-    """De-dot-anchored RSYNC_INCLUDE_PATHS ∪ normalized --extra-sync-path values.
+    """De-dot-anchored RSYNC_INCLUDE_PATHS + normalized --extra-sync-path values.
 
     Imports the include set from ``explore_persona_space.backends.slurm`` (the
     single source of truth the lane's ``build_rsync_command`` consumes) so the
@@ -378,7 +378,7 @@ def apply_rsync_lane_downgrade(findings: list[Finding], *, cover_set: list[str])
     """Post-classification downgrade for rsync-materialized SLURM lanes (#1835).
 
     A ``Finding(verdict='pass', reason='in-ref')`` whose path is NOT covered by
-    RSYNC_INCLUDE_PATHS ∪ the extra-sync paths downgrades to
+    RSYNC_INCLUDE_PATHS + the extra-sync paths downgrades to
     ``fail`` / ``rsync-lane-not-synced``: the lane's scratch tree is an rsync of
     the include set with ``eval_results/`` etc. excluded, so a git-reachable
     citation outside the sync set is guaranteed absent on the instance (#1689:
@@ -397,7 +397,7 @@ def apply_rsync_lane_downgrade(findings: list[Finding], *, cover_set: list[str])
                     "rsync-lane-not-synced",
                     (
                         "git-reachable but NOT in the SLURM lane's rsync set "
-                        "(RSYNC_INCLUDE_PATHS ∪ extra-sync paths) — re-dispatch with "
+                        "(RSYNC_INCLUDE_PATHS + extra-sync paths) — re-dispatch with "
                         f"--extra-sync-path {f.path} (or a covering prefix, e.g. "
                         f"--extra-sync-path {prefix}) on BOTH this gate and "
                         "dispatch_issue.py launch"
@@ -464,7 +464,7 @@ def main(argv: list[str] | None = None) -> int:
             "router._PER_CLUSTER_LANES: nibi/fir/mila/fellows, plus the legacy "
             "'cluster' alias — whose scratch tree is an rsync of "
             "RSYNC_INCLUDE_PATHS: an in-ref citation NOT covered by "
-            "RSYNC_INCLUDE_PATHS ∪ --extra-sync-path downgrades from PASS to "
+            "RSYNC_INCLUDE_PATHS + --extra-sync-path downgrades from PASS to "
             "FAIL(rsync-lane-not-synced))"
         ),
     )
