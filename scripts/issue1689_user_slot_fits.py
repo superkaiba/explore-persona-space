@@ -116,6 +116,16 @@ N_NULL_DRAWS = 40
 PCA_K_CAP = 1024
 GATE1_TOL = 0.01
 
+# The u2-provenance pairs the transfer leg fits, each in BOTH directions. Shared
+# by the battery and the wall projection so the projection can never charge for a
+# pair the battery does not run (the bridging families carry ONE provenance each,
+# so they contribute zero transfer reads).
+PROVENANCE_TRANSFER_PAIRS: tuple[tuple[str, str], ...] = (
+    ("lmsys", "haiku"),
+    ("lmsys", "onpolicy"),
+    ("haiku", "onpolicy"),
+)
+
 # --- addendum A: length-stratified refits on the PARENT assistant stores -----
 # (model x condition) cells whose L19 stores get the median-token split, and the
 # arms refit inside each half. Keyed to the parent's own store schema
@@ -1118,17 +1128,36 @@ def project_battery_wall(
                 "projected_s": cost + g_cost,
             }
         )
-    # Transfers: provenance (3 pairs x 2 directions per model x frame group),
-    # story-label (2 directions per model x provenance), cross-role (2 per model).
-    frames = {
-        (
-            e["model_dir"],
-            e["framing"] if e["variant"] == "base" else f"{e['framing']}_{e['variant']}",
-        )
-        for e in entries
-    }
+    # Transfers, counted from the REALIZED entry set rather than per-frame
+    # constants: provenance transfers run only where BOTH provenances of a pair
+    # are present in the (model, frame) group, so the 14 bridging frames — one
+    # provenance each — contribute ZERO (a flat 6-per-frame charge would inflate
+    # the projection, and the fence, by 84 phantom max-n reads). Story-label
+    # transfers likewise run per (model, provenance) where BOTH story variants
+    # exist, 2 directions each; cross-role is 2 per model.
+    by_frame: dict[tuple[str, str], set[str]] = {}
+    story_provs: dict[str, dict[str, set[str]]] = {}
+    for e in entries:
+        frame = e["framing"] if e["variant"] == "base" else f"{e['framing']}_{e['variant']}"
+        by_frame.setdefault((e["model_dir"], frame), set()).add(e["provenance"])
+        if e["framing"] == "story":
+            story_provs.setdefault(e["model_dir"], {}).setdefault(e["provenance"], set()).add(
+                e["variant"]
+            )
+    n_prov_transfer = 2 * sum(
+        1
+        for provs in by_frame.values()
+        for a, b in PROVENANCE_TRANSFER_PAIRS
+        if a in provs and b in provs
+    )
+    n_label_transfer = 2 * sum(
+        1
+        for variants in story_provs.values()
+        for got in variants.values()
+        if {"alex", "user_label"} <= got
+    )
     n_models = len({e["model_dir"] for e in entries})
-    n_transfer = 6 * len(frames) + 4 * n_models + 2 * n_models
+    n_transfer = n_prov_transfer + n_label_transfer + 2 * n_models
     max_n = max(int(e["n_rows"]) for e in entries)
     transfer_s = n_transfer * N_FOLDS * fold_no_null * (max_n / n_basis) ** 2
     gate1_s = 2 * N_FOLDS * fold_no_null * (3 * max_n / n_basis) ** 2
@@ -1147,6 +1176,11 @@ def project_battery_wall(
         "n_fit_pairs": sum(r["n_fit_pairs"] for r in rows),
         "n_grid_combos": sum(r["n_grid_combos"] for r in rows),
         "n_transfer_reads": n_transfer,
+        "n_transfer_reads_breakdown": {
+            "provenance": n_prov_transfer,
+            "story_label": n_label_transfer,
+            "cross_role": 2 * n_models,
+        },
         "n_length_split_cells": len(split_rows),
         "within_hours": within_s / 3600.0,
         "grid_hours": grid_s / 3600.0,
@@ -1161,7 +1195,8 @@ def project_battery_wall(
         f"[preflight] PROJECTION: {out['n_units']} units / {out['n_fit_pairs']} fit pairs "
         f"({FOLD_SOLVES_PER_FIT_PAIR} fold-solves each: sweep + reduced companion) + "
         f"{out['n_grid_combos']} grid combos (X-side factorization shared) + "
-        f"{n_transfer} transfer reads + {len(split_rows)} length-split cells -> "
+        f"{n_transfer} transfer reads (prov={n_prov_transfer} label={n_label_transfer} "
+        f"cross_role={2 * n_models}) + {len(split_rows)} length-split cells -> "
         f"within={out['within_hours']:.2f}h grid={out['grid_hours']:.2f}h "
         f"transfer={out['transfer_hours']:.2f}h gate1={out['gate1_hours']:.2f}h "
         f"lensplit={out['length_split_hours']:.2f}h "
@@ -1337,8 +1372,207 @@ def fit_grid(
 
 
 # ---------------------------------------------------------------------------
+# Addenda B / C / D: the bridging reduction
+# ---------------------------------------------------------------------------
+
+# Addendum B pairs each single-turn cell against the FULL two-turn cell that
+# holds the SAME answer target and the SAME speaker label, so the ONLY variable
+# is whether the (u1, a1) turn is present. Both sides fit
+# `answer_header_end -> parent_answer_end`, so their primary R2 are directly
+# comparable. (`single_turn` is plain text, so the plain-text `*_naturalistic`
+# recap cell is the counterpart — never the chat one, whose template differs.)
+PREFIX_ABLATION_PAIRS: dict[str, str] = {
+    "single_turn_assistant": "parent_recap_assistant_naturalistic",
+    "single_turn_wren": "parent_recap_wren_naturalistic",
+}
+
+# Addendum C pairs the on-policy-a1 cell against the base cell with the SAME u2
+# provenance, label and framing shape, so a1 provenance is the only variable.
+# The Wren-labelled cell has NO label-matched base counterpart in this round (the
+# base user families are Assistant-labelled), so it is reported with the
+# confound named rather than presented as a matched contrast.
+A1_PROVENANCE_PAIRS: dict[str, str | None] = {
+    "onpolicy_a1_assistant": "naturalistic",
+    "onpolicy_a1_wren": None,
+}
+
+GRID_PRIMARY_X = "X_clean"
+
+
+def _r2_or_none(fits: dict, name: str) -> float | None:
+    row = fits.get(name)
+    return None if row is None else float(row["r2"])
+
+
+def bridge_comparisons(per_unit: dict, entries: dict, percell_dir: Path) -> dict:
+    """Assemble the addenda-B/C/D reads from ALREADY-fit results.
+
+    A pure reduction — no fitting happens here; every number is read out of the
+    per-cell `fits` / `grid` results the battery just produced. Absent cells
+    (`--allow-missing`, a smoke slice, a partial capture) are SKIPPED with the
+    reason recorded, never silently dropped.
+    """
+    models = sorted({e["model_dir"] for e in entries.values()})
+
+    def unit_for(mdir: str, frame: str, prov: str) -> str:
+        return f"{mdir}__{frame}__{prov}"
+
+    def primary_r2(unit_id: str) -> float | None:
+        o = per_unit.get(unit_id)
+        if o is None:
+            return None
+        return _r2_or_none(o["fits"], entries[unit_id]["primary_fit"])
+
+    from scripts.issue1689_user_slot_render import BRIDGE_PROVENANCE
+
+    # --- B: prefix ablation (single-turn vs the matched full two-turn cell) ---
+    prefix_ablation: dict[str, dict] = {}
+    for mdir in models:
+        for st_frame, tt_frame in PREFIX_ABLATION_PAIRS.items():
+            su = unit_for(mdir, st_frame, BRIDGE_PROVENANCE["single_turn"])
+            tu = unit_for(mdir, tt_frame, BRIDGE_PROVENANCE["parent_recap"])
+            s_r2, t_r2 = primary_r2(su), primary_r2(tu)
+            row = {
+                "single_turn_unit": su,
+                "single_turn_r2": s_r2,
+                "two_turn_unit": tu,
+                "two_turn_r2": t_r2,
+                "delta_r2_two_turn_minus_single_turn": (
+                    None if s_r2 is None or t_r2 is None else t_r2 - s_r2
+                ),
+                "shared_fit": "answer_header_end->parent_answer_end (context->answer)",
+                "note": (
+                    "both arms hold the answer target FIXED at the parent's own a2 for the same "
+                    "conversation; the single-turn arm ABLATES the (u1, a1) turn"
+                ),
+            }
+            if s_r2 is None or t_r2 is None:
+                row["skipped"] = "one or both cells absent from this battery"
+            prefix_ablation[f"{mdir}|{st_frame}"] = row
+
+    # --- C: a1 provenance (on-policy a1 vs the off-policy LMSYS a1) ----------
+    a1_provenance: dict[str, dict] = {}
+    for mdir in models:
+        for on_frame, base_frame in A1_PROVENANCE_PAIRS.items():
+            ou = unit_for(mdir, on_frame, BRIDGE_PROVENANCE["onpolicy_a1"])
+            o_r2 = primary_r2(ou)
+            row: dict = {
+                "onpolicy_a1_unit": ou,
+                "onpolicy_a1_r2": o_r2,
+                "u2_provenance": BRIDGE_PROVENANCE["onpolicy_a1"],
+            }
+            if base_frame is None:
+                row["offpolicy_unit"] = None
+                row["delta_r2_onpolicy_minus_offpolicy"] = None
+                row["skipped"] = (
+                    "no label-matched base cell in this round (the base user families are "
+                    "Assistant-labelled) — a contrast against a base Assistant cell would "
+                    "confound the speaker label with a1 provenance"
+                )
+            else:
+                bu = unit_for(mdir, base_frame, BRIDGE_PROVENANCE["onpolicy_a1"])
+                b_r2 = primary_r2(bu)
+                row["offpolicy_unit"] = bu
+                row["offpolicy_r2"] = b_r2
+                row["delta_r2_onpolicy_minus_offpolicy"] = (
+                    None if o_r2 is None or b_r2 is None else o_r2 - b_r2
+                )
+                row["note"] = (
+                    "u2, framing and label matched; a1 is the model's OWN greedy reply on the "
+                    "on-policy arm vs the corpus reply on the base arm"
+                )
+                if o_r2 is None or b_r2 is None:
+                    row["skipped"] = "one or both cells absent from this battery"
+            a1_provenance[f"{mdir}|{on_frame}"] = row
+
+    # --- D: target-summary convention (Y_mean vs Y_end vs Y_boundary) --------
+    target_convention: dict[str, dict] = {}
+    for unit_id, o in sorted(per_unit.items()):
+        for gname, g in (o.get("grid") or {}).items():
+            combos = g["combos"]
+            got = {
+                y: (
+                    float(combos[f"{GRID_PRIMARY_X}->{y}"]["r2"])
+                    if f"{GRID_PRIMARY_X}->{y}" in combos
+                    else None
+                )
+                for y in ("Y_mean", "Y_end", "Y_boundary")
+            }
+            row = {
+                "unit_id": unit_id,
+                "read_group": gname,
+                "x_kind": GRID_PRIMARY_X,
+                "r2_by_y": got,
+                "delta_r2_mean_minus_end": (
+                    None
+                    if got["Y_mean"] is None or got["Y_end"] is None
+                    else got["Y_mean"] - got["Y_end"]
+                ),
+                "convention_note": (
+                    "Y_mean is the #1345/#825 convention; Y_end is the #1689 parent convention; "
+                    "Y_boundary reads the response slot before the next speaker"
+                ),
+            }
+            # The published parent number exists only for the recap cells (the
+            # rig-bridge arms re-rendering a parent condition), and it was
+            # measured under the END-token convention.
+            e = entries[unit_id]
+            if e["framing"] == "parent_recap":
+                cond = e["variant"]
+                ref_path = percell_dir / f"heldout_r2_{e['model_dir']}_{cond}.json"
+                if ref_path.exists():
+                    row["published_parent_end_convention"] = published_parent_r2(
+                        percell_dir, e["model_dir"], cond
+                    )
+                else:
+                    row["published_parent_end_convention"] = None
+                    row["published_reference_absent"] = str(ref_path)
+            target_convention[f"{unit_id}|{gname}"] = row
+
+    return {
+        "prefix_ablation": prefix_ablation,
+        "a1_provenance": a1_provenance,
+        "target_summary_convention": target_convention,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Synthetic end-to-end smoke
 # ---------------------------------------------------------------------------
+
+
+def _synthetic_specs() -> list[tuple[str, str, str]]:
+    """(framing, variant, provenance) cells the synthetic smoke tree carries.
+
+    The base families keep two provenances each so the provenance-transfer and
+    story-label legs have pairs to run. The three BRIDGING families (addenda
+    B/C/D) each carry ONE cell: their per-family code paths in this battery are
+    the fit-pair table, the slot names (`answer_header_end` as X and
+    `parent_answer_end` as Y — a target no base family fits) and the `answer`
+    read-group grid shape, all of which one cell exercises; adding a second
+    variant would re-run the identical paths. Their single provenance is why
+    they contribute no transfer pairs — which is exactly what
+    :func:`project_battery_wall` must NOT charge for.
+    """
+    from scripts.issue1689_user_slot_render import BRIDGE_PROVENANCE
+
+    return [
+        ("chat", "base", "lmsys"),
+        ("chat", "base", "onpolicy"),
+        ("naturalistic", "base", "lmsys"),
+        ("naturalistic", "base", "onpolicy"),
+        # The haiku arm is addendum C's off-policy-a1 counterpart: without it the
+        # bridging reduction's C leg has nothing to pair against and its delta
+        # arithmetic would first run in production.
+        ("naturalistic", "base", "haiku"),
+        ("story", "alex", "lmsys"),
+        ("story", "alex", "onpolicy"),
+        ("story", "user_label", "lmsys"),
+        ("story", "user_label", "onpolicy"),
+        ("single_turn", "assistant", BRIDGE_PROVENANCE["single_turn"]),
+        ("onpolicy_a1", "assistant", BRIDGE_PROVENANCE["onpolicy_a1"]),
+        ("parent_recap", "assistant_naturalistic", BRIDGE_PROVENANCE["parent_recap"]),
+    ]
 
 
 def build_synthetic_store_tree(root: Path, *, n: int = 60, d: int = 64, seed: int = 0) -> Path:
@@ -1348,6 +1582,9 @@ def build_synthetic_store_tree(root: Path, *, n: int = 60, d: int = 64, seed: in
     matches production (n_train = 48 < d = 64) so the reduced-basis truncation
     genuinely bites, and every store key / manifest field is the real one — the
     battery below runs its production code path unmodified.
+
+    Covers one cell per FAMILY including the three bridging families, so no
+    family's fit-pair table or grid shape first executes in production.
     """
     import numpy as np
     import torch
@@ -1355,6 +1592,7 @@ def build_synthetic_store_tree(root: Path, *, n: int = 60, d: int = 64, seed: in
     from scripts.issue1689_user_slot_render import (
         FIT_PAIRS_BY_FRAMING,
         PRIMARY_FIT_BY_FRAMING,
+        READ_GROUP_NAMES_BY_FRAMING,
         SLOT_STRADDLER_POLICY,
         SLOTS_BY_FRAMING,
         base_metadata,
@@ -1363,16 +1601,7 @@ def build_synthetic_store_tree(root: Path, *, n: int = 60, d: int = 64, seed: in
     rng = np.random.default_rng(seed)
     model = "Qwen/Qwen2.5-7B"
     mdir = model.replace("/", "_")
-    specs = [
-        ("chat", "base", "lmsys"),
-        ("chat", "base", "onpolicy"),
-        ("naturalistic", "base", "lmsys"),
-        ("naturalistic", "base", "onpolicy"),
-        ("story", "alex", "lmsys"),
-        ("story", "alex", "onpolicy"),
-        ("story", "user_label", "lmsys"),
-        ("story", "user_label", "onpolicy"),
-    ]
+    specs = _synthetic_specs()
     entries = []
     conv_ids = np.array([f"c{i:04d}" for i in range(n)], dtype=object)
     for framing, variant, prov in specs:
@@ -1388,7 +1617,10 @@ def build_synthetic_store_tree(root: Path, *, n: int = 60, d: int = 64, seed: in
             )
             for s in slots
         }
-        gnames = ["u2"] + (["u1"] if framing in ("chat", "naturalistic") else [])
+        # Read from the render's own declaration (which its
+        # `_validate_read_groups` asserts against every realized group list), so
+        # the smoke's grid shape can never drift from production's.
+        gnames = list(READ_GROUP_NAMES_BY_FRAMING[framing])
         gacc = {
             f"{gn}__{kind}": (
                 latent @ rng.standard_normal((d, d)) * 0.3 + rng.standard_normal((n, d))
@@ -1505,6 +1737,7 @@ def run_synthetic_smoke(args) -> int:
     print("[synthetic-smoke] Gate-1 non-inertness probe PASS (wrong reference raised)", flush=True)
 
     # Shape assertions on the produced battery.
+    specs = _synthetic_specs()
     n_units = len(summary["per_unit_r2"])
     n_transfer = len(summary["provenance_transfer"])
     n_label = len(summary["story_label_effect"])
@@ -1514,12 +1747,58 @@ def run_synthetic_smoke(args) -> int:
         f"label_pairs={n_label} floor_control_present={floor_seen}",
         flush=True,
     )
-    if n_units != 8 or n_transfer == 0 or n_label == 0 or not floor_seen:
-        raise RuntimeError("synthetic smoke produced an incomplete battery")
+    if n_units != len(specs) or n_transfer == 0 or n_label == 0 or not floor_seen:
+        raise RuntimeError(
+            f"synthetic smoke produced an incomplete battery (units={n_units} "
+            f"expected={len(specs)})"
+        )
     for u, fits in summary["per_unit_r2"].items():
         for name, r2 in fits.items():
             if not np.isfinite(r2):
                 raise RuntimeError(f"non-finite r2 for {u}/{name}")
+
+    # Per-FAMILY coverage: every family's fit-pair table AND grid must have been
+    # exercised. A count-only check passes while a whole family is unfitted.
+    from scripts.issue1689_user_slot_render import (
+        GRID_X_KINDS,
+        GRID_Y_KINDS,
+        PRIMARY_FIT_BY_FRAMING,
+        READ_GROUP_NAMES_BY_FRAMING,
+    )
+
+    mdir = "Qwen_Qwen2.5-7B"
+    for framing, variant, prov in specs:
+        frame = framing if variant == "base" else f"{framing}_{variant}"
+        unit_id = f"{mdir}__{frame}__{prov}"
+        fits = summary["per_unit_r2"].get(unit_id)
+        if not fits:
+            raise RuntimeError(f"synthetic smoke fitted no pairs for {framing} cell {unit_id}")
+        primary = PRIMARY_FIT_BY_FRAMING[framing]
+        if primary not in fits:
+            raise RuntimeError(f"{unit_id}: primary fit {primary!r} missing from {sorted(fits)}")
+        grid = summary["grid_r2"].get(unit_id) or {}
+        want_groups = set(READ_GROUP_NAMES_BY_FRAMING[framing])
+        if set(grid) != want_groups:
+            raise RuntimeError(
+                f"{unit_id}: grid groups {sorted(grid)} != declared {sorted(want_groups)}"
+            )
+        for gn, combos in grid.items():
+            n_want = len(GRID_X_KINDS) * len(GRID_Y_KINDS)
+            if len(combos) != n_want:
+                raise RuntimeError(f"{unit_id}/{gn}: {len(combos)} grid combos, expected {n_want}")
+    families = sorted({s[0] for s in specs})
+    print(f"[synthetic-smoke] per-family coverage OK: {families}", flush=True)
+
+    # The bridging reduction must be populated by the same run (its inputs are
+    # the per-cell + grid results above).
+    bridge = summary.get("bridge_comparisons") or {}
+    if not bridge.get("target_summary_convention"):
+        raise RuntimeError("synthetic smoke produced no addendum-D target-convention rows")
+    print(
+        "[synthetic-smoke] bridge_comparisons: "
+        + json.dumps({k: len(v) for k, v in bridge.items() if isinstance(v, dict)}),
+        flush=True,
+    )
     print("[synthetic-smoke] OK", flush=True)
     return 0
 
@@ -1677,7 +1956,7 @@ def run_battery(args) -> dict:
     }
 
     # --- (2) provenance transfer, 3 pairs x 2 directions -------------------
-    prov_pairs = [("lmsys", "haiku"), ("lmsys", "onpolicy"), ("haiku", "onpolicy")]
+    prov_pairs = list(PROVENANCE_TRANSFER_PAIRS)
     transfers: dict[str, dict] = {}
     groups: dict[tuple[str, str], dict[str, str]] = {}
     for unit_id, e in entries.items():
@@ -1833,6 +2112,44 @@ def run_battery(args) -> dict:
                 flush=True,
             )
     summary["length_stratified"] = lensplit
+
+    # --- (6) addenda B/C/D: the bridging reduction (no new fits) --------------
+    bridge = bridge_comparisons(per_unit, entries, args.percell_dir)
+    summary["bridge_comparisons"] = bridge
+    for key, row in bridge["prefix_ablation"].items():
+        if row.get("skipped"):
+            print(f"[fits] bridge-B {key}: SKIPPED — {row['skipped']}", flush=True)
+            continue
+        print(
+            f"[fits] bridge-B {key}: single_turn={row['single_turn_r2']:+.4f} "
+            f"two_turn={row['two_turn_r2']:+.4f} "
+            f"d={row['delta_r2_two_turn_minus_single_turn']:+.4f}",
+            flush=True,
+        )
+    for key, row in bridge["a1_provenance"].items():
+        if row.get("skipped"):
+            print(f"[fits] bridge-C {key}: SKIPPED — {row['skipped']}", flush=True)
+            continue
+        print(
+            f"[fits] bridge-C {key}: onpolicy_a1={row['onpolicy_a1_r2']:+.4f} "
+            f"offpolicy={row['offpolicy_r2']:+.4f} "
+            f"d={row['delta_r2_onpolicy_minus_offpolicy']:+.4f}",
+            flush=True,
+        )
+    for key, row in bridge["target_summary_convention"].items():
+        by_y = row["r2_by_y"]
+        d = row["delta_r2_mean_minus_end"]
+        print(
+            f"[fits] bridge-D {key} [{row['x_kind']}]: "
+            + " ".join(f"{y}={v:+.4f}" for y, v in by_y.items() if v is not None)
+            + (f" d(mean-end)={d:+.4f}" if d is not None else "")
+            + (
+                f" published_end={row['published_parent_end_convention']}"
+                if row.get("published_parent_end_convention")
+                else ""
+            ),
+            flush=True,
+        )
 
     with (args.out_dir / "summary.json").open("w", encoding="utf-8") as fh:
         json.dump(summary, fh, indent=2)

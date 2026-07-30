@@ -1594,6 +1594,21 @@ READ_GROUPS_BY_FRAMING = {
     "parent_recap": _rg_parent_recap,
 }
 
+# The read-group names each framing REALIZES, in order. Declared rather than
+# only derived so (a) `_validate_read_groups` fails loud if a builder's realized
+# groups ever drift from the declaration, and (b) consumers that must know the
+# grid's shape WITHOUT rendering real text — the fits' synthetic smoke tree —
+# read it from here instead of re-deriving it (a drifting duplicate would make
+# the smoke's grid shape diverge from production's).
+READ_GROUP_NAMES_BY_FRAMING: dict[str, tuple[str, ...]] = {
+    "chat": ("u2", "u1"),
+    "naturalistic": ("u2", "u1"),
+    "story": ("u2",),
+    "onpolicy_a1": ("u2", "u1"),
+    "single_turn": ("answer", "u2"),
+    "parent_recap": ("answer",),
+}
+
 
 def build_read_groups(unit: Unit, off: dict[str, int], text: str) -> tuple[str, list[ReadGroup]]:
     """Dispatch to the framing's read-group builder (addendum E).
@@ -1619,6 +1634,13 @@ def _validate_read_groups(unit: Unit, groups: list[ReadGroup], text: str) -> Non
     names = [g.name for g in groups]
     if len(set(names)) != len(names):
         raise RuntimeError(f"{unit.unit_id}: duplicate read-group names {names}")
+    declared = list(READ_GROUP_NAMES_BY_FRAMING[unit.framing])
+    if names != declared:
+        raise RuntimeError(
+            f"{unit.unit_id}: realized read groups {names} != declared "
+            f"READ_GROUP_NAMES_BY_FRAMING[{unit.framing!r}] {declared} — a consumer sizing the "
+            "grid off the declaration (the fits' synthetic smoke tree) would diverge"
+        )
     for g in groups:
         for label, off in (
             ("answer_start", g.answer_start),

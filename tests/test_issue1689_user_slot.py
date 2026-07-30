@@ -34,6 +34,7 @@ from scripts.issue1689_user_slot_capture import (
 )
 from scripts.issue1689_user_slot_fits import (
     LENGTH_SPLIT_ARMS,
+    bridge_comparisons,
     context_token_lengths,
     conv_rank_median_split,
     expand_by_dup,
@@ -49,6 +50,7 @@ from scripts.issue1689_user_slot_render import (
     GEN_A1_SUBDIR,
     LMSYS_CONST_U2,
     PRIMARY_FIT_BY_FRAMING,
+    READ_GROUP_NAMES_BY_FRAMING,
     READ_GROUPS_BY_FRAMING,
     SINGLE_TURN_VARIANTS,
     SLOT_STRADDLER_POLICY,
@@ -155,6 +157,40 @@ def test_every_framing_has_slots_fit_pairs_and_read_groups():
         # every slot must carry a straddler policy
         for s in u.slots:
             assert s in SLOT_STRADDLER_POLICY, (u.framing, s)
+        # the read-group NAMES must be declared too: the fits' synthetic smoke
+        # tree sizes its grid off the declaration, so a framing missing from it
+        # would be smoke-covered with the wrong grid shape (or a KeyError).
+        assert u.framing in READ_GROUP_NAMES_BY_FRAMING, u.framing
+
+
+def test_declared_read_group_names_match_every_builder_and_are_enforced():
+    """`READ_GROUP_NAMES_BY_FRAMING` is what the fits' synthetic smoke tree
+    builds its grid from, so a drift between it and the real builders would make
+    the smoke's grid shape diverge from production's. Pin BOTH directions: the
+    declaration matches what each builder realizes, AND the in-render assert is
+    not inert."""
+    assert set(READ_GROUP_NAMES_BY_FRAMING) == set(READ_GROUPS_BY_FRAMING)
+
+    text, off = naturalistic_text_and_offsets("hello there", "sure thing", "and tomorrow?")
+    nat_unit = UNIT_BY_ID["Qwen_Qwen2.5-7B__naturalistic__haiku"]
+    _, groups = build_read_groups(nat_unit, off, text)
+    assert [g.name for g in groups] == list(READ_GROUP_NAMES_BY_FRAMING["naturalistic"])
+
+    st_text, st_off = single_turn_text_and_offsets("only question", "the answer", label="Assistant")
+    st_unit = UNIT_BY_ID["Qwen_Qwen2.5-7B__single_turn_assistant__parent"]
+    _, st_groups = build_read_groups(st_unit, st_off, st_text)
+    assert [g.name for g in st_groups] == list(READ_GROUP_NAMES_BY_FRAMING["single_turn"])
+
+    # Non-inertness: a declaration that disagrees with the builder must raise.
+    import scripts.issue1689_user_slot_render as R
+
+    original = R.READ_GROUP_NAMES_BY_FRAMING["naturalistic"]
+    R.READ_GROUP_NAMES_BY_FRAMING["naturalistic"] = ("u2", "u1", "phantom")
+    try:
+        with pytest.raises(RuntimeError, match="realized read groups"):
+            build_read_groups(nat_unit, off, text)
+    finally:
+        R.READ_GROUP_NAMES_BY_FRAMING["naturalistic"] = original
 
 
 def test_naturalistic_offsets_strictly_increasing_and_exact():
@@ -749,25 +785,92 @@ def test_projection_charges_the_grid_and_the_length_split():
     """The wall fence is only a protection if the projection covers every phase:
     the addendum-E grid and the addendum-A half-fits must both be charged."""
     basis = measure_fold_basis(40, 24, null_draws=2)
-    entry = {
-        "unit_id": "u",
-        "n_rows": 40,
-        "model_dir": "M",
-        "framing": "chat",
-        "variant": "base",
-        "fit_pairs": [["a", "b", "primary"]],
-        "read_group_names": ["u2"],
-        "grid_x_kinds": ["X_clean", "X_straddle"],
-        "grid_y_kinds": ["Y_mean", "Y_end", "Y_boundary"],
-    }
-    bare = project_battery_wall([entry], basis, null_draws=2)
-    with_split = project_battery_wall([entry], basis, null_draws=2, length_split_n_rows=[40, 40])
+
+    def entry(framing="chat", variant="base", prov="lmsys", uid="u"):
+        return {
+            "unit_id": uid,
+            "n_rows": 40,
+            "model_dir": "M",
+            "framing": framing,
+            "variant": variant,
+            "provenance": prov,
+            "fit_pairs": [["a", "b", "primary"]],
+            "read_group_names": ["u2"],
+            "grid_x_kinds": ["X_clean", "X_straddle"],
+            "grid_y_kinds": ["Y_mean", "Y_end", "Y_boundary"],
+        }
+
+    bare = project_battery_wall([entry()], basis, null_draws=2)
+    with_split = project_battery_wall([entry()], basis, null_draws=2, length_split_n_rows=[40, 40])
     assert bare["grid_hours"] > 0, "grid combos must be charged"
     assert bare["n_grid_combos"] == 6
     assert bare["length_split_hours"] == 0 and bare["n_length_split_cells"] == 0
     assert with_split["length_split_hours"] > 0
     assert with_split["n_length_split_cells"] == 2
     assert with_split["total_hours"] > bare["total_hours"]
+
+
+def test_projection_charges_transfers_only_for_pairs_that_actually_run():
+    """A flat per-frame transfer charge inflates the fence once the bridging
+    families land: they carry ONE u2 provenance each, so no provenance-transfer
+    pair can run on them, and a 6-per-frame charge would bill 6 phantom max-n
+    reads per bridging frame."""
+    basis = measure_fold_basis(40, 24, null_draws=2)
+
+    def entry(framing, variant, prov, uid):
+        return {
+            "unit_id": uid,
+            "n_rows": 40,
+            "model_dir": "M",
+            "framing": framing,
+            "variant": variant,
+            "provenance": prov,
+            "fit_pairs": [["a", "b", "primary"]],
+            "read_group_names": ["u2"],
+            "grid_x_kinds": ["X_clean", "X_straddle"],
+            "grid_y_kinds": ["Y_mean", "Y_end", "Y_boundary"],
+        }
+
+    # A bridging frame ALONE: one provenance -> zero provenance transfers.
+    lone = project_battery_wall(
+        [entry("single_turn", "assistant", "parent", "b1")], basis, null_draws=2
+    )
+    assert lone["n_transfer_reads_breakdown"]["provenance"] == 0
+    assert lone["n_transfer_reads_breakdown"]["story_label"] == 0
+    assert lone["n_transfer_reads_breakdown"] == {
+        "provenance": 0,
+        "story_label": 0,
+        "cross_role": 2,
+    }
+
+    # A base frame with all three provenances runs 3 pairs x 2 directions = 6.
+    three = project_battery_wall(
+        [entry("chat", "base", p, f"c_{p}") for p in ("lmsys", "haiku", "onpolicy")],
+        basis,
+        null_draws=2,
+    )
+    assert three["n_transfer_reads_breakdown"]["provenance"] == 6
+
+    # Adding the bridging frame beside it must NOT add a single transfer read.
+    mixed = project_battery_wall(
+        [entry("chat", "base", p, f"c_{p}") for p in ("lmsys", "haiku", "onpolicy")]
+        + [entry("single_turn", "assistant", "parent", "b1")],
+        basis,
+        null_draws=2,
+    )
+    assert mixed["n_transfer_reads"] == three["n_transfer_reads"], (
+        "a single-provenance bridging frame must add zero transfer reads"
+    )
+
+    # Story-label transfers need BOTH variants under the same provenance.
+    one_variant = project_battery_wall([entry("story", "alex", "lmsys", "s1")], basis, null_draws=2)
+    assert one_variant["n_transfer_reads_breakdown"]["story_label"] == 0
+    both_variants = project_battery_wall(
+        [entry("story", "alex", "lmsys", "s1"), entry("story", "user_label", "lmsys", "s2")],
+        basis,
+        null_draws=2,
+    )
+    assert both_variants["n_transfer_reads_breakdown"]["story_label"] == 2
 
 
 # ---------------------------------------------------------------------------
@@ -1026,3 +1129,148 @@ def test_bridge_read_groups_validate_and_target_the_right_span():
         # 5 grid slots per group (addendum E), all distinct names
         all_slots = [s for gg in groups for s in gg.slot_names]
         assert len(all_slots) == 5 * len(groups) == len(set(all_slots))
+
+
+# ---------------------------------------------------------------------------
+# Addenda B/C/D: the bridging reduction
+# ---------------------------------------------------------------------------
+
+
+def _grid(mean, end, boundary):
+    return {
+        "combos": {
+            "X_clean->Y_mean": {"r2": mean},
+            "X_clean->Y_end": {"r2": end},
+            "X_clean->Y_boundary": {"r2": boundary},
+        }
+    }
+
+
+def test_bridge_comparisons_pairs_the_addenda_and_records_every_skip(tmp_path: Path):
+    """The reduction is what actually ANSWERS addenda B/C/D, so pin the pairing:
+    B contrasts the prefix-ablated cell against the full two-turn cell holding
+    the SAME answer target; C contrasts on-policy a1 against the matched base
+    cell; D reports the target-summary convention. A missing cell must be
+    SKIPPED with its reason recorded, never silently dropped."""
+    m = "Qwen_Qwen2.5-7B"
+
+    def e(frame, framing, variant, prov, primary):
+        return {
+            "unit_id": f"{m}__{frame}__{prov}",
+            "model_dir": m,
+            "framing": framing,
+            "variant": variant,
+            "provenance": prov,
+            "primary_fit": primary,
+        }
+
+    specs = [
+        e(
+            "single_turn_assistant",
+            "single_turn",
+            "assistant",
+            "parent",
+            "primary_singleturn_to_answer",
+        ),
+        e(
+            "parent_recap_assistant_naturalistic",
+            "parent_recap",
+            "assistant_naturalistic",
+            "parent",
+            "primary_context_to_answer",
+        ),
+        e("onpolicy_a1_assistant", "onpolicy_a1", "assistant", "haiku", "primary_label_to_u2"),
+        e("onpolicy_a1_wren", "onpolicy_a1", "wren", "haiku", "primary_label_to_u2"),
+        e("naturalistic", "naturalistic", "base", "haiku", "primary_label_to_u2"),
+    ]
+    entries = {s["unit_id"]: s for s in specs}
+    r2 = {
+        f"{m}__single_turn_assistant__parent": 0.10,
+        f"{m}__parent_recap_assistant_naturalistic__parent": 0.45,
+        f"{m}__onpolicy_a1_assistant__haiku": 0.30,
+        f"{m}__onpolicy_a1_wren__haiku": 0.28,
+        f"{m}__naturalistic__haiku": 0.20,
+    }
+    per_unit = {
+        s["unit_id"]: {
+            "fits": {s["primary_fit"]: {"r2": r2[s["unit_id"]]}},
+            "grid": {"answer" if s["framing"] != "onpolicy_a1" else "u2": _grid(0.5, 0.4, 0.3)},
+        }
+        for s in specs
+    }
+
+    out = bridge_comparisons(per_unit, entries, tmp_path)
+
+    # B: the delta is two_turn - single_turn on the MATCHED pair.
+    b = out["prefix_ablation"][f"{m}|single_turn_assistant"]
+    assert b["two_turn_unit"] == f"{m}__parent_recap_assistant_naturalistic__parent"
+    assert b["delta_r2_two_turn_minus_single_turn"] == pytest.approx(0.45 - 0.10)
+    assert "skipped" not in b
+    # the wren pair has no cells here -> SKIPPED with a reason, not dropped
+    b_wren = out["prefix_ablation"][f"{m}|single_turn_wren"]
+    assert b_wren["skipped"] and b_wren["delta_r2_two_turn_minus_single_turn"] is None
+
+    # C: matched-label pair computes a delta; the wren cell names its confound.
+    c = out["a1_provenance"][f"{m}|onpolicy_a1_assistant"]
+    assert c["offpolicy_unit"] == f"{m}__naturalistic__haiku"
+    assert c["delta_r2_onpolicy_minus_offpolicy"] == pytest.approx(0.30 - 0.20)
+    c_wren = out["a1_provenance"][f"{m}|onpolicy_a1_wren"]
+    assert c_wren["offpolicy_unit"] is None
+    assert "confound" in c_wren["skipped"]
+
+    # D: every grid-bearing cell reports its Y convention + the mean-end delta.
+    d_key = f"{m}__parent_recap_assistant_naturalistic__parent|answer"
+    d = out["target_summary_convention"][d_key]
+    assert d["x_kind"] == "X_clean"
+    assert d["r2_by_y"] == {"Y_mean": 0.5, "Y_end": 0.4, "Y_boundary": 0.3}
+    assert d["delta_r2_mean_minus_end"] == pytest.approx(0.1)
+    # the published parent reference is absent here -> path recorded, never faked
+    assert d["published_parent_end_convention"] is None
+    assert d["published_reference_absent"].endswith(
+        "heldout_r2_Qwen_Qwen2.5-7B_assistant_naturalistic.json"
+    )
+    # a NON-recap cell gets no published slot at all (none exists for it)
+    non_recap = out["target_summary_convention"][f"{m}__onpolicy_a1_assistant__haiku|u2"]
+    assert "published_parent_end_convention" not in non_recap
+
+
+def test_bridge_comparisons_attaches_the_published_end_convention_when_present(tmp_path: Path):
+    """Addendum D's whole point is Y_mean vs the parent's END convention, so when
+    the published per-cell reference exists it must ride the row."""
+    m = "Qwen_Qwen2.5-7B"
+    (tmp_path / f"heldout_r2_{m}_wren_naturalistic.json").write_text(
+        json.dumps(
+            {
+                "n_rows": 3200,
+                "layers": [14, 18, 19, 26],
+                "prefix": {"held_out_r2_per_layer": [0.0, 0.0, 0.11, 0.0]},
+                "context": {"held_out_r2_per_layer": [0.0, 0.0, 0.62, 0.0]},
+            }
+        ),
+        encoding="utf-8",
+    )
+    uid = f"{m}__parent_recap_wren_naturalistic__parent"
+    entries = {
+        uid: {
+            "unit_id": uid,
+            "model_dir": m,
+            "framing": "parent_recap",
+            "variant": "wren_naturalistic",
+            "provenance": "parent",
+            "primary_fit": "primary_context_to_answer",
+        }
+    }
+    per_unit = {
+        uid: {
+            "fits": {"primary_context_to_answer": {"r2": 0.4}},
+            "grid": {"answer": _grid(0.58, 0.41, 0.33)},
+        }
+    }
+    row = bridge_comparisons(per_unit, entries, tmp_path)["target_summary_convention"][
+        f"{uid}|answer"
+    ]
+    pub = row["published_parent_end_convention"]
+    assert pub["context->answer"] == pytest.approx(0.62)
+    assert pub["prefix->answer"] == pytest.approx(0.11)
+    assert pub["n_rows_published"] == 3200
+    assert "published_reference_absent" not in row
