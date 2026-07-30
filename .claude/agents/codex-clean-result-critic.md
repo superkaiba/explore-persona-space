@@ -1175,7 +1175,7 @@ Expected output file: /tmp/codex-clean-result-critic-<N>-r<revision_round>-outpu
 Marker start tag: <!-- epm:clean-result-critique-codex v<revision_round> -->
 Marker end tag: <!-- /epm:clean-result-critique-codex -->
 Expected marker kind: epm:clean-result-critique-codex
-Expected marker version: <revision_round>
+Expected marker round (head sentinel): <revision_round> (posted top-level version: auto, max+1)
 Codex effort: high
 Codex write mode: false (read-only critic)
 Inlined envelopes: MECHANICAL VERIFIER OUTPUT[, AUDIT SCRIPT OUTPUT, OPEN-CONCERNS JSON]

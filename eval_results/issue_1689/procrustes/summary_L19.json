@@ -1,0 +1,270 @@
+{
+  "metadata": {
+    "alignment_convention": "data-paired orthogonal Procrustes on the pair's conv_id intersection (ma._procrustes_cosine_null / #1310 anchor convention: orth(A,B) = U @ Vh of svd(A.T @ B)); n_common < d, so the rotation beyond rank(A.T @ B) is the LAPACK SVD's orthogonal completion",
+    "engine": "torch-cpu-v1",
+    "fit_convention": "per-CELL ridge (Y ~ X @ W + b) on ALL cell rows; inner-group-cv lambda over the ladder LAMBDAS grid with conv-grouped inner folds (issue1689_fit_ladder._fit_ridge_inner_group_cv_t); bias excluded from cosines",
+    "git_commit": "aeee6601554ac06ffaf1adcfd5f5fc6f787f5d48",
+    "lambda_grid": {
+      "log_max": 4.0,
+      "log_min": -2.0,
+      "size": 13
+    },
+    "layer": 19,
+    "n_null_draws": 200,
+    "null_convention": "two-sided Haar rotation null, batched via the singular-value reduction trace(W_b^T Q1^T W_a Q2) = s_b^T (P * R^T) s_a with P, R ~ Haar; per-draw seeds seed*1000003+k",
+    "numpy_version": "2.2.6",
+    "script": "scripts/issue1689_procrustes_battery.py",
+    "seed": 42,
+    "symmetry_note": "aligned/raw/spectrum cosines + rotation null are exactly symmetric under pair order; ordered rows (src__tgt and tgt__src) carry identical values by construction",
+    "timestamp_utc": "2026-07-29T05:37:12Z",
+    "torch_version": "2.8.0+cu128"
+  },
+  "per_class": {
+    "base": {
+      "context": {
+        "crossed": {
+          "aligned_cosine_mean": 0.1766464833585207,
+          "aligned_cosine_median": 0.17147044334847694,
+          "frac_above_null_p975": 1.0,
+          "n_ordered_rows": 24,
+          "n_screened": 12,
+          "n_skipped": 0,
+          "n_valid": 12,
+          "raw_cosine_mean": 0.09514740378796514,
+          "spectrum_cosine_mean": 0.9811952661571691
+        },
+        "framing": {
+          "aligned_cosine_mean": 0.11966436330518722,
+          "aligned_cosine_median": 0.09628455750343667,
+          "frac_above_null_p975": 1.0,
+          "n_ordered_rows": 24,
+          "n_screened": 0,
+          "n_skipped": 0,
+          "n_valid": 24,
+          "raw_cosine_mean": 0.09591839705111631,
+          "spectrum_cosine_mean": 0.972468790442969
+        },
+        "identity": {
+          "aligned_cosine_mean": 0.14311581627327238,
+          "aligned_cosine_median": 0.14465035254850578,
+          "frac_above_null_p975": 1.0,
+          "n_ordered_rows": 36,
+          "n_screened": 0,
+          "n_skipped": 0,
+          "n_valid": 36,
+          "raw_cosine_mean": 0.22254617138552168,
+          "spectrum_cosine_mean": 0.9800243524628218
+        },
+        "identity-vs-user": {
+          "n_ordered_rows": 6,
+          "n_screened": 6,
+          "n_skipped": 0,
+          "n_valid": 0
+        },
+        "provenance": {
+          "n_ordered_rows": 18,
+          "n_screened": 18,
+          "n_skipped": 0,
+          "n_valid": 0
+        },
+        "user-framing": {
+          "n_ordered_rows": 18,
+          "n_screened": 18,
+          "n_skipped": 0,
+          "n_valid": 0
+        }
+      },
+      "prefix": {
+        "crossed": {
+          "aligned_cosine_mean": 0.19005393054159475,
+          "aligned_cosine_median": 0.19313668640770743,
+          "frac_above_null_p975": 1.0,
+          "n_ordered_rows": 24,
+          "n_screened": 6,
+          "n_skipped": 0,
+          "n_valid": 18,
+          "raw_cosine_mean": 0.046086351910827605,
+          "spectrum_cosine_mean": 0.9791426454926909
+        },
+        "framing": {
+          "aligned_cosine_mean": 0.1047191808896701,
+          "aligned_cosine_median": 0.07788296922034632,
+          "frac_above_null_p975": 1.0,
+          "n_ordered_rows": 24,
+          "n_screened": 0,
+          "n_skipped": 0,
+          "n_valid": 24,
+          "raw_cosine_mean": 0.05836262123160276,
+          "spectrum_cosine_mean": 0.9660091114765859
+        },
+        "identity": {
+          "aligned_cosine_mean": 0.12541505619048576,
+          "aligned_cosine_median": 0.12356496258427949,
+          "frac_above_null_p975": 1.0,
+          "n_ordered_rows": 36,
+          "n_screened": 0,
+          "n_skipped": 0,
+          "n_valid": 36,
+          "raw_cosine_mean": 0.18343267906703342,
+          "spectrum_cosine_mean": 0.9784930117281644
+        },
+        "identity-vs-user": {
+          "aligned_cosine_mean": 0.30000329239150375,
+          "aligned_cosine_median": 0.3592259382285874,
+          "frac_above_null_p975": 1.0,
+          "n_ordered_rows": 6,
+          "n_screened": 0,
+          "n_skipped": 0,
+          "n_valid": 6,
+          "raw_cosine_mean": 0.09030071119729849,
+          "spectrum_cosine_mean": 0.9653211156796022
+        },
+        "provenance": {
+          "aligned_cosine_mean": 0.5029167014247199,
+          "aligned_cosine_median": 0.4882751922129446,
+          "frac_above_null_p975": 1.0,
+          "n_ordered_rows": 18,
+          "n_screened": 6,
+          "n_skipped": 0,
+          "n_valid": 12,
+          "raw_cosine_mean": 0.30818183016579753,
+          "spectrum_cosine_mean": 0.9450440263291146
+        },
+        "user-framing": {
+          "aligned_cosine_mean": 0.3038039230412814,
+          "aligned_cosine_median": 0.4052001705903812,
+          "frac_above_null_p975": 1.0,
+          "n_ordered_rows": 18,
+          "n_screened": 12,
+          "n_skipped": 0,
+          "n_valid": 6,
+          "raw_cosine_mean": 0.03840646148874189,
+          "spectrum_cosine_mean": 0.9643580341953334
+        }
+      }
+    },
+    "instruct": {
+      "context": {
+        "crossed": {
+          "aligned_cosine_mean": 0.19165091217830876,
+          "aligned_cosine_median": 0.1896234600686683,
+          "frac_above_null_p975": 1.0,
+          "n_ordered_rows": 24,
+          "n_screened": 12,
+          "n_skipped": 0,
+          "n_valid": 12,
+          "raw_cosine_mean": 0.044333320312304636,
+          "spectrum_cosine_mean": 0.9863042533760852
+        },
+        "framing": {
+          "aligned_cosine_mean": 0.1191767998348278,
+          "aligned_cosine_median": 0.09955254700654662,
+          "frac_above_null_p975": 1.0,
+          "n_ordered_rows": 24,
+          "n_screened": 0,
+          "n_skipped": 0,
+          "n_valid": 24,
+          "raw_cosine_mean": 0.05208924113147198,
+          "spectrum_cosine_mean": 0.9365941642669084
+        },
+        "identity": {
+          "aligned_cosine_mean": 0.17756534588882408,
+          "aligned_cosine_median": 0.1687568767013993,
+          "frac_above_null_p975": 1.0,
+          "n_ordered_rows": 36,
+          "n_screened": 0,
+          "n_skipped": 0,
+          "n_valid": 36,
+          "raw_cosine_mean": 0.2141301282797252,
+          "spectrum_cosine_mean": 0.970933145397136
+        },
+        "identity-vs-user": {
+          "n_ordered_rows": 6,
+          "n_screened": 6,
+          "n_skipped": 0,
+          "n_valid": 0
+        },
+        "provenance": {
+          "n_ordered_rows": 18,
+          "n_screened": 18,
+          "n_skipped": 0,
+          "n_valid": 0
+        },
+        "user-framing": {
+          "n_ordered_rows": 18,
+          "n_screened": 18,
+          "n_skipped": 0,
+          "n_valid": 0
+        }
+      },
+      "prefix": {
+        "crossed": {
+          "aligned_cosine_mean": 0.19989598094894057,
+          "aligned_cosine_median": 0.17936919614101005,
+          "frac_above_null_p975": 1.0,
+          "n_ordered_rows": 24,
+          "n_screened": 6,
+          "n_skipped": 0,
+          "n_valid": 18,
+          "raw_cosine_mean": 0.026671495010707456,
+          "spectrum_cosine_mean": 0.9827341477982385
+        },
+        "framing": {
+          "aligned_cosine_mean": 0.11435924888657789,
+          "aligned_cosine_median": 0.0959200365733138,
+          "frac_above_null_p975": 1.0,
+          "n_ordered_rows": 24,
+          "n_screened": 0,
+          "n_skipped": 0,
+          "n_valid": 24,
+          "raw_cosine_mean": 0.04648637665848367,
+          "spectrum_cosine_mean": 0.9326125802873914
+        },
+        "identity": {
+          "aligned_cosine_mean": 0.15964462668301477,
+          "aligned_cosine_median": 0.16166360467525553,
+          "frac_above_null_p975": 1.0,
+          "n_ordered_rows": 36,
+          "n_screened": 0,
+          "n_skipped": 0,
+          "n_valid": 36,
+          "raw_cosine_mean": 0.1802182534094306,
+          "spectrum_cosine_mean": 0.9706314284720724
+        },
+        "identity-vs-user": {
+          "aligned_cosine_mean": 0.32658761801786973,
+          "aligned_cosine_median": 0.403729422678039,
+          "frac_above_null_p975": 1.0,
+          "n_ordered_rows": 6,
+          "n_screened": 0,
+          "n_skipped": 0,
+          "n_valid": 6,
+          "raw_cosine_mean": 0.1021172220407968,
+          "spectrum_cosine_mean": 0.9332772401428883
+        },
+        "provenance": {
+          "aligned_cosine_mean": 0.4851394082393555,
+          "aligned_cosine_median": 0.5026288383745324,
+          "frac_above_null_p975": 1.0,
+          "n_ordered_rows": 18,
+          "n_screened": 6,
+          "n_skipped": 0,
+          "n_valid": 12,
+          "raw_cosine_mean": 0.292060583157629,
+          "spectrum_cosine_mean": 0.9163497069470291
+        },
+        "user-framing": {
+          "aligned_cosine_mean": 0.32492287487825083,
+          "aligned_cosine_median": 0.4307718594072545,
+          "frac_above_null_p975": 1.0,
+          "n_ordered_rows": 18,
+          "n_screened": 12,
+          "n_skipped": 0,
+          "n_valid": 6,
+          "raw_cosine_mean": 0.030849429541722127,
+          "spectrum_cosine_mean": 0.9474004088472036
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,2 @@
+{"ts": "2026-07-28T07:04:06Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-07-28T19:06:53Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "New occurrence of the reset-hard incident class, 2026-07-28 ~18:20Z: a concurrent session destructive repo-root git op reverted the #1482 inline feature-extremes round tracked files mid-round (script, eval JSON, figures, dashboard). Round rebuilt + verified bit-identical (13/13 statistics) and recommitted at fcc9965459. Evidence for this review task."}

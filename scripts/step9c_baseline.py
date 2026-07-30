@@ -229,6 +229,15 @@ PYTEST_BASE_FLAGS: tuple[str, ...] = (
     "no:cacheprovider",
     "-o",
     "junit_family=xunit1",
+    # #1746: one collection-broken file must not abort the whole run (rc=2,
+    # unclassifiable — MF-1b refuses). With this flag pytest runs the surviving
+    # collected tests, reports each collect error as a junit <error> testcase
+    # keyed to the broken FILE (empirical shape, pytest 9.0.2 xunit1:
+    # file="tests/test_broken.py", classname="", name="tests.test_broken"),
+    # and exits rc=1 — inside the accepted {0,1} set — so compare's existing
+    # NEW-vs-pre-existing node subtraction classifies it. rc=2 is thereafter
+    # reserved for genuine interruption / internal error (MF-1b preserved).
+    "--continue-on-collection-errors",
 )
 
 
@@ -912,6 +921,16 @@ def parse_junit(path: Path) -> tuple[list[Node], dict]:
     failure, or a failing testcase without the per-case ``file`` attribute
     (pytest 9.0.2 xunit1 emits it — plan #1022 A3; the K2 short-summary
     fallback is a deliberate redesign, not a silent guess).
+
+    Collect-error absorb (#1746, ``--continue-on-collection-errors``): pytest
+    9.0.2 empirically emits the ``file`` attribute on a collect-error testcase
+    too (probe 2026-07-28: ``file="tests/test_broken.py"``, ``classname=""``,
+    ``name="tests.test_broken"``), so the broken file keys to a stable Node via
+    the normal path. As version-drift insurance, a testcase with an ``error``
+    child, NO ``file`` attr, and a ``name`` that is a plausible test-file path
+    (endswith ``.py``) derives ``file`` from ``name``
+    (``Node(file=name, classname="", name=name)``); every OTHER missing-file
+    shape keeps the hard JunitParseError (the xunit1 contract stays fail-loud).
     """
     if not path.exists():
         raise JunitParseError(
@@ -934,13 +953,20 @@ def parse_junit(path: Path) -> tuple[list[Node], dict]:
         n_err += int(has_error)
         if has_failure or has_error:
             file_attr = tc.get("file")
+            name_attr = tc.get("name") or ""
+            if not file_attr and has_error and name_attr.endswith(".py"):
+                # Collect-error row keyed only through ``name`` (#1746 —
+                # version-drift fallback; see docstring): derive a stable
+                # per-file Node from the plausible test-file path in ``name``.
+                failing.append(Node(file=name_attr, classname="", name=name_attr))
+                continue
             if not file_attr:
                 raise JunitParseError(
                     f"failing testcase {tc.get('classname')}::{tc.get('name')} has no "
                     "file attribute — xunit1 contract violated (see plan #1022 K2 fallback)"
                 )
             failing.append(
-                Node(file=file_attr, classname=tc.get("classname") or "", name=tc.get("name") or "")
+                Node(file=file_attr, classname=tc.get("classname") or "", name=name_attr)
             )
     duration = 0.0
     for suite in tree.getroot().iter("testsuite"):
@@ -1322,11 +1348,14 @@ def lint_verdict(root: Path, wt: Path, touched: list[str]) -> dict:
 
 
 def _pristine_command(root: Path, test_file: str) -> str:
-    """The copy-pasteable single-file pristine check printed on the no-run path."""
-    return (
-        f"(cd {root} && uv run pytest {test_file} -q --tb=no -p no:cacheprovider "
-        "-o junit_family=xunit1)"
-    )
+    """The copy-pasteable single-file pristine check printed on the no-run path.
+
+    Built from ``PYTEST_BASE_FLAGS`` (single source — #1746 Must-Fix 1: a
+    duplicated literal here would drop ``--continue-on-collection-errors`` and
+    make the printed manual-recovery command abort rc=2 on a collection-red
+    file instead of reproducing the oracle's flags).
+    """
+    return f"(cd {root} && uv run pytest {test_file} {' '.join(PYTEST_BASE_FLAGS)})"
 
 
 class _Indeterminate(RuntimeError):
@@ -1367,6 +1396,7 @@ class _CompareCtx:
     work_root: Path  # the invoking worktree (its sparse profile gates the scratch fallback)
     new: list[Node] = field(default_factory=list)
     stripped: list[dict] = field(default_factory=list)
+    urgent_park: list[str] = field(default_factory=list)  # #1742 <file>::<name> node ids
     pristine_bucket: list[Node] = field(default_factory=list)
     warns: list[str] = field(default_factory=list)
     live_dirty_paths: list[str] = field(default_factory=list)
@@ -1457,9 +1487,23 @@ def _ledger_view(root: Path, args: argparse.Namespace) -> _LedgerView:
 
 
 def _strip_node(ctx: _CompareCtx, node: Node, via: str) -> None:
-    """Strip *node* as pre-existing; EVERY scan-covered strip WARNs (MF-6)."""
+    """Strip *node* as pre-existing; EVERY scan-covered strip WARNs (MF-6).
+
+    A strip on a WORKFLOW_INVARIANT test additionally demands an urgent park
+    (#1713/#1742): the node id joins ``ctx.urgent_park`` (the JSON
+    ``urgent_park_required`` field) and a loud stderr demand line is emitted —
+    criterion single-sourced from the selector, never a hardcoded glob.
+    """
     ctx.stripped.append({**node._asdict(), "via": via})
     sel = ctx.sel
+    if node.file in getattr(sel, "WORKFLOW_INVARIANT", ()):
+        node_id = f"{node.file}::{node.name}"
+        ctx.urgent_park.append(node_id)
+        _log(
+            f"URGENT-PARK-REQUIRED: {node_id} — stripped pre-existing main-red on a "
+            "workflow-invariant test; emit (or verify existing) a routable "
+            "'urgency: main-red' workflow-fix-candidate (#1713/#1742)"
+        )
     if node.file in sel.GLOB_SCAN_TESTS:
         covered = [f for f in ctx.touched if sel._matches_any(f, sel.GLOB_SCAN_TESTS[node.file])]
         ctx.warns.append(
@@ -1773,6 +1817,7 @@ def _compare_impl(args: argparse.Namespace) -> dict:
         "pytest_rc": args.pytest_rc,
         "new": [n._asdict() for n in ctx.new],
         "stripped": ctx.stripped,
+        "urgent_park_required": ctx.urgent_park,  # #1742 stripped workflow-invariant node ids
         "warns": ctx.warns,
         "stale": lv.stale,
         "stale_reasons": lv.stale_reasons,
@@ -1808,6 +1853,7 @@ def _indeterminate_payload(
         "pytest_rc": pytest_rc,
         "new": [],
         "stripped": [],
+        "urgent_park_required": [],  # #1742 stable shape on the exit-2 payload
         "warns": list(warns or []),
         **(extra or {}),
     }
@@ -1865,6 +1911,8 @@ def cmd_compare(args: argparse.Namespace) -> int:
         )
         for n in result["new"]:
             print(f"  NEW: {n['file']}::{n['name']}")
+        for uid in result["urgent_park_required"]:
+            print(f"  URGENT-PARK-REQUIRED: {uid}")  # #1742 (stderr carries the full demand)
         for w in result["warns"]:
             print(f"  {w}")
     for w in result["warns"]:

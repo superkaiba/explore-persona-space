@@ -2897,8 +2897,9 @@ wc -c < "$MB"   # >=50000 -> the existing artifacts-file oversize fallback
 grep -m1 '^\*\*Verdict' "$MB"            # single-verdict sites (5c / 9a / 9a-bis)
 grep -E '^### Proposal|^\*\*Verdict' "$MB"   # 9b VC only: per-proposal verdicts — no -m1
 grep -m1 '^\*\*Blocker tags:' "$MB" || true  # sites that carry it (5c-bis / 9a-bis strips)
-# 4. Post without reading:
-uv run python scripts/task.py post-marker <N> epm:<kind> --version <n> \
+# 4. Post without reading (OMIT --version: it auto-derives max+1; the round
+#    lives in the extracted block's head sentinel the sed extraction keys on):
+uv run python scripts/task.py post-marker <N> epm:<kind> \
   --file "$MB"
 ```
 
@@ -6247,7 +6248,11 @@ URLs.
   missing-artifacts list, lifecycle-aware resumes the pod if needed,
   pushes to HF / WandB / git, and posts `epm:upload-fix v1`. After each
   uploader round, re-run `upload-verifier`; it posts a fresh
-  `epm:upload-verification v<N+1>`.
+  `epm:upload-verification v<N+1>`. Any gap-fill (uploader- or
+  orchestrator-side) that MATERIALIZES a missing run artifact from
+  markers must reproduce the experiment writer's exact schema, or write
+  a `<name>.materialized.json` sidecar (#1775; full rule: uploader.md
+  § Rules).
 
   Round outcomes:
   - **uploader COMPLETE + verifier PASS** -> proceed as PASS branch above.

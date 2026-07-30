@@ -2014,6 +2014,7 @@ def _emit_daily_drive_summary(
     date: str,
     *,
     dry_run: bool,
+    retry_suspect_matches: int | None = None,
 ) -> None:
     """Print the terminal SUMMARY stderr line and (unless dry_run) append a
     ``daily-drive-summary`` row to filed.jsonl (#1735 §4.4).
@@ -2025,6 +2026,11 @@ def _emit_daily_drive_summary(
     values (or the ``attempting``/``ERROR`` two-phase tail) and ignore this
     row by default. Grep-based consumers find it via
     ``jq 'select(.outcome=="daily-drive-summary")'``.
+
+    ``retry_suspect_matches`` (#1758): the pre-loop count of sliced slugs
+    carrying a suspect ledger row, or None when ``--retry-suspects`` was
+    unset. When exactly 0, a zero-match note is appended to the PRINTED
+    stderr line ONLY — the ledger row's ``counts`` key set stays untouched.
     """
     keys = (
         "filed",
@@ -2045,11 +2051,19 @@ def _emit_daily_drive_summary(
         counts["landed-fix-suspects-unknown-kind"] = unknown
     n_suspects = counts["closed-sibling-suspects"] + counts["landed-fix-suspects"] + unknown
     suspect_hint = " — re-run with --retry-suspects to file suspects" if n_suspects > 0 else ""
+    # #1758: print-line-only reflection of the pre-loop zero-match state; None
+    # (flag unset) never appends. Placed BEFORE suspect_hint so the line reads
+    # chronologically (pre-loop state, then this run's minted suspects).
+    zero_match_note = (
+        " — --retry-suspects matched 0 recorded suspects (nothing retried)"
+        if retry_suspect_matches == 0
+        else ""
+    )
     parts = [f"{k}={counts[k]}" for k in keys]
     if unknown:
         parts.append(f"landed-fix-suspects-unknown-kind={unknown}")
     print(
-        f"SUMMARY dir={dirpath} {' '.join(parts)}{suspect_hint}",
+        f"SUMMARY dir={dirpath} {' '.join(parts)}{zero_match_note}{suspect_hint}",
         file=sys.stderr,
     )
     if dry_run:
@@ -2084,6 +2098,25 @@ def main(argv: list[str] | None = None) -> int:
     target_holds = compute_target_holds(manifest)
     ledger = load_ledger(dirpath)
     sliced = manifest[args.start : args.end]
+    # #1758: under --retry-suspects, count sliced slugs carrying a suspect
+    # ledger row BEFORE the drive loop (pristine loaded ledger — mid-run
+    # appends cannot shift it; prints on dry-run too). Predicate is
+    # deliberately _has_landed_fix_suspect_row, NOT _slug_state ==
+    # "retry-suspect", so an ERROR+suspect slug driven under both retry
+    # flags still counts as a match and cannot draw a false notice.
+    retry_suspect_matches: int | None = None
+    if args.retry_suspects:
+        retry_suspect_matches = sum(
+            1 for item in sliced if _has_landed_fix_suspect_row(ledger, item["slug"])
+        )
+        if retry_suspect_matches == 0:
+            lo = "" if args.start is None else args.start
+            hi = "" if args.end is None else args.end
+            print(
+                f"NOTICE: --retry-suspects matched 0 recorded suspects in slice [{lo}:{hi}]"
+                " — nothing to retry (#1758)",
+                file=sys.stderr,
+            )
     any_error = False
     outcome_counts: dict[str, int] = {}
     for item in sliced:
@@ -2108,7 +2141,14 @@ def main(argv: list[str] | None = None) -> int:
             any_error = True
     # Terminal SUMMARY: always emitted (dry-run too); ledger append skipped on
     # dry-run (read-only by construction, #1735 §4.4).
-    _emit_daily_drive_summary(dirpath, outcome_counts, args, date, dry_run=args.dry_run)
+    _emit_daily_drive_summary(
+        dirpath,
+        outcome_counts,
+        args,
+        date,
+        dry_run=args.dry_run,
+        retry_suspect_matches=retry_suspect_matches,
+    )
     return 1 if any_error else 0
 
 

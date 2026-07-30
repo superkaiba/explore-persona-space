@@ -246,7 +246,10 @@ tab-free stderr WARN + exit 0 (a deletion-only ``git diff --name-only``
 payload is a legitimate zero-resolution list).
 
 Default output: the exact gate invocation
-``timeout --kill-after=60s <T>s uv run pytest <files...> -v --tb=short`` on
+``timeout --kill-after=60s <T>s uv run pytest <files...>
+--continue-on-collection-errors -v --tb=short`` (#1746: a collection-broken
+selected file reports as a per-file junit ``<error>`` testcase and pytest
+exits rc=1 instead of aborting the whole run rc=2) on
 stdout — ``<T>`` sized deterministically by :func:`recommended_timeout_s`
 (#1046: 120s base + 30s/file + a 2400s surcharge when
 ``tests/test_workflow_lint.py`` is selected; re-measured from 330 real gate
@@ -394,10 +397,14 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_marker_contract.py",
     # NEW (#1268) — SKILL.md Step-10d repin/guard hardening pin
     "tests/test_issue_skill_merge_resnapshot_pin.py",
+    # NEW (#1756) — Write-tool merged-note compose pin (3 --file sites + CLAUDE.md)
+    "tests/test_issue_skill_merged_note_compose.py",
     # NEW (#1563) — SKILL.md orchestrator-turn discipline pointer pin
     "tests/test_issue_skill_orchestrator_turn_discipline_pointer.py",
     # NEW (#1572) — staged-index verification pin
     "tests/test_issue_skill_staged_index_verification.py",
+    # NEW (#1751) — SKILL.md KEPT-stash surfacing duty pin
+    "tests/test_issue_skill_stash_kept_duty_pin.py",
     # NEW (#1734) — SKILL.md Step 2 minimum plan-review floor + recorded-skip contract pin
     "tests/test_issue_skill_step2_floor.py",
     # NEW (#1595) — stopped-volume persist-before-park pin (SKILL.md + pod-config.md)
@@ -655,6 +662,40 @@ def rules_pin_pairs(files: list[str], work_root: Path) -> list[tuple[str, str]]:
     )
 
 
+# --- Content-tolerant filesystem probes (#1791). -------------------------------
+def _safe_exists(p: Path) -> bool:
+    """``p.exists()`` that treats an unstat-able path as absent (#1791).
+
+    A content line from a mis-passed ``--map-files`` payload (markdown prose,
+    a source line > NAME_MAX) raises ``OSError`` [Errno 36] — or ``ValueError``
+    on an embedded NUL — from ``Path.exists()`` BEFORE the #1613 misuse
+    diagnostic can fire. Such a line is by definition not an existing repo
+    path, so absent is the correct answer, not a swallowed fault; no stat-able
+    path takes the except arm, so valid inputs are byte-identical.
+    """
+    try:
+        return p.exists()
+    except (OSError, ValueError):
+        return False
+
+
+def _safe_glob(root: Path, pattern: str) -> list[Path]:
+    """``sorted(root.glob(pattern))`` tolerant of content-derived patterns (#1791).
+
+    A stem derived from a mis-passed content line can embed glob
+    metacharacters (``scripts/*.py`` -> stem ``*`` -> pattern
+    ``test_***.py``), which raises ``ValueError`` ("Invalid pattern: '**' can
+    only be an entire path component") on modern pathlib — again before the
+    #1613 diagnostic. An invalid pattern cannot match an existing test, so
+    ``[]`` is the correct answer; valid patterns take the sorted-glob path
+    unchanged.
+    """
+    try:
+        return sorted(root.glob(pattern))
+    except (OSError, ValueError):
+        return []
+
+
 # --- src/scripts dependency arms for --map-files (#1573). ---------------------
 MAP_TIMEOUT_FLOOR_S = 600  # Step-10d TG-leg floor (#1646; was 300, basis the
 #                            ~12.6 s 2-test scan map of 2026-07-08). #1634's
@@ -710,9 +751,12 @@ def dependency_map_pairs(files: list[str], work_root: Path) -> list[tuple[str, s
     for f in literal_path_targets(files):  # the same eligibility predicate
         stem = Path(f).stem
         exact = f"tests/test_{stem}.py"
-        if (work_root / exact).exists() and exact not in inv:
+        # Content-derived probes: _safe_exists/_safe_glob (#1791) — a hostile
+        # content line (> NAME_MAX stem, glob-metachar stem) must reach the
+        # #1613 diagnostic, not crash here first.
+        if _safe_exists(work_root / exact) and exact not in inv:
             pairs.add((exact, f))
-        for hit in sorted((work_root / "tests").glob(f"test_*{stem}*.py")):
+        for hit in _safe_glob(work_root / "tests", f"test_*{stem}*.py"):
             rel = f"tests/{hit.name}"
             if rel not in inv:
                 pairs.add((rel, f))
@@ -1422,9 +1466,10 @@ def select_tests_with_reasons(
         if _matches_any(f, WORKFLOW_SURFACE_GLOBS):
             continue
         p = Path(f)
-        # A touched test file includes itself.
+        # A touched test file includes itself. (_safe_exists: content-line
+        # tolerance, #1791 — diff-mode twin of the map-files stem arm.)
         if f.startswith("tests/") and p.name.startswith("test_") and p.suffix == ".py":
-            if (work_root / f).exists():
+            if _safe_exists(work_root / f):
                 _add(f, "touched-test")
             continue
         # Data / config / doc files: not code, no test mapping.
@@ -1444,10 +1489,10 @@ def select_tests_with_reasons(
             # asserts a cross-cutting invariant ABOUT the file.)
             matched = f in import_tested
             exact = work_root / "tests" / f"test_{stem}.py"
-            if exact.exists():
+            if _safe_exists(exact):
                 _add(f"tests/test_{stem}.py", f"stem-map:{f}")
                 matched = True
-            for hit in sorted((work_root / "tests").glob(f"test_*{stem}*.py")):
+            for hit in _safe_glob(work_root / "tests", f"test_*{stem}*.py"):
                 _add(f"tests/{hit.name}", f"stem-map:{f}")
                 matched = True
             if not matched:
@@ -1558,7 +1603,10 @@ def _zero_resolution_guard(
     """
     if not files or all_pairs:
         return None
-    if any((work_root / f).exists() for f in files if not f.startswith("/")):
+    # _safe_exists (#1791): a > NAME_MAX content line (the mis-passed
+    # markdown/source shape this guard exists to diagnose) raises OSError
+    # from a bare exists() — crashing the very diagnostic meant to fire.
+    if any(_safe_exists(work_root / f) for f in files if not f.startswith("/")):
         return None
     if Path(map_files_arg).suffix in (".py", ".sh"):
         print(
@@ -1593,9 +1641,9 @@ def _run_map_files_mode(map_files_arg: str, work_root: Path) -> int:
     WORKFLOW_INVARIANT-excluded — over an explicit file list. No git diff;
     stderr carries the zero-mapped WARN floor + the recommended-timeout-s
     sizing line (floor 300). Return codes: 0 on success (empty stdout on no
-    match is the Step 10d merge-gate skip signal); 1 on an unreadable input
-    file (fail CLOSED); 2 on the #1613 zero-resolution guard's source-file
-    argument.
+    match is the Step 10d merge-gate skip signal); 1 on an unreadable or
+    undecodable (binary, #1791) input file (fail CLOSED); 2 on the #1613
+    zero-resolution guard's source-file argument.
 
     Extracted from ``main`` (#1717) to keep ``main``'s cyclomatic
     complexity under the ruff C901 cap (≤15) after the new (a)/(c)
@@ -1603,7 +1651,9 @@ def _run_map_files_mode(map_files_arg: str, work_root: Path) -> int:
     """
     try:
         raw = Path(map_files_arg).read_text()
-    except OSError as exc:
+    except (OSError, ValueError) as exc:
+        # ValueError covers a mis-passed BINARY file (UnicodeDecodeError is
+        # a ValueError subclass, #1791) — same rc-1 "cannot read" path.
         # (c) opt-in hint on the comma-blob shape (#1717 defect (c),
         # session `c0a2df1b`): `--map-files a.md,b.md` is a common
         # mistake — argparse treats the comma-joined blob as a single
@@ -1865,7 +1915,11 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"timeout --kill-after=60s {timeout_s}s uv run pytest "
             + " ".join(tests)
-            + " -v --tb=short"
+            # #1746: one collection-broken selected file must not abort the
+            # whole gate rc=2 — pytest runs the surviving files, reports the
+            # collect error as a per-file junit <error> testcase, exits rc=1,
+            # and step9c_baseline compare classifies it like any other failure.
+            + " --continue-on-collection-errors -v --tb=short"
         )
         for f in untested:
             print(f"untested touched file: {f}", file=sys.stderr)

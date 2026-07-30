@@ -1,0 +1,448 @@
+{
+  "commit": "f342cb4161",
+  "created": "2026-07-29T08:05:40Z",
+  "figsize": [
+    5.2,
+    5.0
+  ],
+  "points": [
+    {
+      "Re(\u03bb)": 0.8922186274794921,
+      "Im(\u03bb)": -0.1769775862851197,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.8922186274794921,
+      "Im(\u03bb)": 0.1769775862851197,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.8488606545055286,
+      "Im(\u03bb)": 0.07503613496017374,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.8488606545055286,
+      "Im(\u03bb)": -0.07503613496017374,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.8323577587922115,
+      "Im(\u03bb)": 0.0,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.7788075925940745,
+      "Im(\u03bb)": 0.262227277592813,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.7788075925940745,
+      "Im(\u03bb)": -0.262227277592813,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.8117327004401764,
+      "Im(\u03bb)": 0.12045957666148878,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.8117327004401764,
+      "Im(\u03bb)": -0.12045957666148878,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.7929433825905645,
+      "Im(\u03bb)": 0.18005822859939272,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.7929433825905645,
+      "Im(\u03bb)": -0.18005822859939272,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6586507589180911,
+      "Im(\u03bb)": 0.4255367918745553,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6586507589180911,
+      "Im(\u03bb)": -0.4255367918745553,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6095949827792846,
+      "Im(\u03bb)": -0.4815437118037181,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6095949827792846,
+      "Im(\u03bb)": 0.4815437118037181,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.7235490051178854,
+      "Im(\u03bb)": -0.2274220378241512,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.7235490051178854,
+      "Im(\u03bb)": 0.2274220378241512,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6875457980640265,
+      "Im(\u03bb)": 0.3150469227102469,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6875457980640265,
+      "Im(\u03bb)": -0.3150469227102469,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.7290813094177678,
+      "Im(\u03bb)": -0.1910388081471896,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.7290813094177678,
+      "Im(\u03bb)": 0.1910388081471896,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.753566008381171,
+      "Im(\u03bb)": 0.0,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.7415968567832831,
+      "Im(\u03bb)": -0.1061861299279049,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.7415968567832831,
+      "Im(\u03bb)": 0.1061861299279049,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.5777329482088217,
+      "Im(\u03bb)": -0.43648148011923027,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.5777329482088217,
+      "Im(\u03bb)": 0.43648148011923027,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6153855258517683,
+      "Im(\u03bb)": 0.36302355990534896,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6153855258517683,
+      "Im(\u03bb)": -0.36302355990534896,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6963627549602207,
+      "Im(\u03bb)": 0.1176770408512082,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6963627549602207,
+      "Im(\u03bb)": -0.1176770408512082,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6508188058406776,
+      "Im(\u03bb)": -0.2532859565141925,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6508188058406776,
+      "Im(\u03bb)": 0.2532859565141925,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6832901587366955,
+      "Im(\u03bb)": 0.13197291731801208,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6832901587366955,
+      "Im(\u03bb)": -0.13197291731801208,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6630310253201822,
+      "Im(\u03bb)": -0.19504435817735746,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6630310253201822,
+      "Im(\u03bb)": 0.19504435817735746,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.680819749618977,
+      "Im(\u03bb)": 0.0876068830359393,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.680819749618977,
+      "Im(\u03bb)": -0.0876068830359393,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.5750127128244993,
+      "Im(\u03bb)": -0.3723352691553388,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.5750127128244993,
+      "Im(\u03bb)": 0.3723352691553388,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.47395042313024194,
+      "Im(\u03bb)": -0.4932610238762904,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.47395042313024194,
+      "Im(\u03bb)": 0.4932610238762904,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.5297759419006423,
+      "Im(\u03bb)": -0.40484126282809263,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.5297759419006423,
+      "Im(\u03bb)": 0.40484126282809263,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.4443137380907206,
+      "Im(\u03bb)": -0.48687134919156766,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.4443137380907206,
+      "Im(\u03bb)": 0.48687134919156766,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.4139503052987161,
+      "Im(\u03bb)": -0.5035753179281718,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.4139503052987161,
+      "Im(\u03bb)": 0.5035753179281718,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6496575926291674,
+      "Im(\u03bb)": 0.03163614018720136,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6496575926291674,
+      "Im(\u03bb)": -0.03163614018720136,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.5403389836916017,
+      "Im(\u03bb)": 0.34410367151067073,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.5403389836916017,
+      "Im(\u03bb)": -0.34410367151067073,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.2990749464470699,
+      "Im(\u03bb)": -0.5619948342504452,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.2990749464470699,
+      "Im(\u03bb)": 0.5619948342504452,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6307284393379518,
+      "Im(\u03bb)": -0.05399118617543707,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6307284393379518,
+      "Im(\u03bb)": 0.05399118617543707,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6150919515510614,
+      "Im(\u03bb)": 0.11325574669996086,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.6150919515510614,
+      "Im(\u03bb)": -0.11325574669996086,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.47534506395888,
+      "Im(\u03bb)": -0.39516217506289064,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.47534506395888,
+      "Im(\u03bb)": 0.39516217506289064,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.5831394303233772,
+      "Im(\u03bb)": -0.20409354521975054,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.5831394303233772,
+      "Im(\u03bb)": 0.20409354521975054,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.5891500302775731,
+      "Im(\u03bb)": 0.17058573827735338,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    },
+    {
+      "Re(\u03bb)": 0.5891500302775731,
+      "Im(\u03bb)": -0.17058573827735338,
+      "series": "stable (\u22655/6 folds)",
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 64,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Context-arm operator eigenvalues (gate pass=True; trace/d=0.0358)",
+        "xlabel": "Re(\u03bb)",
+        "ylabel": "Im(\u03bb)",
+        "legend_labels": [
+          "stable (\u22655/6 folds)",
+          "unstable"
+        ],
+        "xticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      },
+      {
+        "ylabel": "Relative eigen residual",
+        "yticklabels": [
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      }
+    ],
+    "series": [
+      "stable (\u22655/6 folds)",
+      "unstable"
+    ]
+  }
+}
