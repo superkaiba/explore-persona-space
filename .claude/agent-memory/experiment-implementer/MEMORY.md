@@ -157,3 +157,4 @@
 - [sha pins live in a DOMAIN](feedback_sha_pin_domain_mismatch.md) — recompute a reused pin from its producer's recipe before asserting; wrong-domain compare masquerades as data drift (#1776 c4)
 - [out-arg FILE-vs-DIR kind](feedback_out_arg_file_vs_dir_kind.md) — a file path passed as an out-dir arg misnests deliverables while .exists()/-e checks pass; use is_file/-f + argparse kind guards + class-sweep out args (#1776 c5)
 - [CUDA partial device placement](feedback_cuda_device_partial_placement.md) — CPU-only smokes structurally cannot exercise CUDA-divergent branches; one move site at entry + named-tensor same-device asserts (#1776 c7)
+- [Must-Fix DONE claims verified on disk](feedback_must_fix_done_claims_verified_on_disk.md) — read the hunk back + confirm every cited test node id collects (--collect-only) before claiming DONE; a from-memory test name inside an existing file is fabrication when wrong (#1768 r1)
