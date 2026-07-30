@@ -83,28 +83,50 @@ print(f'[pvscore] staged {len(paths)} pvsynth capture files')
 fi
 
 # stage_hub_prefix lands files at <dest>/<repo-relative path> (a VERBATIM
-# prefix mirror, #928) — NOT flat in <dest>. Resolve the real store dir by
-# locating the capture manifest rather than hard-coding the mirrored depth,
-# so a producer-side prefix change cannot silently mis-point the consumer.
-resolve_pvcap() {
-  local m
+# prefix mirror, #928) — NOT flat in <dest>. Resolve the mirrored capture root
+# by locating the flat capture manifest rather than hard-coding the mirrored
+# depth, so a producer-side prefix change cannot silently mis-point us.
+#
+# The capture store is PER BEHAVIOR: the prefix holds evil/ hallucination/
+# sycophancy/ subtrees (173 files each) beside 3 flat manifest files. The
+# scorer resolves it as `--pvsynth-store or store_root/pvsynth_capture_store/
+# <behavior>` — an EXPLICIT --pvsynth-store short-circuits that per-behavior
+# leg, so passing one path with three behaviors both defeats the resolution
+# and trips the scorer's multi-behavior override guard (a2ed97265f, rc=2).
+# So: publish the mirrored root AT the layout the default expects and pass NO
+# --pvsynth-store, letting the scorer append each behavior itself.
+publish_pvcap() {
+  local m root dest
   m="$(find "$PVCAP_MIRROR" -name '_capture_manifest.json' -print -quit 2>/dev/null || true)"
   [ -n "$m" ] || { echo "[pvscore] FATAL: _capture_manifest.json not found under $PVCAP_MIRROR" >&2; exit 1; }
-  dirname "$m"
+  root="$(dirname "$m")"
+  dest="$STORE_ROOT/pvsynth_capture_store"
+  if [ ! -e "$dest" ]; then
+    mkdir -p "$STORE_ROOT"
+    ln -s "$(cd "$root" && pwd)" "$dest"
+  fi
+  for b in $BEHAVIORS; do
+    [ -d "$dest/$b" ] || {
+      echo "[pvscore] FATAL: per-behavior capture store $dest/$b missing" >&2
+      exit 1
+    }
+  done
+  echo "[pvscore] pvsynth capture store published -> $dest (per-behavior: $BEHAVIORS)"
 }
 
 # ---- score -----------------------------------------------------------------
 if want_phase score; then
-  PVCAP_DIR="$(resolve_pvcap)"
-  echo "[pvscore] phase=score: pvsynth_store=$PVCAP_DIR map_kind=$MAP_KIND behaviors='$BEHAVIORS'"
+  publish_pvcap
+  echo "[pvscore] phase=score: map_kind=$MAP_KIND behaviors='$BEHAVIORS'"
   # Per-behavior checkpoint/resume lives in the scorer
   # (<out-root>/<behavior>/percell/pvsynth_transfer.jsonl), so an interrupted
   # leg resumes rather than recomputing.
+  # NO --pvsynth-store: see publish_pvcap — the scorer's default appends the
+  # behavior, and an explicit path would short-circuit that for all three.
   uv run python scripts/issue1739_pvsynth_arms.py \
     --behaviors $BEHAVIORS \
     --store-root "$STORE_ROOT" \
     --u-store "$U_STORE_DIR" \
-    --pvsynth-store "$PVCAP_DIR" \
     --map-kind "$MAP_KIND" \
     --device "$DEVICE" \
     --out-root "$PV_ROOT"
