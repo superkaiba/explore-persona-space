@@ -6508,8 +6508,8 @@
     "1840": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1840",
-      "status": "running",
+      "path": "tasks/reviewing/1840",
+      "status": "reviewing",
       "title": "workflow-fix: persistent-wedge bound on the poller zombie-override veto"
     },
     "1841": {
