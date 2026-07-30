@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1886,
+  "highest_id": 1887,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6861,6 +6861,13 @@
       "path": "tasks/proposed/1886",
       "status": "proposed",
       "title": "workflow-fix: gotchas cross-machine-seam entry \u2014 SLURM rsync lane drops committed eval_results"
+    },
+    "1887": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1887",
+      "status": "proposed",
+      "title": "harden ridge lambda-selection: inner-group-CV default + GCV dof-cap + n<d degeneracy tripwire + re-read audit of affected published cells"
     },
     "19": {
       "has_clean_result": false,
