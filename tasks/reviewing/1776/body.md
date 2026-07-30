@@ -144,7 +144,9 @@ The figure plots held-out R² per operator on the in-distribution LMSYS leg (sol
 
 > **Figure.** *Fitted maps transfer almost losslessly; the Jacobian collapses.* Fitted decay ~0.02 (LMSYS-only refit 0.69 → 0.67; mixed 0.68 → 0.66; shipped 0.75 → 0.73) while the two plotted Jacobian arms fall from ~0 to −0.36 and −0.35 (the prefix arm, not plotted, reaches −0.39). Retrieval accuracy: fitted 0.41–0.56, Jacobian 0.001.
 
-The transfer hypothesis predicted the causal component would decay less than a matched-corpus fitted map; the opposite held. The Jacobian's affine prediction, centered on LMSYS anchors, is worse than predicting the mean on WildChat — its tiny learned component plus a shifted intercept actively hurt. The fresh-capture leg reconciles with the 1,000-row pool minus the one silently dropped row (realized n = 999). A planned third leg — the parent eval rig's persona-battery contexts — was never scored (the production dispatcher wires only these two legs), bounding this verdict to the two delivered corpora.
+The transfer hypothesis predicted the causal component would decay less than a matched-corpus fitted map; the opposite held. The Jacobian's affine prediction, centered on LMSYS anchors, is worse than predicting the mean on WildChat — its tiny learned component plus a shifted intercept actively hurt. The fresh-capture leg reconciles with the 1,000-row pool minus the one silently dropped row (realized n = 999).
+
+A planned third leg — the parent eval rig's persona-battery contexts — was never scored (the production dispatcher wires only these two legs), bounding this verdict to the two delivered corpora.
 
 One calibration read: a same-layer identity-plus-bias reference (layer-19 input) retrieves the true profile for 53% of LMSYS and 37% of WildChat contexts while its R² is −0.90 and −1.23 — input-output proximity buys retrieval that R² punishes, context for the fitted maps' retrieval figures.
 
