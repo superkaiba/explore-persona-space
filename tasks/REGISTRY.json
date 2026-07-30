@@ -6536,8 +6536,8 @@
     "1844": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1844",
-      "status": "reviewing",
+      "path": "tasks/completed/1844",
+      "status": "completed",
       "title": "workflow-fix: add the expected pair line `tests/test_issue_skill_lint_fami"
     },
     "185": {
