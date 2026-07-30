@@ -18,11 +18,12 @@ X — read positions (single-token slots, storage order = BND_SLOT_ORDER):
   ctx_preans   X_CLEAN: last token fully contained before the answer's first
                char (straddler-EXCLUSIVE, the #1345 `_last_fully_contained` /
                `_header_slot` convention)
-  x_straddle   X_STRADDLE: the token CONTAINING the answer's first char — the
+  ctx_straddle X_STRADDLE: the token CONTAINING the answer's first char — the
                space-merged first-answer-word token whenever the boundary
                BPE-merges into it (what #1689's straddler-INCLUSIVE rule reads
                in plain text); equals the answer's first token when no merge
-               occurs. Comparison arm ONLY — it can carry answer content.
+               occurs. Comparison arm ONLY — it ALWAYS carries answer content
+               (the answer-overlap it is EXEMPT from is the diagnostic).
 
 Y — targets (span means, storage order = Y_SPAN_ORDER -> `profiles` index):
 
@@ -41,7 +42,7 @@ the y_boundary token index is strictly after the answer span).
 Per-arm suffixes are documented VERBATIM in the store manifest (TRANSITION).
 
 Ordering chain, enforced per row:
-  prefix < ctx_qend <= context <= ctx_preans < x_straddle < answer end
+  prefix < ctx_qend <= context <= ctx_preans < ctx_straddle < answer end
   < y_boundary
 
 Teacher-forced: the render is the story/conversation text truncated at the
@@ -84,15 +85,16 @@ import issue825_render_formats as rf  # noqa: E402
 import issue1345_boundary_ablation_gen as bg  # noqa: E402
 import issue1345_common as c  # noqa: E402
 import issue1345_gen_stories as g  # noqa: E402 — HF boundary helpers
+import issue1345_gen_stories_paired as gp  # noqa: E402 — V1 anchor's own keep-gate
 
 from explore_persona_space.experiments.issue_825.common import Rendered  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Store layout — X slots and Y targets, identical across every arm/comparator
 # ---------------------------------------------------------------------------
-BND_SLOT_ORDER = ("prefix", "ctx_qend", "context", "ctx_preans", "x_straddle")
+BND_SLOT_ORDER = ("prefix", "ctx_qend", "context", "ctx_preans", "ctx_straddle")
 X_CLEAN_SLOT = "ctx_preans"
-X_STRADDLE_SLOT = "x_straddle"
+X_STRADDLE_SLOT = "ctx_straddle"
 # The X variants the addendum's 2x2 grid crosses with the two Y variants.
 X_GRID_SLOTS = (X_CLEAN_SLOT, X_STRADDLE_SLOT)
 # The read the headline (V1-comparable) comparison uses.
@@ -105,6 +107,29 @@ Y_TARGET_INDEX = {name: i for i, name in enumerate(Y_SPAN_ORDER)}
 
 TRACK = c.TRACK
 COMPARATORS = ("chat", "no_template")
+
+# ---------------------------------------------------------------------------
+# V1 — the landed boundary-PRESENT anchor arm (the paired round's
+# `conversation_paired_stories_assistant` stories), re-captured here at the
+# X x Y grid shape so the grid carries its own boundary-present row at matched
+# (read position x target). Gen NEVER runs for V1: its stories + keep-gate live
+# in the PARENT round, so the kept bundle is staged READ-ONLY from the parent HF
+# prefix and sha-pinned in its own domain (file bytes — artifact-reuse (f)).
+# Its stored turn dicts carry `marker_end` (the paired round's name for the
+# attribution-marker end); `_v1_turn` renames it to this round's
+# `boundary_end` so ONE render path serves every arm.
+# ---------------------------------------------------------------------------
+V1_ARM = "v1_boundary_present"
+V1_SLUG = "v1"
+V1_PARENT_VARIANT = "conversation_paired_stories_assistant"
+V1_KEPT_HF_PATH = (
+    f"issue1345_framing/{V1_PARENT_VARIANT}/raw_completions/stories/"
+    "kept_stories_paired_instruct.jsonl"
+)
+V1_KEPT_SHA256 = "ee486558067438adeb5eab1fbdf864b18fb1772efc6afc46b92246748d707e91"
+V1_KEPT_ROWS = 2164
+# Every arm this script can CAPTURE (gen arms + the read-only V1 anchor).
+CAPTURE_ARMS = (*bg.GEN_ARMS, V1_ARM)
 
 # ---------------------------------------------------------------------------
 # Deterministic per-arm TRANSITION SUFFIX (Y_BOUNDARY realization).
@@ -122,6 +147,14 @@ COMPARATORS = ("chat", "no_template")
 # story arms -> the final char of the fixed next-speaker attribution.
 # ---------------------------------------------------------------------------
 TRANSITION: dict[str, dict] = {
+    # V1 groups with the attributed arms (V3/V4): its answer closes with a
+    # double quote, so the closer + next-speaker attribution are identical.
+    V1_ARM: {
+        "closer": '"',
+        "suffix": "\n\nSam then asked:",
+        "anchor_from_end": 0,
+        "read_anchor": "the ':' of the next-speaker attribution",
+    },
     bg.ARM_V2: {
         "closer": "",
         "suffix": "\n\nThe conversation continued as",
@@ -163,6 +196,8 @@ def transition_for(key: str) -> dict:
 
 def format_key(key: str) -> str:
     """Store format key — a DISTINCT stem per arm/comparator (no collisions)."""
+    if key == V1_ARM:
+        return f"bnd_{V1_SLUG}"
     if key in bg.ARM_SLUG:
         return f"bnd_{bg.ARM_SLUG[key]}"
     assert key in COMPARATORS, key
@@ -203,7 +238,7 @@ def _grid_slots(
     Every clean read uses the ONE canonical idiom ``c._last_fully_contained``
     (fully contained BEFORE the char boundary — never ``span[0] - 1``, which
     can be a token that BPE-merged the boundary WITH the answer's first word);
-    ``x_straddle`` is the deliberate straddler-inclusive comparison read.
+    ``ctx_straddle`` is the deliberate straddler-inclusive comparison read.
     """
     slots = {
         "prefix": c._last_fully_contained(offs, q_start),
@@ -278,8 +313,8 @@ def _render_from_boundaries(
             # merged with the answer's first word. 0 on a clean row.
             "answer_span_leading_gap": int(offs[a_tokens[0]][0] - a_start),
             "answer_span_trailing_gap": int(a_end - offs[a_tokens[-1]][1]),
-            # x_straddle == the answer's own first token when no merge occurred.
-            "x_straddle_is_answer_token": bool(xs == span[0]),
+            # ctx_straddle == the answer's own first token when no merge occurred.
+            "ctx_straddle_is_answer_token": bool(xs == span[0]),
             **meta_extra,
         },
     )
@@ -332,7 +367,7 @@ def render_arm(arm: str, stories: list[dict], tokenizer) -> tuple[list[Rendered]
     drift); (2) the stored span must be the verbatim answer under the shared
     normalized matcher (`c.norm_text`).
     """
-    gate = bg.gate_for(arm)
+    gate = gate_for_capture(arm)
     rendered: list[Rendered] = []
     stats = {"stories": 0, "turns_rendered": 0, "turns_dropped": 0}
     for s in stories:
@@ -365,6 +400,66 @@ def render_arm(arm: str, stories: list[dict], tokenizer) -> tuple[list[Rendered]
         stats["turns_rendered"] += 1
         rendered.append(r)
     return rendered, stats
+
+
+# ---------------------------------------------------------------------------
+# V1 (read-only anchor arm) — parent kept bundle + turn-key adapter
+# ---------------------------------------------------------------------------
+def _v1_turn(turn: dict) -> dict:
+    """Parent paired turn -> this round's turn shape (`marker_end` renamed).
+
+    The paired round names the attribution-marker end `marker_end`; every render
+    path here consumes `boundary_end`. `n_attribs` is 1 by the parent gate's own
+    invariant (it requires EXACTLY one attribution).
+    """
+    out = dict(turn)
+    out["boundary_end"] = int(turn["marker_end"])
+    out["n_attribs"] = 1
+    return out
+
+
+def _v1_gate(story: str, answer: str) -> tuple[dict | None, str]:
+    """The PARENT's answer-anchored verbatim gate, adapted to `boundary_end`."""
+    turn, reason = gp.match_verbatim_turn(story, answer)
+    return (None if turn is None else _v1_turn(turn)), reason
+
+
+def gate_for_capture(arm: str):
+    """The mechanical gate this capture re-runs at the trust boundary."""
+    return _v1_gate if arm == V1_ARM else bg.gate_for(arm)
+
+
+def load_v1_stories(dl_dir: Path) -> list[dict]:
+    """Stage + sha-verify the PARENT's kept paired stories (read-only anchor).
+
+    Staged at `main` rather than `c.PIN_REV` (that revision predates the paired
+    round's upload), so the integrity guarantee is the sha256 pin over the file
+    BYTES — the pin's own domain (artifact-reuse (f)); a byte drift fails loud
+    here instead of silently re-anchoring the grid. Turn dicts are normalized to
+    this round's `boundary_end` name at load, so ONE render path serves V1 and
+    the generated arms alike.
+    """
+    import hashlib
+
+    path = c.stage_pinned_file(V1_KEPT_HF_PATH, dl_dir, revision="main")
+    got = hashlib.sha256(path.read_bytes()).hexdigest()
+    assert got == V1_KEPT_SHA256, (
+        f"V1 kept-stories sha mismatch at {path}: got {got}, pinned {V1_KEPT_SHA256} "
+        "— the parent bundle changed; re-verify the anchor before capturing V1"
+    )
+    rows = c.read_jsonl(path)
+    assert len(rows) == V1_KEPT_ROWS, (
+        f"V1 kept rows {len(rows)} != pinned {V1_KEPT_ROWS} (bundle drift under a matching sha "
+        "is impossible — this asserts the reader, not the bytes)"
+    )
+    out = []
+    for r in rows:
+        assert len(r["parsed_turns"]) == 1, (
+            f"V1 story {r['conv_id']}: {len(r['parsed_turns'])} turns"
+        )
+        out.append({**r, "parsed_turns": [_v1_turn(r["parsed_turns"][0])]})
+    print(f"[capture] V1 anchor: {len(out)} kept parent stories (sha {got[:12]})", flush=True)
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -453,8 +548,18 @@ def load_comparator_convs(dl_dir: Path, keep_ids: set[str] | None) -> list[dict]
     return kept
 
 
-def arm_kept_conv_ids(stories_dir: Path, arms: tuple[str, ...]) -> set[str]:
-    """Union of the kept conv ids across the generated arms (comparator scope)."""
+def arm_kept_conv_ids(
+    stories_dir: Path, arms: tuple[str, ...], *, v1_dl_dir: Path | None = None
+) -> set[str]:
+    """Union of the kept conv ids across every CAPTURED arm (comparator scope).
+
+    The comparator store must cover every arm the grid reads, V1 included — a
+    matched-row refit needs the comparator rows for that arm's conversations. So
+    when ``v1_dl_dir`` is given the V1 anchor's kept ids join the union (its
+    pool differs slightly from this round's: the parent gate had its own
+    eligibility). Pass ``v1_dl_dir=None`` to scope the comparator to the
+    generated arms only.
+    """
     ids: set[str] = set()
     for arm in arms:
         kp = bg.kept_path(stories_dir, arm)
@@ -462,6 +567,13 @@ def arm_kept_conv_ids(stories_dir: Path, arms: tuple[str, ...]) -> set[str]:
             print(f"[capture] comparator scope: {kp} absent — skipping {arm}", flush=True)
             continue
         ids.update(str(r["conv_id"]) for r in c.read_jsonl(kp))
+    if v1_dl_dir is not None:
+        v1_ids = {str(r["conv_id"]) for r in load_v1_stories(v1_dl_dir)}
+        print(
+            f"[capture] comparator scope: +{len(v1_ids - ids)} conv ids unique to the V1 anchor",
+            flush=True,
+        )
+        ids |= v1_ids
     assert ids, f"no kept conv ids found under {stories_dir} for arms {arms}"
     return ids
 
@@ -473,12 +585,18 @@ def slot_diagnostics(rendered: list[Rendered]) -> dict:
     """Per-slot positions, ANSWER-OVERLAP, and coincidence rates.
 
     ANSWER-OVERLAP is hard-asserted 0 for every CLEAN slot: a clean read whose
-    char span intersects the answer would be reading the target. X_STRADDLE is
-    EXEMPT by construction — its overlap rate IS the measurement (the rate at
-    which the straddler-inclusive rule reads answer content), so it is
-    REPORTED, never asserted. Coincidence rates (vs the headline `context`
-    slot) are the DETECTABLE degeneracy the comparator stores are expected to
-    show at `ctx_preans`.
+    char span intersects the answer would be reading the target. `ctx_straddle`
+    is an EXPLICIT CARVE-OUT from that gate — it is the token CONTAINING the
+    answer's first char, so it overlaps the answer on EVERY row BY
+    CONSTRUCTION; that is the #1689 straddler-inclusive convention this slot
+    exists to diagnose. The carve-out is asserted in the OPPOSITE direction
+    (overlap must be TOTAL, not zero), so a render change that silently made
+    the straddle read clean fails loud instead of passing as a clean slot; the
+    informative rate is `ctx_straddle_is_answer_token_rate` (how often the
+    boundary did NOT merge, i.e. the straddler == the answer's own first
+    token). Coincidence rates (vs the headline `context` slot) are the
+    DETECTABLE degeneracy the comparator stores are expected to show at
+    `ctx_preans`.
     """
     n = len(rendered)
     positions: dict[str, list[int]] = {s: [] for s in BND_SLOT_ORDER}
@@ -497,19 +615,27 @@ def slot_diagnostics(rendered: list[Rendered]) -> dict:
                 coincide[s] += 1
         if r.meta["answer_span_leading_gap"] > 0:
             lead_gap += 1
-        if r.meta["x_straddle_is_answer_token"]:
+        if r.meta["ctx_straddle_is_answer_token"]:
             straddle_is_answer += 1
     for s, k in overlap.items():
         if s == X_STRADDLE_SLOT:
-            continue  # exempt by construction — the overlap rate IS the measurement
+            # EXPLICIT CARVE-OUT (asserted the other way): the straddler-
+            # inclusive read contains the answer's first char by construction,
+            # so answer-overlap here is EXPECTED and TOTAL.
+            assert k == n, (
+                f"slot {s}: answer-overlap {k}/{n} but the straddler-inclusive read "
+                "contains the answer's first char BY CONSTRUCTION — expected n/n "
+                "(a clean straddle read means the slot definition drifted)"
+            )
+            continue
         assert k == 0, f"slot {s}: {k}/{n} rows read INSIDE the answer span — render bug"
     return {
         "n_rows": n,
         "slot_order": list(BND_SLOT_ORDER),
         "y_span_order": list(Y_SPAN_ORDER),
         "answer_overlap_counts": overlap,
-        "x_straddle_answer_overlap_rate": (overlap[X_STRADDLE_SLOT] / n if n else 0.0),
-        "x_straddle_is_answer_token_rate": (straddle_is_answer / n if n else 0.0),
+        "ctx_straddle_answer_overlap_rate": (overlap[X_STRADDLE_SLOT] / n if n else 0.0),
+        "ctx_straddle_is_answer_token_rate": (straddle_is_answer / n if n else 0.0),
         "coincidence_with_context_rates": {s: (k / n if n else 0.0) for s, k in coincide.items()},
         "median_position": {
             s: float(sorted(v)[len(v) // 2]) if v else float("nan") for s, v in positions.items()
@@ -541,7 +667,7 @@ def persist_store(out_dir: Path, key: str, smoke: bool, extra: dict) -> None:
         "stem": stem,
         "slot_order": list(BND_SLOT_ORDER),
         "x_clean_slot": X_CLEAN_SLOT,
-        "x_straddle_slot": X_STRADDLE_SLOT,
+        "ctx_straddle_slot": X_STRADDLE_SLOT,
         "y_span_order": list(Y_SPAN_ORDER),
         "y_target_index": Y_TARGET_INDEX,
         "headline_slot": HEADLINE_SLOT,
@@ -585,12 +711,22 @@ def _import_check() -> None:
 
     assert inspect.getsource(render_boundary_turn)
     assert inspect.getsource(render_comparator_turn)
-    print("[import-check] OK: torch + hub symbols resolved", flush=True)
+    # The V1 anchor path's deferred import (hashlib) + the parent gate symbol.
+    import hashlib  # noqa: F401
+
+    assert callable(gp.match_verbatim_turn)
+    assert inspect.getsource(load_v1_stories)
+    print("[import-check] OK: torch + hub + V1-anchor symbols resolved", flush=True)
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--arm", choices=tuple(bg.ARM_SLUG[a] for a in bg.GEN_ARMS) + bg.GEN_ARMS)
+    ap.add_argument(
+        "--arm",
+        choices=tuple(bg.ARM_SLUG[a] for a in bg.GEN_ARMS) + bg.GEN_ARMS + (V1_SLUG, V1_ARM),
+        help="an ablation arm (v2/v3/v4, gen-produced) or the read-only V1 anchor "
+        "(v1 — the parent paired round's kept stories, staged + sha-pinned)",
+    )
     ap.add_argument(
         "--comparator",
         choices=COMPARATORS,
@@ -638,9 +774,15 @@ def main() -> None:
 
     key: str
     y_meta: dict = {}
-    if args.arm:
+    if args.arm in (V1_SLUG, V1_ARM):
+        # V1 has no gen phase in THIS round (its stories are the parent's), so
+        # the yield-report guard below does not apply; the sha pin in
+        # load_v1_stories + the per-row parent-gate re-run are its equivalents
+        # (a character-name seam surfaces as a fail-loud gate mismatch there).
+        key = V1_ARM
+    elif args.arm:
         key = bg.SLUG_ARM.get(args.arm, args.arm)
-        assert key in bg.GEN_ARMS, f"{key} is not a generated arm (V1 is reused, never captured)"
+        assert key in bg.GEN_ARMS, f"{key} is not a generated arm"
         # Yield-report guard (the #1345 character-name seam): the gen phase
         # records the realized character name; a capture launched without the
         # gen phase's env fails HERE, at entry, never silently mid-parse.
@@ -659,16 +801,19 @@ def main() -> None:
     model, tokenizer, model_id = ex.load_model(args.model, tiny_model_dir=args.tiny_model_dir)
 
     if args.arm:
-        kept = bg.kept_path(args.stories_dir, key)
-        assert kept.exists(), f"kept stories missing: {kept}"
-        stories = c.read_jsonl(kept)
-        assert stories, f"{kept} is empty"
+        if key == V1_ARM:
+            stories = load_v1_stories(args.dl_dir)
+        else:
+            kept = bg.kept_path(args.stories_dir, key)
+            assert kept.exists(), f"kept stories missing: {kept}"
+            stories = c.read_jsonl(kept)
+            assert stories, f"{kept} is empty"
         if args.smoke:
             stories = stories[:8]
             print(f"[smoke] limiting to {len(stories)} {key} stories", flush=True)
         rendered, render_stats = render_arm(key, stories, tokenizer)
     else:
-        keep_ids = arm_kept_conv_ids(args.stories_dir, bg.GEN_ARMS)
+        keep_ids = arm_kept_conv_ids(args.stories_dir, bg.GEN_ARMS, v1_dl_dir=args.dl_dir)
         convs = load_comparator_convs(args.dl_dir, keep_ids)
         if args.smoke:
             convs = convs[:8]
@@ -731,7 +876,7 @@ def main() -> None:
     coinc = {k: round(v, 4) for k, v in diag["coincidence_with_context_rates"].items()}
     print(
         f"[capture][{key}] clean-slot answer-overlap all 0 (hard-asserted); "
-        f"x_straddle overlap rate {diag['x_straddle_answer_overlap_rate']:.4f}; "
+        f"ctx_straddle overlap rate {diag['ctx_straddle_answer_overlap_rate']:.4f}; "
         f"coincidence-with-context: {coinc}; leading-gap rate "
         f"{diag['answer_span_leading_gap_rate']:.4f} -> {diag_path}",
         flush=True,
@@ -780,7 +925,7 @@ def main() -> None:
         "story_character_name": c.STORY_CHARACTER_NAME,
         "slot_names": list(BND_SLOT_ORDER),
         "x_clean_slot": X_CLEAN_SLOT,
-        "x_straddle_slot": X_STRADDLE_SLOT,
+        "ctx_straddle_slot": X_STRADDLE_SLOT,
         "y_span_order": list(Y_SPAN_ORDER),
         "y_target_index": Y_TARGET_INDEX,
         "headline_slot": HEADLINE_SLOT,

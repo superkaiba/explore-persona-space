@@ -6,8 +6,9 @@ eigh(Gram) per (source, fold), the lambda grid applied as diagonal filter
 rescalings of that ONE factorization, and nulls as Y-permutations against the
 SAME cached factorization — never a re-solve per lambda / per draw):
 
-  1. cells      per ablation arm x the 4 store slots (prefix / ctx_qend /
-                context / ctx_preans) on the arm's OWN store, with the
+  1. cells      per ablation arm x the 5 store slots (prefix / ctx_qend /
+                context / ctx_preans / ctx_straddle) x both Y targets (answer
+                mean / y_boundary) on the arm's OWN store, with the
                 registered conversation-grouped folds, shuffle nulls, the
                 random-projection + mean baselines, and conversation-level
                 bootstrap CIs.
@@ -30,8 +31,18 @@ Both mapping arms are fit per cell by construction: the `prefix` slot IS the
 prefix-arm map (everything before the query) and the three ctx_* slots are
 context-arm maps (prefix + query) at different read positions.
 
+The X x Y grid (addendum) runs on every captured store that carries the 5-slot x
+2-target shape: each ablation arm, both round-own comparators, AND the
+re-captured V1 boundary-PRESENT anchor (`capture --arm v1`) — the row that makes
+the grid an ablation rather than a description.
+
+`--stage-v1` stages the PARENT V1 turnstore (`instruct_stories_paired_s`, ~5.3
+GB) that the paired arm-vs-V1 bootstrap needs; it is NOT one of
+issue1345_prefetch_reuse's reuse stems, so without the flag that read records
+`skipped`.
+
 CLI:
-  uv run python scripts/issue1345_boundary_ablation_fits.py --phase all
+  uv run python scripts/issue1345_boundary_ablation_fits.py --phase all --stage-v1
   uv run python scripts/issue1345_boundary_ablation_fits.py --phase all --smoke
   uv run python scripts/issue1345_boundary_ablation_fits.py --import-check
 """
@@ -92,6 +103,11 @@ V1_MATCHED_CHAT_DOC = {"context": 0.2426, "prefix": 0.1313}
 # The V1 store's own stem + slot order (2 slots: prefix, context).
 V1_STEM_FORMAT = "stories_paired"
 V1_SLOT_INDEX = {"prefix": 0, "context": 1}
+# The parent V1 turnstore is NOT one of issue1345_prefetch_reuse's four r1/r2
+# reuse stems, so `--stage-v1` stages it explicitly; without it `v1_available`
+# reads False and every paired arm-vs-V1 bootstrap silently records `skipped`.
+V1_TURNSTORE_HF_PREFIX = f"issue1345_framing/{bc.V1_PARENT_VARIANT}/analysis_tensors/turnstore"
+V1_TURNSTORE_SHARDS = 5  # instruct_stories_paired_s_shard000..004 (+ sidecars)
 
 # PARENT comparator stores staged by issue1345_prefetch_reuse.py (2 slots,
 # Y_MEAN only) — retained for the V1-PARITY comparator read whose committed
@@ -111,7 +127,7 @@ SLOT_MAP_ARM = {
     "ctx_qend": "context",
     "context": "context",
     "ctx_preans": "context",
-    "x_straddle": "context",
+    "ctx_straddle": "context",
 }
 # Short tags for the two Y targets in cell ids.
 Y_TAG = {bc.Y_MEAN: "ymean", bc.Y_BOUNDARY: "ybnd"}
@@ -120,18 +136,24 @@ Y_TAG = {bc.Y_MEAN: "ymean", bc.Y_BOUNDARY: "ybnd"}
 # ---------------------------------------------------------------------------
 # Cell registry
 # ---------------------------------------------------------------------------
+# Short cell-id tag per grid store (V1's full arm name would bloat every id).
+GRID_TAG = {**bg.ARM_SLUG, bc.V1_ARM: bc.V1_SLUG}
+
+
 def grid_cell_id(store_key: str, slot: str, y: str) -> str:
     """Cell id for one (store, X slot, Y target) grid point."""
-    tag = bg.ARM_SLUG.get(store_key, store_key)
+    tag = GRID_TAG.get(store_key, store_key)
     return f"R_{bg.MODEL_KEY}_bnd_{tag}_{slot}__{Y_TAG[y]}"
 
 
 def grid_cells(store_key: str) -> list[dict]:
     """The store's full X x Y grid: every BND slot crossed with both Y targets.
 
-    ``store_key`` is an ablation arm (V2/V3/V4) or a round-own comparator
-    (``chat`` / ``no_template``) — both carry the identical 5-slot x 2-target
-    store shape, which is what makes the grid comparable across them.
+    ``store_key`` is an ablation arm (V2/V3/V4), the re-captured V1 anchor, or a
+    round-own comparator (``chat`` / ``no_template``) — all carry the identical
+    5-slot x 2-target store shape, which is what makes the grid comparable
+    across them (the V1 row is the boundary-PRESENT anchor the ablation arms are
+    read against at matched (read position x target)).
     """
     return [
         {
@@ -236,6 +258,76 @@ def load_bundle(turnstore_dir: Path, model_key: str, format_key: str, expect_slo
     )
     c.assert_pt_bundle(bundle, expect_slots=expect_slots, expect_layers=fc.EXPECTED_LAYERS)
     return bundle
+
+
+def stage_v1_turnstore(turnstore_dir: Path) -> int:
+    """Stage the PARENT's `instruct_stories_paired_s` turnstore into the flat dir.
+
+    Item (d) of the addendum: without this the V1 store is absent, `v1_available`
+    reads False, and the paired arm-vs-V1 bootstrap records `skipped` SILENTLY —
+    the read the ablation is compared against just disappears from the verdict.
+
+    Per-file `hf_hub_download` through the shared retried helper (never
+    `snapshot_download` on the ~1M-file data repo — gotchas.md), staged into a
+    scratch MIRROR dir under `turnstore_dir` and published per file with
+    `os.replace` (same filesystem, atomic, no EXDEV — gotchas.md), because the
+    hub layout nests the repo path while the fit loader expects flat stems
+    (the #1774 mirror-root trap). Idempotent: an already-flat file is skipped.
+    """
+    import os
+    import shutil
+
+    stem = f"{bg.MODEL_KEY}_{V1_STEM_FORMAT}_{bc.TRACK}"
+    names = [
+        f"{stem}_shard{i:03d}{ext}" for i in range(V1_TURNSTORE_SHARDS) for ext in (".pt", ".json")
+    ]
+    turnstore_dir.mkdir(parents=True, exist_ok=True)
+    missing = [n for n in names if not (turnstore_dir / n).exists()]
+    if not missing:
+        print(f"[fits][stage-v1] all {len(names)} V1 store files already present", flush=True)
+        return 0
+    # Headroom check BEFORE any byte lands (the ~5 GB staging discipline): ONE
+    # server-side-SCOPED tree listing for the sizes, retried like every Hub call.
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate.hub import retry_transient
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    entries = retry_transient(
+        lambda: list(
+            api.list_repo_tree(  # HUB_VERIFY_RETRY_EXEMPT: wrapped in retry_transient
+                c.HF_DATA_REPO,
+                path_in_repo=V1_TURNSTORE_HF_PREFIX,
+                repo_type="dataset",
+                recursive=True,
+            )
+        ),
+        what=f"list_repo_tree({V1_TURNSTORE_HF_PREFIX})",
+    )
+    sizes = {e.path.rsplit("/", 1)[-1]: int(getattr(e, "size", 0) or 0) for e in entries}
+    absent = [n for n in missing if n not in sizes]
+    assert not absent, (
+        f"V1 store files absent on the Hub under {V1_TURNSTORE_HF_PREFIX}: {absent} "
+        "— the parent bundle layout changed; re-verify the anchor before staging"
+    )
+    need = sum(sizes[n] for n in missing)
+    free = shutil.disk_usage(turnstore_dir).free
+    print(
+        f"[fits][stage-v1] staging {len(missing)}/{len(names)} files "
+        f"(~{need / 1e9:.2f} GB declared) into {turnstore_dir} (free {free / 1e9:.1f} GB)",
+        flush=True,
+    )
+    assert free >= 1.5 * need, (
+        f"insufficient headroom staging the V1 store: need ~{need / 1e9:.2f} GB x1.5, "
+        f"free {free / 1e9:.2f} GB at {turnstore_dir}"
+    )
+    scratch = turnstore_dir / ".v1_stage"
+    for n in missing:
+        src = c.stage_pinned_file(f"{V1_TURNSTORE_HF_PREFIX}/{n}", scratch, revision="main")
+        os.replace(src, turnstore_dir / n)
+    shutil.rmtree(scratch, ignore_errors=True)
+    print(f"[fits][stage-v1] staged {len(missing)} V1 store files", flush=True)
+    return len(missing)
 
 
 def store_present(turnstore_dir: Path, model_key: str, format_key: str) -> bool:
@@ -859,6 +951,7 @@ def build_verdict(
     *,
     n_kept: int,
     n_intersection: int | None,
+    v1_grid: dict | None = None,
 ) -> dict:
     """Per-arm verdict record: the headline read against every reference."""
     slug = bg.ARM_SLUG[arm]
@@ -901,12 +994,16 @@ def build_verdict(
         },
         "paired_deltas": paired,
         "reparam_story_vs_chat": reparam,
-        # The consolidated X x Y measurement grid (addendum): the arm's own grid
-        # plus the same grid on each round-own comparator store, so every
-        # (read position x target) pair is comparable arm-vs-comparator.
+        # The consolidated X x Y measurement grid (addendum): the arm's own grid,
+        # the same grid on each round-own comparator store, AND the same grid on
+        # the re-captured V1 anchor — so every (read position x target) pair is
+        # comparable arm-vs-comparator AND arm-vs-boundary-present-anchor. The
+        # V1 row is what makes the grid an ABLATION rather than a description:
+        # a collapse that disappears at (x_clean, y_boundary) for V1 too was a
+        # read-position artifact, not the boundary.
         "xy_grid": {
             "x_clean_slot": bc.X_CLEAN_SLOT,
-            "x_straddle_slot": bc.X_STRADDLE_SLOT,
+            "ctx_straddle_slot": bc.X_STRADDLE_SLOT,
             "y_targets": list(bc.Y_SPAN_ORDER),
             "transition_appended_verbatim": (
                 bc.TRANSITION[arm]["closer"] + bc.TRANSITION[arm]["suffix"]
@@ -914,6 +1011,11 @@ def build_verdict(
             "transition_read_anchor": bc.TRANSITION[arm]["read_anchor"],
             "arm": grid,
             "comparators": comparator_grids,
+            "v1_anchor": (
+                v1_grid
+                if v1_grid is not None
+                else {"skipped": "V1 X x Y store not captured (capture --arm v1)"}
+            ),
         },
     }
     return verdict
@@ -949,6 +1051,13 @@ def main() -> None:
         "fails loud rather than silently doing nothing)",
     )
     ap.add_argument("--turnstore-dir", type=Path, default=c.TURNSTORE_DIR)
+    ap.add_argument(
+        "--stage-v1",
+        action="store_true",
+        help="stage the PARENT V1 turnstore (instruct_stories_paired_s, ~5.3 GB) from "
+        "the parent HF prefix BEFORE fitting, so the paired arm-vs-V1 bootstrap "
+        "cannot silently record `skipped` (it is NOT one of prefetch_reuse's stems)",
+    )
     ap.add_argument("--stories-dir", type=Path, default=c.STORIES_DIR)
     ap.add_argument("--out-dir", type=Path, default=c.EVAL_DIR / "story_boundary_ablation")
     ap.add_argument("--preds-dir", type=Path, default=c.PREDS_CACHE_DIR / "boundary_ablation")
@@ -995,7 +1104,13 @@ def main() -> None:
     arm_convs = {
         arm: store_conv_ids(args.turnstore_dir, bg.MODEL_KEY, bc.format_key(arm)) for arm in arms
     }
+    if args.stage_v1:
+        stage_v1_turnstore(args.turnstore_dir)
     v1_available = store_present(args.turnstore_dir, bg.MODEL_KEY, V1_STEM_FORMAT)
+    assert v1_available or not args.stage_v1, (
+        "--stage-v1 ran but the V1 store is still absent — staging is fail-loud, so "
+        "this means the stem/track convention drifted"
+    )
     v1_convs = (
         store_conv_ids(args.turnstore_dir, bg.MODEL_KEY, V1_STEM_FORMAT) if v1_available else []
     )
@@ -1008,10 +1123,16 @@ def main() -> None:
         key: store_present(args.turnstore_dir, bg.MODEL_KEY, bc.format_key(key))
         for key in BND_COMPARATORS
     }
+    # The round's OWN re-capture of the V1 anchor at the X x Y shape (capture
+    # --arm v1). DISTINCT from `v1_available` above, which is the PARENT 2-slot
+    # store used for the paired arm-vs-V1 bootstrap: this one carries the same
+    # 5 slots x 2 Y targets as every arm, so the grid gets a boundary-PRESENT row.
+    v1_grid_available = store_present(args.turnstore_dir, bg.MODEL_KEY, bc.format_key(bc.V1_ARM))
     print(
         f"[fits] arms={[bg.ARM_SLUG[a] for a in arms]} "
         f"kept={{{', '.join(f'{bg.ARM_SLUG[a]}:{len(v)}' for a, v in arm_convs.items())}}} "
-        f"v1_store={v1_available} parent_comparators={comparators_available} "
+        f"v1_store={v1_available} v1_xy_store={v1_grid_available} "
+        f"parent_comparators={comparators_available} "
         f"xy_comparators={bnd_comparators_available}",
         flush=True,
     )
@@ -1050,6 +1171,15 @@ def main() -> None:
             print(f"[fits] X x Y comparator store {key} absent — grid cells skipped", flush=True)
             continue
         cells += grid_cells(key)
+    # The V1 anchor's own X x Y row (capture --arm v1), same treatment.
+    if v1_grid_available:
+        cells += grid_cells(bc.V1_ARM)
+    else:
+        print(
+            f"[fits] X x Y V1 store {bc.format_key(bc.V1_ARM)} absent — the grid has NO "
+            "boundary-present anchor row (run capture --arm v1)",
+            flush=True,
+        )
 
     bundles: dict[tuple[str, str], dict] = {}
     for cell in cells:
@@ -1132,7 +1262,11 @@ def main() -> None:
     # X x Y grid with the X-side factorization SHARED across Y (addendum).
     grid_by_store: dict[str, dict] = {}
     if args.phase in ("all", "cells", "grid", "verdict"):
-        grid_stores = list(arms) + [k for k, ok in bnd_comparators_available.items() if ok]
+        grid_stores = (
+            list(arms)
+            + [k for k, ok in bnd_comparators_available.items() if ok]
+            + ([bc.V1_ARM] if v1_grid_available else [])
+        )
         for key in grid_stores:
             bkey = (bg.MODEL_KEY, bc.format_key(key))
             if bkey not in bundles:
@@ -1173,7 +1307,7 @@ def main() -> None:
                 "layer": LAYER,
                 "x_slots": list(bc.BND_SLOT_ORDER),
                 "x_clean_slot": bc.X_CLEAN_SLOT,
-                "x_straddle_slot": bc.X_STRADDLE_SLOT,
+                "ctx_straddle_slot": bc.X_STRADDLE_SLOT,
                 "y_targets": list(bc.Y_SPAN_ORDER),
                 "transition_suffixes_verbatim": {
                     k: {
@@ -1263,6 +1397,7 @@ def main() -> None:
                 {k: grid_by_store[k] for k in BND_COMPARATORS if k in grid_by_store},
                 n_kept=len(arm_convs[arm]),
                 n_intersection=(len(inter[arm]) if arm in inter else None),
+                v1_grid=grid_by_store.get(bc.V1_ARM),
             )
             for arm in arms
         }
