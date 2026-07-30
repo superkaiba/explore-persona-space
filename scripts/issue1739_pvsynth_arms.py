@@ -79,6 +79,11 @@ DEFAULT_MAIN_ROOT = Path("eval_results/issue_1739")
 DEFAULT_TENSORS_ROOT = Path("analysis_tensors/issue_1739")
 DEFAULT_STORE_ROOT = Path("data/issue_1739/hf_dl")
 
+# Written at the top of every per-behavior capture store by
+# experiments/issue_1739/capture.py — the discriminator that tells a capture
+# store apart from its parent root (see _resolve_pvsynth_store).
+CAPTURE_MANIFEST_NAME = "_capture_manifest.json"
+
 # Judge surfaces this leg must never touch. Checked against sys.modules at
 # entry and exit — an accidental transitive import fails the run loudly
 # rather than silently spending Batch-API budget.
@@ -228,29 +233,43 @@ def own_pool_frozen_layers(
 
 
 def _resolve_pvsynth_store(args: argparse.Namespace, behavior: str) -> Path:
-    """Per-behavior pvsynth capture store, tolerating a sibling-dir override.
+    """Per-behavior pvsynth capture store, tolerating root- and sibling-dir overrides.
 
     The store is uploaded as ``<hf_prefix>/capture_store/<behavior>/``, so the
-    correct input is always ONE behavior's dir. Three ways to name it, checked
+    correct input is always ONE behavior's dir. Four ways to name it, checked
     in order:
 
     1. ``--pvsynth-store-root <dir>``  -> ``<dir>/<behavior>`` (the root form).
-    2. ``--pvsynth-store <dir>`` where a SIBLING named ``<behavior>`` exists
+    2. ``--pvsynth-store <dir>`` where ``<dir>/<behavior>`` is itself a capture
+       store -> that CHILD. A caller that resolved the mirrored ``capture_store``
+       ROOT (e.g. by ``dirname`` of the FLAT manifest that sits beside the
+       per-behavior subtrees) then gets each behavior's own dir instead of one
+       shared root for all of them.
+    3. ``--pvsynth-store <dir>`` where a SIBLING named ``<behavior>`` exists
        next to it -> that sibling. This makes a caller that resolved ONE
        behavior's dir (e.g. by finding the first ``_capture_manifest.json``
        under a mirrored ``capture_store/`` tree) correct for EVERY behavior
        instead of silently scoring them all against one behavior's
        activations. Only fires when the sibling actually exists, so a
        deliberate single-behavior override is untouched.
-    3. ``--pvsynth-store <dir>`` verbatim, else the ``--store-root`` default.
+    4. ``--pvsynth-store <dir>`` verbatim, else the ``--store-root`` default.
+
+    Cases 2 and 3 resolve ONLY against a real capture store — a dir carrying
+    ``_capture_manifest.json`` (case 3 also accepts a bare dir, the shape it
+    shipped with). A path that is neither a behavior subtree nor a root of
+    them resolves verbatim, so the multi-behavior override guard below still
+    refuses it rather than scoring every behavior against one store.
     """
     if args.pvsynth_store_root is not None:
         return args.pvsynth_store_root / behavior
     if args.pvsynth_store is not None:
         given = Path(args.pvsynth_store)
         if given.name != behavior:
+            child = given / behavior
+            if (child / CAPTURE_MANIFEST_NAME).is_file():
+                return child
             sibling = given.parent / behavior
-            if sibling.is_dir():
+            if (sibling / CAPTURE_MANIFEST_NAME).is_file() or sibling.is_dir():
                 return sibling
         return given
     return args.store_root / "pvsynth_capture_store" / behavior
@@ -748,8 +767,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         set_flags = [
             f"--{f.replace('_', '-')}" for f in single_only if getattr(args, f) is not None
         ]
-        # --pvsynth-store is exempt WHEN it sibling-resolves for every behavior
-        # (see _resolve_pvsynth_store): each behavior then gets its OWN store.
+        # --pvsynth-store is exempt WHEN it root- or sibling-resolves for every
+        # behavior (see _resolve_pvsynth_store): each behavior then gets its OWN
+        # store. A path that resolves verbatim for several behaviors would share
+        # one store across them, so it still lands in set_flags below.
         if args.pvsynth_store is not None and args.pvsynth_store_root is None:
             resolved = {b: _resolve_pvsynth_store(args, b) for b in args.behaviors}
             if len(set(resolved.values())) != len(args.behaviors) or not all(

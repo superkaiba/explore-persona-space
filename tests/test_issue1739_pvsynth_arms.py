@@ -500,6 +500,34 @@ def test_pvsynth_store_sibling_resolves_per_behavior(tmp_path):
     assert pva._behavior_paths(args, "sycophancy")["pvsynth_store"] == cap / "sycophancy"
 
 
+def test_pvsynth_store_root_path_resolves_per_behavior(tmp_path):
+    """An explicit --pvsynth-store naming the capture_store ROOT (children are the
+    per-behavior stores, flat manifests beside them) resolves each behavior to its
+    OWN child, and so passes the multi-behavior override guard."""
+    cap = tmp_path / "mirror" / "capture_store"
+    for b in ("evil", "hallucination", "sycophancy"):
+        (cap / b).mkdir(parents=True)
+        (cap / b / pva.CAPTURE_MANIFEST_NAME).write_text("{}", encoding="utf-8")
+    # the FLAT manifests that sit at the root beside the subtrees
+    (cap / pva.CAPTURE_MANIFEST_NAME).write_text("{}", encoding="utf-8")
+    args = pva.parse_args(
+        ["--behaviors", "evil", "hallucination", "sycophancy", "--pvsynth-store", str(cap)]
+    )
+    for b in ("evil", "hallucination", "sycophancy"):
+        assert pva._behavior_paths(args, b)["pvsynth_store"] == cap / b
+
+
+def test_pvsynth_store_root_without_per_behavior_manifests_is_refused(tmp_path):
+    """A path that is neither a behavior subtree nor a root of capture stores stays
+    verbatim, so the multi-behavior guard still refuses it (guard preserved)."""
+    d = tmp_path / "not_a_capture_store"
+    (d / "evil").mkdir(parents=True)  # a dir, but carrying no capture manifest
+    (d / "hallucination").mkdir(parents=True)
+    with pytest.raises(SystemExit) as exc:
+        pva.parse_args(["--behaviors", "evil", "hallucination", "--pvsynth-store", str(d)])
+    assert exc.value.code == 2
+
+
 def test_pvsynth_store_without_siblings_is_refused_for_multi_behavior(tmp_path):
     """No sibling dirs -> the override would share one store; refuse loudly."""
     lone = tmp_path / "capture_store" / "evil"
