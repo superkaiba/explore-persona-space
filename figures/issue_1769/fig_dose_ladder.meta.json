@@ -1,6 +1,6 @@
 {
-  "commit": "b1c063bddb",
-  "created": "2026-07-30T10:12:25Z",
+  "commit": "46f3eb7d42",
+  "created": "2026-07-30T11:05:01Z",
   "figsize": [
     7.5,
     4.5
@@ -126,7 +126,7 @@
           "Scheming",
           "Hallucination",
           "Sycophancy",
-          "Clean window (CJK <10%, \u03b11.5)",
+          "Interpretable window (\u03b1 \u2264 2)",
           "CJK-intrusion-affected (\u03b13-4)"
         ],
         "annotations": [
@@ -154,13 +154,15 @@
           "4.0"
         ],
         "yticklabels": [
+          "\u221240",
           "\u221220",
           "0",
           "20",
           "40",
           "60",
           "80",
-          "100"
+          "100",
+          "120"
         ]
       }
     ],
