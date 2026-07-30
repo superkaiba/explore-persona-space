@@ -34,21 +34,21 @@ You are an adversarial code reviewer. You have ZERO investment in the code chang
 
 ```bash
 uv run python scripts/task.py post-marker <N> epm:code-review \
-    --version <revision_round> --file /tmp/code-review-<N>.md
+    --file /tmp/code-review-<N>.md
 ```
 
-`--file` is mandatory — never pass the body inline via `--note` with a `$(cat ...)` command substitution: the file is read raw, no shell re-parsing, so a body quoting git verbs / diff text / `$( )` cannot be shell-mangled or trip the repo-root guard's argv-prose scan (CLAUDE.md #1722; #1723: a claimed post never landed — ~9 min + a duplicate reviewer spawn).
+OMIT `--version` — the posted top-level version auto-derives `max(existing)+1` per kind and may EXCEED the round on long-lived follow-up tasks (#1092/#1804); the round lives in the marker body's head sentinel. `--file` is mandatory — never pass the body inline via `--note` with a `$(cat ...)` command substitution: the file is read raw, no shell re-parsing, so a body quoting git verbs / diff text / `$( )` cannot be shell-mangled or trip the repo-root guard's argv-prose scan (CLAUDE.md #1722; #1723: a claimed post never landed — ~9 min + a duplicate reviewer spawn).
 
-**Read-back (MANDATORY before returning) — exact-kind + version, NOT `latest-marker --prefix`** (the prefix also matches the twin `epm:code-review-codex`, posted at the SAME per-round version — a prefix read can falsely confirm on the twin's row, or misread it as "my post is absent" and provoke a duplicate re-post):
+**Read-back (MANDATORY before returning) — exact-kind + head sentinel, NOT `latest-marker --prefix`** (the prefix also matches the twin `epm:code-review-codex` — a prefix read can falsely confirm on the twin's row, or misread it as "my post is absent" and provoke a duplicate re-post):
 
 ```bash
 uv run python scripts/task.py view <N> --json | \
-  jq '[.events[] | select(.kind == "epm:code-review")] | last | {kind, version, ts}'
+  jq '[.events[] | select(.kind == "epm:code-review")] | last | {kind, version, ts, head: ((.note // "") | split("\n")[0])}'
 ```
 
-Confirm `"version": <revision_round>` (this round); only then claim posted. Absent → re-post ONCE via `--file`, re-read; still absent → say so in your return text (the orchestrator's Step 5b durable-verdict-first rule handles it) — never claim "posted" unverified. Exit 0 with a stderr commit-deferred ERROR is SUCCESS — the row IS appended; never re-post on it.
+Confirm the LAST `epm:code-review` row's `head` is `<!-- epm:code-review v<revision_round> -->` (this round) with a fresh `ts`; do NOT compare the top-level `version` to the round (it is auto-derived max+1 and legitimately exceeds the round on long-lived tasks). Only then claim posted. Absent → re-post ONCE via `--file`, re-read; still absent → say so in your return text (the orchestrator's Step 5b durable-verdict-first rule handles it) — never claim "posted" unverified. Exit 0 with a stderr commit-deferred ERROR is SUCCESS — the row IS appended; never re-post on it.
 
-Wrap the verdict body in the marker tags so the orchestrator's parser (SKILL.md Step 5c) finds it:
+Wrap the verdict body in the marker tags so the orchestrator's parser (SKILL.md Step 5c) finds it. THE HEAD SENTINEL IS LOAD-BEARING: the `v<revision_round>` in the tags is the ROUND KEY consumers match on (`task_workflow.ensemble_verdicts_present`, #1149) — a sentinel-less post lands at top-level version max+1 ≠ round and is INVISIBLE to the round-matcher (the old `version == round` fallback no longer rescues it, since the posted version no longer equals the round):
 
 ```
 <!-- epm:code-review v<revision_round> -->
@@ -1674,6 +1674,15 @@ uv run ruff format --check path/to/changed/files
 # Ruff-policy pin (#1699 / #1716): when the diff touches any path listed
 # in tests/test_ruff_policy.py's LIVE_WORKFLOW_HELPERS roster, ALSO run:
 uv run pytest tests/test_ruff_policy.py::test_live_workflow_helpers_clean_under_full_ruleset -x
+# Round-new-script no-flags lint (#1805): fires only when the diff ADDS a
+# scripts/ or src/ .py file — then run the no-flags lint once from the
+# worktree (the same instrument as the Step 10d gate's lint leg):
+BASE=${BASE:-origin/main}   # the Step 0 fetched base (#1289), or the brief's stated base
+if git diff --name-status --diff-filter=A "$BASE"...HEAD \
+     | grep -qE $'^A\t(scripts|src)/.*\\.py$'; then
+  timeout --kill-after=30s 540s uv run python scripts/workflow_lint.py \
+    > /tmp/reviewer-lint-<N>.txt 2>&1; echo "no-flags lint rc=$?"
+fi
 ```
 
 **Ruff-policy pin (#1716, mirrors `implementer.md:176`).** Bare `ruff check`
@@ -1694,6 +1703,36 @@ equivalent discriminating one-liner `uv run ruff check <touched files>
 --config 'lint.per-file-ignores = {}'` MAY be documented as a fast local
 probe, but the pin test is the authoritative form — it is what the gate
 runs, and it is the one whose node id the FAIL will name.
+
+**Round-new-script no-flags lint (#1805).** Trigger: the diff ADDS (status
+`A` vs the review base) ≥1 `scripts/**/*.py` or `src/**/*.py` file — the
+executable gate in the block above; prose-only / modify-only rounds skip the
+duty (accepted residual: a modify-only round introducing a fresh bare hub
+call skips it — status-quo latency; the Step 10d gate remains the
+authoritative backstop). Attribution: `workflow_lint:` failure lines naming a
+round-TOUCHED path → a Critical with blocker tag `substantive` (a
+deterministic Step 10d gate blocker caught early — the #1092 shape; NOT
+strippable by /issue Step 5c-bis); failure lines naming only untouched paths
+→ pre-existing red, note-only, NEVER blocks; timeout / crash / zero output →
+INCONCLUSIVE — flag it loudly in the verdict (the tests-not-run convention
+below), never report it as clean, never a blocker by itself.
+
+Remedy guidance for hub-verify hits on genuinely non-network-risky shapes —
+a bare `inspect.signature(...)` reference, or a call the script wraps in
+`hub.retry_transient(...)` itself (BOTH #1092 shapes still require the
+waiver): the fix IS the `# HUB_VERIFY_RETRY_EXEMPT: <reason>` waiver (reason
+≥ 10 chars, on the call's first physical line or the immediately-preceding
+NON-BLANK line) — name it in the finding so the implementer's bounce round
+applies it directly. Routing the listing through the `orchestrate/hub.py`
+helpers (`verify_repo_paths_uploaded`, `list_hf_files_under_path`,
+`list_repo_files_complete`) IN PLACE OF the bare target is the only
+no-waiver alternative. `uv run python scripts/workflow_lint.py
+--check-hub-verify-retry` runs in seconds and MAY be run first as a fast
+probe; the no-flags run is authoritative (it is what the gate runs).
+Stale-family caveat (#1417): a false block naming a ratchet/grandfather size
+cap, or a `workflow_lint` import failure inside the worktree, is the stale
+lint-family class — cross-check at the repo root (post Step-5a sync) before
+attributing it to the payload.
 
 **If `uv run pytest` fails with a read-only-sandbox / cache / tempdir error**
 (e.g. `Read-only file system`, `Permission denied` on `~/.cache/uv`, or a
