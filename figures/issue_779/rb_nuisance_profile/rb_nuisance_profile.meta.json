@@ -1,0 +1,2381 @@
+{
+  "commit": "3b11c71006",
+  "created": "2026-07-28T20:48:02Z",
+  "figsize": [
+    14.0,
+    16.0
+  ],
+  "points": [
+    {
+      "x": -0.08,
+      "share of the direction's squared mass\non the top-10 massive-activation dims": 0.05501645473812219,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.92,
+      "share of the direction's squared mass\non the top-10 massive-activation dims": 0.07952572866187563,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.92,
+      "share of the direction's squared mass\non the top-10 massive-activation dims": 0.1815460367902494,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.08,
+      "share of the direction's squared mass\non the top-10 massive-activation dims": 0.05720369350293932,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.08,
+      "share of the direction's squared mass\non the top-10 massive-activation dims": 0.03367552931354984,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.08,
+      "share of the direction's squared mass\non the top-10 massive-activation dims": 0.014385007408747999,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.08,
+      "y": 0.061560275894281404,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.92,
+      "y": 0.07599346275662287,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.92,
+      "y": 0.12193856393881652,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.08,
+      "y": 0.09086696644600674,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.08,
+      "y": 0.05417676951240287,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.08,
+      "y": 0.03445867215166302,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -0.08,
+      "y": 0.060309887167841365,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.92,
+      "y": 0.03832891341190609,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.92,
+      "y": 0.05301243321558179,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 0.08,
+      "y": 0.05927861930728946,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 1.08,
+      "y": 0.034386113522844215,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 2.08,
+      "y": 0.01831755773244005,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": -0.08,
+      "|cosine| with the population\nmean activation direction": 0.16546426425054203,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.92,
+      "|cosine| with the population\nmean activation direction": 0.035434082864964314,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.92,
+      "|cosine| with the population\nmean activation direction": 0.14032801981248264,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.08,
+      "|cosine| with the population\nmean activation direction": 0.23712744666503416,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 1.08,
+      "|cosine| with the population\nmean activation direction": 0.10029549840437997,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 2.08,
+      "|cosine| with the population\nmean activation direction": 0.052683193050310814,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": -0.08,
+      "y": 0.19408608394117685,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.92,
+      "y": 0.02637626642516032,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.92,
+      "y": 0.14897518117813086,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 0.08,
+      "y": 0.2592873066230156,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 1.08,
+      "y": 0.12416900534911715,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 2.08,
+      "y": 0.013764061549635394,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": -0.08,
+      "y": 0.2254141159271434,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 0.92,
+      "y": 0.048775781149909554,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 1.92,
+      "y": 0.0964060823036427,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.08,
+      "y": 0.24731239373836258,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 1.08,
+      "y": 0.1088966817016024,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 2.08,
+      "y": 0.07045699300714447,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": -0.08,
+      "share of squared mass in the\ntop-48 principal subspace (mean-answer state)": 0.5224054529926836,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 0.92,
+      "share of squared mass in the\ntop-48 principal subspace (mean-answer state)": 0.5790099076939902,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 1.92,
+      "share of squared mass in the\ntop-48 principal subspace (mean-answer state)": 0.7613907617102573,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 0.08,
+      "share of squared mass in the\ntop-48 principal subspace (mean-answer state)": 0.522044297395732,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 1.08,
+      "share of squared mass in the\ntop-48 principal subspace (mean-answer state)": 0.5787083848531454,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 2.08,
+      "share of squared mass in the\ntop-48 principal subspace (mean-answer state)": 0.7620630456688338,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": -0.08,
+      "y": 0.5619420411754572,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 0.92,
+      "y": 0.646530062194687,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 1.92,
+      "y": 0.7238536875329498,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 0.08,
+      "y": 0.5709208985119616,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 1.08,
+      "y": 0.647923348540086,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 2.08,
+      "y": 0.7188014301702673,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": -0.08,
+      "y": 0.39886999506599596,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.92,
+      "y": 0.48266043501695854,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.92,
+      "y": 0.5233692147927952,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 0.08,
+      "y": 0.397628419452535,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 1.08,
+      "y": 0.4810120550834963,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 2.08,
+      "y": 0.5221276395333855,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "layer": 0.0,
+      "norm of the persona direction": 1.129860448438004,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 1.0,
+      "norm of the persona direction": 1.6163728221909146,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 2.0,
+      "norm of the persona direction": 2.15790055576353,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 3.0,
+      "norm of the persona direction": 2.9949147065219366,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 4.0,
+      "norm of the persona direction": 3.890077023701075,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 5.0,
+      "norm of the persona direction": 4.246642951419796,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 6.0,
+      "norm of the persona direction": 5.183105878610166,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 7.0,
+      "norm of the persona direction": 6.886056829906335,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 8.0,
+      "norm of the persona direction": 8.1514802288388,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 9.0,
+      "norm of the persona direction": 9.578333806005329,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 10.0,
+      "norm of the persona direction": 10.674196753554128,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 11.0,
+      "norm of the persona direction": 11.148526726729742,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 12.0,
+      "norm of the persona direction": 12.089363184246261,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 13.0,
+      "norm of the persona direction": 12.997972045289103,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 14.0,
+      "norm of the persona direction": 14.477554283626183,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 15.0,
+      "norm of the persona direction": 16.09847005240047,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 16.0,
+      "norm of the persona direction": 16.65713552484024,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 17.0,
+      "norm of the persona direction": 17.812919700633103,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 18.0,
+      "norm of the persona direction": 20.19386067527282,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 19.0,
+      "norm of the persona direction": 27.541274389261844,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 20.0,
+      "norm of the persona direction": 32.867668058730736,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 21.0,
+      "norm of the persona direction": 38.73997992371186,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 22.0,
+      "norm of the persona direction": 47.50010407646597,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 23.0,
+      "norm of the persona direction": 55.59153170618672,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 24.0,
+      "norm of the persona direction": 65.87538795102692,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 25.0,
+      "norm of the persona direction": 74.9831507559664,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 26.0,
+      "norm of the persona direction": 87.51577708009401,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 27.0,
+      "norm of the persona direction": 117.90862512072947,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "layer": 0.0,
+      "norm of the persona direction": 1.013465888138333,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 1.0,
+      "norm of the persona direction": 1.501276699636231,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 2.0,
+      "norm of the persona direction": 1.9890906461042923,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 3.0,
+      "norm of the persona direction": 2.7758679681537575,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 4.0,
+      "norm of the persona direction": 3.5486968502673255,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 5.0,
+      "norm of the persona direction": 4.1233228935301325,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 6.0,
+      "norm of the persona direction": 4.946042371292135,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 7.0,
+      "norm of the persona direction": 6.298813837869682,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 8.0,
+      "norm of the persona direction": 7.403967851732445,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 9.0,
+      "norm of the persona direction": 8.092278723378818,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 10.0,
+      "norm of the persona direction": 9.360309633560998,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 11.0,
+      "norm of the persona direction": 9.746153175670054,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 12.0,
+      "norm of the persona direction": 10.127875130525014,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 13.0,
+      "norm of the persona direction": 10.519599985486254,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 14.0,
+      "norm of the persona direction": 11.840140843097785,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 15.0,
+      "norm of the persona direction": 13.49398970473817,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 16.0,
+      "norm of the persona direction": 13.994859759091357,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 17.0,
+      "norm of the persona direction": 14.865117337103811,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 18.0,
+      "norm of the persona direction": 17.221444123472057,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 19.0,
+      "norm of the persona direction": 24.237927393651486,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 20.0,
+      "norm of the persona direction": 28.987254844160166,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 21.0,
+      "norm of the persona direction": 33.98744334029654,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 22.0,
+      "norm of the persona direction": 38.77798176628653,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 23.0,
+      "norm of the persona direction": 45.98114502263046,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 24.0,
+      "norm of the persona direction": 51.584589980032774,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 25.0,
+      "norm of the persona direction": 58.39614913543772,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 26.0,
+      "norm of the persona direction": 64.92881957803817,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 27.0,
+      "norm of the persona direction": 86.57517407354766,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "layer": 0.0,
+      "norm of the persona direction": 0.7457501851323632,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 1.0,
+      "norm of the persona direction": 1.1877035265599885,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 2.0,
+      "norm of the persona direction": 1.6544266505827814,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 3.0,
+      "norm of the persona direction": 2.451271827906388,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 4.0,
+      "norm of the persona direction": 3.0687520071611813,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 5.0,
+      "norm of the persona direction": 3.466383781563684,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 6.0,
+      "norm of the persona direction": 4.353834891846681,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 7.0,
+      "norm of the persona direction": 5.503038464776329,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 8.0,
+      "norm of the persona direction": 6.549957806816568,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 9.0,
+      "norm of the persona direction": 7.359296405913685,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 10.0,
+      "norm of the persona direction": 8.152639568074843,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 11.0,
+      "norm of the persona direction": 8.50769795804169,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 12.0,
+      "norm of the persona direction": 9.223903539166109,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 13.0,
+      "norm of the persona direction": 10.175571607606983,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 14.0,
+      "norm of the persona direction": 11.143349709834718,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 15.0,
+      "norm of the persona direction": 12.396815448804409,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 16.0,
+      "norm of the persona direction": 12.93725805081715,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 17.0,
+      "norm of the persona direction": 13.77254318719778,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 18.0,
+      "norm of the persona direction": 16.101807617346946,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 19.0,
+      "norm of the persona direction": 19.549024911233403,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 20.0,
+      "norm of the persona direction": 23.023675913355703,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 21.0,
+      "norm of the persona direction": 27.11932277614427,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 22.0,
+      "norm of the persona direction": 30.528234816275088,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 23.0,
+      "norm of the persona direction": 34.88211104779047,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 24.0,
+      "norm of the persona direction": 38.83375291732284,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 25.0,
+      "norm of the persona direction": 43.70257209818072,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 26.0,
+      "norm of the persona direction": 48.374457810596176,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 27.0,
+      "norm of the persona direction": 61.51996690173607,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "layer": 0.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.03640862279115209,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 1.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.0431583231310822,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 2.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.04651242193623062,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 3.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.052541188194986065,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 4.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.06276500534517676,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 5.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.05533549310465648,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 6.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.05974828951754227,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 7.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.05844594779634158,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 8.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.05144572963854676,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 9.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.06698421635626277,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 10.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.05634982950952196,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 11.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.06794597164207856,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 12.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.06879465226147166,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 13.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.04730299030959737,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 14.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.0524221198707125,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 15.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.055498858444314125,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 16.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.05711804748915403,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 17.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.06143392475795778,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 18.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.05224326262845281,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 19.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.06388855055325314,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 20.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.061583979507065165,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 21.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.0596221370884661,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 22.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.06678203605176931,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 23.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.07150994981133818,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 24.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.08039851951840385,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 25.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.07338276719334806,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 26.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.06146829988414495,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 27.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.061561645347783855,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "layer": 0.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.02879152921454811,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 1.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.02341947665051091,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 2.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.03899415199311111,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 3.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.031038574800305523,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 4.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.042703934750391526,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 5.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.051195923805776006,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 6.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.06917727887972974,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 7.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.0671613876688584,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 8.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.0667370939332122,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 9.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.06838446519237082,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 10.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.08492038224149985,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 11.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.08626352237312693,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 12.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.06448678401893597,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 13.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.06135925850870927,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 14.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.06139271540089512,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 15.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.05647173027737329,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 16.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.05349013522674359,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 17.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.05234230441500546,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 18.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.04662060111114617,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 19.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.060542494829558056,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 20.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.06804755643122466,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 21.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.06743074079320355,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 22.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.06931745770775158,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 23.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.07675283428009816,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 24.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.07601307844065125,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 25.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.0639898422362109,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 26.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.05099664044094643,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 27.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.04625665745576081,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "layer": 0.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.032245193851290585,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 1.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.04569551710474312,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 2.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.04399829353462883,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 3.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.04424936807624414,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 4.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.04937237722526397,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 5.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.07965905373823201,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 6.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.10634957651190798,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 7.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.09801274395682145,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 8.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.11535595435454203,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 9.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.11405622267679126,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 10.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.10683384849096952,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 11.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.1424966122621835,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 12.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.15828385504432274,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 13.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.15611158228036856,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 14.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.15781971067343684,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 15.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.16644577796785529,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 16.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.16794732836893714,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 17.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.17341445817341,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 18.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.15521899825055152,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 19.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.11500094386271126,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 20.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.10333615594044143,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 21.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.08831093853755281,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 22.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.07179294754134206,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 23.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.055233391839785435,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 24.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.04495697542259752,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 25.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.03539950404414665,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 26.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.02796037448590726,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 27.0,
+      "share of squared mass in the\ndirection's own top-1 coordinate(s)": 0.06174482575692039,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "layer": 0.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.1747238704059223,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 1.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.16100126554465943,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 2.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.17298925586275435,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 3.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.23117710095947783,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 4.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.26314200282014877,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 5.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.28871780744106973,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 6.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.30255913409058155,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 7.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.258363015965771,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 8.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2567359117295658,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 9.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2570933619860755,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 10.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.25244013378024915,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 11.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2720536126776161,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 12.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2670064538753366,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 13.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.22951224609178936,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 14.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.20598032295120625,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 15.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.24465115983848001,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 16.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.24277079003721544,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 17.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.26245799389809443,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 18.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2429962936303245,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 19.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.25606747839495436,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 20.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.26616469582030866,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 21.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.23904921520867464,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 22.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2323702107654263,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 23.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.24046497127342512,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 24.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.24801890808302676,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 25.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.21334539738861236,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 26.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.18760984115591636,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 27.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.26210583054090486,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "layer": 0.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.1388506188060585,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 1.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.15080002359191938,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 2.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.16589727882278055,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 3.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.15828928871498935,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 4.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.1809430401569266,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 5.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.27179437182505345,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 6.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2933502497342091,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 7.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.3116452282202288,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 8.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.31062416819844024,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 9.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.29461270917806043,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 10.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.316453745781075,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 11.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.3268826687147336,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 12.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.3094399070067567,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 13.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.26527350327373395,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 14.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.24431838112144935,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 15.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.25638672119535866,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 16.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2620957294434849,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 17.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2675674705375383,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 18.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2521012069213067,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 19.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2856125907686505,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 20.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.28766123091656887,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 21.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2785545789368627,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 22.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.25917185503167606,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 23.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.27147446287269106,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 24.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.24618549584668267,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 25.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.21497390796654597,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 26.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.18652142340193723,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 27.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.25977834791315085,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "layer": 0.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.15581598316127138,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 1.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2144385522003216,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 2.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2132637971624018,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 3.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2288721016873445,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 4.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.17903230047399904,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 5.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.22374533630752927,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 6.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.24392470397066346,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 7.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.22368102752614946,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 8.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.25243627543628194,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 9.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.24688552050603516,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 10.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2668306318036319,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 11.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2987657102587277,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 12.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.32655396138941223,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 13.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.3116503454484825,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 14.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.3239095072041358,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 15.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.33122952443416753,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 16.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.3301560351010361,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 17.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.3368565585569359,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 18.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.3129190653558631,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 19.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.28725921099507484,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 20.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.26860386799362085,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 21.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2565696506583663,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 22.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.23249407438643785,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 23.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.2152911354591625,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 24.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.19589964608127108,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 25.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.17151767392993428,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 26.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.1370961460745516,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "layer": 27.0,
+      "share of squared mass in the\ndirection's own top-10 coordinate(s)": 0.20595997187397427,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 62
+    }
+  ],
+  "n_series": 63,
+  "total_points": 306,
+  "text": {
+    "suptitle": "Persona directions vs residual-stream nuisance axes (Qwen-2.5-7B, issue 779 r_B bank)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Layer 14",
+        "ylabel": "share of the direction's squared mass\non the top-10 massive-activation dims",
+        "legend_labels": [
+          "random-direction null (2.5-97.5%)",
+          "random-direction null mean",
+          "population variance share, context-end",
+          "population variance share, mean-answer",
+          "context-end state",
+          "mean-answer state"
+        ],
+        "xticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      },
+      {
+        "title_left": "Layer 19",
+        "xticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      },
+      {
+        "title_left": "Layer 26",
+        "xticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      },
+      {
+        "title_left": "Layer 14",
+        "ylabel": "|cosine| with the population\nmean activation direction",
+        "legend_labels": [
+          "random-direction null (2.5-97.5%)",
+          "random-direction null mean",
+          "variance share along it, context-end",
+          "variance share along it, mean-answer",
+          "context-end state",
+          "mean-answer state"
+        ],
+        "xticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      },
+      {
+        "title_left": "Layer 19",
+        "xticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      },
+      {
+        "title_left": "Layer 26",
+        "xticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      },
+      {
+        "title_left": "Layer 14",
+        "ylabel": "share of squared mass in the\ntop-48 principal subspace (mean-answer state)",
+        "legend_labels": [
+          "random-direction null (2.5-97.5%)",
+          "random-direction null mean",
+          "population variance share, uncentred",
+          "population variance share, mean-centred",
+          "raw second moment (uncentred)",
+          "mean-centred (true PCA)"
+        ],
+        "xticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      },
+      {
+        "title_left": "Layer 19",
+        "xticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      },
+      {
+        "title_left": "Layer 26",
+        "xticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      },
+      {
+        "title_left": "Direction norm across depth",
+        "xlabel": "layer",
+        "ylabel": "norm of the persona direction",
+        "legend_labels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ],
+        "legend_title": "trait",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120",
+          "140"
+        ]
+      },
+      {
+        "title_left": "Self-concentration, top-1",
+        "xlabel": "layer",
+        "ylabel": "share of squared mass in the\ndirection's own top-1 coordinate(s)",
+        "legend_labels": [
+          "random-direction null (2.5-97.5%)",
+          "random-direction null median"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ]
+      },
+      {
+        "title_left": "Self-concentration, top-10",
+        "xlabel": "layer",
+        "ylabel": "share of squared mass in the\ndirection's own top-10 coordinate(s)",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ]
+      }
+    ],
+    "series": [
+      "Evil",
+      "Sycophancy",
+      "Hallucination"
+    ]
+  }
+}

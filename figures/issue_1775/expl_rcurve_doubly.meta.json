@@ -1,0 +1,42 @@
+{
+  "commit": "c6cb2b9a67",
+  "created": "2026-07-29T21:15:45Z",
+  "figsize": [
+    4.6,
+    3.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "bilinear r-curve (doubly; exploratory)",
+        "xlabel": "r",
+        "ylabel": "held-out R2",
+        "xticklabels": [
+          "$\\mathdefault{2^{-3}}$",
+          "$\\mathdefault{2^{-2}}$",
+          "$\\mathdefault{2^{-1}}$",
+          "$\\mathdefault{2^{0}}$",
+          "$\\mathdefault{2^{1}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{4}}$",
+          "$\\mathdefault{2^{5}}$",
+          "$\\mathdefault{2^{6}}$",
+          "$\\mathdefault{2^{7}}$"
+        ],
+        "yticklabels": [
+          "0.630",
+          "0.635",
+          "0.640",
+          "0.645",
+          "0.650",
+          "0.655",
+          "0.660",
+          "0.665"
+        ]
+      }
+    ]
+  }
+}

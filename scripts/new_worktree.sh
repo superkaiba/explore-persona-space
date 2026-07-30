@@ -272,8 +272,9 @@ _add() {
   local err1
   # ${START_POINT:+...}: append the base commit-ish only when _resolve_base
   # chose one (empty = local HEAD, today's behavior). --no-track: a branch cut
-  # from the remote-tracking ref must NOT gain origin/main as upstream (today's
-  # branches have no upstream; `git status`/`git push` semantics stay identical).
+  # from the remote-tracking ref must NOT gain origin/main as upstream (#1214).
+  # The branch's upstream is instead its OWN name on origin — set by
+  # _ensure_upstream after creation (#1802) — never origin/main.
   if ! err1=$(git -C "$REPO_ROOT" worktree add "$@" "$WT" -b "$BRANCH" --no-track \
                 ${START_POINT:+"$START_POINT"} 2>&1); then
     git -C "$REPO_ROOT" worktree add "$@" "$WT" "$BRANCH" || {
@@ -374,10 +375,35 @@ _ensure_issue_cones() {
             "repair manually: git -C \"$WT\" sparse-checkout add eval_results/issue_${ISSUE} ood_eval_results/issue_${ISSUE}" >&2
 }
 
+# Upstream tracking (#1802): point the branch at its OWN name on origin —
+# `branch.<BRANCH>.remote=origin` + `branch.<BRANCH>.merge=refs/heads/<BRANCH>`
+# — NEVER origin/main (#1214; the --no-track in _add above stays load-bearing:
+# it prevents the WRONG upstream). Setting the config directly (rather than
+# `git branch --set-upstream-to`) works even before origin/<BRANCH> exists —
+# a bare `git push` inside the worktree then works immediately (creates the
+# remote branch), and a bare `git pull --rebase` works once the branch is on
+# origin. Branch config lives in the SHARED .git/config (worktree-
+# independent); idempotent. Skips: no `origin` remote (nothing to track —
+# fixture repos), or branch.<BRANCH>.merge already configured (never clobber
+# a deliberate upstream; the half-state repair is deliberate — when .remote
+# is set but .merge is unset, .remote is overwritten to origin). WARN-only on
+# write failure: the reuse path must stay exit-0 (same contract as
+# _ensure_issue_cones), and the WARN names the manual fix.
+_ensure_upstream() {
+  git -C "$REPO_ROOT" remote get-url origin >/dev/null 2>&1 || return 0
+  if ! git -C "$WT" config "branch.${BRANCH}.merge" >/dev/null 2>&1; then
+    { git -C "$WT" config "branch.${BRANCH}.remote" origin \
+        && git -C "$WT" config "branch.${BRANCH}.merge" "refs/heads/${BRANCH}"; } \
+      || echo "new_worktree: WARN — could not set upstream origin/${BRANCH};" \
+              "set manually: git -C \"$WT\" branch --set-upstream-to=origin/${BRANCH}" >&2
+  fi
+}
+
 if git -C "$REPO_ROOT" worktree list --porcelain | grep -qxF "worktree $WT"; then
   if _is_populated; then
     echo "new_worktree: $WT already exists — reusing as-is"
     _ensure_issue_cones
+    _ensure_upstream
     ln -sf "$REPO_ROOT/.env" "$WT/.env"
     exit 0
   fi
@@ -427,6 +453,10 @@ else
   fi
   trap - ERR
 fi
+
+# Upstream tracking (#1802) for the fresh-sparse / fresh-full / repair paths
+# (the reuse path calls it above, before its exit 0).
+_ensure_upstream
 
 # Worktrees do NOT inherit the gitignored repo .env (Step 4a contract).
 ln -sf "$REPO_ROOT/.env" "$WT/.env"

@@ -1,0 +1,36 @@
+{
+  "commit": "597ca070ac",
+  "created": "2026-07-30T10:54:20Z",
+  "figsize": [
+    7.5,
+    4.5
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Base-geometry gate prediction per arm x layer (L14/L19/L25 within each group;\ngray band = 0.3-0.7 criterion; n = 16,400 rows per point)",
+        "ylabel": "Spearman rho, predicted vs realized gate",
+        "xticklabels": [
+          "casual writing style",
+          "impoliteness",
+          "sycophancy",
+          "marker token"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  }
+}

@@ -175,7 +175,8 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 61 results total (2 prepended + CHECKS[1:]=47 + 12 appended; check 36
+    # 63 results total (2 prepended + CHECKS[1:]=48 + 13 appended, counting
+    # the #1827 plan-conditions check narrated below; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
     # `check_v4_sample_disclosure_count` (#1421), check 40
@@ -191,8 +192,10 @@ def test_good_body_passes_all():
     # `check_figure_caption_count_claims_vs_sidecar` (#1511 — vacuous
     # PASS, no registered count claim), and check 46
     # `check_hf_brace_expanded_path_claims` (#1520 — vacuous PASS, no
-    # brace-path claims adjacent to pinned HF tree links) ride CHECKS;
-    # 36/37/39/44
+    # brace-path claims adjacent to pinned HF tree links), and check 48
+    # `check_v4_quant_result_figure` (#1832 — PASS-skip, not a v4 body)
+    # ride CHECKS;
+    # 36/37/39/44/48
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
     # 41 is the fake-sha NO-OP PASS above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
@@ -200,9 +203,12 @@ def test_good_body_passes_all():
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture. Check 47
     # `check_context_followup_scope_consistency` (#1521) is dispatched in
     # verify_text (needs the issue number) and PASS-skips here (legacy body).
-    assert len(results) == 61
+    # The plan-conditions coverage check (#1827) is dispatched in verify_text
+    # (needs plans/plan.md) and NO-OP PASSes here (no plan sibling).
+    assert len(results) == 63
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert "plan conditions coverage" in {r.name for r in results}
     assert _HF_32_NAME in {r.name for r in results}
     assert _HF_40_NAME in {r.name for r in results}
     assert "Context follow-up provenance vs followup-scope markers" in {r.name for r in results}
@@ -5837,9 +5843,9 @@ def test_checks_list_size():
     denominator check (needs eval JSONs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 60 results (2 prepended + CHECKS[1:]=47 +
-    11 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 48 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    So `verify_text` returns 63 results (2 prepended + CHECKS[1:]=48 +
+    13 appended — see `test_good_body_passes_all`), but `CHECKS` stays
+    at 49 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
@@ -5849,10 +5855,11 @@ def test_checks_list_size():
     `check_body_artifact_urls_exist` + 43
     `check_github_tree_adjacent_file_claims` (#1507) — check 44
     `check_footer_hf_paths_pinned` (#1509) — check 45
-    `check_figure_caption_count_claims_vs_sidecar` (#1511) — and check 46
-    `check_hf_brace_expanded_path_claims` (#1520) ride CHECKS).
+    `check_figure_caption_count_claims_vs_sidecar` (#1511) — check 46
+    `check_hf_brace_expanded_path_claims` (#1520) — and check 48
+    `check_v4_quant_result_figure` (#1832) ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 48
+    assert len(verify_task_body.CHECKS) == 49
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_footer_hf_paths_pinned in verify_task_body.CHECKS
@@ -5860,6 +5867,7 @@ def test_checks_list_size():
     assert verify_task_body.check_figure_prose_numerics_vs_sidecar in verify_task_body.CHECKS
     assert verify_task_body.check_figure_beat_claims_vs_sidecar_text in verify_task_body.CHECKS
     assert verify_task_body.check_v4_result_paragraph_sentences in verify_task_body.CHECKS
+    assert verify_task_body.check_v4_quant_result_figure in verify_task_body.CHECKS
     assert verify_task_body.check_footer_reuse_bullets_pinned in verify_task_body.CHECKS
     assert verify_task_body.check_v4_sample_disclosure_count in verify_task_body.CHECKS
     assert verify_task_body.check_hf_unpinned_count_claims in verify_task_body.CHECKS
@@ -7177,6 +7185,268 @@ def test_repro_lr_multi_version_plan_in_no_version_still_fails(tmp_path):
     result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
     assert not result.passed, result.render()
     assert "0.0001" in result.detail or "1e-04" in result.detail, result.render()
+
+
+# ─── Plan-§5 conditions coverage (WARN tier, #1827; incident #1774) ─────────
+
+# The verbatim §5 conditions table from the #1774 plan (16 backtick slugs,
+# incl. the `\|` in-cell pipe escapes on the four arm rows) — the incident-era
+# shape the check is calibrated on.
+_I1774_CONDITIONS_PLAN = r"""# Plan — four-arm map operator characterization
+
+## 5. Conditions and Controls
+
+| Plain-English name | What it tests | What it controls for | Config slug |
+|---|---|---|---|
+| Full-context arm | E[a\|p,q] — the full-information map | — (reference arm) | `arm_context` |
+| Pre-query prefix arm | E[a\|p] from the genuinely pre-query state | what the persona alone fixes | `arm_prefix_end` |
+| Bare-query arm | E[a\|q] with no prefix | what the task alone fixes | `arm_bare_query` |
+| Query-averaged arm | E[a\|p] from the richer averaged input | state- vs estimator-grain of the prefix estimand | `arm_query_avg` |
+| Shuffled-pairing refits | chance level of every spectrum/angle/R² read | fitting-procedure artifacts (200 same-λ refits) | `null_perm` |
+| Spectrum-matched angle null | chance subspace overlap | dimensionality/spectrum artifacts in angle reads | `null_procrustes` |
+| Matched-n context subsample | context-arm reads at the prefix arm's effective n | rank/sample-size confound in cross-arm claims (20 draws) | `null_matchedn` |
+| Identity+bias / kNN baselines | trivial-transport floor + retrieval floor per fitted map | "variance a constant shift explains" + mis-scaled maps | `base_idbias_knn` |
+| Kernel-direction injection | causal inertness of discarded directions | — (the negative prediction) | `steer_kernel` |
+| Top-singular injection | causal load-bearing of read directions | validates the steering rig has power | `steer_top` |
+| Norm-matched random injection | generic-perturbation floor | "any direction at this norm moves things" | `steer_rand` |
+| Trait-erase (LEACE) | trait-direction causal contribution | direction-specific vs generic erasure effects | `steer_erase` |
+| No-intervention baseline (K=3 draws/context, same regime) | within-context cross-draw band = the H4 inertness band | decode stochasticity in Δ reads | `steer_base` |
+| Pretrained-reads robustness | do channel counts/angles transfer across reading model | instruct-specific structure | `cell_pre_own` |
+| λ-sweep + df(λ) | read robustness to regularization | λ-set spectrum artifacts (Round-3 concern) | `ctl_lambda` |
+| Fold-jackknife | estimator dispersion of operators/eigenvalues | single-fit overreading | `ctl_jackknife` |
+
+## 6. Evaluation
+
+Prose after the table.
+"""
+
+_I1774_SLUGS = [
+    "arm_context",
+    "arm_prefix_end",
+    "arm_bare_query",
+    "arm_query_avg",
+    "null_perm",
+    "null_procrustes",
+    "null_matchedn",
+    "base_idbias_knn",
+    "steer_kernel",
+    "steer_top",
+    "steer_rand",
+    "steer_erase",
+    "steer_base",
+    "cell_pre_own",
+    "ctl_lambda",
+    "ctl_jackknife",
+]
+
+# Era-correct incident replay fixture (test 8b): a trimmed replica of the
+# PRE-correction #1774 body at `git show 57c915206e:tasks/interpreting/1774/
+# body.md` — the revision where the `cell_pre_own` (pretrained-reads
+# robustness) condition was silently dropped. Load-bearing properties (pinned
+# by `test_plan_conditions_fixture_has_zero_pre_own_trace`): ZERO
+# `cell_pre_own` / "pretrained" mentions, plus enough v4 structure (H1,
+# sentinel, >500 chars) to pass the check-0 stub short-circuit so
+# `verify_text` reaches the new check.
+_I1774_PRECORRECTION_BODY = """\
+# Linear maps predict held-out answer states from the full context or the \
+bare query but not from the genuinely pre-query prefix state, which keeps \
+only persona-average signal (HIGH confidence)
+
+<!-- clean-result-v4 -->
+
+## Takeaways
+
+- Held-out per-answer R² at layer 14: full context **0.812**, bare query **0.717**, pre-query prefix end 0.02, query-averaged prefix −0.02 — with every trait cell resolved at 11.7–16.8× decode-noise floors.
+- The joint-fit and separately-fitted prefix operators agree far above chance (cosine 0.47 vs null 0.01) but below fold self-agreement (0.84) — so cross-arm geometry reads stay descriptive.
+- The context map is high-rank: 763–2,932 held-out-validated channels depending on counting convention, refuting the expected tens-of-channels picture.
+- Causal tests inconclusive: 0.92-unit additions sat at the ≈7.8 no-effect reference (under-dosed positive control); erasing single trait directions moved state 1.8–3.0× and judged behavior, with degradation not excluded.
+
+## Goal
+
+- **This experiment in context:** The parent fitted linear maps from four conditionings of the same conversations — full context, bare query, pre-query prefix end, query-averaged prefix — to the answer state and measured their predictive skill. This task characterizes those fitted maps as operators.
+- **Broader narrative:** Whether pre-question context geometry supports a linear monitor of trait content in upcoming answers.
+
+## Methodology
+
+**Design:** Zero-training analysis-and-intervention experiment over a banked activation store. Fits use the corrected battery-excluded row set (17,308 rows), grouped 6-fold by prefix id, fold seed 0. Layer 14 is primary. Phases: stage audit; a K=5 decode-draw phase for the decode-noise ceiling; the fit battery; a steering phase (60 trait-stratum contexts × 27 intervention conditions plus a 3-draw no-intervention baseline = 1,800 generations); graded judging and aggregation.
+
+## Results
+
+### Four-arm skill ordering
+
+Held-out R² orders context > bare query >> prefix arms at every layer read.
+"""
+
+
+def test_plan_conditions_slug_in_body_passes(tmp_path):
+    """Test 8a: every slug appears in the body → plain PASS."""
+    plan = _write_plan(
+        tmp_path,
+        "## Conditions\n\n"
+        "| Plain-English name | What it tests | Config slug |\n"
+        "|---|---|---|\n"
+        "| Arm A | the effect | `cell_a` |\n"
+        "| Arm B | the control | `cell_b` |\n",
+    )
+    body = _I1774_PRECORRECTION_BODY + "\nCells `cell_a` and `cell_b` both resolved.\n"
+    result = verify_task_body.check_plan_conditions_coverage(body, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+    assert "2 plan condition(s) all covered" in result.detail
+
+
+def test_plan_conditions_era_correct_1774_replay_warns(tmp_path):
+    """Test 8b (the incident replay, via verify_text — pins the
+    registration site): the pre-correction #1774 body + the #1774-shaped
+    plan table → the new check's row WARNs naming `cell_pre_own`.
+    Unrelated WARN/FAIL rows from the trimmed fixture are acceptable —
+    the assertion is on the new check's row specifically."""
+    plan = _write_plan_versions(tmp_path, {"v1.md": _I1774_CONDITIONS_PLAN})
+    _ok, results = verify_task_body.verify_text(_I1774_PRECORRECTION_BODY, plan_path=plan)
+    row = next(r for r in results if r.name == "plan conditions coverage")
+    assert row.passed and row.is_warn, row.render()
+    assert "cell_pre_own" in row.detail, row.render()
+    assert row.detail.startswith("advisory:"), row.render()
+
+
+def test_plan_conditions_fixture_has_zero_pre_own_trace():
+    """Pins the 8b fixture's load-bearing property: the pre-correction
+    replica carries NO trace of the dropped condition (neither the slug
+    nor the plain-English name's tokens)."""
+    lowered = _I1774_PRECORRECTION_BODY.lower()
+    assert "cell_pre_own" not in lowered
+    assert "pretrained" not in lowered
+
+
+def test_plan_conditions_descope_prose_name_covers(tmp_path):
+    """Test 8c (must-PASS companion): slug absent but the plain-English
+    name present — the CURRENT corrected #1774 descope-prose shape
+    ("the planned pretrained-reads robustness condition ... was not
+    run") counts as coverage by construction."""
+    plan = _write_plan(
+        tmp_path,
+        "## 5. Conditions and Controls\n\n"
+        "| Plain-English name | What it tests | Config slug |\n"
+        "|---|---|---|\n"
+        "| Pretrained-reads robustness | cross-model transfer | `cell_pre_own` |\n",
+    )
+    body = (
+        _I1774_PRECORRECTION_BODY
+        + "\nOne named deviation: the planned pretrained-reads robustness condition"
+        " (spectra and angles re-read with the pretrained model's activations) was"
+        " not run — the omission was unintentional, and every channel-count claim"
+        " is therefore instruct-reads only.\n"
+    )
+    result = verify_task_body.check_plan_conditions_coverage(body, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+
+
+def test_plan_conditions_no_plan_noop():
+    """Test 8d: plan_path=None → NO-OP PASS."""
+    result = verify_task_body.check_plan_conditions_coverage(
+        _I1774_PRECORRECTION_BODY, plan_path=None
+    )
+    assert result.passed and not result.is_warn
+    assert "no approved plan" in result.detail
+
+
+def test_plan_conditions_no_table_noop(tmp_path):
+    """Test 8e: no plan version carries a conditions table with a
+    config-slug column → NO-OP PASS."""
+    plan = _write_plan(tmp_path, "## 4. Design\n\nNo conditions table here; lr=2e-6.\n")
+    result = verify_task_body.check_plan_conditions_coverage(
+        _I1774_PRECORRECTION_BODY, plan_path=plan
+    )
+    assert result.passed and not result.is_warn
+    assert "no plan version carries a conditions table" in result.detail
+
+
+def test_plan_conditions_zero_slug_rows_noop(tmp_path):
+    """Test 8e2: a conditions table with the config-slug column but zero
+    backtick-wrapped slug rows → NO-OP PASS."""
+    plan = _write_plan(
+        tmp_path,
+        "## Conditions\n\n"
+        "| Plain-English name | Config slug |\n"
+        "|---|---|\n"
+        "| Arm A | bare_slug_no_backticks |\n",
+    )
+    result = verify_task_body.check_plan_conditions_coverage(
+        _I1774_PRECORRECTION_BODY, plan_path=plan
+    )
+    assert result.passed and not result.is_warn
+    assert "zero backtick" in result.detail
+
+
+def test_plan_conditions_1774_table_parses_all_16_slugs():
+    """Test 8f: the #1774-shaped 16-row table parses ALL 16 slugs —
+    including the four arm rows whose cells carry `\\|` escaped pipes."""
+    rows = verify_task_body._parse_plan_conditions_rows(_I1774_CONDITIONS_PLAN)
+    assert rows is not None
+    assert [slug for slug, _name in rows] == _I1774_SLUGS
+    assert rows[13] == ("cell_pre_own", "Pretrained-reads robustness")
+
+
+def test_plan_conditions_warn_never_fails(tmp_path):
+    """Test 8g: an uncovered row yields is_warn=True AND passed=True —
+    the check can never block."""
+    plan = _write_plan(
+        tmp_path,
+        "## Conditions\n\n"
+        "| Plain-English name | Config slug |\n"
+        "|---|---|\n"
+        "| Utterly unmentioned zzz-condition | `zzz_condition` |\n",
+    )
+    result = verify_task_body.check_plan_conditions_coverage(
+        _I1774_PRECORRECTION_BODY, plan_path=plan
+    )
+    assert result.passed is True
+    assert result.is_warn is True
+    assert "zzz_condition" in result.detail
+
+
+def test_plan_conditions_numeric_version_sort(tmp_path):
+    """Test 8h: versions walk NEWEST-first by NUMERIC suffix — v10's
+    table binds over v2's (a lexicographic reverse sort would order
+    'v2.md' > 'v10.md' and bind v2's covered table → PASS, masking the
+    v10 drop this asserts)."""
+    covered_table = (
+        "## Conditions\n\n"
+        "| Plain-English name | Config slug |\n"
+        "|---|---|\n"
+        "| Old arm | `slug_old` |\n"
+    )
+    newer_table = (
+        "## Conditions\n\n"
+        "| Plain-English name | Config slug |\n"
+        "|---|---|\n"
+        "| New arm | `slug_new` |\n"
+    )
+    plan = _write_plan_versions(tmp_path, {"v2.md": covered_table, "v10.md": newer_table})
+    body = _I1774_PRECORRECTION_BODY + "\nThe `slug_old` cell resolved.\n"
+    result = verify_task_body.check_plan_conditions_coverage(body, plan_path=plan)
+    assert result.passed and result.is_warn, result.render()
+    assert "slug_new" in result.detail, result.render()
+
+
+def test_plan_conditions_amendment_falls_back_to_prior_version(tmp_path):
+    """A follow-up amendment plan with NO conditions table falls back to
+    the newest PRIOR version that carries one (plan criterion 3)."""
+    plan = _write_plan_versions(
+        tmp_path,
+        {
+            "v1.md": (
+                "## Conditions\n\n"
+                "| Plain-English name | Config slug |\n"
+                "|---|---|\n"
+                "| Old arm | `slug_old` |\n"
+            ),
+            "v2.md": "## Follow-up amendment\n\nAnalysis-only round; no conditions table.\n",
+        },
+    )
+    body = _I1774_PRECORRECTION_BODY + "\nThe `slug_old` cell resolved.\n"
+    result = verify_task_body.check_plan_conditions_coverage(body, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+    assert "1 plan condition(s) all covered" in result.detail
 
 
 # ─── v3 redesign (2026-W24): clean-result-v3 sentinel + five-flat-H2 shape ──
@@ -11494,11 +11764,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (48 as of
-    check 46, #1520; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (49 as of
+    check 48, #1832; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 48
+    assert len(verify_task_body.CHECKS) == 49
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -12104,6 +12374,16 @@ def test_check28_hypothesis_and_slot_family_classifier():
     assert fn("l16 slots") == ["l16"]
     assert fn("H1 vs H2") == ["H1", "H2"]
     assert fn("H3 and H3") == ["H3"]  # repeated-token de-dup pin
+    # H<digit><lowercase-letter> hypothesis-tag form (#1774 widen): the
+    # verbatim incident string (a sidecar title_left that passed the old
+    # single-digit `\bH\d\b` form silently), plus a multi-tag pin.
+    assert fn("Jensen-gap direction concentration (H1c)") == ["H1c"]
+    assert fn("H1a vs H4b") == ["H1a", "H4b"]
+    # Accepted false-positive envelope, documented by design: ANY standalone
+    # H<digit><lowercase letter> token now matches (e.g. `H2o`) — no such
+    # token is a legitimate rendered figure-text label in this project's
+    # domain, and check 28 is WARN-only.
+    assert fn("H2o sample") == ["H2o"]
     # Snake-class non-overlap pin: `f16` inside `f16_slots` never matches the
     # slot-family class (no boundary at `_`), while the digit-bearing snake
     # token itself is flagged exactly once — no double-add.
@@ -12131,7 +12411,9 @@ def test_check28_hypothesis_and_slot_family_classifier():
     assert fn("figures/issue_1072/H3.png") == []  # whole-string path skip
     assert fn("source: figures/issue_1072/H3.png") == []  # path word in prose
     assert fn("see figures/a/f16.png") == []  # path word in prose
+    assert fn("figures/a/H1c.png") == []  # H<digit><letter> form inside a path
     assert verify_task_body._HYPOTHESIS_CODE_RE.search("figures/a/H3.png")
+    assert verify_task_body._HYPOTHESIS_CODE_RE.search("figures/a/H1c.png")
     assert verify_task_body._SLOT_FAMILY_RE.search("figures/a/f16.png")
 
 
@@ -16361,3 +16643,187 @@ def test_main_subprocess_kind_infra_returns_exit_3():
     assert "OVERALL: N/A (kind: infra" in result.stdout, (
         f"expected N/A verdict, got:\n{result.stdout}"
     )
+
+
+# ─── Check 48: figure-less quantitative result sections (v4-only WARN, #1832) ─
+#
+# Check 21 (`check_v4_results_beat`) deliberately exempts EVERY figure-less
+# result (the qualitative carve-out), so a number-dense headline result with
+# zero inline images passed the mechanical verifier silently (incident #1769
+# Result 5). Check 48 binds ONLY the figure-less + quantitative intersection:
+# >=3 standalone numeric tokens in non-code content, or any GFM table row.
+# WARN, never FAIL; vacuous PASS on non-v4 bodies.
+
+_CHECK48_NAME = "Quantitative results carry a figure (v4)"
+
+# Verbatim incident fixture: task #1769's fold-round Result 5 (the alpha=2
+# three-treatment lattice carrying the H1 claim), recovered from git history
+# (`git show 1798450ac4:tasks/interpreting/1769/body.md`, lines 394-414) at
+# the revision where it still carried ZERO inline images — a number-dense
+# block whose "figure" is a `> **Figure.**`-captioned GFM table. The round-1
+# LM clean-result-critic REVISE was the only catch pre-check-48.
+_ISSUE1769_RESULT5_BLOCK = """\
+### Evil and sycophancy decode-driven timing at α=2 holds under all three CJK-intrusion treatments; hallucination flips to mixed
+
+Three-treatment α=2 lattice: f_d ratio, cluster-bootstrap 95% CI (B=2000, seed=42), classification, and draw counts per behavior. Raw = all draws; exclusion = CJK draws removed; zeroing = CJK draws scored 0 (n_zeroed = decode_only / both).
+
+| Behavior | Treatment | f_d | 95% CI | Verdict | N kept (decode / both) | N zeroed (decode / both) |
+|---|---|---|---|---|---|---|
+| evil | raw | 1.008 | (0.983, 1.032) | decode-driven | 200 / 200 | — |
+| evil | exclusion | 1.026 | (0.993, 1.058) | decode-driven | 108 / 102 | — |
+| evil | zeroing | 1.072 | (0.932, 1.235) | decode-driven | 200 / 200 | 90 / 94 |
+| hallucination | raw | 0.890 | (0.802, 0.990) | decode-driven | 200 / 200 | — |
+| hallucination | exclusion | 0.834 | (0.716, 0.973) | mixed | 148 / 149 | — |
+| hallucination | zeroing | 0.768 | (0.546, 1.016) | mixed | 200 / 200 | 50 / 44 |
+| sycophancy | raw | 0.928 | (0.830, 1.050) | decode-driven | 200 / 200 | — |
+| sycophancy | exclusion | 0.930 | (0.819, 1.040) | decode-driven | 189 / 185 | — |
+| sycophancy | zeroing | 0.936 | (0.821, 1.081) | decode-driven | 200 / 200 | 11 / 15 |
+
+> **Figure.** Table of f_d (decode fraction), 95% cluster-bootstrap CIs, and lattice classification for three behaviors × three CJK-intrusion treatments at α=2. Source: `eval_results/issue_1769/analysis/alpha2_clean_lattice.json`, n_questions=20, n_draws=10, B=2000, seed=42, lattice thresholds decode-driven lower-CI > 0.75 / prefill-committed CI ⊆ (−0.25, 0.25).
+
+Evil and sycophancy return decode-driven verdicts under all three treatments. The evil exclusion arm drops 45–47% of decode/both draws yet f_d rises to 1.026 (0.993, 1.058); the zeroing CI is wider (0.932, 1.235) but the point estimate stays above 1.0. Sycophancy has low CJK exposure (5.5–7.5%) and is unaffected. Hallucination shifts from decode-driven under raw scoring to mixed under both intrusion-robust treatments: the exclusion CI (0.716, 0.973) falls below the 0.75 threshold, and the zeroing CI (0.546, 1.016) spans 1.0. The registered ceiling check fired for evil/α=2 (both-arm mean=86.03 > 85), so evil is excluded from operating-alpha selection; the f_d analysis is still informative but deltas are near scale-top.
+"""
+
+
+def test_check48_quant_numeric_prose_figureless_warns():
+    """MUST-WARN: a figure-less result whose prose carries >=3 standalone
+    numeric tokens WARNs (passed stays True — never FAIL), naming the
+    section and the numeric-token basis."""
+    body = _v4_minimal_results_body(
+        "### Lift by seed\n\n"
+        "The lift is 17.3 points (baseline 70.4%, treated 87.7%) across 3 seeds; "
+        "every seed moves the same direction.\n"
+    )
+    res = verify_task_body.check_v4_quant_result_figure(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'Lift by seed'" in res.detail
+    assert "numeric tokens" in res.detail
+    assert "no inline figure" in res.detail
+
+
+def test_check48_table_only_figureless_warns():
+    """MUST-WARN: a figure-less result whose only quantitative content is a
+    GFM table (no standalone prose numbers) WARNs with the table basis."""
+    body = _v4_minimal_results_body(
+        "### Rates by arm\n\n"
+        "Judge-scored rates for both arms, all seeds pooled.\n\n"
+        "| Arm | Rate |\n"
+        "|---|---|\n"
+        "| base | low |\n"
+        "| treated | high |\n"
+    )
+    res = verify_task_body.check_v4_quant_result_figure(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'Rates by arm'" in res.detail
+    assert "GFM table" in res.detail
+
+
+def test_check48_qualitative_figureless_passes():
+    """The check-21 exemption survives: a figure-less QUALITATIVE result
+    (below the 3-numeric-token floor, no table) draws no WARN — this also
+    pins the strict >=3 threshold (2 tokens stay silent)."""
+    body = _v4_minimal_results_body(
+        "### Refusal pattern\n\n"
+        "Seeds 42 and 137 behave identically under both prompts; the refusal "
+        "pattern is stable and no arm flips direction.\n"
+    )
+    res = verify_task_body.check_v4_quant_result_figure(body)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "no figure-less quantitative section" in res.detail
+
+
+def test_check48_figure_bearing_quant_passes():
+    """A figure-bearing result never WARNs from check 48, regardless of
+    numeric density (check 21 owns the three-beat framing there)."""
+    body = _v4_minimal_results_body(
+        "### Lift by seed\n\n"
+        "The lift is 17.3 points (baseline 70.4%, treated 87.7%) across 3 seeds.\n\n"
+        "![alt](https://x/y.png)\n\n"
+        "> **Figure.** *Lead claim.* rest of caption.\n\n"
+        "Interpretation prose below the caption.\n"
+    )
+    res = verify_task_body.check_v4_quant_result_figure(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check48_skips_non_v4():
+    """Forward-only: v3 and legacy bodies PASS vacuously — check 48 never
+    fires outside the v4 sentinel."""
+    for fixture in (_V3_GOOD_BODY, GOOD_BODY):
+        res = verify_task_body.check_v4_quant_result_figure(fixture)
+        assert res.passed is True
+        assert res.is_warn is False
+        assert "skipped — not a v4 body" in res.detail
+
+
+def test_check48_fenced_numbers_ignored():
+    """Numbers living only inside a fenced code block do not count toward
+    the quantitative floor — a figure-less config/CLI snippet result stays
+    qualitative."""
+    body = _v4_minimal_results_body(
+        "### Run configuration\n\n"
+        "Config used for the run, quoted verbatim.\n\n"
+        "```json\n"
+        '{"lr": 3e-5, "seeds": [42, 137, 256], "epochs": 3}\n'
+        "```\n"
+    )
+    res = verify_task_body.check_v4_quant_result_figure(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check48_details_table_ignored():
+    """A GFM table living only inside a `<details>` block does not count —
+    collapsed content stays LM-lens territory (the `_prose_words`
+    convention)."""
+    body = _v4_minimal_results_body(
+        "### Cherry-picked rows\n\n"
+        "Qualitative summary of the run; representative rows collapsed below.\n\n"
+        "<details>\n<summary>rows</summary>\n\n"
+        "| a | b |\n|---|---|\n| 1 | 2 |\n\n"
+        "</details>\n"
+    )
+    res = verify_task_body.check_v4_quant_result_figure(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check48_fenced_image_is_not_a_figure():
+    """DURABILITY PIN (intended behavior): an image that exists only inside a
+    fenced code block is NOT an inline figure (matches check 21's fence-aware
+    `_v4_first_image_index`), so quantitative prose beside it still WARNs."""
+    body = _v4_minimal_results_body(
+        "### Lift by seed\n\n"
+        "The lift is 17.3 points (baseline 70.4%, treated 87.7%) across 3 seeds.\n\n"
+        "```markdown\n"
+        "![alt](https://x/y.png)\n"
+        "```\n"
+    )
+    res = verify_task_body.check_v4_quant_result_figure(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'Lift by seed'" in res.detail
+
+
+def test_check48_membership():
+    """Check 48 rides CHECKS (body-only — it needs no issue number)."""
+    assert verify_task_body.check_v4_quant_result_figure in verify_task_body.CHECKS
+
+
+def test_check48_issue1769_result5_incident_fixture_warns():
+    """MUST-WARN incident fixture (#1832 plan-critic concern 1): the verbatim
+    #1769 Result-5 block — number-dense prose + a `> **Figure.**`-captioned
+    GFM table, zero inline images — draws the check-48 WARN naming the
+    section. This is the exact shape that passed the mechanical verifier
+    silently and burned a round-1 LM REVISE."""
+    body = _v4_minimal_results_body(_ISSUE1769_RESULT5_BLOCK)
+    res = verify_task_body.check_v4_quant_result_figure(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'Evil and sycophancy decode-driven timing at" in res.detail
+    assert "GFM table" in res.detail
+    assert "no inline figure" in res.detail

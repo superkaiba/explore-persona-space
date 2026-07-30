@@ -1,0 +1,122 @@
+{
+  "task": {
+    "name": "lang",
+    "explicit_q": "Here is a passage of text:\n\n{text}\n\nName one famous author who wrote in the same language as this passage. Answer with just the author's surname.",
+    "automatic_q": "Here is a passage of text:\n\n{text}\n\nContinue it by writing the next sentence. Output only the continuation."
+  },
+  "passages": [
+    {
+      "category": "French",
+      "key": "fr1",
+      "text": "Le soleil se couchait derrière les collines, et la lumière dorée baignait les champs de lavande. Marie marchait lentement le long du chemin,"
+    },
+    {
+      "category": "French",
+      "key": "fr2",
+      "text": "Il était une fois un petit village au bord de la mer. Les pêcheurs partaient chaque matin avant l'aube, et"
+    },
+    {
+      "category": "German",
+      "key": "de1",
+      "text": "Die Sonne ging hinter den Bergen unter, und ein kalter Wind wehte durch das Tal. Hans stand am Fenster und"
+    },
+    {
+      "category": "German",
+      "key": "de2",
+      "text": "Es war einmal ein kleines Dorf am Rande des Waldes. Die Kinder spielten jeden Tag auf der Wiese, und"
+    },
+    {
+      "category": "Spanish",
+      "key": "es1",
+      "text": "El sol se ponía detrás de las montañas, y una brisa fresca recorría el valle. María caminaba despacio por"
+    },
+    {
+      "category": "Spanish",
+      "key": "es2",
+      "text": "Había una vez un pequeño pueblo junto al mar. Los pescadores salían cada mañana antes del amanecer, y"
+    },
+    {
+      "category": "Italian",
+      "key": "it1",
+      "text": "Il sole tramontava dietro le colline, e una luce dorata illuminava i campi. Maria camminava lentamente"
+    },
+    {
+      "category": "Italian",
+      "key": "it2",
+      "text": "C'era una volta un piccolo villaggio in riva al mare. I pescatori partivano ogni mattina prima dell'alba, e"
+    }
+  ],
+  "intermediates": {
+    "French": [
+      "French",
+      "France",
+      "français",
+      "Paris"
+    ],
+    "German": [
+      "German",
+      "Germany",
+      "Deutsch",
+      "Berlin"
+    ],
+    "Spanish": [
+      "Spanish",
+      "Spain",
+      "español",
+      "Madrid"
+    ],
+    "Italian": [
+      "Italian",
+      "Italy",
+      "italiano",
+      "Rome"
+    ]
+  },
+  "authors": {
+    "French": [
+      "balzac",
+      "baudelaire",
+      "camus",
+      "dumas",
+      "flaubert",
+      "hugo",
+      "molière",
+      "proust",
+      "sartre",
+      "verne",
+      "voltaire",
+      "zola"
+    ],
+    "German": [
+      "brecht",
+      "goethe",
+      "grass",
+      "hesse",
+      "kafka",
+      "mann",
+      "nietzsche",
+      "rilke",
+      "schiller"
+    ],
+    "Spanish": [
+      "allende",
+      "borges",
+      "cervantes",
+      "garcia",
+      "lorca",
+      "márquez",
+      "neruda",
+      "paz"
+    ],
+    "Italian": [
+      "boccaccio",
+      "calvino",
+      "dante",
+      "eco",
+      "leopardi",
+      "manzoni",
+      "petrarch",
+      "pirandello"
+    ]
+  }
+}

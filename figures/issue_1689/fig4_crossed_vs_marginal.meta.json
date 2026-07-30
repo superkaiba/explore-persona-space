@@ -1,0 +1,226 @@
+{
+  "commit": "052a2c1cb3",
+  "created": "2026-07-29T00:03:10Z",
+  "figsize": [
+    12.5,
+    5.6
+  ],
+  "points": [
+    {
+      "x": -0.06,
+      "rung-9 (full A\u00b7M\u00b7B) recovery fraction of target ceiling": 0.8642579793982781,
+      "label": "Dana/chat",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "rung-9 (full A\u00b7M\u00b7B) recovery fraction of target ceiling": 0.931892320603241,
+      "label": "HELIOS/chat",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06,
+      "rung-9 (full A\u00b7M\u00b7B) recovery fraction of target ceiling": 0.7084913701854871,
+      "label": "Wren/chat",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.94,
+      "rung-9 (full A\u00b7M\u00b7B) recovery fraction of target ceiling": 0.5325424371906622,
+      "label": "asst/plain",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "rung-9 (full A\u00b7M\u00b7B) recovery fraction of target ceiling": 0.2785337319970405,
+      "label": "asst/story",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.94,
+      "rung-9 (full A\u00b7M\u00b7B) recovery fraction of target ceiling": 0.31644274690448365,
+      "label": "Dana/plain",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "rung-9 (full A\u00b7M\u00b7B) recovery fraction of target ceiling": 0.22952748273333418,
+      "label": "Dana/story",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.06,
+      "rung-9 (full A\u00b7M\u00b7B) recovery fraction of target ceiling": 0.3216507524633354,
+      "label": "HELIOS/plain",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.12,
+      "rung-9 (full A\u00b7M\u00b7B) recovery fraction of target ceiling": 0.24880180315076345,
+      "label": "HELIOS/story",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.18,
+      "rung-9 (full A\u00b7M\u00b7B) recovery fraction of target ceiling": 0.3520251286920053,
+      "label": "Wren/plain",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.24,
+      "rung-9 (full A\u00b7M\u00b7B) recovery fraction of target ceiling": 0.2145607270331005,
+      "label": "Wren/story",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.06,
+      "y": 1.029531392740905,
+      "label": "Dana/chat",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "y": 0.8779535067963036,
+      "label": "HELIOS/chat",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.06,
+      "y": 0.6406343460493001,
+      "label": "Wren/chat",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.94,
+      "y": 0.5927171800263793,
+      "label": "asst/plain",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 0.3513261470356772,
+      "label": "asst/story",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.94,
+      "y": 0.35605969081391214,
+      "label": "Dana/plain",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.31245073494990494,
+      "label": "Dana/story",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.06,
+      "y": 0.3474760279128127,
+      "label": "HELIOS/plain",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.12,
+      "y": 0.3270792303476175,
+      "label": "HELIOS/plain",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.18,
+      "y": 0.3867565417112464,
+      "label": "Wren/plain",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.24,
+      "y": 0.2996493565126776,
+      "label": "Wren/story",
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 22,
+  "text": {
+    "suptitle": "Transfers into the assistant-chat cell (instruct, L19): what changing each axis costs\npoints = source cells (medians as thick ticks); dashed line = full recovery",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "context arm",
+        "ylabel": "rung-9 (full A\u00b7M\u00b7B) recovery fraction of target ceiling",
+        "annotations": [
+          "Dana/chat",
+          "HELIOS/chat",
+          "Wren/chat",
+          "asst/plain",
+          "asst/story",
+          "Dana/plain",
+          "Dana/story",
+          "HELIOS/plain",
+          "HELIOS/story",
+          "Wren/plain",
+          "Wren/story"
+        ],
+        "xticklabels": [
+          "identity\nchanges",
+          "framing\nchanges",
+          "both\nchange"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ]
+      },
+      {
+        "title_left": "prefix arm",
+        "annotations": [
+          "Dana/chat",
+          "HELIOS/chat",
+          "Wren/chat",
+          "asst/plain",
+          "asst/story",
+          "Dana/plain",
+          "Dana/story",
+          "HELIOS/plain",
+          "HELIOS/story",
+          "Wren/plain",
+          "Wren/story"
+        ],
+        "xticklabels": [
+          "identity\nchanges",
+          "framing\nchanges",
+          "both\nchange"
+        ]
+      }
+    ]
+  }
+}

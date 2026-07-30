@@ -17,8 +17,11 @@ The four #787 sub-fixes these tests guard:
    that routes far-behind small ADDED-only workflow-fix branches straight to
    the surgical additive checkout, plus the surgical compute block's
    ADDED-only / three-dot / workflow-surface-pathspec invariants (A3-new).
-4. Guard-3 — the spec-freshness exclusion matches the commit SUBJECT line only
-   (`awk 'index($0, "spec-freshness") == 0'`), never a subject+body `--grep`.
+4. Guard-3 — the spec-freshness exclusion matches the commit SUBJECT line only,
+   keyed on the prescribed sync-subject anchor
+   (`awk 'index($0, "sync workflow-surface specs from") == 0'`, #1789 — never
+   the bare token, which a deliverable subject legitimately carries), never a
+   subject+body `--grep`.
 """
 
 from __future__ import annotations
@@ -316,23 +319,35 @@ def test_new_shared_src_guard_stays_two_dot_and_src_scoped():
 # Sub-fix 4 — Guard-3 spec-freshness subject-line-only exclusion
 # --------------------------------------------------------------------------
 
+# The banned full-message commit-filter literal under the #1789 sync-subject
+# anchor, built by CONCATENATION so this test file itself never carries the
+# form its negative asserts scan for (the test_issue_skill_lint_family_sync.py
+# _FULL_MESSAGE_FILTER convention).
+_FULL_MESSAGE_ANCHOR_FILTER = "--grep=" + "'sync workflow-surface specs from'"
+
 
 def test_guard3_spec_freshness_subject_only_awk_filter():
     text = _skill_text()
-    assert "awk 'index($0, \"spec-freshness\") == 0'" in text, (
+    assert "awk 'index($0, \"sync workflow-surface specs from\") == 0'" in text, (
         "Guard-3 spec-freshness exclusion must match on the SUBJECT line only "
-        "via awk index(), not a subject+body --grep"
+        "via awk index() keyed on the prescribed sync-subject anchor (#1789), "
+        "not a subject+body --grep"
     )
 
 
 def test_guard3_region_does_not_use_grep_spec_freshness():
     """Within the Guard-3 slice, the exclusion must NOT be a `--grep` (which
-    matches the commit BODY too). The Step-5a sync at line ~1925 is a separate
-    region, subject-scoped by #1560 to the same awk index() form (pinned by
+    matches the commit BODY too) — neither the bare-token form nor the #1789
+    anchored form. The Step-5a sync at line ~1925 is a separate region,
+    subject-scoped by #1560 to the same awk index() form (pinned by
     test_step5a_grep_filter_untouched)."""
     region = _guard3_region(_skill_text())
     assert "--grep='spec-freshness'" not in region, (
         "Guard-3 must not use --grep='spec-freshness' (over-matches commit body)"
+    )
+    assert _FULL_MESSAGE_ANCHOR_FILTER not in region, (
+        "Guard-3 must not use the anchored full-message --grep form either "
+        "(over-matches commit body; subject-scoped awk index() only, #1789)"
     )
     assert "%H %s" in region, (
         "Guard-3 must emit '<sha> <subject>' per commit for a subject-scoped filter"
@@ -354,11 +369,15 @@ def test_step5a_grep_filter_untouched():
     assert "--format='%H %s'" in span, (
         "the Step-5a exclusion must emit '<sha> <subject>' (subject-scoped)"
     )
-    assert "awk 'index($0, \"spec-freshness\") == 0'" in span, (
-        "the Step-5a exclusion must filter via the subject-scoped awk index() form"
+    assert "awk 'index($0, \"sync workflow-surface specs from\") == 0'" in span, (
+        "the Step-5a exclusion must filter via the subject-scoped awk index() form "
+        "keyed on the prescribed sync-subject anchor (#1789)"
     )
     assert "--grep='spec-freshness' --invert-grep" not in span, (
         "the Step-5a sync must not use the full-message --grep filter (#1560)"
+    )
+    assert _FULL_MESSAGE_ANCHOR_FILTER + " --invert-grep" not in span, (
+        "the Step-5a sync must not use the anchored full-message --grep filter either (#1789)"
     )
 
 
@@ -1255,7 +1274,7 @@ def test_post_merge_guard_unpushed_mv_precheck_syncs_before_classify():
     assert len(fences) == 1, "guard region must still carry exactly one fenced bash block"
     fence = fences[0]
 
-    precheck = fence.find('elif ! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt')
+    precheck = fence.find('elif ! grep -qxF -- "$CANON" /tmp/issue-<N>-postmerge-lstree.txt')
     lstree_arm = fence.find('elif ! git -C "$REPO_ROOT" ls-tree -d -r --name-only origin/main')
     dupes_arm = fence.find("elif mapfile -t DUPES < <(grep -E")
     assert precheck != -1, "the unpushed-mv pre-check arm must exist (#1300)"
@@ -1284,7 +1303,7 @@ def test_post_merge_guard_unpushed_mv_precheck_syncs_before_classify():
     # (iv) fall-through: the condition list's FINAL command is the
     # still-absent re-test (recovery success -> condition false -> the
     # DUPES arm runs against the regenerated file).
-    assert '! grep -qxF "$CANON" /tmp/issue-<N>-postmerge-lstree.txt; }; then' in arm, (
+    assert '! grep -qxF -- "$CANON" /tmp/issue-<N>-postmerge-lstree.txt; }; then' in arm, (
         "the recovery must live in the arm's CONDITION with the still-absent "
         "re-test as its final command (successful recovery falls through)"
     )
@@ -1301,6 +1320,68 @@ def test_post_merge_guard_unpushed_mv_precheck_syncs_before_classify():
     assert "worktree" not in arm, (
         "the pre-check arm must never touch the scratch worktree (it deletes nothing)"
     )
+
+
+# --------------------------------------------------------------------------
+# Task #1792 — scratch-cone scripts/hooks + empty-dir residue disposition
+# --------------------------------------------------------------------------
+
+
+def test_post_merge_guard_cone_hooks_and_empty_dir_disposition():
+    """#1792: two post-merge-guard recipe fixes (live incident #1780).
+
+    (a) CONE — the scratch worktree's sparse cone must include scripts/hooks
+    alongside the duplicates: the removal commit's own pre-commit gitleaks
+    hook runs `bash scripts/hooks/gitleaks_scoped.sh` worktree-root-relative
+    with always_run, so a duplicates-only cone exits 127 on the FIRST commit
+    attempt every time (#1780; toplevel .gitleaks.toml/.gitleaksignore ride
+    cone mode automatically).
+
+    (b) EMPTY-DIR DISPOSITION — the local-residue tail gains an arm between
+    the second sync attempt and the terminal fail-loud check: when the
+    persisting paths hold ZERO files AND zero symlinks (one JOINT probe over
+    all persisting paths), rmdir them depth-first (rmdir refuses non-empty
+    dirs by construction), then RE-DERIVE STALE_LOCAL via the same
+    `ls -d "${DUPES[@]}"` probe — the re-derive is the arbiter, never a
+    blind clear, so late-arriving content or a failed rmdir still reaches
+    the loud failure. Ordering pinned via find-from-index anchors (the
+    fence carries several `ls -d "${DUPES[@]}"` occurrences). The #1253
+    strong pin (live hook + bash -n on the substituted fence) covers the
+    new arm's executability."""
+    text = _skill_text()
+    region = _post_merge_guard_region(text)
+    fences = re.findall(r"```bash\n(.*?)```", region, re.DOTALL)
+    assert len(fences) == 1, "guard region must still carry exactly one fenced bash block"
+    fence = fences[0]
+
+    # (a) the cone line carries scripts/hooks AFTER the duplicates.
+    assert 'sparse-checkout set "${DUPES[@]}" scripts/hooks' in fence, (
+        "the scratch cone must include scripts/hooks — the removal commit's "
+        "own pre-commit gitleaks hook exits 127 without it (#1780)"
+    )
+
+    # (b) zero-content probe -> depth-first rmdir -> RE-DERIVE -> fail-loud,
+    # in that order (find-from-index disambiguates the repeated probes).
+    probe = fence.find("-type f -o -type l")
+    assert probe != -1, "the zero-content probe must count files AND symlinks"
+    rmdir_idx = fence.find("-depth -type d -exec rmdir {} \\;")
+    assert rmdir_idx != -1, "the depth-first rmdir disposition must exist"
+    assert probe < rmdir_idx, "the zero-content probe must gate the rmdir"
+    rederive = fence.find(
+        'STALE_LOCAL=$(cd "$REPO_ROOT" && ls -d "${DUPES[@]}" 2>/dev/null || true)',
+        rmdir_idx,
+    )
+    assert rederive != -1, (
+        "STALE_LOCAL must be RE-DERIVED via the same ls -d probe AFTER the "
+        "rmdir — never blind-cleared"
+    )
+    fail_loud = fence.find("persist after 2 root syncs")
+    assert fail_loud != -1, "the terminal fail-loud echo must survive"
+    assert rmdir_idx < rederive < fail_loud, (
+        "ordering must be rmdir -> re-derive -> fail-loud (the re-derive is "
+        "the arbiter: real content still reaches the loud failure)"
+    )
+    assert 'STALE_LOCAL=""' not in fence, "the arm must never blind-clear STALE_LOCAL"
 
 
 # --------------------------------------------------------------------------
@@ -1450,3 +1531,30 @@ def test_mergefile_block_untouched_order():
     done_idx = gate.index("done < /tmp/issue-<N>-overlay-files.txt")
     lint_vintage_idx = gate.index("LINT-VINTAGE 3-WAY MERGE")
     assert done_idx < lint_vintage_idx
+
+
+def test_guard_greps_carry_end_of_options_separator():
+    """#1788 (incidents #1742/#1758): every VARIABLE-pattern full-line grep in
+    the Step 10d guards carries the `--` end-of-options separator. Without it
+    a main-added line starting with `-` (a markdown bullet — ubiquitous on the
+    workflow surface Guard 4 scans) is parsed as grep OPTIONS ("invalid
+    option", rc=2), which the loop miscounts as MISSING_ON_BRANCH and Guard 4
+    false-fires a LOST-UPDATE refusal on a byte-identical branch."""
+    text = _skill_text()
+    # (a) The separator-bearing forms are present.
+    assert 'grep -Fxq -- "$ADD_LINE"' in text, "Guard-4 membership grep lost its -- separator"
+    assert 'grep -Fxq -- "$MB"' in text, "Guard-3 ON_MAINLINE grep lost its -- separator"
+    # (b) No separator-less VARIABLE-pattern form remains, in EITHER flag
+    # ordering. Literal-pattern greps (e.g. -qxF 'scripts/workflow_lint.py')
+    # are exempt by construction: the regex requires the pattern argument to
+    # start with `"$` (a shell-variable pattern), which only a variable-
+    # pattern site has; the fixed forms carry `-- ` and do not match.
+    offenders = [
+        f"line {i}: {line.strip()}"
+        for i, line in enumerate(text.splitlines(), start=1)
+        if re.search(r'grep -(?:Fxq|qxF) "\$', line)
+    ]
+    assert not offenders, (
+        "separator-less variable-pattern grep -Fxq/-qxF site(s) in SKILL.md "
+        "(add `--` before the pattern): " + "; ".join(offenders)
+    )

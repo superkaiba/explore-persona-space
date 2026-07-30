@@ -1,0 +1,1145 @@
+{
+  "commit": "052a2c1cb3",
+  "created": "2026-07-29T00:05:46Z",
+  "figsize": [
+    13.0,
+    8.4
+  ],
+  "points": [
+    {
+      "category": "framing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "user\nframing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "identity",
+      "informative ordered pairs": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "asst-vs\nuser",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "prove-\nnance",
+      "informative ordered pairs": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "crossed",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "framing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "user\nframing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "identity",
+      "informative ordered pairs": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "asst-vs\nuser",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "prove-\nnance",
+      "informative ordered pairs": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "crossed",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "framing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "user\nframing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "identity",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "asst-vs\nuser",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "prove-\nnance",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "crossed",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "framing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "user\nframing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "identity",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "asst-vs\nuser",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "prove-\nnance",
+      "informative ordered pairs": 2.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "crossed",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "framing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "user\nframing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "identity",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "asst-vs\nuser",
+      "informative ordered pairs": 2.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "prove-\nnance",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "crossed",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "framing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "user\nframing",
+      "informative ordered pairs": 2.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "identity",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "asst-vs\nuser",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "prove-\nnance",
+      "informative ordered pairs": 4.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "crossed",
+      "informative ordered pairs": 4.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "framing",
+      "informative ordered pairs": 6.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "user\nframing",
+      "informative ordered pairs": 3.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "identity",
+      "informative ordered pairs": 1.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "asst-vs\nuser",
+      "informative ordered pairs": 3.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "prove-\nnance",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "crossed",
+      "informative ordered pairs": 12.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "framing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "user\nframing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "identity",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "asst-vs\nuser",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "prove-\nnance",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "crossed",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "framing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "user\nframing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "identity",
+      "y": 9.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "asst-vs\nuser",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "prove-\nnance",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "crossed",
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "framing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "user\nframing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "identity",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "asst-vs\nuser",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "prove-\nnance",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "crossed",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "framing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "user\nframing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "identity",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "asst-vs\nuser",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "prove-\nnance",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "crossed",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "framing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "user\nframing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "identity",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "asst-vs\nuser",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "prove-\nnance",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "crossed",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "framing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "user\nframing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "identity",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "asst-vs\nuser",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "prove-\nnance",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "crossed",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "framing",
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "user\nframing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "identity",
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "asst-vs\nuser",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "prove-\nnance",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "crossed",
+      "y": 11.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "framing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "user\nframing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "identity",
+      "informative ordered pairs": 7.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "asst-vs\nuser",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "prove-\nnance",
+      "informative ordered pairs": 4.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "crossed",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "framing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "user\nframing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "identity",
+      "informative ordered pairs": 2.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "asst-vs\nuser",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "prove-\nnance",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "crossed",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "framing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "user\nframing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "identity",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "asst-vs\nuser",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "prove-\nnance",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "crossed",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "framing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "category": "user\nframing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "category": "identity",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "category": "asst-vs\nuser",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "category": "prove-\nnance",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "category": "crossed",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "category": "framing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "category": "user\nframing",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "category": "identity",
+      "informative ordered pairs": 1.0,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "category": "asst-vs\nuser",
+      "informative ordered pairs": 3.0,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "category": "prove-\nnance",
+      "informative ordered pairs": 4.0,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "category": "crossed",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "category": "framing",
+      "informative ordered pairs": 2.0,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "category": "user\nframing",
+      "informative ordered pairs": 4.0,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "category": "identity",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "category": "asst-vs\nuser",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "category": "prove-\nnance",
+      "informative ordered pairs": 4.0,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "category": "crossed",
+      "informative ordered pairs": 9.0,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "category": "framing",
+      "informative ordered pairs": 6.0,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "user\nframing",
+      "informative ordered pairs": 1.0,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "identity",
+      "informative ordered pairs": 6.0,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "asst-vs\nuser",
+      "informative ordered pairs": 3.0,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "prove-\nnance",
+      "informative ordered pairs": 0.0,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "crossed",
+      "informative ordered pairs": 9.0,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "framing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "user\nframing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "identity",
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "asst-vs\nuser",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "prove-\nnance",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "crossed",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "framing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "category": "user\nframing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "category": "identity",
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "category": "asst-vs\nuser",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "category": "prove-\nnance",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "category": "crossed",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "category": "framing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "category": "user\nframing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "category": "identity",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "category": "asst-vs\nuser",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "category": "prove-\nnance",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "category": "crossed",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "category": "framing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "category": "user\nframing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "category": "identity",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "category": "asst-vs\nuser",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "category": "prove-\nnance",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "category": "crossed",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "category": "framing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "category": "user\nframing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "category": "identity",
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "category": "asst-vs\nuser",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "category": "prove-\nnance",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "category": "crossed",
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "category": "framing",
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "user\nframing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "identity",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "asst-vs\nuser",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "prove-\nnance",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "crossed",
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "framing",
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "category": "user\nframing",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "category": "identity",
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "category": "asst-vs\nuser",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "category": "prove-\nnance",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "category": "crossed",
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 27
+    }
+  ],
+  "n_series": 28,
+  "total_points": 168,
+  "text": {
+    "suptitle": "Rung-reached (0.90 bar) by pair class \u2014 informative pairs only\n(construct-invalid arms and degenerate-ceiling targets excluded)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base \u00b7 prefix arm",
+        "ylabel": "informative ordered pairs",
+        "annotations": [
+          "6",
+          "5",
+          "6",
+          "5",
+          "12",
+          "16"
+        ],
+        "xticklabels": [
+          "framing",
+          "user\nframing",
+          "identity",
+          "asst-vs\nuser",
+          "prove-\nnance",
+          "crossed"
+        ],
+        "yticklabels": [
+          "0.0",
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0"
+        ]
+      },
+      {
+        "title_left": "base \u00b7 context arm",
+        "legend_labels": [
+          "1 direct",
+          "2-3 offsets",
+          "4-5 bias/scale",
+          "6 rotation",
+          "7-8 one-side",
+          "9 full",
+          "none"
+        ],
+        "legend_title": "weakest reconciling rung",
+        "annotations": [
+          "6",
+          "0",
+          "10",
+          "0",
+          "0",
+          "12"
+        ],
+        "xticklabels": [
+          "framing",
+          "user\nframing",
+          "identity",
+          "asst-vs\nuser",
+          "prove-\nnance",
+          "crossed"
+        ]
+      },
+      {
+        "title_left": "instruct \u00b7 prefix arm",
+        "ylabel": "informative ordered pairs",
+        "annotations": [
+          "8",
+          "5",
+          "16",
+          "6",
+          "12",
+          "18"
+        ],
+        "xticklabels": [
+          "framing",
+          "user\nframing",
+          "identity",
+          "asst-vs\nuser",
+          "prove-\nnance",
+          "crossed"
+        ],
+        "yticklabels": [
+          "0.0",
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0"
+        ]
+      },
+      {
+        "title_left": "instruct \u00b7 context arm",
+        "annotations": [
+          "10",
+          "0",
+          "19",
+          "0",
+          "0",
+          "12"
+        ],
+        "xticklabels": [
+          "framing",
+          "user\nframing",
+          "identity",
+          "asst-vs\nuser",
+          "prove-\nnance",
+          "crossed"
+        ]
+      }
+    ],
+    "series": [
+      "1 direct",
+      "2-3 offsets",
+      "4-5 bias/scale",
+      "6 rotation",
+      "7-8 one-side",
+      "9 full",
+      "none"
+    ]
+  }
+}

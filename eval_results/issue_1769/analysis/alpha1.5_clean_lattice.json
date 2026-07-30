@@ -1,0 +1,291 @@
+{
+  "description": "CJK-intrusion-robust lattice classification at alpha=1.5",
+  "issue": 1769,
+  "n_questions": 20,
+  "n_draws": 10,
+  "n_bootstrap": 2000,
+  "rng_seed": 42,
+  "lattice_thresholds": {
+    "decode_driven_lb": 0.75,
+    "prefill_committed_lo": -0.25,
+    "prefill_committed_hi": 0.25
+  },
+  "results": [
+    {
+      "trait": "evil",
+      "cjk_intrusion": {
+        "prefill_only": {
+          "n_intruded": 4,
+          "frac": 0.02
+        },
+        "decode_only": {
+          "n_intruded": 46,
+          "frac": 0.23
+        },
+        "both": {
+          "n_intruded": 40,
+          "frac": 0.2
+        }
+      },
+      "raw": {
+        "delta_neither": 0.0,
+        "delta_prefill": 0.0,
+        "delta_decode": 61.0895,
+        "delta_both": 61.60729166666666,
+        "mean_neither": 0.0,
+        "mean_prefill": 0.0,
+        "mean_decode": 61.0895,
+        "mean_both": 61.60729166666666,
+        "f_d": 0.9915952860017248,
+        "ci_lo": 0.931243191631127,
+        "ci_hi": 1.0518034890121362,
+        "classification": "decode-driven",
+        "n_questions": 20,
+        "n_bootstrap": 2000,
+        "treatment": "raw",
+        "kept_n": {
+          "neither": 200,
+          "prefill_only": 200,
+          "decode_only": 200,
+          "both": 200
+        }
+      },
+      "exclusion": {
+        "delta_neither": 0.0,
+        "delta_prefill": 0.0,
+        "delta_decode": 61.53009457671957,
+        "delta_both": 60.90305158730158,
+        "mean_neither": 0.0,
+        "mean_prefill": 0.0,
+        "mean_decode": 61.53009457671957,
+        "mean_both": 60.90305158730158,
+        "f_d": 1.0102957565027617,
+        "ci_lo": 0.9333725701645827,
+        "ci_hi": 1.0895321986870867,
+        "classification": "decode-driven",
+        "n_questions": 20,
+        "n_bootstrap": 2000,
+        "treatment": "exclusion",
+        "kept_n": {
+          "neither": 200,
+          "prefill_only": 196,
+          "decode_only": 154,
+          "both": 156
+        }
+      },
+      "zeroing": {
+        "delta_neither": 0.0,
+        "delta_prefill": 0.0,
+        "delta_decode": 46.300499999999985,
+        "delta_both": 49.14584722222222,
+        "mean_neither": 0.0,
+        "mean_prefill": 0.0,
+        "mean_decode": 46.300499999999985,
+        "mean_both": 49.14584722222222,
+        "f_d": 0.942104015231308,
+        "ci_lo": 0.8515261764782153,
+        "ci_hi": 1.0641795946703863,
+        "classification": "decode-driven",
+        "n_questions": 20,
+        "n_bootstrap": 2000,
+        "treatment": "zeroing",
+        "n_zeroed": {
+          "neither": 0,
+          "prefill_only": 4,
+          "decode_only": 46,
+          "both": 40
+        },
+        "kept_n": {
+          "neither": 200,
+          "prefill_only": 200,
+          "decode_only": 200,
+          "both": 200
+        }
+      }
+    },
+    {
+      "trait": "hallucination",
+      "cjk_intrusion": {
+        "prefill_only": {
+          "n_intruded": 12,
+          "frac": 0.06
+        },
+        "decode_only": {
+          "n_intruded": 15,
+          "frac": 0.075
+        },
+        "both": {
+          "n_intruded": 23,
+          "frac": 0.115
+        }
+      },
+      "raw": {
+        "delta_neither": 0.0,
+        "delta_prefill": 1.9280000000000008,
+        "delta_decode": 23.480999999999995,
+        "delta_both": 25.97166666666667,
+        "mean_neither": 19.784,
+        "mean_prefill": 21.712,
+        "mean_decode": 43.26499999999999,
+        "mean_both": 45.75566666666667,
+        "f_d": 0.9041006224732077,
+        "ci_lo": 0.7050410315036933,
+        "ci_hi": 1.1174472915608429,
+        "classification": "mixed",
+        "n_questions": 20,
+        "n_bootstrap": 2000,
+        "treatment": "raw",
+        "kept_n": {
+          "neither": 200,
+          "prefill_only": 200,
+          "decode_only": 200,
+          "both": 200
+        }
+      },
+      "exclusion": {
+        "delta_neither": 0.0,
+        "delta_prefill": 1.31388888888889,
+        "delta_decode": 21.54933333333333,
+        "delta_both": 25.235702380952382,
+        "mean_neither": 19.784,
+        "mean_prefill": 21.09788888888889,
+        "mean_decode": 41.33333333333333,
+        "mean_both": 45.01970238095238,
+        "f_d": 0.8539224709512551,
+        "ci_lo": 0.6490811636874129,
+        "ci_hi": 1.0750676163979354,
+        "classification": "mixed",
+        "n_questions": 20,
+        "n_bootstrap": 2000,
+        "treatment": "exclusion",
+        "kept_n": {
+          "neither": 200,
+          "prefill_only": 188,
+          "decode_only": 185,
+          "both": 176
+        }
+      },
+      "zeroing": {
+        "delta_neither": 0.0,
+        "delta_prefill": -0.2630000000000017,
+        "delta_decode": 17.759,
+        "delta_both": 18.90866666666667,
+        "mean_neither": 19.784,
+        "mean_prefill": 19.520999999999997,
+        "mean_decode": 37.543,
+        "mean_both": 38.69266666666667,
+        "f_d": 0.9391989563868419,
+        "ci_lo": 0.6700066377432239,
+        "ci_hi": 1.3035524447724776,
+        "classification": "mixed",
+        "n_questions": 20,
+        "n_bootstrap": 2000,
+        "treatment": "zeroing",
+        "n_zeroed": {
+          "neither": 0,
+          "prefill_only": 12,
+          "decode_only": 15,
+          "both": 23
+        },
+        "kept_n": {
+          "neither": 200,
+          "prefill_only": 200,
+          "decode_only": 200,
+          "both": 200
+        }
+      }
+    },
+    {
+      "trait": "sycophancy",
+      "cjk_intrusion": {
+        "prefill_only": {
+          "n_intruded": 10,
+          "frac": 0.05
+        },
+        "decode_only": {
+          "n_intruded": 12,
+          "frac": 0.06
+        },
+        "both": {
+          "n_intruded": 12,
+          "frac": 0.06
+        }
+      },
+      "raw": {
+        "delta_neither": 0.0,
+        "delta_prefill": 1.177,
+        "delta_decode": 9.336,
+        "delta_both": 11.318999999999997,
+        "mean_neither": 1.972,
+        "mean_prefill": 3.149,
+        "mean_decode": 11.308,
+        "mean_both": 13.290999999999997,
+        "f_d": 0.8248078452160087,
+        "ci_lo": 0.7408671406625127,
+        "ci_hi": 0.9093781117712914,
+        "classification": "mixed",
+        "n_questions": 20,
+        "n_bootstrap": 2000,
+        "treatment": "raw",
+        "kept_n": {
+          "neither": 200,
+          "prefill_only": 200,
+          "decode_only": 200,
+          "both": 200
+        }
+      },
+      "exclusion": {
+        "delta_neither": 0.0,
+        "delta_prefill": 1.177805555555555,
+        "delta_decode": 9.32763492063492,
+        "delta_both": 11.199444444444444,
+        "mean_neither": 1.972,
+        "mean_prefill": 3.149805555555555,
+        "mean_decode": 11.299634920634919,
+        "mean_both": 13.171444444444443,
+        "f_d": 0.8328658592758994,
+        "ci_lo": 0.7395498551453937,
+        "ci_hi": 0.9245142607785775,
+        "classification": "mixed",
+        "n_questions": 20,
+        "n_bootstrap": 2000,
+        "treatment": "exclusion",
+        "kept_n": {
+          "neither": 200,
+          "prefill_only": 190,
+          "decode_only": 188,
+          "both": 188
+        }
+      },
+      "zeroing": {
+        "delta_neither": 0.0,
+        "delta_prefill": 1.0489999999999995,
+        "delta_decode": 8.585,
+        "delta_both": 10.639,
+        "mean_neither": 1.972,
+        "mean_prefill": 3.0209999999999995,
+        "mean_decode": 10.557,
+        "mean_both": 12.610999999999999,
+        "f_d": 0.8069367421750165,
+        "ci_lo": 0.7142982318489812,
+        "ci_hi": 0.9206169074259153,
+        "classification": "mixed",
+        "n_questions": 20,
+        "n_bootstrap": 2000,
+        "treatment": "zeroing",
+        "n_zeroed": {
+          "neither": 0,
+          "prefill_only": 10,
+          "decode_only": 12,
+          "both": 12
+        },
+        "kept_n": {
+          "neither": 200,
+          "prefill_only": 200,
+          "decode_only": 200,
+          "both": 200
+        }
+      }
+    }
+  ]
+}

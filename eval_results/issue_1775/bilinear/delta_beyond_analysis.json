@@ -1,0 +1,68 @@
+{
+  "n_draws": 2000,
+  "seed": 0,
+  "r_star_by_scheme": {
+    "prefix": 32,
+    "query": 16
+  },
+  "mlp_seed_ensemble": [
+    0,
+    1,
+    2
+  ],
+  "schemes": {
+    "prefix": {
+      "grouping_unit": "prefix_id",
+      "delta_beyond_mlp_minus_bilinear": {
+        "delta_r2": 0.010384902841569845,
+        "ci95_cluster": [
+          0.009445999285416654,
+          0.011346440103531237
+        ],
+        "n_groups": 996,
+        "n_rows": 17308,
+        "n_draws": 2000,
+        "ci95_row_level_companion": [
+          0.009693171451190086,
+          0.01108755857254494
+        ]
+      },
+      "r2_stitch_mlp_seed_mean": 0.9200952880339224,
+      "r2_bilinear_r_star": 0.9097103851923526,
+      "delta_named_validation_abs_diff": 2.0816681711721685e-17,
+      "n_rows_b3": 17308
+    },
+    "query": {
+      "grouping_unit": "query_id",
+      "delta_beyond_mlp_minus_bilinear": {
+        "delta_r2": 0.06380673739220773,
+        "ci95_cluster": [
+          0.05158534770608914,
+          0.07533002532641797
+        ],
+        "n_groups": 1397,
+        "n_rows": 17308,
+        "n_draws": 2000,
+        "ci95_row_level_companion": [
+          0.06205639441037696,
+          0.06560192834850863
+        ]
+      },
+      "r2_stitch_mlp_seed_mean": 0.7265549113005305,
+      "r2_bilinear_r_star": 0.662748173908323,
+      "delta_named_validation_abs_diff": 1.0408340855860843e-17,
+      "n_rows_b3": 17308
+    }
+  },
+  "doubly": "unavailable \u2014 no stitch-MLP predictions exist for the doubly scheme on the Hub (P3 fit the stitch-MLP under the prefix and query fold schemes only)",
+  "note": "post-hoc analyzer re-reduction of the placeholder delta_beyond_mlp_minus_bilinear in bilinear_fits.json; same helper (cluster_bootstrap_delta_r2), same n_draws/seed as the committed lattice CIs",
+  "meta": {
+    "git_commit": "15a8d91fd80c9e685107d44e9a18a55543166357",
+    "timestamp_utc": "2026-07-29T18:06:49.575467+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "python": "3.11.15",
+    "fold_seed": 0,
+    "n_folds": 6
+  }
+}

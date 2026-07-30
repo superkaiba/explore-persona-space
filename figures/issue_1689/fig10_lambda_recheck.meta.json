@@ -1,0 +1,945 @@
+{
+  "commit": "3c5053faf3",
+  "created": "2026-07-29T15:19:35Z",
+  "figsize": [
+    12.8,
+    5.4
+  ],
+  "points": [
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.07511722190336823,
+      "change in ceiling R2 (19-point grid minus published)": 0.005987890957569464,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.06930589268842569,
+      "change in ceiling R2 (19-point grid minus published)": 0.005742299363632353,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.030445299906651235,
+      "change in ceiling R2 (19-point grid minus published)": 0.010885977838541283,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.00026262313240255075,
+      "change in ceiling R2 (19-point grid minus published)": 0.010434723948480995,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.04029412086000539,
+      "change in ceiling R2 (19-point grid minus published)": 0.008985579793483245,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": -0.010054160631689069,
+      "change in ceiling R2 (19-point grid minus published)": 0.01826460921443096,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": -0.0036590822433362202,
+      "change in ceiling R2 (19-point grid minus published)": 0.010990856299269214,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.024630832571511885,
+      "change in ceiling R2 (19-point grid minus published)": 0.008857465628281158,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": -0.003636640524212531,
+      "change in ceiling R2 (19-point grid minus published)": 0.017202302733769215,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.2878369592165405,
+      "change in ceiling R2 (19-point grid minus published)": -0.0012836948053219777,
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.9810537270813022,
+      "change in ceiling R2 (19-point grid minus published)": -3.3306690738754696e-16,
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.6538604878272825,
+      "change in ceiling R2 (19-point grid minus published)": -1.1102230246251565e-16,
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.516415832168537,
+      "change in ceiling R2 (19-point grid minus published)": -4.440892098500626e-16,
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.9810537270813022,
+      "change in ceiling R2 (19-point grid minus published)": -3.3306690738754696e-16,
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.6533161774363668,
+      "change in ceiling R2 (19-point grid minus published)": 1.1102230246251565e-16,
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.2248747097020417,
+      "change in ceiling R2 (19-point grid minus published)": 1.1102230246251565e-16,
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.8361744675376909,
+      "change in ceiling R2 (19-point grid minus published)": -1.1102230246251565e-16,
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.5344782162845709,
+      "change in ceiling R2 (19-point grid minus published)": 1.1102230246251565e-16,
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.0014813045942579928,
+      "change in ceiling R2 (19-point grid minus published)": 0.007647759332426229,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.0410819793413677,
+      "change in ceiling R2 (19-point grid minus published)": 0.006339674763313652,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.00011687264424298238,
+      "change in ceiling R2 (19-point grid minus published)": 0.01767868495328284,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.0834950347373572,
+      "change in ceiling R2 (19-point grid minus published)": 0.008258422472461557,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.07340679978356002,
+      "change in ceiling R2 (19-point grid minus published)": 0.004660411718731883,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.03875488623977752,
+      "change in ceiling R2 (19-point grid minus published)": 0.007878468582948384,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.0018128186687611514,
+      "change in ceiling R2 (19-point grid minus published)": 0.012803150178073763,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.051232588979081006,
+      "change in ceiling R2 (19-point grid minus published)": 0.005314007841979551,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": -0.008942472659060341,
+      "change in ceiling R2 (19-point grid minus published)": 0.018992154404289918,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": -0.006621761711484764,
+      "change in ceiling R2 (19-point grid minus published)": 0.014572789514955775,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.029983670102315063,
+      "change in ceiling R2 (19-point grid minus published)": 0.008868882878893092,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.001561616343009331,
+      "change in ceiling R2 (19-point grid minus published)": 0.013530725548066447,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.9151342866890312,
+      "change in ceiling R2 (19-point grid minus published)": 2.4424906541753444e-15,
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.9810537270813022,
+      "change in ceiling R2 (19-point grid minus published)": -3.3306690738754696e-16,
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.9895289243453766,
+      "change in ceiling R2 (19-point grid minus published)": -1.1102230246251565e-16,
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.9830356130733426,
+      "change in ceiling R2 (19-point grid minus published)": -8.881784197001252e-16,
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.9810537270813022,
+      "change in ceiling R2 (19-point grid minus published)": -3.3306690738754696e-16,
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.9898138209534727,
+      "change in ceiling R2 (19-point grid minus published)": 1.1102230246251565e-16,
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.5380129627972428,
+      "change in ceiling R2 (19-point grid minus published)": 1.1102230246251565e-16,
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.8361744675376909,
+      "change in ceiling R2 (19-point grid minus published)": -1.1102230246251565e-16,
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.8519881634662589,
+      "change in ceiling R2 (19-point grid minus published)": 0.0,
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.005869859472367622,
+      "change in ceiling R2 (19-point grid minus published)": 0.009192904128860202,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.046598271930226365,
+      "change in ceiling R2 (19-point grid minus published)": 0.005377600959752926,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.0004253652057362167,
+      "change in ceiling R2 (19-point grid minus published)": 0.015769681144158443,
+      "label": "Dana story context (base) +0.019",
+      "series": "base, context (n=21)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.28307210244327696,
+      "change in ceiling R2 (19-point grid minus published)": -2.220446049250313e-16,
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.07820283700883846,
+      "change in ceiling R2 (19-point grid minus published)": 0.007797513560504066,
+      "label": "Dana story context (base) +0.019",
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.016910597441476383,
+      "change in ceiling R2 (19-point grid minus published)": 0.013266176745438174,
+      "label": "Dana story context (base) +0.019",
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.16547159885460827,
+      "change in ceiling R2 (19-point grid minus published)": 0.0,
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.005619288065046746,
+      "change in ceiling R2 (19-point grid minus published)": 0.016227019788309538,
+      "label": "Dana story context (base) +0.019",
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.009747837305162155,
+      "change in ceiling R2 (19-point grid minus published)": 0.014129884660176173,
+      "label": "Dana story context (base) +0.019",
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.1468645166196656,
+      "change in ceiling R2 (19-point grid minus published)": 0.0,
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.005752976052977865,
+      "change in ceiling R2 (19-point grid minus published)": 0.014432543171501555,
+      "label": "Dana story context (base) +0.019",
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.00736665602770481,
+      "change in ceiling R2 (19-point grid minus published)": 0.014347639142492263,
+      "label": "Dana story context (base) +0.019",
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.6896717001779931,
+      "change in ceiling R2 (19-point grid minus published)": 1.1102230246251565e-16,
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.9717708281561409,
+      "change in ceiling R2 (19-point grid minus published)": 0.0,
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.6302658340261487,
+      "change in ceiling R2 (19-point grid minus published)": 2.220446049250313e-16,
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.7802774290788248,
+      "change in ceiling R2 (19-point grid minus published)": 2.220446049250313e-16,
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.9717708281561409,
+      "change in ceiling R2 (19-point grid minus published)": 0.0,
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.619183240541529,
+      "change in ceiling R2 (19-point grid minus published)": 2.220446049250313e-16,
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.4107281146758087,
+      "change in ceiling R2 (19-point grid minus published)": -1.1102230246251565e-16,
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.8607070953412791,
+      "change in ceiling R2 (19-point grid minus published)": 0.0,
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.530276848623283,
+      "change in ceiling R2 (19-point grid minus published)": 0.0,
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.12669189709517703,
+      "change in ceiling R2 (19-point grid minus published)": 0.0,
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.0058335523601104056,
+      "change in ceiling R2 (19-point grid minus published)": 0.015509296986775278,
+      "label": "Dana story context (base) +0.019",
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": -0.000720825216827814,
+      "change in ceiling R2 (19-point grid minus published)": 0.016629814974145063,
+      "label": "Dana story context (base) +0.019",
+      "series": "instruct, prefix (n=21)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.3222966801926398,
+      "change in ceiling R2 (19-point grid minus published)": 2.220446049250313e-16,
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.08196476707968858,
+      "change in ceiling R2 (19-point grid minus published)": 0.0061024749348921326,
+      "label": "Dana story context (base) +0.019",
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.019380814537358626,
+      "change in ceiling R2 (19-point grid minus published)": 0.01113420878973248,
+      "label": "Dana story context (base) +0.019",
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.21270878834898388,
+      "change in ceiling R2 (19-point grid minus published)": 0.0,
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.006995490017612682,
+      "change in ceiling R2 (19-point grid minus published)": 0.01459045276030524,
+      "label": "Dana story context (base) +0.019",
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.014885150505689615,
+      "change in ceiling R2 (19-point grid minus published)": 0.011503287778830806,
+      "label": "Dana story context (base) +0.019",
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.18375032404879033,
+      "change in ceiling R2 (19-point grid minus published)": 0.0,
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.008553548364758301,
+      "change in ceiling R2 (19-point grid minus published)": 0.012250099120731495,
+      "label": "Dana story context (base) +0.019",
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.008538812288085174,
+      "change in ceiling R2 (19-point grid minus published)": 0.012784211031994897,
+      "label": "Dana story context (base) +0.019",
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.9897545949133729,
+      "change in ceiling R2 (19-point grid minus published)": -1.1102230246251565e-16,
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.9717708281561409,
+      "change in ceiling R2 (19-point grid minus published)": 0.0,
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.9868930353537541,
+      "change in ceiling R2 (19-point grid minus published)": -4.440892098500626e-16,
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.9915983261508919,
+      "change in ceiling R2 (19-point grid minus published)": 1.1102230246251565e-16,
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.9717708281561409,
+      "change in ceiling R2 (19-point grid minus published)": 0.0,
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.9875717782355942,
+      "change in ceiling R2 (19-point grid minus published)": -4.440892098500626e-16,
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.6295517922459394,
+      "change in ceiling R2 (19-point grid minus published)": -1.1102230246251565e-16,
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.8607070953412791,
+      "change in ceiling R2 (19-point grid minus published)": 0.0,
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.8700238658418022,
+      "change in ceiling R2 (19-point grid minus published)": 0.0,
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.15848859154452033,
+      "change in ceiling R2 (19-point grid minus published)": 2.220446049250313e-16,
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.008685815538414299,
+      "change in ceiling R2 (19-point grid minus published)": 0.013912795089616403,
+      "label": "Dana story context (base) +0.019",
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "published within-cell held-out R2 (13-point grid)": 0.0002787954181567853,
+      "change in ceiling R2 (19-point grid minus published)": 0.015873651887761353,
+      "label": "Dana story context (base) +0.019",
+      "series": "instruct, context (n=21)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "inner-CV selected ridge lambda": -2.11,
+      "fold-fits selecting this lambda (of 420)": 10.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": -1.61,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": -1.11,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": -0.61,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": -0.11,
+      "fold-fits selecting this lambda (of 420)": 11.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": 0.39,
+      "fold-fits selecting this lambda (of 420)": 47.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": 0.89,
+      "fold-fits selecting this lambda (of 420)": 42.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": 1.39,
+      "fold-fits selecting this lambda (of 420)": 10.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": 1.89,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": 2.39,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": 2.89,
+      "fold-fits selecting this lambda (of 420)": 4.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": 3.39,
+      "fold-fits selecting this lambda (of 420)": 31.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": 3.89,
+      "fold-fits selecting this lambda (of 420)": 265.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": 4.39,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": 4.89,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": 5.39,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": 5.89,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": 6.39,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": 6.89,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "inner-CV selected ridge lambda": -1.89,
+      "fold-fits selecting this lambda (of 420)": 10.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "inner-CV selected ridge lambda": -1.39,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "inner-CV selected ridge lambda": -0.89,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "inner-CV selected ridge lambda": -0.39,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "inner-CV selected ridge lambda": 0.11,
+      "fold-fits selecting this lambda (of 420)": 11.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "inner-CV selected ridge lambda": 0.61,
+      "fold-fits selecting this lambda (of 420)": 47.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "inner-CV selected ridge lambda": 1.11,
+      "fold-fits selecting this lambda (of 420)": 42.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "inner-CV selected ridge lambda": 1.61,
+      "fold-fits selecting this lambda (of 420)": 10.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "inner-CV selected ridge lambda": 2.11,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "inner-CV selected ridge lambda": 2.61,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "inner-CV selected ridge lambda": 3.11,
+      "fold-fits selecting this lambda (of 420)": 4.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "inner-CV selected ridge lambda": 3.61,
+      "fold-fits selecting this lambda (of 420)": 31.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "inner-CV selected ridge lambda": 4.11,
+      "fold-fits selecting this lambda (of 420)": 63.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "inner-CV selected ridge lambda": 4.61,
+      "fold-fits selecting this lambda (of 420)": 100.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "inner-CV selected ridge lambda": 5.11,
+      "fold-fits selecting this lambda (of 420)": 102.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "inner-CV selected ridge lambda": 5.61,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "inner-CV selected ridge lambda": 6.11,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "inner-CV selected ridge lambda": 6.61,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "inner-CV selected ridge lambda": 7.11,
+      "fold-fits selecting this lambda (of 420)": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 122,
+  "text": {
+    "suptitle": "Wider ridge-lambda grid re-check (L19, 84 cell-arms): 0 movers at the 0.02 bar; 0 fold-fits at the new 1e7 ceiling",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "ceiling change per cell-arm (84 of 84 inside the 0.02 bar)",
+        "xlabel": "published within-cell held-out R2 (13-point grid)",
+        "ylabel": "change in ceiling R2 (19-point grid minus published)",
+        "legend_labels": [
+          "base, prefix (n=21)",
+          "base, context (n=21)",
+          "instruct, prefix (n=21)",
+          "instruct, context (n=21)"
+        ],
+        "annotations": [
+          "Dana story context (base) +0.019"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.03",
+          "\u22120.02",
+          "\u22120.01",
+          "0.00",
+          "0.01",
+          "0.02",
+          "0.03"
+        ]
+      },
+      {
+        "title_left": "lambda selection: 202 of 265 old-edge fold-fits move up, none above 1e5",
+        "xlabel": "inner-CV selected ridge lambda",
+        "ylabel": "fold-fits selecting this lambda (of 420)",
+        "legend_labels": [
+          "published 13-point grid (ceiling 1e4)",
+          "wide 19-point grid (ceiling 1e7)"
+        ],
+        "xticklabels": [
+          "1e-2",
+          "1e-1",
+          "1e0",
+          "1e1",
+          "1e2",
+          "1e3",
+          "1e4",
+          "1e5",
+          "1e6",
+          "1e7"
+        ],
+        "yticklabels": [
+          "0",
+          "50",
+          "100",
+          "150",
+          "200",
+          "250",
+          "300"
+        ]
+      }
+    ],
+    "series": [
+      "base, prefix (n=21)",
+      "base, context (n=21)",
+      "instruct, prefix (n=21)",
+      "instruct, context (n=21)",
+      "published 13-point grid (ceiling 1e4)",
+      "wide 19-point grid (ceiling 1e7)"
+    ]
+  }
+}

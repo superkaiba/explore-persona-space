@@ -1290,6 +1290,11 @@ def test_backend_poll_script_produces_legacy_poll_pipeline_json_shape(
         # (Pin update landed with #909's green-gate pass: #873 added the
         # emitter without updating this shape test — pre-existing on main.)
         "gcp_gpu_width_advisory_posted",
+        # #1786 WARN-only handle-staleness flags — always emitted by
+        # backend_poll.main on the NORMAL tick-JSON tail, default False;
+        # never verdict-bearing (WARN-only observability).
+        "handle_stale_vs_live",
+        "handle_older_than_relaunch",
     }
     # Values were correctly threaded through.
     assert decoded["status"] == "done"
@@ -1884,6 +1889,7 @@ def test_reconnect_carry_forward_includes_env_pins(tmp_path) -> None:
     [
         ({"WANDB_PROJECT": "issue1586_methodgen"}, True),
         ({"WANDB_TAGS": "a=b", "WANDB_RUN_GROUP": "g 1"}, True),
+        ({"MALLOC_ARENA_MAX": "2", "OMP_NUM_THREADS": "8"}, True),  # #1803 runtime-tuning keys
         (None, True),  # None → {}
         ({}, True),  # empty → {}
         ({"WANDB_API_KEY": "x"}, False),  # non-allowlisted (secret) key
@@ -1927,3 +1933,19 @@ def test_validate_env_pins_rejects_secret_shaped_value_and_sanitize_splits() -> 
     # Non-mapping input drops wholesale with one reason, never raises.
     kept2, dropped2 = sanitize_env_pins(["WANDB_PROJECT=x"])
     assert kept2 == {} and len(dropped2) == 1
+
+
+def test_env_pin_allowlist_keeps_runtime_tuning_keys() -> None:
+    """#1803: the house runtime-tuning set (OOM / thread-cap remediation,
+    incident #1739) stays in ``ENV_PIN_ALLOWED_KEYS`` — a silent drop in a
+    future allowlist rewrite turns this membership pin red."""
+    from explore_persona_space.backends.base import ENV_PIN_ALLOWED_KEYS
+
+    runtime_tuning = {
+        "MALLOC_ARENA_MAX",
+        "OMP_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
+    }
+    assert runtime_tuning <= ENV_PIN_ALLOWED_KEYS

@@ -1,0 +1,4120 @@
+{
+  "commit": "f342cb4161",
+  "created": "2026-07-29T08:05:24Z",
+  "figsize": [
+    9.0,
+    3.8
+  ],
+  "points": [
+    {
+      "Principal-angle index (k=48)": 0.0,
+      "Angle (degrees)": 75.29313759491656,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 1.0,
+      "Angle (degrees)": 76.32900656785944,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 2.0,
+      "Angle (degrees)": 76.47243267726495,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 3.0,
+      "Angle (degrees)": 77.02185365461418,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 4.0,
+      "Angle (degrees)": 77.62171696224104,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 5.0,
+      "Angle (degrees)": 77.67496098863477,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 6.0,
+      "Angle (degrees)": 78.47644471347894,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 7.0,
+      "Angle (degrees)": 79.03060138264578,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 8.0,
+      "Angle (degrees)": 79.26232496512279,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 9.0,
+      "Angle (degrees)": 79.55586081617405,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 10.0,
+      "Angle (degrees)": 79.76876391943117,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 11.0,
+      "Angle (degrees)": 80.09983220834111,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 12.0,
+      "Angle (degrees)": 80.60796740215302,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 13.0,
+      "Angle (degrees)": 80.73503698907356,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 14.0,
+      "Angle (degrees)": 80.93870682456976,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 15.0,
+      "Angle (degrees)": 81.45087997582588,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 16.0,
+      "Angle (degrees)": 82.0350384593402,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 17.0,
+      "Angle (degrees)": 82.15170153823176,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 18.0,
+      "Angle (degrees)": 82.2064033975831,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 19.0,
+      "Angle (degrees)": 82.29984863790182,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 20.0,
+      "Angle (degrees)": 83.01027705360822,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 21.0,
+      "Angle (degrees)": 83.19901163293629,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 22.0,
+      "Angle (degrees)": 83.42270949396183,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 23.0,
+      "Angle (degrees)": 83.67069746933575,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 24.0,
+      "Angle (degrees)": 83.99611526759111,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 25.0,
+      "Angle (degrees)": 84.32464932878878,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 26.0,
+      "Angle (degrees)": 84.70616305107015,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 27.0,
+      "Angle (degrees)": 85.17898550859691,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 28.0,
+      "Angle (degrees)": 85.36385108682828,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 29.0,
+      "Angle (degrees)": 85.49667402393773,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 30.0,
+      "Angle (degrees)": 85.79518796197516,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 31.0,
+      "Angle (degrees)": 85.90861401810649,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 32.0,
+      "Angle (degrees)": 86.2986616137455,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 33.0,
+      "Angle (degrees)": 86.4202050029239,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 34.0,
+      "Angle (degrees)": 86.98769445690921,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 35.0,
+      "Angle (degrees)": 87.01324579036907,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 36.0,
+      "Angle (degrees)": 87.29885287941741,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 37.0,
+      "Angle (degrees)": 87.46199915599055,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 38.0,
+      "Angle (degrees)": 87.78418269990709,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 39.0,
+      "Angle (degrees)": 88.12050234872261,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 40.0,
+      "Angle (degrees)": 88.18780439585723,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 41.0,
+      "Angle (degrees)": 88.49265604618911,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 42.0,
+      "Angle (degrees)": 88.69620220471643,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 43.0,
+      "Angle (degrees)": 88.94532545417358,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 44.0,
+      "Angle (degrees)": 89.1315211082268,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 45.0,
+      "Angle (degrees)": 89.41666762325868,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 46.0,
+      "Angle (degrees)": 89.72886531620296,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 47.0,
+      "Angle (degrees)": 89.86919294603273,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal-angle index (k=48)": 0.0,
+      "Angle (degrees)": 68.20544311016168,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 1.0,
+      "Angle (degrees)": 69.00802551227487,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 2.0,
+      "Angle (degrees)": 69.98247707592773,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 3.0,
+      "Angle (degrees)": 70.84234419379356,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 4.0,
+      "Angle (degrees)": 71.62848753359452,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 5.0,
+      "Angle (degrees)": 72.12498583469012,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 6.0,
+      "Angle (degrees)": 72.69178021893111,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 7.0,
+      "Angle (degrees)": 73.30173854499145,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 8.0,
+      "Angle (degrees)": 73.78058340775401,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 9.0,
+      "Angle (degrees)": 74.6191147913391,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 10.0,
+      "Angle (degrees)": 75.17487299835788,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 11.0,
+      "Angle (degrees)": 75.5032785660959,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 12.0,
+      "Angle (degrees)": 76.05533220742021,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 13.0,
+      "Angle (degrees)": 76.3637483877662,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 14.0,
+      "Angle (degrees)": 76.80482481705292,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 15.0,
+      "Angle (degrees)": 77.47014271290412,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 16.0,
+      "Angle (degrees)": 77.67033756987213,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 17.0,
+      "Angle (degrees)": 78.12350519626136,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 18.0,
+      "Angle (degrees)": 78.75128335910543,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 19.0,
+      "Angle (degrees)": 79.40072917875433,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 20.0,
+      "Angle (degrees)": 79.68225719682978,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 21.0,
+      "Angle (degrees)": 80.12226962182227,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 22.0,
+      "Angle (degrees)": 80.35896555171529,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 23.0,
+      "Angle (degrees)": 80.72537522433392,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 24.0,
+      "Angle (degrees)": 81.26653612231807,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 25.0,
+      "Angle (degrees)": 81.96199302280557,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 26.0,
+      "Angle (degrees)": 82.15647696844488,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 27.0,
+      "Angle (degrees)": 82.49962832656763,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 28.0,
+      "Angle (degrees)": 82.96643995171533,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 29.0,
+      "Angle (degrees)": 83.7842825473205,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 30.0,
+      "Angle (degrees)": 83.82427981232696,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 31.0,
+      "Angle (degrees)": 84.17283138511995,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 32.0,
+      "Angle (degrees)": 84.4726618748024,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 33.0,
+      "Angle (degrees)": 85.26380206660254,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 34.0,
+      "Angle (degrees)": 85.47373975456468,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 35.0,
+      "Angle (degrees)": 85.90240202273496,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 36.0,
+      "Angle (degrees)": 86.23940186254016,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 37.0,
+      "Angle (degrees)": 86.68205850810718,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 38.0,
+      "Angle (degrees)": 86.77595916378506,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 39.0,
+      "Angle (degrees)": 87.01056273071428,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 40.0,
+      "Angle (degrees)": 87.3914863064214,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 41.0,
+      "Angle (degrees)": 88.08839784114713,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 42.0,
+      "Angle (degrees)": 88.63923888750915,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 43.0,
+      "Angle (degrees)": 88.78012374079547,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 44.0,
+      "Angle (degrees)": 88.82050349185442,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 45.0,
+      "Angle (degrees)": 89.48017883765618,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 46.0,
+      "Angle (degrees)": 89.62379309896306,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 47.0,
+      "Angle (degrees)": 89.95926334678639,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal-angle index (k=48)": 0.0,
+      "Angle (degrees)": 49.79741555679729,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 1.0,
+      "Angle (degrees)": 51.07728143657994,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 2.0,
+      "Angle (degrees)": 51.83797736541832,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 3.0,
+      "Angle (degrees)": 52.991806046817146,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 4.0,
+      "Angle (degrees)": 53.709417150413906,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 5.0,
+      "Angle (degrees)": 53.993326670667294,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 6.0,
+      "Angle (degrees)": 54.96681505104612,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 7.0,
+      "Angle (degrees)": 55.00088133060223,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 8.0,
+      "Angle (degrees)": 55.892950841796456,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 9.0,
+      "Angle (degrees)": 56.61043033847439,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 10.0,
+      "Angle (degrees)": 56.86457305666557,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 11.0,
+      "Angle (degrees)": 57.15873420469451,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 12.0,
+      "Angle (degrees)": 57.52021915412978,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 13.0,
+      "Angle (degrees)": 58.72906761477179,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 14.0,
+      "Angle (degrees)": 59.22067154109161,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 15.0,
+      "Angle (degrees)": 59.62411086905402,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 16.0,
+      "Angle (degrees)": 60.45799984030171,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 17.0,
+      "Angle (degrees)": 61.04409233299066,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 18.0,
+      "Angle (degrees)": 62.242529859071986,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 19.0,
+      "Angle (degrees)": 62.368123154060896,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 20.0,
+      "Angle (degrees)": 63.032280748916094,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 21.0,
+      "Angle (degrees)": 63.59336294095203,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 22.0,
+      "Angle (degrees)": 63.900279544312575,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 23.0,
+      "Angle (degrees)": 64.27272606466808,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 24.0,
+      "Angle (degrees)": 65.08180059053447,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 25.0,
+      "Angle (degrees)": 65.38634167292531,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 26.0,
+      "Angle (degrees)": 65.5612909050234,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 27.0,
+      "Angle (degrees)": 66.86729798101051,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 28.0,
+      "Angle (degrees)": 67.24752237287328,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 29.0,
+      "Angle (degrees)": 68.33007707631982,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 30.0,
+      "Angle (degrees)": 68.87079435741366,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 31.0,
+      "Angle (degrees)": 69.12697098031026,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 32.0,
+      "Angle (degrees)": 70.37786016799106,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 33.0,
+      "Angle (degrees)": 71.05414728288005,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 34.0,
+      "Angle (degrees)": 71.65883815970231,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 35.0,
+      "Angle (degrees)": 72.16341705789418,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 36.0,
+      "Angle (degrees)": 73.68074284377202,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 37.0,
+      "Angle (degrees)": 75.0440366165589,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 38.0,
+      "Angle (degrees)": 75.74950032210752,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 39.0,
+      "Angle (degrees)": 77.61194323848707,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 40.0,
+      "Angle (degrees)": 79.24963009980041,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 41.0,
+      "Angle (degrees)": 80.20911363496454,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 42.0,
+      "Angle (degrees)": 82.14661414243365,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 43.0,
+      "Angle (degrees)": 82.9369701728164,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 44.0,
+      "Angle (degrees)": 85.80508528193958,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 45.0,
+      "Angle (degrees)": 86.77255856799508,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 46.0,
+      "Angle (degrees)": 89.12586953534063,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 47.0,
+      "Angle (degrees)": 89.8594405513811,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal-angle index (k=48)": 0.0,
+      "Angle (degrees)": 75.77699559486413,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 1.0,
+      "Angle (degrees)": 76.30416364814583,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 2.0,
+      "Angle (degrees)": 77.25433535439315,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 3.0,
+      "Angle (degrees)": 78.06420938904964,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 4.0,
+      "Angle (degrees)": 78.3316659062861,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 5.0,
+      "Angle (degrees)": 78.444580100481,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 6.0,
+      "Angle (degrees)": 78.9691540554277,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 7.0,
+      "Angle (degrees)": 79.28012684589943,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 8.0,
+      "Angle (degrees)": 79.62616021671663,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 9.0,
+      "Angle (degrees)": 80.10954607367484,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 10.0,
+      "Angle (degrees)": 80.37111595335362,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 11.0,
+      "Angle (degrees)": 80.57474588964985,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 12.0,
+      "Angle (degrees)": 80.91125233436755,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 13.0,
+      "Angle (degrees)": 81.28584701891474,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 14.0,
+      "Angle (degrees)": 81.70803159360055,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 15.0,
+      "Angle (degrees)": 81.87922792206518,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 16.0,
+      "Angle (degrees)": 82.02348775215899,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 17.0,
+      "Angle (degrees)": 82.35405211611277,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 18.0,
+      "Angle (degrees)": 82.70395703061617,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 19.0,
+      "Angle (degrees)": 82.75410618352818,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 20.0,
+      "Angle (degrees)": 83.27630176509679,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 21.0,
+      "Angle (degrees)": 83.73954065341098,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 22.0,
+      "Angle (degrees)": 83.87150380875045,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 23.0,
+      "Angle (degrees)": 83.89982166278627,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 24.0,
+      "Angle (degrees)": 84.17484594910036,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 25.0,
+      "Angle (degrees)": 84.46123927396273,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 26.0,
+      "Angle (degrees)": 84.69980765000017,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 27.0,
+      "Angle (degrees)": 84.99480111629661,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 28.0,
+      "Angle (degrees)": 85.28699765148122,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 29.0,
+      "Angle (degrees)": 85.56194370696201,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 30.0,
+      "Angle (degrees)": 86.06140686505819,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 31.0,
+      "Angle (degrees)": 86.24266447355144,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 32.0,
+      "Angle (degrees)": 86.64517128154536,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 33.0,
+      "Angle (degrees)": 86.88369306478475,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 34.0,
+      "Angle (degrees)": 86.95133670809238,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 35.0,
+      "Angle (degrees)": 87.17677001194484,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 36.0,
+      "Angle (degrees)": 87.43847083100052,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 37.0,
+      "Angle (degrees)": 87.74097188626232,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 38.0,
+      "Angle (degrees)": 87.76339127763106,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 39.0,
+      "Angle (degrees)": 88.00730655076167,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 40.0,
+      "Angle (degrees)": 88.16032310479326,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 41.0,
+      "Angle (degrees)": 88.37541648832392,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 42.0,
+      "Angle (degrees)": 88.61949088044211,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 43.0,
+      "Angle (degrees)": 88.86660257010192,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 44.0,
+      "Angle (degrees)": 89.17491389636896,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 45.0,
+      "Angle (degrees)": 89.2974550365846,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 46.0,
+      "Angle (degrees)": 89.74873710322191,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 47.0,
+      "Angle (degrees)": 89.95517167452788,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Principal-angle index (k=48)": 0.0,
+      "Angle (degrees)": 75.07759954223896,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 1.0,
+      "Angle (degrees)": 75.78156805272722,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 2.0,
+      "Angle (degrees)": 76.61235286887477,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 3.0,
+      "Angle (degrees)": 76.86015333150941,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 4.0,
+      "Angle (degrees)": 77.44628371079689,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 5.0,
+      "Angle (degrees)": 77.58631789065215,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 6.0,
+      "Angle (degrees)": 78.03592438100253,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 7.0,
+      "Angle (degrees)": 78.18434219655094,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 8.0,
+      "Angle (degrees)": 79.01609771105835,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 9.0,
+      "Angle (degrees)": 79.3041876925986,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 10.0,
+      "Angle (degrees)": 79.80655093688466,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 11.0,
+      "Angle (degrees)": 80.08443532212488,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 12.0,
+      "Angle (degrees)": 80.18414780155977,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 13.0,
+      "Angle (degrees)": 80.8302982428666,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 14.0,
+      "Angle (degrees)": 80.89490748869818,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 15.0,
+      "Angle (degrees)": 81.19258387665656,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 16.0,
+      "Angle (degrees)": 81.53575478763565,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 17.0,
+      "Angle (degrees)": 81.91015478149414,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 18.0,
+      "Angle (degrees)": 82.21618202559293,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 19.0,
+      "Angle (degrees)": 82.28828377990543,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 20.0,
+      "Angle (degrees)": 82.78882554870437,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 21.0,
+      "Angle (degrees)": 82.88846220873644,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 22.0,
+      "Angle (degrees)": 82.98084297130612,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 23.0,
+      "Angle (degrees)": 83.11437643543567,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 24.0,
+      "Angle (degrees)": 83.46506343765336,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 25.0,
+      "Angle (degrees)": 83.85581967760163,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 26.0,
+      "Angle (degrees)": 84.07561540838152,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 27.0,
+      "Angle (degrees)": 84.23464811740169,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 28.0,
+      "Angle (degrees)": 84.77227434309971,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 29.0,
+      "Angle (degrees)": 84.89231074838165,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 30.0,
+      "Angle (degrees)": 85.37483872988204,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 31.0,
+      "Angle (degrees)": 85.50798259860166,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 32.0,
+      "Angle (degrees)": 85.8919389285968,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 33.0,
+      "Angle (degrees)": 86.13780672104683,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 34.0,
+      "Angle (degrees)": 86.72559545910173,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 35.0,
+      "Angle (degrees)": 87.06832440532494,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 36.0,
+      "Angle (degrees)": 87.38575901320554,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 37.0,
+      "Angle (degrees)": 87.56842001172832,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 38.0,
+      "Angle (degrees)": 87.71644528782441,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 39.0,
+      "Angle (degrees)": 87.87657399979558,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 40.0,
+      "Angle (degrees)": 87.9903865155953,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 41.0,
+      "Angle (degrees)": 88.56676297431238,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 42.0,
+      "Angle (degrees)": 88.60742251407987,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 43.0,
+      "Angle (degrees)": 88.89796695959768,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 44.0,
+      "Angle (degrees)": 89.09136983598422,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 45.0,
+      "Angle (degrees)": 89.24764792782516,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 46.0,
+      "Angle (degrees)": 89.51026799021406,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 47.0,
+      "Angle (degrees)": 89.96210414317818,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Principal-angle index (k=48)": 0.0,
+      "Angle (degrees)": 72.41696330791815,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 1.0,
+      "Angle (degrees)": 73.111059567113,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 2.0,
+      "Angle (degrees)": 73.93901470775239,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 3.0,
+      "Angle (degrees)": 74.19891621249145,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 4.0,
+      "Angle (degrees)": 74.87878963302576,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 5.0,
+      "Angle (degrees)": 75.47221148377415,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 6.0,
+      "Angle (degrees)": 75.84002217354822,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 7.0,
+      "Angle (degrees)": 76.51703506774155,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 8.0,
+      "Angle (degrees)": 76.9110285678618,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 9.0,
+      "Angle (degrees)": 77.34908689978043,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 10.0,
+      "Angle (degrees)": 77.52297655101964,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 11.0,
+      "Angle (degrees)": 78.41881652151189,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 12.0,
+      "Angle (degrees)": 78.7316978933712,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 13.0,
+      "Angle (degrees)": 78.87494431233883,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 14.0,
+      "Angle (degrees)": 79.36905433193989,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 15.0,
+      "Angle (degrees)": 79.8003858464564,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 16.0,
+      "Angle (degrees)": 80.39448317625641,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 17.0,
+      "Angle (degrees)": 80.60095767443978,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 18.0,
+      "Angle (degrees)": 80.61787595464679,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 19.0,
+      "Angle (degrees)": 80.83594306835114,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 20.0,
+      "Angle (degrees)": 81.22344721438647,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 21.0,
+      "Angle (degrees)": 81.67871077666518,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 22.0,
+      "Angle (degrees)": 81.74367747715243,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 23.0,
+      "Angle (degrees)": 82.00736633229911,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 24.0,
+      "Angle (degrees)": 82.33555271529139,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 25.0,
+      "Angle (degrees)": 82.64267477206366,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 26.0,
+      "Angle (degrees)": 83.06633647405349,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 27.0,
+      "Angle (degrees)": 83.47527963333405,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 28.0,
+      "Angle (degrees)": 83.80709743375432,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 29.0,
+      "Angle (degrees)": 83.89219045488213,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 30.0,
+      "Angle (degrees)": 84.63783703591463,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 31.0,
+      "Angle (degrees)": 85.2666861284367,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 32.0,
+      "Angle (degrees)": 85.4924048140535,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 33.0,
+      "Angle (degrees)": 85.67250901291433,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 34.0,
+      "Angle (degrees)": 85.91321818429238,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 35.0,
+      "Angle (degrees)": 86.20492491557357,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 36.0,
+      "Angle (degrees)": 86.48878609463814,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 37.0,
+      "Angle (degrees)": 86.82225160273605,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 38.0,
+      "Angle (degrees)": 87.41078564887889,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 39.0,
+      "Angle (degrees)": 87.57697953050638,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 40.0,
+      "Angle (degrees)": 87.73032166117271,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 41.0,
+      "Angle (degrees)": 88.04104995359704,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 42.0,
+      "Angle (degrees)": 88.62457400059156,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 43.0,
+      "Angle (degrees)": 88.91841232728146,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 44.0,
+      "Angle (degrees)": 88.99275219439042,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 45.0,
+      "Angle (degrees)": 89.38943803334071,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 46.0,
+      "Angle (degrees)": 89.53220199657419,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 47.0,
+      "Angle (degrees)": 89.95667402030664,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Principal-angle index (k=48)": 0.0,
+      "Angle (degrees)": 10.707700834062221,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 1.0,
+      "Angle (degrees)": 11.638532421300875,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 2.0,
+      "Angle (degrees)": 15.150330052731361,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 3.0,
+      "Angle (degrees)": 16.127268262092016,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 4.0,
+      "Angle (degrees)": 17.42758325628526,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 5.0,
+      "Angle (degrees)": 18.183015115557225,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 6.0,
+      "Angle (degrees)": 19.587905910581032,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 7.0,
+      "Angle (degrees)": 20.83128595351684,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 8.0,
+      "Angle (degrees)": 21.96589751338886,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 9.0,
+      "Angle (degrees)": 22.793689404713813,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 10.0,
+      "Angle (degrees)": 22.918073913009856,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 11.0,
+      "Angle (degrees)": 24.148875765629565,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 12.0,
+      "Angle (degrees)": 25.79252559924191,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 13.0,
+      "Angle (degrees)": 27.41535209395744,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 14.0,
+      "Angle (degrees)": 27.962455680746427,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 15.0,
+      "Angle (degrees)": 28.3254233194474,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 16.0,
+      "Angle (degrees)": 30.526449953099565,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 17.0,
+      "Angle (degrees)": 31.82523581192708,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 18.0,
+      "Angle (degrees)": 32.4732096539839,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 19.0,
+      "Angle (degrees)": 33.48363465223863,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 20.0,
+      "Angle (degrees)": 33.75576195975081,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 21.0,
+      "Angle (degrees)": 34.69437925142738,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 22.0,
+      "Angle (degrees)": 35.26593032526632,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 23.0,
+      "Angle (degrees)": 37.670155227567115,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 24.0,
+      "Angle (degrees)": 38.20635659479936,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 25.0,
+      "Angle (degrees)": 39.24151703237729,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 26.0,
+      "Angle (degrees)": 40.845785318756896,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 27.0,
+      "Angle (degrees)": 41.34640390448701,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 28.0,
+      "Angle (degrees)": 43.81749367309221,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 29.0,
+      "Angle (degrees)": 45.5366927505891,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 30.0,
+      "Angle (degrees)": 48.60297436499091,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 31.0,
+      "Angle (degrees)": 49.89375159183371,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 32.0,
+      "Angle (degrees)": 51.805093836765444,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 33.0,
+      "Angle (degrees)": 53.749839506047444,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 34.0,
+      "Angle (degrees)": 55.504785291970606,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 35.0,
+      "Angle (degrees)": 58.0735015539436,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 36.0,
+      "Angle (degrees)": 59.42726716000661,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 37.0,
+      "Angle (degrees)": 61.63564156108572,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 38.0,
+      "Angle (degrees)": 62.627298719753504,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 39.0,
+      "Angle (degrees)": 66.33739288570789,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 40.0,
+      "Angle (degrees)": 68.45623202703953,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 41.0,
+      "Angle (degrees)": 73.20053430883513,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 42.0,
+      "Angle (degrees)": 76.32855523617702,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 43.0,
+      "Angle (degrees)": 79.76548593980382,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 44.0,
+      "Angle (degrees)": 81.32134460960157,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 45.0,
+      "Angle (degrees)": 84.00653124661835,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 46.0,
+      "Angle (degrees)": 86.7006827222746,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 47.0,
+      "Angle (degrees)": 88.82204750262363,
+      "series": "Full context vs Prefix end",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Principal-angle index (k=48)": 0.0,
+      "Angle (degrees)": 12.123627249520016,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 1.0,
+      "Angle (degrees)": 13.14314894003732,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 2.0,
+      "Angle (degrees)": 18.703978775599335,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 3.0,
+      "Angle (degrees)": 21.88097888499267,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 4.0,
+      "Angle (degrees)": 23.402261784036753,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 5.0,
+      "Angle (degrees)": 24.888288414078207,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 6.0,
+      "Angle (degrees)": 27.059557956308627,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 7.0,
+      "Angle (degrees)": 27.94425852816557,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 8.0,
+      "Angle (degrees)": 29.650950080588473,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 9.0,
+      "Angle (degrees)": 30.909326683751033,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 10.0,
+      "Angle (degrees)": 31.54532405818994,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 11.0,
+      "Angle (degrees)": 34.04004694841761,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 12.0,
+      "Angle (degrees)": 36.897849996704224,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 13.0,
+      "Angle (degrees)": 37.68798664467364,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 14.0,
+      "Angle (degrees)": 38.993707794050124,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 15.0,
+      "Angle (degrees)": 40.5732402797494,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 16.0,
+      "Angle (degrees)": 43.121570975276754,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 17.0,
+      "Angle (degrees)": 44.36365677158813,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 18.0,
+      "Angle (degrees)": 45.440842450767256,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 19.0,
+      "Angle (degrees)": 46.52221059938547,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 20.0,
+      "Angle (degrees)": 49.451741057732924,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 21.0,
+      "Angle (degrees)": 50.80990830067714,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 22.0,
+      "Angle (degrees)": 53.76904838196565,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 23.0,
+      "Angle (degrees)": 54.12385694864548,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 24.0,
+      "Angle (degrees)": 55.385231503369944,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 25.0,
+      "Angle (degrees)": 56.50113697837379,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 26.0,
+      "Angle (degrees)": 58.93806579203103,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 27.0,
+      "Angle (degrees)": 59.94784014495786,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 28.0,
+      "Angle (degrees)": 62.48926205734114,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 29.0,
+      "Angle (degrees)": 63.48848176755389,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 30.0,
+      "Angle (degrees)": 64.5393404860544,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 31.0,
+      "Angle (degrees)": 66.05044862392295,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 32.0,
+      "Angle (degrees)": 67.89388052948887,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 33.0,
+      "Angle (degrees)": 68.95738068039473,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 34.0,
+      "Angle (degrees)": 71.41701378528475,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 35.0,
+      "Angle (degrees)": 72.03362470968976,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 36.0,
+      "Angle (degrees)": 74.89831732427237,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 37.0,
+      "Angle (degrees)": 75.62516045492744,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 38.0,
+      "Angle (degrees)": 77.15540103492192,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 39.0,
+      "Angle (degrees)": 78.452353337291,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 40.0,
+      "Angle (degrees)": 79.1508046215869,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 41.0,
+      "Angle (degrees)": 79.5711717276195,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 42.0,
+      "Angle (degrees)": 82.06284065741808,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 43.0,
+      "Angle (degrees)": 83.12607931910978,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 44.0,
+      "Angle (degrees)": 84.95062812222649,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 45.0,
+      "Angle (degrees)": 86.92095146787075,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 46.0,
+      "Angle (degrees)": 87.74726079246324,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 47.0,
+      "Angle (degrees)": 89.4328186688283,
+      "series": "Full context vs Bare query",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Principal-angle index (k=48)": 0.0,
+      "Angle (degrees)": 8.49157268852168,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 1.0,
+      "Angle (degrees)": 11.174026632701517,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 2.0,
+      "Angle (degrees)": 13.90574568625932,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 3.0,
+      "Angle (degrees)": 14.70897178618344,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 4.0,
+      "Angle (degrees)": 15.465086833836077,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 5.0,
+      "Angle (degrees)": 15.604102765581981,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 6.0,
+      "Angle (degrees)": 17.965093891591767,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 7.0,
+      "Angle (degrees)": 18.30166828681264,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 8.0,
+      "Angle (degrees)": 19.345952869692937,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 9.0,
+      "Angle (degrees)": 19.69564340614269,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 10.0,
+      "Angle (degrees)": 20.286794760978594,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 11.0,
+      "Angle (degrees)": 20.846341727330422,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 12.0,
+      "Angle (degrees)": 21.574020940087898,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 13.0,
+      "Angle (degrees)": 22.377594079974905,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 14.0,
+      "Angle (degrees)": 23.658117835193053,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 15.0,
+      "Angle (degrees)": 23.793672989389854,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 16.0,
+      "Angle (degrees)": 24.404876787689236,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 17.0,
+      "Angle (degrees)": 25.212749071517962,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 18.0,
+      "Angle (degrees)": 27.02634021902144,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 19.0,
+      "Angle (degrees)": 28.283846942248594,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 20.0,
+      "Angle (degrees)": 29.823654469687412,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 21.0,
+      "Angle (degrees)": 31.060769569109482,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 22.0,
+      "Angle (degrees)": 31.260560989403423,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 23.0,
+      "Angle (degrees)": 33.654500758745094,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 24.0,
+      "Angle (degrees)": 34.34135771389552,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 25.0,
+      "Angle (degrees)": 35.953339582900156,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 26.0,
+      "Angle (degrees)": 36.793385774800285,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 27.0,
+      "Angle (degrees)": 37.823798308045866,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 28.0,
+      "Angle (degrees)": 38.77985152753126,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 29.0,
+      "Angle (degrees)": 39.47824943821429,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 30.0,
+      "Angle (degrees)": 42.30986095687668,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 31.0,
+      "Angle (degrees)": 44.004977182883295,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 32.0,
+      "Angle (degrees)": 45.64797892956956,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 33.0,
+      "Angle (degrees)": 46.87329079360864,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 34.0,
+      "Angle (degrees)": 47.9804376973874,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 35.0,
+      "Angle (degrees)": 49.1856052061046,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 36.0,
+      "Angle (degrees)": 51.29885284116376,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 37.0,
+      "Angle (degrees)": 56.9730448317487,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 38.0,
+      "Angle (degrees)": 58.68767136251452,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 39.0,
+      "Angle (degrees)": 60.10373476430048,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 40.0,
+      "Angle (degrees)": 63.47360056935642,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 41.0,
+      "Angle (degrees)": 67.86231929544071,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 42.0,
+      "Angle (degrees)": 72.66430721948848,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 43.0,
+      "Angle (degrees)": 74.0578513963949,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 44.0,
+      "Angle (degrees)": 81.30710828564811,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 45.0,
+      "Angle (degrees)": 86.13447339972292,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 46.0,
+      "Angle (degrees)": 87.89547479493486,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 47.0,
+      "Angle (degrees)": 88.52069610246006,
+      "series": "Full context vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Principal-angle index (k=48)": 0.0,
+      "Angle (degrees)": 15.491469698135326,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 1.0,
+      "Angle (degrees)": 16.35064988276431,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 2.0,
+      "Angle (degrees)": 22.306293333000415,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 3.0,
+      "Angle (degrees)": 24.51767241867537,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 4.0,
+      "Angle (degrees)": 27.917631373557878,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 5.0,
+      "Angle (degrees)": 29.626748237177,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 6.0,
+      "Angle (degrees)": 30.17052456225125,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 7.0,
+      "Angle (degrees)": 31.5382644005946,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 8.0,
+      "Angle (degrees)": 31.88965378004084,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 9.0,
+      "Angle (degrees)": 35.097162936336474,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 10.0,
+      "Angle (degrees)": 35.594927008275,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 11.0,
+      "Angle (degrees)": 38.199629938448574,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 12.0,
+      "Angle (degrees)": 40.123972955935066,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 13.0,
+      "Angle (degrees)": 41.543006600706036,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 14.0,
+      "Angle (degrees)": 45.365749339733846,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 15.0,
+      "Angle (degrees)": 47.72727882132136,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 16.0,
+      "Angle (degrees)": 48.41299923393339,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 17.0,
+      "Angle (degrees)": 49.26574843169732,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 18.0,
+      "Angle (degrees)": 51.1926113515286,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 19.0,
+      "Angle (degrees)": 52.49846127699687,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 20.0,
+      "Angle (degrees)": 53.21682394593516,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 21.0,
+      "Angle (degrees)": 55.938470680277284,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 22.0,
+      "Angle (degrees)": 56.86771745109216,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 23.0,
+      "Angle (degrees)": 58.20362281061903,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 24.0,
+      "Angle (degrees)": 60.324075503229,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 25.0,
+      "Angle (degrees)": 61.95447666967758,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 26.0,
+      "Angle (degrees)": 62.90170943521551,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 27.0,
+      "Angle (degrees)": 63.87396270953787,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 28.0,
+      "Angle (degrees)": 65.3455705863543,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 29.0,
+      "Angle (degrees)": 67.97654674786862,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 30.0,
+      "Angle (degrees)": 68.15156586163258,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 31.0,
+      "Angle (degrees)": 68.83228763511781,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 32.0,
+      "Angle (degrees)": 71.26901882726811,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 33.0,
+      "Angle (degrees)": 72.35460995115443,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 34.0,
+      "Angle (degrees)": 73.15708244917396,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 35.0,
+      "Angle (degrees)": 75.35690979354774,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 36.0,
+      "Angle (degrees)": 76.21650058894312,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 37.0,
+      "Angle (degrees)": 78.57377251270049,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 38.0,
+      "Angle (degrees)": 80.02836779980461,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 39.0,
+      "Angle (degrees)": 80.3710957351289,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 40.0,
+      "Angle (degrees)": 81.63009289945929,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 41.0,
+      "Angle (degrees)": 82.66871404747192,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 42.0,
+      "Angle (degrees)": 84.13466877827756,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 43.0,
+      "Angle (degrees)": 84.47823922506315,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 44.0,
+      "Angle (degrees)": 85.5154320462866,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 45.0,
+      "Angle (degrees)": 86.55953441120637,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 46.0,
+      "Angle (degrees)": 89.09488488755088,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 47.0,
+      "Angle (degrees)": 89.48564277407554,
+      "series": "Prefix end vs Bare query",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Principal-angle index (k=48)": 0.0,
+      "Angle (degrees)": 14.973596931171878,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 1.0,
+      "Angle (degrees)": 15.263463687211747,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 2.0,
+      "Angle (degrees)": 20.572157325336736,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 3.0,
+      "Angle (degrees)": 22.252807959190246,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 4.0,
+      "Angle (degrees)": 23.466133999621132,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 5.0,
+      "Angle (degrees)": 24.327533183664418,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 6.0,
+      "Angle (degrees)": 26.151748919210366,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 7.0,
+      "Angle (degrees)": 27.142515054990177,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 8.0,
+      "Angle (degrees)": 27.88322907355453,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 9.0,
+      "Angle (degrees)": 29.11554659944086,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 10.0,
+      "Angle (degrees)": 29.72208606530455,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 11.0,
+      "Angle (degrees)": 31.70491644568722,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 12.0,
+      "Angle (degrees)": 33.30636104947722,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 13.0,
+      "Angle (degrees)": 34.881498179327195,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 14.0,
+      "Angle (degrees)": 35.494611684555984,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 15.0,
+      "Angle (degrees)": 36.336672501604546,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 16.0,
+      "Angle (degrees)": 36.75537260418385,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 17.0,
+      "Angle (degrees)": 38.43538728740786,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 18.0,
+      "Angle (degrees)": 40.093616281836276,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 19.0,
+      "Angle (degrees)": 40.86789231696372,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 20.0,
+      "Angle (degrees)": 43.05228304746963,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 21.0,
+      "Angle (degrees)": 43.80447265526755,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 22.0,
+      "Angle (degrees)": 44.00739766270922,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 23.0,
+      "Angle (degrees)": 44.86254077637623,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 24.0,
+      "Angle (degrees)": 45.654495848968374,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 25.0,
+      "Angle (degrees)": 48.62780876869187,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 26.0,
+      "Angle (degrees)": 49.85900944819167,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 27.0,
+      "Angle (degrees)": 51.04422525401465,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 28.0,
+      "Angle (degrees)": 53.68616475490726,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 29.0,
+      "Angle (degrees)": 55.63519795387266,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 30.0,
+      "Angle (degrees)": 56.431793744073225,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 31.0,
+      "Angle (degrees)": 58.6778376619972,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 32.0,
+      "Angle (degrees)": 59.58092780305002,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 33.0,
+      "Angle (degrees)": 62.24531475953383,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 34.0,
+      "Angle (degrees)": 63.28228383721917,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 35.0,
+      "Angle (degrees)": 64.97617203768993,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 36.0,
+      "Angle (degrees)": 68.32400279739673,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 37.0,
+      "Angle (degrees)": 69.95624018257267,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 38.0,
+      "Angle (degrees)": 70.038672022392,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 39.0,
+      "Angle (degrees)": 73.12584752684948,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 40.0,
+      "Angle (degrees)": 76.71098115720434,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 41.0,
+      "Angle (degrees)": 78.48107900710058,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 42.0,
+      "Angle (degrees)": 80.29783610006737,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 43.0,
+      "Angle (degrees)": 82.35561669126422,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 44.0,
+      "Angle (degrees)": 84.78097599480726,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 45.0,
+      "Angle (degrees)": 85.50170262643232,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 46.0,
+      "Angle (degrees)": 87.88706624010923,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 47.0,
+      "Angle (degrees)": 88.69839259182017,
+      "series": "Prefix end vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Principal-angle index (k=48)": 0.0,
+      "Angle (degrees)": 14.10934304652118,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 1.0,
+      "Angle (degrees)": 15.21289158418191,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 2.0,
+      "Angle (degrees)": 22.465422738385573,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 3.0,
+      "Angle (degrees)": 24.186596089617584,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 4.0,
+      "Angle (degrees)": 26.393778111895223,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 5.0,
+      "Angle (degrees)": 27.633018096715894,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 6.0,
+      "Angle (degrees)": 29.89239464232979,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 7.0,
+      "Angle (degrees)": 30.942387209176452,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 8.0,
+      "Angle (degrees)": 32.59726185651415,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 9.0,
+      "Angle (degrees)": 33.63125895191518,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 10.0,
+      "Angle (degrees)": 34.56901591526235,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 11.0,
+      "Angle (degrees)": 36.390903706660126,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 12.0,
+      "Angle (degrees)": 39.88158576605741,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 13.0,
+      "Angle (degrees)": 40.73368397438771,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 14.0,
+      "Angle (degrees)": 43.12753732866833,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 15.0,
+      "Angle (degrees)": 44.643644952166625,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 16.0,
+      "Angle (degrees)": 45.03860642044872,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 17.0,
+      "Angle (degrees)": 46.69809286784041,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 18.0,
+      "Angle (degrees)": 47.132651136465576,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 19.0,
+      "Angle (degrees)": 49.14549900969843,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 20.0,
+      "Angle (degrees)": 49.880566845354934,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 21.0,
+      "Angle (degrees)": 51.4343188390893,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 22.0,
+      "Angle (degrees)": 53.056961201872255,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 23.0,
+      "Angle (degrees)": 54.25613300087194,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 24.0,
+      "Angle (degrees)": 55.24056349772365,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 25.0,
+      "Angle (degrees)": 56.67531323986004,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 26.0,
+      "Angle (degrees)": 59.610349352966495,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 27.0,
+      "Angle (degrees)": 60.256060230186804,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 28.0,
+      "Angle (degrees)": 61.39887853619032,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 29.0,
+      "Angle (degrees)": 64.23317484124081,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 30.0,
+      "Angle (degrees)": 64.81636503652884,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 31.0,
+      "Angle (degrees)": 66.15094255428309,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 32.0,
+      "Angle (degrees)": 68.23985614216994,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 33.0,
+      "Angle (degrees)": 69.9043910023366,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 34.0,
+      "Angle (degrees)": 70.67218928869367,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 35.0,
+      "Angle (degrees)": 72.02335355382702,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 36.0,
+      "Angle (degrees)": 73.20150976253375,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 37.0,
+      "Angle (degrees)": 73.55162635025138,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 38.0,
+      "Angle (degrees)": 74.65769699206,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 39.0,
+      "Angle (degrees)": 76.39833004036888,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 40.0,
+      "Angle (degrees)": 78.30596127965478,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 41.0,
+      "Angle (degrees)": 79.73029082337835,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 42.0,
+      "Angle (degrees)": 81.42844510701427,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 43.0,
+      "Angle (degrees)": 83.6169781445471,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 44.0,
+      "Angle (degrees)": 86.77377028052139,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 45.0,
+      "Angle (degrees)": 87.12707872793327,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 46.0,
+      "Angle (degrees)": 87.72440200802129,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Principal-angle index (k=48)": 47.0,
+      "Angle (degrees)": 89.42261115367431,
+      "series": "Bare query vs Query-averaged prefix",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 576,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Input subspace angles",
+        "xlabel": "Principal-angle index (k=48)",
+        "ylabel": "Angle (degrees)",
+        "legend_labels": [
+          "Full context vs Prefix end",
+          "Full context vs Bare query",
+          "Full context vs Query-averaged prefix",
+          "Prefix end vs Bare query",
+          "Prefix end vs Query-averaged prefix",
+          "Bare query vs Query-averaged prefix"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ],
+        "yticklabels": [
+          "45",
+          "50",
+          "55",
+          "60",
+          "65",
+          "70",
+          "75",
+          "80",
+          "85",
+          "90",
+          "95"
+        ]
+      },
+      {
+        "title_left": "Output subspace angles",
+        "xlabel": "Principal-angle index (k=48)",
+        "ylabel": "Angle (degrees)",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90",
+          "100"
+        ]
+      }
+    ],
+    "series": [
+      "Full context vs Prefix end",
+      "Full context vs Bare query",
+      "Full context vs Query-averaged prefix",
+      "Prefix end vs Bare query",
+      "Prefix end vs Query-averaged prefix",
+      "Bare query vs Query-averaged prefix"
+    ]
+  }
+}

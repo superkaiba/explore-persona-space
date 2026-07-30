@@ -115,6 +115,25 @@ def _score_from_parsed(parsed: object) -> float | None:
     return None
 
 
+def _is_refusal_parsed(parsed: object) -> bool:
+    """True when a dropped draw is an instructed judge-REFUSAL return (#1801).
+
+    Matches BOTH stored shapes: (i) a no-``error`` dict whose ``score`` is the
+    string ``"REFUSAL"`` (case/whitespace-insensitive, mirroring
+    :func:`_score_from_parsed`), and (ii) a bare Python ``str`` parse equal to
+    ``"REFUSAL"`` — the envelope-less judge response that
+    ``judge_dispatch._normalize_scalar_score`` / ``_parsed_with_raw`` pass
+    through untouched. Classification lives in the tally (the #1313 pattern);
+    ``_score_from_parsed`` itself is unchanged.
+    """
+    if isinstance(parsed, str):
+        return parsed.strip().upper() == "REFUSAL"
+    if isinstance(parsed, dict) and not parsed.get("error"):
+        val = parsed.get("score")
+        return isinstance(val, str) and val.strip().upper() == "REFUSAL"
+    return False
+
+
 @dataclass
 class JudgeResult:
     """Per-item graded scores keyed by a caller-supplied item id.
@@ -135,6 +154,13 @@ class JudgeResult:
     (rule 24(ii): blending recreates the censoring the split exists to
     prevent). ``per_item_transport_losses`` is the per-item breakdown (item_id
     -> lost-draw count; absent items lost none).
+
+    ``n_refusal_draws`` (#1801) is the instructed judge-REFUSAL SUBSET of
+    ``n_dropped_draws`` (subset semantics — the total is unchanged). A REFUSAL
+    may be rubric-instructed (the persona-vectors rubric names it as a valid
+    return), so a high refusal share is not by itself instrument failure —
+    unlike malformed/out-of-range residue, which is the rule-23 truncation
+    signature.
     """
 
     scores: dict[str, float | None]
@@ -144,6 +170,7 @@ class JudgeResult:
     per_item_scores: dict[str, list[float]] = field(default_factory=dict)
     n_transport_lost_draws: int = 0  # rule 24(ii)
     per_item_transport_losses: dict[str, int] = field(default_factory=dict)
+    n_refusal_draws: int = 0  # instructed-REFUSAL subset of n_dropped_draws (#1801)
 
 
 def judge_graded(
@@ -268,6 +295,7 @@ def judge_result_from_save_raw(save_raw: Path, items: list[tuple[str, str, str]]
     n_total = 0
     n_dropped = 0
     n_transport = 0
+    n_refusal = 0
     for cid, parsed in all_scores.items():
         # item_id is everything before the FIRST "__idx__comp" tail. Since each
         # item has exactly one question and idx increments per (persona,question),
@@ -287,6 +315,8 @@ def judge_result_from_save_raw(save_raw: Path, items: list[tuple[str, str, str]]
                 per_item_transport[item_id] = per_item_transport.get(item_id, 0) + 1
             else:
                 n_dropped += 1
+                if _is_refusal_parsed(parsed):
+                    n_refusal += 1  # instructed-REFUSAL SUBSET of n_dropped (#1801)
         else:
             per_item_draws[item_id].append(s)
     if n_transport:
@@ -294,6 +324,15 @@ def judge_result_from_save_raw(save_raw: Path, items: list[tuple[str, str, str]]
             "judge reduce: %d transport-lost draws (bounded retries exhausted) — "
             "re-judgeable; NOT blended into content drops (rule 24)",
             n_transport,
+        )
+    if n_dropped:
+        logger.warning(
+            "judge reduce: %d content-dropped draws (%d judge-REFUSAL — may be "
+            "rubric-instructed, not instrument failure alone; %d malformed/out-of-range) "
+            "(rules 9/23)",
+            n_dropped,
+            n_refusal,
+            n_dropped - n_refusal,
         )
 
     scores: dict[str, float | None] = {}
@@ -309,4 +348,5 @@ def judge_result_from_save_raw(save_raw: Path, items: list[tuple[str, str, str]]
         per_item_scores=per_item_draws,
         n_transport_lost_draws=n_transport,
         per_item_transport_losses=per_item_transport,
+        n_refusal_draws=n_refusal,
     )

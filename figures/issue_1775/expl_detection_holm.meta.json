@@ -1,0 +1,210 @@
+{
+  "commit": "9f5b3f863a",
+  "created": "2026-07-29T21:22:06Z",
+  "figsize": [
+    7.6,
+    3.4
+  ],
+  "points": [
+    {
+      "category": "bare query / prefix block / dCor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "bare query / prefix block / HSIC",
+      "Holm-adjusted p": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "bare query / query block / dCor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "bare query / query block / HSIC",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "bare query / within-prefix shuffle / dCor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "bare query / within-prefix shuffle / HSIC",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "full context / prefix block / dCor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "full context / prefix block / HSIC",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "full context / query block / dCor",
+      "Holm-adjusted p": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "full context / query block / HSIC",
+      "Holm-adjusted p": 0.5144855144855145,
+      "_kind": "bar"
+    },
+    {
+      "category": "full context / within-prefix shuffle / dCor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "full context / within-prefix shuffle / HSIC",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix end / prefix block / dCor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix end / prefix block / HSIC",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix end / query block / dCor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix end / query block / HSIC",
+      "Holm-adjusted p": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix end / within-prefix shuffle / dCor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix end / within-prefix shuffle / HSIC",
+      "Holm-adjusted p": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix-averaged / prefix block / dCor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix-averaged / prefix block / HSIC",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix-averaged / query block / dCor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix-averaged / query block / HSIC",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix-averaged / within-prefix shuffle / dCor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix-averaged / within-prefix shuffle / HSIC",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "stitch / prefix block / dCor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "stitch / prefix block / HSIC",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "stitch / query block / dCor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "stitch / query block / HSIC",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "stitch / within-prefix shuffle / dCor",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    },
+    {
+      "category": "stitch / within-prefix shuffle / HSIC",
+      "Holm-adjusted p": 0.02997002997002997,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "residual dependence (30-test family: arm / permutation scheme / statistic)",
+        "ylabel": "Holm-adjusted p",
+        "xticklabels": [
+          "bare query / prefix block / dCor",
+          "bare query / prefix block / HSIC",
+          "bare query / query block / dCor",
+          "bare query / query block / HSIC",
+          "bare query / within-prefix shuffle / dCor",
+          "bare query / within-prefix shuffle / HSIC",
+          "full context / prefix block / dCor",
+          "full context / prefix block / HSIC",
+          "full context / query block / dCor",
+          "full context / query block / HSIC",
+          "full context / within-prefix shuffle / dCor",
+          "full context / within-prefix shuffle / HSIC",
+          "prefix end / prefix block / dCor",
+          "prefix end / prefix block / HSIC",
+          "prefix end / query block / dCor",
+          "prefix end / query block / HSIC",
+          "prefix end / within-prefix shuffle / dCor",
+          "prefix end / within-prefix shuffle / HSIC",
+          "prefix-averaged / prefix block / dCor",
+          "prefix-averaged / prefix block / HSIC",
+          "prefix-averaged / query block / dCor",
+          "prefix-averaged / query block / HSIC",
+          "prefix-averaged / within-prefix shuffle / dCor",
+          "prefix-averaged / within-prefix shuffle / HSIC",
+          "stitch / prefix block / dCor",
+          "stitch / prefix block / HSIC",
+          "stitch / query block / dCor",
+          "stitch / query block / HSIC",
+          "stitch / within-prefix shuffle / dCor",
+          "stitch / within-prefix shuffle / HSIC"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      }
+    ]
+  }
+}

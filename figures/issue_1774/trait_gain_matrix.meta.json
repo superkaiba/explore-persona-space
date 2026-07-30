@@ -1,0 +1,87 @@
+{
+  "commit": "f342cb4161",
+  "created": "2026-07-29T08:05:56Z",
+  "figsize": [
+    8.0,
+    3.6
+  ],
+  "points": [
+    {
+      "category": "Diagonal",
+      "Energy (\u2016\u00b7\u2016\u00b2)": 0.08600392658465544,
+      "_kind": "bar"
+    },
+    {
+      "category": "Off-diagonal",
+      "Energy (\u2016\u00b7\u2016\u00b2)": 0.05387458200923509,
+      "_kind": "bar"
+    },
+    {
+      "category": "Out-of-span",
+      "Energy (\u2016\u00b7\u2016\u00b2)": 0.9960879863976771,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 3,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Trait gain matrix G",
+        "annotations": [
+          "0.252",
+          "0.157",
+          "-0.076",
+          "0.047",
+          "0.077",
+          "0.050",
+          "0.019",
+          "0.135",
+          "0.129"
+        ],
+        "xticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ]
+      },
+      {
+        "title_left": "Where trait mass goes under W",
+        "ylabel": "Energy (\u2016\u00b7\u2016\u00b2)",
+        "xticklabels": [
+          "Diagonal",
+          "Off-diagonal",
+          "Out-of-span"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "ylabel": "Q\u1d40 W Q",
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ]
+      }
+    ]
+  }
+}

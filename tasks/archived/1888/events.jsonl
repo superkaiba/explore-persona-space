@@ -1,0 +1,3 @@
+{"ts": "2026-07-30T18:37:55Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-07-30T18:38:30Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived", "note": "duplicate of open #1883 (same-bug-different-wording, caught by the #1502 open-sibling advisory at filing): #1883's :(glob)tests/test_issue_skill_*.py skill-pin family is a strict superset of this filing's single-test fix. Archived per the workflow-fix-on-bug post-hoc remedy."}
+{"ts": "2026-07-30T18:38:35Z", "kind": "epm:progress", "version": 1, "by": "spawn_session-stop", "note": "deliberate-stop pid=n/a target=happy-session:cms7uwilsemdjwc0uxz0eihl1 reason=operator stop via spawn_session.py stop"}

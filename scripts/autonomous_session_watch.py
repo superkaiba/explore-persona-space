@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-33 passes ("pass" = one top-level per-tick action block in ``main()``'s
+34 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -11,7 +11,8 @@ IDENTIFIERS (cross-referenced throughout this docstring), NOT execution
 order. The per-tick execution order is: 1 (VM disk) -> 15 (data-disk) ->
 16 (happy-patch) -> 12 (CPU-guard) -> 17 (triage-observer) ->
 18 (verdict-disagree) -> 26 (root-draft) -> 27 (registry-drift) ->
-31 (codex-outage) -> 29 (completed-unmerged) -> 32 (partial-bundle) ->
+34 (stash-rescue) -> 31 (codex-outage) -> 29 (completed-unmerged) ->
+32 (partial-bundle) ->
 33 (unfolded-round) -> 30 (urgent-park router) -> 19 (VM-ledger reap) ->
 20 (program-orchestrator
 recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
@@ -765,6 +766,44 @@ adding a pass means adding a numbered item here AND bumping the digit:
    ``EPM_DISABLE_UNFOLDED_ROUND_PASS=1``; ``--unfolded-round-only`` runs
    just this pass (pair with ``--dry-run`` for a live smoke).
    (:func:`unfolded_round_pass`.)
+34. **Stash/rescue-backlog audit pass (#1806; ESCALATE-ONLY;
+   daemon-INDEPENDENT; runs right after pass 27 registry-drift).**
+   Once-daily-throttled (``EPM_STASH_RESCUE_INTERVAL_HOURS``, 24h)
+   recurring audit of the shared repo root's accumulated ``git stash``
+   backlog + the ``~/.task-workflow/root-sync-rescue/`` rescue-entry
+   backlog (verified live 2026-07-30: 23 stashes, oldest May 2026; 66
+   rescue entries) — #1751 surfaces NEW ``stash: KEPT`` events at
+   Step 10d merge sites only; nothing recurring read the existing
+   backlog. Collection is READ-ONLY: one ``git -C PROJECT_ROOT stash
+   list --format=%ct%x09%gs`` subprocess (each line parsed on the FIRST
+   tab only — ``%gs`` subjects can carry embedded tabs; identity =
+   ``(ct, subject)``, deliberately NOT the positional ``stash@{N}``
+   selector, which renumbers on every push/pop and would churn the
+   fingerprint) + one ``os.scandir`` of the rescue dir (dirs AND loose
+   files, e.g. ``stash-*.patch``; identity = entry name). Entries
+   younger than ``EPM_STASH_RESCUE_MIN_AGE_DAYS`` (7d) are excluded —
+   sync_repo_root autostashes live seconds, and #1751's Step 10d duty
+   covers the fresh window. ENOENT on the rescue dir ITSELF is a
+   LEGITIMATE EMPTY rescue set (the dir is lazily created by
+   sync_repo_root.py and may be deleted after a completed #1736
+   triage); every OTHER OSError / git rc != 0 raises to the fail-soft
+   arm (stderr + one error sidecar row per throttle interval — the
+   attempt stamp is saved BEFORE collecting) and is NEVER read as
+   "backlog cleared" (no fp reset on error). NO double-read confirm gap
+   (durable files, not in-flight mutations — the deliberate delta vs
+   pass 27). Non-empty backlog fingerprints (sha256[:12] over the
+   sorted identity lists + counts), appends a row to the dedicated
+   sidecar (``.claude/cache/stash-rescue-audit-events.jsonl``), and
+   fires ONE deduped fail-soft push (counts, oldest stash age, the
+   read-only review commands, companion triage task #1736, "nothing was
+   changed automatically") on fingerprint change or a 168h re-alert TTL
+   (``EPM_STASH_RESCUE_REALERT_HOURS``). NEVER mutates git or
+   filesystem state (no ``stash pop/drop/apply``, no ``rm``), posts NO
+   task markers; triage stays human (#1736). State singleton
+   ``~/.eps-autonomous/stash-rescue-audit.json``. Kill switch
+   ``EPM_DISABLE_STASH_RESCUE_AUDIT=1``; ``--stash-rescue-audit-only``
+   runs just this pass (pair with ``--dry-run`` for a zero-write live
+   smoke). (:func:`stash_rescue_audit_pass`.)
 
 
 Why each pass exists
@@ -7412,6 +7451,308 @@ def registry_drift_pass(dry_run: bool) -> bool:
         # throttled by the attempt stamp saved before the collect).
         _append_registry_drift_sidecar(
             {"kind": "registry-drift-error", "error": str(exc)[:500]}, dry_run
+        )
+        return False
+
+
+# ─── Stash/rescue-backlog audit pass (task #1806) ─────────────────────────────
+#
+# WHY: #1751 surfaces NEW `stash: KEPT` events at Step 10d merge sites only.
+# The shared repo root's EXISTING `git stash` backlog (verified live
+# 2026-07-30: 23 entries, oldest May 2026) and the accumulated
+# ~/.task-workflow/root-sync-rescue/ rescue entries (66 live) have NO
+# recurring surfacing mechanism — 4 independent transcript miners flagged the
+# class on 2026-07-28. This pass is the recurring watcher-side sweep of that
+# whole backlog, cloning the registry_drift_pass (#1439) shape: once-daily
+# throttle, fingerprint dedup, weekly re-alert, dedicated sidecar, fail-soft.
+# ESCALATE-ONLY is a hard invariant: the pass NEVER mutates git or filesystem
+# state (no `stash pop/drop/apply`, no `rm`) — collection is one read-only
+# `git stash list --format=...` + one os.scandir of the rescue dir; triage
+# stays human (companion task #1736 holds the triage decision).
+#
+# Two deliberate deltas vs the registry-drift template: (a) NO double-read
+# confirm gap — stash/rescue entries are durable files, not in-flight
+# mutations (sync_repo_root autostashes live seconds — created + popped
+# inside one recovery — and age past the min-age gate below; #1751's Step 10d
+# duty covers the fresh 0-7-day window); (b) ENOENT on the rescue dir ITSELF
+# is a LEGITIMATE EMPTY rescue set, never a fail-soft error — the dir is
+# lazily created by sync_repo_root.py (RESCUE_ROOT) and may be absent on a
+# fresh host or deleted after a completed #1736 triage; treating it as an
+# error would permanently blind the whole pass (stash half included) and make
+# the recovered/fp-reset branch unreachable after triage. Every OTHER OSError
+# and any git rc != 0 raises to the fail-soft arm and is NEVER read as
+# "backlog cleared" (no fp reset on error).
+
+# Throttle: the audit is cheap (one git subprocess + one dir scan, <100 ms)
+# but once/day is the mandated cadence — backlog needs SURFACING, not
+# tick-rate monitoring. Env EPM_STASH_RESCUE_INTERVAL_HOURS, read at CALL
+# time (registry-drift precedent); lo=0.0 lets a live smoke force a run.
+STASH_RESCUE_INTERVAL_HOURS = 24.0
+# Re-alert TTL for an UNCHANGED fingerprint: weekly — a stash backlog is
+# inert until a triage acts on it, so the registry-drift weekly cadence
+# applies. Env EPM_STASH_RESCUE_REALERT_HOURS, read at call time.
+STASH_RESCUE_REALERT_HOURS = 168.0
+# Min age before an entry counts as backlog: sync_repo_root autostashes live
+# seconds; a stranded one ages past this gate, and #1751's Step 10d KEPT-stash
+# duty covers the fresh window. Env EPM_STASH_RESCUE_MIN_AGE_DAYS.
+STASH_RESCUE_MIN_AGE_DAYS = 7.0
+
+
+def _stash_rescue_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_STASH_RESCUE_AUDIT`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_registry_drift_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_STASH_RESCUE_AUDIT", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _stash_rescue_sidecar_path() -> Path:
+    """DEDICATED stash/rescue-backlog event stream (own stream for clean grep
+    — the registry-drift / root-draft sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "stash-rescue-audit-events.jsonl"
+
+
+def _stash_rescue_state_path() -> Path:
+    """Singleton throttle+dedup state (deliberately NOT a per-issue GC
+    target): ``{"last_run_ts": <float>, "fp": <str|None>,
+    "last_alert_ts": <float>}``."""
+    return AUTONOMOUS_REGISTRY_DIR / "stash-rescue-audit.json"
+
+
+def _stash_rescue_rescue_root() -> Path:
+    """The sync_repo_root.py rescue root (lazily created there — RESCUE_ROOT;
+    honors the same ``EPM_ROOT_SYNC_RESCUE_ROOT`` override so both tools
+    always look at the same tree). Read at call time for testability."""
+    return Path(
+        os.environ.get(
+            "EPM_ROOT_SYNC_RESCUE_ROOT",
+            str(Path.home() / ".task-workflow" / "root-sync-rescue"),
+        )
+    )
+
+
+def _load_stash_rescue_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards (mirrors :func:`_load_registry_drift_state`)."""
+    path = _stash_rescue_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_stash_rescue_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the stash/rescue throttle/dedup state
+    (fail-soft; mirrors :func:`_save_registry_drift_state`); ``dry_run``
+    performs zero writes."""
+    if dry_run:
+        print(f"  [dry-run] would save stash-rescue state (fp={state.get('fp')})")
+        return
+    dest = _stash_rescue_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  stash-rescue: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_stash_rescue_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the stash/rescue sidecar (fail-soft). A ``ts``
+    is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_registry_drift_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append stash-rescue sidecar row: {line[:160]}")
+        return
+    dest = _stash_rescue_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  stash-rescue: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _collect_stash_rescue_backlog(min_age_s: float, now: float) -> dict:
+    """One READ-ONLY backlog snapshot: aged repo-root stash entries + aged
+    rescue-dir entries. Raises on failure — the pass's top-level guard owns
+    fail-soft (a failed ``git stash list`` must NEVER read as "backlog
+    cleared").
+
+    Returns ``{"stashes": [(ct, subject), ...], "rescues": [(name, mtime),
+    ...]}``. Stash identity = ``(ct, subject)`` — deliberately NOT the
+    positional ``stash@{N}`` selector, which renumbers on every push/pop and
+    would churn the fingerprint. Each line is parsed on the FIRST tab only
+    (``%gs`` subjects can carry user text with embedded tabs). Rescue
+    identity = entry name (dirs AND loose files, e.g. ``stash-*.patch``).
+    ENOENT on the rescue dir ITSELF returns an EMPTY rescue list (legitimate
+    absence — lazily created; see the pass header); every OTHER OSError
+    raises."""
+    proc = subprocess.run(  # fixed read-only argv — never a mutating stash verb
+        ["git", "-C", str(PROJECT_ROOT), "stash", "list", "--format=%ct%x09%gs"],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"git stash list failed rc={proc.returncode}: {proc.stderr.strip()[:200]}"
+        )
+    stashes: list[tuple[int, str]] = []
+    for line in proc.stdout.splitlines():
+        if not line.strip():
+            continue
+        parts = line.split("\t", 1)  # FIRST tab only — subjects can carry tabs
+        ct = int(parts[0])  # non-integer ct = garbled output -> fail-soft arm
+        subject = parts[1] if len(parts) > 1 else ""
+        if now - ct > min_age_s:
+            stashes.append((ct, subject))
+    rescues: list[tuple[str, float]] = []
+    root = _stash_rescue_rescue_root()
+    try:
+        entries = list(os.scandir(root))
+    except FileNotFoundError:
+        entries = []  # legitimate EMPTY rescue set — dir is lazily created
+    for entry in entries:
+        mtime = entry.stat(follow_symlinks=False).st_mtime
+        if now - mtime > min_age_s:
+            rescues.append((entry.name, mtime))
+    stashes.sort()
+    rescues.sort()
+    return {"stashes": stashes, "rescues": rescues}
+
+
+def _stash_rescue_fingerprint(collected: dict) -> str:
+    """sha256[:12] (the wf-fix fp shape) over the sorted identity lists +
+    counts. Rescue mtimes are attributes, not identity — a bare ``touch``
+    never churns the fp; adding/removing any entry does."""
+    stash_ids = sorted([int(ct), str(subject)] for ct, subject in collected["stashes"])
+    rescue_ids = sorted(str(name) for name, _mtime in collected["rescues"])
+    payload = json.dumps(
+        {
+            "stashes": stash_ids,
+            "rescues": rescue_ids,
+            "counts": [len(stash_ids), len(rescue_ids)],
+        }
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
+
+
+def decide_stash_rescue_alert(fp: str, state: dict, now: float, realert_s: float) -> bool:
+    """Pure fire decision: True iff ``fp`` differs from the stored fp (the
+    backlog set CHANGED — incl. first appearance and any recomposition) OR
+    the last alert is STRICTLY older than ``realert_s`` (bounded weekly
+    re-surface of an unchanged backlog). ``isinstance`` guards on state
+    fields (the registry-drift corrupt-state contract: garbled state degrades
+    to fire-as-if-unalerted)."""
+    prev_fp = state.get("fp")
+    if not isinstance(prev_fp, str) or prev_fp != fp:
+        return True
+    last_alert = state.get("last_alert_ts")
+    if not isinstance(last_alert, int | float):
+        return True
+    return (now - last_alert) > realert_s
+
+
+def stash_rescue_audit_pass(dry_run: bool) -> bool:
+    """ESCALATE-ONLY once-daily audit of the shared repo root's ``git stash``
+    backlog + the ``~/.task-workflow/root-sync-rescue/`` rescue entries
+    (#1806). NEVER mutates git or filesystem state (no ``stash
+    pop/drop/apply``, no ``rm``), posts NO task markers, writes ONLY its
+    state singleton + sidecar; triage stays the human-owned companion task
+    #1736. NO double-read confirm gap (durable files, not in-flight
+    mutations — the deliberate delta vs :func:`registry_drift_pass`).
+    Fail-soft: a collect exception logs stderr + one error sidecar row per
+    throttle interval (the attempt stamp is saved BEFORE collecting) and is
+    NEVER read as "backlog cleared" (no fp write on error), never crashes
+    the tick. Daemon-independent (one read-only git subprocess + one dir
+    scan). Returns True when a push fired this run."""
+    if not _stash_rescue_enabled():
+        print("  stash-rescue: disabled via EPM_DISABLE_STASH_RESCUE_AUDIT; skipping")
+        return False
+    try:
+        now = time.time()
+        interval_h = _env_float(
+            "EPM_STASH_RESCUE_INTERVAL_HOURS", STASH_RESCUE_INTERVAL_HOURS, lo=0.0, hi=720.0
+        )
+        realert_h = _env_float(
+            "EPM_STASH_RESCUE_REALERT_HOURS", STASH_RESCUE_REALERT_HOURS, lo=1.0, hi=2160.0
+        )
+        min_age_d = _env_float(
+            "EPM_STASH_RESCUE_MIN_AGE_DAYS", STASH_RESCUE_MIN_AGE_DAYS, lo=0.0, hi=365.0
+        )
+        state = _load_stash_rescue_state()
+        last = state.get("last_run_ts")
+        if isinstance(last, int | float) and (now - last) < interval_h * 3600.0:
+            return False  # throttled — silent (would fire 143x/day otherwise)
+        state["last_run_ts"] = now
+        # Stamp the ATTEMPT before collecting: a crashing collect is then
+        # bounded to one error sidecar row per throttle interval instead of
+        # spamming every 10-min tick.
+        _save_stash_rescue_state(state, dry_run)
+        collected = _collect_stash_rescue_backlog(min_age_d * 86400.0, now)
+        stashes, rescues = collected["stashes"], collected["rescues"]
+        if not (stashes or rescues):
+            # Reached ONLY on a clean collect (incl. the legitimate
+            # absent-rescue-dir case) — an error raised to the fail-soft arm
+            # can never take this branch, so the fp reset is trustworthy.
+            if state.get("fp"):
+                print("  stash-rescue: recovered — previously-flagged backlog is gone")
+            _save_stash_rescue_state({**state, "fp": None}, dry_run)
+            return False
+        fp = _stash_rescue_fingerprint(collected)
+        fire = decide_stash_rescue_alert(fp, state, now, realert_h * 3600.0)
+        oldest_stash_age_d = max((now - ct for ct, _s in stashes), default=0.0) / 86400.0
+        oldest_rescue_age_d = max((now - mt for _n, mt in rescues), default=0.0) / 86400.0
+        _append_stash_rescue_sidecar(
+            {
+                "kind": "stash-rescue-backlog",
+                "fingerprint": fp,
+                "n_stashes": len(stashes),
+                "n_rescues": len(rescues),
+                "oldest_stash_age_days": round(oldest_stash_age_d, 1),
+                "oldest_rescue_age_days": round(oldest_rescue_age_d, 1),
+                # Sample identities, capped — the full set keys the fp only.
+                "stashes": [[ct, subj[:120]] for ct, subj in stashes[:20]],
+                "rescues": [name for name, _mt in rescues[:20]],
+                # `pushed` records the fire DECISION (dedup bookkeeping), not
+                # delivery — _telegram_push is fail-soft and sent != seen.
+                "pushed": fire,
+            },
+            dry_run,
+        )
+        print(
+            f"  stash-rescue: {len(stashes)} aged stash(es) "
+            f"(oldest {oldest_stash_age_d:.0f}d) + {len(rescues)} rescue entr(y/ies)"
+        )
+        if fire:
+            _telegram_push(
+                f"STASH/RESCUE backlog (escalate-only #1806 pass): {len(stashes)} "
+                f"git stash entr(y/ies) on the shared repo root (oldest "
+                f"{oldest_stash_age_d:.0f}d) + {len(rescues)} rescue entr(y/ies) "
+                f"under ~/.task-workflow/root-sync-rescue/. Review (read-only): "
+                f"`git stash list`, `ls ~/.task-workflow/root-sync-rescue/`. "
+                f"Triage decision is human — companion task #1736. Nothing was "
+                f"changed automatically.",
+                dry_run,
+            )
+        _save_stash_rescue_state(
+            {**state, "fp": fp, **({"last_alert_ts": now} if fire else {})}, dry_run
+        )
+        return fire
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  stash-rescue: pass failed (fail-soft): {exc}", file=sys.stderr)
+        # Error row only — NO fp write (the next in-interval tick stays
+        # throttled by the attempt stamp saved before the collect; an error
+        # is NEVER interpreted as "backlog cleared").
+        _append_stash_rescue_sidecar(
+            {"kind": "stash-rescue-error", "error": str(exc)[:500]}, dry_run
         )
         return False
 
@@ -28696,6 +29037,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "--dry-run for a zero-write live smoke.",
     )
     parser.add_argument(
+        "--stash-rescue-audit-only",
+        action="store_true",
+        help="run ONLY the stash/rescue-backlog audit pass (#1806, "
+        "escalate-only — the shared repo root's aged git-stash backlog + "
+        "~/.task-workflow/root-sync-rescue/ entries; never mutates git or "
+        "filesystem state) and exit; skip every other pass. "
+        "Daemon-independent; pair with --dry-run for a zero-write live "
+        "smoke.",
+    )
+    parser.add_argument(
         "--completed-unmerged-only",
         action="store_true",
         help="run ONLY the completed-unmerged pass (#1564 flag + #1653 "
@@ -28870,6 +29221,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         registry_drift_pass(args.dry_run)
         return 0
 
+    # --stash-rescue-audit-only mirrors --registry-drift-only: the pass is
+    # daemon-independent (one read-only git subprocess + one dir scan + its
+    # own state file), so run it alone. Pair with --dry-run for a zero-write
+    # live smoke.
+    if args.stash_rescue_audit_only:
+        stash_rescue_audit_pass(args.dry_run)
+        return 0
+
     # --completed-unmerged-only mirrors --registry-drift-only: the FLAG half
     # is daemon-independent (registry + events.jsonl reads + read-only
     # gh/git probes; marker posts go via the task.py subprocess), and the
@@ -29030,6 +29389,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # --repair`; NEVER repairs, posts NO task markers. Daemon-independent,
     # so it runs on a daemon outage too.
     registry_drift_pass(args.dry_run)
+
+    # Stash/rescue-backlog audit (#1806): once-daily ESCALATE-ONLY audit of
+    # the shared repo root's aged git-stash backlog + the
+    # ~/.task-workflow/root-sync-rescue/ entries (the class #1751's Step 10d
+    # KEPT-stash duty surfaces only for NEW events). One read-only
+    # `git stash list` + one rescue-dir scan; sidecar + ONE deduped push
+    # naming the read-only review commands + companion triage task #1736;
+    # NEVER mutates git/filesystem state, posts NO task markers.
+    # Daemon-independent, so it runs on a daemon outage too.
+    stash_rescue_audit_pass(args.dry_run)
 
     # Codex quota-outage alert (#1691): ESCALATE-ONLY audit sibling of the
     # #1204 pre-spawn sentinel check. Alerts once per Codex quota-outage

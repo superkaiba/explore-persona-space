@@ -1,0 +1,440 @@
+{
+  "carrier_sentence": "The old painting hung crookedly on the wall.",
+  "concept_math_conditions": [
+    "concept",
+    "math",
+    "concept_first",
+    "math_first"
+  ],
+  "concept_concept_conditions": [
+    "a_only",
+    "b_only",
+    "a_first",
+    "b_first"
+  ],
+  "concept_pairs": [
+    [
+      "citrus",
+      "farm"
+    ],
+    [
+      "planets",
+      "instruments"
+    ],
+    [
+      "vegetables",
+      "ocean"
+    ],
+    [
+      "days",
+      "body"
+    ],
+    [
+      "weather",
+      "desserts"
+    ],
+    [
+      "metals",
+      "insects"
+    ],
+    [
+      "months",
+      "trees"
+    ],
+    [
+      "chess",
+      "kitchen"
+    ],
+    [
+      "gems",
+      "boats"
+    ],
+    [
+      "cards",
+      "footwear"
+    ]
+  ],
+  "pairs": [
+    {
+      "key": "citrus",
+      "concept": "citrus fruits",
+      "concept_words": [
+        "orange",
+        "lemon",
+        "lime",
+        "grapefruit",
+        "tangerine",
+        "citrus",
+        "mandarin",
+        "clementine"
+      ],
+      "base": 3,
+      "exp": 2,
+      "sub": 2
+    },
+    {
+      "key": "planets",
+      "concept": "planets",
+      "concept_words": [
+        "Mercury",
+        "Venus",
+        "Earth",
+        "Mars",
+        "Jupiter",
+        "Saturn",
+        "Uranus",
+        "Neptune",
+        "Pluto"
+      ],
+      "base": 2,
+      "exp": 3,
+      "sub": 1
+    },
+    {
+      "key": "instruments",
+      "concept": "musical instruments",
+      "concept_words": [
+        "piano",
+        "guitar",
+        "violin",
+        "drum",
+        "flute",
+        "trumpet",
+        "cello",
+        "harp",
+        "saxophone"
+      ],
+      "base": 3,
+      "exp": 2,
+      "sub": 4
+    },
+    {
+      "key": "farm",
+      "concept": "farm animals",
+      "concept_words": [
+        "cow",
+        "pig",
+        "horse",
+        "sheep",
+        "goat",
+        "chicken",
+        "duck",
+        "donkey",
+        "rooster"
+      ],
+      "base": 2,
+      "exp": 3,
+      "sub": 5
+    },
+    {
+      "key": "months",
+      "concept": "months of the year",
+      "concept_words": [
+        "January",
+        "February",
+        "March",
+        "April",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+      ],
+      "base": 2,
+      "exp": 2,
+      "sub": 1
+    },
+    {
+      "key": "days",
+      "concept": "days of the week",
+      "concept_words": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "base": 3,
+      "exp": 2,
+      "sub": 1
+    },
+    {
+      "key": "chess",
+      "concept": "chess pieces",
+      "concept_words": [
+        "pawn",
+        "rook",
+        "knight",
+        "bishop",
+        "queen",
+        "king",
+        "knights",
+        "bishops",
+        "pawns"
+      ],
+      "base": 2,
+      "exp": 3,
+      "sub": 2
+    },
+    {
+      "key": "metals",
+      "concept": "precious metals",
+      "concept_words": [
+        "gold",
+        "silver",
+        "platinum",
+        "copper",
+        "bronze",
+        "iron",
+        "steel"
+      ],
+      "base": 3,
+      "exp": 2,
+      "sub": 3
+    },
+    {
+      "key": "gems",
+      "concept": "gemstones",
+      "concept_words": [
+        "diamond",
+        "ruby",
+        "emerald",
+        "sapphire",
+        "pearl",
+        "opal",
+        "jade",
+        "topaz",
+        "gems",
+        "jewel"
+      ],
+      "base": 2,
+      "exp": 3,
+      "sub": 4
+    },
+    {
+      "key": "weather",
+      "concept": "weather conditions",
+      "concept_words": [
+        "rain",
+        "snow",
+        "wind",
+        "fog",
+        "hail",
+        "thunder",
+        "lightning",
+        "cloudy",
+        "sunny"
+      ],
+      "base": 3,
+      "exp": 2,
+      "sub": 5
+    },
+    {
+      "key": "body",
+      "concept": "body parts",
+      "concept_words": [
+        "arm",
+        "leg",
+        "hand",
+        "foot",
+        "head",
+        "neck",
+        "shoulder",
+        "elbow",
+        "knee",
+        "finger",
+        "eye",
+        "ear",
+        "nose"
+      ],
+      "base": 2,
+      "exp": 3,
+      "sub": 6
+    },
+    {
+      "key": "vegetables",
+      "concept": "vegetables",
+      "concept_words": [
+        "carrot",
+        "potato",
+        "onion",
+        "tomato",
+        "corn",
+        "bean",
+        "lettuce",
+        "cabbage",
+        "pepper",
+        "broccoli",
+        "spinach"
+      ],
+      "base": 3,
+      "exp": 2,
+      "sub": 6
+    },
+    {
+      "key": "cards",
+      "concept": "card suits",
+      "concept_words": [
+        "hearts",
+        "spades",
+        "clubs",
+        "diamonds",
+        "ace",
+        "joker"
+      ],
+      "base": 2,
+      "exp": 2,
+      "sub": 2
+    },
+    {
+      "key": "ocean",
+      "concept": "ocean creatures",
+      "concept_words": [
+        "whale",
+        "shark",
+        "dolphin",
+        "octopus",
+        "squid",
+        "jellyfish",
+        "crab",
+        "lobster",
+        "seal",
+        "fish"
+      ],
+      "base": 2,
+      "exp": 4,
+      "sub": 7
+    },
+    {
+      "key": "trees",
+      "concept": "types of trees",
+      "concept_words": [
+        "oak",
+        "pine",
+        "maple",
+        "willow",
+        "cedar",
+        "elm",
+        "spruce",
+        "redwood"
+      ],
+      "base": 2,
+      "exp": 4,
+      "sub": 8
+    },
+    {
+      "key": "kitchen",
+      "concept": "kitchen utensils",
+      "concept_words": [
+        "spoon",
+        "fork",
+        "knife",
+        "whisk",
+        "spatula",
+        "ladle",
+        "bowl",
+        "plate",
+        "pan"
+      ],
+      "base": 2,
+      "exp": 4,
+      "sub": 9
+    },
+    {
+      "key": "emotions",
+      "concept": "emotions",
+      "concept_words": [
+        "joy",
+        "anger",
+        "fear",
+        "sadness",
+        "disgust",
+        "surprise",
+        "grief",
+        "shame",
+        "happy",
+        "angry"
+      ],
+      "base": 3,
+      "exp": 2,
+      "sub": 7
+    },
+    {
+      "key": "boats",
+      "concept": "types of boats",
+      "concept_words": [
+        "canoe",
+        "kayak",
+        "yacht",
+        "sailboat",
+        "ferry",
+        "raft",
+        "ship",
+        "boat",
+        "vessel"
+      ],
+      "base": 2,
+      "exp": 3,
+      "sub": 7
+    },
+    {
+      "key": "insects",
+      "concept": "insects",
+      "concept_words": [
+        "ant",
+        "bee",
+        "wasp",
+        "beetle",
+        "butterfly",
+        "moth",
+        "fly",
+        "mosquito",
+        "spider",
+        "cricket"
+      ],
+      "base": 2,
+      "exp": 2,
+      "sub": 3
+    },
+    {
+      "key": "desserts",
+      "concept": "desserts",
+      "concept_words": [
+        "cake",
+        "pie",
+        "cookie",
+        "brownie",
+        "pudding",
+        "chocolate",
+        "donut",
+        "tart",
+        "candy"
+      ],
+      "base": 3,
+      "exp": 2,
+      "sub": 8
+    },
+    {
+      "key": "footwear",
+      "concept": "types of footwear",
+      "concept_words": [
+        "shoe",
+        "boot",
+        "sandal",
+        "sneaker",
+        "slipper",
+        "heel",
+        "loafer",
+        "sock",
+        "boots"
+      ],
+      "base": 2,
+      "exp": 3,
+      "sub": 3
+    }
+  ]
+}

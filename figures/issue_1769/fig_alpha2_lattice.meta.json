@@ -1,0 +1,148 @@
+{
+  "commit": "2e382684bf",
+  "created": "2026-07-29T17:04:09Z",
+  "figsize": [
+    8.5,
+    4.2
+  ],
+  "points": [
+    {
+      "Behavior class": -0.2333333333333333,
+      "Decode fraction f_d\n(\u0394_decode / \u0394_both, 95 % CI)": 1.0078284078392385,
+      "error": 0.024314565055960413,
+      "series": "Raw (all draws)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Behavior class": 0.0,
+      "Decode fraction f_d\n(\u0394_decode / \u0394_both, 95 % CI)": 1.0264366957424855,
+      "error": 0.032497570631772776,
+      "series": "Exclusion (drop intruded)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Behavior class": 0.2333333333333333,
+      "Decode fraction f_d\n(\u0394_decode / \u0394_both, 95 % CI)": 1.0717484839796036,
+      "error": 0.15136391100917063,
+      "series": "Zeroing (score intruded = 0)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Behavior class": 0.7666666666666667,
+      "Decode fraction f_d\n(\u0394_decode / \u0394_both, 95 % CI)": 0.928127847716764,
+      "error": 0.11031420215347182,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Behavior class": 1.0,
+      "Decode fraction f_d\n(\u0394_decode / \u0394_both, 95 % CI)": 0.9296439636841175,
+      "error": 0.11062854799664817,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Behavior class": 1.2333333333333334,
+      "Decode fraction f_d\n(\u0394_decode / \u0394_both, 95 % CI)": 0.9360302429442396,
+      "error": 0.12981885016822492,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Behavior class": 1.7666666666666666,
+      "Decode fraction f_d\n(\u0394_decode / \u0394_both, 95 % CI)": 0.8902888573636921,
+      "error": 0.09403805409993082,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Behavior class": 2.0,
+      "Decode fraction f_d\n(\u0394_decode / \u0394_both, 95 % CI)": 0.8339491823361933,
+      "error": 0.12822963043155955,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "Behavior class": 2.2333333333333334,
+      "Decode fraction f_d\n(\u0394_decode / \u0394_both, 95 % CI)": 0.7683139213610127,
+      "error": 0.23487217621217393,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Behavior class": 0.0,
+      "Decode fraction f_d\n(\u0394_decode / \u0394_both, 95 % CI)": 0.75,
+      "series": "Decode-driven threshold (0.75)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Behavior class": 1.0,
+      "Decode fraction f_d\n(\u0394_decode / \u0394_both, 95 % CI)": 0.75,
+      "series": "Decode-driven threshold (0.75)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Behavior class": 0.0,
+      "Decode fraction f_d\n(\u0394_decode / \u0394_both, 95 % CI)": 0.25,
+      "series": "Prefill-negligible threshold (0.25)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Behavior class": 1.0,
+      "Decode fraction f_d\n(\u0394_decode / \u0394_both, 95 % CI)": 0.25,
+      "series": "Prefill-negligible threshold (0.25)",
+      "_kind": "line",
+      "_group": 10
+    }
+  ],
+  "n_series": 11,
+  "total_points": 13,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "f_d at \u03b1=2 under three CJK-intrusion treatments\n(question-cluster bootstrap B=2000, N=20 questions)",
+        "xlabel": "Behavior class",
+        "ylabel": "Decode fraction f_d\n(\u0394_decode / \u0394_both, 95 % CI)",
+        "legend_labels": [
+          "Decode-driven threshold (0.75)",
+          "Prefill-negligible threshold (0.25)",
+          "Raw (all draws)",
+          "Exclusion (drop intruded)",
+          "Zeroing (score intruded = 0)"
+        ],
+        "xticklabels": [
+          "Scheming",
+          "Sycophancy",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ]
+      }
+    ],
+    "series": [
+      "Decode-driven threshold (0.75)",
+      "Prefill-negligible threshold (0.25)",
+      "Raw (all draws)",
+      "Exclusion (drop intruded)",
+      "Zeroing (score intruded = 0)"
+    ]
+  }
+}

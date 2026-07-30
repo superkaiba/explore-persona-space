@@ -1,0 +1,144 @@
+{
+  "commit": "29d3a0139e",
+  "created": "2026-07-30T18:53:14Z",
+  "figsize": [
+    7.5,
+    4.0
+  ],
+  "points": [
+    {
+      "ridge held-out $R^2$": 0.059577,
+      "y": 0.11915465941177317,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ridge held-out $R^2$": 0.044572,
+      "y": 0.0891440181667621,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ridge held-out $R^2$": 0.048686,
+      "y": 0.0973722230933175,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ridge held-out $R^2$": 0.053202,
+      "y": 0.10640494996470751,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ridge held-out $R^2$": 0.000293,
+      "y": 0.0005864899329379725,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ridge held-out $R^2$": 0.002757,
+      "y": 0.0055144372293775,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ridge held-out $R^2$": 0.067434,
+      "y": 0.13486761792269275,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ridge held-out $R^2$": 0.062938,
+      "y": 0.12587650757504887,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ridge held-out $R^2$": 0.183683,
+      "y": 0.3673660367496828,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ridge held-out $R^2$": 0.222768,
+      "y": 0.4455369678157678,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ridge held-out $R^2$": 0.191186,
+      "y": 0.38237123175690513,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ridge held-out $R^2$": 0.210846,
+      "y": 0.42169255161684105,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ridge held-out $R^2$": 0.087871,
+      "y": 0.17574288252303594,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ridge held-out $R^2$": 0.075074,
+      "y": 0.15014768345938467,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ridge held-out $R^2$": 0.215002,
+      "y": 0.430004425952884,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ridge held-out $R^2$": 0.196919,
+      "y": 0.3938389254541893,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Write predictability from $c_0$ \u2014 ridge, layer 19",
+        "xlabel": "ridge held-out $R^2$",
+        "legend_labels": [
+          "on-policy [op]",
+          "matched-text [tf]"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ],
+        "yticklabels": [
+          "impoliteness pers-con-lr3e5-s42",
+          "impoliteness pers-po-lr1e5-s137",
+          "writing-style pers-con-lr1e5-s137",
+          "sycophancy bare-con-lr1e5-s42",
+          "sycophancy conv-po-lr1e5-s137",
+          "marker pers-po-lr5e6-s137",
+          "impoliteness pers-ft-con-s137",
+          "sycophancy pers-ft-con-s137"
+        ]
+      }
+    ],
+    "series": [
+      "on-policy [op]",
+      "matched-text [tf]"
+    ]
+  }
+}

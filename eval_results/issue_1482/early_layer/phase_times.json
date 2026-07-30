@@ -1,0 +1,28 @@
+{
+  "phases": [
+    {
+      "phase": "pilot",
+      "wall_s": 53.3
+    },
+    {
+      "phase": "capture",
+      "wall_s": 5745.1
+    },
+    {
+      "phase": "upload1",
+      "wall_s": 4332.3
+    },
+    {
+      "phase": "fits",
+      "wall_s": 6366.0
+    },
+    {
+      "phase": "evidence",
+      "wall_s": 170.6
+    },
+    {
+      "phase": "analyze",
+      "wall_s": 30.0
+    }
+  ]
+}

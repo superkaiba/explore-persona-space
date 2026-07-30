@@ -1,0 +1,377 @@
+{
+  "commit": "c6cb2b9a67",
+  "created": "2026-07-29T21:15:44Z",
+  "figsize": [
+    7.8,
+    3.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.10741145454762624,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.09995671997012612,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.09240031951722405,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.08821362002393951,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.10057339494365636,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.09859646590352178,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "per-fold held-out R2\n(48-PC target space)": -7.6385406033160415,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "per-fold held-out R2\n(48-PC target space)": -9.12862633675545,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "per-fold held-out R2\n(48-PC target space)": -8.396128827853598,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "per-fold held-out R2\n(48-PC target space)": -7.94083096734362,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "per-fold held-out R2\n(48-PC target space)": -7.3842269923038995,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "per-fold held-out R2\n(48-PC target space)": -8.643563235161396,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.8584811638718142,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.8377090327772452,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.8417058977941676,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.8541452742932273,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.8556851486007722,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.8463584091602413,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.39366430387464224,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.38819641449315023,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.336480501297752,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.26750203323489674,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.26153532321225303,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.4527102518321757,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.7447991518013964,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.7216494787789927,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.7358386343309182,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.7519139317271637,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.7457909882022992,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.7385070442112305,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.9189864775199726,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.9103430776006058,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.9100704324954432,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.9130539027210067,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.9204427473697443,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.9117587645242675,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.14967588119837405,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.21083266168644677,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.13610493243487787,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.07990749539049136,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.015920103164884014,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.2573273845553107,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.4723406037334319,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.4162669518332184,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.38207614922773736,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.2939610450925272,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.3307080703966573,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "per-fold held-out R2\n(48-PC target space)": 0.4634600513155488,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "per-fold held-out R2\n(48-PC target space)": -0.2504443981438178,
+      "series": "inner-val lambda refit (per fold)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "per-fold held-out R2\n(48-PC target space)": -0.3416817360638913,
+      "series": "inner-val lambda refit (per fold)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "per-fold held-out R2\n(48-PC target space)": -0.2646459364063498,
+      "series": "inner-val lambda refit (per fold)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "per-fold held-out R2\n(48-PC target space)": -0.27525936975964416,
+      "series": "inner-val lambda refit (per fold)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "per-fold held-out R2\n(48-PC target space)": -0.23645551379365037,
+      "series": "inner-val lambda refit (per fold)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "per-fold held-out R2\n(48-PC target space)": -0.31561771428109475,
+      "series": "inner-val lambda refit (per fold)",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 54,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Linear (PRESS ridge) fits: all 6 folds per arm",
+        "ylabel": "per-fold held-out R2\n(48-PC target space)",
+        "legend_labels": [
+          "inner-val lambda refit (per fold)"
+        ],
+        "xticklabels": [
+          "prefix end-state (novel-prefix)",
+          "prefix-averaged context state (novel-prefix)",
+          "prefix + query stitch (novel-prefix)",
+          "prefix + query stitch (novel-query)",
+          "bare query state (novel-prefix)",
+          "full context (linear ref.) (novel-prefix)",
+          "bare query state (novel-query)",
+          "prefix + query stitch (doubly-novel)"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "\u22128",
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2"
+        ]
+      }
+    ],
+    "series": [
+      "inner-val lambda refit (per fold)"
+    ]
+  }
+}

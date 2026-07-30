@@ -1,0 +1,134 @@
+{
+  "commit": "79db347246",
+  "created": "2026-07-30T04:14:12Z",
+  "figsize": [
+    7.2,
+    3.6
+  ],
+  "points": [
+    {
+      "Held-out R\u00b2 (pinned lmsys test-1000, bootstrap 95% CI)": -0.000718,
+      "y": -0.0014355742858680465,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out R\u00b2 (pinned lmsys test-1000, bootstrap 95% CI)": -0.104387,
+      "y": -0.2087747372428106,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out R\u00b2 (pinned lmsys test-1000, bootstrap 95% CI)": 0.034873,
+      "y": 0.06974660685913692,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out R\u00b2 (pinned lmsys test-1000, bootstrap 95% CI)": 0.042972,
+      "y": 0.08594347097710664,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out R\u00b2 (pinned lmsys test-1000, bootstrap 95% CI)": 0.340383,
+      "y": 0.6807654832274969,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Held-out R\u00b2 (pinned lmsys test-1000, bootstrap 95% CI)": -0.012106914205773095,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Held-out R\u00b2 (pinned lmsys test-1000, bootstrap 95% CI)": -0.22254663143016845,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Held-out R\u00b2 (pinned lmsys test-1000, bootstrap 95% CI)": 0.06051585128405644,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Held-out R\u00b2 (pinned lmsys test-1000, bootstrap 95% CI)": 0.0768973358456571,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Held-out R\u00b2 (pinned lmsys test-1000, bootstrap 95% CI)": 0.6679137585389352,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Held-out R\u00b2 (pinned lmsys test-1000, bootstrap 95% CI)": 0.005267400816574202,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Held-out R\u00b2 (pinned lmsys test-1000, bootstrap 95% CI)": -0.19727944944998224,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Held-out R\u00b2 (pinned lmsys test-1000, bootstrap 95% CI)": 0.07538083897867208,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Held-out R\u00b2 (pinned lmsys test-1000, bootstrap 95% CI)": 0.09165050532655344,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Held-out R\u00b2 (pinned lmsys test-1000, bootstrap 95% CI)": 0.6926401613866991,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 15,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "Held-out R\u00b2 (pinned lmsys test-1000, bootstrap 95% CI)",
+        "annotations": [
+          "-0.001",
+          "-0.209",
+          "0.070",
+          "0.086",
+          "0.681"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ],
+        "yticklabels": [
+          "Averaged Jacobian J (raw)",
+          "Identity + learned bias (layer 14)",
+          "Global scalar rescale s\u00b7J (train-fit)",
+          "Per-context rescale of J (oracle ceiling)",
+          "Fitted ridge M\u2032 (50k crossing rows)"
+        ]
+      }
+    ]
+  }
+}

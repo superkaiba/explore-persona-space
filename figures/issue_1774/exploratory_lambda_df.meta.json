@@ -1,0 +1,349 @@
+{
+  "commit": "f342cb4161",
+  "created": "2026-07-29T08:06:08Z",
+  "figsize": [
+    8.4,
+    3.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "PRESS-selected \u03bb (per fold)": 1000.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "PRESS-selected \u03bb (per fold)": 1000.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "PRESS-selected \u03bb (per fold)": 1000.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "PRESS-selected \u03bb (per fold)": 1000.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "PRESS-selected \u03bb (per fold)": 1000.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "PRESS-selected \u03bb (per fold)": 1000.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "PRESS-selected \u03bb (per fold)": 0.001,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "PRESS-selected \u03bb (per fold)": 0.001,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "PRESS-selected \u03bb (per fold)": 0.001,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "PRESS-selected \u03bb (per fold)": 0.001,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "PRESS-selected \u03bb (per fold)": 0.001,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "PRESS-selected \u03bb (per fold)": 0.001,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "PRESS-selected \u03bb (per fold)": 0.001,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "PRESS-selected \u03bb (per fold)": 0.001,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "PRESS-selected \u03bb (per fold)": 0.001,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "PRESS-selected \u03bb (per fold)": 0.001,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "PRESS-selected \u03bb (per fold)": 0.001,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "PRESS-selected \u03bb (per fold)": 0.001,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "PRESS-selected \u03bb (per fold)": 0.001,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "PRESS-selected \u03bb (per fold)": 0.001,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "PRESS-selected \u03bb (per fold)": 0.001,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "PRESS-selected \u03bb (per fold)": 0.001,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "PRESS-selected \u03bb (per fold)": 0.001,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "PRESS-selected \u03bb (per fold)": 0.001,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "df(\u03bb) (per fold)": 1397.6594041667117,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "df(\u03bb) (per fold)": 1384.1485052791527,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "df(\u03bb) (per fold)": 1384.2461520056981,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "df(\u03bb) (per fold)": 1386.7717751348237,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "df(\u03bb) (per fold)": 1392.9135083089593,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "df(\u03bb) (per fold)": 1387.2467497093176,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "df(\u03bb) (per fold)": 414.9999626030158,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "df(\u03bb) (per fold)": 400.9999651868036,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "df(\u03bb) (per fold)": 407.9999641495024,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "df(\u03bb) (per fold)": 419.9999620345815,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "df(\u03bb) (per fold)": 414.9999632596189,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "df(\u03bb) (per fold)": 410.99996308656904,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "df(\u03bb) (per fold)": 1235.9757720950358,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "df(\u03bb) (per fold)": 1240.9705187318086,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "df(\u03bb) (per fold)": 1242.9726831173443,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "df(\u03bb) (per fold)": 1242.9735277204854,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "df(\u03bb) (per fold)": 1241.9744650202865,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "df(\u03bb) (per fold)": 1241.9707175904628,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "df(\u03bb) (per fold)": 784.9991111484505,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "df(\u03bb) (per fold)": 788.9990228920049,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "df(\u03bb) (per fold)": 784.9991019054389,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "df(\u03bb) (per fold)": 785.9991421279215,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "df(\u03bb) (per fold)": 787.9991123361625,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "df(\u03bb) (per fold)": 786.999066523111,
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "\u03bb selection per arm (extended grid)",
+        "ylabel": "PRESS-selected \u03bb (per fold)",
+        "xticklabels": [
+          "Full context",
+          "Prefix end",
+          "Bare query",
+          "Query-averaged prefix"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$"
+        ]
+      },
+      {
+        "title_left": "Effective dof per arm",
+        "ylabel": "df(\u03bb) (per fold)",
+        "xticklabels": [
+          "Full context",
+          "Prefix end",
+          "Bare query",
+          "Query-averaged prefix"
+        ],
+        "yticklabels": [
+          "200",
+          "400",
+          "600",
+          "800",
+          "1000",
+          "1200",
+          "1400",
+          "1600"
+        ]
+      }
+    ]
+  }
+}

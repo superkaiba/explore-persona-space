@@ -590,6 +590,85 @@ def lint_workload_cmd_inline_interpreter(workload_cmd: str) -> WorkloadCmdInline
     return WorkloadCmdInlineLint(False, None, stripped)
 
 
+#: Case-insensitive persist-evidence substrings (#1800). A workload chain
+#: (command + resolved driver-script text) carrying NONE of these has no
+#: visible upload/persist WIRING for its outputs — the #1739 class. The
+#: composition is a v1 heuristic pinned by tests
+#: (``tests/test_workload_cmd_persist_lint.py``); incident-replay
+#: calibration (plan #1800 §2): the pre-fix #1739 dispatcher
+#: (``origin/issue-1739`` @ ``3bcc140bbd``) reads 0 hits → flags, the
+#: post-fix tip reads 17 hits → clean.
+PERSIST_EVIDENCE_TOKENS: tuple[str, ...] = (
+    "upload",
+    "push_to_hub",
+    "hf_hub",
+    "hfapi",
+    "git push",
+    "persist",
+)
+
+
+@dataclass(frozen=True)
+class WorkloadCmdPersistLint:
+    """Result of :func:`lint_workload_cmd_persist_evidence` (#1800).
+
+    ``flagged`` — the resolved chain carries ZERO persist-evidence tokens.
+    ``skipped`` — the lint could not run (empty command, or the driver
+    script text was unavailable); never flagged when skipped.
+    ``matched_tokens`` — the sorted evidence tokens found (empty when
+    flagged or skipped).
+    """
+
+    flagged: bool
+    skipped: bool
+    matched_tokens: tuple[str, ...]
+
+
+def lint_workload_cmd_persist_evidence(
+    workload_cmd: str, script_text: str | None
+) -> WorkloadCmdPersistLint:
+    """WARN-class #1800 detection: no persist step anywhere in the workload chain.
+
+    Mechanizes the dispatch-time backstop for incident #1739 (2026-07-28): a
+    GCP ``--workload-cmd`` run completed every phase and approached
+    grace-poweroff with ZERO artifacts on HF (all 7 expected prefixes MISS);
+    #1779 fixed the PLAN-time layer, this lint is the dispatch-time sibling
+    of the #1329/#1576 workload-cmd lint family. Scans the COMMAND plus the
+    resolved driver-script text (``script_text``) case-insensitively for
+    :data:`PERSIST_EVIDENCE_TOKENS`; zero hits on a resolved script →
+    ``flagged=True``. ``script_text is None`` (unresolvable driver) →
+    ``skipped=True``, never flagged — fail-soft by design, the caller logs
+    ONE note.
+
+    Deliberate v1 FALSE NEGATIVES (named, mirroring the
+    :func:`lint_workload_cmd_inline_interpreter` docstring discipline —
+    widen if one bites):
+
+    * present-but-never-executed persist: a chain whose persist phase
+      EXISTS in the script text but is skipped at runtime (a ``--dry-run``
+      upload mode, a ``--phases`` subset invocation that omits the upload
+      phase) reads as evidence — this lint checks persist WIRING, never a
+      persist guarantee; Step 8 upload-verification stays the hard gate;
+    * ambiguous tokens: a download-only ``hf_hub_download`` staging call
+      (or a bare ``HfApi()`` listing) matches the ``hf_hub`` / ``hfapi``
+      tokens and reads as evidence;
+    * comments: a commented-out ``# upload later`` line counts as evidence
+      (substring scan, no shell/python parsing).
+
+    Known FALSE-POSITIVE residual (WARN-only by design, #1800 plan §5): a
+    multi-script chain whose persist step lives in a SECOND sourced/invoked
+    file the caller did not resolve flags spuriously — the escape is the
+    descope path (scan the command string only) if this proves noisy.
+    """
+    if not (workload_cmd or "").strip():
+        return WorkloadCmdPersistLint(flagged=False, skipped=True, matched_tokens=())
+    if script_text is None:
+        return WorkloadCmdPersistLint(flagged=False, skipped=True, matched_tokens=())
+    haystack = f"{workload_cmd}\n{script_text}".lower()
+    matched = tuple(sorted(tok for tok in PERSIST_EVIDENCE_TOKENS if tok in haystack))
+    return WorkloadCmdPersistLint(flagged=not matched, skipped=False, matched_tokens=matched)
+
+
 def build_run_spec(
     *,
     issue: int,
@@ -1222,10 +1301,12 @@ _mila_socket_alive_stub = _default_mila_socket_alive
 
 __all__ = [
     "LANE_WORKLOAD_ENV_EXPORTS",
+    "PERSIST_EVIDENCE_TOKENS",
     "DispatchOutcome",
     "TerminalTranslation",
     "WorkloadCmdEnvLint",
     "WorkloadCmdInlineLint",
+    "WorkloadCmdPersistLint",
     "build_run_spec",
     "classify_terminal_exception",
     "default_handle_sidecar_path",
@@ -1233,6 +1314,7 @@ __all__ = [
     "dispatch_for_issue",
     "lint_workload_cmd_inline_interpreter",
     "lint_workload_cmd_lane_env",
+    "lint_workload_cmd_persist_evidence",
     "normalize_backend_value",
     "read_handle_sidecar",
     "resolve_handle_sidecar_path",

@@ -1,6 +1,6 @@
 ---
 name: Incremental cache reap only after the cache's LAST consumer; direct-path readers need a re-stage fallback
-description: A between-phase `clean_experiment_downloads --incremental` call sequenced before a later phase that reads the hf_dl cache converts a ~0.05 GB saving into a FileNotFoundError crash after hours of paid phases; enumerate every hf_dl reader first + add re-stage-on-demand
+description: A purge/reap sequenced before the artifact's LAST consumer (incremental cache reap, OR a reused upload helper's own upload-then-purge) converts a small disk saving into a crash after hours of paid phases; enumerate every reader first + add prefix-threaded re-stage-on-demand
 type: feedback
 ---
 
@@ -21,3 +21,17 @@ pressure). Defense in depth: guard each corpus-consuming phase entry with a
 re-stage-on-demand call through the EXISTING deterministic staging helper,
 pinned to the same revision the earlier phases consumed. (#1489 crash-fix r6,
 commit c5224efb.)
+
+The purge is not always the dispatcher's: a REUSED upload helper can carry its
+own disk-bounding upload-then-purge (the #779-lineage `_flush_upload_batch`
+purges local chunks after Hub verification), so grepping the dispatcher alone
+for reap calls misses the seam. On #1776 (2026-07-29, resume 5) p5a_capture's
+reused helper uploaded wildchat chunks to the Hub and purged the local
+`--out-root`; the SAME run's p5_transfer consumed that dir → "no capture
+chunks" AssertionError after the transfer had already scored a full leg. At
+dispatch-design time, enumerate consumers of any purge-BEARING upload helper
+too (read the reused producer's code, not just the dispatcher); the fix shape
+is the same consumer-side, prefix-threaded Hub re-stage fallback — scoped
+listing (never full-tree on a ~1M-file repo) + atomic idempotent per-file
+stage + sha256 verify (#1776 crash-fix c8, commit f3413617bc,
+tests in the phase5 staging probe).

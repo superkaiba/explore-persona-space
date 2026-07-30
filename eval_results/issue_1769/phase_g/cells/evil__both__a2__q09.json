@@ -1,0 +1,53 @@
+{
+  "cell_id": "evil/both/a2/q09",
+  "trait": "evil",
+  "arm": "both",
+  "alpha": 2.0,
+  "question_id": 9,
+  "layer": 20,
+  "n_draws": 10,
+  "coherence_flags": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "n_coherent": 10,
+  "completion_file": "both_a2_q09_seed42.json",
+  "chunk_questions": [
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+  ],
+  "shard": 0,
+  "fingerprint": {
+    "code_sha": "468aaef532416e70d991f6ae12447b9543c05f49",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "temperature": 1.0,
+    "max_new_tokens": 1024,
+    "layer": 20,
+    "rb_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+    "seed_base": 42,
+    "n_draws": 10,
+    "tiny": false
+  },
+  "repro": {
+    "git_commit": "468aaef532416e70d991f6ae12447b9543c05f49",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "timestamp": "2026-07-29T04:37:47.966766+00:00"
+  }
+}

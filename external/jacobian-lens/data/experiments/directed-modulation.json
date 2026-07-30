@@ -1,0 +1,548 @@
+{
+  "phrasings": [
+    {
+      "name": "foc_think",
+      "group": "focus",
+      "text": "Think about {x} while you write."
+    },
+    {
+      "name": "foc_concentrate",
+      "group": "focus",
+      "text": "Concentrate on {x} while you write the sentence."
+    },
+    {
+      "name": "foc_focus",
+      "group": "focus",
+      "text": "Try to focus on {x} while you write the sentence."
+    },
+    {
+      "name": "foc_hold",
+      "group": "focus",
+      "text": "Hold {x} in mind as you write."
+    },
+    {
+      "name": "foc_keep",
+      "group": "focus",
+      "text": "Keep {x} in your thoughts."
+    },
+    {
+      "name": "dis_irrelevant",
+      "group": "dismissal",
+      "text": "{x} is irrelevant — ignore it."
+    },
+    {
+      "name": "dis_irrelevant_t",
+      "group": "dismissal",
+      "text": "{x} is irrelevant."
+    },
+    {
+      "name": "dis_ignore",
+      "group": "dismissal",
+      "text": "Ignore {x}."
+    },
+    {
+      "name": "dis_paren",
+      "group": "dismissal",
+      "text": "(Ignore: {x}.)"
+    },
+    {
+      "name": "dis_distraction",
+      "group": "dismissal",
+      "text": "{x} is a distraction — push it out of your mind."
+    },
+    {
+      "name": "dis_unrelated",
+      "group": "dismissal",
+      "text": "{x} is unrelated to this task."
+    },
+    {
+      "name": "neg_dont",
+      "group": "negated-think",
+      "text": "Don't think about {x}."
+    },
+    {
+      "name": "neg_avoid",
+      "group": "negated-think",
+      "text": "Avoid thinking about {x}."
+    },
+    {
+      "name": "neg_clear",
+      "group": "negated-think",
+      "text": "Clear your mind of {x}."
+    },
+    {
+      "name": "neg_tryhard",
+      "group": "negated-think",
+      "text": "Try very hard not to think about {x} while you write."
+    },
+    {
+      "name": "neg_forbidden",
+      "group": "negated-think",
+      "text": "You are forbidden from thinking about {x}."
+    },
+    {
+      "name": "neg_whatever",
+      "group": "negated-think",
+      "text": "Whatever you do, do not think about {x}."
+    },
+    {
+      "name": "neg_dontworry",
+      "group": "negated-think",
+      "text": "Don't worry about {x}."
+    },
+    {
+      "name": "men_bare",
+      "group": "mention",
+      "text": "{x}."
+    },
+    {
+      "name": "men_paren",
+      "group": "mention",
+      "text": "({x})"
+    },
+    {
+      "name": "men_natural",
+      "group": "mention",
+      "text": "{x} came up in conversation."
+    },
+    {
+      "name": "men_initial",
+      "group": "mention",
+      "text": "{x} appears in this prompt."
+    },
+    {
+      "name": "men_final",
+      "group": "mention",
+      "text": "This prompt contains a reference to {x}."
+    },
+    {
+      "name": "men_medial",
+      "group": "mention",
+      "text": "There is a phrase, {x}, included here."
+    }
+  ],
+  "group_kind": {
+    "focus": "focus",
+    "mention": "control",
+    "dismissal": "suppress",
+    "negated-think": "suppress"
+  },
+  "carrier_sentences": [
+    "The old painting hung crookedly on the wall.",
+    "The sun is shining brightly today in town.",
+    "They all went home together after work ended.",
+    "I forgot my umbrella at work yesterday afternoon.",
+    "The old man walked his dog every single morning.",
+    "She carefully placed the letter back inside the wooden drawer.",
+    "We ate dinner at the new restaurant last night happily.",
+    "He left the key under the mat near the back door.",
+    "The garden behind the house grew wild after years of neglect.",
+    "The children played outside all day long and came home very tired.",
+    "The mechanic spent most of the afternoon trying to fix the broken engine.",
+    "She quietly closed the door and walked down the long empty hallway alone.",
+    "The river wound slowly through the valley past farms and small sleepy villages.",
+    "After the storm passed the whole town came out to clear fallen branches.",
+    "Nobody expected the meeting to run so late into the evening that day.",
+    "The museum was nearly empty that morning except for a small group near the entrance.",
+    "The library stayed open later than usual because of the upcoming holiday.",
+    "She found the missing notebook wedged behind the old filing cabinet upstairs.",
+    "The waiter brought the wrong order but nobody at the table seemed to mind.",
+    "He spent the entire weekend reorganizing the cluttered garage by himself."
+  ],
+  "math_problems": [
+    {
+      "expr": "4 * 2",
+      "answer": "8",
+      "tier": 1
+    },
+    {
+      "expr": "5 + 4",
+      "answer": "9",
+      "tier": 1
+    },
+    {
+      "expr": "3 * 3",
+      "answer": "9",
+      "tier": 1
+    },
+    {
+      "expr": "3 + 4",
+      "answer": "7",
+      "tier": 1
+    },
+    {
+      "expr": "2 * 3",
+      "answer": "6",
+      "tier": 1
+    },
+    {
+      "expr": "2 + 3",
+      "answer": "5",
+      "tier": 1
+    },
+    {
+      "expr": "14 / 2",
+      "answer": "7",
+      "tier": 1
+    },
+    {
+      "expr": "18 / 2",
+      "answer": "9",
+      "tier": 1
+    },
+    {
+      "expr": "11 - 5",
+      "answer": "6",
+      "tier": 2
+    },
+    {
+      "expr": "15 - 7",
+      "answer": "8",
+      "tier": 2
+    },
+    {
+      "expr": "9 - 5",
+      "answer": "4",
+      "tier": 2
+    },
+    {
+      "expr": "11 - 9",
+      "answer": "2",
+      "tier": 2
+    },
+    {
+      "expr": "12 / 4",
+      "answer": "3",
+      "tier": 2
+    },
+    {
+      "expr": "21 / 3",
+      "answer": "7",
+      "tier": 2
+    },
+    {
+      "expr": "24 / 3",
+      "answer": "8",
+      "tier": 2
+    },
+    {
+      "expr": "3^2 - 2",
+      "answer": "7",
+      "tier": 3
+    },
+    {
+      "expr": "2^3 - 3",
+      "answer": "5",
+      "tier": 3
+    },
+    {
+      "expr": "2^3 + 1",
+      "answer": "9",
+      "tier": 3
+    },
+    {
+      "expr": "2^2 + 2",
+      "answer": "6",
+      "tier": 3
+    },
+    {
+      "expr": "3^2 - 4",
+      "answer": "5",
+      "tier": 3
+    },
+    {
+      "expr": "2^4 - 9",
+      "answer": "7",
+      "tier": 4
+    },
+    {
+      "expr": "4 * 4 - 9",
+      "answer": "7",
+      "tier": 4
+    },
+    {
+      "expr": "6 * 6 / 4",
+      "answer": "9",
+      "tier": 4
+    },
+    {
+      "expr": "5^2 - 19",
+      "answer": "6",
+      "tier": 4
+    }
+  ],
+  "topic_categories": [
+    {
+      "name": "citrus fruits",
+      "members": [
+        "orange",
+        "lime",
+        "mandarin"
+      ]
+    },
+    {
+      "name": "months of the year",
+      "members": [
+        "January",
+        "February",
+        "March",
+        "April",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+      ]
+    },
+    {
+      "name": "days of the week",
+      "members": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ]
+    },
+    {
+      "name": "planets",
+      "members": [
+        "Mercury",
+        "Venus",
+        "Earth",
+        "Mars",
+        "Jupiter",
+        "Saturn",
+        "Neptune"
+      ]
+    },
+    {
+      "name": "chess pieces",
+      "members": [
+        "knight",
+        "bishop",
+        "queen",
+        "king",
+        "knights",
+        "bishops",
+        "queens",
+        "kings"
+      ]
+    },
+    {
+      "name": "precious metals",
+      "members": [
+        "gold",
+        "silver",
+        "platinum",
+        "copper",
+        "bronze",
+        "iron",
+        "steel"
+      ]
+    },
+    {
+      "name": "gemstones",
+      "members": [
+        "diamond",
+        "ruby",
+        "emerald",
+        "pearl",
+        "jade",
+        "diamonds",
+        "gems"
+      ]
+    },
+    {
+      "name": "farm animals",
+      "members": [
+        "cow",
+        "pig",
+        "horse",
+        "sheep",
+        "chicken",
+        "duck"
+      ]
+    },
+    {
+      "name": "musical instruments",
+      "members": [
+        "piano",
+        "guitar",
+        "violin",
+        "drum",
+        "trumpet",
+        "saxophone"
+      ]
+    },
+    {
+      "name": "weather conditions",
+      "members": [
+        "rain",
+        "snow",
+        "wind",
+        "fog",
+        "thunder",
+        "lightning",
+        "cloudy",
+        "sunny"
+      ]
+    },
+    {
+      "name": "body parts",
+      "members": [
+        "arm",
+        "leg",
+        "hand",
+        "foot",
+        "head",
+        "neck",
+        "shoulder",
+        "knee",
+        "finger",
+        "fingers",
+        "eye",
+        "eyes",
+        "ear",
+        "nose"
+      ]
+    },
+    {
+      "name": "vegetables",
+      "members": [
+        "carrots",
+        "potato",
+        "corn",
+        "bean",
+        "beans",
+        "lettuce",
+        "pepper",
+        "spinach"
+      ]
+    },
+    {
+      "name": "card suits",
+      "members": [
+        "hearts",
+        "clubs",
+        "diamonds",
+        "ace"
+      ]
+    },
+    {
+      "name": "ocean creatures",
+      "members": [
+        "whale",
+        "shark",
+        "dolphin",
+        "seal",
+        "fish"
+      ]
+    },
+    {
+      "name": "types of trees",
+      "members": [
+        "oak",
+        "pine",
+        "maple",
+        "cedar",
+        "elm"
+      ]
+    },
+    {
+      "name": "kitchen utensils",
+      "members": [
+        "fork",
+        "knife",
+        "spatula",
+        "bowl",
+        "plate",
+        "pan"
+      ]
+    },
+    {
+      "name": "emotions",
+      "members": [
+        "joy",
+        "anger",
+        "fear",
+        "disgust",
+        "surprise",
+        "happiness",
+        "grief",
+        "shame",
+        "sad",
+        "happy",
+        "angry",
+        "scared",
+        "afraid"
+      ]
+    },
+    {
+      "name": "geometric shapes",
+      "members": [
+        "circle",
+        "square",
+        "triangle",
+        "rectangle",
+        "oval",
+        "cube",
+        "sphere",
+        "cone"
+      ]
+    },
+    {
+      "name": "types of boats",
+      "members": [
+        "yacht",
+        "sailboat",
+        "ferry",
+        "ship",
+        "boat",
+        "vessel"
+      ]
+    },
+    {
+      "name": "insects",
+      "members": [
+        "ant",
+        "bee",
+        "beetle",
+        "beetles",
+        "butterfly",
+        "moth",
+        "fly",
+        "mosquito",
+        "spider",
+        "cricket"
+      ]
+    },
+    {
+      "name": "desserts",
+      "members": [
+        "cake",
+        "pie",
+        "cookie",
+        "brownie",
+        "chocolate",
+        "candy"
+      ]
+    },
+    {
+      "name": "types of footwear",
+      "members": [
+        "shoe",
+        "shoes",
+        "boot",
+        "boots",
+        "sandal",
+        "heel",
+        "sock"
+      ]
+    }
+  ]
+}

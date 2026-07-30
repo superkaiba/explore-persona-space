@@ -57,7 +57,10 @@ from issue1092_fit_grid import (  # noqa: E402
 )
 
 STAGE = Path(
-    "/mnt/eps-data/thomasjiralerspong/issue_1092_inline_operator/issue1092_realistic_crossing"
+    os.environ.get(
+        "I1092_STAGE_DIR",
+        "/mnt/eps-data/thomasjiralerspong/issue_1092_inline_operator/issue1092_realistic_crossing",
+    )
 )
 SUMM = STAGE / "analysis_tensors/summaries"
 MANIFEST = STAGE / "corpus/manifest.jsonl"
@@ -114,7 +117,9 @@ class _MLP(torch.nn.Module):
         return self.net(x)
 
 
-def process_cell(cell: str, rows: list[dict]) -> dict:
+def process_cell(
+    cell: str, rows: list[dict], *, out_dir: Path = OUT, persist_gap: bool = False
+) -> dict:
     ctx_all = _load(cell, "context_end")
     t_shapes = [_load(cell, t).shape[0] for t in TARGETS]
     n0 = min(ctx_all.shape[0], min(t_shapes), len(rows))
@@ -253,16 +258,44 @@ def process_cell(cell: str, rows: list[dict]) -> dict:
             "spread_vs_jensen": _spearman(spread[m], jensen[m]),
             "spread_vs_d_mlp": _spearman(spread[m], d_mlp[m]),
         }
-    OUT.mkdir(parents=True, exist_ok=True)
-    np.savez(
-        OUT / f"per_prefix_jensen_{cell}.npz",
-        jensen=jensen,
-        d_mlp=d_mlp,
-        e_centroid=e_centroid,
-        e_avgpred=e_avgpred,
-        spread=spread,
-        n_turns=n_turns,
-    )
+    if persist_gap:
+        # #1774 Q1c: banked scalar npz (996 prefixes) reproduces jensen norms
+        # within tolerance on the prefix overlap — the refit's norm cross-check.
+        banked = OUT / f"per_prefix_jensen_{cell}.npz"
+        if banked.exists() and banked.resolve() != (out_dir / banked.name).resolve():
+            with np.load(banked) as z:
+                if "jensen" in z.files and len(z["jensen"]) == len(jensen):
+                    max_abs = float(np.max(np.abs(np.asarray(z["jensen"]) - jensen)))
+                    blk["banked_norm_crosscheck"] = {
+                        "max_abs_jensen_diff": max_abs,
+                        "n_overlap": int(len(jensen)),
+                    }
+                else:
+                    blk["banked_norm_crosscheck"] = {
+                        "skipped": f"banked n={len(z['jensen']) if 'jensen' in z.files else 0} "
+                        f"!= refit n={len(jensen)} — overlap join left to the analyzer"
+                    }
+    out_dir.mkdir(parents=True, exist_ok=True)
+    save_arrays = {
+        "jensen": jensen,
+        "d_mlp": d_mlp,
+        "e_centroid": e_centroid,
+        "e_avgpred": e_avgpred,
+        "spread": spread,
+        "n_turns": n_turns,
+    }
+    if persist_gap:
+        # per-prefix Jensen-gap VECTORS in the pca48 target basis (H1c read),
+        # + the per-coordinate target variance (the trivial-alternative
+        # reference the concentration curve is reported against).
+        save_arrays.update(
+            gap_vectors=(pred_avg - cent_pred),
+            pred_avg=pred_avg,
+            cent_pred=cent_pred,
+            prefix_ids=np.asarray(pids),
+            target_var_per_coord=Yb.var(axis=0, ddof=1),
+        )
+    np.savez(out_dir / f"per_prefix_jensen_{cell}.npz", **save_arrays)
     print(
         f"[{cell}] r2_rows={r2_rows:.4f} jensen_mean={jensen.mean():.3f} "
         f"spread->J rho={blk['spearman_spread_vs_jensen']['rho']:+.3f} "
@@ -273,12 +306,41 @@ def process_cell(cell: str, rows: list[dict]) -> dict:
     return blk
 
 
-def main() -> int:
-    OUT.mkdir(parents=True, exist_ok=True)
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument(
+        "--persist-gap-vectors",
+        action="store_true",
+        help="#1774 Q1c: additionally persist per-prefix gap VECTORS (pca48 "
+        "basis) + pred_avg/cent_pred/prefix_ids/target_var_per_coord in the "
+        "npz (same recipe verbatim; scalar outputs unchanged)",
+    )
+    ap.add_argument("--cells", default=",".join(CELLS), help="comma list (default both)")
+    ap.add_argument(
+        "--out-dir",
+        default=None,
+        help="output dir override (default: the banked #1092 location; a "
+        "gap-vector refit MUST use a fresh dir so the banked scalar npz — the "
+        "norm cross-check reference — is never overwritten)",
+    )
+    args = ap.parse_args(argv)
+    out_dir = Path(args.out_dir) if args.out_dir else OUT
+    if args.persist_gap_vectors and out_dir.resolve() == OUT.resolve():
+        raise SystemExit(
+            "--persist-gap-vectors requires --out-dir != the banked #1092 dir "
+            "(the banked scalar npz is the norm cross-check reference; never overwrite it)"
+        )
+    cells = [c for c in args.cells.split(",") if c]
+    assert set(cells) <= set(CELLS), cells
+
+    out_dir.mkdir(parents=True, exist_ok=True)
     rows = _jsonl(MANIFEST)
     result: dict = {
         "meta": {
             "script": "scripts/issue1092_mlp_jensen_natural.py",
+            "persist_gap_vectors": bool(args.persist_gap_vectors),
             "note": (
                 "out-of-fold Jensen gap: h fit 6-fold over prefixes (FOLD_SEED=0); "
                 "h(centroid) uses the fold model that held the prefix out; a linear map "
@@ -287,18 +349,29 @@ def main() -> int:
         },
         "cells": {},
     }
-    for cell in CELLS:
-        unit_path = OUT / f"cell_{cell}.json"
-        if unit_path.exists():
+    for cell in cells:
+        unit_path = out_dir / f"cell_{cell}.json"
+        npz_path = out_dir / f"per_prefix_jensen_{cell}.npz"
+        # resume predicate keys on the output-affecting regime (gap persistence
+        # is part of the key — #722 r3): a unit done WITHOUT gap vectors does
+        # not satisfy a --persist-gap-vectors run.
+        done = unit_path.exists()
+        if done and args.persist_gap_vectors:
+            if not npz_path.exists():
+                done = False
+            else:
+                with np.load(npz_path) as z:
+                    done = "gap_vectors" in z.files
+        if done:
             result["cells"][cell] = json.loads(unit_path.read_text())
             print(f"[resume] skipping completed cell {cell}", flush=True)
             continue
-        blk = process_cell(cell, rows)
+        blk = process_cell(cell, rows, out_dir=out_dir, persist_gap=args.persist_gap_vectors)
         unit_path.write_text(json.dumps(blk, indent=2))
         result["cells"][cell] = blk
         gc.collect()
-    (OUT / "mlp_jensen_natural.json").write_text(json.dumps(result, indent=2))
-    print(f"wrote {OUT / 'mlp_jensen_natural.json'}")
+    (out_dir / "mlp_jensen_natural.json").write_text(json.dumps(result, indent=2))
+    print(f"wrote {out_dir / 'mlp_jensen_natural.json'}")
     return 0
 
 

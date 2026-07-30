@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "git_commit": "8b8237dc9e665ff97ec0eec1e10132ca3bbe2a5c",
+    "timestamp_utc": "2026-07-30T04:05:01.232069+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "python": "3.11.15",
+    "fold_seed": 0,
+    "n_folds": 6,
+    "smoke": false,
+    "n_draws": 2000,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "folds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "scheme": "doubly",
+  "grouping_unit": "prefix_id x query_id (two-way cluster bootstrap)",
+  "r_star_carried": 32,
+  "delta_beyond_mlp_minus_bilinear": {
+    "delta_r2": 0.05779066503312293,
+    "ci95_two_way_cluster": [
+      0.048251551227360655,
+      0.06768312162062969
+    ],
+    "n_prefix_groups": 921,
+    "n_query_groups": 636,
+    "n_rows": 2900,
+    "n_draws": 2000
+  },
+  "r2_stitch_mlp_seed_mean": 0.7187258028465735,
+  "r2_bilinear_r_star": 0.6609351378134506,
+  "delta_named_validation_abs_diff": 0.0,
+  "delta_named_doubly_recomputed": {
+    "delta_r2": 0.028287969842974294,
+    "ci95_two_way_cluster": [
+      0.018320661128466618,
+      0.03973223592697123
+    ],
+    "n_prefix_groups": 921,
+    "n_query_groups": 636,
+    "n_rows": 2900,
+    "n_draws": 2000
+  },
+  "n_rows_b3": 2900,
+  "note": "fills the doubly cell issue1775_delta_beyond.py reported as 'unavailable' (run 1 fit no stitch-MLP under the doubly scheme); bilinear arm = run-1's persisted pred_doubly_* shards (reused, Hub-fetched via the delta helper's _fetch), MLP arm = this round's fit; same rows, paired"
+}

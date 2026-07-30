@@ -1,0 +1,449 @@
+{
+  "commit": "29d3a0139e",
+  "created": "2026-07-30T18:52:58Z",
+  "figsize": [
+    12.5,
+    6.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "held-out $R^2$\n(fitted maps)": 0.11915465941177317,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.25,
+      "held-out $R^2$\n(fitted maps)": 0.13099689308685925,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.5,
+      "held-out $R^2$\n(fitted maps)": 0.08668094744329158,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.05,
+      "held-out $R^2$\n(fitted maps)": 0.3673660367496828,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.3,
+      "held-out $R^2$\n(fitted maps)": 0.40092255324956205,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.55,
+      "held-out $R^2$\n(fitted maps)": 0.15990390693669754,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.35,
+      "held-out $R^2$\n(fitted maps)": 0.0891440181667621,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 2.6,
+      "held-out $R^2$\n(fitted maps)": 0.10230702260186697,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.85,
+      "held-out $R^2$\n(fitted maps)": 0.056212044521055105,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 3.4,
+      "held-out $R^2$\n(fitted maps)": 0.4455369678157678,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 3.65,
+      "held-out $R^2$\n(fitted maps)": 0.49910043703184004,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 3.9,
+      "held-out $R^2$\n(fitted maps)": 0.10274338344041278,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 4.7,
+      "held-out $R^2$\n(fitted maps)": 0.0973722230933175,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 4.95,
+      "held-out $R^2$\n(fitted maps)": 0.11764078729878313,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 5.2,
+      "held-out $R^2$\n(fitted maps)": 0.05834209717701688,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 5.75,
+      "held-out $R^2$\n(fitted maps)": 0.38237123175690513,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 6.0,
+      "held-out $R^2$\n(fitted maps)": 0.4376333482069156,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 6.25,
+      "held-out $R^2$\n(fitted maps)": 0.13760066764416057,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 7.05,
+      "held-out $R^2$\n(fitted maps)": 0.10640494996470751,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 7.3,
+      "held-out $R^2$\n(fitted maps)": 0.12454660030926878,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 7.55,
+      "held-out $R^2$\n(fitted maps)": 0.07795352797741995,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 8.1,
+      "held-out $R^2$\n(fitted maps)": 0.42169255161684105,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 8.35,
+      "held-out $R^2$\n(fitted maps)": 0.4776133460969064,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 8.6,
+      "held-out $R^2$\n(fitted maps)": 0.22759379128965496,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 9.4,
+      "held-out $R^2$\n(fitted maps)": 0.0005864899329379725,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 9.65,
+      "held-out $R^2$\n(fitted maps)": 1.1962743444726698e-06,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "x": 9.9,
+      "held-out $R^2$\n(fitted maps)": -0.17115374717450327,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 10.45,
+      "held-out $R^2$\n(fitted maps)": 0.17574288252303594,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "x": 10.7,
+      "held-out $R^2$\n(fitted maps)": 0.20136795419076103,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "x": 10.95,
+      "held-out $R^2$\n(fitted maps)": -7.517655637656878,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "x": 11.75,
+      "held-out $R^2$\n(fitted maps)": 0.0055144372293775,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 12.0,
+      "held-out $R^2$\n(fitted maps)": 0.002468999195392785,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": 12.25,
+      "held-out $R^2$\n(fitted maps)": -0.10756919514224905,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "x": 12.8,
+      "held-out $R^2$\n(fitted maps)": 0.15014768345938467,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 13.05,
+      "held-out $R^2$\n(fitted maps)": 0.1577274751162817,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 13.3,
+      "held-out $R^2$\n(fitted maps)": -2.8350109541707034,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "x": 14.1,
+      "held-out $R^2$\n(fitted maps)": 0.13486761792269275,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "x": 14.35,
+      "held-out $R^2$\n(fitted maps)": 0.1458356371636763,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "x": 14.6,
+      "held-out $R^2$\n(fitted maps)": 0.11110045149835912,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "x": 15.15,
+      "held-out $R^2$\n(fitted maps)": 0.430004425952884,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": 15.4,
+      "held-out $R^2$\n(fitted maps)": 0.472054614661516,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "x": 15.65,
+      "held-out $R^2$\n(fitted maps)": 0.27197774459336554,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 16.45,
+      "held-out $R^2$\n(fitted maps)": 0.12587650757504887,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 16.7,
+      "held-out $R^2$\n(fitted maps)": 0.13584242906736543,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "x": 16.95,
+      "held-out $R^2$\n(fitted maps)": 0.096714927508595,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "x": 17.5,
+      "held-out $R^2$\n(fitted maps)": 0.3938389254541893,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "x": 17.75,
+      "held-out $R^2$\n(fitted maps)": 0.42064607767454476,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "x": 18.0,
+      "held-out $R^2$\n(fitted maps)": 0.234518062329111,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "category": "impoliteness pers-con-lr3e5-s42 [op]",
+      "held-out $R^2$\nidentity+bias (symlog)": -48.09933275075724,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "category": "impoliteness pers-con-lr3e5-s42 [tf]",
+      "held-out $R^2$\nidentity+bias (symlog)": -230.1885933902766,
+      "_kind": "bar",
+      "_group": 49
+    },
+    {
+      "category": "impoliteness pers-po-lr1e5-s137 [op]",
+      "held-out $R^2$\nidentity+bias (symlog)": -56.82058352495115,
+      "_kind": "bar",
+      "_group": 50
+    },
+    {
+      "category": "impoliteness pers-po-lr1e5-s137 [tf]",
+      "held-out $R^2$\nidentity+bias (symlog)": -402.0455917498907,
+      "_kind": "bar",
+      "_group": 51
+    },
+    {
+      "category": "writing-style pers-con-lr1e5-s137 [op]",
+      "held-out $R^2$\nidentity+bias (symlog)": -55.587248601511654,
+      "_kind": "bar",
+      "_group": 52
+    },
+    {
+      "category": "writing-style pers-con-lr1e5-s137 [tf]",
+      "held-out $R^2$\nidentity+bias (symlog)": -279.7785882588029,
+      "_kind": "bar",
+      "_group": 53
+    },
+    {
+      "category": "sycophancy bare-con-lr1e5-s42 [op]",
+      "held-out $R^2$\nidentity+bias (symlog)": -48.294063870757554,
+      "_kind": "bar",
+      "_group": 54
+    },
+    {
+      "category": "sycophancy bare-con-lr1e5-s42 [tf]",
+      "held-out $R^2$\nidentity+bias (symlog)": -240.21659438887465,
+      "_kind": "bar",
+      "_group": 55
+    },
+    {
+      "category": "sycophancy conv-po-lr1e5-s137 [op]",
+      "held-out $R^2$\nidentity+bias (symlog)": -214.61835154440035,
+      "_kind": "bar",
+      "_group": 56
+    },
+    {
+      "category": "sycophancy conv-po-lr1e5-s137 [tf]",
+      "held-out $R^2$\nidentity+bias (symlog)": -10300.582760792102,
+      "_kind": "bar",
+      "_group": 57
+    },
+    {
+      "category": "marker pers-po-lr5e6-s137 [op]",
+      "held-out $R^2$\nidentity+bias (symlog)": -141.10108577217417,
+      "_kind": "bar",
+      "_group": 58
+    },
+    {
+      "category": "marker pers-po-lr5e6-s137 [tf]",
+      "held-out $R^2$\nidentity+bias (symlog)": -4198.982292780347,
+      "_kind": "bar",
+      "_group": 59
+    },
+    {
+      "category": "impoliteness pers-ft-con-s137 [op]",
+      "held-out $R^2$\nidentity+bias (symlog)": -41.96484911015443,
+      "_kind": "bar",
+      "_group": 60
+    },
+    {
+      "category": "impoliteness pers-ft-con-s137 [tf]",
+      "held-out $R^2$\nidentity+bias (symlog)": -182.0745265328164,
+      "_kind": "bar",
+      "_group": 61
+    },
+    {
+      "category": "sycophancy pers-ft-con-s137 [op]",
+      "held-out $R^2$\nidentity+bias (symlog)": -43.07318985031797,
+      "_kind": "bar",
+      "_group": 62
+    },
+    {
+      "category": "sycophancy pers-ft-con-s137 [tf]",
+      "held-out $R^2$\nidentity+bias (symlog)": -183.59530554499378,
+      "_kind": "bar",
+      "_group": 63
+    }
+  ],
+  "n_series": 64,
+  "total_points": 64,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Predicting the per-context write $w(x)$ from the base context vector $c_0(x)$ \u2014 layer 19. Variance-weighted $R^2$ vs the test mean of $w$, so $R^2>0$ is context-dependent predictability beyond the static mean write.",
+        "ylabel": "held-out $R^2$\n(fitted maps)",
+        "legend_labels": [
+          "ridge",
+          "krr",
+          "mlp",
+          "on-policy write [op]",
+          "matched-text write [tf]"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{-10^{0}}$",
+          "$\\mathdefault{-10^{-1}}$",
+          "$\\mathdefault{0}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$"
+        ]
+      },
+      {
+        "ylabel": "held-out $R^2$\nidentity+bias (symlog)",
+        "xticklabels": [
+          "impoliteness pers-con-lr3e5-s42 [op]",
+          "impoliteness pers-con-lr3e5-s42 [tf]",
+          "impoliteness pers-po-lr1e5-s137 [op]",
+          "impoliteness pers-po-lr1e5-s137 [tf]",
+          "writing-style pers-con-lr1e5-s137 [op]",
+          "writing-style pers-con-lr1e5-s137 [tf]",
+          "sycophancy bare-con-lr1e5-s42 [op]",
+          "sycophancy bare-con-lr1e5-s42 [tf]",
+          "sycophancy conv-po-lr1e5-s137 [op]",
+          "sycophancy conv-po-lr1e5-s137 [tf]",
+          "marker pers-po-lr5e6-s137 [op]",
+          "marker pers-po-lr5e6-s137 [tf]",
+          "impoliteness pers-ft-con-s137 [op]",
+          "impoliteness pers-ft-con-s137 [tf]",
+          "sycophancy pers-ft-con-s137 [op]",
+          "sycophancy pers-ft-con-s137 [tf]"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{-10^{4}}$",
+          "$\\mathdefault{-10^{3}}$",
+          "$\\mathdefault{-10^{2}}$",
+          "$\\mathdefault{-10^{1}}$",
+          "$\\mathdefault{-10^{0}}$",
+          "$\\mathdefault{0}$"
+        ]
+      }
+    ]
+  }
+}

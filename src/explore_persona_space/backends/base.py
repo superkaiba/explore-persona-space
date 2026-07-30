@@ -105,6 +105,13 @@ ENV_PIN_ALLOWED_KEYS: frozenset[str] = frozenset(
         "EPM_PERSIST_ADAPTER_HF_REPO",
         "EPM_PERSIST_ADAPTER_SUBFOLDER",
         "EPM_UPLOAD_MERGED",
+        # #1803: the house runtime-tuning set (OOM / thread-cap remediation,
+        # incident #1739) — values stay validated single-line strings.
+        "MALLOC_ARENA_MAX",
+        "OMP_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
     }
 )
 

@@ -418,3 +418,175 @@ def test_skill_6a5_stanza_names_helper() -> None:
         "Residual risks",
     ):
         assert needle in span, f"Step 6a.5 stanza lost required element: {needle}"
+
+
+# ---------------------------------------------------------------------------
+# #1835 — lane-aware rsync downgrade (the SLURM lanes materialize via rsync of
+# RSYNC_INCLUDE_PATHS, so git-reachability is necessary but NOT sufficient).
+# ---------------------------------------------------------------------------
+
+
+def _rsync_findings(repo: Path, text: str, extras: list[str] | None = None, issue: int = 77):
+    fs = vci.run_check(text, repo_root=repo, issue=issue, check_ref="origin/main")
+    return vci.apply_rsync_lane_downgrade(fs, cover_set=vci.rsync_cover_set(extras))
+
+
+def test_rsync_lane_downgrades_in_ref_eval_results(repo: Path, tmp_path: Path) -> None:
+    """An in-ref eval_results/ citation PASSes on the clone lanes but is NOT in
+    the SLURM rsync include set -> FAIL(rsync-lane-not-synced), exit 1."""
+    _write(repo, "eval_results/issue_12/a.json")
+    _commit_push(repo, "eval_results/issue_12/a.json")
+    text = "Reuses eval_results/issue_12/a.json as the stage-1 input."
+    fs = _rsync_findings(repo, text)
+    assert [(f.verdict, f.reason) for f in fs] == [("fail", "rsync-lane-not-synced")]
+    assert "--extra-sync-path" in fs[0].detail  # named remediation
+    assert _main(repo, _plan(tmp_path, text), extra=["--lane", "rsync"]) == 1
+
+
+def test_rsync_lane_extra_sync_path_restores_pass(repo: Path, tmp_path: Path) -> None:
+    """--extra-sync-path with a covering prefix restores PASS for paths under it."""
+    _write(repo, "eval_results/issue_12/a.json")
+    _commit_push(repo, "eval_results/issue_12/a.json")
+    text = "Reuses eval_results/issue_12/a.json as the stage-1 input."
+    fs = _rsync_findings(repo, text, extras=["eval_results/issue_12"])
+    assert [(f.verdict, f.reason) for f in fs] == [("pass", "in-ref")]
+    rc = _main(
+        repo,
+        _plan(tmp_path, text),
+        extra=["--lane", "rsync", "--extra-sync-path", "eval_results/issue_12"],
+    )
+    assert rc == 0
+
+
+def test_rsync_lane_default_include_covered_no_downgrade(repo: Path, tmp_path: Path) -> None:
+    """A committed data/sft/ input is covered by RSYNC_INCLUDE_PATHS by
+    default -> no downgrade under --lane rsync."""
+    _write(repo, "data/sft/foo.jsonl")
+    _commit_push(repo, "data/sft/foo.jsonl")
+    text = "Trains on data/sft/foo.jsonl rows."
+    fs = _rsync_findings(repo, text)
+    assert [(f.verdict, f.reason) for f in fs] == [("pass", "in-ref")]
+    assert _main(repo, _plan(tmp_path, text), extra=["--lane", "rsync"]) == 0
+
+
+def test_rsync_lane_ood_eval_results_downgrade_and_restore(repo: Path, tmp_path: Path) -> None:
+    """ood_eval_results/ is exclude-listed AND include-absent — the
+    second-most-likely real citation class (critic concern (c))."""
+    _write(repo, "ood_eval_results/issue_9/f.json")
+    _commit_push(repo, "ood_eval_results/issue_9/f.json")
+    text = "Compares against ood_eval_results/issue_9/f.json from the OOD split."
+    fs = _rsync_findings(repo, text)
+    assert [(f.verdict, f.reason) for f in fs] == [("fail", "rsync-lane-not-synced")]
+    fs2 = _rsync_findings(repo, text, extras=["ood_eval_results/issue_9"])
+    assert [(f.verdict, f.reason) for f in fs2] == [("pass", "in-ref")]
+    assert _main(repo, _plan(tmp_path, text), extra=["--lane", "rsync"]) == 1
+    rc = _main(
+        repo,
+        _plan(tmp_path, text),
+        extra=["--lane", "rsync", "--extra-sync-path", "ood_eval_results/issue_9"],
+    )
+    assert rc == 0
+
+
+def test_rsync_lane_clone_fails_untouched(repo: Path, tmp_path: Path) -> None:
+    """The downgrade touches ONLY pass/in-ref rows: a clone-lane FAIL
+    (untracked-local-only) keeps its verdict + reason under --lane rsync."""
+    _write(repo, "eval_results/issue_12/m.json")  # untracked
+    text = "Consumes eval_results/issue_12/m.json at stage time."
+    fs = _rsync_findings(repo, text)
+    assert [(f.verdict, f.reason) for f in fs] == [("fail", "untracked-local-only")]
+
+
+def test_lane_clone_and_flag_absent_byte_identical(repo: Path, tmp_path: Path) -> None:
+    """--lane clone (and flag absence) is byte-identical to today on an
+    existing corpus fixture: identical findings + exit codes, and the JSON
+    gains the lane/extra_sync_paths fields."""
+    _write(repo, "eval_results/issue_12/a.json")
+    _commit_push(repo, "eval_results/issue_12/a.json")
+    plan = _plan(tmp_path, "Reuses eval_results/issue_12/a.json as input.")
+
+    def _payload(extra: list[str]) -> dict:
+        proc = subprocess.run(
+            [
+                sys.executable,
+                str(_SCRIPT),
+                "--plan",
+                str(plan),
+                "--issue",
+                "77",
+                "--repo-root",
+                str(repo),
+                "--no-fetch",
+                "--json",
+                *extra,
+            ],
+            capture_output=True,
+            text=True,
+        )
+        assert proc.returncode == 0, proc.stderr
+        return json.loads(proc.stdout)
+
+    default = _payload([])
+    clone = _payload(["--lane", "clone"])
+    assert default["findings"] == clone["findings"]
+    assert default["n_fail"] == clone["n_fail"] == 0
+    assert default["lane"] == clone["lane"] == "clone"
+    assert default["extra_sync_paths"] == clone["extra_sync_paths"] == []
+
+
+def test_rsync_lane_json_fields(repo: Path, tmp_path: Path) -> None:
+    _write(repo, "eval_results/issue_12/a.json")
+    _commit_push(repo, "eval_results/issue_12/a.json")
+    plan = _plan(tmp_path, "Reuses eval_results/issue_12/a.json as input.")
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(_SCRIPT),
+            "--plan",
+            str(plan),
+            "--issue",
+            "77",
+            "--repo-root",
+            str(repo),
+            "--no-fetch",
+            "--json",
+            "--lane",
+            "rsync",
+            "--extra-sync-path",
+            "eval_results/issue_12",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, proc.stderr
+    payload = json.loads(proc.stdout)
+    assert payload["lane"] == "rsync"
+    assert payload["extra_sync_paths"] == ["eval_results/issue_12"]
+    assert [(f["verdict"], f["reason"]) for f in payload["findings"]] == [("pass", "in-ref")]
+
+
+def test_invalid_extra_sync_path_exits_2(repo: Path, tmp_path: Path) -> None:
+    """A malformed --extra-sync-path is a usage error (exit 2) either lane —
+    the same fail-loud contract as dispatch_issue.py's parse-time guard."""
+    plan = _plan(tmp_path, "no citations here")
+    rc = _main(repo, plan, extra=["--lane", "rsync", "--extra-sync-path", "/abs/path"])
+    assert rc == 2
+    rc2 = _main(repo, plan, extra=["--extra-sync-path", "eval_results/../up"])
+    assert rc2 == 2
+
+
+def test_skill_6a5_rsync_clause_covers_all_per_cluster_lanes() -> None:
+    """#1835 Must-Fix durability pin: the Step 6a.5 rsync-lane clause's lane
+    list covers EVERY member of router._PER_CLUSTER_LANES (a lane added to
+    the router without updating the clause fails here), plus the legacy
+    'cluster' alias, the --lane rsync invocation, and the downgrade reason."""
+    from explore_persona_space.backends.router import _PER_CLUSTER_LANES
+
+    skill = (REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md").read_text()
+    start = skill.index("#### Step 6a.5")
+    end = skill.index("#### Step 6a.6")
+    span = skill[start:end]
+    for lane in sorted(_PER_CLUSTER_LANES):
+        assert f"`{lane}`" in span, f"Step 6a.5 rsync clause missing lane: {lane}"
+    for needle in ("--lane rsync", "rsync-lane-not-synced", "cluster", "--extra-sync-path"):
+        assert needle in span, f"Step 6a.5 rsync clause missing: {needle}"

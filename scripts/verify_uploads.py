@@ -344,6 +344,9 @@ def check_claimed_urls_resolve(claimed_text_path: str | Path) -> dict:
     ``explore_persona_space.orchestrate.hub.verify_artifacts_exist`` (the
     same helper /issue Step 6a.5 uses pre-launch to block on phantom
     carry-over artifacts) so behavior stays consistent at both gates.
+    Glob-bearing claimed paths (the planned-output shape, #1482) are SKIPPED
+    by that checker; their count is appended to ``detail`` on OK and FAIL
+    paths alike so the skip is never silent.
 
     A claimed-but-absent URL is a hard ``FAIL`` — that is exactly the
     phantom-checkpoint condition that lets a write-up cite a file nothing
@@ -376,7 +379,10 @@ def check_claimed_urls_resolve(claimed_text_path: str | Path) -> dict:
             "detail": f"claimed-urls file missing or not a file: {claimed_text_path}",
         }
     try:
-        from explore_persona_space.orchestrate.hub import verify_artifacts_exist
+        from explore_persona_space.orchestrate.hub import (
+            hf_url_path_has_glob,
+            verify_artifacts_exist,
+        )
 
         urls = extract_claimed_urls(claimed_text_path.read_text(encoding="utf-8"))
         # Qualify bare org/repo claims with their actual repo type (#599):
@@ -384,6 +390,18 @@ def check_claimed_urls_resolve(claimed_text_path: str | Path) -> dict:
         # needs; claims whose repo resolves as neither type become
         # deterministic phantoms instead of aborting the scan with ERROR.
         urls, rewritten_to_original, phantoms = resolve_claimed_repo_types(urls)
+        # Glob-bearing claimed URLs are the planned-output shape (#1482):
+        # verify_artifacts_exist SKIPs them (a glob cannot be existence-
+        # checked literally), so disclose the skipped count in ``detail`` on
+        # OK and FAIL paths alike — a glob-shaped claim must never read as a
+        # silently-clean OK with zero trace. Shared glob definition:
+        # hub.hf_url_path_has_glob.
+        n_glob = sum(1 for u in urls if hf_url_path_has_glob(u))
+        glob_clause = (
+            f"; {n_glob} glob-shaped claimed URL(s) not existence-checkable — skipped"
+            if n_glob
+            else ""
+        )
         # Write the sanitized one-URL-per-line view to a temp file:
         # verify_artifacts_exist takes a path and runs its own URL regexes,
         # which terminate cleanly at end-of-line once trailing punctuation
@@ -404,7 +422,11 @@ def check_claimed_urls_resolve(claimed_text_path: str | Path) -> dict:
                     f"; {len(rewritten_to_original)} bare dataset-repo claim(s) "
                     "resolved via repo_type=dataset (#599)"
                 )
-            return {"status": "OK", "url": str(claimed_text_path), "detail": detail}
+            return {
+                "status": "OK",
+                "url": str(claimed_text_path),
+                "detail": detail + glob_clause,
+            }
         # Report missing URLs the way the task cited them (un-rewritten).
         missing_cited = phantoms + [rewritten_to_original.get(u, u) for u in missing]
         detail = "claimed-but-absent URLs (phantom): " + "; ".join(missing_cited)
@@ -413,7 +435,7 @@ def check_claimed_urls_resolve(claimed_text_path: str | Path) -> dict:
                 " [repo resolves as neither model nor dataset — phantom repo, "
                 "or private without HF_TOKEN access]"
             )
-        return {"status": "FAIL", "url": "", "detail": detail}
+        return {"status": "FAIL", "url": "", "detail": detail + glob_clause}
     except Exception as e:
         return {"status": "ERROR", "url": "", "detail": str(e)}
 

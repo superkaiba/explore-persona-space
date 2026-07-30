@@ -4726,3 +4726,105 @@ def test_env_pin_rejects_secret_shaped_value_exit_2(monkeypatch, tmp_path) -> No
             backends_factory=_explode_factory,
         )
     assert ei.value.code == 2
+
+
+# ---------------------------------------------------------------------------
+# #1835 — --extra-sync-path: threading + parse-time validation (exit 2)
+# ---------------------------------------------------------------------------
+
+
+def test_extra_sync_path_threads_extra_and_echoes_launch_json(monkeypatch, tmp_path) -> None:
+    """#1835: repeated ``--extra-sync-path`` threads NORMALIZED (dot-anchored,
+    deduped) paths to ``spec.extra['extra_sync_paths']`` as a LIST (the handle
+    sidecar JSON channel) and echoes them into the printed launch JSON line
+    (the gate->launch drift audit record)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "1835",
+                "--intent",
+                "lora-7b",
+                "--workload-cmd",
+                "bash scripts/issue1835_dispatch.sh",
+                "--extra-sync-path",
+                "eval_results/issue_1689/ladder",
+                "--extra-sync-path",
+                "./ood_eval_results/issue_5",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert nibi.launches[0].extra["extra_sync_paths"] == [
+        "./eval_results/issue_1689/ladder",
+        "./ood_eval_results/issue_5",
+    ]
+    payload = json.loads(buf.getvalue().strip().splitlines()[-1])
+    assert payload["extra_sync_paths"] == [
+        "./eval_results/issue_1689/ladder",
+        "./ood_eval_results/issue_5",
+    ]
+
+
+def test_extra_sync_path_accepted_without_workload_cmd(monkeypatch, tmp_path) -> None:
+    """#1835: UNLIKE --env-pin there is NO --workload-cmd requirement — the
+    knob is lane-scoped (consumed only by the SLURM prepare), so it rides a
+    hydra launch too (accepted on every lane, lane-inert elsewhere)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "1835",
+                "--intent",
+                "lora-7b",
+                "--hydra",
+                "seed=42",
+                "--extra-sync-path",
+                "eval_results/issue_1689/ladder",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert nibi.launches[0].extra["extra_sync_paths"] == ["./eval_results/issue_1689/ladder"]
+
+
+def test_extra_sync_path_invalid_exits_2(monkeypatch, tmp_path) -> None:
+    """#1835: an absolute path and a '..' traversal both exit 2 at parse time,
+    BEFORE any backend is built (mirrors the --env-pin guards)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    from scripts.dispatch_issue import main
+
+    base = [
+        "launch",
+        "--issue",
+        "1835",
+        "--intent",
+        "lora-7b",
+        "--workload-cmd",
+        "bash scripts/x.sh",
+    ]
+    with pytest.raises(SystemExit) as ei:
+        main([*base, "--extra-sync-path", "/abs/path"], backends_factory=_explode_factory)
+    assert ei.value.code == 2
+    with pytest.raises(SystemExit) as ei2:
+        main(
+            [*base, "--extra-sync-path", "eval_results/../secrets"],
+            backends_factory=_explode_factory,
+        )
+    assert ei2.value.code == 2

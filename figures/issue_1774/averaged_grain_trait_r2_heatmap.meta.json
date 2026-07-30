@@ -1,0 +1,59 @@
+{
+  "commit": "0307c6cb94",
+  "created": "2026-07-29T11:22:36Z",
+  "figsize": [
+    7.0,
+    4.6
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Persona-averaged trait readability by arm (L14, 996 prefixes)",
+        "annotations": [
+          "0.847",
+          "-0.125",
+          "0.730",
+          "0.678",
+          "0.896",
+          "0.088",
+          "0.662",
+          "0.778",
+          "0.848",
+          "0.046",
+          "0.600",
+          "0.691",
+          "0.798",
+          "0.174",
+          "0.462",
+          "0.572"
+        ],
+        "xticklabels": [
+          "Full context",
+          "Prefix end",
+          "Bare query",
+          "Query-averaged prefix"
+        ],
+        "yticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination",
+          "Overall (all coords)"
+        ]
+      },
+      {
+        "ylabel": "Held-out persona-averaged R\u00b2",
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

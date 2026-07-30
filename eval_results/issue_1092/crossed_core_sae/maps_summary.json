@@ -1,0 +1,901 @@
+{
+ "cells": {
+  "cell_inst_own": {
+   "ctx": {
+    "label": "context_end",
+    "pooled_r2_mean": 0.8887821435928345,
+    "n_ss_tot_zero": 0,
+    "pooled_r2_exploratory": {
+     "max": 0.6390015482902527,
+     "frac": 0.851593554019928
+    },
+    "identity_bias": {
+     "applicable": true,
+     "n_intersection": 764,
+     "pooled_r2": -4.066267967224121,
+     "note": "evaluated on the input\u2229target active-feature intersection (plan section 4)",
+     "n_common_features": 764
+    },
+    "knn": {
+     "euclidean": {
+      "1": {
+       "acc": 0.26115319865319864,
+       "chance": 0.0012637867647058822
+      },
+      "10": {
+       "acc": 0.9398148148148148,
+       "chance": 0.012637867647058822
+      }
+     },
+     "cosine": {
+      "1": {
+       "acc": 0.2668350168350168,
+       "chance": 0.0012637867647058822
+      },
+      "10": {
+       "acc": 0.9452861952861953,
+       "chance": 0.012637867647058822
+      }
+     },
+     "cosine_centered": {
+      "1": {
+       "acc": 0.27104377104377103,
+       "chance": 0.0012637867647058822
+      },
+      "10": {
+       "acc": 0.9497053872053872,
+       "chance": 0.012637867647058822
+      }
+     }
+    },
+    "lambda_per_fold": {
+     "0": 100.0,
+     "1": 100.0,
+     "2": 100.0,
+     "3": 100.0,
+     "4": 100.0,
+     "5": 100.0
+    },
+    "pilot": {
+     "unit_s": 0.4488813877105713,
+     "unit_shape": [
+      3120,
+      793,
+      55204
+     ],
+     "projected_units_per_map": 36,
+     "projected_s_per_map": 16.159729957580566
+    },
+    "n_rows": 4752
+   },
+   "pre": {
+    "label": "prefix_end",
+    "pooled_r2_mean": 0.07841247320175171,
+    "n_ss_tot_zero": 0,
+    "pooled_r2_exploratory": {
+     "max": 0.0031638145446777344,
+     "frac": 0.06687039136886597
+    },
+    "identity_bias": {
+     "applicable": true,
+     "n_intersection": 197,
+     "pooled_r2": -2.4371259212493896,
+     "note": "evaluated on the input\u2229target active-feature intersection (plan section 4)",
+     "n_common_features": 197
+    },
+    "knn": {
+     "euclidean": {
+      "1": {
+       "acc": 0.004208754208754209,
+       "chance": 0.0012637867647058822
+      },
+      "10": {
+       "acc": 0.03324915824915825,
+       "chance": 0.012637867647058822
+      }
+     },
+     "cosine": {
+      "1": {
+       "acc": 0.0021043771043771043,
+       "chance": 0.0012637867647058822
+      },
+      "10": {
+       "acc": 0.03198653198653199,
+       "chance": 0.012637867647058822
+      }
+     },
+     "cosine_centered": {
+      "1": {
+       "acc": 0.0031565656565656565,
+       "chance": 0.0012637867647058822
+      },
+      "10": {
+       "acc": 0.03345959595959596,
+       "chance": 0.012637867647058822
+      }
+     }
+    },
+    "lambda_per_fold": {
+     "0": 1000.0,
+     "1": 1000.0,
+     "2": 1000.0,
+     "3": 1000.0,
+     "4": 1000.0,
+     "5": 1000.0
+    },
+    "pilot": {
+     "unit_s": 0.12227821350097656,
+     "unit_shape": [
+      3120,
+      243,
+      55204
+     ],
+     "projected_units_per_map": 36,
+     "projected_s_per_map": 4.402015686035156
+    },
+    "n_rows": 4752
+   },
+   "bare": {
+    "label": "bare_query (folds grouped BY QUERY)",
+    "pooled_r2_mean": 0.02327573299407959,
+    "n_ss_tot_zero": 0,
+    "pooled_r2_exploratory": {
+     "max": -0.07477700710296631,
+     "frac": -0.06052696704864502
+    },
+    "identity_bias": {
+     "applicable": true,
+     "n_intersection": 673,
+     "pooled_r2": -6.014259338378906,
+     "note": "evaluated on the input\u2229target active-feature intersection (plan section 4)",
+     "n_common_features": 673
+    },
+    "knn": {
+     "euclidean": {
+      "1": {
+       "acc": 0.0031565656565656565,
+       "chance": 0.0012626262626262627
+      },
+      "10": {
+       "acc": 0.03198653198653199,
+       "chance": 0.012626262626262626
+      }
+     },
+     "cosine": {
+      "1": {
+       "acc": 0.003787878787878788,
+       "chance": 0.0012626262626262627
+      },
+      "10": {
+       "acc": 0.03556397306397306,
+       "chance": 0.012626262626262626
+      }
+     },
+     "cosine_centered": {
+      "1": {
+       "acc": 0.004629629629629629,
+       "chance": 0.0012626262626262627
+      },
+      "10": {
+       "acc": 0.041456228956228955,
+       "chance": 0.012626262626262626
+      }
+     }
+    },
+    "lambda_per_fold": {
+     "0": 1000.0,
+     "1": 1000.0,
+     "2": 1000.0,
+     "3": 1000.0,
+     "4": 1000.0,
+     "5": 1000.0
+    },
+    "pilot": {
+     "unit_s": 0.08149027824401855,
+     "unit_shape": [
+      3168,
+      697,
+      55204
+     ],
+     "projected_units_per_map": 36,
+     "projected_s_per_map": 2.933650016784668
+    },
+    "n_rows": 4752
+   },
+   "bare_dense": {
+    "label": "bare_query_dense_3584d (folds grouped BY QUERY)",
+    "pooled_r2_mean": 0.02707970142364502,
+    "n_ss_tot_zero": 0,
+    "pooled_r2_exploratory": {
+     "max": -0.03162801265716553,
+     "frac": -0.03719782829284668
+    },
+    "identity_bias": {
+     "applicable": false,
+     "reason": "input dim != target active-feature dim"
+    },
+    "knn": {
+     "euclidean": {
+      "1": {
+       "acc": 0.0035774410774410776,
+       "chance": 0.0012626262626262627
+      },
+      "10": {
+       "acc": 0.03135521885521886,
+       "chance": 0.012626262626262626
+      }
+     },
+     "cosine": {
+      "1": {
+       "acc": 0.003787878787878788,
+       "chance": 0.0012626262626262627
+      },
+      "10": {
+       "acc": 0.037037037037037035,
+       "chance": 0.012626262626262626
+      }
+     },
+     "cosine_centered": {
+      "1": {
+       "acc": 0.005471380471380472,
+       "chance": 0.0012626262626262627
+      },
+      "10": {
+       "acc": 0.046085858585858584,
+       "chance": 0.012626262626262626
+      }
+     }
+    },
+    "lambda_per_fold": {
+     "0": 1000.0,
+     "1": 1000.0,
+     "2": 1000.0,
+     "3": 1000.0,
+     "4": 1000.0,
+     "5": 1000.0
+    },
+    "pilot": {
+     "unit_s": 0.13318967819213867,
+     "unit_shape": [
+      3168,
+      3584,
+      55204
+     ],
+     "projected_units_per_map": 36,
+     "projected_s_per_map": 4.794828414916992
+    },
+    "n_rows": 4752
+   },
+   "induced_averaged": {
+    "label": "induced_averaged (PRIMARY averaged read)",
+    "pooled_r2_mean": 0.9258443713188171,
+    "n_prefixes": 99,
+    "identity_bias": {
+     "applicable": true,
+     "n_intersection": 764,
+     "pooled_r2": -1.519315242767334,
+     "note": "evaluated on the input\u2229target active-feature intersection (plan section 4)"
+    },
+    "knn": {
+     "euclidean": {
+      "1": {
+       "acc": 0.5151515151515151,
+       "chance": 0.06066176470588235
+      },
+      "10": {
+       "acc": 0.9797979797979798,
+       "chance": 0.6066176470588235
+      }
+     },
+     "cosine": {
+      "1": {
+       "acc": 0.5252525252525253,
+       "chance": 0.06066176470588235
+      },
+      "10": {
+       "acc": 0.9797979797979798,
+       "chance": 0.6066176470588235
+      }
+     },
+     "cosine_centered": {
+      "1": {
+       "acc": 0.48484848484848486,
+       "chance": 0.06066176470588235
+      },
+      "10": {
+       "acc": 0.9797979797979798,
+       "chance": 0.6066176470588235
+      }
+     }
+    }
+   },
+   "independently_fit_averaged": {
+    "label": "independently_fit_averaged (SECONDARY/diagnostic)",
+    "caveat": "n_train ~= 83 prefixes per fold << d = 55204 \u2014 an explicitly under-determined regime; SECONDARY/diagnostic only (plan section 4 map (c))",
+    "pooled_r2_mean": 0.9295879602432251,
+    "lambda_per_fold": {
+     "0": 10.0,
+     "1": 10.0,
+     "2": 10.0,
+     "3": 10.0,
+     "4": 10.0,
+     "5": 10.0
+    },
+    "knn": {
+     "euclidean": {
+      "1": {
+       "acc": 0.5151515151515151,
+       "chance": 0.06066176470588235
+      },
+      "10": {
+       "acc": 0.9797979797979798,
+       "chance": 0.6066176470588235
+      }
+     },
+     "cosine": {
+      "1": {
+       "acc": 0.494949494949495,
+       "chance": 0.06066176470588235
+      },
+      "10": {
+       "acc": 0.9797979797979798,
+       "chance": 0.6066176470588235
+      }
+     },
+     "cosine_centered": {
+      "1": {
+       "acc": 0.48484848484848486,
+       "chance": 0.06066176470588235
+      },
+      "10": {
+       "acc": 0.9797979797979798,
+       "chance": 0.6066176470588235
+      }
+     }
+    }
+   },
+   "sink_robustness": {
+    "tail_overlap_at_100": 1.0,
+    "share_prefix_pearson": 0.9999999999999999,
+    "n_rows_pe_sink_flagged": 0,
+    "n_rows_ce_sink_flagged": 0,
+    "mean_sink_answer_tokens": 0.0,
+    "note": "PRIMARY pooling excludes 10x-median-norm sink answer tokens; SECONDARY is the all-token mean (v12 taxonomy control (1): headline must survive)"
+   },
+   "rb_alignment": {
+    "headline": "scaffold_projected (plan v14 SCAFFOLD CONTROL; raw kept as companion)",
+    "scaffold_rank": 48,
+    "rb_scaffold_mass_frac_per_trait": {
+     "evil": 0.36838993430137634,
+     "hallucination": 0.5840710997581482,
+     "sycophancy": 0.5126110911369324
+    },
+    "trait_order": [
+     "evil",
+     "hallucination",
+     "sycophancy"
+    ],
+    "raw": {
+     "obs_max_over_traits": {
+      "p50": 0.03561556339263916,
+      "p95": 0.10864931344985962,
+      "p99": 0.16852040588855743,
+      "max": 0.5140782594680786
+     },
+     "null_p95_of_per_draw_max": 0.039886474609375
+    },
+    "scaffold_projected": {
+     "obs_max_over_traits": {
+      "p50": 0.030835608020424843,
+      "p95": 0.07992947846651077,
+      "p99": 0.1272459179162979,
+      "max": 0.4242430329322815
+     },
+     "null_p95_of_per_draw_max": 0.0401611328125
+    },
+    "evil_raw": {
+     "p50": 0.0170440673828125,
+     "p95": 0.07170701026916504,
+     "p99": 0.12188529968261719,
+     "max": 0.42724609375
+    },
+    "evil_mean_centered": {
+     "p50": 0.016876220703125,
+     "p95": 0.07159423828125,
+     "p99": 0.12225341796875,
+     "max": 0.4306640625
+    },
+    "evil_scaffold_projected": {
+     "p50": 0.0155181884765625,
+     "p95": 0.05810546875,
+     "p99": 0.10119438171386719,
+     "max": 0.41015625
+    }
+   },
+   "anova_selection": {
+    "prefix": {
+     "obs_max": 0.6199119091033936,
+     "obs_topk_mean": 0.21459396183490753,
+     "p_selection_max": 0.004975124378109453,
+     "p_selection_topk": 0.004975124378109453,
+     "top_k": 100
+    },
+    "query": {
+     "obs_max": 0.9974979162216187,
+     "obs_topk_mean": 0.9850919842720032,
+     "p_selection_max": 0.004975124378109453,
+     "p_selection_topk": 0.004975124378109453,
+     "top_k": 100
+    }
+   },
+   "four_object_table": {
+    "pooled_r2 (matched target = pooled-answer mean)": {
+     "prefix_end": 0.07841247320175171,
+     "bare_query": 0.02327573299407959,
+     "bare_query_dense": 0.02707970142364502,
+     "context_end": 0.8887821435928345,
+     "encode_then_averaged_induced": 0.9258443713188171
+    },
+    "per_feature_slice_tau": 0.1,
+    "n_bare_query_predictable": 1510,
+    "n_need_prefix (pre>tau, bare<=tau)": 21,
+    "n_need_composition (ctx>tau, bare<=tau, pre<=tau)": 39912
+   }
+  },
+  "cell_pre_own": {
+   "ctx": {
+    "label": "context_end",
+    "pooled_r2_mean": 0.8117079138755798,
+    "n_ss_tot_zero": 0,
+    "pooled_r2_exploratory": {
+     "max": 0.6471973061561584,
+     "frac": 0.7762284874916077
+    },
+    "identity_bias": {
+     "applicable": true,
+     "n_intersection": 763,
+     "pooled_r2": -1.0523526668548584,
+     "note": "evaluated on the input\u2229target active-feature intersection (plan section 4)",
+     "n_common_features": 763
+    },
+    "knn": {
+     "euclidean": {
+      "1": {
+       "acc": 0.26452020202020204,
+       "chance": 0.0012637867647058822
+      },
+      "10": {
+       "acc": 0.9255050505050505,
+       "chance": 0.012637867647058822
+      }
+     },
+     "cosine": {
+      "1": {
+       "acc": 0.27230639730639733,
+       "chance": 0.0012637867647058822
+      },
+      "10": {
+       "acc": 0.9320286195286195,
+       "chance": 0.012637867647058822
+      }
+     },
+     "cosine_centered": {
+      "1": {
+       "acc": 0.26914983164983164,
+       "chance": 0.0012637867647058822
+      },
+      "10": {
+       "acc": 0.9427609427609428,
+       "chance": 0.012637867647058822
+      }
+     }
+    },
+    "lambda_per_fold": {
+     "0": 100.0,
+     "1": 100.0,
+     "2": 100.0,
+     "3": 100.0,
+     "4": 100.0,
+     "5": 100.0
+    },
+    "pilot": {
+     "unit_s": 0.014518260955810547,
+     "unit_shape": [
+      3120,
+      857,
+      30581
+     ],
+     "projected_units_per_map": 36,
+     "projected_s_per_map": 0.5226573944091797
+    },
+    "n_rows": 4752
+   },
+   "pre": {
+    "label": "prefix_end",
+    "pooled_r2_mean": -176130.015625,
+    "n_ss_tot_zero": 0,
+    "pooled_r2_exploratory": {
+     "max": -202711.0,
+     "frac": -171560.953125
+    },
+    "identity_bias": {
+     "applicable": true,
+     "n_intersection": 27290,
+     "pooled_r2": -1092548.375,
+     "note": "evaluated on the input\u2229target active-feature intersection (plan section 4)",
+     "n_common_features": 27290
+    },
+    "knn": {
+     "euclidean": {
+      "1": {
+       "acc": 0.0006313131313131314,
+       "chance": 0.0012637867647058822
+      },
+      "10": {
+       "acc": 0.018518518518518517,
+       "chance": 0.012637867647058822
+      }
+     },
+     "cosine": {
+      "1": {
+       "acc": 0.0010521885521885522,
+       "chance": 0.0012637867647058822
+      },
+      "10": {
+       "acc": 0.01452020202020202,
+       "chance": 0.012637867647058822
+      }
+     },
+     "cosine_centered": {
+      "1": {
+       "acc": 0.0008417508417508417,
+       "chance": 0.0012637867647058822
+      },
+      "10": {
+       "acc": 0.016203703703703703,
+       "chance": 0.012637867647058822
+      }
+     }
+    },
+    "lambda_per_fold": {
+     "0": 1000.0,
+     "1": 1000.0,
+     "2": 1000.0,
+     "3": 1000.0,
+     "4": 1000.0,
+     "5": 1000.0
+    },
+    "pilot": {
+     "unit_s": 0.11155462265014648,
+     "unit_shape": [
+      3120,
+      113503,
+      30581
+     ],
+     "projected_units_per_map": 36,
+     "projected_s_per_map": 4.015966415405273
+    },
+    "n_rows": 4752
+   },
+   "bare": {
+    "label": "bare_query (folds grouped BY QUERY)",
+    "pooled_r2_mean": -0.041112422943115234,
+    "n_ss_tot_zero": 0,
+    "pooled_r2_exploratory": {
+     "max": -0.14898240566253662,
+     "frac": -0.10145378112792969
+    },
+    "identity_bias": {
+     "applicable": true,
+     "n_intersection": 462,
+     "pooled_r2": -1.5418431758880615,
+     "note": "evaluated on the input\u2229target active-feature intersection (plan section 4)",
+     "n_common_features": 462
+    },
+    "knn": {
+     "euclidean": {
+      "1": {
+       "acc": 0.002946127946127946,
+       "chance": 0.0012626262626262627
+      },
+      "10": {
+       "acc": 0.022306397306397305,
+       "chance": 0.012626262626262626
+      }
+     },
+     "cosine": {
+      "1": {
+       "acc": 0.002735690235690236,
+       "chance": 0.0012626262626262627
+      },
+      "10": {
+       "acc": 0.021464646464646464,
+       "chance": 0.012626262626262626
+      }
+     },
+     "cosine_centered": {
+      "1": {
+       "acc": 0.00484006734006734,
+       "chance": 0.0012626262626262627
+      },
+      "10": {
+       "acc": 0.036616161616161616,
+       "chance": 0.012626262626262626
+      }
+     }
+    },
+    "lambda_per_fold": {
+     "0": 1000.0,
+     "1": 1000.0,
+     "2": 1000.0,
+     "3": 1000.0,
+     "4": 1000.0,
+     "5": 1000.0
+    },
+    "pilot": {
+     "unit_s": 0.00954294204711914,
+     "unit_shape": [
+      3168,
+      538,
+      30581
+     ],
+     "projected_units_per_map": 36,
+     "projected_s_per_map": 0.34354591369628906
+    },
+    "n_rows": 4752
+   },
+   "bare_dense": {
+    "label": "bare_query_dense_3584d (folds grouped BY QUERY)",
+    "pooled_r2_mean": -0.017435550689697266,
+    "n_ss_tot_zero": 0,
+    "pooled_r2_exploratory": {
+     "max": -0.14041519165039062,
+     "frac": -0.08760905265808105
+    },
+    "identity_bias": {
+     "applicable": false,
+     "reason": "input dim != target active-feature dim"
+    },
+    "knn": {
+     "euclidean": {
+      "1": {
+       "acc": 0.003367003367003367,
+       "chance": 0.0012626262626262627
+      },
+      "10": {
+       "acc": 0.02251683501683502,
+       "chance": 0.012626262626262626
+      }
+     },
+     "cosine": {
+      "1": {
+       "acc": 0.0031565656565656565,
+       "chance": 0.0012626262626262627
+      },
+      "10": {
+       "acc": 0.027146464646464648,
+       "chance": 0.012626262626262626
+      }
+     },
+     "cosine_centered": {
+      "1": {
+       "acc": 0.005471380471380472,
+       "chance": 0.0012626262626262627
+      },
+      "10": {
+       "acc": 0.04503367003367004,
+       "chance": 0.012626262626262626
+      }
+     }
+    },
+    "lambda_per_fold": {
+     "0": 1000.0,
+     "1": 1000.0,
+     "2": 1000.0,
+     "3": 1000.0,
+     "4": 1000.0,
+     "5": 1000.0
+    },
+    "pilot": {
+     "unit_s": 0.051957130432128906,
+     "unit_shape": [
+      3168,
+      3584,
+      30581
+     ],
+     "projected_units_per_map": 36,
+     "projected_s_per_map": 1.8704566955566406
+    },
+    "n_rows": 4752
+   },
+   "induced_averaged": {
+    "label": "induced_averaged (PRIMARY averaged read)",
+    "pooled_r2_mean": 0.8927764892578125,
+    "n_prefixes": 99,
+    "identity_bias": {
+     "applicable": true,
+     "n_intersection": 763,
+     "pooled_r2": -0.23181748390197754,
+     "note": "evaluated on the input\u2229target active-feature intersection (plan section 4)"
+    },
+    "knn": {
+     "euclidean": {
+      "1": {
+       "acc": 0.5252525252525253,
+       "chance": 0.06066176470588235
+      },
+      "10": {
+       "acc": 0.9797979797979798,
+       "chance": 0.6066176470588235
+      }
+     },
+     "cosine": {
+      "1": {
+       "acc": 0.5151515151515151,
+       "chance": 0.06066176470588235
+      },
+      "10": {
+       "acc": 0.9797979797979798,
+       "chance": 0.6066176470588235
+      }
+     },
+     "cosine_centered": {
+      "1": {
+       "acc": 0.5252525252525253,
+       "chance": 0.06066176470588235
+      },
+      "10": {
+       "acc": 0.9797979797979798,
+       "chance": 0.6066176470588235
+      }
+     }
+    }
+   },
+   "independently_fit_averaged": {
+    "label": "independently_fit_averaged (SECONDARY/diagnostic)",
+    "caveat": "n_train ~= 83 prefixes per fold << d = 30581 \u2014 an explicitly under-determined regime; SECONDARY/diagnostic only (plan section 4 map (c))",
+    "pooled_r2_mean": 0.9099496603012085,
+    "lambda_per_fold": {
+     "0": 10.0,
+     "1": 10.0,
+     "2": 10.0,
+     "3": 10.0,
+     "4": 10.0,
+     "5": 10.0
+    },
+    "knn": {
+     "euclidean": {
+      "1": {
+       "acc": 0.5050505050505051,
+       "chance": 0.06066176470588235
+      },
+      "10": {
+       "acc": 0.9797979797979798,
+       "chance": 0.6066176470588235
+      }
+     },
+     "cosine": {
+      "1": {
+       "acc": 0.5050505050505051,
+       "chance": 0.06066176470588235
+      },
+      "10": {
+       "acc": 0.9797979797979798,
+       "chance": 0.6066176470588235
+      }
+     },
+     "cosine_centered": {
+      "1": {
+       "acc": 0.494949494949495,
+       "chance": 0.06066176470588235
+      },
+      "10": {
+       "acc": 0.9797979797979798,
+       "chance": 0.6066176470588235
+      }
+     }
+    }
+   },
+   "sink_robustness": {
+    "tail_overlap_at_100": 1.0,
+    "share_prefix_pearson": 0.9999999999999998,
+    "n_rows_pe_sink_flagged": 2496,
+    "n_rows_ce_sink_flagged": 0,
+    "mean_sink_answer_tokens": 0.0,
+    "note": "PRIMARY pooling excludes 10x-median-norm sink answer tokens; SECONDARY is the all-token mean (v12 taxonomy control (1): headline must survive)"
+   },
+   "rb_alignment": {
+    "headline": "scaffold_projected (plan v14 SCAFFOLD CONTROL; raw kept as companion)",
+    "scaffold_rank": 48,
+    "rb_scaffold_mass_frac_per_trait": {
+     "evil": 0.29126831889152527,
+     "hallucination": 0.5406979322433472,
+     "sycophancy": 0.42382827401161194
+    },
+    "trait_order": [
+     "evil",
+     "hallucination",
+     "sycophancy"
+    ],
+    "raw": {
+     "obs_max_over_traits": {
+      "p50": 0.03755516558885574,
+      "p95": 0.11934393644332886,
+      "p99": 0.1860962063074112,
+      "max": 0.5140782594680786
+     },
+     "null_p95_of_per_draw_max": 0.0399169921875
+    },
+    "scaffold_projected": {
+     "obs_max_over_traits": {
+      "p50": 0.03173470497131348,
+      "p95": 0.08573062717914581,
+      "p99": 0.14203289151191711,
+      "max": 0.4444220960140228
+     },
+     "null_p95_of_per_draw_max": 0.0401611328125
+    },
+    "evil_raw": {
+     "p50": 0.017333984375,
+     "p95": 0.076904296875,
+     "p99": 0.13063979148864746,
+     "max": 0.42724609375
+    },
+    "evil_mean_centered": {
+     "p50": 0.0172882080078125,
+     "p95": 0.07666015625,
+     "p99": 0.1309814453125,
+     "max": 0.429931640625
+    },
+    "evil_scaffold_projected": {
+     "p50": 0.01537322998046875,
+     "p95": 0.0623779296875,
+     "p99": 0.11397719383239746,
+     "max": 0.4443359375
+    }
+   },
+   "anova_selection": {
+    "prefix": {
+     "obs_max": 0.7975810766220093,
+     "obs_topk_mean": 0.2320317029953003,
+     "p_selection_max": 0.004975124378109453,
+     "p_selection_topk": 0.004975124378109453,
+     "top_k": 100
+    },
+    "query": {
+     "obs_max": 0.9995139837265015,
+     "obs_topk_mean": 0.9856485724449158,
+     "p_selection_max": 0.004975124378109453,
+     "p_selection_topk": 0.004975124378109453,
+     "top_k": 100
+    }
+   },
+   "four_object_table": {
+    "pooled_r2 (matched target = pooled-answer mean)": {
+     "prefix_end": -176130.015625,
+     "bare_query": -0.041112422943115234,
+     "bare_query_dense": -0.017435550689697266,
+     "context_end": 0.8117079138755798,
+     "encode_then_averaged_induced": 0.8927764892578125
+    },
+    "per_feature_slice_tau": 0.1,
+    "n_bare_query_predictable": 268,
+    "n_need_prefix (pre>tau, bare<=tau)": 0,
+    "n_need_composition (ctx>tau, bare<=tau, pre<=tau)": 23640
+   }
+  }
+ },
+ "repro": {
+  "git_commit": "",
+  "torch": "2.8.0+cu128",
+  "transformers": "4.57.6",
+  "numpy": "2.2.6",
+  "timestamp_utc": "2026-07-29T00:23:41Z",
+  "corpus_rev": "e590170619e7691c1a95c7b1bb20bda5fd4065ad",
+  "rb_rev": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "sae": {
+   "k": 64,
+   "layer": 19
+  }
+ }
+}

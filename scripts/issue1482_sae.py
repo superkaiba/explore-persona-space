@@ -67,10 +67,33 @@ SAE_REPO = "andyrdt/saes-qwen2.5-7b-instruct"
 SAE_REVISION = "c37e53c4bb07127ad17ab88f28b93d4e87142e59"
 ACT_DIM = 3584
 DICT_SIZE = 131_072
-TRAINER_SUBDIR = {64: "resid_post_layer_19/trainer_1", 128: "resid_post_layer_19/trainer_2"}
+# Suite coverage + k -> trainer-index map (early-layer-arm generalization, #1482 plan v16
+# §4 item 1): resid_post layers {3,7,11,15,19,23,27}; trainers 0..3 = k in {32,64,128,256}.
+# Verified at L3 AND consistent with the L19 registrations below (Hub configs read at the
+# pinned revision, 2026-07-28: L3 trainer_1 k=64 / trainer_2 k=128).
+SUITE_LAYERS = (3, 7, 11, 15, 19, 23, 27)
+TRAINER_INDEX_BY_K = {32: 0, 64: 1, 128: 2, 256: 3}
+
+
+def trainer_subdir(layer: int, k: int) -> str:
+    """Repo subfolder for one (layer, k) trainer; fail-loud off the suite grid."""
+    assert layer in SUITE_LAYERS, f"layer {layer} not in suite {SUITE_LAYERS}"
+    assert k in TRAINER_INDEX_BY_K, f"k {k} not in {sorted(TRAINER_INDEX_BY_K)}"
+    return f"resid_post_layer_{layer}/trainer_{TRAINER_INDEX_BY_K[k]}"
+
+
+# Legacy L19 map — kept so existing callers stay byte-compatible
+# (issue1482_error_analysis.phase_p2 `sorted(TRAINER_SUBDIR)`, the _cli choices).
+TRAINER_SUBDIR = {k: trainer_subdir(19, k) for k in (64, 128)}
 EXPECTED_KEYS = {"b_dec", "k", "threshold", "decoder.weight", "encoder.weight", "encoder.bias"}
 # Published suite eval (each trainer's eval_results.json) — Gate B calibration source.
-PUBLISHED_FVE = {64: 0.80572265625, 128: 0.84236328125}
+# Keyed layer -> k (JSON-serializable; L3 values Hub-read at the pinned revision
+# 2026-07-28: frac_variance_explained 0.93087890625 / 0.94208984375).
+PUBLISHED_FVE_BY_LAYER = {
+    3: {64: 0.93087890625, 128: 0.94208984375},
+    19: {64: 0.80572265625, 128: 0.84236328125},
+}
+PUBLISHED_FVE = PUBLISHED_FVE_BY_LAYER[19]  # legacy alias (existing L19 callers)
 
 # Reference token-pool constants (andyrdt/dictionary_learning@andyrdt/qwen buffer.py —
 # see module docstring "TOKEN-POOL semantics"). Applied by fve_l0 (outlier filter)
@@ -133,9 +156,18 @@ class BatchTopKSAE:
         self.threshold = float(thr)
 
     @classmethod
-    def load(cls, k: int = 64, device: str = "cpu", cache_dir: Path | str | None = None):
-        """Download (revision-pinned) + load one trainer; asserts config + key set.
+    def load(
+        cls,
+        k: int = 64,
+        device: str = "cpu",
+        cache_dir: Path | str | None = None,
+        *,
+        layer: int = 19,
+    ):
+        """Download (revision-pinned) + load one (layer, k) trainer; asserts config + keys.
 
+        ``layer`` defaults to 19 so every pre-existing caller stays byte-compatible
+        (#1482 early-layer-arm generalization; the layer assert generalizes with it).
         Both fetches ride ``hub.retry_transient`` (#1402: Retry-After-aware,
         ``EPM_HF_RETRY_BUDGET_S`` wall budget, LocalEntryNotFoundError transient
         BY CLASS) — this is P2-child-reachable, and a Hub queue-full 429 storm
@@ -144,7 +176,7 @@ class BatchTopKSAE:
 
         from explore_persona_space.orchestrate import hub
 
-        sub = TRAINER_SUBDIR[k]
+        sub = trainer_subdir(layer, k)
         kw = {"revision": SAE_REVISION, "repo_type": "model"}
         if cache_dir is not None:
             kw["local_dir"] = str(cache_dir)
@@ -155,7 +187,7 @@ class BatchTopKSAE:
         cfg = json.loads(Path(cfg_path).read_text())["trainer"]
         assert cfg["dict_class"] == "BatchTopKSAE", cfg["dict_class"]
         assert cfg["activation_dim"] == ACT_DIM and cfg["dict_size"] == DICT_SIZE, cfg
-        assert cfg["k"] == k and cfg["layer"] == 19, (cfg["k"], cfg["layer"])
+        assert cfg["k"] == k and cfg["layer"] == layer, (cfg["k"], cfg["layer"], layer)
         assert cfg["lm_name"] == "Qwen/Qwen2.5-7B-Instruct", cfg["lm_name"]
         ae_path = hub.retry_transient(
             lambda: hf_hub_download(SAE_REPO, f"{sub}/ae.pt", **kw),
@@ -168,9 +200,10 @@ class BatchTopKSAE:
         return cls(sd, k=k, device=device)
 
     @classmethod
-    def ensure_downloaded(cls, k: int, cache_dir: Path | str) -> None:
-        """Idempotently stage trainer ``k``'s ``config.json`` + ``ae.pt`` into
-        ``cache_dir`` (parent-side pre-stage for fan-out consumers).
+    def ensure_downloaded(cls, k: int, cache_dir: Path | str, *, layer: int = 19) -> None:
+        """Idempotently stage the (``layer``, ``k``) trainer's ``config.json`` +
+        ``ae.pt`` into ``cache_dir`` (parent-side pre-stage for fan-out consumers;
+        ``layer`` defaults to 19 for existing-caller byte-compatibility).
 
         N concurrent workers calling ``load()`` against ONE empty shared
         ``local_dir`` race the download scratch (#1315 fanout shared-staging
@@ -185,7 +218,7 @@ class BatchTopKSAE:
 
         from explore_persona_space.orchestrate import hub
 
-        sub = TRAINER_SUBDIR[k]
+        sub = trainer_subdir(layer, k)
         cache = Path(cache_dir)
         staged, present = [], []
         for fname in ("config.json", "ae.pt"):
@@ -315,6 +348,282 @@ def sparsify(pooled: dict[str, torch.Tensor]) -> dict[str, object]:
     for name, v in pooled.items():
         out[name] = v[idx].cpu().numpy().astype(np.float16)
     return out
+
+
+# ── SAELens matryoshka jumprelu (issue #1482 matryoshka-tier round) — ADDITIVE ───────
+# Everything in this section is NEW for the matryoshka-tier round (plan v21 §4 item 1);
+# the BatchTopKSAE surface above is byte-untouched (check-(i) source-module convention;
+# the round's consistency check certified this module additive-only).
+
+SAELENS_REPO = "chanind/qwen2.5-7B-it-layer-20-saes"
+# Pinned at plan time (repo main sha, Hub-resolved 2026-07-29; plan v21 §2 availability gate).
+SAELENS_REVISION = "db8c88b400e36e603d0563abcf8d289e5eff5687"
+SAELENS_DICT_SIZE = 65_536
+SAELENS_SAE_IDS = ("lmsys/matryoshka/k-100", "pile/matryoshka/k-100")
+SAELENS_EXPECTED_KEYS = {"W_enc", "W_dec", "b_enc", "b_dec", "threshold"}
+# Training-imposed granularity tiers (runner_cfg.json matryoshka_widths, Hub-read at the
+# pinned revision; arXiv 2503.17547 nested-prefix semantics): feature-id bins
+# [0, 2048) / [2048, 16384) / [16384, 65536) -> tier 0 / 1 / 2.
+MATRYOSHKA_TIER_BOUNDS = (2048, 16384, 65536)
+
+
+def tier_of(ids):
+    """Matryoshka tier index (0/1/2) per feature id — deterministic id bins, no fit
+    input (plan §11 R2). Returns an int8 numpy array; fail-loud outside [0, 65536)."""
+    import numpy as np
+
+    arr = np.asarray(ids, dtype=np.int64)
+    assert arr.size == 0 or ((arr >= 0).all() and (arr < MATRYOSHKA_TIER_BOUNDS[-1]).all()), (
+        "feature id outside [0, 65536)"
+    )
+    bounds = np.asarray(MATRYOSHKA_TIER_BOUNDS[:-1], dtype=np.int64)
+    return np.searchsorted(bounds, arr, side="right").astype(np.int8)
+
+
+def _cfg_field(cfg: dict, key: str):
+    """cfg.json field lookup — top level first, then the SAELens ``metadata`` nest;
+    fail-loud on absence (never a silent default)."""
+    if key in cfg:
+        return cfg[key]
+    meta = cfg.get("metadata")
+    if isinstance(meta, dict) and key in meta:
+        return meta[key]
+    raise KeyError(f"cfg.json field {key!r} absent (top level and metadata)")
+
+
+@torch.no_grad()
+def _reference_fve_l0(sae, h: torch.Tensor, chunk: int = 2048) -> tuple[float, float, dict]:
+    """Reference-parity FVE/L0 for any encode/decode SAE object (the BatchTopKSAE.fve_l0
+    semantics generalized so the SAELens class reuses them verbatim — see the module
+    docstring "TOKEN-POOL semantics"): drop token rows with L2 norm >
+    OUTLIER_NORM_FACTOR x pool median, then var-based FVE (per-dim unbiased variance,
+    summed) + mean-nnz L0 over kept rows; fp64 accumulators. Sequence-level callers
+    strip the first BOS_OFFSET positions BEFORE pooling rows into ``h``.
+    Raises ValueError below 2 inlier rows (variance undefined)."""
+    assert h.ndim == 2 and h.shape[1] == sae.act_dim, tuple(h.shape)
+    h32 = h.to(device=sae.device, dtype=torch.float32)
+    norms = h32.norm(dim=1)
+    med = float(norms.median())
+    keep = norms <= OUTLIER_NORM_FACTOR * med
+    n_dropped = int((~keep).sum())
+    hk = h32[keep]
+    n = int(hk.shape[0])
+    if n < 2:
+        raise ValueError(
+            f"fve_l0: only {n} inlier rows (need >= 2 for variance); "
+            f"n_rows={int(h.shape[0])} n_outlier_dropped={n_dropped}"
+        )
+    x_sum = torch.zeros(sae.act_dim, dtype=torch.float64, device=sae.device)
+    x_sq = torch.zeros_like(x_sum)
+    r_sum = torch.zeros_like(x_sum)
+    r_sq = torch.zeros_like(x_sum)
+    l0_sum = 0.0
+    for s in range(0, n, chunk):
+        x = hk[s : s + chunk]
+        f = sae.encode(x, chunk=chunk)
+        r = x - sae.decode(f)
+        x_sum += x.sum(0, dtype=torch.float64)
+        x_sq += (x * x).sum(0, dtype=torch.float64)
+        r_sum += r.sum(0, dtype=torch.float64)
+        r_sq += (r * r).sum(0, dtype=torch.float64)
+        l0_sum += float((f > 0).sum())
+
+    def _var_sum(ssum: torch.Tensor, ssq: torch.Tensor) -> float:
+        return float(((ssq - ssum * ssum / n) / (n - 1)).sum())
+
+    ss_tot = _var_sum(x_sum, x_sq)
+    fve = float("nan") if ss_tot < 1e-12 else 1.0 - _var_sum(r_sum, r_sq) / ss_tot
+    diag = {
+        "n_rows": int(h.shape[0]),
+        "n_inlier": n,
+        "n_outlier_dropped": n_dropped,
+        "median_norm": round(med, 2),
+    }
+    return fve, l0_sum / n, diag
+
+
+class SAELensJumpReLU:
+    """Minimal inference-only SAELens jumprelu SAE (the chanind L20 matryoshka save).
+
+    Encode/decode semantics VERBATIM from the pinned SAELens v6.37.6 tag
+    (``sae_lens/saes/jumprelu_sae.py``, source fetched at plan time — plan §11 R7):
+
+        sae_in     = x - b_dec                    # apply_b_dec_to_input: true (asserted)
+        hidden_pre = sae_in @ W_enc + b_enc
+        acts       = relu(hidden_pre) * (hidden_pre > threshold)
+        recon      = acts @ W_dec + b_dec
+
+    fp32 throughout; NO runtime decoder-norm rescaling — the training-time
+    ``rescale_acts_by_decoder_norm: true`` is folded into the saved jumprelu weights
+    at conversion (SAELens ``_fold_norm_topk``), and the inference cfg.json declares
+    plain ``jumprelu`` with ``normalize_activations: "none"`` (both asserted at load).
+    Duck-types ``BatchTopKSAE``'s encode/decode/fve_l0 tensor contract so the shared
+    ``_row_features`` / pooling consumers run unchanged."""
+
+    def __init__(self, cfg: dict, state_dict: dict, device: str = "cpu"):
+        assert _cfg_field(cfg, "architecture") == "jumprelu", _cfg_field(cfg, "architecture")
+        assert int(_cfg_field(cfg, "d_in")) == ACT_DIM, _cfg_field(cfg, "d_in")
+        assert int(_cfg_field(cfg, "d_sae")) == SAELENS_DICT_SIZE, _cfg_field(cfg, "d_sae")
+        assert _cfg_field(cfg, "apply_b_dec_to_input") is True, "apply_b_dec_to_input != true"
+        assert _cfg_field(cfg, "normalize_activations") == "none", _cfg_field(
+            cfg, "normalize_activations"
+        )
+        keys = set(state_dict.keys())
+        assert keys == SAELENS_EXPECTED_KEYS, (
+            f"sae_weights key drift: {sorted(keys)} != {sorted(SAELENS_EXPECTED_KEYS)}"
+        )
+        w_enc = state_dict["W_enc"]
+        w_dec = state_dict["W_dec"]
+        b_enc = state_dict["b_enc"]
+        b_dec = state_dict["b_dec"]
+        thr = state_dict["threshold"]
+        assert tuple(w_enc.shape) == (ACT_DIM, SAELENS_DICT_SIZE), w_enc.shape
+        assert tuple(w_dec.shape) == (SAELENS_DICT_SIZE, ACT_DIM), w_dec.shape
+        assert tuple(b_enc.shape) == (SAELENS_DICT_SIZE,), b_enc.shape
+        assert tuple(b_dec.shape) == (ACT_DIM,), b_dec.shape
+        # Per-feature jumprelu threshold VECTOR (the saved-inference format; NOT the
+        # BatchTopK scalar — asserted so a save-format drift fails loud here).
+        assert tuple(thr.shape) == (SAELENS_DICT_SIZE,), thr.shape
+        self.act_dim = ACT_DIM
+        self.dict_size = SAELENS_DICT_SIZE
+        self.device = device
+        self.w_enc = w_enc.to(device=device, dtype=torch.float32)
+        self.w_dec = w_dec.to(device=device, dtype=torch.float32)
+        self.b_enc = b_enc.to(device=device, dtype=torch.float32)
+        self.b_dec = b_dec.to(device=device, dtype=torch.float32)
+        self.threshold = thr.to(device=device, dtype=torch.float32)
+
+    @staticmethod
+    def _files(sae_id: str) -> tuple[str, str]:
+        assert sae_id in SAELENS_SAE_IDS, f"unknown matryoshka sae_id {sae_id!r}"
+        return f"{sae_id}/cfg.json", f"{sae_id}/sae_weights.safetensors"
+
+    @classmethod
+    def load(
+        cls,
+        sae_id: str,
+        device: str = "cpu",
+        cache_dir: Path | str | None = None,
+        *,
+        repo_id: str = SAELENS_REPO,
+        revision: str = SAELENS_REVISION,
+    ):
+        """Download (revision-pinned) + load one matryoshka variant; asserts cfg + keys.
+
+        Both fetches ride ``hub.retry_transient`` (the P2-child 429-storm class)."""
+        from huggingface_hub import hf_hub_download
+        from safetensors import safe_open
+
+        from explore_persona_space.orchestrate import hub
+
+        cfg_name, w_name = cls._files(sae_id)
+        kw = {"revision": revision, "repo_type": "model"}
+        if cache_dir is not None:
+            kw["local_dir"] = str(cache_dir)
+        cfg_path = hub.retry_transient(
+            lambda: hf_hub_download(repo_id, cfg_name, **kw),
+            what=f"saelens cfg fetch ({repo_id}:{sae_id})",
+        )
+        cfg = json.loads(Path(cfg_path).read_text())
+        w_path = hub.retry_transient(
+            lambda: hf_hub_download(repo_id, w_name, **kw),
+            what=f"saelens weights fetch ({repo_id}:{sae_id})",
+        )
+        sd: dict = {}
+        with safe_open(w_path, framework="pt", device="cpu") as f:
+            for k in f.keys():  # noqa: SIM118 — safetensors handle, not a dict
+                sd[k] = f.get_tensor(k)
+        logger.info("[sae] loaded %s from %s@%s (jumprelu)", sae_id, repo_id, revision[:8])
+        return cls(cfg, sd, device=device)
+
+    @classmethod
+    def ensure_downloaded(
+        cls,
+        sae_id: str,
+        cache_dir: Path | str,
+        *,
+        repo_id: str = SAELENS_REPO,
+        revision: str = SAELENS_REVISION,
+    ) -> None:
+        """Idempotently stage the variant's cfg + weights into ``cache_dir`` (the
+        BatchTopKSAE.ensure_downloaded parent-pre-stage convention; #1315 class)."""
+        from huggingface_hub import hf_hub_download
+
+        from explore_persona_space.orchestrate import hub
+
+        cache = Path(cache_dir)
+        staged, present = [], []
+        for fname in cls._files(sae_id):
+            target = cache / fname
+            if target.exists() and target.stat().st_size > 0:
+                present.append(fname)
+                continue
+            hub.retry_transient(
+                lambda f=fname: hf_hub_download(
+                    repo_id, f, revision=revision, repo_type="model", local_dir=str(cache)
+                ),
+                what=f"saelens pre-stage ({repo_id}:{fname})",
+            )
+            staged.append(fname)
+        logger.info(
+            "[sae] pre-stage %s -> %s (staged=%s present=%s)", sae_id, cache, staged, present
+        )
+
+    @torch.no_grad()
+    def encode(self, h: torch.Tensor, chunk: int = 2048) -> torch.Tensor:
+        """(T, act_dim) activations -> (T, dict_size) jumprelu features (fp32).
+
+        Chunked over rows so the (chunk, dict_size) buffer bounds peak memory."""
+        assert h.ndim == 2 and h.shape[1] == self.act_dim, tuple(h.shape)
+        outs = []
+        for s in range(0, h.shape[0], chunk):
+            x = h[s : s + chunk].to(device=self.device, dtype=torch.float32) - self.b_dec
+            pre = x @ self.w_enc + self.b_enc
+            outs.append(torch.relu(pre) * (pre > self.threshold))
+        return torch.cat(outs) if len(outs) != 1 else outs[0]
+
+    @torch.no_grad()
+    def decode(self, f: torch.Tensor) -> torch.Tensor:
+        """(T, dict_size) features -> (T, act_dim) reconstruction (fp32)."""
+        assert f.ndim == 2 and f.shape[1] == self.dict_size, tuple(f.shape)
+        return f.to(device=self.device, dtype=torch.float32) @ self.w_dec + self.b_dec
+
+    @torch.no_grad()
+    def fve_l0(self, h: torch.Tensor, chunk: int = 2048) -> tuple[float, float, dict]:
+        """Reference-parity reconstruction fitness (Gate B-m mechanism) — the shared
+        token-pool semantics via ``_reference_fve_l0``."""
+        return _reference_fve_l0(self, h, chunk=chunk)
+
+
+def fetch_saelens_sparsity(
+    sae_id: str,
+    cache_dir: Path | str | None = None,
+    *,
+    repo_id: str = SAELENS_REPO,
+    revision: str = SAELENS_REVISION,
+) -> torch.Tensor:
+    """The variant's training ``sparsity.safetensors`` (single tensor, key-agnostic —
+    asserted exactly one key of shape (65536,)): the Gate B-m sparsity-correlation
+    convention fingerprint's reference (diagnostic only, plan §4 M0 (b))."""
+    from huggingface_hub import hf_hub_download
+    from safetensors import safe_open
+
+    from explore_persona_space.orchestrate import hub
+
+    assert sae_id in SAELENS_SAE_IDS, f"unknown matryoshka sae_id {sae_id!r}"
+    kw = {"revision": revision, "repo_type": "model"}
+    if cache_dir is not None:
+        kw["local_dir"] = str(cache_dir)
+    path = hub.retry_transient(
+        lambda: hf_hub_download(repo_id, f"{sae_id}/sparsity.safetensors", **kw),
+        what=f"saelens sparsity fetch ({repo_id}:{sae_id})",
+    )
+    with safe_open(path, framework="pt", device="cpu") as f:
+        keys = list(f.keys())
+        assert len(keys) == 1, f"sparsity.safetensors carries {len(keys)} keys: {keys}"
+        t = f.get_tensor(keys[0]).to(torch.float32).reshape(-1)
+    assert tuple(t.shape) == (SAELENS_DICT_SIZE,), t.shape
+    return t
 
 
 # ── local fitness check (VM-side; the r3 p2-pilot-local verification command) ────────

@@ -1,0 +1,19 @@
+{
+ "git_commit": "8c950e611f176307f860fc38a3dba087353b1d75",
+ "numpy": "2.2.6",
+ "python": "3.11.15",
+ "timestamp_utc": "2026-07-29T05:28:59.224695+00:00",
+ "task": 1773,
+ "seed": 17732026,
+ "kappa_per_axis": {
+  "abstraction": 0.6830335510692788,
+  "speaker_property": 0.5141345584214199,
+  "content_type": 0.6243433258503199,
+  "functional_role": 0.3310419597030369,
+  "interpretable": 0.6348175211510186
+ },
+ "n_axes_clearing_0.2": 5,
+ "floor": 0.2,
+ "verdict": "PROCEED",
+ "n_features": 500
+}

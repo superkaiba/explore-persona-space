@@ -1,0 +1,17 @@
+{
+ "val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+ "test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+ "n_val": 400,
+ "n_test": 1000,
+ "n_train": 15000,
+ "sample_seed": 42,
+ "source": "issue1768_cells.assert_pinned_split() (#779 pinned splits)",
+ "ts": "2026-07-30T17:12:05Z",
+ "git_commit": "9ebfb48d153670fb0583ab5563ec9ae1ffa7ed9e",
+ "torch": "2.8.0+cu128",
+ "numpy": "2.2.6",
+ "issue": 1768,
+ "layer": 19,
+ "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+ "round": "inline-write-predictability"
+}

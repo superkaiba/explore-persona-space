@@ -1020,6 +1020,117 @@ def _warn_workload_cmd_inline_interpreter_and_flag_marker(
     )
 
 
+#: First committed driver-script token in a ``--workload-cmd`` string
+#: (``bash scripts/<driver>.sh`` / ``uv run python scripts/<x>.py``) —
+#: the resolution anchor for the #1800 persist-evidence lint.
+_WORKLOAD_CMD_SCRIPT_TOKEN_RE = re.compile(r"scripts/[A-Za-z0-9_.\-/]+\.(?:sh|py)\b")
+
+
+def _resolve_workload_driver_script(
+    workload_cmd: str, repo_branch: str | None
+) -> tuple[str | None, str | None]:
+    """Fail-soft driver-script text resolution for the #1800 persist lint.
+
+    Extracts the FIRST ``scripts/<x>.sh|.py`` token from the workload
+    command and resolves its text in ladder order: ``git show
+    origin/<repo_branch>:<path>`` (the ref the gcp/runpod lanes actually
+    clone), the local ``<repo_branch>`` ref, then the invoking working
+    tree. Returns ``(path, text)``; ``(path, None)`` when the token
+    resolved NOWHERE (caller skips the lint with ONE note); ``(None,
+    None)`` when the command names no script token at all. Never raises —
+    an unresolvable script must never block a launch.
+    """
+    m = _WORKLOAD_CMD_SCRIPT_TOKEN_RE.search(workload_cmd or "")
+    if m is None:
+        return None, None
+    path = m.group(0)
+    refs = [f"origin/{repo_branch}", repo_branch] if repo_branch else []
+    for ref in refs:
+        try:
+            proc = subprocess.run(
+                ["git", "show", f"{ref}:{path}"],
+                capture_output=True,
+                text=True,
+                timeout=15,
+                check=False,
+                env={**os.environ},
+            )
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if proc.returncode == 0 and proc.stdout:
+            return path, proc.stdout
+    try:
+        p = Path(path)
+        if p.is_file():
+            return path, p.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        pass
+    return path, None
+
+
+def _warn_workload_cmd_persist_and_flag_marker(
+    spec: Any, marker_poster: Callable[..., None]
+) -> Callable[..., None]:
+    """WARN-only #1800 arm of the workload-cmd lint family. Never blocks.
+
+    Flags a workload chain with ZERO persist-evidence tokens (per
+    ``lint_workload_cmd_persist_evidence``) across the command + the
+    resolved driver-script text — the #1739 class: a run completes every
+    phase with no upload step wired anywhere and leaves zero artifacts on
+    HF. Fail-soft: an unresolvable driver script skips the lint with ONE
+    stderr note, never a refusal. Own kill switch
+    ``EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT=1``. No strict upgrade:
+    ``--strict-workload-cmd-env`` is lane-env-scoped by contract (the
+    #1576 precedent) — this arm has NO refusal path at all. Hydra
+    launches (no ``--workload-cmd``) are exempt: ``train.py`` carries
+    built-in upload paths.
+    """
+    from explore_persona_space.backends.issue_dispatch import (
+        PERSIST_EVIDENCE_TOKENS,
+        lint_workload_cmd_persist_evidence,
+    )
+
+    if not spec.workload_cmd:
+        return marker_poster
+    log = logging.getLogger("dispatch_issue")
+    if os.environ.get("EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT") == "1":
+        log.info(
+            "EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT=1 — workload-cmd persist-evidence "
+            "lint (#1800) skipped."
+        )
+        return marker_poster
+    script_path, script_text = _resolve_workload_driver_script(
+        spec.workload_cmd, (spec.extra or {}).get("repo_branch")
+    )
+    lint = lint_workload_cmd_persist_evidence(spec.workload_cmd, script_text)
+    if lint.skipped:
+        log.info(
+            "workload-cmd persist-evidence lint (#1800) skipped — driver script %s "
+            "unresolvable (git show origin/<branch> / local branch / working tree). "
+            "Step 8 upload-verification remains the hard persist gate.",
+            script_path or "<none named in --workload-cmd>",
+        )
+        return marker_poster
+    if not lint.flagged:
+        return marker_poster
+    log.warning(
+        "--workload-cmd chain carries NO persist-evidence token (%s) in the command "
+        "or the resolved driver script %s — the #1739 class: the run can complete "
+        "every phase and leave ZERO artifacts on HF, forcing improvised recovery "
+        "uploads against the poweroff clock. Wire an upload/persist step (Upload "
+        "Policy: raw completions MUST upload before teardown; #779 "
+        "persist-by-default), or a plan-NAMED off-pod harvest+upload step. Launch "
+        "continues; epm:backend-selected carries "
+        "extra.workload_cmd_no_persist_evidence. Silence with "
+        "EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT=1.",
+        ", ".join(PERSIST_EVIDENCE_TOKENS),
+        script_path,
+    )
+    return _wrap_marker_poster_with_override_flag(
+        marker_poster, {"workload_cmd_no_persist_evidence": True}
+    )
+
+
 def _workload_cmd_env_lint_gate(
     args: argparse.Namespace, spec: Any
 ) -> tuple[Any, dict[str, Any] | None]:
@@ -1374,6 +1485,20 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         pins = _parse_env_pins(args.env_pin)
         if pins:
             extra["env_pins"] = pins
+    if getattr(args, "extra_sync_path", None):
+        # #1835: SLURM-lane extra rsync paths — validated + dot-anchored at
+        # parse time (main()'s guard; this re-validate cannot raise on the
+        # CLI path) and RE-validated by SlurmBackend.prepare (the handle
+        # sidecar JSON round-trips tuple -> list). Stored as a LIST so the
+        # sidecar serializes cleanly; set only when non-empty (the #934
+        # omit-when-absent discipline). Consumed ONLY by the SLURM lane's
+        # additive extra rsync; inert on GCP / RunPod (their git clones
+        # carry committed inputs already).
+        from explore_persona_space.backends.slurm import validate_extra_sync_paths
+
+        paths = list(validate_extra_sync_paths(args.extra_sync_path))
+        if paths:
+            extra["extra_sync_paths"] = paths
     if getattr(args, "min_gpu_mem_gb", None):
         # GCP A100-40 rung gate (#1468): read by gcp.a100_40_fallback_for_intent
         # — a declared per-GPU requirement strictly above gcp.A100_40_USABLE_GIB
@@ -1651,7 +1776,11 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
     # inline-interpreter one-liner body (python -c / stdin heredoc; the
     # sanctioned write_completion_sentinel append is exempt) via the
     # marker-poster decoration below — never a refusal, and
-    # --strict-workload-cmd-env does NOT upgrade it.
+    # --strict-workload-cmd-env does NOT upgrade it. A THIRD, WARN-only
+    # arm (#1800, incident #1739) flags a chain with NO persist-evidence
+    # token in the command + the resolved driver script (kill switch:
+    # EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT=1; unresolvable script → lint
+    # skipped with one note; never a refusal, no strict upgrade).
     env_lint, env_refusal = _workload_cmd_env_lint_gate(args, spec)
     if env_refusal is not None:
         print(json.dumps(env_refusal, sort_keys=True))
@@ -1660,6 +1789,7 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
     deps = backends_factory()
     marker_poster = _warn_workload_cmd_env_and_flag_marker(env_lint, deps["marker_poster"])
     marker_poster = _warn_workload_cmd_inline_interpreter_and_flag_marker(spec, marker_poster)
+    marker_poster = _warn_workload_cmd_persist_and_flag_marker(spec, marker_poster)
     marker_poster = _check_runpod_override_frontmatter(int(args.issue), args.backend, marker_poster)
     marker_poster = _warn_default_boot_disk_ft_intent(spec, int(args.issue), marker_poster)
     try:
@@ -1825,6 +1955,16 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         "workload_pid": handle_extra.get("workload_pid"),
         "log_path": result.handle.log_path,
     }
+    if getattr(args, "extra_sync_path", None):
+        # #1835 gate->launch drift audit: echo the RESOLVED (normalized,
+        # dot-anchored) extra sync paths into the printed launch JSON line
+        # so the launched set is auditable against the Step 6a.5
+        # `verify_carryover_inputs.py --lane rsync` invocation. The
+        # epm:backend-selected marker is composed router-side with no clean
+        # dispatcher note seam, so the launch JSON line is the record.
+        from explore_persona_space.backends.slurm import validate_extra_sync_paths
+
+        body["extra_sync_paths"] = list(validate_extra_sync_paths(args.extra_sync_path))
     _annotate_launch_body_reconnect_and_lane(body, args=args, result=result)
     if outcome.sidecar_write_error is not None:
         # The launch SUCCEEDED (live VM / job) but the sidecar write
@@ -2543,6 +2683,29 @@ def _build_argparser() -> argparse.ArgumentParser:
         ),
     )
     launch.add_argument(
+        "--extra-sync-path",
+        action="append",
+        default=None,
+        metavar="REPO_REL_PATH",
+        help=(
+            "Repo-relative path (repeatable, #1835) the SLURM rsync lane must "
+            "ADDITIONALLY stage to the cluster scratch — plan-cited committed "
+            "reference inputs (eval_results/issue_<M>/..., ood_eval_results/...) "
+            "that RSYNC_INCLUDE_PATHS omits and RSYNC_EXCLUDE_PATTERNS excludes "
+            "(incident #1689: fellows job 15188 died at first read on a "
+            "gate-certified committed input). Validated + dot-anchored at parse "
+            "time (backends.slurm.validate_extra_sync_paths: repo-relative only, "
+            "no '..'); threads to spec.extra['extra_sync_paths'] -> the handle "
+            "sidecar. Accepted on EVERY lane; consumed only by SlurmBackend."
+            "prepare's separate additive rsync (-a --relative --partial "
+            "--mkpath, NO --delete, NO excludes) — lane-inert elsewhere. Unlike "
+            "--env-pin there is NO --workload-cmd requirement (the knob is "
+            "lane-scoped, not command-scoped). Pass the SAME values to "
+            "scripts/verify_carryover_inputs.py --lane rsync (Step 6a.5) so the "
+            "gate-PASSing set and the launched set cannot drift."
+        ),
+    )
+    launch.add_argument(
         "--min-gpu-mem-gb",
         type=int,
         default=None,
@@ -2789,6 +2952,19 @@ def main(
                 )
             try:
                 _parse_env_pins(args.env_pin)
+            except ValueError as exc:
+                parser.error(str(exc))
+        # #1835: --extra-sync-path validates at parse time (exit 2) —
+        # repo-relative, no '..', non-empty — BEFORE any backend is built.
+        # UNLIKE --env-pin there is deliberately NO --workload-cmd
+        # requirement: the knob is lane-scoped (consumed only by the SLURM
+        # prepare's additive rsync), not command-scoped, so it must ride
+        # hydra launches too.
+        if getattr(args, "extra_sync_path", None):
+            from explore_persona_space.backends.slurm import validate_extra_sync_paths
+
+            try:
+                validate_extra_sync_paths(args.extra_sync_path)
             except ValueError as exc:
                 parser.error(str(exc))
     logging.basicConfig(

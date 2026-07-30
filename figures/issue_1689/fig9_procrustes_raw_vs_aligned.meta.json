@@ -1,0 +1,1316 @@
+{
+  "commit": "9319318909",
+  "created": "2026-07-29T05:46:38Z",
+  "figsize": [
+    12.8,
+    5.8
+  ],
+  "points": [
+    {
+      "raw operator cosine (shared coordinates)": 0.16239346336756455,
+      "data-paired Procrustes-aligned operator cosine": 0.2998183584300213,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.11110525550515628,
+      "data-paired Procrustes-aligned operator cosine": 0.28657046369552935,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.07437801230781452,
+      "data-paired Procrustes-aligned operator cosine": 0.2089297842432066,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.04713039945584873,
+      "data-paired Procrustes-aligned operator cosine": 0.188135319505753,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.10076893500475435,
+      "data-paired Procrustes-aligned operator cosine": 0.206167238510939,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.08350259644299587,
+      "data-paired Procrustes-aligned operator cosine": 0.18851029704406258,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.12230726603785859,
+      "data-paired Procrustes-aligned operator cosine": 0.09031678056691918,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.05137329689958993,
+      "data-paired Procrustes-aligned operator cosine": 0.06996231282205655,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.04554920654566135,
+      "data-paired Procrustes-aligned operator cosine": 0.05082881633494192,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.022233647604012526,
+      "data-paired Procrustes-aligned operator cosine": 0.0411615887924288,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.08026196685450585,
+      "data-paired Procrustes-aligned operator cosine": 0.09453718540800105,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.06297411931242311,
+      "data-paired Procrustes-aligned operator cosine": 0.08289216104353846,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.11203457263948474,
+      "data-paired Procrustes-aligned operator cosine": 0.06601702890727792,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.05236752954409838,
+      "data-paired Procrustes-aligned operator cosine": 0.06291823395803592,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.06709188054675706,
+      "data-paired Procrustes-aligned operator cosine": 0.05367998496580729,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.023432277727284713,
+      "data-paired Procrustes-aligned operator cosine": 0.04339681095208029,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.10030687222295905,
+      "data-paired Procrustes-aligned operator cosine": 0.10036978295456049,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.0699103354664997,
+      "data-paired Procrustes-aligned operator cosine": 0.07848890652995208,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.12864381305204745,
+      "data-paired Procrustes-aligned operator cosine": 0.10117099358764128,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.05844208414488719,
+      "data-paired Procrustes-aligned operator cosine": 0.07727703191074055,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.05430153322914806,
+      "data-paired Procrustes-aligned operator cosine": 0.06610447615405836,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.026239477353965545,
+      "data-paired Procrustes-aligned operator cosine": 0.0539152930785404,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.10298324280484017,
+      "data-paired Procrustes-aligned operator cosine": 0.09803192959887229,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.09164043532247124,
+      "data-paired Procrustes-aligned operator cosine": 0.0834017513433232,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.18512702340480983,
+      "data-paired Procrustes-aligned operator cosine": 0.1753821804861739,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.16044518626697377,
+      "data-paired Procrustes-aligned operator cosine": 0.15928284082465874,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.16865919700727547,
+      "data-paired Procrustes-aligned operator cosine": 0.14978079073751294,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.14048979487719448,
+      "data-paired Procrustes-aligned operator cosine": 0.1386449841828133,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.1940927110767606,
+      "data-paired Procrustes-aligned operator cosine": 0.16987777800452347,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.15679903036178267,
+      "data-paired Procrustes-aligned operator cosine": 0.15235916632946475,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.2625884353600072,
+      "data-paired Procrustes-aligned operator cosine": 0.2351970491604188,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.2697764762926239,
+      "data-paired Procrustes-aligned operator cosine": 0.21679129357460203,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.2537454822326707,
+      "data-paired Procrustes-aligned operator cosine": 0.2189309750930881,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.25601437976000596,
+      "data-paired Procrustes-aligned operator cosine": 0.1996739457545619,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.2572643937293515,
+      "data-paired Procrustes-aligned operator cosine": 0.23769665087852512,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.26742743529736107,
+      "data-paired Procrustes-aligned operator cosine": 0.22027046243763593,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.1276870318495309,
+      "data-paired Procrustes-aligned operator cosine": 0.1318383971944155,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.07721989095540116,
+      "data-paired Procrustes-aligned operator cosine": 0.10662183068071875,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.15292433489211793,
+      "data-paired Procrustes-aligned operator cosine": 0.13951991435949862,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.09715190756136702,
+      "data-paired Procrustes-aligned operator cosine": 0.1151059064901623,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.15373033370334593,
+      "data-paired Procrustes-aligned operator cosine": 0.12842120877493698,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.09823856397003998,
+      "data-paired Procrustes-aligned operator cosine": 0.10848549505969582,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.23067813572237963,
+      "data-paired Procrustes-aligned operator cosine": 0.08899862203370773,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.20140955629267626,
+      "data-paired Procrustes-aligned operator cosine": 0.07803618681021285,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.2516576880143424,
+      "data-paired Procrustes-aligned operator cosine": 0.08949426159053415,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.2073377636720274,
+      "data-paired Procrustes-aligned operator cosine": 0.06724639100461456,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.31831723799348743,
+      "data-paired Procrustes-aligned operator cosine": 0.1552747135359074,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.2588161289875677,
+      "data-paired Procrustes-aligned operator cosine": 0.1320240186783967,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.35683132447271,
+      "data-paired Procrustes-aligned operator cosine": 0.1829468921055667,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.30552710064396416,
+      "data-paired Procrustes-aligned operator cosine": 0.16034378248653905,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.1616779867547982,
+      "data-paired Procrustes-aligned operator cosine": 0.08165556205081141,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.10684036540071153,
+      "data-paired Procrustes-aligned operator cosine": 0.0713543044287209,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.17844858945065858,
+      "data-paired Procrustes-aligned operator cosine": 0.07239476069818523,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.12303362737317296,
+      "data-paired Procrustes-aligned operator cosine": 0.06308021285565893,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.2207548039033888,
+      "data-paired Procrustes-aligned operator cosine": 0.053663200102057676,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.16843967348867547,
+      "data-paired Procrustes-aligned operator cosine": 0.0449136255153111,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.332438302512359,
+      "data-paired Procrustes-aligned operator cosine": 0.17288721963641504,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.2827599616180928,
+      "data-paired Procrustes-aligned operator cosine": 0.15208531758811325,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.19920807285939562,
+      "data-paired Procrustes-aligned operator cosine": 0.09212451647662412,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.12406138038696342,
+      "data-paired Procrustes-aligned operator cosine": 0.07115124672686308,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.3814723188839428,
+      "data-paired Procrustes-aligned operator cosine": 0.6707610848726815,
+      "label": "haiku chat vs LMSYS chat",
+      "series": "provenance (n=6)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.37219835575876925,
+      "data-paired Procrustes-aligned operator cosine": 0.3721983557587623,
+      "label": "haiku story vs on-pol story",
+      "series": "provenance (n=6)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.2307046446922043,
+      "data-paired Procrustes-aligned operator cosine": 0.7057290648074813,
+      "label": "haiku story vs LMSYS story",
+      "series": "provenance (n=6)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.5485681045435421,
+      "data-paired Procrustes-aligned operator cosine": 0.548568104543532,
+      "label": "haiku story vs on-pol story",
+      "series": "provenance (n=6)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.16153564902009615,
+      "data-paired Procrustes-aligned operator cosine": 0.29226131868350536,
+      "series": "provenance (n=6)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.15461190809623074,
+      "data-paired Procrustes-aligned operator cosine": 0.4279822798823571,
+      "series": "provenance (n=6)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.08291316978174329,
+      "data-paired Procrustes-aligned operator cosine": 0.3592259382285874,
+      "series": "identity-vs-user (n=3)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.11953999020874619,
+      "data-paired Procrustes-aligned operator cosine": 0.38490272711133683,
+      "series": "identity-vs-user (n=3)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.06844897360140599,
+      "data-paired Procrustes-aligned operator cosine": 0.15588121183458706,
+      "series": "identity-vs-user (n=3)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.04160789997614902,
+      "data-paired Procrustes-aligned operator cosine": 0.4052001705903812,
+      "series": "user-framing (n=3)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.04460283810708212,
+      "data-paired Procrustes-aligned operator cosine": 0.41244214762196524,
+      "series": "user-framing (n=3)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.029008646382994527,
+      "data-paired Procrustes-aligned operator cosine": 0.09376945091149762,
+      "series": "user-framing (n=3)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.13745328385323274,
+      "data-paired Procrustes-aligned operator cosine": 0.20422883681328755,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.09415148678064593,
+      "data-paired Procrustes-aligned operator cosine": 0.1963621303243743,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.052593680990640185,
+      "data-paired Procrustes-aligned operator cosine": 0.14786035559155863,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.029072213172218496,
+      "data-paired Procrustes-aligned operator cosine": 0.1300274773748877,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.13869392735217803,
+      "data-paired Procrustes-aligned operator cosine": 0.19000831944343713,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.0785328794169177,
+      "data-paired Procrustes-aligned operator cosine": 0.1769572011531552,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.052859638054148964,
+      "data-paired Procrustes-aligned operator cosine": 0.15293256725351675,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.032350847478618126,
+      "data-paired Procrustes-aligned operator cosine": 0.13969761266810599,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.021584784355158086,
+      "data-paired Procrustes-aligned operator cosine": 0.2733321048861059,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.02081839316833208,
+      "data-paired Procrustes-aligned operator cosine": 0.2497439501290072,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.020840839328577512,
+      "data-paired Procrustes-aligned operator cosine": 0.2187447253998958,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.13567868508932582,
+      "data-paired Procrustes-aligned operator cosine": 0.21208796729146898,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.08201959992717585,
+      "data-paired Procrustes-aligned operator cosine": 0.19313668640770743,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.05360520738826512,
+      "data-paired Procrustes-aligned operator cosine": 0.15276085375785511,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.03540612356980461,
+      "data-paired Procrustes-aligned operator cosine": 0.13248348653111316,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.13438474093909658,
+      "y": 0.29042320370293717,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.08010036746732455,
+      "y": 0.27248073383865484,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.0367397399756595,
+      "y": 0.18974433455372233,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.04035315522934761,
+      "y": 0.19061523287092455,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.044996963418001176,
+      "y": 0.1528388574361098,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.06460473456128737,
+      "y": 0.164153527433696,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.05466743588291693,
+      "y": 0.083218331596197,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.03410658632175277,
+      "y": 0.08453933581531187,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.024660724934830163,
+      "y": 0.0670161258733016,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.02790516818597071,
+      "y": 0.06526881003805995,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.055807321359787755,
+      "y": 0.12326917005518176,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.06294909096219346,
+      "y": 0.11501837631774225,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.05908173692223863,
+      "y": 0.07090849378769921,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.03565141006280719,
+      "y": 0.0640437933647274,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.02244482119901821,
+      "y": 0.08711112331800251,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.0262383683400952,
+      "y": 0.07409992073928363,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.04854316221366551,
+      "y": 0.11199397069509072,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.06730300790834227,
+      "y": 0.10786913014624173,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.05600811716978966,
+      "y": 0.06437506680986269,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.02826128503315894,
+      "y": 0.060102948602183036,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.024221994710808634,
+      "y": 0.07403392306864273,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.02158592610930243,
+      "y": 0.0668184401407937,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.063514134851851,
+      "y": 0.11518899712118597,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.06877741972022165,
+      "y": 0.10730073733131575,
+      "series": "framing (n=24)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.2680494943978725,
+      "y": 0.22763233118818213,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.21086301291242845,
+      "y": 0.19286797338476436,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.2737845429520586,
+      "y": 0.23839327928082674,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.20929608549754522,
+      "y": 0.18887063096385123,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.26077849042734813,
+      "y": 0.22926144884172264,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.20241173825601239,
+      "y": 0.18725043144245718,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.11881311158065268,
+      "y": 0.16782194636344044,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.1255091529188033,
+      "y": 0.16992793711244233,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.12485155184640619,
+      "y": 0.1616201395898954,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.14530333572992585,
+      "y": 0.16205473422680317,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.1205803373463013,
+      "y": 0.15964815214675745,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.11584703563151319,
+      "y": 0.16127247512370788,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.14986975670361033,
+      "y": 0.16657947695430023,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.1109160039463451,
+      "y": 0.14951933317640262,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.14482195539999893,
+      "y": 0.1706027860619652,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.12118480092410941,
+      "y": 0.15328094591193936,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.13120326841207833,
+      "y": 0.15344377388032562,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.1145131206121086,
+      "y": 0.14199124731766127,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.33878031757391214,
+      "y": 0.1800618572832105,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.3173695869356528,
+      "y": 0.18393706105463498,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.3699305363744908,
+      "y": 0.17444012486404187,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.34116276524919004,
+      "y": 0.1750200340322837,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.1624618893373788,
+      "y": 0.14472011198989657,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.15680526234261433,
+      "y": 0.141581400381142,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.18624901662561513,
+      "y": 0.16969180703935816,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.16843761672484459,
+      "y": 0.16215480693863601,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.20615555694815266,
+      "y": 0.16774422104925557,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.14426983248270145,
+      "y": 0.13358118948878922,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.1968989788612093,
+      "y": 0.14398802093898375,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.13191844932716976,
+      "y": 0.11866019385394311,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.4159497428951125,
+      "y": 0.2133671124988571,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.31665519116310314,
+      "y": 0.16242754740228074,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.17910407859146746,
+      "y": 0.1471446759653303,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.17050404762603574,
+      "y": 0.14925412401641636,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.20605968276138756,
+      "y": 0.18001496006248383,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.1409615230896468,
+      "y": 0.13995121446610995,
+      "series": "identity (n=36)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.39445328661994805,
+      "y": 0.6724120979261022,
+      "label": "haiku chat vs LMSYS chat",
+      "series": "provenance (n=6)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.305537412087359,
+      "y": 0.3055374120873614,
+      "series": "provenance (n=6)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.20272756141204948,
+      "y": 0.6893099952746852,
+      "label": "haiku story vs LMSYS story",
+      "series": "provenance (n=6)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.5619445270021598,
+      "y": 0.5619445270021646,
+      "label": "haiku story vs on-pol story",
+      "series": "provenance (n=6)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.13703726900928567,
+      "y": 0.23831926739891973,
+      "series": "provenance (n=6)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.15066344281497207,
+      "y": 0.4433131497469003,
+      "label": "haiku story vs LMSYS story",
+      "series": "provenance (n=6)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.09935159515734683,
+      "y": 0.403729422678039,
+      "series": "identity-vs-user (n=3)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.1589872226528157,
+      "y": 0.43774969013351184,
+      "label": "haiku story vs LMSYS story",
+      "series": "identity-vs-user (n=3)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.04801284831222791,
+      "y": 0.13828374124205828,
+      "series": "identity-vs-user (n=3)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.03396962066804239,
+      "y": 0.45966273976679306,
+      "series": "user-framing (n=3)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.03636265901363724,
+      "y": 0.4307718594072545,
+      "series": "user-framing (n=3)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.022216008943486736,
+      "y": 0.08433402546070504,
+      "series": "user-framing (n=3)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.056900004437475823,
+      "y": 0.20461139566956077,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.037099691921303454,
+      "y": 0.18665679344911693,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.0361683398527024,
+      "y": 0.1810666327523933,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.030777494477341467,
+      "y": 0.15947261334849944,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.059572977924381404,
+      "y": 0.19063740622909545,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.034562506762538484,
+      "y": 0.16856203143874604,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.025126354577169312,
+      "y": 0.18778983922289838,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.030258000243775927,
+      "y": 0.1701222100378156,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.01655553675836636,
+      "y": 0.2908476105884854,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.01369875474043748,
+      "y": 0.2617976639535575,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.013506518909418772,
+      "y": 0.2147842961492615,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.0598354843116466,
+      "y": 0.19719068528766365,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.03795517235206388,
+      "y": 0.17936919614101005,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.028396760770452254,
+      "y": 0.18860951390824113,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw operator cosine (shared coordinates)": 0.025629778931121287,
+      "y": 0.16745141343397266,
+      "series": "crossed (n=15)",
+      "_kind": "scatter",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 174,
+  "text": {
+    "suptitle": "Fitted context-to-answer operators per pair: raw vs aligned cosine (L19, both arms pooled)\n87 valid pair-arms per model; labels on aligned >= 0.50; gray band at y=0 = Haar rotation-null p97.5",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base",
+        "xlabel": "raw operator cosine (shared coordinates)",
+        "ylabel": "data-paired Procrustes-aligned operator cosine",
+        "legend_labels": [
+          "framing (n=24)",
+          "identity (n=36)",
+          "provenance (n=6)",
+          "identity-vs-user (n=3)",
+          "user-framing (n=3)",
+          "crossed (n=15)"
+        ],
+        "annotations": [
+          "haiku chat vs LMSYS chat",
+          "haiku story vs LMSYS story",
+          "haiku story vs on-pol story"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "instruct",
+        "xlabel": "raw operator cosine (shared coordinates)",
+        "annotations": [
+          "haiku chat vs LMSYS chat",
+          "haiku story vs LMSYS story",
+          "haiku story vs on-pol story"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "framing (n=24)",
+      "identity (n=36)",
+      "provenance (n=6)",
+      "identity-vs-user (n=3)",
+      "user-framing (n=3)",
+      "crossed (n=15)"
+    ]
+  }
+}

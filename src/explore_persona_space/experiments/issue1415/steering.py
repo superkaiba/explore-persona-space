@@ -166,6 +166,22 @@ class DeltaHook:
     time. Every other code path is byte-identical (default ``None`` preserves
     current behavior).
 
+    ``prefill_all`` (keyword-only; the #1769 ``prefill_only`` arm) adds
+    ``alpha * delta`` to EVERY position of the FIRST forward pass (all prompt
+    positions, left-pad slots included — the attention mask excludes pad
+    positions from every real position's attention, so the pad edits are
+    inert); every later (decode) forward is untouched.
+
+    ``decode_only`` (keyword-only; the #1769 ``decode_only`` arm) SKIPS the
+    first forward pass (the prefill — asserted against
+    ``expected_prompt_len``) and adds ``alpha * delta`` at every position of
+    every SUBSEQUENT forward — under the KV cache each decode step is a
+    ``T = 1`` slice, i.e. exactly that step's newly generated position.
+
+    ``prefill_all`` / ``decode_only`` are mutually exclusive with each other
+    and with ``all_positions`` / ``edit_position``; existing modes are
+    behavior-unchanged.
+
     ``delta`` is ``(H,)`` (broadcast over the batch) or ``(B, H)`` (per-row —
     lets one batched generate carry a different Δ per pair). The hook handles
     both tuple and bare-tensor block outputs and edits OUT-OF-PLACE (clone).
@@ -181,6 +197,8 @@ class DeltaHook:
         all_positions: bool = False,
         *,
         edit_position: int | None = None,
+        prefill_all: bool = False,
+        decode_only: bool = False,
     ):
         blocks, _, _ = _resolve_decoder_blocks(model)
         assert blocks is not None, "DeltaHook requires a standard decoder (model.model.layers)"
@@ -188,6 +206,12 @@ class DeltaHook:
         assert delta.dim() in (1, 2), delta.shape
         assert not (all_positions and edit_position is not None), (
             "edit_position mode is mutually exclusive with all_positions"
+        )
+        n_modes = sum(
+            (bool(all_positions), edit_position is not None, bool(prefill_all), bool(decode_only))
+        )
+        assert n_modes <= 1, (
+            "all_positions / edit_position / prefill_all / decode_only are mutually exclusive"
         )
         self.model = model
         self.layer = layer
@@ -197,6 +221,8 @@ class DeltaHook:
         self.expected_prompt_len = expected_prompt_len
         self.all_positions = bool(all_positions)
         self.edit_position = int(edit_position) if edit_position is not None else None
+        self.prefill_all = bool(prefill_all)
+        self.decode_only = bool(decode_only)
         self._handle = None
         self._prefill_seen = False
         self.n_edits = 0  # forward passes edited (telemetry / test hook)
@@ -225,6 +251,9 @@ class DeltaHook:
         ``all_positions``; the ``edit_position < T`` bound is asserted at edit
         time (T is unknown until the forward runs)."""
         assert not self.all_positions, "arm_at() is incompatible with all_positions"
+        assert not (self.prefill_all or self.decode_only), (
+            "arm_at() is incompatible with prefill_all / decode_only (#1769 modes)"
+        )
         assert edit_position >= 0, edit_position
         self.edit_position = int(edit_position)
         self.reset()
@@ -258,6 +287,36 @@ class DeltaHook:
             out = hidden.clone()
             out[:, self.edit_position, :] = out[:, self.edit_position, :] + scaled
             self._prefill_seen = True
+            self.n_edits += 1
+            return out
+        if self.prefill_all:
+            # #1769 prefill_only arm: edit ALL positions of the FIRST forward
+            # pass (every prompt position; left-pad slots are attention-masked
+            # away from every real position, so their edits are inert). Every
+            # decode-step forward is untouched.
+            if self._prefill_seen:
+                return hidden
+            assert self.expected_prompt_len is not None, (
+                "DeltaHook.arm(expected_prompt_len) must be called before the prefill"
+            )
+            assert self.expected_prompt_len == T, (T, self.expected_prompt_len)
+            out = hidden + (scaled[:, None, :] if scaled.dim() == 2 else scaled)
+            self._prefill_seen = True
+            self.n_edits += 1
+            return out
+        if self.decode_only:
+            # #1769 decode_only arm: SKIP the prefill (asserted to be the
+            # prompt-shaped first forward), then edit every position of every
+            # subsequent forward — each decode step's single new position
+            # (T = 1 under the KV cache).
+            if not self._prefill_seen:
+                assert self.expected_prompt_len is not None, (
+                    "DeltaHook.arm(expected_prompt_len) must be called before the prefill"
+                )
+                assert self.expected_prompt_len == T, (T, self.expected_prompt_len)
+                self._prefill_seen = True
+                return hidden
+            out = hidden + (scaled[:, None, :] if scaled.dim() == 2 else scaled)
             self.n_edits += 1
             return out
         if self.all_positions:

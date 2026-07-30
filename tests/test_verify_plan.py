@@ -180,10 +180,11 @@ def test_good_plan_passes_all():
         "c39_off_pod_phase_declaration": "SKIP",
         "c41_regression_anchor_executed": "SKIP",
         "c42_commit_sha_resolves": "SKIP",
+        "c43_sentinel_lane": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 41
+    assert len(results) == 42
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -1573,15 +1574,27 @@ def test_skillmd_canonical_escapes_sync_with_docstring():
     # docstring phrase must keep the double-backtick wrapping + the
     # `N/A —` / `Durability pin: N/A` prefix convention, or it evades
     # extraction here (the floor catches shrinkage, not a never-extracted
-    # phrase).
+    # phrase). ONE registered carve-out: c43's deliberately PREFIX-LESS
+    # phrase (`no sentinel dependence — auto-safe`, #1787) has its own
+    # explicit extraction below; any future prefix-less phrase needs its
+    # own extraction line here too — it is invisible to the alternation.
     doc = verify_plan.__doc__
     section = doc[doc.index("Canonical N/A escape phrases") : doc.index("WARN semantics")]
     phrases = re.findall(r"``((?:N/A —|Durability pin: N/A)[^`]+?)``", section)
     # Extraction guard (never-self-escapes precedent, :1232): 29 phrases at
-    # pin time. A shrinking count means the docstring format drifted and the
-    # parser silently under-covers — fix the regex; never lower this floor
-    # except for a deliberate check retirement (state which check).
+    # pin time (39 as of #1787). A shrinking count means the docstring format
+    # drifted and the parser silently under-covers — fix the regex; never
+    # lower this floor except for a deliberate check retirement (state which
+    # check).
     assert len(phrases) >= 29, (len(phrases), phrases)  # c4 registered (#1277)
+    # Prefix-less canonical escape (c43, #1787): registered standalone
+    # WITHOUT the N/A prefix, so the prefixed alternation above never
+    # extracts it. Extract it from the docstring (ground truth) so the
+    # wrapped-presence loop below pins its SKILL.md registration too; a
+    # future prefix-less phrase needs its own extraction line here.
+    prefixless = re.findall(r"``(no sentinel dependence[^`]+?)``", section)
+    assert prefixless, "c43 prefix-less escape phrase missing from docstring registration"
+    phrases += prefixless
     # Code->docstring leg: every `_standalone_na_declared` call-site tail must
     # match somewhere in the docstring section, so a new check's recognizer
     # cannot land unregistered (the SKILL.md asserts below then propagate the
@@ -5875,17 +5888,19 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    # 35 = the 32 pre-c40 skips + c40 (SKIP: `plan.md` carries no v{K} version)
+    # 36 = the 32 pre-c40 skips + c40 (SKIP: `plan.md` carries no v{K} version)
     # + c41 (kind-exempt SKIP: regression-anchor check is infra|batch-only and
     # --plan-file mode defaults to kind=experiment)
     # + c42 (SKIP: GOOD_PLAN cites no commit SHAs; the check is trigger-
-    #   conditional, #1683/#1700).
-    assert payload["n_skip"] == 35
+    #   conditional, #1683/#1700)
+    # + c43 (SKIP: GOOD_PLAN declares no /workspace sentinel paths; trigger-
+    #   conditional, #1775).
+    assert payload["n_skip"] == 36
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 43
-    assert len({c["id"] for c in payload["checks"]}) == 43
+    assert len(payload["checks"]) == 44
+    assert len({c["id"] for c in payload["checks"]}) == 44
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -8356,6 +8371,86 @@ def test_c39_fenced_na_escape_does_not_satisfy():
     assert _status(plan, "c39_off_pod_phase_declaration") == "WARN"
 
 
+# ─── Check 39 — inverse-direction trigger widening (#1796) ─────────────────
+# The #1773 class: a dispatched (pod/GCE/SLURM) phase consuming VM-produced
+# inputs. Corpus-calibrated 2026-07-29 over 3,004 persisted plan-versions
+# (see the calibration comment above _C39_TRIGGER_RE); no in-corpus
+# non-compliant positive control exists for `vm-produced` (#1773's own
+# occurrences are inside its fenced off_pod_phases: block), so the WARN
+# tests below are the synthetic positive controls (the c38 convention).
+
+C39_INVERSE_PROSE = (
+    GOOD_PLAN + "\nPhase P6 (GCE ridge fit) consumes the VM-produced probe JSONs at boot.\n"
+)
+
+
+def test_c39_inverse_direction_trigger_warns():
+    # Inverse-direction prose with NO `off-pod` / `vm-side` token anywhere
+    # → the widened trigger fires; same WARN text (satisfiers unchanged).
+    _, by_id = _run(C39_INVERSE_PROSE)
+    r = by_id["c39_off_pod_phase_declaration"]
+    assert r.status == "WARN"
+    assert "off_pod_phases:" in r.detail  # names the missing block
+    assert "N/A — no off-pod phase" in r.detail  # teaches the escape
+
+
+def test_c39_inverse_produced_on_the_vm_trigger_warns():
+    # Durability pin for the second SHIPPED token (exact string, the c33
+    # per-token pin style): `produced on the vm`, case-insensitive.
+    plan = GOOD_PLAN + "\nThe probe bank is produced on the VM before the pod phase loads it.\n"
+    assert _status(plan, "c39_off_pod_phase_declaration") == "WARN"
+
+
+def test_c39_inverse_fenced_vocabulary_only_skips():
+    # Inverse vocabulary ONLY inside a fence (the #1773 shape: `VM-produced`
+    # in a fenced off_pod_phases-adjacent note) — the trigger scans STRIPPED
+    # prose, so a fence-only occurrence never fires.
+    plan = GOOD_PLAN + "\n```\nnote: VM-produced (enumerated at git dest)\n```\n"
+    assert _status(plan, "c39_off_pod_phase_declaration") == "SKIP"
+
+
+def test_c39_inverse_trigger_block_satisfies():
+    # Inverse trigger + the fenced off_pod_phases: block → PASS (satisfiers
+    # unchanged by #1796; the schema is direction-agnostic since #1782).
+    _, by_id = _run(C39_INVERSE_PROSE + C39_BLOCK)
+    r = by_id["c39_off_pod_phase_declaration"]
+    assert r.status == "PASS"
+    assert "off_pod_phases" in r.detail
+
+
+def test_c39_inverse_kind_exempt_skips():
+    # An infra plan carrying the new token (e.g. a workflow-fix plan
+    # discussing this very seam — #1782/#1796 are the calibration cases)
+    # stays kind-exempt.
+    assert _status(C39_INVERSE_PROSE, "c39_off_pod_phase_declaration", kind="infra") == "SKIP"
+
+
+def test_c39_forward_staging_prose_does_not_trigger():
+    # Negative pin (plan #1796 §3 rejected `stages ... from HF` at plan
+    # time): FORWARD-direction staging prose is the normal, pervasive
+    # direction in compliant plans and must never fire the trigger.
+    plan = (
+        GOOD_PLAN
+        + "\nPhase P2 stages the training mix from the HF data repo at boot.\n"
+        + "\nThe probe bank is staged from the HF data repo before training.\n"
+    )
+    assert _status(plan, "c39_off_pod_phase_declaration") == "SKIP"
+
+
+def test_c39_dropped_tokens_do_not_trigger():
+    # Negative durability pin for the calibration-DROPPED tokens:
+    # `git-clone lane` (irreducible nuisance class — artifact-reuse
+    # boilerplate + compliant staging prose) and `vm-built`/`vm-generated`
+    # (zero corpus recall). A future re-add must re-run the corpus scan
+    # per the calibration comment's re-scan gate.
+    plan = (
+        GOOD_PLAN
+        + "\nThe git-clone lane stages committed eval JSONs by construction.\n"
+        + "\nA VM-built index and a VM-generated cache are consumed later.\n"
+    )
+    assert _status(plan, "c39_off_pod_phase_declaration") == "SKIP"
+
+
 # ─── Check 41 — regression-anchor test executed or gate-selected ───────────
 # Fixture strategy (plan #1551 §6, the c34 pattern): monkeypatch
 # verify_plan._C41_REPO_ROOT to a tmp fixture tree; the REAL selector
@@ -8916,3 +9011,148 @@ def test_c42_deduplicates_repeated_sha():
     r = by_id[C42]
     assert r.status == "PASS", r.detail
     assert "all 1 cited commit SHA" in r.detail
+
+
+# ─── Check 43 — /workspace sentinels vs unpinned auto lane (#1775) ──────────
+
+C43 = "c43_sentinel_lane"
+
+# Arm (b), the founding #1775 shape: fenced `phase_outputs` YAML declaring
+# `/workspace/logs/issue-NNNN-p*.done` gate sentinels + "no backend pin →
+# auto lane" prose (plan v3 §9; the Methodology critic's Must-Fix M1). NO
+# line carries both "sentinel" and "/workspace/", so a dead arm (a) cannot
+# carry this fixture (the #1114 per-arm-fixture lesson / c39
+# vm_side_trigger precedent).
+C43_1775_SHAPED = (
+    GOOD_PLAN
+    + """
+The dispatcher signals phase completion via gate files; no `backend:` pin → auto lane.
+
+```yaml
+phase_outputs:
+  - path: /workspace/logs/issue-9999-p1.done
+    kind: gate-file
+  - path: /workspace/logs/issue-9999-p2.done
+    kind: gate-file
+```
+"""
+)
+
+# Arm (a): "sentinel" + a NON-logs /workspace/ path on the SAME line — no
+# `/workspace/logs/issue-` anywhere, so a dead arm (b) cannot carry it.
+C43_ARM_A = (
+    GOOD_PLAN + "\nThe run writes a completion sentinel at /workspace/data/issue_9999/done.json\n"
+)
+
+
+def test_c43_no_trigger_skips():
+    assert _status(GOOD_PLAN, C43) == "SKIP"
+
+
+def test_c43_kind_exempt_skips():
+    # An infra plan quoting a sentinel path (this check's own workflow-fix
+    # plan is the calibration case) legitimately discusses `/workspace/...`
+    # sentinels without dispatching a sentinel-signaling workload.
+    for kind in ("infra", "batch", "analysis", "survey"):
+        assert _status(C43_1775_SHAPED, C43, kind=kind) == "SKIP"
+
+
+def test_c43_arm_b_ws_logs_path_warns():
+    # Arm (b) fires on the bare `/workspace/logs/issue-` path with NO
+    # "sentinel" token on the line — the fenced #1775 phase_outputs shape
+    # (trigger scans RAW text; strip_fences would miss it by construction).
+    _, by_id = _run(C43_1775_SHAPED)
+    r = by_id[C43]
+    assert r.status == "WARN"
+    assert "plan-compute-sizing.md" in r.detail
+    assert "Sentinel-signaling workloads" in r.detail  # the rule section
+    assert "#608" in r.detail  # the SLURM mkdir crash
+    assert "drains the sentinels" in r.detail  # the fellows silent-loss hazard
+    assert "backend: gcp" in r.detail and "backend: runpod" in r.detail  # pin remedy
+    assert "no sentinel dependence — auto-safe" in r.detail  # escape remedy
+
+
+def test_c43_arm_a_sentinel_ws_path_warns():
+    # Arm (a) fires on "sentinel" + a NON-logs /workspace/ path on one line;
+    # a typo'd arm (b) could not carry this fixture green.
+    assert _status(C43_ARM_A, C43) == "WARN"
+
+
+def test_c43_backend_gcp_pin_passes():
+    plan = C43_1775_SHAPED + "\nPinned lane: backend: gcp (GCE mirrors the /workspace contract).\n"
+    _, by_id = _run(plan)
+    r = by_id[C43]
+    assert r.status == "PASS"
+    assert "lane pinned" in r.detail
+
+
+def test_c43_dispatch_flag_backend_runpod_passes():
+    # A fenced dispatch command carrying `--backend runpod` satisfies too —
+    # the satisfier scans RAW text (dispatch commands live in fences).
+    plan = C43_1775_SHAPED + (
+        "\n```bash\nuv run python scripts/dispatch_issue.py launch --issue 9999 "
+        "--backend runpod --intent lora-7b\n```\n"
+    )
+    assert _status(plan, C43) == "PASS"
+
+
+def test_c43_standalone_escape_passes():
+    plan = C43_1775_SHAPED + "\nno sentinel dependence — auto-safe\n"
+    _, by_id = _run(plan)
+    r = by_id[C43]
+    assert r.status == "PASS"
+    assert "escape declared" in r.detail
+
+
+def test_c43_bold_prefixed_escape_at_line_start_passes():
+    # Bold-prefixed standalone form at line start (the #1768 v4 vocabulary,
+    # relocated to line start — the shape the check is designed to accept):
+    # the `_standalone_na_declared` lstrip convention strips the leading
+    # `**`, and the regex is explicitly case-insensitive.
+    plan = C43_1775_SHAPED + (
+        "\n**No sentinel dependence — auto-safe:** results ride HF uploads; the poller "
+        "reads the Hub, nothing posts through /workspace sentinels.\n"
+    )
+    assert _status(plan, C43) == "PASS"
+
+
+def test_c43_escape_dash_variants_pass():
+    # The rule text renders the dash as an em dash; hyphen / en-dash /
+    # em-dash variants all count.
+    for dash in ("-", "–", "—"):
+        plan = C43_1775_SHAPED + f"\nno sentinel dependence {dash} auto-safe\n"
+        assert _status(plan, C43) == "PASS", dash
+
+
+def test_c43_na_form_escape_passes():
+    # The `N/A — no sentinel dependence...` form routes through the shared
+    # `_standalone_na_declared` helper.
+    plan = C43_1775_SHAPED + "\nN/A — no sentinel dependence — auto-safe\n"
+    assert _status(plan, C43) == "PASS"
+
+
+def test_c43_fenced_escape_does_not_satisfy():
+    # Anti-paste `_standalone_na_declared` semantics (c39/c38 parity): the
+    # escape inside a fence (a quoted bounce brief) must not satisfy.
+    plan = C43_1775_SHAPED + "\n```\nno sentinel dependence — auto-safe\n```\n"
+    assert _status(plan, C43) == "WARN"
+
+
+def test_c43_backtick_wrapped_escape_does_not_satisfy():
+    # A backtick-wrapped paste of the remedy's quoted form is NOT a
+    # declaration (#1238 anti-paste doctrine — declare escapes UNWRAPPED).
+    plan = C43_1775_SHAPED + "\n`no sentinel dependence — auto-safe`\n"
+    assert _status(plan, C43) == "WARN"
+
+
+def test_c43_midline_label_prefixed_escape_warns():
+    # The #1738 v4 real-corpus shape (and the REALIZED #1768 v4 shape — its
+    # bold-prefixed phrase actually sits mid-line after a `**Backend/lane:**`
+    # label), pinned as WARN — the INTENDED #1238 anti-paste miss: a
+    # label-prefixed MID-LINE mention is not a standalone declaration
+    # (re.match after the lstrip never reaches mid-line text).
+    plan = C43_1775_SHAPED + (
+        "\n**Lane / sentinel contract:** no sentinel dependence — auto-safe "
+        "(results ride HF uploads).\n"
+    )
+    assert _status(plan, C43) == "WARN"

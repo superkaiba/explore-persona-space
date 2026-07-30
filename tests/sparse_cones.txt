@@ -57,6 +57,10 @@
 #                             the committed phase1{,_rep43,_rep44}/cells/ metadata
 #                             (28-pair count asserts; a sparse worktree without the
 #                             cone FileNotFoundErrors — the #671 class)
+#   eval_results/issue_1776 — test_issue1776_judge_ids.py reads the committed
+#                             phase3/raw_completions_manifest.json (26 realized
+#                             stratum names) to round-trip the Batch-custom_id
+#                             persona-alias maps (crash-fix r13 charset pin)
 eval_results/issue_545
 eval_results/issue_521
 eval_results/issue_257
@@ -73,3 +77,4 @@ eval_results/issue_1434
 eval_results/issue_1482
 eval_results/issue_779
 eval_results/issue_1415
+eval_results/issue_1776

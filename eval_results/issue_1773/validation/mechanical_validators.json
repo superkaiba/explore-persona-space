@@ -1,0 +1,1460 @@
+{
+ "language_monolinguality": {
+  "n": 1695,
+  "mean_share": 0.5358702064896755,
+  "rows": [
+   {
+    "feat_id": 40,
+    "method": "langdetect",
+    "top_lang": "zh-cn",
+    "share": 0.4,
+    "script_top": "CJK"
+   },
+   {
+    "feat_id": 82,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.575,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 83,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.6,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 138,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.65,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 149,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.6,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 220,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.475,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 427,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.4,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 574,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.675,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 586,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.625,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 676,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.575,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 719,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.475,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 809,
+    "method": "langdetect",
+    "top_lang": "pt",
+    "share": 0.35,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 844,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.725,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 1088,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.65,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 1150,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.675,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 1184,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.4,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 1231,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.35,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 1295,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.675,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 1357,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.725,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 1371,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.55,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 1409,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.525,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 1676,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.775,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 1762,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.4,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 1994,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.625,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 2073,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.425,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 2084,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.625,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 2204,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.35,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 2210,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.5,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 2396,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.65,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 2461,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.6,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 2651,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.45,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 2827,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.7,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 2857,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.875,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 2936,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.375,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 2988,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.625,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 2997,
+    "method": "langdetect",
+    "top_lang": "zh-cn",
+    "share": 0.6,
+    "script_top": "CJK"
+   },
+   {
+    "feat_id": 3531,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.575,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 3555,
+    "method": "langdetect",
+    "top_lang": "fr",
+    "share": 0.3,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 3775,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.475,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 3823,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.4,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 3848,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.325,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 3903,
+    "method": "langdetect",
+    "top_lang": "zh-cn",
+    "share": 0.55,
+    "script_top": "CJK"
+   },
+   {
+    "feat_id": 3942,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.575,
+    "script_top": "CYRILLIC"
+   },
+   {
+    "feat_id": 4118,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.65,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 4120,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.625,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 4219,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.6,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 4281,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.75,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 4608,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.675,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 4612,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.725,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 4624,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.575,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 4985,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.475,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 5110,
+    "method": "langdetect",
+    "top_lang": "zh-cn",
+    "share": 0.6,
+    "script_top": "CJK"
+   },
+   {
+    "feat_id": 5133,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.425,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 5411,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.65,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 5425,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.475,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 5466,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.325,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 5503,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.65,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 5562,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.75,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 5574,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.375,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 5629,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.575,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 5638,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.675,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 5696,
+    "method": "langdetect",
+    "top_lang": "es",
+    "share": 0.225,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 5833,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.8,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 5841,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.625,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 5950,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.35,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 6011,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.6,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 6118,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.425,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 6136,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.45,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 6212,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.675,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 6318,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.675,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 6460,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.25,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 6543,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.275,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 6571,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.65,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 6609,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.725,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 6867,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.625,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 7091,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.75,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 7148,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.325,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 7270,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.725,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 7334,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.55,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 7383,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.475,
+    "script_top": "CYRILLIC"
+   },
+   {
+    "feat_id": 7397,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.65,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 7411,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.625,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 7537,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.5,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 7552,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.45,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 7706,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.375,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 7723,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.675,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 7773,
+    "method": "langdetect",
+    "top_lang": "zh-cn",
+    "share": 0.6,
+    "script_top": "CJK"
+   },
+   {
+    "feat_id": 7830,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.55,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 7951,
+    "method": "langdetect",
+    "top_lang": "pt",
+    "share": 0.2,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 8190,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.5,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 8620,
+    "method": "langdetect",
+    "top_lang": "zh-cn",
+    "share": 0.5,
+    "script_top": "CJK"
+   },
+   {
+    "feat_id": 8878,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.65,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 8982,
+    "method": "langdetect",
+    "top_lang": "zh-cn",
+    "share": 0.55,
+    "script_top": "CJK"
+   },
+   {
+    "feat_id": 9065,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.375,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 9140,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.4,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 9228,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.625,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 9248,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.575,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 9374,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.8,
+    "script_top": "CYRILLIC"
+   },
+   {
+    "feat_id": 9388,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.35,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 9447,
+    "method": "langdetect",
+    "top_lang": "es",
+    "share": 0.275,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 9466,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.6,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 9582,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.775,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 9593,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.375,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 9698,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.675,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 9744,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.7,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 9769,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.85,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 9951,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.2,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 10068,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.325,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 10090,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.7,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 10100,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.675,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 10109,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.7,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 10170,
+    "method": "langdetect",
+    "top_lang": "zh-cn",
+    "share": 0.275,
+    "script_top": "CJK"
+   },
+   {
+    "feat_id": 10276,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.625,
+    "script_top": "CYRILLIC"
+   },
+   {
+    "feat_id": 10341,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.575,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 10358,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.5,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 10381,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.6,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 10497,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.4,
+    "script_top": "CYRILLIC"
+   },
+   {
+    "feat_id": 10508,
+    "method": "langdetect",
+    "top_lang": "es",
+    "share": 0.25,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 10614,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.6,
+    "script_top": "CYRILLIC"
+   },
+   {
+    "feat_id": 10739,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.575,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 10745,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.7,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 10776,
+    "method": "langdetect",
+    "top_lang": "zh-cn",
+    "share": 0.25,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 10818,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.65,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 10820,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.35,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 10920,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.625,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 11196,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.225,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 11258,
+    "method": "langdetect",
+    "top_lang": "fr",
+    "share": 0.25,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 11326,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.45,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 11434,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.725,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 11455,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.725,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 11475,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.55,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 11514,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.4,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 11632,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.525,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 11755,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.6,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 12137,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.25,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 12155,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.475,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 12247,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.575,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 12320,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.775,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 12466,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.375,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 12594,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.425,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 12798,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.625,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 12901,
+    "method": "langdetect",
+    "top_lang": "zh-cn",
+    "share": 0.75,
+    "script_top": "CJK"
+   },
+   {
+    "feat_id": 12902,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.3,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 12906,
+    "method": "langdetect",
+    "top_lang": "zh-cn",
+    "share": 0.8,
+    "script_top": "CJK"
+   },
+   {
+    "feat_id": 12944,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.4,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 13003,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.75,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 13055,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.8,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 13057,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.475,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 13059,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.7,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 13221,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.375,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 13259,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.65,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 13326,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.8,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 13360,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.65,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 13515,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.55,
+    "script_top": "CYRILLIC"
+   },
+   {
+    "feat_id": 13590,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.525,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 13597,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.8,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 13807,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.3,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 13843,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.75,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 13871,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.225,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 14025,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.575,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 14032,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.625,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 14083,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.55,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 14115,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.325,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 14123,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.75,
+    "script_top": "CYRILLIC"
+   },
+   {
+    "feat_id": 14255,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.225,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 14317,
+    "method": "langdetect",
+    "top_lang": "es",
+    "share": 0.325,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 14378,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.525,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 14410,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.275,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 14645,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.325,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 14657,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.675,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 14832,
+    "method": "langdetect",
+    "top_lang": "zh-cn",
+    "share": 0.35,
+    "script_top": "CJK"
+   },
+   {
+    "feat_id": 14858,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.45,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 14900,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.75,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 14948,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.25,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 15130,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.375,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 15153,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.525,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 15299,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.5,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 15486,
+    "method": "langdetect",
+    "top_lang": "ru",
+    "share": 0.425,
+    "script_top": "CJK"
+   },
+   {
+    "feat_id": 15569,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.8,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 15673,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.7,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 15692,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.5,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 15815,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.625,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 15932,
+    "method": "langdetect",
+    "top_lang": "zh-cn",
+    "share": 0.725,
+    "script_top": "CJK"
+   },
+   {
+    "feat_id": 15972,
+    "method": "langdetect",
+    "top_lang": "zh-cn",
+    "share": 0.725,
+    "script_top": "CJK"
+   },
+   {
+    "feat_id": 15993,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.225,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 16033,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.625,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 16067,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.75,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 16177,
+    "method": "langdetect",
+    "top_lang": "zh-cn",
+    "share": 0.725,
+    "script_top": "CJK"
+   },
+   {
+    "feat_id": 16199,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.525,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 16209,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.5,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 16313,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.7,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 16320,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.775,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 16453,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.7,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 16500,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.475,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 16533,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.65,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 16585,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.45,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 16622,
+    "method": "langdetect",
+    "top_lang": "zh-cn",
+    "share": 0.775,
+    "script_top": "CJK"
+   },
+   {
+    "feat_id": 16626,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.625,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 16654,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.45,
+    "script_top": "LATIN"
+   },
+   {
+    "feat_id": 16743,
+    "method": "langdetect",
+    "top_lang": "en",
+    "share": 0.7,
+    "script_top": "LATIN"
+   }
+  ]
+ },
+ "register_informality": {
+  "n": 1233,
+  "mean": 0.005612521344258811,
+  "baseline_mean": 0.004393461425661331,
+  "note": "lexical proxy; steering-transfer validator DEFERRED (plan \u00a711 deviation)"
+ },
+ "functional_role_side_ratio": {
+  "input_side": {
+   "n": 12574,
+   "mean": 0.7334311372714769
+  },
+  "output_promoting": {
+   "n": 888,
+   "mean": 0.7388844506079476
+  },
+  "mixed": {
+   "n": 1415,
+   "mean": 0.7410911704730322
+  }
+ },
+ "abstraction_auc": {
+  "n": 12207,
+  "auc_activity": 0.4705377808032675,
+  "auc_persist": 0.528967027979962,
+  "auc_concentration": 0.5651705038022261
+ },
+ "identity_rb_align_percentile_PROXY": {
+  "n_identity": 101,
+  "mean_percentile_identity": 0.8495742084737682,
+  "mean_percentile_all": 0.5,
+  "note": "PROXY read \u2014 headline identity-disposition precision is human-annotation-gated"
+ },
+ "interpretable_detection_separation": {
+  "yes": {
+   "n": 228,
+   "mean": 0.7258771929824561
+  },
+  "no": {
+   "n": 222,
+   "mean": 0.6846846846846847
+  },
+  "unresolved": {
+   "n": 30,
+   "mean": 0.675
+  }
+ },
+ "git_commit": "d122a947ed764fb9def8c37ec88b79a77fe65d64",
+ "numpy": "2.2.6",
+ "python": "3.11.15",
+ "timestamp_utc": "2026-07-29T06:33:13.091696+00:00",
+ "task": 1773,
+ "seed": 17732026
+}

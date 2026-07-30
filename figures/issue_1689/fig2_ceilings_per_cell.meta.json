@@ -1,0 +1,669 @@
+{
+  "commit": "052a2c1cb3",
+  "created": "2026-07-29T00:02:59Z",
+  "figsize": [
+    13.5,
+    9.0
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "within-cell held-out R$^2$ (L19)": 0.07511722190336823,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "within-cell held-out R$^2$ (L19)": 0.06930589268842569,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "within-cell held-out R$^2$ (L19)": 0.030445299906651235,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.8,
+      "within-cell held-out R$^2$ (L19)": 0.516415832168537,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.8,
+      "within-cell held-out R$^2$ (L19)": 0.9810537270813022,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.8,
+      "within-cell held-out R$^2$ (L19)": 0.6533161774363668,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.8,
+      "within-cell held-out R$^2$ (L19)": 0.2878369592165405,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.8,
+      "within-cell held-out R$^2$ (L19)": 0.9810537270813022,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.8,
+      "within-cell held-out R$^2$ (L19)": 0.6538604878272825,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.8,
+      "within-cell held-out R$^2$ (L19)": 0.2248747097020417,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 9.8,
+      "within-cell held-out R$^2$ (L19)": 0.8361744675376909,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 10.8,
+      "within-cell held-out R$^2$ (L19)": 0.5344782162845709,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 11.8,
+      "within-cell held-out R$^2$ (L19)": -0.0036590822433362202,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 12.8,
+      "within-cell held-out R$^2$ (L19)": 0.024630832571511885,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 13.8,
+      "within-cell held-out R$^2$ (L19)": -0.003636640524212531,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 14.8,
+      "within-cell held-out R$^2$ (L19)": 0.0014813045942579928,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 15.8,
+      "within-cell held-out R$^2$ (L19)": 0.0410819793413677,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 16.8,
+      "within-cell held-out R$^2$ (L19)": 0.00011687264424298238,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 17.8,
+      "within-cell held-out R$^2$ (L19)": 0.00026262313240255075,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 18.8,
+      "within-cell held-out R$^2$ (L19)": 0.04029412086000539,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 19.8,
+      "within-cell held-out R$^2$ (L19)": -0.010054160631689069,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "within-cell held-out R$^2$ (L19)": 0.0834950347373572,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "within-cell held-out R$^2$ (L19)": 0.07340679978356002,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "within-cell held-out R$^2$ (L19)": 0.03875488623977752,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.2,
+      "within-cell held-out R$^2$ (L19)": 0.9830356130733426,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.2,
+      "within-cell held-out R$^2$ (L19)": 0.9810537270813022,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.2,
+      "within-cell held-out R$^2$ (L19)": 0.9898138209534727,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.2,
+      "within-cell held-out R$^2$ (L19)": 0.9151342866890312,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.2,
+      "within-cell held-out R$^2$ (L19)": 0.9810537270813022,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.2,
+      "within-cell held-out R$^2$ (L19)": 0.9895289243453766,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 9.2,
+      "within-cell held-out R$^2$ (L19)": 0.5380129627972428,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 10.2,
+      "within-cell held-out R$^2$ (L19)": 0.8361744675376909,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 11.2,
+      "within-cell held-out R$^2$ (L19)": 0.8519881634662589,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 12.2,
+      "within-cell held-out R$^2$ (L19)": -0.006621761711484764,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 13.2,
+      "within-cell held-out R$^2$ (L19)": 0.029983670102315063,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 14.2,
+      "within-cell held-out R$^2$ (L19)": 0.001561616343009331,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 15.2,
+      "within-cell held-out R$^2$ (L19)": 0.005869859472367622,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 16.2,
+      "within-cell held-out R$^2$ (L19)": 0.046598271930226365,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 17.2,
+      "within-cell held-out R$^2$ (L19)": 0.0004253652057362167,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 18.2,
+      "within-cell held-out R$^2$ (L19)": 0.0018128186687611514,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 19.2,
+      "within-cell held-out R$^2$ (L19)": 0.051232588979081006,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 20.2,
+      "within-cell held-out R$^2$ (L19)": -0.008942472659060341,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.2,
+      "within-cell held-out R$^2$ (L19)": 0.28307210244327696,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.8,
+      "within-cell held-out R$^2$ (L19)": 0.07820283700883846,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.8,
+      "within-cell held-out R$^2$ (L19)": 0.016910597441476383,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.8,
+      "within-cell held-out R$^2$ (L19)": 0.7802774290788248,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.8,
+      "within-cell held-out R$^2$ (L19)": 0.9717708281561409,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.8,
+      "within-cell held-out R$^2$ (L19)": 0.619183240541529,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.8,
+      "within-cell held-out R$^2$ (L19)": 0.6896717001779931,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.8,
+      "within-cell held-out R$^2$ (L19)": 0.9717708281561409,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.8,
+      "within-cell held-out R$^2$ (L19)": 0.6302658340261487,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 8.8,
+      "within-cell held-out R$^2$ (L19)": 0.4107281146758087,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 9.8,
+      "within-cell held-out R$^2$ (L19)": 0.8607070953412791,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 10.8,
+      "within-cell held-out R$^2$ (L19)": 0.530276848623283,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 11.8,
+      "within-cell held-out R$^2$ (L19)": 0.1468645166196656,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 12.8,
+      "within-cell held-out R$^2$ (L19)": 0.005752976052977865,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 13.8,
+      "within-cell held-out R$^2$ (L19)": 0.00736665602770481,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 14.8,
+      "within-cell held-out R$^2$ (L19)": 0.12669189709517703,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 15.8,
+      "within-cell held-out R$^2$ (L19)": 0.0058335523601104056,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 16.8,
+      "within-cell held-out R$^2$ (L19)": -0.000720825216827814,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 17.8,
+      "within-cell held-out R$^2$ (L19)": 0.16547159885460827,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 18.8,
+      "within-cell held-out R$^2$ (L19)": 0.005619288065046746,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 19.8,
+      "within-cell held-out R$^2$ (L19)": 0.009747837305162155,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.2,
+      "within-cell held-out R$^2$ (L19)": 0.3222966801926398,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.2,
+      "within-cell held-out R$^2$ (L19)": 0.08196476707968858,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.2,
+      "within-cell held-out R$^2$ (L19)": 0.019380814537358626,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.2,
+      "within-cell held-out R$^2$ (L19)": 0.9915983261508919,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.2,
+      "within-cell held-out R$^2$ (L19)": 0.9717708281561409,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.2,
+      "within-cell held-out R$^2$ (L19)": 0.9875717782355942,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 6.2,
+      "within-cell held-out R$^2$ (L19)": 0.9897545949133729,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 7.2,
+      "within-cell held-out R$^2$ (L19)": 0.9717708281561409,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 8.2,
+      "within-cell held-out R$^2$ (L19)": 0.9868930353537541,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 9.2,
+      "within-cell held-out R$^2$ (L19)": 0.6295517922459394,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 10.2,
+      "within-cell held-out R$^2$ (L19)": 0.8607070953412791,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 11.2,
+      "within-cell held-out R$^2$ (L19)": 0.8700238658418022,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 12.2,
+      "within-cell held-out R$^2$ (L19)": 0.18375032404879033,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 13.2,
+      "within-cell held-out R$^2$ (L19)": 0.008553548364758301,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 14.2,
+      "within-cell held-out R$^2$ (L19)": 0.008538812288085174,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 15.2,
+      "within-cell held-out R$^2$ (L19)": 0.15848859154452033,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 16.2,
+      "within-cell held-out R$^2$ (L19)": 0.008685815538414299,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 17.2,
+      "within-cell held-out R$^2$ (L19)": 0.0002787954181567853,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 18.2,
+      "within-cell held-out R$^2$ (L19)": 0.21270878834898388,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 19.2,
+      "within-cell held-out R$^2$ (L19)": 0.006995490017612682,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 20.2,
+      "within-cell held-out R$^2$ (L19)": 0.014885150505689615,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 84,
+  "text": {
+    "suptitle": "Per-cell map ceilings: within-cell held-out R$^2$, both arms\nhatched red = degenerate arm (identity+bias baseline R$^2$ = 1.0: X equals Y by construction)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Qwen2.5-7B",
+        "ylabel": "within-cell held-out R$^2$ (L19)",
+        "legend_labels": [
+          "prefix arm",
+          "context arm"
+        ],
+        "annotations": [
+          "0.08",
+          "0.07",
+          "0.03",
+          "0.52",
+          "0.98",
+          "0.65",
+          "0.29",
+          "0.98",
+          "0.65",
+          "0.22",
+          "0.84",
+          "0.53",
+          "-0.00",
+          "0.02",
+          "-0.00",
+          "0.00",
+          "0.04",
+          "0.00",
+          "0.00",
+          "0.04",
+          "-0.01",
+          "0.08",
+          "0.07",
+          "0.04",
+          "0.98",
+          "0.98",
+          "0.99",
+          "0.92",
+          "0.98",
+          "0.99",
+          "0.54",
+          "0.84",
+          "0.85",
+          "-0.01",
+          "0.03",
+          "0.00",
+          "0.01",
+          "0.05",
+          "0.00",
+          "0.00",
+          "0.05",
+          "-0.01"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "Qwen2.5-7B-Instruct",
+        "ylabel": "within-cell held-out R$^2$ (L19)",
+        "annotations": [
+          "0.28",
+          "0.08",
+          "0.02",
+          "0.78",
+          "0.97",
+          "0.62",
+          "0.69",
+          "0.97",
+          "0.63",
+          "0.41",
+          "0.86",
+          "0.53",
+          "0.15",
+          "0.01",
+          "0.01",
+          "0.13",
+          "0.01",
+          "-0.00",
+          "0.17",
+          "0.01",
+          "0.01",
+          "0.32",
+          "0.08",
+          "0.02",
+          "0.99",
+          "0.97",
+          "0.99",
+          "0.99",
+          "0.97",
+          "0.99",
+          "0.63",
+          "0.86",
+          "0.87",
+          "0.18",
+          "0.01",
+          "0.01",
+          "0.16",
+          "0.01",
+          "0.00",
+          "0.21",
+          "0.01",
+          "0.01"
+        ],
+        "xticklabels": [
+          "asst/chat",
+          "asst/plain",
+          "asst/story",
+          "user-LMSYS/chat",
+          "user-LMSYS/plain",
+          "user-LMSYS/story",
+          "user-haiku/chat",
+          "user-haiku/plain",
+          "user-haiku/story",
+          "user-onpol/chat",
+          "user-onpol/plain",
+          "user-onpol/story",
+          "HELIOS/chat",
+          "HELIOS/plain",
+          "HELIOS/story",
+          "Wren/chat",
+          "Wren/plain",
+          "Wren/story",
+          "Dana/chat",
+          "Dana/plain",
+          "Dana/story"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "prefix arm",
+      "context arm"
+    ]
+  }
+}

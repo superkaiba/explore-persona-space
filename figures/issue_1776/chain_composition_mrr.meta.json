@@ -1,0 +1,53 @@
+{
+  "commit": "a7a99f955e",
+  "created": "2026-07-30T03:14:54Z",
+  "figsize": [
+    5.6,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "M\u2032 chain (c14)",
+      "MRR of generated answer tokens in lens decode": 0.011360393650052324,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "shipped-M chain (c19)",
+      "MRR of generated answer tokens in lens decode": 0.013930925291949229,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 2,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Chain composition: lens(J-transport of v\u0302(C)) vs shuffled null (red)",
+        "ylabel": "MRR of generated answer tokens in lens decode",
+        "annotations": [
+          "0.0114",
+          "0.0139"
+        ],
+        "xticklabels": [
+          "M\u2032 chain (c14)",
+          "shipped-M chain (c19)"
+        ],
+        "yticklabels": [
+          "0.000",
+          "0.002",
+          "0.004",
+          "0.006",
+          "0.008",
+          "0.010",
+          "0.012",
+          "0.014",
+          "0.016"
+        ]
+      }
+    ]
+  }
+}

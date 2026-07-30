@@ -1,0 +1,4863 @@
+{
+ "ts": "2026-07-30T18:53:14Z",
+ "git_commit": "29d3a0139ee33dddf67facdfc9f5f200316c399b",
+ "torch": "2.8.0+cu128",
+ "numpy": "2.2.6",
+ "issue": 1768,
+ "layer": 19,
+ "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+ "round": "inline-write-predictability",
+ "question": "Is the per-context fine-tuning write w(x) predictable from the BASE model's context vector c0(x), and is that map linear?",
+ "arm_picks": {
+  "criteria": [
+   {
+    "criterion": "imp_lora_con_highdose",
+    "text": "highest-dose (max lr) impoliteness LoRA contrastive, pers context"
+   },
+   {
+    "criterion": "imp_lora_po_highdose",
+    "text": "highest-dose (max lr) impoliteness LoRA positive-only, pers context"
+   },
+   {
+    "criterion": "ws_lora_con",
+    "text": "writing-style (cas) LoRA contrastive, pers context, max lr"
+   },
+   {
+    "criterion": "syc_bare_changed",
+    "text": "sycophancy bare-context LoRA arm whose L19 verdict is Changed"
+   },
+   {
+    "criterion": "syc_conv_unchanged",
+    "text": "sycophancy conversation-history LoRA arm whose L19 verdict is Unchanged"
+   },
+   {
+    "criterion": "marker_pers",
+    "text": "marker persona-context LoRA arm (lowest in-window lr rung), max |ΔG|"
+   },
+   {
+    "criterion": "imp_ft",
+    "text": "full fine-tune impoliteness arm (method axis vs the LoRA imp arms)"
+   },
+   {
+    "criterion": "syc_ft",
+    "text": "full fine-tune sycophancy arm (method axis vs the LoRA syc arms)"
+   }
+  ],
+  "picks": [
+   {
+    "criterion": "imp_lora_con_highdose",
+    "criterion_text": "highest-dose (max lr) impoliteness LoRA contrastive, pers context",
+    "arm_id": "imp-pers-con-lr3e5-s42",
+    "method": "lora",
+    "kind": "content",
+    "beh_key": "imp",
+    "ctx_key": "pers",
+    "regime": "con",
+    "seed": 42,
+    "lr": 3e-05,
+    "step": 30,
+    "selection_read": 0.81,
+    "base_unit": "base_content",
+    "round1_L19_verdict": "Changed",
+    "round1_L19_D": 12.90595606136192,
+    "round1_L19_m0_r2": 0.5012811586020105,
+    "round1_L19_mplus_r2": 0.47906205877793784,
+    "why": "max lr 3e-05 among imp/pers/con LoRA arms"
+   },
+   {
+    "criterion": "imp_lora_po_highdose",
+    "criterion_text": "highest-dose (max lr) impoliteness LoRA positive-only, pers context",
+    "arm_id": "imp-pers-po-lr1e5-s137",
+    "method": "lora",
+    "kind": "content",
+    "beh_key": "imp",
+    "ctx_key": "pers",
+    "regime": "po",
+    "seed": 137,
+    "lr": 1e-05,
+    "step": 35,
+    "selection_read": 0.66,
+    "base_unit": "base_content",
+    "round1_L19_verdict": "Changed",
+    "round1_L19_D": 4.2258902807332,
+    "round1_L19_m0_r2": 0.5012811586020105,
+    "round1_L19_mplus_r2": 0.4740455854983977,
+    "why": "max lr 1e-05 among imp/pers/po LoRA arms"
+   },
+   {
+    "criterion": "ws_lora_con",
+    "criterion_text": "writing-style (cas) LoRA contrastive, pers context, max lr",
+    "arm_id": "cas-pers-con-lr1e5-s137",
+    "method": "lora",
+    "kind": "content",
+    "beh_key": "cas",
+    "ctx_key": "pers",
+    "regime": "con",
+    "seed": 137,
+    "lr": 1e-05,
+    "step": 30,
+    "selection_read": 0.85,
+    "base_unit": "base_content",
+    "round1_L19_verdict": "Changed",
+    "round1_L19_D": 7.597228312542633,
+    "round1_L19_m0_r2": 0.5012811586020105,
+    "round1_L19_mplus_r2": 0.4805285210495298,
+    "why": "writing-style (cas) pers/con LoRA, max lr 1e-05"
+   },
+   {
+    "criterion": "syc_bare_changed",
+    "criterion_text": "sycophancy bare-context LoRA arm whose L19 verdict is Changed",
+    "arm_id": "syc-bare-con-lr1e5-s42",
+    "method": "lora",
+    "kind": "content",
+    "beh_key": "syc",
+    "ctx_key": "bare",
+    "regime": "con",
+    "seed": 42,
+    "lr": 1e-05,
+    "step": 20,
+    "selection_read": 0.6,
+    "base_unit": "base_content",
+    "round1_L19_verdict": "Changed",
+    "round1_L19_D": 8.167650089340412,
+    "round1_L19_m0_r2": 0.5012811586020105,
+    "round1_L19_mplus_r2": 0.48041273838120446,
+    "why": "largest L19 D 8.168 among Changed syc/bare arms"
+   },
+   {
+    "criterion": "syc_conv_unchanged",
+    "criterion_text": "sycophancy conversation-history LoRA arm whose L19 verdict is Unchanged",
+    "arm_id": "syc-conv-po-lr1e5-s137",
+    "method": "lora",
+    "kind": "content",
+    "beh_key": "syc",
+    "ctx_key": "conv",
+    "regime": "po",
+    "seed": 137,
+    "lr": 1e-05,
+    "step": 5,
+    "selection_read": 0.75,
+    "base_unit": "base_content",
+    "round1_L19_verdict": "Unchanged",
+    "round1_L19_D": -4.771037781378471,
+    "round1_L19_m0_r2": 0.5012811586020105,
+    "round1_L19_mplus_r2": 0.4975876275038651,
+    "why": "most-negative L19 D -4.771 among Unchanged syc/conv"
+   },
+   {
+    "criterion": "marker_pers",
+    "criterion_text": "marker persona-context LoRA arm (lowest in-window lr rung), max |ΔG|",
+    "arm_id": "mk-pers-po-lr5e6-s137",
+    "method": "lora",
+    "kind": "marker",
+    "beh_key": "mk",
+    "ctx_key": "pers",
+    "regime": "po",
+    "seed": 137,
+    "lr": 5e-06,
+    "step": 80,
+    "selection_read": 7.4173308372497555,
+    "base_unit": "base_mk",
+    "round1_L19_verdict": "Unchanged",
+    "round1_L19_D": -3.560704666119568,
+    "round1_L19_m0_r2": 0.4989856789032986,
+    "round1_L19_mplus_r2": 0.4969693102084358,
+    "why": "lowest in-window lr rung 5e-06, |ΔG| 7.42 nat"
+   },
+   {
+    "criterion": "imp_ft",
+    "criterion_text": "full fine-tune impoliteness arm (method axis vs the LoRA imp arms)",
+    "arm_id": "imp-pers-ft-con-s137",
+    "method": "ft",
+    "kind": "content",
+    "beh_key": "imp",
+    "ctx_key": "pers",
+    "regime": "con",
+    "seed": 137,
+    "lr": 5e-06,
+    "step": 12,
+    "selection_read": 0.6326530612244898,
+    "base_unit": "base_content",
+    "round1_L19_verdict": "Changed",
+    "round1_L19_D": 13.31761927969583,
+    "round1_L19_m0_r2": 0.5012811586020105,
+    "round1_L19_mplus_r2": 0.4720697997310902,
+    "why": "full-FT imp contrastive arm (step 12) — method axis"
+   },
+   {
+    "criterion": "syc_ft",
+    "criterion_text": "full fine-tune sycophancy arm (method axis vs the LoRA syc arms)",
+    "arm_id": "syc-pers-ft-con-s137",
+    "method": "ft",
+    "kind": "content",
+    "beh_key": "syc",
+    "ctx_key": "pers",
+    "regime": "con",
+    "seed": 137,
+    "lr": 5e-06,
+    "step": 24,
+    "selection_read": 0.61,
+    "base_unit": "base_content",
+    "round1_L19_verdict": "Changed",
+    "round1_L19_D": 14.504513360180667,
+    "round1_L19_m0_r2": 0.5012811586020105,
+    "round1_L19_mplus_r2": 0.46608162236815776,
+    "why": "full-FT syc contrastive arm (step 24) — method axis"
+   }
+  ],
+  "verdict_source": "eval_results/issue_1768/map_change_summary.json (round-1 p8)",
+  "registry_source": "scripts/issue1768_cells.py all_arms() (72-arm fleet)",
+  "ts": "2026-07-30T17:09:41Z",
+  "git_commit": "339105e86ec2ec1eeaf7b0b9bfb059485e302419",
+  "torch": "2.8.0+cu128",
+  "numpy": "2.2.6",
+  "issue": 1768,
+  "layer": 19,
+  "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+  "round": "inline-write-predictability"
+ },
+ "split": {
+  "val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+  "test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+  "n_val": 400,
+  "n_test": 1000,
+  "n_train": 15000,
+  "sample_seed": 42,
+  "source": "issue1768_cells.assert_pinned_split() (#779 pinned splits)",
+  "ts": "2026-07-30T17:12:05Z",
+  "git_commit": "9ebfb48d153670fb0583ab5563ec9ae1ffa7ed9e",
+  "torch": "2.8.0+cu128",
+  "numpy": "2.2.6",
+  "issue": 1768,
+  "layer": 19,
+  "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+  "round": "inline-write-predictability"
+ },
+ "staging": {
+  "stage_root": "/mnt/eps-data/thomasjiralerspong/issue1768_write_predictability/hf_dl",
+  "n_files": 19,
+  "bytes": 9891902781,
+  "projected_downloaded_bytes": 9891902781,
+  "free_bytes_before": 417543897088,
+  "wall_s": 99.2,
+  "ts": "2026-07-30T17:12:03Z",
+  "git_commit": "9ebfb48d153670fb0583ab5563ec9ae1ffa7ed9e",
+  "torch": "2.8.0+cu128",
+  "numpy": "2.2.6",
+  "issue": 1768,
+  "layer": 19,
+  "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+  "round": "inline-write-predictability"
+ },
+ "cells": {
+  "cas-pers-con-lr1e5-s137|op": {
+   "arm_id": "cas-pers-con-lr1e5-s137",
+   "tree": "op",
+   "tree_text": "on-policy write: trained on-policy answer state − base answer state",
+   "layer": 19,
+   "method": "lora",
+   "n_rows": 16400,
+   "n_train": 15000,
+   "n_val": 400,
+   "n_test": 1000,
+   "d_in": 3584,
+   "d_out": 3584,
+   "write_norm_mean_test": 22.03124406121069,
+   "predictors": {
+    "ridge": {
+     "n_train": 15000,
+     "selection": "val-lambda (primal, streaming)",
+     "selected_lambda": 31622.776601683792,
+     "val_r2_at_selected": 0.08624288488933862,
+     "lambda_grid_edge": null,
+     "ridge_block": 50000,
+     "lambda_grid": [
+      -3.0,
+      8.0,
+      23
+     ],
+     "heldout_r2": 0.0973722230933175,
+     "mean_cos": 0.5534276577095211,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.017,
+       "10": 0.063
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 364.5,
+      "mrr": 0.035152655123892124
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.023,
+       "10": 0.13
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 162.0,
+      "mrr": 0.06155195656875873
+     },
+     "heldout_r2_ci95": [
+      0.08721475308140128,
+      0.10489000172639268
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "identity_bias": {
+     "applicable": true,
+     "note": "d_in == d_out == 3584 so the standing identity+bias baseline applies; conceptually a weak prior here (w is a DIFFERENCE vector, c0 an activation), reported per the mapping-baselines rule, never skipped",
+     "heldout_r2": -55.587248601511654,
+     "mean_cos": 0.060845665711377284,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.002,
+       "10": 0.016
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 500.0,
+      "mrr": 0.008493070821832193
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.001,
+       "10": 0.009
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 511.5,
+      "mrr": 0.008974791989123777
+     },
+     "heldout_r2_ci95": [
+      -60.17002023913101,
+      -50.91040967612718
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "krr": {
+     "selected": {
+      "gamma_mult": 1.0,
+      "gamma": 4.1396145716398754e-05,
+      "lambda": 0.1,
+      "val_r2": 0.10023046326098362
+     },
+     "base_gamma": 4.1396145716398754e-05,
+     "m_landmarks": 1024,
+     "recipe": "Nystrom RBF KRR (#779 FFC krr_select_predict), val-selected (gamma, lambda)",
+     "heldout_r2": 0.11764078729878313,
+     "mean_cos": 0.5624990173066577,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.019,
+       "10": 0.068
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 339.0,
+      "mrr": 0.03913088774501855
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.026,
+       "10": 0.149
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 130.0,
+      "mrr": 0.07178523451744014
+     },
+     "heldout_r2_ci95": [
+      0.10589419063993635,
+      0.1266423469817908
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "mlp": {
+     "arm_id": "cas-pers-con-lr1e5-s137",
+     "tree": "op",
+     "epochs_ran": 127,
+     "best_internal_val": 0.11688739061355591,
+     "wall_s": 13.9,
+     "recipe": {
+      "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+      "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+      "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+      "hidden": 3584,
+      "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+      "lr": 0.001,
+      "wd": 0.0001,
+      "max_epochs": 300,
+      "patience": 20,
+      "device": "cuda"
+     },
+     "heldout_r2": 0.05834209717701688,
+     "mean_cos": 0.5118133866058567,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.017,
+       "10": 0.061
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 342.5,
+      "mrr": 0.03640762922541495
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.024,
+       "10": 0.128
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 134.0,
+      "mrr": 0.05975650267454186
+     },
+     "heldout_r2_ci95": [
+      0.04513662972660333,
+      0.0696859196125371
+     ],
+     "r2_ci_n_draws": 200,
+     "ts": "2026-07-30T18:45:44Z",
+     "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+     "torch": "2.8.0+cu128",
+     "numpy": "2.2.6",
+     "issue": 1768,
+     "layer": 19,
+     "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+     "round": "inline-write-predictability",
+     "source": "mlp.json"
+    }
+   },
+   "per_direction": {
+    "direction_rank": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "heldout_r2_per_direction": [
+     0.1351377821955776,
+     0.09821533109767511,
+     0.316678335057188,
+     0.3124135916143763,
+     0.3622273542458595,
+     0.16741005085368532,
+     0.09707588915212284,
+     0.2178756865735859,
+     0.1815406700677551,
+     0.11807138887663693
+    ],
+    "train_var_share_per_direction": [
+     0.08778804181976006,
+     0.07718643795263472,
+     0.052325194175399506,
+     0.02776663207116042,
+     0.023586672549495653,
+     0.020522839943198107,
+     0.019240286228818338,
+     0.015835996119423587,
+     0.013450315010350712,
+     0.012450262876942796
+    ],
+    "participation_ratio_train": 9.382169899893947,
+    "total_centered_var_train": 6432002.5,
+    "basis": "top-10 right singular vectors of the CENTERED train write matrix",
+    "left_vectors": "N/A — row-space (per-train-row loadings); no held-out analogue",
+    "centering": "train-mean centered (round-1 rank_read convention)",
+    "svd": "torch.svd_lowrank(q=20, niter=4)",
+    "predictor": "ridge (val-selected lambda)"
+   },
+   "walls": {
+    "ridge_s": 35.03,
+    "identity_bias_s": 2.43,
+    "krr_s": 17.45,
+    "per_direction_s": 1.67
+   },
+   "r2_convention": "variance-weighted pooled R² over the 3,584 dims of w, scored against the TEST-set mean of w — so R² > 0 is context-DEPENDENT predictability beyond the static mean write (a mean-write predictor reads exactly 0)",
+   "ts": "2026-07-30T17:19:49Z",
+   "git_commit": "ecc2786d45333109e3579929d57c293da88c2b82",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "cas-pers-con-lr1e5-s137|tf": {
+   "arm_id": "cas-pers-con-lr1e5-s137",
+   "tree": "tf",
+   "tree_text": "matched-text write: trained teacher-forced-on-base answer state − base answer state",
+   "layer": 19,
+   "method": "lora",
+   "n_rows": 16400,
+   "n_train": 15000,
+   "n_val": 400,
+   "n_test": 1000,
+   "d_in": 3584,
+   "d_out": 3584,
+   "write_norm_mean_test": 11.014975850707186,
+   "predictors": {
+    "ridge": {
+     "n_train": 15000,
+     "selection": "val-lambda (primal, streaming)",
+     "selected_lambda": 1000.0,
+     "val_r2_at_selected": 0.424753480245052,
+     "lambda_grid_edge": null,
+     "ridge_block": 50000,
+     "lambda_grid": [
+      -3.0,
+      8.0,
+      23
+     ],
+     "heldout_r2": 0.38237123175690513,
+     "mean_cos": 0.8664578822084954,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.215,
+       "10": 0.505
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 10.0,
+      "mrr": 0.3112530961657277
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.304,
+       "10": 0.619
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 5.0,
+      "mrr": 0.4094218668524436
+     },
+     "heldout_r2_ci95": [
+      0.3648184395576136,
+      0.40097194417352733
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "identity_bias": {
+     "applicable": true,
+     "note": "d_in == d_out == 3584 so the standing identity+bias baseline applies; conceptually a weak prior here (w is a DIFFERENCE vector, c0 an activation), reported per the mapping-baselines rule, never skipped",
+     "heldout_r2": -279.7785882588029,
+     "mean_cos": 0.08929973792586006,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.002,
+       "10": 0.016
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 447.5,
+      "mrr": 0.010659786173279383
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.003,
+       "10": 0.019
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 444.0,
+      "mrr": 0.011470186440589296
+     },
+     "heldout_r2_ci95": [
+      -305.73383202322634,
+      -258.64475340940925
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "krr": {
+     "selected": {
+      "gamma_mult": 1.0,
+      "gamma": 4.1396145716398754e-05,
+      "lambda": 0.001,
+      "val_r2": 0.46270491176826023
+     },
+     "base_gamma": 4.1396145716398754e-05,
+     "m_landmarks": 1024,
+     "recipe": "Nystrom RBF KRR (#779 FFC krr_select_predict), val-selected (gamma, lambda)",
+     "heldout_r2": 0.4376333482069156,
+     "mean_cos": 0.8796398656011661,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.226,
+       "10": 0.501
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 10.0,
+      "mrr": 0.31581335296912405
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.306,
+       "10": 0.594
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 5.0,
+      "mrr": 0.4014877402630849
+     },
+     "heldout_r2_ci95": [
+      0.41963457753137606,
+      0.45839315068898123
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "mlp": {
+     "arm_id": "cas-pers-con-lr1e5-s137",
+     "tree": "tf",
+     "epochs_ran": 151,
+     "best_internal_val": 0.011970867402851582,
+     "wall_s": 17.2,
+     "recipe": {
+      "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+      "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+      "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+      "hidden": 3584,
+      "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+      "lr": 0.001,
+      "wd": 0.0001,
+      "max_epochs": 300,
+      "patience": 20,
+      "device": "cuda"
+     },
+     "heldout_r2": 0.13760066764416057,
+     "mean_cos": 0.7545426449377389,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.105,
+       "10": 0.337
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 36.0,
+      "mrr": 0.17826548674244327
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.141,
+       "10": 0.411
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 18.0,
+      "mrr": 0.2309142140358782
+     },
+     "heldout_r2_ci95": [
+      0.11766963142154459,
+      0.15384668713589322
+     ],
+     "r2_ci_n_draws": 200,
+     "ts": "2026-07-30T18:45:30Z",
+     "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+     "torch": "2.8.0+cu128",
+     "numpy": "2.2.6",
+     "issue": 1768,
+     "layer": 19,
+     "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+     "round": "inline-write-predictability",
+     "source": "mlp.json"
+    }
+   },
+   "per_direction": {
+    "direction_rank": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "heldout_r2_per_direction": [
+     0.615338021745863,
+     0.46835934219093633,
+     0.6378197168129085,
+     0.4187230390461434,
+     0.6843247344671202,
+     0.4863249390807277,
+     0.3429599077252753,
+     0.5172738716503851,
+     0.24914761134120145,
+     0.4217190165327277
+    ],
+    "train_var_share_per_direction": [
+     0.2697189892048653,
+     0.1616786923449205,
+     0.040353129504462945,
+     0.03294577573516338,
+     0.027618764371423108,
+     0.020433555269851043,
+     0.01710906918155712,
+     0.015327961920931776,
+     0.013432028461867663,
+     0.012935816084705357
+    ],
+    "participation_ratio_train": 4.467218959381777,
+    "total_centered_var_train": 610389.75,
+    "basis": "top-10 right singular vectors of the CENTERED train write matrix",
+    "left_vectors": "N/A — row-space (per-train-row loadings); no held-out analogue",
+    "centering": "train-mean centered (round-1 rank_read convention)",
+    "svd": "torch.svd_lowrank(q=20, niter=4)",
+    "predictor": "ridge (val-selected lambda)"
+   },
+   "walls": {
+    "ridge_s": 36.72,
+    "identity_bias_s": 2.56,
+    "krr_s": 18.95,
+    "per_direction_s": 1.78
+   },
+   "r2_convention": "variance-weighted pooled R² over the 3,584 dims of w, scored against the TEST-set mean of w — so R² > 0 is context-DEPENDENT predictability beyond the static mean write (a mean-write predictor reads exactly 0)",
+   "ts": "2026-07-30T17:20:50Z",
+   "git_commit": "ecc2786d45333109e3579929d57c293da88c2b82",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "imp-pers-con-lr3e5-s42|op": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "tree": "op",
+   "tree_text": "on-policy write: trained on-policy answer state − base answer state",
+   "layer": 19,
+   "method": "lora",
+   "n_rows": 16400,
+   "n_train": 15000,
+   "n_val": 400,
+   "n_test": 1000,
+   "d_in": 3584,
+   "d_out": 3584,
+   "write_norm_mean_test": 25.89430705070604,
+   "predictors": {
+    "ridge": {
+     "n_train": 15000,
+     "selection": "val-lambda (primal, streaming)",
+     "selected_lambda": 10000.0,
+     "val_r2_at_selected": 0.12640960082086372,
+     "lambda_grid_edge": null,
+     "ridge_block": 50000,
+     "lambda_grid": [
+      -3.0,
+      8.0,
+      23
+     ],
+     "heldout_r2": 0.11915465941177317,
+     "mean_cos": 0.6350860667960896,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.036,
+       "10": 0.113
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 290.0,
+      "mrr": 0.06381881930088519
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.042,
+       "10": 0.17
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 201.0,
+      "mrr": 0.08512057640454748
+     },
+     "heldout_r2_ci95": [
+      0.10525559533028768,
+      0.12825752031933663
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "identity_bias": {
+     "applicable": true,
+     "note": "d_in == d_out == 3584 so the standing identity+bias baseline applies; conceptually a weak prior here (w is a DIFFERENCE vector, c0 an activation), reported per the mapping-baselines rule, never skipped",
+     "heldout_r2": -48.09933275075724,
+     "mean_cos": 0.06270141161189621,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.001,
+       "10": 0.012
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 562.0,
+      "mrr": 0.006767579677570324
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.002,
+       "10": 0.016
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 531.0,
+      "mrr": 0.009379238513040143
+     },
+     "heldout_r2_ci95": [
+      -52.18961303024477,
+      -44.52174540696699
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "krr": {
+     "selected": {
+      "gamma_mult": 1.0,
+      "gamma": 4.1396145716398754e-05,
+      "lambda": 0.1,
+      "val_r2": 0.1333125879516035
+     },
+     "base_gamma": 4.1396145716398754e-05,
+     "m_landmarks": 1024,
+     "recipe": "Nystrom RBF KRR (#779 FFC krr_select_predict), val-selected (gamma, lambda)",
+     "heldout_r2": 0.13099689308685925,
+     "mean_cos": 0.645736407544348,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.024,
+       "10": 0.107
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 293.5,
+      "mrr": 0.05310857362093758
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.032,
+       "10": 0.144
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 203.5,
+      "mrr": 0.07013206718274882
+     },
+     "heldout_r2_ci95": [
+      0.11792971895867205,
+      0.14099682845310602
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "mlp": {
+     "arm_id": "imp-pers-con-lr3e5-s42",
+     "tree": "op",
+     "epochs_ran": 129,
+     "best_internal_val": 0.12330589443445206,
+     "wall_s": 13.6,
+     "recipe": {
+      "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+      "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+      "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+      "hidden": 3584,
+      "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+      "lr": 0.001,
+      "wd": 0.0001,
+      "max_epochs": 300,
+      "patience": 20,
+      "device": "cuda"
+     },
+     "heldout_r2": 0.08668094744329158,
+     "mean_cos": 0.6160854404721802,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.023,
+       "10": 0.099
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 291.5,
+      "mrr": 0.05117321752970647
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.025,
+       "10": 0.138
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 200.5,
+      "mrr": 0.06584038392074737
+     },
+     "heldout_r2_ci95": [
+      0.0736668032858101,
+      0.09733569441434574
+     ],
+     "r2_ci_n_draws": 200,
+     "ts": "2026-07-30T18:46:22Z",
+     "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+     "torch": "2.8.0+cu128",
+     "numpy": "2.2.6",
+     "issue": 1768,
+     "layer": 19,
+     "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+     "round": "inline-write-predictability",
+     "source": "mlp.json"
+    }
+   },
+   "per_direction": {
+    "direction_rank": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "heldout_r2_per_direction": [
+     0.35389192808762715,
+     0.02973768100352625,
+     0.2214848298595007,
+     0.46526532779499974,
+     0.11965301036019882,
+     0.40324335305103454,
+     0.10527236496374925,
+     0.1966133489395573,
+     0.1658041380788965,
+     0.17948092780191083
+    ],
+    "train_var_share_per_direction": [
+     0.08978739142898347,
+     0.07484293182037056,
+     0.040436810532327415,
+     0.02997086353652557,
+     0.02253012361500692,
+     0.019442299634752056,
+     0.018904737669433246,
+     0.01826060424035565,
+     0.01276695046122829,
+     0.01222773937534868
+    ],
+    "participation_ratio_train": 9.467591815229571,
+    "total_centered_var_train": 7155707.0,
+    "basis": "top-10 right singular vectors of the CENTERED train write matrix",
+    "left_vectors": "N/A — row-space (per-train-row loadings); no held-out analogue",
+    "centering": "train-mean centered (round-1 rank_read convention)",
+    "svd": "torch.svd_lowrank(q=20, niter=4)",
+    "predictor": "ridge (val-selected lambda)"
+   },
+   "walls": {
+    "ridge_s": 39.3,
+    "identity_bias_s": 2.36,
+    "krr_s": 18.6,
+    "per_direction_s": 1.9
+   },
+   "r2_convention": "variance-weighted pooled R² over the 3,584 dims of w, scored against the TEST-set mean of w — so R² > 0 is context-DEPENDENT predictability beyond the static mean write (a mean-write predictor reads exactly 0)",
+   "ts": "2026-07-30T17:13:38Z",
+   "git_commit": "64f12b007664d6ed7f056423f3b327145db4ca0b",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "imp-pers-con-lr3e5-s42|tf": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "tree": "tf",
+   "tree_text": "matched-text write: trained teacher-forced-on-base answer state − base answer state",
+   "layer": 19,
+   "method": "lora",
+   "n_rows": 16400,
+   "n_train": 15000,
+   "n_val": 400,
+   "n_test": 1000,
+   "d_in": 3584,
+   "d_out": 3584,
+   "write_norm_mean_test": 14.320596439834295,
+   "predictors": {
+    "ridge": {
+     "n_train": 15000,
+     "selection": "val-lambda (primal, streaming)",
+     "selected_lambda": 1000.0,
+     "val_r2_at_selected": 0.40841695108051146,
+     "lambda_grid_edge": null,
+     "ridge_block": 50000,
+     "lambda_grid": [
+      -3.0,
+      8.0,
+      23
+     ],
+     "heldout_r2": 0.3673660367496828,
+     "mean_cos": 0.8740563814511513,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.268,
+       "10": 0.513
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 9.0,
+      "mrr": 0.34834123068874995
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.353,
+       "10": 0.626
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 4.0,
+      "mrr": 0.44657342732400035
+     },
+     "heldout_r2_ci95": [
+      0.3458786393527691,
+      0.3865587303527947
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "identity_bias": {
+     "applicable": true,
+     "note": "d_in == d_out == 3584 so the standing identity+bias baseline applies; conceptually a weak prior here (w is a DIFFERENCE vector, c0 an activation), reported per the mapping-baselines rule, never skipped",
+     "heldout_r2": -230.1885933902766,
+     "mean_cos": 0.07200351840631902,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.0,
+       "10": 0.012
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 532.5,
+      "mrr": 0.006651397901525149
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.001,
+       "10": 0.011
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 517.5,
+      "mrr": 0.00763139791665696
+     },
+     "heldout_r2_ci95": [
+      -249.37317401497236,
+      -215.77236255049476
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "krr": {
+     "selected": {
+      "gamma_mult": 1.0,
+      "gamma": 4.1396145716398754e-05,
+      "lambda": 0.001,
+      "val_r2": 0.42883639240517735
+     },
+     "base_gamma": 4.1396145716398754e-05,
+     "m_landmarks": 1024,
+     "recipe": "Nystrom RBF KRR (#779 FFC krr_select_predict), val-selected (gamma, lambda)",
+     "heldout_r2": 0.40092255324956205,
+     "mean_cos": 0.8843273427327504,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.247,
+       "10": 0.488
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 11.0,
+      "mrr": 0.3272841742322715
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.307,
+       "10": 0.595
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 5.0,
+      "mrr": 0.40445267840467525
+     },
+     "heldout_r2_ci95": [
+      0.38087407695878217,
+      0.42488025278641633
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "mlp": {
+     "arm_id": "imp-pers-con-lr3e5-s42",
+     "tree": "tf",
+     "epochs_ran": 145,
+     "best_internal_val": 0.015737885609269142,
+     "wall_s": 15.7,
+     "recipe": {
+      "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+      "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+      "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+      "hidden": 3584,
+      "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+      "lr": 0.001,
+      "wd": 0.0001,
+      "max_epochs": 300,
+      "patience": 20,
+      "device": "cuda"
+     },
+     "heldout_r2": 0.15990390693669754,
+     "mean_cos": 0.8111625948572968,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.116,
+       "10": 0.337
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 37.5,
+      "mrr": 0.19050596803608114
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.156,
+       "10": 0.417
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 17.0,
+      "mrr": 0.2390341670626118
+     },
+     "heldout_r2_ci95": [
+      0.14262046675040002,
+      0.17404218218062595
+     ],
+     "r2_ci_n_draws": 200,
+     "ts": "2026-07-30T18:46:08Z",
+     "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+     "torch": "2.8.0+cu128",
+     "numpy": "2.2.6",
+     "issue": 1768,
+     "layer": 19,
+     "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+     "round": "inline-write-predictability",
+     "source": "mlp.json"
+    }
+   },
+   "per_direction": {
+    "direction_rank": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "heldout_r2_per_direction": [
+     0.5183396328584053,
+     0.6742260870681148,
+     0.7358445820355692,
+     0.7239866110898654,
+     0.5562893345979724,
+     0.6128644134503382,
+     0.583901241859001,
+     0.486217385121009,
+     0.57406525365827,
+     0.642645690131583
+    ],
+    "train_var_share_per_direction": [
+     0.20160752820035086,
+     0.1694383330261159,
+     0.05261869098369405,
+     0.030559331835513386,
+     0.022384728962815605,
+     0.0184551021168726,
+     0.01710126429343207,
+     0.014734002683839164,
+     0.01233433271057018,
+     0.010878529985301753
+    ],
+    "participation_ratio_train": 5.059756339678792,
+    "total_centered_var_train": 928654.1875,
+    "basis": "top-10 right singular vectors of the CENTERED train write matrix",
+    "left_vectors": "N/A — row-space (per-train-row loadings); no held-out analogue",
+    "centering": "train-mean centered (round-1 rank_read convention)",
+    "svd": "torch.svd_lowrank(q=20, niter=4)",
+    "predictor": "ridge (val-selected lambda)"
+   },
+   "walls": {
+    "ridge_s": 37.93,
+    "identity_bias_s": 2.36,
+    "krr_s": 17.55,
+    "per_direction_s": 1.76
+   },
+   "r2_convention": "variance-weighted pooled R² over the 3,584 dims of w, scored against the TEST-set mean of w — so R² > 0 is context-DEPENDENT predictability beyond the static mean write (a mean-write predictor reads exactly 0)",
+   "ts": "2026-07-30T17:14:38Z",
+   "git_commit": "64f12b007664d6ed7f056423f3b327145db4ca0b",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "imp-pers-ft-con-s137|op": {
+   "arm_id": "imp-pers-ft-con-s137",
+   "tree": "op",
+   "tree_text": "on-policy write: trained on-policy answer state − base answer state",
+   "layer": 19,
+   "method": "ft",
+   "n_rows": 16400,
+   "n_train": 15000,
+   "n_val": 400,
+   "n_test": 1000,
+   "d_in": 3584,
+   "d_out": 3584,
+   "write_norm_mean_test": 26.397034872299095,
+   "predictors": {
+    "ridge": {
+     "n_train": 15000,
+     "selection": "val-lambda (primal, streaming)",
+     "selected_lambda": 10000.0,
+     "val_r2_at_selected": 0.13670994084232868,
+     "lambda_grid_edge": null,
+     "ridge_block": 50000,
+     "lambda_grid": [
+      -3.0,
+      8.0,
+      23
+     ],
+     "heldout_r2": 0.13486761792269275,
+     "mean_cos": 0.6110781528787868,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.027,
+       "10": 0.096
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 315.5,
+      "mrr": 0.05382744662863389
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.047,
+       "10": 0.172
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 99.0,
+      "mrr": 0.09145135905271717
+     },
+     "heldout_r2_ci95": [
+      0.1219359598861733,
+      0.14274496062243391
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "identity_bias": {
+     "applicable": true,
+     "note": "d_in == d_out == 3584 so the standing identity+bias baseline applies; conceptually a weak prior here (w is a DIFFERENCE vector, c0 an activation), reported per the mapping-baselines rule, never skipped",
+     "heldout_r2": -41.96484911015443,
+     "mean_cos": 0.08580904959489077,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.002,
+       "10": 0.018
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 508.0,
+      "mrr": 0.009908629649152125
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.001,
+       "10": 0.019
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 528.5,
+      "mrr": 0.009558140317869944
+     },
+     "heldout_r2_ci95": [
+      -45.57252658848583,
+      -38.966779749367575
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "krr": {
+     "selected": {
+      "gamma_mult": 1.0,
+      "gamma": 4.1396145716398754e-05,
+      "lambda": 0.1,
+      "val_r2": 0.14495380413202585
+     },
+     "base_gamma": 4.1396145716398754e-05,
+     "m_landmarks": 1024,
+     "recipe": "Nystrom RBF KRR (#779 FFC krr_select_predict), val-selected (gamma, lambda)",
+     "heldout_r2": 0.1458356371636763,
+     "mean_cos": 0.618488455524091,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.019,
+       "10": 0.092
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 323.0,
+      "mrr": 0.04537449905781407
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.034,
+       "10": 0.16
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 111.0,
+      "mrr": 0.07519738420334338
+     },
+     "heldout_r2_ci95": [
+      0.13537261187895527,
+      0.15718803621827154
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "mlp": {
+     "arm_id": "imp-pers-ft-con-s137",
+     "tree": "op",
+     "epochs_ran": 130,
+     "best_internal_val": 0.13919159770011902,
+     "wall_s": 27.5,
+     "recipe": {
+      "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+      "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+      "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+      "hidden": 3584,
+      "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+      "lr": 0.001,
+      "wd": 0.0001,
+      "max_epochs": 300,
+      "patience": 20,
+      "device": "cuda"
+     },
+     "heldout_r2": 0.11110045149835912,
+     "mean_cos": 0.5882612479974716,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.018,
+       "10": 0.082
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 298.0,
+      "mrr": 0.04389762122450098
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.034,
+       "10": 0.154
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 101.5,
+      "mrr": 0.07418079987402831
+     },
+     "heldout_r2_ci95": [
+      0.0955419725227563,
+      0.12183804239032073
+     ],
+     "r2_ci_n_draws": 200,
+     "ts": "2026-07-30T18:47:10Z",
+     "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+     "torch": "2.8.0+cu128",
+     "numpy": "2.2.6",
+     "issue": 1768,
+     "layer": 19,
+     "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+     "round": "inline-write-predictability",
+     "source": "mlp.json"
+    }
+   },
+   "per_direction": {
+    "direction_rank": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "heldout_r2_per_direction": [
+     0.1792516136261173,
+     0.24740806999200848,
+     0.40752009015502944,
+     0.6102935419962927,
+     0.1460637927261802,
+     0.13185980051318047,
+     0.30580126420099707,
+     0.10882147082914961,
+     0.17868862152978016,
+     0.2095096474435122
+    ],
+    "train_var_share_per_direction": [
+     0.09606128640469788,
+     0.07631823647418774,
+     0.05430087218305034,
+     0.035044364625405215,
+     0.025925484661034608,
+     0.022092315988354087,
+     0.019037366937832728,
+     0.01734276145604628,
+     0.01281416257284994,
+     0.012046700918380202
+    ],
+    "participation_ratio_train": 9.28858678189616,
+    "total_centered_var_train": 7859490.5,
+    "basis": "top-10 right singular vectors of the CENTERED train write matrix",
+    "left_vectors": "N/A — row-space (per-train-row loadings); no held-out analogue",
+    "centering": "train-mean centered (round-1 rank_read convention)",
+    "svd": "torch.svd_lowrank(q=20, niter=4)",
+    "predictor": "ridge (val-selected lambda)"
+   },
+   "walls": {
+    "ridge_s": 31.46,
+    "identity_bias_s": 1.92,
+    "krr_s": 15.67,
+    "per_direction_s": 1.53
+   },
+   "r2_convention": "variance-weighted pooled R² over the 3,584 dims of w, scored against the TEST-set mean of w — so R² > 0 is context-DEPENDENT predictability beyond the static mean write (a mean-write predictor reads exactly 0)",
+   "ts": "2026-07-30T17:27:50Z",
+   "git_commit": "1712e7e32bcf6c57a4d4e245d02a1bf1a61fbe1c",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "imp-pers-ft-con-s137|tf": {
+   "arm_id": "imp-pers-ft-con-s137",
+   "tree": "tf",
+   "tree_text": "matched-text write: trained teacher-forced-on-base answer state − base answer state",
+   "layer": 19,
+   "method": "ft",
+   "n_rows": 16400,
+   "n_train": 15000,
+   "n_val": 400,
+   "n_test": 1000,
+   "d_in": 3584,
+   "d_out": 3584,
+   "write_norm_mean_test": 14.281036999335289,
+   "predictors": {
+    "ridge": {
+     "n_train": 15000,
+     "selection": "val-lambda (primal, streaming)",
+     "selected_lambda": 1000.0,
+     "val_r2_at_selected": 0.46746711017626885,
+     "lambda_grid_edge": null,
+     "ridge_block": 50000,
+     "lambda_grid": [
+      -3.0,
+      8.0,
+      23
+     ],
+     "heldout_r2": 0.430004425952884,
+     "mean_cos": 0.8814011637129272,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.24,
+       "10": 0.498
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 11.0,
+      "mrr": 0.3244198808609659
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.312,
+       "10": 0.643
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 4.0,
+      "mrr": 0.4237260873715087
+     },
+     "heldout_r2_ci95": [
+      0.4120393997176596,
+      0.44856559079244407
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "identity_bias": {
+     "applicable": true,
+     "note": "d_in == d_out == 3584 so the standing identity+bias baseline applies; conceptually a weak prior here (w is a DIFFERENCE vector, c0 an activation), reported per the mapping-baselines rule, never skipped",
+     "heldout_r2": -182.0745265328164,
+     "mean_cos": 0.11764362119636436,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.002,
+       "10": 0.017
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 465.5,
+      "mrr": 0.010457865463914518
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.003,
+       "10": 0.024
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 458.5,
+      "mrr": 0.011682455311367012
+     },
+     "heldout_r2_ci95": [
+      -196.76291089584288,
+      -171.65605436435564
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "krr": {
+     "selected": {
+      "gamma_mult": 1.0,
+      "gamma": 4.1396145716398754e-05,
+      "lambda": 0.001,
+      "val_r2": 0.4925620065203865
+     },
+     "base_gamma": 4.1396145716398754e-05,
+     "m_landmarks": 1024,
+     "recipe": "Nystrom RBF KRR (#779 FFC krr_select_predict), val-selected (gamma, lambda)",
+     "heldout_r2": 0.472054614661516,
+     "mean_cos": 0.8902901861271089,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.221,
+       "10": 0.476
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 13.0,
+      "mrr": 0.3122249817079472
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.28,
+       "10": 0.609
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 5.75,
+      "mrr": 0.38947501883188973
+     },
+     "heldout_r2_ci95": [
+      0.45292345420719365,
+      0.49342854427620436
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "mlp": {
+     "arm_id": "imp-pers-ft-con-s137",
+     "tree": "tf",
+     "epochs_ran": 146,
+     "best_internal_val": 0.015745172277092934,
+     "wall_s": 16.0,
+     "recipe": {
+      "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+      "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+      "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+      "hidden": 3584,
+      "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+      "lr": 0.001,
+      "wd": 0.0001,
+      "max_epochs": 300,
+      "patience": 20,
+      "device": "cuda"
+     },
+     "heldout_r2": 0.27197774459336554,
+     "mean_cos": 0.8080516704784245,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.107,
+       "10": 0.348
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 30.0,
+      "mrr": 0.1916499175189793
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.151,
+       "10": 0.461
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 13.0,
+      "mrr": 0.25433666110000636
+     },
+     "heldout_r2_ci95": [
+      0.2523752371737174,
+      0.28690245981462664
+     ],
+     "r2_ci_n_draws": 200,
+     "ts": "2026-07-30T18:46:42Z",
+     "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+     "torch": "2.8.0+cu128",
+     "numpy": "2.2.6",
+     "issue": 1768,
+     "layer": 19,
+     "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+     "round": "inline-write-predictability",
+     "source": "mlp.json"
+    }
+   },
+   "per_direction": {
+    "direction_rank": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "heldout_r2_per_direction": [
+     0.6448006710657425,
+     0.5723759709193428,
+     0.675262682388615,
+     0.6815945464349553,
+     0.5203897451468423,
+     0.44554362393426705,
+     0.4256439398500571,
+     0.45902827447439054,
+     0.45577951628588254,
+     0.6247240384680698
+    ],
+    "train_var_share_per_direction": [
+     0.31153443746071546,
+     0.12049699901789268,
+     0.047849994026478326,
+     0.03688379918956021,
+     0.025975133268091775,
+     0.021636447678484626,
+     0.01619378970510706,
+     0.014162343792081613,
+     0.012855747748029878,
+     0.01068868820313134
+    ],
+    "participation_ratio_train": 4.004344100020939,
+    "total_centered_var_train": 1011205.5,
+    "basis": "top-10 right singular vectors of the CENTERED train write matrix",
+    "left_vectors": "N/A — row-space (per-train-row loadings); no held-out analogue",
+    "centering": "train-mean centered (round-1 rank_read convention)",
+    "svd": "torch.svd_lowrank(q=20, niter=4)",
+    "predictor": "ridge (val-selected lambda)"
+   },
+   "walls": {
+    "ridge_s": 31.2,
+    "identity_bias_s": 3.69,
+    "krr_s": 27.6,
+    "per_direction_s": 2.68
+   },
+   "r2_convention": "variance-weighted pooled R² over the 3,584 dims of w, scored against the TEST-set mean of w — so R² > 0 is context-DEPENDENT predictability beyond the static mean write (a mean-write predictor reads exactly 0)",
+   "ts": "2026-07-30T17:28:56Z",
+   "git_commit": "ed274f93ff69fc0e1e11f2b6235b73f192fb8859",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "imp-pers-po-lr1e5-s137|op": {
+   "arm_id": "imp-pers-po-lr1e5-s137",
+   "tree": "op",
+   "tree_text": "on-policy write: trained on-policy answer state − base answer state",
+   "layer": 19,
+   "method": "lora",
+   "n_rows": 16400,
+   "n_train": 15000,
+   "n_val": 400,
+   "n_test": 1000,
+   "d_in": 3584,
+   "d_out": 3584,
+   "write_norm_mean_test": 20.921348857512218,
+   "predictors": {
+    "ridge": {
+     "n_train": 15000,
+     "selection": "val-lambda (primal, streaming)",
+     "selected_lambda": 31622.776601683792,
+     "val_r2_at_selected": 0.09011272702988316,
+     "lambda_grid_edge": null,
+     "ridge_block": 50000,
+     "lambda_grid": [
+      -3.0,
+      8.0,
+      23
+     ],
+     "heldout_r2": 0.0891440181667621,
+     "mean_cos": 0.5397378239036459,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.011,
+       "10": 0.048
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 385.0,
+      "mrr": 0.027649742200783818
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.027,
+       "10": 0.105
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 156.5,
+      "mrr": 0.06018130173633646
+     },
+     "heldout_r2_ci95": [
+      0.07793231333910927,
+      0.09788291411545234
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "identity_bias": {
+     "applicable": true,
+     "note": "d_in == d_out == 3584 so the standing identity+bias baseline applies; conceptually a weak prior here (w is a DIFFERENCE vector, c0 an activation), reported per the mapping-baselines rule, never skipped",
+     "heldout_r2": -56.82058352495115,
+     "mean_cos": 0.0711095496363256,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.002,
+       "10": 0.015
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 493.0,
+      "mrr": 0.008815800001763682
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.002,
+       "10": 0.016
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 489.5,
+      "mrr": 0.010356910442997747
+     },
+     "heldout_r2_ci95": [
+      -62.92017323811389,
+      -51.87648598387911
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "krr": {
+     "selected": {
+      "gamma_mult": 1.0,
+      "gamma": 4.1396145716398754e-05,
+      "lambda": 0.1,
+      "val_r2": 0.09752156962841163
+     },
+     "base_gamma": 4.1396145716398754e-05,
+     "m_landmarks": 1024,
+     "recipe": "Nystrom RBF KRR (#779 FFC krr_select_predict), val-selected (gamma, lambda)",
+     "heldout_r2": 0.10230702260186697,
+     "mean_cos": 0.5474966487728148,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.012,
+       "10": 0.059
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 368.5,
+      "mrr": 0.029886078005053465
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.022,
+       "10": 0.126
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 137.5,
+      "mrr": 0.06181555622870267
+     },
+     "heldout_r2_ci95": [
+      0.08933543334239598,
+      0.11160260084868562
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "mlp": {
+     "arm_id": "imp-pers-po-lr1e5-s137",
+     "tree": "op",
+     "epochs_ran": 146,
+     "best_internal_val": 0.10959107428789139,
+     "wall_s": 15.6,
+     "recipe": {
+      "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+      "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+      "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+      "hidden": 3584,
+      "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+      "lr": 0.001,
+      "wd": 0.0001,
+      "max_epochs": 300,
+      "patience": 20,
+      "device": "cuda"
+     },
+     "heldout_r2": 0.056212044521055105,
+     "mean_cos": 0.4994733016722798,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.015,
+       "10": 0.052
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 365.5,
+      "mrr": 0.03026294768418352
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.026,
+       "10": 0.123
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 143.0,
+      "mrr": 0.060629705246322586
+     },
+     "heldout_r2_ci95": [
+      0.04163253226709115,
+      0.07146252725014246
+     ],
+     "r2_ci_n_draws": 200,
+     "ts": "2026-07-30T18:47:59Z",
+     "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+     "torch": "2.8.0+cu128",
+     "numpy": "2.2.6",
+     "issue": 1768,
+     "layer": 19,
+     "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+     "round": "inline-write-predictability",
+     "source": "mlp.json"
+    }
+   },
+   "per_direction": {
+    "direction_rank": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "heldout_r2_per_direction": [
+     0.12276582480884302,
+     0.08995656141340402,
+     0.26825037039382094,
+     0.29104871371182517,
+     0.48464260832553874,
+     0.09779062455649656,
+     0.07513804476428565,
+     0.14253856687375033,
+     0.26497508103377587,
+     0.2638619451629308
+    ],
+    "train_var_share_per_direction": [
+     0.08635034306004773,
+     0.07224647836363708,
+     0.04127627846743852,
+     0.0270483652291806,
+     0.024606255125713735,
+     0.021915812304559218,
+     0.018928771228313386,
+     0.014083001931130448,
+     0.01394251520911255,
+     0.012598218415124445
+    ],
+    "participation_ratio_train": 9.68556046843644,
+    "total_centered_var_train": 5866492.5,
+    "basis": "top-10 right singular vectors of the CENTERED train write matrix",
+    "left_vectors": "N/A — row-space (per-train-row loadings); no held-out analogue",
+    "centering": "train-mean centered (round-1 rank_read convention)",
+    "svd": "torch.svd_lowrank(q=20, niter=4)",
+    "predictor": "ridge (val-selected lambda)"
+   },
+   "walls": {
+    "ridge_s": 48.54,
+    "identity_bias_s": 4.32,
+    "krr_s": 32.48,
+    "per_direction_s": 4.05
+   },
+   "r2_convention": "variance-weighted pooled R² over the 3,584 dims of w, scored against the TEST-set mean of w — so R² > 0 is context-DEPENDENT predictability beyond the static mean write (a mean-write predictor reads exactly 0)",
+   "ts": "2026-07-30T17:16:55Z",
+   "git_commit": "c133180e131e15a82307c84370e6c23773ccc981",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "imp-pers-po-lr1e5-s137|tf": {
+   "arm_id": "imp-pers-po-lr1e5-s137",
+   "tree": "tf",
+   "tree_text": "matched-text write: trained teacher-forced-on-base answer state − base answer state",
+   "layer": 19,
+   "method": "lora",
+   "n_rows": 16400,
+   "n_train": 15000,
+   "n_val": 400,
+   "n_test": 1000,
+   "d_in": 3584,
+   "d_out": 3584,
+   "write_norm_mean_test": 9.782940202715752,
+   "predictors": {
+    "ridge": {
+     "n_train": 15000,
+     "selection": "val-lambda (primal, streaming)",
+     "selected_lambda": 1000.0,
+     "val_r2_at_selected": 0.47958394457642817,
+     "lambda_grid_edge": null,
+     "ridge_block": 50000,
+     "lambda_grid": [
+      -3.0,
+      8.0,
+      23
+     ],
+     "heldout_r2": 0.4455369678157678,
+     "mean_cos": 0.8872323316191286,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.237,
+       "10": 0.503
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 10.0,
+      "mrr": 0.32825524444505366
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.307,
+       "10": 0.615
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 4.0,
+      "mrr": 0.4132401927244197
+     },
+     "heldout_r2_ci95": [
+      0.425781735746065,
+      0.4650869031718438
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "identity_bias": {
+     "applicable": true,
+     "note": "d_in == d_out == 3584 so the standing identity+bias baseline applies; conceptually a weak prior here (w is a DIFFERENCE vector, c0 an activation), reported per the mapping-baselines rule, never skipped",
+     "heldout_r2": -402.0455917498907,
+     "mean_cos": 0.1036835218539978,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.0,
+       "10": 0.012
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 439.5,
+      "mrr": 0.007455590813443317
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.001,
+       "10": 0.014
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 443.0,
+      "mrr": 0.008553690702285238
+     },
+     "heldout_r2_ci95": [
+      -436.82513465665176,
+      -374.69691936859255
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "krr": {
+     "selected": {
+      "gamma_mult": 1.0,
+      "gamma": 4.1396145716398754e-05,
+      "lambda": 0.001,
+      "val_r2": 0.5151112695499085
+     },
+     "base_gamma": 4.1396145716398754e-05,
+     "m_landmarks": 1024,
+     "recipe": "Nystrom RBF KRR (#779 FFC krr_select_predict), val-selected (gamma, lambda)",
+     "heldout_r2": 0.49910043703184004,
+     "mean_cos": 0.897687921335405,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.228,
+       "10": 0.506
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 10.0,
+      "mrr": 0.3219977364380687
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.299,
+       "10": 0.605
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 5.0,
+      "mrr": 0.3993119534613944
+     },
+     "heldout_r2_ci95": [
+      0.4775933147966095,
+      0.5237019109851095
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "mlp": {
+     "arm_id": "imp-pers-po-lr1e5-s137",
+     "tree": "tf",
+     "epochs_ran": 150,
+     "best_internal_val": 0.010434769093990326,
+     "wall_s": 16.2,
+     "recipe": {
+      "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+      "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+      "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+      "hidden": 3584,
+      "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+      "lr": 0.001,
+      "wd": 0.0001,
+      "max_epochs": 300,
+      "patience": 20,
+      "device": "cuda"
+     },
+     "heldout_r2": 0.10274338344041278,
+     "mean_cos": 0.759684595332773,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.098,
+       "10": 0.326
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 40.5,
+      "mrr": 0.17091983616139714
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.124,
+       "10": 0.399
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 18.0,
+      "mrr": 0.21364202445424685
+     },
+     "heldout_r2_ci95": [
+      0.07111957168517162,
+      0.12822764814205406
+     ],
+     "r2_ci_n_draws": 200,
+     "ts": "2026-07-30T18:47:43Z",
+     "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+     "torch": "2.8.0+cu128",
+     "numpy": "2.2.6",
+     "issue": 1768,
+     "layer": 19,
+     "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+     "round": "inline-write-predictability",
+     "source": "mlp.json"
+    }
+   },
+   "per_direction": {
+    "direction_rank": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "heldout_r2_per_direction": [
+     0.6329536571838388,
+     0.4817467647482141,
+     0.7129289355308728,
+     0.622860831881789,
+     0.5219721151404592,
+     0.5381376135289484,
+     0.5952759897256035,
+     0.5327740651106946,
+     0.44864175847345544,
+     0.48608099030269303
+    ],
+    "train_var_share_per_direction": [
+     0.31891345378557695,
+     0.11829865080833367,
+     0.04942612649186699,
+     0.03776306778027589,
+     0.02595407131784827,
+     0.018980125572691506,
+     0.015292415330916279,
+     0.01381007679493974,
+     0.013468486168761794,
+     0.012011977890391295
+    ],
+    "participation_ratio_train": 3.924142162722567,
+    "total_centered_var_train": 458012.0,
+    "basis": "top-10 right singular vectors of the CENTERED train write matrix",
+    "left_vectors": "N/A — row-space (per-train-row loadings); no held-out analogue",
+    "centering": "train-mean centered (round-1 rank_read convention)",
+    "svd": "torch.svd_lowrank(q=20, niter=4)",
+    "predictor": "ridge (val-selected lambda)"
+   },
+   "walls": {
+    "ridge_s": 78.46,
+    "identity_bias_s": 3.16,
+    "krr_s": 19.53,
+    "per_direction_s": 1.78
+   },
+   "r2_convention": "variance-weighted pooled R² over the 3,584 dims of w, scored against the TEST-set mean of w — so R² > 0 is context-DEPENDENT predictability beyond the static mean write (a mean-write predictor reads exactly 0)",
+   "ts": "2026-07-30T17:18:38Z",
+   "git_commit": "67d2bea80decfce5817a34fd663e1bb2450816df",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "mk-pers-po-lr5e6-s137|op": {
+   "arm_id": "mk-pers-po-lr5e6-s137",
+   "tree": "op",
+   "tree_text": "on-policy write: trained on-policy answer state − base answer state",
+   "layer": 19,
+   "method": "lora",
+   "n_rows": 16400,
+   "n_train": 15000,
+   "n_val": 400,
+   "n_test": 1000,
+   "d_in": 3584,
+   "d_out": 3584,
+   "write_norm_mean_test": 10.693914540879312,
+   "predictors": {
+    "ridge": {
+     "n_train": 15000,
+     "selection": "val-lambda (primal, streaming)",
+     "selected_lambda": 316227.7660168379,
+     "val_r2_at_selected": 0.0012872495873765821,
+     "lambda_grid_edge": null,
+     "ridge_block": 50000,
+     "lambda_grid": [
+      -3.0,
+      8.0,
+      23
+     ],
+     "heldout_r2": 0.0055144372293775,
+     "mean_cos": 0.3067794540751885,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.005,
+       "10": 0.031
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 499.0,
+      "mrr": 0.015401166335019138
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.01,
+       "10": 0.043
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 413.0,
+      "mrr": 0.02317691736657159
+     },
+     "heldout_r2_ci95": [
+      0.002373351128819437,
+      0.006849984436243241
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "identity_bias": {
+     "applicable": true,
+     "note": "d_in == d_out == 3584 so the standing identity+bias baseline applies; conceptually a weak prior here (w is a DIFFERENCE vector, c0 an activation), reported per the mapping-baselines rule, never skipped",
+     "heldout_r2": -141.10108577217417,
+     "mean_cos": -0.008398914809996463,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.001,
+       "10": 0.012
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 544.0,
+      "mrr": 0.008190863055145459
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.0,
+       "10": 0.01
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 503.0,
+      "mrr": 0.007506666279677258
+     },
+     "heldout_r2_ci95": [
+      -163.31278358965122,
+      -121.80653863211593
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "krr": {
+     "selected": {
+      "gamma_mult": 1.0,
+      "gamma": 4.1396145716398754e-05,
+      "lambda": 10.0,
+      "val_r2": -0.0003682917933596208
+     },
+     "base_gamma": 4.1396145716398754e-05,
+     "m_landmarks": 1024,
+     "recipe": "Nystrom RBF KRR (#779 FFC krr_select_predict), val-selected (gamma, lambda)",
+     "heldout_r2": 0.002468999195392785,
+     "mean_cos": 0.29763843517083133,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.002,
+       "10": 0.016
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 499.5,
+      "mrr": 0.010206344251508565
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.007,
+       "10": 0.034
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 454.5,
+      "mrr": 0.01760019178315246
+     },
+     "heldout_r2_ci95": [
+      -0.00013285293305544398,
+      0.003297660187809823
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "mlp": {
+     "arm_id": "mk-pers-po-lr5e6-s137",
+     "tree": "op",
+     "epochs_ran": 163,
+     "best_internal_val": 0.05350252240896225,
+     "wall_s": 17.9,
+     "recipe": {
+      "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+      "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+      "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+      "hidden": 3584,
+      "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+      "lr": 0.001,
+      "wd": 0.0001,
+      "max_epochs": 300,
+      "patience": 20,
+      "device": "cuda"
+     },
+     "heldout_r2": -0.10756919514224905,
+     "mean_cos": 0.15671980743740138,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.009,
+       "10": 0.045
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 499.5,
+      "mrr": 0.024525697484646364
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.017,
+       "10": 0.07
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 391.5,
+      "mrr": 0.03538081931048062
+     },
+     "heldout_r2_ci95": [
+      -0.1309610357449458,
+      -0.08896875562858392
+     ],
+     "r2_ci_n_draws": 200,
+     "ts": "2026-07-30T18:48:43Z",
+     "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+     "torch": "2.8.0+cu128",
+     "numpy": "2.2.6",
+     "issue": 1768,
+     "layer": 19,
+     "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+     "round": "inline-write-predictability",
+     "source": "mlp.json"
+    }
+   },
+   "per_direction": {
+    "direction_rank": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "heldout_r2_per_direction": [
+     0.02078025475418732,
+     -0.0007911497138795021,
+     0.027453171093863693,
+     -0.00760268945610032,
+     0.005309844812148468,
+     0.00532040506032061,
+     0.015038423446634308,
+     0.009743500013237094,
+     6.880681480392337e-05,
+     0.028391781067587774
+    ],
+    "train_var_share_per_direction": [
+     0.12417044968477854,
+     0.06187387871028483,
+     0.030064893471159475,
+     0.019902224681585038,
+     0.01799106550005756,
+     0.016515587013116978,
+     0.014851157052912158,
+     0.01277232098382747,
+     0.011699231396281425,
+     0.010514208766643336
+    ],
+    "participation_ratio_train": 6.939482859421021,
+    "total_centered_var_train": 2632989.75,
+    "basis": "top-10 right singular vectors of the CENTERED train write matrix",
+    "left_vectors": "N/A — row-space (per-train-row loadings); no held-out analogue",
+    "centering": "train-mean centered (round-1 rank_read convention)",
+    "svd": "torch.svd_lowrank(q=20, niter=4)",
+    "predictor": "ridge (val-selected lambda)"
+   },
+   "walls": {
+    "ridge_s": 31.74,
+    "identity_bias_s": 2.15,
+    "krr_s": 16.38,
+    "per_direction_s": 1.69
+   },
+   "r2_convention": "variance-weighted pooled R² over the 3,584 dims of w, scored against the TEST-set mean of w — so R² > 0 is context-DEPENDENT predictability beyond the static mean write (a mean-write predictor reads exactly 0)",
+   "ts": "2026-07-30T17:25:54Z",
+   "git_commit": "6154d7128d2bd7e704dd2d554e9217a3429aa62a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "mk-pers-po-lr5e6-s137|tf": {
+   "arm_id": "mk-pers-po-lr5e6-s137",
+   "tree": "tf",
+   "tree_text": "matched-text write: trained teacher-forced-on-base answer state − base answer state",
+   "layer": 19,
+   "method": "lora",
+   "n_rows": 16400,
+   "n_train": 15000,
+   "n_val": 400,
+   "n_test": 1000,
+   "d_in": 3584,
+   "d_out": 3584,
+   "write_norm_mean_test": 2.277215116892682,
+   "predictors": {
+    "ridge": {
+     "n_train": 15000,
+     "selection": "val-lambda (primal, streaming)",
+     "selected_lambda": 1000.0,
+     "val_r2_at_selected": 0.24598560209234366,
+     "lambda_grid_edge": null,
+     "ridge_block": 50000,
+     "lambda_grid": [
+      -3.0,
+      8.0,
+      23
+     ],
+     "heldout_r2": 0.15014768345938467,
+     "mean_cos": 0.8801106913985481,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.285,
+       "10": 0.517
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 9.0,
+      "mrr": 0.36621169707530876
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.391,
+       "10": 0.661
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 3.0,
+      "mrr": 0.4843591428637999
+     },
+     "heldout_r2_ci95": [
+      0.08858910233034697,
+      0.24584592209960845
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "identity_bias": {
+     "applicable": true,
+     "note": "d_in == d_out == 3584 so the standing identity+bias baseline applies; conceptually a weak prior here (w is a DIFFERENCE vector, c0 an activation), reported per the mapping-baselines rule, never skipped",
+     "heldout_r2": -4198.982292780347,
+     "mean_cos": -0.028379694035478478,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.0,
+       "10": 0.014
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 579.0,
+      "mrr": 0.005277663394699728
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.0,
+       "10": 0.001
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 562.5,
+      "mrr": 0.004388931834131329
+     },
+     "heldout_r2_ci95": [
+      -6892.092066107065,
+      -2860.4077869901676
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "krr": {
+     "selected": {
+      "gamma_mult": 1.0,
+      "gamma": 4.1396145716398754e-05,
+      "lambda": 0.001,
+      "val_r2": 0.248212476597778
+     },
+     "base_gamma": 4.1396145716398754e-05,
+     "m_landmarks": 1024,
+     "recipe": "Nystrom RBF KRR (#779 FFC krr_select_predict), val-selected (gamma, lambda)",
+     "heldout_r2": 0.1577274751162817,
+     "mean_cos": 0.8882278702194615,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.269,
+       "10": 0.489
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 12.0,
+      "mrr": 0.3443481989878565
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.358,
+       "10": 0.631
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 3.0,
+      "mrr": 0.4516977909267854
+     },
+     "heldout_r2_ci95": [
+      0.10624274618039652,
+      0.2582724073820945
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "mlp": {
+     "arm_id": "mk-pers-po-lr5e6-s137",
+     "tree": "tf",
+     "epochs_ran": 161,
+     "best_internal_val": 0.005771374795585871,
+     "wall_s": 17.0,
+     "recipe": {
+      "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+      "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+      "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+      "hidden": 3584,
+      "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+      "lr": 0.001,
+      "wd": 0.0001,
+      "max_epochs": 300,
+      "patience": 20,
+      "device": "cuda"
+     },
+     "heldout_r2": -2.8350109541707034,
+     "mean_cos": 0.34987991683427505,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.047,
+       "10": 0.186
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 154.0,
+      "mrr": 0.09538396510894376
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.052,
+       "10": 0.238
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 67.0,
+      "mrr": 0.1125712700430765
+     },
+     "heldout_r2_ci95": [
+      -4.37178260749858,
+      -2.002460342374084
+     ],
+     "r2_ci_n_draws": 200,
+     "ts": "2026-07-30T18:48:25Z",
+     "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+     "torch": "2.8.0+cu128",
+     "numpy": "2.2.6",
+     "issue": 1768,
+     "layer": 19,
+     "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+     "round": "inline-write-predictability",
+     "source": "mlp.json"
+    }
+   },
+   "per_direction": {
+    "direction_rank": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "heldout_r2_per_direction": [
+     0.673887770158532,
+     0.5295918632102545,
+     0.6976086529376215,
+     0.610410624259472,
+     0.5605172103622512,
+     0.35925419065088027,
+     0.5943395784981378,
+     0.47140640730575956,
+     0.3537770438244431,
+     0.5889220632548104
+    ],
+    "train_var_share_per_direction": [
+     0.26727455433098735,
+     0.053302081077632714,
+     0.04013482160329134,
+     0.028712881145136485,
+     0.024423952434391754,
+     0.020663915046164376,
+     0.016205529097098187,
+     0.013826070069195945,
+     0.012494229504514823,
+     0.010967949837544063
+    ],
+    "participation_ratio_train": 3.9982356038956373,
+    "total_centered_var_train": 20613.791015625,
+    "basis": "top-10 right singular vectors of the CENTERED train write matrix",
+    "left_vectors": "N/A — row-space (per-train-row loadings); no held-out analogue",
+    "centering": "train-mean centered (round-1 rank_read convention)",
+    "svd": "torch.svd_lowrank(q=20, niter=4)",
+    "predictor": "ridge (val-selected lambda)"
+   },
+   "walls": {
+    "ridge_s": 32.49,
+    "identity_bias_s": 2.0,
+    "krr_s": 16.41,
+    "per_direction_s": 1.71
+   },
+   "r2_convention": "variance-weighted pooled R² over the 3,584 dims of w, scored against the TEST-set mean of w — so R² > 0 is context-DEPENDENT predictability beyond the static mean write (a mean-write predictor reads exactly 0)",
+   "ts": "2026-07-30T17:26:47Z",
+   "git_commit": "6154d7128d2bd7e704dd2d554e9217a3429aa62a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "syc-bare-con-lr1e5-s42|op": {
+   "arm_id": "syc-bare-con-lr1e5-s42",
+   "tree": "op",
+   "tree_text": "on-policy write: trained on-policy answer state − base answer state",
+   "layer": 19,
+   "method": "lora",
+   "n_rows": 16400,
+   "n_train": 15000,
+   "n_val": 400,
+   "n_test": 1000,
+   "d_in": 3584,
+   "d_out": 3584,
+   "write_norm_mean_test": 23.55813300783566,
+   "predictors": {
+    "ridge": {
+     "n_train": 15000,
+     "selection": "val-lambda (primal, streaming)",
+     "selected_lambda": 31622.776601683792,
+     "val_r2_at_selected": 0.0978949749144179,
+     "lambda_grid_edge": null,
+     "ridge_block": 50000,
+     "lambda_grid": [
+      -3.0,
+      8.0,
+      23
+     ],
+     "heldout_r2": 0.10640494996470751,
+     "mean_cos": 0.5714873595503459,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.017,
+       "10": 0.055
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 366.0,
+      "mrr": 0.033301539642589736
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.027,
+       "10": 0.124
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 146.0,
+      "mrr": 0.06402344339552021
+     },
+     "heldout_r2_ci95": [
+      0.09554715639037993,
+      0.11419130652400146
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "identity_bias": {
+     "applicable": true,
+     "note": "d_in == d_out == 3584 so the standing identity+bias baseline applies; conceptually a weak prior here (w is a DIFFERENCE vector, c0 an activation), reported per the mapping-baselines rule, never skipped",
+     "heldout_r2": -48.294063870757554,
+     "mean_cos": 0.0646702072952545,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.001,
+       "10": 0.015
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 515.0,
+      "mrr": 0.008080635221814299
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.002,
+       "10": 0.022
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 524.0,
+      "mrr": 0.010214916577352668
+     },
+     "heldout_r2_ci95": [
+      -52.39983937915362,
+      -44.1615011072441
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "krr": {
+     "selected": {
+      "gamma_mult": 1.0,
+      "gamma": 4.1396145716398754e-05,
+      "lambda": 0.1,
+      "val_r2": 0.11054837976061027
+     },
+     "base_gamma": 4.1396145716398754e-05,
+     "m_landmarks": 1024,
+     "recipe": "Nystrom RBF KRR (#779 FFC krr_select_predict), val-selected (gamma, lambda)",
+     "heldout_r2": 0.12454660030926878,
+     "mean_cos": 0.5762713264306428,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.016,
+       "10": 0.065
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 348.5,
+      "mrr": 0.03533249595876799
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.036,
+       "10": 0.135
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 126.0,
+      "mrr": 0.07374458658050004
+     },
+     "heldout_r2_ci95": [
+      0.1137604294933734,
+      0.13480995861930242
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "mlp": {
+     "arm_id": "syc-bare-con-lr1e5-s42",
+     "tree": "op",
+     "epochs_ran": 125,
+     "best_internal_val": 0.1233140081167221,
+     "wall_s": 13.5,
+     "recipe": {
+      "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+      "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+      "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+      "hidden": 3584,
+      "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+      "lr": 0.001,
+      "wd": 0.0001,
+      "max_epochs": 300,
+      "patience": 20,
+      "device": "cuda"
+     },
+     "heldout_r2": 0.07795352797741995,
+     "mean_cos": 0.5320024692400613,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.014,
+       "10": 0.055
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 337.5,
+      "mrr": 0.031992024742768216
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.029,
+       "10": 0.119
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 130.0,
+      "mrr": 0.06548879678471851
+     },
+     "heldout_r2_ci95": [
+      0.06637487844797148,
+      0.08781975107637274
+     ],
+     "r2_ci_n_draws": 200,
+     "ts": "2026-07-30T18:49:23Z",
+     "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+     "torch": "2.8.0+cu128",
+     "numpy": "2.2.6",
+     "issue": 1768,
+     "layer": 19,
+     "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+     "round": "inline-write-predictability",
+     "source": "mlp.json"
+    }
+   },
+   "per_direction": {
+    "direction_rank": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "heldout_r2_per_direction": [
+     0.12850209691623005,
+     0.14159739220802503,
+     0.405111469278444,
+     0.43657606372951085,
+     0.12590624987541277,
+     0.13867780455912604,
+     0.10598739722650063,
+     0.13377744958826487,
+     0.23377154066816863,
+     0.0823736259550708
+    ],
+    "train_var_share_per_direction": [
+     0.10632403173028064,
+     0.0754496117039731,
+     0.05070369119354382,
+     0.03207492025459369,
+     0.025884218948976703,
+     0.019822840095548494,
+     0.019088431601794357,
+     0.016924807825371146,
+     0.012915914791641578,
+     0.01234335907927501
+    ],
+    "participation_ratio_train": 8.627426268769291,
+    "total_centered_var_train": 6851073.0,
+    "basis": "top-10 right singular vectors of the CENTERED train write matrix",
+    "left_vectors": "N/A — row-space (per-train-row loadings); no held-out analogue",
+    "centering": "train-mean centered (round-1 rank_read convention)",
+    "svd": "torch.svd_lowrank(q=20, niter=4)",
+    "predictor": "ridge (val-selected lambda)"
+   },
+   "walls": {
+    "ridge_s": 32.3,
+    "identity_bias_s": 2.09,
+    "krr_s": 15.02,
+    "per_direction_s": 1.48
+   },
+   "r2_convention": "variance-weighted pooled R² over the 3,584 dims of w, scored against the TEST-set mean of w — so R² > 0 is context-DEPENDENT predictability beyond the static mean write (a mean-write predictor reads exactly 0)",
+   "ts": "2026-07-30T17:21:54Z",
+   "git_commit": "9fca23c638f2ad4df0ef4237e57ebc01f8de078a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "syc-bare-con-lr1e5-s42|tf": {
+   "arm_id": "syc-bare-con-lr1e5-s42",
+   "tree": "tf",
+   "tree_text": "matched-text write: trained teacher-forced-on-base answer state − base answer state",
+   "layer": 19,
+   "method": "lora",
+   "n_rows": 16400,
+   "n_train": 15000,
+   "n_val": 400,
+   "n_test": 1000,
+   "d_in": 3584,
+   "d_out": 3584,
+   "write_norm_mean_test": 12.08805675988959,
+   "predictors": {
+    "ridge": {
+     "n_train": 15000,
+     "selection": "val-lambda (primal, streaming)",
+     "selected_lambda": 1000.0,
+     "val_r2_at_selected": 0.46176126058870803,
+     "lambda_grid_edge": null,
+     "ridge_block": 50000,
+     "lambda_grid": [
+      -3.0,
+      8.0,
+      23
+     ],
+     "heldout_r2": 0.42169255161684105,
+     "mean_cos": 0.8887884548865422,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.239,
+       "10": 0.502
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 10.0,
+      "mrr": 0.3269954329927936
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.323,
+       "10": 0.652
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 4.0,
+      "mrr": 0.42983476109362473
+     },
+     "heldout_r2_ci95": [
+      0.40294313975641827,
+      0.43988415402216197
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "identity_bias": {
+     "applicable": true,
+     "note": "d_in == d_out == 3584 so the standing identity+bias baseline applies; conceptually a weak prior here (w is a DIFFERENCE vector, c0 an activation), reported per the mapping-baselines rule, never skipped",
+     "heldout_r2": -240.21659438887465,
+     "mean_cos": 0.10441020502943434,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.003,
+       "10": 0.02
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 450.0,
+      "mrr": 0.011627555424720413
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.004,
+       "10": 0.018
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 447.5,
+      "mrr": 0.012570422609491679
+     },
+     "heldout_r2_ci95": [
+      -262.0648271237073,
+      -221.92321960035497
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "krr": {
+     "selected": {
+      "gamma_mult": 1.0,
+      "gamma": 4.1396145716398754e-05,
+      "lambda": 0.001,
+      "val_r2": 0.5011450492783567
+     },
+     "base_gamma": 4.1396145716398754e-05,
+     "m_landmarks": 1024,
+     "recipe": "Nystrom RBF KRR (#779 FFC krr_select_predict), val-selected (gamma, lambda)",
+     "heldout_r2": 0.4776133460969064,
+     "mean_cos": 0.9001532930926024,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.251,
+       "10": 0.497
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 11.0,
+      "mrr": 0.3332963321298442
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.311,
+       "10": 0.612
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 5.0,
+      "mrr": 0.4109230391764079
+     },
+     "heldout_r2_ci95": [
+      0.46113981128622555,
+      0.5018054963458584
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "mlp": {
+     "arm_id": "syc-bare-con-lr1e5-s42",
+     "tree": "tf",
+     "epochs_ran": 153,
+     "best_internal_val": 0.012072434648871422,
+     "wall_s": 16.3,
+     "recipe": {
+      "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+      "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+      "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+      "hidden": 3584,
+      "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+      "lr": 0.001,
+      "wd": 0.0001,
+      "max_epochs": 300,
+      "patience": 20,
+      "device": "cuda"
+     },
+     "heldout_r2": 0.22759379128965496,
+     "mean_cos": 0.7917703665337371,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.121,
+       "10": 0.339
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 30.0,
+      "mrr": 0.19720704607534884
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.155,
+       "10": 0.443
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 15.0,
+      "mrr": 0.24759924762082727
+     },
+     "heldout_r2_ci95": [
+      0.20594496072790372,
+      0.24385865564083226
+     ],
+     "r2_ci_n_draws": 200,
+     "ts": "2026-07-30T18:49:09Z",
+     "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+     "torch": "2.8.0+cu128",
+     "numpy": "2.2.6",
+     "issue": 1768,
+     "layer": 19,
+     "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+     "round": "inline-write-predictability",
+     "source": "mlp.json"
+    }
+   },
+   "per_direction": {
+    "direction_rank": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "heldout_r2_per_direction": [
+     0.6367814539858283,
+     0.4631178587242081,
+     0.6370313732763864,
+     0.5830838573996018,
+     0.4508237086263197,
+     0.4383642675550027,
+     0.3734850055355131,
+     0.36318918516079435,
+     0.35438865544722686,
+     0.4933766668802614
+    ],
+    "train_var_share_per_direction": [
+     0.3423625494280935,
+     0.13494117088833846,
+     0.03861520836182852,
+     0.033704000824941155,
+     0.024587807472363846,
+     0.018544897071243512,
+     0.016436946235788064,
+     0.01442598056098178,
+     0.011349048928140931,
+     0.010115497480078518
+    ],
+    "participation_ratio_train": 3.5819600251276067,
+    "total_centered_var_train": 679518.5,
+    "basis": "top-10 right singular vectors of the CENTERED train write matrix",
+    "left_vectors": "N/A — row-space (per-train-row loadings); no held-out analogue",
+    "centering": "train-mean centered (round-1 rank_read convention)",
+    "svd": "torch.svd_lowrank(q=20, niter=4)",
+    "predictor": "ridge (val-selected lambda)"
+   },
+   "walls": {
+    "ridge_s": 29.69,
+    "identity_bias_s": 2.01,
+    "krr_s": 15.64,
+    "per_direction_s": 1.56
+   },
+   "r2_convention": "variance-weighted pooled R² over the 3,584 dims of w, scored against the TEST-set mean of w — so R² > 0 is context-DEPENDENT predictability beyond the static mean write (a mean-write predictor reads exactly 0)",
+   "ts": "2026-07-30T17:22:44Z",
+   "git_commit": "9234cb8d69cef9e987abe51dfe185ab8a1857189",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "syc-conv-po-lr1e5-s137|op": {
+   "arm_id": "syc-conv-po-lr1e5-s137",
+   "tree": "op",
+   "tree_text": "on-policy write: trained on-policy answer state − base answer state",
+   "layer": 19,
+   "method": "lora",
+   "n_rows": 16400,
+   "n_train": 15000,
+   "n_val": 400,
+   "n_test": 1000,
+   "d_in": 3584,
+   "d_out": 3584,
+   "write_norm_mean_test": 8.283593156507337,
+   "predictors": {
+    "ridge": {
+     "n_train": 15000,
+     "selection": "val-lambda (primal, streaming)",
+     "selected_lambda": 316227.7660168379,
+     "val_r2_at_selected": -0.0005993758686499984,
+     "lambda_grid_edge": null,
+     "ridge_block": 50000,
+     "lambda_grid": [
+      -3.0,
+      8.0,
+      23
+     ],
+     "heldout_r2": 0.0005864899329379725,
+     "mean_cos": 0.31778702769063283,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.009,
+       "10": 0.033
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 500.0,
+      "mrr": 0.01932520039877867
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.013,
+       "10": 0.047
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 466.5,
+      "mrr": 0.02700265104013566
+     },
+     "heldout_r2_ci95": [
+      -0.0015642299241513113,
+      0.0006162690625061918
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "identity_bias": {
+     "applicable": true,
+     "note": "d_in == d_out == 3584 so the standing identity+bias baseline applies; conceptually a weak prior here (w is a DIFFERENCE vector, c0 an activation), reported per the mapping-baselines rule, never skipped",
+     "heldout_r2": -214.61835154440035,
+     "mean_cos": 0.03553473095975581,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.001,
+       "10": 0.013
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 420.5,
+      "mrr": 0.008574299387378116
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.004,
+       "10": 0.021
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 459.0,
+      "mrr": 0.012740513305713404
+     },
+     "heldout_r2_ci95": [
+      -264.4913550918852,
+      -178.48556296006603
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "krr": {
+     "selected": {
+      "gamma_mult": 0.25,
+      "gamma": 1.0349036429099688e-05,
+      "lambda": 10.0,
+      "val_r2": -0.0007831136656979432
+     },
+     "base_gamma": 4.1396145716398754e-05,
+     "m_landmarks": 1024,
+     "recipe": "Nystrom RBF KRR (#779 FFC krr_select_predict), val-selected (gamma, lambda)",
+     "heldout_r2": 1.1962743444726698e-06,
+     "mean_cos": 0.3155492486139122,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.004,
+       "10": 0.017
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 501.0,
+      "mrr": 0.01169724853362791
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.004,
+       "10": 0.02
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 485.5,
+      "mrr": 0.013069267169094111
+     },
+     "heldout_r2_ci95": [
+      -0.0019774403480115445,
+      -0.0003744858790633184
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "mlp": {
+     "arm_id": "syc-conv-po-lr1e5-s137",
+     "tree": "op",
+     "epochs_ran": 156,
+     "best_internal_val": 0.04316064342856407,
+     "wall_s": 16.8,
+     "recipe": {
+      "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+      "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+      "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+      "hidden": 3584,
+      "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+      "lr": 0.001,
+      "wd": 0.0001,
+      "max_epochs": 300,
+      "patience": 20,
+      "device": "cuda"
+     },
+     "heldout_r2": -0.17115374717450327,
+     "mean_cos": 0.12116928569491427,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.011,
+       "10": 0.05
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 502.0,
+      "mrr": 0.02603704961558379
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.011,
+       "10": 0.058
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 446.0,
+      "mrr": 0.02860275547697497
+     },
+     "heldout_r2_ci95": [
+      -0.2090790180114467,
+      -0.14546197318230786
+     ],
+     "r2_ci_n_draws": 200,
+     "ts": "2026-07-30T18:50:05Z",
+     "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+     "torch": "2.8.0+cu128",
+     "numpy": "2.2.6",
+     "issue": 1768,
+     "layer": 19,
+     "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+     "round": "inline-write-predictability",
+     "source": "mlp.json"
+    }
+   },
+   "per_direction": {
+    "direction_rank": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "heldout_r2_per_direction": [
+     -0.0008862950928749669,
+     0.0034720422352497726,
+     -0.003266296720827677,
+     0.001252924958317192,
+     0.0006825889290282827,
+     0.0007133732350061983,
+     0.011011690345768321,
+     -0.0015853913754890758,
+     0.0020480150201301894,
+     -0.0006794890777341855
+    ],
+    "train_var_share_per_direction": [
+     0.09855926560627581,
+     0.06397809036132382,
+     0.02854835389926238,
+     0.020918582900044377,
+     0.019808825681499168,
+     0.016400471937294065,
+     0.014833187178802755,
+     0.013525827219403644,
+     0.01174153865736292,
+     0.010417152927054085
+    ],
+    "participation_ratio_train": 8.240730280845384,
+    "total_centered_var_train": 1946966.5,
+    "basis": "top-10 right singular vectors of the CENTERED train write matrix",
+    "left_vectors": "N/A — row-space (per-train-row loadings); no held-out analogue",
+    "centering": "train-mean centered (round-1 rank_read convention)",
+    "svd": "torch.svd_lowrank(q=20, niter=4)",
+    "predictor": "ridge (val-selected lambda)"
+   },
+   "walls": {
+    "ridge_s": 34.37,
+    "identity_bias_s": 2.13,
+    "krr_s": 16.89,
+    "per_direction_s": 1.64
+   },
+   "r2_convention": "variance-weighted pooled R² over the 3,584 dims of w, scored against the TEST-set mean of w — so R² > 0 is context-DEPENDENT predictability beyond the static mean write (a mean-write predictor reads exactly 0)",
+   "ts": "2026-07-30T17:23:50Z",
+   "git_commit": "c35277bb02e8b5e635da5b7f6c3af3f7c24dd601",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "syc-conv-po-lr1e5-s137|tf": {
+   "arm_id": "syc-conv-po-lr1e5-s137",
+   "tree": "tf",
+   "tree_text": "matched-text write: trained teacher-forced-on-base answer state − base answer state",
+   "layer": 19,
+   "method": "lora",
+   "n_rows": 16400,
+   "n_train": 15000,
+   "n_val": 400,
+   "n_test": 1000,
+   "d_in": 3584,
+   "d_out": 3584,
+   "write_norm_mean_test": 1.5928408328707118,
+   "predictors": {
+    "ridge": {
+     "n_train": 15000,
+     "selection": "val-lambda (primal, streaming)",
+     "selected_lambda": 3162.2776601683795,
+     "val_r2_at_selected": 0.3399465270604224,
+     "lambda_grid_edge": null,
+     "ridge_block": 50000,
+     "lambda_grid": [
+      -3.0,
+      8.0,
+      23
+     ],
+     "heldout_r2": 0.17574288252303594,
+     "mean_cos": 0.8830345104812356,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.158,
+       "10": 0.401
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 29.5,
+      "mrr": 0.24102391620291003
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.235,
+       "10": 0.506
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 10.0,
+      "mrr": 0.32603500692107246
+     },
+     "heldout_r2_ci95": [
+      0.09105377854444308,
+      0.3306791011161736
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "identity_bias": {
+     "applicable": true,
+     "note": "d_in == d_out == 3584 so the standing identity+bias baseline applies; conceptually a weak prior here (w is a DIFFERENCE vector, c0 an activation), reported per the mapping-baselines rule, never skipped",
+     "heldout_r2": -10300.582760792102,
+     "mean_cos": 0.06598390541855517,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.002,
+       "10": 0.014
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 337.0,
+      "mrr": 0.011150887195867487
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.003,
+       "10": 0.015
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 345.0,
+      "mrr": 0.012212895855761163
+     },
+     "heldout_r2_ci95": [
+      -19883.002733861962,
+      -6153.097769321714
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "krr": {
+     "selected": {
+      "gamma_mult": 1.0,
+      "gamma": 4.1396145716398754e-05,
+      "lambda": 0.001,
+      "val_r2": 0.3679974769765425
+     },
+     "base_gamma": 4.1396145716398754e-05,
+     "m_landmarks": 1024,
+     "recipe": "Nystrom RBF KRR (#779 FFC krr_select_predict), val-selected (gamma, lambda)",
+     "heldout_r2": 0.20136795419076103,
+     "mean_cos": 0.8851587607825749,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.18,
+       "10": 0.406
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 24.0,
+      "mrr": 0.25712965710033325
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.242,
+       "10": 0.525
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 8.0,
+      "mrr": 0.34073054966389466
+     },
+     "heldout_r2_ci95": [
+      0.11852163613569867,
+      0.37891803534669094
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "mlp": {
+     "arm_id": "syc-conv-po-lr1e5-s137",
+     "tree": "tf",
+     "epochs_ran": 150,
+     "best_internal_val": 0.005961551796644926,
+     "wall_s": 15.9,
+     "recipe": {
+      "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+      "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+      "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+      "hidden": 3584,
+      "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+      "lr": 0.001,
+      "wd": 0.0001,
+      "max_epochs": 300,
+      "patience": 20,
+      "device": "cuda"
+     },
+     "heldout_r2": -7.517655637656878,
+     "mean_cos": 0.2659051663610497,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.021,
+       "10": 0.119
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 214.5,
+      "mrr": 0.05536580468969964
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.023,
+       "10": 0.13
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 142.5,
+      "mrr": 0.06048889972266655
+     },
+     "heldout_r2_ci95": [
+      -14.184876122587132,
+      -4.192413614241034
+     ],
+     "r2_ci_n_draws": 200,
+     "ts": "2026-07-30T18:49:48Z",
+     "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+     "torch": "2.8.0+cu128",
+     "numpy": "2.2.6",
+     "issue": 1768,
+     "layer": 19,
+     "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+     "round": "inline-write-predictability",
+     "source": "mlp.json"
+    }
+   },
+   "per_direction": {
+    "direction_rank": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "heldout_r2_per_direction": [
+     0.5839749261360205,
+     0.5666872121207587,
+     0.6414241834279794,
+     0.527670208372123,
+     0.33249931116095066,
+     0.5109664204003128,
+     0.5156297646725584,
+     0.39856579959741234,
+     0.554784517363762,
+     0.2735206830621787
+    ],
+    "train_var_share_per_direction": [
+     0.24312452396570322,
+     0.06017824054300773,
+     0.04739732138142953,
+     0.041191703702463466,
+     0.028462405085922973,
+     0.020385970332349262,
+     0.019008619448507937,
+     0.017271350893888725,
+     0.013913169109352138,
+     0.012155259164616091
+    ],
+    "participation_ratio_train": 4.835365396031296,
+    "total_centered_var_train": 10589.4521484375,
+    "basis": "top-10 right singular vectors of the CENTERED train write matrix",
+    "left_vectors": "N/A — row-space (per-train-row loadings); no held-out analogue",
+    "centering": "train-mean centered (round-1 rank_read convention)",
+    "svd": "torch.svd_lowrank(q=20, niter=4)",
+    "predictor": "ridge (val-selected lambda)"
+   },
+   "walls": {
+    "ridge_s": 31.54,
+    "identity_bias_s": 1.98,
+    "krr_s": 16.08,
+    "per_direction_s": 1.56
+   },
+   "r2_convention": "variance-weighted pooled R² over the 3,584 dims of w, scored against the TEST-set mean of w — so R² > 0 is context-DEPENDENT predictability beyond the static mean write (a mean-write predictor reads exactly 0)",
+   "ts": "2026-07-30T17:24:42Z",
+   "git_commit": "f1fcd88100b33133675ae4fe5c6fd23402ea5cfe",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "syc-pers-ft-con-s137|op": {
+   "arm_id": "syc-pers-ft-con-s137",
+   "tree": "op",
+   "tree_text": "on-policy write: trained on-policy answer state − base answer state",
+   "layer": 19,
+   "method": "ft",
+   "n_rows": 16400,
+   "n_train": 15000,
+   "n_val": 400,
+   "n_test": 1000,
+   "d_in": 3584,
+   "d_out": 3584,
+   "write_norm_mean_test": 26.89392911185733,
+   "predictors": {
+    "ridge": {
+     "n_train": 15000,
+     "selection": "val-lambda (primal, streaming)",
+     "selected_lambda": 10000.0,
+     "val_r2_at_selected": 0.13646746404608734,
+     "lambda_grid_edge": null,
+     "ridge_block": 50000,
+     "lambda_grid": [
+      -3.0,
+      8.0,
+      23
+     ],
+     "heldout_r2": 0.12587650757504887,
+     "mean_cos": 0.6395183892835976,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.022,
+       "10": 0.107
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 270.5,
+      "mrr": 0.05294360399013308
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.041,
+       "10": 0.168
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 135.0,
+      "mrr": 0.08464305801337964
+     },
+     "heldout_r2_ci95": [
+      0.1132201230891663,
+      0.13282832172055156
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "identity_bias": {
+     "applicable": true,
+     "note": "d_in == d_out == 3584 so the standing identity+bias baseline applies; conceptually a weak prior here (w is a DIFFERENCE vector, c0 an activation), reported per the mapping-baselines rule, never skipped",
+     "heldout_r2": -43.07318985031797,
+     "mean_cos": 0.07840524120180735,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.001,
+       "10": 0.006
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 526.0,
+      "mrr": 0.00708333004111111
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.0,
+       "10": 0.011
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 533.5,
+      "mrr": 0.00810777558566781
+     },
+     "heldout_r2_ci95": [
+      -46.88199381114354,
+      -39.99845204779339
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "krr": {
+     "selected": {
+      "gamma_mult": 1.0,
+      "gamma": 4.1396145716398754e-05,
+      "lambda": 0.1,
+      "val_r2": 0.14002351388438417
+     },
+     "base_gamma": 4.1396145716398754e-05,
+     "m_landmarks": 1024,
+     "recipe": "Nystrom RBF KRR (#779 FFC krr_select_predict), val-selected (gamma, lambda)",
+     "heldout_r2": 0.13584242906736543,
+     "mean_cos": 0.648533167698738,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.016,
+       "10": 0.094
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 276.0,
+      "mrr": 0.044904439842172565
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.028,
+       "10": 0.142
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 117.0,
+      "mrr": 0.07054289242065208
+     },
+     "heldout_r2_ci95": [
+      0.12416342646112866,
+      0.14561943669697355
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "mlp": {
+     "arm_id": "syc-pers-ft-con-s137",
+     "tree": "op",
+     "epochs_ran": 131,
+     "best_internal_val": 0.1303938776254654,
+     "wall_s": 14.2,
+     "recipe": {
+      "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+      "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+      "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+      "hidden": 3584,
+      "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+      "lr": 0.001,
+      "wd": 0.0001,
+      "max_epochs": 300,
+      "patience": 20,
+      "device": "cuda"
+     },
+     "heldout_r2": 0.096714927508595,
+     "mean_cos": 0.6204593057211334,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.017,
+       "10": 0.097
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 268.5,
+      "mrr": 0.04494623597709574
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.032,
+       "10": 0.144
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 109.0,
+      "mrr": 0.07362550262125969
+     },
+     "heldout_r2_ci95": [
+      0.0826083454485487,
+      0.10653426706052573
+     ],
+     "r2_ci_n_draws": 200,
+     "ts": "2026-07-30T18:50:43Z",
+     "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+     "torch": "2.8.0+cu128",
+     "numpy": "2.2.6",
+     "issue": 1768,
+     "layer": 19,
+     "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+     "round": "inline-write-predictability",
+     "source": "mlp.json"
+    }
+   },
+   "per_direction": {
+    "direction_rank": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "heldout_r2_per_direction": [
+     0.32000632012967045,
+     0.164000456543967,
+     0.2022992605585655,
+     0.5846342082423719,
+     0.1663060069287392,
+     0.08852408779050269,
+     0.2960987031044958,
+     0.20881862286193742,
+     0.11006960949566369,
+     0.15032706458171596
+    ],
+    "train_var_share_per_direction": [
+     0.08484016770851201,
+     0.0738486345990029,
+     0.04562405471381045,
+     0.03649649679586117,
+     0.02410155990481883,
+     0.020627289631425606,
+     0.01992196217686853,
+     0.01572222584727178,
+     0.012516269984712718,
+     0.011371816609787404
+    ],
+    "participation_ratio_train": 9.773909935260699,
+    "total_centered_var_train": 7661525.5,
+    "basis": "top-10 right singular vectors of the CENTERED train write matrix",
+    "left_vectors": "N/A — row-space (per-train-row loadings); no held-out analogue",
+    "centering": "train-mean centered (round-1 rank_read convention)",
+    "svd": "torch.svd_lowrank(q=20, niter=4)",
+    "predictor": "ridge (val-selected lambda)"
+   },
+   "walls": {
+    "ridge_s": 57.9,
+    "identity_bias_s": 3.92,
+    "krr_s": 29.59,
+    "per_direction_s": 2.87
+   },
+   "r2_convention": "variance-weighted pooled R² over the 3,584 dims of w, scored against the TEST-set mean of w — so R² > 0 is context-DEPENDENT predictability beyond the static mean write (a mean-write predictor reads exactly 0)",
+   "ts": "2026-07-30T17:30:51Z",
+   "git_commit": "0c5266b85c056ae346587d922c1a5a84dbfdafaf",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "syc-pers-ft-con-s137|tf": {
+   "arm_id": "syc-pers-ft-con-s137",
+   "tree": "tf",
+   "tree_text": "matched-text write: trained teacher-forced-on-base answer state − base answer state",
+   "layer": 19,
+   "method": "ft",
+   "n_rows": 16400,
+   "n_train": 15000,
+   "n_val": 400,
+   "n_test": 1000,
+   "d_in": 3584,
+   "d_out": 3584,
+   "write_norm_mean_test": 15.218066283213604,
+   "predictors": {
+    "ridge": {
+     "n_train": 15000,
+     "selection": "val-lambda (primal, streaming)",
+     "selected_lambda": 1000.0,
+     "val_r2_at_selected": 0.4391263864455107,
+     "lambda_grid_edge": null,
+     "ridge_block": 50000,
+     "lambda_grid": [
+      -3.0,
+      8.0,
+      23
+     ],
+     "heldout_r2": 0.3938389254541893,
+     "mean_cos": 0.8814393630111388,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.267,
+       "10": 0.524
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 9.0,
+      "mrr": 0.3535013923656668
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.346,
+       "10": 0.649
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 4.0,
+      "mrr": 0.4472448126311677
+     },
+     "heldout_r2_ci95": [
+      0.37177761188545255,
+      0.41407494129613126
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "identity_bias": {
+     "applicable": true,
+     "note": "d_in == d_out == 3584 so the standing identity+bias baseline applies; conceptually a weak prior here (w is a DIFFERENCE vector, c0 an activation), reported per the mapping-baselines rule, never skipped",
+     "heldout_r2": -183.59530554499378,
+     "mean_cos": 0.0959392458430804,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.002,
+       "10": 0.012
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 514.0,
+      "mrr": 0.008319852857959052
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.001,
+       "10": 0.009
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 508.0,
+      "mrr": 0.008664686453067012
+     },
+     "heldout_r2_ci95": [
+      -199.71246475672538,
+      -170.78849613164704
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "krr": {
+     "selected": {
+      "gamma_mult": 1.0,
+      "gamma": 4.1396145716398754e-05,
+      "lambda": 0.001,
+      "val_r2": 0.4508049789259265
+     },
+     "base_gamma": 4.1396145716398754e-05,
+     "m_landmarks": 1024,
+     "recipe": "Nystrom RBF KRR (#779 FFC krr_select_predict), val-selected (gamma, lambda)",
+     "heldout_r2": 0.42064607767454476,
+     "mean_cos": 0.8900356752124842,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.228,
+       "10": 0.499
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 11.0,
+      "mrr": 0.32072126499374487
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.313,
+       "10": 0.604
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 5.0,
+      "mrr": 0.4102667066424106
+     },
+     "heldout_r2_ci95": [
+      0.40047701759011,
+      0.44282584928295593
+     ],
+     "r2_ci_n_draws": 200
+    },
+    "mlp": {
+     "arm_id": "syc-pers-ft-con-s137",
+     "tree": "tf",
+     "epochs_ran": 150,
+     "best_internal_val": 0.016834262758493423,
+     "wall_s": 16.4,
+     "recipe": {
+      "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+      "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+      "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+      "hidden": 3584,
+      "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+      "lr": 0.001,
+      "wd": 0.0001,
+      "max_epochs": 300,
+      "patience": 20,
+      "device": "cuda"
+     },
+     "heldout_r2": 0.234518062329111,
+     "mean_cos": 0.8244279677003243,
+     "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.146,
+       "10": 0.379
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 23.0,
+      "mrr": 0.22282823106148858
+     },
+     "knn_cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.176,
+       "10": 0.464
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "10": 0.01
+      },
+      "median_rank": 13.0,
+      "mrr": 0.2721423415516631
+     },
+     "heldout_r2_ci95": [
+      0.2182541344028751,
+      0.24939671818404927
+     ],
+     "r2_ci_n_draws": 200,
+     "ts": "2026-07-30T18:50:29Z",
+     "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+     "torch": "2.8.0+cu128",
+     "numpy": "2.2.6",
+     "issue": 1768,
+     "layer": 19,
+     "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+     "round": "inline-write-predictability",
+     "source": "mlp.json"
+    }
+   },
+   "per_direction": {
+    "direction_rank": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "heldout_r2_per_direction": [
+     0.6495536650666629,
+     0.5455239096495188,
+     0.7954374149727373,
+     0.698741648468665,
+     0.5110886211428863,
+     0.6193501099464207,
+     0.6237812361573738,
+     0.3734449395272177,
+     0.6591412731590651,
+     0.6186523275197985
+    ],
+    "train_var_share_per_direction": [
+     0.21867608109928685,
+     0.17351165647528552,
+     0.04887539567835009,
+     0.03469928971736518,
+     0.026685335649331725,
+     0.025512385211649776,
+     0.019181520420671103,
+     0.01716908796000507,
+     0.015008377917497187,
+     0.01043361962617336
+    ],
+    "participation_ratio_train": 5.116112851728453,
+    "total_centered_var_train": 1118908.5,
+    "basis": "top-10 right singular vectors of the CENTERED train write matrix",
+    "left_vectors": "N/A — row-space (per-train-row loadings); no held-out analogue",
+    "centering": "train-mean centered (round-1 rank_read convention)",
+    "svd": "torch.svd_lowrank(q=20, niter=4)",
+    "predictor": "ridge (val-selected lambda)"
+   },
+   "walls": {
+    "ridge_s": 58.77,
+    "identity_bias_s": 3.63,
+    "krr_s": 28.82,
+    "per_direction_s": 2.66
+   },
+   "r2_convention": "variance-weighted pooled R² over the 3,584 dims of w, scored against the TEST-set mean of w — so R² > 0 is context-DEPENDENT predictability beyond the static mean write (a mean-write predictor reads exactly 0)",
+   "ts": "2026-07-30T17:32:25Z",
+   "git_commit": "02fd01aa385a13b4a04c718acb2822ef2345648b",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  }
+ },
+ "mlp_leg": {
+  "status": "landed",
+  "n_cells_with_mlp": 16,
+  "n_cells_total": 16,
+  "device": "cuda",
+  "recipe": {
+   "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+   "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+   "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+   "hidden": 3584,
+   "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+   "lr": 0.001,
+   "wd": 0.0001,
+   "max_epochs": 300,
+   "patience": 20,
+   "device": "cuda"
+  },
+  "per_cell_wall_s": {
+   "cas-pers-con-lr1e5-s137|op": 13.9,
+   "cas-pers-con-lr1e5-s137|tf": 17.2,
+   "imp-pers-con-lr3e5-s42|op": 13.6,
+   "imp-pers-con-lr3e5-s42|tf": 15.7,
+   "imp-pers-ft-con-s137|op": 27.5,
+   "imp-pers-ft-con-s137|tf": 16.0,
+   "imp-pers-po-lr1e5-s137|op": 15.6,
+   "imp-pers-po-lr1e5-s137|tf": 16.2,
+   "mk-pers-po-lr5e6-s137|op": 17.9,
+   "mk-pers-po-lr5e6-s137|tf": 17.0,
+   "syc-bare-con-lr1e5-s42|op": 13.5,
+   "syc-bare-con-lr1e5-s42|tf": 16.3,
+   "syc-conv-po-lr1e5-s137|op": 16.8,
+   "syc-conv-po-lr1e5-s137|tf": 15.9,
+   "syc-pers-ft-con-s137|op": 14.2,
+   "syc-pers-ft-con-s137|tf": 16.4
+  },
+  "execution": "USER OVERRIDE 'just run on GPU' — the full 16-cell MLP leg ran on a 1-GPU RunPod pod (pod-1768-wp), NOT the CPU-descoped 4-cell contingency the earlier pilot gate had sized. No descope.",
+  "cpu_pilot_basis_superseded": "the shared-VM CPU pilot measured 6.29 s/epoch/group (2-point: 3 vs 12 epochs), projecting 8.4 h for a 16-cell x 300-epoch CPU battery — the reason the GPU override was taken. Recorded for provenance; not the executed path.",
+  "note": "an undertrained MLP R2 is never presented: only the full-fidelity mlp.json feeds figures/summary (mlp_pilot.json is a timing measurement, excluded by construction). The CPU pilot still read R2 -5.73 at 12 epochs, so the full-dim MLP needs many epochs before it is competitive — read epochs_ran per cell before comparing."
+ },
+ "pilot_walls": {
+  "cas-pers-con-lr1e5-s137|op": {
+   "ridge_s": 35.03,
+   "identity_bias_s": 2.43,
+   "krr_s": 17.45,
+   "per_direction_s": 1.67
+  },
+  "cas-pers-con-lr1e5-s137|tf": {
+   "ridge_s": 36.72,
+   "identity_bias_s": 2.56,
+   "krr_s": 18.95,
+   "per_direction_s": 1.78
+  },
+  "imp-pers-con-lr3e5-s42|op": {
+   "ridge_s": 39.3,
+   "identity_bias_s": 2.36,
+   "krr_s": 18.6,
+   "per_direction_s": 1.9
+  },
+  "imp-pers-con-lr3e5-s42|tf": {
+   "ridge_s": 37.93,
+   "identity_bias_s": 2.36,
+   "krr_s": 17.55,
+   "per_direction_s": 1.76
+  },
+  "imp-pers-ft-con-s137|op": {
+   "ridge_s": 31.46,
+   "identity_bias_s": 1.92,
+   "krr_s": 15.67,
+   "per_direction_s": 1.53
+  },
+  "imp-pers-ft-con-s137|tf": {
+   "ridge_s": 31.2,
+   "identity_bias_s": 3.69,
+   "krr_s": 27.6,
+   "per_direction_s": 2.68
+  },
+  "imp-pers-po-lr1e5-s137|op": {
+   "ridge_s": 48.54,
+   "identity_bias_s": 4.32,
+   "krr_s": 32.48,
+   "per_direction_s": 4.05
+  },
+  "imp-pers-po-lr1e5-s137|tf": {
+   "ridge_s": 78.46,
+   "identity_bias_s": 3.16,
+   "krr_s": 19.53,
+   "per_direction_s": 1.78
+  },
+  "mk-pers-po-lr5e6-s137|op": {
+   "ridge_s": 31.74,
+   "identity_bias_s": 2.15,
+   "krr_s": 16.38,
+   "per_direction_s": 1.69
+  },
+  "mk-pers-po-lr5e6-s137|tf": {
+   "ridge_s": 32.49,
+   "identity_bias_s": 2.0,
+   "krr_s": 16.41,
+   "per_direction_s": 1.71
+  },
+  "syc-bare-con-lr1e5-s42|op": {
+   "ridge_s": 32.3,
+   "identity_bias_s": 2.09,
+   "krr_s": 15.02,
+   "per_direction_s": 1.48
+  },
+  "syc-bare-con-lr1e5-s42|tf": {
+   "ridge_s": 29.69,
+   "identity_bias_s": 2.01,
+   "krr_s": 15.64,
+   "per_direction_s": 1.56
+  },
+  "syc-conv-po-lr1e5-s137|op": {
+   "ridge_s": 34.37,
+   "identity_bias_s": 2.13,
+   "krr_s": 16.89,
+   "per_direction_s": 1.64
+  },
+  "syc-conv-po-lr1e5-s137|tf": {
+   "ridge_s": 31.54,
+   "identity_bias_s": 1.98,
+   "krr_s": 16.08,
+   "per_direction_s": 1.56
+  },
+  "syc-pers-ft-con-s137|op": {
+   "ridge_s": 57.9,
+   "identity_bias_s": 3.92,
+   "krr_s": 29.59,
+   "per_direction_s": 2.87
+  },
+  "syc-pers-ft-con-s137|tf": {
+   "ridge_s": 58.77,
+   "identity_bias_s": 3.63,
+   "krr_s": 28.82,
+   "per_direction_s": 2.66
+  }
+ },
+ "notes": {
+  "r2_convention": "variance-weighted pooled R² over the 3,584 dims of w against the TEST-set mean of w: R² > 0 means context-DEPENDENT predictability beyond the static mean write; a constant mean-write predictor reads exactly 0.",
+  "mapping_arms": "CONTEXT-based arm only (c0 = base context vector). The prefix arm is degenerate on this corpus (2 distinct prefix strings) — round 1's stated deviation carries over verbatim.",
+  "identity_baseline": "identity+learned-bias applies (d_in == d_out == 3584) and is reported for every cell per the standing mapping-baselines rule, though it is a weak prior here: w is a DIFFERENCE vector, c0 an activation.",
+  "duplicate_sha_caveat": "the 82-duplicate-sha val/test caveat of the pinned #779 split carries over verbatim from round 1 (1,400 pinned rows -> 1,318 unique; val n test 13).",
+  "per_direction_basis": "top-10 right singular vectors of the CENTERED train write matrix (round-1 rank_read convention). Left singular vectors are row-space and have no held-out analogue.",
+  "mlp_helper_deviation": "MLP uses issue779_fitter_fair_comparison.batched_mlp_fit (padded-bmm AdamW, batched ACROSS cells) rather than analysis/vectorized_mlp_skill.py: the latter is built for the tiny-n many-LOCO-fold PCA-target regime (n~49-480), while batched_mlp_fit is the on-main batched helper for exactly this full-dim 3584->3584 n~15k map shape (#779 built it, #1073's analogous inline round reused it)."
+ }
+}

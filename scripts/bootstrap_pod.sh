@@ -376,6 +376,23 @@ RC2EOF
     fi
 done
 
+# ~/.local/bin on PATH for interactive/login shells (#1794; the non-login
+# case is covered by the /usr/local/bin shims below). Separately guarded so
+# already-bootstrapped pods gain it on any re-bootstrap. The grep pattern
+# keeps its dollar sign LITERAL on the remote shell (backslash-escaped
+# through the outer single-quoted ssh_cmd argument) so it byte-matches the
+# heredoc-written line; an expanding $HOME would never match and duplicate
+# the append on every re-bootstrap.
+for f in /root/.bashrc /root/.profile; do
+    if ! grep -qF "PATH=\"\$HOME/.local/bin" "$f" 2>/dev/null; then
+        cat >> "$f" <<"RC3EOF"
+
+# uv install dir on PATH (#1794)
+export PATH="$HOME/.local/bin:$PATH"
+RC3EOF
+    fi
+done
+
 # Append to project .env (for dotenv-loading subprocesses)
 ENV_FILE=/workspace/explore-persona-space/.env
 touch "$ENV_FILE"

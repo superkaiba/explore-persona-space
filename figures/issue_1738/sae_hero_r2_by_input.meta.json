@@ -1,0 +1,119 @@
+{
+  "commit": "05a74a1c5d",
+  "created": "2026-07-30T05:59:57Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "history features",
+      "held-out pooled R\u00b2 (9,941 contexts)": 0.35885520790880054,
+      "error": 0.006670301881965407,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "full-context features",
+      "held-out pooled R\u00b2 (9,941 contexts)": 0.6375947549755905,
+      "error": 0.00522359606469458,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "dense history",
+      "held-out pooled R\u00b2 (9,941 contexts)": 0.45109661417073954,
+      "error": 0.007350261564989663,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "dense full-context",
+      "held-out pooled R\u00b2 (9,941 contexts)": 0.7003278835531743,
+      "error": 0.0049589235806973275,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out pooled R\u00b2 (9,941 contexts)": 0.3521887861020329,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out pooled R\u00b2 (9,941 contexts)": 0.6322990605132708,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out pooled R\u00b2 (9,941 contexts)": 0.44361516554100067,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out pooled R\u00b2 (9,941 contexts)": 0.6952859927114895,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out pooled R\u00b2 (9,941 contexts)": 0.3655293898659637,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out pooled R\u00b2 (9,941 contexts)": 0.6427462526426599,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out pooled R\u00b2 (9,941 contexts)": 0.45831568867098,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "held-out pooled R\u00b2 (9,941 contexts)": 0.7052038398728842,
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "answer-feature recovery by input (SAE space, mean pooling)",
+        "ylabel": "held-out pooled R\u00b2 (9,941 contexts)",
+        "legend_labels": [
+          "shuffled-pairing floor (K=20/arm)"
+        ],
+        "xticklabels": [
+          "history features",
+          "full-context features",
+          "dense history",
+          "dense full-context"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  }
+}

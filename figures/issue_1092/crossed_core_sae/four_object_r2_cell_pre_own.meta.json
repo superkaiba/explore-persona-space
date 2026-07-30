@@ -1,0 +1,90 @@
+{
+  "commit": "e857c9148c",
+  "created": "2026-07-29T00:30:43Z",
+  "figsize": [
+    8.0,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "prefix_end",
+      "held-out pooled R^2 (pooled-answer mean)": -176130.015625,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "bare_query",
+      "held-out pooled R^2 (pooled-answer mean)": -0.041112422943115234,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "bare_query_dense",
+      "held-out pooled R^2 (pooled-answer mean)": -0.017435550689697266,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "context_end",
+      "held-out pooled R^2 (pooled-answer mean)": 0.8117079138755798,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "encode_then_averaged_induced",
+      "held-out pooled R^2 (pooled-answer mean)": 0.8927764892578125,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out pooled R^2 (pooled-answer mean)": -1.0523526668548584,
+      "series": "identity+bias (ctx, intersection)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out pooled R^2 (pooled-answer mean)": -1.0523526668548584,
+      "series": "identity+bias (ctx, intersection)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 7,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "cell_pre_own: four-object matched table (same target/folds per arm)",
+        "ylabel": "held-out pooled R^2 (pooled-answer mean)",
+        "legend_labels": [
+          "identity+bias (ctx, intersection)"
+        ],
+        "xticklabels": [
+          "prefix_end",
+          "bare_query",
+          "bare_query_dense",
+          "context_end",
+          "encode_then_averaged_induced"
+        ],
+        "yticklabels": [
+          "\u2212200000",
+          "\u2212175000",
+          "\u2212150000",
+          "\u2212125000",
+          "\u2212100000",
+          "\u221275000",
+          "\u221250000",
+          "\u221225000",
+          "0"
+        ]
+      }
+    ],
+    "series": [
+      "identity+bias (ctx, intersection)"
+    ]
+  }
+}

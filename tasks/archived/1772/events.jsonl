@@ -1,0 +1,3 @@
+{"ts": "2026-07-28T21:10:53Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-07-28T21:11:15Z", "kind": "epm:progress", "version": 1, "by": "spawn_session-stop", "note": "deliberate-stop pid=n/a target=happy-session:cms55hodqwxzywc0uzbufu5rl reason=operator stop via spawn_session.py stop"}
+{"ts": "2026-07-28T21:11:20Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived", "note": "Duplicate of #1770 (status reviewing, same two files, same red test). Caught by the file_infra_task open-sibling advisory; archived per .claude/rules/workflow-fix-on-bug.md remedy, spawned session stopped."}
