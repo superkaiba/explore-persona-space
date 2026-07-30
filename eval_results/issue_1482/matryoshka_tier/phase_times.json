@@ -15,6 +15,14 @@
     {
       "phase": "fits",
       "wall_s": 7043.9
+    },
+    {
+      "phase": "evidence",
+      "wall_s": 226.5
+    },
+    {
+      "phase": "analyze",
+      "wall_s": 150.1
     }
   ]
 }
