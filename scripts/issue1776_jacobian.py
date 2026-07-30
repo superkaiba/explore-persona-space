@@ -84,14 +84,78 @@ def load_pairs(pairs_path: Path) -> list[dict]:
     return rows
 
 
-def render_pair(tok, prompt: str, response: str) -> dict | None:
+SPAN_SENTINEL = "EPSQSPAN7SENTINEL"  # locates the user-content slot in the rendered template
+
+
+def _suffix_q_span(tok, prompt_text: str, prompt: str) -> tuple[int, int]:
+    """EXACT char span of the final user content, anchored from the template TAIL.
+
+    The legacy ``str.find``-from-0 locator mis-anchors whenever a short
+    real-user query substring-matches inside the rendered chat-template
+    preamble (Qwen default-system boilerplate, 115 chars): measured on the
+    staged corpora 2026-07-30, 4/999 WildChat rows CRASH the strict span
+    assert (match inside token 0 -> prefix_len=0 — the p3_pcj pod crash,
+    ``AssertionError: (0, 1, 30)``) and 11/999 more SILENTLY mis-anchor
+    (garbage spans that pass it); 1/1536 lmsys jpairs rows mis-anchor the same
+    way. The single-turn render is ``preamble + content + tail`` with a
+    content-independent tail, so anchoring from the tail is exact.
+    """
+    sent_text = tok.apply_chat_template(
+        [{"role": "user", "content": SPAN_SENTINEL}], tokenize=False, add_generation_prompt=True
+    )
+    i = sent_text.find(SPAN_SENTINEL)
+    assert i >= 0 and sent_text.count(SPAN_SENTINEL) == 1, "sentinel template render failed"
+    tail = sent_text[i + len(SPAN_SENTINEL) :]
+    assert tail and prompt_text.endswith(tail), (
+        "chat-template tail drift — the suffix anchor requires a content-independent tail"
+    )
+    q_end = len(prompt_text) - len(tail)
+    q_start = q_end - len(prompt)
+    assert q_start >= 0 and prompt_text[q_start:q_end] == prompt, (
+        "user content is not verbatim before the template tail (template mutated the content)"
+    )
+    return q_start, q_end
+
+
+def legacy_find_anchor_agrees(tok, prompt: str) -> bool:
+    """True iff the legacy find-from-0 anchor lands on the exact tail-anchored span.
+
+    Tokenizer-only (~sub-ms). Used by the p3_pcj resume predicate: a retained
+    per-context unit computed under the legacy anchor is valid exactly when
+    this holds (for every such row the two anchors produce identical spans);
+    a disagreeing row's legacy unit carries mis-anchored spans -> recompute.
+    """
+    text = tok.apply_chat_template(
+        [{"role": "user", "content": prompt}], tokenize=False, add_generation_prompt=True
+    )
+    q_start, _ = _suffix_q_span(tok, text, prompt)
+    return text.find(prompt) == q_start
+
+
+def render_pair(tok, prompt: str, response: str, *, anchor: str = "find") -> dict | None:
     """Producer-convention render + span boundaries for one pair.
 
-    Returns {"full_ids", "prompt_len", "prefix_len", "context_len"} or None on
-    an empty response / a prompt-boundary BPE seam (designed skip — counted by
-    the caller; the #779 producer convention has no seam on this corpus, the
-    guard keeps a drifted row out of the estimator instead of crashing it).
+    Returns {"full_ids", "prompt_len", "prefix_len", "context_len", "anchor"}
+    or None on an empty response / a prompt-boundary BPE seam (designed skip —
+    counted by the caller; the #779 producer convention has no seam on this
+    corpus, the guard keeps a drifted row out of the estimator instead of
+    crashing it).
+
+    ``anchor`` selects how the question's char span is located in the render:
+
+    - ``"find"`` (default): first occurrence from char 0 — the parent jac_full
+      convention, byte-identical to every prior run of this module.
+    - ``"suffix"`` (#1776 p3_pcj crash-fix r15): exact tail-anchored span via
+      :func:`_suffix_q_span`; REQUIRED for bare real-user corpora whose short
+      queries can substring-match inside the template preamble (see
+      ``_suffix_q_span``). For every row where "find" anchors correctly the
+      two produce IDENTICAL spans. "suffix" additionally legalizes
+      ``prefix_len == 0`` (a template-less render) — ``pair_backward`` then
+      refuses LOUDLY if the 3-arm prefix/context split is requested on such a
+      row (unreachable under the Qwen chat template, whose preamble is the
+      prefix).
     """
+    assert anchor in ("find", "suffix"), anchor
     msgs = [{"role": "user", "content": prompt}]
     prompt_text = tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
     prompt_ids = tok(prompt_text, return_tensors="pt", padding=False)["input_ids"][0]
@@ -108,15 +172,24 @@ def render_pair(tok, prompt: str, response: str) -> dict | None:
         return None  # empty-response row (producer kept non-empty; guard anyway)
     if not torch.equal(full_ids[:prompt_len], prompt_ids):
         return None  # prompt-boundary BPE seam under the producer convention
-    prefix_len, context_len = compute_prompt_spans(
-        tok, None, prompt, [int(x) for x in prompt_ids], on_seam="snap"
+    span_kw = (
+        {"q_char_span": _suffix_q_span(tok, prompt_text, prompt)} if anchor == "suffix" else {}
     )
-    assert 0 < prefix_len < context_len <= prompt_len, (prefix_len, context_len, prompt_len)
+    prefix_len, context_len = compute_prompt_spans(
+        tok, None, prompt, [int(x) for x in prompt_ids], on_seam="snap", **span_kw
+    )
+    min_prefix = 0 if anchor == "suffix" else 1
+    assert min_prefix <= prefix_len < context_len <= prompt_len, (
+        prefix_len,
+        context_len,
+        prompt_len,
+    )
     return {
         "full_ids": full_ids,
         "prompt_len": prompt_len,
         "prefix_len": int(prefix_len),
         "context_len": int(context_len),
+        "anchor": anchor,
     }
 
 
@@ -184,8 +257,18 @@ class JacobianEstimator:
         Seeds (S, H) are cotangents on v_19; chunked K per vmapped backward
         (``is_grads_batched``), K auto-halved on CUDA OOM (mem_get_info logged).
         """
-        h_src, h_ro = self.forward_captured(rend["full_ids"])
         pl, pre, ctx = rend["prompt_len"], rend["prefix_len"], rend["context_len"]
+        if pre <= 0:
+            # A suffix-anchored render legalizes prefix_len == 0 (template-less
+            # render); the 3-arm split consumer refuses it LOUDLY (crash-fix
+            # r15 contract): a zero-width prefix arm would silently persist
+            # all-zero rows. Unreachable under the Qwen chat template.
+            raise ValueError(
+                f"prefix/context split requested on a zero-prefix render (prefix_len={pre}): "
+                "bare-context rows under a template-less render have no prefix arm; the "
+                "3-arm jacobian split requires a nonzero chat-template preamble prefix"
+            )
+        h_src, h_ro = self.forward_captured(rend["full_ids"])
         v = h_ro[0, pl:, :].to(torch.float32).mean(dim=0)  # (H,) — POOLING parity
         out = {arm: [] for arm in ARMS}
         ctx_maxabs = 0.0
