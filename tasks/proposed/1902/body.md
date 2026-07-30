@@ -38,7 +38,7 @@ The context→answer map is present in both the base model and the instruct mode
 
 ## Goal
 
-Characterize how each open post-training stage (SFT → DPO → RLVR; the OLMo-2-1124-7B base/SFT/DPO/Instruct chain) changes the context→answer activation mapping: (1) within-stage fit quality (ridge + MLP, prefix AND context arms, identity+learned-bias baseline + kNN retrieval) on ~10k diverse real-world contexts under a 4x4 activation-checkpoint × answer-text-source grid separating representation change from answer-distribution change; (2) which context classes each stage makes more or less predictable; (3) cross-stage transferability of the map (direct and Procrustes-aligned), characterized on context and answer sides; (4) the per-stage operator change (delta-W rank/spectrum/subspace, direction-aware vs spectrum-only reads against matched nulls), with SAE/crosscoder feature readout as a stretch goal.
+Characterize how each open post-training stage (SFT → DPO → RLVR; the OLMo-2-1124-7B base/SFT/DPO/Instruct chain) changes the context→answer activation mapping: (1) within-stage fit quality (ridge + MLP, prefix AND context arms, identity+learned-bias baseline + kNN retrieval) on ~10k diverse real-world contexts under a 4×4 activation-checkpoint × answer-text-source grid separating representation change from answer-distribution change; (2) which context classes each stage makes more or less predictable; (3) cross-stage transferability of the map (direct and Procrustes-aligned), characterized on context and answer sides; (4) the per-stage operator change (ΔW rank / spectrum / subspace overlap, direction-aware vs spectrum-only reads against matched nulls), with SAE/crosscoder feature readout as a stretch goal.
 
 ## Formalization (object of study)
 
@@ -49,7 +49,7 @@ Checkpoints m ∈ {B, S, D, R} = {base, SFT, DPO, RLVR} — one weight chain, ea
 Measured quantities:
 - **Q(m, s, ℓ, F)** — held-out fit quality: pooled group-fold OOF R², plus the identity+learned-bias baseline (u and w share d=4096, so applicable) and kNN retrieval acc@{1,10} (euclidean + cosine, chance = k/n_pool stated). The DIAGONAL Q(m,m) along B→S→D→R is the headline "R² evolution" curve.
 - **Decomposition** — variance of Q across s at fixed m (answer-distribution effect) vs across m at fixed s (representation effect): a 4×4 heatmap per arm per F.
-- **Transfer T(i→j)** — f_{i,i} evaluated on checkpoint j's (u_j, w_j) pairs, full 4×4 matrix: direct, AND Procrustes-aligned (orthogonal Ω_ctx, Ω_ans fitted on train folds between the two activation spaces) — the aligned arm separates "same map, rotated basis" from "genuinely different map". Accompanied by descriptive per-layer CKA / mean-cosine between u_i and u_j (and w_i, w_j) over shared inputs, so trivially-close spaces are visible as such.
+- **Transfer T(i→j)** — f_{i,i} evaluated on checkpoint j's (u_j, w_j) pairs, full 4×4 matrix: direct, AND Procrustes-aligned (orthogonal Ω_ctx, Ω_ans fitted on train folds between the two activation spaces) — the aligned arm separates "same map, rotated basis" from "genuinely different map" — AND a **fixed-answer-text transfer read**: f_{i,i} evaluated on (u_j, w_j(·, a_i)) — checkpoint j's representations of checkpoint i's answer text, a cell the capture grid already contains — so a transfer failure is attributable text-side vs representation-side. Accompanied by descriptive per-layer CKA / mean-cosine between u_i and u_j (and w_i, w_j) over shared inputs, so trivially-close spaces are visible as such.
 - **Context-conditional Q_c** — per-context-cluster evaluation slices of the GLOBAL map (never per-cluster fits: n_cluster ≪ d would be estimator-degenerate); ΔQ_c across adjacent stages identifies stage-specific context classes.
 - **Operator change** — for the ridge operators W_m: ΔW spectrum + effective rank, principal angles between row/column subspaces of W_i vs W_j, direction-aware (Procrustes-aligned) operator cosine vs spectrum-only cosine, each against the matched shuffle-fit / random-rotation nulls per the `scripts/issue1345_operator_comparison.py` conventions.
 
@@ -74,10 +74,10 @@ Exact numeric success/kill thresholds are set at plan time (adversarial-planner)
 
 ### Mapping arms (BOTH, per standing rule)
 - **Context-based arm** (context = prefix + query): primary, runs on all 10k.
-- **Prefix-based arm:** bare LMSYS queries have a degenerate (empty/constant) prefix, so the prefix arm runs on a dedicated **prefix-bearing subset**: ~2k cells built as (system-prompt battery from the parent line) × (sampled queries). If the planner drops or restructures this subset, that is an explicit stated deviation in the plan, never silent.
+- **Prefix-based arm:** bare LMSYS queries have a degenerate (empty/constant) prefix, so the prefix arm runs on a dedicated **prefix-bearing subset**: ~10k cells built as (system-prompt battery from the parent line) × (sampled queries) — sized ≥ ~2×d so the prefix-arm fits are well-posed (n_train ≈ 8k > d = 4096 per fold; a ~2k subset would reproduce the #1701 estimator-degenerate shape). Folds on this crossed battery × query subset are group-level on BOTH factors (leave-system-prompt-out AND leave-query-cluster-out, reported separately) — a system prompt shared across train/test folds is a leakage channel plain query-cluster folds miss. If the planner drops or restructures this subset, that is an explicit stated deviation in the plan, never silent.
 
 ### Answer generation (on-policy per checkpoint)
-For each checkpoint m: vLLM batched generation on all 10k contexts, 1 sample/context (temperature + max_new_tokens ≥ 1024 grounded at plan time against the parent protocol), + n=2 extra samples on a 1k subset for the sampling-noise ceiling (split-half reliability ceiling on the diagonal Q(m,m)). Base-checkpoint generation uses a plain QA serialization (no chat template) — expected messier; a degeneracy filter (e.g. n-gram repetition-loop cap) is applied SYMMETRICALLY across all four sources with per-source filtered fractions reported, never a silent drop. All rollout text persists to the HF data repo per upload policy.
+For each checkpoint m: vLLM batched generation on all 10k contexts, 1 sample/context (temperature + max_new_tokens ≥ 1024 grounded at plan time against the parent protocol), + n=2 extra samples on a 1k subset for the sampling-noise ceiling (split-half reliability ceiling on the diagonal Q(m,m)). Base-checkpoint generation uses a plain QA serialization (no chat template) — expected messier; a degeneracy filter (n-gram repetition-loop cap AND a truncation flag — base-model plain-QA text often never emits EOS and hits the max_new_tokens cap) is applied SYMMETRICALLY across all four sources with per-source filtered/truncated fractions reported, never a silent drop. Grid analyses run on the INTERSECTION of contexts surviving all four sources' filters (intersection size reported; per-source full-set numbers as a robustness read) so cross-cell comparisons share one context set. Per-cell answer-length distributions and answer-summary target variance are REQUIRED outputs: answer length varies systematically across sources (base truncation-prone, instruct stages longer), pooled answer summaries change variance structure with length, and the diagonal R² curve is partially a mechanical answer-statistics effect unless reported alongside. All rollout text persists to the HF data repo per upload policy.
 - **Template decision for teacher-forced capture (planner decision, pilot first):** option (i) one canonical serialization for all four checkpoints (uniform conditioning; base slightly off-distribution) vs (ii) per-checkpoint native format (on-distribution; conditioning text differs across m, confounding the m axis). Recommendation: (i) for the primary grid, (ii) as a robustness read on a subset.
 
 ### Activation capture
@@ -86,7 +86,7 @@ For each (activation checkpoint m, answer source s): teacher-forced forward over
 ### Fits & metrics
 - Ridge: reuse `ridge_fit_predict_fast` / `ridge_fit_predict_fast_layer_batched` (`src/explore_persona_space/experiments/issue_779/fit_h.py`), λ selected inside train folds; batched across layers × cells (never a serial per-cell dense-solve loop).
 - MLP: `src/explore_persona_space/analysis/vectorized_mlp_skill.py`, on the ridge-selected layer(s) only (not all 33 × 16 cells); hyperparameters inherited from the #722 protocol with Source: cites.
-- Folds: GROUP-level — leave-cluster-out over the topic clusters (doubles as the per-context analysis) — n_train ≈ 9k+ > d = 4096 per fold, well-posed; n_train vs d stated per fit per the estimator-validity duty.
+- Folds: GROUP-level — context arm: leave-cluster-out over the topic clusters (doubles as the per-context analysis), n_train ≈ 9k+ > d = 4096 per fold, well-posed; prefix arm: the crossed two-factor group folds above (n_train ≈ 8k > d = 4096). n_train vs d stated per fit per the estimator-validity duty — the well-posedness claim is per-arm, never blanket.
 - Every fitted map reports: pooled OOF R², identity+learned-bias baseline, kNN retrieval (euclidean + cosine, chance stated). Transfer cells additionally report the identity baseline on the target checkpoint's pairs.
 - Any max/top-k headline over a free axis (best layer, most-moved cluster) rides a selection-symmetric null (selection re-run per draw).
 
@@ -94,15 +94,15 @@ For each (activation checkpoint m, answer source s): teacher-forced forward over
 1. **R² evolution:** diagonal Q(m,m) vs stage, ridge vs MLP (the MLP−ridge gap = nonlinearity demand per stage), per arm; full layer curves behind the headline.
 2. **Text-vs-representation grid:** 4×4 heatmap (m × s) per arm.
 3. **Context classes:** per-cluster ΔQ_c per adjacent stage transition, labeled scatter (stage i vs i+1) + top-moved clusters with example indices (by file+index, not inlined text).
-4. **Transfer matrix:** 4×4 direct + Procrustes-aligned transfer R²/retrieval, with the u/w cross-checkpoint CKA descriptives; context-side (which clusters break) and answer-side (residual principal directions, projections onto Δ answer-mean/style directions) characterization of transfer failures.
+4. **Transfer matrix:** 4×4 direct + Procrustes-aligned + fixed-answer-text transfer R²/retrieval, with the u/w cross-checkpoint CKA descriptives; context-side (which clusters break) and answer-side (residual principal directions, projections onto Δ answer-mean/style directions) characterization of transfer failures.
 5. **Operator change:** ΔW spectra + effective rank, principal-angle subspace overlap, direction-aware vs spectrum-only operator cosine vs matched nulls (issue1345 battery).
 6. **(Stretch)** SAE/crosscoder feature readout of the changed subspaces — SAE availability for OLMo-2 to be verified at plan time; if absent, either skip (state it) or route via the Tülu/Llama chain follow-up where public SAEs exist. Crosscoder-based model diffing (the Anthropic crosscoders line) is the natural instrument here but training one is out of round-1 scope.
 
 ### Compute & storage sketch (planner refines with a measured 1-cell pilot)
-- Generation: 4 checkpoints × 10k × ≤1024 tok, vLLM ≈ 2-4 H100-h.
-- Capture: 4 models × 50k teacher-forced forwards (10k ctx + 4×10k answers), batched ≈ 6-10 H100-h.
-- Fits: ridge layer-batched + MLP on selected layers ≈ 2-5 GPU-h.
-- **Total ≈ 15-25 GPU-h**, single 1×H100-class pod (or fellows/GCP auto lane); storage ~27-54 GB on-pod → HF data repo.
+- Generation: 4 checkpoints × (10k context-arm + ~10k prefix-arm cells) × ≤1024 tok, vLLM ≈ 4-8 H100-h.
+- Capture: 4 models × ~100k teacher-forced forwards (both arms: ctx/prefix side + 4-source answer side), batched ≈ 12-20 H100-h.
+- Fits: ridge layer-batched + MLP on selected layers, both arms ≈ 3-6 GPU-h.
+- **Total ≈ 20-35 GPU-h**, single 1×H100-class pod (or fellows/GCP auto lane); storage ≈ 54 GB per arm at all-33-layers fp16 (~108 GB both arms) → every-2nd-layer ≈ 54 GB, pilot-selected layer subset recommended; on-pod → HF data repo, never the shared VM.
 
 ### Risks / open decisions for the planner
 - Base-model on-policy text degeneracy; symmetric filter policy + per-source yield report.
