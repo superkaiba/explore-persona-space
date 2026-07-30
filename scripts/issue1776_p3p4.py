@@ -86,6 +86,30 @@ STAGE_FILES = (
 )
 RB_PREFIX = "issue779_monitoring/r_b"
 
+# Self-describing population classes (round-14 review minor + crash-fix r15).
+# MEASURED population semantics (2026-07-30 sweep over the staged corpora):
+# BOTH corpora are BARE single-turn real-user prompts under the identical chat
+# render (jpairs min prompt 2 chars; no persona/system segment anywhere) — the
+# classes differ in PROVENANCE/ROLE, not prompt structure: lmsys rows are the
+# phase-0.4 J-fit pool (in-sample for J_avg), wildchat rows the held-out fresh
+# captures. Consequently every context's PREFIX arm covers ONLY the
+# chat-template preamble (incl. the Qwen default system prompt) — identical
+# boilerplate across contexts, so the prefix arm carries no per-context
+# persona variation in this population.
+CONTEXT_CLASSES = {"lmsys": "lmsys_jfit_bare_user", "wildchat": "wildchat_heldout_bare_user"}
+POPULATION_CAVEAT = (
+    "Both context classes are BARE single-turn real-user prompts rendered under the "
+    "identical chat template (no persona/system segment): the prefix arm covers only the "
+    "template preamble + Qwen default system prompt (shared boilerplate), and the class "
+    "split is provenance/role — lmsys = phase-0.4 J-fit pool (in-sample for J_avg), "
+    "wildchat = held-out fresh captures."
+)
+
+
+def context_class_of(source) -> str:
+    """Population class for a pcj row ('source' corpus tag -> class label)."""
+    return CONTEXT_CLASSES.get(str(source), "unspecified")
+
 
 def _slug(pair_id: str) -> str:
     """Filesystem-safe per-context filename stem (uniqueness asserted by caller)."""
@@ -326,6 +350,11 @@ def cmd_build(args) -> int:
             err2, args.n_sketch // 2, args.n_full // 2, args.strata, rng
         )
         report_strata[corpus] = {
+            # context_class lives in the REPORT (and downstream payloads), NOT
+            # in pcj_pairs.jsonl rows: the pairs file must stay byte-identical
+            # across deterministic rebuilds so pairs_sha survives the p3_pcj
+            # resume-manifest check (crash-fix r15 resume contract).
+            "context_class": context_class_of(corpus),
             "n_pool": int(err2.shape[0]),
             "err2_quantile_edges": edges,
             "picked_per_stratum": {
@@ -383,6 +412,7 @@ def cmd_build(args) -> int:
             "n_strata": args.strata,
             "seed": args.seed,
             "strata": report_strata,
+            "population_caveat": POPULATION_CAVEAT,
             "pairs_sha": _sha256_file(pairs_path),
             "ladder_alphas": ladder["alphas"],
             "repro": C76.repro_meta(),
@@ -413,7 +443,10 @@ def cmd_pilot(args) -> int:
     )
     rend = None
     for row in rows:
-        rend = J76.render_pair(tok, row["prompt"], row["response"])
+        # suffix anchor (crash-fix r15): the bare real-user population's short
+        # queries can substring-match inside the template preamble; see
+        # J76._suffix_q_span.
+        rend = J76.render_pair(tok, row["prompt"], row["response"], anchor="suffix")
         if rend is not None:
             break
     assert rend is not None, "no renderable pilot row"
@@ -499,6 +532,35 @@ def _check_run_manifest(out_dir: Path, manifest: dict) -> None:
     C76.atomic_write_json(path, manifest)
 
 
+def _unit_spans_stale(out_path: Path, tok, row: dict, j: int, n: int) -> bool:
+    """True when a RETAINED per-context unit carries mis-anchored legacy spans.
+
+    Resume-invalidation for crash-fix r15: units persisted BEFORE the suffix
+    anchor landed were rendered under the legacy find-from-0 locator, which is
+    span-IDENTICAL to the suffix anchor except on rows whose query text
+    substring-matches inside the template preamble (the silent garbage-span
+    class; crash rows never persisted a unit). Only that rare class pays the
+    payload read (mmap — tensor storages never materialize); an unreadable
+    payload fails toward recompute (idempotent unit).
+    """
+    if J76.legacy_find_anchor_agrees(tok, row["prompt"]):
+        return False
+    try:
+        prior = torch.load(out_path, map_location="cpu", weights_only=True, mmap=True)
+        anchor = prior.get("span_anchor")
+    except Exception as e:  # unreadable/truncated unit -> recompute, loudly
+        print(f"[pcj] unit {j + 1}/{n} {_slug(row['pair_id'])} unreadable ({e!r})", flush=True)
+        anchor = None
+    if anchor == "suffix":
+        return False
+    print(
+        f"[pcj] unit {j + 1}/{n} {_slug(row['pair_id'])} STALE-SPANS "
+        "(legacy find-anchor mis-anchored this row) -> recompute",
+        flush=True,
+    )
+    return True
+
+
 def cmd_run(args) -> int:
     """Per-context backward sweep for one shard; per-context persist + resume."""
     rows = J76.load_pairs(args.pairs)
@@ -530,7 +592,7 @@ def cmd_run(args) -> int:
     for j, row in enumerate(shard_rows):
         slug = _slug(row["pair_id"])
         out_path = pcj_dir / f"{slug}.pt"
-        if out_path.exists():
+        if out_path.exists() and not _unit_spans_stale(out_path, tok, row, j, len(shard_rows)):
             print(f"[pcj] unit {j + 1}/{len(shard_rows)} {slug} SKIP (done)", flush=True)
             continue
         full = bool(row.get("full_rank", False))
@@ -540,7 +602,11 @@ def cmd_run(args) -> int:
             seed_mat = eye
         else:
             seed_mat = sketch_seeds
-        rend = J76.render_pair(tok, row["prompt"], row["response"])
+        # suffix anchor (crash-fix r15): find-from-0 mis-anchors short bare
+        # real-user queries inside the template preamble (pod crash
+        # AssertionError (0, 1, 30) at compute_prompt_spans; plus a SILENT
+        # garbage-span class) — see J76._suffix_q_span.
+        rend = J76.render_pair(tok, row["prompt"], row["response"], anchor="suffix")
         if rend is None:
             seam_skips.append(str(row["pair_id"]))
             print(f"[pcj] unit {j + 1}/{len(shard_rows)} {slug} SEAM-SKIP", flush=True)
@@ -557,6 +623,11 @@ def cmd_run(args) -> int:
         payload = {
             "pair_id": row["pair_id"],
             "source": row.get("source", "unspecified"),
+            "context_class": context_class_of(row.get("source", "unspecified")),
+            "span_anchor": rend["anchor"],
+            "prompt_len": rend["prompt_len"],
+            "prefix_len": rend["prefix_len"],
+            "context_len": rend["context_len"],
             "stratum": int(row.get("stratum", 0)),
             "seed_mode": "full" if full else "sketch",
             "seeds_sha": "std_basis" if full else seeds_sha,
@@ -703,9 +774,20 @@ def cmd_analyze(args) -> int:
             r_by_id[x["pair_id"]] = rows
     r_avg = seeds @ javg  # (S, H_in) — the production averaged J, sketch-restricted
 
+    # Population classes: derive from `source` for units persisted BEFORE the
+    # class field landed (retained pod units, crash-fix r15 resume contract).
+    cls_arr = np.array(
+        [x.get("context_class") or context_class_of(x.get("source", "unspecified")) for x in ctxs]
+    )
     result: dict = {
         "n_contexts": len(ctxs),
         "n_full_rank": len(full_by_id),
+        "population": {
+            "context_classes": {
+                str(cl): int((cls_arr == cl).sum()) for cl in sorted(set(cls_arr.tolist()))
+            },
+            "caveat": POPULATION_CAVEAT,
+        },
         "per_context": [],
         "arms": {},
     }
@@ -742,6 +824,10 @@ def cmd_analyze(args) -> int:
             "cos_to_J_avg_q10_q90": [float(np.quantile(cos_avg, q)) for q in (0.1, 0.9)],
             "pairwise_cos_median": float(np.median(off)),
             "pairwise_cos_q10_q90": [float(np.quantile(off, q)) for q in (0.1, 0.9)],
+            "cos_to_J_avg_median_by_class": {
+                str(cl): float(np.median(cos_avg[cls_arr == cl]))
+                for cl in sorted(set(cls_arr.tolist()))
+            },
         }
         if a == "last":
             cos_avg_last = cos_avg
@@ -770,6 +856,8 @@ def cmd_analyze(args) -> int:
             {
                 "pair_id": x["pair_id"],
                 "source": x["source"],
+                "context_class": str(cls_arr[i]),
+                "span_anchor": x.get("span_anchor", "find-legacy"),
                 "stratum": x["stratum"],
                 "seed_mode": x["seed_mode"],
                 "norm_last": float(r_by_id[x["pair_id"]].norm()),
