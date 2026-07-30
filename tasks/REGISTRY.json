@@ -6284,8 +6284,8 @@
     "1811": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1811",
-      "status": "reviewing",
+      "path": "tasks/completed/1811",
+      "status": "completed",
       "title": "daily-fix: implementer memory \u2014 self-reports need evidence"
     },
     "1812": {
