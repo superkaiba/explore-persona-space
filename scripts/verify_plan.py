@@ -189,7 +189,8 @@ labeled-line forms):
     N/A prefix; hyphen / en-dash / em-dash variants tolerated; the
     ``N/A — no sentinel dependence`` form is also accepted via the shared
     helper. A genuinely sentinel-signaling plan instead pins a
-    /workspace-contract lane: ``backend: gcp`` / ``backend: runpod``)
+    drained lane: ``backend: gcp`` / ``backend: runpod`` /
+    ``backend: fellows`` — the fellows drain landed at #1898)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -7415,9 +7416,10 @@ _C43_SENTINEL_WORD_RE = re.compile(r"(?i)\bsentinel")
 _C43_WS_LOGS_RE = re.compile(r"/workspace/logs/issue-")
 
 # Satisfier (raw scan too — a dispatch command lives in a fenced block): a
-# /workspace-contract lane pin, `backend: gcp|runpod` (frontmatter / prose
-# line) or a `--backend gcp|runpod` dispatch flag.
-_C43_LANE_PIN_RE = re.compile(r"(?i)(?:\bbackend:\s*|--backend[=\s]+)(?:gcp|runpod)\b")
+# DRAINED-lane pin, `backend: gcp|runpod|fellows` (frontmatter / prose
+# line) or a `--backend gcp|runpod|fellows` dispatch flag. fellows joined
+# the drained set at #1898 (slurm_monitor.drain_cluster_sentinels).
+_C43_LANE_PIN_RE = re.compile(r"(?i)(?:\bbackend:\s*|--backend[=\s]+)(?:gcp|runpod|fellows)\b")
 
 # The rule's own escape phrase, standalone at line start (leading
 # list/blockquote/bold markers tolerated via the `_standalone_na_declared`
@@ -7451,16 +7453,19 @@ def check_sentinel_lane(plan: str, kind: str) -> CheckResult:
     """WARN-only, conditional, experiment-only: a plan that declares
     ``/workspace/...`` sentinel paths (gate sentinels, ``epm:results``
     payloads — the pod-side signaling contract) while leaving the backend
-    on the unrestricted auto lane must either pin a /workspace-contract
-    lane (``backend: gcp`` / ``backend: runpod``, or a ``--backend
-    gcp|runpod`` dispatch flag) or declare the rule's own escape ``no
-    sentinel dependence — auto-safe``. Mechanizes
+    on the unrestricted auto lane must either pin a DRAINED lane
+    (``backend: gcp`` / ``backend: runpod`` / ``backend: fellows``, or a
+    ``--backend gcp|runpod|fellows`` dispatch flag) or declare the rule's
+    own escape ``no sentinel dependence — auto-safe``. Mechanizes
     ``plan-compute-sizing.md`` § "Sentinel-signaling workloads need a
-    /workspace-contract lane": on auto, a GCP capacity miss falls through
-    to SLURM, where DRAC/Mila compute nodes have no /workspace — the
-    dispatcher dies at ``mkdir -p /workspace/logs`` and burns the
-    submission (#608) — and the fellows rung HAS /workspace, so sentinels
-    get written but nothing drains them (silent marker loss). Founding
+    /workspace-contract lane": on auto, a fellows + GCP capacity miss can
+    fall through to the DRAC/Mila SLURM lanes, where compute nodes have no
+    /workspace — the dispatcher dies FAIL-LOUD at ``mkdir -p
+    /workspace/logs`` and burns the submission (#608). fellows is a
+    DRAINED lane as of #1898 (``slurm_monitor.drain_cluster_sentinels``
+    reads its cluster-shared ``/workspace/logs`` each poll tick, the same
+    contract as GCP/RunPod), so every silent-loss path is closed and the
+    residual auto-lane hazard is the fail-loud DRAC/Mila burn. Founding
     instance: #1775 plan v3 declared ``/workspace/logs/issue-1775-p*.done``
     sentinels in a fenced ``phase_outputs`` block while §9 said "no
     backend pin → auto lane"; only a Methodology critic caught it
@@ -7488,22 +7493,28 @@ def check_sentinel_lane(plan: str, kind: str) -> CheckResult:
     if not trigger_lines:
         return _skip(cid, name, "no /workspace sentinel paths detected")
     if _C43_LANE_PIN_RE.search(plan):
-        return _pass(cid, name, "/workspace-contract lane pinned (backend:/--backend gcp|runpod)")
+        return _pass(
+            cid,
+            name,
+            "/workspace-contract (drained) lane pinned (backend:/--backend gcp|runpod|fellows)",
+        )
     if _c43_escape_declared(plan):
         return _pass(cid, name, "explicit escape declared (no sentinel dependence — auto-safe)")
     shown = "; ".join(ln.strip()[:70] for ln in trigger_lines[:3])
     return _warn(
         cid,
         name,
-        f"plan declares /workspace sentinel paths ({shown!r}) with no /workspace-contract "
-        "lane pinned — on the auto lane a GCP capacity miss falls through to SLURM, where "
-        "DRAC/Mila compute nodes have no /workspace (the dispatcher dies at `mkdir -p "
-        "/workspace/logs` and burns the submission, #608) and the fellows rung HAS "
-        "/workspace but nothing drains the sentinels (silent marker loss). Pin `backend: "
-        "gcp` or `backend: runpod` (or carry `--backend gcp|runpod` in the dispatch "
-        "command), or declare `no sentinel dependence — auto-safe` on its own line, "
-        "unwrapped (no backticks/quotes), if nothing in the run posts through sentinels "
-        "(plan-compute-sizing.md § Sentinel-signaling workloads)",
+        f"plan declares /workspace sentinel paths ({shown!r}) with no drained lane "
+        "pinned — on the auto lane a fellows + GCP capacity miss can fall through to the "
+        "DRAC/Mila SLURM lanes, where compute nodes have no /workspace: the dispatcher "
+        "dies fail-loud at `mkdir -p /workspace/logs` and burns the submission (#608). "
+        "fellows is a DRAINED lane as of #1898 (the VM-side poller drains its "
+        "/workspace/logs sentinels each tick, same contract as GCP/RunPod). Pin "
+        "`backend: gcp`, `backend: runpod`, or `backend: fellows` (or carry `--backend "
+        "gcp|runpod|fellows` in the dispatch command), or declare `no sentinel "
+        "dependence — auto-safe` on its own line, unwrapped (no backticks/quotes), if "
+        "nothing in the run posts through sentinels (plan-compute-sizing.md "
+        "§ Sentinel-signaling workloads)",
     )
 
 
