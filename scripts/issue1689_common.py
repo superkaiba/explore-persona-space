@@ -212,6 +212,26 @@ N_BOOTSTRAP_DRAWS = 1000
 N_REPARAM_NULL_DRAWS = 200
 RUNG_REACHED_THRESHOLD = 0.9  # R2_transfer >= 0.9 * R2_within(T)
 
+# --- Well-posed reduced-basis round (`wellposed-shared-readout`, plan v10) ---
+# k_unit = min(PCA_K_CAP, floor(min-fold n_train / 2)) so n_train >= 2k on
+# EVERY fold (plan v10 s4 item 1; changing the formula/cap is must-ask s13).
+PCA_K_CAP = 1024
+K_FLOOR_LIMITED = 8  # report-only diagnostic label (plan v10 s6); no gating
+# k-band edges aligned to the parent truncation grid (plan v10 s6/ s11).
+K_BAND_EDGES = (32, 128, 512)
+
+
+def k_band(k: int) -> str:
+    """Registered k-band label for stratified reporting (plan v10 s6)."""
+    if k < K_BAND_EDGES[0]:
+        return "k<32"
+    if k < K_BAND_EDGES[1]:
+        return "32-127"
+    if k < K_BAND_EDGES[2]:
+        return "128-511"
+    return ">=512"
+
+
 # --- Judge -----------------------------------------------------------------
 JUDGE_MODEL = "claude-sonnet-4-5-20250929"
 JUDGE_N_DRAWS = 3

@@ -1,0 +1,130 @@
+{
+ "coverage": {
+  "dvf_within": {
+   "n_ambient": 504,
+   "n_reduced": 504,
+   "n_matched": 504,
+   "ambient_only": [],
+   "reduced_only": []
+  },
+  "xm_dvf": {
+   "n_ambient": 84,
+   "n_reduced": 84,
+   "n_matched": 84,
+   "ambient_only": [],
+   "reduced_only": []
+  },
+  "cms_within": {
+   "n_ambient": 504,
+   "n_reduced": 504,
+   "n_matched": 504,
+   "ambient_only": [],
+   "reduced_only": []
+  },
+  "cms_xm": {
+   "n_ambient": 84,
+   "n_reduced": 84,
+   "n_matched": 84,
+   "ambient_only": [],
+   "reduced_only": []
+  }
+ },
+ "rung1_calibration": {
+  "ambient": {
+   "pooled": {
+    "n_class0_excluded": 216,
+    "n_shared_supported": 13,
+    "rate": 0.06018518518518518
+   },
+   "32-127": {
+    "n_class0_excluded": 89,
+    "n_shared_supported": 1,
+    "rate": 0.011235955056179775
+   },
+   "k<32": {
+    "n_class0_excluded": 69,
+    "n_shared_supported": 4,
+    "rate": 0.057971014492753624
+   },
+   "128-511": {
+    "n_class0_excluded": 26,
+    "n_shared_supported": 0,
+    "rate": 0.0
+   },
+   ">=512": {
+    "n_class0_excluded": 32,
+    "n_shared_supported": 8,
+    "rate": 0.25
+   }
+  },
+  "reduced": {
+   "pooled": {
+    "n_class0_excluded": 212,
+    "n_shared_supported": 34,
+    "rate": 0.16037735849056603
+   },
+   "32-127": {
+    "n_class0_excluded": 89,
+    "n_shared_supported": 1,
+    "rate": 0.011235955056179775
+   },
+   "k<32": {
+    "n_class0_excluded": 65,
+    "n_shared_supported": 1,
+    "rate": 0.015384615384615385
+   },
+   "128-511": {
+    "n_class0_excluded": 26,
+    "n_shared_supported": 0,
+    "rate": 0.0
+   },
+   ">=512": {
+    "n_class0_excluded": 32,
+    "n_shared_supported": 32,
+    "rate": 1.0
+   }
+  }
+ },
+ "verdict_flip_matrix": {
+  "transfer_map_insufficient->transfer_map_insufficient": 381,
+  "transfer_map_insufficient->readout_changed": 37,
+  "readout_changed->readout_changed": 40,
+  "readout_changed->transfer_map_insufficient": 9,
+  "shared_readout_supported->free_map_uninformative": 4,
+  "readout_changed->shared_readout_supported": 53,
+  "shared_readout_supported->shared_readout_supported": 21,
+  "free_map_uninformative->free_map_uninformative": 40,
+  "transfer_map_insufficient->shared_readout_supported": 1,
+  "transfer_map_insufficient->free_map_uninformative": 2
+ },
+ "concordance": {
+  "ambient|context": {
+   "n": 232,
+   "spearman_rung_g1": -0.66906448563321
+  },
+  "reduced|context": {
+   "n": 230,
+   "spearman_rung_g1": -0.3046383559476127
+  },
+  "ambient|prefix": {
+   "n": 232,
+   "spearman_rung_g1": -0.7155639909451285
+  },
+  "reduced|prefix": {
+   "n": 230,
+   "spearman_rung_g1": -0.49324148809534935
+  }
+ },
+ "eff_rank": {
+  "cms_within": {
+   "n": 504,
+   "median_ambient_eff_rank_frac": 0.9778543665668419,
+   "median_reduced_eff_rank_frac": 0.7565922843942622
+  },
+  "cms_xm": {
+   "n": 84,
+   "median_ambient_eff_rank_frac": 0.984955110188352,
+   "median_reduced_eff_rank_frac": 0.7501295867054804
+  }
+ }
+}
