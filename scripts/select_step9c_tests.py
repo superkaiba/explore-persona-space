@@ -394,6 +394,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1625) — SKILL.md 9a-ter + CLAUDE.md inline measurement-design +
     # figure-sanity duties pin (both-arms mapping statement, rendered-PNG check)
     "tests/test_issue_skill_inline_measurement_duties.py",
+    # NEW (#1812) — SKILL.md 9a-ter + CLAUDE.md instrument-supersession +
+    # scope-extension addenda duties pin
+    "tests/test_issue_skill_instrument_supersession_addenda_pin.py",
     "tests/test_issue_skill_marker_contract.py",
     # NEW (#1268) — SKILL.md Step-10d repin/guard hardening pin
     "tests/test_issue_skill_merge_resnapshot_pin.py",
