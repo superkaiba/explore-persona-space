@@ -113,21 +113,34 @@ def _eigh_robust(a: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
 # ── assembly: stream crossed chunks → per-(array, layer) memmaps + sae sidecars ────
 
 
-def _crossed_chunk_names(args) -> list[str]:
+def _crossed_chunk_names(args, n_q: int) -> list[str]:
+    """Chunk basenames for the REALIZED-n_q family ONLY (r2 blocker-1): a G1
+    query-ladder descope leaves stale foreign-n_q chunks (and the pilot's
+    ``pilotpartial`` files) under capture/ — scanning them would assemble a
+    mixed-grid store (the ``qid.max() < n_q`` assert's crash) or double-count
+    the pilot's partial rows. Names carry the family tag ``_qQQ_chunk``."""
+    tag = f"_q{int(n_q):02d}_chunk"
     if args.local_capture_dir:
-        names = sorted(p.name for p in Path(args.local_capture_dir).glob("shard*_chunk*.pt"))
+        pool = sorted(p.name for p in Path(args.local_capture_dir).glob("shard*.pt"))
     else:
-        names = sorted(
+        pool = sorted(
             n
             for n in N50._remote_index(f"{args.hf_prefix}/{GG.CAPTURE_SUBDIR}")
             if n.endswith(".pt")
         )
+    names = [n for n in pool if tag in n]
     if not names:
-        raise SystemExit("no crossed capture chunks found — run the S1 capture first")
+        fams = sorted({p.split("_")[1] for p in pool if "_q" in p})
+        raise SystemExit(
+            f"no crossed capture chunks for realized n_q={n_q} (tag {tag!r}); "
+            f"{len(pool)} .pt files present (n_q families: {fams or 'none'}) — "
+            "run the S1 capture at this n_q first (the G1 ladder re-runs the "
+            "pilot + fleet with --queries-per-prefix; stale families are inert)"
+        )
     return names
 
 
-def assemble_crossed(args, layers: list[int]):
+def assemble_crossed(args, layers: list[int], n_q: int):
     """Stream crossed chunks (HF or local) into append-only fp32 binaries per
     (array, layer) + int64 ci/prefix-pos/query binaries + per-chunk SAE sidecars
     (the sae-arm chunk schema fields only — text never re-persisted), with a
@@ -139,7 +152,7 @@ def assemble_crossed(args, layers: list[int]):
     mm_dir.mkdir(parents=True, exist_ok=True)
     side_dir = mm_dir / "sae_side"
     side_dir.mkdir(exist_ok=True)
-    names = _crossed_chunk_names(args)
+    names = _crossed_chunk_names(args, n_q)
     fp = hashlib.sha256(
         ("\n".join(names) + f"|{args.hf_prefix}|{sorted(layers)}|crossed-v1").encode()
     ).hexdigest()
@@ -193,6 +206,11 @@ def assemble_crossed(args, layers: list[int]):
         "ans_mean",
         "ans_max",
         "ans_frac",
+        "nm_feat_idx",  # unmasked pooling twin (plan §6 mask-robustness; r2 blocker-2);
+        "nm_row_ptr",  # absent from pre-r2 chunks — the save below is key-tolerant
+        "nm_mean",
+        "nm_max",
+        "nm_frac",
         "px_feat_idx",
         "px_row_ptr",
         "px_feat_val",
@@ -239,7 +257,7 @@ def assemble_crossed(args, layers: list[int]):
             ci_f.write(np.asarray(bundle["ci"], dtype=np.int64).tobytes())
             if bundle.get("sae_enabled"):
                 sae_any = True
-                torch.save({key: bundle[key] for key in sae_keys}, side_dir / name)
+                torch.save({key: bundle[key] for key in sae_keys if key in bundle}, side_dir / name)
             n_rows += n
             cursor.update(
                 {
@@ -442,8 +460,9 @@ def _answer_pca_dirs(Y, tr: np.ndarray, k: int, dev, block: int) -> np.ndarray:
 # ── run: the six reads ─────────────────────────────────────────────────────────────
 
 
-def _regime_fp(args, split_doc) -> str:
-    """Resume regime fingerprint: every output-affecting key (#722 r3 law)."""
+def _regime_fp(args, split_doc, n_q: int) -> str:
+    """Resume regime fingerprint: every output-affecting key (#722 r3 law).
+    Recorded-only today; the realized n_q (G1 ladder) is output-affecting."""
     payload = json.dumps(
         {
             "split_shas": {k: v["sha256"] for k, v in split_doc["sets"].items()},
@@ -452,10 +471,26 @@ def _regime_fp(args, split_doc) -> str:
             "n_boot": args.n_boot,
             "pca_dirs": args.pca_dirs,
             "inner_cv_folds": args.inner_cv_folds,
+            "queries_per_prefix_realized": int(n_q),
         },
         sort_keys=True,
     )
     return hashlib.sha256(payload.encode()).hexdigest()[:16]
+
+
+def _ladder_split_view(split: dict, n_q_grid: int, n_q: int) -> dict:
+    """G1-ladder-aware coverage denominators (r2 blocker-1(b)): the split doc's
+    intended counts were built on the FULL n_q_grid grid, so a clean descope
+    capture (only q < n_q realized per prefix) would read n_q/n_q_grid coverage
+    and trip the floor. Intersect each set's intended rows with q < realized
+    n_q; identity when the ladder never fired. Row ci = prefix_pos*n_q_grid+q."""
+    if int(n_q) == int(n_q_grid):
+        return split
+    sets = {
+        name: {**s, "n": int(sum(1 for c in s["ci"] if int(c) % n_q_grid < n_q))}
+        for name, s in split["sets"].items()
+    }
+    return {**split, "sets": sets}
 
 
 def _load_manifest_bundle(args):
@@ -527,10 +562,12 @@ def run_reads(args) -> int:  # noqa: C901 — the six-read pipeline is one linea
         assert got == s["sha256"], f"prefix set {name!r} sha mismatch"
 
     C.phase("crossed-assemble")
-    mm, ci, ameta = assemble_crossed(args, layers)
+    mm, ci, ameta = assemble_crossed(args, layers, n_q)
     h_dim = int(ameta["h_dim"])
     sets = MTF.split_positions(split, ci)
-    bad = MTF._coverage_shortfalls(sets, split, args.coverage_floor)
+    bad = MTF._coverage_shortfalls(
+        sets, _ladder_split_view(split, n_q_grid, n_q), args.coverage_floor
+    )
     if bad:
         raise SystemExit(f"capture coverage below floor: {bad} (missing fleet shard?)")
     tr, val, ho = sets["train"], sets["val"], sets["holdout"]
@@ -563,7 +600,7 @@ def run_reads(args) -> int:  # noqa: C901 — the six-read pipeline is one linea
     bq = _load_bank_bare(args, layers, n_q, h_dim)
     qid = (ci % n_q_grid).astype(np.int64)
 
-    regime = _regime_fp(args, split)
+    regime = _regime_fp(args, split, n_q)
     n_cells_fence = (len(ARMS) + 1) * len(layers)  # +1 = the stitch cell per layer
     first_wall: float | None = None
     fits_out: dict = {"cells": {}, "induced": {}, "stitch": {}, "regime_fp": regime}
@@ -902,13 +939,24 @@ def _operator_geometry_layer(arm_fits, mm, li, tr, tr_p, Xa, Ya, args, dev) -> d
             f["fac"]["ymu"],
             args.ridge_block,
         )
-        out["arms"][arm] = {
+        entry = {
             "selected_lambda": lam,
             "rank": rank,
             "k90_output": OPS._k90(s) if s.numel() else 0,
             "gamma_x_mean_norm_fraction": gx,
             "gamma_y_mean_norm_fraction": gy,
         }
+        if arm == "bare":
+            entry["gamma_x_note"] = (
+                "N/A: bare X = the <=n_q-row query bank tiled over rows (no per-prefix "
+                "x-variation; a train-row mean-norm fraction is degenerate)"
+            )
+        elif arm == "stitch":
+            entry["gamma_x_note"] = (
+                "N/A: stitch X concatenates prefix-end + bare-query spaces (2H); a single "
+                "mean-norm fraction is not comparable to the H-dim arms"
+            )
+        out["arms"][arm] = entry
     pairs = [
         ("context", "prefix"),
         ("context", "bare"),
@@ -1105,6 +1153,73 @@ def _phase_transfer(
     return out
 
 
+def _mask_robustness(side: list[Path]) -> dict:
+    """Plan §6 with/without-mask robustness twin (r2 blocker-2): compare the SAE
+    answer pooling WITH the #1482 token-inlier mask (the registered R6 inputs)
+    against the UNMASKED pooling of the SAME per-token features. Capture stores
+    the unmasked (``nm_*``) pooled trio ONLY where the mask bites (n_inl < n_ans
+    — ``encode`` is row-independent, so masked == unmasked EXACTLY on
+    outlier-free rows, reconstructed here as cos=1.0 rows). Per differing row:
+    cosine(masked, unmasked) per pooling; plus the all-tokens-outlier count
+    (masked family empty — the maximal mask effect, excluded from cosines)."""
+    per_pool: dict[str, list[float]] = {"mean": [], "max": [], "frac": []}
+    n_equal = n_diff = n_all_outlier = 0
+    missing_schema = 0
+    val_key = {"mean": "ans_mean", "max": "ans_max", "frac": "ans_frac"}
+    for p in side:
+        d = torch.load(p, map_location="cpu", weights_only=False)
+        if "nm_row_ptr" not in d:
+            missing_schema += 1
+            continue
+        n_ans = np.asarray(d["n_ans_tokens"], dtype=np.int64)
+        n_inl = np.asarray(d["n_inlier_tokens"], dtype=np.int64)
+        n_all_outlier += len(d.get("sae_skipped_ci", []))
+        n_equal += int(((n_inl == n_ans) & (n_ans > 0)).sum())
+        rp = np.asarray(d["row_ptr"], dtype=np.int64)
+        nrp = np.asarray(d["nm_row_ptr"], dtype=np.int64)
+        fi = np.asarray(d["feat_idx"], dtype=np.int64)
+        nfi = np.asarray(d["nm_feat_idx"], dtype=np.int64)
+        for j in np.nonzero((n_ans > 0) & (n_inl < n_ans))[0]:
+            n_diff += 1
+            mi = fi[rp[j] : rp[j + 1]]
+            ui = nfi[nrp[j] : nrp[j + 1]]
+            _common, ia, ib = np.intersect1d(mi, ui, return_indices=True)
+            for pool in ("mean", "max", "frac"):
+                mv = np.asarray(d[val_key[pool]][rp[j] : rp[j + 1]], dtype=np.float64)
+                uv = np.asarray(d[f"nm_{pool}"][nrp[j] : nrp[j + 1]], dtype=np.float64)
+                den = float(np.linalg.norm(mv) * np.linalg.norm(uv))
+                per_pool[pool].append(
+                    float((mv[ia] * uv[ib]).sum()) / den if den > 0 else float("nan")
+                )
+    if missing_schema and not (n_diff or n_equal):
+        return {"skipped": "capture chunks predate the mask-twin (nm_*) schema"}
+    out: dict = {
+        "n_rows_mask_equal": int(n_equal),
+        "n_rows_mask_differs": int(n_diff),
+        "n_rows_all_tokens_outlier": int(n_all_outlier),
+        "n_chunks_missing_nm_schema": int(missing_schema),
+        "note": (
+            "cosine(masked, unmasked pooled answer features) per pooling over the "
+            "mask-differing rows; mask-equal rows are cos=1.0 by construction "
+            "(row-independent encode); all-outlier rows have an empty masked family"
+        ),
+    }
+    for pool, vals in per_pool.items():
+        v = np.asarray([x for x in vals if np.isfinite(x)], dtype=np.float64)
+        out[pool] = (
+            {
+                "n": int(len(v)),
+                "cos_min": float(v.min()),
+                "cos_p05": float(np.quantile(v, 0.05)),
+                "cos_median": float(np.median(v)),
+                "cos_mean": float(v.mean()),
+            }
+            if len(v)
+            else {"n": 0}
+        )
+    return out
+
+
 def _phase_sae(
     args,
     mm_dir: Path,
@@ -1144,6 +1259,8 @@ def _phase_sae(
         C.write_json_atomic(out_eval / "sae_perfeature.json", doc)
         logger.warning("[R6] %s", doc["reason"])
         return
+    mask_rob = _mask_robustness(side)  # plan §6 nuisance-control twin (r2 blocker-2)
+    logger.info("[R6] mask_robustness: %s", {k: v for k, v in mask_rob.items() if k != "note"})
     first = torch.load(side[0], map_location="cpu", weights_only=False)
     dict_size = int(first["sae"]["dict_size"])
     train_ci = {int(ci[r]) for r in sets["train"]}
@@ -1361,6 +1478,7 @@ def _phase_sae(
         "n_dense_latent": int(dense_latent.sum()),
         "feature_maps": feature_maps,
         "rb_alignment": rb_block,
+        "mask_robustness": mask_rob,
         "judged_label_freeze": (
             "0 judge/API calls this round — evidence artifacts persisted for #1773"
         ),

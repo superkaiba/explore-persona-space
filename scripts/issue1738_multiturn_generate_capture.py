@@ -2055,6 +2055,31 @@ def _crossed_rows(prefix_rows: list[dict], bank: list[str], n_q_grid: int, n_q: 
     return out
 
 
+def _crossed_chunk_plan(
+    n_rows: int, shard_size: int, shard_index: int, n_q: int, is_pilot: bool
+) -> list[tuple[str, int, int]]:
+    """Deterministic chunk plan for one crossed shard: [(basename, start, end)].
+
+    r2 blocker-1 fix shape (a): the realized n_q is EMBEDDED in every chunk name
+    (``shardSS_qQQ_chunkCCCC``), so a G1 query-ladder re-run at a reduced n_q can
+    never name-collide with the stale family — the Hub resume skip and the reads
+    scanner both key on the (shard, n_q, chunk) triple. Sibling A: a PILOT's
+    trailing PARTIAL chunk (n_rows % shard_size != 0) is named ``pilotpartial``
+    instead of ``chunk`` — the pilot's rows are a strict PREFIX of the fleet
+    shard's rows (same prefix order, same n_q), so chunk k covers the identical
+    row slice [k*ss, (k+1)*ss) in both runs for every FULL chunk (fleet-resumable
+    by name), while the fleet's FULL chunk at the pilot's partial index gets a
+    fresh capture instead of a silent (ss - partial)-row hole. The reads scanner
+    consumes ``_qQQ_chunk`` names ONLY (pilotpartial rows are re-captured by the
+    fleet; their raw text still uploads — persist-by-default)."""
+    out = []
+    for ci_idx, s in enumerate(range(0, n_rows, shard_size)):
+        e = min(s + shard_size, n_rows)
+        kind = "pilotpartial" if (is_pilot and (e - s) < shard_size) else "chunk"
+        out.append((f"shard{shard_index:02d}_q{n_q:02d}_{kind}{ci_idx:04d}", s, e))
+    return out
+
+
 def _make_smoke_sae(act_dim: int, dict_size: int = 256, k: int = 4):
     """From-config tiny BatchTopK SAE over the tiny-model hidden dim (smoke only;
     the sae-arm smoke convention — real class, synthetic weights)."""
@@ -2116,7 +2141,14 @@ def _crossed_sae_verdict_from_hub(up: str) -> bool:
 def _sae_encode_row(sae, span_states, px_state, cx_state, fve_pool):
     """SAE fold-in for ONE captured row: encode + pool inlier answer tokens
     (mean/max/frac trio) and the stored px/cx states (sae-arm helpers verbatim).
-    Returns the per-row sparse pieces, or None when all tokens are outliers."""
+    Returns the per-row sparse pieces, or None when all tokens are outliers.
+
+    Plan §6 with/without-mask robustness twin (r2 blocker-2): per-token states
+    are a declared discard, so the UNMASKED pooled trio is computed HERE, on the
+    same already-materialized states. ``encode`` is row-independent (thresholded
+    ReLU per token), so masked == unmasked EXACTLY when no token is an outlier —
+    the ``nm`` twin is stored ONLY for rows where the mask bites (n_inl < n_ans);
+    the reads driver reconstructs equality for the rest (near-zero storage)."""
     import issue1482_sae as SAEMOD
 
     inl = SAEMOD.token_inlier_mask(span_states)
@@ -2127,8 +2159,8 @@ def _sae_encode_row(sae, span_states, px_state, cx_state, fve_pool):
         fve_pool["answer"].add(span_in)
         fve_pool["context"].add(px_state[None, :])
         fve_pool["context"].add(cx_state[None, :])
-    f = sae.encode(span_in.to(sae.device))
-    spd = SAEMOD.sparsify(SAEMOD.pool_answer_features(f))
+    f_all = sae.encode(span_states.to(sae.device))
+    spd = SAEMOD.sparsify(SAEMOD.pool_answer_features(f_all[inl.to(f_all.device)]))
     out = {
         "idx": spd["idx"],
         "mean": spd["mean"],
@@ -2136,6 +2168,11 @@ def _sae_encode_row(sae, span_states, px_state, cx_state, fve_pool):
         "frac": spd["frac"],
         "n_ans": int(span_states.shape[0]),
         "n_inl": int(span_in.shape[0]),
+        "nm": (
+            SAEMOD.sparsify(SAEMOD.pool_answer_features(f_all))
+            if int(span_in.shape[0]) < int(span_states.shape[0])
+            else None  # no outliers: unmasked == masked by construction
+        ),
     }
     for name, state in (("px", px_state), ("cx", cx_state)):
         v = sae.encode(state[None, :].to(sae.device))[0]
@@ -2148,8 +2185,8 @@ def _sae_encode_row(sae, span_states, px_state, cx_state, fve_pool):
 def _capture_crossed_rows(hf, tok, rows, responses, layers, sae, sae_layer_pos, fve_pool):
     """Per-row crossed capture: parent px/cx/v_x path + optional SAE fold-in on
     the answer-span states the SAME forward already materialized (plan §4.2).
-    Returns (kept_row_dicts, violations)."""
-    out, violations = [], []
+    Returns (kept_row_dicts, violations, empty_response_cis)."""
+    out, violations, empty_ci = [], [], []
     keep_tok = sae is not None
     for r, resp in zip(rows, responses, strict=True):
         cap, reason = _capture_context_and_prefix(hf, tok, r["messages"], layers)
@@ -2159,7 +2196,8 @@ def _capture_crossed_rows(hf, tok, rows, responses, layers, sae, sae_layer_pos, 
         av = COL.capture_answer_vector(
             hf, tok, r["messages"], resp, layers, {}, keep_per_token=keep_tok
         )
-        if av is None:  # empty response
+        if av is None:  # empty response — a grid hole; counted for the 0.5% budget read
+            empty_ci.append(int(r["i"]))
             continue
         row = {
             "ci": int(r["i"]),
@@ -2182,7 +2220,7 @@ def _capture_crossed_rows(hf, tok, rows, responses, layers, sae, sae_layer_pos, 
                 fve_pool,
             )
         out.append(row)
-    return out, violations
+    return out, violations, empty_ci
 
 
 def _stack_chunk_crossed(rows, layers, shard_index, chunk_idx, *, sae, sae_layer):
@@ -2201,6 +2239,8 @@ def _stack_chunk_crossed(rows, layers, shard_index, chunk_idx, *, sae, sae_layer
 
     feat_idx, row_ptr = [], [0]
     vals: dict[str, list] = {"mean": [], "max": [], "frac": []}
+    nm_idx, nm_ptr = [], [0]
+    nm_vals: dict[str, list] = {"mean": [], "max": [], "frac": []}
     pxi, pxv, pxp = [], [], [0]
     cxi, cxv, cxp = [], [], [0]
     n_ans, n_inl, sae_skipped = [], [], []
@@ -2210,6 +2250,7 @@ def _stack_chunk_crossed(rows, layers, shard_index, chunk_idx, *, sae, sae_layer
         if s is None:  # all answer tokens outliers — empty feature row, 1:1 kept
             sae_skipped.append(int(r["ci"]))
             row_ptr.append(row_ptr[-1])
+            nm_ptr.append(nm_ptr[-1])
             pxp.append(pxp[-1])
             cxp.append(cxp[-1])
             n_ans.append(0)
@@ -2219,6 +2260,16 @@ def _stack_chunk_crossed(rows, layers, shard_index, chunk_idx, *, sae, sae_layer
         row_ptr.append(row_ptr[-1] + len(s["idx"]))
         for p in ("mean", "max", "frac"):
             vals[p].append(s[p])
+        # unmasked twin (plan §6 mask-robustness): stored ONLY where the mask
+        # bit (n_inl < n_ans); empty row otherwise (== masked by construction)
+        nm = s.get("nm")
+        if nm is None:
+            nm_ptr.append(nm_ptr[-1])
+        else:
+            nm_idx.append(nm["idx"])
+            nm_ptr.append(nm_ptr[-1] + len(nm["idx"]))
+            for p in ("mean", "max", "frac"):
+                nm_vals[p].append(nm[p])
         pxi.append(s["px_idx"])
         pxv.append(s["px_val"])
         pxp.append(pxp[-1] + len(s["px_idx"]))
@@ -2234,6 +2285,11 @@ def _stack_chunk_crossed(rows, layers, shard_index, chunk_idx, *, sae, sae_layer
             "ans_mean": _cat(vals["mean"], np.float16),
             "ans_max": _cat(vals["max"], np.float16),
             "ans_frac": _cat(vals["frac"], np.float16),
+            "nm_feat_idx": _cat(nm_idx, np.int32),
+            "nm_row_ptr": np.asarray(nm_ptr, dtype=np.int64),
+            "nm_mean": _cat(nm_vals["mean"], np.float16),
+            "nm_max": _cat(nm_vals["max"], np.float16),
+            "nm_frac": _cat(nm_vals["frac"], np.float16),
             "px_feat_idx": _cat(pxi, np.int32),
             "px_row_ptr": np.asarray(pxp, dtype=np.int64),
             "px_feat_val": _cat(pxv, np.float16),
@@ -2379,8 +2435,25 @@ def run_crossed_capture(args, *, smoke_sae=None) -> int:
 
     scratch = args.out_dir / "crossed_shards"
     scratch.mkdir(parents=True, exist_ok=True)
-    done_pt = set(N50._remote_index(f"{up}/{CAPTURE_SUBDIR}")) if not args.no_upload else set()
-    done_raw = set(N50._remote_index(f"{up}/{RAW_SUBDIR}")) if not args.no_upload else set()
+    if args.no_upload:
+        # smoke seam: a fake done index exercises the resume-skip path in-process
+        smoke_done = set(getattr(args, "smoke_done_index", None) or [])
+        done_pt = {n for n in smoke_done if n.endswith(".pt")}
+        done_raw = {n for n in smoke_done if n.endswith(".json")}
+    else:
+        done_pt = set(N50._remote_index(f"{up}/{CAPTURE_SUBDIR}"))
+        done_raw = set(N50._remote_index(f"{up}/{RAW_SUBDIR}"))
+    qtag = f"_q{n_q:02d}_"
+    foreign = sorted(n for n in done_pt if n.endswith(".pt") and qtag not in n)
+    if foreign:
+        logger.warning(
+            "[crossed shard %d] %d foreign-n_q chunk(s) already under the prefix "
+            "(G1 ladder residue, e.g. %s) — the resume skip ignores them and the "
+            "reads scanner keys on the realized n_q from the pilot meta",
+            args.shard_index,
+            len(foreign),
+            foreign[0],
+        )
 
     C.phase("crossed_load_model")
     tok, hf = _load_models(args)
@@ -2412,13 +2485,15 @@ def run_crossed_capture(args, *, smoke_sae=None) -> int:
 
     C.phase("crossed_capture")
     rows_all = _crossed_rows(shard_prefixes, bank, n_q_grid, n_q)
-    n_sub = (len(rows_all) + args.shard_size - 1) // args.shard_size
+    plan = _crossed_chunk_plan(len(rows_all), args.shard_size, args.shard_index, n_q, is_pilot)
+    n_sub = len(plan)
     kept_total = 0
     t_start = time.time()
     pending_pt: list[str] = []
     pending_raw: list[str] = []
     violations_all: list[dict] = []
     skipped_all: list[dict] = []
+    empty_all: list[int] = []
     pilot_px: list[torch.Tensor] = []
 
     def _flush_pending() -> None:
@@ -2433,10 +2508,10 @@ def run_crossed_capture(args, *, smoke_sae=None) -> int:
 
     prev_sigterm = signal.signal(signal.SIGTERM, _on_sigterm)
     try:
-        for ci_idx, s in enumerate(range(0, len(rows_all), args.shard_size)):
-            name = f"shard{args.shard_index:02d}_chunk{ci_idx:04d}.pt"
-            raw_name = f"shard{args.shard_index:02d}_chunk{ci_idx:04d}.json"
-            chunk = rows_all[s : s + args.shard_size]
+        for ci_idx, (base, s, e) in enumerate(plan):
+            name = f"{base}.pt"
+            raw_name = f"{base}.json"
+            chunk = rows_all[s:e]
             kept_rows, skipped = _filter_rows_overlength(
                 chunk, _gen_render_len(tok), PROMPT_TOKEN_BUDGET
             )
@@ -2461,10 +2536,11 @@ def run_crossed_capture(args, *, smoke_sae=None) -> int:
                 continue
             ts = time.time()
             responses = _generate_multiturn(llm, tok, [r["messages"] for r in kept_rows])
-            rows, violations = _capture_crossed_rows(
+            rows, violations, empties = _capture_crossed_rows(
                 hf, tok, kept_rows, responses, layers, sae, sae_layer_pos, fve_pool
             )
             violations_all.extend(violations)
+            empty_all.extend(empties)
             # fleet halt: strict-token-prefix violations above the 0.5% budget
             attempted = kept_total + len(rows) + len(violations_all)
             if _crossed_violation_should_halt(len(violations_all), attempted):
@@ -2522,14 +2598,15 @@ def run_crossed_capture(args, *, smoke_sae=None) -> int:
                 if len(pending_pt) >= UPLOAD_BATCH:
                     _flush_pending()
             logger.info(
-                "[crossed-capture] chunk %d/%d shard=%d: %d/%d captured (%d viol, %.0fs "
-                "elapsed=%.0fs)",
+                "[crossed-capture] chunk %d/%d shard=%d: %d/%d captured (%d viol, %d empty, "
+                "%.0fs elapsed=%.0fs)",
                 ci_idx + 1,
                 n_sub,
                 args.shard_index,
                 len(rows),
                 len(chunk),
                 len(violations),
+                len(empties),
                 time.time() - ts,
                 time.time() - t_start,
             )
@@ -2549,12 +2626,14 @@ def run_crossed_capture(args, *, smoke_sae=None) -> int:
     _write_sidecar(scratch, args, skipped_all, violations_all, prefix=up)
     wall_h = (time.time() - t_start) / 3600.0
     logger.info(
-        "[crossed shard %d] done: %d rows / %d chunks (%d over-length, %d violations, %.2f h)",
+        "[crossed shard %d] done: %d rows / %d chunks (%d over-length, %d violations, "
+        "%d empty-response drops, %.2f h)",
         args.shard_index,
         kept_total,
         n_sub,
         len(skipped_all),
         len(violations_all),
+        len(empty_all),
         wall_h,
     )
     if is_pilot or (args.no_upload and fve_pool is not None):
@@ -2572,6 +2651,7 @@ def run_crossed_capture(args, *, smoke_sae=None) -> int:
             sae_gate=sae_gate,
             n_q=n_q,
             n_q_grid=n_q_grid,
+            n_empty=len(empty_all),
         )
         if rc != 0:
             sys.exit(rc)
@@ -2592,6 +2672,7 @@ def _write_crossed_pilot_meta(
     sae_gate,
     n_q,
     n_q_grid,
+    n_empty=0,
 ) -> int:
     """G1/G2 pilot artifact + designed-halt routing (report FIRST, then rc).
 
@@ -2621,6 +2702,7 @@ def _write_crossed_pilot_meta(
         "fence_gpu_h": float(args.crossed_fence_gpu_h),
         "n_overlength_skipped": len(skipped_all),
         "n_prefix_violations": len(violations_all),
+        "n_empty_response_dropped": int(n_empty),  # grid holes vs the <0.5% budget (r2 minor)
         "violation_rate": float(viol_rate),
         "violation_rate_max": PILOT_VIOLATION_RATE_MAX,
         "prefix_min_pairwise_cos_by_layer": min_cos_by_layer,
@@ -3527,27 +3609,61 @@ def _smoke_crossed(args, ns, cargs) -> None:
         "crossed split not a partition of the 5x3 grid"
     )
 
-    # S1 capture: pilot shard 0 (G1/G2/SAE gates) + fleet shard 1 -> full grid.
+    # S1 capture: pilot shard 0 (G1/G2/SAE gates) + fleet shards 0+1 -> full grid.
+    # Pilot: 3 prefixes x 3 q = 9 rows @ shard_size 4 -> chunk0000, chunk0001 +
+    # pilotpartial0002 (blocker-1 sibling A: the trailing partial is NOT
+    # fleet-resumable by name, so the fleet re-captures that range fully).
     tiny_sae = _make_smoke_sae(64, dict_size=256, k=4)
     rc = run_crossed_capture(xns, smoke_sae=tiny_sae)
     assert rc == 0
+    xscratch = xbase / "crossed_shards"
+    assert (xscratch / "shard00_q03_pilotpartial0002.pt").exists(), sorted(
+        p.name for p in xscratch.iterdir()
+    )
+    # fleet shard 0 against a fake done index = everything the pilot "uploaded":
+    # full chunks SKIP by name (mtime unchanged); the partial range re-captures
+    # under the fleet's `_chunk` name — the resume-skip path, exercised in-process.
+    q3_pilot_files = sorted(p.name for p in xscratch.iterdir() if "_q03_" in p.name)
+    mt_full = (xscratch / "shard00_q03_chunk0000.pt").stat().st_mtime_ns
+    rc = run_crossed_capture(
+        argparse.Namespace(**{**vars(xns), "pilot_cap": 0, "smoke_done_index": q3_pilot_files}),
+        smoke_sae=tiny_sae,
+    )
+    assert rc == 0
+    assert (xscratch / "shard00_q03_chunk0000.pt").stat().st_mtime_ns == mt_full, (
+        "fleet re-captured a full pilot chunk the done index already covers"
+    )
+    assert (xscratch / "shard00_q03_chunk0002.pt").exists(), (
+        "fleet did not re-capture the pilot-partial row range (silent row hole)"
+    )
     rc = run_crossed_capture(
         argparse.Namespace(**{**vars(xns), "shard_index": 1, "pilot_cap": 0}),
         smoke_sae=tiny_sae,
     )
     assert rc == 0
-    xscratch = xbase / "crossed_shards"
     seen_ci: list[int] = []
+    nm_extra_bytes = 0
     for xc in sorted(xscratch.glob("shard*_chunk*.pt")):
         xb = torch.load(xc, weights_only=False)
         assert xb["sae_enabled"], xc
         assert int(xb["row_ptr"][-1]) == len(xb["feat_idx"]), "sae CSR row_ptr misaligned"
+        # mask-twin schema (r2 blocker-2): nm CSR 1:1 with rows; nm rows are
+        # non-empty ONLY where the inlier mask bit (n_inl < n_ans)
+        assert len(xb["nm_row_ptr"]) == len(xb["ci"]) + 1, xc
+        assert int(xb["nm_row_ptr"][-1]) == len(xb["nm_feat_idx"]), "nm CSR misaligned"
+        nm_off = np.diff(np.asarray(xb["nm_row_ptr"]))
+        differs = np.asarray(xb["n_inlier_tokens"]) < np.asarray(xb["n_ans_tokens"])
+        assert bool(np.all((nm_off > 0) <= differs)), "nm row stored for a mask-equal row"
+        nm_extra_bytes += 4 * len(xb["nm_feat_idx"]) + 2 * sum(
+            len(xb[k]) for k in ("nm_mean", "nm_max", "nm_frac")
+        )
         assert len(xb["prefix_id"]) == len(xb["ci"]) == len(xb["query_id"])
         assert xb["px_dense19"].shape == (len(xb["ci"]), 64), xb["px_dense19"].shape
         for j, c in enumerate(xb["ci"]):
             assert int(c) % 3 == int(xb["query_id"][j]) and 0 <= int(c) // 3 < 5, (c, j)
         seen_ci.extend(int(c) for c in xb["ci"])
     assert sorted(seen_ci) == list(range(15)), f"grid incomplete: {sorted(seen_ci)}"
+    logger.info("[smoke crossed] nm mask-twin payload across q3 chunks: %d bytes", nm_extra_bytes)
     assert (xscratch / "bank_bare.pt").exists(), "bank bare capture missing"
     xpm = json.loads((xbase / CROSSED_PILOT_META_NAME).read_text())
     assert xpm["gate_g2"]["prefix_varies_ok"] and xpm["gate_g2"]["violation_rate_ok"], xpm
@@ -3653,6 +3769,9 @@ def _smoke_crossed(args, ns, cargs) -> None:
     xsae = json.loads((rargs.out_eval / "sae_perfeature.json").read_text())
     assert not xsae.get("skipped"), xsae
     assert "induced_averaged" in xsae["feature_maps"], xsae["feature_maps"]
+    mr = xsae["mask_robustness"]  # plan §6 with/without-mask twin (r2 blocker-2)
+    assert "n_rows_mask_equal" in mr and "n_rows_mask_differs" in mr, mr
+    assert mr["n_rows_mask_equal"] + mr["n_rows_mask_differs"] > 0, mr
     assert (rargs.out_eval / "perfeature_crossed_summary.csv").exists()
     # R6 clean-skip branch (sae_enabled=false verdict) — separate out dir so the
     # PASSING artifacts above are never clobbered
@@ -3693,7 +3812,131 @@ def _smoke_crossed(args, ns, cargs) -> None:
     ]
     dch = _stack_chunk_crossed(dummy, [0, 1], 0, 0, sae=tiny_sae, sae_layer=1)
     assert dch["sae_skipped_ci"] == [0] and dch["row_ptr"].tolist() == [0, 0], dch["row_ptr"]
-    logger.info("[smoke] crossed leg OK — manifest -> capture (2 shards) -> all six reads")
+    assert dch["nm_row_ptr"].tolist() == [0, 0], dch["nm_row_ptr"]
+
+    # ── mask-twin pure probe (r2 blocker-2): synthetic sidecar with one
+    # mask-equal row + one differing row of KNOWN cosine 16/25 = 0.64 exactly
+    # (masked mean [3,4] on idx [0,3]; unmasked [4,3] on idx [3,8]).
+    fake_side = xbase / "fake_side"
+    fake_side.mkdir(exist_ok=True)
+    two_nm = np.asarray([4.0, 3.0], np.float16)
+    fake = {
+        "n_ans_tokens": np.asarray([2, 3], np.int32),
+        "n_inlier_tokens": np.asarray([2, 2], np.int32),
+        "sae_skipped_ci": [],
+        "row_ptr": np.asarray([0, 2, 4], np.int64),
+        "feat_idx": np.asarray([0, 1, 0, 3], np.int32),
+        "ans_mean": np.asarray([0.5, 0.5, 3.0, 4.0], np.float16),
+        "ans_max": np.asarray([0.5, 0.5, 3.0, 4.0], np.float16),
+        "ans_frac": np.asarray([0.5, 0.5, 3.0, 4.0], np.float16),
+        "nm_row_ptr": np.asarray([0, 0, 2], np.int64),
+        "nm_feat_idx": np.asarray([3, 8], np.int32),
+        "nm_mean": two_nm,
+        "nm_max": two_nm,
+        "nm_frac": two_nm,
+    }
+    torch.save(fake, fake_side / "f0.pt")
+    mrp = CR._mask_robustness([fake_side / "f0.pt"])
+    assert mrp["n_rows_mask_equal"] == 1 and mrp["n_rows_mask_differs"] == 1, mrp
+    for pool in ("mean", "max", "frac"):
+        assert abs(mrp[pool]["cos_median"] - 0.64) < 1e-3, (pool, mrp[pool])
+    legacy = {k: v for k, v in fake.items() if not k.startswith("nm_")}
+    torch.save(legacy, fake_side / "legacy.pt")
+    assert "skipped" in CR._mask_robustness([fake_side / "legacy.pt"]), (
+        "pre-r2 chunks (no nm_*) must skip cleanly (backward tolerance)"
+    )
+
+    # ── blocker-1 sibling-A EXACT arithmetic: pilot rows are a strict PREFIX of
+    # the fleet shard's rows, so every SHARED name covers the identical slice and
+    # the pilot's trailing partial NEVER collides with the fleet's full chunk.
+    pplan = _crossed_chunk_plan(6, 4, 0, 2, True)  # pilot: 3 prefixes x 2 q
+    assert [b for b, _, _ in pplan] == [
+        "shard00_q02_chunk0000",
+        "shard00_q02_pilotpartial0001",
+    ], pplan
+    fplan = {b: (s, e) for b, s, e in _crossed_chunk_plan(10, 4, 0, 2, False)}  # full shard
+    for b, s, e in pplan:
+        if "pilotpartial" in b:
+            assert b not in fplan, b  # the partial can never be skip-matched
+        else:
+            assert fplan[b] == (s, e), (b, fplan[b], (s, e))  # identical slice => resumable
+    # ladder families never collide (the q tag is in every name); an exactly-
+    # divisible pilot has NO partial (all chunks fleet-resumable)
+    p_q3 = {b for b, _, _ in _crossed_chunk_plan(9, 4, 0, 3, True)}
+    p_q2 = {b for b, _, _ in _crossed_chunk_plan(6, 4, 0, 2, True)}
+    assert not (p_q3 & p_q2), p_q3 & p_q2
+    assert all("_chunk" in b for b, _, _ in _crossed_chunk_plan(8, 4, 0, 2, True))
+    # ladder-aware coverage view (blocker-1(b)): a clean q<2 capture of the 5x3
+    # grid reads 10/10 under the view (PASS) vs 10/15 = 0.67 < 0.95 raw (FAIL)
+    cov_doc = {"sets": {"train": {"n": 15, "ci": list(range(15))}}}
+    lv = CR._ladder_split_view(cov_doc, 3, 2)
+    assert lv["sets"]["train"]["n"] == 10, lv
+    assert CR._ladder_split_view(cov_doc, 3, 3) is cov_doc  # identity off-ladder
+    assert MTF._coverage_shortfalls({"train": np.arange(10)}, cov_doc, 0.95)
+    assert not MTF._coverage_shortfalls({"train": np.arange(10)}, lv, 0.95)
+
+    # ── G1 query-ladder e2e (r2 blocker-1): descoped pilot (n_q=2) against a
+    # fake done index holding the FULL-grid q3 family — under the pre-r2 naming
+    # those entries collide, every chunk skips, pilot_px stays empty, and the
+    # pilot dies as a spurious G2 rc-30; q-tagged names keep the re-run fresh.
+    assert q3_pilot_files, "expected q03-family files from the full-grid leg"
+    xl = argparse.Namespace(
+        **{**vars(xns), "queries_per_prefix": 2, "smoke_done_index": q3_pilot_files}
+    )
+    rc = run_crossed_capture(xl, smoke_sae=tiny_sae)
+    assert rc == 0, "ladder pilot skip-collided with the stale q3 family (the rc-30 chain)"
+    lpm = json.loads((xbase / CROSSED_PILOT_META_NAME).read_text())
+    assert lpm["queries_per_prefix_realized"] == 2 and lpm["queries_per_prefix_grid"] == 3, lpm
+    assert lpm["gate_g2"]["prefix_varies_ok"], lpm["gate_g2"]
+    assert (xscratch / "shard00_q02_pilotpartial0001.pt").exists()  # 6 rows @ shard_size 4
+    # fleet shard 0 at the SAME n_q: full pilot chunk skips by name; the partial
+    # range re-captures under the fleet's `_chunk` name (no row hole).
+    q2_pilot_files = sorted(p.name for p in xscratch.iterdir() if "_q02_" in p.name)
+    mt_q2 = (xscratch / "shard00_q02_chunk0000.pt").stat().st_mtime_ns
+    rc = run_crossed_capture(
+        argparse.Namespace(
+            **{
+                **vars(xns),
+                "queries_per_prefix": 2,
+                "pilot_cap": 0,
+                "smoke_done_index": q3_pilot_files + q2_pilot_files,
+            }
+        ),
+        smoke_sae=tiny_sae,
+    )
+    assert rc == 0
+    assert (xscratch / "shard00_q02_chunk0000.pt").stat().st_mtime_ns == mt_q2
+    assert (xscratch / "shard00_q02_chunk0001.pt").exists(), "ladder fleet left a row hole"
+    rc = run_crossed_capture(
+        argparse.Namespace(
+            **{**vars(xns), "queries_per_prefix": 2, "shard_index": 1, "pilot_cap": 0}
+        ),
+        smoke_sae=tiny_sae,
+    )
+    assert rc == 0
+    # ladder reads: scratch now holds BOTH families + pilotpartial files; the
+    # scanner keys on realized n_q=2 (pilot meta) and coverage on the ladder view.
+    lr = argparse.Namespace(
+        **{
+            **vars(rargs),
+            "out_eval": xbase / "crossed_eval_ladder",
+            "out_local": xbase / "crossed_reads_ladder",
+            "mm_dir": xbase / "crossed_reads_ladder" / "mm",
+        }
+    )
+    rc = CR.run_reads(lr)
+    assert rc == 0, "ladder reads must pass the 0.95 coverage floor on a clean q2 capture"
+    lcur = json.loads((Path(lr.mm_dir) / "cursor.json").read_text())
+    assert lcur["n_rows"] == 10, lcur  # 5 prefixes x 2 realized queries; q3 chunks excluded
+    la = json.loads((Path(lr.out_eval) / "anova.json").read_text())
+    assert la["n_queries"] == 2, la["n_queries"]
+    lf = json.loads((Path(lr.out_eval) / "crossed_fits.json").read_text())
+    assert len(lf["cells"]) == 4 * 2, sorted(lf["cells"])
+    logger.info(
+        "[smoke] crossed leg OK — manifest -> capture (2 shards; resume-skip + "
+        "pilot-partial re-capture) -> all six reads -> G1 ladder (q3 -> q2: no "
+        "collision, no rc-30, ladder coverage PASS, mixed-family store excluded)"
+    )
 
 
 def main() -> int:
