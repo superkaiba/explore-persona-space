@@ -6851,8 +6851,8 @@
     "1885": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1885",
-      "status": "proposed",
+      "path": "tasks/archived/1885",
+      "status": "archived",
       "title": "workflow-fix: lane-aware carry-over gate \u2014 committed inputs unshippable on SLURM rsync lanes"
     },
     "19": {
