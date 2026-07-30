@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1866,
+  "highest_id": 1867,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6707,6 +6707,13 @@
       "path": "tasks/proposed/1866",
       "status": "proposed",
       "title": "daily-fix: SLURM completed-work-but-FAILED state disambiguat"
+    },
+    "1867": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1867",
+      "status": "proposed",
+      "title": "daily-fix: task.py address-concern accepts --note alias"
     },
     "187": {
       "has_clean_result": true,
