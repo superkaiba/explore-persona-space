@@ -83,6 +83,10 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=Path("analysis_tensors/issue_1739/pvsynth_store"),
         help="per-behavior capture stores land under <store-root>/<behavior>",
     )
+    # This leg is bound to #1739's pvsynth rung by construction (it reads #1739's
+    # e1_assets instruction/question files and writes the pvsynth rung's own capture
+    # store), so the default names that rung's own subtree, not a reusable destination.
+    # UPLOAD_PREFIX_EXEMPT: pvsynth-rung-specific leg; an explicit --hf-prefix overrides
     ap.add_argument("--hf-prefix", default=HF_PREFIX)
     ap.add_argument("--k-rollouts", type=int, default=None, help="default: constants.K_ROLLOUTS")
     ap.add_argument("--max-new-tokens", type=int, default=None, help="default: GEN_MAX_NEW_TOKENS")

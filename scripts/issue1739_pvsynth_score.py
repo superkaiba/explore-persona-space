@@ -83,6 +83,10 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=Path("data/issue_1739/pvsynth_stage"),
         help="MIRROR ROOT for Hub staging (files land at <root>/<repo-relative path>)",
     )
+    # This leg is bound to #1739's pvsynth rung by construction (it drains the pvsynth
+    # capture sentinel and writes that rung's own DV / judge / spread artifacts), so the
+    # default names that rung's own subtree, not a reusable destination.
+    # UPLOAD_PREFIX_EXEMPT: pvsynth-rung-specific leg; an explicit --hf-prefix overrides
     ap.add_argument("--hf-prefix", default=HF_PREFIX)
     ap.add_argument(
         "--local-rollout-root",
