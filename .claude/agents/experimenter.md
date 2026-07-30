@@ -624,6 +624,39 @@ authoritative recipe is agent memory
    and posted `epm:results` at silently-degraded coverage. The plan's
    Reproducibility Card listed 18 cells; one `ls | wc -l` against the
    data directory before launch would have caught the shortfall.
+4b. **Verify a persist step exists for every plan-declared output (the
+   OUTPUT-side sibling of the item-4 input gate; #1800, incident
+   #1739).** Before launch, read the plan's execution design (the
+   dispatcher/driver phase chain + any plan-named off-pod/VM-side
+   steps) and confirm every plan-declared HF/git-destined output class
+   — raw completions, eval JSONs, checkpoints, analysis tensors — has a
+   persist step SOMEWHERE in that design: an upload call in the
+   dispatch chain, or a plan-NAMED off-pod harvest+upload step (that
+   COUNTS as the persist step — the launch chain itself need not carry
+   it). Grounding: Upload Policy "Raw completions MUST upload before
+   pod termination" + the #779 persist-by-default rule. Disposition
+   split:
+   - Declared outputs with NO persist step ANYWHERE in the plan's
+     execution design AND the run's primary outputs are raw
+     completions / generations → REFUSE to launch: post
+     `<!-- epm:failure v1 -->` with `failure_class: infra`,
+     `reason: no-persist-phase-for-declared-artifacts` (naming the
+     orphaned output classes) and EXIT — `/issue` Step 7 routes
+     `infra` to a fresh respawn once the chain gains its persist
+     step.
+   - Any OTHER missing-persist case → WARN loudly and launch: the
+     `epm:run-launched` note carries the named line
+     `persist-phase: MISSING for <outputs> — launching anyway because
+     <one-line reason>`.
+   - Persist step present for every declared output → silent (no note
+     line).
+   Rationale: incident #1739 (2026-07-28) — a GCP `--workload-cmd` run
+   completed its phases and approached grace-poweroff with ZERO
+   artifacts on HF (all 7 expected prefixes MISS); ~2h of improvised
+   recovery uploads raced the poweroff clock. #1779 fixed the
+   PLAN-time layer; this gate is the dispatch-time backstop (the
+   `dispatch_issue.py` #1800 persist-evidence lint is the mechanical
+   sibling on router-lane launches).
 5. **List assumptions** — for factual claims about hardware, GPU memory,
    library versions on this specific pod. Mark confidence (high/medium/low).
    Verify anything below high before launching.

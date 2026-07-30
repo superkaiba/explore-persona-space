@@ -621,30 +621,42 @@ recorded a negative finding).
 table (no GPU-bound components). For those, write "N/A — no
 compute-bound components" and move on.
 
-### Off-pod phase declaration (`off_pod_phases:`) — reads enumerated, outputs pre-declared (#1535)
+### Cross-phase reads declaration (`off_pod_phases:`) — reads enumerated, outputs pre-declared (#1535, #1773)
 
-REQUIRED only when the plan has a pod/backend dispatch AND ≥1 subsequent
-off-pod phase (a VM / cpu-small / cpu-mid / cpu-bigmem / Batch-API judge or
-analysis phase). Pod-free plans and single-machine runs OMIT this block
-entirely — no boilerplate, no escape line needed. Two incidents it closes:
+REQUIRED whenever ANY dispatched phase reads ANOTHER phase's outputs —
+BOTH directions: (a) a pod/backend dispatch with ≥1 subsequent off-pod
+phase (a VM / cpu-small / cpu-mid / cpu-bigmem / Batch-API judge or
+analysis phase) consuming pod outputs — the original #1482/#1426
+direction; AND (b) any pod-gpu / GCE / SLURM phase consuming another
+phase's outputs, including VM-PRODUCED inputs — the #1773 inverse seam:
+the git-clone lanes stage ONLY the pushed branch (`data/` is gitignored,
+the #734/#1434 class), and the #1469 carry-over gate glob-skips
+phase-output globs, so no mechanical gate covers that seam. Pod-free
+plans and single-machine runs OMIT this block
+entirely — no boilerplate, no escape line needed. Three incidents it closes:
 #1482 (the off-pod P5 judge died at VM launch loading pod-only
 `scratch/{split_indices.npz,row_ci.npy,prov.npy}` never in the P4 upload
 set — the pod was already terminated; recovery needed a sha-anchored
-reconstruction) and #1426 (a planned VM-side phase FAILed the verifier's
+reconstruction), #1426 (a planned VM-side phase FAILed the verifier's
 initial r1 BY CONSTRUCTION — the verifier expected its outputs on the pod;
 the follow-up round's verifier then IMPROVISED "DEFERRED + gap-listed" rows
 for the same phase — live precedent for the deferral grammar this block
-mechanizes). This is the plan-time mechanization of the `gotchas.md`
-off-pod upload-set bullet (#1526, rules (i)-(iv)).
+mechanizes), and #1773 (the inverse direction: Pass B on GCE crashed
+`FileNotFoundError` loading Pass A's VM-produced selection outputs — never
+HF-uploaded, no launcher staging step; one 4×A100 GCE provision+boot cycle
+burned, att-20260729-010419). This is the plan-time mechanization of the
+`gotchas.md` cross-machine upload-set bullet (#1526, rules (i)-(iv)).
 
-Render as a fenced YAML block, one entry per off-pod phase:
+Render as a fenced YAML block, one entry per phase that reads another
+phase's outputs (the block NAME stays `off_pod_phases:` for back-compat
+with in-flight plans and the c39 satisfier):
 
 ```yaml
 off_pod_phases:
   - phase: <verbatim §9 phase name, e.g. "P5 judge (VM, post-termination)">
-    runs_on: vm | cpu-small | cpu-mid | cpu-bigmem | batch-api
+    runs_on: vm | cpu-small | cpu-mid | cpu-bigmem | batch-api | pod-gpu | gce | slurm
     reads:
-      - path: <path the off-pod loader opens/fetches>
+      - path: <path the phase's loader opens/fetches>
         produced_by: <producing phase, e.g. "P4 (pod)">
         source: hf-data-repo | git-issue-branch | vm-resident-by-construction
     outputs:
@@ -654,13 +666,33 @@ off_pod_phases:
 
 Rules:
 
-- **Every `reads[].path` must resolve at a permanent source the off-pod
+- **Every `reads[].path` must resolve at a permanent source the CONSUMING
   machine can fetch** — an HF data-repo path, a git-issue-branch path, or
   `vm-resident-by-construction` with a one-line basis (e.g. "arrives with
-  the git clone"). A read that exists only as pod-side scratch is a design
+  the git clone"). A read that exists only as one machine's local scratch
+  (pod-side OR VM-side) is a design
   defect: add it to the producing phase's upload set (KB–tens-of-MB scratch
   metadata — split indices, provenance arrays, configs — uploads
   UNCONDITIONALLY; the large-tensor discard economy never applies to it).
+- **`vm-resident-by-construction` is keyed on EXECUTION LOCUS, not the
+  literal `runs_on: vm` enum value:** legal only for VM-EXECUTING phases —
+  `vm`, and `batch-api` (a Batch-API judge's driver runs VM-side and
+  legitimately opens VM-resident inputs; live precedent: #1776 plan v4's
+  `runs_on: batch-api` rows with `source: vm-resident-by-construction`).
+  ILLEGAL for dispatched git-clone / staged lanes (`pod-gpu | gce | slurm`
+  and the `cpu-*` lanes) — those machines stage only the pushed branch, so
+  a VM-resident file is simply not there; use `hf-data-repo` or
+  `git-issue-branch`. Blocks in plans persisted before this change are
+  never retro-invalidated (critic item 10 pressure is forward-only).
+- **A VM-PRODUCED read consumed by a git-clone-lane phase (`pod-gpu | gce
+  | slurm` — the #1773 direction) names BOTH transport halves:** the
+  PRODUCING phase ends with a fail-loud bulk `upload_folder` of its
+  outputs to the issue HF prefix, AND the CONSUMING launcher stages the
+  missing inputs via scoped `list_repo_tree` + per-file download (never
+  `snapshot_download` on the ~1M-file data repo — gotchas.md #833),
+  logging a `[stage] <input> staged: N files` line usable as the
+  crash-fix fix-engaged signal (mirrors the implementer-side memory
+  `feedback_cross_machine_input_staging.md`).
 - **`outputs[]` is scoped to files the declared off-pod phase ITSELF
   writes** — it must NOT sweep in any pod-side phase's deliverables (no
   over-broad globs like `eval_results/issue_<N>/**` when a pod phase also
@@ -674,18 +706,27 @@ Rules:
   the exact upload command), and Step 2.7 enumerates a declared phase's
   OUTPUTS at the declared `dest` — or records them deferred when the phase
   is sequenced after pod termination — instead of FAILing on pod-absence.
-- **Derive `reads[]` from the off-pod loader's ACTUAL open/fetch set**
-  (its argument list + `open()`/`snapshot_download` calls), not from
-  memory of the design — an omitted read reproduces #1482 despite the
-  block; state the derivation basis in one line when the loader exists at
-  plan time.
+- **Derive `reads[]` from EACH DECLARED PHASE'S loader ACTUAL open/fetch
+  set** (its argument list + `open()` and staging calls), direction-agnostic,
+  not from memory of the design — an omitted read reproduces #1482/#1773
+  despite the block (the #1773 plan HAD a block; the intermediate
+  passA→passB read was omitted because reads were derived only for the
+  final off-pod loader); state the derivation basis in one line per phase
+  when the loader exists at plan time.
 - **§6.5 interaction:** a `primary_deliverable:` row produced by a declared
   off-pod phase is enumerated at that phase's declared `dest` (Step 2.7
   sub-rule), not on the pod; keep the §6.5 row — the block does not
   replace it.
 - **Escape:** a plan whose prose trips the off-pod vocabulary check
-  (`verify_plan.py` c39) but genuinely has no off-pod phase declares the
+  (`verify_plan.py` c39) but genuinely has no cross-phase read declares the
   standalone line `N/A — no off-pod phase`.
+- **Known mechanical residual (direction (b)):** c39's trigger vocabulary
+  (`off-pod` / `vm-side` / `vm-produced` / `produced on the vm`) fires on
+  the calibrated inverse-direction tokens (#1796), but OTHER
+  inverse-direction phrasings (a pod/GCE/SLURM phase reading VM-produced
+  inputs described in different vocabulary) still do not fire, so that
+  residual of direction (b) is enforced by this section + critic
+  Methodology item 10 only.
 
 Worked example (#1482's design, as it should have been declared):
 
@@ -702,6 +743,23 @@ off_pod_phases:
         source: git-issue-branch
     outputs:
       - path: eval_results/issue_1482/judge/*.json
+        dest: git-issue-branch
+```
+
+Second worked example (#1773's design — the inverse direction, as it
+should have been declared: Pass A produces on the VM, Pass B consumes on
+a git-clone lane):
+
+```yaml
+off_pod_phases:
+  - phase: Pass B scoring (GCE, consumes Pass A selection outputs)
+    runs_on: gce
+    reads:
+      - path: issue1773_slug/selection/inverted_index.npz
+        produced_by: Pass A selection (VM)
+        source: hf-data-repo
+    outputs:
+      - path: eval_results/issue_1773/passB/*.json
         dest: git-issue-branch
 ```
 
@@ -787,6 +845,22 @@ upload-verifier treats a `discarded_artifacts:` entry naming generations /
 text as INVALID (FAIL `generation-discard-declared-invalid`), not as a
 license. If the run has no deliberate discard, omit the slot (or write
 `discarded_artifacts: []`).
+
+**Ephemeral-lane text/JSON destinations (destination-vs-lane durability).**
+For any stage whose §9 lane is EPHEMERAL — a GCE instance with
+`--instance-termination-action=DELETE` (the boot disk dies with the run)
+or a RunPod pod on the terminate-on-upload-verify lifecycle; SLURM lanes
+are deliberately NOT in this set (job scratch/project storage persists
+past job end) — every text/JSON output row (summary JSONs, metrics,
+judge outputs, configs) MUST name an HF (non-LFS) destination, e.g. the
+issue data-repo prefix `issue<N>_<slug>/…`. A git-only destination
+("commit to the issue branch") is legal ONLY for a VM-resident stage, or
+when the plan names an explicit pre-teardown HARVEST phase that commits
+the file BEFORE the instance/pod is reaped. Rationale: a clean exit on
+the DELETE-on-exit lane reaps the disk minutes later — #1738's two
+summary JSONs, declared "→ git issue branch" with no harvest phase, were
+lost at reap and cost a 28-min rebuild round. The critic Methodology
+lens item 18 REVISEs violations.
 
 ## 11. Decision Rationale
 
@@ -901,6 +975,23 @@ Rationale (#1721): a plan that says "the check at line 142 does Y" against a cod
 ### Detection / trigger-lane predicate plans — trace the predicate
 
 Copied by reference from planner.md § 12 (the always-on paragraph): when the plan designs or modifies a predicate that classifies a persisted artifact's shape to decide an automated action (watcher fire/keep, guard block/allow, janitor reap, failure classifier class) AND the motivating incident left a persisted artifact, §12 MUST carry one row per predicate arm — including the read/ingest path that feeds it — traced against the actual artifact by path, with each arm evaluated on values MEASURED from it at plan time (row counts, byte sizes, field values — READ, never recalled), and the traced outcome stated. The predicate MUST fire on its own motivating incident; "would not fire" is a design defect to fix before returning the plan. Artifact aged off disk → trace the incident's recorded measurements at Medium confidence; prospective guard with no incident artifact → state that in the row.
+
+### Real-corpus structural assumptions — smoke-slice probe routing
+
+**Trigger (all three conjuncts):** a §12 row that (a) asserts a STRUCTURAL property of a real corpus / dataset / reused artifact — distinct-value counts, field cardinality, per-row uniqueness, template homogeneity, schema/field presence — AND (b) gates an arm / fit / phase via a fail-loud check in the design (an assert / raise the production run executes), AND (c) is only checkable against the data itself, first materialized at smoke time (plan-time grounding — the fact-checker, a grep, a prior body — structurally cannot reach it).
+
+**The duty:** the row's **How to verify** routes to a NAMED smoke-slice probe at **full-CONSUMED-corpus grain** — the property is read over the exact pinned data the production arm actually loads, NEVER the sliced smoke sample alone (a tiny sample can satisfy a premise the full corpus violates), and NEVER the upstream/streaming source (a full-LMSYS scan at smoke time is prohibitive — the #1092 streaming class; the consumed corpus is the object the production assert binds to). Read the property from a manifest/metadata field WHEN one carries it (the cheap 1-row read); when no manifest field carries the property, COMPUTE it from the consumed corpus — manifest presence is not a precondition for the probe.
+
+**Implementer hand-off:** the implementer runs the named probe during smoke and records the MEASURED value in the relevant `### <phase-name>` sub-section under `## Smoke run` (experiment-implementer.md checklist item 3 carries the mirror duty).
+
+**Violated-premise disposition:** a measured violation is a PLAN defect, not a code bug — surface it and bounce to plan amendment / re-scope BEFORE production; leaving it to the production assert is the failure mode this sub-rule closes (#1768: plan assumption A4, `n_distinct_prefix==1`, was hard-asserted in the capture script and false on the real corpus — measured 2, an LMSYS-vs-WildChat template split; the smoke run PASSed on its tiny sample and the p1 pilot assert fired ~55 min after relaunch).
+
+Worked example pair:
+
+- **Correct:** `A4. Every corpus row shares one prompt template (n_distinct_prefix==1). Confidence: Low. Source: guessed from the #779 pinned subset. How to verify: SMOKE-SLICE PROBE — p0 reads n_distinct_prefix from the full consumed-corpus manifest and reports the measured value in ## Smoke run; the p1 prefix-arm gate re-asserts it.`
+- **Wrong:** the same row with `How to verify: the p1 assert will catch it` — that IS the production crash (#1768).
+
+Plan-time critics reviewing §12 check that every row matching the three-conjunct trigger carries the smoke-slice probe routing (prose-only enforcement, the #1287 precedent).
 
 ### General shape
 
