@@ -3678,6 +3678,22 @@ def phase_pfx1(cfg: Cfg) -> None:
     _pfx_pilot_gate(ratio, cfg.smoke)
 
 
+def _pfx_expected_uploads(cfg: Cfg) -> list[str]:
+    """The exact-set verify list: every load-bearing store file currently in
+    the on_target trees (the pfx4 resume-skip predicate keys on its count)."""
+    expected = []
+    for tree, fname in (
+        ("on_target/corpus_capture", "pooled.pt"),
+        ("on_target/corpus_capture_tf", "pooled_tf.pt"),
+    ):
+        local_tree = cfg.out_root / tree
+        if local_tree.exists():
+            for unit_dir in sorted(local_tree.iterdir()):
+                if (unit_dir / fname).exists():
+                    expected.append(f"{cfg.hf_prefix}/{tree}/{unit_dir.name}/{fname}")
+    return expected
+
+
 def phase_pfx4(cfg: Cfg) -> None:
     """pfx4: on_target tree upload + exact-set verify — BEFORE fits (#825)."""
     _phase("pfx4_store_upload")
@@ -3689,21 +3705,26 @@ def phase_pfx4(cfg: Cfg) -> None:
 
     from explore_persona_space.orchestrate import hub
 
+    expected = _pfx_expected_uploads(cfg)
+    done_path = _pfx_root(cfg) / "upload_done.json"
+    if done_path.exists():  # r3-v2 Minor: skip the re-upload when nothing new shipped
+        prior = json.loads(done_path.read_text())
+        if prior.get("n_verified") == len(expected):
+            logger.info(
+                "[pfx4] upload_done.json matches the expected store count (%d) — resume skip",
+                len(expected),
+            )
+            return
+        logger.info(
+            "[pfx4] expected store count changed (%s -> %d) — re-uploading",
+            prior.get("n_verified"),
+            len(expected),
+        )
     uploaded = {}
     for name in PFX_UPLOAD_TREES:
         dest = _upload_tree(cfg, name)
         if dest:
             uploaded[name] = dest
-    expected = []
-    for tree, fname in (
-        ("on_target/corpus_capture", "pooled.pt"),
-        ("on_target/corpus_capture_tf", "pooled_tf.pt"),
-    ):
-        local_tree = cfg.out_root / tree
-        if local_tree.exists():
-            for unit_dir in sorted(local_tree.iterdir()):
-                if (unit_dir / fname).exists():
-                    expected.append(f"{cfg.hf_prefix}/{tree}/{unit_dir.name}/{fname}")
     if expected:
         missing = hub.verify_repo_paths_uploaded(
             HfApi(),

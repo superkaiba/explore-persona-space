@@ -1465,7 +1465,18 @@ def test_paired_d_contrast_math_and_lattice():
     null = fit._paired_d_contrast(bare, bare, seed=7)
     assert null["delta_d"] == pytest.approx(0.0, abs=1e-9)
     assert null["verdict"] == "Indistinguishable"
-    assert fit.contrast_verdict(-1.0, [-2.0, -0.5]) == "On-target-attenuated"
+    assert fit.contrast_verdict([-2.0, -0.5]) == "On-target-attenuated"
+    # control reads thread control-specific vocabulary (never on/off-target)
+    assert (
+        fit.contrast_verdict(
+            [-2.0, -0.5], positive="Control-above-own", negative="Control-below-own"
+        )
+        == "Control-below-own"
+    )
+    ctrl = fit._paired_d_contrast(
+        own, bare, seed=7, positive="Control-above-own", negative="Control-below-own"
+    )
+    assert ctrl["verdict"] == "Control-above-own"
 
 
 def test_pfx_fit_core_persists_percell_and_state(tmp_path):
@@ -1565,3 +1576,82 @@ def test_pfx_join_coverage_floor_and_contrast_no_overlap(tmp_path):
     b = {**a, "test_src_qidx": np.arange(100, 104)}
     with pytest.raises(AssertionError, match="no shared test rows"):
         fit._paired_d_contrast(a, b, seed=0)
+
+
+def test_pfx7_reads_what_pfx5_writes_including_ctrl(tmp_path):
+    """r3-v2 Critical-1 pin: producer/consumer path equality for EVERY pfx
+    condition — `_pfx_fit_core` writes and the REAL `phase_pfx7` (smoke=False,
+    so the ctrl branch executes) reads through the ONE `pfx_cell_paths`
+    helper; the ctrl fits JSON `_ctrl`-vs-`_control` drift class cannot recur."""
+    import issue1768_fit as fit
+
+    rng = np.random.default_rng(0)
+    n, d, layer = 60, 5, 0
+    C0 = rng.standard_normal((n, d))
+    W = rng.standard_normal((d, d))
+    V0 = C0 @ W + 0.01 * rng.standard_normal((n, d))
+    Cp = C0 + 0.01 * rng.standard_normal((n, d))
+    Vp = Cp @ (W + 3.0) + 0.01 * rng.standard_normal((n, d))
+    cell = {
+        "C0": C0,
+        "V0": V0,
+        "Cplus": Cp,
+        "Vplus": Vp,
+        "Vplus_tf": Vp,
+        "split": np.array(["train"] * 40 + ["val"] * 8 + ["test"] * 12),
+        "corpus": np.array(["lmsys", "wildchat"] * 30),
+        "sha": [f"s{i}" for i in range(n)],
+        "qidx": np.arange(n),
+        "src_qidx": np.arange(n) + 100,
+    }
+    arm = "syc-pers-con-lr1e5-s42"  # a PFX_CONTROL_ARMS member — ctrl branch fires
+    res_dir = tmp_path / "res"
+    for cond in ("own", "ctrl", "bare_n"):
+        fit._pfx_fit_core(
+            tmp_path, res_dir, arm, layer, cond, cell, smoke=True, run_transfer_fold=False
+        )
+        fits_p, npz_p, percell_p = fit.pfx_cell_paths(tmp_path, res_dir, arm, layer, cond)
+        assert fits_p.exists() and npz_p.exists() and percell_p.exists(), cond
+    # percell files carry the plan §4.5 suffixes {own, control, bare_n}
+    percell = res_dir / "on_target" / "percell"
+    assert (percell / f"{arm}_L0_own.json").exists()
+    assert (percell / f"{arm}_L0_control.json").exists()
+    assert (percell / f"{arm}_L0_bare_n.json").exists()
+    # the REAL consumer, ctrl branch included (smoke=False)
+    fit.phase_pfx7(tmp_path, res_dir, (layer,), smoke=False, arms_filter=(arm,))
+    summary = json.loads((res_dir / "on_target" / "map_change_on_target.json").read_text())
+    row = summary["contrast"][f"{arm}_L0"]
+    assert "D_control" in row and "control_contrast" in row
+    assert row["control_contrast"]["verdict"] in {
+        "Control-above-own",
+        "Control-below-own",
+        "Indistinguishable",
+    }
+    assert summary["success_criteria"]["n_control_arms"] >= 0
+    # missing-cell path fails loud NAMING the re-run phase, not FileNotFoundError
+    with pytest.raises(RuntimeError, match="re-run pfx5"):
+        fit._pfx_cell_inputs(tmp_path, res_dir, arm, 99, "own")
+
+
+def test_pfx4_resume_skip_and_recount(tmp_path, monkeypatch):
+    """r3-v2 Minor: pfx4 consults upload_done.json at entry — matching
+    expected-store count skips the re-upload; a changed count re-uploads."""
+    import issue1768_capture as cap
+
+    from explore_persona_space.orchestrate import hub as hub_mod
+
+    calls: list[str] = []
+    monkeypatch.setattr(
+        cap, "_upload_tree", lambda cfg, name: (calls.append(name), f"{cfg.hf_prefix}/{name}")[1]
+    )
+    monkeypatch.setattr(hub_mod, "verify_repo_paths_uploaded", lambda *a, **k: [])
+    cfg = cap.Cfg(out_root=tmp_path, phases=(), upload=True)
+    cap._atomic_json(tmp_path / "on_target" / "upload_done.json", {"n_verified": 0})
+    cap.phase_pfx4(cfg)
+    assert calls == []  # matching count (0 stores) -> resume skip
+    store = tmp_path / "on_target" / "corpus_capture" / "base_content@pers"
+    store.mkdir(parents=True)
+    (store / "pooled.pt").write_bytes(b"x")
+    cap.phase_pfx4(cfg)  # count changed 0 -> 1: re-upload fires
+    assert calls == list(cap.PFX_UPLOAD_TREES)
+    assert json.loads((tmp_path / "on_target" / "upload_done.json").read_text())["n_verified"] == 1

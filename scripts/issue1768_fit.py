@@ -674,6 +674,29 @@ def _pfx_results(results_dir: Path) -> Path:
     return Path(results_dir) / "on_target"
 
 
+def pfx_cell_paths(
+    out_root: Path, results_dir: Path, arm_id: str, layer: int, cond_label: str
+) -> tuple[Path, Path, Path]:
+    """The ONE canonical (fits_json, fit_state_npz, percell_json) path triple
+    per pfx cell. Producer (`_pfx_fit_core`) and consumer (`phase_pfx7`) BOTH
+    compose paths through this helper so a writer/reader name drift cannot
+    recur (r3-v2 Critical 1: the ctrl fits JSON was written `_ctrl` and read
+    `_control`). ``cond_label`` ∈ {"own", "ctrl", "bare_n"}; file suffixes are
+    the plan §4.5 names {own, control, bare_n}."""
+    res = _pfx_results(results_dir)
+    if cond_label == "bare_n":
+        suffix = "bare_n"
+        stem = f"{arm_id}_L{layer}"
+        fits = res / "fits_bare_n" / f"{stem}.json"
+    else:
+        suffix = PFX_PERCELL_SUFFIX[cond_label]  # KeyError = unknown condition, loud
+        stem = f"{arm_id}_L{layer}_{suffix}"
+        fits = res / "fits" / f"{stem}.json"
+    npz = _pfx_out(out_root) / "fit_state" / f"{stem}.npz"
+    percell = res / "percell" / f"{arm_id}_L{layer}_{suffix}.json"
+    return fits, npz, percell
+
+
 def _pfx_fit_arms(smoke: bool, arms_filter: tuple[str, ...]) -> list[str]:
     if arms_filter:
         want = set(arms_filter)
@@ -826,11 +849,10 @@ def _pfx_fit_core(
     run_transfer_fold: bool,
 ) -> dict:
     """One pfx cell: 3 maps + baselines + floor + verdict, persisted the moment
-    it completes (fits JSON + percell rows JSON + fit_state npz)."""
-    res = _pfx_results(results_dir)
-    subdir = "fits_bare_n" if cond_label == "bare_n" else "fits"
-    fname = f"{arm_id}_L{layer}" + ("" if cond_label == "bare_n" else f"_{cond_label}")
-    dest = res / subdir / f"{fname}.json"
+    it completes (fits JSON + percell rows JSON + fit_state npz). Every output
+    path composes through `pfx_cell_paths` — the same helper `phase_pfx7`
+    reads through (r3-v2 Critical 1)."""
+    dest, npz_path, percell_path = pfx_cell_paths(out_root, results_dir, arm_id, layer, cond_label)
     if dest.exists():
         return json.loads(dest.read_text())
     dev = _device()
@@ -872,7 +894,7 @@ def _pfx_fit_core(
         for k, i in enumerate(state["te"])
     ]
     _atomic_json(
-        res / "percell" / f"{arm_id}_L{layer}_{percell_suffix}.json",
+        percell_path,
         {
             "arm_id": arm_id,
             "layer": layer,
@@ -883,7 +905,7 @@ def _pfx_fit_core(
         },
     )
     _atomic_npz(
-        _pfx_out(out_root) / "fit_state" / f"{fname}.npz",
+        npz_path,
         delta_rows=state["delta_rows"],
         floor_rows=state["floor_rows"],
         test_qidx=cell["qidx"][state["te"]].astype(np.int64),
@@ -1013,7 +1035,12 @@ def _m0_prefix_effect(
 
 
 def _physical_gpus() -> list[int]:
-    """Visible GPUs via CVD/nvidia-smi subprocess (never torch.cuda; gotchas)."""
+    """Visible GPUs via CVD/nvidia-smi subprocess (never torch.cuda; gotchas).
+
+    Fail-loud split (r3-v2 Minor): a MISSING nvidia-smi binary means a CPU box
+    (VM smoke) — serial in-process is correct there — but nvidia-smi PRESENT
+    and FAILING is a broken driver on a GPU box, where a silent `[]` would
+    quietly run the fits serially at width 1 (the round-1 p8 ~12x lesson)."""
     cvd = os.environ.get("CUDA_VISIBLE_DEVICES")
     if cvd is not None:
         return [int(x) for x in cvd.split(",") if x.strip() != ""]
@@ -1024,9 +1051,17 @@ def _physical_gpus() -> list[int]:
             text=True,
             check=True,
         ).stdout
+    except FileNotFoundError:
+        return []  # no nvidia-smi binary: CPU box — serial is the correct width
+    except (OSError, subprocess.CalledProcessError) as e:
+        raise RuntimeError(
+            "[pfx] nvidia-smi present but failed — refusing the silent serial "
+            f"width-1 fallback on a GPU box (set CUDA_VISIBLE_DEVICES to override): {e}"
+        ) from e
+    try:
         return [int(line) for line in out.split("\n") if line.strip()]
-    except (OSError, subprocess.CalledProcessError, ValueError):
-        return []
+    except ValueError as e:
+        raise RuntimeError(f"[pfx] unparseable nvidia-smi index output: {out!r}") from e
 
 
 def _fanout_fit_arms(
@@ -1050,6 +1085,7 @@ def _fanout_fit_arms(
     for i, arm in enumerate(arms):
         shards[gpus[i % len(gpus)]].append(arm)
     procs: dict[int, tuple[subprocess.Popen, list[str]]] = {}
+    log_handles: list = []
     log_dir = _pfx_out(out_root) / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     for gpu, shard in shards.items():
@@ -1081,6 +1117,7 @@ def _fanout_fit_arms(
         env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(gpu)}
         log_path = log_dir / f"{phase}_gpu{gpu}.log"
         logf = log_path.open("a")
+        log_handles.append(logf)
         procs[gpu] = (
             subprocess.Popen(cmd, cwd=REPO_ROOT, env=env, stdout=logf, stderr=logf),
             shard,
@@ -1088,19 +1125,23 @@ def _fanout_fit_arms(
         logger.info(
             "[%s] shard on gpu %d: %d arms (pid %d)", phase, gpu, len(shard), procs[gpu][0].pid
         )
-    failed: list[tuple[int, int]] = []
-    for gpu, (proc, _shard) in procs.items():
-        rc = proc.wait()
-        if rc != 0:
-            failed.append((gpu, rc))
-    if failed:
-        for gpu, (proc, _shard) in procs.items():  # reap any stragglers
-            if proc.poll() is None:
-                proc.terminate()
-        gpu, rc = failed[0]
-        tail_path = log_dir / f"{phase}_gpu{gpu}.log"
-        tail = tail_path.read_text()[-4000:] if tail_path.exists() else "(no log)"
-        raise RuntimeError(f"[{phase}] shard gpu{gpu} exited rc={rc}\n--- log tail ---\n{tail}")
+    try:
+        failed: list[tuple[int, int]] = []
+        for gpu, (proc, _shard) in procs.items():
+            rc = proc.wait()
+            if rc != 0:
+                failed.append((gpu, rc))
+        if failed:
+            for gpu, (proc, _shard) in procs.items():  # reap any stragglers
+                if proc.poll() is None:
+                    proc.terminate()
+            gpu, rc = failed[0]
+            tail_path = log_dir / f"{phase}_gpu{gpu}.log"
+            tail = tail_path.read_text()[-4000:] if tail_path.exists() else "(no log)"
+            raise RuntimeError(f"[{phase}] shard gpu{gpu} exited rc={rc}\n--- log tail ---\n{tail}")
+    finally:
+        for h in log_handles:  # r3-v2 Minor: close shard log handles
+            h.close()
     return True
 
 
@@ -1180,21 +1221,40 @@ def _pfx_primary_layer(arm_id: str) -> int:
     return 25 if arm_id.startswith("mk-") else 19
 
 
-def contrast_verdict(delta_d: float, ci: list[float]) -> str:
-    """The §3 per-arm contrast lattice (DISJOINT + exhaustive)."""
+def contrast_verdict(
+    ci: list[float],
+    *,
+    positive: str = "On-target-amplified",
+    negative: str = "On-target-attenuated",
+) -> str:
+    """The §3 per-arm contrast lattice (DISJOINT + exhaustive) — the verdict
+    derives from the CI alone (r3-v2 Minor: the point estimate was an unused
+    parameter). ``positive``/``negative`` label the two significant sides so a
+    control−own contrast never reuses the on/off-target vocabulary (r3-v2
+    Minor: inverted semantics)."""
     if ci[0] > 0:
-        return "On-target-amplified"
+        return positive
     if ci[1] < 0:
-        return "On-target-attenuated"
+        return negative
     return "Indistinguishable"
 
 
-def _paired_d_contrast(a_state: dict, b_state: dict, seed: int, n_draws: int = N_CI_DRAWS) -> dict:
+def _paired_d_contrast(
+    a_state: dict,
+    b_state: dict,
+    seed: int,
+    n_draws: int = N_CI_DRAWS,
+    *,
+    positive: str = "On-target-amplified",
+    negative: str = "On-target-attenuated",
+) -> dict:
     """Paired ΔD = D_a − D_b over SHARED test rows × refit draws.
 
     Rows are paired by src_qidx (the round-1 sample index both sides carry);
     each bootstrap draw resamples ONE shared row-index vector applied to both
     sides (paired), recomputing Δ_med − floor_p95 per side per draw.
+    ``positive``/``negative`` thread the verdict vocabulary (control reads
+    pass control-specific labels).
     """
     a_src = [int(q) for q in a_state["test_src_qidx"]]
     b_src = [int(q) for q in b_state["test_src_qidx"]]
@@ -1233,30 +1293,43 @@ def _paired_d_contrast(a_state: dict, b_state: dict, seed: int, n_draws: int = N
         "d_b_shared": d_b,
         "delta_d": d_a - d_b,
         "delta_d_ci95": ci,
-        "verdict": contrast_verdict(d_a - d_b, ci),
+        "verdict": contrast_verdict(ci, positive=positive, negative=negative),
     }
+
+
+def _pfx_cell_inputs(
+    out_root: Path, results_dir: Path, arm_id: str, layer: int, cond_label: str
+) -> tuple[dict, dict]:
+    """(fits JSON, fit_state arrays) for one cell, read through the SAME
+    `pfx_cell_paths` helper the producer wrote through (r3-v2 Critical 1);
+    a missing cell fails loud NAMING the phase to re-run, not with a raw
+    FileNotFoundError (r3 verdict § Unaddressed Cases)."""
+    fits_path, npz_path, _ = pfx_cell_paths(out_root, results_dir, arm_id, layer, cond_label)
+    for p in (fits_path, npz_path):
+        if not p.exists():
+            rerun = "pfx6" if cond_label == "bare_n" else "pfx5"
+            raise RuntimeError(
+                f"[pfx7] missing {p} — cell {arm_id}_L{layer}@{cond_label} not fitted; "
+                f"re-run {rerun} (a partially-fanned shard may have been aborted)"
+            )
+    with np.load(npz_path) as z:
+        state = {k: z[k] for k in z.files}
+    return json.loads(fits_path.read_text()), state
 
 
 def phase_pfx7(out_root: Path, results_dir: Path, layers, smoke: bool, arms_filter) -> None:
     _phase("pfx7_contrast")
     arms = _pfx_fit_arms(smoke, arms_filter)
     res = _pfx_results(results_dir)
-    state_dir = _pfx_out(out_root) / "fit_state"
-
-    def _state(fname: str) -> dict:
-        with np.load(state_dir / f"{fname}.npz") as z:
-            return {k: z[k] for k in z.files}
-
-    def _fit_json(subdir: str, fname: str) -> dict:
-        return json.loads((res / subdir / f"{fname}.json").read_text())
 
     table: dict[str, dict] = {}
-    for ai, arm in enumerate(arms):
+    for arm in arms:
+        # stable per-arm seed index (r3-v2 Minor: an --arms-filtered re-run
+        # must draw the same CIs as the full run)
+        ai = X.PFX_ARMS.index(arm)
         for layer in layers:
-            own_state = _state(f"{arm}_L{layer}_own")
-            bare_state = _state(f"{arm}_L{layer}")
-            own_fit = _fit_json("fits", f"{arm}_L{layer}_own")
-            bare_fit = _fit_json("fits_bare_n", f"{arm}_L{layer}")
+            own_fit, own_state = _pfx_cell_inputs(out_root, results_dir, arm, layer, "own")
+            bare_fit, bare_state = _pfx_cell_inputs(out_root, results_dir, arm, layer, "bare_n")
             seed = X.FLOOR_SEED + 7000 + int(layer) * 100 + ai
             row = {
                 "arm_id": arm,
@@ -1272,13 +1345,19 @@ def phase_pfx7(out_root: Path, results_dir: Path, layers, smoke: bool, arms_filt
                 "contrast": _paired_d_contrast(own_state, bare_state, seed),
             }
             if "ctrl" in _pfx_conds(smoke, arm):
-                ctrl_state = _state(f"{arm}_L{layer}_ctrl")
-                ctrl_fit = _fit_json("fits", f"{arm}_L{layer}_control")
+                ctrl_fit, ctrl_state = _pfx_cell_inputs(out_root, results_dir, arm, layer, "ctrl")
                 row["D_control"] = ctrl_fit["map_change"]["D"]
                 row["verdict_control"] = ctrl_fit["map_change"]["verdict"]
+                # ΔD = D_ctrl − D_own; "Control-below-own" (upper CI < 0) is
+                # the prefix-SPECIFIC read (control-specific vocabulary —
+                # r3-v2 Minor: never the on/off-target labels here)
                 row["control_contrast"] = _paired_d_contrast(
-                    ctrl_state, own_state, seed + 50
-                )  # ΔD = D_ctrl − D_own; upper CI < 0 => prefix-specific
+                    ctrl_state,
+                    own_state,
+                    seed + 50,
+                    positive="Control-above-own",
+                    negative="Control-below-own",
+                )
             table[f"{arm}_L{layer}"] = row
             print(f"[pfx7] contrast {arm}_L{layer}", flush=True)
     primary = {
@@ -1425,16 +1504,27 @@ def phase_pfx8(
 def _pfx_results_upload(out_root: Path, results_dir: Path, hf_prefix: str | None) -> None:
     """Results mirror (plan §10): on_target eval_results JSONs + fit_state npz
     to the data repo — the fellows lane rsync-excludes eval_results/, so the
-    Hub mirror is the durable route for the reduce outputs."""
+    Hub mirror is the durable route for the reduce outputs.
+
+    ``hf_prefix`` is REQUIRED (fail-loud raise, never an `or X.HF_PREFIX`
+    fallback at the upload destination — the #1005 clobber shape the
+    `--check-upload-prefix-clobber` lint bans: a child issue reusing this
+    script would silently inherit this issue's prefix). Every caller passes
+    the `resolve_fit_hf_prefix` result, which smoke-suffixes `_smoke`.
+    """
     from explore_persona_space.orchestrate import hub
 
-    prefix = hf_prefix or X.HF_PREFIX
+    if not hf_prefix:
+        raise ValueError(
+            "_pfx_results_upload requires an explicit hf_prefix (no hardcoded "
+            "issue-prefix fallback at an upload destination — #1005 class)"
+        )
     res = _pfx_results(results_dir)
     url = hub._upload(
         res,
         repo_id=X.HF_DATA_REPO,
         repo_type="dataset",
-        path_in_repo=f"{prefix}/on_target/eval_results",
+        path_in_repo=f"{hf_prefix}/on_target/eval_results",
     )
     if not url:
         raise RuntimeError(f"pfx8 results-mirror upload of {res} returned no path")
@@ -1444,7 +1534,7 @@ def _pfx_results_upload(out_root: Path, results_dir: Path, hf_prefix: str | None
             state,
             repo_id=X.HF_DATA_REPO,
             repo_type="dataset",
-            path_in_repo=f"{prefix}/on_target/fit_state",
+            path_in_repo=f"{hf_prefix}/on_target/fit_state",
         )
         if not url:
             raise RuntimeError(f"pfx8 fit_state upload of {state} returned no path")
