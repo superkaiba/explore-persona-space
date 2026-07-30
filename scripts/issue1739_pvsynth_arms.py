@@ -227,6 +227,35 @@ def own_pool_frozen_layers(
 # ---------------------------------------------------------------------------
 
 
+def _resolve_pvsynth_store(args: argparse.Namespace, behavior: str) -> Path:
+    """Per-behavior pvsynth capture store, tolerating a sibling-dir override.
+
+    The store is uploaded as ``<hf_prefix>/capture_store/<behavior>/``, so the
+    correct input is always ONE behavior's dir. Three ways to name it, checked
+    in order:
+
+    1. ``--pvsynth-store-root <dir>``  -> ``<dir>/<behavior>`` (the root form).
+    2. ``--pvsynth-store <dir>`` where a SIBLING named ``<behavior>`` exists
+       next to it -> that sibling. This makes a caller that resolved ONE
+       behavior's dir (e.g. by finding the first ``_capture_manifest.json``
+       under a mirrored ``capture_store/`` tree) correct for EVERY behavior
+       instead of silently scoring them all against one behavior's
+       activations. Only fires when the sibling actually exists, so a
+       deliberate single-behavior override is untouched.
+    3. ``--pvsynth-store <dir>`` verbatim, else the ``--store-root`` default.
+    """
+    if args.pvsynth_store_root is not None:
+        return args.pvsynth_store_root / behavior
+    if args.pvsynth_store is not None:
+        given = Path(args.pvsynth_store)
+        if given.name != behavior:
+            sibling = given.parent / behavior
+            if sibling.is_dir():
+                return sibling
+        return given
+    return args.store_root / "pvsynth_capture_store" / behavior
+
+
 def _behavior_paths(args: argparse.Namespace, behavior: str) -> dict[str, Path]:
     """Resolve every input path for one behavior (flags override the defaults).
 
@@ -242,7 +271,7 @@ def _behavior_paths(args: argparse.Namespace, behavior: str) -> dict[str, Path]:
         "train_store": args.train_store or args.store_root / f"{behavior}_labeling",
         "train_dv": args.train_dv_json or args.train_dv_root / behavior / "labeling.json",
         "e1_store": args.e1_store or args.store_root / f"{behavior}_extraction",
-        "pvsynth_store": args.pvsynth_store or args.store_root / "pvsynth_capture_store" / behavior,
+        "pvsynth_store": _resolve_pvsynth_store(args, behavior),
         "pvsynth_dv": args.pvsynth_dv_json
         or args.out_root / "dv_dataset" / behavior / "labeling.json",
         "train_summary": args.train_summary
@@ -669,6 +698,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--train-dv-json", type=Path, default=None)
     ap.add_argument("--e1-store", type=Path, default=None)
     ap.add_argument("--pvsynth-store", type=Path, default=None)
+    ap.add_argument(
+        "--pvsynth-store-root",
+        type=Path,
+        default=None,
+        help="dir holding <behavior>/ pvsynth capture stores (a mirrored capture_store/ tree)",
+    )
     ap.add_argument("--pvsynth-dv-json", type=Path, default=None)
     ap.add_argument("--train-summary", type=Path, default=None)
     ap.add_argument(
@@ -706,7 +741,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "train_store",
         "train_dv_json",
         "e1_store",
-        "pvsynth_store",
         "pvsynth_dv_json",
         "train_summary",
     )
@@ -714,6 +748,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         set_flags = [
             f"--{f.replace('_', '-')}" for f in single_only if getattr(args, f) is not None
         ]
+        # --pvsynth-store is exempt WHEN it sibling-resolves for every behavior
+        # (see _resolve_pvsynth_store): each behavior then gets its OWN store.
+        if args.pvsynth_store is not None and args.pvsynth_store_root is None:
+            resolved = {b: _resolve_pvsynth_store(args, b) for b in args.behaviors}
+            if len(set(resolved.values())) != len(args.behaviors) or not all(
+                p.is_dir() for p in resolved.values()
+            ):
+                set_flags.append("--pvsynth-store")
         if set_flags:
             ap.error(
                 f"{', '.join(set_flags)} name ONE behavior's input but --behaviors has "

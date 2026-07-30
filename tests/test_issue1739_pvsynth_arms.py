@@ -486,8 +486,47 @@ def test_train_dv_root_override(tmp_path):
     )
 
 
+def test_pvsynth_store_sibling_resolves_per_behavior(tmp_path):
+    """A --pvsynth-store naming ONE behavior's dir resolves each behavior to its
+    OWN sibling — the shape a find-first-manifest caller produces."""
+    cap = tmp_path / "mirror" / "capture_store"
+    for b in ("evil", "hallucination", "sycophancy"):
+        (cap / b).mkdir(parents=True)
+    args = pva.parse_args(
+        ["--behaviors", "evil", "hallucination", "sycophancy", "--pvsynth-store", str(cap / "evil")]
+    )
+    assert pva._behavior_paths(args, "evil")["pvsynth_store"] == cap / "evil"
+    assert pva._behavior_paths(args, "hallucination")["pvsynth_store"] == cap / "hallucination"
+    assert pva._behavior_paths(args, "sycophancy")["pvsynth_store"] == cap / "sycophancy"
+
+
+def test_pvsynth_store_without_siblings_is_refused_for_multi_behavior(tmp_path):
+    """No sibling dirs -> the override would share one store; refuse loudly."""
+    lone = tmp_path / "capture_store" / "evil"
+    lone.mkdir(parents=True)
+    with pytest.raises(SystemExit) as exc:
+        pva.parse_args(["--behaviors", "evil", "hallucination", "--pvsynth-store", str(lone)])
+    assert exc.value.code == 2
+
+
+def test_pvsynth_store_root_form(tmp_path):
+    cap = tmp_path / "capture_store"
+    args = pva.parse_args(
+        ["--behaviors", "evil", "hallucination", "--pvsynth-store-root", str(cap)]
+    )
+    assert pva._behavior_paths(args, "hallucination")["pvsynth_store"] == cap / "hallucination"
+
+
+def test_pvsynth_store_single_behavior_override_is_verbatim(tmp_path):
+    """A deliberate single-behavior override is never rewritten."""
+    d = tmp_path / "somewhere" / "evil"
+    d.mkdir(parents=True)
+    args = pva.parse_args(["--behaviors", "evil", "--pvsynth-store", str(d)])
+    assert pva._behavior_paths(args, "evil")["pvsynth_store"] == d
+
+
 @pytest.mark.parametrize(
-    "flag", ["--train-store", "--train-dv-json", "--e1-store", "--pvsynth-store", "--train-summary"]
+    "flag", ["--train-store", "--train-dv-json", "--e1-store", "--train-summary"]
 )
 def test_single_path_override_refused_for_multi_behavior_run(flag, tmp_path):
     with pytest.raises(SystemExit) as exc:
