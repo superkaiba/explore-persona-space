@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1891,
+  "highest_id": 1892,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6494,8 +6494,8 @@
     "1839": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1839",
-      "status": "reviewing",
+      "path": "tasks/completed/1839",
+      "status": "completed",
       "title": "workflow-fix: gotchas parity family \u2014 tensor device placement (CPU smokes can't exercise CUDA branches)"
     },
     "184": {
@@ -6896,6 +6896,13 @@
       "path": "tasks/proposed/1891",
       "status": "proposed",
       "title": "workflow-fix: experiment-implementer MEMORY.md exceeds the always-loaded read limit (41KB vs ~24.4KB) \u2014 curate + add size guard"
+    },
+    "1892": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1892",
+      "status": "proposed",
+      "title": "workflow-fix: reconnect handle writes spec-default provisioning_model, disarming FLEX_START queue-timeout failover"
     },
     "19": {
       "has_clean_result": false,
