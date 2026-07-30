@@ -11,6 +11,14 @@ origin_prompt: 'Help me to plan this experiment with these model organisms: What
   variants); is leakage due to similarity of mean answer vectors with context similarity
   a byproduct; any other suggestions'
 workflow: v1
+goal: 'On the model-organism fleet at per-prompt grain (the #1768 16,400-real-user-prompt
+  corpus), determine which per-context predictor computable BEFORE fine-tuning best
+  predicts per-context leakage of the trained behavior (graded judge DV for content
+  arms; three-space log P(marker) for marker arms), whether base behavioral propensity
+  survives as the champion, and whether context-vector similarity''s predictive power
+  is mediated by answer-side similarity; post-FT and delta candidates form a separate
+  mechanistic panel, and every similarity candidate is computed against both the training-context-centroid
+  and panel-source-context anchors.'
 ---
 # Leakage-predictor horse race at per-prompt grain: pre-fine-tuning geometry candidates vs base propensity, with an answer-side mediation test
 
@@ -21,7 +29,7 @@ workflow: v1
 
 ## Goal
 
-On the model-organism fleet at per-prompt grain (the #1768 16,400-real-user-prompt corpus), determine which per-context predictor computable BEFORE fine-tuning best predicts per-context leakage of the trained behavior, whether the incumbent base behavioral propensity survives as champion, and whether context-vector similarity's predictive power is mediated by answer-side similarity (context similarity as byproduct). Leakage DV: graded 0–100 multi-sampled judge score on the existing on-policy completions (content arms; binary rate companion) and the three-space log P(marker) at the post-response slot (marker arms). The headline ranks DEPLOYABLE (pre-FT) candidates only; post-FT and delta candidates form a mechanistic explanation panel.
+On the model-organism fleet at per-prompt grain (the #1768 16,400-real-user-prompt corpus), determine which per-context predictor computable BEFORE fine-tuning best predicts per-context leakage of the trained behavior (graded judge DV for content arms; three-space log P(marker) for marker arms), whether base behavioral propensity survives as the champion, and whether context-vector similarity's predictive power is mediated by answer-side similarity; post-FT and delta candidates form a separate mechanistic panel, and every similarity candidate is computed against both the training-context-centroid and panel-source-context anchors.
 
 ## Candidate roster
 
