@@ -52,6 +52,13 @@ DIR_C = {
     "w1_mprime": pal[0],
     "random": "#8a8a8a",
 }
+DIR_LABEL = {
+    "evil": "evil",
+    "sycophancy": "sycophancy",
+    "hallucination": "hallucination",
+    "w1_mprime": "top map direction",
+    "random": "random control",
+}
 
 # ------------------------------------------------------------------ HERO
 ops = jvm["operators"]
@@ -120,7 +127,7 @@ for d, col in DIR_C.items():
         s=7,
         alpha=0.35,
         color=col,
-        label=f"{d} (n={len(sub)})",
+        label=f"{DIR_LABEL[d]} (n={len(sub)})",
         linewidths=0,
     )
 lim = 0.45
@@ -364,7 +371,7 @@ ax.set_title("Behavioral dose response (filled = raw, open = CJK-excluded)", fon
 ax = axes[1]
 for d in ("evil", "sycophancy", "hallucination", "w1_mprime", "random"):
     ys = [shifts["per_stratum"][f"{d}_a{a:g}"]["mean_dv_norm"] for a in alphas]
-    ax.plot(alphas, ys, marker="o", color=DIR_C[d], label=d)
+    ax.plot(alphas, ys, marker="o", color=DIR_C[d], label=DIR_LABEL[d])
 floor = sup["steering_noise"]["scaled_noise_floor_median"]
 ax.axhline(floor, color="#b3261e", ls="--", lw=1.2)
 ax.text(
@@ -392,7 +399,7 @@ for st, col in [("evil_a4", DIR_C["evil"]), ("random_a4", DIR_C["random"])]:
         bins=30,
         alpha=0.55,
         color=col,
-        label=f"{st} (median {np.median(sup['steering_noise']['per_cell_reliability'][st]['splithalf_dv_cos']):.2f})",
+        label=f"{'evil, α=4' if st == 'evil_a4' else 'random, α=4'} (median {np.median(sup['steering_noise']['per_cell_reliability'][st]['splithalf_dv_cos']):.2f})",
     )
 ax.axvline(0, color="#555555", lw=0.9)
 ax.set_xlabel("split-half cosine of per-cell Δv̄ (draws 1-2 vs 3-4)")

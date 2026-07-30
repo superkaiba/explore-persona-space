@@ -1,6 +1,6 @@
 {
-  "commit": "ef571068d5",
-  "created": "2026-07-30T03:01:07Z",
+  "commit": "a7a99f955e",
+  "created": "2026-07-30T03:14:25Z",
   "figsize": [
     11.5,
     4.6
@@ -14059,8 +14059,8 @@
           "evil (n=748)",
           "sycophancy (n=748)",
           "hallucination (n=752)",
-          "w1_mprime (n=748)",
-          "random (n=749)"
+          "top map direction (n=748)",
+          "random control (n=749)"
         ],
         "xticklabels": [
           "\u22120.5",
@@ -14094,8 +14094,8 @@
       "evil (n=748)",
       "sycophancy (n=748)",
       "hallucination (n=752)",
-      "w1_mprime (n=748)",
-      "random (n=749)"
+      "top map direction (n=748)",
+      "random control (n=749)"
     ]
   }
 }

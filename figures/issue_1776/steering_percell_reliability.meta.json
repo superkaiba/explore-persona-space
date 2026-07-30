@@ -1,6 +1,6 @@
 {
-  "commit": "ef571068d5",
-  "created": "2026-07-30T03:01:45Z",
+  "commit": "a7a99f955e",
+  "created": "2026-07-30T03:14:52Z",
   "figsize": [
     11.5,
     4.2
@@ -12019,8 +12019,8 @@
         "xlabel": "split-half cosine of per-cell \u0394v\u0304 (draws 1-2 vs 3-4)",
         "ylabel": "cells",
         "legend_labels": [
-          "evil_a4 (median 0.00)",
-          "random_a4 (median 0.00)"
+          "evil, \u03b1=4 (median 0.00)",
+          "random, \u03b1=4 (median 0.00)"
         ],
         "xticklabels": [
           "\u22120.8",

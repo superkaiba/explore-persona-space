@@ -1,6 +1,6 @@
 {
-  "commit": "ef571068d5",
-  "created": "2026-07-30T03:01:39Z",
+  "commit": "a7a99f955e",
+  "created": "2026-07-30T03:14:46Z",
   "figsize": [
     11.5,
     4.4
@@ -215,56 +215,56 @@
     {
       "steering scale \u03b1": 0.5,
       "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.371410281211149,
-      "series": "w1_mprime",
+      "series": "top map direction",
       "_kind": "line",
       "_group": 12
     },
     {
       "steering scale \u03b1": 1.0,
       "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.192593181293664,
-      "series": "w1_mprime",
+      "series": "top map direction",
       "_kind": "line",
       "_group": 12
     },
     {
       "steering scale \u03b1": 2.0,
       "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.217674435204337,
-      "series": "w1_mprime",
+      "series": "top map direction",
       "_kind": "line",
       "_group": 12
     },
     {
       "steering scale \u03b1": 4.0,
       "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.459984560749774,
-      "series": "w1_mprime",
+      "series": "top map direction",
       "_kind": "line",
       "_group": 12
     },
     {
       "steering scale \u03b1": 0.5,
       "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.240390891088002,
-      "series": "random",
+      "series": "random control",
       "_kind": "line",
       "_group": 13
     },
     {
       "steering scale \u03b1": 1.0,
       "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.279470807970757,
-      "series": "random",
+      "series": "random control",
       "_kind": "line",
       "_group": 13
     },
     {
       "steering scale \u03b1": 2.0,
       "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.403144890031947,
-      "series": "random",
+      "series": "random control",
       "_kind": "line",
       "_group": 13
     },
     {
       "steering scale \u03b1": 4.0,
       "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.4486773852722425,
-      "series": "random",
+      "series": "random control",
       "_kind": "line",
       "_group": 13
     }
@@ -334,8 +334,8 @@
           "evil",
           "sycophancy",
           "hallucination",
-          "w1_mprime",
-          "random"
+          "top map direction",
+          "random control"
         ],
         "annotations": [
           "independent-draw noise floor (\u03b1=0 pseudo-shift)"
@@ -368,8 +368,8 @@
       "evil",
       "sycophancy",
       "hallucination",
-      "w1_mprime",
-      "random"
+      "top map direction",
+      "random control"
     ]
   }
 }
