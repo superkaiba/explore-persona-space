@@ -58,15 +58,20 @@ def _stage(stage_root: Path, rel: str) -> Path:
     """hf_hub_download one file from the pinned revision into stage_root."""
     from huggingface_hub import hf_hub_download
 
+    from explore_persona_space.orchestrate import hub
+
     local = stage_root / rel
     if local.exists():
         return local
-    hf_hub_download(
-        X.HF_DATA_REPO,
-        rel,
-        repo_type="dataset",
-        revision=REV,
-        local_dir=str(stage_root),
+    hub.retry_transient(
+        lambda: hf_hub_download(
+            X.HF_DATA_REPO,
+            rel,
+            repo_type="dataset",
+            revision=REV,
+            local_dir=str(stage_root),
+        ),
+        what=f"panel store fetch {rel}",
     )
     assert local.exists(), rel
     return local
