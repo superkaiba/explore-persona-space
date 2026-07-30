@@ -1904,12 +1904,29 @@ def _stage_event_ts(event: dict) -> datetime | None:
     return parsed
 
 
+_BREADCRUMB_VALUE_TRAILING_PUNCT = ":;,."
+
+
 def _breadcrumb_fields(note: str) -> dict[str, str]:
-    """Parse a ``stage-dispatch`` note's ``key=value`` tokens (whitespace-split, order-free)."""
+    """Parse a ``stage-dispatch`` note's ``key=value`` tokens (whitespace-split, order-free).
+
+    Hardened (#1828, incident #1689): trailing sentence punctuation is stripped from values
+    (``label=foo:`` -> ``foo``) and binding is FIRST-non-empty-wins — a later bare ``key=``
+    prose substring can neither re-bind an already-parsed field nor bind an empty value.
+    (A lone ``=``-bearing prose token with empty key AND value — the #931
+    ``success = [phase=done]`` shape — previously bound ``fields[""] = ""``; post-change it
+    never binds. No consumer reads key ``""``.) A correction to a bad breadcrumb is posted
+    as a NEW event, never a later same-note token override — within one note the FIRST
+    non-empty binding of a key is authoritative (canonical fields lead the note by
+    convention; prose follows).
+    """
     fields: dict[str, str] = {}
     for token in note.split():
         key, sep, value = token.partition("=")
-        if sep:
+        if not sep:
+            continue
+        value = value.rstrip(_BREADCRUMB_VALUE_TRAILING_PUNCT)
+        if value and key not in fields:
             fields[key] = value
     return fields
 
