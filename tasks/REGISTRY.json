@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1860,
+  "highest_id": 1861,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6665,6 +6665,13 @@
       "path": "tasks/proposed/1860",
       "status": "proposed",
       "title": "daily-fix: humanize loop verifies candidate body before set-"
+    },
+    "1861": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1861",
+      "status": "proposed",
+      "title": "daily-fix: repo-root guard recognizes cd-to-worktree via var"
     },
     "187": {
       "has_clean_result": true,
