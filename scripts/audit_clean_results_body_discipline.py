@@ -243,6 +243,31 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # hand-adjudication; the same line-scoped property
         # `_strip_interval_inline_exempt_lines` already has; 0 wrapped
         # instances in the 2026-07-29 new-hit set).
+        # #1831 (2026-07-30) adds `ceilings?`/`checks?` for the #1769
+        # escape: 'the registered ceiling check' (x4) and bare
+        # 'registered ceiling' in #1769's draft passed the audit clean
+        # on 2026-07-29 — 'ceiling'/'check' were absent from the
+        # alternation — and were caught only by the LM critic's
+        # Lens 6/7 read. The filing's `gates?` proposal was narrowed at
+        # plan time: `gates?` was ALREADY in the set, and 'registered
+        # ceiling gate' already matched via `gates?` with 'ceiling' as
+        # an intermediate token. Measured 2026-07-30 over all 1,816
+        # tasks/*/*/body.md (full-pattern old-vs-new match-START diff
+        # through the audit's own scan-source pipeline, re.IGNORECASE):
+        # 7 new starts — 4 genuine pre-registration jargon (#562
+        # 'registered manipulation check', #600 'registered check',
+        # #1042 'registered acceptance check', #614 'registered daycare
+        # continuity check') + 3 in #1831's own filing body
+        # ('registered ceiling check' x3, the #1553
+        # incident-self-quote class) — every one manually classified
+        # genuine (deciding question: does 'registered' here mean
+        # PRE-REGISTERED?), 0 benign verb-register false positives.
+        # OLD-minus-NEW match starts: 0 (pure extension). Named
+        # accepted residual (plan critic): verb-`checks` landing inside
+        # the {0,3} intermediate-token window fires, e.g. 'registered a
+        # callback that checks disk' (0 corpus instances in 1,816
+        # bodies; report-only severity + loud hand-adjudication + the
+        # per-noun kill lever make it acceptable).
         r"pre-?registered|pre-?registration|(?<![a-z])pre-reg(?![a-z])|registered hypothesis"
         r"|registered alpha|\bas registered\b|fail at the gate|passed the gate"
         r"|gate-pre-?registered"
@@ -252,7 +277,7 @@ PATTERNS: dict[str, tuple[str, str]] = {
         r"|gates?|rules?|endpoints?|contrasts?|floors?|companions?|hypothes[ei]s|alpha"
         r"|cuts?|paths?|clauses?|controls?|levers?|bars?|smokes?|estimators?"
         r"|layers?|rungs?|windows?|preconditions?|curves?|designs?|legs?"
-        r"|subsamples?|intervals?|tests?)\b",
+        r"|subsamples?|intervals?|tests?|ceilings?|checks?)\b",
         "Pre-registration jargon ('pre-registered', 'as registered', "
         "'fail at the gate', bare 'registered <verdict/margin/read/...>', etc.)",
     ),

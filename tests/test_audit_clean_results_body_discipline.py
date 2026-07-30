@@ -1383,6 +1383,64 @@ def test_pre_reg_1783_new_nouns_benign_verb_usages_not_flagged():
     assert "pre_reg" not in findings, findings
 
 
+# ─── pre_reg: the #1769 escape (fix #1831) ────────────────────────────────
+#
+# #1769's clean-result draft carried 'the registered ceiling check' x4 (and
+# bare 'registered ceiling') in reader-facing prose; the audit passed it
+# clean on 2026-07-29 — 'ceiling'/'check' were absent from the head-noun
+# alternation — and only the LM critic's Lens 6/7 read caught it. #1831
+# adds `ceilings?`/`checks?`. The filing's `gates?` proposal was narrowed
+# at plan time: `gates?` was already in the set ('registered ceiling gate'
+# already matched via `gates?` with 'ceiling' as an intermediate token).
+
+
+def test_pre_reg_registered_ceiling_check_in_takeaways_is_flagged():
+    """The verbatim #1769 escape phrasing — 'the registered ceiling check'
+    in a v4 `## Takeaways` bullet — trips `pre_reg` now that #1831 added
+    `ceilings?`/`checks?`. The lazy intervening-token window stops at the
+    EARLIER noun, so the match text is 'registered ceiling' (the same
+    lazy-stop property as #1593's 'registered test paths')."""
+    body = V4_BODY_CLEAN.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: the registered ceiling check flagged the band.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("registered ceiling" in s.lower() for s in findings["pre_reg"]), findings
+
+
+def test_pre_reg_bare_registered_ceiling_is_flagged():
+    """Bare 'a registered ceiling' in v4 Results prose trips `pre_reg`
+    (the `ceilings?` head noun with zero intervening tokens)."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The band sits under a registered ceiling at every seed.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("registered ceiling" in s.lower() for s in findings["pre_reg"]), findings
+
+
+def test_pre_reg_1831_new_nouns_benign_verb_usage_not_flagged():
+    """A benign verb-register shape with the #1831 nouns DOWNSTREAM of
+    'registered' stays clean: 'hooks registered on the ceiling-check
+    codepath' exercises the first-token preposition lookahead ('on')
+    with 'ceiling'/'check' tokens inside the would-be window. (A
+    noun-BEFORE-verb row like 'the sanity check was registered in WandB'
+    is structurally incapable of matching and would guard nothing.)
+    Corpus-measured 2026-07-30 (1,816 bodies): 0 benign verb-register
+    false positives among the 7 new match starts."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "hooks registered on the ceiling-check codepath fired at every seed.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
 # ─── v4 ## Methodology sample-data <details> exemption (#1171) ───────────
 #
 # The v4 spec moved the verbatim sample rows to `## Methodology` →
