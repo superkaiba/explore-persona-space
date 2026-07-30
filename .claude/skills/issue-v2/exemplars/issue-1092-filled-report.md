@@ -1,6 +1,8 @@
 # Result: The direct prefix map (prefix end → answer) and averaged prefix map (context end averaged over queries → answer) are different objects. The averaged prefix map is a much better predictor of mean answer activations, but not for the purpose of behavioral expression prediction
 <!-- report-v1 -->
 
+**Detailed writeup:** https://github.com/superkaiba/explore-persona-space/blob/0000000000000000000000000000000000000000/docs/reports/issue_1092_detailed.md
+
 <!-- Worked exemplar of the FILLED-IN official result template (post-Thomas
      pass): a claim-shaped H1 (may run to several sentences), Motivation with
      the objects + question, a numbers-first TLDR, a compact shared
@@ -10,6 +12,11 @@
      2026-07-30. At generation time the TLDR / Takeaways / Conclusion sections
      below would be placeholders and the titles question/plot-name-shaped —
      see report-template.md. -->
+
+<!-- NOTE on placeholders: the **Detailed writeup:** link above uses the
+     all-zeros PLACEHOLDER SHA (this writeup predates the two-document output,
+     so no real companion doc exists); a real report pins the companion doc's
+     actual commit. Same for the two placeholder images below. -->
 
 <!-- NOTE on images: Thomas's original writeup used Obsidian
      `![[Pasted image ...]]` embeds for Results 1 and 3; those figures were
