@@ -552,12 +552,242 @@ def sae_cells_table(sae: dict, mb: dict) -> None:
     print(f"wrote {out}")
 
 
+# ---------------------------------------------------------------------------
+# crossed-multiturn-averaged round additions (plan v9 §6) — data-only; render
+# once the round's artifacts exist under eval_results/issue_1738/crossed/.
+# ---------------------------------------------------------------------------
+EC = E / "crossed"  # crossed round outputs (plan v9 §6.5)
+
+CROSSED_ARM_ORDER = ["bare", "prefix", "context", "avg"]
+CROSSED_ARM_LABELS = {
+    "bare": "bare query",
+    "prefix": "history (prefix-end)",
+    "context": "full context",
+    "avg": "question-averaged",
+}
+CROSSED_LAYERS = [14, 19, 26]
+
+
+def _crossed_cell(arm: str, layer: int) -> dict:
+    return json.load(open(EC / "cells" / f"{arm}_L{layer}.json"))
+
+
+def _pt_ci(c: dict) -> tuple[float, float, float]:
+    """(point, lo-offset, hi-offset) with non-negative errorbar offsets (gotchas #547/#1335)."""
+    v = c["holdout_r2"]
+    ci = c["bootstrap"]["r2"]
+    return v, max(0.0, v - ci["lo"]), max(0.0, ci["hi"] - v)
+
+
+def fig_crossed_grid() -> None:
+    """Crossed round: 4-arm x 3-layer held-out R² grid (ridge, sole fitter),
+    95% bootstrap CIs. Per-row arms score 10,000 rows; the averaged arm
+    scores 500 held-out prefixes (independent fit)."""
+    fig, ax = plt.subplots(figsize=(8.4, 4.2))
+    x = np.arange(len(CROSSED_LAYERS))
+    width = 0.2
+    for j, arm in enumerate(CROSSED_ARM_ORDER):
+        pts, lo, hi = [], [], []
+        for layer in CROSSED_LAYERS:
+            v, lo1, hi1 = _pt_ci(_crossed_cell(arm, layer))
+            pts.append(v)
+            lo.append(lo1)
+            hi.append(hi1)
+        ax.bar(
+            x + (j - 1.5) * width,
+            pts,
+            width,
+            yerr=[lo, hi],
+            color=ARM_COLORS[arm],
+            label=CROSSED_ARM_LABELS[arm],
+            error_kw={"elinewidth": 1.0, "ecolor": "#333333"},
+        )
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"layer {layer}" for layer in CROSSED_LAYERS])
+    ax.axhline(0.0, color="#666666", lw=0.8)
+    ax.set_ylabel("held-out R² (10,000 rows; averaged: 500 prefixes)")
+    ax.set_title("crossed corpus: 5,000 prefixes x 20 shared queries", loc="left")
+    ax.legend(loc="upper left", fontsize=8, ncol=2)
+    savefig_paper(fig, "issue_1738/crossed_arm_r2_grid", dir=FIGDIR)
+    plt.close(fig)
+
+
+def fig_crossed_anova(anova: dict) -> None:
+    """Crossed round: variance shares of the mean-answer state on the
+    5,000 x 20 grid — overall per layer (left) + per-direction across the
+    top-48 answer-PCA directions at L19 (right, the per-unit view)."""
+    share_colors = {
+        "share_prefix": ARM_COLORS["prefix"],
+        "share_query": ARM_COLORS["bare"],
+        "share_inter": "#b0b0b0",
+    }
+    share_labels = {
+        "share_prefix": "conversation history (prefix)",
+        "share_query": "final query",
+        "share_inter": "interaction + residual (incl. answer-sampling noise)",
+    }
+    keys = ["share_query", "share_prefix", "share_inter"]
+    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.0), gridspec_kw={"width_ratios": [1, 1.6]})
+    # left: overall stacked shares per layer
+    x = np.arange(len(CROSSED_LAYERS))
+    bottom = np.zeros(len(CROSSED_LAYERS))
+    for k in keys:
+        vals = np.array([anova["per_layer"][str(la)]["overall"][k] for la in CROSSED_LAYERS])
+        axes[0].bar(x, vals, 0.55, bottom=bottom, color=share_colors[k], label=share_labels[k])
+        bottom += vals
+    axes[0].set_xticks(x)
+    axes[0].set_xticklabels([f"layer {la}" for la in CROSSED_LAYERS])
+    axes[0].set_ylabel("share of total variance")
+    axes[0].set_ylim(0, 1)
+    axes[0].set_title("overall variance shares", loc="left")
+    # right: per-direction stacked area at L19 (rank order = answer-PCA variance order)
+    pd19 = anova["per_layer"]["19"]["per_direction"]
+    n_dirs = len(pd19["share_query"])
+    ranks = np.arange(1, n_dirs + 1)
+    cum = np.zeros(n_dirs)
+    for k in keys:
+        vals = np.array(pd19[k])
+        axes[1].fill_between(ranks, cum, cum + vals, color=share_colors[k], linewidth=0)
+        cum += vals
+    axes[1].set_xlim(1, n_dirs)
+    axes[1].set_ylim(0, 1)
+    axes[1].set_xlabel("answer-PCA direction rank (layer 19)")
+    axes[1].set_ylabel("share of that direction's variance")
+    axes[1].set_title("per-direction shares (48 directions)", loc="left")
+    fig.legend(
+        *axes[0].get_legend_handles_labels(), loc="upper center", ncol=3, bbox_to_anchor=(0.5, 1.08)
+    )
+    savefig_paper(fig, "issue_1738/crossed_anova_shares", dir=FIGDIR)
+    plt.close(fig)
+
+
+def fig_crossed_averaged(cf: dict, stitch: dict) -> None:
+    """Crossed round: question-averaged reads. Left: independently-fit averaged
+    map vs the per-row context map APPLIED to averaged inputs (induced), per
+    layer, 500 held-out prefixes. Right: disjoint stitch [prefix-end;
+    bare-query] vs its parts, per layer, 10,000 rows."""
+    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.0), sharey=True)
+    x = np.arange(len(CROSSED_LAYERS))
+    # left: independent vs induced at averaged grain
+    for j, (key, lab, hatch) in enumerate(
+        [
+            ("independent", "independently-fit averaged map", None),
+            ("induced", "per-row context map, applied to averages", "//"),
+        ]
+    ):
+        pts, lo, hi = [], [], []
+        for layer in CROSSED_LAYERS:
+            c = _crossed_cell("avg", layer) if key == "independent" else cf["induced"][f"L{layer}"]
+            v, lo1, hi1 = _pt_ci(c)
+            pts.append(v)
+            lo.append(lo1)
+            hi.append(hi1)
+        axes[0].bar(
+            x + (j - 0.5) * 0.32,
+            pts,
+            0.32,
+            yerr=[lo, hi],
+            color=ARM_COLORS["avg"],
+            hatch=hatch,
+            edgecolor="white" if hatch else None,
+            label=lab,
+            error_kw={"elinewidth": 1.0, "ecolor": "#333333"},
+        )
+    axes[0].set_xticks(x)
+    axes[0].set_xticklabels([f"layer {layer}" for layer in CROSSED_LAYERS])
+    axes[0].set_ylabel("held-out R² (500 prefixes)")
+    axes[0].set_ylim(0, 0.98)
+    axes[0].set_title("question-averaged grain", loc="left")
+    axes[0].legend(loc="upper left", fontsize=8, framealpha=0.9)
+    # right: stitch vs its parts vs full context (per-row grain)
+    for j, (arm, lab) in enumerate(
+        [
+            ("bare", CROSSED_ARM_LABELS["bare"]),
+            ("stitch", "stitch [history; bare query]"),
+            ("context", CROSSED_ARM_LABELS["context"]),
+        ]
+    ):
+        pts, lo, hi = [], [], []
+        for layer in CROSSED_LAYERS:
+            c = stitch["per_layer"][f"L{layer}"] if arm == "stitch" else _crossed_cell(arm, layer)
+            v, lo1, hi1 = _pt_ci(c)
+            pts.append(v)
+            lo.append(lo1)
+            hi.append(hi1)
+        axes[1].bar(
+            x + (j - 1) * 0.26,
+            pts,
+            0.26,
+            yerr=[lo, hi],
+            color=ARM_COLORS[arm] if arm != "stitch" else ARM_COLORS["stitch"],
+            label=lab,
+            error_kw={"elinewidth": 1.0, "ecolor": "#333333"},
+        )
+    axes[1].set_xticks(x)
+    axes[1].set_xticklabels([f"layer {layer}" for layer in CROSSED_LAYERS])
+    axes[1].set_title("disjoint stitch vs full context (10,000 rows)", loc="left")
+    axes[1].legend(loc="upper left", fontsize=8, framealpha=0.9)
+    savefig_paper(fig, "issue_1738/crossed_induced_vs_independent", dir=FIGDIR)
+    plt.close(fig)
+
+
+def crossed_cells_table(cf: dict, mb: dict, stitch: dict) -> None:
+    """Per-cell CSV behind the crossed aggregates (data-only)."""
+    out = EC / "cells_table.csv"
+    with open(out, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(
+            [
+                "cell",
+                "holdout_r2",
+                "ci_lo",
+                "ci_hi",
+                "n_test",
+                "n_train",
+                "n_train_unique_x",
+                "selected_lambda",
+                "identity_bias_r2",
+                "knn_acc1_cosine",
+                "knn_chance1",
+            ]
+        )
+        rows: list[tuple[str, dict]] = []
+        for layer in CROSSED_LAYERS:
+            for arm in CROSSED_ARM_ORDER:
+                rows.append((f"{arm}_L{layer}", _crossed_cell(arm, layer)))
+            rows.append((f"induced_avg_L{layer}", cf["induced"][f"L{layer}"]))
+            rows.append((f"stitch_L{layer}", stitch["per_layer"][f"L{layer}"]))
+        for name, c in rows:
+            b = mb["cells"].get(name, {})
+            ib = b.get("identity_bias", {})
+            pred = "induced" if name.startswith("induced") else "ridge"
+            knn = b.get("knn", {}).get(pred, {}).get("cosine", {})
+            w.writerow(
+                [
+                    name,
+                    f"{c['holdout_r2']:.5f}",
+                    f"{c['bootstrap']['r2']['lo']:.5f}",
+                    f"{c['bootstrap']['r2']['hi']:.5f}",
+                    c["bootstrap"].get("n_test", ""),
+                    c.get("n_train", ""),
+                    c.get("n_train_unique_x", ""),
+                    c.get("selected_lambda", c.get("applied_lambda", "")),
+                    ib.get("holdout_r2", ib.get("status", "")),
+                    knn.get("acc_at_k", {}).get("1", ""),
+                    knn.get("chance_at_k", {}).get("1", ""),
+                ]
+            )
+    print(f"wrote {out}")
+
+
 def main() -> None:
     set_paper_style("blog")
     pal = paper_palette_blog(6)
     ARM_COLORS["prefix"] = pal[1]
     ARM_COLORS["context"] = pal[0]
     ARM_COLORS["bare"] = pal[2]
+    ARM_COLORS["avg"] = pal[3]
+    ARM_COLORS["stitch"] = pal[4]
     fits = _load("fits/multiturn_100k_fits.json")
     fig_hero(fits)
     fig_depth(_load("depth_contrasts.json"))
@@ -587,6 +817,17 @@ def main() -> None:
         sae_cells_table(sae, json.load(open(ES / "mapping_baselines.json")))
     else:
         print("sae_arm fits JSON absent — SAE figures skipped (pre-S2)")
+    # crossed-multiturn-averaged round additions (plan v9 §6) — data-only.
+    crossed_p = EC / "crossed_fits.json"
+    if crossed_p.exists():
+        cf = json.load(open(crossed_p))
+        stitch = json.load(open(EC / "stitch.json"))
+        fig_crossed_grid()
+        fig_crossed_anova(json.load(open(EC / "anova.json")))
+        fig_crossed_averaged(cf, stitch)
+        crossed_cells_table(cf, json.load(open(EC / "mapping_baselines.json")), stitch)
+    else:
+        print("crossed fits JSON absent — crossed figures skipped (pre-S2)")
     print("done")
 
 
