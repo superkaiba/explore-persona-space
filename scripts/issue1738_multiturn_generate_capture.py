@@ -1706,7 +1706,7 @@ def run_bare_capture(args) -> int:
                     _flush_pending()  # persist completed chunks before the halt
                     if not args.no_upload:
                         try:  # artifact-first halt routing: rc survives an upload failure
-                            # UPLOAD_LOOP_EXEMPT: single bare_fence_report.json file uploaded ONCE at the designed rc-25 fence halt (report-first routing), not a per-file loop
+                            # UPLOAD_LOOP_EXEMPT: single bare_fence_report.json uploaded ONCE at the rc-25 fence halt — # UPLOAD_PREFIX_EXEMPT: dest defaults to this issue's own --hf-prefix (issue1738_multiturn); bare arm passes an explicit prefix (plan v6 §4.1.5)
                             url = hub._upload(
                                 args.out_dir / "bare_fence_report.json",
                                 repo_id=C.HF_DATA_REPO,
