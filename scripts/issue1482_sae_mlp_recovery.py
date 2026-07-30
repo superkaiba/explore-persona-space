@@ -243,7 +243,11 @@ def _shuffle_floor(pred: np.ndarray, truth: np.ndarray, seed: int) -> float:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--phase", choices=("diag", "ladder", "final", "all"), default="all")
+    ap.add_argument(
+        "--phase",
+        choices=("diag", "ladder", "final", "ridge_matched", "all"),
+        default="all",
+    )
     ap.add_argument("--store", type=Path, default=None)
     ap.add_argument("--scratch", type=Path, default=None)
     ap.add_argument("--out-dir", type=Path, default=None)
