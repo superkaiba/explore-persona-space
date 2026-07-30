@@ -6025,8 +6025,8 @@
       "goal": "Compute the averaged causal Jacobian J_{C\u2192A} on the #779 corpus; measure what fraction of the fitted ridge map M's predictive power is causal; test which map predicts steered-generation interventions and off-distribution transfer; and test whether the context\u2192answer channel reads from / writes into the J-space verbalizable workspace (Anthropic 2026), all phases unconditional.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/1776",
-      "status": "interpreting",
+      "path": "tasks/reviewing/1776",
+      "status": "reviewing",
       "title": "Averaged causal Jacobians recover essentially none of the fitted context-to-answer map's predictive power (HIGH confidence)"
     },
     "1777": {
