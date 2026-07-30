@@ -128,7 +128,7 @@ The figure plots, per arm at its primary layer (content layer 19, marker layer 2
 
 > **Figure.** *Content arms sit above zero, marker arms below.* D per arm; color = behavior, circle/triangle = contrastive/positive-only regime, open = full fine-tune; error bars 95% CI; row ticks are arm slugs — LoRA behavior-context-regime-learning rate-seed, full fine-tune behavior-context-ft-regime-seed. Writing style: 14 of 15 changed at layer 19; impoliteness 17 of 17; sycophancy 12 of 20; marker 0 of 20 at layer 25.
 
-Across all 216 cells the verdict split is 107 Changed / 102 Unchanged / 7 Unresolved (3.2% vs the 20% criterion); 33 of 34 seed pairs agree at the primary layer. The marker null reverses the plan's expectation (marker arms were expected Changed) and holds at every layer, though the large negative D partly reflects the layer-25 floor (24.6) being 3× the layer-19 floor (8.0). Within sycophancy the verdict depends on training context: bare-context arms changed (D 5.1–8.2), conversation-history arms did not (≈ −4.7), and persona and demonstration contexts split by training regime (contrastive vs positive-only mixes). Sycophancy's median D across layers 14/19/25 is −1.5 / +2.2 / +3.0.
+Across all 216 cells the verdict split is 107 Changed / 102 Unchanged / 7 Unresolved (3.2% vs the 20% criterion); 33 of 34 seed pairs agree at the primary layer. The marker null reverses the plan's expectation (marker arms were expected Changed) and holds at every layer; the large negative D partly reflects the layer-25 floor (24.6) sitting 3× above layer-19 (8.0). Within sycophancy the verdict depends on training context: bare-context arms changed (D 5.1–8.2), conversation-history arms did not (≈ −4.7), and persona and demonstration contexts split by training regime (contrastive vs positive-only). Sycophancy's median D across layers 14/19/25: −1.5 / +2.2 / +3.0.
 
 ### Map change tracks the weights-carried answer shift
 
@@ -142,15 +142,15 @@ The near-monotone relation says the verdicts order by dose, and behavior type ad
 
 ### The write's alignment with the training displacement is text-carried
 
-For each arm at its primary layer, the figure plots the cosine between the panel source-context write ŵ and two candidate directions (the horse race): the training displacement δ and the behavior read-out r_B, for the on-policy (left panel) and matched-text (right panel) writes, with the norm-matched null band shaded. Marker arms race the marker unembedding row in place of r_B.
+For each arm at its primary layer, the figure plots the cosine between the panel source-context write ŵ and two candidate directions (the horse race): the training displacement δ and the behavior read-out r_B, on-policy (left) and matched-text (right), norm-matched null band shaded. Marker arms race the marker unembedding row in place of r_B.
 
 ![Dot plot of write-direction cosines against training displacement and read-out candidates, on-policy and matched-text](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fa81c85759b80b2260df956f5c79fc04068222db/figures/issue_1768/hero2_horse_race.png)
 
 > **Figure.** *Displacement alignment is strong on-policy and gone at fixed text.* Blue circles = training displacement, orange diamonds = read-out, gray = null band. On-policy displacement medians +0.43 / +0.63 / +0.33 (writing style / impoliteness / sycophancy); matched-text −0.15 to +0.09, read-out retaining +0.27 / +0.22. Per-arm bootstrap half-widths: median ±0.16 (displacement), ±0.06 (read-out).
 
-Holding text fixed removes the displacement alignment — it travels with the emitted text rather than the weights; the earlier arm panel's near-zero cosine, measured teacher-forced on base responses (this matched-text regime), stands for the weights-carried write. Matched-text, the read-out beats the displacement in 42 of 52 content arms but clears the null only for writing style (12 of 15) and impoliteness (7 of 17); sycophancy (2 of 20) and marker (0 of 20) align with nothing measured.
+Holding text fixed removes the displacement alignment — it travels with the emitted text rather than the weights; the earlier panel's near-zero cosine, measured teacher-forced (this matched-text regime), stands for the weights-carried write. Matched-text, the read-out beats the displacement in 42 of 52 content arms but clears the null only for writing style (12 of 15) and impoliteness (7 of 17); sycophancy (2 of 20) and marker (0 of 20) align with nothing measured.
 
-Bootstrap half-widths: median ±0.16 per displacement, ±0.06 read-out — deduplicated pooled median 0.11, over the 0.1 criterion, so the across-arm counts support the claims. Split-half reliability (median 0.85 across arms) argues against attenuation as the explanation for the sycophancy nulls.
+Bootstrap half-widths: median ±0.16 displacement, ±0.06 read-out; deduplicated pooled median 0.11, over the 0.1 criterion, so the across-arm counts support the claims. Split-half reliability (median 0.85 across arms) argues against attenuation explaining the sycophancy nulls.
 
 ### The write's read-out alignment is not behavior-specific
 
@@ -224,9 +224,9 @@ On-policy, most of the answer-state shift is off-map — carried by the differen
 
 ### Planned-versus-actual coverage
 
-216 fit cells were realized vs the plan's 222-cell sizing, which counted the 2 base corpus units; those feed the fits but are not themselves fit cells. Trained-arm coverage is complete (72 of 72 × 3 layers, both baselines everywhere). Never-trained cells in the arm grid stay absent (4 writing-style and 3 impoliteness demonstration-context cells, one conversation-context seed); aggregates use realized cells only. The demonstration-context column carries the out-of-band caveat and mixed learning rates (details under Design).
+216 fit cells were realized vs the plan's 222-cell sizing, which counted the 2 base corpus units (fit inputs rather than cells). Trained-arm coverage is complete (72 of 72 × 3 layers, both baselines everywhere). Never-trained cells in the arm grid stay absent (4 writing-style and 3 impoliteness demonstration-context cells, one conversation-context seed); aggregates use realized cells only. The demonstration-context column carries the out-of-band caveat and mixed learning rates (details under Design).
 
-Two planned reads remain unevaluated: the raw context-movement statistic was never persisted (the input-movement share is the in-hand proxy), and the matched-text shift was never compared to a capture-noise floor. The horse-race cosine CIs — a success criterion missing from the first round — were computed in this revision (`horse_race_cis.json`; criteria table in Methodology). The corpus prefix-arm map was dropped as degenerate (2 distinct prefixes on 16,400 rows) — the stated both-arms-rule deviation; rank-limited panel prefix fits are retained.
+Two planned reads remain unevaluated: the raw context-movement statistic was never persisted (the input-movement share is the in-hand proxy), and the matched-text shift was never compared to a capture-noise floor. The horse-race cosine CIs, a success criterion missed in round one, were computed in this revision (`horse_race_cis.json`; criteria table in Methodology). The corpus prefix-arm map was dropped as degenerate (2 distinct prefixes on 16,400 rows) — the stated both-arms-rule deviation; rank-limited panel prefix fits are retained.
 
 Run-level deviations: corpus capture ~24 h vs the 10–11.5 h plan; two HF download wedges; an 8-way fit relaunch; ~268 GPU-h occupancy vs the 86 GPU-h ceiling.
 
