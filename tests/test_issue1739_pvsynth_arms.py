@@ -444,6 +444,16 @@ def test_committed_summary_path_is_used_when_present(rig):
     assert all(p["frozen_layer_idx"] == 0 for p in per_layer)
 
 
+def test_u_store_default_follows_store_root(tmp_path):
+    """--u-store defaults under --store-root (never a constant disk)."""
+    args = pva.parse_args(["--store-root", str(tmp_path / "staged")])
+    assert args.u_store == tmp_path / "staged" / "u_store"
+    explicit = pva.parse_args(
+        ["--store-root", str(tmp_path / "staged"), "--u-store", str(tmp_path / "elsewhere")]
+    )
+    assert explicit.u_store == tmp_path / "elsewhere"
+
+
 def test_dv_construct_meta_flags_hallucination_provisional():
     ev = pva.dv_construct_meta("evil")
     assert ev["provisional"] is False and ev["caveats"] == []

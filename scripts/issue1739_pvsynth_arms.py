@@ -656,7 +656,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--pvsynth-dv-json", type=Path, default=None)
     ap.add_argument("--train-summary", type=Path, default=None)
     ap.add_argument(
-        "--u-store", type=Path, default=DEFAULT_STORE_ROOT / "u_store", help="#1092 U-pool store"
+        "--u-store",
+        type=Path,
+        default=None,
+        help="#1092 U-pool store (default: <--store-root>/u_store, staged on demand)",
     )
     ap.add_argument(
         "--force-own-pool-frozen",
@@ -672,6 +675,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ap.error("--behaviors must be unique")
     if len(set(args.variants)) != len(args.variants):
         ap.error("--variants must be unique")
+    # Resolve AFTER parsing so --store-root moves the U pool too (a constant
+    # default would stage ~13 GB onto whichever disk DEFAULT_STORE_ROOT names,
+    # not the one the caller pointed every other store at).
+    if args.u_store is None:
+        args.u_store = args.store_root / "u_store"
     return args
 
 
