@@ -245,7 +245,9 @@ Held-out pooled R² (n = 9,941) onto the same 16,384 mean-pooled sparse-autoenco
 
 > **Figure.** *The history-vs-context gap survives the re-basis into interpretable features, and dense inputs beat the sparse codes of the same states.* Held-out pooled R² onto mean-pooled sparse-autoencoder answer features, layer 19, n=9,941; shuffled-pairing floors sit at −0.003 to −0.007.
 
-History features recover 0.359 vs 0.638 for full-context features — the same ~56% share the dense-state arms show — over floors at ≈0, so both maps are real, not pairing artifacts. Re-basing the input costs both arms information: the same states read densely give 0.451 and 0.700. The single-token input codes are sparse — 216 (history) / 530 (context) features clear the 1%-activity floor vs 3,584 dense dimensions — so the answer state is far more recoverable from the raw state than from its interpretable code. Mean pooling is the right target: max and fraction-active pooling drop to 0.171 / 0.317 and 0.241 / 0.477. An LMSYS-only feature fit scores 0.353 / 0.611 on WildChat rows.
+History features recover 0.359 vs 0.638 for full-context features — the same ~56% share the dense-state arms show — over floors at ≈0, so both maps are real, not pairing artifacts. Re-basing the input costs both arms information: the same states read densely give 0.451 and 0.700.
+
+The single-token input codes are sparse — 216 (history) / 530 (context) features clear the 1%-activity floor vs 3,584 dense dimensions — so the answer state is far more recoverable from the raw state than from its interpretable code. Mean pooling is the right target: max and fraction-active pooling drop to 0.171 / 0.317 and 0.241 / 0.477. An LMSYS-only feature fit scores 0.353 / 0.611 on WildChat rows.
 
 ### Nearly every answer feature is better predicted from the full context than from history alone
 
@@ -255,7 +257,9 @@ Per-feature held-out R² over the 16,384 restricted answer features (layer 19, m
 
 > **Figure.** *The cloud sits below the diagonal: the context advantage is feature-wide, not a feature subpopulation.* Each point is one answer feature (n=16,384); axes are per-feature held-out R² over 9,941 contexts; the dotted line is y = x.
 
-The full-context map beats the history map on 99.7% of features (median per-feature R² 0.113 vs 0.038; median gap 0.069). Both arms carry nearly every feature above its null — 16,340 / 16,371 of 16,384 vs ≈819 expected false positives — but the 20-draw threshold is loosely calibrated (a held-out null draw exceeds it 9.2% of the time vs the nominal 5%), so the counts are exploratory; the cross-arm contrast is the load-bearing read (split-half rank stability 0.92–0.93). The context advantage is larger for more-active and more within-answer-consistent features (Spearman 0.32 and 0.48; committed companion figure, footer). Feature-space baselines match the dense story: identity-plus-bias on shared feature ids reads −2.99 / −2.38 vs 0.43 / 0.72 fitted, and rank-1 retrieval is 1.3% / 23.8% (chance 0.01%).
+The full-context map beats the history map on 99.7% of features (median per-feature R² 0.113 vs 0.038; median gap 0.069). Both arms carry nearly every feature above its null — 16,340 / 16,371 of 16,384 vs ≈819 expected false positives — but the 20-draw threshold is loosely calibrated (a held-out null draw exceeds it 9.2% of the time vs the nominal 5%), so the counts are exploratory; the cross-arm contrast is the load-bearing read (split-half rank stability 0.92–0.93).
+
+The context advantage is larger for more-active and more within-answer-consistent features (Spearman 0.32 and 0.48; committed companion figure, footer). Feature-space baselines match the dense story: identity-plus-bias on shared feature ids reads −2.99 / −2.38 vs 0.43 / 0.72 fitted, and rank-1 retrieval is 1.3% / 23.8% (chance 0.01%).
 
 ---
 
@@ -270,6 +274,7 @@ Follow-up round `bare-query` (same-issue; user-chat 2026-07-28, verbatim: "yes" 
 Follow-up round `sae-arm` (same-issue; user-chat 2026-07-28, verbatim: "yes run it now" — approving "Want me to queue it? I'd post the follow-up scope on #1738 now (\"SAE arm, both input arms, +15-20 GPU-h, runs post-capture\") so the running session picks it up as soon as the store is verified"): re-bases the maps into sparse-autoencoder feature space. Run 2026-07-30.
 
 Lineage: [#1482](https://eps.superkaiba.com/tasks/1482) — parent (this run applies its error-characterization battery per input arm at multi-turn scale). Created 2026-07-28; run 2026-07-28 → 2026-07-30.
+
 
 
 
