@@ -454,6 +454,10 @@ def test_empty_diff_note_at_main_checkout_real_git(tmp_path: Path, monkeypatch, 
     captured = capsys.readouterr()
     # The #851 shape is no longer silent:
     assert "NOTE — empty diff" in captured.err
+    # #1717 defect (d): the NOTE names uncommitted edits as a likely cause
+    # (case-insensitive substring pin — the widened NOTE writes
+    # "empty diff — commit first;" mid-sentence).
+    assert "commit first" in captured.err.lower()
     # Provenance breadcrumb names the main checkout + branch:
     assert f"work root {repo.resolve()}" in captured.err
     assert "(branch: main)" in captured.err
@@ -465,8 +469,11 @@ def test_empty_diff_note_at_main_checkout_real_git(tmp_path: Path, monkeypatch, 
         "timeout --kill-after=60s "
         f"{sel.recommended_timeout_s(sorted(sel.WORKFLOW_INVARIANT))}s uv run pytest "
     )
-    assert line.startswith(prefix) and line.endswith(" -v --tb=short")
-    files = line.removeprefix(prefix).removesuffix(" -v --tb=short").split()
+    # #1746: the printed command carries --continue-on-collection-errors so a
+    # collection-broken selected file reports per-file instead of aborting rc=2.
+    suffix = " --continue-on-collection-errors -v --tb=short"
+    assert line.startswith(prefix) and line.endswith(suffix)
+    files = line.removeprefix(prefix).removesuffix(suffix).split()
     assert files == sorted(sel.WORKFLOW_INVARIANT)
 
 
@@ -783,6 +790,87 @@ def test_cli_map_files_pairs_suppress_zero_resolution_guard(tmp_path: Path, caps
     assert captured.out != ""
     assert "ZERO existing repo paths" not in captured.err
     assert "looks like a source file" not in captured.err
+
+
+# --- #1791: hostile --map-files content must reach the #1613 diagnostic -------
+# (not crash at a content-derived filesystem probe). The three line shapes:
+# a bare >NAME_MAX prose line (OSError Errno 36 at the guard's exists() scan),
+# an arm-eligible scripts/<300 chars>.py line (OSError at the stem probe,
+# which runs BEFORE the guard), and a scripts/*.py glob-metachar line
+# (ValueError "Invalid pattern" at the content-derived stem glob). The CLI
+# cases use a BARE work root (the test_cli_map_files_missing_test_dropped
+# precedent): the scripts/ lines match the broad scripts/**/*.py scan glob,
+# and against a _make_tree root the resulting pairs would legitimately
+# SUPPRESS the guard (the `all_pairs` conjunct) — the bare root drops those
+# pairs so the guard's verdict is what these cases pin.
+_HOSTILE_LINES = (
+    "lorem ipsum dolor sit amet consectetur adipiscing " * 8,
+    "scripts/" + "x" * 300 + ".py",
+    "scripts/*.py",
+)
+
+
+def test_cli_map_files_hostile_lines_py_argument_exit2(tmp_path: Path, capsys):
+    """A .py-named --map-files arg holding all three hostile line shapes
+    reaches the #1613 source-file ERROR: rc 2, empty stdout, no traceback
+    (an uncaught OSError/ValueError would propagate and fail this test)."""
+    bare = tmp_path / "bare"
+    bare.mkdir()
+    src = tmp_path / "some_module.py"
+    src.write_text("\n".join(_HOSTILE_LINES) + "\n")
+    rc = sel.main(["--map-files", str(src), "--repo-root", str(bare)])
+    assert rc == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "looks like a source file" in captured.err
+
+
+def test_cli_map_files_hostile_lines_list_argument_warns_exit0(tmp_path: Path, capsys):
+    """The same three hostile lines in a .md-named arg take the #1613 hedged
+    WARN branch: rc 0, empty stdout, no traceback."""
+    bare = tmp_path / "bare"
+    bare.mkdir()
+    listing = tmp_path / "notes.md"
+    listing.write_text("\n".join(_HOSTILE_LINES) + "\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(bare)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "ZERO existing repo paths" in captured.err
+    assert "looks like a source file" not in captured.err
+
+
+def test_cli_map_files_binary_argument_exit1(tmp_path: Path, capsys):
+    """A mis-passed BINARY (undecodable) --map-files arg takes the existing
+    rc-1 "cannot read" path — UnicodeDecodeError is a ValueError (#1791) —
+    never an uncaught traceback."""
+    repo = _make_tree(tmp_path, [])
+    blob = tmp_path / "payload.bin"
+    blob.write_bytes(b"\x80\x81\xfe\x00")
+    rc = sel.main(["--map-files", str(blob), "--repo-root", str(repo)])
+    assert rc == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "cannot read --map-files input" in captured.err
+
+
+def test_safe_exists_unstatable_paths_false(tmp_path: Path):
+    """_safe_exists: a >NAME_MAX path reads as absent (no OSError escape);
+    stat-able paths are byte-identical to Path.exists()."""
+    assert sel._safe_exists(tmp_path / ("x" * 300)) is False
+    assert sel._safe_exists(tmp_path / "nul\x00name") is False
+    assert sel._safe_exists(tmp_path) is True
+    assert sel._safe_exists(tmp_path / "absent.txt") is False
+
+
+def test_safe_glob_invalid_pattern_empty(tmp_path: Path):
+    """_safe_glob: a content-derived invalid pattern yields [] (no ValueError
+    escape); a valid pattern returns exactly sorted(root.glob(...))."""
+    (tmp_path / "test_alpha.py").write_text("# stub\n")
+    (tmp_path / "test_beta.py").write_text("# stub\n")
+    assert sel._safe_glob(tmp_path, "test_***.py") == []
+    assert sel._safe_glob(tmp_path, "test_*alpha*.py") == sorted(tmp_path.glob("test_*alpha*.py"))
+    assert sel._safe_glob(tmp_path, "test_*alpha*.py") == [tmp_path / "test_alpha.py"]
 
 
 # --- #1289: diff-base resolution (fetched origin/main default) -----------------
@@ -1764,7 +1852,7 @@ def test_map_files_sizing_line(tmp_path: Path, capsys):
     assert "recommended-timeout-s=600" in captured.err
     assert not any("\t" in line for line in captured.err.splitlines())
     assert len(captured.out.splitlines()) == 2
-    # 17 tests clear the floor: 120 + 17*30 = 630.
+    # 17 tests clear the floor: (120 + 17*30) * 2.0 dispersion = 1260 (#1697).
     repo17 = _make_import_tree(
         tmp_path / "seventeen",
         {
@@ -1775,7 +1863,7 @@ def test_map_files_sizing_line(tmp_path: Path, capsys):
     rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo17)])
     assert rc == 0
     captured = capsys.readouterr()
-    assert "recommended-timeout-s=630" in captured.err
+    assert "recommended-timeout-s=1260" in captured.err
     assert not any("\t" in line for line in captured.err.splitlines())
 
 
@@ -1791,6 +1879,52 @@ def test_recommended_timeout_s_floor_kwarg():
     expected = sel.TIMEOUT_BASE_S + 40 * sel.TIMEOUT_PER_FILE_S  # 1320 > both floors
     assert sel.recommended_timeout_s(forty, floor=sel.MAP_TIMEOUT_FLOOR_S) == expected
     assert sel.recommended_timeout_s(forty) == expected
+
+
+# --- Case 69-bis (#1697): --map-files dispersion factor ---------------------------
+def test_recommended_timeout_s_map_dispersion():
+    """The --map-files path applies MAP_TIMEOUT_DISPERSION=2.0 to base+per_file,
+    but NOT to the SLOW_TESTS surcharge; diff-path (default dispersion=1.0)
+    stays byte-identical. Ties to #1697 (the #1675/#1682 undersized-bound trap
+    at 780 s vs 728-752 s measured walls, ~1.04-1.07x)."""
+    assert sel.MAP_TIMEOUT_DISPERSION == 2.0
+
+    # The exact #1682/#1675 shape: 26 tests, no SLOW_TESTS members in the map.
+    # NOTE: tests/test_workflow_lint_x{i}.py filenames are NOT in SLOW_TESTS —
+    # only the exact `tests/test_workflow_lint.py` key matches (single-file
+    # per-key surcharge, not a glob-family), so these 26 synthetic tests
+    # contribute 0 surcharge and exercise the base+per_file*dispersion path
+    # cleanly.
+    twenty_six = [f"tests/test_workflow_lint_x{i}.py" for i in range(26)]
+    # Base+per_file only: 120 + 30*26 = 900. Times 2.0 dispersion = 1800.
+    assert (
+        sel.recommended_timeout_s(
+            twenty_six, floor=sel.MAP_TIMEOUT_FLOOR_S, dispersion=sel.MAP_TIMEOUT_DISPERSION
+        )
+        == 1800
+    )
+    # Diff-path default: dispersion=1.0, byte-identical to today's arithmetic.
+    assert sel.recommended_timeout_s(twenty_six) == 900
+
+    # SLOW_TESTS surcharge is NOT re-scaled by dispersion (already headroom'd).
+    with_wl = [*twenty_six, "tests/test_workflow_lint.py"]
+    # Dispersed base: (120 + 30*27) * 2 = 1860. Plus 2400 surcharge = 4260.
+    expected_map = (
+        round(sel.MAP_TIMEOUT_DISPERSION * (sel.TIMEOUT_BASE_S + 27 * sel.TIMEOUT_PER_FILE_S))
+        + sel.SLOW_TESTS["tests/test_workflow_lint.py"]
+    )
+    assert (
+        sel.recommended_timeout_s(
+            with_wl, floor=sel.MAP_TIMEOUT_FLOOR_S, dispersion=sel.MAP_TIMEOUT_DISPERSION
+        )
+        == expected_map
+    )
+    assert expected_map == 4260  # explicit sanity — 1860 + 2400
+
+    # Diff-path with SLOW_TESTS unchanged: 120 + 30*27 + 2400 = 4130.
+    assert sel.recommended_timeout_s(with_wl) == (
+        sel.TIMEOUT_BASE_S + 27 * sel.TIMEOUT_PER_FILE_S + 2400
+    )
 
 
 # --- Case 70: dependency_map_pairs unit — import + literal + stem union, sorted ----
@@ -2033,11 +2167,12 @@ def test_transitive_consumer_missing_on_disk_dropped(tmp_path: Path):
     assert pairs == [("tests/test_inline_lint_gate.py", _SELECTOR_KEY)]
 
 
-# --- Case 86: CLI --map-files end-to-end on the LIVE tree — the 6 pairs verbatim --
+# --- Case 86: CLI --map-files end-to-end on the LIVE tree — the 7 pairs verbatim --
 def test_cli_map_files_transitive_pairs_live_tree(tmp_path: Path, capsys):
-    """CLI end-to-end on the LIVE tree: the selector payload prints all 4
-    pre-existing pairs PLUS the 2 transitive pairs (6 pairs, 6 tests) and the
-    sizing line stays at the 300 s floor. Exact-set assert — a new arm/pin
+    """CLI end-to-end on the LIVE tree: the selector payload prints all 5
+    dependency-arm pairs PLUS the 2 transitive pairs (7 pairs, 7 tests) and
+    the sizing line clears the 600 s MAP_TIMEOUT_FLOOR_S at 660
+    ((120 + 7*30) * 2.0). Exact-set assert — a new arm/pin
     joining later legitimately forces a deliberate 1-line update here (that
     loudness is the point; cf. the case-60 drift-pin posture)."""
     repo_root = _HELPER_PATH.parents[1]
@@ -2049,12 +2184,13 @@ def test_cli_map_files_transitive_pairs_live_tree(tmp_path: Path, capsys):
     assert captured.out.splitlines() == [
         f"tests/test_inline_lint_gate.py\t{_SELECTOR_KEY}",
         f"tests/test_inline_payload_lint_gate_contract.py\t{_SELECTOR_KEY}",
+        f"tests/test_issue_skill_lint_family_sync.py\t{_SELECTOR_KEY}",
         f"tests/test_ruff_policy.py\t{_SELECTOR_KEY}",
         f"tests/test_select_step9c_tests.py\t{_SELECTOR_KEY}",
         f"tests/test_shared_vm_thread_caps.py\t{_SELECTOR_KEY}",
         f"tests/test_step9c_baseline.py\t{_SELECTOR_KEY}",
     ]
-    assert "map-files — 6 pairs, 6 tests; recommended-timeout-s=600" in captured.err
+    assert "map-files — 7 pairs, 7 tests; recommended-timeout-s=660" in captured.err
 
 
 # --- Case 87: map-leg asymmetry — an invariant registration is excluded -----------
@@ -2314,3 +2450,113 @@ def test_issue1688_live_tree_escapee_shape():
     assert "tests/test_issue667_dispatcher.py" in tests
     assert "tests/test_issue811_maxp.py" in tests
     assert probe not in untested  # stem/import arms already matched it pre-#1688
+
+
+# --- #1717 defect (a): --map-files + --json fails loud (argparse exit 2) ------
+@pytest.mark.parametrize(
+    "extra",
+    [
+        [],  # ordinary two-flag combo
+        # A third co-passed flag that IS in the parser (--no-fetch) does not
+        # change the parser.error verdict — the (--map-files, --json)
+        # combination itself is what fires, regardless of surrounding argv.
+        ["--no-fetch"],
+    ],
+)
+def test_cli_map_files_json_flag_rejected(tmp_path: Path, capsys, extra: list[str]):
+    """The (a) fix: `--map-files` combined with `--json` is a CLI usage error.
+    argparse's `parser.error()` exits 2 with a stderr `: error: ...` line and
+    empty stdout; no work-root resolution, no map-files load. Both flag
+    orderings are checked (argparse is order-agnostic post-parse). A third
+    valid flag (`--no-fetch`) co-passed does NOT change the verdict — the
+    combination itself is what fires, regardless of surrounding argv.
+    """
+    repo = _make_tree(tmp_path, [])
+    listing = tmp_path / "payload.txt"
+    listing.write_text("scripts/issue123_foo.py\n")
+    # Ordering A: --map-files first, --json after.
+    with pytest.raises(SystemExit) as excinfo:
+        sel.main(["--map-files", str(listing), "--json", "--repo-root", str(repo), *extra])
+    assert excinfo.value.code == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "--json is not supported with --map-files" in captured.err
+    # Ordering B: --json first, --map-files after.
+    with pytest.raises(SystemExit) as excinfo:
+        sel.main(["--json", "--map-files", str(listing), "--repo-root", str(repo), *extra])
+    assert excinfo.value.code == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "--json is not supported with --map-files" in captured.err
+
+
+# --- #1717 defect (c): --map-files comma-detected hint (opt-in on comma) ------
+def test_cli_map_files_comma_hint(tmp_path: Path, capsys):
+    """The (c) fix: a comma in the --map-files argument (the session
+    `c0a2df1b` shape — `--map-files a.md,b.md`) APPENDS an opt-in hint
+    after the standard Errno-2 line, telling the caller to pass a
+    newline-separated file path. A non-comma missing path preserves the
+    base OSError text WITHOUT the hint (hint is opt-in on comma
+    detection — a real comma-in-path failure still surfaces Errno + path
+    verbatim).
+    """
+    repo = _make_tree(tmp_path, [])
+    # Positive branch: a comma in the argument triggers the hint.
+    rc = sel.main(["--map-files", "a.md,b.md", "--repo-root", str(repo)])
+    assert rc == 1
+    err = capsys.readouterr().err
+    assert "cannot read --map-files input" in err
+    # Base Errno-2 text stays first, then the appended hint.
+    assert "Errno 2" in err or "No such file" in err
+    assert (
+        "--map-files takes a PATH to a newline-separated file list, not a comma-separated list"
+    ) in err
+    # Negative branch: a non-comma missing path — NO hint appended.
+    rc = sel.main(
+        ["--map-files", str(tmp_path / "definitely-not-there.txt"), "--repo-root", str(repo)]
+    )
+    assert rc == 1
+    err = capsys.readouterr().err
+    assert "cannot read --map-files input" in err
+    assert "comma-separated list" not in err
+
+
+# --- #1717 defect (d): empty-diff NOTE names uncommitted edits ---------------
+def test_empty_diff_note_names_uncommitted_edits(tmp_path: Path, monkeypatch, capsys):
+    """The (d) fix: the empty-diff NOTE at the main checkout carries the
+    widened phrasing calling out uncommitted edits as the first likely
+    cause. Reuses the `_make_git_repo_with_worktree` fixture; asserts the
+    case-insensitive `commit first` substring survives in stderr.
+    Distinct from `test_empty_diff_note_at_main_checkout_real_git` — that
+    test now ALSO asserts `commit first` alongside its existing prefix +
+    breadcrumb pins, and this test preserves the isolated pin so a future
+    NOTE rewording immediately surfaces which assertion caught it.
+    """
+    repo, _wt = _make_git_repo_with_worktree(tmp_path)
+    monkeypatch.chdir(repo)
+    rc = sel.main([])
+    assert rc == 0
+    captured = capsys.readouterr()
+    # The widened NOTE still starts with the byte-identical prefix (pinned
+    # by test_empty_diff_note_at_main_checkout_real_git):
+    assert "NOTE — empty diff" in captured.err
+    # The new cause line: uncommitted edits are named first.
+    assert "commit first" in captured.err.lower()
+
+
+# --- #1717 defect (b): --json help text warns against `2>&1` stderr redirect --
+def test_json_help_warns_against_stderr_redirect(capsys):
+    """The (b) fix: the `--json` flag's help string carries a safety
+    warning against redirecting stderr into stdout (`2>&1`), naming the
+    safe recipe (`2>/dev/null`). Broader-invariant assertion: the help
+    text mentions BOTH the concept (`stderr`) AND the recipe recommendation
+    (`2>/dev/null`) — a benign softening of the exact phrasing that keeps
+    both survives the pin; dropping either fails.
+    """
+    with pytest.raises(SystemExit) as excinfo:
+        sel.main(["--help"])
+    # argparse's --help handler exits 0.
+    assert excinfo.value.code == 0
+    help_text = capsys.readouterr().out
+    assert "stderr" in help_text.lower()
+    assert "2>/dev/null" in help_text
