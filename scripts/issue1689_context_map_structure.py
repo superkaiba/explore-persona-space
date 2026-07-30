@@ -65,7 +65,9 @@ from scripts.issue1689_derived_vs_free import (  # noqa: E402
     _atomic_write_json,
     _CellCache,
     _metadata,
+    assert_distinct_unit_keys,
     build_pair_specs,
+    unit_identity_mismatch,
     unit_key,
 )
 
@@ -701,8 +703,9 @@ def cmd_overlap(args) -> int:
 def cmd_merge(args) -> int:
     specs = build_pair_specs(args)
     units = [(spec, arm) for spec in specs for arm in ("prefix", "context")]
+    assert_distinct_unit_keys(units, getattr(args, "expect_units", None))
     pairs_dir = args.out_root / "pairs"
-    rows, failures, missing = [], [], []
+    rows, failures, missing, key_mismatch = [], [], [], []
     for spec, arm in units:
         uk = unit_key(spec, arm)
         upath = pairs_dir / f"{uk}.json"
@@ -710,9 +713,13 @@ def cmd_merge(args) -> int:
             missing.append(uk)
             continue
         unit = json.loads(upath.read_text())
-        (failures if "error" in unit else rows).append(
-            {"unit_key": uk, "error": unit["error"]} if "error" in unit else unit
-        )
+        if "error" in unit:
+            failures.append({"unit_key": uk, "error": unit["error"]})
+            continue
+        if unit_identity_mismatch(unit, spec, arm):
+            key_mismatch.append({"unit_key": uk, "recorded_src_model": unit.get("src_model")})
+            continue
+        rows.append(unit)
     weakest_counts: dict[str, dict[str, int]] = {}
     rank_reached: dict[str, dict[str, int | None]] = {}
     for unit in rows:
@@ -737,8 +744,10 @@ def cmd_merge(args) -> int:
         "n_complete": len(rows),
         "n_failed": len(failures),
         "n_missing": len(missing),
+        "n_key_mismatch": len(key_mismatch),
         "failures": failures,
         "missing_units": missing[:50],
+        "key_mismatch_units": key_mismatch[:50],
         "weakest_class_counts": weakest_counts,
         "rank_reached": rank_reached,
         "metadata": _metadata(),
@@ -746,10 +755,10 @@ def cmd_merge(args) -> int:
     _atomic_write_json(args.out_root / "summary.json", summary)
     print(
         f"[cms-merge] wrote summary: {len(rows)} complete / {len(failures)} failed / "
-        f"{len(missing)} missing of {len(units)} units",
+        f"{len(missing)} missing / {len(key_mismatch)} key-mismatched of {len(units)} units",
         flush=True,
     )
-    return 3 if missing else 0
+    return 3 if (missing or key_mismatch) else 0
 
 
 def main() -> int:
@@ -769,6 +778,12 @@ def main() -> int:
     ap.add_argument("--models", type=str, default=",".join(MODEL_SLUGS))
     ap.add_argument("--num-shards", type=int, default=1)
     ap.add_argument("--shard-index", type=int, default=0)
+    ap.add_argument(
+        "--expect-units",
+        type=int,
+        default=None,
+        help="merge: hard-assert exactly N distinct qualified units are enumerated",
+    )
     ap.add_argument("--items", choices=["structure", "rank", "both"], default="both")
     ap.add_argument("--class-null-draws", type=int, default=40)
     ap.add_argument("--rank-null-draws", type=int, default=40)

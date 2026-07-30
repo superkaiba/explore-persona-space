@@ -11,7 +11,11 @@ Covers:
 - pairs-file schema parsing (legacy / nested / mixed / errors);
 - data-dependent gates: n_common < 3, all-folds-degenerate, low-common flag,
   merge fail-loud on never-attempted units, Gate-1 parity refusal (rc 7);
-- item-7a class-ladder floor == identity_bias_predict (translation class).
+- item-7a class-ladder floor == identity_bias_predict (translation class);
+- fix round 3 (model-qualified unit keys): within-model keys carry the model
+  (two models sharing an out-root no longer collide — the 241+11-of-504
+  defect), cross-model keys byte-unchanged, one-shot migrate-keys rename,
+  merge double-count/expect-units/identity fail-louds.
 """
 
 from __future__ import annotations
@@ -400,8 +404,8 @@ def test_cmd_pairs_shard_coverage_and_resume(tmp_path, capsys):
         assert rc == 0
     written = sorted(p.name for p in (out_root / "pairs").glob("*.json"))
     assert written == [
-        "assistant_chat__assistant_naturalistic__context.json",
-        "assistant_chat__assistant_naturalistic__prefix.json",
+        "mA__assistant_chat__assistant_naturalistic__context.json",
+        "mA__assistant_chat__assistant_naturalistic__prefix.json",
     ]
     capsys.readouterr()
     rc = dvf.cmd_pairs(argparse.Namespace(**common, num_shards=1, shard_index=0))
@@ -474,6 +478,195 @@ def test_cmd_nulls_draw_count_upgrade_updates_metadata(tmp_path):
             assert draw_keys
             for k in draw_keys:
                 assert z[k].shape[0] == 4
+
+
+def test_unit_key_model_qualified():
+    """Fix round 3: within-model keys carry the model slug (distinct across
+    models sharing an out-root); cross-model keys are byte-unchanged."""
+    wa = dvf.unit_key((("mA", "s"), ("mA", "t")), "prefix")
+    wb = dvf.unit_key((("mB", "s"), ("mB", "t")), "prefix")
+    assert wa == "mA__s__t__prefix"
+    assert wb == "mB__s__t__prefix"
+    assert wa != wb
+    assert dvf.unit_key((("m1", "a"), ("m2", "a")), "context") == "m1@a__m2@a__context"
+
+
+def test_two_model_pairs_no_checkpoint_collision(tmp_path, capsys):
+    """THE round-3 regression: two models over the SAME out-root must compute
+    ALL units (pre-fix, the second model's units skip-if-exists'd against the
+    first model's unqualified files — 241 base + 11 instruct of 504)."""
+    store = tmp_path / "store"
+    _write_synth_store(store, "mA", ["assistant_chat", "assistant_naturalistic"], seed=7)
+    _write_synth_store(store, "mB", ["assistant_chat", "assistant_naturalistic"], seed=8)
+    pf = tmp_path / "pairs.json"
+    pf.write_text(
+        json.dumps(
+            [
+                [["mA", "assistant_chat"], ["mA", "assistant_naturalistic"]],
+                [["mB", "assistant_chat"], ["mB", "assistant_naturalistic"]],
+            ]
+        )
+    )
+    out_root = tmp_path / "out"
+    args = argparse.Namespace(
+        layer=19,
+        lambda_grid="ladder13",
+        seed=42,
+        device="cpu",
+        row_limit=None,
+        dim_limit=None,
+        rotation_draws=2,
+        pairs_file=pf,
+        default_model=None,
+        pair_set="within-model",
+        models="mA,mB",
+        out_root=out_root,
+        store_root=store,
+        num_shards=1,
+        shard_index=0,
+    )
+    assert dvf.cmd_pairs(args) == 0
+    written = sorted(p.name for p in (out_root / "pairs").glob("*.json"))
+    assert written == [
+        "mA__assistant_chat__assistant_naturalistic__context.json",
+        "mA__assistant_chat__assistant_naturalistic__prefix.json",
+        "mB__assistant_chat__assistant_naturalistic__context.json",
+        "mB__assistant_chat__assistant_naturalistic__prefix.json",
+    ]
+    # Each file records ITS OWN model — no cross-model checkpoint reuse.
+    for p in (out_root / "pairs").glob("*.json"):
+        unit = json.loads(p.read_text())
+        assert unit["src_model"] == p.name.split("__")[0]
+        assert unit["unit_key"] == p.stem
+    # And a re-run RESUMEs all 4 (no recompute, no collision).
+    capsys.readouterr()
+    assert dvf.cmd_pairs(args) == 0
+    assert capsys.readouterr().out.count("RESUME (checkpoint)") == 4
+
+
+def test_migrate_unqualified_keys(tmp_path):
+    """One-shot migration renames pre-fix UNQUALIFIED files (JSON + bundle) to
+    their internally-recorded model's qualified key; unattributable and
+    target-exists files are retained in place; idempotent second pass."""
+    pairs = tmp_path / "pairs"
+    bundles = tmp_path / "bundles"
+    pairs.mkdir()
+    bundles.mkdir()
+    meta = {"battery_version": "dvf-v1"}
+    computed = {
+        "meta": meta,
+        "src_model": "mA",
+        "src_cond": "assistant_chat",
+        "tgt_model": "mA",
+        "tgt_cond": "dana_chat",
+        "arm": "prefix",
+        "unit_key": "assistant_chat__dana_chat__prefix",
+        "verdict": "shared_readout_supported",
+    }
+    (pairs / "assistant_chat__dana_chat__prefix.json").write_text(json.dumps(computed))
+    np.savez(bundles / "assistant_chat__dana_chat__prefix.npz", x=np.zeros(2))
+    # Unattributable error unit (pre-fix error units record no model): retained.
+    (pairs / "dana_chat__wren_chat__context.json").write_text(
+        json.dumps({"error": "boom", "retryable": True, "meta": meta})
+    )
+    # Target-exists case: old unqualified + fresh qualified both present.
+    clash_old = dict(computed, arm="context", unit_key="assistant_chat__dana_chat__context")
+    (pairs / "assistant_chat__dana_chat__context.json").write_text(json.dumps(clash_old))
+    (pairs / "mA__assistant_chat__dana_chat__context.json").write_text(
+        json.dumps(dict(clash_old, unit_key="mA__assistant_chat__dana_chat__context"))
+    )
+    counts = dvf.migrate_unqualified_keys(tmp_path)
+    assert counts["renamed"] == 1
+    assert counts["unattributable"] == 1
+    assert counts["target_exists"] == 1
+    assert counts["already_qualified"] == 1
+    migrated = json.loads((pairs / "mA__assistant_chat__dana_chat__prefix.json").read_text())
+    assert migrated["unit_key"] == "mA__assistant_chat__dana_chat__prefix"
+    assert migrated["unit_key_migrated_from"] == "assistant_chat__dana_chat__prefix"
+    assert migrated["verdict"] == "shared_readout_supported"
+    assert not (pairs / "assistant_chat__dana_chat__prefix.json").exists()
+    assert (bundles / "mA__assistant_chat__dana_chat__prefix.npz").exists()
+    assert not (bundles / "assistant_chat__dana_chat__prefix.npz").exists()
+    # Retained (never deleted): unattributable + target-exists old files.
+    assert (pairs / "dana_chat__wren_chat__context.json").exists()
+    assert (pairs / "assistant_chat__dana_chat__context.json").exists()
+    # Idempotent: second pass renames nothing.
+    counts2 = dvf.migrate_unqualified_keys(tmp_path)
+    assert counts2["renamed"] == 0
+    assert counts2["already_qualified"] == 2
+
+
+def test_merge_duplicate_keys_and_expect_units_raise(tmp_path):
+    """Double-count probe: duplicate enumerated units RAISE; an --expect-units
+    mismatch RAISES (the 504-unit hard assert the dispatch leg arms)."""
+    spec_row = [["mA", "assistant_chat"], ["mA", "assistant_naturalistic"]]
+    pf_dup = tmp_path / "dup.json"
+    pf_dup.write_text(json.dumps([spec_row, spec_row]))
+    (tmp_path / "pairs").mkdir()
+    common = dict(
+        layer=19,
+        lambda_grid="ladder13",
+        seed=42,
+        device="cpu",
+        row_limit=None,
+        dim_limit=None,
+        default_model=None,
+        pair_set="within-model",
+        models="mA",
+        out_root=tmp_path,
+        parent_ladder_dir=tmp_path / "noladder",
+    )
+    with pytest.raises(RuntimeError, match="residual double-count"):
+        dvf.cmd_merge(argparse.Namespace(**common, pairs_file=pf_dup, expect_units=None))
+    pf_one = tmp_path / "one.json"
+    pf_one.write_text(json.dumps([spec_row]))
+    with pytest.raises(RuntimeError, match="expected 504 distinct"):
+        dvf.cmd_merge(argparse.Namespace(**common, pairs_file=pf_one, expect_units=504))
+    # cms merge shares the same guards via the imported helpers.
+    with pytest.raises(RuntimeError, match="residual double-count"):
+        cms.cmd_merge(argparse.Namespace(**common, pairs_file=pf_dup, expect_units=None))
+
+
+def test_merge_key_mismatch_fail_loud(tmp_path):
+    """A checkpoint whose INTERNAL model contradicts its qualified key is never
+    counted — rc 3 + n_key_mismatch (the belt-and-suspenders identity check)."""
+    spec_row = [["mA", "assistant_chat"], ["mA", "assistant_naturalistic"]]
+    pf = tmp_path / "pairs.json"
+    pf.write_text(json.dumps([spec_row]))
+    pairs = tmp_path / "pairs"
+    pairs.mkdir()
+    for arm in ("prefix", "context"):
+        (pairs / f"mA__assistant_chat__assistant_naturalistic__{arm}.json").write_text(
+            json.dumps(
+                {
+                    "src_model": "mB",  # WRONG model recorded inside
+                    "src_cond": "assistant_chat",
+                    "tgt_model": "mB",
+                    "tgt_cond": "assistant_naturalistic",
+                    "arm": arm,
+                    "meta": {},
+                }
+            )
+        )
+    args = argparse.Namespace(
+        layer=19,
+        lambda_grid="ladder13",
+        seed=42,
+        device="cpu",
+        row_limit=None,
+        dim_limit=None,
+        pairs_file=pf,
+        default_model=None,
+        pair_set="within-model",
+        models="mA",
+        out_root=tmp_path,
+        parent_ladder_dir=tmp_path / "noladder",
+        expect_units=2,
+    )
+    assert dvf.cmd_merge(args) == 3
+    summary = json.loads((tmp_path / "summary.json").read_text())
+    assert summary["n_key_mismatch"] == 2
+    assert summary["n_complete"] == 0
 
 
 def test_rung78_degenerate_split_raises_in_production_shape():

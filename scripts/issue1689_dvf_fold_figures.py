@@ -17,9 +17,17 @@ import csv
 import json
 from pathlib import Path
 
-import numpy as np
+# load_dotenv() BEFORE numpy/matplotlib (shared-VM thread caps, #847).
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style
+load_dotenv()
+
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
+    savefig_paper,
+    set_paper_style,
+)
 
 BASE = Path("eval_results/issue_1689")
 

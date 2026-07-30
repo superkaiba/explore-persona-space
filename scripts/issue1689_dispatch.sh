@@ -260,6 +260,23 @@ run_phase_derived_vs_free() {
     fi
     mkdir -p "$dvf_root" "$cms_root" "$xm_root" "$xms_root"
 
+    # Fix round 3 (#1689): one-shot key migration BEFORE any resume. Pre-fix
+    # within-model unit checkpoints were UNQUALIFIED (no model in the key), so
+    # base+instruct collided in the shared out-roots (241 base + 11 instruct
+    # of 504 computed; merge double-counted each file for both models). The
+    # migration renames surviving files to their internally-recorded model's
+    # qualified key — retained, never deleted — so only the genuinely-missing
+    # units re-run below. Cross-model roots never had unqualified keys (no-op).
+    echo "[phase=dvf_migrate_keys]"
+    uv run python scripts/issue1689_derived_vs_free.py --phase migrate-keys --out-root "$dvf_root"
+    uv run python scripts/issue1689_derived_vs_free.py --phase migrate-keys --out-root "$cms_root"
+
+    # Within-model merges hard-assert the full 504-unit qualified enumeration
+    # (2 models x 126 ordered pairs x 2 arms) in full mode; smoke pair subsets
+    # carry their own (smaller) exact counts via the merge's missing/dupe gates.
+    local expect_units=()
+    [ -z "$SMOKE" ] && expect_units=(--expect-units 504)
+
     # Stage the pinned L19 stores (idempotent; consumer layout is
     # <root>/<model_slug>/<condition>/L19.pt — exact per-file targets).
     local dvf_store="${DVF_STORE_ROOT:-$DATA_ROOT/hf_dl/issue1689_speaker_lattice/analysis_tensors}"
@@ -350,7 +367,7 @@ run_phase_derived_vs_free() {
         scripts/issue1689_derived_vs_free.py --phase nulls --out-root "$dvf_root" \
         --rotation-draws "$rot_draws" --device "$device"
     uv run python scripts/issue1689_derived_vs_free.py --phase merge \
-        --out-root "$dvf_root" "${within_pairs_args[@]}"
+        --out-root "$dvf_root" "${within_pairs_args[@]}" "${expect_units[@]}"
 
     # --- Cross-model same-condition pairs (item 9): full ladder + battery ---
     echo "[phase=xm_ladder]"
@@ -394,7 +411,7 @@ run_phase_derived_vs_free() {
     uv run python scripts/issue1689_context_map_structure.py --phase overlap \
         --out-root "$cms_root"
     uv run python scripts/issue1689_context_map_structure.py --phase merge \
-        --out-root "$cms_root" "${within_pairs_args[@]}"
+        --out-root "$cms_root" "${within_pairs_args[@]}" "${expect_units[@]}"
     echo "[phase=xm_structure]"
     RUN_FENCE="$cms_fence" run_sharded scripts/issue1689_context_map_structure.py --phase units \
         --store-root "$dvf_store" --out-root "$xms_root" \
@@ -421,7 +438,16 @@ run_phase_derived_vs_free() {
             uv run python scripts/issue1689_derived_vs_free.py --phase upload --out-root "$r"
         done
         # --- Result commit + BARE push, verify-then-assert (#1205/#1325) ---
+        # Fix round 3: NO-OP gracefully on a non-git tree (the fellows/SLURM
+        # rsync lane ships no .git — job 15194 died HERE at the very end; the
+        # VM-side orchestrator lands git artifacts on that lane, per the
+        # pod-side-reporting SLURM result-landing contract).
         echo "[phase=dvf_push]"
+        if ! git rev-parse --git-dir >/dev/null 2>&1; then
+            echo "[derived_vs_free] dvf_push SKIP: not a git checkout (rsync lane; VM orchestrator lands git artifacts)"
+            echo "[derived_vs_free] leg complete"
+            return 0
+        fi
         git add "$dvf_root" "$cms_root" "$xm_root" "$dvf_figs"
         git -c user.name="eps-runner" -c user.email="eps-runner@local" \
             commit -m "task #1689: derived-vs-free round results (battery + structure + crossmodel + figures)" \

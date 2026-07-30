@@ -27,7 +27,9 @@ conjugation amplifies noise along weak singular directions). Verdict lattice
   readout_changed           <=> g1 < 0 and g2 = R2(b_derived2_max) - 0.9 R2(b_free) >= 0
   transfer_map_insufficient <=> otherwise
 
-Phases (--phase): stage | gate1 | pairs | nulls | merge | upload | write-pairs.
+Phases (--phase): stage | gate1 | pairs | nulls | merge | upload | write-pairs
+| migrate-keys (one-shot rename of pre-fix unqualified within-model unit
+checkpoints to model-qualified keys — fix round 3).
 Per-unit JSON checkpoints (skip-if-meta-matches resume, parent R13 convention);
 compact SVD bundles under <out-root>/bundles/. Rotation nulls (item 5) run as a
 SHARED-draw pass (--phase nulls) using the parent 9a-ter Procrustes battery's
@@ -168,7 +170,99 @@ def regime_meta(args) -> dict:
 
 
 def unit_key(spec, arm: str) -> str:
+    """Model-qualified per-unit checkpoint key: <model>__<src>__<tgt>__<arm>.
+
+    Fix round 3 (#1689): the old within-model key (`fl.pair_spec_key` =
+    `<src>__<tgt>`, NO model) collided across models sharing an out-root, so
+    the second model's units skip-if-exists'd against the first model's files
+    (241 base + 11 instruct of 504 computed; merge counted each file for BOTH
+    models). Cross-model keys already embed both models via pair_spec_key
+    (`m@c__m@c`) and are byte-unchanged.
+    """
+    (sm, _sc), (tm, _tc) = spec
+    if sm == tm:
+        return f"{sm}__{fl.pair_spec_key(spec)}__{arm}"
     return f"{fl.pair_spec_key(spec)}__{arm}"
+
+
+def migrate_unqualified_keys(out_root: Path) -> dict:
+    """One-shot rename of pre-fix UNQUALIFIED within-model per-unit checkpoints.
+
+    The old within-model key carried no model, so two models sharing an
+    out-root collided (see unit_key). Each computed unit JSON records its
+    model internally (src_model/tgt_model); rename the JSON + its sibling
+    bundle to the model-qualified unit_key so the surviving units are
+    RETAINED under correct keys and only genuinely-missing units re-run.
+    Files are NEVER deleted: unattributable files (error units without a
+    model record) and renames whose target already exists are left in place
+    with a log line. Idempotent — a second pass no-ops.
+    """
+    pairs_dir = out_root / "pairs"
+    bundles_dir = out_root / "bundles"
+    counts = {
+        "renamed": 0,
+        "already_qualified": 0,
+        "unattributable": 0,
+        "target_exists": 0,
+        "unparseable": 0,
+    }
+    if not pairs_dir.exists():
+        print(f"[dvf-migrate] no pairs dir at {pairs_dir} — nothing to migrate", flush=True)
+        return counts
+    for upath in sorted(pairs_dir.glob("*.json")):
+        try:
+            unit = json.loads(upath.read_text())
+        except (json.JSONDecodeError, OSError):
+            counts["unparseable"] += 1
+            print(f"[dvf-migrate] SKIP {upath.name} (unparseable) — retained", flush=True)
+            continue
+        fields = ("src_model", "src_cond", "tgt_model", "tgt_cond", "arm")
+        if not isinstance(unit, dict) or not all(unit.get(f) for f in fields):
+            counts["unattributable"] += 1
+            print(
+                f"[dvf-migrate] SKIP {upath.name} (no internal model record) — retained", flush=True
+            )
+            continue
+        spec = ((unit["src_model"], unit["src_cond"]), (unit["tgt_model"], unit["tgt_cond"]))
+        qk = unit_key(spec, unit["arm"])
+        if upath.stem == qk:
+            counts["already_qualified"] += 1
+            continue
+        new_upath = pairs_dir / f"{qk}.json"
+        if new_upath.exists():
+            counts["target_exists"] += 1
+            print(
+                f"[dvf-migrate] SKIP {upath.name} (target {new_upath.name} exists) — retained",
+                flush=True,
+            )
+            continue
+        old_stem = upath.stem
+        unit["unit_key"] = qk
+        unit["unit_key_migrated_from"] = old_stem
+        _atomic_write_json(new_upath, unit)
+        upath.unlink()  # rename: identical content retained under the qualified name
+        old_bundle = bundles_dir / f"{old_stem}.npz"
+        if old_bundle.exists():
+            new_bundle = bundles_dir / f"{qk}.npz"
+            if new_bundle.exists():
+                print(
+                    f"[dvf-migrate] SKIP bundle {old_bundle.name} (target exists) — retained",
+                    flush=True,
+                )
+            else:
+                os.replace(old_bundle, new_bundle)
+        counts["renamed"] += 1
+        print(f"[dvf-migrate] RENAMED {old_stem} -> {qk}", flush=True)
+    print(
+        f"[dvf-migrate] {out_root}: " + " ".join(f"{k}={v}" for k, v in sorted(counts.items())),
+        flush=True,
+    )
+    return counts
+
+
+def cmd_migrate_keys(args) -> int:
+    migrate_unqualified_keys(args.out_root)
+    return 0
 
 
 def verdict_class(r2_free: float, r2_ident: float, g1: float, g2: float) -> str:
@@ -665,12 +759,53 @@ def _spearman(a: np.ndarray, b: np.ndarray) -> float:
     return float(spearmanr(a, b).statistic)
 
 
+def assert_distinct_unit_keys(units: list, expect_units: int | None) -> list[str]:
+    """Fail-loud key-accounting guard (fix round 3, #1689).
+
+    The pre-fix merge enumerated per (spec, arm) but resolved UNQUALIFIED
+    filenames, counting each surviving file for BOTH models (n_complete
+    '504' = 252x2). Model-qualified keys make that structurally impossible;
+    this guard asserts it stays so: every enumerated unit key is distinct,
+    and (when --expect-units is given) exactly N distinct qualified units
+    are enumerated.
+    """
+    from collections import Counter
+
+    uks = [unit_key(spec, arm) for spec, arm in units]
+    dupes = sorted(k for k, c in Counter(uks).items() if c > 1)
+    if dupes:
+        raise RuntimeError(
+            f"residual double-count: {len(dupes)} duplicate unit keys in enumeration "
+            f"(first: {dupes[:5]})"
+        )
+    if expect_units is not None and len(uks) != expect_units:
+        raise RuntimeError(
+            f"expected {expect_units} distinct qualified units, enumerated {len(uks)}"
+        )
+    return uks
+
+
+def unit_identity_mismatch(unit: dict, spec, arm: str) -> bool:
+    """True when a loaded unit file's internal identity contradicts its key
+    (a stale/mis-keyed checkpoint must never be counted for another model)."""
+    (sm, sc), (tm, tc) = spec
+    recorded = (
+        unit.get("src_model"),
+        unit.get("src_cond"),
+        unit.get("tgt_model"),
+        unit.get("tgt_cond"),
+        unit.get("arm"),
+    )
+    return recorded != (sm, sc, tm, tc, arm)
+
+
 def cmd_merge(args) -> int:
     specs = build_pair_specs(args)
     units = _units(specs)
+    assert_distinct_unit_keys(units, getattr(args, "expect_units", None))
     pairs_dir = args.out_root / "pairs"
     rungs = _load_parent_rungs(args)
-    rows, failures, missing = [], [], []
+    rows, failures, missing, key_mismatch = [], [], [], []
     for spec, arm in units:
         uk = unit_key(spec, arm)
         upath = pairs_dir / f"{uk}.json"
@@ -680,6 +815,9 @@ def cmd_merge(args) -> int:
         unit = json.loads(upath.read_text())
         if "error" in unit:
             failures.append({"unit_key": uk, "error": unit["error"]})
+            continue
+        if unit_identity_mismatch(unit, spec, arm):
+            key_mismatch.append({"unit_key": uk, "recorded_src_model": unit.get("src_model")})
             continue
         rows.append(unit)
     verdict_counts: dict[str, dict[str, int]] = {}
@@ -721,8 +859,10 @@ def cmd_merge(args) -> int:
         "n_complete": len(rows),
         "n_failed": len(failures),
         "n_missing": len(missing),
+        "n_key_mismatch": len(key_mismatch),
         "failures": failures,
         "missing_units": missing[:50],
+        "key_mismatch_units": key_mismatch[:50],
         "verdict_counts": verdict_counts,
         "class0_free_map_uninformative_counts": class0_counts,
         "verdict_counts_fixed_effrank": verdict_counts_fixed,
@@ -734,11 +874,15 @@ def cmd_merge(args) -> int:
     _atomic_write_json(args.out_root / "summary.json", summary)
     print(
         f"[dvf-merge] wrote summary: {len(rows)} complete / {len(failures)} failed / "
-        f"{len(missing)} missing of {len(units)} units",
+        f"{len(missing)} missing / {len(key_mismatch)} key-mismatched of {len(units)} units",
         flush=True,
     )
-    if missing:
-        print(f"[dvf-merge] FAIL-LOUD: {len(missing)} units never attempted", flush=True)
+    if missing or key_mismatch:
+        print(
+            f"[dvf-merge] FAIL-LOUD: {len(missing)} units never attempted, "
+            f"{len(key_mismatch)} mis-keyed",
+            flush=True,
+        )
         return 3
     return 0
 
@@ -928,7 +1072,16 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
         "--phase",
-        choices=["stage", "gate1", "pairs", "nulls", "merge", "upload", "write-pairs"],
+        choices=[
+            "stage",
+            "gate1",
+            "pairs",
+            "nulls",
+            "merge",
+            "upload",
+            "write-pairs",
+            "migrate-keys",
+        ],
         required=True,
     )
     ap.add_argument("--store-root", type=Path, default=None)
@@ -945,6 +1098,12 @@ def main() -> int:
     ap.add_argument("--models", type=str, default=",".join(MODEL_SLUGS))
     ap.add_argument("--num-shards", type=int, default=1)
     ap.add_argument("--shard-index", type=int, default=0)
+    ap.add_argument(
+        "--expect-units",
+        type=int,
+        default=None,
+        help="merge: hard-assert exactly N distinct qualified units are enumerated",
+    )
     ap.add_argument("--rotation-draws", type=int, default=200)
     ap.add_argument("--row-limit", type=int, default=None, help="smoke: cap common rows")
     ap.add_argument("--dim-limit", type=int, default=None, help="smoke: cap hidden dims")
@@ -982,6 +1141,7 @@ def main() -> int:
         "merge": cmd_merge,
         "upload": cmd_upload,
         "write-pairs": cmd_write_pairs,
+        "migrate-keys": cmd_migrate_keys,
     }
     return dispatch[args.phase](args)
 
