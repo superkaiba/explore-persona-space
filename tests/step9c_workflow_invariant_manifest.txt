@@ -39,6 +39,7 @@ tests/test_issue_skill_marker_contract.py
 tests/test_issue_skill_merge_resnapshot_pin.py
 tests/test_issue_skill_merged_note_compose.py
 tests/test_issue_skill_orchestrator_turn_discipline_pointer.py
+tests/test_issue_skill_presplit_dispatch_pin.py
 tests/test_issue_skill_staged_index_verification.py
 tests/test_issue_skill_stash_kept_duty_pin.py
 tests/test_issue_skill_step10_teardown_ordering.py
