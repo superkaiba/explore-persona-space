@@ -564,9 +564,13 @@ ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD: str = "gcp_queue_timeout_failove
 ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD: str = "gcp_boot_loop_failover_runpod"
 
 #: The ASYNC poller detected a GCP FLEX_START instance that VANISHED while
-#: PENDING (#1116/#1112): the create SUCCEEDED and the instance sat in the DWS
-#: capacity queue (last observed ``current_phase == "pending"``, per the
-#: sidecar phase clock), then disappeared from instances-list entirely (a dead
+#: PENDING (#1116/#1112/#1815): the create SUCCEEDED and the instance sat in
+#: the DWS capacity queue — last observed ``current_phase == "pending"`` per
+#: a SAME-incarnation/legacy sidecar phase clock (arm P), OR never observed
+#: past the queue at all: no clock record for this incarnation + FLEX_START
+#: provenance + a young ``gcp_launched_ts`` (arm N, #1815; the arm rides the
+#: marker evidence as ``vanish_arm``, never a new reason string) — then
+#: disappeared from instances-list entirely (a dead
 #: ``terminal_instance not found`` poll, NO delete operation) — the queue
 #: dropped the request server-side, a pure CAPACITY event. DISTINCT from
 #: :data:`ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD` (the instance there

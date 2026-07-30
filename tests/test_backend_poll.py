@@ -667,11 +667,18 @@ def _running_poll(phase: str, *, reachability_alarm: bool) -> PollResult:
     )
 
 
-def _gcp_handle_with_clock(*, phase: str, ts: float) -> RunHandle:
-    """A GCP handle whose sidecar extra carries the staleness clock keys."""
+def _gcp_handle_with_clock(*, phase: str, ts: float, incarnation: str | None = None) -> RunHandle:
+    """A GCP handle whose sidecar extra carries the staleness clock keys.
+
+    ``incarnation`` (#1815) stamps ``last_phase_incarnation`` — pass a value
+    DIFFERENT from the handle's ``job_id`` (``"instance-fake-1"``) to model a
+    stale prior-launch record; ``None`` keeps the pre-#1815 legacy record.
+    """
     extra = dict(_GCP_EXTRA_659)
     extra["last_phase"] = phase
     extra["last_phase_change_ts"] = ts
+    if incarnation is not None:
+        extra["last_phase_incarnation"] = incarnation
     return _gcp_handle(extra=extra)
 
 
@@ -2681,19 +2688,29 @@ def _vanish_handle(
     *,
     job_id: str = "instance-vanish-1",
     clock_phase: str | None = "pending",
+    clock_incarnation: str | None = None,
     launched_ts: float | None = None,
+    provisioning_model: str | None = None,
     extra: dict | None = None,
 ) -> RunHandle:
     """A GCP RunHandle for the queue-vanish tests: the sidecar extra carries
     the phase clock at ``clock_phase`` (None = no clock keys, the fresh-dispatch
     / wiped-sidecar shape) and optionally ``gcp_launched_ts`` so the #1029
-    heuristic branch is armed on the negative controls."""
+    heuristic branch is armed on the negative controls. #1815 kwargs:
+    ``clock_incarnation`` stamps ``last_phase_incarnation`` (pass a value !=
+    ``job_id`` to model a stale prior-launch record; None keeps the legacy
+    record) and ``provisioning_model`` arms/declines the never-ran-young-flex
+    arm's FLEX conjunct."""
     e = dict(extra if extra is not None else _GCP_EXTRA_1116)
     if clock_phase is not None:
         e["last_phase"] = clock_phase
         e["last_phase_change_ts"] = _time.time() - 100
+    if clock_incarnation is not None:
+        e["last_phase_incarnation"] = clock_incarnation
     if launched_ts is not None:
         e["gcp_launched_ts"] = launched_ts
+    if provisioning_model is not None:
+        e["provisioning_model"] = provisioning_model
     return RunHandle(
         backend="gcp",
         cluster=None,
@@ -2840,12 +2857,16 @@ def test_gcp_not_found_with_workload_clock_not_vanish(tmp_path, monkeypatch, cap
 
 
 def test_gcp_not_found_with_no_clock_record_not_vanish(tmp_path, monkeypatch, capsys):
-    """#1116 negative control (fail-open): a dead not-found poll on a sidecar
-    with NO phase-clock record (fresh-dispatch handle, or the #1112 shape where
-    the sidecar was wiped) behaves byte-identically to today — no rewrite, no
-    failover, AND the #1029 boot-death record still happens (streak 1, the
-    fall-back breaker for the clock-less vanish; mirrors
-    test_gcp_instance_not_found_young_death_counts)."""
+    """#1116 negative control (fail-open), RE-SCOPED by #1815 to the
+    non-FLEX-PROVENANCE shape: a dead not-found poll on a sidecar with NO
+    phase-clock record AND no ``provisioning_model`` key (this fixture's
+    shape — a pre-#1815 handle) behaves byte-identically to today — no
+    rewrite, no failover, AND the #1029 boot-death record still happens
+    (streak 1, the fall-back breaker; mirrors
+    test_gcp_instance_not_found_young_death_counts). A clock-less handle
+    that DOES carry FLEX_START provenance + a young launch now deliberately
+    FIRES via the never-ran-young-flex arm —
+    test_gcp_queue_vanish_no_clock_flex_young_fires."""
     from explore_persona_space.backends.router import gcp_boot_death_streak
 
     sidecar = tmp_path / "issue-1116-handle.json"
@@ -3010,6 +3031,396 @@ def test_gcp_queue_vanish_does_not_record_boot_death(tmp_path, monkeypatch, caps
     assert out["current_phase"] == "gcp_queue_vanish_failover_runpod"
     assert len(rp.launches) == 1
     assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 0  # never recorded
+
+
+# ---------------------------------------------------------------------------
+# issue #1815 — the two-arm queue-vanish discriminator + incarnation-keyed
+# phase clock.
+#
+# #1738 mechanism replay: a fresh FLEX_START attempt vanished from the DWS
+# queue while the sidecar clock was EITHER stale from a prior launch
+# incarnation (mechanism (a) — the pre-rewrite Phase-3 record read
+# last_phase="workload") OR absent entirely (mechanism (b) — the reconnect
+# rewrite dropped the clock keys), so the #1116 arm-P discriminator early-outed
+# and the failover never fired. Post-#1815: clock records carry
+# last_phase_incarnation (job_id-first; legacy records without the key stay
+# valid), a mismatched-incarnation record reads as ABSENT for all three clock
+# readers (#669 wedge / #783 queue-timeout / #1116 vanish), and a second arm
+# (never-ran-young-flex) fires on a clock-less dead not-found poll whose
+# handle carries FLEX_START provenance + create evidence + a young launch ts
+# (< EPS_GCP_QUEUE_VANISH_MAX_AGE_SECONDS, default 1500 s).
+# ---------------------------------------------------------------------------
+
+
+def test_gcp_queue_vanish_stale_prior_attempt_clock_fires(tmp_path, monkeypatch, capsys):
+    """#1815 HEADLINE / the task-body-named mechanism (a) replay: a stale
+    PRIOR-incarnation clock (last_phase="workload" stamped under
+    "prior-instance-0") reads as ABSENT for the current incarnation, and the
+    FLEX_START + young-launch handle then fires the never-ran-young-flex arm —
+    rewrite + RunPod failover on the FIRST occurrence, sidecar re-pointed, no
+    boot-death record. Pre-#1815 the stale "workload" record early-outed the
+    vanish detector (the #1738 no-fire)."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(
+        _vanish_handle(
+            clock_phase="workload",
+            clock_incarnation="prior-instance-0",
+            provisioning_model="FLEX_START",
+            launched_ts=_time.time() - 700,
+        ),
+        sidecar,
+    )
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "gcp_queue_vanish_failover_runpod"
+    assert len(rp.launches) == 1
+    assert read_handle_sidecar(sidecar).backend == "runpod"
+    assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 0  # never recorded
+
+
+def test_gcp_queue_vanish_no_clock_flex_young_fires(tmp_path, monkeypatch, capsys):
+    """#1815 mechanism (b) replay / residual-#3 narrowing: a dead not-found
+    poll on a CLOCK-LESS sidecar (the reconnect-rewritten #1738 shape) whose
+    handle carries FLEX_START provenance + a young launch fires the
+    never-ran-young-flex arm; the marker evidence records
+    vanish_arm="never-ran-young-flex" with last_observed_phase null, and no
+    boot-death record lands."""
+    import scripts.backend_poll as bp
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(
+        _vanish_handle(
+            clock_phase=None,
+            provisioning_model="FLEX_START",
+            launched_ts=_time.time() - 700,
+        ),
+        sidecar,
+    )
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    captured: list[dict] = []
+    monkeypatch.setattr(
+        bp, "post_marker_via_task_py", lambda **kw: captured.append(kw), raising=False
+    )
+    monkeypatch.setattr(
+        "explore_persona_space.backends.slurm.post_marker_via_task_py",
+        lambda **kw: captured.append(kw),
+        raising=False,
+    )
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "gcp_queue_vanish_failover_runpod"
+    assert len(rp.launches) == 1
+    assert read_handle_sidecar(sidecar).backend == "runpod"
+    assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 0  # never recorded
+    backend_selected = [m for m in captured if m.get("marker") == "epm:backend-selected"]
+    assert backend_selected, "no epm:backend-selected marker posted by the arm-N failover"
+    body = json.loads(backend_selected[-1]["note"])
+    assert body["reason"] == "gcp_queue_vanish_failover_runpod"  # no new reason string
+    evidence = body["extra"]["gcp_workload_evidence"]
+    assert evidence["vanish_arm"] == "never-ran-young-flex"
+    assert evidence["last_observed_phase"] is None
+    assert evidence["gcp_ladder_rung"] == "flexstart_a100_80"
+
+
+@pytest.mark.parametrize("provisioning_model", ["STANDARD", None])
+def test_gcp_queue_vanish_no_clock_non_flex_not_vanish(
+    tmp_path, monkeypatch, capsys, provisioning_model
+):
+    """#1815 negative control (fail-safe FLEX conjunct): a clock-less dead
+    not-found poll whose handle is NON-FLEX ("STANDARD") or carries NO
+    provisioning_model key at all does NOT fire arm N — today's path:
+    ordinary dead JSON + the #1029 young-death record (streak 1; the
+    launched_ts is deliberately young, < 1500 s, so the streak assertion is
+    age-valid)."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(
+        _vanish_handle(
+            clock_phase=None,
+            provisioning_model=provisioning_model,
+            launched_ts=_time.time() - 60,
+        ),
+        sidecar,
+    )
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+
+    def _boom(*_a, **_k):
+        raise AssertionError("RunPod must NOT be constructed for a non-FLEX vanish (#1815)")
+
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", _boom)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["current_phase"] == "terminal_instance not found"
+    assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 1  # #1029 path untouched
+    assert read_handle_sidecar(sidecar).backend == "gcp"
+
+
+def test_gcp_queue_vanish_no_clock_flex_aged_not_vanish(tmp_path, monkeypatch, capsys):
+    """#1815 negative control (recency bound): a clock-less FLEX handle whose
+    launch is AGED (>= EPS_GCP_QUEUE_VANISH_MAX_AGE_SECONDS = 1500 s — e.g.
+    a never-polled completed run reaped post-done-grace) does NOT fire arm N
+    AND takes the ORDINARY dead path with NO streak record either: the
+    arm-N window equals the #1029 age floor
+    (GCP_BOOT_DEATH_MAX_AGE_SECONDS_DEFAULT = 1500), whose own gate is
+    `age >= floor -> no record` — unchanged from today."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(
+        _vanish_handle(
+            clock_phase=None,
+            provisioning_model="FLEX_START",
+            launched_ts=_time.time() - 3600,
+        ),
+        sidecar,
+    )
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+
+    def _boom(*_a, **_k):
+        raise AssertionError("RunPod must NOT be constructed for an aged FLEX death (#1815)")
+
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", _boom)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["current_phase"] == "terminal_instance not found"
+    assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 0  # aged: no #1029 record
+    assert read_handle_sidecar(sidecar).backend == "gcp"
+
+
+def test_gcp_queue_vanish_same_incarnation_workload_clock_not_vanish(tmp_path, monkeypatch, capsys):
+    """#1815 negative control (the body-required genuine-mid-workload-deletion
+    case): a clock record stamped under the CURRENT incarnation reading
+    "workload" means the instance RAN — even with maximally-armed arm-N extras
+    (FLEX + young launch) neither arm fires; the #659/#1029 classifications
+    own the death (young not-found -> streak 1)."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(
+        _vanish_handle(
+            clock_phase="workload",
+            clock_incarnation="instance-vanish-1",  # == the handle's job_id
+            provisioning_model="FLEX_START",
+            launched_ts=_time.time() - 700,
+        ),
+        sidecar,
+    )
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+
+    def _boom(*_a, **_k):
+        raise AssertionError(
+            "RunPod must NOT be constructed for a same-incarnation workload death (#1815)"
+        )
+
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", _boom)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["current_phase"] == "terminal_instance not found"
+    assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 1  # #1029 path untouched
+    assert read_handle_sidecar(sidecar).backend == "gcp"
+
+
+def test_gcp_queue_vanish_stale_prior_incarnation_pending_clock_non_flex_not_vanish(
+    tmp_path, monkeypatch, capsys
+):
+    """#1815 pins the REMOVED pre-fix FALSE-FIRE direction: a stale PENDING
+    clock stamped under a PRIOR incarnation beside a NON-FLEX young handle
+    must NOT fire — pre-#1815 arm P wrongly fired on the stale pending record
+    (attributing the prior launch's queued state to the new instance);
+    post-#1815 the mismatched incarnation reads as absent and arm N's FLEX
+    conjunct fails safe. Ordinary dead path + the #1029 young-death record."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(
+        _vanish_handle(
+            job_id="instance-vanish-2",
+            clock_phase="pending",
+            clock_incarnation="prior-instance-0",
+            provisioning_model="STANDARD",
+            launched_ts=_time.time() - 60,
+        ),
+        sidecar,
+    )
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+
+    def _boom(*_a, **_k):
+        raise AssertionError(
+            "RunPod must NOT be constructed on a stale prior-incarnation pending clock (#1815)"
+        )
+
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", _boom)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["current_phase"] == "terminal_instance not found"
+    assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 1  # #1029 path untouched
+    assert read_handle_sidecar(sidecar).backend == "gcp"
+
+
+def test_phase_clock_incarnation_roundtrip_and_mismatch_reads_absent(tmp_path):
+    """#1815 unit: _write_phase_clock stamps last_phase_incarnation and
+    _read_phase_clock_for keys on it — same incarnation reads the record,
+    a DIFFERENT incarnation reads (None, None), a LEGACY record (no stored
+    key) stays valid under every handle, and a fully-degenerate handle (no
+    job_id / attempt_id / gcp_launched_ts) skips the check (fail-open)."""
+    from scripts.backend_poll import (
+        _read_phase_clock,
+        _read_phase_clock_for,
+        _write_phase_clock,
+    )
+
+    def _handle(job_id: str, extra: dict | None = None) -> RunHandle:
+        return RunHandle(
+            backend="gcp",
+            cluster=None,
+            job_id=job_id,
+            pod_name="eps-issue-1815",
+            scratch_dir="/workspace/eps-issue-1815",
+            log_path="/workspace/logs/issue-1815.log",
+            extra=dict(extra or {}),
+        )
+
+    sidecar = tmp_path / "issue-1815-handle.json"
+    handle_a = _handle("inc-A")
+    handle_b = _handle("inc-B")
+    degenerate = _handle("", extra={})  # no job_id/attempt_id/launched_ts
+
+    write_handle_sidecar(handle_a, sidecar)
+    ts = _time.time() - 50
+
+    # Stamp under incarnation A: A reads it, B reads absent, legacy read sees it.
+    _write_phase_clock(sidecar, phase="pending", ts=ts, incarnation="inc-A")
+    assert _read_phase_clock_for(sidecar, handle_a) == ("pending", ts)
+    assert _read_phase_clock_for(sidecar, handle_b) == (None, None)
+    assert _read_phase_clock(sidecar) == ("pending", ts)  # legacy 2-tuple wrapper
+    # A degenerate handle (no computable incarnation) skips the check.
+    assert _read_phase_clock_for(sidecar, degenerate) == ("pending", ts)
+
+    # LEGACY record (incarnation=None pops the key): valid under BOTH handles.
+    _write_phase_clock(sidecar, phase="workload", ts=ts, incarnation=None)
+    raw_extra = json.loads(sidecar.read_text())["extra"]
+    assert "last_phase_incarnation" not in raw_extra  # popped, not left stale
+    assert _read_phase_clock_for(sidecar, handle_a) == ("workload", ts)
+    assert _read_phase_clock_for(sidecar, handle_b) == ("workload", ts)
+
+
+def test_gcp_queue_timeout_stale_incarnation_pending_clock_restamps_no_premature_fire(
+    tmp_path, monkeypatch, capsys
+):
+    """#1815 latent cross-attempt premature-timeout pinned FIXED: a "pending"
+    clock aged past the 600 s floor but stamped under a PRIOR incarnation must
+    NOT mature the #783 queue-timeout for a fresh queued instance — the stale
+    record reads as absent, the clock is RE-STAMPED "pending" under the
+    CURRENT incarnation with a fresh ts, and the tick stays running."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(
+        _gcp_handle_with_clock(
+            phase="pending", ts=_time.time() - 700, incarnation="prior-instance-0"
+        ),
+        sidecar,
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_poll("running", "pending")),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "pending"
+    assert len(rp.launches) == 0
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "gcp"
+    assert recovered.extra["last_phase"] == "pending"
+    assert recovered.extra["last_phase_change_ts"] > _time.time() - 60  # fresh re-stamp
+    assert recovered.extra["last_phase_incarnation"] == "instance-fake-1"  # current job_id
+
+
+def test_gcp_wedge_stale_incarnation_clock_restamps(tmp_path, monkeypatch, capsys):
+    """#1815 wedge sibling: a frozen "workload" clock past the #669 staleness
+    floor but stamped under a PRIOR incarnation must NOT wedge the current
+    launch even WITH a reachability alarm — the stale record reads as absent
+    (first-observation semantics), the clock re-stamps under the CURRENT
+    incarnation, and the tick stays running."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(
+        _gcp_handle_with_clock(
+            phase="workload", ts=_time.time() - 1000, incarnation="prior-instance-0"
+        ),
+        sidecar,
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "workload"
+    assert len(rp.launches) == 0
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.extra["last_phase"] == "workload"
+    assert recovered.extra["last_phase_change_ts"] > _time.time() - 60  # fresh re-stamp
+    assert recovered.extra["last_phase_incarnation"] == "instance-fake-1"  # current job_id
 
 
 # ---------------------------------------------------------------------------

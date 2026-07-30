@@ -278,6 +278,33 @@ def _gcp_queue_wait_seconds() -> int:
     return val if val > 0 else GCP_QUEUE_WAIT_SECONDS_DEFAULT
 
 
+# The default max create age for the #1815 never-observed-past-pending vanish
+# arm (arm N of ``_vanish_arm_for``). Mirrors the #1029 young-unobserved-death
+# horizon (``EPS_GCP_BOOT_DEATH_MAX_AGE_SECONDS``, 1500 s).
+GCP_QUEUE_VANISH_MAX_AGE_SECONDS_DEFAULT = 1500
+
+
+def _gcp_queue_vanish_max_age_seconds() -> int:
+    """``EPS_GCP_QUEUE_VANISH_MAX_AGE_SECONDS`` (default 1500) — max create age
+    for the never-observed-past-pending vanish arm (#1815).
+
+    Default mirrors the #1029 young-unobserved-death horizon
+    (``EPS_GCP_BOOT_DEATH_MAX_AGE_SECONDS`` 1500 s) and MUST stay well under
+    the #935 done-grace window (90 min): a never-polled COMPLETED run's
+    post-grace poweroff+DELETE reads not-found at age >= ~95 min, so this
+    bound is what keeps it from ever being mislabeled a vanish (a paid RunPod
+    re-run of finished work). Missing / malformed / non-positive -> 1500.
+    """
+    raw = os.environ.get("EPS_GCP_QUEUE_VANISH_MAX_AGE_SECONDS")
+    if raw is None:
+        return GCP_QUEUE_VANISH_MAX_AGE_SECONDS_DEFAULT
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return GCP_QUEUE_VANISH_MAX_AGE_SECONDS_DEFAULT
+    return val if val > 0 else GCP_QUEUE_VANISH_MAX_AGE_SECONDS_DEFAULT
+
+
 # ── GCP pre-workload boot-loop breaker (#1029) ────────────────────────────────
 # The ``current_phase`` ``GcpBackend.poll`` produces for a pre-workload setup
 # death — DETERMINISTIC evidence the workload never started (the §4.1.0b
@@ -847,40 +874,98 @@ def _is_runpod_cuda_ima_failure(handle, result) -> bool:
     )
 
 
-def _read_phase_clock(sidecar: Path) -> tuple[str | None, float | None]:
-    """Read the (last_phase, last_phase_change_ts) staleness clock from the sidecar (#669).
+def _clock_incarnation_for(handle) -> str | None:
+    """Launch-incarnation key for phase-clock records (#1815).
 
-    The clock keys live inside the sidecar JSON's ``extra`` dict (round-trips
-    via ``serialize_handle``'s ``dict(handle.extra)``, so no schema migration).
-    A freshly-dispatched sidecar (pre-this-change handle) has neither key, which
-    reads as ``(None, None)`` → the caller fails toward ``running``, never
-    toward a false wedge. A missing / unreadable / malformed sidecar also reads
-    as ``(None, None)`` — the clock can never crash the poll.
+    job_id-first (the GCE instance id — distinct per create, stable across
+    re-polls of one sidecar); fallback ``f"{attempt_id}:{gcp_launched_ts}"``.
+    attempt_id ALONE is FORBIDDEN (#763: all five creates shared one
+    attempt_id). Mirrors the #1029 boot-death recorder's derivation (this
+    file, the ``_maybe_escalate_gcp_boot_loop`` incarnation block). ``None``
+    on a fully-degenerate handle -> callers skip the check (fail-open).
+    """
+    inc = str(getattr(handle, "job_id", "") or "")
+    if inc:
+        return inc
+    extra = getattr(handle, "extra", None) or {}
+    att = str(extra.get("attempt_id") or "")
+    ts_raw = extra.get("gcp_launched_ts")
+    ts_part = "" if ts_raw in (None, "") else str(ts_raw)
+    if not att and not ts_part:
+        return None
+    return f"{att}:{ts_part}"
+
+
+def _read_phase_clock_record(sidecar: Path) -> tuple[str | None, float | None, str | None]:
+    """Read (last_phase, last_phase_change_ts, last_phase_incarnation) from the sidecar.
+
+    The single parse behind :func:`_read_phase_clock` (the legacy 2-tuple
+    wrapper) and :func:`_read_phase_clock_for` (the #1815 incarnation-checked
+    read). The clock keys live inside the sidecar JSON's ``extra`` dict
+    (round-trips via ``serialize_handle``'s ``dict(handle.extra)``, so no
+    schema migration). A freshly-dispatched sidecar has none of the keys,
+    which reads as ``(None, None, None)`` → callers fail toward ``running``,
+    never toward a false wedge. A missing / unreadable / malformed sidecar
+    also reads as ``(None, None, None)`` — the clock can never crash the poll.
     """
     try:
         payload = json.loads(Path(sidecar).read_text())
     except (OSError, json.JSONDecodeError, ValueError):
-        return None, None
+        return None, None, None
     extra = payload.get("extra") if isinstance(payload, dict) else None
     if not isinstance(extra, dict):
-        return None, None
+        return None, None, None
     last_phase = extra.get("last_phase")
     last_ts = extra.get("last_phase_change_ts")
+    stored_inc = extra.get("last_phase_incarnation")
     last_phase = str(last_phase) if isinstance(last_phase, str) else None
     last_ts = float(last_ts) if isinstance(last_ts, (int, float)) else None
+    stored_inc = str(stored_inc) if isinstance(stored_inc, str) and stored_inc else None
+    return last_phase, last_ts, stored_inc
+
+
+def _read_phase_clock(sidecar: Path) -> tuple[str | None, float | None]:
+    """Read the (last_phase, last_phase_change_ts) staleness clock from the sidecar (#669).
+
+    Legacy 2-tuple wrapper over :func:`_read_phase_clock_record` — kept for
+    direct callers/tests that predate the #1815 incarnation key; escalation
+    sites read through :func:`_read_phase_clock_for` instead.
+    """
+    last_phase, last_ts, _stored_inc = _read_phase_clock_record(sidecar)
     return last_phase, last_ts
 
 
-def _write_phase_clock(sidecar: Path, *, phase: str, ts: float) -> None:
+def _read_phase_clock_for(sidecar: Path, handle) -> tuple[str | None, float | None]:
+    """Incarnation-checked clock read (#1815): a record stamped under a
+    DIFFERENT launch incarnation reads as ABSENT, so a prior attempt's phase
+    can never satisfy (or age) a discriminator for the current one. A LEGACY
+    record with no stored incarnation stays valid (pre-fix in-flight runs keep
+    today's behavior); a handle with no computable incarnation skips the check.
+    """
+    phase, ts, stored = _read_phase_clock_record(sidecar)
+    if phase is None and ts is None:
+        return None, None
+    cur = _clock_incarnation_for(handle)
+    if stored and cur and stored != cur:
+        return None, None
+    return phase, ts
+
+
+def _write_phase_clock(
+    sidecar: Path, *, phase: str, ts: float, incarnation: str | None = None
+) -> None:
     """Persist the staleness clock onto the sidecar's ``extra`` dict, best-effort (#669).
 
-    Mutates ONLY ``extra["last_phase"]`` / ``extra["last_phase_change_ts"]`` on
-    the raw sidecar JSON (every other handle field is preserved verbatim) and
-    rewrites atomically (write-temp + rename). A write failure (EDQUOT /
-    read-only fs) is logged, NOT raised — the next tick simply re-reads stale
-    state and either re-stamps (phase advanced) or re-evaluates the floor. A
-    clock-write failure can NEVER crash the poll or manufacture a wedge (the
-    floor + reachability-alarm conjunction still gates the escalation).
+    Mutates ONLY ``extra["last_phase"]`` / ``extra["last_phase_change_ts"]`` /
+    ``extra["last_phase_incarnation"]`` (#1815 — stamped when ``incarnation``
+    is non-None, POPPED when None so a degenerate-handle stamp never leaves a
+    stale attribution beside a fresh phase) on the raw sidecar JSON (every
+    other handle field is preserved verbatim) and rewrites atomically
+    (write-temp + rename). A write failure (EDQUOT / read-only fs) is logged,
+    NOT raised — the next tick simply re-reads stale state and either
+    re-stamps (phase advanced) or re-evaluates the floor. A clock-write
+    failure can NEVER crash the poll or manufacture a wedge (the floor +
+    reachability-alarm conjunction still gates the escalation).
     """
     try:
         path = Path(sidecar)
@@ -893,6 +978,10 @@ def _write_phase_clock(sidecar: Path, *, phase: str, ts: float) -> None:
             payload["extra"] = extra
         extra["last_phase"] = phase
         extra["last_phase_change_ts"] = float(ts)
+        if incarnation is not None:
+            extra["last_phase_incarnation"] = str(incarnation)
+        else:
+            extra.pop("last_phase_incarnation", None)
         tmp = path.with_suffix(path.suffix + ".tmp")
         tmp.write_text(json.dumps(payload, sort_keys=True, indent=2))
         tmp.replace(path)
@@ -938,10 +1027,16 @@ def _maybe_escalate_gcp_wedge(handle, result, sidecar: Path, *, now: float):
     """
     if getattr(handle, "backend", None) != "gcp" or result.status != "running":
         return result
-    last_phase, last_ts = _read_phase_clock(sidecar)
+    last_phase, last_ts = _read_phase_clock_for(sidecar, handle)
     if last_phase != result.current_phase or last_ts is None:
-        # Phase advanced (or first observation) → re-stamp the clock.
-        _write_phase_clock(sidecar, phase=result.current_phase, ts=now)
+        # Phase advanced (or first observation, or a stale prior-incarnation
+        # record — #1815) → re-stamp the clock under the CURRENT incarnation.
+        _write_phase_clock(
+            sidecar,
+            phase=result.current_phase,
+            ts=now,
+            incarnation=_clock_incarnation_for(handle),
+        )
         return result
     stale_for = now - last_ts
     if stale_for > GCP_STALENESS_FLOOR_SEC and getattr(result, "reachability_alarm", False):
@@ -1003,10 +1098,18 @@ def _maybe_escalate_gcp_queue_timeout(handle, result, sidecar: Path, *, now: flo
         return result
     if result.current_phase != GCP_PENDING_PHASE:
         return result
-    last_phase, last_ts = _read_phase_clock(sidecar)
+    last_phase, last_ts = _read_phase_clock_for(sidecar, handle)
     if last_phase != result.current_phase or last_ts is None:
-        # Phase advanced onto pending (or first observation) → re-stamp the clock.
-        _write_phase_clock(sidecar, phase=result.current_phase, ts=now)
+        # Phase advanced onto pending (or first observation, or a stale
+        # prior-incarnation record — #1815: a prior attempt's aged "pending"
+        # stamp can no longer mature the floor for a fresh queued instance) →
+        # re-stamp the clock under the CURRENT incarnation.
+        _write_phase_clock(
+            sidecar,
+            phase=result.current_phase,
+            ts=now,
+            incarnation=_clock_incarnation_for(handle),
+        )
         return result
     queued_for = now - last_ts
     floor = _gcp_queue_wait_seconds()
@@ -1062,8 +1165,47 @@ def _is_gcp_queue_timeout(handle, result) -> bool:
     )
 
 
-def _maybe_escalate_gcp_queue_vanish(handle, result, sidecar: Path):
-    """Escalate a GCP instance that VANISHED from the FLEX_START queue (#1116/#1112).
+def _flex_create_never_ran_young(handle, *, now: float) -> bool:
+    """Arm-N predicate (#1815): create DONE (job_id known), FLEX_START
+    provenance, young launch. Every unknown fails SAFE (False -> today's path):
+    a missing/foreign ``provisioning_model``, an empty ``job_id``, and a
+    missing/non-numeric ``gcp_launched_ts`` all decline the arm.
+    """
+    extra = getattr(handle, "extra", None) or {}
+    if extra.get("provisioning_model") != "FLEX_START":
+        return False
+    if not str(getattr(handle, "job_id", "") or ""):
+        return False
+    ts = extra.get("gcp_launched_ts")
+    if not isinstance(ts, (int, float)):
+        return False
+    return (now - float(ts)) < _gcp_queue_vanish_max_age_seconds()
+
+
+def _vanish_arm_for(handle, sidecar: Path, *, now: float) -> tuple[str | None, str | None]:
+    """(arm, last_observed_phase) for the queue-vanish discriminator (#1116/#1815).
+
+    * ``("pending-clock", "pending")`` — the #1116 arm P: a SAME-incarnation
+      (or legacy) clock record last observed ``"pending"``;
+    * ``("never-ran-young-flex", None)`` — the #1815 arm N: no clock record
+      for THIS incarnation (absent, wiped, or stamped by a PRIOR incarnation)
+      AND :func:`_flex_create_never_ran_young` (FLEX_START provenance +
+      create evidence + young launch);
+    * ``(None, <phase>)`` — not a vanish shape: a same-incarnation
+      NON-pending clock means the instance RAN (#659/#1029 own that), and a
+      clock-less non-FLEX / aged / evidence-less handle keeps today's
+      fall-through to the #1029 streak path.
+    """
+    last_phase, _last_ts = _read_phase_clock_for(sidecar, handle)
+    if last_phase == GCP_PENDING_PHASE:
+        return "pending-clock", last_phase
+    if last_phase is None and _flex_create_never_ran_young(handle, now=now):
+        return "never-ran-young-flex", None
+    return None, last_phase
+
+
+def _maybe_escalate_gcp_queue_vanish(handle, result, sidecar: Path, *, now: float | None = None):
+    """Escalate a GCP instance that VANISHED from the FLEX_START queue (#1116/#1112/#1815).
 
     The queue-VANISH sibling of :func:`_maybe_escalate_gcp_queue_timeout`. A
     DWS-queued FLEX_START instance can be dropped SERVER-SIDE (create DONE, no
@@ -1075,12 +1217,22 @@ def _maybe_escalate_gcp_queue_vanish(handle, result, sidecar: Path):
     worst — mislabelling a pure CAPACITY event as a boot problem) and
     ``route()`` re-booked the same dead flex rung indefinitely.
 
-    The discriminator is the sidecar phase clock (:func:`_read_phase_clock`):
-    a dead not-found poll whose ``last_phase`` reads ``"pending"`` means the
-    instance was LAST OBSERVED still queued — it never reached a running
-    phase — so the vanish is deterministic capacity evidence, escalated
-    INSTANTANEOUSLY (no aging floor, no streak; the clock is READ-ONLY here —
-    unlike #783 there is nothing to age and unlike #1029 nothing to count).
+    The discriminator is :func:`_vanish_arm_for` — TWO arms (#1815):
+
+    * **Arm P (pending-clock, #1116):** a dead not-found poll whose
+      SAME-incarnation (or legacy) clock last observed ``"pending"`` — the
+      instance was LAST OBSERVED still queued, deterministic capacity
+      evidence, escalated INSTANTANEOUSLY (no aging floor, no streak; the
+      clock is READ-ONLY here). The #1815 incarnation check
+      (:func:`_read_phase_clock_for`) keeps a PRIOR launch's stale record
+      from satisfying (or blocking) this arm for the current one.
+    * **Arm N (never-ran-young-flex, #1815):** NO clock record for THIS
+      incarnation (fresh/reconnect-rewritten sidecar, sparse polling, or a
+      prior incarnation's stale record reading as absent) AND the handle
+      carries FLEX_START provenance + create evidence (``job_id``) + a young
+      ``gcp_launched_ts`` (< ``EPS_GCP_QUEUE_VANISH_MAX_AGE_SECONDS``,
+      default 1500 s) — the #1738 no-fire shape: the instance was created,
+      never observed past the DWS queue, and disappeared young.
 
     Guards, in order (each returns ``result`` unchanged):
 
@@ -1088,11 +1240,11 @@ def _maybe_escalate_gcp_queue_vanish(handle, result, sidecar: Path):
     * ``result.current_phase != GCP_INSTANCE_NOT_FOUND_PHASE`` — narrow to
       not-found ONLY: a ``terminal_terminated`` instance still EXISTS
       server-side (a preemption / manual stop), which is NOT the vanish shape;
-    * the sidecar clock's ``last_phase`` is not ``"pending"`` — covers a
-      workload-phase clock (the instance ran, then was deleted: the existing
-      #659/#1029 classifications own that) AND a missing/None clock
-      (fresh-dispatch handle, wiped sidecar — fail-open to today's behavior,
-      which falls through to the #1029 streak path);
+    * :func:`_vanish_arm_for` returns arm ``None`` — a same-incarnation
+      NON-pending clock (the instance ran: #659/#1029 own it), or a
+      clock-less handle failing any arm-N conjunct (non-FLEX / unknown
+      provenance, no create evidence, aged launch) — fail-open to today's
+      behavior, which falls through to the #1029 streak path;
     * :func:`_cpu_intent_blocks_runpod_failover` — the #677/#747 guard gates
       the REWRITE itself (mirroring :func:`_maybe_escalate_gcp_boot_loop`), so
       a ``cpu-bigmem`` vanish keeps its ordinary dead path INCLUDING today's
@@ -1103,22 +1255,25 @@ def _maybe_escalate_gcp_queue_vanish(handle, result, sidecar: Path):
     failover fires. The ``main()`` wiring places this BEFORE
     :func:`_maybe_escalate_gcp_boot_loop`, whose heuristic phase set contains
     not-found — the vanish branch's early return is what keeps a capacity miss
-    out of the boot-death streak.
+    out of the boot-death streak. ``now`` is kw-only with a ``time.time()``
+    default so pre-#1815 direct callers keep binding.
     """
     if getattr(handle, "backend", None) != "gcp" or result.status != "dead":
         return result
     if result.current_phase != GCP_INSTANCE_NOT_FOUND_PHASE:
         return result
-    last_phase, _last_ts = _read_phase_clock(sidecar)
-    if last_phase != GCP_PENDING_PHASE:
+    now = time.time() if now is None else now
+    arm, last_phase = _vanish_arm_for(handle, sidecar, now=now)
+    if arm is None:
         return result
     if _cpu_intent_blocks_runpod_failover(handle):
         return result
     logging.warning(
         "backend_poll: GCP instance vanished from the FLEX_START capacity queue "
-        "(dead poll %r with last observed phase %r) — escalating to %s and "
-        "failing over to RunPod (#1116/#1112)",
+        "(dead poll %r, vanish arm %r, last observed phase %r) — escalating to "
+        "%s and failing over to RunPod (#1116/#1112/#1815)",
         result.current_phase,
+        arm,
         last_phase,
         GCP_QUEUE_VANISH_PHASE,
     )
@@ -4080,8 +4235,10 @@ def _failover_boot_looped_gcp_to_runpod(*, issue: int, handle, result, sidecar: 
     )
 
 
-def _failover_vanished_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path) -> dict:
-    """Fail a vanished-while-PENDING GCP instance over to RunPod (#1116/#1112).
+def _failover_vanished_gcp_to_runpod(
+    *, issue: int, handle, result, sidecar: Path, now: float | None = None
+) -> dict:
+    """Fail a vanished-while-PENDING GCP instance over to RunPod (#1116/#1112/#1815).
 
     The queue-VANISH sibling of :func:`_failover_queued_gcp_to_runpod` /
     :func:`_failover_boot_looped_gcp_to_runpod`: a thin wrapper over the SAME
@@ -4094,16 +4251,26 @@ def _failover_vanished_gcp_to_runpod(*, issue: int, handle, result, sidecar: Pat
       server-side (the DWS drop deleted it; that absence IS the trigger), so
       there is nothing to tear down — the #659 stance, NOT #783's (only a
       still-LIVE queued instance needs its capacity request released).
-    * ``extra_evidence`` carrying the last observed phase (``"pending"``, the
-      clock discriminator) + the ladder-rung label, so the
+    * ``extra_evidence`` carrying the ACTUAL last observed phase
+      (``"pending"`` for arm P, ``None`` for the clock-less arm N), the
+      ``vanish_arm`` label (``"pending-clock"`` | ``"never-ran-young-flex"``,
+      #1815 — recomputed here via :func:`_vanish_arm_for`; an arm-``None``
+      recompute, e.g. the age window expired between escalation and failover,
+      records ``"expired-at-failover"`` rather than a bare null and the
+      failover still proceeds — the escalated phase is the trigger, the
+      recompute is evidence-only), and the ladder-rung label, so the
       ``epm:backend-selected`` marker records WHICH rung's queue dropped the
-      request.
+      request and via which arm.
     * ``gcp_ondemand_retry_reason=ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY``
       (#1596) — one of the two queue-loss callers that arm the retry (the
       #1601 queue-timeout wrapper is the other): a capacity-class RunPod
       refusal with CLEAN provision residue retries the GCP ladder's STANDARD
       (on-demand) rungs before minting the terminal (the #1112 manual
       recovery, automated).
+
+    ``now`` is kw-only with a ``time.time()`` default, threaded from the
+    ``main()`` caller (matching the escalation call) so pre-#1815 direct
+    callers keep binding.
     """
     # Lazy import (module convention: backend_poll -> router imports stay inside
     # functions so the --help path is fast and the import direction is one-way).
@@ -4114,6 +4281,14 @@ def _failover_vanished_gcp_to_runpod(*, issue: int, handle, result, sidecar: Pat
 
     extra = getattr(handle, "extra", None) or {}
     rung = str(extra.get("gcp_ladder_rung") or "unknown_rung")
+    now = time.time() if now is None else now
+    arm, last_observed_phase = _vanish_arm_for(handle, sidecar, now=now)
+    if arm is None:
+        # Evidence-only tolerance (#1815): the escalated GCP_QUEUE_VANISH_PHASE
+        # is the trigger; a failover-time recompute that no longer matches an
+        # arm (age-window expiry between the two reads) never blocks the
+        # failover and never records a bare null arm.
+        arm = "expired-at-failover"
     return _failover_gcp_to_runpod(
         issue=issue,
         handle=handle,
@@ -4125,7 +4300,11 @@ def _failover_vanished_gcp_to_runpod(*, issue: int, handle, result, sidecar: Pat
         evidence_source="async_poller_queue_vanish",
         failover_tag="#1116 queue-vanish failover",
         teardown_first=False,
-        extra_evidence={"last_observed_phase": GCP_PENDING_PHASE, "gcp_ladder_rung": rung},
+        extra_evidence={
+            "last_observed_phase": last_observed_phase,
+            "vanish_arm": arm,
+            "gcp_ladder_rung": rung,
+        },
         gcp_ondemand_retry_reason=ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
     )
 
@@ -5040,24 +5219,32 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(queue_timeout_json))
         return 0
 
-    # #1116 GCP FLEX_START queue-VANISH escalation: a dead not-found poll
-    # (current_phase="terminal_instance not found") whose sidecar phase clock
-    # last observed "pending" means the DWS queue dropped the request
-    # server-side (create DONE, no delete op — #1112) — a CAPACITY miss, failed
-    # over to RunPod on the FIRST occurrence (reason
-    # gcp_queue_vanish_failover_runpod, no daily-attempt burn, no teardown —
-    # the record is already gone). Input-disjoint with the queue-timeout block
-    # above (running/"pending" there vs dead/not-found here) and with the #659
-    # predicate below (not-found vs terminal_workload_failed); MUST run BEFORE
-    # the #1029 boot-loop recorder — not-found is in its heuristic phase set,
-    # and this branch's return is what keeps a pure capacity event from
-    # poisoning the boot-death streak. A no-op on every other case (non-GCP,
-    # not dead, wrong phase, non-pending/missing clock, or a cpu-bigmem
-    # handle, which keeps its ordinary dead path incl. the boot-death record).
-    result = _maybe_escalate_gcp_queue_vanish(handle, result, Path(sidecar))
+    # #1116/#1815 GCP FLEX_START queue-VANISH escalation: a dead not-found poll
+    # (current_phase="terminal_instance not found") that either (arm P) has a
+    # SAME-incarnation/legacy sidecar clock last observing "pending", or
+    # (arm N, #1815) has NO clock record for THIS incarnation while the handle
+    # carries FLEX_START provenance + create evidence + a young launch ts —
+    # both mean the DWS queue dropped the request server-side (create DONE, no
+    # delete op — #1112) — a CAPACITY miss, failed over to RunPod on the FIRST
+    # occurrence (reason gcp_queue_vanish_failover_runpod, no daily-attempt
+    # burn, no teardown — the record is already gone). Input-disjoint with the
+    # queue-timeout block above (running/"pending" there vs dead/not-found
+    # here) and with the #659 predicate below (not-found vs
+    # terminal_workload_failed); MUST run BEFORE the #1029 boot-loop recorder —
+    # not-found is in its heuristic phase set, and this branch's return is what
+    # keeps a pure capacity event from poisoning the boot-death streak. A no-op
+    # on every other case (non-GCP, not dead, wrong phase, a same-incarnation
+    # non-pending clock, a clock-less non-FLEX/aged/evidence-less handle — the
+    # #1029 streak path keeps those — or a cpu-bigmem handle, which keeps its
+    # ordinary dead path incl. the boot-death record).
+    result = _maybe_escalate_gcp_queue_vanish(handle, result, Path(sidecar), now=time.time())
     if _is_gcp_queue_vanish(handle, result):
         queue_vanish_json = _failover_vanished_gcp_to_runpod(
-            issue=args.issue, handle=handle, result=result, sidecar=Path(sidecar)
+            issue=args.issue,
+            handle=handle,
+            result=result,
+            sidecar=Path(sidecar),
+            now=time.time(),
         )
         print(json.dumps(queue_vanish_json))
         return 0
