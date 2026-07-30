@@ -6403,8 +6403,8 @@
     "1827": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1827",
-      "status": "reviewing",
+      "path": "tasks/completed/1827",
+      "status": "completed",
       "title": "workflow-fix: WARN-tier plan-conditions coverage check (silent condition drop)"
     },
     "1828": {
