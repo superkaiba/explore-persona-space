@@ -26,8 +26,12 @@ import json
 import re
 from pathlib import Path
 
-import numpy as np
-import torch
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # bind shared-VM thread caps BEFORE numpy/torch import (#847)
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 B = Path("data/issue_1776/hf_dl/issue1776_jacobian")
 OUT = Path("eval_results/issue_1776/analyzer")
