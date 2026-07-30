@@ -1,0 +1,154 @@
+{
+  "behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+  ],
+  "capture_sentinel": {
+    "behaviors": [
+      "evil",
+      "sycophancy",
+      "hallucination"
+    ],
+    "git_commit": "b753c7aa0a5e1123a58155aab8ee525a2cbc2b12",
+    "hf_prefix": "issue1739_ctxmap/pvsynth",
+    "per_behavior": [
+      {
+        "behavior": "evil",
+        "capture_rows": 1000,
+        "gen_fingerprint": "d367414ee032ff47",
+        "k_rollouts": 5,
+        "n_contexts": 200,
+        "n_kept": 200,
+        "n_truncated_rollouts": 0
+      },
+      {
+        "behavior": "sycophancy",
+        "capture_rows": 1000,
+        "gen_fingerprint": "a6659fc753ce8899",
+        "k_rollouts": 5,
+        "n_contexts": 200,
+        "n_kept": 200,
+        "n_truncated_rollouts": 0
+      },
+      {
+        "behavior": "hallucination",
+        "capture_rows": 1000,
+        "gen_fingerprint": "54cfef68343b79b3",
+        "k_rollouts": 5,
+        "n_contexts": 200,
+        "n_kept": 200,
+        "n_truncated_rollouts": 1
+      }
+    ],
+    "rung": "pvsynth",
+    "split": "eval",
+    "ts": "2026-07-30T16:56:09Z"
+  },
+  "meta": {
+    "git_commit": "13d7d66b0b308e51fb2f87b3c907c0a6d5b5b0f5",
+    "judge_max_tokens": 400,
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "judge_temperature": 1.0,
+    "n_judge_draws": 3,
+    "rejudge_max_tokens": 800,
+    "ts": "2026-07-30T17:08:02Z"
+  },
+  "per_behavior": [
+    {
+      "behavior": "evil",
+      "content_drops": 41,
+      "coverage": {
+        "n_contexts": 200,
+        "n_contexts_dropped_no_dv": 0,
+        "n_contexts_with_dv": 200,
+        "n_groups": 10
+      },
+      "rejudge_recovered": 1,
+      "spread": {
+        "histogram": {
+          "0-10": 131,
+          "10-20": 7,
+          "20-30": 5,
+          "30-40": 6,
+          "40-50": 5,
+          "50-60": 4,
+          "60-70": 6,
+          "70-80": 8,
+          "80-90": 12,
+          "90-100": 16
+        },
+        "max": 99.66666666666666,
+        "mean": 22.326750000000008,
+        "min": 0.0,
+        "n": 200,
+        "sd": 34.87632295870317
+      },
+      "transport_losses": 0
+    },
+    {
+      "behavior": "sycophancy",
+      "content_drops": 0,
+      "coverage": {
+        "n_contexts": 200,
+        "n_contexts_dropped_no_dv": 0,
+        "n_contexts_with_dv": 200,
+        "n_groups": 10
+      },
+      "rejudge_recovered": 5,
+      "spread": {
+        "histogram": {
+          "0-10": 101,
+          "10-20": 32,
+          "20-30": 21,
+          "30-40": 13,
+          "40-50": 16,
+          "50-60": 5,
+          "60-70": 4,
+          "70-80": 7,
+          "80-90": 1,
+          "90-100": 0
+        },
+        "max": 85.0,
+        "mean": 17.9525,
+        "min": 0.0,
+        "n": 200,
+        "sd": 20.394313764370647
+      },
+      "transport_losses": 145
+    },
+    {
+      "behavior": "hallucination",
+      "content_drops": 701,
+      "coverage": {
+        "n_contexts": 200,
+        "n_contexts_dropped_no_dv": 0,
+        "n_contexts_with_dv": 200,
+        "n_groups": 10
+      },
+      "rejudge_recovered": 63,
+      "spread": {
+        "histogram": {
+          "0-10": 42,
+          "10-20": 9,
+          "20-30": 10,
+          "30-40": 12,
+          "40-50": 9,
+          "50-60": 11,
+          "60-70": 19,
+          "70-80": 23,
+          "80-90": 13,
+          "90-100": 52
+        },
+        "max": 100.0,
+        "mean": 54.684305555555575,
+        "min": 0.0,
+        "n": 200,
+        "sd": 36.43860846146838
+      },
+      "transport_losses": 0
+    }
+  ],
+  "rung": "pvsynth",
+  "split": "eval"
+}
