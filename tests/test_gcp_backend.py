@@ -1594,6 +1594,47 @@ def test_reconnect_bare_spec_keeps_legacy_extra_shape() -> None:
     assert handle.extra["instance_name"] == "eps-issue-137"
 
 
+def test_reconnect_handle_carries_provisioning_model_and_launch_ts() -> None:
+    """#1815: the reconnect handle's extra carries provisioning_model
+    (scheduling.provisioningModel) + gcp_launched_ts (creationTimestamp →
+    epoch seconds) read off the SAME --format=json list response — the arm-N
+    inputs the poller's never-ran-young-flex vanish arm needs on the
+    reconnect path (the #1738 incident handle shape). Fields absent from the
+    instance JSON → keys absent (arm N fail-safes)."""
+    from datetime import datetime, timedelta, timezone
+
+    created = datetime(2026, 7, 30, 1, 5, 0, 588000, tzinfo=timezone(timedelta(hours=-7)))
+    payload = json.dumps(
+        [
+            {
+                "name": "eps-issue-137",
+                "id": "5705168949671854266",
+                # PENDING = the queued FLEX_START incident shape: live (not in
+                # _NONLIVE_INSTANCE_STATUSES), no guest-phase probe (RUNNING-only).
+                "status": "PENDING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+                "creationTimestamp": created.isoformat(),  # RFC3339 with offset
+                "scheduling": {"provisioningModel": "FLEX_START"},
+            }
+        ]
+    )
+    runner = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+    assert handle is not None
+    assert handle.extra["provisioning_model"] == "FLEX_START"
+    assert abs(handle.extra["gcp_launched_ts"] - created.timestamp()) < 1.0
+
+    # Fields ABSENT from the list JSON -> keys absent (fail-safe direction).
+    bare = _Runner(list_results=[GcloudRunResult(0, _running_instance_payload(), "")])
+    bare_handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=bare)
+    assert bare_handle is not None
+    assert "provisioning_model" not in bare_handle.extra
+    assert "gcp_launched_ts" not in bare_handle.extra
+
+
 def test_reconnect_skips_terminated_instance() -> None:
     payload = json.dumps(
         [
