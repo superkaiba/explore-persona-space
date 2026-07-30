@@ -942,7 +942,7 @@ def _operator_geometry_layer(arm_fits, mm, li, tr, tr_p, Xa, Ya, args, dev) -> d
         entry = {
             "selected_lambda": lam,
             "rank": rank,
-            "k90_output": OPS._k90(s) if s.numel() else 0,
+            "k90_output": OPS._k90(s.cpu()) if s.numel() else 0,
             "gamma_x_mean_norm_fraction": gx,
             "gamma_y_mean_norm_fraction": gy,
         }
@@ -975,7 +975,9 @@ def _operator_geometry_layer(arm_fits, mm, li, tr, tr_p, Xa, Ya, args, dev) -> d
         sv_b = _svd_at(fb, lam_m)
         pair_out: dict = {"matched_lambda": float(lam_m)}
         k48 = min(48, sv_a["rank"], sv_b["rank"])
-        k90a, k90b = OPS._k90(sv_a["s"]), OPS._k90(sv_b["s"])
+        # OPS._k90 builds a CPU scalar for searchsorted; the fac tensors (and hence
+        # the SVD outputs) are CUDA on the GPU lane, so device-match via .cpu().
+        k90a, k90b = OPS._k90(sv_a["s"].cpu()), OPS._k90(sv_b["s"].cpu())
         for name, k1, k2, A, B in (
             ("output_k48", k48, k48, sv_a["u"], sv_b["u"]),
             ("input_k48", k48, k48, sv_a["vh"].T, sv_b["vh"].T),
