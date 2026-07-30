@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1900,
+  "highest_id": 1901,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6974,6 +6974,13 @@
       "path": "tasks/planning/1900",
       "status": "planning",
       "title": "Leakage-predictor horse race at per-prompt grain: pre-FT geometry vs base propensity, with answer-side mediation test"
+    },
+    "1901": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1901",
+      "status": "proposed",
+      "title": "Characterize mapping-quality metrics: 1M-context linear + nonlinear maps vs baselines on every metric"
     },
     "191": {
       "has_clean_result": false,
