@@ -17,6 +17,12 @@ origin_prompt: 'Run this in background with happy coder:
   - [ ] [[I think a good baseline would be learned bias]], W = identity - another
   metric besides R^2 would be e.g. P(answer summary is in k nearest neighbors of prediction)'
 workflow: v1
+goal: Characterize every mapping-quality metric in use (held-out R², kNN retrieval
+  acc@k euclidean+cosine, and companions) — what construct each measures, what it
+  rules out, where they dissociate — and report the ~1M-context (n≈963k LMSYS) linear
+  and nonlinear context→answer mappings against the full baseline ladder (constant
+  train-mean; W = identity; identity + learned bias) on ALL metrics, in both the context-based
+  and prefix-based arms.
 ---
 # Characterize mapping-quality metrics: 1M-context linear + nonlinear maps vs baselines on every metric
 
@@ -26,7 +32,7 @@ We have accumulated several metrics for measuring the quality of a fitted repres
 
 ## Goal
 
-Characterize every mapping-quality metric in use (held-out R², kNN retrieval acc@k euclidean+cosine, and companions) — what construct each measures, what it rules out, and where they dissociate — and report the ~1M-context (n≈963k LMSYS) linear and nonlinear context→answer mappings against the full baseline ladder (constant train-mean predictor; W = identity; identity + learned bias v̂ = x + b) on ALL metrics, in both the context-based and prefix-based mapping arms.
+Characterize every mapping-quality metric in use (held-out R², kNN retrieval acc@k euclidean+cosine, and companions) — what construct each measures, what it rules out, where they dissociate — and report the ~1M-context (n≈963k LMSYS) linear and nonlinear context→answer mappings against the full baseline ladder (constant train-mean; W = identity; identity + learned bias) on ALL metrics, in both the context-based and prefix-based arms.
 
 ## Design sketch (planner refines)
 
