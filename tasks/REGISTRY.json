@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1895,
+  "highest_id": 1896,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6924,6 +6924,13 @@
       "path": "tasks/proposed/1895",
       "status": "proposed",
       "title": "Does the context\u2192answer map's predictable subspace coincide with the SAE's representable subspace?"
+    },
+    "1896": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1896",
+      "status": "proposed",
+      "title": "workflow-fix: add capture-7b to the fellows/SLURM lane intent tables"
     },
     "19": {
       "has_clean_result": false,
