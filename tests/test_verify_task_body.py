@@ -175,7 +175,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 63 results total (2 prepended + CHECKS[1:]=48 + 13 appended, counting
+    # 64 results total (2 prepended + CHECKS[1:]=48 + 14 appended, counting
     # the #1827 plan-conditions check narrated below; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
@@ -204,11 +204,15 @@ def test_good_body_passes_all():
     # `check_context_followup_scope_consistency` (#1521) is dispatched in
     # verify_text (needs the issue number) and PASS-skips here (legacy body).
     # The plan-conditions coverage check (#1827) is dispatched in verify_text
-    # (needs plans/plan.md) and NO-OP PASSes here (no plan sibling).
-    assert len(results) == 63
+    # (needs plans/plan.md) and NO-OP PASSes here (no plan sibling). Check 49
+    # `check_orphaned_result_jsons` (#1846) is dispatched in verify_text
+    # (needs `issue` + `plan_path`) and vacuous-PASSes here (no plan sibling
+    # — the C1 plan-named anchor has nothing to anchor on).
+    assert len(results) == 64
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert "plan conditions coverage" in {r.name for r in results}
+    assert "result JSONs reported" in {r.name for r in results}
     assert _HF_32_NAME in {r.name for r in results}
     assert _HF_40_NAME in {r.name for r in results}
     assert "Context follow-up provenance vs followup-scope markers" in {r.name for r in results}
@@ -1778,6 +1782,372 @@ def test_per_unit_basename_pattern(stem, expected):
     mid-word hits (`supercontext`), and other per-X families
     (per_source/per_seed) do NOT — Lens 11 owns the substance."""
     assert bool(verify_task_body._PER_UNIT_FIG_RE.search(stem)) is expected
+
+
+# ─── Check 49: orphaned result JSONs (result-JSON sibling of check 31) ─────
+#
+# Incident task #1776: the phase4 deliverable dir committed 3 JSONs at a
+# body-cited SHA; the plan named `jspace_energy.json`, and the sibling
+# `jdelta_split.json` — the H_ctx†-composition read — sat
+# committed-but-unreported through every review round (named in prose only
+# by condition-id `steer_jsplit`, so it is catchable ONLY via the small-dir
+# plan-named-sibling rule C2, never by plan-name matching alone). Check 49
+# runs check 31's inverse-git-probe shape over result JSONs with
+# plan-anchored candidate NARROWING (an all-JSON scan measured firing on
+# 4/4 healthy recent bodies — per-cell/intermediate dumps are the norm).
+
+_RESULT_JSON_CHECK = "result JSONs reported"
+
+
+def _make_repo_with_result_jsons(
+    tmp_path,
+    jsons=("jspace_energy.json", "jdelta_split.json", "jother_report.json"),
+    subdir="phase4",
+    plan_named=("jspace_energy.json",),
+):
+    """git repo whose HEAD tracks `figures/issue_999/hero.png` (so
+    GOOD_BODY's inline figure URL cites the sha — check 49's SHA source)
+    plus `eval_results/issue_999/<subdir>/<jsons>`, and an out-of-repo
+    `plans/` dir whose `v1.md` names each ``plan_named`` deliverable by
+    full repo-relative path while `v2.md` (the follow-up copy `plan.md`
+    mirrors — the symlink-at-highest-version shape) names none, pinning
+    the plans/v*.md UNION (check-16/#597 precedent). Returns
+    (repo_path, head_sha, plan_path)."""
+    repo = tmp_path / "resultjsonrepo"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    figdir = repo / "figures" / "issue_999"
+    figdir.mkdir(parents=True)
+    (figdir / "hero.png").write_bytes(b"\x89PNG fake bytes")
+    evaldir = repo / "eval_results" / "issue_999" / subdir
+    evaldir.mkdir(parents=True)
+    for j in jsons:
+        (evaldir / j).write_text("{}\n")
+    script = repo / "scripts" / "run.py"
+    script.parent.mkdir(parents=True)
+    script.write_text("print('entry script')\n")
+    git("add", "figures", "eval_results", "scripts")
+    git("commit", "-q", "-m", "add hero + result JSONs + entry script")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    plans = tmp_path / "plans"
+    plans.mkdir()
+    named = "\n".join(f"- `eval_results/issue_999/{subdir}/{j}` (deliverable)" for j in plan_named)
+    (plans / "v1.md").write_text(f"# Plan v1\n\nDeliverables:\n{named}\n")
+    followup = "# Plan v2 — follow-up analysis round\n\nNo file deliverables named here.\n"
+    (plans / "v2.md").write_text(followup)
+    (plans / "plan.md").write_text(followup)
+    return repo, sha, plans / "plan.md"
+
+
+def test_result_json_founding_incident_shape(tmp_path, monkeypatch):
+    """The #1776 phase4 shape (acceptance criterion 1): a 3-JSON
+    deliverable dir, ONE plan-named file mentioned in the body, siblings
+    unmentioned → the WARN names the unmentioned siblings (C2 small-dir
+    extension; the plan-name union in v1.md, not the follow-up v2.md), and
+    the MENTIONED sibling does NOT exempt the dir."""
+    repo, sha, plan_path = _make_repo_with_result_jsons(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "The J-space energy read is `jspace_energy.json`. The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_result_jsons(body, issue=999, plan_path=plan_path)
+    assert r.passed is True  # WARN-tier: the overall verdict is never flipped
+    assert r.is_warn is True
+    assert "eval_results/issue_999/phase4/jdelta_split.json" in r.detail
+    assert "eval_results/issue_999/phase4/jother_report.json" in r.detail
+    assert "jspace_energy.json" not in r.detail  # the mentioned deliverable is not an orphan
+    assert sha[:8] in r.detail
+    assert "Lens 11" in r.detail
+
+
+def test_result_json_plan_named_orphan_warns_c1(tmp_path, monkeypatch):
+    """C1: a plan-named JSON referenced nowhere in the body WARNs with the
+    `plan-named` class tag (siblings tag as small-dir siblings)."""
+    repo, sha, plan_path = _make_repo_with_result_jsons(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    r = verify_task_body.check_orphaned_result_jsons(body, issue=999, plan_path=plan_path)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "eval_results/issue_999/phase4/jspace_energy.json" in r.detail
+    assert "plan-named" in r.detail
+    assert "small-dir sibling of a plan-named JSON" in r.detail
+
+
+def test_result_json_basename_mentions_pass(tmp_path, monkeypatch):
+    """Boundary-aware basename mentions of every candidate anywhere in the
+    body → clean PASS."""
+    repo, sha, plan_path = _make_repo_with_result_jsons(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "Reads: `jspace_energy.json`, `jdelta_split.json`, `jother_report.json`. "
+        "The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_result_jsons(body, issue=999, plan_path=plan_path)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no orphaned result JSONs" in r.detail
+
+
+def test_result_json_full_path_mentions_pass(tmp_path, monkeypatch):
+    """Full repo-relative path mentions also count as references."""
+    repo, sha, plan_path = _make_repo_with_result_jsons(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "Reads: `eval_results/issue_999/phase4/jspace_energy.json`, "
+        "`eval_results/issue_999/phase4/jdelta_split.json`, "
+        "`eval_results/issue_999/phase4/jother_report.json`. "
+        "The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_result_jsons(body, issue=999, plan_path=plan_path)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_result_json_boundary_negative_control(tmp_path, monkeypatch):
+    """Boundary discipline (acceptance criterion 4): a body mention of
+    `data.json` must NOT count as referencing the sibling `a.json` (a bare
+    substring scan would match `a.json` inside `data.json`)."""
+    repo, sha, plan_path = _make_repo_with_result_jsons(
+        tmp_path, jsons=("a.json", "data.json"), plan_named=("a.json", "data.json")
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "The consolidated read is `data.json`. The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_result_jsons(body, issue=999, plan_path=plan_path)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "eval_results/issue_999/phase4/a.json" in r.detail
+    assert "data.json" not in r.detail  # referenced — not an orphan
+
+
+def test_result_json_dir_exemption_passes(tmp_path, monkeypatch):
+    """Dir-grain disclosure escape: a paragraph naming the dir's leaf
+    segment + an anchored exemption phrase exempts every JSON under it."""
+    repo, sha, plan_path = _make_repo_with_result_jsons(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "The `phase4` sweep outputs are not reported here — superseded by the "
+        "consolidated table above. The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_result_jsons(body, issue=999, plan_path=plan_path)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_result_json_exemption_other_paragraph_still_warns(tmp_path, monkeypatch):
+    """Paragraph-proximity scoping (check 31's contract): an exemption
+    phrase in a DIFFERENT blank-line-delimited paragraph than the dir /
+    basename does not exempt."""
+    repo, sha, plan_path = _make_repo_with_result_jsons(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "The `phase4` sweep produced three JSON reads.\n\n"
+        "A different artifact was deliberately not reported for space. "
+        "The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_result_jsons(body, issue=999, plan_path=plan_path)
+    assert r.passed is True
+    assert r.is_warn is True
+
+
+def test_result_json_tree_link_is_sha_source_never_reference(tmp_path, monkeypatch):
+    """Anti-vacuity (acceptance criterion 2): a dir-level footer
+    `/tree/<sha>/eval_results/issue_999` link is a SHA SOURCE — it grounds
+    the scan (here it is the ONLY reachable SHA: the figure URL keeps the
+    unreachable placeholder) yet never counts as referencing the JSONs
+    under it, so the orphans still WARN."""
+    repo, sha, plan_path = _make_repo_with_result_jsons(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    tree_url = (
+        f"https://github.com/superkaiba/explore-persona-space/tree/{sha}/eval_results/issue_999"
+    )
+    body = GOOD_BODY.replace(
+        "**Compute:** 1× H100, 47 min.",
+        f"**Compute:** 1× H100, 47 min.\n\n**Data:** [eval results]({tree_url}).",
+    )
+    r = verify_task_body.check_orphaned_result_jsons(body, issue=999, plan_path=plan_path)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "eval_results/issue_999/phase4/jdelta_split.json" in r.detail
+
+
+def test_result_json_large_dir_exempt_from_c2(tmp_path, monkeypatch):
+    """A leaf dir over the small-dir cap (>8 JSONs) is a per-cell dump dir:
+    its non-plan-named members never become C2 candidates — with the one
+    plan-named member referenced, the check PASSes clean."""
+    many = tuple(f"cell_{w}_read.json" for w in "abcdefghi")  # 9 JSONs
+    repo, sha, plan_path = _make_repo_with_result_jsons(
+        tmp_path, jsons=many, plan_named=("cell_a_read.json",)
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "The anchor cell read is `cell_a_read.json`. The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_result_jsons(body, issue=999, plan_path=plan_path)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_result_json_intermediate_basenames_exempt_from_c2(tmp_path, monkeypatch):
+    """Intermediate-family basenames (judge dumps, manifests, id maps,
+    spec enumerations) never join C2 — with the plan-named deliverable
+    referenced, the check PASSes clean despite the unmentioned siblings."""
+    repo, sha, plan_path = _make_repo_with_result_jsons(
+        tmp_path,
+        jsons=(
+            "jspace_energy.json",
+            "judge_raw_dump.json",
+            "manifest.json",
+            "crossmodel_pair_specs.json",
+            "rows_id_map_v2.json",
+        ),
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "The J-space energy read is `jspace_energy.json`. The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_result_jsons(body, issue=999, plan_path=plan_path)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_result_json_cross_issue_dir_not_scanned_when_issue_known(tmp_path, monkeypatch):
+    """Issue scoping (check 31's contract): a cross-issue
+    `/tree/<sha>/eval_results/issue_777` link must NOT surface issue_777's
+    orphans when `issue=999` is known."""
+    repo, _sha, plan_path = _make_repo_with_result_jsons(tmp_path)
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    other = repo / "eval_results" / "issue_777" / "phase1"
+    other.mkdir(parents=True)
+    (other / "x.json").write_text("{}\n")
+    git("add", "eval_results")
+    git("commit", "-q", "-m", "add cross-issue result JSON")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    tree_url = (
+        f"https://github.com/superkaiba/explore-persona-space/tree/{sha}/eval_results/issue_777"
+    )
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "Reads: `jspace_energy.json`, `jdelta_split.json`, `jother_report.json` "
+        f"([cross-issue inputs]({tree_url})). The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_result_jsons(body, issue=999, plan_path=plan_path)
+    assert r.passed is True
+    assert r.is_warn is False  # issue_999 fully referenced; issue_777 out of scope
+    assert "issue_777" not in r.detail
+
+
+def test_result_json_vacuous_pass_no_cited_shas(tmp_path, monkeypatch):
+    """No same-repo SHA-pinned URLs anywhere → vacuous PASS (the figure URL
+    is re-hosted to another repo; the Code blob link never enters
+    eval_results)."""
+    repo, _sha, plan_path = _make_repo_with_result_jsons(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace(
+        "raw.githubusercontent.com/superkaiba/explore-persona-space",
+        "raw.githubusercontent.com/acme/other-repo",
+    )
+    r = verify_task_body.check_orphaned_result_jsons(body, issue=999, plan_path=plan_path)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no same-repo SHA-pinned URLs" in r.detail
+
+
+def test_result_json_unreachable_sha_skips_silently(tmp_path, monkeypatch):
+    """Cited sha unknown to the local object DB (GOOD_BODY's placeholder
+    kept): skipped SILENTLY — counted in the PASS detail, never a WARN."""
+    repo, _sha, plan_path = _make_repo_with_result_jsons(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    r = verify_task_body.check_orphaned_result_jsons(GOOD_BODY, issue=999, plan_path=plan_path)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "not locally reachable" in r.detail
+
+
+def test_result_json_no_plan_vacuous_pass(tmp_path, monkeypatch):
+    """No approved plan on disk → vacuous PASS by design: C1 anchors on
+    the plan and C2 requires a C1 sibling, so no candidates can exist."""
+    repo, sha, _plan_path = _make_repo_with_result_jsons(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    r = verify_task_body.check_orphaned_result_jsons(body, issue=999, plan_path=None)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no approved plan" in r.detail
+
+
+def test_result_json_repo_unresolved_skips(tmp_path, monkeypatch):
+    """`_resolve_repo_root` → None (running outside the repo): skip-PASS."""
+    _repo, sha, plan_path = _make_repo_with_result_jsons(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    r = verify_task_body.check_orphaned_result_jsons(body, issue=999, plan_path=plan_path)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert r.detail.startswith("skipped")
+
+
+def test_result_json_aggregation_cap(tmp_path, monkeypatch):
+    """>8 orphans aggregate: the first 8 are listed verbatim, the
+    remainder collapses to a `(+K more under <dirs>)` tail — ONE
+    CheckResult either way."""
+    many = tuple(f"read_{w}.json" for w in "abcdefghij")  # 10 JSONs, all plan-named
+    repo, sha, plan_path = _make_repo_with_result_jsons(tmp_path, jsons=many, plan_named=many)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    r = verify_task_body.check_orphaned_result_jsons(body, issue=999, plan_path=plan_path)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert r.detail.count("committed at") == 8  # cap on verbatim entries
+    assert "+2 more under" in r.detail
+    assert "eval_results/issue_999/phase4" in r.detail
+
+
+def test_check49_dispatched(tmp_path, monkeypatch):
+    """Registration pin: check 49 is dispatched from `verify_text` OUTSIDE
+    the body-only CHECKS list with BOTH `issue` and `plan_path` threaded —
+    a refactor dropping the `results.append` (or either kwarg) fails here
+    because the WARN can only fire when both channels bind (the check-31
+    dispatch-pin pattern)."""
+    repo, sha, plan_path = _make_repo_with_result_jsons(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    ok, results = verify_task_body.verify_text(body, issue=999, plan_path=plan_path)
+    r = _results_by_name(results)[_RESULT_JSON_CHECK]
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "eval_results/issue_999/phase4/jdelta_split.json" in r.detail
+    assert ok  # the WARN never flips the overall verdict
 
 
 # ─── Check 8b: Reproducibility artifact-URL existence ─────────────────────
