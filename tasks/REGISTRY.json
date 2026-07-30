@@ -6522,8 +6522,8 @@
     "1842": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1842",
-      "status": "proposed",
+      "path": "tasks/planning/1842",
+      "status": "planning",
       "title": "workflow-fix: gotchas entry \u2014 Batch custom_id charset+length shape (^[a-zA-Z0-9_-]{1,64}$)"
     },
     "1843": {
