@@ -52,3 +52,4 @@ scripts/issue1738_sae_arm.py:generic-api-key:1614
 scripts/issue1738_sae_arm.py:generic-api-key:1636
 tasks/followups_running/1738/events.jsonl:generic-api-key:249
 tasks/followups_running/1738/events.jsonl:generic-api-key:253
+scripts/issue1689_user_slot_gen_a1.py:generic-api-key:362

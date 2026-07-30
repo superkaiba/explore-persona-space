@@ -26,6 +26,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from scripts import issue1689_user_slot_gen_a1 as GA1
 from scripts.issue1689_user_slot_capture import (
     assign_units_to_gpus,
     resolve_slot_token,
@@ -693,3 +694,105 @@ def test_projection_charges_the_grid_and_the_length_split():
     assert with_split["length_split_hours"] > 0
     assert with_split["n_length_split_cells"] == 2
     assert with_split["total_hours"] > bare["total_hours"]
+
+
+# ---------------------------------------------------------------------------
+# Addendum C prerequisite: on-policy a1 generation
+# ---------------------------------------------------------------------------
+
+
+def test_gen_a1_fingerprint_covers_every_output_affecting_key():
+    """A resume key that ignores an output-affecting flag silently reuses wrong
+    rows (#722 r3) — model, prompt set, token cap AND engine knobs must all move
+    the fingerprint."""
+    rows = [{"conv_id": "c1", "prompt": "p1"}, {"conv_id": "c2", "prompt": "p2"}]
+    eng = {"enforce_eager": False, "no_prefix_caching": False, "max_model_len": 8192}
+    base = GA1.fingerprint("Qwen/Qwen2.5-7B", rows, max_new_tokens=1024, engine=eng)
+    assert base == GA1.fingerprint("Qwen/Qwen2.5-7B", rows, max_new_tokens=1024, engine=eng)
+    variants = {
+        "model": GA1.fingerprint("Qwen/Qwen2.5-7B-Instruct", rows, max_new_tokens=1024, engine=eng),
+        "max_new": GA1.fingerprint("Qwen/Qwen2.5-7B", rows, max_new_tokens=256, engine=eng),
+        "engine": GA1.fingerprint(
+            "Qwen/Qwen2.5-7B", rows, max_new_tokens=1024, engine={**eng, "enforce_eager": True}
+        ),
+        "prompt": GA1.fingerprint(
+            "Qwen/Qwen2.5-7B",
+            [rows[0], {"conv_id": "c2", "prompt": "DIFFERENT"}],
+            max_new_tokens=1024,
+            engine=eng,
+        ),
+        "conv_set": GA1.fingerprint("Qwen/Qwen2.5-7B", rows[:1], max_new_tokens=1024, engine=eng),
+    }
+    for name, fp in variants.items():
+        assert fp != base, f"{name} must change the resume fingerprint"
+
+
+def test_gen_a1_checkpoint_resumes_on_match_and_restarts_on_mismatch(tmp_path: Path):
+    out = tmp_path / "a1.jsonl"
+    meta = tmp_path / "a1.meta.json"
+    GA1.append_rows(out, [{"conv_id": "c1", "a1_onpolicy": "x"}])
+    GA1.write_meta(meta, {"fingerprint": "GOOD"})
+    assert set(GA1.load_checkpoint(out, meta, "GOOD")) == {"c1"}
+    assert GA1.load_checkpoint(out, meta, "OTHER") == {}, "a mismatched key must restart fresh"
+    # a second append is additive + durable
+    GA1.append_rows(out, [{"conv_id": "c2", "a1_onpolicy": "y"}])
+    assert set(GA1.load_checkpoint(out, meta, "GOOD")) == {"c1", "c2"}
+
+
+def test_gen_a1_prompt_budget_filter_drops_overlong_and_fails_loud_when_empty():
+    """An over-length prompt is ENGINE-FATAL at vLLM add_request (#952/#1738),
+    so the filter runs at LOAD time and records drops digest-only."""
+    tok = _tokenizer()
+    rows = [{"conv_id": "short", "u1": "hi"}, {"conv_id": "long", "u1": "word " * 400}]
+    kept, digest = GA1.filter_by_prompt_budget(rows, tok, budget=200)
+    assert [r["conv_id"] for r in kept] == ["short"]
+    assert digest["n_dropped"] == 1
+    assert digest["dropped"][0]["conv_id"] == "long"
+    assert "u1" not in digest["dropped"][0], "drop records are digest-only, never row text"
+    assert digest["max_kept_prompt_tokens"] <= 200
+    with pytest.raises(RuntimeError, match="kept 0 of"):
+        GA1.filter_by_prompt_budget(rows, tok, budget=1)
+
+
+def test_gen_a1_visible_devices_indexes_into_preset_allocation(monkeypatch):
+    """NEVER export absolute device indices on a shared node — index INTO the
+    pre-set CUDA_VISIBLE_DEVICES allocation (the SLURM lesson)."""
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "2,5")
+    assert GA1.visible_devices() == ["2", "5"]
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", " 3 , 4 ,")
+    assert GA1.visible_devices() == ["3", "4"]
+
+
+def test_gen_a1_greedy_chunked_chunks_and_disables_tqdm():
+    """Production-body test of the real chunking path: the vLLM boundary is faked
+    by a signature-conformant stub, everything else is the real body."""
+    calls: list[dict] = []
+
+    class _Out:
+        def __init__(self, text):
+            self.outputs = [type("O", (), {"text": text, "finish_reason": "stop"})()]
+
+    class _FakeLLM:
+        def generate(self, prompts, sampling_params, use_tqdm=True):  # mirrors LLM.generate
+            calls.append({"n": len(prompts), "use_tqdm": use_tqdm, "sp": sampling_params})
+            return [_Out(f"r{i}") for i in range(len(prompts))]
+
+    prompts = [f"p{i}" for i in range(7)]
+    got = list(GA1.greedy_chunked(_FakeLLM(), prompts, max_new_tokens=32, chunk=3))
+    assert [c["n"] for c in calls] == [3, 3, 1], "must chunk, never one giant generate (#664)"
+    assert all(c["use_tqdm"] is False for c in calls), "#613 tqdm ZeroDivisionError"
+    assert all(c["sp"].temperature == 0.0 and c["sp"].max_tokens == 32 for c in calls)
+    assert [o for o, _, _ in got] == [0, 3, 6], "offsets must index the ORIGINAL prompt list"
+    assert sum(len(t) for _, t, _ in got) == 7
+
+
+def test_gen_a1_sets_spawn_before_vllm_import():
+    """vLLM reads VLLM_WORKER_MULTIPROC_METHOD at IMPORT time, so the setdefault
+    must sit above any vllm import (#628 fork-poisoned EngineCore death)."""
+    src = Path(GA1.__file__).read_text(encoding="utf-8").split("\n")
+    spawn_line = next(i for i, ln in enumerate(src) if "VLLM_WORKER_MULTIPROC_METHOD" in ln)
+    vllm_imports = [
+        i for i, ln in enumerate(src) if ln.strip().startswith(("import vllm", "from vllm"))
+    ]
+    assert vllm_imports, "expected at least one vllm import to guard"
+    assert spawn_line < min(vllm_imports), "spawn setdefault must precede every vllm import"
