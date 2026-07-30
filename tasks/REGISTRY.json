@@ -6893,8 +6893,8 @@
     "1891": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1891",
-      "status": "approved",
+      "path": "tasks/running/1891",
+      "status": "running",
       "title": "workflow-fix: experiment-implementer MEMORY.md exceeds the always-loaded read limit (41KB vs ~24.4KB) \u2014 curate + add size guard"
     },
     "1892": {
