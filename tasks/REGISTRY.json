@@ -6410,8 +6410,8 @@
     "1828": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1828",
-      "status": "planning",
+      "path": "tasks/approved/1828",
+      "status": "approved",
       "title": "workflow-fix: harden _breadcrumb_fields against prose-glued/empty key=value tokens"
     },
     "1829": {
