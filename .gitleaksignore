@@ -26,3 +26,9 @@ eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.j
 eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:generic-api-key:85315
 eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/results_msgbatch_01CLkRfsfys7XVnksYbBtf4u.json:generic-api-key:14044
 eval_results/issue_1482/judge_labels/raw/main.jsonl:generic-api-key:13562
+# issue-1739 hallu DV labeling.json: gitleaks generic-api-key false positives on
+# high-entropy group_key TOPIC tokens (e.g. "3-phosphoglycerate", "12.9-kilometre")
+eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:41185
+eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:50236
+eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:123715
+eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:399403
