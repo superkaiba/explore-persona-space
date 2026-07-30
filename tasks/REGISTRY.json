@@ -6277,8 +6277,8 @@
     "1810": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1810",
-      "status": "reviewing",
+      "path": "tasks/completed/1810",
+      "status": "completed",
       "title": "daily-fix: pre-split multi-deliverable implementer dispatche"
     },
     "1811": {
