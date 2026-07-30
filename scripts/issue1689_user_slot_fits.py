@@ -867,6 +867,148 @@ def enforce_wall_fence(projection: dict, max_hours: float) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Addendum E: the X x Y grid battery (SHARED X-side factorization)
+# ---------------------------------------------------------------------------
+
+
+def fit_grid(
+    grid: dict,
+    conv_ids,
+    *,
+    x_kinds: tuple[str, ...],
+    y_kinds: tuple[str, ...],
+    null_draws: int = N_NULL_DRAWS,
+) -> dict:
+    """All ``len(x_kinds) x len(y_kinds)`` combos of one read group, sharing the
+    X-side factorization across every Y variant.
+
+    This sharing is LOAD-BEARING, not an optimization. Each (X, fold) pair costs
+    one Gram eigh + one inner-lambda cache (measured 8.5 s of a 175 s per-fold
+    total at production shape n=3800/d=3584/40 draws); the per-Y marginal cost is
+    a ``V.T @ Y`` reduction plus the 13-lambda diagonal rescale. Fitting the six
+    combos independently would build six factorizations per fold instead of two
+    and projects the grid battery to ~145 h; sharing keeps it at ~2x the
+    single-combo cost.
+
+    ``grid`` maps a slot kind ("X_clean" / "Y_mean" / ...) to its (N, D) array.
+    Returns ``{f"{x}->{y}": {...}}`` plus a ``shared_factorizations`` audit count
+    so a reviewer can confirm the sharing actually happened.
+    """
+    import numpy as np
+
+    from scripts.issue825_fit_cells import (
+        N_INNER_LAMBDA_FOLDS,
+        _cv_folds,
+        _null_ss_contrib,
+        _prep_fold,
+        _prep_inner_lambda,
+        _ridge_predict_cached,
+    )
+
+    ids = np.asarray(conv_ids)
+    folds = _cv_folds(ids, N_FOLDS, FIT_SEED)
+    rng = np.random.default_rng(FIT_SEED + 1)
+    uniq, inv = np.unique(ids, return_inverse=True)
+    rows_of = [np.flatnonzero(inv == k) for k in range(len(uniq))]
+    null_perms = [
+        np.concatenate([rows_of[k] for k in rng.permutation(len(uniq))]) for _ in range(null_draws)
+    ]
+
+    ys = {y: np.asarray(grid[y], dtype=np.float32) for y in y_kinds}
+    acc: dict[tuple[str, str], dict] = {
+        (x, y): {
+            "ss_res": 0.0,
+            "ss_tot": 0.0,
+            "ss_res_red": 0.0,
+            "ss_tot_red": 0.0,
+            "ss_res_null": np.zeros(null_draws),
+            "ss_tot_null": np.zeros(null_draws),
+            "lams": [],
+            "pred": [],
+            "true": [],
+            "ks": [],
+        }
+        for x in x_kinds
+        for y in y_kinds
+    }
+    n_factorizations = 0
+    for x in x_kinds:
+        X = np.asarray(grid[x], dtype=np.float32)
+        for k in range(N_FOLDS):
+            te = folds == k
+            tr = ~te
+            if te.sum() == 0 or tr.sum() < 3:
+                continue
+            # ONE factorization per (X, fold) — reused by every Y below.
+            cache = _prep_fold(X[tr], X[te])
+            cache["inner"] = _prep_inner_lambda(
+                X[tr], ids[tr], N_INNER_LAMBDA_FOLDS, FIT_SEED + 4242 + k
+            )
+            n_factorizations += 1
+            kk = _pca_k(int(tr.sum()))
+            cache_red = _truncate_cache(cache, kk)
+            for y in y_kinds:
+                Y = ys[y]
+                a = acc[(x, y)]
+                pred, lam = _ridge_predict_cached(cache, Y[tr], return_lam=True)
+                true = Y[te].astype(np.float64)
+                mu = true.mean(0)
+                a["ss_res"] += float(np.sum((true - pred) ** 2))
+                a["ss_tot"] += float(np.sum((true - mu) ** 2))
+                a["lams"].append(float(lam))
+                a["pred"].append(np.asarray(pred, dtype=np.float64))
+                a["true"].append(true)
+                pred_r = _ridge_predict_cached(cache_red, Y[tr])
+                a["ss_res_red"] += float(np.sum((true - pred_r) ** 2))
+                a["ss_tot_red"] += float(np.sum((true - mu) ** 2))
+                a["ks"].append(kk)
+                if null_perms:
+                    ssr, sst = _null_ss_contrib(cache, Y, tr, te, null_perms, impl="batched")
+                    a["ss_res_null"] += ssr
+                    a["ss_tot_null"] += sst
+            del cache, cache_red
+
+    from explore_persona_space.analysis.mapping_baselines import knn_retrieval
+
+    out: dict = {
+        "shared_factorizations": n_factorizations,
+        "unshared_would_have_been": n_factorizations * len(y_kinds),
+        "n_rows": int(np.asarray(grid[x_kinds[0]]).shape[0]),
+        "combos": {},
+    }
+    for (x, y), a in acc.items():
+        if not a["pred"]:
+            continue
+        p_all = np.concatenate(a["pred"])
+        t_all = np.concatenate(a["true"])
+        row = {
+            "x_slot": x,
+            "y_slot": y,
+            "r2": _pooled(a["ss_res"], a["ss_tot"]),
+            "r2_reduced_basis": _pooled(a["ss_res_red"], a["ss_tot_red"]),
+            "pca_k_per_fold": a["ks"],
+            "lambdas_selected": a["lams"],
+            "knn_euclidean": knn_retrieval(p_all, t_all, metric="euclidean"),
+            "knn_cosine": knn_retrieval(p_all, t_all, metric="cosine"),
+        }
+        row.update(_identity_bias_folded(grid[x], grid[y], folds))
+        if null_draws:
+            with np.errstate(divide="ignore", invalid="ignore"):
+                nulls = 1.0 - a["ss_res_null"] / np.where(
+                    a["ss_tot_null"] < 1e-12, np.nan, a["ss_tot_null"]
+                )
+            row["null_shuffle_fit_targets"] = {
+                "n_draws": int(null_draws),
+                "mean": float(np.nanmean(nulls)),
+                "p50": float(np.nanpercentile(nulls, 50)),
+                "p97_5": float(np.nanpercentile(nulls, 97.5)),
+                "max": float(np.nanmax(nulls)),
+            }
+        out["combos"][f"{x}->{y}"] = row
+    return out
+
+
+# ---------------------------------------------------------------------------
 # Synthetic end-to-end smoke
 # ---------------------------------------------------------------------------
 
@@ -918,7 +1060,19 @@ def build_synthetic_store_tree(root: Path, *, n: int = 60, d: int = 64, seed: in
             )
             for s in slots
         }
+        gnames = ["u2"] + (["u1"] if framing in ("chat", "naturalistic") else [])
+        gacc = {
+            f"{gn}__{kind}": (
+                latent @ rng.standard_normal((d, d)) * 0.3 + rng.standard_normal((n, d))
+            ).astype(np.float32)
+            for gn in gnames
+            for kind in ("X_clean", "X_straddle", "Y_mean", "Y_end", "Y_boundary")
+        }
         store = {
+            "grid_slots": gacc,
+            "grid_group_names": gnames,
+            "grid_x_kinds": ["X_clean", "X_straddle"],
+            "grid_y_kinds": ["Y_mean", "Y_end", "Y_boundary"],
             "slots": acc,
             "slot_token_pos": {
                 s: np.arange(len(slots)).repeat(n)[:n].astype(np.int32) for s in slots
@@ -962,6 +1116,9 @@ def build_synthetic_store_tree(root: Path, *, n: int = 60, d: int = 64, seed: in
                 "primary_fit": PRIMARY_FIT_BY_FRAMING[framing],
                 "rendered_path": f"{unit_id}.jsonl",
                 "n_rows": n,
+                "read_group_names": gnames,
+                "grid_x_kinds": ["X_clean", "X_straddle"],
+                "grid_y_kinds": ["Y_mean", "Y_end", "Y_boundary"],
             }
         )
     (root / "render_manifest.json").write_text(
@@ -1128,6 +1285,27 @@ def run_battery(args) -> dict:
                 f"idb={res['identity_bias_r2']}",
                 flush=True,
             )
+        # --- addendum E: the X x Y grid, one factorization per (X, fold) ----
+        grids: dict[str, dict] = {}
+        for gn in list(st.get("grid_group_names") or []):
+            gslots = {
+                kind: st["grid_slots"][f"{gn}__{kind}"]
+                for kind in ("X_clean", "X_straddle", "Y_mean", "Y_end", "Y_boundary")
+            }
+            grids[gn] = fit_grid(
+                gslots,
+                ids,
+                x_kinds=tuple(st.get("grid_x_kinds") or ("X_clean", "X_straddle")),
+                y_kinds=tuple(st.get("grid_y_kinds") or ("Y_mean", "Y_end", "Y_boundary")),
+                null_draws=args.null_draws,
+            )
+            best = {k: v["r2"] for k, v in grids[gn]["combos"].items()}
+            print(
+                f"[fits] {unit_id} grid[{gn}] factorizations="
+                f"{grids[gn]['shared_factorizations']} (unshared would be "
+                f"{grids[gn]['unshared_would_have_been']}) r2={best}",
+                flush=True,
+            )
         unit_out = {
             "unit_id": unit_id,
             "unit": {k: entry[k] for k in ("model", "framing", "provenance", "variant")},
@@ -1140,12 +1318,18 @@ def run_battery(args) -> dict:
                 else entry["provenance"]
             ),
             "fits": fits,
+            "grid": grids,
         }
         per_unit[unit_id] = unit_out
         with (args.out_dir / f"{unit_id}.json").open("w", encoding="utf-8") as fh:
             json.dump(unit_out, fh, indent=2)
     summary["per_unit_r2"] = {
         u: {n: f["r2"] for n, f in o["fits"].items()} for u, o in per_unit.items()
+    }
+    summary["grid_r2"] = {
+        u: {gn: {c: r["r2"] for c, r in g["combos"].items()} for gn, g in o["grid"].items()}
+        for u, o in per_unit.items()
+        if o.get("grid")
     }
 
     # --- (2) provenance transfer, 3 pairs x 2 directions -------------------

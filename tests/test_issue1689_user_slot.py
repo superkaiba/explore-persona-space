@@ -265,6 +265,50 @@ def test_truncation_equivalence_holds_and_bites():
     assert out["n_train"] < out["d"], "fixture must be in the production rank regime"
 
 
+def test_fit_grid_shares_x_factorizations_and_covers_all_combos():
+    """The X-side factorization is built ONCE per (X, fold) and reused by every
+    Y variant.
+
+    This sharing is load-bearing: six independent combos would build 6 x N_FOLDS
+    factorizations per group instead of 2 x N_FOLDS, which projects the grid
+    battery to ~145 h at production shape. The audit counters make a silent
+    regression to the unshared shape impossible to miss.
+    """
+    from scripts.issue1689_user_slot_fits import N_FOLDS, fit_grid
+
+    # Production rank regime: n_train (48) < d, so the Gram is full rank and the
+    # reduced basis k = n_train // 2 genuinely truncates. A fixture with d <
+    # n_train keeps every nonzero eigenvalue and makes the companion INERT.
+    n, d = 60, 200
+    rng = np.random.default_rng(0)
+    latent = rng.standard_normal((n, d))
+    kinds = ("X_clean", "X_straddle", "Y_mean", "Y_end", "Y_boundary")
+    grid = {
+        k: (latent @ rng.standard_normal((d, d)) * 0.4 + rng.standard_normal((n, d))).astype(
+            np.float32
+        )
+        for k in kinds
+    }
+    ids = np.array([f"c{i // 2}" for i in range(n)], dtype=object)
+    x_kinds = ("X_clean", "X_straddle")
+    y_kinds = ("Y_mean", "Y_end", "Y_boundary")
+    out = fit_grid(grid, ids, x_kinds=x_kinds, y_kinds=y_kinds, null_draws=4)
+
+    assert out["shared_factorizations"] == len(x_kinds) * N_FOLDS
+    assert out["unshared_would_have_been"] == len(x_kinds) * N_FOLDS * len(y_kinds)
+    assert out["shared_factorizations"] * len(y_kinds) == out["unshared_would_have_been"]
+    assert set(out["combos"]) == {f"{x}->{y}" for x in x_kinds for y in y_kinds}
+    for key, row in out["combos"].items():
+        assert np.isfinite(row["r2"]), key
+        assert np.isfinite(row["r2_reduced_basis"]), key
+        assert row["null_shuffle_fit_targets"]["n_draws"] == 4, key
+        # The reduced basis genuinely bites: k = n_train // 2 discards real
+        # eigen-directions because n_train < d makes the Gram full rank.
+        assert row["r2_reduced_basis"] != row["r2"], key
+        assert "identity_bias_r2" in row, key
+        assert row["knn_cosine"]["n_pool"] > 0, key
+
+
 def test_gate1_raises_on_a_wrong_published_reference(tmp_path: Path):
     """Gate-1 non-inertness: a mismatching reference MUST fail loud."""
     n, d = 40, 8
