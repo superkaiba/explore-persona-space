@@ -149,6 +149,32 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="abort multiple (plan §9 registers 3x: 'If any pilot exceeds 3x the "
         "estimate above, abort and re-size')",
     )
+    # NOTE: the choices tuple is a literal (every `fits` import in this module is
+    # deferred); parity with fits.NONLINEAR_MAP_KINDS is test-pinned by
+    # tests/test_issue1739_nlmap.py::test_cli_map_kind_choices_match_fits.
+    ap.add_argument(
+        "--map-kind",
+        choices=("linear", "mlp", "kernel"),
+        default="linear",
+        help=(
+            "context->answer map family for the map arms (6/7/8). 'linear' (default) is "
+            "the reviewed ridge map — byte-identical behavior. 'mlp' / 'kernel' fit the "
+            "#1739 nonlinear-map round's maps via the reused #779 N1M fitters; every "
+            "downstream arm, fold scheme and output schema is unchanged."
+        ),
+    )
+    ap.add_argument(
+        "--mlp-map-width",
+        type=int,
+        default=None,
+        help="hidden width for --map-kind mlp (default: fits.MLP_MAP_WIDTH, the 512 recipe)",
+    )
+    ap.add_argument(
+        "--krr-map-centers",
+        type=int,
+        default=None,
+        help="Nystrom landmarks for --map-kind kernel (default: fits.KRR_MAP_M_CENTERS)",
+    )
     ap.add_argument("--out-root", type=Path, default=DEFAULT_OUT_ROOT)
     ap.add_argument("--tensors-root", type=Path, default=DEFAULT_TENSORS_ROOT)
     ap.add_argument("--device", default="cpu")
@@ -279,7 +305,7 @@ def _run_synthetic(args: argparse.Namespace) -> int:
     x_ctx, y_ans, dv, groups, rb_raw, x_u, y_u = _make_synthetic(n, n_layers, d)
     wh = fits.fit_whitening(x_u, device=args.device)
     z_u, zy_u = fits.apply_whitening(x_u, wh), fits.apply_whitening(y_u, wh)
-    mapfit = fits.fit_linear_map(z_u, zy_u, device=args.device)
+    mapfit = _fit_map(args, z_u, zy_u)
     rb = np.einsum("ld,lde->le", rb_raw, wh.w)
     data = arms.CellData(
         z_ctx=fits.apply_whitening(x_ctx, wh),
@@ -614,13 +640,16 @@ def _save_map(tensors_root: Path, variant: str, u_label: str, mapfit, layers) ->
 
     out_dir = Path(tensors_root) / "maps"
     out_dir.mkdir(parents=True, exist_ok=True)
-    out = out_dir / f"{variant}__u{u_label}.npz"
+    kind = getattr(mapfit, "kind", "linear")
+    suffix = "" if kind == "linear" else f"__{kind}"
+    out = out_dir / f"{variant}__u{u_label}{suffix}.npz"
     if out.exists():
         return out
     meta = {
         "variant": variant,
         "u_label": u_label,
         "layers": [int(x) for x in layers],
+        "map_kind": kind,
         "w_fit_rows": mapfit.diagnostics.get("w_fit_rows"),
         "solver": mapfit.diagnostics.get("solver"),
         "dtype": "w=fp16; mu/sd=fp32",
@@ -628,6 +657,25 @@ def _save_map(tensors_root: Path, variant: str, u_label: str, mapfit, layers) ->
         "git_commit": _git_commit(),
         "ts": _time.strftime("%Y-%m-%dT%H:%M:%SZ", _time.gmtime()),
     }
+    if kind != "linear":
+        # A nonlinear map is a per-layer torch payload (the #779 N1M apply_map
+        # format), not a (w, mu, sd) npz — persist it with torch.save under a
+        # .pt sibling so the `--stage tensors` sweep (no eligibility filter)
+        # still carries it. Atomic write; keeps the whole-tree upload wiring.
+        import os as _os
+
+        import torch as _torch
+
+        out = out_dir / f"{variant}__u{u_label}__{kind}.pt"
+        if out.exists():
+            return out
+        meta["apply"] = "pred = issue779_ffc_n1m_fits.apply_map(payload[layer], x) (whitened space)"
+        meta["dtype"] = "per-layer N1M payload tensors (fp32)"
+        tmp = out_dir / (out.name + ".tmp")
+        _torch.save({"meta": meta, "payloads": list(mapfit.nl_payloads)}, tmp)
+        _os.replace(tmp, out)
+        logger.info("[fits] %s map payloads persisted -> %s", kind, out)
+        return out
     tmp = out_dir / f"{out.stem}.tmp.npz"  # keep the .npz suffix (#1092 savez trap)
     with tmp.open("wb") as fh:
         np.savez(
@@ -642,6 +690,29 @@ def _save_map(tensors_root: Path, variant: str, u_label: str, mapfit, layers) ->
     os.replace(tmp, out)
     logger.info("[fits] map weights persisted -> %s", out)
     return out
+
+
+def _fit_map(args, x_w, y_w):
+    """Fit the (variant, U rung) context->answer map per ``args.map_kind``.
+
+    ONE seam for both call sites (synthetic + real), so the nonlinear round
+    inherits the whole reviewed pipeline — folds, arms, bootstrap, output
+    schema — unchanged. ``map_kind == "linear"`` reproduces the pre-existing
+    ``fit_linear_map(...)`` call EXACTLY (byte-identical default path).
+    """
+    from explore_persona_space.experiments.issue_1739 import fits
+
+    kind = getattr(args, "map_kind", "linear")
+    if kind == "linear":
+        return fits.fit_linear_map(x_w, y_w, device=args.device)
+    kwargs = {}
+    if getattr(args, "mlp_map_width", None) is not None:
+        kwargs["mlp_width"] = int(args.mlp_map_width)
+    if getattr(args, "krr_map_centers", None) is not None:
+        kwargs["krr_m_centers"] = int(args.krr_map_centers)
+    return fits.fit_nonlinear_map(
+        x_w, y_w, kind=kind, device=args.device, seed=args.seeds[0], **kwargs
+    )
 
 
 def _record_compose_skip(spec: RunSpec, exc: Exception, compose_skips: list[dict]) -> None:
@@ -831,9 +902,7 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
             continue
         t_map = time.time()
         wh = fits.fit_whitening(u_x, device=args.device, seed=args.seeds[0])
-        mapfit = fits.fit_linear_map(
-            fits.apply_whitening(u_x, wh), fits.apply_whitening(u_y, wh), device=args.device
-        )
+        mapfit = _fit_map(args, fits.apply_whitening(u_x, wh), fits.apply_whitening(u_y, wh))
         if timings is not None:
             timings.setdefault("map_fit_s", []).append(time.time() - t_map)
         del u_x, u_y  # the map + whitening carry everything downstream needs

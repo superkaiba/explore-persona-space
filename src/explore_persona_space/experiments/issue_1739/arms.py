@@ -307,13 +307,29 @@ def verify_arm9_l0_degeneracy(data: CellData, *, device: str = "cpu", n_rows: in
     """
     assert data.mapfit is not None, "arm9 gate needs a fitted map"
     n = min(int(n_rows), data.z_ctx.shape[1])
-    sub_map = MapFit(
-        w=data.mapfit.w[:1],
-        x_mu=data.mapfit.x_mu[:1],
-        x_sd=data.mapfit.x_sd[:1],
-        y_mu=data.mapfit.y_mu[:1],
-        diagnostics={},
-    )
+    if data.mapfit.kind == "linear":
+        sub_map = MapFit(
+            w=data.mapfit.w[:1],
+            x_mu=data.mapfit.x_mu[:1],
+            x_sd=data.mapfit.x_sd[:1],
+            y_mu=data.mapfit.y_mu[:1],
+            diagnostics={},
+        )
+    else:
+        # A nonlinear map has no (w, mu, sd) to slice — but its payloads ARE
+        # per-layer, so the first-layer probe map slices identically. The
+        # arm-9 L->0 degeneracy invariant is a property of the arm-9 L2-SP
+        # path, independent of the map family, so the gate still runs.
+        sub_map = MapFit(
+            w=None,
+            x_mu=None,
+            x_sd=None,
+            y_mu=None,
+            diagnostics={},
+            kind=data.mapfit.kind,
+            nl_payloads=data.mapfit.nl_payloads[:1],
+            apply_device=data.mapfit.apply_device,
+        )
     z_sub = np.asarray(data.z_ctx[:1, :n], dtype=np.float64)
     rb_sub = np.asarray(data.rb[:1], dtype=np.float64)
     dv_probe = _proj(apply_map(z_sub, sub_map), rb_sub)[0]  # dv == arm-6 scores
@@ -415,15 +431,25 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
             for r in range(n_r):
                 scores[r]["arm6_map_proj_e1"] = _proj(mp, rbs[r])
         if "arm13_shuffled_map" in want:
-            w_shuf = (
-                base.w_shuffled
-                if base.w_shuffled is not None
-                else shuffled_map_weights(base.mapfit.w, seed=cell.seed)
-            )
-            mp_shuf = apply_map(z, base.mapfit, w=w_shuf)  # shared (seed-dep only)
-            for r in range(n_r):
-                scores[r]["arm13_shuffled_map"] = _proj(mp_shuf, rbs[r])
-            del mp_shuf
+            if base.mapfit.kind != "linear":
+                # The shuffled-map control row-permutes the map's WEIGHT
+                # tensor (norm-preserving by construction). A nonlinear map
+                # has no such tensor, so the control has no analogue this
+                # round — RECORD the skip, never a silent zero.
+                _skip(
+                    "arm13_shuffled_map",
+                    f"shuffled-weight control is linear-map only (map_kind={base.mapfit.kind})",
+                )
+            else:
+                w_shuf = (
+                    base.w_shuffled
+                    if base.w_shuffled is not None
+                    else shuffled_map_weights(base.mapfit.w, seed=cell.seed)
+                )
+                mp_shuf = apply_map(z, base.mapfit, w=w_shuf)  # shared (seed-dep only)
+                for r in range(n_r):
+                    scores[r]["arm13_shuffled_map"] = _proj(mp_shuf, rbs[r])
+                del mp_shuf
     else:
         for slug in (
             "arm6_map_proj_e1",

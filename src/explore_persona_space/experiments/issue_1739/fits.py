@@ -37,6 +37,25 @@ from explore_persona_space.experiments.issue_1739.constants import (
 
 logger = logging.getLogger(__name__)
 
+# Nonlinear context->answer map kinds (#1739 nonlinear-map round). Both reuse
+# the #779 N1M fitters verbatim (``scripts/issue779_ffc_n1m_fits.py``:
+# ``fit_mlp`` / ``fit_krr_nystrom`` + ``apply_map``) — see
+# :func:`fit_nonlinear_map`. "linear" stays the default everywhere.
+NONLINEAR_MAP_KINDS = ("mlp", "kernel")
+
+# Per-layer nonlinear-map hyperparameters. The MLP width is the plan-named
+# 3584->512->3584 house recipe; lr/wd/patience/batch/max_epochs are the #779
+# constants the reused fitter itself reads (F.MLP_WD / F.MLP_PATIENCE), so the
+# only values named here are the ones the fitter takes as arguments.
+MLP_MAP_WIDTH = 512
+MLP_MAP_LR = 1e-3  # Source: #779 fitter_fair_comparison MLP_LR (same fitter, same d)
+MLP_MAP_MAX_EPOCHS = 300  # Source: #779 MLP_MAX_EPOCHS (early-stop patience 20)
+MLP_MAP_BATCH = 4096  # Source: #779 MLP_BATCH
+KRR_MAP_M_CENTERS = 4096  # Nystrom landmarks; clamped to n_train by the fitter
+KRR_MAP_GAMMA_MULT = (1.0,)  # Source: #779 KRR_GAMMA_MULT (median-heuristic gamma)
+KRR_MAP_LAMBDAS = (1e-1, 1e1)  # Source: #779 KRR_LAMBDAS
+KRR_MAP_BLOCK = 4096  # streaming Phi block
+
 
 # ---------------------------------------------------------------------------
 # matched-budget protocol: labeled draws + shared group-level folds
@@ -359,17 +378,38 @@ def extract_rb_matched(
 
 @dataclasses.dataclass
 class MapFit:
-    """Frozen linear context->answer map (standardized-input-space weights).
+    """Frozen context->answer map (standardized-input-space weights).
 
-    Application contract mirrors ``ridge_fit_predict_fast_layer_batched``:
+    LINEAR (``kind == "linear"``, the default): application contract mirrors
+    ``ridge_fit_predict_fast_layer_batched`` —
     ``pred = ((x - x_mu)/x_sd) @ w + y_mu`` (float64, layer-leading).
+
+    NONLINEAR (``kind in {"mlp", "kernel"}``, #1739 nonlinear-map round): ``w``
+    / ``x_mu`` / ``x_sd`` / ``y_mu`` are ``None`` and the map lives in
+    ``nl_payloads`` — one per-layer payload in the #779 N1M ``apply_map``
+    format (``issue779_ffc_n1m_fits.apply_map``), which carries its OWN
+    standardizer per layer. :func:`apply_map` dispatches on ``kind``, so every
+    downstream arm that consumes a map (arms 6/7/8) works unchanged.
     """
 
-    w: np.ndarray  # (Ly, d, d)
-    x_mu: np.ndarray  # (Ly, 1, d)
-    x_sd: np.ndarray  # (Ly, 1, d)
-    y_mu: np.ndarray  # (Ly, 1, d)
+    w: np.ndarray | None  # (Ly, d, d) — None for a nonlinear kind
+    x_mu: np.ndarray | None  # (Ly, 1, d)
+    x_sd: np.ndarray | None  # (Ly, 1, d)
+    y_mu: np.ndarray | None  # (Ly, 1, d)
     diagnostics: dict
+    kind: str = "linear"
+    nl_payloads: tuple[dict, ...] = ()  # per-layer N1M apply_map payloads
+    apply_device: str = "cpu"  # device the nonlinear per-layer apply runs on
+
+    def __post_init__(self) -> None:
+        if self.kind == "linear":
+            if self.w is None:
+                raise ValueError("MapFit(kind='linear') requires w")
+        elif self.kind in NONLINEAR_MAP_KINDS:
+            if not self.nl_payloads:
+                raise ValueError(f"MapFit(kind={self.kind!r}) requires nl_payloads")
+        else:
+            raise ValueError(f"unknown MapFit kind {self.kind!r}")
 
 
 def r2_pooled(pred: np.ndarray, true: np.ndarray) -> float:
@@ -701,15 +741,247 @@ def fit_linear_map(
     return MapFit(w=w, x_mu=x_mu, x_sd=x_sd, y_mu=y_mu, diagnostics=diagnostics)
 
 
+def _nl_split(n: int, holdout_frac: float, seed: int):
+    """The IDENTICAL holdout split :func:`fit_linear_map` draws.
+
+    Same rng key ``[1739, 4, seed]`` and same permutation slice, so a
+    nonlinear map's held-out R²/kNN diagnostics are computed on the SAME rows
+    as the linear map's at the same (variant, U rung, seed) — the whole point
+    of the round is a cell-for-cell linear-vs-nonlinear comparison, which a
+    differently-drawn holdout would silently break.
+    """
+    rng = np.random.default_rng([1739, 4, int(seed)])
+    perm = rng.permutation(n)
+    n_hold = max(2, round(holdout_frac * n))
+    return perm[:n_hold], perm[n_hold:]
+
+
+def fit_nonlinear_map(
+    x_u: np.ndarray,
+    y_u: np.ndarray,
+    *,
+    kind: str,
+    device: str = "cpu",
+    holdout_frac: float = WHITEN_HOLDOUT_FRAC,
+    seed: int = 0,
+    knn_ks: tuple[int, ...] = KNN_KS,
+    mlp_width: int = MLP_MAP_WIDTH,
+    krr_m_centers: int = KRR_MAP_M_CENTERS,
+    refit_full: bool = True,
+) -> MapFit:
+    """Fit a per-layer NONLINEAR context->answer map on the U pool + diagnostics.
+
+    Reuses the #779 N1M fitters VERBATIM (no re-implemented fit math):
+    ``kind="mlp"`` -> ``fit_mlp`` (3584->``mlp_width``->3584 GELU, AdamW,
+    minibatched, internal-val early stop); ``kind="kernel"`` ->
+    ``fit_krr_nystrom`` (RBF Nystrom KRR, median-heuristic gamma,
+    (gamma, lambda) val-selected, streaming Phi^TPhi). Each fitter's
+    ``capture_out`` payload is the frozen map, applied by
+    :func:`apply_nl_map` through the SAME ``apply_map`` predict path #779
+    roundtrip-gates.
+
+    Two-stage, mirroring :func:`fit_linear_map` so the U-ladder semantics
+    MATCH the linear arm: diagnostics come from an 80/20 split fit (held-out
+    R² + identity+bias baseline + kNN retrieval via :func:`map_diagnostics`),
+    then the FROZEN payload is REFIT on the FULL U pool (``refit_full=True``)
+    so a rung's nominal budget is its effective fit size. ``refit_full=False``
+    keeps the split fit as the frozen map (halves the cost; makes the rung's
+    effective fit size 0.8x nominal — a stated deviation, not the default).
+
+    Serial over the LAYER axis by construction, and that is the correct shape
+    here rather than a vectorize-first violation: each per-layer fit is a
+    large-n FLOP-bound GPU job (the reused fitters' own docstring: "FLOP-bound
+    single large-n fit — NOT a many-cell loop"), not the tiny-op
+    overhead-bound regime ``vectorize-many-cell-fits.md`` targets.
+    """
+    if kind not in NONLINEAR_MAP_KINDS:
+        raise ValueError(f"kind must be one of {NONLINEAR_MAP_KINDS}, got {kind!r}")
+    import time as _time
+
+    import torch
+
+    n1m = _n1m()
+    x = np.asarray(x_u, dtype=np.float64)
+    y = np.asarray(y_u, dtype=np.float64)
+    assert x.shape == y.shape and x.ndim == 3, (x.shape, y.shape)
+    n_layers, n, _d = x.shape
+    hold, tr = _nl_split(n, holdout_frac, seed)
+    if len(tr) < 4:
+        raise ValueError(f"fit_nonlinear_map: too few train rows ({len(tr)})")
+    dev = torch.device(device)
+
+    def _fit_one(xl, yl, tr_idx, te_idx, payload):
+        """One layer's fit; returns pred at ``te_idx``. Payload filled in place."""
+        if kind == "mlp":
+            return n1m.fit_mlp(
+                xl,
+                yl,
+                tr_idx,
+                te_idx,
+                mlp_width,
+                MLP_MAP_LR,
+                MLP_MAP_MAX_EPOCHS,
+                MLP_MAP_BATCH,
+                int(seed),
+                dev,
+                capture_out=payload,
+            )
+        # kernel: carve an inner val out of tr for (gamma, lambda) selection so
+        # selection never touches the diagnostics holdout.
+        rng = np.random.default_rng([1739, 5, int(seed)])
+        p = rng.permutation(len(tr_idx))
+        n_val = max(2, round(0.1 * len(tr_idx)))
+        val_idx, inner_idx = tr_idx[p[:n_val]], tr_idx[p[n_val:]]
+        return n1m.fit_krr_nystrom(
+            xl,
+            yl,
+            inner_idx,
+            val_idx,
+            te_idx,
+            m_centers=krr_m_centers,
+            gamma_mult=KRR_MAP_GAMMA_MULT,
+            lambdas=KRR_MAP_LAMBDAS,
+            seed=int(seed),
+            dev=dev,
+            block=KRR_MAP_BLOCK,
+            capture_out=payload,
+        )
+
+    # ---- stage 1: split fit -> honest held-out diagnostics -----------------
+    t0 = _time.time()
+    preds_hold, fit_meta = [], []
+    for li in range(n_layers):
+        pred, meta = _fit_one(x[li], y[li], tr, hold, {})
+        preds_hold.append(np.asarray(pred, dtype=np.float64))
+        fit_meta.append(meta)
+        print(
+            f"[nlmap] {kind} diag layer {li + 1}/{n_layers} "
+            f"n_tr={len(tr)} elapsed={_time.time() - t0:.1f}s",
+            flush=True,
+        )
+    diagnostics = map_diagnostics(
+        np.stack(preds_hold), x[:, hold], y[:, hold], x[:, tr], y[:, tr], knn_ks=knn_ks
+    )
+    diagnostics.update(
+        {
+            "n_train": len(tr),
+            "n_holdout": len(hold),
+            "map_kind": kind,
+            "fit_meta_per_layer": fit_meta,
+            "apply_device": str(device),
+            "diag_fit_s": round(_time.time() - t0, 1),
+        }
+    )
+
+    # ---- stage 2: frozen payload (full-pool refit by default) --------------
+    t1 = _time.time()
+    payloads: list[dict] = []
+    if refit_full:
+        all_rows = np.arange(n, dtype=np.int64)
+        for li in range(n_layers):
+            payload: dict = {}
+            _fit_one(x[li], y[li], all_rows, all_rows[:2], payload)
+            if not payload:
+                raise RuntimeError(f"{kind} fitter returned no capture payload (layer {li})")
+            payloads.append(payload)
+            print(
+                f"[nlmap] {kind} refit layer {li + 1}/{n_layers} "
+                f"n_fit={n} elapsed={_time.time() - t1:.1f}s",
+                flush=True,
+            )
+    else:
+        for li in range(n_layers):
+            payload = {}
+            _fit_one(x[li], y[li], tr, hold, payload)
+            payloads.append(payload)
+    diagnostics.update(
+        {
+            "w_fit_rows": int(n if refit_full else len(tr)),
+            "w_refit_on_full_u": bool(refit_full),
+            "solver": kind,
+            "refit_s": round(_time.time() - t1, 1),
+        }
+    )
+    logger.info(
+        "[fits] %s map fit: Ly=%d n_tr=%d n_hold=%d w_fit_rows=%d mean r2_map=%.4f",
+        kind,
+        n_layers,
+        len(tr),
+        len(hold),
+        diagnostics["w_fit_rows"],
+        float(np.mean([r["r2_map"] for r in diagnostics["per_layer"]])),
+    )
+    return MapFit(
+        w=None,
+        x_mu=None,
+        x_sd=None,
+        y_mu=None,
+        diagnostics=diagnostics,
+        kind=kind,
+        nl_payloads=tuple(payloads),
+        apply_device=str(device),
+    )
+
+
 def apply_map(x: np.ndarray, m: MapFit, *, w: np.ndarray | None = None) -> np.ndarray:
     """Apply the frozen map to (Ly, n, d): ``((x-x_mu)/x_sd) @ W + y_mu``.
 
     ``w`` overrides the weight tensor (the shuffled-map control applies the
     SAME standardization with row-permuted weights).
+
+    NONLINEAR kinds dispatch to :func:`apply_nl_map` (per-layer N1M payloads);
+    ``w`` is then meaningless and raises rather than being silently ignored —
+    a shuffled-weight control has no nonlinear analogue in this round.
     """
+    if m.kind != "linear":
+        if w is not None:
+            raise ValueError(
+                f"apply_map(w=...) is linear-only; MapFit kind={m.kind!r} has no weight tensor"
+            )
+        return apply_nl_map(x, m)
     x = np.asarray(x, dtype=np.float64)
     weights = m.w if w is None else w
     return ((x - m.x_mu) / m.x_sd) @ weights + m.y_mu
+
+
+def _n1m():
+    """Import the #779 N1M fitter module (repo-root syspath-guarded).
+
+    ``scripts/`` is not on ``sys.path`` under script mode (#823 trap), so the
+    guard is mandatory for this ``src/``-side import — mirrors the
+    ``_ensure_repo_root_on_syspath`` pattern the #1739 scripts already use.
+    """
+    import sys
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[4]
+    sentinel = root / "scripts" / "issue779_ffc_n1m_fits.py"
+    if not sentinel.is_file():  # wrong depth => fail loud, never a silent miss
+        raise RuntimeError(f"repo-root resolution failed: {sentinel} missing")
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+    import issue779_ffc_n1m_fits as n1m
+
+    return n1m
+
+
+def apply_nl_map(x: np.ndarray, m: MapFit) -> np.ndarray:
+    """Apply a per-layer nonlinear map to (Ly, n, d) -> (Ly, n, d) float64.
+
+    Each layer's payload carries its own standardizer, so this is exactly the
+    #779 ``apply_map`` predict path per layer (the roundtrip-gated one) — no
+    re-derivation here. Serial over the LAYER axis by construction: the
+    payload format is per-layer and each apply is one large GEMM / cdist
+    (FLOP-bound), not a tiny-op loop.
+    """
+    import torch
+
+    n1m = _n1m()
+    x = np.asarray(x, dtype=np.float64)
+    if len(m.nl_payloads) != x.shape[0]:
+        raise ValueError(f"nl_payloads {len(m.nl_payloads)} != n_layers {x.shape[0]}")
+    dev = torch.device(m.apply_device)
+    return np.stack([n1m.apply_map(m.nl_payloads[li], x[li], dev) for li in range(x.shape[0])])
 
 
 def shuffled_map_weights(w: np.ndarray, *, seed: int) -> np.ndarray:
