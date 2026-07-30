@@ -1148,3 +1148,87 @@ def test_ridge_device_fanout_threaded_branch_matches_serial(monkeypatch):
     threaded, _ = arms.run_cell(data, cell, arms=ridge_arms, lambdas=_GATE_LAMBDAS)
     for slug in ridge_arms:
         assert np.allclose(serial[slug], threaded[slug], atol=1e-12, equal_nan=True), slug
+
+
+# ---------------------------------------------------------------------------
+# r10 crash fix: arm-10 batched normal-eq solve — degenerate-slice fallback
+# ---------------------------------------------------------------------------
+
+
+def _singular_normal_eq_stack():
+    """(4, 3, 3) normal-eq stack whose slice 2 is EXACTLY singular.
+
+    Slice 2 is the Gram of a constant-column design (col1 = 2 * col0 — the
+    production degeneracy shape: an exactly-collinear arm-10 feature),
+    integer-exact so LAPACK gesv hits an exact zero pivot deterministically.
+    """
+    rng = np.random.default_rng(1739)
+    a = rng.normal(size=(4, 3, 3))
+    ata = a @ a.transpose(0, 2, 1) + 3.0 * np.stack([np.eye(3)] * 4)  # healthy SPD slices
+    design = np.array([[1.0, 2.0, 0.0], [1.0, 2.0, 1.0], [1.0, 2.0, 3.0], [1.0, 2.0, -1.0]])
+    ata[2] = design.T @ design  # rank 2 — exactly singular
+    atb = rng.normal(size=(4, 3, 1))
+    return ata, atb
+
+
+def test_solve_stacked_normal_eqs_pinv_fallback_flags_and_matches():
+    """One singular slice kills the whole batched np.linalg.solve (the #1739
+    sycophancy-lane crash — asserted below as the pre-fix arm-10 behavior);
+    the robust solver completes, flags EXACTLY the singular slice, matches
+    the per-slice solve on healthy slices and pinv on the flagged one."""
+    ata, atb = _singular_normal_eq_stack()
+    with pytest.raises(np.linalg.LinAlgError):  # pre-fix arm-10 call == the crash
+        np.linalg.solve(ata, atb)
+    beta, degenerate = arms._solve_stacked_normal_eqs(ata, atb)
+    assert degenerate == [2]
+    for li in (0, 1, 3):
+        assert np.allclose(beta[li], np.linalg.solve(ata[li], atb[li]), atol=1e-12), li
+    assert np.allclose(beta[2], np.linalg.pinv(ata[2]) @ atb[2], atol=1e-10)
+    # healthy stack: identical to the batched solve, nothing flagged
+    healthy = ata.copy()
+    healthy[2] = np.eye(3) * 2.0
+    beta_h, deg_h = arms._solve_stacked_normal_eqs(healthy, atb)
+    assert deg_h == [] and np.array_equal(beta_h, np.linalg.solve(healthy, atb))
+
+
+def test_run_grid_multi_flags_degenerate_ols_cell(tmp_path, monkeypatch):
+    """A degenerate arm-10 cell no longer kills the grid: the REAL
+    _solve_stacked_normal_eqs body runs on a genuinely singular stack
+    (injected into the ata INPUT at the real arm-10 call site — the solver
+    itself is never stubbed), the unit completes, and the per-cell record +
+    cells.jsonl row carry degenerate_ols=True with the fold->layer detail."""
+    data, groups = _synthetic_cell_data()
+    calls: list[int] = []
+    real = arms._solve_stacked_normal_eqs
+    design = np.array([[1.0, 2.0, 0.0], [1.0, 2.0, 1.0], [1.0, 2.0, 3.0], [1.0, 2.0, -1.0]])
+
+    def corrupt_then_solve(ata, atb):
+        if not calls:  # first fold only: layer-1 slice made exactly singular
+            ata = ata.copy()
+            ata[1] = design.T @ design
+        calls.append(1)
+        return real(ata, atb)
+
+    monkeypatch.setattr(arms, "_solve_stacked_normal_eqs", corrupt_then_solve)
+    kw = dict(
+        budgets=[18],
+        draws=[0],
+        seeds=[0],
+        out_dir=tmp_path,
+        arms=["arm4_ridge_ctx", "arm6_map_proj_e1", "arm10_stacked"],
+        n_boot=20,
+        n_perm=20,
+    )
+    recs = arms.run_grid(data, groups, provenance={"regime": "e1"}, **kw)
+    assert calls, "arm10 never dispatched through the robust solver"
+    (rec,) = recs
+    assert rec["degenerate_ols"] is True
+    detail = rec["degenerate_ols_detail"]["arm10_stacked"]
+    assert detail["degenerate_ols"] is True and detail["fold_layers"] == {"0": [1]}
+    row = json.loads((tmp_path / "percell" / "cells.jsonl").read_text().strip())
+    assert row["degenerate_ols"] is True
+    # a clean sibling run records the flag as False, with no detail key
+    recs2 = arms.run_grid(
+        data, groups, provenance={"regime": "e2"}, **{**kw, "out_dir": tmp_path / "clean"}
+    )
+    assert recs2[0]["degenerate_ols"] is False and "degenerate_ols_detail" not in recs2[0]

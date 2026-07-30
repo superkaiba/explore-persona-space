@@ -100,6 +100,21 @@ for b in sys.argv[1].split():
     print(f'[leg2] dv_dataset/{b}: staged', flush=True)
 " "$BEHAVIORS"
 
+# step 5 (optional): restore a crashed lane's crash-persisted partial fits
+# so the fits phase's per-cell resume (arm_results/percell/cells.jsonl +
+# preds/*.npz) skips completed cells. EPM_I1739_RESUME_PARTIAL_PREFIX names
+# the HF attempt prefix (e.g. issue1739_partial/att-20260729-032734-syc);
+# scoped per-behavior enumeration + atomic skip-if-exists staging — never a
+# full-repo enumeration (gotchas #833). Scoped to EPM_I1739_BEHAVIORS like
+# the other steps.
+if [ -n "${EPM_I1739_RESUME_PARTIAL_PREFIX:-}" ]; then
+  echo "[leg2] step 5: restore partial fits from $EPM_I1739_RESUME_PARTIAL_PREFIX"
+  uv run python scripts/issue1739_restore_partial.py \
+    --hf-prefix "$EPM_I1739_RESUME_PARTIAL_PREFIX" \
+    --behaviors "$BEHAVIORS" \
+    --results-root "$RESULTS_ROOT"
+fi
+
 # Pre-stage ONLY — the workload cmd chains `... issue1739_leg2.sh && bash
 # scripts/issue1739_dispatch.sh --from-phase fits` so the dispatcher's
 # reserved [phase=done] terminal stays the workload log's single terminal

@@ -175,6 +175,34 @@ def _fold_masks(fold_ids: np.ndarray, n_folds: int) -> tuple[np.ndarray, np.ndar
     return ~ev, ev
 
 
+def _solve_stacked_normal_eqs(ata: np.ndarray, atb: np.ndarray) -> tuple[np.ndarray, list[int]]:
+    """Solve a (Ly, k, k) x (Ly, k, 1) normal-equation stack; per-slice pinv fallback.
+
+    The healthy path is the single batched ``np.linalg.solve`` — identical to
+    the pre-fix arm-10 call. numpy raises ONE ``LinAlgError`` for the WHOLE
+    batch when ANY slice is singular past the caller's ridge jitter (one
+    degenerate layer killed the #1739 sycophancy fits lane ~25 h in), so on
+    that raise the slices are re-solved individually: healthy slices via the
+    same LAPACK ``gesv`` solve, singular slices via the ``pinv`` least-squares
+    solution. Returns ``(beta, degenerate_slice_idxs)`` so the caller can flag
+    the cell (``degenerate_ols``) — never a silent placeholder, never a
+    swallowed error (a non-LinAlgError still propagates).
+    """
+    try:
+        return np.linalg.solve(ata, atb), []
+    except np.linalg.LinAlgError:
+        pass  # fall through to the per-slice re-solve; degenerate slices flagged below
+    beta = np.empty_like(atb)
+    degenerate: list[int] = []
+    for li in range(ata.shape[0]):
+        try:
+            beta[li] = np.linalg.solve(ata[li], atb[li])
+        except np.linalg.LinAlgError:
+            beta[li] = np.linalg.pinv(ata[li]) @ atb[li]
+            degenerate.append(li)
+    return beta, degenerate
+
+
 @dataclasses.dataclass
 class RidgeJob:
     """One shared-design ridge solve: (source, fold) with T stacked targets.
@@ -314,6 +342,7 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
     lambdas: tuple[float, ...] = RIDGE_LAMBDAS,
     mlp_kwargs: dict | None = None,
     ridge_folds: tuple[int, ...] | None = None,
+    diagnostics: list[dict] | None = None,
 ) -> list[tuple[dict[str, np.ndarray], dict[str, str]]]:
     """Pooled-OOF scores for every requested arm, for R regime slices AT ONCE.
 
@@ -328,7 +357,10 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
     caches key on identity). ``ridge_folds`` restricts which folds' ridge
     problems are SOLVED (the transfer leg's discarded-fold skip); non-solved
     folds' OOF slots stay NaN. Every arm consumes the SAME realized rows +
-    folds (matched-budget protocol).
+    folds (matched-budget protocol). ``diagnostics`` (optional out-param): an
+    empty list the caller passes; one dict per regime is appended (in
+    ``datas`` order) carrying non-fatal numeric-degeneracy flags — today the
+    arm-10 ``degenerate_ols`` pinv-fallback record (#1739 r10 crash fix).
     """
     assert datas, "run_cell_multi needs >= 1 CellData"
     base = datas[0]
@@ -361,6 +393,9 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
 
     scores: list[dict[str, np.ndarray]] = [{} for _ in range(n_r)]
     skipped: list[dict[str, str]] = [{} for _ in range(n_r)]
+    diag: list[dict] = [{} for _ in range(n_r)]
+    if diagnostics is not None:
+        diagnostics.extend(diag)  # SAME dict objects — later in-place mutation propagates
 
     def _skip(slug: str, reason: str) -> None:
         if slug in want:
@@ -592,6 +627,7 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
             if s6 is None:  # arm 6 not requested — the combiner still needs its feature
                 s6 = _proj(mp, rbs[r])
             out10 = np.full((n_layers, n_l), np.nan)
+            deg_by_fold: dict[str, list[int]] = {}
             for f in range(n_folds):  # <=5 folds; layers batched inside
                 trr, evr = tr_rows[f], ev_rows[f]
                 p4_in = solved[("z", f)]["tr"][:, :, p4_col]  # (Ly, n_tr) in-sample train preds
@@ -601,9 +637,20 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
                 )  # (Ly, n_tr, 3)
                 ata = a_tr.transpose(0, 2, 1) @ a_tr + 1e-8 * np.eye(3)
                 atb = a_tr.transpose(0, 2, 1) @ dv[trr, None]
-                beta = np.linalg.solve(ata, atb)  # (Ly, 3, 1)
+                beta, deg_layers = _solve_stacked_normal_eqs(ata, atb)  # (Ly, 3, 1)
+                if deg_layers:
+                    deg_by_fold[str(f)] = deg_layers
                 a_ev = np.stack([np.ones((n_layers, len(evr))), s6[:, evr], p4_oof], axis=2)
                 out10[:, evr] = (a_ev @ beta)[:, :, 0]
+            if deg_by_fold:
+                logger.warning(
+                    "[arms] arm10: singular normal-eq slice(s) -> pinv fallback "
+                    "(regime=%d n_slices=%d fold->layers=%s)",
+                    r,
+                    sum(len(v) for v in deg_by_fold.values()),
+                    deg_by_fold,
+                )
+                diag[r]["arm10_stacked"] = {"degenerate_ols": True, "fold_layers": deg_by_fold}
             scores[r]["arm10_stacked"] = out10
 
     # ---- arm 5: batched group-fold MLP (rb-independent — fit ONCE, shared) ----
@@ -1269,8 +1316,14 @@ def run_grid_multi(
             f"L={budget_l} draw={draw} seed={seed}",
             flush=True,
         )
+        cell_diags: list[dict] = []
         outs = run_cell_multi(
-            [datas[r] for r in pending], cell, arms=arms, device=device, mlp_kwargs=mlp_kwargs
+            [datas[r] for r in pending],
+            cell,
+            arms=arms,
+            device=device,
+            mlp_kwargs=mlp_kwargs,
+            diagnostics=cell_diags,
         )
         dv_cell = base.dv[cell.row_idx]
         margins_cell = base.margins[cell.row_idx] if base.margins is not None else None
@@ -1292,6 +1345,11 @@ def run_grid_multi(
             )
             rec["unit_key"] = keys[r]
             rec["skipped_arms"] = skipped
+            # #1739 r10: rank-deficiency audit flag — downstream analysis can
+            # see which cells' arm-10 fell back to the pinv solution.
+            rec["degenerate_ols"] = bool(cell_diags[j])
+            if cell_diags[j]:
+                rec["degenerate_ols_detail"] = cell_diags[j]
             if context_ids is not None:
                 rec["preds_npz"] = _save_cell_preds(
                     out_dir / "percell" / "preds", keys[r], rec, scores, cell, context_ids, base.dv
