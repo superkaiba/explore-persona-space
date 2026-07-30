@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1858,
+  "highest_id": 1859,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6644,6 +6644,13 @@
       "path": "tasks/proposed/1858",
       "status": "proposed",
       "title": "daily-fix: RunPod failover launcher timeout-bounds sync, rea"
+    },
+    "1859": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1859",
+      "status": "proposed",
+      "title": "daily-fix: repo-root guard allows timeout-prefixed ssh paylo"
     },
     "186": {
       "has_clean_result": true,
