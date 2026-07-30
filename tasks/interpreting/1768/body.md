@@ -25,11 +25,11 @@ relates_to:
 ## Takeaways
 
 - At 15,000 real-user contexts, 107 of 216 (arm, layer) cells show map change above the refit-noise floor, 102 sit below it, 7 unresolved; 33 of 34 seed pairs agree.
-- The split is behavior-shaped: casual writing style 36 of 45 cells changed, impoliteness 45 of 51, sycophancy 26 of 60, marker token 0 of 60 — reversing the plan's expectation that marker arms would change.
+- The split is behavior-shaped: casual writing style 36 of 45 cells changed, impoliteness 45 of 51, sycophancy 26 of 60, marker token 0 of 60, which reverses the plan's expectation that marker arms would change.
 - Map change rank-tracks the matched-text answer shift (Spearman 0.98 at layer 19, n=72 arms), so the marker verdict is consistent with its smaller weights-carried dose.
-- Full fine-tuning changes the map more than LoRA at matched cells (36 of 48), but also carries the larger matched-text shift (31 of 48) — a larger weights-carried dose, not a dose-matched contrast.
+- Full fine-tuning changes the map more than LoRA at matched cells (36 of 48), but it also carries the larger matched-text shift (31 of 48); the method contrast was never dose-matched.
 - On-policy writes align with the training displacement (medians +0.33 to +0.63; 45 of 52 content arms above null), but the alignment collapses on matched text — text-carried.
-- Rank-one-write and base-gate assumptions fail at corpus scale (top-1 share median 0.09 on-policy vs the 0.6 criterion; gate rank correlation median 0.14); read-out stability holds (cosine 0.84–0.99) but its write alignment is not behavior-specific (own read-out best in only 30 of 52 content arms).
+- Rank-one-write and base-gate assumptions fail at corpus scale (top-1 share median 0.09 on-policy vs the 0.6 criterion; gate rank correlation median 0.14); read-out stability holds on the 6 re-extracted arms (cosine 0.84–0.99) but its write alignment is specific only at family level (own read-out best in 30 of 52 content arms).
 
 ## Goal
 
@@ -116,7 +116,7 @@ Cherry-picked 3 of 500 shard-0 rows; full text at the corpus_capture link in the
 
 </details>
 
-Marker emission on this evaluation surface is essentially zero: 0 of 500 shard-0 rows contain the marker token (id 83399) in each of 6 sampled marker arms (persona/bare/conversation/demonstration contexts, both methods), and 0 of 20 panel rows at each arm's source context (1–2 of 20 only under the demonstration-prefix panel context, whose prefix itself shows the marker). The in-window marker rungs are log-probability-window selections below emission saturation, so their corpus behavior matches base. Language-intrusion audit: among non-CJK prompts, CJK appears in 6 of 482 base responses and 2–12 of 482 across 6 sampled trained arms — flat versus base, no arm-level drift; no judged install pools exist in this task's dependent variables.
+Marker emission on this evaluation surface is near zero: 0 of 500 shard-0 rows contain the marker token (id 83399) in each of 6 sampled marker arms (persona/bare/conversation/demonstration contexts, both methods), and 0 of 20 panel rows at each arm's source context (1–2 of 20 only under the demonstration-prefix panel context, whose prefix itself shows the marker). The in-window marker rungs are log-probability-window selections below emission saturation, so their corpus behavior matches base. Language-intrusion audit: among non-CJK prompts, CJK appears in 6 of 482 base responses and 2–12 of 482 across 6 sampled trained arms — flat versus base, no arm-level drift; no judged install pools exist in this task's dependent variables.
 
 ## Results
 
@@ -128,103 +128,103 @@ The figure plots, per arm at its primary layer (content layer 19, marker layer 2
 
 > **Figure.** *Content arms sit above zero, marker arms below.* D per arm; color = behavior, circle/triangle = contrastive/positive-only regime, open = full fine-tune; error bars 95% CI; row ticks are arm slugs — LoRA behavior-context-regime-learning rate-seed, full fine-tune behavior-context-ft-regime-seed. Writing style: 14 of 15 changed at layer 19; impoliteness 17 of 17; sycophancy 12 of 20; marker 0 of 20 at layer 25.
 
-Across all 216 cells the lattice returns 107 Changed / 102 Unchanged / 7 Unresolved (3.2% vs the 20% criterion); 33 of 34 seed pairs agree at the primary layer. The marker null reverses the plan's expectation (marker arms were expected Changed) and holds at every layer, though the large negative D partly reflects the layer-25 floor (24.6) being 3× the layer-19 floor (8.0). Within sycophancy the verdict is training-context-dependent — bare-context arms changed (D 5.1–8.2), conversation-history arms unchanged (≈ −4.7), persona and demonstration contexts split by regime — and depth-increasing (median D −1.5 / +2.2 / +3.0 across the three layers).
+Across all 216 cells the verdict split is 107 Changed / 102 Unchanged / 7 Unresolved (3.2% vs the 20% criterion); 33 of 34 seed pairs agree at the primary layer. The marker null reverses the plan's expectation (marker arms were expected Changed) and holds at every layer, though the large negative D partly reflects the layer-25 floor (24.6) being 3× the layer-19 floor (8.0). Within sycophancy the verdict depends on training context: bare-context arms changed (D 5.1–8.2), conversation-history arms did not (≈ −4.7), and persona and demonstration contexts split by training regime (contrastive vs positive-only mixes). Sycophancy's median D across layers 14/19/25 is −1.5 / +2.2 / +3.0.
 
 ### Map change tracks the weights-carried answer shift
 
-The figure plots, for all 72 arms at layer 19, D against the matched-text answer-state shift — the mean norm of the trained-minus-base answer activation with the response text held fixed at the base model's own rows, removing text-distribution shift.
+What is plotted: for all 72 arms at layer 19, D against the matched-text answer-state shift — the mean norm of the trained-minus-base answer activation with the response text held fixed at the base model's own rows, removing text-distribution shift.
 
 ![Scatter of map-change statistic versus matched-text answer shift at layer 19 for all 72 arms](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c1765b47fdafc48fa9742a926e4164e4b1b6132b/figures/issue_1768/d_vs_matched_text_shift.png)
 
 > **Figure.** *Map change rises near-monotonically with the matched-text answer shift.* D at layer 19 vs the shift; 72 points, one per arm; Spearman 0.98 (0.98, 0.99 at layers 14, 25). Marker arms occupy the low-shift, negative-D corner.
 
-The near-monotone relation says the verdict split is a dose ordering, not a behavior-type dichotomy: marker arms (median matched-text shift 2.0) sit exactly where the trend predicts Unchanged, the LoRA sycophancy arms (6.8) straddle the floor, and impoliteness, writing-style, and full-fine-tune arms (10–19) clear it. Both axes scale with weight-change size, so the rank agreement is a common-dose read, not causal evidence the map is the channel. Full fine-tuning exceeds LoRA in D for 36 of 48 matched cells (median gap +3.5) — but it also carries the larger matched-text shift in 31 of those cells, so the method gap rides a larger weights-carried dose; the contrast is exploratory, installs being matched behaviorally rather than by weight dose.
+The near-monotone relation says the verdicts order by dose, and behavior type adds little beyond its matched-text shift: marker arms (median matched-text shift 2.0) sit where the trend predicts Unchanged, the LoRA sycophancy arms (6.8) straddle the floor, and impoliteness, writing-style, and full-fine-tune arms (10–19) clear it. Both axes scale with weight-change size, so the rank agreement reflects a shared dose rather than causal evidence that the map is the channel. Full fine-tuning exceeds LoRA in D for 36 of 48 matched cells (median gap +3.5) — but it also carries the larger matched-text shift in 31 of those cells, so the method gap rides a larger weights-carried dose; the contrast is exploratory: arms were matched on behavioral expression, and weight dose varied freely.
 
 ### The write's alignment with the training displacement is text-carried
 
-The figure plots, per arm at its primary layer, the cosine between the panel source-context write ŵ and two candidates — the training displacement δ and the behavior read-out r_B — for the on-policy (left panel) and matched-text (right panel) writes, with the norm-matched null band shaded. Marker arms race the marker unembedding row in place of r_B.
+For each arm at its primary layer, the figure plots the cosine between the panel source-context write ŵ and two candidate directions (the horse race): the training displacement δ and the behavior read-out r_B, for the on-policy (left panel) and matched-text (right panel) writes, with the norm-matched null band shaded. Marker arms race the marker unembedding row in place of r_B.
 
 ![Dot plot of write-direction cosines against training displacement and read-out candidates, on-policy and matched-text](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fa81c85759b80b2260df956f5c79fc04068222db/figures/issue_1768/hero2_horse_race.png)
 
 > **Figure.** *Displacement alignment is strong on-policy and gone at fixed text.* Blue circles = training displacement, orange diamonds = read-out, gray = null band. On-policy displacement medians +0.43 / +0.63 / +0.33 (writing style / impoliteness / sycophancy); matched-text −0.15 to +0.09, read-out retaining +0.27 / +0.22. Per-arm bootstrap half-widths: median ±0.16 (displacement), ±0.06 (read-out).
 
-Holding text fixed removes the displacement alignment — text-carried, not weights-carried; the prior fleet's near-zero cosine, measured teacher-forced on base responses (this matched-text regime), stands for the weights-carried write. Matched-text, the read-out beats the displacement in 42 of 52 content arms but clears the null only for writing style (12 of 15) and impoliteness (7 of 17); sycophancy (2 of 20) and marker (0 of 20) align with nothing measured.
+Holding text fixed removes the displacement alignment — it travels with the emitted text rather than the weights; the earlier arm panel's near-zero cosine, measured teacher-forced on base responses (this matched-text regime), stands for the weights-carried write. Matched-text, the read-out beats the displacement in 42 of 52 content arms but clears the null only for writing style (12 of 15) and impoliteness (7 of 17); sycophancy (2 of 20) and marker (0 of 20) align with nothing measured.
 
-Bootstrap half-widths: median ±0.16 per displacement, ±0.06 read-out — deduplicated pooled median 0.11, over the 0.1 criterion, so across-arm counts carry the claims. Split-half reliability (median 0.85) rules out attenuation for the sycophancy nulls.
+Bootstrap half-widths: median ±0.16 per displacement, ±0.06 read-out — deduplicated pooled median 0.11, over the 0.1 criterion, so the across-arm counts support the claims. Split-half reliability (median 0.85 across arms) argues against attenuation as the explanation for the sycophancy nulls.
 
 ### The write's read-out alignment is not behavior-specific
 
-The figure plots, per content arm at layer 19, the cosine between the on-policy write and the arm's own behavior's read-out against the highest cosine with any other behavior's read-out — the cross-behavior control attached to the horse race; points above the diagonal align better with another behavior's read-out than with their own.
+Per content arm at layer 19, the figure shows the cosine between the on-policy write and the arm's own behavior's read-out against the highest cosine with any other behavior's read-out — the cross-behavior control attached to the horse race; points above the diagonal align better with another behavior's read-out than with their own.
 
 ![Scatter of own-behavior versus best other-behavior read-out cosine per content arm](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c1765b47fdafc48fa9742a926e4164e4b1b6132b/figures/issue_1768/rb_specificity.png)
 
 > **Figure.** *The own-behavior read-out wins in only 30 of 52 content arms.* Own vs best-other read-out cosine, on-policy write, layer 19; dashed diagonal = parity. All 4 bare-context sycophancy writes align with the casual-writing read-out at 0.44–0.49 versus 0.16–0.24 with their own.
 
-The read-out's alignment with the write is real but not behavior-identifying: nearly half the arms align as well or better with another behavior's read-out — bare-context sycophancy with casual writing, demonstration-context sycophancy with impoliteness. A read-out-based write predictor would rank candidate directions within the style-like family but could not tell which behavior was trained, so the read-out-as-predictor reading in the later stability result is family-level, not behavior-level.
+The read-out's alignment with the write is real but not behavior-identifying: nearly half the arms align as well or better with another behavior's read-out — bare-context sycophancy with casual writing, demonstration-context sycophancy with impoliteness. A read-out-based write predictor would rank candidate directions within the style-like family but would confuse behaviors in nearly half the arms (own read-out best in 30 of 52), so the read-out-as-predictor reading in the later stability result is family-level at best.
 
 ### The write is high-rank at corpus scale
 
-The figure plots, per arm at its primary layer, the top-1 SVD variance share of the 16,400-row answer-shift matrix — the fraction of update variance one direction carries — for on-policy (filled) and matched-text (open) shifts, against the 0.6 criterion and the prior panel-scale range 0.81–0.86.
+Each point is one arm (primary-layer convention as above): the top-1 SVD variance share of the 16,400-row answer-shift matrix — the fraction of update variance one direction carries — for on-policy (filled) and matched-text (open) shifts, against the 0.6 criterion and the prior panel-scale range 0.81–0.86.
 
 ![Top-1 SVD variance share of the answer-shift matrix per arm, on-policy and matched-text](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fa81c85759b80b2260df956f5c79fc04068222db/figures/issue_1768/write_rank_a6.png)
 
 > **Figure.** *No arm's write concentrates in one direction.* Top-1 variance share per arm at its primary layer: on-policy median 0.09 (participation ratio about 51), matched-text 0.29 (about 10); one marker arm reaches 0.65, all others below the 0.6 criterion. Gray band: prior panel-scale 0.81–0.86 — also a fixed-text read, so 0.29 is the regime-matched comparison.
 
-At real-prompt scale the rank-one-write picture fails: no arm's on-policy shift concentrates in one direction, and even at fixed text the leading direction carries under a third of the variance for the median arm. The prior 0.81–0.86 figures came from 120-row single-source panels; over 16,400 heterogeneous contexts the write acts context-dependently. Fitting the write as a scalar multiple of the displacement leaves median residual shares of 0.61 (impoliteness) to 0.99 (marker).
+At real-prompt scale the rank-one-write picture fails: no arm's on-policy shift concentrates in one direction, and even at fixed text the leading direction accounts for under a third of the variance for the median arm. The prior 0.81–0.86 figures came from 120-row single-source panels; over 16,400 heterogeneous contexts the write acts context-dependently. Fitting the write as a scalar multiple of the displacement leaves median residual shares of 0.61 (impoliteness) to 0.99 (marker).
 
-### The base-geometry gate predicts transfer weakly on this fleet
+### The base-geometry gate predicts transfer weakly on this arm set
 
-The figure plots, per arm and layer, the rank correlation (Spearman, n=16,400 contexts) between the gate predicted from base context geometry (whitened similarity to the source context) and the realized per-context write coefficient on the on-policy tree, against the 0.3–0.7 band the hypothesis named.
+The figure plots, per arm and layer, the rank correlation (Spearman, n=16,400 contexts) between the gate predicted from base context geometry (whitened similarity to the source context) and the realized per-context write coefficient on the on-policy tree (activations from the trained model's own responses), against the 0.3–0.7 band the hypothesis named.
 
 ![Per-arm rank correlations between predicted and realized gate across behaviors and layers](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fa81c85759b80b2260df956f5c79fc04068222db/figures/issue_1768/gate_a10_a11.png)
 
 > **Figure.** *Most cells fall below the 0.3–0.7 band.* Predicted-vs-realized gate rank correlation per arm × layer (columns per behavior = layers 14/19/25), on-policy tree. Content: median 0.14, maximum 0.49, 31 of 156 cells in band. Marker: median 0.005.
 
-The prior fleet's 0.46–0.59 gate correlations do not transfer: most content cells sit below 0.3 (at n=16,400 every p-value is vanishingly small — the shortfall is magnitude, not significance), and marker cells carry no gate signal, consistent with their unchanged maps and near-zero corpus expression. The matched-text read is weaker still (content median 0.098, 25 of 156 in band). Base-geometry similarity retains some ordering (up to 0.49) but well short of the band the older fleet supported.
+The earlier panel experiment's 0.46–0.59 gate correlations do not transfer: most content cells sit below 0.3 (at n=16,400 every correlation is trivially significant; the shortfall is in magnitude), and marker cells show no gate signal, consistent with their unchanged maps and near-zero corpus expression. The matched-text read is weaker still (content median 0.098, 25 of 156 in band). Base-geometry similarity retains some ordering (up to 0.49), well short of the band the earlier experiment's arms supported.
 
 ### The behavior read-out direction survives fine-tuning
 
-The figure plots, for the 6 re-extracted arms (persona context, seed 42, both regimes, three content behaviors), the cosine between the read-out re-extracted from the trained model via the persona-vectors recipe and the base model's read-out, at layers 14/19/25, against the 0.8 criterion.
+For the 6 re-extracted arms (persona context, seed 42, both regimes, three content behaviors), the figure shows the cosine between the read-out re-extracted from the trained model via the persona-vectors recipe and the base model's read-out, at layers 14/19/25, against the 0.8 criterion.
 
 ![Cosine between re-extracted and base read-out directions for six arms at three layers](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fa81c85759b80b2260df956f5c79fc04068222db/figures/issue_1768/rb_stability_a4.png)
 
 > **Figure.** *Every re-extracted read-out stays aligned with its base direction.* Cosine 0.845–0.987 across all 18 (arm, layer) cells, lowest for impoliteness at layer 25; all clear the 0.8 criterion. X ticks are arm slugs reading behavior-context-regime-learning rate-seed.
 
-Fine-tuning the behavior into the model leaves the direction along which the behavior is read out essentially unchanged — the stability assumption the prior fleet's expression-based test scored as refuted holds on the direct direction-cosine test. Together with the horse race and the specificity control: the read-out survives training and partially aligns with the matched-text write for the two style-like behaviors, but not behavior-specifically — at best a weak, family-level write predictor, not a replacement for the training displacement.
+Fine-tuning the behavior into the model leaves the direction along which the behavior is read out unchanged to within cosine 0.84–0.99 — the stability assumption the earlier expression-based test scored as refuted holds on the direct direction-cosine test. Read together with the horse race and the specificity control above, this bounds the read-out's predictive value: it survives training and partially aligns with the matched-text write for the two style-like behaviors, with family-level rather than behavior-level specificity.
 
-### The fitted maps are genuine: baselines fail, retrieval succeeds, transfer holds
+### Baselines fail, retrieval succeeds at k=1, transfer folds hold
 
-The figure plots, for all 216 cells by layer: held-out R² of the ridge maps (base and trained), the identity-plus-learned-bias baseline R² (answer state predicted as the context vector plus a constant shift), and kNN retrieval accuracy at k=1 (whether the predicted answer state finds its true target among 1,000 held-out candidates, cosine metric).
+What is plotted, for all 216 cells by layer: held-out R² of the ridge maps (base and trained), the identity-plus-learned-bias baseline R² (answer state predicted as the context vector plus a constant shift), and kNN retrieval accuracy at k=1 (whether the predicted answer state finds its true target among 1,000 held-out candidates, cosine metric).
 
 ![Held-out R-squared, identity baseline, and retrieval accuracy per layer for all cells](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fa81c85759b80b2260df956f5c79fc04068222db/figures/issue_1768/fit_quality_baselines.png)
 
 > **Figure.** *The fitted maps beat both standing baselines by wide margins.* Left: held-out R², base medians 0.477 / 0.501 / 0.451 at layers 14/19/25. Middle: identity+bias baseline R² −39.0 / −14.6 / −1.5. Right: retrieval accuracy at k=1, medians 0.56 / 0.54 / 0.39 vs chance 0.001.
 
-Both standing baseline reads support a genuine map: a constant-shift model explains nothing (strongly negative R²), while the fitted map retrieves the exact held-out target for over half the contexts at layers 14–19. Corpus-provenance transfer folds hold up (median R² 0.489 fitting LMSYS and testing WildChat, 0.426 in reverse, versus 0.501 in-distribution at layer 19), so the maps are not corpus-idiosyncratic.
+Both standing baseline reads support the fitted map: a constant-shift model explains nothing (strongly negative R²), while the fitted map retrieves the exact held-out target for over half the contexts at layers 14–19. Corpus-provenance transfer folds hold up (median R² 0.489 fitting LMSYS and testing WildChat, 0.426 in reverse, versus 0.501 in-distribution at layer 19), so the maps are not corpus-idiosyncratic.
 
 ### The 120-row panel instrument resolves none of what the corpus instrument resolves
 
-The figure plots, per arm at its primary layer, the corpus-scale D (16,400 rows) against the panel-scale equivalent from the parent experiment's fitting family run in its home regime on the 120-row panels, retained as an instrument-continuity check.
+Each point compares one arm's corpus-scale D (16,400 rows, primary layer) against the panel-scale equivalent from the parent experiment's ridge fitter re-run on the 120-row panels under its original capture regime, retained as an instrument-continuity check.
 
 ![Corpus-scale versus panel-scale map-change statistics per arm](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fa81c85759b80b2260df956f5c79fc04068222db/figures/issue_1768/panel_vs_corpus_D.png)
 
 > **Figure.** *The panel instrument resolves no arm; the corpus instrument separates them.* Panel-scale D (map difference minus combined refit floor) is negative for all 72 arms — 0 of 72 clear their floor at 120 rows.
 
-This directly explains the parent's inconclusive sycophancy and EM cells: at n=120 (let alone n=16) the refit-noise floor exceeds every arm's map difference, so no verdict was reachable in principle. The scale-up, not a fleet difference, is what resolved the question.
+This directly explains the parent's inconclusive sycophancy and emergent-misalignment cells: at n=120 (let alone n=16) the refit-noise floor exceeds every arm's map difference, so no verdict was reachable in principle. Resolution came from the scale-up, and no difference between the arm panels is needed to explain it.
 
 ### On-policy answer shifts are mostly off-map; matched-text shifts attribute to map change
 
-The figure plots, per arm at its primary layer, the squared-norm shares of the answer-state shift attributed to map change, input movement, and residual (on-policy), plus the matched-text residual share; terms are non-orthogonal, so shares need not sum to 1.
+The figure splits each arm's answer-state shift (primary layer) into squared-norm shares attributed to map change, input movement, and residual (on-policy), plus the matched-text residual share; terms are non-orthogonal, so shares need not sum to 1.
 
 ![Per-arm decomposition shares of the answer-state shift by behavior](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fa81c85759b80b2260df956f5c79fc04068222db/figures/issue_1768/decomposition_shares.png)
 
 > **Figure.** *On-policy shifts are mostly off-map; fixed-text shifts attribute to map change.* Shares per arm at its primary layer: on-policy residual median 0.78 (content), matched-text residual 0.35; map-change share 0.35 content vs 0.11 marker; input movement 0.12 vs 0.03.
 
-On-policy, most of the answer-state shift is off-map — carried by the different text the trained model writes. With text held fixed, the map-change term becomes the largest attributable component for content arms, and the context-side input-movement term stays small on both trees: fine-tuning acts mainly on the map and the emitted text, only weakly on the context representation.
+On-policy, most of the answer-state shift is off-map — carried by the different text the trained model writes. With text held fixed, the map-change term becomes the largest attributable component for content arms, and the context-side input-movement term stays small on both response trees (trained-model and base-model text): fine-tuning acts mainly on the map and the emitted text; the context representation barely moves.
 
 ### Planned-versus-actual coverage
 
-216 fit cells were realized vs the plan's 222-cell sizing, which counted the 2 base corpus units — fit inputs, not fit cells; trained-arm coverage is complete (72 of 72 × 3 layers, both baselines everywhere). Never-trained fleet cells stay absent (4 writing-style and 3 impoliteness demonstration-context cells, one conversation-context seed); aggregates use realized cells only. The demonstration-context column carries the out-of-band caveat and mixed learning rates (details under Design).
+216 fit cells were realized vs the plan's 222-cell sizing, which counted the 2 base corpus units; those feed the fits but are not themselves fit cells. Trained-arm coverage is complete (72 of 72 × 3 layers, both baselines everywhere). Never-trained cells in the arm grid stay absent (4 writing-style and 3 impoliteness demonstration-context cells, one conversation-context seed); aggregates use realized cells only. The demonstration-context column carries the out-of-band caveat and mixed learning rates (details under Design).
 
 Two planned reads remain unevaluated: the raw context-movement statistic was never persisted (the input-movement share is the in-hand proxy), and the matched-text shift was never compared to a capture-noise floor. The horse-race cosine CIs — a success criterion missing from the first round — were computed in this revision (`horse_race_cis.json`; criteria table in Methodology). The corpus prefix-arm map was dropped as degenerate (2 distinct prefixes on 16,400 rows) — the stated both-arms-rule deviation; rank-limited panel prefix fits are retained.
 
