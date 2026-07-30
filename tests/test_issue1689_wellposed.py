@@ -361,3 +361,114 @@ def test_reduced_checkpoint_never_satisfied_by_ambient(tmp_path):
 )
 def test_k_band_edges(k, expected):
     assert k_band(k) == expected
+
+
+# --- Parent-inputs staging (#734 upload-first; fellows job 15724 crash-fix) ---
+
+
+def _parent_inputs_fixture(root: Path) -> Path:
+    """A tiny complete local parent-input set (all singles + 1 file/tree)."""
+    for s in dvf.PARENT_INPUT_SINGLES:
+        p = root / s
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("battery,n_common\n" if s.endswith(".csv") else "{}")
+    for t in dvf.PARENT_INPUT_TREES:
+        d = root / t
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "unit_a.json").write_text("{}")
+    return root
+
+
+def test_stage_parent_inputs_skips_when_all_present(tmp_path, monkeypatch, capsys):
+    """A complete local checkout (VM smoke / pod git lane) short-circuits
+    BEFORE any Hub call — the [ -f ]-style idempotence guard."""
+    root = _parent_inputs_fixture(tmp_path / "eval")
+
+    def _boom(*a, **k):
+        raise AssertionError("Hub call on a complete local checkout")
+
+    monkeypatch.setattr("huggingface_hub.HfApi.repo_info", _boom)
+    assert dvf.cmd_stage_parent_inputs(argparse.Namespace(parent_inputs_root=root)) == 0
+    assert "— skip" in capsys.readouterr().out
+
+
+def test_stage_parent_inputs_fetches_missing_and_fails_loud(tmp_path, monkeypatch):
+    """Fresh-lane shape (fellows rsync: no eval_results/ at all): every
+    mirrored file stages to its exact consumed rel path; an incomplete HF
+    mirror is a RuntimeError, never a silent skip (the consumers'
+    exists/WARN guards would silently drop the rung conditioning)."""
+    import shutil
+    import types
+
+    from explore_persona_space.orchestrate import hub
+
+    src = _parent_inputs_fixture(tmp_path / "src")
+    rels = dvf._parent_input_rel_paths_local(src)
+
+    monkeypatch.setattr(
+        "huggingface_hub.HfApi.repo_info",
+        lambda self, repo_id, repo_type=None: types.SimpleNamespace(sha="0" * 40),
+    )
+    monkeypatch.setattr(
+        hub,
+        "list_hf_files_under_path",
+        lambda api, repo_id, path, *, repo_type="model", revision=None: [
+            f"{dvf.PARENT_INPUTS_HF_PREFIX}/{r}" for r in rels
+        ],
+    )
+
+    def fake_stage_hub_file(
+        repo_id,
+        path_in_repo,
+        target,
+        *,
+        repo_type="dataset",
+        revision=None,
+        token=None,
+        overwrite=False,
+    ):
+        rel = path_in_repo.removeprefix(dvf.PARENT_INPUTS_HF_PREFIX + "/")
+        target = Path(target)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src / rel, target)
+        return target
+
+    monkeypatch.setattr(hub, "stage_hub_file", fake_stage_hub_file)
+    fresh = tmp_path / "fresh"
+    assert dvf.cmd_stage_parent_inputs(argparse.Namespace(parent_inputs_root=fresh)) == 0
+    for r in rels:
+        assert (fresh / r).is_file(), r
+
+    # incomplete mirror (digest CSV absent from the listing) -> fail-loud
+    monkeypatch.setattr(
+        hub,
+        "list_hf_files_under_path",
+        lambda api, repo_id, path, *, repo_type="model", revision=None: [
+            f"{dvf.PARENT_INPUTS_HF_PREFIX}/{r}"
+            for r in rels
+            if r != "analyzer/dvf_unit_digest.csv"
+        ],
+    )
+    with pytest.raises(RuntimeError, match="mirror incomplete"):
+        dvf.cmd_stage_parent_inputs(argparse.Namespace(parent_inputs_root=tmp_path / "fresh2"))
+
+
+def test_parent_input_rel_paths_local_fails_loud_on_gaps(tmp_path):
+    root = _parent_inputs_fixture(tmp_path / "eval")
+    assert set(dvf.PARENT_INPUT_SINGLES) <= set(dvf._parent_input_rel_paths_local(root))
+    (root / dvf.PARENT_INPUT_SINGLES[0]).unlink()
+    with pytest.raises(RuntimeError, match="singles missing"):
+        dvf._parent_input_rel_paths_local(root)
+
+
+def test_dispatch_leg_stages_parent_inputs_before_fence():
+    """Ordering pin: the wellposed leg stages parent inputs BEFORE the fence
+    phase (which open()s the digest CSV — the fellows job 15724 crash site)."""
+    sh = (Path(dvf.REPO_ROOT) / "scripts/issue1689_dispatch.sh").read_text()
+    body = sh[sh.index("run_phase_derived_vs_free_wellposed()") :]
+    assert body.index("--phase stage-parent-inputs") < body.index("--phase fence")
+    # the staged set covers the leg's committed-input classes
+    assert "analyzer/dvf_unit_digest.csv" in dvf.PARENT_INPUT_SINGLES
+    assert "crossmodel_pairs/ladder_crossmodel_L19.json" in dvf.PARENT_INPUT_SINGLES
+    assert "derived_vs_free_B/pairs" in dvf.PARENT_INPUT_TREES
+    assert "crossmodel_pairs/crossmodel_structure/pairs" in dvf.PARENT_INPUT_TREES

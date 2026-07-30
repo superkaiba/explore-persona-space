@@ -526,6 +526,18 @@ run_phase_derived_vs_free_wellposed() {
     uv run python scripts/issue1689_derived_vs_free.py --phase stage \
         --store-root "$dvf_store" "${stage_args[@]}"
 
+    # Parent-inputs staging (#734 upload-first; fellows job 15724 crash-fix):
+    # the fellows/SLURM rsync lane excludes eval_results/ wholesale
+    # (backends/slurm.py RSYNC_INCLUDE_PATHS), so the parent round's committed
+    # inputs — the fence digest CSV, the ladder JSONs, and the paired digest's
+    # ambient per-unit trees — never reach the node from git. Idempotent: a
+    # git checkout (VM smoke / pod) has them all and skips with no Hub call;
+    # fail-loud on an incomplete HF mirror (the downstream consumers'
+    # exists/WARN guards would otherwise SILENTLY skip the rung conditioning).
+    echo "[phase=wp_stage_parent_inputs]"
+    uv run python scripts/issue1689_derived_vs_free.py --phase stage-parent-inputs \
+        --parent-inputs-root "$EVAL_ROOT"
+
     # Width derives from DETECTED GPUs (no smoke-conditional narrowing; CVD is
     # pinned per shard in the launcher env below — the #545 clobber rule).
     local ngpu

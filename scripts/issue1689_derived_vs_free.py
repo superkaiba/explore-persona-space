@@ -82,6 +82,27 @@ DATA_REPO = "superkaiba1/explore-persona-space-data"
 PINNED_STORE_REVISION = "d1010a25f81ce184f68a9cc0ed49bce9736b80dd"
 STORE_HF_PREFIX = f"{HF_DATA_PREFIX}/analysis_tensors"
 BUNDLE_HF_PREFIX = f"{HF_DATA_PREFIX}/derived_vs_free/analysis_tensors"
+PARENT_INPUTS_HF_PREFIX = f"{HF_DATA_PREFIX}/parent_inputs"
+# Committed parent-round eval_results inputs the wellposed leg consumes. The
+# fellows/SLURM lane rsyncs only RSYNC_INCLUDE_PATHS (eval_results/ excluded
+# wholesale, backends/slurm.py), so these never reach the node from git —
+# they are mirrored on the data repo (--phase upload-parent-inputs, run once
+# VM-side from a git checkout) and staged at leg entry
+# (--phase stage-parent-inputs): the #734 upload-first remedy for the
+# fellows job 15724 crash (FileNotFoundError in cmd_fence on the digest CSV).
+# All paths are relative to eval_results/issue_1689/.
+PARENT_INPUT_SINGLES = (
+    "analyzer/dvf_unit_digest.csv",  # cmd_fence --digest-csv + paired-digest join
+    "crossmodel_pairs/ladder_crossmodel_L19.json",  # cms --crossmodel-ladder-json
+    "ladder/ladder_Qwen_Qwen2.5-7B_L19.json",  # cmd_merge/cms --parent-ladder-dir
+    "ladder/ladder_Qwen_Qwen2.5-7B-Instruct_L19.json",
+)
+PARENT_INPUT_TREES = (
+    "derived_vs_free_B/pairs",  # paired-digest ambient dvf units (+ fence pilot)
+    "crossmodel_pairs/pairs",  # paired-digest ambient xm units
+    "context_map_structure/pairs",  # paired-digest ambient cms units
+    "crossmodel_pairs/crossmodel_structure/pairs",  # paired-digest ambient xms units
+)
 TRUNCATION_RANKS = (32, 128, 512)  # + per-fold eff-rank (scope item 2)
 RANK_LABELS = ("r32", "r128", "r512", "effrank")
 BATTERY_VERSION = "dvf-v1"
@@ -1288,6 +1309,129 @@ def cmd_stage(args) -> int:
     return 0
 
 
+def _parent_input_rel_paths_local(root: Path) -> list[str]:
+    """Enumerate the parent-input set from a git checkout; fail-loud on gaps."""
+    missing = [s for s in PARENT_INPUT_SINGLES if not (root / s).is_file()]
+    if missing:
+        raise RuntimeError(f"parent-input singles missing under {root}: {missing}")
+    rels: list[str] = list(PARENT_INPUT_SINGLES)
+    for tree in PARENT_INPUT_TREES:
+        found = sorted((root / tree).glob("*.json"))
+        if not found:
+            raise RuntimeError(f"parent-input tree empty under {root}: {tree}")
+        rels.extend(str(p.relative_to(root)) for p in found)
+    return rels
+
+
+def cmd_upload_parent_inputs(args) -> int:
+    """Mirror the committed parent eval_results inputs to the data repo
+    (upload-first, #734): copy the exact enumerated set into a temp staging
+    dir (no eligibility filter — the whole enumerated set uploads), ONE
+    upload_folder commit, exact-set verify. Run VM-side from a git checkout;
+    idempotent (identical bytes re-upload as a Hub no-op)."""
+    import shutil
+    import tempfile
+
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    root = args.parent_inputs_root
+    rels = _parent_input_rel_paths_local(root)
+    with tempfile.TemporaryDirectory(prefix="i1689-parent-inputs-") as td:
+        stage = Path(td)
+        for rel in rels:
+            dst = stage / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(root / rel, dst)
+        url = hub._upload(
+            stage,
+            DATA_REPO,
+            "dataset",
+            PARENT_INPUTS_HF_PREFIX,
+            raise_on_error=True,
+        )
+    expected = [f"{PARENT_INPUTS_HF_PREFIX}/{r}" for r in rels]
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    missing = hub.verify_repo_paths_uploaded(
+        api, DATA_REPO, expected, path_in_repo=PARENT_INPUTS_HF_PREFIX, repo_type="dataset"
+    )
+    if missing:
+        raise RuntimeError(
+            f"parent-inputs upload verify FAILED: {len(missing)} missing (first {missing[:3]})"
+        )
+    print(
+        f"[wp-parent-inputs] {len(expected)} files verified at {url or PARENT_INPUTS_HF_PREFIX}",
+        flush=True,
+    )
+    return 0
+
+
+def cmd_stage_parent_inputs(args) -> int:
+    """Stage the parent-round committed inputs from the HF mirror (#734).
+
+    Runs at wellposed-leg entry BEFORE the fence phase. Idempotent: a git
+    checkout (VM smoke / pod) has every file and skips with NO Hub call.
+    Per-file exact-dest staging via hub.stage_hub_file (the #1774
+    mirror-root trap applies to stage_hub_prefix, not here); one revision
+    resolved for the whole set. Fail-loud on an incomplete mirror — the
+    downstream consumers' exists/WARN guards would otherwise SILENTLY skip
+    the ladder rung conditioning instead of crashing.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    root = args.parent_inputs_root
+    have_singles = [s for s in PARENT_INPUT_SINGLES if (root / s).is_file()]
+    tree_counts = {t: len(list((root / t).glob("*.json"))) for t in PARENT_INPUT_TREES}
+    if len(have_singles) == len(PARENT_INPUT_SINGLES) and all(tree_counts.values()):
+        print(
+            f"[wp-stage-parent-inputs] all parent inputs present under {root} "
+            f"({len(have_singles)} singles + {sum(tree_counts.values())} tree files) — skip",
+            flush=True,
+        )
+        return 0
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    revision = hub.retry_transient(
+        lambda: api.repo_info(DATA_REPO, repo_type="dataset").sha,
+        what=f"repo_info({DATA_REPO})",
+    )
+    listed = hub.list_hf_files_under_path(
+        api, DATA_REPO, PARENT_INPUTS_HF_PREFIX, repo_type="dataset", revision=revision
+    )
+    rels = sorted(f.removeprefix(PARENT_INPUTS_HF_PREFIX + "/") for f in listed)
+    relset = set(rels)
+    absent = [s for s in PARENT_INPUT_SINGLES if s not in relset]
+    bare = [t for t in PARENT_INPUT_TREES if not any(r.startswith(t + "/") for r in rels)]
+    if absent or bare:
+        raise RuntimeError(
+            f"parent-inputs HF mirror incomplete at {PARENT_INPUTS_HF_PREFIX}: "
+            f"missing singles {absent} / empty trees {bare} — run "
+            "--phase upload-parent-inputs from a git checkout first"
+        )
+    todo = [(f"{PARENT_INPUTS_HF_PREFIX}/{r}", root / r) for r in rels if not (root / r).is_file()]
+
+    def _one(item):
+        repo_path, target = item
+        hub.stage_hub_file(DATA_REPO, repo_path, target, repo_type="dataset", revision=revision)
+        print(f"[wp-stage-parent-inputs] staged {target}", flush=True)
+
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        list(ex.map(_one, todo))
+    still = [s for s in PARENT_INPUT_SINGLES if not (root / s).is_file()]
+    if still:
+        raise RuntimeError(f"parent-input staging incomplete after fetch: {still}")
+    print(
+        f"[wp-stage-parent-inputs] fetched {len(todo)} files (of {len(rels)} mirrored, "
+        f"rev {revision[:12]}) into {root}",
+        flush=True,
+    )
+    return 0
+
+
 def cmd_upload(args) -> int:
     """One upload_folder commit per out-root bundles dir + exact-set verify."""
     from huggingface_hub import HfApi
@@ -1428,6 +1572,8 @@ def main() -> int:
         "--phase",
         choices=[
             "stage",
+            "stage-parent-inputs",
+            "upload-parent-inputs",
             "gate1",
             "pairs",
             "nulls",
@@ -1504,6 +1650,13 @@ def main() -> int:
     ap.add_argument(
         "--parent-ladder-dir", type=Path, default=Path("eval_results/issue_1689/ladder")
     )
+    ap.add_argument(
+        "--parent-inputs-root",
+        type=Path,
+        default=REPO_ROOT / "eval_results/issue_1689",
+        help="stage/upload-parent-inputs: local eval_results root the parent-input "
+        "set (PARENT_INPUT_SINGLES + PARENT_INPUT_TREES) is rooted at",
+    )
     ap.add_argument("--write-pairs-out", type=Path, default=None)
     args = ap.parse_args()
 
@@ -1525,6 +1678,8 @@ def main() -> int:
     )
     dispatch = {
         "stage": cmd_stage,
+        "stage-parent-inputs": cmd_stage_parent_inputs,
+        "upload-parent-inputs": cmd_upload_parent_inputs,
         "gate1": cmd_gate1,
         "pairs": cmd_pairs,
         "nulls": cmd_nulls,
