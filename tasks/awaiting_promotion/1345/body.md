@@ -1,7 +1,7 @@
 ---
-title: Narrative-story framing collapses the assistant context→answer map on identical
-  conversations at every probed read position, while chat and plain-text framings
-  share one operator up to linear coordinates (MODERATE confidence)
+title: Narrative-story framing weakens the assistant context→answer map on identical
+  conversations rather than eliminating it, while chat and plain-text framings share
+  one operator up to linear coordinates (MODERATE confidence)
 kind: experiment
 tags:
 - followup-manual
