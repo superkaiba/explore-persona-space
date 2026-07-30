@@ -43,7 +43,7 @@ OMIT `--version` — the posted top-level version auto-derives `max(existing)+1`
 
 ```bash
 uv run python scripts/task.py view <N> --json | \
-  jq '[.events[] | select(.kind == "epm:code-review")] | last | {kind, version, ts, head: (.note | split("\n")[0])}'
+  jq '[.events[] | select(.kind == "epm:code-review")] | last | {kind, version, ts, head: ((.note // "") | split("\n")[0])}'
 ```
 
 Confirm the LAST `epm:code-review` row's `head` is `<!-- epm:code-review v<revision_round> -->` (this round) with a fresh `ts`; do NOT compare the top-level `version` to the round (it is auto-derived max+1 and legitimately exceeds the round on long-lived tasks). Only then claim posted. Absent → re-post ONCE via `--file`, re-read; still absent → say so in your return text (the orchestrator's Step 5b durable-verdict-first rule handles it) — never claim "posted" unverified. Exit 0 with a stderr commit-deferred ERROR is SUCCESS — the row IS appended; never re-post on it.
