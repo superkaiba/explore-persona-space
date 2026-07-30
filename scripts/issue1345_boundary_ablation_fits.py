@@ -92,44 +92,77 @@ V1_MATCHED_CHAT_DOC = {"context": 0.2426, "prefix": 0.1313}
 V1_STEM_FORMAT = "stories_paired"
 V1_SLOT_INDEX = {"prefix": 0, "context": 1}
 
-# Comparator stores staged by issue1345_prefetch_reuse.py.
+# PARENT comparator stores staged by issue1345_prefetch_reuse.py (2 slots,
+# Y_MEAN only) — retained for the V1-PARITY comparator read whose committed
+# value this round cross-checks. The X x Y grid comparators are the round's own
+# bnd_chat / bnd_ntpl stores below.
 COMPARATOR_FORMAT = {"r1_chat": "chat", "r2_no_template": "naturalistic"}
 COMPARATOR_TURN_INDEX = 1  # r1/r2 single-turn track-S rows sort [u1, a1]
-# Which store slot each mapping arm reads in the r1/r2/V1 stores.
+# Round-own X x Y comparator stores (issue1345_boundary_ablation_capture
+# --comparator): same 5 slots + 2 Y targets as every ablation arm.
+BND_COMPARATORS = bc.COMPARATORS  # ("chat", "no_template")
+# Which store slot each mapping arm reads in the PARENT r1/r2/V1 stores.
 MAP_ARM_SLOT = dict(c.ARM_SLOT_INDEX)  # {"prefix": 0, "context": 1}
-# Which mapping arm each boundary-store slot belongs to (both arms are covered).
+# Which mapping arm each boundary-store slot belongs to (both arms are covered:
+# `prefix` is the prefix-arm map; every ctx_*/x_* slot is a context-arm map).
 SLOT_MAP_ARM = {
     "prefix": "prefix",
     "ctx_qend": "context",
     "context": "context",
     "ctx_preans": "context",
+    "x_straddle": "context",
 }
+# Short tags for the two Y targets in cell ids.
+Y_TAG = {bc.Y_MEAN: "ymean", bc.Y_BOUNDARY: "ybnd"}
 
 
 # ---------------------------------------------------------------------------
 # Cell registry
 # ---------------------------------------------------------------------------
-def arm_cells(arm: str) -> list[dict]:
-    """The arm's own 4 slot cells (one per read position)."""
+def grid_cell_id(store_key: str, slot: str, y: str) -> str:
+    """Cell id for one (store, X slot, Y target) grid point."""
+    tag = bg.ARM_SLUG.get(store_key, store_key)
+    return f"R_{bg.MODEL_KEY}_bnd_{tag}_{slot}__{Y_TAG[y]}"
+
+
+def grid_cells(store_key: str) -> list[dict]:
+    """The store's full X x Y grid: every BND slot crossed with both Y targets.
+
+    ``store_key`` is an ablation arm (V2/V3/V4) or a round-own comparator
+    (``chat`` / ``no_template``) — both carry the identical 5-slot x 2-target
+    store shape, which is what makes the grid comparable across them.
+    """
     return [
         {
-            "cell_id": f"R_{bg.MODEL_KEY}_bnd_{bg.ARM_SLUG[arm]}_{slot}",
+            "cell_id": grid_cell_id(store_key, slot, y),
             "model_key": bg.MODEL_KEY,
-            "format_key": bc.format_key(arm),
+            "format_key": bc.format_key(store_key),
             "track": bc.TRACK,
             "slot_index": idx,
-            "target_turn_index": 0,
-            "regime": bc.format_key(arm),
-            "bnd_arm": arm,
+            "target_turn_index": bc.Y_TARGET_INDEX[y],
+            "regime": bc.format_key(store_key),
+            "bnd_arm": store_key,
             "slot": slot,
+            "y_target": y,
             "arm": SLOT_MAP_ARM[slot],
         }
         for idx, slot in enumerate(bc.BND_SLOT_ORDER)
+        for y in bc.Y_SPAN_ORDER
     ]
 
 
+def arm_cells(arm: str) -> list[dict]:
+    """The ablation arm's own X x Y grid cells."""
+    return grid_cells(arm)
+
+
 def comparator_cells(arm: str, label: str) -> list[dict]:
-    """r1/r2 comparator cells for one arm (both mapping arms), matched-row."""
+    """PARENT r1/r2 comparator cells for one arm (both mapping arms), matched-row.
+
+    These are the V1-PARITY reads (2-slot parent stores, Y_MEAN only) whose
+    committed values this round cross-checks; the X x Y comparator grid lives on
+    the round's own bnd_chat / bnd_ntpl stores (``grid_cells``).
+    """
     return [
         {
             "cell_id": f"R_{bg.MODEL_KEY}_{label}_bnd_{bg.ARM_SLUG[arm]}_{map_arm}",
@@ -141,6 +174,7 @@ def comparator_cells(arm: str, label: str) -> list[dict]:
             "regime": COMPARATOR_FORMAT[label],
             "bnd_arm": arm,
             "slot": map_arm,
+            "y_target": bc.Y_MEAN,
             "arm": map_arm,
         }
         for map_arm in c.ARMS
@@ -160,6 +194,7 @@ def v1_matched_cells(arm: str) -> list[dict]:
             "regime": V1_STEM_FORMAT,
             "bnd_arm": arm,
             "slot": map_arm,
+            "y_target": bc.Y_MEAN,
             "arm": map_arm,
         }
         for map_arm in c.ARMS
@@ -179,10 +214,11 @@ def arm_matched_cells(arm: str) -> list[dict]:
             "slot_index": list(bc.BND_SLOT_ORDER).index(
                 "prefix" if map_arm == "prefix" else bc.HEADLINE_SLOT
             ),
-            "target_turn_index": 0,
+            "target_turn_index": bc.Y_TARGET_INDEX[bc.Y_MEAN],
             "regime": bc.format_key(arm),
             "bnd_arm": arm,
             "slot": map_arm,
+            "y_target": bc.Y_MEAN,
             "arm": map_arm,
         }
         for map_arm in c.ARMS
@@ -450,12 +486,139 @@ def _load_preds(preds_dir: Path, cell_id: str) -> tuple[np.ndarray, np.ndarray, 
 
 
 # ---------------------------------------------------------------------------
-# Leg 4 — story <-> chat reparameterization ladder (shared factorization)
+# Leg 4a — X x Y grid with the X-side factorization SHARED across Y
 # ---------------------------------------------------------------------------
 def _t(a: np.ndarray):
     import torch
 
     return torch.as_tensor(np.asarray(a), dtype=torch.float64)
+
+
+def xy_grid(
+    bundle: dict,
+    store_key: str,
+    *,
+    allow: list[str] | None,
+    n_folds: int,
+    seed: int,
+    null_draws: int,
+    n_boot: int,
+) -> dict:
+    """Held-out R^2 for every (X slot, Y target) pair, X factorization SHARED.
+
+    ONE eigh(Gram) per (X slot, fold) — `ma._ridge_prep` — is reused by BOTH Y
+    targets and by every shuffle-null draw at that slot: the lambda grid rides
+    the cached factorization as diagonal filter rescalings, and a null draw is a
+    Y-permutation against the SAME prep. So the grid costs one X-side
+    factorization per slot/fold, not one per (slot, target) — the addendum's
+    "X-side factorizations shared across Y".
+
+    Returns per-cell pooled R^2 + conversation-level bootstrap CI + the
+    shuffle-null band, keyed ``"<slot>|<y>"``.
+    """
+    import issue825_map_alignment as ma
+    import torch
+
+    arrays = bundle["arrays"]
+    slots = np.asarray(arrays["slots"], dtype=np.float32)
+    profiles = np.asarray(arrays["profiles"], dtype=np.float32)
+    conv_all = np.asarray([str(x) for x in bundle["sidecar"].get("conv_ids", [])])
+    assert slots.shape[1] == len(bc.BND_SLOT_ORDER), (slots.shape, bc.BND_SLOT_ORDER)
+    assert profiles.shape[1] == len(bc.Y_SPAN_ORDER), (profiles.shape, bc.Y_SPAN_ORDER)
+    keep = np.ones(len(conv_all), bool)
+    if allow is not None:
+        keep = np.isin(conv_all, np.asarray(sorted(set(allow))))
+        assert keep.any(), f"{store_key}: xy_grid allowlist selected zero rows"
+    conv = conv_all[keep]
+    folds = fc._cv_folds(conv, n_folds, seed)
+    rng = np.random.default_rng(seed + 31)
+    out: dict[str, dict] = {}
+    for si, slot in enumerate(bc.BND_SLOT_ORDER):
+        X = _t(slots[keep][:, si, LAYER, :])
+        Ys = {y: _t(profiles[keep][:, bc.Y_TARGET_INDEX[y], LAYER, :]) for y in bc.Y_SPAN_ORDER}
+        preds = {y: np.zeros((len(conv), Ys[y].shape[1]), np.float64) for y in bc.Y_SPAN_ORDER}
+        fitted = np.zeros(len(conv), bool)
+        null_acc = {
+            y: [{"res": 0.0, "tot": 0.0} for _ in range(null_draws)] for y in bc.Y_SPAN_ORDER
+        }
+        for k in range(n_folds):
+            tr, te = folds != k, folds == k
+            if te.sum() == 0 or tr.sum() < 3:
+                continue
+            trt, tet = torch.as_tensor(tr), torch.as_tensor(te)
+            # ONE factorization per (slot, fold) — reused across both Y targets
+            # AND every null draw below.
+            prep = ma._ridge_prep(X[trt])
+            fitted[te] = True
+            for y, Y in Ys.items():
+                preds[y][te] = ma._ridge_predict(prep, Y[trt], X[tet]).cpu().numpy()
+                mu = Y[trt].mean(0)
+                tot = float(((Y[tet] - mu) ** 2).sum())
+                for d in range(null_draws):
+                    perm = rng.permutation(int(tr.sum()))
+                    p_null = ma._ridge_predict(prep, Y[trt][torch.as_tensor(perm)], X[tet])
+                    null_acc[y][d]["res"] += float(((Y[tet] - p_null) ** 2).sum())
+                    null_acc[y][d]["tot"] += tot
+        if not fitted.any():
+            for y in bc.Y_SPAN_ORDER:
+                out[f"{slot}|{y}"] = {"skipped": "no usable folds"}
+            continue
+        for y, Y in Ys.items():
+            true = Y.cpu().numpy()[fitted]
+            pred = preds[y][fitted]
+            rec = dict(
+                c.conv_bootstrap_r2(pred, true, conv[fitted], n_boot=n_boot, seed=seed + 400 + si)
+            )
+            vals = [
+                1.0 - a["res"] / a["tot"] if a["tot"] > 1e-12 else float("nan") for a in null_acc[y]
+            ]
+            vals = [v for v in vals if v == v]
+            rec["shuffle_null"] = {
+                "n_draws": int(null_draws),
+                "null_mean": float(np.mean(vals)) if vals else float("nan"),
+                "null_p975": float(np.quantile(vals, 0.975)) if vals else float("nan"),
+                "observed_above_null_p975": (
+                    bool(rec["r2"] > np.quantile(vals, 0.975)) if vals else None
+                ),
+            }
+            rec["knn"] = {
+                m: mb.knn_retrieval(pred, true, ks=KNN_KS, metric=m)
+                for m in ("euclidean", "cosine")
+            }
+            if pred.shape[1] == true.shape[1]:
+                Xn = X.cpu().numpy()[fitted]
+                ib = np.zeros_like(true)
+                ib_fit = np.zeros(len(true), bool)
+                sub_folds = folds[fitted]
+                for k in range(n_folds):
+                    tr, te = sub_folds != k, sub_folds == k
+                    if te.sum() == 0 or tr.sum() < 3 or Xn.shape[1] != true.shape[1]:
+                        continue
+                    ib[te] = mb.identity_bias_predict(Xn[tr], true[tr], Xn[te])
+                    ib_fit[te] = True
+                if ib_fit.any():
+                    rec["identity_bias"] = c.conv_bootstrap_r2(
+                        ib[ib_fit],
+                        true[ib_fit],
+                        conv[fitted][ib_fit],
+                        n_boot=n_boot,
+                        seed=seed + 700 + si,
+                    )
+            out[f"{slot}|{y}"] = rec
+    return {
+        "store": store_key,
+        "layer": LAYER,
+        "n_folds": int(n_folds),
+        "n_rows": int(keep.sum()),
+        "n_groups": int(len(np.unique(conv))),
+        "null_draws": int(null_draws),
+        "x_slots": list(bc.BND_SLOT_ORDER),
+        "y_targets": list(bc.Y_SPAN_ORDER),
+        "x_grid_slots": list(bc.X_GRID_SLOTS),
+        "factorization": "one eigh(Gram) per (X slot, fold), shared across both Y "
+        "targets and every shuffle-null draw",
+        "cells": out,
+    }
 
 
 def reparam_ladder(src: dict, tgt: dict, *, n_folds: int, seed: int, null_draws: int) -> dict:
@@ -615,13 +778,15 @@ def build_verdict(
     cell_summary: dict[str, dict],
     paired: dict,
     reparam: dict,
+    grid: dict,
+    comparator_grids: dict[str, dict],
     *,
     n_kept: int,
     n_intersection: int | None,
 ) -> dict:
     """Per-arm verdict record: the headline read against every reference."""
     slug = bg.ARM_SLUG[arm]
-    own = cell_summary.get(f"R_{bg.MODEL_KEY}_bnd_{slug}_{bc.HEADLINE_SLOT}", {})
+    own = cell_summary.get(grid_cell_id(arm, bc.HEADLINE_SLOT, bc.Y_MEAN), {})
     anchor = _read_committed(V1_ANCHOR_FILES["context"], LAYER)
     chat_anchor = _read_committed(V1_MATCHED_CHAT_FILES["context"], LAYER)
     chat_cell = cell_summary.get(f"R_{bg.MODEL_KEY}_r1_chat_bnd_{slug}_context", {})
@@ -637,7 +802,7 @@ def build_verdict(
             cell_summary[cid]["cell"]["slot"]: {
                 k: cell_summary[cid].get(k) for k in ("r2", "ci", "null_p975", "skill_over_mean")
             }
-            for cid in (f"R_{bg.MODEL_KEY}_bnd_{slug}_{s}" for s in bc.BND_SLOT_ORDER)
+            for cid in (grid_cell_id(arm, s, bc.Y_MEAN) for s in bc.BND_SLOT_ORDER)
             if cid in cell_summary and "cell" in cell_summary[cid]
         },
         "headline": {k: own.get(k) for k in ("r2", "ci", "null_p975", "skill_over_mean")},
@@ -660,6 +825,20 @@ def build_verdict(
         },
         "paired_deltas": paired,
         "reparam_story_vs_chat": reparam,
+        # The consolidated X x Y measurement grid (addendum): the arm's own grid
+        # plus the same grid on each round-own comparator store, so every
+        # (read position x target) pair is comparable arm-vs-comparator.
+        "xy_grid": {
+            "x_clean_slot": bc.X_CLEAN_SLOT,
+            "x_straddle_slot": bc.X_STRADDLE_SLOT,
+            "y_targets": list(bc.Y_SPAN_ORDER),
+            "transition_appended_verbatim": (
+                bc.TRANSITION[arm]["closer"] + bc.TRANSITION[arm]["suffix"]
+            ),
+            "transition_read_anchor": bc.TRANSITION[arm]["read_anchor"],
+            "arm": grid,
+            "comparators": comparator_grids,
+        },
     }
     return verdict
 
@@ -682,7 +861,9 @@ def _import_check() -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--phase", choices=("all", "cells", "reparam", "verdict"), default="all")
+    ap.add_argument(
+        "--phase", choices=("all", "cells", "grid", "reparam", "verdict"), default="all"
+    )
     ap.add_argument("--arms", default=",".join(bg.ARM_SLUG[a] for a in bg.GEN_ARMS))
     ap.add_argument(
         "--reparam-arms", default=",".join(bg.ARM_SLUG[a] for a in DEFAULT_REPARAM_ARMS)
@@ -729,10 +910,16 @@ def main() -> None:
         label: store_present(args.turnstore_dir, bg.MODEL_KEY, fmt)
         for label, fmt in COMPARATOR_FORMAT.items()
     }
+    # Round-own X x Y comparator stores (capture --comparator chat|no_template).
+    bnd_comparators_available = {
+        key: store_present(args.turnstore_dir, bg.MODEL_KEY, bc.format_key(key))
+        for key in BND_COMPARATORS
+    }
     print(
         f"[fits] arms={[bg.ARM_SLUG[a] for a in arms]} "
         f"kept={{{', '.join(f'{bg.ARM_SLUG[a]}:{len(v)}' for a, v in arm_convs.items())}}} "
-        f"v1_store={v1_available} comparators={comparators_available}",
+        f"v1_store={v1_available} parent_comparators={comparators_available} "
+        f"xy_comparators={bnd_comparators_available}",
         flush=True,
     )
 
@@ -762,6 +949,14 @@ def main() -> None:
                     "paired V1 refits skipped",
                     flush=True,
                 )
+    # The X x Y grid on the round-own comparator stores: fit ONCE per comparator
+    # (not per arm) over the union of the arms' kept conversations, which is
+    # exactly the row set those stores were captured on.
+    for key, present in bnd_comparators_available.items():
+        if not present:
+            print(f"[fits] X x Y comparator store {key} absent — grid cells skipped", flush=True)
+            continue
+        cells += grid_cells(key)
 
     bundles: dict[tuple[str, str], dict] = {}
     for cell in cells:
@@ -806,7 +1001,7 @@ def main() -> None:
         for arm in arms:
             slug = bg.ARM_SLUG[arm]
             reads: dict[str, tuple] = {}
-            own = _load_preds(args.preds_dir, f"R_{bg.MODEL_KEY}_bnd_{slug}_{bc.HEADLINE_SLOT}")
+            own = _load_preds(args.preds_dir, grid_cell_id(arm, bc.HEADLINE_SLOT, bc.Y_MEAN))
             chat = _load_preds(args.preds_dir, f"R_{bg.MODEL_KEY}_r1_chat_bnd_{slug}_context")
             nt = _load_preds(args.preds_dir, f"R_{bg.MODEL_KEY}_r2_no_template_bnd_{slug}_context")
             pairs: list[tuple[str, str]] = []
@@ -840,6 +1035,63 @@ def main() -> None:
                 }
             paired_by_arm[arm] = block
 
+    # X x Y grid with the X-side factorization SHARED across Y (addendum).
+    grid_by_store: dict[str, dict] = {}
+    if args.phase in ("all", "cells", "grid", "verdict"):
+        grid_stores = list(arms) + [k for k, ok in bnd_comparators_available.items() if ok]
+        for key in grid_stores:
+            bkey = (bg.MODEL_KEY, bc.format_key(key))
+            if bkey not in bundles:
+                grid_by_store[key] = {"skipped": f"store {bc.format_key(key)} not staged"}
+                continue
+            ids = arm_convs.get(key)
+            if args.smoke:
+                probe = ids if ids is not None else store_conv_ids(args.turnstore_dir, *bkey)
+                reason = degenerate_fold_reason(
+                    np.asarray(probe), n_folds=args.n_folds, seed=args.seed
+                )
+                if reason:
+                    grid_by_store[key] = {"skipped": f"smoke: {reason}"}
+                    print(f"[grid][smoke] SKIP {key}: {reason}", flush=True)
+                    continue
+            grid_by_store[key] = xy_grid(
+                bundles[bkey],
+                key,
+                allow=ids,
+                n_folds=args.n_folds,
+                seed=args.seed,
+                null_draws=null_draws,
+                n_boot=n_boot,
+            )
+            got = grid_by_store[key].get("cells", {})
+            head = got.get(f"{bc.X_CLEAN_SLOT}|{bc.Y_MEAN}", {})
+            print(
+                f"[grid] {key}: {len(got)} X x Y cells (x_clean|y_mean R2={head.get('r2')})",
+                flush=True,
+            )
+        c.write_json(
+            args.out_dir / "xy_grid.json",
+            {
+                "metadata": c.metadata(
+                    args.seed, len(grid_by_store), "scripts/issue1345_boundary_ablation_fits.py"
+                ),
+                "round": bg.ROUND_VARIANT,
+                "layer": LAYER,
+                "x_slots": list(bc.BND_SLOT_ORDER),
+                "x_clean_slot": bc.X_CLEAN_SLOT,
+                "x_straddle_slot": bc.X_STRADDLE_SLOT,
+                "y_targets": list(bc.Y_SPAN_ORDER),
+                "transition_suffixes_verbatim": {
+                    k: {
+                        "appended_verbatim": v["closer"] + v["suffix"],
+                        "read_anchor": v["read_anchor"],
+                    }
+                    for k, v in bc.TRANSITION.items()
+                },
+                "stores": grid_by_store,
+            },
+        )
+
     # Reparameterization ladder, both directions, story arm <-> chat.
     reparam_by_arm: dict[str, dict] = {}
     if args.phase in ("all", "reparam", "verdict"):
@@ -854,7 +1106,11 @@ def main() -> None:
                     "skipped": f"shared conversation set {len(ids)} < n_folds {args.n_folds}"
                 }
                 continue
-            story_cell = next(cl for cl in arm_cells(arm) if cl["slot"] == bc.HEADLINE_SLOT)
+            story_cell = next(
+                cl
+                for cl in arm_cells(arm)
+                if cl["slot"] == bc.HEADLINE_SLOT and cl["y_target"] == bc.Y_MEAN
+            )
             chat_cell = next(
                 cl for cl in comparator_cells(arm, "r1_chat") if cl["slot"] == "context"
             )
@@ -909,6 +1165,8 @@ def main() -> None:
                 cell_summary,
                 paired_by_arm.get(arm, {}),
                 reparam_by_arm.get(arm, {"skipped": "reparam phase not run"}),
+                grid_by_store.get(arm, {"skipped": "grid phase not run"}),
+                {k: grid_by_store[k] for k in BND_COMPARATORS if k in grid_by_store},
                 n_kept=len(arm_convs[arm]),
                 n_intersection=(len(inter[arm]) if arm in inter else None),
             )
@@ -924,6 +1182,8 @@ def main() -> None:
                 "layer": LAYER,
                 "headline_slot": bc.HEADLINE_SLOT,
                 "slot_order": list(bc.BND_SLOT_ORDER),
+                "y_span_order": list(bc.Y_SPAN_ORDER),
+                "x_grid_slots": list(bc.X_GRID_SLOTS),
                 "n_folds": args.n_folds,
                 "seed": args.seed,
                 "null_draws": null_draws,
