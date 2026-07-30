@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jlens"
+version = "0.1.0"
+description = "Companion code for 'Verbalizable Representations Form a Global Workspace in Language Models'"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+dependencies = [
+    "torch",
+    "huggingface_hub",
+    "transformers>=5.5",
+    "numpy",
+]
+
+[project.urls]
+Repository = "https://github.com/anthropics/jacobian-lens"
+Paper = "https://transformer-circuits.pub/2026/workspace/index.html"
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff", "datasets"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501", "E741"]
+
+[tool.setuptools]
+packages = ["jlens"]
+
+[tool.setuptools.package-data]
+jlens = ["data/*"]

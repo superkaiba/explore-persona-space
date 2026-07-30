@@ -1,0 +1,1553 @@
+{
+  "commit": "3291f11d51",
+  "created": "2026-07-30T02:26:34Z",
+  "figsize": [
+    13.2,
+    5.2
+  ],
+  "points": [
+    {
+      "ordered pair-arm units": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ordered pair-arm units": 5.5,
+      "y": 9.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ordered pair-arm units": 60.5,
+      "y": 101.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ordered pair-arm units": 116.0,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "ordered pair-arm units": 1.0,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "ordered pair-arm units": 23.5,
+      "y": 43.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "ordered pair-arm units": 47.0,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "ordered pair-arm units": 2.5,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "ordered pair-arm units": "20",
+      "y": 30.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "ordered pair-arm units": 72.5,
+      "y": 75.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "ordered pair-arm units": 115.0,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "ordered pair-arm units": 13.0,
+      "y": 26.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "ordered pair-arm units": 5.5,
+      "y": 11.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.120540661364624,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.21587122330200978,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.973106513490903,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.26009473843265374,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1577830847610082,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.054016821925060056,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.08684193278612,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1956926249824732,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8214380330705657,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.2085452056116029,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.2092738347201726,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.0803968371058208,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.114901468875756,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.16549564284720825,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.12586829432186,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.22166421015811205,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.83636999837724,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.97816981267405,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.943151130662336,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.187776595093386,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.063300652835492,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.142015109839166,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.975102247484026,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.879985037585302,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.024017306286968,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8080795926858372,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1178300754375877,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.144157715676736,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.24978823967208813,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0579323356137085,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.23862904580058597,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.113558605637564,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.17483085931638118,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.935991425977143,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.2730005329260228,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.2071071307337575,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1602590388041793,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 3.172973293381767,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.18676317050678543,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 3.1224887387124554,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1392074582387868,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.865641031454865,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.4467784773964476,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.985357241639894,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.49119317467514434,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.7992736569463806,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.15905351860957886,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.847887376509721,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.18224306239780247,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.08054153942668,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.15486999318611255,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1076953485994396,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.12829414243665188,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.2057042822710524,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.06258618282973571,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9233631575807868,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.10779992732483791,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9430022706553423,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.0428878251859475,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9866045569613555,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.010539799964373445,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.863367397997086,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.16064673311159988,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8371654623476075,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.18554542898919366,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9893101675394108,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.036572558468341745,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.879840113582389,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.13954177746802615,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0747181576603047,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.17162941306309004,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9723468443038256,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.26507471280356887,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.146378406265448,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.3680810528209836,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.088116644880989,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1797910679667843,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.917441322208098,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.24465689172176874,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1461943126138885,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.2781160779219803,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1340963172985927,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.16313631475740004,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9504904867732767,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.15306427792937505,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9068643657293074,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.13511561585534723,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0802980217489893,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": 0.048001607123492496,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8414910927880963,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.07742850207856715,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8679596090890477,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.09646451013470203,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.7832393986904425,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.12970343416319807,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.126246726100941,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.17636183200223518,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0725343769004942,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.2212693940507292,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0902727665955874,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.18316412361832618,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.123520773649666,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.0383837293442061,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9819229412368695,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.16169322628142485,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0302461262192733,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.15574344082799396,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.841510679176169,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.28713402383568726,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8303932323558283,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.21068167095341037,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0740973031878076,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.17513786836990888,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9872823307029783,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1604456583251392,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.028703886851723,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.19473855850065552,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1165994972630513,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.156092761823365,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.05927606080026,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.2573393899743204,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.023574936289519,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.026051150727982,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 5.913738043147549,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.793559847209893,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.9479632121339406,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.97215565126224,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.874417256040593,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.95975260323884,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.4913831475140176,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.155497352237994,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.88293337378075,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.80565320634319,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 7.903808912489678,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.3955564604443285,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 5.909181253417341,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.088700581502944,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.071243266479835,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.025094147030163,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 3.124915212006822,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.3998951803799573,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.07229795774405,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.9479632121339406,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.958810219033632,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.138168969253055,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.85346808475939,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.789993312178899,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.819621058741282,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.097838114262439,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.98322598131061,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8509595827747848,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.0330252908185726,
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 3.00045970104548,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.3802998696470001,
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.847017325193795,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.086380965034204,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.976308761252573,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.9651600647048979,
+      "_kind": "scatter",
+      "_group": 105
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.947649339482453,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 106
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.912665319225066,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 107
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.057324340972311,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 108
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.939197548643492,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.4451991499112653,
+      "_kind": "scatter",
+      "_group": 109
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8185659644990845,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 110
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.831922596933026,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 111
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.2032349724017863,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.11465117334210909,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1797755039113471,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.030419853097483088,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0878711388767297,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.16894664797563988,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8969827830421886,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.15969720017755815,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.2064376060329984,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.06687533947892865,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.12265039774495,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.14021897248799223,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.095431683229958,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.17194335890579804,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.977719060943267,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.23008702043321066,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8997862872118699,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1493701251158261,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8224120233475397,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.10864491739376123,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1771450544792903,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.18794045452408617,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.980541567526789,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.266245571830829,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8690398805099013,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.061067185604998464,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9146209146262871,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.21048578198951473,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0348566103344343,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.2011679218440529,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.857780024493262,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.8564700457077714,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1569102850006452,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.029547618677658823,
+      "_kind": "scatter",
+      "_group": 128
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.113748593127493,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1315663206808789,
+      "_kind": "scatter",
+      "_group": 129
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.096563700618413,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.2332301031387325,
+      "_kind": "scatter",
+      "_group": 130
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9701209375010457,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.07963298279464401,
+      "_kind": "scatter",
+      "_group": 131
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.056015889909075,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.13713512951314744,
+      "_kind": "scatter",
+      "_group": 132
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.037003106321604,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.20503439599023304,
+      "_kind": "scatter",
+      "_group": 133
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0659325046841208,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.0752324496702319,
+      "_kind": "scatter",
+      "_group": 134
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 2.817155501301551,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.11803230954860529,
+      "_kind": "scatter",
+      "_group": 135
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.962955256955068,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.17141824554727697,
+      "_kind": "scatter",
+      "_group": 136
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.798310236499233,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.4618546814772069,
+      "_kind": "scatter",
+      "_group": 137
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.997355960467589,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 138
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.925138933426426,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 139
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.843590643101061,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 140
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.825497305797922,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 141
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.038563611758192,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 142
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.855060906156229,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 143
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.18705285208579,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 144
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.035666901468174,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 145
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 2.9326227139953285,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.11790557778361296,
+      "_kind": "scatter",
+      "_group": 146
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.040002816251823,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.13009730357620813,
+      "_kind": "scatter",
+      "_group": 147
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.790033703253068,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.20461602901716858,
+      "_kind": "scatter",
+      "_group": 148
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.201766053826235,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.22353448059524458,
+      "_kind": "scatter",
+      "_group": 149
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.992213512254876,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.19604821045315132,
+      "_kind": "scatter",
+      "_group": 150
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 3.124403499990126,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.11288455870296206,
+      "_kind": "scatter",
+      "_group": 151
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 2.816401199965873,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.12796017167709178,
+      "_kind": "scatter",
+      "_group": 152
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 2.9941296655687903,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.08508518739162965,
+      "_kind": "scatter",
+      "_group": 153
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.99591107751599,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.4164428970739418,
+      "_kind": "scatter",
+      "_group": 154
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.192643640188992,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.5049840445816542,
+      "_kind": "scatter",
+      "_group": 155
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0315603430454732,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1921403441857458,
+      "_kind": "scatter",
+      "_group": 156
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9883353364650597,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.22576866657139433,
+      "_kind": "scatter",
+      "_group": 157
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 2.897469291760433,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.18503312584024462,
+      "_kind": "scatter",
+      "_group": 158
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.925890358830723,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.22848404913716686,
+      "_kind": "scatter",
+      "_group": 159
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0090958570874766,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1245244680536578,
+      "_kind": "scatter",
+      "_group": 160
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9731210425342205,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.13492295046901537,
+      "_kind": "scatter",
+      "_group": 161
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.7895093151473453,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.08675212354002862,
+      "_kind": "scatter",
+      "_group": 162
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1435684466455174,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.06583194799220178,
+      "_kind": "scatter",
+      "_group": 163
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.174310739609497,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.17336641808163494,
+      "_kind": "scatter",
+      "_group": 164
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 2.8417095991593886,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1065319636351579,
+      "_kind": "scatter",
+      "_group": 165
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0237759031571818,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.05316582694875173,
+      "_kind": "scatter",
+      "_group": 166
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8277733260995952,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.08989400853718515,
+      "_kind": "scatter",
+      "_group": 167
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.075785640937517,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.15762122847686016,
+      "_kind": "scatter",
+      "_group": 168
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9037428648891637,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.23579652345617655,
+      "_kind": "scatter",
+      "_group": 169
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.070145959264437,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.4676880371372366,
+      "_kind": "scatter",
+      "_group": 170
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.099877630286228,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1801614931739231,
+      "_kind": "scatter",
+      "_group": 171
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1182048964437692,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.21237011270624506,
+      "_kind": "scatter",
+      "_group": 172
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8274060162205945,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.22967743304578964,
+      "_kind": "scatter",
+      "_group": 173
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1830452118605475,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.17939641508438137,
+      "_kind": "scatter",
+      "_group": 174
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8812941559937475,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.20458691597061274,
+      "_kind": "scatter",
+      "_group": 175
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.7964615247175191,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.2436076300606018,
+      "_kind": "scatter",
+      "_group": 176
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0241350865322527,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": 0.030859809349874145,
+      "_kind": "scatter",
+      "_group": 177
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.943205804899473,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.08972753810654648,
+      "_kind": "scatter",
+      "_group": 178
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1451074869782618,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.0914127343214558,
+      "_kind": "scatter",
+      "_group": 179
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1356306477082927,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1668367276772248,
+      "_kind": "scatter",
+      "_group": 180
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.919541112841994,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.18774541462692404,
+      "_kind": "scatter",
+      "_group": 181
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 3.199275733830688,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.11152786485240841,
+      "_kind": "scatter",
+      "_group": 182
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9080038487816522,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1789333880160731,
+      "_kind": "scatter",
+      "_group": 183
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0066251368619543,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.059072330938607545,
+      "_kind": "scatter",
+      "_group": 184
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8926246398497452,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.08314619135277627,
+      "_kind": "scatter",
+      "_group": 185
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1918591708215438,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.14114212021364836,
+      "_kind": "scatter",
+      "_group": 186
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.852427439736088,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.26724865842958706,
+      "_kind": "scatter",
+      "_group": 187
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 2.7997606725326247,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.23533756732073527,
+      "_kind": "scatter",
+      "_group": 188
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9714427064013367,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1762933163469839,
+      "_kind": "scatter",
+      "_group": 189
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.2166452481845682,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.18528688486039677,
+      "_kind": "scatter",
+      "_group": 190
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1723379971521621,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.20909386252645862,
+      "_kind": "scatter",
+      "_group": 191
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1093875285610577,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.19491402802760055,
+      "_kind": "scatter",
+      "_group": 192
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.17194869598655,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.1933070044215128,
+      "_kind": "scatter",
+      "_group": 193
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1731165214670598,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.15759290918707652,
+      "_kind": "scatter",
+      "_group": 194
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0082976785700375,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.19178847879566052,
+      "_kind": "scatter",
+      "_group": 195
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9190087828055489,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": 0.0073664851485729654,
+      "_kind": "scatter",
+      "_group": 196
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.119685470128834,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.177240148596834,
+      "_kind": "scatter",
+      "_group": 197
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.071130955793815,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.0634324518418157,
+      "_kind": "scatter",
+      "_group": 198
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9444094007044325,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.06011492322717904,
+      "_kind": "scatter",
+      "_group": 199
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.821565333947067,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.2091723507977472,
+      "_kind": "scatter",
+      "_group": 200
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1085874289935715,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.05487046002795429,
+      "_kind": "scatter",
+      "_group": 201
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8954826270060605,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.025267281906534267,
+      "_kind": "scatter",
+      "_group": 202
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.192197786234863,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": 0.06272605384296026,
+      "_kind": "scatter",
+      "_group": 203
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 7.886027053002501,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.3381578355778005,
+      "_kind": "scatter",
+      "_group": 204
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8340134902610539,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": 0.016858597987142288,
+      "_kind": "scatter",
+      "_group": 205
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1456895757349588,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1725605229317972,
+      "_kind": "scatter",
+      "_group": 206
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8474450993147774,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.16695104757985824,
+      "_kind": "scatter",
+      "_group": 207
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.858878055589406,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.5321981073260145,
+      "_kind": "scatter",
+      "_group": 208
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.043728428269171,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.177240148596834,
+      "_kind": "scatter",
+      "_group": 209
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1648072979684845,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1219776467949793,
+      "_kind": "scatter",
+      "_group": 210
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8664312529144123,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.042275592683097996,
+      "_kind": "scatter",
+      "_group": 211
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.916542416076041,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.2810388202238845,
+      "_kind": "scatter",
+      "_group": 212
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1220581288261182,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": 0.05906520569700402,
+      "_kind": "scatter",
+      "_group": 213
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.2076036274668256,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.06891053850216955,
+      "_kind": "scatter",
+      "_group": 214
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0003261219290307,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.023375771984677995,
+      "_kind": "scatter",
+      "_group": 215
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 2.8433149011225503,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.22403311284924887,
+      "_kind": "scatter",
+      "_group": 216
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.7861319665916087,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.0234576447089254,
+      "_kind": "scatter",
+      "_group": 217
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.881048653199496,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.797747177492898,
+      "_kind": "scatter",
+      "_group": 218
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.838001775826068,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 219
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.078169816389657,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 220
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.833606302036554,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.1620659290873083,
+      "_kind": "scatter",
+      "_group": 221
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.002785169913079,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 222
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.08547547168287,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 223
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.035691308057197,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.2009296104604439,
+      "_kind": "scatter",
+      "_group": 224
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 2.8679012867304254,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.21446343548936886,
+      "_kind": "scatter",
+      "_group": 225
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1338147915201955,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.5,
+      "_kind": "scatter",
+      "_group": 226
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 9.094779137030953,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.4666551972546855,
+      "_kind": "scatter",
+      "_group": 227
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1051529617228384,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.2711147540070057,
+      "_kind": "scatter",
+      "_group": 228
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8376654106852178,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.10765942759117621,
+      "_kind": "scatter",
+      "_group": 229
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8344516736061516,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.18871939829336107,
+      "_kind": "scatter",
+      "_group": 230
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.1881275224428633,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.18448309484800882,
+      "_kind": "scatter",
+      "_group": 231
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9549344052829739,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.06367834919841175,
+      "_kind": "scatter",
+      "_group": 232
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.912417424383614,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1693401949967729,
+      "_kind": "scatter",
+      "_group": 233
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9949769799546746,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.13105495885582263,
+      "_kind": "scatter",
+      "_group": 234
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0716602536159763,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.17354034394892687,
+      "_kind": "scatter",
+      "_group": 235
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.2004742331006668,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.11744242809790245,
+      "_kind": "scatter",
+      "_group": 236
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9060363398281042,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1117964193096653,
+      "_kind": "scatter",
+      "_group": 237
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.186915708897292,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.1333166522453371,
+      "_kind": "scatter",
+      "_group": 238
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 8.790938176209952,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -1.1299121929489861,
+      "_kind": "scatter",
+      "_group": 239
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 3.024287138623803,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.05645846134269972,
+      "_kind": "scatter",
+      "_group": 240
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 1.0589490491396774,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.2380275387370212,
+      "_kind": "scatter",
+      "_group": 241
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8265948576503315,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.2481204953840696,
+      "_kind": "scatter",
+      "_group": 242
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.8417494227081216,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.7896038746713778,
+      "_kind": "scatter",
+      "_group": 243
+    },
+    {
+      "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)": 0.9644103004991736,
+      "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]": -0.028122420953907663,
+      "_kind": "scatter",
+      "_group": 244
+    }
+  ],
+  "n_series": 245,
+  "total_points": 245,
+  "text": {
+    "suptitle": "Derived shared-readout map vs free map: verdicts and concordance (surviving 252 of 504 planned units)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Verdict counts (per-unit files; instruct within-model battery not run)",
+        "xlabel": "ordered pair-arm units",
+        "legend_labels": [
+          "shared readout supported",
+          "readout changed",
+          "transfer map insufficient",
+          "free map uninformative (excluded)"
+        ],
+        "annotations": [
+          "9",
+          "101",
+          "10",
+          "43",
+          "4",
+          "5",
+          "30",
+          "75",
+          "10",
+          "26",
+          "11"
+        ],
+        "xticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120",
+          "140"
+        ],
+        "yticklabels": [
+          "base | prefix \u2014 all computed (121)",
+          "base | prefix \u2014 informative (49)",
+          "base | context \u2014 all computed (120)",
+          "base | context \u2014 informative (26)",
+          "instruct \u2014 the 11 computed units"
+        ]
+      },
+      {
+        "title_left": "prefix: rho(g1, parent rung) = -0.73 (n=116)\ncontext: rho(g1, parent rung) = -0.60 (n=116)\nfilled = informative unit, open = validity-screened",
+        "xlabel": "parent ladder rung reached (1 = direct transfer, 9 = full reparameterization / none)",
+        "ylabel": "g1 = R2(derived) - 0.9 x R2(free), clipped to [-1.5, 0.5]",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10"
+        ],
+        "yticklabels": [
+          "\u22121.6",
+          "\u22121.4",
+          "\u22121.2",
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2"
+        ]
+      }
+    ]
+  }
+}

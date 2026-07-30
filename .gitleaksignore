@@ -50,3 +50,5 @@ tasks/followups_running/1482/events.jsonl:generic-api-key:334
 scripts/issue1738_sae_arm.py:generic-api-key:1587
 scripts/issue1738_sae_arm.py:generic-api-key:1614
 scripts/issue1738_sae_arm.py:generic-api-key:1636
+tasks/followups_running/1738/events.jsonl:generic-api-key:249
+tasks/followups_running/1738/events.jsonl:generic-api-key:253

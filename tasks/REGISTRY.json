@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1841,
+  "highest_id": 1846,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6017,17 +6017,17 @@
       "goal": "Determine where the linear story of the context\u2192answer map ends: per-arm nonlinearity gain under matched folds (ridge \u2192 RFF/Nystr\u00f6m \u2192 MLP), residual HSIC/dCor detection, fold-structure verification of the banked n50k/n1m fitter comparisons, and the headline test of whether a rank-r bilinear prefix\u00d7query interaction closes the same \u22480.06 R\u00b2 gap the banked 1M nonlinear fits find \u2014 per Task B of docs/ideas/2026-07-28-four-arm-map-theoretical-analysis-plan.md",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1775",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1775",
+      "status": "awaiting_promotion",
       "title": "A low-rank bilinear prefix\u2013query interaction closes most but not all of the context\u2192answer map's nonlinear gap (MODERATE confidence)"
     },
     "1776": {
       "goal": "Compute the averaged causal Jacobian J_{C\u2192A} on the #779 corpus; measure what fraction of the fitted ridge map M's predictive power is causal; test which map predicts steered-generation interventions and off-distribution transfer; and test whether the context\u2192answer channel reads from / writes into the J-space verbalizable workspace (Anthropic 2026), all phases unconditional.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/1776",
-      "status": "running",
-      "title": "Jacobian context\u2192answer map (J_C\u2192A) vs fitted ridge M + J-space workspace mediation on Qwen-2.5-7B"
+      "path": "tasks/followups_running/1776",
+      "status": "followups_running",
+      "title": "Averaged causal Jacobians recover essentially none of the fitted context-to-answer map's predictive power (HIGH confidence)"
     },
     "1777": {
       "has_clean_result": false,
@@ -6235,36 +6235,36 @@
     "1805": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1805",
-      "status": "running",
+      "path": "tasks/completed/1805",
+      "status": "completed",
       "title": "daily-fix: review-time no-flags lint on new scripts in diff"
     },
     "1806": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1806",
-      "status": "running",
+      "path": "tasks/completed/1806",
+      "status": "completed",
       "title": "daily-fix: escalate-only audit of root stashes + rescue dirs"
     },
     "1807": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1807",
-      "status": "proposed",
+      "path": "tasks/completed/1807",
+      "status": "completed",
       "title": "daily-fix: Step 10d/9c \u2014 re-sync before SHA-bound gates"
     },
     "1808": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1808",
-      "status": "proposed",
+      "path": "tasks/completed/1808",
+      "status": "completed",
       "title": "daily-fix: driver sha-scan exempts item's own fingerprint"
     },
     "1809": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1809",
-      "status": "proposed",
+      "path": "tasks/completed/1809",
+      "status": "completed",
       "title": "daily-fix: chat claims \u2014 sweeps, counts, sunk compute, doc f"
     },
     "181": {
@@ -6277,43 +6277,43 @@
     "1810": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1810",
-      "status": "proposed",
+      "path": "tasks/completed/1810",
+      "status": "completed",
       "title": "daily-fix: pre-split multi-deliverable implementer dispatche"
     },
     "1811": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1811",
-      "status": "proposed",
+      "path": "tasks/completed/1811",
+      "status": "completed",
       "title": "daily-fix: implementer memory \u2014 self-reports need evidence"
     },
     "1812": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1812",
-      "status": "proposed",
+      "path": "tasks/completed/1812",
+      "status": "completed",
       "title": "daily-fix: 9a-ter \u2014 instrument supersession + addenda charac"
     },
     "1813": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1813",
-      "status": "proposed",
+      "path": "tasks/reviewing/1813",
+      "status": "reviewing",
       "title": "daily-fix: argv dry-run before dispatching a new phase"
     },
     "1814": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1814",
-      "status": "proposed",
+      "path": "tasks/reviewing/1814",
+      "status": "reviewing",
       "title": "daily-fix: gotchas \u2014 subsample filters, zones, hub path glob"
     },
     "1815": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1815",
-      "status": "proposed",
+      "path": "tasks/planning/1815",
+      "status": "planning",
       "title": "daily-fix: queue-vanish guard defeated by stale phase clock"
     },
     "1816": {
@@ -6518,6 +6518,41 @@
       "path": "tasks/proposed/1841",
       "status": "proposed",
       "title": "workflow-fix: Step 6d.2 tick parse must preserve advisory decision fields"
+    },
+    "1842": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1842",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas entry \u2014 Batch custom_id charset+length shape (^[a-zA-Z0-9_-]{1,64}$)"
+    },
+    "1843": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/1843",
+      "status": "archived",
+      "title": "workflow-fix: green test_ruff_policy full-ruleset \u2014 verify_task_body.py:13224 E501"
+    },
+    "1844": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1844",
+      "status": "completed",
+      "title": "workflow-fix: add the expected pair line `tests/test_issue_skill_lint_fami"
+    },
+    "1845": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1845",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas \u2014 batched np.linalg.solve dies on ONE singular slice"
+    },
+    "1846": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1846",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body WARN check \u2014 orphaned result JSONs (sibling of check 31)"
     },
     "185": {
       "has_clean_result": false,

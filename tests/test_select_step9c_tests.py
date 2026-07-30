@@ -2167,11 +2167,12 @@ def test_transitive_consumer_missing_on_disk_dropped(tmp_path: Path):
     assert pairs == [("tests/test_inline_lint_gate.py", _SELECTOR_KEY)]
 
 
-# --- Case 86: CLI --map-files end-to-end on the LIVE tree — the 6 pairs verbatim --
+# --- Case 86: CLI --map-files end-to-end on the LIVE tree — the 7 pairs verbatim --
 def test_cli_map_files_transitive_pairs_live_tree(tmp_path: Path, capsys):
-    """CLI end-to-end on the LIVE tree: the selector payload prints all 4
-    pre-existing pairs PLUS the 2 transitive pairs (6 pairs, 6 tests) and the
-    sizing line stays at the 300 s floor. Exact-set assert — a new arm/pin
+    """CLI end-to-end on the LIVE tree: the selector payload prints all 5
+    dependency-arm pairs PLUS the 2 transitive pairs (7 pairs, 7 tests) and
+    the sizing line clears the 600 s MAP_TIMEOUT_FLOOR_S at 660
+    ((120 + 7*30) * 2.0). Exact-set assert — a new arm/pin
     joining later legitimately forces a deliberate 1-line update here (that
     loudness is the point; cf. the case-60 drift-pin posture)."""
     repo_root = _HELPER_PATH.parents[1]
@@ -2183,12 +2184,13 @@ def test_cli_map_files_transitive_pairs_live_tree(tmp_path: Path, capsys):
     assert captured.out.splitlines() == [
         f"tests/test_inline_lint_gate.py\t{_SELECTOR_KEY}",
         f"tests/test_inline_payload_lint_gate_contract.py\t{_SELECTOR_KEY}",
+        f"tests/test_issue_skill_lint_family_sync.py\t{_SELECTOR_KEY}",
         f"tests/test_ruff_policy.py\t{_SELECTOR_KEY}",
         f"tests/test_select_step9c_tests.py\t{_SELECTOR_KEY}",
         f"tests/test_shared_vm_thread_caps.py\t{_SELECTOR_KEY}",
         f"tests/test_step9c_baseline.py\t{_SELECTOR_KEY}",
     ]
-    assert "map-files — 6 pairs, 6 tests; recommended-timeout-s=600" in captured.err
+    assert "map-files — 7 pairs, 7 tests; recommended-timeout-s=660" in captured.err
 
 
 # --- Case 87: map-leg asymmetry — an invariant registration is excluded -----------
