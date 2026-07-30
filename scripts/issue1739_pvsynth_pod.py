@@ -225,14 +225,60 @@ def _upload_file(local: Path, path_in_repo: str, *, skip: bool) -> str:
     )
 
 
-def run_behavior(behavior: str, args: argparse.Namespace, model=None, tokenizer=None) -> dict:
-    """Generate -> upload text -> capture -> upload store for one behavior."""
-    from explore_persona_space.experiments.issue_1739 import capture, generation
-    from explore_persona_space.experiments.issue_1739.constants import (
-        HIDDEN_DIM,
-        K_ROLLOUTS,
-        N_LAYERS,
-    )
+def reap_generation_engine(drain_timeout_s: int = 180, floor_mib: int = 2048) -> None:
+    """Reap the module-cached vLLM engine and DRAIN-WAIT the GPU below a floor.
+
+    vLLM and the HF capture model must NEVER co-reside here: the engine reserves
+    ``gpu_memory_utilization`` of HBM, so a 7B bf16 HF model already resident
+    makes the engine init raise "Free memory ... less than desired GPU memory
+    utilization" (observed on the pod's first production smoke). Generation runs
+    to completion for EVERY behavior, then this reap releases the GPU, then the
+    capture model loads. The drain verdict reads DEVICE-level ``memory.used``
+    (never compute-apps rows alone — those are pid-visibility-dependent inside a
+    container, #825/#1333).
+    """
+    import subprocess
+
+    from explore_persona_space.experiments.issue_1739 import generation as _gen
+
+    llm = _gen._TOKENIZER_CACHE.pop("_llm", None)
+    if llm is None:
+        logger.info("[reap] no cached vLLM engine to reap")
+        return
+    from explore_persona_space.analysis.representation_shift import _reap_vllm_engine
+
+    _reap_vllm_engine(llm)
+    del llm
+
+    deadline = time.time() + drain_timeout_s
+    while True:
+        proc = subprocess.run(
+            ["nvidia-smi", "--query-gpu=index,memory.used", "--format=csv,noheader,nounits"],
+            capture_output=True,
+            text=True,
+            env={**os.environ},
+        )
+        used = []
+        for line in proc.stdout.strip().splitlines():
+            parts = [p.strip() for p in line.split(",")]
+            if len(parts) == 2 and parts[1].isdigit():
+                used.append((int(parts[0]), int(parts[1])))
+        worst = max((m for _, m in used), default=0)
+        if used and worst <= floor_mib:
+            print(f"[phase=pvsynth_reap] GPU drained: max_used={worst} MiB", flush=True)
+            return
+        if time.time() >= deadline:
+            raise RuntimeError(
+                f"vLLM teardown did not drain below {floor_mib} MiB within "
+                f"{drain_timeout_s}s (per-GPU used MiB: {used})"
+            )
+        time.sleep(5)
+
+
+def generate_for_behavior(behavior: str, args: argparse.Namespace, tokenizer) -> dict:
+    """Build contexts -> K rollouts -> upload rollout TEXT (no capture; vLLM only)."""
+    from explore_persona_space.experiments.issue_1739 import generation
+    from explore_persona_space.experiments.issue_1739.constants import K_ROLLOUTS
 
     k_rollouts = args.k_rollouts or K_ROLLOUTS
     max_new_tokens = args.max_new_tokens or generation.GEN_MAX_NEW_TOKENS
@@ -291,10 +337,17 @@ def run_behavior(behavior: str, args: argparse.Namespace, model=None, tokenizer=
         skip=args.skip_upload,
     )
 
-    if args.skip_capture:
-        return {"behavior": behavior, "generation": gen_manifest, "capture": None}
+    return {"behavior": behavior, "generation": gen_manifest, "capture": None}
 
-    # --- 4. batched teacher-forced capture ---------------------------------
+
+def capture_for_behavior(
+    behavior: str, args: argparse.Namespace, gen_manifest: dict, model, tokenizer
+) -> dict:
+    """Batched teacher-forced capture -> upload store (HF model only; no vLLM)."""
+    from explore_persona_space.experiments.issue_1739 import capture
+    from explore_persona_space.experiments.issue_1739.constants import HIDDEN_DIM, N_LAYERS
+
+    rollout_dir = args.out_root / "labeling" / behavior
     rollout_paths = sorted(rollout_dir.glob("*.json"))
     rollout_paths = [p for p in rollout_paths if not p.name.startswith("_")]
     if not rollout_paths:
@@ -325,7 +378,7 @@ def run_behavior(behavior: str, args: argparse.Namespace, model=None, tokenizer=
         f"{args.hf_prefix}/capture_store/{behavior}",
         skip=args.skip_upload,
     )
-    return {"behavior": behavior, "generation": gen_manifest, "capture": cap_manifest}
+    return cap_manifest
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -357,6 +410,9 @@ def main(argv: list[str] | None = None) -> int:
             get_tokenizer,
             load_e1_assets,
         )
+        from explore_persona_space.analysis.representation_shift import (  # noqa: F401
+            _reap_vllm_engine,
+        )
         from explore_persona_space.orchestrate import hub  # noqa: F401
         from explore_persona_space.orchestrate.hub import (  # noqa: F401
             DEFAULT_DATASET_REPO,
@@ -374,20 +430,31 @@ def main(argv: list[str] | None = None) -> int:
     args.store_root.mkdir(parents=True, exist_ok=True)
 
     tokenizer = generation.get_tokenizer()
-    model = None
-    if not args.skip_capture:
-        # load_capture_model returns the MODEL ONLY (never a tuple) — the
-        # tokenizer stays generation.get_tokenizer()'s pinned instance so
-        # generation and capture share one tokenizer.
-        model = capture.load_capture_model(device=args.device)
 
+    # PHASE 1 — generation for EVERY behavior (vLLM engine loaded once, reused).
+    # The HF capture model is NOT loaded yet: co-residency starves the engine's
+    # gpu_memory_utilization reservation (the pod's first production smoke).
     manifests = []
     for i, behavior in enumerate(args.behaviors):
         print(
-            f"[phase=pvsynth_behavior] unit {i + 1}/{len(args.behaviors)} {behavior}",
+            f"[phase=pvsynth_behavior_gen] unit {i + 1}/{len(args.behaviors)} {behavior}",
             flush=True,
         )
-        manifests.append(run_behavior(behavior, args, model=model, tokenizer=tokenizer))
+        manifests.append(generate_for_behavior(behavior, args, tokenizer))
+
+    if args.skip_capture:
+        print("[phase=pvsynth_capture] SKIPPED (--skip-capture)", flush=True)
+    else:
+        # PHASE 2 — reap the engine, THEN load the capture model, THEN capture.
+        reap_generation_engine()
+        model = capture.load_capture_model(device=args.device)
+        for i, m in enumerate(manifests):
+            behavior = m["behavior"]
+            print(
+                f"[phase=pvsynth_behavior_capture] unit {i + 1}/{len(manifests)} {behavior}",
+                flush=True,
+            )
+            m["capture"] = capture_for_behavior(behavior, args, m["generation"], model, tokenizer)
 
     sentinel = {
         "rung": RUNG,
