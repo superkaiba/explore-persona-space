@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1899,
+  "highest_id": 1900,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6966,6 +6966,13 @@
       "path": "tasks/completed/190",
       "status": "completed",
       "title": "Map Romance-language spill pattern in language-inversion LoRA"
+    },
+    "1900": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1900",
+      "status": "proposed",
+      "title": "Leakage-predictor horse race at per-prompt grain: pre-FT geometry vs base propensity, with answer-side mediation test"
     },
     "191": {
       "has_clean_result": false,
