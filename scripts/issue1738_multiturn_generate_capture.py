@@ -123,6 +123,16 @@ PILOT_VIOLATION_RATE_MAX = 0.005  # G1: strict-token-prefix violations <= 0.5%
 PILOT_PREFIX_COS_MAX = 0.999  # G1/K1: min pairwise px cos must be BELOW this
 KRESAMPLE_SEEDS = (43, 44, 45, 46)
 
+# ── bare-query arm constants (follow-up `bare-query`, plan §4.1) ──────────────────
+BARE_BATCH_DEFAULT = 64  # right-padded forward batch (plan §11: ungrounded — pilot-gated)
+BARE_CHUNK_DEFAULT = 2_000  # rows per output chunk (~86 MB fp32 at 3×3584)
+BARE_FENCE_MIN_DEFAULT = 45.0  # G-B1 per-shard projected-wall fence (minutes)
+BARE_PARITY_MIN_COS = 0.999  # G-B1: batched-vs-per-row per-layer cosine floor
+RC_BARE_FENCE = 25  # G-B1 designed-halt rc (report written first; never a bare rc=1)
+# unique sentinel for the one-time empty-system template split (never appears in
+# a chat template); the split is what makes assert (b) STRING-level, not token-count
+_BARE_SENTINEL = "EPMBARESENTINEL1738Q"
+
 # Engine-cap invariant (r5 crash fix): a budget-admitted prompt + max generation
 # always fits the engine, so gating admission at PROMPT_TOKEN_BUDGET is what
 # keeps llm_engine.add_request from ever seeing > MAX_MODEL_LEN. The attempt-3
@@ -1329,6 +1339,413 @@ def _min_pairwise_cos(px: torch.Tensor) -> dict[str, float]:
     return out
 
 
+# ── bare-query arm: empty-system render + batched forward-only capture ────────────
+# (follow-up `bare-query`, plan §4.1; #1092 _render_bare_query_empty_system convention)
+
+
+def _bare_template_parts(tok) -> tuple[str, str]:
+    """Split the empty-system chat-template render around a unique sentinel query
+    ONCE per process → (TEMPLATE_PREFIX, TEMPLATE_SUFFIX). The per-row identity
+    assert is then STRING-level (`text == PREFIX + q + SUFFIX`) — BPE-seam-immune
+    (plan §4.1.1: a leading-newline query merges across the template's `user\\n`
+    seam, shifting token overhead 13→12, so a token-count identity false-fires)."""
+    probe = tok.apply_chat_template(
+        [{"role": "system", "content": ""}, {"role": "user", "content": _BARE_SENTINEL}],
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+    assert probe.count(_BARE_SENTINEL) == 1, (
+        f"bare template split failed: sentinel appears {probe.count(_BARE_SENTINEL)}x"
+    )
+    pre, _, suf = probe.partition(_BARE_SENTINEL)
+    return pre, suf
+
+
+def _render_bare_query(tok, q: str, parts: tuple[str, str]) -> str:
+    """Render the FINAL user query with an explicit EMPTY system turn. Per-row
+    HARD asserts (plan §4.1.1): (a) no injected Qwen default system prompt;
+    (b) no-prefix-content identity at STRING level."""
+    text = tok.apply_chat_template(
+        [{"role": "system", "content": ""}, {"role": "user", "content": q}],
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+    if "You are Qwen" in text:  # (a) default-system injection
+        raise RuntimeError("bare render carries the Qwen default system prompt (assert a)")
+    if text != parts[0] + q + parts[1]:  # (b) exact-concatenation identity
+        raise RuntimeError(
+            "bare render != TEMPLATE_PREFIX + query + TEMPLATE_SUFFIX (assert b) — "
+            "prefix-content / extra-turn leakage or a template content transform"
+        )
+    return text
+
+
+def _bare_render_selftest(tok) -> tuple[str, str]:
+    """B0 in-process self-test (plan §4.1.1): assert (b) PASSES on a probe query
+    beginning with a literal newline (the BPE-seam case) and FAILS on a render
+    with an injected extra turn; assert (a) has teeth (a system-less render on
+    this tokenizer injects the Qwen default system prompt). Returns the parts."""
+    parts = _bare_template_parts(tok)
+    # (i) seam case: leading-"\n" query must PASS the string identity.
+    _render_bare_query(tok, "\nWhat is the capital of France?", parts)
+    # (ii) injected extra turn must FAIL the identity.
+    q = "plain probe question"
+    injected = tok.apply_chat_template(
+        [
+            {"role": "system", "content": ""},
+            {"role": "user", "content": "an earlier turn"},
+            {"role": "assistant", "content": "an earlier answer"},
+            {"role": "user", "content": q},
+        ],
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+    assert injected != parts[0] + q + parts[1], (
+        "B0: injected-extra-turn render passed the string identity — assert (b) is toothless"
+    )
+    # (iii) assert (a) has teeth: messages WITHOUT a system turn inject the default.
+    bare_default = tok.apply_chat_template(
+        [{"role": "user", "content": q}], tokenize=False, add_generation_prompt=True
+    )
+    assert "You are Qwen" in bare_default, (
+        "B0: system-less render does NOT inject the Qwen default system prompt — "
+        "the empty-system convention needs re-derivation for this tokenizer"
+    )
+    logger.info("[bare-b0] render self-test OK (seam identity + injected-turn refusal)")
+    return parts
+
+
+def _capture_bare_batch(hf, tok, texts: list[str], layers: list[int], batch: int) -> torch.Tensor:
+    """Right-padded batched teacher-forced forwards; last-REAL-token states at
+    ``layers`` → (n, L, H) fp32 cpu. Right padding is causal-safe (later
+    positions cannot influence earlier ones) and keeps real tokens at positions
+    0..len-1, so no position_ids threading is needed; batching numerics are
+    gated by the G-B1 parity probe (per-layer cos >= BARE_PARITY_MIN_COS)."""
+    assert tok.pad_token_id is not None, "tokenizer has no pad token (right-padded batches)"
+    outs = []
+    prev_side = tok.padding_side
+    tok.padding_side = "right"
+    try:
+        for s in range(0, len(texts), batch):
+            enc = tok(texts[s : s + batch], return_tensors="pt", padding=True)
+            ids = enc["input_ids"].to(hf.device)
+            mask = enc["attention_mask"].to(hf.device)
+            captured = extract_layer_activations(hf, ids, layers, attention_mask=mask)
+            last = mask.sum(dim=1) - 1  # (B,) last real index per row
+            b_idx = torch.arange(ids.shape[0])
+            per_layer = []
+            for li in layers:
+                hs = captured[li]  # (B, T, H) on device
+                per_layer.append(hs[b_idx.to(hs.device), last.to(hs.device), :].float().cpu())
+            outs.append(torch.stack(per_layer, dim=1))  # (B, L, H)
+    finally:
+        tok.padding_side = prev_side
+    return torch.cat(outs, dim=0)
+
+
+def _bare_parity_probe(hf, tok, texts: list[str], layers: list[int], batch: int) -> dict:
+    """G-B1 32-row parity probe: batched right-padded capture vs per-row unpadded
+    forwards (the parent's per-row convention), per-layer MIN cosine. A miss is a
+    capture-code bug — fail loud before the fleet proceeds (plan §7 G-B1)."""
+    bq = _capture_bare_batch(hf, tok, texts, layers, batch)
+    refs = []
+    for t in texts:
+        ids = tok(t, return_tensors="pt", padding=False)["input_ids"].to(hf.device)
+        cap = extract_layer_activations(hf, ids, layers)
+        refs.append(torch.stack([cap[li][0, -1, :].float().cpu() for li in layers]))
+    ref = torch.stack(refs)  # (n, L, H)
+    out: dict[str, float] = {}
+    for k, li in enumerate(layers):
+        cos = torch.nn.functional.cosine_similarity(bq[:, k, :].double(), ref[:, k, :].double(), 1)
+        out[str(li)] = float(cos.min().item())
+    return out
+
+
+def _bare_fence_should_halt(
+    elapsed_s: float, fresh_rows: int, pending_rows_total: int, fence_min: float
+) -> bool:
+    """G-B1 pure fence predicate: halt when the measured rate projects THIS
+    shard's pending rows past ``fence_min`` minutes (plan §7: re-size, never a
+    silent overrun)."""
+    if fresh_rows <= 0:
+        return False
+    return (elapsed_s / fresh_rows) * pending_rows_total / 60.0 > fence_min
+
+
+def _stack_chunk_bare(rows: list[dict], layers, shard_index: int, chunk_idx: int) -> dict:
+    """Bare chunk bundle (plan §4.1.4): bq_last (n, L, H) fp32 + ci + renders."""
+    return {
+        "bq_last": torch.stack([r["bq_last"] for r in rows]),
+        "ci": [int(r["ci"]) for r in rows],
+        "bare_render": [r["bare_render"] for r in rows],
+        "layers": list(layers),
+        "shard_index": int(shard_index),
+        "chunk": int(chunk_idx),
+    }
+
+
+def run_bare_capture(args) -> int:
+    """Plan §4.1 ``--bare-query`` mode: forward-only BATCHED capture of the FINAL
+    user query rendered with an explicit EMPTY system turn (#1092 convention).
+    ALL manifest rows (parent over-length skips included — bare renders are
+    short); no generation, no vLLM. Uploads ride ``--upload-prefix`` (default =
+    ``--hf-prefix``) so the parent capture prefix is never clobbered."""
+    # UPLOAD_PREFIX_EXEMPT: default = this issue's own --hf-prefix (issue1738_multiturn); the bare round passes --upload-prefix so the parent capture prefix is never written (plan v6 §4.1.4)
+    up = args.upload_prefix or args.hf_prefix
+    manifest_dir = _resolve_manifest_dir(args)  # manifest rides --hf-prefix (parent)
+    pool, _meta = N1M.read_manifest_pool(manifest_dir)
+    n_total = len(pool)
+    start, end = N50._shard_range(n_total, args.num_shards, args.shard_index)
+    shard_pool = pool[start:end]
+    if args.pilot_cap and args.pilot_cap > 0:
+        shard_pool = shard_pool[: args.pilot_cap]
+    layers = [int(x) for x in args.capture_layers.split(",")]
+    logger.info(
+        "[bare shard %d/%d] range [%d, %d) = %d contexts (%d total)%s -> upload %s",
+        args.shard_index,
+        args.num_shards,
+        start,
+        end,
+        len(shard_pool),
+        n_total,
+        f" PILOT cap {args.pilot_cap}" if args.pilot_cap else "",
+        up,
+    )
+
+    C.phase("load_model")
+    tok, hf = _load_models(args)
+    C.phase("bare_selftest")
+    parts = _bare_render_selftest(tok)  # B0 (hard asserts; plan §4.1.1)
+    if not shard_pool:
+        logger.info("[bare shard %d] empty range; nothing to do", args.shard_index)
+        C.phase("done")
+        return 0
+
+    scratch = args.out_dir / "bare_shards"
+    scratch.mkdir(parents=True, exist_ok=True)
+    done_pt = set(N50._remote_index(f"{up}/{CAPTURE_SUBDIR}")) if not args.no_upload else set()
+
+    C.phase("bare_capture")
+
+    # render + over-length filter + deterministic sort over the WHOLE shard
+    # (sorted by rendered token length -> near-uniform right-padded batches;
+    # (n_tok, ci) tie-break keeps chunk composition deterministic for resume).
+    _len_cache: dict[str, int] = {}  # memoized — the filter + the sort key share it
+
+    def _bare_tok_len(messages: list[dict]) -> int:
+        q = messages[-1]["content"]
+        n = _len_cache.get(q)
+        if n is None:
+            n = len(tok(parts[0] + q + parts[1], add_special_tokens=False)["input_ids"])
+            _len_cache[q] = n
+        return n
+
+    kept_rows, skipped_all = _filter_rows_overlength(shard_pool, _bare_tok_len, PROMPT_TOKEN_BUDGET)
+    if skipped_all:  # expected 0 (plan §12 assumption 5) — recorded, never silent
+        logger.warning(
+            "[bare shard %d] %d over-length bare renders skipped (> %d tok); cis=%s",
+            args.shard_index,
+            len(skipped_all),
+            PROMPT_TOKEN_BUDGET,
+            [d["ci"] for d in skipped_all][:20],
+        )
+    kept_rows = sorted(kept_rows, key=lambda r: (_bare_tok_len(r["messages"]), int(r["i"])))
+    n_sub = (len(kept_rows) + args.bare_chunk - 1) // args.bare_chunk
+    chunk_specs = []  # (chunk_idx, name, rows, resumed)
+    pending_rows_total = 0
+    for ci_idx, s in enumerate(range(0, len(kept_rows), args.bare_chunk)):
+        name = f"shard{args.shard_index:02d}_chunk{ci_idx:04d}.pt"
+        rows = kept_rows[s : s + args.bare_chunk]
+        resumed = name in done_pt
+        if not resumed:
+            pending_rows_total += len(rows)
+        chunk_specs.append((ci_idx, name, rows, resumed))
+
+    kept_total = 0
+    fresh_rows = 0
+    t_start = time.time()
+    pending_pt: list[str] = []
+    parity: dict | None = None
+    pilot_written = False
+
+    def _flush_pending() -> None:
+        if args.no_upload or not pending_pt:
+            return
+        _flush_upload_batch_mt(scratch, up, pending_pt, [])
+        pending_pt.clear()
+
+    def _write_bare_pilot_meta() -> None:
+        wall_h = (time.time() - t_start) / 3600.0
+        rate = fresh_rows / wall_h if wall_h > 0 else float("nan")
+        doc = {
+            "n_pilot_rows": int(fresh_rows),
+            "wall_h": float(wall_h),
+            "rows_per_gpu_h": float(rate),
+            "pending_rows_this_shard": int(pending_rows_total),
+            "projected_shard_wall_min": float(
+                (time.time() - t_start) / max(1, fresh_rows) * pending_rows_total / 60.0
+            ),
+            "bare_fence_min": float(args.bare_fence_min),
+            # hard-assert semantics (plan §4.1.1): any render violation raises
+            # per row, so reaching this write PROVES the count is 0.
+            "n_render_violations": 0,
+            "n_overlength_skipped": len(skipped_all),
+            "parity_min_cos_by_layer": parity,
+            "parity_min_cos_floor": BARE_PARITY_MIN_COS,
+            "parity_ok": parity is not None
+            and all(v >= BARE_PARITY_MIN_COS for v in parity.values()),
+            "bare_batch": int(args.bare_batch),
+            "bare_chunk": int(args.bare_chunk),
+            # worked-example render, verbatim (plan §4.1.1) — a SYNTHETIC probe
+            # query, never corpus text (refusal-safety: module docstring).
+            "worked_example_render": _render_bare_query(
+                tok, "What is the capital of France?", parts
+            ),
+            "shard_index": int(args.shard_index),
+            "pilot_cap": int(args.pilot_cap),
+        }
+        out = args.out_dir / "bare_pilot_meta.json"
+        C.write_json_atomic(out, doc)
+        logger.info(
+            "[bare-pilot] rows/GPU-h=%.0f projected_shard_wall=%.1f min parity=%s",
+            rate,
+            doc["projected_shard_wall_min"],
+            parity,
+        )
+        if not args.no_upload:
+            # upload_as_file=True uses path_in_repo as the FULL FILE destination
+            # (hub._upload file branch: `path_in_repo or local_path.name`) — passing
+            # the bare prefix here created a FILE at `<prefix>` that 400-blocked
+            # every later `<prefix>/capture/*` chunk commit (fu1 B1 incident).
+            url = hub._upload(
+                out,
+                repo_id=C.HF_DATA_REPO,
+                repo_type="dataset",
+                path_in_repo=f"{up}/{CAPTURE_SUBDIR}/bare_pilot_meta.json",
+                upload_as_file=True,
+            )
+            if not url:
+                raise RuntimeError("bare_pilot_meta.json upload returned no URL")
+
+    def _on_sigterm(signum, frame):
+        raise SystemExit(f"SIGTERM ({signum}) received — flushing pending upload batch")
+
+    prev_sigterm = signal.signal(signal.SIGTERM, _on_sigterm)
+    try:
+        for ci_idx, name, rows, resumed in chunk_specs:
+            if resumed:
+                logger.info(
+                    "[bare shard %d] chunk %d/%d already on Hub; skip",
+                    args.shard_index,
+                    ci_idx + 1,
+                    n_sub,
+                )
+                continue
+            ts = time.time()
+            texts = [_render_bare_query(tok, r["messages"][-1]["content"], parts) for r in rows]
+            if parity is None:  # G-B1 32-row parity probe, first fresh chunk
+                probe_n = min(32, len(texts))
+                parity = _bare_parity_probe(hf, tok, texts[:probe_n], layers, args.bare_batch)
+                bad = {k: v for k, v in parity.items() if v < BARE_PARITY_MIN_COS}
+                if bad:
+                    raise RuntimeError(
+                        f"G-B1 parity probe FAILED (min cos < {BARE_PARITY_MIN_COS}): {parity} — "
+                        "batched capture != per-row convention; fix before the fleet proceeds"
+                    )
+                logger.info("[bare-parity] %d rows, per-layer min cos %s", probe_n, parity)
+            bq = _capture_bare_batch(hf, tok, texts, layers, args.bare_batch)
+            h_dim = int(hf.config.hidden_size)
+            assert bq.shape == (len(rows), len(layers), h_dim), bq.shape
+            chunk_rows = [
+                {"ci": int(r["i"]), "bare_render": t, "bq_last": bq[j]}
+                for j, (r, t) in enumerate(zip(rows, texts, strict=True))
+            ]
+            torch.save(
+                _stack_chunk_bare(chunk_rows, layers, args.shard_index, ci_idx), scratch / name
+            )
+            kept_total += len(rows)
+            fresh_rows += len(rows)
+            if not args.no_upload:
+                pending_pt.append(name)
+                if len(pending_pt) >= UPLOAD_BATCH:
+                    _flush_pending()
+            logger.info(
+                "[bare-capture] chunk %d/%d shard=%d: %d rows (%.0fs elapsed=%.0fs)",
+                ci_idx + 1,
+                n_sub,
+                args.shard_index,
+                len(rows),
+                time.time() - ts,
+                time.time() - t_start,
+            )
+            if not pilot_written:
+                # G-B1 in-run gate after the FIRST fresh chunk (plan §7): pilot
+                # meta (shard 0 / pilot dispatch ONLY — on an 8-wide pod all
+                # shards share out_dir + the HF meta path, so one writer) + the
+                # per-shard projected-wall fence (designed halt, every shard).
+                if args.shard_index == 0 or args.pilot_cap:
+                    _write_bare_pilot_meta()
+                pilot_written = True
+                if _bare_fence_should_halt(
+                    time.time() - t_start, fresh_rows, pending_rows_total, args.bare_fence_min
+                ):
+                    rep = {
+                        "gate": "G-B1",
+                        "shard_index": int(args.shard_index),
+                        "fresh_rows": int(fresh_rows),
+                        "pending_rows_this_shard": int(pending_rows_total),
+                        "elapsed_s": time.time() - t_start,
+                        "projected_shard_wall_min": (time.time() - t_start)
+                        / max(1, fresh_rows)
+                        * pending_rows_total
+                        / 60.0,
+                        "bare_fence_min": float(args.bare_fence_min),
+                    }
+                    C.write_json_atomic(args.out_dir / "bare_fence_report.json", rep)
+                    logger.error("[G-B1] bare fence tripped: %s", rep)
+                    _flush_pending()  # persist completed chunks before the halt
+                    if not args.no_upload:
+                        try:  # artifact-first halt routing: rc survives an upload failure
+                            # UPLOAD_LOOP_EXEMPT: single bare_fence_report.json uploaded ONCE at the rc-25 fence halt — # UPLOAD_PREFIX_EXEMPT: dest defaults to this issue's own --hf-prefix (issue1738_multiturn); bare arm passes an explicit prefix (plan v6 §4.1.5)
+                            url = hub._upload(
+                                args.out_dir / "bare_fence_report.json",
+                                repo_id=C.HF_DATA_REPO,
+                                repo_type="dataset",
+                                path_in_repo=up,
+                                upload_as_file=True,
+                            )
+                            if not url:
+                                logger.error("[G-B1] fence-report upload returned no URL")
+                        except Exception:
+                            logger.exception("[G-B1] fence-report upload failed (rc kept)")
+                    sys.exit(RC_BARE_FENCE)
+        _flush_pending()
+    except BaseException:
+        try:
+            _flush_pending()
+        except Exception:
+            logger.exception(
+                "[bare shard %d] best-effort pending-batch flush failed on exit",
+                args.shard_index,
+            )
+        raise
+    finally:
+        signal.signal(signal.SIGTERM, prev_sigterm)
+
+    _write_sidecar(scratch, args, skipped_all, [], prefix=up)
+    wall_h = (time.time() - t_start) / 3600.0
+    logger.info(
+        "[bare shard %d] done: %d rows across %d chunks (%d over-length skips, %.2f h)",
+        args.shard_index,
+        kept_total,
+        n_sub,
+        len(skipped_all),
+        wall_h,
+    )
+    C.phase("done")
+    return 0
+
+
 def run_capture(args) -> int:
     manifest_dir = _resolve_manifest_dir(args)
     pool, _meta = N1M.read_manifest_pool(manifest_dir)
@@ -1505,9 +1922,15 @@ def run_capture(args) -> int:
     return 0
 
 
-def _write_sidecar(scratch: Path, args, skipped_all: list[dict], violations_all: list[dict]):
+def _write_sidecar(
+    scratch: Path, args, skipped_all: list[dict], violations_all: list[dict], *, prefix: str = ""
+):
     """Per-shard sidecar: over-length skips + strict-token-prefix violations
-    (ci + counts only, never text). Uploaded beside raw_completions."""
+    (ci + counts only, never text). Uploaded beside raw_completions. ``prefix``
+    overrides the upload prefix (the bare arm's ``--upload-prefix``; default =
+    ``args.hf_prefix``, the parent behavior)."""
+    # UPLOAD_PREFIX_EXEMPT: default = this issue's own --hf-prefix (issue1738_multiturn, parent behavior); bare arm passes an explicit prefix (plan v6 §4.1.4)
+    up = prefix or args.hf_prefix
     skip_name = f"shard{args.shard_index:02d}_skipped.json"
     C.write_json_atomic(
         scratch / skip_name,
@@ -1523,13 +1946,14 @@ def _write_sidecar(scratch: Path, args, skipped_all: list[dict], violations_all:
     )
     if args.no_upload:
         return
+    # UPLOAD_PREFIX_EXEMPT: dest defaults to this issue's own --hf-prefix (issue1738_multiturn, parent behavior); the bare arm passes an explicit prefix (plan v6 §4.1.4)
     url = hub._upload_folder_filtered(
         scratch,
         repo_id=C.HF_DATA_REPO,
         repo_type="dataset",
-        path_in_repo=f"{args.hf_prefix}/{RAW_SUBDIR}",
+        path_in_repo=f"{up}/{RAW_SUBDIR}",
         allow_patterns=[skip_name],
-        expected_repo_paths=[f"{args.hf_prefix}/{RAW_SUBDIR}/{skip_name}"],
+        expected_repo_paths=[f"{up}/{RAW_SUBDIR}/{skip_name}"],
     )
     if not url:
         raise RuntimeError(f"skipped-sidecar upload of {skip_name} returned no URL")
@@ -2010,7 +2434,63 @@ def _smoke(args) -> int:
     assert by_reason[("overlength",)]["n_tokens"] > PROMPT_TOKEN_BUDGET, krec
     assert by_reason[("no_primary_draw",)]["ci"] == gate_out_ci, krec
 
-    logger.info("[smoke] OK — manifest/allocation/carve/gate/capture-indexing/kresample")
+    # (7) bare-query arm (plan §4.1.6): B0 render self-test + a tiny batched bare
+    # pass through the PRODUCTION entrypoint (run_bare_capture; tiny 2-layer
+    # model, REAL Qwen tokenizer). Render asserts + shapes + bq != cx sanity.
+    bargs = argparse.Namespace(
+        **{
+            **vars(cargs),
+            "bare_query": True,
+            "upload_prefix": "",
+            "bare_batch": 2,
+            "bare_chunk": 3,
+            "bare_fence_min": 10_000.0,
+            "pilot_cap": 6,
+            "num_shards": 4,
+            "shard_index": 0,
+        }
+    )
+    rc = run_bare_capture(bargs)
+    assert rc == 0
+    bchunks = sorted((ns.out_dir / "bare_shards").glob("shard00_chunk*.pt"))
+    assert bchunks, "bare capture smoke wrote no chunks"
+    bq_by_ci: dict[int, torch.Tensor] = {}
+    for bc in bchunks:
+        bb = torch.load(bc, weights_only=False)
+        assert bb["bq_last"].shape[1] == 2, bb["bq_last"].shape
+        assert len(bb["bare_render"]) == len(bb["ci"]) == bb["bq_last"].shape[0], bc
+        for j, c in enumerate(bb["ci"]):
+            bq_by_ci[int(c)] = bb["bq_last"][j]
+    cx_by_ci: dict[int, torch.Tensor] = {}
+    for pc in sorted((ns.out_dir / "shards").glob("shard00_chunk*.pt")):
+        pb = torch.load(pc, weights_only=False)
+        for j, c in enumerate(pb["ci"]):
+            cx_by_ci[int(c)] = pb["cx_last"][j]
+    shared = sorted(set(bq_by_ci) & set(cx_by_ci))
+    assert shared, "no shared ci between bare and context smoke chunks"
+    for c in shared:
+        assert not torch.allclose(bq_by_ci[c], cx_by_ci[c]), (
+            f"bq == cx at ci {c} — bare render not distinct from the context render"
+        )
+    bpm = json.loads((ns.out_dir / "bare_pilot_meta.json").read_text())
+    assert bpm["parity_ok"] and bpm["n_render_violations"] == 0, bpm
+    assert bpm["worked_example_render"].startswith("<|im_start|>system"), bpm[
+        "worked_example_render"
+    ]
+    # degenerate probes (data-dependent-gates duty): the G-B1 fence predicate
+    # fires past the budget + stays quiet under it; a fence-tripping run takes
+    # the DESIGNED halt rc (report JSON written first).
+    assert _bare_fence_should_halt(3600.0, 100, 10_000, 45.0)
+    assert not _bare_fence_should_halt(10.0, 100, 200, 45.0)
+    try:
+        run_bare_capture(argparse.Namespace(**{**vars(bargs), "bare_fence_min": 1e-9}))
+        raise AssertionError("G-B1 bare fence did not halt")
+    except SystemExit as e:
+        assert e.code == RC_BARE_FENCE, e.code
+    frep = json.loads((ns.out_dir / "bare_fence_report.json").read_text())
+    assert frep["gate"] == "G-B1" and frep["projected_shard_wall_min"] > 0, frep
+
+    logger.info("[smoke] OK — manifest/allocation/carve/gate/capture-indexing/kresample/bare-query")
     return 0
 
 
@@ -2061,6 +2541,28 @@ def main() -> int:
     ap.add_argument(
         "--tiny-model", action="store_true", help="SMOKE ONLY: 2-layer from-config model"
     )
+    # ── bare-query arm (follow-up `bare-query`, plan §4.1) ────────────────────────
+    ap.add_argument(
+        "--bare-query",
+        action="store_true",
+        help="bare-arm mode: batched forward-only capture of the FINAL user query "
+        "under the empty-system render (#1092 convention); no generation",
+    )
+    ap.add_argument(
+        "--upload-prefix",
+        default="",
+        help="HF prefix for THIS mode's uploads (default = --hf-prefix); the bare "
+        "arm passes issue1738_multiturn/bare_query so the parent capture prefix "
+        "is never clobbered (plan §4.1.4)",
+    )
+    ap.add_argument("--bare-batch", type=int, default=BARE_BATCH_DEFAULT)
+    ap.add_argument("--bare-chunk", type=int, default=BARE_CHUNK_DEFAULT)
+    ap.add_argument(
+        "--bare-fence-min",
+        type=float,
+        default=BARE_FENCE_MIN_DEFAULT,
+        help="G-B1: designed halt when the measured rate projects this shard past N minutes",
+    )
     ap.add_argument("--smoke", action="store_true", help="CPU logic smoke (synthetic streams)")
     args = ap.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -2075,6 +2577,8 @@ def main() -> int:
         rc = 0
     elif args.kresample:
         rc = run_kresample(args)
+    elif args.bare_query:
+        rc = run_bare_capture(args)
     else:
         rc = run_capture(args)
     # heavy C-extension entrypoint: explicit exit dodges the finalize-time

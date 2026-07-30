@@ -86,8 +86,11 @@ def _upload_summary_jsons(args, paths: list[Path], *, best_effort: bool = False)
     if not present:
         return
     rel = sorted(str(p.relative_to(args.out_eval)) for p in present)
-    dest = f"{args.hf_prefix}/{FT.ANALYSIS_TENSORS_SUBDIR}/summaries/characterize"
+    # UPLOAD_PREFIX_EXEMPT: default = this issue's own --hf-prefix (issue1738_multiturn); a child issue reusing this driver must pass --upload-prefix explicitly (plan v6 §4.3)
+    up = getattr(args, "upload_prefix", "") or args.hf_prefix
+    dest = f"{up}/{FT.ANALYSIS_TENSORS_SUBDIR}/summaries/characterize"
     try:
+        # UPLOAD_PREFIX_EXEMPT: dest defaults to this issue's own --hf-prefix (issue1738_multiturn); child reuse must pass --upload-prefix (plan v6 §4.3)
         url = hub._upload_folder_filtered(
             args.out_eval,
             repo_id=C.HF_DATA_REPO,
@@ -102,6 +105,22 @@ def _upload_summary_jsons(args, paths: list[Path], *, best_effort: bool = False)
         if not best_effort:
             raise
         logger.exception("[upload] best-effort summaries upload failed (designed rc kept)")
+
+
+def _arms_list(args) -> list[str]:
+    """Parse + validate --arms (plan §4.3: default prefix,context for back-compat;
+    the bare-query round passes 'bare')."""
+    arms = [a.strip() for a in args.arms.split(",") if a.strip()]
+    bad = [a for a in arms if a not in FT.ARMS]
+    assert arms and not bad, f"--arms invalid: {bad or 'empty'} (choices {sorted(FT.ARMS)})"
+    return arms
+
+
+def _labels_floors_eval(args) -> Path:
+    """Root the EXISTING judge labels + kresample floors are read from — the
+    PARENT out-eval for the bare round (plan §4.3: 0 new judge calls; the floor
+    is target-side, arm-independent). Default: this run's own --out-eval."""
+    return Path(args.parent_eval) if args.parent_eval else args.out_eval
 
 
 JUDGE_MODEL = A82.JUDGE_MODEL  # claude-sonnet-4-5-20250929 (project pin)
@@ -540,7 +559,8 @@ def _contrast_masks(
 def phase_taxonomy(args) -> None:
     layers = [int(x) for x in args.layers.split(",")]
     fields = _manifest_fields(Path(args.manifest_dir))
-    labels = {} if args.no_labels else _load_labels(args.out_eval)
+    src_eval = _labels_floors_eval(args)  # EXISTING labels + floors (plan §4.3)
+    labels = {} if args.no_labels else _load_labels(src_eval)
     out: dict = {
         "n_boot": N_BOOT,
         "n_perm": N_PERM,
@@ -551,8 +571,8 @@ def phase_taxonomy(args) -> None:
     depth_doc: dict = {"arms": {}}
     li = 19 if 19 in layers else layers[0]
     # per-context floors from the K-resample phase (P4c floor-adjusted input).
-    floors_p = args.out_eval / "kresample" / f"floors_L{li}.npz"
-    floor_summary_p = args.out_eval / "kresample" / "floor_summary.json"
+    floors_p = src_eval / "kresample" / f"floors_L{li}.npz"
+    floor_summary_p = src_eval / "kresample" / "floor_summary.json"
     if floor_summary_p.exists() and not floors_p.exists():
         raise SystemExit(
             f"{floor_summary_p} exists but per-context floors {floors_p} are missing — "
@@ -563,7 +583,7 @@ def phase_taxonomy(args) -> None:
         with np.load(floors_p) as fz:
             floors = {"ci": fz["ci"].copy(), "share": fz["share"].copy()}
     out["floor_adjusted_available"] = floors is not None
-    for arm in ("prefix", "context"):
+    for arm in _arms_list(args):
         nz = args.out_eval / "percontext" / f"{arm}_L{li}_ridge.npz"
         if not nz.exists():
             logger.warning("[taxonomy] missing %s — skipping arm", nz)
@@ -748,8 +768,12 @@ def phase_perdirection(args) -> None:
 
     layers = [int(x) for x in args.layers.split(",")]
     li = 19 if 19 in layers else layers[0]
+    arms = _arms_list(args)
     dev = torch.device(args.device if args.device != "cuda" or torch.cuda.is_available() else "cpu")
     mm, ci, _meta = FT.assemble_streams(args, layers)
+    if "bare" in arms:  # plan §4.3: bare X memmaps ride the fits bare assembly
+        bare_mm, _bm = FT.assemble_bare_streams(args, layers, ci, _meta["fingerprint"])
+        mm.update(bare_mm)
     split = FT.load_split(Path(args.split_file))
     sets = FT.split_positions(split, ci)
     tr, val, ho = sets["train"], sets["val"], sets["holdout"]
@@ -789,8 +813,8 @@ def phase_perdirection(args) -> None:
     yh = np.asarray(Y[ho], dtype=np.float64)
     yv_rot, yh_rot = yv @ top, yh @ top
     bands = {"1-16": (0, 16), "17-64": (16, 64), "65-128": (64, 128), "129-256": (128, 256)}
-    for arm in ("context", "prefix"):
-        X = mm[(("px" if arm == "prefix" else "cx"), li)]
+    for arm in [a for a in FT.ARM_ORDER if a in arms]:
+        X = mm[(FT.ARM_MM_KEY[arm], li)]
         fac = PF._ridge_factorize(X, Y, tr, dev, block)
         proj_val = np.empty((len(lam_grid), len(val), topk), dtype=np.float32)
         proj_ho = np.empty((len(lam_grid), len(ho), topk), dtype=np.float32)
@@ -880,18 +904,19 @@ def phase_figures(args) -> None:
     fig_dir.mkdir(parents=True, exist_ok=True)
     colors = paper_palette(len(fitters))
 
+    arms_l = _arms_list(args)
     fig, axes = plt.subplots(1, len(layers), figsize=(4.2 * len(layers), 3.4), sharey=True)
     axes = np.atleast_1d(axes)
     for ax, li in zip(axes, layers, strict=True):
-        xs = np.arange(2)
+        xs = np.arange(len(arms_l))
         w = 0.8 / len(fitters)
         for fi, name in enumerate(fitters):
             vals = [
                 fits["cells"].get(f"{arm}_L{li}_{name}", {}).get("holdout_r2", np.nan)
-                for arm in ("prefix", "context")
+                for arm in arms_l
             ]
             los, his = [], []
-            for arm in ("prefix", "context"):
+            for arm in arms_l:
                 cib = fits["cells"].get(f"{arm}_L{li}_{name}", {}).get("holdout_bootstrap_ci", {})
                 r2 = cib.get("r2", {})
                 los.append(r2.get("lo", np.nan))
@@ -913,7 +938,7 @@ def phase_figures(args) -> None:
             )
         ax.axhspan(0.05, H1_PREFIX_BAND_TOP, color="gray", alpha=0.25)
         ax.set_xticks(xs + 0.4 - w / 2)
-        ax.set_xticklabels(["prefix", "context"])
+        ax.set_xticklabels(arms_l)
         ax.set_title(f"layer {li}")
     axes[0].set_ylabel("holdout R² (10k contexts)")
     fig.legend(loc="upper center", ncol=len(fitters), fontsize=7)
@@ -1117,6 +1142,43 @@ def _smoke(args) -> int:
     phase_figures(ns)
     assert (Path(ns.fig_dir) / "hero_prefix_vs_context_r2.png").exists()
 
+    # (5b) bare-arm threading (plan §4.3): taxonomy + depth + floor-relative +
+    # perdirection with --arms bare against the fits smoke's bare outputs;
+    # labels + floors read from the PARENT eval (--parent-eval), 0 judge calls.
+    beval = froot / "eval_bare"
+    bns = argparse.Namespace(
+        **{
+            **vars(ns),
+            "arms": "bare",
+            "out_eval": beval,
+            "parent_eval": str(out_eval),
+            "pred16_dir": str(froot / "local_bare" / "pred16"),
+            "y_holdout_dir": str(froot / "local_bare" / "y_holdout"),
+        }
+    )
+    phase_taxonomy(bns)
+    btax = json.loads((beval / "taxonomy.json").read_text())
+    assert set(btax["arms"]) == {"bare_L19_ridge"}, sorted(btax["arms"])
+    assert btax["arms"]["bare_L19_ridge"]["contrasts"]
+    assert btax["floor_adjusted_available"] is True
+    assert btax["arms"]["bare_L19_ridge"]["floor_adjusted"]["contrasts"]
+    bdep = json.loads((beval / "depth_contrasts.json").read_text())
+    assert "bare_L19_ridge" in bdep["arms"], sorted(bdep["arms"])
+    bpd = argparse.Namespace(
+        **{
+            **vars(bns),
+            "local_capture_dir": str(froot / "capture"),
+            "local_bare_dir": str(froot / "bare_capture"),
+            "mm_dir": str(root / "mm3"),
+            "hf_prefix": GG.HF_PREFIX,
+            "device": "cpu",
+            "ridge_block": 50_000,
+        }
+    )
+    phase_perdirection(bpd)
+    bpdoc = json.loads((beval / "perdirection" / "pdshrink_summary.json").read_text())
+    assert "bare" in bpdoc["arms"] and bpdoc["arms"]["bare"]["bands"], sorted(bpdoc["arms"])
+
     # (6) judge request-builder: items composed via the production builder;
     # optionally 2 LIVE sync calls (--smoke-live-judge) through dispatch_judge_items.
     items = [
@@ -1185,6 +1247,27 @@ def main() -> int:
     ap.add_argument("--out-eval", type=Path, default=DEFAULT_OUT_EVAL)
     # UPLOAD_PREFIX_EXEMPT: issue 1738's own summaries prefix; a child issue reusing this driver must pass --hf-prefix explicitly (artifact-reuse check (i))
     ap.add_argument("--hf-prefix", default=GG.HF_PREFIX)
+    # ── bare-arm threading (follow-up `bare-query`, plan §4.3) ────────────────────
+    ap.add_argument(
+        "--arms",
+        default="prefix,context",
+        help="comma list of arms (back-compat default; the bare round passes 'bare')",
+    )
+    ap.add_argument(
+        "--parent-eval",
+        default="",
+        help="out-eval root the EXISTING judge labels + kresample floors are read "
+        "from (the bare round passes eval_results/issue_1738; default: --out-eval)",
+    )
+    # UPLOAD_PREFIX_EXEMPT: issue 1738's own bare-arm store prefix (plan §4.3); read-side default
+    ap.add_argument("--bare-hf-prefix", default=f"{GG.HF_PREFIX}/bare_query")
+    ap.add_argument("--local-bare-dir", default="", help="read bare chunks locally (smoke)")
+    ap.add_argument(
+        "--upload-prefix",
+        default="",
+        help="HF prefix for THIS run's summary dual-writes (default = --hf-prefix); "
+        "the bare round passes issue1738_multiturn/bare_query",
+    )
     ap.add_argument("--manifest-dir", default="")
     ap.add_argument("--split-file", default="")
     ap.add_argument("--pred16-dir", default=str(FT.DEFAULT_OUT_LOCAL / "pred16"))

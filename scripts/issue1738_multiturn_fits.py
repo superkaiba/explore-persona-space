@@ -70,7 +70,13 @@ logging.basicConfig(
 logger = logging.getLogger("issue1738_mt_fits")
 
 FIT_POINT = "multiturn_100k"
-ARMS = {"prefix": "px_last", "context": "cx_last"}
+ARMS = {"prefix": "px_last", "context": "cx_last", "bare": "bq_last"}
+# memmap key per arm (replaces the former hardcoded px/cx ternaries; plan §4.2)
+ARM_MM_KEY = {"prefix": "px", "context": "cx", "bare": "bq"}
+# `--input-arm both` keeps the PARENT semantics (prefix+context only); the bare
+# arm is a separate single-arm round (follow-up `bare-query`, plan §4.2).
+BOTH_ARMS = ("prefix", "context")
+ARM_ORDER = ("context", "prefix", "bare")  # (context, L19) first = the G2 pilot cell
 LAYERS_DEFAULT = (14, 19, 26)
 LAMBDAS = PF.LAMBDAS_N1M  # logspace(-3, 8, 23), parent grid verbatim
 PREDICTORS = PF.PREDICTORS
@@ -264,6 +270,184 @@ def assemble_streams(args, layers: list[int]):
     return mm, ci, {"n_rows": n_rows, "n_chunks": len(names), "fingerprint": fp}
 
 
+# ── bare-arm assembly: stream bq chunks + ci-keyed reorder to parent order ────────
+# (follow-up `bare-query`, plan §4.2)
+
+
+def _bare_chunk_names(args) -> list[str]:
+    if args.local_bare_dir:
+        names = sorted(p.name for p in Path(args.local_bare_dir).glob("*.pt"))
+    else:
+        names = sorted(
+            n
+            for n in GG.N50._remote_index(f"{args.bare_hf_prefix}/{GG.CAPTURE_SUBDIR}")
+            if n.endswith(".pt")
+        )
+    if not names:
+        raise SystemExit("no bare-query capture chunks found — run --bare-query capture first")
+    return names
+
+
+def assemble_bare_streams(args, layers: list[int], parent_ci: np.ndarray, parent_fp: str):
+    """Stream bare-query chunks (HF or local) into raw fp32 binaries (cursor-
+    checkpointed, resume-safe), then write per-layer ``bq`` memmaps REORDERED to
+    the PARENT capture ci order via one vectorized fancy-index (plan §4.2).
+
+    Coverage assert (1:1): every parent captured ci MUST be present in the bare
+    store — missing ⇒ fail loud; the ≤873 extra bare rows (parent over-length
+    skips) are recorded in ``bq_meta.json`` and dropped. Returns
+    ``({("bq", li): memmap aligned to parent rows}, bare_meta)``."""
+    mm_dir = Path(args.mm_dir)
+    mm_dir.mkdir(parents=True, exist_ok=True)
+    names = _bare_chunk_names(args)
+    fp = hashlib.sha256(
+        ("\n".join(names) + f"|{args.bare_hf_prefix}|{sorted(layers)}|{parent_fp}").encode()
+    ).hexdigest()
+    raw_paths = {li: mm_dir / f"bqraw_L{li}.bin" for li in layers}
+    out_paths = {li: mm_dir / f"bq_L{li}.bin" for li in layers}
+    ci_p = mm_dir / "bare_ci.bin"
+    cursor_p = mm_dir / "bare_cursor.json"
+    meta_p = mm_dir / "bq_meta.json"
+    n_parent = len(parent_ci)
+    if meta_p.exists():  # reorder already done under this fingerprint — resume-skip
+        prev = json.loads(meta_p.read_text())
+        if prev.get("fingerprint") == fp and all(out_paths[li].exists() for li in layers):
+            logger.info("[bare-assemble] resume: reordered bq memmaps present (%d rows)", n_parent)
+            mm = {
+                ("bq", li): np.memmap(
+                    out_paths[li], dtype=np.float32, mode="r", shape=(n_parent, H_DIM)
+                )
+                for li in layers
+            }
+            return mm, prev
+    cursor = {"fingerprint": fp, "n_chunks_done": 0, "n_rows": 0}
+    if cursor_p.exists():
+        prev = json.loads(cursor_p.read_text())
+        if prev.get("fingerprint") == fp:
+            cursor = prev
+            logger.info(
+                "[bare-assemble] resume: %d chunks / %d rows done",
+                cursor["n_chunks_done"],
+                cursor["n_rows"],
+            )
+        else:
+            logger.info("[bare-assemble] cursor fingerprint mismatch — fresh assembly")
+            for p in [*raw_paths.values(), ci_p]:
+                Path(p).unlink(missing_ok=True)
+    n_rows = int(cursor["n_rows"])
+    for li in layers:
+        p = raw_paths[li]
+        want = n_rows * H_DIM * 4
+        if p.exists() and p.stat().st_size != want:
+            with open(p, "r+b") as f:
+                f.truncate(want)
+        elif not p.exists():
+            p.touch()
+    if ci_p.exists() and ci_p.stat().st_size != n_rows * 8:
+        with open(ci_p, "r+b") as f:
+            f.truncate(n_rows * 8)
+    elif not ci_p.exists():
+        ci_p.touch()
+    cache = mm_dir / "bare_dl_cache"
+    cache.mkdir(exist_ok=True)
+    handles = {li: open(raw_paths[li], "ab") for li in layers}
+    ci_f = open(ci_p, "ab")
+    try:
+        for k, name in enumerate(names):
+            if k < cursor["n_chunks_done"]:
+                continue
+            if args.local_bare_dir:
+                local = Path(args.local_bare_dir) / name
+            else:
+                local = Path(
+                    PF._download_chunk_with_retry(
+                        C.HF_DATA_REPO, f"{args.bare_hf_prefix}/{GG.CAPTURE_SUBDIR}/{name}", cache
+                    )
+                )
+            bundle = torch.load(local, map_location="cpu", weights_only=False)
+            blayers = list(bundle["layers"])
+            li_pos = {li: blayers.index(li) for li in layers}
+            n = len(bundle["ci"])
+            t = bundle["bq_last"]
+            assert t.shape == (n, len(blayers), H_DIM), (name, t.shape)
+            for li in layers:
+                handles[li].write(
+                    np.ascontiguousarray(t[:, li_pos[li], :].numpy().astype(np.float32)).tobytes()
+                )
+            ci_f.write(np.asarray(bundle["ci"], dtype=np.int64).tobytes())
+            n_rows += n
+            cursor.update({"n_chunks_done": k + 1, "n_rows": n_rows})
+            if not args.local_bare_dir:
+                local.unlink(missing_ok=True)  # purge — peak footprint ~one chunk
+            if (k + 1) % 25 == 0 or (k + 1) == len(names):
+                for h in handles.values():
+                    h.flush()
+                ci_f.flush()
+                GG.N1M._atomic_write_json(cursor_p, cursor)
+                logger.info("[bare-assemble] chunk %d/%d (%d rows)", k + 1, len(names), n_rows)
+    finally:
+        for h in handles.values():
+            h.close()
+        ci_f.close()
+    GG.N1M._atomic_write_json(cursor_p, cursor)
+    bare_ci = np.fromfile(ci_p, dtype=np.int64)
+    assert len(bare_ci) == n_rows, (len(bare_ci), n_rows)
+    assert len(set(bare_ci.tolist())) == n_rows, "duplicate ci across bare chunks"
+    # ci-keyed reorder to the parent capture order (vectorized fancy-index).
+    pos_of = {int(c): p for p, c in enumerate(bare_ci.tolist())}
+    missing = [int(c) for c in parent_ci.tolist() if int(c) not in pos_of]
+    assert not missing, (
+        f"bare store missing {len(missing)} parent captured ci (first {missing[:5]}) — "
+        "1:1 coverage violated (plan §4.2); backfill the bare capture"
+    )
+    perm = np.asarray([pos_of[int(c)] for c in parent_ci.tolist()], dtype=np.int64)
+    extra = sorted(set(bare_ci.tolist()) - {int(c) for c in parent_ci.tolist()})
+    for li in layers:
+        raw = np.memmap(raw_paths[li], dtype=np.float32, mode="r", shape=(n_rows, H_DIM))
+        out = np.ascontiguousarray(raw[perm])
+        with open(out_paths[li], "wb") as f:
+            f.write(out.tobytes())
+        del raw, out
+    meta = {
+        "fingerprint": fp,
+        "n_bare_rows": int(n_rows),
+        "n_parent_rows": int(n_parent),
+        "n_extra_dropped": len(extra),
+        "extra_ci_head": [int(x) for x in extra[:20]],
+        "n_chunks": len(names),
+    }
+    GG.N1M._atomic_write_json(meta_p, meta)
+    logger.info(
+        "[bare-assemble] reordered %d rows to parent ci order (%d extra bare rows dropped)",
+        n_parent,
+        len(extra),
+    )
+    mm = {
+        ("bq", li): np.memmap(out_paths[li], dtype=np.float32, mode="r", shape=(n_parent, H_DIM))
+        for li in layers
+    }
+    return mm, meta
+
+
+def _assert_parent_split_shas(split: dict, parent_fits_json: str) -> dict:
+    """Bare-arm cross-assert (plan §4.2, consistency-check note round 1): the new
+    run's split_shas must equal the PARENT fits JSON's recorded split_shas — pins
+    content identity to the parent's REALIZED split, not only the loader's
+    internal shas. Returns the parent shas for the summary record."""
+    pj = Path(parent_fits_json)
+    assert pj.is_file(), (
+        f"--parent-fits-json missing: {pj} — the bare arm requires the parent "
+        "split_shas cross-assert (plan §4.2)"
+    )
+    parent_shas = json.loads(pj.read_text())["split_shas"]
+    own = {k: split["sets"][k]["sha256"] for k in split["sets"]}
+    assert own == parent_shas, (
+        f"split_shas != parent fits JSON ({pj}): own={own} parent={parent_shas}"
+    )
+    logger.info("[split] bare-arm split_shas cross-assert vs parent fits JSON OK")
+    return parent_shas
+
+
 # ── fit dispatch (parent fitters verbatim; MLP lr grid val-selected) ──────────────
 
 
@@ -379,7 +563,7 @@ def _boot_recon_ci_batched(pred: np.ndarray, true: np.ndarray, n_boot: int, seed
 
 def run_fits(args) -> int:
     layers = [int(x) for x in args.layers.split(",")]
-    arms = list(ARMS) if args.input_arm == "both" else [args.input_arm]
+    arms = list(BOTH_ARMS) if args.input_arm == "both" else [args.input_arm]
     dev = torch.device(args.device if args.device != "cuda" or torch.cuda.is_available() else "cpu")
     args.mlp_lrs_list = [float(x) for x in args.mlp_lrs.split(",")]
     args.krr_gamma_mult = tuple(float(x) for x in args.krr_gamma_mult_s.split(","))
@@ -388,7 +572,13 @@ def run_fits(args) -> int:
     C.phase("fits-assemble")
     mm, ci, ameta = assemble_streams(args, layers)
     afp = ameta["fingerprint"]  # assembly fingerprint — the resume regime key
+    bare_meta = None
+    if "bare" in arms:
+        bare_mm, bare_meta = assemble_bare_streams(args, layers, ci, afp)
+        mm.update(bare_mm)
     split = load_split(Path(args.split_file))
+    if "bare" in arms:
+        _assert_parent_split_shas(split, args.parent_fits_json)
     sets = split_positions(split, ci)
     shortfalls = _coverage_shortfalls(sets, split, args.min_split_coverage)
     if shortfalls:
@@ -409,9 +599,10 @@ def run_fits(args) -> int:
         pool, _m = GG.N1M.read_manifest_pool(Path(args.manifest_dir))
         corpus_by_ci = {int(r["i"]): r["corpus"] for r in pool}
 
-    # cell order: (context, L19) FIRST — the G2 in-run timing pilot cell.
+    # cell order: (context, L19) FIRST — the G2 in-run timing pilot cell (a
+    # bare-only round's first cell is (bare, L19), the same pilot semantics).
     layer_order = ([19] if 19 in layers else []) + [x for x in layers if x != 19]
-    arm_order = [a for a in ("context", "prefix") if a in arms]
+    arm_order = [a for a in ARM_ORDER if a in arms]
     cells = [(a, li) for a in arm_order for li in layer_order]
     cells_dir = args.out_eval / "fits" / "cells"
     pc_dir = args.out_eval / "percontext"
@@ -461,6 +652,8 @@ def run_fits(args) -> int:
         "numpy": np.__version__,
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
+    if bare_meta is not None:  # coverage + dropped-extras record (plan §4.2)
+        summary["bare_assembly"] = bare_meta
     for cell_i, (arm, li) in enumerate(cells):
         # G2 fence: designed halt once elapsed exceeds fence_mult × first-cell
         # extrapolation (report JSON + distinct rc — never an anonymous crash).
@@ -487,14 +680,16 @@ def run_fits(args) -> int:
                     except Exception:
                         logger.exception("[G2] fence-report upload failed (rc %d kept)", RC_FENCE)
                 sys.exit(RC_FENCE)
-        X = mm[(("px" if arm == "prefix" else "cx"), li)]
+        X = mm[(ARM_MM_KEY[arm], li)]
         Y = mm[("vx", li)]
         t_cell = time.time()
         resid_lr = float(args.mlp_lrs_list[-1])
         ridge_refit = False
         for name in [p for p in PREDICTORS if p in args.predictors.split(",")]:
             cj = cells_dir / f"{arm}_L{li}_{name}.json"
-            want_seed43 = name == "mlp_w8192" and li == 19
+            # seed-43 repeat NOT re-run on the bare arm (plan §10 Seeds row:
+            # "fit seeds 42 (+43 not re-run — single-arm round)").
+            want_seed43 = name == "mlp_w8192" and li == 19 and arm != "bare"
             if cj.exists() and not args.no_resume:
                 doc = json.loads(cj.read_text())
                 # resume keyed on the assembly fingerprint (#722-r3 regime-key
@@ -672,7 +867,7 @@ def _compute_baselines(mm, tr, ho, cells, pred_dir) -> dict:
     Extracted verbatim from run_fits so --rebuild-summaries shares it (r4)."""
     baselines: dict = {"ks": [1, 5, 10], "metrics": ["euclidean", "cosine"], "cells": {}}
     for arm, li in cells:
-        X = mm[(("px" if arm == "prefix" else "cx"), li)]
+        X = mm[(ARM_MM_KEY[arm], li)]
         Y = mm[("vx", li)]
         y_ho = np.asarray(Y[ho], dtype=np.float64)
         pred_ib = identity_bias_predict(np.asarray(X[tr]), np.asarray(Y[tr]), np.asarray(X[ho]))
@@ -712,7 +907,7 @@ def _compute_transfer(mm, ci, arms, split, tr, val, ho, corpus_by_ci, dev, args)
             transfer["skipped"] = f"empty cells (tr_lm={len(tr_lm)}, ho_wc={len(ho_wc)})"
         else:
             for arm in arms:
-                X = mm[(("px" if arm == "prefix" else "cx"), 19)]
+                X = mm[(ARM_MM_KEY[arm], 19)]
                 Y = mm[("vx", 19)]
                 eval_idx = np.concatenate([ho_wc, ho_lm])
                 pred, meta = PF.fit_ridge(
@@ -743,21 +938,24 @@ def _upload_analysis_tensors(args, entries: list[tuple[str, Path, list[str] | No
 
     entries: (sub, local_dir, rel_files) — rel_files None means every file under
     local_dir (rglob), else the explicit relative-path subset. Fail-loud on any
-    unverified commit (the per-cell exact-set contract, upload-policy.md)."""
+    unverified commit (the per-cell exact-set contract, upload-policy.md).
+    Uploads ride ``--upload-prefix`` when set (the bare round's
+    issue1738_multiturn/bare_query; default = ``--hf-prefix``, plan §4.2)."""
+    # UPLOAD_PREFIX_EXEMPT: default = this issue's own --hf-prefix (issue1738_multiturn); child reuse must pass --upload-prefix (plan v6 §4.2 dual-write)
+    up = getattr(args, "upload_prefix", "") or args.hf_prefix
     for sub, local, files in entries:
         if files is None:
             files = sorted(str(p.relative_to(local)) for p in local.rglob("*") if p.is_file())
         if not files:
             continue
+        # UPLOAD_PREFIX_EXEMPT: dest defaults to this issue's own --hf-prefix (issue1738_multiturn); child reuse must pass --upload-prefix (plan v6 §4.2 dual-write)
         url = hub._upload_folder_filtered(
             local,
             repo_id=C.HF_DATA_REPO,
             repo_type="dataset",
-            path_in_repo=f"{args.hf_prefix}/{ANALYSIS_TENSORS_SUBDIR}/{sub}",
+            path_in_repo=f"{up}/{ANALYSIS_TENSORS_SUBDIR}/{sub}",
             allow_patterns=files,
-            expected_repo_paths=[
-                f"{args.hf_prefix}/{ANALYSIS_TENSORS_SUBDIR}/{sub}/{f}" for f in files
-            ],
+            expected_repo_paths=[f"{up}/{ANALYSIS_TENSORS_SUBDIR}/{sub}/{f}" for f in files],
         )
         if not url:
             raise RuntimeError(f"analysis-tensors upload ({sub}) returned no URL")
@@ -817,7 +1015,9 @@ def _stage_analysis_subdir(args, sub: str) -> Path:
         d = Path(args.local_analysis_dir) / sub
         assert d.is_dir(), f"--local-analysis-dir missing subdir {d}"
         return d
-    prefix = f"{args.hf_prefix}/{ANALYSIS_TENSORS_SUBDIR}/{sub}"
+    # UPLOAD_PREFIX_EXEMPT: default = this issue's own --hf-prefix (issue1738_multiturn); child reuse must pass --upload-prefix (plan v6 §4.2)
+    up = getattr(args, "upload_prefix", "") or args.hf_prefix
+    prefix = f"{up}/{ANALYSIS_TENSORS_SUBDIR}/{sub}"
     dest = Path(args.out_local) / "rebuild_stage"
     hub.stage_hub_prefix(C.HF_DATA_REPO, prefix, dest, repo_type="dataset")
     return dest / prefix
@@ -836,7 +1036,7 @@ def run_rebuild(args) -> int:
     lmsys_transfer control is RE-fit (ridge only) on CPU and tagged as such:
     a fresh deterministic estimate, not a reconstruction of the lost values."""
     layers = [int(x) for x in args.layers.split(",")]
-    arms = list(ARMS) if args.input_arm == "both" else [args.input_arm]
+    arms = list(BOTH_ARMS) if args.input_arm == "both" else [args.input_arm]
     dev = torch.device("cpu")
     args.mlp_lrs_list = [float(x) for x in args.mlp_lrs.split(",")]
 
@@ -848,7 +1048,12 @@ def run_rebuild(args) -> int:
     C.phase("rebuild-assemble")
     mm, ci, ameta = assemble_streams(args, layers)
     afp = ameta["fingerprint"]
+    if "bare" in arms:
+        bare_mm, _bare_meta = assemble_bare_streams(args, layers, ci, afp)
+        mm.update(bare_mm)
     split = load_split(Path(args.split_file))
+    if "bare" in arms:
+        _assert_parent_split_shas(split, args.parent_fits_json)
     sets = split_positions(split, ci)
     shortfalls = _coverage_shortfalls(sets, split, args.min_split_coverage)
     if shortfalls:
@@ -872,7 +1077,7 @@ def run_rebuild(args) -> int:
         corpus_by_ci = {int(r["i"]): r["corpus"] for r in pool}
 
     layer_order = ([19] if 19 in layers else []) + [x for x in layers if x != 19]
-    arm_order = [a for a in ("context", "prefix") if a in arms]
+    arm_order = [a for a in ARM_ORDER if a in arms]
     cells = [(a, li) for a in arm_order for li in layer_order]
     preds_list = [p for p in PREDICTORS if p in args.predictors.split(",")]
 
@@ -1021,9 +1226,14 @@ def run_rebuild(args) -> int:
 # ── smoke: tiny synthetic capture store through the PRODUCTION entrypoint ─────────
 
 
-def _write_smoke_store(root: Path, *, n_rows=140, layers=(14, 19, 26), seed=0) -> tuple[Path, Path]:
+def _write_smoke_store(
+    root: Path, *, n_rows=140, layers=(14, 19, 26), seed=0
+) -> tuple[Path, Path, Path]:
     """Synthetic capture chunks in the PRODUCTION chunk schema + a matching
-    manifest/split doc. Y = linear(X_cx) + noise so ridge finds real signal."""
+    manifest/split doc + a BARE-arm store (plan §4.2 smoke: bq chunks in
+    REVERSED ci order — exercises the ci-keyed reorder — plus 2 extra ci absent
+    from the parent capture, the recorded-and-dropped path).
+    Y = linear(X_cx) + noise so ridge finds real signal."""
     rng = np.random.default_rng(seed)
     cap = root / "capture"
     man = root / "manifest"
@@ -1032,10 +1242,12 @@ def _write_smoke_store(root: Path, *, n_rows=140, layers=(14, 19, 26), seed=0) -
     W = rng.standard_normal((H_DIM, H_DIM)).astype(np.float32) * 0.01
     rows_per_chunk = (n_rows + 2) // 3
     pool_rows = []
+    cx_all: list[np.ndarray] = []
     ci0 = 0
     for k in range(3):
         n = min(rows_per_chunk, n_rows - ci0)
         cx = rng.standard_normal((n, len(layers), H_DIM)).astype(np.float32)
+        cx_all.append(cx)
         px = cx + 0.5 * rng.standard_normal((n, len(layers), H_DIM)).astype(np.float32)
         vx = np.einsum("nlh,hd->nld", cx, W).astype(np.float32)
         vx += 0.05 * rng.standard_normal(vx.shape).astype(np.float32)
@@ -1085,15 +1297,58 @@ def _write_smoke_store(root: Path, *, n_rows=140, layers=(14, 19, 26), seed=0) -
     meta = {"n_new": n_rows, "capture_layers": list(layers)}
     GG.N1M._write_manifest_parts(man, pool_rows, meta)
     GG.N1M._atomic_write_json(man / "split_1738.json", doc)
-    return cap, man
+    # bare-arm store: bq = 0.6*cx + noise (correlated but distinct), rows in
+    # REVERSED parent-ci order + 2 EXTRA ci the parent never captured.
+    bare = root / "bare_capture"
+    bare.mkdir(parents=True, exist_ok=True)
+    cx_full = np.concatenate(cx_all, axis=0)  # (n_rows, L, H), parent ci order
+    bare_ci = list(reversed(range(n_rows))) + [n_rows, n_rows + 1]
+    bq_full = np.concatenate(
+        [
+            0.6 * cx_full[list(reversed(range(n_rows)))],
+            rng.standard_normal((2, len(layers), H_DIM)).astype(np.float32),
+        ],
+        axis=0,
+    ) + 0.1 * rng.standard_normal((n_rows + 2, len(layers), H_DIM)).astype(np.float32)
+    per = (len(bare_ci) + 1) // 2
+    for k in range(2):
+        sl = slice(k * per, min((k + 1) * per, len(bare_ci)))
+        torch.save(
+            {
+                "bq_last": torch.from_numpy(bq_full[sl]),
+                "ci": bare_ci[sl],
+                "bare_render": ["<|im_start|>system\n..."] * (sl.stop - sl.start),
+                "layers": list(layers),
+                "shard_index": 0,
+                "chunk": k,
+            },
+            bare / f"shard00_chunk{k:04d}.pt",
+        )
+    return cap, man, bare
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #1738 multi-turn prefix/context fits.")
-    ap.add_argument("--input-arm", choices=["prefix", "context", "both"], default="both")
+    ap.add_argument("--input-arm", choices=["prefix", "context", "both", "bare"], default="both")
     ap.add_argument("--layers", default=",".join(str(x) for x in LAYERS_DEFAULT))
     # UPLOAD_PREFIX_EXEMPT: issue 1738's own analysis-tensors prefix; a child issue reusing this driver must pass --hf-prefix explicitly (artifact-reuse check (i))
     ap.add_argument("--hf-prefix", default=GG.HF_PREFIX)
+    # ── bare-arm inputs (follow-up `bare-query`, plan §4.2) ───────────────────────
+    # UPLOAD_PREFIX_EXEMPT: issue 1738's own bare-arm store prefix (plan §4.2); read-side default
+    ap.add_argument("--bare-hf-prefix", default=f"{GG.HF_PREFIX}/bare_query")
+    ap.add_argument("--local-bare-dir", default="", help="read bare chunks locally (smoke)")
+    ap.add_argument(
+        "--parent-fits-json",
+        default=str(DEFAULT_OUT_EVAL / "fits" / f"{FIT_POINT}_fits.json"),
+        help="bare arm: parent fits JSON whose recorded split_shas the new run's "
+        "split MUST match (plan §4.2 cross-assert)",
+    )
+    ap.add_argument(
+        "--upload-prefix",
+        default="",
+        help="HF prefix for THIS run's analysis-tensor/summary uploads (default = "
+        "--hf-prefix); the bare round passes issue1738_multiturn/bare_query",
+    )
     ap.add_argument("--local-capture-dir", default="", help="read chunks locally (smoke/pod)")
     ap.add_argument("--manifest-dir", default="", help="local manifest dir (corpus provenance)")
     ap.add_argument("--manifest-from-hf", action="store_true")
@@ -1144,7 +1399,7 @@ def main() -> int:
             import shutil
 
             shutil.rmtree(root)
-        cap, man = _write_smoke_store(root)
+        cap, man, bare_cap = _write_smoke_store(root)
         args = argparse.Namespace(
             **{
                 **vars(args),
@@ -1276,6 +1531,92 @@ def main() -> int:
                 # smoke fits ran on cpu too -> the refit is draw-identical
                 assert abs(rtr["cells"][arm_][f_] - tcell[f_]) < 1e-9, (arm_, f_)
         logger.info("[smoke] rebuild-summaries equivalence OK (%d cells)", len(rsum["cells"]))
+        # ── bare-arm leg (plan §4.2): single-arm fits through the SAME production
+        # entrypoint — ci-keyed reorder + 1:1 coverage assert + parent split_shas
+        # cross-assert + extras recorded/dropped + no seed-43 repeat.
+        beval = root / "eval_bare"
+        blocal = root / "local_bare"
+        bargs = argparse.Namespace(
+            **{
+                **vars(args),
+                "input_arm": "bare",
+                "local_bare_dir": str(bare_cap),
+                "parent_fits_json": str(args.out_eval / "fits" / f"{FIT_POINT}_fits.json"),
+                "out_eval": beval,
+                "out_local": blocal,
+            }
+        )
+        assert run_fits(bargs) == 0
+        bsum = json.loads((beval / "fits" / f"{FIT_POINT}_fits.json").read_text())
+        assert bsum["arms"] == ["bare"] and len(bsum["cells"]) == 5, sorted(bsum["cells"])
+        assert "seed43" not in bsum["cells"]["bare_L19_mlp_w8192"], (
+            "seed-43 repeat must NOT run on the bare arm (plan §10 Seeds row)"
+        )
+        ba = bsum["bare_assembly"]
+        assert ba["n_extra_dropped"] == 2 and ba["n_parent_rows"] == bsum["n_rows_captured"], ba
+        # reorder correctness: bare percontext rows carry the SAME holdout ci
+        # order as the parent arm (the fancy-index alignment worked).
+        bz = np.load(beval / "percontext" / "bare_L19_ridge.npz")
+        pz2 = np.load(args.out_eval / "percontext" / "context_L19_ridge.npz")
+        assert np.array_equal(bz["ci"], pz2["ci"]), "bare percontext ci != parent holdout ci"
+        bbl = json.loads((beval / "mapping_baselines.json").read_text())
+        assert "bare_L19" in bbl["cells"] and "ridge" in bbl["cells"]["bare_L19"]["knn"]
+        assert bsum["lmsys_transfer"]["cells"].get("bare"), bsum["lmsys_transfer"]
+        # degenerate probe (i): a bare store MISSING one parent ci fails the
+        # 1:1 coverage assert LOUD (never a silent drop).
+        import shutil
+
+        bare_missing = root / "bare_missing"
+        shutil.copytree(bare_cap, bare_missing)
+        mc = sorted(bare_missing.glob("*.pt"))[0]
+        mb = torch.load(mc, weights_only=False)
+        torch.save(
+            {
+                **mb,
+                "bq_last": mb["bq_last"][1:],
+                "ci": mb["ci"][1:],
+                "bare_render": mb["bare_render"][1:],
+            },
+            mc,
+        )
+        cov_fired = False
+        try:
+            run_fits(
+                argparse.Namespace(
+                    **{
+                        **vars(bargs),
+                        "local_bare_dir": str(bare_missing),
+                        "mm_dir": str(root / "mm_missing"),
+                        "out_eval": root / "eval_bare_missing",
+                        "out_local": root / "local_bare_missing",
+                    }
+                )
+            )
+        except AssertionError as e:
+            assert "1:1 coverage" in str(e), e
+            cov_fired = True
+        assert cov_fired, "bare coverage assert did not fire on a missing parent ci"
+        # degenerate probe (ii): a parent-fits split_shas mismatch fails the
+        # cross-assert LOUD before any fitting.
+        bad_pj = root / "bad_parent_fits.json"
+        bad_pj.write_text(json.dumps({"split_shas": dict.fromkeys(bsum["split_shas"], "dead")}))
+        sha_fired = False
+        try:
+            run_fits(
+                argparse.Namespace(
+                    **{
+                        **vars(bargs),
+                        "parent_fits_json": str(bad_pj),
+                        "out_eval": root / "eval_bare_sha",
+                        "out_local": root / "local_bare_sha",
+                    }
+                )
+            )
+        except AssertionError as e:
+            assert "split_shas" in str(e), e
+            sha_fired = True
+        assert sha_fired, "parent split_shas cross-assert did not fire"
+        logger.info("[smoke] bare-arm leg OK: 5 cells + reorder + coverage/sha probes")
         logger.info("[smoke] fits OK: %d cells + baselines + transfer", len(summ["cells"]))
     else:
         if args.manifest_from_hf and not args.manifest_dir:
