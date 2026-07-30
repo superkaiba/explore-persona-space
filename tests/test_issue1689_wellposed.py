@@ -276,7 +276,8 @@ def test_paired_digest_join_and_coverage(tmp_path, capsys):
     assert dig.paired_main(args) == 0
     import csv as _csv
 
-    rows = list(_csv.DictReader(open(args.out)))
+    with open(args.out) as fh:
+        rows = list(_csv.DictReader(fh))
     assert len(rows) == 1
     row = rows[0]
     assert row["verdict_flip"] == "1" and row["k_band"] == k_band(40)
