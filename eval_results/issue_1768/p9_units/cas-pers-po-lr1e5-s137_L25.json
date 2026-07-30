@@ -1,0 +1,118 @@
+{
+ "smoke": false,
+ "direction": {
+  "arm_id": "cas-pers-po-lr1e5-s137",
+  "method": "lora",
+  "layer": 25,
+  "src_ctx": "persona_software_engineer",
+  "n_panel_questions": 20,
+  "w_norm": 57.505006582830006,
+  "w_split_half_cos": 0.9308193716649513,
+  "w_tf_split_half_cos": 0.9816263138469068,
+  "delta_split_half_cos": 0.5341014047397682,
+  "delta_split_half_cos_sharedB_record_only": 0.7795037571880173,
+  "delta_split_half_cos_upper_bound_sharedB": false,
+  "n_mix_rows": 20,
+  "delta_arm": "cas-pers-po-lr1e5-s137",
+  "races": {
+   "delta": {
+    "cos_w": 0.4632085679298128,
+    "cos_w_shared_record_only": 0.6241642108886657,
+    "top_eig_contamination_cos": -0.14172103050552992,
+    "nulls": {
+     "isotropic": {
+      "p2_5": -0.031573629296093815,
+      "p97_5": 0.03166108429276651,
+      "abs_p95": 0.03158195101158821,
+      "n_draws": 2000
+     },
+     "corpus_covariance": {
+      "p2_5": -0.1497005099971341,
+      "p97_5": 0.14852277384811638,
+      "abs_p95": 0.14907164877628587,
+      "n_draws": 2000
+     }
+    },
+    "shuffled_row_null": {
+     "p2_5": -0.40445997028731695,
+     "p97_5": 0.4036532901644078,
+     "abs_p95": 0.4045068001540114,
+     "n_draws": 2000
+    },
+    "covariance_band_contaminated": false,
+    "primary_null_family": "corpus_covariance",
+    "cos_w_tf": 0.08889113345628141
+   },
+   "r_B": {
+    "cos_w": 0.5554914157089654,
+    "cos_w_shared_record_only": 0.5845411820822495,
+    "top_eig_contamination_cos": -0.12990228693977648,
+    "nulls": {
+     "isotropic": {
+      "p2_5": -0.03356067359632883,
+      "p97_5": 0.034169568783163184,
+      "abs_p95": 0.03383045684950633,
+      "n_draws": 2000
+     },
+     "corpus_covariance": {
+      "p2_5": -0.14219342870726792,
+      "p97_5": 0.14123686903244365,
+      "abs_p95": 0.14152742283072478,
+      "n_draws": 2000
+     }
+    },
+    "shuffled_row_null": {
+     "p2_5": -0.3652274239084196,
+     "p97_5": 0.34998335488545235,
+     "abs_p95": 0.35862675545601774,
+     "n_draws": 2000
+    },
+    "covariance_band_contaminated": false,
+    "primary_null_family": "corpus_covariance",
+    "cos_w_tf": 0.34805483686147565
+   }
+  },
+  "cross_behavior_rb_cos": {
+   "syc": -0.020856594261089243,
+   "mk": -0.026911452206784998,
+   "imp": 0.38152551671176854
+  },
+  "A5_scalar_fit": {
+   "a": 0.43978771507976366,
+   "residual_share": 0.7854378225964119
+  },
+  "A6_rank": {
+   "top1_var_share": 0.0558510475150734,
+   "participation_ratio": 121.74647725455287,
+   "cos_u1_w": 0.4576572693331674,
+   "n_rows": 16400
+  },
+  "A6_rank_tf": {
+   "top1_var_share": 0.27822846442401766,
+   "participation_ratio": 10.975430578756118,
+   "cos_u1_w": 0.3386199935141231,
+   "n_rows": 16400
+  },
+  "baseline_halves": "w:evens(A) delta:odds(B) — disjoint (Must-Fix)"
+ },
+ "gate": {
+  "arm_id": "cas-pers-po-lr1e5-s137",
+  "method": "lora",
+  "layer": 25,
+  "on_policy": {
+   "spearman_rho": 0.09371442129614699,
+   "p_value": 2.567369779940501e-33,
+   "n": 16400
+  },
+  "matched_text": {
+   "spearman_rho": 0.03999936186282566,
+   "p_value": 2.9899757772633506e-07,
+   "n": 16400
+  },
+  "sigma_n_rows": 15000,
+  "sigma_shrinkage": 0.1,
+  "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+ },
+ "ts": "2026-07-30T09:58:55Z",
+ "issue": 1768
+}
