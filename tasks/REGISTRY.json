@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1888,
+  "highest_id": 1889,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6875,6 +6875,13 @@
       "path": "tasks/archived/1888",
       "status": "archived",
       "title": "workflow-fix: add lint-family-sync pin test to Step 5a workflow family"
+    },
+    "1889": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1889",
+      "status": "proposed",
+      "title": "workflow-fix: inline lint gate blind to untracked payload files"
     },
     "19": {
       "has_clean_result": false,
