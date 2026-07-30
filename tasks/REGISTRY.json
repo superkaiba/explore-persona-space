@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1876,
+  "highest_id": 1877,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6784,6 +6784,13 @@
       "path": "tasks/proposed/1876",
       "status": "proposed",
       "title": "daily-fix: compliant git-commit forms at snippet sites + blo"
+    },
+    "1877": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1877",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas \u2014 HF download-accel failure matrix (scope disables per workload)"
     },
     "188": {
       "has_clean_result": false,
