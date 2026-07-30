@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1867,
+  "highest_id": 1868,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6714,6 +6714,13 @@
       "path": "tasks/proposed/1867",
       "status": "proposed",
       "title": "daily-fix: task.py address-concern accepts --note alias"
+    },
+    "1868": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1868",
+      "status": "proposed",
+      "title": "daily-fix: Step 10d teardown re-runs sync on in-flight advis"
     },
     "187": {
       "has_clean_result": true,
