@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1851,
+  "highest_id": 1852,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6595,6 +6595,13 @@
       "path": "tasks/proposed/1851",
       "status": "proposed",
       "title": "daily-fix: step9c selector misses SKILL.md-pinning tests"
+    },
+    "1852": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1852",
+      "status": "proposed",
+      "title": "daily-fix: env-pin allowlist PYTORCH_CUDA_ALLOC_CONF + help "
     },
     "186": {
       "has_clean_result": true,
