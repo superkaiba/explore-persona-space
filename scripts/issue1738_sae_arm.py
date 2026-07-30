@@ -1176,7 +1176,23 @@ def run_fits(args) -> int:
     for p in (out_eval, mm_dir, cells_dir, pred_dir, pf_dir):
         p.mkdir(parents=True, exist_ok=True)
 
-    # pinned split (sha-assert) + parent split_shas cross-assert (v6 pattern)
+    # pinned split (sha-assert) + parent split_shas cross-assert (v6 pattern).
+    # --split-file default: stage the parent's pinned split_1738.json from the HF
+    # sampling manifest (the plan §10 S2 command passes no local manifest — a fresh
+    # GCE clone has none; review r1 Critical). stage_hub_file is retried + atomic
+    # and RAISES on a missing file / transport exhaustion (fail-loud, no fallback);
+    # idempotent on resume (existing target short-circuits — any stale copy is
+    # caught by load_split's per-set sha assert + the parent split_shas cross-assert).
+    if not args.split_file:
+        args.split_file = str(
+            hub.stage_hub_file(
+                C.HF_DATA_REPO,
+                f"{args.hf_prefix}/{GG.MANIFEST_SUBDIR}/split_1738.json",
+                out_local / "split_1738.json",
+                repo_type="dataset",
+            )
+        )
+        logger.info("[sae-fits] split_1738.json staged from HF: %s", args.split_file)
     split = MTF.load_split(Path(args.split_file))
     MTF._assert_parent_split_shas(split, args.parent_fits_json)
     parent_fits = json.loads(Path(args.parent_fits_json).read_text())
@@ -1186,7 +1202,7 @@ def run_fits(args) -> int:
         (
             "\n".join(names)
             + f"|{sae_prefix}|{MAX_FEATURES_OUT}|{MAX_FEATURES_IN}|{SHUFFLE_SEED_BASE}"
-            + f"|{args.k_draws}|{[float(x) for x in LAMBDAS]}"
+            + f"|{args.k_draws}|{args.n_boot}|{[float(x) for x in LAMBDAS]}"
         ).encode()
     ).hexdigest()
     cache = out_local / "sae_dl"
@@ -1551,8 +1567,14 @@ def run_fits(args) -> int:
             del fac_lm, kit_lm
     summary["lmsys_transfer"] = transfer
 
-    # pilot meta recap (staged copy into out_eval, plan §6.5)
+    # pilot meta recap (staged copy into out_eval, plan §6.5). Only a genuinely-
+    # absent file (response-bearing 404) is non-fatal — the durable copy uploads
+    # at pilot time and the upload-verifier's §6.5 glob is the backstop; any
+    # OTHER failure (transport exhaustion past stage_hub_file's retries) raises
+    # per fail-fast discipline (review r1 Minor 3 — no blanket Exception swallow).
     if not args.local_sae_dir:
+        from huggingface_hub.utils import EntryNotFoundError  # lazy, mirrors hub.py style
+
         try:
             hub.stage_hub_file(
                 C.HF_DATA_REPO,
@@ -1561,8 +1583,8 @@ def run_fits(args) -> int:
                 repo_type="dataset",
                 overwrite=True,
             )
-        except Exception:
-            logger.warning("[sae-fits] pilot meta not staged from Hub (absent?)")
+        except EntryNotFoundError:
+            logger.warning("[sae-fits] pilot meta absent on Hub — recap skipped")
     elif (Path(args.local_sae_dir).parent / PILOT_META_NAME).exists():
         (out_eval / PILOT_META_NAME).write_text(
             (Path(args.local_sae_dir).parent / PILOT_META_NAME).read_text()
@@ -1955,7 +1977,10 @@ def _smoke(args) -> int:
                 }
             )
         )
-        raise AssertionError("parent split_shas mismatch did not fire")
+        # sentinel text must NOT contain "split_shas" — the except-arm checks for
+        # that substring, so a self-matching sentinel would mask a disabled gate
+        # (review r1 Minor 1).
+        raise AssertionError("cross-assert did not fire")
     except AssertionError as e:
         assert "split_shas" in str(e), e
     bad_count = base / "bad_count.json"
