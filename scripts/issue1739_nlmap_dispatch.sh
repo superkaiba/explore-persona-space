@@ -50,9 +50,28 @@ KINDS="${EPM_I1739_NL_KINDS:-mlp kernel}"
 USIZES="${EPM_I1739_NL_USIZES:-250 5000 full}"
 SEEDS="${EPM_I1739_NL_SEEDS:-0 1 2}"
 DRAWS="${EPM_I1739_NL_DRAWS:-0 1 2 3 4}"
-# Wall-clock budget for the pilot gate (GPU-h, one behavior x one kind).
-PLAN_WALL_H="${EPM_I1739_NL_PLAN_WALL_H:-1.0}"
+# Pilot gate budget. The ROUND ceiling is ~5 GPU-h across all
+# (behavior x kind) invocations; with 6 invocations that is ~0.83 h each, and
+# the pilot runs on the HEAVIEST behavior (3 regimes), so a per-invocation pass
+# bounds the lighter ones too. abort-mult 1 makes the gate enforce that share
+# directly rather than the fits default 3x plan-§9 re-size fence.
+PLAN_WALL_H="${EPM_I1739_NL_PLAN_WALL_H:-0.83}"
+PILOT_ABORT_MULT="${EPM_I1739_NL_PILOT_ABORT_MULT:-1}"
+# Comma/space list of phases, or "all". Two-leg dispatch (stage,pilot then
+# fits,collect,upload) keeps the round-level STOP decision on measured numbers.
 PHASE="${EPM_I1739_NL_PHASE:-all}"
+
+want_phase() {
+  # want_phase <name> — true when PHASE is "all" or lists <name>.
+  case "$PHASE" in
+    all) return 0 ;;
+  esac
+  local p
+  for p in ${PHASE//,/ }; do
+    [ "$p" = "$1" ] && return 0
+  done
+  return 1
+}
 
 FITS_DEVICE="${EPM_I1739_FITS_DEVICE:-}"
 if [ -z "$FITS_DEVICE" ]; then
@@ -110,7 +129,7 @@ fits_args() {
 }
 
 # ---- stage -----------------------------------------------------------------
-if [ "$PHASE" = "all" ] || [ "$PHASE" = "stage" ]; then
+if want_phase stage; then
   echo "[nlmap] phase=stage: pre-staging inputs via issue1739_leg2.sh"
   bash scripts/issue1739_leg2.sh
   for b in $BEHAVIORS; do
@@ -129,18 +148,20 @@ fi
 # never a sizing basis). The fits script's own `--pilot` times one cell and
 # projects the grid wall; rc=7 means the projection exceeds PLAN_WALL_H, which
 # this round treats as STOP-and-report, not a silent descope.
-if [ "$PHASE" = "all" ] || [ "$PHASE" = "pilot" ]; then
+if want_phase pilot; then
   pb="$(echo "$BEHAVIORS" | awk '{print $1}')"
   pk="$(echo "$KINDS" | awk '{print $1}')"
-  echo "[nlmap] phase=pilot: $pb/$pk vs plan_wall_h=$PLAN_WALL_H"
+  echo "[nlmap] phase=pilot: $pb/$pk vs plan_wall_h=$PLAN_WALL_H x mult=$PILOT_ABORT_MULT"
   set +e
   mapfile -t _pa < <(fits_args "$pb" "$pk")
-  uv run python scripts/issue1739_fits.py "${_pa[@]}" --pilot --plan-wall-h "$PLAN_WALL_H"
+  uv run python scripts/issue1739_fits.py "${_pa[@]}" --pilot \
+    --plan-wall-h "$PLAN_WALL_H" --pilot-abort-mult "$PILOT_ABORT_MULT"
   prc=$?
   set -e
   if [ "$prc" -eq 7 ]; then
-    echo "[nlmap] PILOT REFUSED (rc=7): projected wall exceeds ${PLAN_WALL_H}h." >&2
-    echo "[nlmap] STOP — reporting instead of launching (see pilot report JSON)." >&2
+    echo "[nlmap] PILOT REFUSED (rc=7): projected wall exceeds" \
+      "${PILOT_ABORT_MULT}x${PLAN_WALL_H}h." >&2
+    echo "[nlmap] STOP — reporting instead of launching (see pilot_report.json)." >&2
     exit 7
   fi
   [ "$prc" -eq 0 ] || { echo "[nlmap] FATAL: pilot exited rc=$prc" >&2; exit "$prc"; }
@@ -148,7 +169,7 @@ if [ "$PHASE" = "all" ] || [ "$PHASE" = "pilot" ]; then
 fi
 
 # ---- fits ------------------------------------------------------------------
-if [ "$PHASE" = "all" ] || [ "$PHASE" = "fits" ]; then
+if want_phase fits; then
   for b in $BEHAVIORS; do
     for kind in $KINDS; do
       echo "[nlmap] phase=fits behavior=$b kind=$kind start $(date -u +%FT%TZ)"
@@ -163,7 +184,7 @@ fi
 # Derived from the frozen `maps/*.pt` metas (which carry the held-out
 # r2_map + identity+bias baseline + kNN retrieval per layer), so the standing
 # mapping-companion reads survive without re-running any fit.
-if [ "$PHASE" = "all" ] || [ "$PHASE" = "collect" ]; then
+if want_phase collect; then
   echo "[nlmap] phase=collect: map_quality.json"
   uv run python scripts/issue1739_nlmap_collect.py \
     --tensors-root "$TENSORS_ROOT" \
@@ -172,7 +193,7 @@ if [ "$PHASE" = "all" ] || [ "$PHASE" = "collect" ]; then
 fi
 
 # ---- upload ----------------------------------------------------------------
-if [ "$PHASE" = "all" ] || [ "$PHASE" = "upload" ]; then
+if want_phase upload; then
   echo "[nlmap] phase=upload: nonlinear map payloads -> HF analysis_tensors"
   uv run python scripts/issue1739_upload.py --stage tensors
   echo "[nlmap] phase=upload: results -> git (fetch+rebase first; #1880 push race)"
