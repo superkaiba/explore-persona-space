@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1896,
+  "highest_id": 1897,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6931,6 +6931,13 @@
       "path": "tasks/proposed/1896",
       "status": "proposed",
       "title": "workflow-fix: add capture-7b to the fellows/SLURM lane intent tables"
+    },
+    "1897": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1897",
+      "status": "proposed",
+      "title": "workflow-fix: Step 10d probes PR state; verify landing before verdict consume"
     },
     "19": {
       "has_clean_result": false,
