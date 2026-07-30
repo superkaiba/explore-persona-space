@@ -6305,8 +6305,8 @@
     "1814": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1814",
-      "status": "approved",
+      "path": "tasks/running/1814",
+      "status": "running",
       "title": "daily-fix: gotchas \u2014 subsample filters, zones, hub path glob"
     },
     "1815": {
