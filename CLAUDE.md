@@ -225,7 +225,7 @@ uv run python scripts/task.py view <N> [--json]
 uv run python scripts/task.py latest-marker <N>               # "where do I resume"
 uv run python scripts/task.py set-status <N> <status>
 uv run python scripts/task.py post-marker <N> epm:foo --note '...'   # long body: --file <path.md> (the flag is --file, NOT --note-file). --note and --file are MUTUALLY EXCLUSIVE — pick one (passing both raises argparse error exit 2).
-uv run python scripts/task.py address-concern <N> --concern-id <id> --summary '...'   # the flag is --summary, NOT --note (argparse exit 2; 2026-07-28)
+uv run python scripts/task.py address-concern <N> --concern-id <id> --by <agent> --round <k> --summary '...'   # --by and --round are REQUIRED; the summary flag is --summary, NOT --note (argparse exit 2; 2026-07-28/29)
 uv run python scripts/task.py set-body <N> --file body.md --snapshot
 uv run python scripts/task.py set-title <N> "..."
 uv run python scripts/task.py set-clean-result <N>            # flips has_clean_result=true
