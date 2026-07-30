@@ -1,6 +1,6 @@
 ---
-title: Jacobian context→answer map (J_C→A) vs fitted ridge M + J-space workspace mediation
-  on Qwen-2.5-7B
+title: Averaged causal Jacobians recover essentially none of the fitted context-to-answer
+  map's predictive power (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-28T21:44:34Z'

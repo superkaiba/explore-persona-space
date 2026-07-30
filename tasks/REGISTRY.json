@@ -6027,7 +6027,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1776",
       "status": "interpreting",
-      "title": "Jacobian context\u2192answer map (J_C\u2192A) vs fitted ridge M + J-space workspace mediation on Qwen-2.5-7B"
+      "title": "Averaged causal Jacobians recover essentially none of the fitted context-to-answer map's predictive power (HIGH confidence)"
     },
     "1777": {
       "has_clean_result": false,
