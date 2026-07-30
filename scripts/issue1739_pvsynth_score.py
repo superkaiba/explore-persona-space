@@ -409,13 +409,74 @@ def _run_meta(args: argparse.Namespace) -> dict:
     }
 
 
+def _main_checkout() -> Path | None:
+    """The MAIN checkout dir (worktree-safe), or None if it cannot be resolved.
+
+    `_REPO_ROOT` is THIS file's tree — a WORKTREE on the `issue-<N>` branch, where
+    `task.py` refuses (it branch-guards to `main`). The main checkout is the parent
+    of the shared git common dir.
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=str(_REPO_ROOT),
+            capture_output=True,
+            text=True,
+            check=True,
+            env={**os.environ},
+        )
+    except (subprocess.CalledProcessError, OSError):
+        return None
+    common = Path(proc.stdout.strip())
+    root = common.parent
+    return root if (root / "scripts" / "task.py").exists() else None
+
+
+def _on_main(checkout: Path) -> bool:
+    """True iff `checkout`'s HEAD is the `main` branch (task.py's precondition)."""
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=str(checkout),
+            capture_output=True,
+            text=True,
+            check=True,
+            env={**os.environ},
+        )
+    except (subprocess.CalledProcessError, OSError):
+        return False
+    return proc.stdout.strip() == "main"
+
+
 def _post_progress_marker(args: argparse.Namespace, note_path: Path) -> bool:
-    """Fail-soft `epm:progress` post from the VM (never pod-side — CLAUDE.md)."""
+    """Fail-soft `epm:progress` post — LOCAL-VM ONLY, gated on a `main` checkout.
+
+    `task.py` branch-guards to `main`, so this posts ONLY from the VM's main
+    checkout (resolved via the git common dir — never this file's worktree, whose
+    HEAD is `issue-<N>`). The `main`-HEAD gate is what makes the call structurally
+    unreachable on a pod: a pod clone runs the `issue-<N>` branch, so the gate
+    short-circuits and the note is left for the orchestrator to post. That keeps
+    the repo-wide pod-side-shellout invariant intact
+    (tests/test_no_pod_side_task_py_shellout.py; CLAUDE.md § "Pod-side code NEVER
+    shells out to scripts/task.py").
+    """
+    checkout = _main_checkout()
+    if checkout is None or not _on_main(checkout):
+        where = str(checkout) if checkout else "unresolved"
+        print(
+            f"[marker] SKIPPED task.py post — no `main` checkout available "
+            f"({where}); this leg is local-VM-only by contract. Note preserved at "
+            f"{note_path}\n"
+            f"[marker] orchestrator: uv run python scripts/task.py post-marker "
+            f"{args.issue} epm:progress --file {note_path}",
+            flush=True,
+        )
+        return False
     cmd = [
         "uv",
         "run",
         "python",
-        str(_REPO_ROOT / "scripts" / "task.py"),
+        str(checkout / "scripts" / "task.py"),
         "post-marker",
         str(args.issue),
         "epm:progress",
@@ -424,7 +485,14 @@ def _post_progress_marker(args: argparse.Namespace, note_path: Path) -> bool:
     ]
     try:
         proc = subprocess.run(
-            cmd, cwd=str(_REPO_ROOT), capture_output=True, text=True, env={**os.environ}
+            # epm-lint: pod-shellout-ok -- local-VM-only leg, gated above on the
+            # resolved main checkout being on branch `main`; a pod clone runs
+            # issue-<N>, so this call is structurally unreachable pod-side.
+            cmd,
+            cwd=str(checkout),
+            capture_output=True,
+            text=True,
+            env={**os.environ},
         )
     except OSError as exc:
         print(f"[marker] FAILED to invoke task.py ({exc}); note at {note_path}", flush=True)
