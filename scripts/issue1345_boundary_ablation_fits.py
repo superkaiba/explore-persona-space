@@ -639,14 +639,23 @@ PROBE_REFERENCE = {
     ),
     "story_vC_to_story_vA": {
         "ambient_gcv_r2": -0.306,
-        "reduced_basis_r2": 0.262,
+        "reduced_basis_r2_on_policy": 0.262,
+        "reduced_basis_r2_teacher_forced": 0.367,
         "forced_lambda_1e2_r2": 0.1605,
         "forced_lambda_1e3_r2": 0.4075,
-        "forced_lambda_1e4_r2": 0.4180,
+        "forced_lambda_1e4_r2": 0.4180,  # the PEAK of the swept grid, not 1e3
     },
+    # Guard against a known mislabel: +0.4359 / +0.4403 at lambda 1e3 / 1e4 are
+    # story context -> CHAT context, NOT story -> story answer (+0.4075 / +0.4180).
+    "story_vC_to_chat_vC": {"forced_lambda_1e3_r2": 0.4359, "forced_lambda_1e4_r2": 0.4403},
     "note": (
         "ambient GCV picks the lambda-grid floor 0.01 in 5/5 folds at n_train<d; "
         "the committed V1 anchor -0.3056 is the ARTIFACT-BEARING read"
+    ),
+    "citation_guidance": (
+        "for a single UNSELECTED headline figure cite the reduced-basis leg (per-fold "
+        "GCV in a train-fold-only basis, no post-hoc selection); the forced-lambda "
+        "sweep is a best-of-grid HELD-OUT estimate and carries selection"
     ),
 }
 
@@ -743,6 +752,16 @@ def companions_shared_x(
                 }
                 for lam in FORCED_LAMBDAS
             },
+            # The forced sweep is DIAGNOSTIC: reading max-over-lambda as the map's
+            # skill is post-hoc selection on the held-out estimate itself, so it
+            # must never carry a headline. The reduced-basis leg above selects
+            # lambda per fold by GCV inside a train-fold-only basis and is the
+            # clean unselected citation (hence the verdict's PRIMARY read).
+            "forced_lambda_selection_bearing": True,
+            "forced_lambda_note": (
+                "best-of-grid held-out estimate; diagnostic only — cite the "
+                "reduced-basis read for any headline"
+            ),
             "probe_reference": PROBE_REFERENCE,
         }
     return out
