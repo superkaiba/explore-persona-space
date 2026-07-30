@@ -6298,8 +6298,8 @@
     "1813": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1813",
-      "status": "proposed",
+      "path": "tasks/planning/1813",
+      "status": "planning",
       "title": "daily-fix: argv dry-run before dispatching a new phase"
     },
     "1814": {
