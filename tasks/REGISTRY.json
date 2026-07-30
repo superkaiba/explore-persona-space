@@ -6235,8 +6235,8 @@
     "1805": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1805",
-      "status": "planning",
+      "path": "tasks/approved/1805",
+      "status": "approved",
       "title": "daily-fix: review-time no-flags lint on new scripts in diff"
     },
     "1806": {
