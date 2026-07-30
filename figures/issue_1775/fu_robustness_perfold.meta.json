@@ -1,0 +1,418 @@
+{
+  "commit": "896694b3f1",
+  "created": "2026-07-30T04:58:13Z",
+  "figsize": [
+    10.4,
+    3.9
+  ],
+  "points": [
+    {
+      "x": -0.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.8585949773137564,
+      "series": "additive stitch ridge (PRESS) - train-fold-only PCs",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.9,
+      "per-fold held-out R2 (48 answer PCs)": 0.8378312230359897,
+      "series": "additive stitch ridge (PRESS) - train-fold-only PCs",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.9,
+      "per-fold held-out R2 (48 answer PCs)": 0.8417731684042788,
+      "series": "additive stitch ridge (PRESS) - train-fold-only PCs",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.9,
+      "per-fold held-out R2 (48 answer PCs)": 0.8540585798320062,
+      "series": "additive stitch ridge (PRESS) - train-fold-only PCs",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.9,
+      "per-fold held-out R2 (48 answer PCs)": 0.8553169396776363,
+      "series": "additive stitch ridge (PRESS) - train-fold-only PCs",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.9,
+      "per-fold held-out R2 (48 answer PCs)": 0.8464163748323338,
+      "series": "additive stitch ridge (PRESS) - train-fold-only PCs",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.8584811638718142,
+      "series": "additive stitch ridge (PRESS) - full-population PCs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.8377090327772452,
+      "series": "additive stitch ridge (PRESS) - full-population PCs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.8417058977941676,
+      "series": "additive stitch ridge (PRESS) - full-population PCs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.8541452742932273,
+      "series": "additive stitch ridge (PRESS) - full-population PCs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.8556851486007722,
+      "series": "additive stitch ridge (PRESS) - full-population PCs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.8463584091602413,
+      "series": "additive stitch ridge (PRESS) - full-population PCs",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": -0.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.8707975929085823,
+      "series": "bilinear r = 0 refit - train-fold-only PCs",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.9,
+      "per-fold held-out R2 (48 answer PCs)": 0.8492652987885904,
+      "series": "bilinear r = 0 refit - train-fold-only PCs",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.9,
+      "per-fold held-out R2 (48 answer PCs)": 0.8526853836160175,
+      "series": "bilinear r = 0 refit - train-fold-only PCs",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.9,
+      "per-fold held-out R2 (48 answer PCs)": 0.863826502803801,
+      "series": "bilinear r = 0 refit - train-fold-only PCs",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.9,
+      "per-fold held-out R2 (48 answer PCs)": 0.8658226471854598,
+      "series": "bilinear r = 0 refit - train-fold-only PCs",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.9,
+      "per-fold held-out R2 (48 answer PCs)": 0.8600000461769334,
+      "series": "bilinear r = 0 refit - train-fold-only PCs",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.870687855413739,
+      "series": "bilinear r = 0 refit - full-population PCs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.8490729634012961,
+      "series": "bilinear r = 0 refit - full-population PCs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.8526173978511321,
+      "series": "bilinear r = 0 refit - full-population PCs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.8640710582752325,
+      "series": "bilinear r = 0 refit - full-population PCs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.8658641284933594,
+      "series": "bilinear r = 0 refit - full-population PCs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.8599661704270231,
+      "series": "bilinear r = 0 refit - full-population PCs",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.9168797004267926,
+      "series": "bilinear r = 32 - train-fold-only PCs",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.9,
+      "per-fold held-out R2 (48 answer PCs)": 0.9025250896576578,
+      "series": "bilinear r = 32 - train-fold-only PCs",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.9,
+      "per-fold held-out R2 (48 answer PCs)": 0.9056043319182532,
+      "series": "bilinear r = 32 - train-fold-only PCs",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.9,
+      "per-fold held-out R2 (48 answer PCs)": 0.9105586164197159,
+      "series": "bilinear r = 32 - train-fold-only PCs",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.9,
+      "per-fold held-out R2 (48 answer PCs)": 0.9175828549310233,
+      "series": "bilinear r = 32 - train-fold-only PCs",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.9,
+      "per-fold held-out R2 (48 answer PCs)": 0.9072472280382371,
+      "series": "bilinear r = 32 - train-fold-only PCs",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.9164954555170011,
+      "series": "bilinear r = 32 - full-population PCs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.9021373417243689,
+      "series": "bilinear r = 32 - full-population PCs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.9055434714912927,
+      "series": "bilinear r = 32 - full-population PCs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.9106246382086424,
+      "series": "bilinear r = 32 - full-population PCs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.9173400581058622,
+      "series": "bilinear r = 32 - full-population PCs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.1,
+      "per-fold held-out R2 (48 answer PCs)": 0.9058771600872347,
+      "series": "bilinear r = 32 - full-population PCs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "held-out R2 (48 answer PCs)": 0.7487578761145036,
+      "series": "stitch-MLP ensemble, per fold",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "held-out R2 (48 answer PCs)": 0.7357294074990575,
+      "series": "stitch-MLP ensemble, per fold",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "held-out R2 (48 answer PCs)": 0.7026217112024074,
+      "series": "stitch-MLP ensemble, per fold",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "held-out R2 (48 answer PCs)": 0.6847567306504405,
+      "series": "stitch-MLP ensemble, per fold",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "held-out R2 (48 answer PCs)": 0.6886191797109504,
+      "series": "stitch-MLP ensemble, per fold",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "held-out R2 (48 answer PCs)": 0.7436590487211974,
+      "series": "stitch-MLP ensemble, per fold",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "held-out R2 (48 answer PCs)": 0.7187258028465735,
+      "series": "stitch-MLP pooled (0.719)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "held-out R2 (48 answer PCs)": 0.7187258028465735,
+      "series": "stitch-MLP pooled (0.719)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "held-out R2 (48 answer PCs)": 0.6609351378134506,
+      "series": "bilinear r = 32 pooled (0.661)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "held-out R2 (48 answer PCs)": 0.6609351378134506,
+      "series": "bilinear r = 32 pooled (0.661)",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 46,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "PC provenance: filled = train-fold-only PC bases,\nopen = full-population PCs (novel-prefix folds)",
+        "ylabel": "per-fold held-out R2 (48 answer PCs)",
+        "legend_labels": [
+          "additive stitch ridge (PRESS) - train-fold-only PCs",
+          "additive stitch ridge (PRESS) - full-population PCs",
+          "bilinear r = 0 refit - train-fold-only PCs",
+          "bilinear r = 0 refit - full-population PCs",
+          "bilinear r = 32 - train-fold-only PCs",
+          "bilinear r = 32 - full-population PCs"
+        ],
+        "xticklabels": [
+          "fold 0",
+          "fold 1",
+          "fold 2",
+          "fold 3",
+          "fold 4",
+          "fold 5"
+        ],
+        "yticklabels": [
+          "0.83",
+          "0.84",
+          "0.85",
+          "0.86",
+          "0.87",
+          "0.88",
+          "0.89",
+          "0.90",
+          "0.91",
+          "0.92",
+          "0.93"
+        ]
+      },
+      {
+        "title_left": "Doubly-novel folds: the stitch-MLP sits above\nthe bilinear in every fold (2,900 rows)",
+        "ylabel": "held-out R2 (48 answer PCs)",
+        "legend_labels": [
+          "stitch-MLP ensemble, per fold",
+          "stitch-MLP pooled (0.719)",
+          "bilinear r = 32 pooled (0.661)"
+        ],
+        "annotations": [
+          "0.749",
+          "0.736",
+          "0.703",
+          "0.685",
+          "0.689",
+          "0.744"
+        ],
+        "xticklabels": [
+          "fold 0",
+          "fold 1",
+          "fold 2",
+          "fold 3",
+          "fold 4",
+          "fold 5"
+        ],
+        "yticklabels": [
+          "0.64",
+          "0.66",
+          "0.68",
+          "0.70",
+          "0.72",
+          "0.74",
+          "0.76"
+        ]
+      }
+    ],
+    "series": [
+      "additive stitch ridge (PRESS) - train-fold-only PCs",
+      "additive stitch ridge (PRESS) - full-population PCs",
+      "bilinear r = 0 refit - train-fold-only PCs",
+      "bilinear r = 0 refit - full-population PCs",
+      "bilinear r = 32 - train-fold-only PCs",
+      "bilinear r = 32 - full-population PCs",
+      "stitch-MLP ensemble, per fold",
+      "stitch-MLP pooled (0.719)",
+      "bilinear r = 32 pooled (0.661)"
+    ]
+  }
+}
