@@ -589,6 +589,36 @@ def test_render_sbatch_lora_eval_golden() -> None:
     assert "WANDB_PROJECT" not in script
 
 
+def test_write_status_tmp_is_writer_unique() -> None:
+    """#1836: the ``_write_status`` tmp path must be writer-unique.
+
+    The background ``_heartbeat_loop`` subshell and the main script's
+    phase writers previously shared ONE ``${STATUS_JSON}.tmp``; when the
+    two interleaved (printf-A, mv-B steals the tmp, mv-A finds nothing),
+    the losing ``mv`` failed and ``set -euo pipefail`` killed an
+    otherwise-healthy job (fellows job 15192, 2026-07-29). The
+    ``${BASHPID}`` suffix gives each (sub)shell its own tmp — ``$$``
+    would NOT work (it reads the PARENT's pid inside the heartbeat
+    subshell). A future revert to a shared tmp fails here with a named
+    reason, not just a fixture diff.
+    """
+    spec = _lora_spec("lora-7b")
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+    )
+    assert 'local tmp="${STATUS_JSON}.tmp.${BASHPID}"' in script
+    # The old shared-tmp form must be GONE. The closing-quote + newline
+    # anchor cannot substring-match the new form (which continues with
+    # `.${BASHPID}"` before its newline).
+    assert 'local tmp="${STATUS_JSON}.tmp"\n' not in script
+    # The atomic rename itself is unchanged — no `|| true`, no `mv -f`.
+    assert 'mv "$tmp" "$STATUS_JSON"' in script
+    assert 'mv "$tmp" "$STATUS_JSON" || true' not in script
+
+
 def test_render_sbatch_secret_expansions_sit_outside_xtrace() -> None:
     """Round-6 C1: every line that EXPANDS a secret value must execute
     with xtrace OFF.
