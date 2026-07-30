@@ -6949,8 +6949,8 @@
     "1899": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1899",
-      "status": "approved",
+      "path": "tasks/running/1899",
+      "status": "running",
       "title": "workflow-fix: fellows QoS fallback ladder (high-eur first, then normal-eur/low-eur)"
     },
     "19": {
