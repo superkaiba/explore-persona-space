@@ -6515,8 +6515,8 @@
     "1841": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1841",
-      "status": "proposed",
+      "path": "tasks/planning/1841",
+      "status": "planning",
       "title": "workflow-fix: Step 6d.2 tick parse must preserve advisory decision fields"
     },
     "1842": {
