@@ -6795,8 +6795,8 @@
     "1878": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1878",
-      "status": "proposed",
+      "path": "tasks/planning/1878",
+      "status": "planning",
       "title": "workflow-fix: gotchas span-family entry \u2014 find-from-0 query mis-anchor in chat-template renders"
     },
     "188": {
