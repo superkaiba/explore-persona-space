@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1846,
+  "highest_id": 1847,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6553,6 +6553,13 @@
       "path": "tasks/proposed/1846",
       "status": "proposed",
       "title": "workflow-fix: verify_task_body WARN check \u2014 orphaned result JSONs (sibling of check 31)"
+    },
+    "1847": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1847",
+      "status": "proposed",
+      "title": "daily-fix: bash -n pin test for Step 10d TG fenced blocks"
     },
     "185": {
       "has_clean_result": false,
