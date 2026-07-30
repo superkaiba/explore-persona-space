@@ -4,6 +4,7 @@ title: Causal Jacobians, averaged or per-context, recover essentially none of th
 kind: experiment
 tags:
 - followup-auto
+- followup-manual
 created_at: '2026-07-28T21:44:34Z'
 has_clean_result: true
 parent_id: 779
