@@ -1042,8 +1042,29 @@ def holm_correction(pvals: dict[str, float]) -> dict[str, float]:
 # ── phase upload (one upload_folder commit per phase) ────────────────────────────
 
 
+def _upload_eligible_relpaths(local: Path) -> list[str]:
+    """Relative paths under ``local`` that ``hub._upload``'s folder branch will
+    actually upload: rglob MINUS the uploader's own excludes. huggingface_hub's
+    ``upload_folder`` ALWAYS appends ``DEFAULT_IGNORE_PATTERNS`` (e.g.
+    ``**/.cache/huggingface/**`` — the per-file metadata
+    ``hf_hub_download(local_dir=...)`` leaves behind) and ``hub._upload``
+    always adds ``TRAINING_STATE_IGNORE_PATTERNS``. An UNFILTERED rglob as the
+    verify set counts never-uploaded files as missing — a deterministic
+    post-upload RuntimeError (round-1 fu Critical,
+    `fu-arrays-upload-verify-cache-mismatch`)."""
+    from huggingface_hub.utils import DEFAULT_IGNORE_PATTERNS, filter_repo_objects
+
+    rels = sorted(str(p.relative_to(local)) for p in local.rglob("*") if p.is_file())
+    ignore = list(DEFAULT_IGNORE_PATTERNS) + list(hub.TRAINING_STATE_IGNORE_PATTERNS)
+    return list(filter_repo_objects(rels, ignore_patterns=ignore))
+
+
 def _upload_dir_verified(local: Path, path_in_repo: str) -> str:
-    """One fail-loud upload_folder commit of `local` + exact-set verify (#997)."""
+    """One fail-loud upload_folder commit of `local` + exact-set verify (#997).
+
+    The expected set applies the uploader's own eligibility filter
+    (:func:`_upload_eligible_relpaths`), so verify checks exactly what
+    ``upload_folder`` was asked to ship — never uploader-excluded metadata."""
     url = hub._upload(
         local,
         repo_id=HF_DATA_REPO,
@@ -1053,7 +1074,7 @@ def _upload_dir_verified(local: Path, path_in_repo: str) -> str:
     )
     if not url:
         raise RuntimeError(f"upload returned no path for {path_in_repo} — fail loud")
-    expected = [f"{path_in_repo}/{p.relative_to(local)}" for p in local.rglob("*") if p.is_file()]
+    expected = [f"{path_in_repo}/{r}" for r in _upload_eligible_relpaths(local)]
     missing = hub.verify_repo_paths_uploaded(
         HfApi(),
         HF_DATA_REPO,

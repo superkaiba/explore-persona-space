@@ -196,6 +196,28 @@ def main() -> int:
     fit_pairs = [pairs[f] for f in folds]
     groups = ad.prefix_ids  # scheme != query -> prefix groups (run-1 convention)
 
+    # ── run-1 bilinear arm + committed-Δ_named validation gate, BEFORE the fit ───
+    # (round-1 review m2: this consumes run-1 artifacts only — running it ahead
+    # of the ~0.8 h mlp_fit_groups fails fast on shard drift)
+    units = _load_committed_doubly_units()
+    run1_seeds = [0, 1, 2]
+    pred_star, cov_star = _pooled_bilinear_pred(units, R_STAR_DOUBLY, run1_seeds, n, d_out, pairs)
+    pred_0, cov_0 = _pooled_bilinear_pred(units, 0, run1_seeds, n, d_out, pairs)
+    both = cov_star & cov_0
+    # validation gate: reproduce the committed doubly delta_named point exactly
+    committed = json.loads((COMMITTED / "bilinear_fits.json").read_text())
+    ref = committed["schemes"]["doubly"]["delta_named"]
+    val = two_way_cluster_bootstrap_delta_r2(
+        Yp, pred_star, pred_0, both, ad.prefix_ids, ad.query_ids, n_draws=n_draws, seed=0
+    )
+    dd = abs(val["delta_r2"] - ref["delta_r2"])
+    print(
+        f"[delta-doubly] delta_named recomputed {val['delta_r2']:.10f} vs committed "
+        f"{ref['delta_r2']:.10f} (|diff|={dd:.2e})",
+        flush=True,
+    )
+    assert dd < 1e-8, f"doubly delta_named validation failed: |diff|={dd}"
+
     # ── stitch-MLP (#779 recipe verbatim via the committed batched trainer) ──────
     units_path = out_dir / "units_doubly_mlp.jsonl"
     unit = _mlp_unit(folds, seeds, args.smoke, max_epochs)
@@ -282,25 +304,7 @@ def main() -> int:
     # persist the pred shards BEFORE the reduction consumes them (#825 ordering)
     upload_phase_tensors("heldout_preds", smoke=bool(args.smoke))
 
-    # ── delta_beyond(doubly): reuse run-1's persisted doubly bilinear preds ──────
-    units = _load_committed_doubly_units()
-    run1_seeds = [0, 1, 2]
-    pred_star, cov_star = _pooled_bilinear_pred(units, R_STAR_DOUBLY, run1_seeds, n, d_out, pairs)
-    pred_0, cov_0 = _pooled_bilinear_pred(units, 0, run1_seeds, n, d_out, pairs)
-    both = cov_star & cov_0
-    # validation gate: reproduce the committed doubly delta_named point exactly
-    committed = json.loads((COMMITTED / "bilinear_fits.json").read_text())
-    ref = committed["schemes"]["doubly"]["delta_named"]
-    val = two_way_cluster_bootstrap_delta_r2(
-        Yp, pred_star, pred_0, both, ad.prefix_ids, ad.query_ids, n_draws=n_draws, seed=0
-    )
-    dd = abs(val["delta_r2"] - ref["delta_r2"])
-    print(
-        f"[delta-doubly] delta_named recomputed {val['delta_r2']:.10f} vs committed "
-        f"{ref['delta_r2']:.10f} (|diff|={dd:.2e})",
-        flush=True,
-    )
-    assert dd < 1e-8, f"doubly delta_named validation failed: |diff|={dd}"
+    # ── delta_beyond(doubly): MLP (this fit) vs run-1 bilinear (validated above) ─
     mmask = np.load(pred_files[seeds[0]][1]) if pred_files[seeds[0]][1].exists() else covered
     b3 = both & mmask
     boot = two_way_cluster_bootstrap_delta_r2(

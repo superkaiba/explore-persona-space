@@ -44,8 +44,10 @@ to log lines at smoke scale (#1345 gate-calibration parity); artifact presence
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -90,7 +92,19 @@ from explore_persona_space.orchestrate import hub  # noqa: E402
 LAYER = 19
 RUNGS = ("ridge", "krr", "mlp", "residual_skip")
 VARIANTS = ("deduped", "random_drop")
-FIT_REGIME_KEYS = ("variant", "rung", "layer", "smoke", "n_train")
+# m3: EVERY output-affecting regime key (#722 r3) — krr_grid / mlp_epochs are
+# per-rung fields (absent -> unit_key's str(None), so non-KRR resumes never
+# invalidate on a KRR grid change); n_boot keys the per-unit bootstrap curve.
+FIT_REGIME_KEYS = (
+    "variant",
+    "rung",
+    "layer",
+    "smoke",
+    "n_train",
+    "n_boot",
+    "krr_grid",
+    "mlp_epochs",
+)
 PASS_B_HF_PATH = "issue779_monitoring/analysis_tensors/pass_b/train_context_vectors.pt"
 BANKED_OVERLAP = (
     Path(__file__).resolve().parents[1]
@@ -129,12 +143,67 @@ def _chunk_prompts(bundle) -> list[str]:
     return [str(x) for x in p]
 
 
+def _stream_parts_dir(cache_dir: Path, prefix: str, layer: int, max_chunks: int | None) -> Path:
+    """Per-chunk checkpoint dir, keyed on EVERY output-affecting stream regime
+    key (prefix + layer + max_chunks — the #722-r3 resume-key discipline) so
+    smoke (max_chunks=1) and production parts can never cross-resume."""
+    key = hashlib.sha256(
+        json.dumps({"prefix": prefix, "layer": layer, "max_chunks": max_chunks}).encode()
+    ).hexdigest()[:12]
+    return cache_dir / f"parts_{key}"
+
+
+def _ensure_parts_meta(parts: Path, meta: dict) -> None:
+    """Fingerprint-gate the parts dir: an existing meta that mismatches (HF
+    chunk-list drift under the same regime key) invalidates the cached parts
+    LOUDLY — they are a derived, re-streamable cache."""
+    parts.mkdir(parents=True, exist_ok=True)
+    meta_path = parts / "stream_meta.json"
+    if meta_path.exists() and json.loads(meta_path.read_text()) != meta:
+        print(f"[f1a] stream parts fingerprint drift — invalidating {parts}", flush=True)
+        shutil.rmtree(parts)
+        parts.mkdir(parents=True)
+    if not meta_path.exists():
+        atomic_write_json(meta_path, meta)
+
+
+def _save_part(parts: Path, i: int, cx: np.ndarray, vx: np.ndarray, prompts: list[str]) -> None:
+    """Atomic per-chunk checkpoint: fp16 arrays first, prompts JSON LAST — its
+    presence marks the chunk done. Tmp names keep the `.npz` suffix so
+    ``np.savez`` cannot append a second one (gotchas.md); uncompressed (#813)."""
+    part_npz = parts / f"c{i:04d}.npz"
+    tmp = part_npz.with_name(part_npz.stem + ".tmp.npz")
+    np.savez(tmp, cx=cx, vx=vx)
+    os.replace(tmp, part_npz)
+    part_pj = parts / f"c{i:04d}.prompts.json"
+    ptmp = part_pj.with_suffix(".tmp")
+    ptmp.write_text(json.dumps(prompts), encoding="utf-8")
+    os.replace(ptmp, part_pj)
+
+
+def _load_part(parts: Path, i: int) -> tuple[np.ndarray, np.ndarray, list[str]] | None:
+    """Load chunk ``i``'s checkpoint, or None when absent/incomplete."""
+    part_npz = parts / f"c{i:04d}.npz"
+    part_pj = parts / f"c{i:04d}.prompts.json"
+    if not (part_npz.exists() and part_pj.exists()):
+        return None
+    with np.load(part_npz) as z:
+        cx, vx = z["cx"], z["vx"]
+    return cx, vx, json.loads(part_pj.read_text())
+
+
 def stream_chunks_with_prompts(
     prefix: str, layer: int, cache_dir: Path, *, max_chunks: int | None = None
 ):
     """cx_last + v_x at ``layer`` + per-row prompts, stream-reduced from the HF
     capture chunks (download one -> mmap-slice -> DELETE; peak ~one chunk).
-    Returns (cx, vx, prompts, n_kept, stream_diag). First-5-chunks pilot line
+    Checkpoint-per-chunk (fp16 parts + prompts shard, ~7.5 MB/chunk) with a
+    regime-fingerprinted resume, so a mid-stream crash resumes instead of
+    re-streaming from zero (external-stream contract; round-1 fu Major
+    `f1a-stream-no-checkpoint-resume`). fp16 part round-trip is exact w.r.t.
+    the arrays' terminal fp16 persist (fp16->fp32->fp16 is identity), so
+    resumed and fresh streams yield byte-identical persisted arrays.
+    Returns (cx, vx, prompts, n_kept, stream_diag). Downloaded-chunk pilot line
     projects the staging wall (plan section 7 kill criterion 1 input)."""
     from huggingface_hub import HfApi, hf_hub_download
 
@@ -155,43 +224,63 @@ def stream_chunks_with_prompts(
     if max_chunks is not None:
         names = names[: int(max_chunks)]
     cache_dir.mkdir(parents=True, exist_ok=True)
+    parts = _stream_parts_dir(cache_dir, prefix, layer, max_chunks)
+    _ensure_parts_meta(
+        parts, {"prefix": prefix, "layer": layer, "max_chunks": max_chunks, "names": names}
+    )
     cx_parts: list[np.ndarray] = []
     vx_parts: list[np.ndarray] = []
     prompts: list[str] = []
     t0 = time.monotonic()
     bytes_seen = 0
+    n_dl = 0
+    n_resumed = 0
     pilot_logged = False
     for i, name in enumerate(names):
-        got = Path(
-            hub.retry_transient(
-                lambda name=name: hf_hub_download(
-                    HF_DATA_REPO,
-                    filename=f"{prefix}/{name}",
-                    repo_type="dataset",
-                    local_dir=cache_dir,
-                ),
-                what=f"n50k chunk {name}",
-            )
-        )
-        bytes_seen += got.stat().st_size
-        b = F._mmap_load(got)
-        cx_parts.append(N._slice_layer(b, "cx_last", layer))
-        vx_parts.append(N._slice_layer(b, "v_x", layer))
-        prompts.extend(_chunk_prompts(b))
-        del b
-        got.unlink()  # stream-reduce: purge each chunk after the layer slice
-        print(
-            f"[f1a] unit {i + 1}/{len(names)} chunk={name} bytes={bytes_seen / 1e9:.1f}GB "
-            f"elapsed={time.monotonic() - t0:.0f}s",
-            flush=True,
-        )
-        if not pilot_logged and (i + 1 == 5 or i + 1 == len(names)):
-            per = (time.monotonic() - t0) / (i + 1)
+        cached = _load_part(parts, i)
+        if cached is not None:
+            cxi, vxi, pl = cached
+            n_resumed += 1
             print(
-                f"[f1a] PILOT: {i + 1} chunks in {time.monotonic() - t0:.0f}s "
+                f"[f1a] RESUME unit {i + 1}/{len(names)} chunk={name} (part checkpoint)", flush=True
+            )
+        else:
+            got = Path(
+                hub.retry_transient(
+                    lambda name=name: hf_hub_download(
+                        HF_DATA_REPO,
+                        filename=f"{prefix}/{name}",
+                        repo_type="dataset",
+                        local_dir=cache_dir,
+                    ),
+                    what=f"n50k chunk {name}",
+                )
+            )
+            bytes_seen += got.stat().st_size
+            n_dl += 1
+            b = F._mmap_load(got)
+            cxi = N._slice_layer(b, "cx_last", layer).astype(np.float16)
+            vxi = N._slice_layer(b, "v_x", layer).astype(np.float16)
+            pl = _chunk_prompts(b)
+            del b
+            got.unlink()  # stream-reduce: purge each chunk after the layer slice
+            _save_part(parts, i, cxi, vxi, pl)
+            print(
+                f"[f1a] unit {i + 1}/{len(names)} chunk={name} bytes={bytes_seen / 1e9:.1f}GB "
+                f"elapsed={time.monotonic() - t0:.0f}s",
+                flush=True,
+            )
+        cx_parts.append(cxi)
+        vx_parts.append(vxi)
+        prompts.extend(pl)
+        if not pilot_logged and n_dl > 0 and (n_dl == 5 or i + 1 == len(names)):
+            per = (time.monotonic() - t0) / n_dl
+            print(
+                f"[f1a] PILOT: {n_dl} downloaded chunks in {time.monotonic() - t0:.0f}s "
                 f"({bytes_seen / 1e9:.1f} GB) -> projected stream wall "
                 f"~{per * len(names) / 3600:.2f}h over {len(names)} chunks "
-                "(plan section 9 F1a booked 1.4h; >2x -> epm:compute-deviation, CONTINUE)",
+                "(fresh-download basis; plan section 9 F1a booked 1.4h; "
+                ">2x -> epm:compute-deviation, CONTINUE)",
                 flush=True,
             )
             pilot_logged = True
@@ -199,6 +288,7 @@ def stream_chunks_with_prompts(
     assert len(prompts) == n_kept, (len(prompts), n_kept)
     diag = {
         "n_chunks": len(names),
+        "n_chunks_resumed": int(n_resumed),
         "bytes_streamed": int(bytes_seen),
         "wall_s": time.monotonic() - t0,
         "max_chunks_cap": max_chunks,
@@ -303,7 +393,17 @@ def _plant_smoke_dupes(X, Y, prompts, train_pos, test_pos):
 def run_stage(args) -> int:
     out_dir = eval_dir(FU_SUB)
     arrays = fu_arrays_dir()
-    cache = arrays / ".n50k_stream_cache"
+    # C1 (`fu-arrays-upload-verify-cache-mismatch`): the stream cache lives
+    # OUTSIDE the uploaded arrays dir — hf_hub_download(local_dir=...) leaves
+    # `.cache/huggingface` metadata upload_folder never ships, which broke the
+    # exact-set verify when the cache nested inside the upload root.
+    cache = arrays.parent / ".n50k_stream_cache"
+    legacy_cache = arrays / ".n50k_stream_cache"
+    if legacy_cache.exists():
+        # same-pod retry of a pre-fix run: purge residue (metadata AND any
+        # partial chunk .pt, which NO uploader filter would exclude)
+        print(f"[f1a] purging legacy in-arrays stream cache {legacy_cache}", flush=True)
+        shutil.rmtree(legacy_cache)
     t0 = time.monotonic()
     if args.smoke:
         cx, vx, prompts, n_kept, sdiag = stream_chunks_with_prompts(
@@ -332,7 +432,10 @@ def run_stage(args) -> int:
         if not F.PASS_B_PATH.exists():
             print(f"[f1a] staging pass_b bundle from HF -> {F.PASS_B_PATH}", flush=True)
             hub.stage_hub_file(HF_DATA_REPO, PASS_B_HF_PATH, F.PASS_B_PATH, repo_type="dataset")
-        work = out_dir / "work"
+        # m1: work dir OUT of eval_dir — rederive.json carries the full raw
+        # prompt lists (~15-40 MB LMSYS text), which must never ride the
+        # eval-json upload channel nor the pod-side eval-dir git commit
+        work = out_root() / "data" / "issue_1775" / "fu_work"
         used = FC.rederive_used_sets(work, smoke=False)
         round1, new, targets = used["round1"], used["new"], used["valtest"]
         assert len(round1) == N.N_PASS_B, (len(round1), N.N_PASS_B)
@@ -423,6 +526,9 @@ def run_stage(args) -> int:
         # expensive-intermediate ordering (#825): arrays land on HF BEFORE any fit
         _upload_dir_verified(arrays, f"{OUT_HF_PREFIX}/fu_dedup_refit")
         upload_phase_eval_json(FU_SUB, smoke=False)
+        # arrays durable on HF -> reap the stream cache + per-chunk parts
+        # (kept until here so a failed upload leaves the resume state intact)
+        shutil.rmtree(cache, ignore_errors=True)
     print(
         f"[f1a] done in {(time.monotonic() - t0) / 60:.1f} min "
         f"(drop={drop_out['n_drop_train']} of {drop_out['n_train']} train rows; "
@@ -498,7 +604,12 @@ def run_fits(args) -> int:
                 "layer": LAYER,
                 "smoke": bool(args.smoke),
                 "n_train": int(tr.size),
+                "n_boot": int(n_boot),
             }
+            if rung == "krr":
+                u["krr_grid"] = f"gm={args.krr_gamma_mult};lam={args.krr_lambdas}"
+            if rung in ("mlp", "residual_skip"):
+                u["mlp_epochs"] = int(mlp_epochs)
             pred_path = arrays / f"pred_{variant}_{rung}.npy"
             if unit_key(u, FIT_REGIME_KEYS) in done and pred_path.exists():
                 n_done += 1
