@@ -133,6 +133,35 @@ RC_BARE_FENCE = 25  # G-B1 designed-halt rc (report written first; never a bare 
 # a chat template); the split is what makes assert (b) STRING-level, not token-count
 _BARE_SENTINEL = "EPMBARESENTINEL1738Q"
 
+# ── crossed-multiturn-averaged round constants (follow-up fu3, plan v9 §4) ────────
+CROSSED_HF_PREFIX = "issue1738_crossed"  # all fu3 writes ride this prefix (never parent)
+# LOCAL dir name for the crossed manifest — deliberately NOT MANIFEST_SUBDIR: the
+# builder READS the main manifest at {out_dir}/sampling_manifest and must never
+# clobber it; the REMOTE path stays {crossed_hf_prefix}/sampling_manifest (the
+# name is applied inside _upload_manifest/_download_manifest).
+CROSSED_MANIFEST_LOCAL = "crossed_manifest"
+CROSSED_N_PREFIXES = 5_000  # scope-approved: prefixes = averaged-arm sample size (never cut)
+CROSSED_N_QUERIES = 20  # shared bank width (G1 ladder 20->12->10 via --queries-per-prefix)
+CROSSED_G0_PREFIX_FLOOR = 5_500  # G0: eligible prefix pool floor (take-what-exists below)
+CROSSED_G0_BANK_FLOOR = 200  # G0: bank candidate pool floor
+CROSSED_BANK_QUERY_TOKEN_MAX = 256  # bank supply-side eligibility cap (meta-recorded;
+# ungrounded per plan — a supply choice, not a measurement knob; G0 floor guards the pool)
+CROSSED_SPLIT_PREFIXES = {"val": 20, "test": 50, "holdout": 500}  # train = remainder (4,430)
+CROSSED_SEED = 42  # plan §10: draw/split seed
+CROSSED_FENCE_GPU_H = 24.0  # G1: projected total past this => designed halt (query ladder)
+CROSSED_S2_BOOK_GPU_H = 2.5  # plan §9 S2 book, added to the G1 projection
+RC_CROSSED_FENCE = 28  # G1 designed-halt rc (report written first; never a bare rc=1)
+RC_CROSSED_VIOLATION = 29  # fleet halt: strict-token-prefix violations > 0.5% (plan §4.2)
+RC_CROSSED_G2 = 30  # G2 crossing-sanity FAIL (min pairwise px cos >= 0.999) — code bug halt
+CROSSED_VIOLATION_MIN_ATTEMPTED = 1_000  # rate read is meaningless below this floor
+CROSSED_SAE_LAYER = 19  # SAE fold-in layer (Source: #1482 via sae-arm round)
+CROSSED_SAE_K = 64
+CROSSED_SAE_FVE_MIN = 0.75  # plan §12.4 inherited bar (sae-arm G-S0)
+CROSSED_SAE_L0_RANGE = (30.0, 120.0)
+CROSSED_SAE_POOL_CAP = 150_000  # fitness token-pool cap (sae-arm _FvePool convention)
+BARE_BANK_SUBDIR = "bare_bank"  # 20-query bare-arm capture destination under the prefix
+CROSSED_PILOT_META_NAME = "crossed_pilot_meta.json"
+
 # Engine-cap invariant (r5 crash fix): a budget-admitted prompt + max generation
 # always fits the engine, so gating admission at PROMPT_TOKEN_BUDGET is what
 # keeps llm_engine.add_request from ever seeing > MAX_MODEL_LEN. The attempt-3
@@ -1746,6 +1775,904 @@ def run_bare_capture(args) -> int:
     return 0
 
 
+# ── crossed-multiturn-averaged round (follow-up fu3, plan v9 §4.1/§4.2) ───────────
+# P0: build_crossed_manifest — 5,000 main-manifest prefixes × 20 shared real bank
+# queries = 100,000 contexts, prefix-grouped 4-way split in the PARENT schema.
+# S1: run_crossed_capture — shard BY PREFIX, one on-policy answer per context,
+# px/cx/v_x at {14,19,26} + SAE L19 fold-in on already-materialized states.
+
+
+def _crossed_split_prefix_targets(n_prefixes: int) -> dict[str, int]:
+    """Prefix-count split targets: production 4,430/20/50/500 at P=5,000; tiny
+    pools (smoke / G0 shortfall) scale to 1/1/1 + the remainder as train."""
+    carve = dict(CROSSED_SPLIT_PREFIXES)
+    if n_prefixes < sum(carve.values()) + 2:
+        assert n_prefixes >= 5, f"crossed pool too small to split: {n_prefixes} prefixes"
+        carve = {"val": 1, "test": 1, "holdout": 1}
+        logger.warning("[crossed] tiny prefix pool %d — scaled carve to %s", n_prefixes, carve)
+    return carve
+
+
+def _q_norm(q: str) -> str:
+    """Normalized query text — the bank near-dupe/dedup surface (render-key style)."""
+    return " ".join(q.lower().split())
+
+
+def _crossed_bank_candidates(pool: list[dict], tok, args) -> tuple[list[dict], dict]:
+    """Seeded walk of the main-manifest pool -> >= bank-floor length-gated,
+    mutually-non-near-dupe last-user-turn candidates (the #1092 bank
+    construction). Returns (candidates [{q, source_ci, n_tokens}], stats)."""
+    rng = np.random.default_rng(CROSSED_SEED)
+    perm = rng.permutation(len(pool))
+    cand: list[dict] = []
+    n_len_reject = n_dupe_reject = 0
+    for j in perm:
+        r = pool[int(j)]
+        q = r["messages"][-1]["content"]
+        n_tok = len(tok(q, add_special_tokens=False)["input_ids"])
+        if n_tok > args.crossed_bank_query_token_max:
+            n_len_reject += 1
+            continue
+        if cand and _make_gate([_q_norm(c["q"]) for c in cand], "minhash").is_dupe(_q_norm(q)):
+            n_dupe_reject += 1
+            continue
+        cand.append({"q": q, "source_ci": int(r["i"]), "n_tokens": n_tok})
+        if len(cand) >= args.crossed_g0_bank_floor:
+            break
+    stats = {
+        "n_candidates": len(cand),
+        "bank_pool_floor": int(args.crossed_g0_bank_floor),
+        "bank_pool_ok": len(cand) >= args.crossed_g0_bank_floor,
+        "n_len_rejects": n_len_reject,
+        "n_within_bank_dupe_rejects": n_dupe_reject,
+        "bank_query_token_max": int(args.crossed_bank_query_token_max),
+    }
+    return cand, stats
+
+
+def _bank_sha(bank: list[str]) -> str:
+    return hashlib.sha256("\x00".join(bank).encode("utf-8")).hexdigest()
+
+
+def build_crossed_manifest(args) -> dict:
+    """P0 (plan v9 §4.1): crossed manifest = 5,000 prefixes (main-manifest rows,
+    prefix_id = main ci) x 20-query shared bank, fully crossed by construction
+    (row ci = prefix_pos * n_queries + q). Writes {meta.json, part_*.jsonl (the
+    PREFIX rows), bank.json, split_1738_crossed.json} and uploads the folder to
+    {crossed_hf_prefix}/sampling_manifest/ (the --manifest-from-hf loader's
+    meta.json contract holds verbatim)."""
+    from transformers import AutoTokenizer
+
+    C.phase("crossed-manifest")
+    main_dir = _resolve_manifest_dir(args)  # main manifest rides --hf-prefix (parent)
+    pool, main_meta = N1M.read_manifest_pool(main_dir)
+    tok = AutoTokenizer.from_pretrained(args.model)
+    n_q = int(args.crossed_n_queries)
+
+    # 1. bank candidate pool (G0 bank floor; length + within-bank near-dupe gates).
+    cand, bank_stats = _crossed_bank_candidates(pool, tok, args)
+    assert cand, "crossed bank: zero eligible candidates (length gate rejects everything?)"
+    if not bank_stats["bank_pool_ok"]:
+        logger.warning(
+            "[crossed G0] bank pool %d < floor %d — take-what-exists",
+            bank_stats["n_candidates"],
+            bank_stats["bank_pool_floor"],
+        )
+    # LONGEST candidate bounds the length precheck so any prefix-clash replacement
+    # (step 3) stays within the prechecked budget.
+    longest_q = max(cand, key=lambda c: c["n_tokens"])["q"]
+    bank_src_cis = {c["source_ci"] for c in cand}
+
+    # 2. prefix eligibility walk (lazy length precheck against the longest candidate,
+    #    stopping at the G0 floor — bounds tokenizer work to ~floor renders).
+    rng = np.random.default_rng(CROSSED_SEED)
+    perm = rng.permutation(len(pool))
+    tok_len = _gen_render_len(tok)
+    need = max(int(args.crossed_g0_prefix_floor), int(args.crossed_n_prefixes))
+    eligible: list[int] = []
+    n_pref_len_reject = 0
+    n_walked = 0
+    for j in perm:
+        r = pool[int(j)]
+        if int(r["i"]) in bank_src_cis:
+            continue
+        n_walked += 1
+        prefix_messages = r["messages"][:-1]
+        assert prefix_messages and prefix_messages[-1]["role"] == "assistant", r["i"]
+        if tok_len([*prefix_messages, {"role": "user", "content": longest_q}]) > (
+            PROMPT_TOKEN_BUDGET
+        ):
+            n_pref_len_reject += 1
+            continue
+        eligible.append(int(j))
+        if len(eligible) >= need:
+            break
+    exhausted = len(eligible) < need
+    prefix_pool_ok = len(eligible) >= int(args.crossed_g0_prefix_floor)
+    if not prefix_pool_ok:
+        logger.warning(
+            "[crossed G0] eligible prefix pool %d < floor %d after exhausting the walk "
+            "— take-what-exists (reported)",
+            len(eligible),
+            args.crossed_g0_prefix_floor,
+        )
+    take = min(int(args.crossed_n_prefixes), len(eligible))
+    sel = eligible[:take]
+    assert take >= 5, f"crossed: only {take} eligible prefixes"
+
+    # 3. bank vs SELECTED-prefix near-dupe gate; replace trips from the candidate pool.
+    gate_p = _make_gate([_render_key(pool[j]["messages"][:-1]) for j in sel], "minhash")
+    bank: list[str] = []
+    bank_ci: list[int] = []
+    n_prefix_clash = 0
+    for c in cand:
+        if len(bank) >= n_q:
+            break
+        if gate_p.is_dupe(_q_norm(c["q"])):
+            n_prefix_clash += 1
+            continue
+        bank.append(c["q"])
+        bank_ci.append(c["source_ci"])
+    assert len(bank) == min(n_q, len(cand) - n_prefix_clash), (len(bank), n_q)
+    if len(bank) < n_q:
+        logger.warning("[crossed G0] bank realized %d < %d — take-what-exists", len(bank), n_q)
+    n_q = len(bank)
+
+    # 4. prefix-grouped split (seeded permutation; all n_q rows of a prefix one side).
+    carve = _crossed_split_prefix_targets(take)
+    sperm = np.random.default_rng(CROSSED_SEED + 1).permutation(take)
+    cursor = 0
+    prefix_sets: dict[str, list[int]] = {}
+    for name in ("val", "test", "holdout"):
+        prefix_sets[name] = sorted(int(x) for x in sperm[cursor : cursor + carve[name]])
+        cursor += carve[name]
+    prefix_sets["train"] = sorted(int(x) for x in sperm[cursor:])
+    split_doc: dict = {
+        "seed": CROSSED_SEED,
+        "n_manifest": take * n_q,
+        "recipe_version": "crossed-mt-v1",
+        "grid": {"n_prefixes": take, "n_queries": n_q},
+        "sets": {},
+        "prefix_sets": {},
+        "transfer_descoped": False,
+    }
+    for name, pset in prefix_sets.items():
+        rows = sorted(p * n_q + q for p in pset for q in range(n_q))
+        split_doc["sets"][name] = {"ci": rows, "n": len(rows), "sha256": _sha_int_list(rows)}
+        split_doc["prefix_sets"][name] = {
+            "pi": pset,
+            "n": len(pset),
+            "sha256": _sha_int_list(pset),
+        }
+
+    # 5. prefix rows (the manifest parts) + meta + bank.json; upload the folder.
+    prefix_rows = []
+    for pos, j in enumerate(sel):
+        r = pool[j]
+        set_name = next(n for n, s in prefix_sets.items() if pos in set(s))
+        prefix_rows.append(
+            {
+                "i": pos,
+                "prefix_id": int(r["i"]),  # main-manifest ci — the mechanical join key
+                "messages": r["messages"][:-1],  # PREFIX messages (ends assistant)
+                "depth": int(r["depth"]),
+                "corpus": r["corpus"],
+                "split": set_name,
+            }
+        )
+    meta = {
+        "n_new": len(prefix_rows),  # read_manifest_pool contract (PREFIX rows)
+        "kind": "crossed",
+        "n_queries": n_q,
+        "n_rows_crossed": take * n_q,
+        "g0": {
+            "prefix_pool_eligible_seen": len(eligible),
+            "prefix_pool_floor": int(args.crossed_g0_prefix_floor),
+            "prefix_pool_ok": prefix_pool_ok,
+            "prefix_walk_exhausted": exhausted,
+            "n_prefix_len_rejects": n_pref_len_reject,
+            "n_prefixes_walked": n_walked,
+            "bank": {**bank_stats, "n_prefix_clash_replaced": n_prefix_clash},
+        },
+        "overlap_fraction_main_manifest": 1.0,  # drawn FROM the main manifest by design
+        "main_manifest_hf_prefix": args.hf_prefix,
+        "main_manifest_recipe": main_meta.get("recipe_version"),
+        "depth_hist": _depth_hist(prefix_rows),
+        "corpus_counts": dict(Counter(r["corpus"] for r in prefix_rows)),
+        "split_shas": {k: v["sha256"] for k, v in split_doc["sets"].items()},
+        "prefix_split_shas": {k: v["sha256"] for k, v in split_doc["prefix_sets"].items()},
+        "bank_sha256": _bank_sha(bank),  # G2 byte-identity assert surface
+        "capture_layers": [int(x) for x in args.capture_layers.split(",")],
+        "model": args.model,
+        "prompt_token_budget": PROMPT_TOKEN_BUDGET,
+        "recipe_version": "crossed-mt-v1",
+        "seed": CROSSED_SEED,
+    }
+    crossed_dir = args.out_dir / CROSSED_MANIFEST_LOCAL
+    n_parts = N1M._write_manifest_parts(crossed_dir, prefix_rows, meta)
+    N1M._atomic_write_json(
+        crossed_dir / "bank.json",
+        {
+            "queries": bank,
+            "source_ci": bank_ci,
+            "sha256": _bank_sha(bank),
+            "n_tokens": [len(tok(q, add_special_tokens=False)["input_ids"]) for q in bank],
+            **bank_stats,
+        },
+    )
+    N1M._atomic_write_json(crossed_dir / "split_1738_crossed.json", split_doc)
+    logger.info(
+        "[crossed manifest] %d prefixes x %d queries = %d rows in %d parts; carve=%s",
+        take,
+        n_q,
+        take * n_q,
+        n_parts,
+        {k: len(v) for k, v in prefix_sets.items()},
+    )
+    if not args.no_upload:
+        N1M._upload_manifest(crossed_dir, args.crossed_hf_prefix)
+    C.phase("crossed-manifest-done")
+    return meta
+
+
+def _load_crossed_manifest(args) -> tuple[list[dict], list[str], dict, dict]:
+    """Resolve + load the crossed manifest (prefix rows, bank queries, split doc,
+    meta). Local dir = {out_dir}/{CROSSED_MANIFEST_LOCAL}; --manifest-from-hf
+    stages {crossed_hf_prefix}/sampling_manifest (bank + split ride the folder)."""
+    local = args.out_dir / CROSSED_MANIFEST_LOCAL
+    if args.manifest_from_hf:
+        local = N1M._download_manifest(args.crossed_hf_prefix, local)
+    prefix_rows, meta = N1M.read_manifest_pool(local)
+    assert meta.get("kind") == "crossed", (
+        f"{local} is not a crossed manifest (kind={meta.get('kind')!r})"
+    )
+    bank_doc = json.loads((local / "bank.json").read_text())
+    bank = list(bank_doc["queries"])
+    # G2 crossing-sanity half 2: the bank strings are byte-identical to the
+    # manifest-time freeze (every realized row is built from THESE strings).
+    got = _bank_sha(bank)
+    assert got == meta["bank_sha256"], f"bank sha drift: {got} != {meta['bank_sha256']}"
+    split_doc = json.loads((local / "split_1738_crossed.json").read_text())
+    return prefix_rows, bank, split_doc, meta
+
+
+def _crossed_rows(prefix_rows: list[dict], bank: list[str], n_q_grid: int, n_q: int):
+    """Materialize crossed rows (p-major, q-minor) for the given prefix rows.
+    Row ci = prefix_pos * n_q_grid + q (grid-stable under the G1 query ladder)."""
+    out = []
+    for r in prefix_rows:
+        for q in range(n_q):
+            out.append(
+                {
+                    "i": int(r["i"]) * n_q_grid + q,
+                    "prefix_id": int(r["prefix_id"]),
+                    "query_id": q,
+                    "messages": [*r["messages"], {"role": "user", "content": bank[q]}],
+                    "depth": int(r["depth"]),
+                    "corpus": r["corpus"],
+                }
+            )
+    return out
+
+
+def _make_smoke_sae(act_dim: int, dict_size: int = 256, k: int = 4):
+    """From-config tiny BatchTopK SAE over the tiny-model hidden dim (smoke only;
+    the sae-arm smoke convention — real class, synthetic weights)."""
+    import issue1482_sae as SAEMOD
+
+    torch.manual_seed(1738)
+    sd = {
+        "b_dec": torch.zeros(act_dim),
+        "k": torch.tensor(k),
+        "threshold": torch.tensor(0.0),
+        "decoder.weight": torch.randn(act_dim, dict_size) * 0.05,
+        "encoder.weight": torch.randn(dict_size, act_dim) * 0.05,
+        "encoder.bias": torch.zeros(dict_size),
+    }
+    return SAEMOD.BatchTopKSAE(sd, k=k, act_dim=act_dim, dict_size=dict_size)
+
+
+def _resolve_crossed_sae(args, smoke_sae):
+    """Fail-fast SAE staging for the fold-in (plan §4.2 preamble). Returns
+    (sae | None). --no-sae => None (encode disabled outright, recorded)."""
+    import issue1482_sae as SAEMOD
+
+    if args.no_sae:
+        return None
+    if smoke_sae is not None:
+        return smoke_sae
+    cache = args.sae_cache_dir or (args.out_dir / "sae_cache")
+    SAEMOD.BatchTopKSAE.ensure_downloaded(CROSSED_SAE_K, cache, layer=int(args.crossed_sae_layer))
+    dev = "cuda" if args.device == "cuda" else "cpu"
+    return SAEMOD.BatchTopKSAE.load(
+        k=CROSSED_SAE_K, device=dev, cache_dir=cache, layer=int(args.crossed_sae_layer)
+    )
+
+
+def _crossed_sae_verdict_from_hub(up: str) -> bool:
+    """Fleet shards read the PILOT's authoritative sae_enabled verdict from the
+    Hub pilot meta (single decision point; launcher runs the pilot foreground
+    first). Fail loud when absent — the launcher ordering guarantees presence."""
+    from huggingface_hub import hf_hub_download
+
+    try:
+        p = hub.retry_transient(
+            lambda: hf_hub_download(
+                C.HF_DATA_REPO,
+                f"{up}/{CAPTURE_SUBDIR}/{CROSSED_PILOT_META_NAME}",
+                repo_type="dataset",
+            ),
+            what="crossed pilot meta fetch",
+        )
+    except Exception as e:  # noqa: BLE001 — re-raised with the operator recipe
+        raise RuntimeError(
+            f"crossed pilot meta absent on Hub ({up}/{CAPTURE_SUBDIR}/"
+            f"{CROSSED_PILOT_META_NAME}) — run the launcher's foreground pilot first"
+        ) from e
+    doc = json.loads(Path(p).read_text())
+    return bool(doc["sae"]["enabled"])
+
+
+def _sae_encode_row(sae, span_states, px_state, cx_state, fve_pool):
+    """SAE fold-in for ONE captured row: encode + pool inlier answer tokens
+    (mean/max/frac trio) and the stored px/cx states (sae-arm helpers verbatim).
+    Returns the per-row sparse pieces, or None when all tokens are outliers."""
+    import issue1482_sae as SAEMOD
+
+    inl = SAEMOD.token_inlier_mask(span_states)
+    span_in = span_states[inl]
+    if span_in.shape[0] == 0:
+        return None
+    if fve_pool is not None:
+        fve_pool["answer"].add(span_in)
+        fve_pool["context"].add(px_state[None, :])
+        fve_pool["context"].add(cx_state[None, :])
+    f = sae.encode(span_in.to(sae.device))
+    spd = SAEMOD.sparsify(SAEMOD.pool_answer_features(f))
+    out = {
+        "idx": spd["idx"],
+        "mean": spd["mean"],
+        "max": spd["max"],
+        "frac": spd["frac"],
+        "n_ans": int(span_states.shape[0]),
+        "n_inl": int(span_in.shape[0]),
+    }
+    for name, state in (("px", px_state), ("cx", cx_state)):
+        v = sae.encode(state[None, :].to(sae.device))[0]
+        nz = torch.nonzero(v, as_tuple=False).squeeze(-1)
+        out[f"{name}_idx"] = nz.cpu().numpy().astype(np.int32)
+        out[f"{name}_val"] = v[nz].float().cpu().numpy().astype(np.float16)
+    return out
+
+
+def _capture_crossed_rows(hf, tok, rows, responses, layers, sae, sae_layer_pos, fve_pool):
+    """Per-row crossed capture: parent px/cx/v_x path + optional SAE fold-in on
+    the answer-span states the SAME forward already materialized (plan §4.2).
+    Returns (kept_row_dicts, violations)."""
+    out, violations = [], []
+    keep_tok = sae is not None
+    for r, resp in zip(rows, responses, strict=True):
+        cap, reason = _capture_context_and_prefix(hf, tok, r["messages"], layers)
+        if cap is None:
+            violations.append({"ci": int(r["i"]), "reason": reason})
+            continue
+        av = COL.capture_answer_vector(
+            hf, tok, r["messages"], resp, layers, {}, keep_per_token=keep_tok
+        )
+        if av is None:  # empty response
+            continue
+        row = {
+            "ci": int(r["i"]),
+            "prefix_id": int(r["prefix_id"]),
+            "query_id": int(r["query_id"]),
+            "messages": r["messages"],
+            "response": resp,
+            "depth": int(r["depth"]),
+            "corpus": r["corpus"],
+            "cx_last": cap["cx_last"],
+            "px_last": cap["px_last"],
+            "v_x": av["v_x"],
+        }
+        if keep_tok:
+            row["sae"] = _sae_encode_row(
+                sae,
+                av["per_token"][:, sae_layer_pos, :],
+                cap["px_last"][sae_layer_pos],
+                cap["cx_last"][sae_layer_pos],
+                fve_pool,
+            )
+        out.append(row)
+    return out, violations
+
+
+def _stack_chunk_crossed(rows, layers, shard_index, chunk_idx, *, sae, sae_layer):
+    """Crossed chunk = parent bundle + {prefix_id, query_id} + (when the fold-in
+    ran) the sae-arm chunk schema fields VERBATIM, so the sae-arm scan/CSR
+    builders (`_scan_sae` / `_build_sae_matrices`) reuse without adaptation."""
+    d = _stack_chunk_mt(rows, layers, shard_index, chunk_idx)
+    d["prefix_id"] = [int(r["prefix_id"]) for r in rows]
+    d["query_id"] = [int(r["query_id"]) for r in rows]
+    d["sae_enabled"] = sae is not None
+    if sae is None:
+        return d
+
+    def _cat(parts, dtype):
+        return np.concatenate(parts).astype(dtype) if parts else np.zeros(0, dtype=dtype)
+
+    feat_idx, row_ptr = [], [0]
+    vals: dict[str, list] = {"mean": [], "max": [], "frac": []}
+    pxi, pxv, pxp = [], [], [0]
+    cxi, cxv, cxp = [], [], [0]
+    n_ans, n_inl, sae_skipped = [], [], []
+    li = list(layers).index(sae_layer)
+    for r in rows:
+        s = r["sae"]
+        if s is None:  # all answer tokens outliers — empty feature row, 1:1 kept
+            sae_skipped.append(int(r["ci"]))
+            row_ptr.append(row_ptr[-1])
+            pxp.append(pxp[-1])
+            cxp.append(cxp[-1])
+            n_ans.append(0)
+            n_inl.append(0)
+            continue
+        feat_idx.append(s["idx"])
+        row_ptr.append(row_ptr[-1] + len(s["idx"]))
+        for p in ("mean", "max", "frac"):
+            vals[p].append(s[p])
+        pxi.append(s["px_idx"])
+        pxv.append(s["px_val"])
+        pxp.append(pxp[-1] + len(s["px_idx"]))
+        cxi.append(s["cx_idx"])
+        cxv.append(s["cx_val"])
+        cxp.append(cxp[-1] + len(s["cx_idx"]))
+        n_ans.append(s["n_ans"])
+        n_inl.append(s["n_inl"])
+    d.update(
+        {
+            "feat_idx": _cat(feat_idx, np.int32),
+            "row_ptr": np.asarray(row_ptr, dtype=np.int64),
+            "ans_mean": _cat(vals["mean"], np.float16),
+            "ans_max": _cat(vals["max"], np.float16),
+            "ans_frac": _cat(vals["frac"], np.float16),
+            "px_feat_idx": _cat(pxi, np.int32),
+            "px_row_ptr": np.asarray(pxp, dtype=np.int64),
+            "px_feat_val": _cat(pxv, np.float16),
+            "cx_feat_idx": _cat(cxi, np.int32),
+            "cx_row_ptr": np.asarray(cxp, dtype=np.int64),
+            "cx_feat_val": _cat(cxv, np.float16),
+            "px_dense19": torch.stack([r["px_last"][li] for r in rows]).to(torch.float16),
+            "cx_dense19": torch.stack([r["cx_last"][li] for r in rows]).to(torch.float16),
+            "n_ans_tokens": np.asarray(n_ans, dtype=np.int32),
+            "n_inlier_tokens": np.asarray(n_inl, dtype=np.int32),
+            "sae_skipped_ci": sae_skipped,
+            "dropped_ci": [],  # _scan_sae contract: feature rows are 1:1 with ci here
+            "sae": {
+                "repo": None if sae is None else getattr(sae, "repo", None),
+                "k": sae.k,
+                "dict_size": sae.dict_size,
+                "layer": int(sae_layer),
+            },
+        }
+    )
+    return d
+
+
+def _run_bank_bare_capture(args, tok, hf, bank: list[str], layers, up: str) -> None:
+    """The 20-query bare-bank capture (once, negligible — plan §4.2): B0 render
+    self-test + batched empty-system capture of every realized bank query at the
+    capture layers -> ONE bank_bare.pt under {up}/bare_bank/."""
+    name = "bank_bare.pt"
+    if not args.no_upload and name in N50._remote_index(f"{up}/{BARE_BANK_SUBDIR}"):
+        logger.info("[crossed bank-bare] already on Hub; skip")
+        return
+    parts = _bare_render_selftest(tok)  # B0 hard asserts (bare-round convention)
+    texts = [_render_bare_query(tok, q, parts) for q in bank]
+    bq = _capture_bare_batch(hf, tok, texts, layers, args.bare_batch)
+    h_dim = int(hf.config.hidden_size)
+    assert bq.shape == (len(bank), len(layers), h_dim), bq.shape
+    out = args.out_dir / "crossed_shards" / name
+    out.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "bq_last": bq,
+            "query_id": list(range(len(bank))),
+            "bank_sha256": _bank_sha(bank),
+            "bare_render": texts,
+            "layers": list(layers),
+        },
+        out,
+    )
+    if not args.no_upload:
+        url = hub._upload(
+            out,
+            repo_id=C.HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=f"{up}/{BARE_BANK_SUBDIR}/{name}",
+            upload_as_file=True,
+        )
+        if not url:
+            raise RuntimeError("bank_bare.pt upload returned no URL")
+    logger.info("[crossed bank-bare] captured %d bank queries -> %s", len(bank), out)
+
+
+def _crossed_violation_should_halt(n_violations: int, n_attempted: int) -> bool:
+    """Pure fleet-halt predicate: strict-token-prefix violations above the 0.5%
+    budget once enough rows have been attempted (plan §4.2; rate below the
+    attempt floor is statistically meaningless)."""
+    return (
+        n_attempted >= CROSSED_VIOLATION_MIN_ATTEMPTED
+        and n_violations / n_attempted > PILOT_VIOLATION_RATE_MAX
+    )
+
+
+def _crossed_sae_gate(fve_pool, sae, *, force: str) -> dict:
+    """Pilot SAE fitness re-check (plan §12.4): reference-parity fve_l0 on the
+    accumulated inlier ANSWER token pool; bar FVE >= 0.75 / L0 in [30, 120].
+    FAIL => the fleet PROCEEDS with the encode disabled (R6 skips cleanly).
+    ``force`` ("on"/"off"/"") overrides the verdict (smoke: gate computed +
+    recorded, verdict demoted to a log line — production-n gate calibration)."""
+    pool = fve_pool["answer"].tensor()
+    out: dict = {
+        "fve_min": CROSSED_SAE_FVE_MIN,
+        "l0_range": list(CROSSED_SAE_L0_RANGE),
+        "n_pool_tokens": int(pool.shape[0]),
+        "force": force,
+    }
+    if sae is None:
+        out.update({"enabled": False, "reason": "--no-sae"})
+        return out
+    fve, l0, diag = sae.fve_l0(pool)
+    lo, hi = CROSSED_SAE_L0_RANGE
+    verdict = bool(fve >= CROSSED_SAE_FVE_MIN and lo <= l0 <= hi)
+    out.update({"fve": float(fve), "l0": float(l0), "diag": diag, "gate_pass": verdict})
+    if force == "on":
+        out["enabled"] = True
+        out["reason"] = "forced on (smoke gate demoted to informational)"
+    elif force == "off":
+        out["enabled"] = False
+        out["reason"] = "forced off"
+    else:
+        out["enabled"] = verdict
+        out["reason"] = "gate verdict"
+    logger.info(
+        "[crossed sae-gate] fve=%.4f l0=%.1f pass=%s enabled=%s", fve, l0, verdict, out["enabled"]
+    )
+    return out
+
+
+def run_crossed_capture(args, *, smoke_sae=None) -> int:
+    """S1 (plan v9 §4.2): sharded-BY-PREFIX crossed generation + capture + SAE
+    fold-in + the once-only bank bare capture. Pilot (--pilot-cap, in PREFIXES)
+    runs G1 (throughput fence, designed rc 28) + G2 (crossing sanity, rc 30) +
+    the SAE fitness gate, and writes/uploads crossed_pilot_meta.json BEFORE the
+    fleet detaches (launcher foreground, sae-arm pattern)."""
+    up = args.crossed_hf_prefix
+    prefix_rows, bank, split_doc, cmeta = _load_crossed_manifest(args)
+    n_q_grid = int(cmeta["n_queries"])
+    n_q = int(args.queries_per_prefix) or n_q_grid
+    assert 1 <= n_q <= n_q_grid, (n_q, n_q_grid)
+    if n_q != n_q_grid:
+        logger.warning("[crossed] G1 query ladder: realizing %d/%d queries/prefix", n_q, n_q_grid)
+    layers = [int(x) for x in args.capture_layers.split(",")]
+    sae_layer = int(args.crossed_sae_layer)
+    assert sae_layer in layers, (sae_layer, layers)
+    sae_layer_pos = layers.index(sae_layer)
+
+    P = len(prefix_rows)
+    start, end = N50._shard_range(P, args.num_shards, args.shard_index)
+    shard_prefixes = prefix_rows[start:end]
+    is_pilot = bool(args.pilot_cap and args.pilot_cap > 0)
+    if is_pilot:
+        shard_prefixes = shard_prefixes[: args.pilot_cap]
+    logger.info(
+        "[crossed shard %d/%d] prefixes [%d, %d) = %d x %d queries = %d rows%s -> %s",
+        args.shard_index,
+        args.num_shards,
+        start,
+        end,
+        len(shard_prefixes),
+        n_q,
+        len(shard_prefixes) * n_q,
+        f" PILOT cap {args.pilot_cap} prefixes" if is_pilot else "",
+        up,
+    )
+
+    scratch = args.out_dir / "crossed_shards"
+    scratch.mkdir(parents=True, exist_ok=True)
+    done_pt = set(N50._remote_index(f"{up}/{CAPTURE_SUBDIR}")) if not args.no_upload else set()
+    done_raw = set(N50._remote_index(f"{up}/{RAW_SUBDIR}")) if not args.no_upload else set()
+
+    C.phase("crossed_load_model")
+    tok, hf = _load_models(args)
+    llm = N1M._build_capture_engine(args) if args.device == "cuda" else None
+    h_dim = int(hf.config.hidden_size)
+    sae = _resolve_crossed_sae(args, smoke_sae)
+    fve_pool = None
+    if is_pilot or (args.no_upload and sae is not None):
+        # pilot (or upload-less smoke): the gate is computed in-run from the pool
+        import issue1738_sae_arm as SAEARM  # deferred: SAEARM imports this module
+
+        fve_pool = {
+            "answer": SAEARM._FvePool(cap=CROSSED_SAE_POOL_CAP),
+            "context": SAEARM._FvePool(cap=CROSSED_SAE_POOL_CAP),
+        }
+        sae_gate = None
+    elif sae is not None:
+        # fleet shard: the PILOT's Hub-published verdict is authoritative
+        enabled = _crossed_sae_verdict_from_hub(up)
+        sae_gate = {"enabled": enabled, "reason": "pilot meta (Hub)"}
+        if not enabled:
+            logger.warning("[crossed] pilot verdict: SAE encode DISABLED — R6 will skip")
+            sae = None
+    else:
+        sae_gate = {"enabled": False, "reason": "--no-sae"}
+
+    if args.shard_index == 0:
+        _run_bank_bare_capture(args, tok, hf, bank[:n_q], layers, up)
+
+    C.phase("crossed_capture")
+    rows_all = _crossed_rows(shard_prefixes, bank, n_q_grid, n_q)
+    n_sub = (len(rows_all) + args.shard_size - 1) // args.shard_size
+    kept_total = 0
+    t_start = time.time()
+    pending_pt: list[str] = []
+    pending_raw: list[str] = []
+    violations_all: list[dict] = []
+    skipped_all: list[dict] = []
+    pilot_px: list[torch.Tensor] = []
+
+    def _flush_pending() -> None:
+        if args.no_upload or not pending_pt:
+            return
+        _flush_upload_batch_mt(scratch, up, pending_pt, pending_raw)
+        pending_pt.clear()
+        pending_raw.clear()
+
+    def _on_sigterm(signum, frame):
+        raise SystemExit(f"SIGTERM ({signum}) received — flushing pending upload batch")
+
+    prev_sigterm = signal.signal(signal.SIGTERM, _on_sigterm)
+    try:
+        for ci_idx, s in enumerate(range(0, len(rows_all), args.shard_size)):
+            name = f"shard{args.shard_index:02d}_chunk{ci_idx:04d}.pt"
+            raw_name = f"shard{args.shard_index:02d}_chunk{ci_idx:04d}.json"
+            chunk = rows_all[s : s + args.shard_size]
+            kept_rows, skipped = _filter_rows_overlength(
+                chunk, _gen_render_len(tok), PROMPT_TOKEN_BUDGET
+            )
+            skipped_all.extend(skipped)
+            if skipped:  # expected ~0: the manifest prechecked against the longest query
+                logger.warning(
+                    "[crossed shard %d] chunk %d: %d over-length skips (precheck leak?); cis=%s",
+                    args.shard_index,
+                    ci_idx,
+                    len(skipped),
+                    [d["ci"] for d in skipped][:20],
+                )
+            if name in done_pt and raw_name in done_raw:
+                logger.info(
+                    "[crossed shard %d] chunk %d/%d already on Hub; skip",
+                    args.shard_index,
+                    ci_idx + 1,
+                    n_sub,
+                )
+                continue
+            if not kept_rows:
+                continue
+            ts = time.time()
+            responses = _generate_multiturn(llm, tok, [r["messages"] for r in kept_rows])
+            rows, violations = _capture_crossed_rows(
+                hf, tok, kept_rows, responses, layers, sae, sae_layer_pos, fve_pool
+            )
+            violations_all.extend(violations)
+            # fleet halt: strict-token-prefix violations above the 0.5% budget
+            attempted = kept_total + len(rows) + len(violations_all)
+            if _crossed_violation_should_halt(len(violations_all), attempted):
+                rep = {
+                    "gate": "crossed-violation",
+                    "shard_index": int(args.shard_index),
+                    "n_attempted": attempted,
+                    "n_violations": len(violations_all),
+                    "rate": len(violations_all) / attempted,
+                    "rate_max": PILOT_VIOLATION_RATE_MAX,
+                }
+                C.write_json_atomic(args.out_dir / "crossed_violation_report.json", rep)
+                logger.error("[crossed] violation fleet-halt: %s", rep)
+                _flush_pending()
+                sys.exit(RC_CROSSED_VIOLATION)
+            if not rows:
+                logger.warning(
+                    "[crossed shard %d] chunk %d: 0 captured rows; skip", args.shard_index, ci_idx
+                )
+                continue
+            for fld in ("px_last", "cx_last", "v_x"):
+                for r in rows:
+                    assert r[fld].shape == (len(layers), h_dim), (fld, r[fld].shape)
+            torch.save(
+                _stack_chunk_crossed(
+                    rows, layers, args.shard_index, ci_idx, sae=sae, sae_layer=sae_layer
+                ),
+                scratch / name,
+            )
+            C.write_json_atomic(
+                scratch / raw_name,
+                {
+                    "shard_index": args.shard_index,
+                    "chunk": ci_idx,
+                    "rows": [
+                        {
+                            "ci": int(r["ci"]),
+                            "prefix_id": int(r["prefix_id"]),
+                            "query_id": int(r["query_id"]),
+                            "messages": r["messages"],
+                            "response": r["response"],
+                            "depth": int(r["depth"]),
+                            "corpus": r["corpus"],
+                        }
+                        for r in rows
+                    ],
+                },
+            )
+            if is_pilot:
+                pilot_px.append(torch.stack([r["px_last"] for r in rows]))
+            kept_total += len(rows)
+            if not args.no_upload:
+                pending_pt.append(name)
+                pending_raw.append(raw_name)
+                if len(pending_pt) >= UPLOAD_BATCH:
+                    _flush_pending()
+            logger.info(
+                "[crossed-capture] chunk %d/%d shard=%d: %d/%d captured (%d viol, %.0fs "
+                "elapsed=%.0fs)",
+                ci_idx + 1,
+                n_sub,
+                args.shard_index,
+                len(rows),
+                len(chunk),
+                len(violations),
+                time.time() - ts,
+                time.time() - t_start,
+            )
+        _flush_pending()
+    except BaseException:
+        try:
+            _flush_pending()
+        except Exception:
+            logger.exception(
+                "[crossed shard %d] best-effort pending-batch flush failed on exit",
+                args.shard_index,
+            )
+        raise
+    finally:
+        signal.signal(signal.SIGTERM, prev_sigterm)
+
+    _write_sidecar(scratch, args, skipped_all, violations_all, prefix=up)
+    wall_h = (time.time() - t_start) / 3600.0
+    logger.info(
+        "[crossed shard %d] done: %d rows / %d chunks (%d over-length, %d violations, %.2f h)",
+        args.shard_index,
+        kept_total,
+        n_sub,
+        len(skipped_all),
+        len(violations_all),
+        wall_h,
+    )
+    if is_pilot or (args.no_upload and fve_pool is not None):
+        sae_gate = _crossed_sae_gate(fve_pool, sae, force=args.crossed_sae_force)
+    if is_pilot:
+        rc = _write_crossed_pilot_meta(
+            args,
+            up,
+            kept_total=kept_total,
+            wall_h=wall_h,
+            n_rows_total=P * n_q,
+            skipped_all=skipped_all,
+            violations_all=violations_all,
+            pilot_px=pilot_px,
+            sae_gate=sae_gate,
+            n_q=n_q,
+            n_q_grid=n_q_grid,
+        )
+        if rc != 0:
+            sys.exit(rc)
+    C.phase("done")
+    return 0
+
+
+def _write_crossed_pilot_meta(
+    args,
+    up,
+    *,
+    kept_total,
+    wall_h,
+    n_rows_total,
+    skipped_all,
+    violations_all,
+    pilot_px,
+    sae_gate,
+    n_q,
+    n_q_grid,
+) -> int:
+    """G1/G2 pilot artifact + designed-halt routing (report FIRST, then rc).
+
+    G1: projected total GPU-h (measured rate x full grid + the S2 book) past the
+    24 GPU-h fence => rc 28 (the orchestrator re-sizes the query ladder; never a
+    silent overspend). G2: per-layer min pairwise prefix-end cosine must sit
+    BELOW 0.999 (the multi-turn prefixes genuinely vary) => rc 30 on FAIL."""
+    n_attempted = kept_total + len(violations_all)
+    viol_rate = len(violations_all) / max(1, n_attempted)
+    px = torch.cat(pilot_px, dim=0) if pilot_px else torch.zeros(0, 1, 1)
+    min_cos = _min_pairwise_cos(px) if px.shape[0] >= 2 else {}
+    layers = [int(x) for x in args.capture_layers.split(",")]
+    min_cos_by_layer = {str(layers[int(k)]): v for k, v in min_cos.items()}
+    rate = kept_total / wall_h if wall_h > 0 else float("nan")
+    projected_gpu_h = (n_rows_total / rate if rate > 0 else float("inf")) + (CROSSED_S2_BOOK_GPU_H)
+    g2_prefix_varies = bool(min_cos_by_layer) and all(
+        v < PILOT_PREFIX_COS_MAX for v in min_cos_by_layer.values()
+    )
+    doc = {
+        "n_captured": int(kept_total),
+        "wall_h": float(wall_h),
+        "ctx_per_gpu_h": float(rate),
+        "n_rows_total_grid": int(n_rows_total),
+        "queries_per_prefix_realized": int(n_q),
+        "queries_per_prefix_grid": int(n_q_grid),
+        "projected_total_gpu_h": float(projected_gpu_h),
+        "fence_gpu_h": float(args.crossed_fence_gpu_h),
+        "n_overlength_skipped": len(skipped_all),
+        "n_prefix_violations": len(violations_all),
+        "violation_rate": float(viol_rate),
+        "violation_rate_max": PILOT_VIOLATION_RATE_MAX,
+        "prefix_min_pairwise_cos_by_layer": min_cos_by_layer,
+        "prefix_cos_max": PILOT_PREFIX_COS_MAX,
+        "gate_g1": {"projected_within_fence": projected_gpu_h <= args.crossed_fence_gpu_h},
+        "gate_g2": {
+            "prefix_varies_ok": g2_prefix_varies,
+            "bank_byte_identity_ok": True,  # asserted fail-loud at manifest load
+            "violation_rate_ok": viol_rate <= PILOT_VIOLATION_RATE_MAX,
+        },
+        "sae": sae_gate,
+        "shard_index": int(args.shard_index),
+        "pilot_cap_prefixes": int(args.pilot_cap),
+    }
+    out = args.out_dir / CROSSED_PILOT_META_NAME
+    C.write_json_atomic(out, doc)
+    logger.info(
+        "[crossed-pilot] ctx/GPU-h=%.0f projected=%.1f GPU-h (fence %.0f) viol=%.4f "
+        "min_cos=%s sae=%s",
+        rate,
+        projected_gpu_h,
+        args.crossed_fence_gpu_h,
+        viol_rate,
+        min_cos_by_layer,
+        sae_gate.get("enabled"),
+    )
+    if not args.no_upload:
+        # under capture/ — a FILE at the bare prefix 400-blocks later folder
+        # commits under the prefix (the fu1 B1 incident, commit dd9a615c22)
+        url = hub._upload(
+            out,
+            repo_id=C.HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=f"{up}/{CAPTURE_SUBDIR}/{CROSSED_PILOT_META_NAME}",
+            upload_as_file=True,
+        )
+        if not url:
+            raise RuntimeError("crossed_pilot_meta.json upload returned no URL")
+    if not doc["gate_g2"]["prefix_varies_ok"] or not doc["gate_g2"]["violation_rate_ok"]:
+        logger.error("[crossed G2] FAIL: %s — halt fleet (code bug, not science)", doc["gate_g2"])
+        return RC_CROSSED_G2
+    if not doc["gate_g1"]["projected_within_fence"]:
+        logger.error(
+            "[crossed G1] projected %.1f GPU-h > fence %.0f — designed halt (query ladder "
+            "20->12->10 is the orchestrator's re-size; prefixes are never reduced)",
+            projected_gpu_h,
+            args.crossed_fence_gpu_h,
+        )
+        return RC_CROSSED_FENCE
+    return 0
+
+
 def run_capture(args) -> int:
     manifest_dir = _resolve_manifest_dir(args)
     pool, _meta = N1M.read_manifest_pool(manifest_dir)
@@ -2490,8 +3417,283 @@ def _smoke(args) -> int:
     frep = json.loads((ns.out_dir / "bare_fence_report.json").read_text())
     assert frep["gate"] == "G-B1" and frep["projected_shard_wall_min"] > 0, frep
 
-    logger.info("[smoke] OK — manifest/allocation/carve/gate/capture-indexing/kresample/bare-query")
+    # (8) crossed-multiturn-averaged leg (fu3, plan v9 S0): tiny crossed manifest
+    # (from a DIVERSE-query smoke main manifest — synthetic near-identical queries
+    # would near-dupe-collapse the bank pool) → crossed capture (tiny model + tiny
+    # from-config SAE) → the FULL reads driver on the local chunks. Proves the
+    # meta.json contract, the chunk schema incl. the sae fields, and split reuse
+    # — all through the PRODUCTION entrypoints (PASS_UNIFIED).
+    _smoke_crossed(args, ns, cargs)
+
+    logger.info(
+        "[smoke] OK — manifest/allocation/carve/gate/capture-indexing/kresample/bare-query/crossed"
+    )
     return 0
+
+
+_SMOKE_DIVERSE_QUERIES = (
+    "Explain how ocean tides form along irregular coastlines",
+    "What are solid beginner openings to study in chess",
+    "Draft a short toast for my sister's graduation dinner",
+    "Compare compost bins and worm farms for a small balcony",
+    "Why does bread dough need a second rise before baking",
+    "Summarize the plot of a heist film without naming it",
+    "How do I split rent fairly with roommates of unequal rooms",
+    "Give me stretches for wrist pain from typing all day",
+    "What is the difference between espresso and moka pot coffee",
+    "Plan a rainy weekend itinerary for two days in a small city",
+    "How should I prune an overgrown rosemary bush in spring",
+    "Explain latency versus bandwidth using a postal analogy",
+)
+
+
+def _smoke_crossed(args, ns, cargs) -> None:
+    """The fu3 S0 leg (plan v9 §4.3): P0 build (incl. the G0 shortfall degenerate
+    probe) → S1 capture (both shards; pilot gates G1/G2/violation probed) → S2
+    reads (all six reads on the local chunks; R6 skip branch probed)."""
+    import numpy as np
+
+    xbase = ns.out_dir / "_smoke_crossed"
+    xbase.mkdir(parents=True, exist_ok=True)
+    # diverse-last-user-turn corpus so the bank's near-dupe gates keep a pool
+    div_lm = [_synth_conv(i, 2 + (i % 4)) for i in range(80)]
+    div_wc = [_synth_conv(500 + i, 2, wc=True) for i in range(30)]
+    for i, conv in enumerate(div_lm + div_wc):
+        q = _SMOKE_DIVERSE_QUERIES[i % len(_SMOKE_DIVERSE_QUERIES)]
+        conv["conversation"][-2]["content"] = f"{q} case {i}"
+    xmain = argparse.Namespace(
+        **{
+            **vars(args),
+            "no_upload": True,
+            "n_target": 60,
+            "probe_rows": 40,
+            "skip_probe": True,
+            "out_dir": xbase,
+        }
+    )
+    build_manifest(xmain, smoke_lmsys=div_lm, smoke_wildchat=div_wc)
+
+    xns = argparse.Namespace(
+        **{
+            **vars(cargs),
+            "out_dir": xbase,
+            "crossed_hf_prefix": "issue1738_crossed_smoke",
+            "crossed_n_prefixes": 5,
+            "crossed_n_queries": 3,
+            "crossed_g0_prefix_floor": 5,
+            "crossed_g0_bank_floor": 6,
+            "crossed_bank_query_token_max": CROSSED_BANK_QUERY_TOKEN_MAX,
+            "queries_per_prefix": 0,
+            # G1's 24 GPU-h fence is calibrated at production THROUGHPUT — a tiny
+            # CPU pilot projects past any real fence by construction (the smoke-
+            # gate-calibration law): demote to a non-binding bound here, and probe
+            # the fence BRANCH with a degenerate tiny fence below.
+            "crossed_fence_gpu_h": 1e9,
+            "crossed_sae_layer": 1,
+            "no_sae": False,
+            "crossed_sae_force": "on",  # gate computed + recorded; verdict demoted (random SAE)
+            "sae_cache_dir": None,
+            "manifest_from_hf": False,
+            "num_shards": 2,
+            "shard_index": 0,
+            "shard_size": 4,
+            "pilot_cap": 3,
+        }
+    )
+    # G0 shortfall degenerate probe FIRST (overwritten by the real build below):
+    # an unreachable prefix floor takes-what-exists + reports, never all-or-nothing.
+    short_meta = build_crossed_manifest(
+        argparse.Namespace(**{**vars(xns), "crossed_g0_prefix_floor": 10_000})
+    )
+    assert short_meta["g0"]["prefix_pool_ok"] is False, short_meta["g0"]
+    assert short_meta["g0"]["prefix_walk_exhausted"] is True, short_meta["g0"]
+    assert short_meta["n_new"] == 5, short_meta["n_new"]
+
+    xmeta = build_crossed_manifest(xns)
+    assert xmeta["n_new"] == 5 and xmeta["n_queries"] == 3, (xmeta["n_new"], xmeta["n_queries"])
+    assert xmeta["overlap_fraction_main_manifest"] == 1.0
+    xdir = xbase / CROSSED_MANIFEST_LOCAL
+    assert (xdir / "meta.json").exists(), (
+        "crossed meta.json contract broken (loader hard-requires it)"
+    )
+    xsplit = json.loads((xdir / "split_1738_crossed.json").read_text())
+    for s in ("val", "test", "holdout", "train"):
+        ids = xsplit["sets"][s]["ci"]
+        assert xsplit["sets"][s]["sha256"] == _sha_int_list(ids), s
+        pset = set(xsplit["prefix_sets"][s]["pi"])
+        assert all(i // 3 in pset for i in ids), f"{s}: rows not prefix-grouped"
+    row_sets = [set(xsplit["sets"][s]["ci"]) for s in ("val", "test", "holdout", "train")]
+    assert sum(len(x) for x in row_sets) == len(set().union(*row_sets)) == 15, (
+        "crossed split not a partition of the 5x3 grid"
+    )
+
+    # S1 capture: pilot shard 0 (G1/G2/SAE gates) + fleet shard 1 -> full grid.
+    tiny_sae = _make_smoke_sae(64, dict_size=256, k=4)
+    rc = run_crossed_capture(xns, smoke_sae=tiny_sae)
+    assert rc == 0
+    rc = run_crossed_capture(
+        argparse.Namespace(**{**vars(xns), "shard_index": 1, "pilot_cap": 0}),
+        smoke_sae=tiny_sae,
+    )
+    assert rc == 0
+    xscratch = xbase / "crossed_shards"
+    seen_ci: list[int] = []
+    for xc in sorted(xscratch.glob("shard*_chunk*.pt")):
+        xb = torch.load(xc, weights_only=False)
+        assert xb["sae_enabled"], xc
+        assert int(xb["row_ptr"][-1]) == len(xb["feat_idx"]), "sae CSR row_ptr misaligned"
+        assert len(xb["prefix_id"]) == len(xb["ci"]) == len(xb["query_id"])
+        assert xb["px_dense19"].shape == (len(xb["ci"]), 64), xb["px_dense19"].shape
+        for j, c in enumerate(xb["ci"]):
+            assert int(c) % 3 == int(xb["query_id"][j]) and 0 <= int(c) // 3 < 5, (c, j)
+        seen_ci.extend(int(c) for c in xb["ci"])
+    assert sorted(seen_ci) == list(range(15)), f"grid incomplete: {sorted(seen_ci)}"
+    assert (xscratch / "bank_bare.pt").exists(), "bank bare capture missing"
+    xpm = json.loads((xbase / CROSSED_PILOT_META_NAME).read_text())
+    assert xpm["gate_g2"]["prefix_varies_ok"] and xpm["gate_g2"]["violation_rate_ok"], xpm
+    assert xpm["sae"]["enabled"] and xpm["sae"]["force"] == "on", xpm["sae"]
+    assert "gate_pass" in xpm["sae"] and "fve" in xpm["sae"], "sae gate not COMPUTED"
+    assert xpm["queries_per_prefix_realized"] == 3, xpm
+
+    # degenerate gate probes (data-dependent-gates duty):
+    # (a) violation fleet-halt predicate fires past the budget, stays quiet under it
+    assert _crossed_violation_should_halt(10, 1_000)
+    assert not _crossed_violation_should_halt(1, 1_000)
+    assert not _crossed_violation_should_halt(500, 999)  # below the attempt floor
+    # (b) G1 fence: a tiny fence takes the DESIGNED halt rc 28 (report written first)
+    try:
+        run_crossed_capture(
+            argparse.Namespace(**{**vars(xns), "crossed_fence_gpu_h": 1e-9}),
+            smoke_sae=tiny_sae,
+        )
+        raise AssertionError("crossed G1 fence did not halt")
+    except SystemExit as e:
+        assert e.code == RC_CROSSED_FENCE, e.code
+    frep = json.loads((xbase / CROSSED_PILOT_META_NAME).read_text())
+    assert frep["gate_g1"]["projected_within_fence"] is False, frep["gate_g1"]
+    # (c) G2 sanity: identical prefix-end states (min cos 1.0) -> designed rc 30
+    rc_g2 = _write_crossed_pilot_meta(
+        xns,
+        "unused-prefix",
+        kept_total=4,
+        wall_h=0.01,
+        n_rows_total=15,
+        skipped_all=[],
+        violations_all=[],
+        pilot_px=[torch.ones(4, 2, 64)],
+        sae_gate={"enabled": True},
+        n_q=3,
+        n_q_grid=3,
+    )
+    assert rc_g2 == RC_CROSSED_G2, rc_g2
+    # restore the PASSING pilot meta for the reads leg (deterministic re-run)
+    rc = run_crossed_capture(xns, smoke_sae=tiny_sae)
+    assert rc == 0
+    xpm = json.loads((xbase / CROSSED_PILOT_META_NAME).read_text())
+    assert xpm["gate_g2"]["prefix_varies_ok"] and xpm["sae"]["enabled"], xpm
+
+    # S2: the full reads driver on the local chunks (deferred import: the reads
+    # module imports THIS module at top level).
+    import issue1738_crossed_reads as CR
+
+    rargs = argparse.Namespace(
+        hf_prefix="issue1738_crossed_smoke",
+        local_capture_dir=str(xscratch),
+        local_manifest_dir=str(xdir),
+        pilot_meta=str(xbase / CROSSED_PILOT_META_NAME),
+        out_eval=xbase / "crossed_eval",
+        out_local=xbase / "crossed_reads_local",
+        mm_dir=xbase / "crossed_reads_local" / "mm",
+        layers="0,1",
+        device="cpu",
+        ridge_block=4096,
+        # G3's 2x first-cell fence assumes production-homogeneous cell walls;
+        # millisecond smoke cells are jitter-dominated (smoke-gate-calibration
+        # law) — demote here; the PREDICATE is probed degenerately below.
+        fence_mult=100.0,
+        coverage_floor=0.95,
+        n_boot=25,
+        pca_dirs=2,
+        inner_cv_folds=2,
+        n_operator_nulls=4,
+        sae_feature_block=64,
+        rb_tail_n=8,
+        skip_rb_align=True,
+        queries_per_prefix=0,
+        kresample_summary=str(xbase / "_missing_kresample.json"),
+        no_upload=True,
+    )
+    rc = CR.run_reads(rargs)
+    assert rc == 0
+    # G3 fence PREDICATE degenerate probe (the fence itself is smoke-demoted above)
+    import issue1738_multiturn_fits as MTF
+
+    assert MTF._fence_should_halt(100.0, 1.0, 10, 2.0)
+    assert not MTF._fence_should_halt(10.0, 1.0, 10, 2.0)
+    xf = json.loads((rargs.out_eval / "crossed_fits.json").read_text())
+    assert len(xf["cells"]) == 4 * 2, sorted(xf["cells"])  # 4 arms x 2 smoke layers
+    assert xf["cells"]["avg_L1"]["selection"].startswith("inner CV"), xf["cells"]["avg_L1"]
+    assert "gap_induced_minus_independent_r2" in xf["induced"]["L0"], xf["induced"]
+    assert ("skipped" in xf["transfer"]) or ("context" in xf["transfer"]["cells"])
+    xa = json.loads((rargs.out_eval / "anova.json").read_text())
+    sh = xa["per_layer"]["0"]["overall"]
+    assert abs(sh["share_prefix"] + sh["share_query"] + sh["share_inter"] - 1.0) < 1e-4, sh
+    assert xa["kresample_reference"].get("skipped"), "missing-comparator branch not recorded"
+    assert len(xa["per_layer"]["0"]["per_direction"]["share_prefix"]) == 2  # pca_dirs
+    ib = json.loads((rargs.out_eval / "mapping_baselines.json").read_text())
+    assert ib["cells"]["stitch_L0"]["identity_bias"].get("status") == "inapplicable", (
+        "R4 identity+bias dimension-mismatch not recorded EXPLICITLY"
+    )
+    assert "identity_bias" in ib["cells"]["context_L0"] and (
+        "holdout_r2" in ib["cells"]["context_L0"]["identity_bias"]
+    )
+    xo = json.loads((rargs.out_eval / "operator_geometry.json").read_text())
+    assert "context|prefix" in xo["per_layer"]["0"]["pairs"], sorted(xo["per_layer"]["0"]["pairs"])
+    assert (rargs.out_eval / "stitch.json").exists()
+    xsae = json.loads((rargs.out_eval / "sae_perfeature.json").read_text())
+    assert not xsae.get("skipped"), xsae
+    assert "induced_averaged" in xsae["feature_maps"], xsae["feature_maps"]
+    assert (rargs.out_eval / "perfeature_crossed_summary.csv").exists()
+    # R6 clean-skip branch (sae_enabled=false verdict) — separate out dir so the
+    # PASSING artifacts above are never clobbered
+    skip_dir = xbase / "crossed_eval_skip"
+    skip_dir.mkdir(exist_ok=True)
+    CR._phase_sae(
+        rargs,
+        Path(rargs.mm_dir),
+        np.zeros(0, np.int64),
+        3,
+        3,
+        {"train": np.zeros(0, np.int64)},
+        np.zeros(0, np.int64),
+        np.zeros((0, 3), np.int64),
+        {},
+        torch.device("cpu"),
+        {"enabled": False},
+        skip_dir,
+        xbase / "crossed_reads_local" / "pf_skip",
+        {},
+    )
+    assert json.loads((skip_dir / "sae_perfeature.json").read_text())["skipped"] is True
+    # _stack_chunk_crossed empty-feature-row alignment (all-tokens-outlier shape)
+    dummy = [
+        {
+            "ci": 0,
+            "prefix_id": 0,
+            "query_id": 0,
+            "messages": [{"role": "user", "content": "q"}],
+            "response": "r",
+            "depth": 2,
+            "corpus": "lmsys",
+            "cx_last": torch.zeros(2, 64),
+            "px_last": torch.zeros(2, 64),
+            "v_x": torch.zeros(2, 64),
+            "sae": None,
+        }
+    ]
+    dch = _stack_chunk_crossed(dummy, [0, 1], 0, 0, sae=tiny_sae, sae_layer=1)
+    assert dch["sae_skipped_ci"] == [0] and dch["row_ptr"].tolist() == [0, 0], dch["row_ptr"]
+    logger.info("[smoke] crossed leg OK — manifest -> capture (2 shards) -> all six reads")
 
 
 def main() -> int:
@@ -2563,6 +3765,42 @@ def main() -> int:
         default=BARE_FENCE_MIN_DEFAULT,
         help="G-B1: designed halt when the measured rate projects this shard past N minutes",
     )
+    # ── crossed-multiturn-averaged round (follow-up fu3, plan v9 §4.1/§4.2) ───────
+    ap.add_argument(
+        "--build-crossed-manifest",
+        action="store_true",
+        help="P0: build + upload the crossed manifest (prefixes x shared bank)",
+    )
+    ap.add_argument(
+        "--crossed-capture",
+        action="store_true",
+        help="S1: crossed generation + capture + SAE fold-in (shard BY PREFIX)",
+    )
+    # UPLOAD_PREFIX_EXEMPT: the crossed round's OWN self-contained prefix (plan v9 §10); parent prefixes are never written by these modes
+    ap.add_argument("--crossed-hf-prefix", default=CROSSED_HF_PREFIX)
+    ap.add_argument("--crossed-n-prefixes", type=int, default=CROSSED_N_PREFIXES)
+    ap.add_argument("--crossed-n-queries", type=int, default=CROSSED_N_QUERIES)
+    ap.add_argument("--crossed-g0-prefix-floor", type=int, default=CROSSED_G0_PREFIX_FLOOR)
+    ap.add_argument("--crossed-g0-bank-floor", type=int, default=CROSSED_G0_BANK_FLOOR)
+    ap.add_argument(
+        "--crossed-bank-query-token-max", type=int, default=CROSSED_BANK_QUERY_TOKEN_MAX
+    )
+    ap.add_argument(
+        "--queries-per-prefix",
+        type=int,
+        default=0,
+        help="G1 ladder subset (20->12->10); 0 = the full manifest grid",
+    )
+    ap.add_argument("--crossed-fence-gpu-h", type=float, default=CROSSED_FENCE_GPU_H)
+    ap.add_argument("--crossed-sae-layer", type=int, default=CROSSED_SAE_LAYER)
+    ap.add_argument("--no-sae", action="store_true", help="crossed: skip the SAE fold-in outright")
+    ap.add_argument(
+        "--crossed-sae-force",
+        choices=["", "on", "off"],
+        default="",
+        help="override the pilot SAE fitness verdict (smoke: 'on' — gate demoted to a log)",
+    )
+    ap.add_argument("--sae-cache-dir", type=Path, default=None)
     ap.add_argument("--smoke", action="store_true", help="CPU logic smoke (synthetic streams)")
     args = ap.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -2575,6 +3813,11 @@ def main() -> int:
     elif args.build_sampling_manifest:
         build_manifest(args)
         rc = 0
+    elif args.build_crossed_manifest:
+        build_crossed_manifest(args)
+        rc = 0
+    elif args.crossed_capture:
+        rc = run_crossed_capture(args)
     elif args.kresample:
         rc = run_kresample(args)
     elif args.bare_query:
