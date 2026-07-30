@@ -6928,8 +6928,8 @@
     "1896": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1896",
-      "status": "approved",
+      "path": "tasks/running/1896",
+      "status": "running",
       "title": "workflow-fix: add capture-7b to the fellows/SLURM lane intent tables"
     },
     "1897": {
