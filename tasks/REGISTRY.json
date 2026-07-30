@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1885,
+  "highest_id": 1886,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6854,6 +6854,13 @@
       "path": "tasks/archived/1885",
       "status": "archived",
       "title": "workflow-fix: lane-aware carry-over gate \u2014 committed inputs unshippable on SLURM rsync lanes"
+    },
+    "1886": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1886",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas cross-machine-seam entry \u2014 SLURM rsync lane drops committed eval_results"
     },
     "19": {
       "has_clean_result": false,
