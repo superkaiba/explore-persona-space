@@ -11898,10 +11898,14 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 133,188 B post-#1743 (task-bound verdict post switched to
-    # the --file channel + MANDATORY exact-kind read-back duty —
-    # plan-mandated growth; cap = measured + ~1.0 KB.
+    # measured 135,813 B post-#1805 (Step 4 round-new-script no-flags lint
+    # duty — executable diff-adds trigger gate in the fenced pre-pass block
+    # + attribution / waiver-remedy / stale-family prose — plan-mandated
+    # growth; cap = measured + ~1.5 KB.
     # Prior:
+    # 134_200 — measured 133,188 B post-#1743 (task-bound verdict post
+    # switched to the --file channel + MANDATORY exact-kind read-back
+    # duty),
     # 132_500 — measured 131,378 B post-Step-10d-merge (task #1727 Step
     # 0.70 smoke-variable gating gate + task #1716 Step 4 ruff-policy pin
     # + L99 style-bullet + Step 0.5 pin-invocation marker-shape check —
@@ -11937,7 +11941,7 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # reads), 99,000 — measured 98,126 B post-#1230 (Step 6 durability-pin
     # shipping duty), 97,000 — measured 96,072 B post-#1119, 95,000 —
     # measured 94,126 B post-#1115)
-    "code-reviewer.md": 134_200,
+    "code-reviewer.md": 137_400,
     # measured 74,082 B post-#1447 (family-enumeration sync: the two
     # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
     # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
@@ -11947,16 +11951,19 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # 72,229 B post-#1056, 72,000 post-#1050 r2, 71,000 post-#1050 r1,
     # 60,554 B pre-#1050)
     "codex-clean-result-critic.md": 75_200,
-    # measured 59,576 B post-#1693 (Step 0.69 mirror paragraph pointing at
-    # code-reviewer.md's phase-idempotency + inter-phase-contract gate —
-    # plan-mandated growth; cap = measured + ~1.2 KB. Prior: 59,200 —
+    # measured 61,503 B post-#1805 (Step 4 copy-list bullet extension:
+    # round-new-script no-flags lint duty, no-uv static hub-verify
+    # adaptation — plan-mandated growth; cap = measured + ~1.3 KB. Prior:
+    # 60_800 — measured 59,576 B post-#1693 (Step 0.69 mirror paragraph
+    # pointing at code-reviewer.md's phase-idempotency +
+    # inter-phase-contract gate), 59,200 —
     # measured 58,271 B post-#1438 (Step 0.9 copy-list bullet + inlined-
     # rubric 0.9 slot + Blocker-tags data-access-blocked entry),
     # 56,800 — measured 55,870 B post-#1380 (Step 4.6 copy-list bullet +
     # inlined-rubric 4.6 slot + Blocker-tags 4.6-presence), 53,300 —
     # measured 52,361 B post-#1254, 51,600 — measured 50,642 B post-#948,
     # 47,930 B post-#881)
-    "codex-code-reviewer.md": 60_800,
+    "codex-code-reviewer.md": 62_800,
     # measured 76,274 B post-#1692 (item 5 Axis 1 import-resolution leg,
     # Axis 2 per-arm resolution attestation, PASS_PARTIAL verdict +
     # post-marker template extension — plan-mandated growth; cap =
