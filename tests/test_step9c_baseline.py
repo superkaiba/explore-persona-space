@@ -40,6 +40,8 @@ import getpass
 import importlib.util
 import json
 import os
+import re
+import shlex
 import subprocess
 
 # Import the helper by path (it lives under scripts/, not an importable package).
@@ -2740,3 +2742,136 @@ def test_main_repo_root_and_resolve_work_root_real_body(monkeypatch):
     assert (main_root / ".git").is_dir()  # the MAIN root owns the real .git dir
     # The override path bypasses git entirely.
     assert sb.resolve_work_root(str(here)) == here
+
+
+# --- #1821: probe subcommand (single-flight liveness, self-/ancestor-excluding) ----
+#
+# Exit contract (docstring table): 0 = CLEAR (safe to launch), 3 = >=1 live
+# FOREIGN match (pid<TAB>args lines), 2 = usage / bad regex — deliberately
+# INVERTED vs pgrep so `probe && launch` composes. The subprocess cases below
+# execute the real /proc scan end-to-end (real-body coverage for
+# _ancestor_pids/_probe_matches/cmd_probe per code-style.md #906); only the
+# --issue derivation unit stubs _probe_matches to capture the compiled regex.
+
+
+def _unique_probe_issue() -> int:
+    """Per-process unique issue id: concurrent sessions running this file on
+    the shared VM must not cross-match each other's decoys/wrapper argvs."""
+    return 90_000_000 + os.getpid()
+
+
+def test_probe_ancestor_argv_self_match_defeated_clear():
+    """AC-3 (#1742 shape): the probe runs inside a bash whose -c command
+    string — and therefore its /proc cmdline — carries the LITERAL junit
+    path; bash is the probe's ancestor, so the probe must report CLEAR."""
+    issue = _unique_probe_issue()
+    cmd = (
+        f"{shlex.quote(sys.executable)} {shlex.quote(str(_HELPER_PATH))} "
+        f"probe --issue {issue}; rc=$?; "
+        f": /tmp/step9c-junit-issue-{issue}.xml; exit $rc"
+    )
+    proc = subprocess.run(["bash", "-c", cmd], capture_output=True, text=True, timeout=60)
+    assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+    assert proc.stdout.strip() == ""
+
+
+def test_probe_detects_foreign_process_exit_3_with_line():
+    """AC-4: a live NON-ancestor process whose argv carries the derived
+    pattern is reported — exit 3 + one pid<TAB>args line (never swallowed
+    into exit 0). Decoy = a python child holding the junit filename as a
+    positional argv token (a bash comment decoy is stripped at parse time
+    and an exec-optimized simple command rewrites cmdline — not usable)."""
+    issue = _unique_probe_issue()
+    decoy = subprocess.Popen(
+        [sys.executable, "-c", "import time; time.sleep(60)", f"step9c-junit-issue-{issue}.xml"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        deadline = time.time() + 20
+        while True:
+            proc = subprocess.run(
+                [sys.executable, str(_HELPER_PATH), "probe", "--issue", str(issue)],
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+            if proc.returncode == 3 or time.time() > deadline:
+                break
+            time.sleep(0.2)  # pre-exec fork window: decoy cmdline not yet rewritten
+        assert proc.returncode == 3, (proc.returncode, proc.stdout, proc.stderr)
+        rows = [line.split("\t", 1) for line in proc.stdout.splitlines() if line.strip()]
+        assert any(int(pid) == decoy.pid for pid, _args in rows), proc.stdout
+    finally:
+        decoy.kill()
+        decoy.wait()
+
+
+def test_probe_clear_exit_0_on_unmatched_pattern():
+    """Exit-code contract: no live match anywhere -> 0, empty stdout."""
+    sentinel = f"no-such-argv-token-{os.getpid()}-zz"
+    proc = subprocess.run(
+        [sys.executable, str(_HELPER_PATH), "probe", "--pattern", sentinel],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+    assert proc.stdout.strip() == ""
+
+
+def test_probe_bad_regex_exits_2():
+    """Fail-loud pin: a bad regex exits 2 with a stderr note — never a
+    silent CLEAR (the reason until-loops must use the --issue form)."""
+    proc = subprocess.run(
+        [sys.executable, str(_HELPER_PATH), "probe", "--pattern", "(unclosed"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert proc.returncode == 2, (proc.returncode, proc.stdout, proc.stderr)
+    assert "bad regex" in proc.stderr
+    assert proc.stdout.strip() == ""
+
+
+def test_probe_usage_errors_exit_2():
+    """--pattern / --issue are mutually exclusive, exactly one required
+    (argparse exits 2 on neither/both)."""
+    neither = subprocess.run(
+        [sys.executable, str(_HELPER_PATH), "probe"], capture_output=True, text=True, timeout=60
+    )
+    assert neither.returncode == 2
+    both = subprocess.run(
+        [sys.executable, str(_HELPER_PATH), "probe", "--pattern", "x", "--issue", "7"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert both.returncode == 2
+
+
+def test_probe_issue_flag_derives_junit_pattern(monkeypatch):
+    """AC-2: --issue N derives step9c-junit-issue-N\\.xml INTERNALLY (the
+    probe's own argv never carries the junit filename)."""
+    captured: list[str] = []
+
+    def fake_matches(pattern: re.Pattern[str]) -> list[tuple[int, str]]:
+        captured.append(pattern.pattern)
+        return []
+
+    monkeypatch.setattr(sb, "_probe_matches", fake_matches)
+    args = sb.build_parser().parse_args(["probe", "--issue", "424242"])
+    assert args.func(args) == 0
+    assert captured == [r"step9c-junit-issue-424242\.xml"]
+
+
+def test_probe_helpers_real_body():
+    """Real-body coverage (code-style.md #906) for the helpers the
+    derivation unit stubs: _ancestor_pids walks the real /proc (self +
+    parent present); _probe_matches runs a real full /proc scan."""
+    pids = sb._ancestor_pids()
+    assert os.getpid() in pids
+    assert os.getppid() in pids
+    assert 0 not in pids
+    # Real scan, no-match pattern: executes the full iteration/read/skip body.
+    assert sb._probe_matches(re.compile(f"zz-no-such-{os.getpid()}-token")) == []
