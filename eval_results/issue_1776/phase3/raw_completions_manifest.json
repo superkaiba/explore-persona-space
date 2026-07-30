@@ -1,0 +1,42 @@
+{
+  "local_dir": "/workspace/issue_1776/phase3/raw_completions/steered",
+  "hf_dest_prefix": "issue1776_jacobian/raw_completions/steered/",
+  "files": [
+    "baseline_a0.json",
+    "evil_a0.5.json",
+    "evil_a1.json",
+    "evil_a2.json",
+    "evil_a4.json",
+    "evil_a4_allpos.json",
+    "hallucination_a0.5.json",
+    "hallucination_a1.json",
+    "hallucination_a2.json",
+    "hallucination_a4.json",
+    "hallucination_a4_allpos.json",
+    "random_a0.5.json",
+    "random_a1.json",
+    "random_a2.json",
+    "random_a4.json",
+    "random_a4_allpos.json",
+    "sycophancy_a0.5.json",
+    "sycophancy_a1.json",
+    "sycophancy_a2.json",
+    "sycophancy_a4.json",
+    "sycophancy_a4_allpos.json",
+    "w1_mprime_a0.5.json",
+    "w1_mprime_a1.json",
+    "w1_mprime_a2.json",
+    "w1_mprime_a4.json",
+    "w1_mprime_a4_allpos.json"
+  ],
+  "note": "uploaded by the pod dispatcher BEFORE capture/judging (plan \u00a79 order)",
+  "repro": {
+    "issue": 1776,
+    "git_commit": "f3413617bcb70eb87bed8966d71d883cbce2cce3",
+    "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+    "timestamp_utc": "2026-07-30T00:47:17Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "python_version": "3.11.10"
+  }
+}

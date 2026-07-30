@@ -1,0 +1,530 @@
+{
+  "commit": "a7a99f955e",
+  "created": "2026-07-30T03:14:29Z",
+  "figsize": [
+    6.4,
+    4.8
+  ],
+  "points": [
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 21.035932540893555,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.3684742980660117,
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 19.449092864990234,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.2602038932818772,
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 13.14915943145752,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.12032361028489397,
+      "label": "dir 1",
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 12.470953941345215,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.2148340057977669,
+      "label": "dir 1",
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 11.624719619750977,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.08687844215250413,
+      "label": "dir 1",
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 11.448325157165527,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.12905467431465514,
+      "label": "dir 1",
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 10.85504150390625,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.10025055465566216,
+      "label": "dir 1",
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 10.519312858581543,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.1003116629492082,
+      "label": "dir 1",
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 10.195074081420898,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.13276596795240816,
+      "label": "dir 1",
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 9.855659484863281,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.10802923380288501,
+      "label": "dir 1",
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 9.461458206176758,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.09841080055419767,
+      "label": "dir 1",
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 9.114117622375488,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.12209722420702754,
+      "label": "dir 1",
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 9.043950080871582,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.08786071625100902,
+      "label": "dir 1",
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 8.90110969543457,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.06961771728187802,
+      "label": "dir 1",
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 8.646656036376953,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.07573480187301058,
+      "label": "dir 1",
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 8.409533500671387,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.10123285753933343,
+      "label": "dir 1",
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 8.146315574645996,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.05297176652432568,
+      "label": "dir 1",
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 8.040020942687988,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.1340555846256353,
+      "label": "dir 1",
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 7.905340671539307,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.08708397018589084,
+      "label": "dir 1",
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 7.732542514801025,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.08948807168825401,
+      "label": "dir 1",
+      "series": "J gain, last arm",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 21.035932540893555,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.47768082970014547,
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 19.449092864990234,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.37465058973139936,
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 13.14915943145752,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.22424728476801406,
+      "label": "dir 1",
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 12.470953941345215,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.286266322622011,
+      "label": "dir 1",
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 11.624719619750977,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.2479336452845624,
+      "label": "dir 1",
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 11.448325157165527,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.31818597263852155,
+      "label": "dir 1",
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 10.85504150390625,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.24447214547149781,
+      "label": "dir 1",
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 10.519312858581543,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.2516111403996366,
+      "label": "dir 1",
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 10.195074081420898,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.3100791399389624,
+      "label": "dir 1",
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 9.855659484863281,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.24958331635014944,
+      "label": "dir 1",
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 9.461458206176758,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.27933636188675987,
+      "label": "dir 1",
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 9.114117622375488,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.29711871039167315,
+      "label": "dir 1",
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 9.043950080871582,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.20189718006170493,
+      "label": "dir 1",
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 8.90110969543457,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.22940824109310176,
+      "label": "dir 1",
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 8.646656036376953,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.2143073228964134,
+      "label": "dir 1",
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 8.409533500671387,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.24304310161966702,
+      "label": "dir 1",
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 8.146315574645996,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.18090748634646225,
+      "label": "dir 1",
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 8.040020942687988,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.26007807450461035,
+      "label": "dir 1",
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 7.905340671539307,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.2757119571940742,
+      "label": "dir 1",
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 7.732542514801025,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.22243452023863758,
+      "label": "dir 1",
+      "series": "J gain, ctx arm",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 21.035932540893555,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.16730741122715587,
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 19.449092864990234,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.10365153024757029,
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 13.14915943145752,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.08211304639555154,
+      "label": "dir 1",
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 12.470953941345215,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.1009979581858432,
+      "label": "dir 1",
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 11.624719619750977,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.0591686499310106,
+      "label": "dir 1",
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 11.448325157165527,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.0807953693530669,
+      "label": "dir 1",
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 10.85504150390625,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.06156678947795028,
+      "label": "dir 1",
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 10.519312858581543,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.05913322830695449,
+      "label": "dir 1",
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 10.195074081420898,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.08219300512378314,
+      "label": "dir 1",
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 9.855659484863281,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.07567587987767721,
+      "label": "dir 1",
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 9.461458206176758,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.06511222561215291,
+      "label": "dir 1",
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 9.114117622375488,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.07225767083387541,
+      "label": "dir 1",
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 9.043950080871582,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.06492648631364138,
+      "label": "dir 1",
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 8.90110969543457,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.05419718986117213,
+      "label": "dir 1",
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 8.646656036376953,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.049578034635149065,
+      "label": "dir 1",
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 8.409533500671387,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.06499504837806427,
+      "label": "dir 1",
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 8.146315574645996,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.04200414978270324,
+      "label": "dir 1",
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 8.040020942687988,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.07215088778480386,
+      "label": "dir 1",
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 7.905340671539307,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.0584079627232052,
+      "label": "dir 1",
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)": 7.732542514801025,
+      "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016": 0.060381876534166795,
+      "label": "dir 1",
+      "series": "J gain, prefix arm",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 60,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Fitted gain vs causal gain, top-20 M\u2032 directions",
+        "xlabel": "fitted-map claimed gain \u03c3\u1d62 (M\u2032 singular value)",
+        "ylabel": "measured causal gain \u2016E[g(u\u1d62,\u00b7)]\u2016",
+        "legend_labels": [
+          "J gain, last arm",
+          "J gain, ctx arm",
+          "J gain, prefix arm"
+        ],
+        "annotations": [
+          "dir 1",
+          "dir 2",
+          "dir 3"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      }
+    ],
+    "series": [
+      "J gain, last arm",
+      "J gain, ctx arm",
+      "J gain, prefix arm"
+    ]
+  }
+}

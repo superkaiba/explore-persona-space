@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1845,
+  "highest_id": 1851,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5738,8 +5738,8 @@
       "goal": "Build the multi-turn analogue of the #779 fitter-fair-comparison-n1m corpus at N\u2248100,000 real multi-turn LMSYS/WildChat conversations (prefix = full conversation history before the last user turn, \u22652 user turns; query = last user turn), generate one on-policy answer per context under the parent decoding recipe, capture layer-{14,19,26} prefix-end + context-end + mean-answer states under the parent capture convention, fit the five parent fitters in BOTH arms (prefix-based AND context-based) on a pinned near-dupe-gated split, and run the #1482 error-characterization pipeline on both arms: (1) prefix-arm transport at scale (held-out R\u00b2 per arm/layer vs the context arm and vs #1092's 0.05\u20130.11); (2) per-context error + judged taxonomy incl. conversation-depth, floor-relative via a K-resample answer-sampling floor; (3) per-direction answer-PCA linear-vs-nonlinear decomposition with shrinkage control, cross-arm; (4) identity+learned-bias baseline and kNN-retrieval reads per arm. Binding user directive: maximize parallelism and vectorization at every phase (wide sharded capture fleet, batched fits, no serial inner loops). Phase 0 CPU manifest probe verifies multi-turn supply before any GPU provisions; a 1-shard pilot re-measures multi-turn throughput before fleet sizing (plan basis ~1,500\u20132,000 ctx/GPU-h vs parent's measured single-turn 3,250).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1738",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1738",
+      "status": "awaiting_promotion",
       "title": "Conversation history alone carries about half the full-context answer-state map on 100k real multi-turn conversations (HIGH confidence)"
     },
     "1739": {
@@ -6025,8 +6025,8 @@
       "goal": "Compute the averaged causal Jacobian J_{C\u2192A} on the #779 corpus; measure what fraction of the fitted ridge map M's predictive power is causal; test which map predicts steered-generation interventions and off-distribution transfer; and test whether the context\u2192answer channel reads from / writes into the J-space verbalizable workspace (Anthropic 2026), all phases unconditional.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/1776",
-      "status": "reviewing",
+      "path": "tasks/followups_running/1776",
+      "status": "followups_running",
       "title": "Averaged causal Jacobians recover essentially none of the fitted context-to-answer map's predictive power (HIGH confidence)"
     },
     "1777": {
@@ -6284,36 +6284,36 @@
     "1811": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1811",
-      "status": "reviewing",
+      "path": "tasks/completed/1811",
+      "status": "completed",
       "title": "daily-fix: implementer memory \u2014 self-reports need evidence"
     },
     "1812": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1812",
-      "status": "running",
+      "path": "tasks/completed/1812",
+      "status": "completed",
       "title": "daily-fix: 9a-ter \u2014 instrument supersession + addenda charac"
     },
     "1813": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1813",
-      "status": "approved",
+      "path": "tasks/reviewing/1813",
+      "status": "reviewing",
       "title": "daily-fix: argv dry-run before dispatching a new phase"
     },
     "1814": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1814",
-      "status": "proposed",
+      "path": "tasks/reviewing/1814",
+      "status": "reviewing",
       "title": "daily-fix: gotchas \u2014 subsample filters, zones, hub path glob"
     },
     "1815": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1815",
-      "status": "proposed",
+      "path": "tasks/planning/1815",
+      "status": "planning",
       "title": "daily-fix: queue-vanish guard defeated by stale phase clock"
     },
     "1816": {
@@ -6547,12 +6547,54 @@
       "status": "proposed",
       "title": "workflow-fix: gotchas \u2014 batched np.linalg.solve dies on ONE singular slice"
     },
+    "1846": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1846",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body WARN check \u2014 orphaned result JSONs (sibling of check 31)"
+    },
+    "1847": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1847",
+      "status": "proposed",
+      "title": "daily-fix: bash -n pin test for Step 10d TG fenced blocks"
+    },
+    "1848": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1848",
+      "status": "proposed",
+      "title": "daily-fix: plan_patch.py --file alias + rc-check note"
+    },
+    "1849": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1849",
+      "status": "proposed",
+      "title": "daily-fix: hub._upload fail-loud when file dest looks like a"
+    },
     "185": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/185",
       "status": "archived",
       "title": "EM destroys persona-coupled markers via catastrophic cliff at 10-25 steps, not gradual forgetting (MODERATE confidence)"
+    },
+    "1850": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1850",
+      "status": "proposed",
+      "title": "daily-fix: remote-landing watches need fence deadline + hear"
+    },
+    "1851": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1851",
+      "status": "proposed",
+      "title": "daily-fix: step9c selector misses SKILL.md-pinning tests"
     },
     "186": {
       "has_clean_result": true,

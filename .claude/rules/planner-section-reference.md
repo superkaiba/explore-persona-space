@@ -721,11 +721,12 @@ Rules:
   (`verify_plan.py` c39) but genuinely has no cross-phase read declares the
   standalone line `N/A — no off-pod phase`.
 - **Known mechanical residual (direction (b)):** c39's trigger vocabulary
-  (`off-pod` / `vm-side`) does not fire on inverse-direction prose (a
-  pod/GCE/SLURM phase reading VM-produced inputs), so direction (b) is
-  enforced by this section + critic Methodology item 10 only — a c39
-  vocabulary extension is a semantics change deliberately out of scope
-  (parked candidate on #1782's events).
+  (`off-pod` / `vm-side` / `vm-produced` / `produced on the vm`) fires on
+  the calibrated inverse-direction tokens (#1796), but OTHER
+  inverse-direction phrasings (a pod/GCE/SLURM phase reading VM-produced
+  inputs described in different vocabulary) still do not fire, so that
+  residual of direction (b) is enforced by this section + critic
+  Methodology item 10 only.
 
 Worked example (#1482's design, as it should have been declared):
 

@@ -13221,7 +13221,8 @@ def _finding_prose_cap_results(findings: str) -> tuple[list[str], list[str]]:
         if wc >= V3_FINDING_PROSE_FAIL_WORDS:
             fails.append(
                 f"finding '{short}' prose is {wc} words (cap: must be "
-                f"<{V3_FINDING_PROSE_FAIL_WORDS}; FAIL fires at ≥{V3_FINDING_PROSE_FAIL_WORDS} inclusive)"
+                f"<{V3_FINDING_PROSE_FAIL_WORDS}; FAIL fires at "
+                f"≥{V3_FINDING_PROSE_FAIL_WORDS} inclusive)"
             )
         elif wc > V3_FINDING_PROSE_WARN_WORDS:
             warns.append(f"finding '{short}' prose is {wc} words (>{V3_FINDING_PROSE_WARN_WORDS})")

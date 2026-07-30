@@ -94,7 +94,7 @@ import logging
 import os
 import re
 import time
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -246,6 +246,35 @@ def _validate_custom_ids(items: list[JudgeItem]) -> None:
             f"grammar ^[a-zA-Z0-9_-]{{1,64}}$ (first {min(len(bad), 5)}: {shown}). "
             "Fix the caller's id construction or route ids through "
             "batch_judge.make_custom_id()."
+        )
+
+
+# The Anthropic Batch API's documented custom_id constraint. A request whose
+# custom_id violates it is rejected server-side with a 400 at batches.create
+# ("String should match pattern '^[a-zA-Z0-9_-]{1,64}$'") — validate BEFORE any
+# submit so a charset/length bug is an instant, named pre-flight failure (#1776:
+# stratum keys carrying '.' + '::' rode custom_ids verbatim and 400'd the first
+# create; the routing-only dry run could never catch it).
+BATCH_CUSTOM_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")
+
+
+def validate_batch_custom_ids(custom_ids: Iterable[str]) -> None:
+    """Fail-loud pre-submit validation of Batch API custom_ids (#1776).
+
+    Raises ValueError naming the first offending ids (index + repr) when any
+    id violates ``^[a-zA-Z0-9_-]{1,64}$``. Called (a) at routing time whenever
+    the decided path is ``batch`` — dry-run included, so a charset violation
+    surfaces at zero API cost — and (b) at :func:`_run_batch_path` entry as
+    defense-in-depth for direct/retry entries. Zero network I/O.
+    """
+    bad = [(i, cid) for i, cid in enumerate(custom_ids) if not BATCH_CUSTOM_ID_RE.match(cid)]
+    if bad:
+        head = "; ".join(f"items[{i}]={cid!r}" for i, cid in bad[:5])
+        more = f" ... and {len(bad) - 5} more" if len(bad) > 5 else ""
+        raise ValueError(
+            f"{len(bad)} Batch API custom_id(s) violate '^[a-zA-Z0-9_-]{{1,64}}$' "
+            f"(charset [a-zA-Z0-9_-], length 1..64; the API 400s these at "
+            f"batches.create): {head}{more}"
         )
 
 
@@ -1210,6 +1239,10 @@ async def _run_batch_path(
     wall-clock).
     """
     now_fn = now_fn or (lambda: _dt.datetime.now(_dt.UTC))
+    # Defense-in-depth (#1776): the routing-time check covers the public entry;
+    # this one covers direct/retry entries into the batch path. Pre-flight, so
+    # no state dir is created and no batch is submitted for a doomed id set.
+    validate_batch_custom_ids(cid for cid, *_ in items)
     fingerprint = _compute_fingerprint(items, judge_model, judge_system_prompt, max_tokens)
     dispatch_dir = Path(checkpoint_dir) / f"dispatch_{fingerprint}"
     items_map = {cid: {"question": q, "completion": c, "user_msg": u} for cid, q, c, u in items}
@@ -1529,6 +1562,12 @@ async def dispatch_judge_items_async(  # noqa: C901  # Phase 5 added one routing
     if on_decision is not None:
         on_decision(decision)
 
+    # Batch-bound custom_ids are validated at ROUTING time — before the dry-run
+    # return — so a charset/length violation surfaces in a dry run at zero API
+    # cost instead of as a server-side 400 at the first batches.create (#1776).
+    if decision.path == "batch":
+        validate_batch_custom_ids(it[0] for it in items)
+
     # Step 2: dry-run prints and returns without any API call.
     if dry_run:
         print(decision.render())
@@ -1687,6 +1726,7 @@ def _cli(argv: list[str] | None = None) -> None:
 
 
 __all__ = [
+    "BATCH_CUSTOM_ID_RE",
     "JudgeItem",
     "RoutingDecision",
     "decide_route",
@@ -1694,6 +1734,7 @@ __all__ = [
     "dispatch_judge_items_async",
     "graded_temperature",
     "probe_otpm_limit",
+    "validate_batch_custom_ids",
 ]
 
 if __name__ == "__main__":
