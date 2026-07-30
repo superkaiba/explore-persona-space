@@ -1,0 +1,63 @@
+{
+  "arm": "sae_ctx",
+  "variant": "v1_activity_floor",
+  "lr": 0.0003,
+  "max_epochs": 300,
+  "n_cols_kept": 8454,
+  "n_cols_total": 16384,
+  "dense_mlp_reference": 0.7387,
+  "poolings": {
+    "mean": {
+      "pooled_r2": 0.6762941482098186,
+      "splithalf_rank_stability": 0.9642501495387191,
+      "splithalf_permutation_seed": 1482,
+      "shuffled_pairing_floor_r2": -0.8222435650202715,
+      "ridge_reference": 0.6901409540488584,
+      "broken_mlp_reference": -2107897883076.9233,
+      "width": 8192,
+      "lr": 0.0003,
+      "epochs_ran": 55,
+      "batch": 4096,
+      "best_val_mse": 0.005530919392903646,
+      "n_cols_kept": 8454,
+      "wall_s": 274.4
+    },
+    "max": {
+      "pooled_r2": 0.3760594275371065,
+      "splithalf_rank_stability": 0.9914397716210599,
+      "splithalf_permutation_seed": 1482,
+      "shuffled_pairing_floor_r2": -0.41105944000682104,
+      "ridge_reference": 0.35888451827902956,
+      "broken_mlp_reference": -10178451246.74001,
+      "width": 8192,
+      "lr": 0.0003,
+      "epochs_ran": 30,
+      "batch": 4096,
+      "best_val_mse": 5.034321940104166,
+      "n_cols_kept": 8454,
+      "wall_s": 149.5
+    },
+    "frac": {
+      "pooled_r2": 0.47666615685167213,
+      "splithalf_rank_stability": 0.9737829464953528,
+      "splithalf_permutation_seed": 1482,
+      "shuffled_pairing_floor_r2": -0.6506320513677926,
+      "ridge_reference": 0.5395329417404842,
+      "broken_mlp_reference": -59395724118335.13,
+      "width": 8192,
+      "lr": 0.0003,
+      "epochs_ran": 94,
+      "batch": 4096,
+      "best_val_mse": 0.0001363906462987264,
+      "n_cols_kept": 8454,
+      "wall_s": 456.0
+    }
+  },
+  "metadata": {
+    "git_commit": "51a41e99147ad11178cf54904808240c1032c1e7",
+    "timestamp_utc": "2026-07-30T19:08:13.832810Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}

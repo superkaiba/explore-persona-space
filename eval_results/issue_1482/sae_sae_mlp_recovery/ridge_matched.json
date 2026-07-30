@@ -1,0 +1,39 @@
+{
+  "variant": "v1_activity_floor",
+  "n_cols_kept": 8454,
+  "n_cols_total": 16384,
+  "note": "ridge on the SAME restricted design the repaired MLP uses (the banked ridge reference used all 16384 columns)",
+  "poolings": {
+    "mean": {
+      "pooled_r2": 0.6881262510353825,
+      "splithalf_rank_stability": 0.938632386530697,
+      "shuffled_pairing_floor_r2": -0.6940440438786526,
+      "ridge_full_design_reference": 0.6901409540488584,
+      "selected_lambda": 10000.0,
+      "val_r2": 0.688974365809782
+    },
+    "max": {
+      "pooled_r2": 0.35829476968691654,
+      "splithalf_rank_stability": 0.9927362308237639,
+      "shuffled_pairing_floor_r2": -0.3665451312698471,
+      "ridge_full_design_reference": 0.35888451827902956,
+      "selected_lambda": 31622.776601683792,
+      "val_r2": 0.3591499587133954
+    },
+    "frac": {
+      "pooled_r2": 0.5379757154044095,
+      "splithalf_rank_stability": 0.941411652136614,
+      "shuffled_pairing_floor_r2": -0.5588813341855972,
+      "ridge_full_design_reference": 0.5395329417404842,
+      "selected_lambda": 10000.0,
+      "val_r2": 0.5388147569192406
+    }
+  },
+  "metadata": {
+    "git_commit": "7248e9675c14cfcacd60a7525bf53db767776c80",
+    "timestamp_utc": "2026-07-30T19:32:01.028249Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}
