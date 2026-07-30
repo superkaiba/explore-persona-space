@@ -115,6 +115,40 @@ def _reservoir_update(
     np.add.at(state["n_seen"], uniq, counts)
 
 
+def _draw_nonact_rejection(
+    uniq_rows: np.ndarray, active_rows: np.ndarray, take: int, rng: np.random.Generator
+) -> np.ndarray:
+    """Uniform draw WITHOUT replacement of `take` rows from
+    `uniq_rows \\ active_rows`, by rejection.
+
+    Equivalent in distribution to `rng.choice(complement, size=take,
+    replace=False)` (every ordered sample of distinct complement members is
+    equally likely) but costs O(take) instead of materializing the complement:
+    |active_rows| <= RESERVOIR_PER_FEATURE (660) against ~120k uniq rows, so
+    the rejection rate is well under 1%. Falls back to the exact complement
+    draw if the pool is so small that rejection cannot fill the quota.
+    """
+    excl = set(int(r) for r in active_rows.tolist())
+    n = int(uniq_rows.shape[0])
+    picked: list[int] = []
+    seen: set[int] = set()
+    budget = 20 * max(take, 1) + 200
+    while len(picked) < take and budget > 0:
+        for i in rng.integers(0, n, size=max(take, 8)):
+            r = int(uniq_rows[i])
+            if r in excl or r in seen:
+                continue
+            seen.add(r)
+            picked.append(r)
+            if len(picked) >= take:
+                break
+        budget -= max(take, 8)
+    if len(picked) < take:  # tiny-pool smoke: fall back to the exact complement
+        pool = uniq_rows[~np.isin(uniq_rows, active_rows)]
+        return rng.choice(pool, size=min(take, len(pool)), replace=False)
+    return np.asarray(picked, dtype=np.int64)
+
+
 def pass_select(args) -> int:
     """Pass A: stream shards -> reservoirs -> stratified activating draw +
     non-activating candidate draw + random directions + inverted index.
@@ -124,10 +158,15 @@ def pass_select(args) -> int:
     if args.upload_only:
         return upload_selection(args.selection_dir)
     rng = np.random.default_rng(CM.SEED)
-    com = np.load(CM.PERFEATURE_NPZ, allow_pickle=False)
-    fid = np.asarray(com["feat_ids"], dtype=np.int64)
-    n_feat = args.feature_limit if args.feature_limit > 0 else len(fid)
-    fid = fid[:n_feat]
+    if args.full_dictionary:
+        # Every dictionary index, not the committed top-16,384-by-activity key.
+        n_feat = args.feature_limit if args.feature_limit > 0 else CM.DICT_SIZE
+        fid = np.arange(n_feat, dtype=np.int64)
+    else:
+        com = np.load(CM.PERFEATURE_NPZ, allow_pickle=False)
+        fid = np.asarray(com["feat_ids"], dtype=np.int64)
+        n_feat = args.feature_limit if args.feature_limit > 0 else len(fid)
+        fid = fid[:n_feat]
     pos = np.full(CM.DICT_SIZE, -1, dtype=np.int64)
     pos[fid] = np.arange(n_feat)
 
@@ -221,9 +260,17 @@ def pass_select(args) -> int:
         short = len(act) < CM.N_ACT_BINS * CM.ACT_PER_BIN
         n_short += int(short)
         act_rows_set = set(state["res_row"][fi][valid].tolist())
-        pool = uniq_rows[~np.isin(uniq_rows, rows_f, assume_unique=True)]
-        take = min(NONACT_SPARES, len(pool))
-        nonact_rows = draw_rng.choice(pool, size=take, replace=False)
+        if args.full_dictionary:
+            # Rejection draw from uniq_rows minus this feature's active rows —
+            # distributionally identical to the complement `choice` below, but
+            # O(NONACT_SPARES) instead of the O(|uniq_rows| log) `isin` the
+            # restricted path pays per feature (that is ~8x131k sorts of a
+            # 120k-row array at full dictionary; measured minutes -> seconds).
+            nonact_rows = _draw_nonact_rejection(uniq_rows, rows_f, NONACT_SPARES, draw_rng)
+        else:
+            pool = uniq_rows[~np.isin(uniq_rows, rows_f, assume_unique=True)]
+            take = min(NONACT_SPARES, len(pool))
+            nonact_rows = draw_rng.choice(pool, size=take, replace=False)
         nonact = [
             {"row": int(r), "ci": int(row_to_ci[int(r)]), "order": o}
             for o, r in enumerate(nonact_rows)
@@ -440,6 +487,24 @@ def stratified_bin_draw(
 # ── Pass B: window extraction (GPU) ──────────────────────────────────────────
 
 
+class _RowIndex:
+    """`.get(row, [])` over a row-SORTED inverted index, via searchsorted.
+
+    Drop-in for the dict-of-lists the pass used to build: same call shape, but
+    O(1) extra memory instead of one Python int per index entry (13.1M at the
+    full dictionary). Returns a range object, which `for ii in ...` consumes
+    identically to a list.
+    """
+
+    def __init__(self, rows: np.ndarray) -> None:
+        self._rows = rows
+
+    def get(self, row: int, default=()):
+        lo = int(np.searchsorted(self._rows, row, side="left"))
+        hi = int(np.searchsorted(self._rows, row, side="right"))
+        return range(lo, hi) if hi > lo else default
+
+
 def _load_sae(args):
     """Pinned Hub SAE (production) or a small same-key-set state dict (tiny e2e)."""
     import issue1482_sae as S
@@ -539,9 +604,14 @@ def pass_windows(args) -> int:
     z = np.load(sel_dir / "inverted_index.npz", allow_pickle=False)
     inv = {k: np.asarray(z[k]) for k in ("row", "ci", "feat", "kind", "bin", "split", "order")}
     needed_ci = {int(c): int(r) for c, r in zip(inv["ci"], inv["row"], strict=True)}
-    by_row: dict[int, list[int]] = {}
-    for i, r in enumerate(inv["row"]):
-        by_row.setdefault(int(r), []).append(i)
+    # Row -> inverted-index slice via searchsorted on the row-sorted index
+    # (pass_select writes it stable-sorted by row). A dict-of-lists costs
+    # ~1 GB of Python ints per worker at the full-dictionary index size
+    # (131,072 features x 100 entries = 13.1M rows vs 1.6M at 16,384); the
+    # sorted-array form is O(1) extra memory and identical in behaviour.
+    inv_rows = np.asarray(inv["row"])
+    assert np.all(inv_rows[:-1] <= inv_rows[1:]), "inverted_index rows must be sorted"
+    by_row = _RowIndex(inv_rows)
 
     dirs = np.load(sel_dir / "random_directions.npz", allow_pickle=False)["directions"]
     if args.act_dim != dirs.shape[1]:  # tiny e2e: regenerate at the tiny width
@@ -848,11 +918,24 @@ def pass_assemble(args) -> int:
             "(or pass --fetch-missing to stage them from the Hub); assembling now would "
             "emit all-short packets with fill=0.0"
         )
+    # At the full dictionary the join holds ~13.1M window records (131,072
+    # features x 100 selected rows) instead of ~1.6M. `values_fp16` (32 floats
+    # per window) is ~3x the record's payload and is NEVER rendered into a
+    # prompt (plan §11: per-token activation values omitted; only text_marked /
+    # text_plain reach the judge), so full-dictionary mode drops it at load —
+    # the single largest memory + manifest-size lever available here.
+    drop_values = bool(args.full_dictionary)
     for p in win_files:
         for r in CM.iter_jsonl(p):
             f = int(r["feat_id"])
             if f in windows:
+                if drop_values and isinstance(r.get("window"), dict):
+                    r["window"].pop("values_fp16", None)
                 windows[f][r["kind"]].append(r)
+    _log(
+        f"[assemble] joined {len(win_files)} window files for {len(sel)} features "
+        f"(drop_values={drop_values}) rss={_rss_gb():.2f}GiB"
+    )
 
     # phase0 joins: neighbours + logit footprint + density/persist (STAT)
     p0_table = args.phase0_dir / "feature_table.jsonl"
@@ -1095,6 +1178,15 @@ def main() -> int:
     ap.add_argument("--max-chunks", type=int, default=0)
     ap.add_argument("--max-shards", type=int, default=0, help="Pass A smoke slice")
     ap.add_argument("--feature-limit", type=int, default=0, help="Pass A smoke feature subset")
+    ap.add_argument(
+        "--full-dictionary",
+        action="store_true",
+        help=(
+            "all 131,072 dictionary features instead of the #1482 restricted 16,384 "
+            "(Pass A: arange feat_ids + rejection non-activating draw; "
+            "Pass C: per-token activation values dropped from packets)"
+        ),
+    )
     ap.add_argument("--pilot", action="store_true", help="Pass B: 1 chunk, timed incl. upload")
     ap.add_argument("--upload-every", type=int, default=20)
     ap.add_argument("--no-upload", action="store_true")
