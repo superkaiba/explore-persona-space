@@ -38,15 +38,18 @@ import logging
 import sys
 from pathlib import Path
 
-import numpy as np
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
+# BEFORE numpy/torch-bearing imports: load_dotenv() setdefaults the shared-VM
+# BLAS/OMP thread caps, and torch (pulled in transitively) freezes its intra-op
+# pool from OMP_NUM_THREADS at import (#847).
 load_dotenv()
+
+import numpy as np  # noqa: E402
 
 import issue1482_analysis as A  # noqa: E402  (contrast helpers, TOPICS -- reused verbatim)
 import issue1482_error_analysis as D  # noqa: E402  (_write_json, SPLIT_SEED_1482)
@@ -58,6 +61,10 @@ logger = logging.getLogger("issue1482_floor_taxonomy")
 
 HF_REPO = "superkaiba1/explore-persona-space-data"
 FLOOR_REMOTE = "issue1482_kresample/analysis_tensors/percontext_floor.npz"
+PARENT_PERCONTEXT_REMOTE = (
+    "issue1482_error_analysis/analysis_tensors/percontext/refit_holdout__ridge__seed0.npz"
+)
+PARENT_JOIN_MED_REL_MAX = 1e-3
 BOOT_SEED = 1482  # the k-resample bootstrap seed (adjusted_contrast.json seeds.bootstrap)
 N_DRAWS = 10000
 FDR_Q = 0.05
@@ -98,6 +105,44 @@ def _stage_floor_npz(dest: Path) -> Path:
     hub.stage_hub_file(HF_REPO, FLOOR_REMOTE, dest, repo_type="dataset")
     logger.info("[floor-tax] staged %s -> %s", FLOOR_REMOTE, dest)
     return dest
+
+
+def _parent_join_gate(rows: np.ndarray, nerr_stored: np.ndarray, dest: Path) -> dict:
+    """Row-wise join gate against the PARENT per-context ridge npz.
+
+    The identity gate below re-derives the k-resample's own published aggregates;
+    this one is orthogonal — it checks that the subsample's ``nerr_stored`` still
+    matches the parent fit's ``holdout_nerr`` ROW BY ROW, i.e. that the join key
+    itself is sound. Median relative deviation must sit under 1e-3.
+    """
+    if not dest.exists():
+        from explore_persona_space.orchestrate import hub
+
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        hub.stage_hub_file(HF_REPO, PARENT_PERCONTEXT_REMOTE, dest, repo_type="dataset")
+    z = np.load(dest)
+    pos = {int(r): i for i, r in enumerate(z["holdout_rows"])}
+    missing = [int(r) for r in rows if int(r) not in pos]
+    if missing:
+        raise RuntimeError(f"[floor-tax] {len(missing)} subsample rows absent from the parent npz")
+    idx = np.asarray([pos[int(r)] for r in rows], dtype=np.int64)
+    parent = z["holdout_nerr"].astype(np.float64)[idx]
+    rel = np.abs(nerr_stored - parent) / np.maximum(np.abs(parent), 1e-12)
+    med, mx = float(np.median(rel)), float(rel.max())
+    if med >= PARENT_JOIN_MED_REL_MAX:
+        raise RuntimeError(
+            f"[floor-tax] parent-join gate FAILED: median rel dev {med:.3e} "
+            f">= {PARENT_JOIN_MED_REL_MAX}"
+        )
+    logger.info("[floor-tax] parent-join gate PASS: median rel dev %.3e (max %.3e)", med, mx)
+    return {
+        "source": f"HF {HF_REPO}/{PARENT_PERCONTEXT_REMOTE}",
+        "n_joined": int(len(idx)),
+        "median_rel_dev": med,
+        "max_rel_dev": mx,
+        "threshold_median_rel": PARENT_JOIN_MED_REL_MAX,
+        "pass": True,
+    }
 
 
 def _identity_gate(dv: dict[str, np.ndarray], arm: np.ndarray) -> dict:
@@ -264,6 +309,11 @@ def main() -> int:
         "floor_n": z["floor_n"].astype(np.float64),
     }
     gate = _identity_gate(dv, arm)
+    join_gate = _parent_join_gate(
+        z["rows"].astype(np.int64),
+        dv["nerr_stored"],
+        PROJECT_ROOT / "data" / "issue_1482" / "percontext" / "refit_holdout__ridge__seed0.npz",
+    )
 
     labels = json.loads(
         (PROJECT_ROOT / "eval_results" / "issue_1482" / "judge_labels" / "labels.json").read_text()
@@ -334,6 +384,7 @@ def main() -> int:
         "resampling": "contexts resampled JOINTLY per bootstrap draw "
         "(one index draw applied to values and both masks)",
         "identity_gate": gate,
+        "parent_join_gate": join_gate,
         "language_join_mismatch": n_lang_mismatch,
         "floor_source": f"HF {HF_REPO}/{FLOOR_REMOTE} (k-resample round; NOT regenerated)",
         "survival": survival,

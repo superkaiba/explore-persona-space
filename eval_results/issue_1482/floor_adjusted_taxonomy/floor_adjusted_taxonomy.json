@@ -37,6 +37,14 @@
     "atol": 1e-09,
     "pass": true
   },
+  "parent_join_gate": {
+    "source": "HF superkaiba1/explore-persona-space-data/issue1482_error_analysis/analysis_tensors/percontext/refit_holdout__ridge__seed0.npz",
+    "n_joined": 2000,
+    "median_rel_dev": 0.0,
+    "max_rel_dev": 0.0,
+    "threshold_median_rel": 0.001,
+    "pass": true
+  },
   "language_join_mismatch": 0,
   "floor_source": "HF superkaiba1/explore-persona-space-data/issue1482_kresample/analysis_tensors/percontext_floor.npz (k-resample round; NOT regenerated)",
   "survival": [
@@ -1221,8 +1229,8 @@
   },
   "parent_taxonomy_note": "parent contrasts ran on the FULL holdout (n_labeled 2589 in group 0); the subsample here is 2000 contexts (1000 en + 1000 non-en by construction), so power is much lower and the en/non-en mix is NOT the corpus mix",
   "metadata": {
-    "git_commit": "2005f480bbb60a1b6cd75a03bb8dd0f139c5b94e",
-    "timestamp_utc": "2026-07-30T18:20:55.116306Z",
+    "git_commit": "91b29a32e7cf484caf16b514098aade9ffb7fafd",
+    "timestamp_utc": "2026-07-30T19:49:40.783592Z",
     "python_version": "3.11.15",
     "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
     "cuda_visible_devices": "all"
