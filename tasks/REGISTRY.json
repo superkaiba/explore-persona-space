@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1865,
+  "highest_id": 1866,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6700,6 +6700,13 @@
       "path": "tasks/proposed/1865",
       "status": "proposed",
       "title": "daily-fix: pod relaunch shape fully detaches stdio"
+    },
+    "1866": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1866",
+      "status": "proposed",
+      "title": "daily-fix: SLURM completed-work-but-FAILED state disambiguat"
     },
     "187": {
       "has_clean_result": true,
