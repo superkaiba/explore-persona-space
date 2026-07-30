@@ -832,3 +832,292 @@ def test_reduce_rb_zero_kept_production_raises_smoke_falls_back():
     out = cap.reduce_rb_from_persisted("t", rollouts, scores_blob, acts_blob, smoke=True)
     assert out["counts"]["arms"]["neg"]["smoke_keep_all_fallback"] is True
     assert out["counts"]["arms"]["pos"]["smoke_keep_all_fallback"] is False
+
+
+# ── pnf: matched-text capture-noise floor (plan v7 follow-up) ────────────────
+
+
+def _pnf_write_store(path, shas, qidx, vecs_by_layer, regime, gpu="testgpu"):
+    """Minimal conforming replicate store (the run_noise_floor_unit schema)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "schema_version": 1,
+            "row_sha": list(shas),
+            "row_question_idx": list(qidx),
+            "arms": {
+                "response": {
+                    li: torch.as_tensor(np.asarray(v), dtype=torch.float16)
+                    for li, v in vecs_by_layer.items()
+                }
+            },
+            "metadata": {"regime": regime, "gpu_name": gpu},
+        },
+        path,
+    )
+
+
+def test_pnf_units_selection_and_pending(tmp_path):
+    """Smoke = base_content only (plan v7 §4.4); --arms filters trained units
+    with base_content always kept; pnf pending is per unit x replicate and
+    satisfied by store presence (resume-aware headroom gate input)."""
+    import issue1768_capture as cap
+
+    assert cap._pnf_units(cap.Cfg(out_root=tmp_path, phases=(), smoke=True)) == ["base_content"]
+    assert cap._pnf_units(cap.Cfg(out_root=tmp_path, phases=())) == list(cap.PNF_UNITS)
+    cfg = cap.Cfg(out_root=tmp_path, phases=(), arms=("mk-pers-con-lr5e6-s42",))
+    assert cap._pnf_units(cfg) == ["base_content", "mk-pers-con-lr5e6-s42"]
+    pend = cap._pending_units(cfg, "pnf")
+    assert sorted(pend) == sorted(
+        f"{u}:{rep}" for u in cap._pnf_units(cfg) for rep in cap.PNF_REPLICATES
+    )
+    st = tmp_path / "noise_floor" / "base_content" / "pooled_nf_r1.pt"
+    st.parent.mkdir(parents=True)
+    st.write_text("x")
+    assert "base_content:r1" not in cap._pending_units(cfg, "pnf")
+    assert "base_content:r2" in cap._pending_units(cfg, "pnf")
+
+
+def test_pnf_subsample_deterministic_and_unique(tmp_path):
+    """Seed-42 TRAIN draw: deterministic across calls, unique shas, stable
+    sorted-sha fingerprint; duplicate train shas fail loud (r4 postcondition)."""
+    import issue1768_capture as cap
+
+    shas = [f"s{i:02d}" for i in range(10)]
+    (tmp_path / "inputs").mkdir(parents=True)
+    sample = {
+        "rows": [{"prompt": f"q{i}", "corpus": "lmsys", "sha": s} for i, s in enumerate(shas)]
+        + [{"prompt": "v", "corpus": "valtest", "sha": "vt0"}],
+        "n_train": 10,
+        "n_val": 1,
+        "n_test": 0,
+    }
+    (tmp_path / "inputs" / "corpus_sample.json").write_text(json.dumps(sample))
+    cfg = cap.Cfg(out_root=tmp_path, phases=())
+    got1, key1 = cap._pnf_subsample(cfg)
+    got2, key2 = cap._pnf_subsample(cfg)
+    assert got1 == got2 and key1 == key2 and len(key1) == 64
+    assert sorted(got1) == sorted(shas)  # min(2000, 10) draws all train shas
+    assert "vt0" not in got1  # valtest rows never enter the subsample
+    sample["rows"][1]["sha"] = "s00"  # duplicate train sha -> fail loud
+    (tmp_path / "inputs" / "corpus_sample.json").write_text(json.dumps(sample))
+    with pytest.raises(AssertionError, match="not unique"):
+        cap._pnf_subsample(cfg)
+
+
+def test_pnf_regime_mismatch_refuses_and_match_skips(tmp_path):
+    """Regime-keyed resume (#722-r3 class): a stored regime differing from the
+    current invocation refuses loud; exact matches skip WITHOUT re-capture."""
+    import issue1768_capture as cap
+
+    cfg = cap.Cfg(out_root=tmp_path, phases=(), layers=(19,))
+    unit_dir = tmp_path / "noise_floor" / "base_content"
+    bad = cap._pnf_regime(cfg, "base_content", "r1", "subkey")
+    bad["tf_batch"] = 99  # a DIFFERENT regime than the current invocation
+    _pnf_write_store(unit_dir / "pooled_nf_r1.pt", ["s0"], [0], {19: np.zeros((1, 4))}, bad)
+    with pytest.raises(RuntimeError, match="DIFFERENT regime"):
+        cap.run_noise_floor_unit(cfg, "base_content", tmp_path, ["s0"], "subkey")
+    for rep in cap.PNF_REPLICATES:  # exact matches -> both skipped, no model load
+        _pnf_write_store(
+            unit_dir / f"pooled_nf_{rep}.pt",
+            ["s0"],
+            [0],
+            {19: np.zeros((1, 4))},
+            cap._pnf_regime(cfg, "base_content", rep, "subkey"),
+        )
+    assert cap.run_noise_floor_unit(cfg, "base_content", tmp_path, ["s0"], "subkey") == []
+
+
+def test_pnf_rows_join_asserts_on_missing_sha(tmp_path):
+    """Kill criterion (b): a subsample sha absent from the base tree fails
+    loud at the sha-join (never a silent short row set)."""
+    import issue1768_capture as cap
+
+    base_dir = tmp_path / "corpus_capture" / "base_content"
+    base_dir.mkdir(parents=True)
+    rows = [
+        {
+            "persona": "base_content",
+            "question_idx": i,
+            "prompt_sha": f"s{i}",
+            "prompt_token_ids": [1, 2, 3],
+            "response_token_ids": [4],
+            "finish_reason": "stop",
+            "response_text": "x",
+        }
+        for i in range(3)
+    ]
+    cap._append_shard(base_dir, rows)
+    (base_dir / "rows_spans.json").write_text(
+        json.dumps(
+            {
+                "rows": [
+                    {"prompt_sha": f"s{i}", "question_idx": i, "prefix_len": 1, "context_len": 2}
+                    for i in range(3)
+                ]
+            }
+        )
+    )
+    assert len(cap._pnf_rows_for_unit(base_dir, ["s0", "s2"])) == 2
+    with pytest.raises(AssertionError, match="sha-join incomplete"):
+        cap._pnf_rows_for_unit(base_dir, ["s0", "missing"])
+
+
+def test_pnf_wall_gate():
+    """Kill criterion (a): capture wall > 3x the first unit's halts loud."""
+    import issue1768_capture as cap
+
+    cap._pnf_wall_gate("u", 29.9, 10.0)  # under 3x -> no halt
+    with pytest.raises(RuntimeError, match="kill criterion"):
+        cap._pnf_wall_gate("u", 30.1, 10.0)
+
+
+def test_pnf_reduce_math_verdicts_and_anchor(tmp_path):
+    """End-to-end reduce on synthetic stores: sha-joined replicate distances
+    (r2 permuted), p95/median floors, degenerate-zero flag, own-vs-fleet ratio
+    verdict bands, H3 fraction, marker falsification, and the same-pass
+    duplicate-sha anchor (byte-identical pairs only)."""
+    import issue1768_capture as cap
+
+    cfg = cap.Cfg(out_root=tmp_path, phases=(), arms=("mk-pers-con-lr5e6-s42",), layers=(19, 25))
+    shas = [f"s{i:02d}" for i in range(4)]
+    (tmp_path / "inputs").mkdir(parents=True)
+    (tmp_path / "inputs" / "corpus_sample.json").write_text(
+        json.dumps(
+            {
+                "rows": [
+                    {"prompt": f"q{i}", "corpus": "lmsys", "sha": s} for i, s in enumerate(shas)
+                ],
+                "n_train": 4,
+                "n_val": 0,
+                "n_test": 0,
+            }
+        )
+    )
+    _sub, sub_sha = cap._pnf_subsample(cfg)
+    d = 8
+    zero = {s: np.zeros(d) for s in shas}
+
+    def e0(c):
+        v = np.zeros(d)
+        v[0] = c
+        return v
+
+    perm = [shas[2], shas[0], shas[3], shas[1]]  # r2 store order != r1 (join test)
+
+    def put(unit, rep, order, vecs):
+        _pnf_write_store(
+            tmp_path / "noise_floor" / unit / f"pooled_nf_{rep}.pt",
+            order,
+            list(range(len(order))),
+            {li: np.stack([v[s] for s in order]) for li, v in vecs.items()},
+            cap._pnf_regime(cfg, unit, rep, sub_sha),
+        )
+
+    # base_content: L19 identical (degenerate 0 floor); L25 constant 1.0
+    put("base_content", "r1", shas, {19: zero, 25: zero})
+    put("base_content", "r2", perm, {19: zero, 25: {s: e0(1.0) for s in shas}})
+    # mk arm: L19 constant 0.5; L25 row-dependent [1,2,3,4] keyed by SHA (a
+    # positional join would scramble these under the permuted r2 order)
+    mk = "mk-pers-con-lr5e6-s42"
+    l25 = {s: e0(float(i + 1)) for i, s in enumerate(shas)}
+    put(mk, "r1", shas, {19: zero, 25: zero})
+    put(mk, "r2", perm, {19: {s: e0(0.5) for s in shas}, 25: l25})
+
+    fits_dir = tmp_path / "fits"
+    fits_dir.mkdir()
+    (fits_dir / f"{mk}_L25.json").write_text(
+        json.dumps({"arm_id": mk, "layer": 25, "decomposition_tf": {"mean_norm_total": 5.0}})
+    )
+    (fits_dir / "cas-pers-con-lr1e5-s42_L19.json").write_text(
+        json.dumps(
+            {
+                "arm_id": "cas-pers-con-lr1e5-s42",
+                "layer": 19,
+                "decomposition_tf": {"mean_norm_total": 30.0},
+            }
+        )
+    )
+    (tmp_path / "arm_registry.json").write_text(json.dumps({"arms": [{"arm_id": mk}]}))
+
+    # anchor base tree: 1 byte-identical duplicate pair (dist 0.25) + 1
+    # differing-response pair (excluded, counted)
+    base_dir = tmp_path / "corpus_capture" / "base_content"
+    base_dir.mkdir(parents=True)
+    mk_row = lambda q, sha, resp: {  # noqa: E731
+        "persona": "base_content",
+        "question_idx": q,
+        "prompt_sha": sha,
+        "prompt_token_ids": [1],
+        "response_token_ids": resp,
+        "finish_reason": "stop",
+        "response_text": "x",
+    }
+    cap._append_shard(
+        base_dir,
+        [
+            mk_row(0, "dup", [7, 8]),
+            mk_row(1, "dup", [7, 8]),
+            mk_row(2, "d2", [9]),
+            mk_row(3, "d2", [10]),
+        ],
+    )
+    for f in ("rows_spans.json", "raw_rows.done.json", "manifest.json"):
+        (base_dir / f).write_text("{}")
+    resp = {li: torch.zeros(4, d, dtype=torch.float16) for li in (19, 25)}
+    for li in (19, 25):
+        resp[li][1, 0] = 0.25
+    torch.save(
+        {
+            "row_sha": ["dup", "dup", "d2", "d2"],
+            "row_question_idx": [0, 1, 2, 3],
+            "arms": {"response": resp},
+        },
+        base_dir / "pooled.pt",
+    )
+
+    out = cap.noise_floor_reduce(cfg, fits_dir=fits_dir, results_dir=tmp_path / "res")
+
+    assert out["floors"]["base_content"]["19"]["p95"] == 0.0
+    assert ["base_content", 19] in out["degenerate_zero_floors"]
+    assert out["floors"][mk]["19"]["p95"] == pytest.approx(0.5)
+    assert out["floors"][mk]["25"]["median"] == pytest.approx(2.5)
+    assert out["floors"][mk]["25"]["p95"] == pytest.approx(3.85)
+    assert out["fleet_floor_p95"]["25"] == pytest.approx(3.85)
+    rows_by = {(r["arm_id"], r["layer"]): r for r in out["ratio_table"]}
+    mk_row_out = rows_by[(mk, 25)]
+    assert mk_row_out["floor_source"] == "own"
+    assert mk_row_out["ratio"] == pytest.approx(5.0 / 3.85)
+    assert mk_row_out["verdict"] == "noise-ordered"
+    cas_row = rows_by[("cas-pers-con-lr1e5-s42", 19)]
+    assert cas_row["floor_source"] == "fleet"
+    assert cas_row["ratio"] == pytest.approx(60.0)
+    assert cas_row["verdict"] == "clear"
+    crit = out["criteria"]
+    assert crit["h3_n_arms"] == 2 and crit["h3_frac_above_fleet_floor_primary"] == 1.0
+    assert crit["h3_met"] is True
+    assert crit["marker_falsified"] is True  # own-floor ratio 1.30 <= 2
+    anchor = out["same_pass_anchor"]
+    assert anchor["n_duplicate_sha_groups"] == 2
+    assert anchor["n_identical_response_pairs"] == 1
+    assert anchor["n_pairs_response_text_differs"] == 1
+    assert anchor["per_layer"]["19"]["median"] == pytest.approx(0.25)
+    # low-level per-context artifacts land beside the aggregate
+    assert (tmp_path / "res" / "noise_floor_percontext" / f"{mk}_L25.json").exists()
+    pc = json.loads((tmp_path / "res" / "noise_floor_percontext" / f"{mk}_L25.json").read_text())
+    assert sorted(pc["distance"]) == pytest.approx([1.0, 2.0, 3.0, 4.0])
+
+
+def test_pnf_failloud_gates(tmp_path):
+    """Degenerate-input probes for the remaining pnf gates: unresolvable base
+    tree, replicate sha-set mismatch, arm-registry unit-pin miss."""
+    import issue1768_capture as cap
+
+    cfg = cap.Cfg(out_root=tmp_path, phases=(), layers=(19,))
+    with pytest.raises(RuntimeError, match="base tree base_content unavailable"):
+        cap._pnf_resolved_base_dir(cfg, "base_content")
+    unit_dir = tmp_path / "noise_floor" / "u"
+    _pnf_write_store(unit_dir / "pooled_nf_r1.pt", ["a"], [0], {19: np.zeros((1, 4))}, {})
+    _pnf_write_store(unit_dir / "pooled_nf_r2.pt", ["b"], [0], {19: np.zeros((1, 4))}, {})
+    with pytest.raises(AssertionError, match="sha sets differ"):
+        cap._pnf_replicate_distances(unit_dir, [19])
