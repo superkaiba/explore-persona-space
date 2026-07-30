@@ -6291,8 +6291,8 @@
     "1812": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1812",
-      "status": "planning",
+      "path": "tasks/approved/1812",
+      "status": "approved",
       "title": "daily-fix: 9a-ter \u2014 instrument supersession + addenda charac"
     },
     "1813": {
