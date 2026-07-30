@@ -3103,3 +3103,85 @@ def test_slurm_prepare_invalid_extra_sync_path_raises_before_extra_rsync(tmp_pat
     with pytest.raises(ValueError, match="traverse"):
         backend.prepare(spec)
     assert extra_calls == []
+
+
+# ---------------------------------------------------------------------------
+# issue #1899 — fellows QoS fallback ladder: render override seam + row pins
+# ---------------------------------------------------------------------------
+
+
+def test_fellows_qos_ladder_row_pins_granted_tiers() -> None:
+    """#1899: the fellows row pins the granted-QoS ladder (normal-eur, then
+    low-eur paired with `general,overflow` per the cluster handbook); the
+    primary qos stays high-eur; every non-fellows row has NO ladder."""
+    from explore_persona_space.backends.slurm import CLUSTER_CONFIGS, QosRung
+
+    fellows = CLUSTER_CONFIGS["fellows"]
+    assert fellows.qos == "high-eur"
+    assert fellows.qos_ladder == (
+        QosRung("normal-eur"),
+        QosRung("low-eur", partition="general,overflow"),
+    )
+    for name in ("nibi", "fir", "mila"):
+        assert CLUSTER_CONFIGS[name].qos_ladder == ()
+
+
+def test_render_qos_override_from_spec_extra() -> None:
+    """#1899 acceptance 3 (render half): ``spec.extra["slurm_qos_override"]``
+    supersedes the fellows row's primary qos; the partition keeps the
+    cluster default when no partition override rides along."""
+    fellows = _fellows()
+    spec = _fellows_spec()
+    spec.extra["slurm_qos_override"] = "normal-eur"
+    script = render_sbatch(
+        spec=spec,
+        cluster=fellows,
+        plan=stages_for_spec(spec),
+        scratch_dir="/workspace/superkaiba/eps/issue-1609",
+    )
+    assert "#SBATCH --qos=normal-eur\n" in script
+    assert "--qos=high-eur" not in script
+    assert "#SBATCH --partition=general\n" in script
+
+
+def test_render_partition_override_from_spec_extra() -> None:
+    """#1899 acceptance 3: the low-eur rung's extras render BOTH the QoS
+    and the `general,overflow` partition override (exact-line asserts —
+    `general` is a substring of `general,overflow`)."""
+    fellows = _fellows()
+    spec = _fellows_spec()
+    spec.extra["slurm_qos_override"] = "low-eur"
+    spec.extra["slurm_partition_override"] = "general,overflow"
+    script = render_sbatch(
+        spec=spec,
+        cluster=fellows,
+        plan=stages_for_spec(spec),
+        scratch_dir="/workspace/superkaiba/eps/issue-1609",
+    )
+    assert "#SBATCH --qos=low-eur\n" in script
+    assert "#SBATCH --partition=general,overflow\n" in script
+    assert "#SBATCH --partition=general\n" not in script
+    assert "--qos=high-eur" not in script
+
+
+def test_render_no_override_fellows_unchanged() -> None:
+    """#1899 acceptance 4 guard: absent the override extras the fellows
+    render keeps the primary ``--qos=high-eur`` / ``--partition=general``
+    lines, never leaks a ladder tier, and is deterministic — the #1609
+    snapshot contract holds with zero fixture edits."""
+    fellows = _fellows()
+    spec = _fellows_spec()
+    kwargs = dict(
+        spec=spec,
+        cluster=fellows,
+        plan=stages_for_spec(spec),
+        scratch_dir="/workspace/superkaiba/eps/issue-1609",
+    )
+    script_a = render_sbatch(**kwargs)
+    script_b = render_sbatch(**kwargs)
+    assert script_a == script_b
+    assert "#SBATCH --qos=high-eur\n" in script_a
+    assert "#SBATCH --partition=general\n" in script_a
+    # The ladder is ROUTER-consumed only — never rendered.
+    assert "normal-eur" not in script_a
+    assert "low-eur" not in script_a
