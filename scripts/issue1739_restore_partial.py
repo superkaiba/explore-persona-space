@@ -23,9 +23,20 @@ lane's ``EPM_I1739_BEHAVIORS`` convention.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+
+# Force the PLAIN download path for THIS script only (must precede the hub /
+# huggingface_hub import): the 458-small-npz restore storm WEDGES xet_get
+# indefinitely (att-20260730-055211-syc, py-spy-confirmed) and errors
+# hf_transfer (att-20260730-063858-syc), while the plain path handles small
+# files fine. The disables are deliberately NOT set process-wide by the
+# caller: leg2 step 2's >50 GB store tars REQUIRE an accelerator (plain
+# download refuses them — att-20260730-065438-syc).
+os.environ["HF_HUB_DISABLE_XET"] = "1"
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
 
 from explore_persona_space.orchestrate.env import load_dotenv
 
