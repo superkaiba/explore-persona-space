@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1879,
+  "highest_id": 1880,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6812,6 +6812,13 @@
       "path": "tasks/archived/188",
       "status": "archived",
       "title": "Evolutionary trigger recovery: iterative mutation of top-firing Stage A candidates on Gaperon-1125-1B"
+    },
+    "1880": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1880",
+      "status": "proposed",
+      "title": "workflow-fix: pod-side results-git push must fetch+rebase (mid-run branch-push race)"
     },
     "19": {
       "has_clean_result": false,
