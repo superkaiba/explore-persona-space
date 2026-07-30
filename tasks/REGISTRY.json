@@ -6865,8 +6865,8 @@
     "1887": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1887",
-      "status": "approved",
+      "path": "tasks/running/1887",
+      "status": "running",
       "title": "harden ridge lambda-selection: inner-group-CV default + GCV dof-cap + n<d degeneracy tripwire + re-read audit of affected published cells"
     },
     "1888": {
