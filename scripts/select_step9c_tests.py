@@ -246,7 +246,10 @@ tab-free stderr WARN + exit 0 (a deletion-only ``git diff --name-only``
 payload is a legitimate zero-resolution list).
 
 Default output: the exact gate invocation
-``timeout --kill-after=60s <T>s uv run pytest <files...> -v --tb=short`` on
+``timeout --kill-after=60s <T>s uv run pytest <files...>
+--continue-on-collection-errors -v --tb=short`` (#1746: a collection-broken
+selected file reports as a per-file junit ``<error>`` testcase and pytest
+exits rc=1 instead of aborting the whole run rc=2) on
 stdout — ``<T>`` sized deterministically by :func:`recommended_timeout_s`
 (#1046: 120s base + 30s/file + a 2400s surcharge when
 ``tests/test_workflow_lint.py`` is selected; re-measured from 330 real gate
@@ -309,8 +312,16 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # group 2 — workflow-lint / yaml / fix-dedup
     "tests/test_workflow_lint.py",
     "tests/test_workflow_lint_dotenv_check.py",
+    # NEW (#1701) — workflow_lint --check-inline-round-duty-mirror + no-flags
+    # bundling + drift-detection semantics pin
+    "tests/test_workflow_lint_inline_round_duty_mirror.py",
     "tests/test_workflow_yaml.py",
     "tests/test_workflow_fix_dedup.py",
+    # NEW (#1735) — rule reconciliation pin: workflow-fix-on-bug.md §
+    # Recently-closed-sibling SUSPECT probe describes the composite blocking
+    # contract (target + non-stopword title arm), not the retired
+    # "advisory only, never a block" phrasing.
+    "tests/test_workflow_fix_rule_closed_sibling_reconciliation.py",
     "tests/test_workflow_hub_upload_as_file.py",
     # group 3 — test_no_* invariants
     "tests/test_no_auto_runpod_path_under_any_failure.py",
@@ -333,6 +344,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_sparse_worktree.py",
     # NEW (#1623) — CLAUDE.md ad-hoc-summaries disclosure-clause pins (#1458/#1539/#1623)
     "tests/test_adhoc_summary_disclosure_pins.py",
+    # NEW (#1734) — adversarial-planner SKILL.md Phase 1.5.0 per-WARN disposition pin
+    "tests/test_adversarial_planner_warn_disposition.py",
     "tests/test_autonomous_plan_gate.py",
     "tests/test_autonomous_session_watch.py",
     # NEW (#1630) — /daily SKILL.md pathspec-commit (own-files-only) pin
@@ -341,6 +354,13 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_daily_stub_first_doc.py",
     # NEW (#1645) — /daily SKILL.md three-route classifier prose pin (#706)
     "tests/test_daily_three_route_classifier_doc.py",
+    # NEW (#1699) — implementer spec pin: mechanical --map-files pin-sweep hit list
+    "tests/test_implementer_spec_mechanical_pin_sweep.py",
+    # NEW (#1699) — implementer spec pin: repo-wide invariants in local union on
+    # any scripts/*.py or src/** edit (#1681)
+    "tests/test_implementer_spec_names_invariant_local_union.py",
+    # NEW (#1699) — implementer spec pin: ruff-policy pin invocation in lint step (#1672)
+    "tests/test_implementer_spec_names_ruff_policy_pin.py",
     # NEW (#1659) — SKILL.md 9a-ter + CLAUDE.md measured 1-cell pilot +
     # >=2x pilot-extrapolated fence-sizing pin
     "tests/test_issue_skill_compute_pilot_fence_pin.py",
@@ -351,6 +371,12 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # Registration rider (#1659) — the pre-existing 9a-ter element-(5) content
     # pin (#1393) was never registered (the #1546 unregistered-pin class)
     "tests/test_issue_skill_disk_routing_pin.py",
+    # NEW (#1698) — experimenter.md Contract scope + fence-field derivation
+    # prose pins (#1689 R8 launch-path fix). experimenter.md is
+    # WORKFLOW_SURFACE, so this test file must live in WORKFLOW_INVARIANT to
+    # gate the prose (touched-file selector routes WORKFLOW_SURFACE files
+    # here). SKILL.md Step 6d.1 check-4 is pinned in the same file.
+    "tests/test_experimenter_md.py",
     "tests/test_issue_skill_exit_breadcrumb.py",  # NEW (#1242) — SKILL.md exit-breadcrumb pin
     # NEW (#1575) — SKILL.md cap-park surfacing pins (#1548/#1558/#1575)
     "tests/test_issue_skill_followup_cap_park_note_pin.py",
@@ -368,13 +394,24 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1625) — SKILL.md 9a-ter + CLAUDE.md inline measurement-design +
     # figure-sanity duties pin (both-arms mapping statement, rendered-PNG check)
     "tests/test_issue_skill_inline_measurement_duties.py",
+    # NEW (#1812) — SKILL.md 9a-ter + CLAUDE.md instrument-supersession +
+    # scope-extension addenda duties pin
+    "tests/test_issue_skill_instrument_supersession_addenda_pin.py",
     "tests/test_issue_skill_marker_contract.py",
     # NEW (#1268) — SKILL.md Step-10d repin/guard hardening pin
     "tests/test_issue_skill_merge_resnapshot_pin.py",
+    # NEW (#1756) — Write-tool merged-note compose pin (3 --file sites + CLAUDE.md)
+    "tests/test_issue_skill_merged_note_compose.py",
     # NEW (#1563) — SKILL.md orchestrator-turn discipline pointer pin
     "tests/test_issue_skill_orchestrator_turn_discipline_pointer.py",
+    # NEW (#1810) — SKILL.md Step 4b pre-split multi-deliverable dispatch pin
+    "tests/test_issue_skill_presplit_dispatch_pin.py",
     # NEW (#1572) — staged-index verification pin
     "tests/test_issue_skill_staged_index_verification.py",
+    # NEW (#1751) — SKILL.md KEPT-stash surfacing duty pin
+    "tests/test_issue_skill_stash_kept_duty_pin.py",
+    # NEW (#1734) — SKILL.md Step 2 minimum plan-review floor + recorded-skip contract pin
+    "tests/test_issue_skill_step2_floor.py",
     # NEW (#1595) — stopped-volume persist-before-park pin (SKILL.md + pod-config.md)
     "tests/test_issue_skill_stopped_volume_persist_pin.py",
     # NEW (#1587) — SKILL.md trigger-dense tag-adoption pin
@@ -389,10 +426,23 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_ownership_probe_exemplar_bracketed.py",
     # NEW (#1631) — plan-patch helper + SKILL.md pointer pin
     "tests/test_plan_patch.py",
+    "tests/test_step0_enumerator_total_form.py",  # NEW (#1722) — Step-0 enumerator total-form pin
     "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
+    # NEW (#1723) — SKILL.md Step 10 CRON-TEARDOWN + epm:done reorder around
+    # Step 10d merge (Terminal-teardown H4 + exit-site enumeration +
+    # Step 10 step 6 branch-on-epm:merged + retry-surface long-phase heartbeats)
+    "tests/test_issue_skill_step10_teardown_ordering.py",
     "tests/test_step_completed_resume.py",  # NEW (#1242) — resume/step-completed contract pin
     # NEW (#1662) — CLAUDE.md + SKILL.md suffixed-pod completion-teardown contract pin
     "tests/test_suffixed_pod_completion_teardown_pin.py",
+    # NEW (#1693) — code-reviewer.md Step 0.69 phase-idempotency + inter-phase-
+    # contract gate pin (prose + codex mirror + substantive-tag registry + ratchet-cap)
+    "tests/test_code_reviewer_phase_idempotency_gate.py",
+    # NEW (#1693) — gotchas.md finalization-crash entry pin (PyGILState_Release +
+    # explicit-exit remedy under existing dispatcher paths: glob)
+    "tests/test_gotchas_finalization_entry.py",
+    # NEW (#1693) — planner.md §9 phase_outputs: declaration pin
+    "tests/test_planner_phase_outputs_declaration.py",
     # NEW (#1598) — CLAUDE.md teammate-coordination bullet pins (a)-(d)
     "tests/test_teammate_coordination_pins.py",
     "tests/test_plan_handoff_path_convention.py",
@@ -411,6 +461,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # the selector's arms are .py-only, so a settings.json diff re-runs this
     # pin ONLY via this tuple.
     "tests/test_ruff_format_hook_tmp_exclusion.py",
+    # NEW (#1732) — parentless-kind: infra consistency-checker SKIP rule pin
+    # (agent spec + adversarial-planner SKILL.md + /issue SKILL.md Step 2b);
+    # any of the three targets can be edited independently, so this pin
+    # lives in WORKFLOW_INVARIANT to gate all three prose surfaces.
+    "tests/test_consistency_checker_parentless_infra_skip.py",
 )
 
 # --- Touched files that short-circuit (no per-file test map). ----------------
@@ -612,6 +667,40 @@ def rules_pin_pairs(files: list[str], work_root: Path) -> list[tuple[str, str]]:
     )
 
 
+# --- Content-tolerant filesystem probes (#1791). -------------------------------
+def _safe_exists(p: Path) -> bool:
+    """``p.exists()`` that treats an unstat-able path as absent (#1791).
+
+    A content line from a mis-passed ``--map-files`` payload (markdown prose,
+    a source line > NAME_MAX) raises ``OSError`` [Errno 36] — or ``ValueError``
+    on an embedded NUL — from ``Path.exists()`` BEFORE the #1613 misuse
+    diagnostic can fire. Such a line is by definition not an existing repo
+    path, so absent is the correct answer, not a swallowed fault; no stat-able
+    path takes the except arm, so valid inputs are byte-identical.
+    """
+    try:
+        return p.exists()
+    except (OSError, ValueError):
+        return False
+
+
+def _safe_glob(root: Path, pattern: str) -> list[Path]:
+    """``sorted(root.glob(pattern))`` tolerant of content-derived patterns (#1791).
+
+    A stem derived from a mis-passed content line can embed glob
+    metacharacters (``scripts/*.py`` -> stem ``*`` -> pattern
+    ``test_***.py``), which raises ``ValueError`` ("Invalid pattern: '**' can
+    only be an entire path component") on modern pathlib — again before the
+    #1613 diagnostic. An invalid pattern cannot match an existing test, so
+    ``[]`` is the correct answer; valid patterns take the sorted-glob path
+    unchanged.
+    """
+    try:
+        return sorted(root.glob(pattern))
+    except (OSError, ValueError):
+        return []
+
+
 # --- src/scripts dependency arms for --map-files (#1573). ---------------------
 MAP_TIMEOUT_FLOOR_S = 600  # Step-10d TG-leg floor (#1646; was 300, basis the
 #                            ~12.6 s 2-test scan map of 2026-07-08). #1634's
@@ -620,6 +709,18 @@ MAP_TIMEOUT_FLOOR_S = 600  # Step-10d TG-leg floor (#1646; was 300, basis the
 #                            residual load; 600 ~= 3x the measured healthy
 #                            small-map wall (#1634 run 2 passed, TG legs
 #                            174/174 on both trees).
+MAP_TIMEOUT_DISPERSION = 2.0  # p90 dispersion factor on the map path (#1697;
+#                               was implicit 1.0). Two independent same-day
+#                               sessions #1675/#1682 (2026-07-25) hit the
+#                               undersized-bound trap at 728.19s / 751.7s
+#                               measured walls against the 780s formula-derived
+#                               bound (~1.04-1.07x) and each hand-doubled to
+#                               1560s / 1600s to recover. Matches the p90 x2
+#                               default in .claude/rules/plan-compute-sizing.md
+#                               (#833's realized-vs-planned mean overrun of ~2x).
+#                               Applies ONLY on the --map-files path; the diff
+#                               path already carries the per-file SLOW_TESTS
+#                               surcharge (#1646, 1.40x-dispersion-adjusted).
 
 
 def dependency_map_pairs(files: list[str], work_root: Path) -> list[tuple[str, str]]:
@@ -655,9 +756,12 @@ def dependency_map_pairs(files: list[str], work_root: Path) -> list[tuple[str, s
     for f in literal_path_targets(files):  # the same eligibility predicate
         stem = Path(f).stem
         exact = f"tests/test_{stem}.py"
-        if (work_root / exact).exists() and exact not in inv:
+        # Content-derived probes: _safe_exists/_safe_glob (#1791) — a hostile
+        # content line (> NAME_MAX stem, glob-metachar stem) must reach the
+        # #1613 diagnostic, not crash here first.
+        if _safe_exists(work_root / exact) and exact not in inv:
             pairs.add((exact, f))
-        for hit in sorted((work_root / "tests").glob(f"test_*{stem}*.py")):
+        for hit in _safe_glob(work_root / "tests", f"test_*{stem}*.py"):
             rel = f"tests/{hit.name}"
             if rel not in inv:
                 pairs.add((rel, f))
@@ -781,19 +885,31 @@ def resolve_base(base: str, work_root: Path, *, fetch: bool = True) -> str:
     return branch
 
 
-def recommended_timeout_s(tests: list[str], *, floor: int = TIMEOUT_FLOOR_S) -> int:
+def recommended_timeout_s(
+    tests: list[str],
+    *,
+    floor: int = TIMEOUT_FLOOR_S,
+    dispersion: float = 1.0,
+) -> int:
     """Deterministic `timeout(1)` bound for a Step 9c gate selection.
 
-    ``BASE + PER_FILE * len(tests) + sum(slow surcharges)``, floored at
-    *floor* (default ``TIMEOUT_FLOOR_S`` — diff-path callers unchanged;
+    ``BASE + PER_FILE * len(tests)`` scaled by *dispersion*, then plus the
+    slow-file surcharges, floored at *floor*.
+    Default ``dispersion=1.0`` keeps the diff-path callers byte-identical;
+    ``--map-files`` mode passes ``dispersion=MAP_TIMEOUT_DISPERSION`` (2.0;
+    #1697) so a healthy leg's bound is ~2x its measured wall, not ~1x.
+    Slow-file surcharges are NOT re-scaled (they already encode a per-file
+    dispersion-adjusted headroom: #1646 pinned `tests/test_workflow_lint.py`
+    at 2400s = 1.40x its 1819s worst measured wall).
+    Default ``floor`` (``TIMEOUT_FLOOR_S``) keeps diff-path callers unchanged;
     ``--map-files`` mode passes ``floor=MAP_TIMEOUT_FLOOR_S``, the Step-10d
-    TG-leg 600 s floor, #1573/#1646). Invariant-only selection (61 files as
+    TG-leg 600 s floor (#1573/#1646). Invariant-only selection (61 files as
     of 2026-07-24, incl. the workflow-lint surcharge) -> 4350 s (72.5 min),
     matching the invariant-set-scale precedents (``step9c_baseline.py
     refresh`` ``--timeout-s`` default 4350 s; the SKILL.md detached
     refresh's 4650 s).
     """
-    t = TIMEOUT_BASE_S + TIMEOUT_PER_FILE_S * len(tests)
+    t = round(dispersion * (TIMEOUT_BASE_S + TIMEOUT_PER_FILE_S * len(tests)))
     t += sum(SLOW_TESTS.get(x, 0) for x in tests)
     return max(t, floor)
 
@@ -1355,9 +1471,10 @@ def select_tests_with_reasons(
         if _matches_any(f, WORKFLOW_SURFACE_GLOBS):
             continue
         p = Path(f)
-        # A touched test file includes itself.
+        # A touched test file includes itself. (_safe_exists: content-line
+        # tolerance, #1791 — diff-mode twin of the map-files stem arm.)
         if f.startswith("tests/") and p.name.startswith("test_") and p.suffix == ".py":
-            if (work_root / f).exists():
+            if _safe_exists(work_root / f):
                 _add(f, "touched-test")
             continue
         # Data / config / doc files: not code, no test mapping.
@@ -1377,10 +1494,10 @@ def select_tests_with_reasons(
             # asserts a cross-cutting invariant ABOUT the file.)
             matched = f in import_tested
             exact = work_root / "tests" / f"test_{stem}.py"
-            if exact.exists():
+            if _safe_exists(exact):
                 _add(f"tests/test_{stem}.py", f"stem-map:{f}")
                 matched = True
-            for hit in sorted((work_root / "tests").glob(f"test_*{stem}*.py")):
+            for hit in _safe_glob(work_root / "tests", f"test_*{stem}*.py"):
                 _add(f"tests/{hit.name}", f"stem-map:{f}")
                 matched = True
             if not matched:
@@ -1491,7 +1608,10 @@ def _zero_resolution_guard(
     """
     if not files or all_pairs:
         return None
-    if any((work_root / f).exists() for f in files if not f.startswith("/")):
+    # _safe_exists (#1791): a > NAME_MAX content line (the mis-passed
+    # markdown/source shape this guard exists to diagnose) raises OSError
+    # from a bare exists() — crashing the very diagnostic meant to fire.
+    if any(_safe_exists(work_root / f) for f in files if not f.startswith("/")):
         return None
     if Path(map_files_arg).suffix in (".py", ".sh"):
         print(
@@ -1515,6 +1635,111 @@ def _zero_resolution_guard(
         file=sys.stderr,
     )
     return None
+
+
+def _run_map_files_mode(map_files_arg: str, work_root: Path) -> int:
+    """Execute the --map-files mapping mode (#1147).
+
+    Emits `<test>\\t<matched_path>` TSV lines to stdout across four
+    arms (GLOB_SCAN_TESTS, rules-pin #1496, src/scripts dependency arms
+    #1573/#1688, pinned transitive-consumer pairs #1589) — all
+    WORKFLOW_INVARIANT-excluded — over an explicit file list. No git diff;
+    stderr carries the zero-mapped WARN floor + the recommended-timeout-s
+    sizing line (floor 300). Return codes: 0 on success (empty stdout on no
+    match is the Step 10d merge-gate skip signal); 1 on an unreadable or
+    undecodable (binary, #1791) input file (fail CLOSED); 2 on the #1613
+    zero-resolution guard's source-file argument.
+
+    Extracted from ``main`` (#1717) to keep ``main``'s cyclomatic
+    complexity under the ruff C901 cap (≤15) after the new (a)/(c)
+    branches landed on the top-level entry.
+    """
+    try:
+        raw = Path(map_files_arg).read_text()
+    except (OSError, ValueError) as exc:
+        # ValueError covers a mis-passed BINARY file (UnicodeDecodeError is
+        # a ValueError subclass, #1791) — same rc-1 "cannot read" path.
+        # (c) opt-in hint on the comma-blob shape (#1717 defect (c),
+        # session `c0a2df1b`): `--map-files a.md,b.md` is a common
+        # mistake — argparse treats the comma-joined blob as a single
+        # PATH, so read_text() surfaces Errno 2. Append (never
+        # substitute — a legitimate comma-in-path failure still needs
+        # to see its own Errno).
+        hint = ""
+        if "," in str(map_files_arg):
+            hint = (
+                " (--map-files takes a PATH to a newline-separated file "
+                "list, not a comma-separated list of paths — write the "
+                "paths to a file and pass that file's path)"
+            )
+        print(
+            f"select_step9c_tests: cannot read --map-files input: {exc}{hint}",
+            file=sys.stderr,
+        )
+        return 1
+    files = [line.strip() for line in raw.splitlines() if line.strip()]
+    scan_pairs = map_scan_tests(files, work_root)
+    for scan_test, f in sorted(_scan_pairs(files) - set(scan_pairs)):
+        print(
+            f"select_step9c_tests: WARN — scan test {scan_test} (matched by {f}) "
+            f"absent from {work_root}; pair dropped",
+            file=sys.stderr,
+        )
+    # Rules-pin pairs (#1496) + the src/scripts dependency arms (#1573:
+    # import-map + literal-path + stem-map) + the pinned
+    # transitive-consumer pairs (#1589) join the scan-map pairs (union
+    # dedupes; a test hit by several arms prints once per distinct matched
+    # path, and the consumers' `sort -u` dedupes downstream).
+    # WORKFLOW_INVARIANT members are excluded inside rules_pin_pairs /
+    # dependency_map_pairs / transitive_consumer_pairs; the existing WARN
+    # loop above is scan-map-only by design (scan-map keys are pinned
+    # literals that can vanish from the tree; the discovery arms only ever
+    # find on-disk tests, and a vanished transitive-consumer registration
+    # is dropped by its existence check — the live-tree drift pins in
+    # tests/test_select_step9c_tests.py make that staleness loud on main).
+    all_pairs = sorted(
+        {
+            *scan_pairs,
+            *rules_pin_pairs(files, work_root),
+            *dependency_map_pairs(files, work_root),
+            *transitive_consumer_pairs(files, work_root),
+        }
+    )
+    # #1613 zero-resolution guard (see _zero_resolution_guard): the
+    # source-file-argument shape returns 2 here; the deletion-only
+    # list-file shape prints its hedged WARN and falls through.
+    guard_rc = _zero_resolution_guard(map_files_arg, files, all_pairs, work_root)
+    if guard_rc is not None:
+        return guard_rc
+    # The #1573 fail-loud floor: an eligible src/scripts code file with
+    # ZERO pairs across ALL arms is loudly visible (stderr, tab-free; rc
+    # stays 0 — consumers treat helper rc!=0 as crash-class fail-closed).
+    mapped = {f for _t, f in all_pairs}
+    for f in sorted(literal_path_targets(files) - mapped):
+        print(
+            f"select_step9c_tests: WARN — no mapped tests for code file {f} "
+            "(src/scripts dependency floor, #1573): a change here reaches the "
+            "Step 10d / inline gates with zero pytest",
+            file=sys.stderr,
+        )
+    if all_pairs:
+        # Machine-greppable sizing line (tab-free stderr) so the Step-10d
+        # TG legs can size their pytest bound from the map (#1573; floor =
+        # the pre-#1573 fixed 300 s TG-leg bound).
+        k_tests = sorted({t for t, _f in all_pairs})
+        map_timeout = recommended_timeout_s(
+            k_tests,
+            floor=MAP_TIMEOUT_FLOOR_S,
+            dispersion=MAP_TIMEOUT_DISPERSION,
+        )
+        print(
+            f"select_step9c_tests: map-files — {len(all_pairs)} pairs, "
+            f"{len(k_tests)} tests; recommended-timeout-s={map_timeout}",
+            file=sys.stderr,
+        )
+    for test, f in all_pairs:
+        print(f"{test}\t{f}")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1545,7 +1770,17 @@ def main(argv: list[str] | None = None) -> int:
             "run from the issue worktree at Step 9c)"
         ),
     )
-    parser.add_argument("--json", action="store_true", help="emit a JSON object")
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help=(
+            "emit a JSON object on stdout. Informational NOTE / WARN / sizing "
+            "lines go to stderr BY DESIGN — NEVER redirect stderr into stdout "
+            "(no `2>&1`) when piping stdout into a JSON parser; use "
+            "`2>/dev/null` (or leave stderr on the terminal / a log file) so "
+            "stdout stays pure JSON."
+        ),
+    )
     parser.add_argument(
         "--map-files",
         default=None,
@@ -1571,6 +1806,19 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    # (a) fail-loud on --map-files + --json: mapping mode emits TSV (one
+    # `<test>\t<matched_path>` line per pair) and the only consumers today
+    # (.claude/agents/implementer.md L174; the Step 10d TG legs' `sort -u`)
+    # are TSV-shaped. Silently ignoring --json here has cost a live session a
+    # wasted turn (#1717 defect (a)). The gate must fail CLOSED — parser.error
+    # exits 2 and prints to stderr, no diagnostic on stdout so consumers that
+    # tolerate exit 2 (they should not) still get no corrupted JSON.
+    if args.map_files is not None and args.json:
+        parser.error(
+            "--json is not supported with --map-files (mapping mode emits TSV: "
+            "'<test>\\t<matched_path>' per line)"
+        )
+
     try:
         work_root = _resolve_work_root(args.repo_root)
     except subprocess.CalledProcessError as exc:
@@ -1594,87 +1842,7 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     if args.map_files is not None:
-        # Mapping mode (#1147): GLOB_SCAN_TESTS + rules-pin (#1496) +
-        # src/scripts dependency arms (import/literal/stem #1573;
-        # dotted/basename/transitive #1688) +
-        # pinned transitive-consumer pairs (#1589) — all three
-        # WORKFLOW_INVARIANT-excluded — over an explicit file list — no git
-        # diff; stderr carries the zero-mapped WARN floor + the
-        # recommended-timeout-s sizing line (floor 300). The
-        # Step 10d merge gate consumes the tab-separated stdout; empty output
-        # + exit 0 means "no scan-covered payload" (the gate skips its test
-        # leg). An unreadable input file (exit 1) or a source-file-shaped
-        # argument — zero path resolution + zero pairs + .py/.sh suffix —
-        # (exit 2, #1613) are errors; the gate must fail CLOSED when it
-        # cannot classify the payload.
-        try:
-            raw = Path(args.map_files).read_text()
-        except OSError as exc:
-            print(
-                f"select_step9c_tests: cannot read --map-files input: {exc}",
-                file=sys.stderr,
-            )
-            return 1
-        files = [line.strip() for line in raw.splitlines() if line.strip()]
-        scan_pairs = map_scan_tests(files, work_root)
-        for scan_test, f in sorted(_scan_pairs(files) - set(scan_pairs)):
-            print(
-                f"select_step9c_tests: WARN — scan test {scan_test} (matched by {f}) "
-                f"absent from {work_root}; pair dropped",
-                file=sys.stderr,
-            )
-        # Rules-pin pairs (#1496) + the src/scripts dependency arms (#1573:
-        # import-map + literal-path + stem-map) + the pinned
-        # transitive-consumer pairs (#1589) join the scan-map pairs (union
-        # dedupes; a test hit by several arms
-        # prints once per distinct matched path, and the consumers' `sort -u`
-        # dedupes downstream). WORKFLOW_INVARIANT members are excluded inside
-        # rules_pin_pairs / dependency_map_pairs / transitive_consumer_pairs;
-        # the existing WARN loop above
-        # is scan-map-only by design (scan-map keys are pinned literals that
-        # can vanish from the tree; the discovery arms only ever find on-disk
-        # tests, and a vanished transitive-consumer registration is dropped by
-        # its existence check — the live-tree drift pins in
-        # tests/test_select_step9c_tests.py make that staleness loud on main).
-        all_pairs = sorted(
-            {
-                *scan_pairs,
-                *rules_pin_pairs(files, work_root),
-                *dependency_map_pairs(files, work_root),
-                *transitive_consumer_pairs(files, work_root),
-            }
-        )
-        # #1613 zero-resolution guard (see _zero_resolution_guard): the
-        # source-file-argument shape returns 2 here; the deletion-only
-        # list-file shape prints its hedged WARN and falls through.
-        guard_rc = _zero_resolution_guard(args.map_files, files, all_pairs, work_root)
-        if guard_rc is not None:
-            return guard_rc
-        # The #1573 fail-loud floor: an eligible src/scripts code file with
-        # ZERO pairs across ALL arms is loudly visible (stderr, tab-free; rc
-        # stays 0 — consumers treat helper rc!=0 as crash-class fail-closed).
-        mapped = {f for _t, f in all_pairs}
-        for f in sorted(literal_path_targets(files) - mapped):
-            print(
-                f"select_step9c_tests: WARN — no mapped tests for code file {f} "
-                "(src/scripts dependency floor, #1573): a change here reaches the "
-                "Step 10d / inline gates with zero pytest",
-                file=sys.stderr,
-            )
-        if all_pairs:
-            # Machine-greppable sizing line (tab-free stderr) so the Step-10d
-            # TG legs can size their pytest bound from the map (#1573; floor =
-            # the pre-#1573 fixed 300 s TG-leg bound).
-            k_tests = sorted({t for t, _f in all_pairs})
-            map_timeout = recommended_timeout_s(k_tests, floor=MAP_TIMEOUT_FLOOR_S)
-            print(
-                f"select_step9c_tests: map-files — {len(all_pairs)} pairs, "
-                f"{len(k_tests)} tests; recommended-timeout-s={map_timeout}",
-                file=sys.stderr,
-            )
-        for test, f in all_pairs:
-            print(f"{test}\t{f}")
-        return 0
+        return _run_map_files_mode(args.map_files, work_root)
 
     # Diff-base resolution (#1289): AFTER the --map-files early return (mapping
     # mode never diffs, so it must never fetch), BEFORE the diff. Every later
@@ -1693,8 +1861,10 @@ def main(argv: list[str] | None = None) -> int:
         # #851 failure was a SILENT invariant-only fallback from the wrong cwd.
         print(
             f"select_step9c_tests: NOTE — empty diff vs '{base}' in {work_root}; "
-            "falling back to the workflow-invariant set only. If this task's changes "
-            "live in an issue worktree, re-run from that worktree (Step 9c contract).",
+            "falling back to the workflow-invariant set only. The selector diffs "
+            "COMMITTED state against fetched origin/main, so uncommitted edits "
+            "produce an empty diff — commit first; if this task's changes live "
+            "in an issue worktree, re-run from that worktree (Step 9c contract).",
             file=sys.stderr,
         )
 
@@ -1750,7 +1920,11 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"timeout --kill-after=60s {timeout_s}s uv run pytest "
             + " ".join(tests)
-            + " -v --tb=short"
+            # #1746: one collection-broken selected file must not abort the
+            # whole gate rc=2 — pytest runs the surviving files, reports the
+            # collect error as a per-file junit <error> testcase, exits rc=1,
+            # and step9c_baseline compare classifies it like any other failure.
+            + " --continue-on-collection-errors -v --tb=short"
         )
         for f in untested:
             print(f"untested touched file: {f}", file=sys.stderr)
