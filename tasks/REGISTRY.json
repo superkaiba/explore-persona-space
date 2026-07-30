@@ -6494,8 +6494,8 @@
     "1839": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1839",
-      "status": "proposed",
+      "path": "tasks/planning/1839",
+      "status": "planning",
       "title": "workflow-fix: gotchas parity family \u2014 tensor device placement (CPU smokes can't exercise CUDA branches)"
     },
     "184": {
