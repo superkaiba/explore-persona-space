@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1848,
+  "highest_id": 1849,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6567,6 +6567,13 @@
       "path": "tasks/proposed/1848",
       "status": "proposed",
       "title": "daily-fix: plan_patch.py --file alias + rc-check note"
+    },
+    "1849": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1849",
+      "status": "proposed",
+      "title": "daily-fix: hub._upload fail-loud when file dest looks like a"
     },
     "185": {
       "has_clean_result": false,
