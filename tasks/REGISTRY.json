@@ -6221,8 +6221,8 @@
     "1803": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1803",
-      "status": "reviewing",
+      "path": "tasks/completed/1803",
+      "status": "completed",
       "title": "daily-fix: env-pin allowlist gains vetted runtime-tuning key"
     },
     "1804": {
