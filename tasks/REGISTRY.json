@@ -6872,8 +6872,8 @@
     "1888": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1888",
-      "status": "proposed",
+      "path": "tasks/archived/1888",
+      "status": "archived",
       "title": "workflow-fix: add lint-family-sync pin test to Step 5a workflow family"
     },
     "19": {
