@@ -6312,8 +6312,8 @@
     "1815": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1815",
-      "status": "reviewing",
+      "path": "tasks/completed/1815",
+      "status": "completed",
       "title": "daily-fix: queue-vanish guard defeated by stale phase clock"
     },
     "1816": {
