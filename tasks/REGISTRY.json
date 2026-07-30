@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1853,
+  "highest_id": 1854,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6609,6 +6609,13 @@
       "path": "tasks/proposed/1853",
       "status": "proposed",
       "title": "daily-fix: watcher leaves filed infra tasks undispatched for"
+    },
+    "1854": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1854",
+      "status": "proposed",
+      "title": "daily-fix: /daily route-1 code applies run full-ruleset lint"
     },
     "186": {
       "has_clean_result": true,
