@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1852,
+  "highest_id": 1853,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6602,6 +6602,13 @@
       "path": "tasks/proposed/1852",
       "status": "proposed",
       "title": "daily-fix: env-pin allowlist PYTORCH_CUDA_ALLOC_CONF + help "
+    },
+    "1853": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1853",
+      "status": "proposed",
+      "title": "daily-fix: watcher leaves filed infra tasks undispatched for"
     },
     "186": {
       "has_clean_result": true,
