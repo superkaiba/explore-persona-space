@@ -200,9 +200,12 @@ def test_good_body_passes_all():
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture. Check 47
     # `check_context_followup_scope_consistency` (#1521) is dispatched in
     # verify_text (needs the issue number) and PASS-skips here (legacy body).
-    assert len(results) == 61
+    # The plan-conditions coverage check (#1827) is dispatched in verify_text
+    # (needs plans/plan.md) and NO-OP PASSes here (no plan sibling).
+    assert len(results) == 62
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert "plan conditions coverage" in {r.name for r in results}
     assert _HF_32_NAME in {r.name for r in results}
     assert _HF_40_NAME in {r.name for r in results}
     assert "Context follow-up provenance vs followup-scope markers" in {r.name for r in results}
@@ -7177,6 +7180,268 @@ def test_repro_lr_multi_version_plan_in_no_version_still_fails(tmp_path):
     result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
     assert not result.passed, result.render()
     assert "0.0001" in result.detail or "1e-04" in result.detail, result.render()
+
+
+# ─── Plan-§5 conditions coverage (WARN tier, #1827; incident #1774) ─────────
+
+# The verbatim §5 conditions table from the #1774 plan (16 backtick slugs,
+# incl. the `\|` in-cell pipe escapes on the four arm rows) — the incident-era
+# shape the check is calibrated on.
+_I1774_CONDITIONS_PLAN = r"""# Plan — four-arm map operator characterization
+
+## 5. Conditions and Controls
+
+| Plain-English name | What it tests | What it controls for | Config slug |
+|---|---|---|---|
+| Full-context arm | E[a\|p,q] — the full-information map | — (reference arm) | `arm_context` |
+| Pre-query prefix arm | E[a\|p] from the genuinely pre-query state | what the persona alone fixes | `arm_prefix_end` |
+| Bare-query arm | E[a\|q] with no prefix | what the task alone fixes | `arm_bare_query` |
+| Query-averaged arm | E[a\|p] from the richer averaged input | state- vs estimator-grain of the prefix estimand | `arm_query_avg` |
+| Shuffled-pairing refits | chance level of every spectrum/angle/R² read | fitting-procedure artifacts (200 same-λ refits) | `null_perm` |
+| Spectrum-matched angle null | chance subspace overlap | dimensionality/spectrum artifacts in angle reads | `null_procrustes` |
+| Matched-n context subsample | context-arm reads at the prefix arm's effective n | rank/sample-size confound in cross-arm claims (20 draws) | `null_matchedn` |
+| Identity+bias / kNN baselines | trivial-transport floor + retrieval floor per fitted map | "variance a constant shift explains" + mis-scaled maps | `base_idbias_knn` |
+| Kernel-direction injection | causal inertness of discarded directions | — (the negative prediction) | `steer_kernel` |
+| Top-singular injection | causal load-bearing of read directions | validates the steering rig has power | `steer_top` |
+| Norm-matched random injection | generic-perturbation floor | "any direction at this norm moves things" | `steer_rand` |
+| Trait-erase (LEACE) | trait-direction causal contribution | direction-specific vs generic erasure effects | `steer_erase` |
+| No-intervention baseline (K=3 draws/context, same regime) | within-context cross-draw band = the H4 inertness band | decode stochasticity in Δ reads | `steer_base` |
+| Pretrained-reads robustness | do channel counts/angles transfer across reading model | instruct-specific structure | `cell_pre_own` |
+| λ-sweep + df(λ) | read robustness to regularization | λ-set spectrum artifacts (Round-3 concern) | `ctl_lambda` |
+| Fold-jackknife | estimator dispersion of operators/eigenvalues | single-fit overreading | `ctl_jackknife` |
+
+## 6. Evaluation
+
+Prose after the table.
+"""
+
+_I1774_SLUGS = [
+    "arm_context",
+    "arm_prefix_end",
+    "arm_bare_query",
+    "arm_query_avg",
+    "null_perm",
+    "null_procrustes",
+    "null_matchedn",
+    "base_idbias_knn",
+    "steer_kernel",
+    "steer_top",
+    "steer_rand",
+    "steer_erase",
+    "steer_base",
+    "cell_pre_own",
+    "ctl_lambda",
+    "ctl_jackknife",
+]
+
+# Era-correct incident replay fixture (test 8b): a trimmed replica of the
+# PRE-correction #1774 body at `git show 57c915206e:tasks/interpreting/1774/
+# body.md` — the revision where the `cell_pre_own` (pretrained-reads
+# robustness) condition was silently dropped. Load-bearing properties (pinned
+# by `test_plan_conditions_fixture_has_zero_pre_own_trace`): ZERO
+# `cell_pre_own` / "pretrained" mentions, plus enough v4 structure (H1,
+# sentinel, >500 chars) to pass the check-0 stub short-circuit so
+# `verify_text` reaches the new check.
+_I1774_PRECORRECTION_BODY = """\
+# Linear maps predict held-out answer states from the full context or the \
+bare query but not from the genuinely pre-query prefix state, which keeps \
+only persona-average signal (HIGH confidence)
+
+<!-- clean-result-v4 -->
+
+## Takeaways
+
+- Held-out per-answer R² at layer 14: full context **0.812**, bare query **0.717**, pre-query prefix end 0.02, query-averaged prefix −0.02 — with every trait cell resolved at 11.7–16.8× decode-noise floors.
+- The joint-fit and separately-fitted prefix operators agree far above chance (cosine 0.47 vs null 0.01) but below fold self-agreement (0.84) — so cross-arm geometry reads stay descriptive.
+- The context map is high-rank: 763–2,932 held-out-validated channels depending on counting convention, refuting the expected tens-of-channels picture.
+- Causal tests inconclusive: 0.92-unit additions sat at the ≈7.8 no-effect reference (under-dosed positive control); erasing single trait directions moved state 1.8–3.0× and judged behavior, with degradation not excluded.
+
+## Goal
+
+- **This experiment in context:** The parent fitted linear maps from four conditionings of the same conversations — full context, bare query, pre-query prefix end, query-averaged prefix — to the answer state and measured their predictive skill. This task characterizes those fitted maps as operators.
+- **Broader narrative:** Whether pre-question context geometry supports a linear monitor of trait content in upcoming answers.
+
+## Methodology
+
+**Design:** Zero-training analysis-and-intervention experiment over a banked activation store. Fits use the corrected battery-excluded row set (17,308 rows), grouped 6-fold by prefix id, fold seed 0. Layer 14 is primary. Phases: stage audit; a K=5 decode-draw phase for the decode-noise ceiling; the fit battery; a steering phase (60 trait-stratum contexts × 27 intervention conditions plus a 3-draw no-intervention baseline = 1,800 generations); graded judging and aggregation.
+
+## Results
+
+### Four-arm skill ordering
+
+Held-out R² orders context > bare query >> prefix arms at every layer read.
+"""
+
+
+def test_plan_conditions_slug_in_body_passes(tmp_path):
+    """Test 8a: every slug appears in the body → plain PASS."""
+    plan = _write_plan(
+        tmp_path,
+        "## Conditions\n\n"
+        "| Plain-English name | What it tests | Config slug |\n"
+        "|---|---|---|\n"
+        "| Arm A | the effect | `cell_a` |\n"
+        "| Arm B | the control | `cell_b` |\n",
+    )
+    body = _I1774_PRECORRECTION_BODY + "\nCells `cell_a` and `cell_b` both resolved.\n"
+    result = verify_task_body.check_plan_conditions_coverage(body, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+    assert "2 plan condition(s) all covered" in result.detail
+
+
+def test_plan_conditions_era_correct_1774_replay_warns(tmp_path):
+    """Test 8b (the incident replay, via verify_text — pins the
+    registration site): the pre-correction #1774 body + the #1774-shaped
+    plan table → the new check's row WARNs naming `cell_pre_own`.
+    Unrelated WARN/FAIL rows from the trimmed fixture are acceptable —
+    the assertion is on the new check's row specifically."""
+    plan = _write_plan_versions(tmp_path, {"v1.md": _I1774_CONDITIONS_PLAN})
+    _ok, results = verify_task_body.verify_text(_I1774_PRECORRECTION_BODY, plan_path=plan)
+    row = next(r for r in results if r.name == "plan conditions coverage")
+    assert row.passed and row.is_warn, row.render()
+    assert "cell_pre_own" in row.detail, row.render()
+    assert row.detail.startswith("advisory:"), row.render()
+
+
+def test_plan_conditions_fixture_has_zero_pre_own_trace():
+    """Pins the 8b fixture's load-bearing property: the pre-correction
+    replica carries NO trace of the dropped condition (neither the slug
+    nor the plain-English name's tokens)."""
+    lowered = _I1774_PRECORRECTION_BODY.lower()
+    assert "cell_pre_own" not in lowered
+    assert "pretrained" not in lowered
+
+
+def test_plan_conditions_descope_prose_name_covers(tmp_path):
+    """Test 8c (must-PASS companion): slug absent but the plain-English
+    name present — the CURRENT corrected #1774 descope-prose shape
+    ("the planned pretrained-reads robustness condition ... was not
+    run") counts as coverage by construction."""
+    plan = _write_plan(
+        tmp_path,
+        "## 5. Conditions and Controls\n\n"
+        "| Plain-English name | What it tests | Config slug |\n"
+        "|---|---|---|\n"
+        "| Pretrained-reads robustness | cross-model transfer | `cell_pre_own` |\n",
+    )
+    body = (
+        _I1774_PRECORRECTION_BODY
+        + "\nOne named deviation: the planned pretrained-reads robustness condition"
+        " (spectra and angles re-read with the pretrained model's activations) was"
+        " not run — the omission was unintentional, and every channel-count claim"
+        " is therefore instruct-reads only.\n"
+    )
+    result = verify_task_body.check_plan_conditions_coverage(body, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+
+
+def test_plan_conditions_no_plan_noop():
+    """Test 8d: plan_path=None → NO-OP PASS."""
+    result = verify_task_body.check_plan_conditions_coverage(
+        _I1774_PRECORRECTION_BODY, plan_path=None
+    )
+    assert result.passed and not result.is_warn
+    assert "no approved plan" in result.detail
+
+
+def test_plan_conditions_no_table_noop(tmp_path):
+    """Test 8e: no plan version carries a conditions table with a
+    config-slug column → NO-OP PASS."""
+    plan = _write_plan(tmp_path, "## 4. Design\n\nNo conditions table here; lr=2e-6.\n")
+    result = verify_task_body.check_plan_conditions_coverage(
+        _I1774_PRECORRECTION_BODY, plan_path=plan
+    )
+    assert result.passed and not result.is_warn
+    assert "no plan version carries a conditions table" in result.detail
+
+
+def test_plan_conditions_zero_slug_rows_noop(tmp_path):
+    """Test 8e2: a conditions table with the config-slug column but zero
+    backtick-wrapped slug rows → NO-OP PASS."""
+    plan = _write_plan(
+        tmp_path,
+        "## Conditions\n\n"
+        "| Plain-English name | Config slug |\n"
+        "|---|---|\n"
+        "| Arm A | bare_slug_no_backticks |\n",
+    )
+    result = verify_task_body.check_plan_conditions_coverage(
+        _I1774_PRECORRECTION_BODY, plan_path=plan
+    )
+    assert result.passed and not result.is_warn
+    assert "zero backtick" in result.detail
+
+
+def test_plan_conditions_1774_table_parses_all_16_slugs():
+    """Test 8f: the #1774-shaped 16-row table parses ALL 16 slugs —
+    including the four arm rows whose cells carry `\\|` escaped pipes."""
+    rows = verify_task_body._parse_plan_conditions_rows(_I1774_CONDITIONS_PLAN)
+    assert rows is not None
+    assert [slug for slug, _name in rows] == _I1774_SLUGS
+    assert rows[13] == ("cell_pre_own", "Pretrained-reads robustness")
+
+
+def test_plan_conditions_warn_never_fails(tmp_path):
+    """Test 8g: an uncovered row yields is_warn=True AND passed=True —
+    the check can never block."""
+    plan = _write_plan(
+        tmp_path,
+        "## Conditions\n\n"
+        "| Plain-English name | Config slug |\n"
+        "|---|---|\n"
+        "| Utterly unmentioned zzz-condition | `zzz_condition` |\n",
+    )
+    result = verify_task_body.check_plan_conditions_coverage(
+        _I1774_PRECORRECTION_BODY, plan_path=plan
+    )
+    assert result.passed is True
+    assert result.is_warn is True
+    assert "zzz_condition" in result.detail
+
+
+def test_plan_conditions_numeric_version_sort(tmp_path):
+    """Test 8h: versions walk NEWEST-first by NUMERIC suffix — v10's
+    table binds over v2's (a lexicographic reverse sort would order
+    'v2.md' > 'v10.md' and bind v2's covered table → PASS, masking the
+    v10 drop this asserts)."""
+    covered_table = (
+        "## Conditions\n\n"
+        "| Plain-English name | Config slug |\n"
+        "|---|---|\n"
+        "| Old arm | `slug_old` |\n"
+    )
+    newer_table = (
+        "## Conditions\n\n"
+        "| Plain-English name | Config slug |\n"
+        "|---|---|\n"
+        "| New arm | `slug_new` |\n"
+    )
+    plan = _write_plan_versions(tmp_path, {"v2.md": covered_table, "v10.md": newer_table})
+    body = _I1774_PRECORRECTION_BODY + "\nThe `slug_old` cell resolved.\n"
+    result = verify_task_body.check_plan_conditions_coverage(body, plan_path=plan)
+    assert result.passed and result.is_warn, result.render()
+    assert "slug_new" in result.detail, result.render()
+
+
+def test_plan_conditions_amendment_falls_back_to_prior_version(tmp_path):
+    """A follow-up amendment plan with NO conditions table falls back to
+    the newest PRIOR version that carries one (plan criterion 3)."""
+    plan = _write_plan_versions(
+        tmp_path,
+        {
+            "v1.md": (
+                "## Conditions\n\n"
+                "| Plain-English name | Config slug |\n"
+                "|---|---|\n"
+                "| Old arm | `slug_old` |\n"
+            ),
+            "v2.md": "## Follow-up amendment\n\nAnalysis-only round; no conditions table.\n",
+        },
+    )
+    body = _I1774_PRECORRECTION_BODY + "\nThe `slug_old` cell resolved.\n"
+    result = verify_task_body.check_plan_conditions_coverage(body, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+    assert "1 plan condition(s) all covered" in result.detail
 
 
 # ─── v3 redesign (2026-W24): clean-result-v3 sentinel + five-flat-H2 shape ──
