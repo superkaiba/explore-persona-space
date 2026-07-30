@@ -2381,6 +2381,32 @@ _WANDB_URL_RE = re.compile(
     r"https?://(?:www\.)?wandb\.ai/(?P<entity>[\w.\-]+)/(?P<project>[\w.\-]+)/runs/(?P<run_id>[\w.\-]+)"
 )
 
+# Glob metacharacters in an in-repo path — the PLANNED-OUTPUT shape (#1482): a
+# plan citing its OWN not-yet-existing outputs writes hf:// globs
+# (`.../pooled_l3_*.npz`), which cannot be existence-checked literally. This is
+# the ONE shared glob definition both existence-check consumers use:
+# ``verify_artifacts_exist``'s skip arm below and
+# ``scripts/verify_uploads.py::check_claimed_urls_resolve``'s skipped-count
+# disclosure (via ``hf_url_path_has_glob``).
+_GLOB_CHARS_RE = re.compile(r"[*?\[]")
+
+
+def hf_url_path_has_glob(url: str) -> bool:
+    """True iff ``url`` parses as an HF URL whose in-repo PATH carries a glob
+    metacharacter (``*`` / ``?`` / ``[`` — :data:`_GLOB_CHARS_RE`).
+
+    The shared #1482 planned-output classifier: ``verify_artifacts_exist``
+    SKIPs such paths (they cannot be existence-checked literally), and
+    ``scripts/verify_uploads.py::check_claimed_urls_resolve`` counts them for
+    its ``detail`` disclosure. Only the in-repo path portion is inspected —
+    a string that does not match ``_HF_URL_RE`` at all returns False.
+    """
+    m = _HF_URL_RE.search(url)
+    if m is None:
+        return False
+    path = m.group("webpath") or m.group("uripath") or ""
+    return bool(_GLOB_CHARS_RE.search(path))
+
 
 def _kind_to_repo_type(kind: str | None) -> str:
     """Map a huggingface.co URL path prefix to an HfApi ``repo_type``."""
@@ -2404,6 +2430,11 @@ def _hf_artifact_exists(api, repo_id: str, repo_type: str, revision: str | None,
     A reachable repo whose tree is missing the cited ``path`` is a normal
     ``False`` — NOT an exception. Genuine transport / auth errors propagate so
     the caller fails loud rather than reporting a real artifact as missing.
+
+    ``RepositoryNotFoundError`` also propagates from THIS helper on both
+    branches (tree walk and empty-path ``repo_info``); the
+    ``verify_artifacts_exist`` caller catches it to drive its
+    repo-type-fallback / missing-row classification (#1482).
     """
     if not path:
         # URL points at the repo root — repo (+revision) resolving is enough.
@@ -2458,20 +2489,43 @@ def verify_artifacts_exist(plan_path: str | Path) -> tuple[bool, list[str]]:
     public API. HF auth uses the ambient ``HF_TOKEN``; WandB uses
     ``WANDB_API_KEY`` via the public API's normal credential resolution.
 
-    Fail-loud contract:
+    Fail-loud contract (two classification arms + one deliberate narrowing,
+    #1482):
       - A malformed / missing / non-file ``plan_path`` raises ``ValueError``
         (the caller passed something that can't be a plan).
+      - GLOB-SKIP ARM: an HF URL whose in-repo path carries a glob
+        metacharacter (``*`` / ``?`` / ``[`` — :data:`_GLOB_CHARS_RE`) is the
+        plan's own PLANNED-OUTPUT shape — it cannot be existence-checked
+        literally, and marking it missing would false-block the Step 6a.5
+        launch gate on the plan's own outputs. It is SKIPPED (never probed,
+        never in ``missing``), with one INFO log line per skipped URL.
+      - REPO-TYPE-FALLBACK ARM: an un-prefixed URL (no ``datasets/`` /
+        ``spaces/`` prefix, which ``_kind_to_repo_type`` maps to ``model``)
+        whose probe raises ``RepositoryNotFoundError`` is retried once as
+        ``repo_type="dataset"``. A repo resolving under NEITHER repo_type —
+        or an explicit-kind URL raising ``RepositoryNotFoundError`` — is a
+        NORMAL ``missing`` row, never an uncaught traceback.
       - A reachable-but-missing artifact is a NORMAL ``(False, [...])`` return,
         not an exception.
-      - Genuine transport / auth errors propagate (the helper does not swallow
-        them and report a real artifact as missing).
+      - Deliberate NARROWING: ``GatedRepoError`` subclasses
+        ``RepositoryNotFoundError`` on the pinned hub 0.36.2 (verified via
+        ``issubclass`` probe, 2026-07-29), so a gated repo classifies as a
+        ``missing`` row here instead of propagating — acceptable because
+        Step 6a's ``auth_check`` gate owns gated/auth repos and runs BEFORE
+        this Step 6a.5 gate.
+      - Genuine transport / auth errors (5xx / timeout / connection / a 403
+        that is not repo-not-found) still PROPAGATE, as does
+        ``RevisionNotFoundError`` (NOT a ``RepositoryNotFoundError`` subclass
+        on hub 0.36.2) — the helper does not swallow them and report a real
+        artifact as missing.
 
     Args:
         plan_path: Path to the cached plan markdown file.
 
     Returns:
         ``(all_exist, missing_urls)``. ``all_exist`` is True iff every detected
-        URL resolved; ``missing_urls`` is the de-duplicated list of URLs that
+        URL resolved (glob-shaped planned-output paths are skipped, not
+        counted); ``missing_urls`` is the de-duplicated list of URLs that
         did not (empty when ``all_exist`` is True). A plan citing no artifact
         URLs returns ``(True, [])``.
 
@@ -2489,6 +2543,7 @@ def verify_artifacts_exist(plan_path: str | Path) -> tuple[bool, list[str]]:
     text = plan_path.read_text(encoding="utf-8")
 
     from huggingface_hub import HfApi
+    from huggingface_hub.utils import RepositoryNotFoundError
 
     api = HfApi(token=os.environ.get("HF_TOKEN"))
 
@@ -2504,8 +2559,27 @@ def verify_artifacts_exist(plan_path: str | Path) -> tuple[bool, list[str]]:
         repo_id = m.group("webrepo") or m.group("urirepo")
         revision = m.group("webrev") or m.group("urirev")
         path = m.group("webpath") or m.group("uripath") or ""
+        if _GLOB_CHARS_RE.search(path):
+            # Planned-output shape (#1482): a glob cannot be existence-checked
+            # literally, and marking it missing would false-block the Step
+            # 6a.5 launch gate on the plan's own outputs. Skip — observably.
+            logger.info("glob-shaped hf:// path — planned-output shape, skipped: %s", url)
+            continue
         repo_type = _kind_to_repo_type(kind)
-        if not _hf_artifact_exists(api, repo_id, repo_type, revision, path):
+        try:
+            exists = _hf_artifact_exists(api, repo_id, repo_type, revision, path)
+        except RepositoryNotFoundError:
+            if kind is None and repo_type == "model":
+                # Un-prefixed URI (#1482): a dataset repo cited without the
+                # datasets/ prefix maps to repo_type="model" and 404s on the
+                # MODELS endpoint — retry once as a dataset repo.
+                try:
+                    exists = _hf_artifact_exists(api, repo_id, "dataset", revision, path)
+                except RepositoryNotFoundError:
+                    exists = False  # resolves under NEITHER repo_type
+            else:
+                exists = False  # explicit-kind URL whose repo does not resolve
+        if not exists:
             missing.append(url)
 
     for m in _WANDB_URL_RE.finditer(text):

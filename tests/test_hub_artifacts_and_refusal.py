@@ -9,16 +9,23 @@ Covers (all network mocked):
     completion (the Claude judge is mocked).
 """
 
+import logging
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
 from huggingface_hub.hf_api import RepoFile, RepoFolder
-from huggingface_hub.utils import EntryNotFoundError, HfHubHTTPError, RepositoryNotFoundError
+from huggingface_hub.utils import (
+    EntryNotFoundError,
+    GatedRepoError,
+    HfHubHTTPError,
+    RepositoryNotFoundError,
+)
 
 from explore_persona_space.eval.refusal import detect_refusal, filter_refusals
 from explore_persona_space.orchestrate.hub import (
     _HF_URL_RE,
+    hf_url_path_has_glob,
     list_hf_files_under_path,
     list_repo_files_complete,
     verify_artifacts_exist,
@@ -256,6 +263,38 @@ class TestListHfFilesUnderPath:
 # ── verify_artifacts_exist ────────────────────────────────────────────────────
 
 
+class _RepoTypeFallbackApi:
+    """Signature-mirroring ``HfApi`` stand-in for the #1482 repo_type-fallback
+    tests: the MODEL endpoint raises ``RepositoryNotFoundError``; the DATASET
+    endpoint resolves (or also raises, under ``dataset_exists=False``).
+
+    Boundary fakes conform BY CONSTRUCTION (def-mirrored ``list_repo_tree`` /
+    ``repo_info``), never a bare ``MagicMock`` — the real
+    ``verify_artifacts_exist`` body runs end to end against them (code-style
+    rule: one production-body test per seam-stubbed function, #906).
+    """
+
+    def __init__(self, dataset_files=(), *, dataset_exists=True):
+        self._dataset_files = list(dataset_files)
+        self._dataset_exists = dataset_exists
+        self.tree_repo_types: list[str | None] = []
+        self.repo_info_repo_types: list[str | None] = []
+
+    def list_repo_tree(
+        self, *, repo_id, repo_type=None, revision=None, recursive=False, path_in_repo=None
+    ):
+        self.tree_repo_types.append(repo_type)
+        if repo_type != "dataset" or not self._dataset_exists:
+            raise RepositoryNotFoundError(f"404: {repo_id} does not resolve as {repo_type}")
+        return [_repo_file(p) for p in self._dataset_files]
+
+    def repo_info(self, repo_id, *, repo_type=None, revision=None):
+        self.repo_info_repo_types.append(repo_type)
+        if repo_type != "dataset" or not self._dataset_exists:
+            raise RepositoryNotFoundError(f"404: {repo_id} does not resolve as {repo_type}")
+        return SimpleNamespace(id=repo_id)
+
+
 class TestVerifyArtifactsExist:
     def test_raises_on_missing_plan_path(self, tmp_path):
         with pytest.raises(ValueError, match="does not exist"):
@@ -420,18 +459,21 @@ class TestVerifyArtifactsExist:
         assert api.repo_info.call_count == 1
         assert api.list_repo_tree.call_count == 0
 
-    def test_repo_root_repo_info_failure_propagates(self, tmp_path):
-        """A missing repo on the repo-root branch propagates (fail-loud) —
-        never a swallowed False (#988 site-1 negative path)."""
+    def test_repo_root_neither_repo_type_is_missing_row(self, tmp_path):
+        """Acceptance 3, repo-root (empty-path) variant: a bare ``hf://org/name``
+        citation whose repo resolves under NEITHER repo_type is a reportable
+        ``missing`` row — the #1482 reclassification of the former
+        propagate-on-``RepositoryNotFoundError`` behavior (#988 site 1)."""
         plan = tmp_path / "plan.md"
-        plan.write_text("whole repo https://huggingface.co/org/ghost-repo\n")
-        api = MagicMock()
-        api.repo_info.side_effect = RepositoryNotFoundError("repo gone")
-        with (
-            patch("huggingface_hub.HfApi", return_value=api),
-            pytest.raises(RepositoryNotFoundError),
-        ):
-            verify_artifacts_exist(plan)
+        plan.write_text("whole repo hf://org/ghost-repo\n")
+        api = _RepoTypeFallbackApi(dataset_exists=False)
+        with patch("huggingface_hub.HfApi", return_value=api):
+            ok, missing = verify_artifacts_exist(plan)
+        assert ok is False
+        assert missing == ["hf://org/ghost-repo"]
+        # Empty-path branch: repo_info probed as model, retried as dataset.
+        assert api.repo_info_repo_types == ["model", "dataset"]
+        assert api.tree_repo_types == []
 
     def test_cited_dir_path_threads_scoped_walk(self, tmp_path):
         """A cited dir path scopes the tree walk server-side via path_in_repo
@@ -459,6 +501,133 @@ class TestVerifyArtifactsExist:
             ok, missing = verify_artifacts_exist(plan)
         assert ok is expected_ok
         assert missing == ([] if expected_ok else [url])
+
+    # ── #1482: glob-skip + repo_type-fallback classification arms ─────────────
+
+    def test_glob_path_skipped_never_probed(self, tmp_path, caplog):
+        """Acceptance 1 + 6: a glob-bearing hf:// path (the plan's own planned
+        output) is SKIPPED — never probed, never in ``missing`` — with one
+        INFO log line naming the URL."""
+        url = (
+            "hf://superkaiba1/explore-persona-space-data/issue1482_error_analysis/"
+            "analysis_tensors/early_layer/pooled_l3_*.npz"
+        )
+        plan = tmp_path / "plan.md"
+        plan.write_text(f"planned output at {url}\n")
+        api = MagicMock()
+        with (
+            patch("huggingface_hub.HfApi", return_value=api),
+            caplog.at_level(logging.INFO, logger="explore_persona_space.orchestrate.hub"),
+        ):
+            ok, missing = verify_artifacts_exist(plan)
+        assert ok is True
+        assert missing == []
+        # The probe is NEVER attempted for a glob-shaped path.
+        api.repo_info.assert_not_called()
+        api.list_repo_tree.assert_not_called()
+        api.file_exists.assert_not_called()
+        # Observability (acceptance 6): one INFO line per skipped URL.
+        skip_lines = [
+            r.getMessage()
+            for r in caplog.records
+            if "glob-shaped hf:// path — planned-output shape, skipped" in r.getMessage()
+        ]
+        assert skip_lines == [f"glob-shaped hf:// path — planned-output shape, skipped: {url}"]
+
+    def test_unprefixed_uri_retries_as_dataset(self, tmp_path):
+        """Acceptance 2: an un-prefixed hf:// citation of a DATASET repo is
+        retried under ``repo_type="dataset"`` after the model probe raises
+        ``RepositoryNotFoundError`` — and then checks normally."""
+        url = "hf://superkaiba1/explore-persona-space-data/issue1482_error_analysis/summary.json"
+        plan = tmp_path / "plan.md"
+        plan.write_text(f"carry-over input {url}\n")
+        api = _RepoTypeFallbackApi(["issue1482_error_analysis/summary.json"])
+        with patch("huggingface_hub.HfApi", return_value=api):
+            ok, missing = verify_artifacts_exist(plan)
+        assert ok is True
+        assert missing == []
+        assert api.tree_repo_types == ["model", "dataset"]
+
+    def test_neither_repo_type_is_missing_row_path_bearing(self, tmp_path):
+        """Acceptance 3, path-bearing variant: a repo resolving under NEITHER
+        repo_type yields a ``missing`` row (the URL string), never an
+        exception."""
+        url = "hf://org/ghost-repo/some/path.json"
+        plan = tmp_path / "plan.md"
+        plan.write_text(f"reuse {url}\n")
+        api = _RepoTypeFallbackApi(dataset_exists=False)
+        with patch("huggingface_hub.HfApi", return_value=api):
+            ok, missing = verify_artifacts_exist(plan)
+        assert ok is False
+        assert missing == [url]
+        assert api.tree_repo_types == ["model", "dataset"]
+
+    def test_explicit_kind_repo_not_found_is_missing_no_retry(self, tmp_path):
+        """An explicit ``datasets/``-prefixed citation whose repo raises
+        ``RepositoryNotFoundError`` is a ``missing`` row with NO cross-repo_type
+        retry (the kind was explicit)."""
+        url = "https://huggingface.co/datasets/org/ghost/tree/main/x"
+        plan = tmp_path / "plan.md"
+        plan.write_text(f"data {url}\n")
+        api = _RepoTypeFallbackApi(dataset_exists=False)
+        with patch("huggingface_hub.HfApi", return_value=api):
+            ok, missing = verify_artifacts_exist(plan)
+        assert ok is False
+        assert missing == [url]
+        assert api.tree_repo_types == ["dataset"]
+
+    def test_gated_repo_classifies_as_missing(self, tmp_path):
+        """The deliberate narrowing: ``GatedRepoError`` subclasses
+        ``RepositoryNotFoundError`` on hub 0.36.2, so a gated repo classifies
+        as ``missing`` here (Step 6a's auth_check gate owns gated repos and
+        runs before 6a.5)."""
+        url = "https://huggingface.co/datasets/org/gated/tree/main/x"
+        plan = tmp_path / "plan.md"
+        plan.write_text(f"data {url}\n")
+        api = MagicMock()
+        api.list_repo_tree.side_effect = GatedRepoError("gated repo")
+        with patch("huggingface_hub.HfApi", return_value=api):
+            ok, missing = verify_artifacts_exist(plan)
+        assert ok is False
+        assert missing == [url]
+
+    def test_transport_auth_error_still_propagates(self, tmp_path):
+        """Acceptance 5: a genuine transport/auth error (a 403 that is NOT
+        repo-not-found) still PROPAGATES — the fallback narrows only
+        ``RepositoryNotFoundError``."""
+        plan = tmp_path / "plan.md"
+        plan.write_text("adapter https://huggingface.co/org/models/tree/main/cond_seed42\n")
+        api = MagicMock()
+        api.list_repo_tree.side_effect = _http_err(403, "403 forbidden (auth)")
+        with (
+            patch("huggingface_hub.HfApi", return_value=api),
+            pytest.raises(HfHubHTTPError),
+        ):
+            verify_artifacts_exist(plan)
+
+
+class TestHfUrlPathHasGlob:
+    """Pin the shared #1482 glob definition both consumers use
+    (``verify_artifacts_exist``'s skip arm + ``check_claimed_urls_resolve``'s
+    skipped-count disclosure)."""
+
+    @pytest.mark.parametrize("path_piece", ["pooled_l3_*.npz", "shard_?.npz", "shard_[01].npz"])
+    def test_glob_metachars_detected(self, path_piece):
+        assert hf_url_path_has_glob(f"hf://org/repo/dir/{path_piece}") is True
+
+    def test_web_form_glob_detected(self):
+        assert hf_url_path_has_glob("https://huggingface.co/org/repo/tree/main/dir/x_*.json") is (
+            True
+        )
+
+    def test_plain_path_is_not_glob(self):
+        assert hf_url_path_has_glob("hf://org/repo/dir/file.npz") is False
+
+    def test_repo_root_url_is_not_glob(self):
+        assert hf_url_path_has_glob("hf://org/repo") is False
+
+    def test_non_hf_url_is_not_glob(self):
+        assert hf_url_path_has_glob("https://wandb.ai/t/p/runs/r123") is False
 
 
 class TestHfUrlRegexCaptures:

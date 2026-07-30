@@ -108,12 +108,15 @@ Check catalog (id — classification — kind scope)
       test executed or gate-selected
   c42 cited commit SHA          FAIL, conditional         all kinds
       resolves
+  c43 /workspace sentinels vs   WARN-only, conditional    experiment only
+      unpinned auto lane
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41, 42) also SKIP when their content trigger does not fire.
+37, 38, 39, 40, 41, 42, 43) also SKIP when their content trigger does not
+fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -181,6 +184,12 @@ labeled-line forms):
   - ``N/A — no exit-0 acceptance criterion`` (check 38)
   - ``N/A — no off-pod phase`` (check 39)
   - ``N/A — no regression anchors`` (check 41)
+  - ``no sentinel dependence — auto-safe`` (check 43 — the
+    plan-compute-sizing.md rule's own escape phrase, standalone WITHOUT the
+    N/A prefix; hyphen / en-dash / em-dash variants tolerated; the
+    ``N/A — no sentinel dependence`` form is also accepted via the shared
+    helper. A genuinely sentinel-signaling plan instead pins a
+    /workspace-contract lane: ``backend: gcp`` / ``backend: runpod``)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -6828,20 +6837,67 @@ def check_exit0_repo_wide_baseline(plan: str, kind: str) -> CheckResult:
 
 # ─── Check 39 — off-pod phase declaration (reads + outputs) ────────────────
 
-_C39_TRIGGER_RE = re.compile(r"(?i)\boff-pod\b|\bvm-side\b")
+# Calibration (DEVELOPMENT-SET numbers, fitted IN-SAMPLE — the tokens were
+# tuned on the same persisted-plan corpus they were measured on; ANY future
+# c39-regex change re-runs the corpus scan and records the realized numbers
+# here — the c33/c27/c32 gate precedent). Re-scan 2026-07-29 (#1796,
+# implementation-time, AS-SHIPPED regex) over 3,004 persisted plan-versions
+# (tasks/*/*/plans/v*.md, 1,264 distinct issues), mirroring the check's
+# gating exactly (stripped-prose per-line trigger; kind==experiment; raw
+# `off_pod_phases:` satisfier; standalone `N/A — no off-pod phase` escape).
+# Inverse-direction tokens KEPT: `vm-produced` — 5 pv triggered (issues
+# #1782/#1796 only, both kind:infra workflow-fix plans discussing this very
+# seam ⇒ kind-exempt), 0 would-WARN; ZERO in-prose non-compliant hits exist
+# in the corpus (#1773's own `VM-produced` prose lives INSIDE its fenced
+# off_pod_phases: block in already-compliant plans, invisible to the
+# stripped-prose trigger by design), so no in-corpus positive control
+# exists and the token is FORWARD-LOOKING per the c38 positive/negative-
+# control convention — the pinned WARN test is the synthetic positive
+# control. `produced on the vm` — 2 pv triggered (#548 v1, #778 v5), both
+# GENUINE cross-phase-read prose ("The off-pod primary read ... is produced
+# on the VM AFTER pod termination") and both ALREADY would-WARN under the
+# pre-#1796 off-pod/vm-side regex ⇒ 0 NEW would-WARNs, empty nuisance
+# class. Tokens DROPPED: `vm-built` / `vm-generated` — 0 corpus hits;
+# secondary variants gated on demonstrated recall (plan #1796 §3),
+# speculative widening declined. `git-clone lane` — 13 pv / 5 issues,
+# 7 would-WARN, nuisance class irreducible: artifact-reuse fitness-check
+# boilerplate (#1090 v5 "fetchability check (h) passes by construction
+# (git-clone lane, ...)") and COMPLIANT staging prose (#920 v1-v3
+# "committed to the issue branch before dispatch so the git-clone lane
+# stages it" — 3 NEW nuisance would-WARNs); dropped per the plan's
+# drop-by-default posture. Recent-era (issue >= 1000) NEW nuisance WARNs
+# from the SHIPPED tokens: 0. AS-SHIPPED delta confirmation: the widened
+# regex changes ZERO plan-version verdicts across the full corpus (0 newly
+# triggered pv, 0 newly would-WARN pv vs the pre-#1796 regex — every
+# shipped-token hit lives in a plan that already triggers on off-pod /
+# vm-side vocabulary elsewhere), i.e. purely forward-looking widening.
+_C39_TRIGGER_RE = re.compile(r"(?i)\boff-pod\b|\bvm-side\b|\bvm-produced\b|\bproduced on the vm\b")
 
 
 def check_off_pod_phase_declaration(plan: str, kind: str) -> CheckResult:
     """WARN-only, conditional, experiment-only: a plan whose non-fenced
     prose names an off-pod / VM-side phase must either carry the fenced
     ``off_pod_phases:`` declaration block (planner-section-reference.md § 9
-    — per phase: runs_on + reads[] with producing phase + permanent source
-    + outputs[] with off-pod dest; the block upload-verifier Steps 2.7/2.8
+    — since #1782 a direction-agnostic CROSS-PHASE READS rule: per phase
+    that reads another phase's outputs, runs_on + reads[] with producing
+    phase + permanent source the CONSUMING machine can fetch + outputs[]
+    with dest; the block upload-verifier Steps 2.7/2.8
     consume, #1535) or declare the standalone escape
-    ``N/A — no off-pod phase``. Mechanizes the #1526 gotchas.md off-pod
-    upload-set bullet at plan time (incident #1482: an off-pod judge died
+    ``N/A — no off-pod phase``. Mechanizes the #1526 gotchas.md
+    cross-machine upload-set bullet at plan time (incident #1482: an
+    off-pod judge died
     at VM launch on pod-only scratch never in the upload set; incident
-    #1426: a planned VM-side phase FAILed the verifier r1 by construction).
+    #1426: a planned VM-side phase FAILed the verifier r1 by construction;
+    incident #1773 — the inverse direction: a GCE phase crashed loading
+    VM-produced inputs never uploaded/staged). KNOWN MECHANICAL RESIDUAL
+    (narrowed by #1796): the trigger now ALSO fires on the corpus-
+    calibrated inverse-direction tokens (`vm-produced` /
+    `produced on the vm` — a pod/GCE/SLURM phase consuming VM-produced
+    inputs); inverse-direction prose using OTHER vocabulary (calibration
+    dropped `git-clone lane` as irreducibly noisy and `vm-built` /
+    `vm-generated` as zero-recall — see the calibration comment above
+    _C39_TRIGGER_RE) remains enforced by planner §9 + critic Methodology
+    item 10 only.
     NEVER FAILs — the trigger is a vocabulary heuristic (the c31/c34
     family), and legacy plans must not bounce retroactively. kind-exempt
     outside experiment: infra/batch/analysis/survey plans rarely dispatch
@@ -6873,10 +6929,13 @@ def check_off_pod_phase_declaration(plan: str, kind: str) -> CheckResult:
         "`off_pod_phases:` block — without the declaration the phase's READS are not "
         "plan-named (upload-verifier Step 2.8 cannot gate them at the cheap-fix window "
         "before the pod dies; the #1482 class) and its OUTPUTS false-FAIL the pod-side "
-        "Step 2.7 gate by construction (#1426). Add the fenced `off_pod_phases:` block "
-        "(template + worked example: planner-section-reference.md § 9 (off_pod_phases)), "
+        "Step 2.7 gate by construction (#1426). The rule is direction-agnostic (#1773): "
+        "declare EVERY dispatched phase that reads another phase's outputs, incl. a "
+        "pod/GCE/SLURM phase consuming VM-produced inputs. Add the fenced "
+        "`off_pod_phases:` block "
+        "(template + worked examples: planner-section-reference.md § 9 (off_pod_phases)), "
         "or declare `N/A — no off-pod phase` on its own line, unwrapped (no "
-        "backticks/quotes), if the vocabulary is incidental and no phase runs off the pod",
+        "backticks/quotes), if the vocabulary is incidental and no such phase exists",
     )
 
 
@@ -7342,6 +7401,112 @@ def check_commit_sha_resolves(plan: str, kind: str) -> CheckResult:
     return _fail(cid, name, detail)
 
 
+# ─── Check 43 — /workspace sentinels need a /workspace-contract lane ───────
+
+# Trigger scans the RAW plan text (NOT strip_fences): sentinel declarations
+# live in fenced ``phase_outputs:`` YAML by design (the c30 convention — the
+# founding #1775 instance declared `/workspace/logs/issue-1775-p*.done`
+# inside a fenced block), so a stripped-prose scan would miss exactly the
+# founding shape. Two arms, same-line co-occurrence for arm (a):
+#   (a) a line carrying "sentinel" (case-insensitive) AND "/workspace/";
+#   (b) a `/workspace/logs/issue-` path (the poll_pipeline.py sentinel
+#       prefix), even with no "sentinel" token on the line.
+_C43_SENTINEL_WORD_RE = re.compile(r"(?i)\bsentinel")
+_C43_WS_LOGS_RE = re.compile(r"/workspace/logs/issue-")
+
+# Satisfier (raw scan too — a dispatch command lives in a fenced block): a
+# /workspace-contract lane pin, `backend: gcp|runpod` (frontmatter / prose
+# line) or a `--backend gcp|runpod` dispatch flag.
+_C43_LANE_PIN_RE = re.compile(r"(?i)(?:\bbackend:\s*|--backend[=\s]+)(?:gcp|runpod)\b")
+
+# The rule's own escape phrase, standalone at line start (leading
+# list/blockquote/bold markers tolerated via the `_standalone_na_declared`
+# lstrip convention; case-insensitivity explicit; hyphen / en-dash /
+# em-dash variants tolerated). A label-prefixed MID-LINE mention (`**Lane /
+# sentinel contract:** no sentinel dependence — auto-safe ...`, the #1738
+# v4 shape) and any backtick/fence-wrapped paste are DELIBERATELY
+# unrecognized (the #1238 anti-paste doctrine) — declare the escape
+# unwrapped on its own line.
+_C43_ESCAPE_RE = re.compile(
+    r"(?i)^no sentinel dependence\s*[-–—]+\s*auto[-–— ]safe\b"  # noqa: RUF001 — real dash variants
+)
+
+
+def _c43_escape_declared(plan: str) -> bool:
+    """Standalone ``no sentinel dependence — auto-safe`` declaration (the
+    plan-compute-sizing.md rule's own phrase, no N/A prefix), or the
+    shared-helper ``N/A — no sentinel dependence`` form. Fenced lines and
+    wrapped pastes never satisfy (see ``_standalone_na_declared``)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced:
+            continue
+        if _C43_ESCAPE_RE.match(line.lstrip(" \t>*-")):
+            return True
+    return _standalone_na_declared(plan, r"no sentinel dependence\b")
+
+
+def check_sentinel_lane(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, experiment-only: a plan that declares
+    ``/workspace/...`` sentinel paths (gate sentinels, ``epm:results``
+    payloads — the pod-side signaling contract) while leaving the backend
+    on the unrestricted auto lane must either pin a /workspace-contract
+    lane (``backend: gcp`` / ``backend: runpod``, or a ``--backend
+    gcp|runpod`` dispatch flag) or declare the rule's own escape ``no
+    sentinel dependence — auto-safe``. Mechanizes
+    ``plan-compute-sizing.md`` § "Sentinel-signaling workloads need a
+    /workspace-contract lane": on auto, a GCP capacity miss falls through
+    to SLURM, where DRAC/Mila compute nodes have no /workspace — the
+    dispatcher dies at ``mkdir -p /workspace/logs`` and burns the
+    submission (#608) — and the fellows rung HAS /workspace, so sentinels
+    get written but nothing drains them (silent marker loss). Founding
+    instance: #1775 plan v3 declared ``/workspace/logs/issue-1775-p*.done``
+    sentinels in a fenced ``phase_outputs`` block while §9 said "no
+    backend pin → auto lane"; only a Methodology critic caught it
+    (Must-Fix M1). NEVER FAILs — the disposition is sometimes legitimately
+    prose-satisfied in different words, and legacy plans must not bounce
+    retroactively (the c39/c31/c34 family convention). kind-exempt outside
+    experiment: infra workflow-fix plans (this check's own plan included)
+    legitimately QUOTE ``/workspace/...`` sentinel paths without
+    dispatching a sentinel-signaling workload. Trigger AND satisfiers scan
+    the RAW plan text (NOT strip_fences): the sentinel declarations and
+    the dispatch command both live in fenced blocks by design (unlike c39,
+    whose trigger is prose vocabulary)."""
+    cid, name = "c43_sentinel_lane", "/workspace sentinels vs unpinned auto lane"
+    if kind != "experiment":
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: sentinel-lane pinning is an experiment-plan (pod-dispatch) shape",
+        )
+    trigger_lines = [
+        ln
+        for ln in plan.splitlines()
+        if _C43_WS_LOGS_RE.search(ln) or ("/workspace/" in ln and _C43_SENTINEL_WORD_RE.search(ln))
+    ]
+    if not trigger_lines:
+        return _skip(cid, name, "no /workspace sentinel paths detected")
+    if _C43_LANE_PIN_RE.search(plan):
+        return _pass(cid, name, "/workspace-contract lane pinned (backend:/--backend gcp|runpod)")
+    if _c43_escape_declared(plan):
+        return _pass(cid, name, "explicit escape declared (no sentinel dependence — auto-safe)")
+    shown = "; ".join(ln.strip()[:70] for ln in trigger_lines[:3])
+    return _warn(
+        cid,
+        name,
+        f"plan declares /workspace sentinel paths ({shown!r}) with no /workspace-contract "
+        "lane pinned — on the auto lane a GCP capacity miss falls through to SLURM, where "
+        "DRAC/Mila compute nodes have no /workspace (the dispatcher dies at `mkdir -p "
+        "/workspace/logs` and burns the submission, #608) and the fellows rung HAS "
+        "/workspace but nothing drains the sentinels (silent marker loss). Pin `backend: "
+        "gcp` or `backend: runpod` (or carry `--backend gcp|runpod` in the dispatch "
+        "command), or declare `no sentinel dependence — auto-safe` on its own line, "
+        "unwrapped (no backticks/quotes), if nothing in the run posts through sentinels "
+        "(plan-compute-sizing.md § Sentinel-signaling workloads)",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -7385,6 +7550,7 @@ CHECKS = [
     check_off_pod_phase_declaration,
     check_regression_anchor_executed,
     check_commit_sha_resolves,
+    check_sentinel_lane,
 ]
 
 

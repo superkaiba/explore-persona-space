@@ -1079,6 +1079,112 @@ def test_check_body_shas_appends_provenance_when_heading_absent(tmp_path):
     assert ddf.WF_FIX_TARGET_KEY not in text
 
 
+# ── #1808: token-level fp exemption in the #1467 sha walk ───────────────────────
+
+# The 2026-07-28 incident fp — 12-hex WITH letters, so only the exempt set (never
+# HAS_HEX_LETTER_RE) can spare it from the walk; unresolvable in the hermetic repo.
+_OWN_FP = "06bc0203d759"
+
+
+def test_scan_exempts_own_fp_midprose_commit_context(tmp_path):
+    # The incident shape: the own fp quoted bare (no `fingerprint:` colon substring,
+    # so SHA_EXCLUDE_LINE_RE does NOT skip the line) on a commit-context line.
+    repo, _head = _init_hermetic_repo(tmp_path)
+    body = (
+        "## Workflow gap\n\n"
+        f"the incident fingerprint `{_OWN_FP}` differs from the landed fix commit.\n"
+    )
+    # Sanity: without the exempt set the token is tier 1 — the exemption is load-bearing.
+    assert ddf.scan_unresolvable_shas(body, repo) == ([_OWN_FP], [])
+    assert ddf.scan_unresolvable_shas(body, repo, exempt=frozenset({_OWN_FP})) == ([], [])
+
+
+def test_scan_exempts_fingerprint_labeled_token_recurring_bare(tmp_path):
+    # A token declared via a `fingerprint:` label anywhere in the body is exempt when
+    # it recurs bare on another (commit-context) line. Uses the #1580 reconcile-line
+    # shape verbatim — TWO captures on ONE line (new fp + superseded body-carried fp).
+    repo, _head = _init_hermetic_repo(tmp_path)
+    new_fp, old_fp = "aabbccddee99", _OWN_FP
+    body = (
+        "## Provenance\n\n"
+        f"- fingerprint: {new_fp} (tag-authoritative; supersedes body-carried "
+        f"fingerprint: {old_fp})\n\n"
+        f"## Workflow gap\n\nthe fix landed after {old_fp} was computed.\n"
+    )
+    exempt = ddf._fp_exempt_tokens(body, None)
+    assert exempt == frozenset({new_fp, old_fp})  # both captures on the reconcile line
+    assert ddf.scan_unresolvable_shas(body, repo) == ([old_fp], [])  # pre-#1808 shape
+    assert ddf.scan_unresolvable_shas(body, repo, exempt=exempt) == ([], [])
+
+
+def test_scan_still_flags_unrelated_nonresolving_token_with_exempt_set(tmp_path):
+    # #1467 regression coverage: the exempt set spares ONLY its own tokens — an
+    # unrelated non-resolving 12-hex token in commit context stays tier 1.
+    repo, _head = _init_hermetic_repo(tmp_path)
+    body = (
+        "## Workflow gap\n\n"
+        f"fingerprint `{_OWN_FP}` was superseded; the fix commit `deadbee7f00d` landed.\n"
+    )
+    tier1, tier2 = ddf.scan_unresolvable_shas(body, repo, exempt=frozenset({_OWN_FP}))
+    assert tier1 == ["deadbee7f00d"]
+    assert tier2 == []
+
+
+def test_check_body_shas_own_fp_no_advisory(tmp_path):
+    # Real path with fp= threaded: a body quoting its OWN fp mid-prose in commit
+    # context gains NO advisory and returns [] (task #1808's own body was annotated
+    # at filing time for exactly this shape).
+    repo, _head = _init_hermetic_repo(tmp_path)
+    d = tmp_path / f"filings-{DATE}"
+    d.mkdir()
+    item = make_item("fp-own")
+    body_path = d / "fp-own.md"
+    before = (
+        "## Workflow gap\n\n"
+        f"the prior filing's fingerprint `{_OWN_FP}` differs — that fix commit landed.\n"
+    )
+    body_path.write_text(before, encoding="utf-8")
+    assert ddf._check_body_shas(item, d, repo, fp=_OWN_FP) == []
+    assert body_path.read_text(encoding="utf-8") == before  # body byte-unchanged
+
+
+def test_check_body_shas_label_scan_arm_works_with_fp_none(tmp_path):
+    # The label-scan arm is independent of fp=: a `fingerprint:`-labeled token that
+    # recurs bare in commit context is exempt even under the default fp=None.
+    repo, _head = _init_hermetic_repo(tmp_path)
+    d = tmp_path / f"filings-{DATE}"
+    d.mkdir()
+    item = make_item("fp-label")
+    body_path = d / "fp-label.md"
+    before = (
+        "## Provenance\n\n"
+        f"- fingerprint: {_OWN_FP}\n\n"
+        f"## Workflow gap\n\nthe fix landed after {_OWN_FP} was recorded.\n"
+    )
+    body_path.write_text(before, encoding="utf-8")
+    assert ddf._check_body_shas(item, d, repo) == []
+    assert body_path.read_text(encoding="utf-8") == before
+
+
+def test_dry_run_sha_note_exempts_own_fp(tmp_path):
+    # Dry-run mirror parity (#1808): with fp= the note is clean; without it the same
+    # body counts one commit-context token — the fp PARAM (no anchored fp line is
+    # injected at dry-run time) is what carries the parity with the real path.
+    repo, _head = _init_hermetic_repo(tmp_path)
+    d = tmp_path / f"filings-{DATE}"
+    d.mkdir()
+    item = make_item("fp-dry")
+    (d / "fp-dry.md").write_text(
+        f"## Workflow gap\n\nfingerprint `{_OWN_FP}` predates the landed fix commit.\n",
+        encoding="utf-8",
+    )
+    assert ddf._dry_run_sha_note(item, d, repo, fp=_OWN_FP) == ""
+    assert (
+        ddf._dry_run_sha_note(item, d, repo)
+        == " [sha-scan: 1 commit-context, 0 other non-resolving]"
+    )
+
+
 def test_process_item_records_sha_warnings_in_ledger(tmp_path, tasks_root, monkeypatch):
     # main(argv)-level harness; git resolution stubbed hermetically (the real
     # _sha_resolves body is exercised by the tmp-repo scan tests above).

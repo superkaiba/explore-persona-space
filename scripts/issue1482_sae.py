@@ -67,10 +67,33 @@ SAE_REPO = "andyrdt/saes-qwen2.5-7b-instruct"
 SAE_REVISION = "c37e53c4bb07127ad17ab88f28b93d4e87142e59"
 ACT_DIM = 3584
 DICT_SIZE = 131_072
-TRAINER_SUBDIR = {64: "resid_post_layer_19/trainer_1", 128: "resid_post_layer_19/trainer_2"}
+# Suite coverage + k -> trainer-index map (early-layer-arm generalization, #1482 plan v16
+# §4 item 1): resid_post layers {3,7,11,15,19,23,27}; trainers 0..3 = k in {32,64,128,256}.
+# Verified at L3 AND consistent with the L19 registrations below (Hub configs read at the
+# pinned revision, 2026-07-28: L3 trainer_1 k=64 / trainer_2 k=128).
+SUITE_LAYERS = (3, 7, 11, 15, 19, 23, 27)
+TRAINER_INDEX_BY_K = {32: 0, 64: 1, 128: 2, 256: 3}
+
+
+def trainer_subdir(layer: int, k: int) -> str:
+    """Repo subfolder for one (layer, k) trainer; fail-loud off the suite grid."""
+    assert layer in SUITE_LAYERS, f"layer {layer} not in suite {SUITE_LAYERS}"
+    assert k in TRAINER_INDEX_BY_K, f"k {k} not in {sorted(TRAINER_INDEX_BY_K)}"
+    return f"resid_post_layer_{layer}/trainer_{TRAINER_INDEX_BY_K[k]}"
+
+
+# Legacy L19 map — kept so existing callers stay byte-compatible
+# (issue1482_error_analysis.phase_p2 `sorted(TRAINER_SUBDIR)`, the _cli choices).
+TRAINER_SUBDIR = {k: trainer_subdir(19, k) for k in (64, 128)}
 EXPECTED_KEYS = {"b_dec", "k", "threshold", "decoder.weight", "encoder.weight", "encoder.bias"}
 # Published suite eval (each trainer's eval_results.json) — Gate B calibration source.
-PUBLISHED_FVE = {64: 0.80572265625, 128: 0.84236328125}
+# Keyed layer -> k (JSON-serializable; L3 values Hub-read at the pinned revision
+# 2026-07-28: frac_variance_explained 0.93087890625 / 0.94208984375).
+PUBLISHED_FVE_BY_LAYER = {
+    3: {64: 0.93087890625, 128: 0.94208984375},
+    19: {64: 0.80572265625, 128: 0.84236328125},
+}
+PUBLISHED_FVE = PUBLISHED_FVE_BY_LAYER[19]  # legacy alias (existing L19 callers)
 
 # Reference token-pool constants (andyrdt/dictionary_learning@andyrdt/qwen buffer.py —
 # see module docstring "TOKEN-POOL semantics"). Applied by fve_l0 (outlier filter)
@@ -133,9 +156,18 @@ class BatchTopKSAE:
         self.threshold = float(thr)
 
     @classmethod
-    def load(cls, k: int = 64, device: str = "cpu", cache_dir: Path | str | None = None):
-        """Download (revision-pinned) + load one trainer; asserts config + key set.
+    def load(
+        cls,
+        k: int = 64,
+        device: str = "cpu",
+        cache_dir: Path | str | None = None,
+        *,
+        layer: int = 19,
+    ):
+        """Download (revision-pinned) + load one (layer, k) trainer; asserts config + keys.
 
+        ``layer`` defaults to 19 so every pre-existing caller stays byte-compatible
+        (#1482 early-layer-arm generalization; the layer assert generalizes with it).
         Both fetches ride ``hub.retry_transient`` (#1402: Retry-After-aware,
         ``EPM_HF_RETRY_BUDGET_S`` wall budget, LocalEntryNotFoundError transient
         BY CLASS) — this is P2-child-reachable, and a Hub queue-full 429 storm
@@ -144,7 +176,7 @@ class BatchTopKSAE:
 
         from explore_persona_space.orchestrate import hub
 
-        sub = TRAINER_SUBDIR[k]
+        sub = trainer_subdir(layer, k)
         kw = {"revision": SAE_REVISION, "repo_type": "model"}
         if cache_dir is not None:
             kw["local_dir"] = str(cache_dir)
@@ -155,7 +187,7 @@ class BatchTopKSAE:
         cfg = json.loads(Path(cfg_path).read_text())["trainer"]
         assert cfg["dict_class"] == "BatchTopKSAE", cfg["dict_class"]
         assert cfg["activation_dim"] == ACT_DIM and cfg["dict_size"] == DICT_SIZE, cfg
-        assert cfg["k"] == k and cfg["layer"] == 19, (cfg["k"], cfg["layer"])
+        assert cfg["k"] == k and cfg["layer"] == layer, (cfg["k"], cfg["layer"], layer)
         assert cfg["lm_name"] == "Qwen/Qwen2.5-7B-Instruct", cfg["lm_name"]
         ae_path = hub.retry_transient(
             lambda: hf_hub_download(SAE_REPO, f"{sub}/ae.pt", **kw),
@@ -168,9 +200,10 @@ class BatchTopKSAE:
         return cls(sd, k=k, device=device)
 
     @classmethod
-    def ensure_downloaded(cls, k: int, cache_dir: Path | str) -> None:
-        """Idempotently stage trainer ``k``'s ``config.json`` + ``ae.pt`` into
-        ``cache_dir`` (parent-side pre-stage for fan-out consumers).
+    def ensure_downloaded(cls, k: int, cache_dir: Path | str, *, layer: int = 19) -> None:
+        """Idempotently stage the (``layer``, ``k``) trainer's ``config.json`` +
+        ``ae.pt`` into ``cache_dir`` (parent-side pre-stage for fan-out consumers;
+        ``layer`` defaults to 19 for existing-caller byte-compatibility).
 
         N concurrent workers calling ``load()`` against ONE empty shared
         ``local_dir`` race the download scratch (#1315 fanout shared-staging
@@ -185,7 +218,7 @@ class BatchTopKSAE:
 
         from explore_persona_space.orchestrate import hub
 
-        sub = TRAINER_SUBDIR[k]
+        sub = trainer_subdir(layer, k)
         cache = Path(cache_dir)
         staged, present = [], []
         for fname in ("config.json", "ae.pt"):

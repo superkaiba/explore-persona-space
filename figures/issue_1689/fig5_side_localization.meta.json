@@ -1,0 +1,788 @@
+{
+  "commit": "052a2c1cb3",
+  "created": "2026-07-29T00:03:15Z",
+  "figsize": [
+    12.8,
+    5.8
+  ],
+  "points": [
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.3968038393918773,
+      "answer-side-only recovery (rung 8, B-only)": 0.3133977405940014,
+      "series": "framing (n=6)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.5511307746927484,
+      "answer-side-only recovery (rung 8, B-only)": 0.3545525020754197,
+      "series": "framing (n=6)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.5619599606329221,
+      "answer-side-only recovery (rung 8, B-only)": 0.28783772389593026,
+      "series": "framing (n=6)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.455689132602107,
+      "answer-side-only recovery (rung 8, B-only)": 0.4826257569761505,
+      "series": "framing (n=6)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.018497300178862384,
+      "answer-side-only recovery (rung 8, B-only)": 0.17990328281570708,
+      "series": "framing (n=6)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.008595606799753968,
+      "answer-side-only recovery (rung 8, B-only)": 0.27617242038981604,
+      "series": "framing (n=6)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.30859071251200026,
+      "answer-side-only recovery (rung 8, B-only)": 1.1353156558611803,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.5,
+      "answer-side-only recovery (rung 8, B-only)": 1.5,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.6363864013416873,
+      "answer-side-only recovery (rung 8, B-only)": 0.5891716534736601,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.2831456739911533,
+      "answer-side-only recovery (rung 8, B-only)": 1.3659117368646587,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.25211435969305895,
+      "answer-side-only recovery (rung 8, B-only)": 1.231605602076903,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.6016305738588491,
+      "answer-side-only recovery (rung 8, B-only)": 1.445060964990127,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.5797077627687269,
+      "answer-side-only recovery (rung 8, B-only)": 0.6200978125203168,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.6076747011691747,
+      "answer-side-only recovery (rung 8, B-only)": 0.6966313285843241,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.5,
+      "answer-side-only recovery (rung 8, B-only)": 1.5,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.9006415478421019,
+      "answer-side-only recovery (rung 8, B-only)": 1.5,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.2831456739911533,
+      "answer-side-only recovery (rung 8, B-only)": 1.3659117368646587,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.6950521424709897,
+      "answer-side-only recovery (rung 8, B-only)": 0.7327914353786121,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.18975654103698433,
+      "answer-side-only recovery (rung 8, B-only)": 0.5435732861718566,
+      "series": "identity-vs-user (n=5)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.06297469326489767,
+      "answer-side-only recovery (rung 8, B-only)": 0.6273600008983908,
+      "series": "identity-vs-user (n=5)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.5560143279908027,
+      "answer-side-only recovery (rung 8, B-only)": 0.07231697108896373,
+      "series": "identity-vs-user (n=5)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -1.2587134050064017,
+      "answer-side-only recovery (rung 8, B-only)": 0.9751183601896583,
+      "series": "identity-vs-user (n=5)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -1.37693721991759,
+      "answer-side-only recovery (rung 8, B-only)": 1.1080562405627685,
+      "series": "identity-vs-user (n=5)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.15352038209706137,
+      "answer-side-only recovery (rung 8, B-only)": 0.34579401578316427,
+      "series": "user-framing (n=4)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.35508373857613135,
+      "answer-side-only recovery (rung 8, B-only)": 0.2572041529242755,
+      "series": "user-framing (n=4)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.027873917189152844,
+      "answer-side-only recovery (rung 8, B-only)": 0.4712311335545855,
+      "series": "user-framing (n=4)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.2744239316563011,
+      "answer-side-only recovery (rung 8, B-only)": 0.22589063482597022,
+      "series": "user-framing (n=4)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.1327836291932956,
+      "answer-side-only recovery (rung 8, B-only)": 0.21650092764870082,
+      "series": "crossed (n=6)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.08224839123479896,
+      "answer-side-only recovery (rung 8, B-only)": 0.2831112904849501,
+      "series": "crossed (n=6)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.1037066517257728,
+      "answer-side-only recovery (rung 8, B-only)": 0.09810567077230155,
+      "series": "crossed (n=6)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.28343766547995114,
+      "answer-side-only recovery (rung 8, B-only)": -0.033438085835740435,
+      "series": "crossed (n=6)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -1.2664839602295146,
+      "answer-side-only recovery (rung 8, B-only)": 0.33697608189212647,
+      "series": "crossed (n=6)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -1.5,
+      "answer-side-only recovery (rung 8, B-only)": 0.37142686268871083,
+      "series": "crossed (n=6)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.1720023775971887,
+      "y": 0.5218601162061551,
+      "series": "framing (n=11)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.2305685066680283,
+      "y": 0.6856978617326477,
+      "series": "framing (n=11)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.11220750248299385,
+      "y": 0.29056339841953993,
+      "series": "framing (n=11)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.14562371874189595,
+      "y": 0.4777935317882149,
+      "series": "framing (n=11)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.03602042472698504,
+      "y": 0.13264023564720914,
+      "series": "framing (n=11)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.01688685966381988,
+      "y": 0.1586310447580295,
+      "series": "framing (n=11)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.22922760048391644,
+      "y": 0.2567653363604653,
+      "series": "framing (n=11)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.2612009846313276,
+      "y": 0.18564431686518432,
+      "series": "framing (n=11)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -1.5,
+      "y": -1.5,
+      "series": "framing (n=11)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -1.5,
+      "y": -1.1690832923414758,
+      "series": "framing (n=11)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -1.5,
+      "y": -1.5,
+      "series": "framing (n=11)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.162942510433609,
+      "y": 1.1023083092263612,
+      "series": "identity (n=16)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.0986174257333385,
+      "y": 0.7917051819033679,
+      "series": "identity (n=16)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.5,
+      "y": 1.5,
+      "series": "identity (n=16)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.5,
+      "y": 1.4412128588660351,
+      "series": "identity (n=16)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.5,
+      "y": 1.176497589120768,
+      "series": "identity (n=16)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.5,
+      "y": 1.2074566710075632,
+      "series": "identity (n=16)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.5,
+      "y": 1.220269626678798,
+      "series": "identity (n=16)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.4587414145043702,
+      "y": 0.9417886152032309,
+      "series": "identity (n=16)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.2626606379260983,
+      "y": 0.45852771653824326,
+      "series": "identity (n=16)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.3600411490747003,
+      "y": 0.3990231600527014,
+      "series": "identity (n=16)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.4959049812219847,
+      "y": 1.1801440185129242,
+      "series": "identity (n=16)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.4944490669236432,
+      "y": 1.1468731380726456,
+      "series": "identity (n=16)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.2573553962119226,
+      "y": 0.7003615708716595,
+      "series": "identity (n=16)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.2650600586966854,
+      "y": 0.7658571813440835,
+      "series": "identity (n=16)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.12629506801862664,
+      "y": 0.4452532427806851,
+      "series": "identity (n=16)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.13218100263802246,
+      "y": 0.3757688528684479,
+      "series": "identity (n=16)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.3309558911376342,
+      "y": 1.019152302982618,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.173691940235125,
+      "y": 1.5,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.5024981753587764,
+      "y": 0.596141011488951,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.309581315231025,
+      "y": 1.4002743354604792,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.20289211003983146,
+      "y": 1.0539479579915811,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.4513309519309021,
+      "y": 1.1594058815046897,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.4866876622465832,
+      "y": 0.6418699186039079,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.5884291953589531,
+      "y": 0.7651855208266902,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.173691940235125,
+      "y": 1.5,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.5086441375819993,
+      "y": 1.1475161136922996,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 1.309581315231025,
+      "y": 1.4002743354604792,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.6352818848693939,
+      "y": 0.6861497988560176,
+      "series": "provenance (n=12)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.41085225695700783,
+      "y": 0.8809370743565974,
+      "series": "identity-vs-user (n=6)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.1775693293649533,
+      "y": 0.8827875013646072,
+      "series": "identity-vs-user (n=6)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.4002055732592329,
+      "y": 0.5692801899225973,
+      "series": "identity-vs-user (n=6)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.668297146222315,
+      "y": 1.030517369649475,
+      "series": "identity-vs-user (n=6)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.6164462888346157,
+      "y": 1.1125239160715379,
+      "series": "identity-vs-user (n=6)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -1.5,
+      "y": 0.9376017992343306,
+      "series": "identity-vs-user (n=6)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.34910557908717277,
+      "y": 0.34625890906033013,
+      "series": "user-framing (n=5)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.25862820563875716,
+      "y": 0.38328232819407543,
+      "series": "user-framing (n=5)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.47428145040090913,
+      "y": 0.38378973231794744,
+      "series": "user-framing (n=5)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.1569804800585473,
+      "y": 0.4819674768863378,
+      "series": "user-framing (n=5)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -1.4939607238842596,
+      "y": -0.8319679372659068,
+      "series": "user-framing (n=5)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.5394437078800955,
+      "y": 0.3017938997893902,
+      "series": "crossed (n=18)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.5661576674400955,
+      "y": 0.37092252260331027,
+      "series": "crossed (n=18)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.40658434560801937,
+      "y": 0.18978263231385264,
+      "series": "crossed (n=18)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.12809565905819317,
+      "y": 0.13975915729520827,
+      "series": "crossed (n=18)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.07242497925289293,
+      "y": 0.28429375632690956,
+      "series": "crossed (n=18)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.01900129200493687,
+      "y": 0.07821003749627416,
+      "series": "crossed (n=18)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.012856874300749622,
+      "y": 0.07879733616088681,
+      "series": "crossed (n=18)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.07215808846775927,
+      "y": 0.12448003309942408,
+      "series": "crossed (n=18)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.04324913104569304,
+      "y": 0.2706722442405886,
+      "series": "crossed (n=18)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.08756573829539775,
+      "y": 0.11001633241406664,
+      "series": "crossed (n=18)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.07959884336734387,
+      "y": 0.08177368592130664,
+      "series": "crossed (n=18)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.7343717341387751,
+      "y": 0.2930622618143177,
+      "series": "crossed (n=18)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.7677060646614341,
+      "y": 0.38377271187510653,
+      "series": "crossed (n=18)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -1.1815463069818473,
+      "y": 0.20806700308159867,
+      "series": "crossed (n=18)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.01617133040266382,
+      "y": 0.16394651718750006,
+      "series": "crossed (n=18)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": 0.026671291875916138,
+      "y": 0.2976265066837511,
+      "series": "crossed (n=18)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.16383983449182854,
+      "y": 0.09942574907846013,
+      "series": "crossed (n=18)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context-side-only recovery (rung 7, A-only)": -0.1014699913056829,
+      "y": 0.08902621187209737,
+      "series": "crossed (n=18)",
+      "_kind": "scatter",
+      "_group": 10
+    }
+  ],
+  "n_series": 11,
+  "total_points": 101,
+  "text": {
+    "suptitle": "Side localization, pairs with target ceiling >= 0.05 (both arms pooled; values clipped to [-1.5, 1.5])\nabove the diagonal = answer-side correction recovers more than context-side",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base",
+        "xlabel": "context-side-only recovery (rung 7, A-only)",
+        "ylabel": "answer-side-only recovery (rung 8, B-only)",
+        "xticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0"
+        ],
+        "yticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0"
+        ]
+      },
+      {
+        "title_left": "instruct",
+        "xlabel": "context-side-only recovery (rung 7, A-only)",
+        "legend_labels": [
+          "framing (n=11)",
+          "identity (n=16)",
+          "provenance (n=12)",
+          "identity-vs-user (n=6)",
+          "user-framing (n=5)",
+          "crossed (n=18)"
+        ],
+        "xticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0"
+        ]
+      }
+    ],
+    "series": [
+      "framing (n=6)",
+      "identity (n=0)",
+      "provenance (n=12)",
+      "identity-vs-user (n=5)",
+      "user-framing (n=4)",
+      "crossed (n=6)",
+      "framing (n=11)",
+      "identity (n=16)",
+      "identity-vs-user (n=6)",
+      "user-framing (n=5)",
+      "crossed (n=18)"
+    ]
+  }
+}

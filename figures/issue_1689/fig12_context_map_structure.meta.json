@@ -1,0 +1,1722 @@
+{
+  "commit": "3291f11d51",
+  "created": "2026-07-30T02:26:38Z",
+  "figsize": [
+    13.2,
+    5.2
+  ],
+  "points": [
+    {
+      "category": "identity",
+      "informative pair-arm units": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "framing",
+      "informative pair-arm units": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "crossed",
+      "informative pair-arm units": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "provenance",
+      "informative pair-arm units": 8.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "identity-vs-user",
+      "informative pair-arm units": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "user-framing",
+      "informative pair-arm units": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "identity",
+      "informative pair-arm units": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "framing",
+      "informative pair-arm units": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "crossed",
+      "informative pair-arm units": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "provenance",
+      "informative pair-arm units": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "identity-vs-user",
+      "informative pair-arm units": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "user-framing",
+      "informative pair-arm units": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "identity",
+      "informative pair-arm units": 10.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "framing",
+      "informative pair-arm units": 12.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "crossed",
+      "informative pair-arm units": 28.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "provenance",
+      "informative pair-arm units": 4.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "identity-vs-user",
+      "informative pair-arm units": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "user-framing",
+      "informative pair-arm units": 5.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3387.541907313537,
+      "held-out R2 gain, full affine over translation": 0.9534812570246208,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3378.8685650911093,
+      "held-out R2 gain, full affine over translation": 1.197755766065226,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3429.0423902517214,
+      "held-out R2 gain, full affine over translation": 1.2889175129332109,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3407.350575624875,
+      "held-out R2 gain, full affine over translation": 1.6172449841020897,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3540.0105751677634,
+      "held-out R2 gain, full affine over translation": 0.002458367398067818,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3541.7229616967034,
+      "held-out R2 gain, full affine over translation": -0.010755194404985624,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3508.073151169944,
+      "held-out R2 gain, full affine over translation": 0.7376414919192756,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3498.497540956134,
+      "held-out R2 gain, full affine over translation": 1.051265512032525,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3523.89179105814,
+      "held-out R2 gain, full affine over translation": 1.026175875586139,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3491.739960242379,
+      "held-out R2 gain, full affine over translation": 0.8366178213358447,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3546.777137902075,
+      "held-out R2 gain, full affine over translation": -0.03177287146929941,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3539.1842869613865,
+      "held-out R2 gain, full affine over translation": -0.060650015227441956,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3515.5514804593154,
+      "held-out R2 gain, full affine over translation": 0.7470491959472795,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3504.558135694248,
+      "held-out R2 gain, full affine over translation": 0.9850583426635362,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3507.914132352937,
+      "held-out R2 gain, full affine over translation": 1.0911849296130458,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3542.740709534077,
+      "held-out R2 gain, full affine over translation": 1.3174765491807454,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3540.562760216882,
+      "held-out R2 gain, full affine over translation": 0.3231272632204739,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 1968.4157978002672,
+      "held-out R2 gain, full affine over translation": -0.04781870758735696,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3231.930362018578,
+      "held-out R2 gain, full affine over translation": 0.9509151234290296,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3459.660824046547,
+      "held-out R2 gain, full affine over translation": 1.3000934408840181,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3379.917912798092,
+      "held-out R2 gain, full affine over translation": 1.379613780821608,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3521.017905105962,
+      "held-out R2 gain, full affine over translation": 2.2190933956554777,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 1988.2547138719108,
+      "held-out R2 gain, full affine over translation": -0.05082137946509613,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 1968.4157978002672,
+      "held-out R2 gain, full affine over translation": -0.04781870758735696,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3231.930362018578,
+      "held-out R2 gain, full affine over translation": 0.9509151234290296,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3459.660824046547,
+      "held-out R2 gain, full affine over translation": 1.3000934408840181,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3349.5105363354205,
+      "held-out R2 gain, full affine over translation": 1.0975191227555563,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3331.9645778827603,
+      "held-out R2 gain, full affine over translation": 1.6331193106494215,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3565.597008393415,
+      "held-out R2 gain, full affine over translation": 0.38294847315864156,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3510.485861912969,
+      "held-out R2 gain, full affine over translation": -0.4818156652618535,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3464.490863879552,
+      "held-out R2 gain, full affine over translation": 0.8411052844981771,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3466.7104565886852,
+      "held-out R2 gain, full affine over translation": 0.904684413036203,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3533.043036485305,
+      "held-out R2 gain, full affine over translation": 1.3132403904968624,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3539.271446533859,
+      "held-out R2 gain, full affine over translation": 1.6121411300943562,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3539.469103520981,
+      "held-out R2 gain, full affine over translation": 0.008425643475338362,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3529.103186158406,
+      "held-out R2 gain, full affine over translation": -0.3947062909982666,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3519.838631996542,
+      "held-out R2 gain, full affine over translation": 0.8381416495998263,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3506.4771871528997,
+      "held-out R2 gain, full affine over translation": 1.6552371050244847,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3526.003914718295,
+      "held-out R2 gain, full affine over translation": 1.07654732696591,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3497.0324832249253,
+      "held-out R2 gain, full affine over translation": 0.928894221315872,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3412.7691474065373,
+      "held-out R2 gain, full affine over translation": 0.9926286297477327,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3502.2833770468355,
+      "held-out R2 gain, full affine over translation": 1.0182539866398814,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3463.3850177311965,
+      "held-out R2 gain, full affine over translation": 1.1832394784335198,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3450.157613334683,
+      "held-out R2 gain, full affine over translation": 0.7010081238709904,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3470.3965870154793,
+      "held-out R2 gain, full affine over translation": 0.29034577923261284,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3451.2833951761827,
+      "held-out R2 gain, full affine over translation": -0.06121040948901446,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3472.44247958901,
+      "held-out R2 gain, full affine over translation": 0.34701679571791877,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3454.0823282914243,
+      "held-out R2 gain, full affine over translation": -0.06910124797802641,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3482.7579731745336,
+      "held-out R2 gain, full affine over translation": 0.31490935140134524,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3462.2260731448614,
+      "held-out R2 gain, full affine over translation": -0.08124622413524718,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3416.041082603657,
+      "held-out R2 gain, full affine over translation": 0.9170588915410728,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3499.7301862555387,
+      "held-out R2 gain, full affine over translation": 0.8115622059169643,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3432.5880332920865,
+      "held-out R2 gain, full affine over translation": 0.8494764204048103,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3424.062176809371,
+      "held-out R2 gain, full affine over translation": 0.5555582963945992,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3466.8290238772584,
+      "held-out R2 gain, full affine over translation": 0.3258949990695802,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3506.905203735512,
+      "held-out R2 gain, full affine over translation": 0.25702554607176764,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3450.777911171826,
+      "held-out R2 gain, full affine over translation": 0.26535537860040215,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3489.588148101124,
+      "held-out R2 gain, full affine over translation": 0.19564226369990623,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3480.2089745726903,
+      "held-out R2 gain, full affine over translation": 0.30349967835646385,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3512.3354411420537,
+      "held-out R2 gain, full affine over translation": 0.17270678702697861,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3538.2507745272237,
+      "held-out R2 gain, full affine over translation": -0.1221671654638351,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3559.299991396883,
+      "held-out R2 gain, full affine over translation": -0.008619309680669818,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3569.0473604111653,
+      "held-out R2 gain, full affine over translation": 0.2444742270205107,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3574.345174997782,
+      "held-out R2 gain, full affine over translation": 0.7617199268218191,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3582.3911295465477,
+      "held-out R2 gain, full affine over translation": 0.6604596485914646,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3576.539836844535,
+      "held-out R2 gain, full affine over translation": 0.5857100998230714,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3573.991351899616,
+      "held-out R2 gain, full affine over translation": -0.7189116438697283,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3575.9949437595765,
+      "held-out R2 gain, full affine over translation": -0.7424896928644817,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3573.114358177954,
+      "held-out R2 gain, full affine over translation": -0.7017985686992763,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3576.0452320107343,
+      "held-out R2 gain, full affine over translation": -0.5628901517861892,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3518.619214905592,
+      "held-out R2 gain, full affine over translation": 0.7889703460111828,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3552.4704985973244,
+      "held-out R2 gain, full affine over translation": 0.9942744243371656,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3526.139839904676,
+      "held-out R2 gain, full affine over translation": 0.2773453892303237,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3456.047165270591,
+      "held-out R2 gain, full affine over translation": -0.05039236759608834,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3577.385154154959,
+      "held-out R2 gain, full affine over translation": 0.5744198555850778,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3581.0660604929367,
+      "held-out R2 gain, full affine over translation": 1.0636874243429173,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3565.486905246506,
+      "held-out R2 gain, full affine over translation": 0.8456265772734045,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3556.2923638021975,
+      "held-out R2 gain, full affine over translation": 0.41013273359262037,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3520.1362861393504,
+      "held-out R2 gain, full affine over translation": -0.25459267331175195,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3515.4205997903437,
+      "held-out R2 gain, full affine over translation": -0.28313848548074894,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3489.33996886314,
+      "held-out R2 gain, full affine over translation": -0.29844491818803764,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3481.1724565584323,
+      "held-out R2 gain, full affine over translation": -0.3084556626712457,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3522.945959559915,
+      "held-out R2 gain, full affine over translation": 0.9444557627928579,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3562.184299242728,
+      "held-out R2 gain, full affine over translation": 1.4207886307381066,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3495.0562268559597,
+      "held-out R2 gain, full affine over translation": 0.5138921076087842,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3534.6538770075895,
+      "held-out R2 gain, full affine over translation": 0.5950699206113632,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3579.0942560048597,
+      "held-out R2 gain, full affine over translation": 0.7921390868623539,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3581.888669202477,
+      "held-out R2 gain, full affine over translation": 1.0942364863562335,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3563.343009782787,
+      "held-out R2 gain, full affine over translation": 0.8379963858760565,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3562.805744541832,
+      "held-out R2 gain, full affine over translation": 0.6672954999581017,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3519.117125211325,
+      "held-out R2 gain, full affine over translation": -0.1048463887044857,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3523.558628885365,
+      "held-out R2 gain, full affine over translation": -0.15807952657774593,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3532.632242498727,
+      "held-out R2 gain, full affine over translation": -0.1248435410754557,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3540.6254481499705,
+      "held-out R2 gain, full affine over translation": -0.09167109649078298,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3538.8814422026185,
+      "held-out R2 gain, full affine over translation": -0.11714544587540054,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3558.397581180491,
+      "held-out R2 gain, full affine over translation": -0.025239837016789668,
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3573.280570661648,
+      "held-out R2 gain, full affine over translation": -0.7138083053902541,
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3574.872453492408,
+      "held-out R2 gain, full affine over translation": -0.7403185411057555,
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3575.284756147397,
+      "held-out R2 gain, full affine over translation": 0.3205350880890293,
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3579.8654697069815,
+      "held-out R2 gain, full affine over translation": 0.7855543991023942,
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3581.0127811743178,
+      "held-out R2 gain, full affine over translation": 0.9285021929550188,
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3572.5374270845555,
+      "held-out R2 gain, full affine over translation": 0.9522287001799158,
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3573.3792335560765,
+      "held-out R2 gain, full affine over translation": -0.7468751626568131,
+      "_kind": "scatter",
+      "_group": 105
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3573.986435396234,
+      "held-out R2 gain, full affine over translation": -0.656301819231556,
+      "_kind": "scatter",
+      "_group": 106
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3521.3302465004717,
+      "held-out R2 gain, full affine over translation": 0.7827327243223758,
+      "_kind": "scatter",
+      "_group": 107
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3558.730859747219,
+      "held-out R2 gain, full affine over translation": 1.077111699210144,
+      "_kind": "scatter",
+      "_group": 108
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3528.66381401367,
+      "held-out R2 gain, full affine over translation": 0.3499593107038581,
+      "_kind": "scatter",
+      "_group": 109
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3458.9343435815617,
+      "held-out R2 gain, full affine over translation": -0.05272640172432841,
+      "_kind": "scatter",
+      "_group": 110
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3522.3941584710287,
+      "held-out R2 gain, full affine over translation": -0.25068029220717924,
+      "_kind": "scatter",
+      "_group": 111
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3514.709302398192,
+      "held-out R2 gain, full affine over translation": -0.28496305952533274,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3580.971592624403,
+      "held-out R2 gain, full affine over translation": 0.445646399701349,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3582.9456380215406,
+      "held-out R2 gain, full affine over translation": 0.8206545275057504,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3563.2050061093696,
+      "held-out R2 gain, full affine over translation": 0.83298004177675,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3551.9829507449535,
+      "held-out R2 gain, full affine over translation": 0.375459053214685,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3532.137902328455,
+      "held-out R2 gain, full affine over translation": -0.29025612365016884,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3523.215023724651,
+      "held-out R2 gain, full affine over translation": -0.3184266738325522,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3499.6431438298946,
+      "held-out R2 gain, full affine over translation": 0.8762695369455353,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3571.0599683652567,
+      "held-out R2 gain, full affine over translation": 0.8777836946573552,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3474.4756343291224,
+      "held-out R2 gain, full affine over translation": 0.37389105327939853,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3520.687657262733,
+      "held-out R2 gain, full affine over translation": 0.45911524532857284,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3534.9504559450975,
+      "held-out R2 gain, full affine over translation": -0.1232983594418059,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3519.060884682573,
+      "held-out R2 gain, full affine over translation": -0.1823061260335629,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3580.489972421258,
+      "held-out R2 gain, full affine over translation": 0.6274050101883415,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3578.866532356391,
+      "held-out R2 gain, full affine over translation": 0.8821761687342919,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3558.9843565767683,
+      "held-out R2 gain, full affine over translation": 0.6429622552213824,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3557.8686911367795,
+      "held-out R2 gain, full affine over translation": 0.5184298576396804,
+      "_kind": "scatter",
+      "_group": 128
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3512.3753330411073,
+      "held-out R2 gain, full affine over translation": -0.1461905071124211,
+      "_kind": "scatter",
+      "_group": 129
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3521.6403219709878,
+      "held-out R2 gain, full affine over translation": -0.1481079612887557,
+      "_kind": "scatter",
+      "_group": 130
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3497.5913179254276,
+      "held-out R2 gain, full affine over translation": 1.3881249259552448,
+      "_kind": "scatter",
+      "_group": 131
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 1969.841477237602,
+      "held-out R2 gain, full affine over translation": -0.04776861511656816,
+      "_kind": "scatter",
+      "_group": 132
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3410.55734632993,
+      "held-out R2 gain, full affine over translation": 1.3299082232510155,
+      "_kind": "scatter",
+      "_group": 133
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3411.0638489991943,
+      "held-out R2 gain, full affine over translation": 2.5085097617326344,
+      "_kind": "scatter",
+      "_group": 134
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3480.89303329878,
+      "held-out R2 gain, full affine over translation": 2.034307912207569,
+      "_kind": "scatter",
+      "_group": 135
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3495.2774318047423,
+      "held-out R2 gain, full affine over translation": 4.237491708759358,
+      "_kind": "scatter",
+      "_group": 136
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3454.2698914159287,
+      "held-out R2 gain, full affine over translation": 1.15145327811112,
+      "_kind": "scatter",
+      "_group": 137
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 616.318430150508,
+      "held-out R2 gain, full affine over translation": -0.005845178048500155,
+      "_kind": "scatter",
+      "_group": 138
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3457.0073064800067,
+      "held-out R2 gain, full affine over translation": -0.43282521266305995,
+      "_kind": "scatter",
+      "_group": 139
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3457.0068095811807,
+      "held-out R2 gain, full affine over translation": -0.373264384554036,
+      "_kind": "scatter",
+      "_group": 140
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3499.33393972238,
+      "held-out R2 gain, full affine over translation": 1.4941072566691844,
+      "_kind": "scatter",
+      "_group": 141
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3538.585394247179,
+      "held-out R2 gain, full affine over translation": 0.9108311416669175,
+      "_kind": "scatter",
+      "_group": 142
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3530.4152329191998,
+      "held-out R2 gain, full affine over translation": 0.868402742556196,
+      "_kind": "scatter",
+      "_group": 143
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3556.1185673931313,
+      "held-out R2 gain, full affine over translation": 0.4409937326579071,
+      "_kind": "scatter",
+      "_group": 144
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3491.578674530948,
+      "held-out R2 gain, full affine over translation": 1.631067507400406,
+      "_kind": "scatter",
+      "_group": 145
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3499.559145108038,
+      "held-out R2 gain, full affine over translation": 1.8420729265575697,
+      "_kind": "scatter",
+      "_group": 146
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 614.9430269612873,
+      "held-out R2 gain, full affine over translation": -0.012378406584492296,
+      "_kind": "scatter",
+      "_group": 147
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 614.9430269612873,
+      "held-out R2 gain, full affine over translation": -0.012378406584492296,
+      "_kind": "scatter",
+      "_group": 148
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 2917.116281285048,
+      "held-out R2 gain, full affine over translation": -0.14789988303786972,
+      "_kind": "scatter",
+      "_group": 149
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 2917.116281285048,
+      "held-out R2 gain, full affine over translation": -0.14789988303786972,
+      "_kind": "scatter",
+      "_group": 150
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3334.678858793386,
+      "held-out R2 gain, full affine over translation": 0.99492971965756,
+      "_kind": "scatter",
+      "_group": 151
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3420.5485873175403,
+      "held-out R2 gain, full affine over translation": 0.6624259658499094,
+      "_kind": "scatter",
+      "_group": 152
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3386.676230263945,
+      "held-out R2 gain, full affine over translation": 0.5724316271682323,
+      "_kind": "scatter",
+      "_group": 153
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3488.242038100033,
+      "held-out R2 gain, full affine over translation": 0.32955424693812496,
+      "_kind": "scatter",
+      "_group": 154
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3151.487348052309,
+      "held-out R2 gain, full affine over translation": 0.7952050073012973,
+      "_kind": "scatter",
+      "_group": 155
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3146.0158296234176,
+      "held-out R2 gain, full affine over translation": 0.8528947778603458,
+      "_kind": "scatter",
+      "_group": 156
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3051.2055199451343,
+      "held-out R2 gain, full affine over translation": 0.3079686087268202,
+      "_kind": "scatter",
+      "_group": 157
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 2963.969391660328,
+      "held-out R2 gain, full affine over translation": 0.7561882150322587,
+      "_kind": "scatter",
+      "_group": 158
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3070.204904013487,
+      "held-out R2 gain, full affine over translation": -0.13781371431919276,
+      "_kind": "scatter",
+      "_group": 159
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3070.2093974140053,
+      "held-out R2 gain, full affine over translation": -0.12533777875433838,
+      "_kind": "scatter",
+      "_group": 160
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 1986.5979861708768,
+      "held-out R2 gain, full affine over translation": -0.058518592328848706,
+      "_kind": "scatter",
+      "_group": 161
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 1969.841477237602,
+      "held-out R2 gain, full affine over translation": -0.04776861511656816,
+      "_kind": "scatter",
+      "_group": 162
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3366.674162677845,
+      "held-out R2 gain, full affine over translation": 0.412353467272803,
+      "_kind": "scatter",
+      "_group": 163
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 616.318430150508,
+      "held-out R2 gain, full affine over translation": -0.005845178048500155,
+      "_kind": "scatter",
+      "_group": 164
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3416.261354376226,
+      "held-out R2 gain, full affine over translation": 1.0188650577046774,
+      "_kind": "scatter",
+      "_group": 165
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3411.0638489991943,
+      "held-out R2 gain, full affine over translation": 2.5085097617326344,
+      "_kind": "scatter",
+      "_group": 166
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3470.2653008651523,
+      "held-out R2 gain, full affine over translation": 1.1663975905433066,
+      "_kind": "scatter",
+      "_group": 167
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3455.032951511255,
+      "held-out R2 gain, full affine over translation": 3.094727742221418,
+      "_kind": "scatter",
+      "_group": 168
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3555.469429527345,
+      "held-out R2 gain, full affine over translation": 0.4152695359238582,
+      "_kind": "scatter",
+      "_group": 169
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3457.0068095811807,
+      "held-out R2 gain, full affine over translation": -0.373264384554036,
+      "_kind": "scatter",
+      "_group": 170
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3499.33393972238,
+      "held-out R2 gain, full affine over translation": 1.4941072566691844,
+      "_kind": "scatter",
+      "_group": 171
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3538.585394247179,
+      "held-out R2 gain, full affine over translation": 0.9108311416669175,
+      "_kind": "scatter",
+      "_group": 172
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 614.9430269612873,
+      "held-out R2 gain, full affine over translation": -0.012378406584492296,
+      "_kind": "scatter",
+      "_group": 173
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 614.9430269612873,
+      "held-out R2 gain, full affine over translation": -0.012378406584492296,
+      "_kind": "scatter",
+      "_group": 174
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3457.558706593257,
+      "held-out R2 gain, full affine over translation": 1.42015570305905,
+      "_kind": "scatter",
+      "_group": 175
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3556.1185673931313,
+      "held-out R2 gain, full affine over translation": 0.4409937326579071,
+      "_kind": "scatter",
+      "_group": 176
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3476.6568517018213,
+      "held-out R2 gain, full affine over translation": 1.4435075857949689,
+      "_kind": "scatter",
+      "_group": 177
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3279.504878401703,
+      "held-out R2 gain, full affine over translation": 0.997264712245366,
+      "_kind": "scatter",
+      "_group": 178
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 2917.116281285048,
+      "held-out R2 gain, full affine over translation": -0.14789988303786972,
+      "_kind": "scatter",
+      "_group": 179
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 2917.116281285048,
+      "held-out R2 gain, full affine over translation": -0.14789988303786972,
+      "_kind": "scatter",
+      "_group": 180
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3342.025513388794,
+      "held-out R2 gain, full affine over translation": 0.9924299715963798,
+      "_kind": "scatter",
+      "_group": 181
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3544.878380873904,
+      "held-out R2 gain, full affine over translation": 0.8079862001406752,
+      "_kind": "scatter",
+      "_group": 182
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3113.097199477276,
+      "held-out R2 gain, full affine over translation": 0.38264540623723475,
+      "_kind": "scatter",
+      "_group": 183
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3401.277034534912,
+      "held-out R2 gain, full affine over translation": 1.1786144644987098,
+      "_kind": "scatter",
+      "_group": 184
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3228.5520145006167,
+      "held-out R2 gain, full affine over translation": 0.9603863256151747,
+      "_kind": "scatter",
+      "_group": 185
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3559.019560884145,
+      "held-out R2 gain, full affine over translation": 0.38994261072149095,
+      "_kind": "scatter",
+      "_group": 186
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3154.7607022007687,
+      "held-out R2 gain, full affine over translation": 0.8655475530478003,
+      "_kind": "scatter",
+      "_group": 187
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3160.5135026962316,
+      "held-out R2 gain, full affine over translation": 0.6769456045142179,
+      "_kind": "scatter",
+      "_group": 188
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3461.689299146183,
+      "held-out R2 gain, full affine over translation": 0.2911037628086127,
+      "_kind": "scatter",
+      "_group": 189
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3479.8520179958764,
+      "held-out R2 gain, full affine over translation": 1.1231583206485605,
+      "_kind": "scatter",
+      "_group": 190
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3567.103087713333,
+      "held-out R2 gain, full affine over translation": 0.4584112317376845,
+      "_kind": "scatter",
+      "_group": 191
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3510.955764934159,
+      "held-out R2 gain, full affine over translation": -0.48175620399648234,
+      "_kind": "scatter",
+      "_group": 192
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3457.0073064800067,
+      "held-out R2 gain, full affine over translation": -0.43282521266305995,
+      "_kind": "scatter",
+      "_group": 193
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3457.0068095811807,
+      "held-out R2 gain, full affine over translation": -0.373264384554036,
+      "_kind": "scatter",
+      "_group": 194
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3555.2806146793396,
+      "held-out R2 gain, full affine over translation": 0.44521409610646745,
+      "_kind": "scatter",
+      "_group": 195
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3457.0068095811807,
+      "held-out R2 gain, full affine over translation": -0.373264384554036,
+      "_kind": "scatter",
+      "_group": 196
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3579.1824474029236,
+      "held-out R2 gain, full affine over translation": 0.5568734804590918,
+      "_kind": "scatter",
+      "_group": 197
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3572.082572858864,
+      "held-out R2 gain, full affine over translation": 0.8207636585481026,
+      "_kind": "scatter",
+      "_group": 198
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3582.8207019134356,
+      "held-out R2 gain, full affine over translation": 0.8281482222571441,
+      "_kind": "scatter",
+      "_group": 199
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3579.9925930102067,
+      "held-out R2 gain, full affine over translation": 1.4327362234244752,
+      "_kind": "scatter",
+      "_group": 200
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3558.059869135808,
+      "held-out R2 gain, full affine over translation": 1.455265552343266,
+      "_kind": "scatter",
+      "_group": 201
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3553.5253471549936,
+      "held-out R2 gain, full affine over translation": 1.2312456294808576,
+      "_kind": "scatter",
+      "_group": 202
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 2917.116281285048,
+      "held-out R2 gain, full affine over translation": -0.14789988303786972,
+      "_kind": "scatter",
+      "_group": 203
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 2917.116281285048,
+      "held-out R2 gain, full affine over translation": -0.14789988303786972,
+      "_kind": "scatter",
+      "_group": 204
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 2917.116281285048,
+      "held-out R2 gain, full affine over translation": -0.14789988303786972,
+      "_kind": "scatter",
+      "_group": 205
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 2917.116281285048,
+      "held-out R2 gain, full affine over translation": -0.14789988303786972,
+      "_kind": "scatter",
+      "_group": 206
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3580.914386840372,
+      "held-out R2 gain, full affine over translation": 1.1687683705804912,
+      "_kind": "scatter",
+      "_group": 207
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3580.785823141417,
+      "held-out R2 gain, full affine over translation": 0.8360891640703046,
+      "_kind": "scatter",
+      "_group": 208
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3563.121534515385,
+      "held-out R2 gain, full affine over translation": 1.5487185193513766,
+      "_kind": "scatter",
+      "_group": 209
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3564.6415032730033,
+      "held-out R2 gain, full affine over translation": 1.741656668049449,
+      "_kind": "scatter",
+      "_group": 210
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3519.947591162911,
+      "held-out R2 gain, full affine over translation": 0.8550441557320618,
+      "_kind": "scatter",
+      "_group": 211
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3509.67518575681,
+      "held-out R2 gain, full affine over translation": 0.8228794597222543,
+      "_kind": "scatter",
+      "_group": 212
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3070.204904013487,
+      "held-out R2 gain, full affine over translation": -0.13781371431919276,
+      "_kind": "scatter",
+      "_group": 213
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3070.2093974140053,
+      "held-out R2 gain, full affine over translation": -0.12533777875433838,
+      "_kind": "scatter",
+      "_group": 214
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3439.8264271086373,
+      "held-out R2 gain, full affine over translation": 0.21330631446498005,
+      "_kind": "scatter",
+      "_group": 215
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3399.139998307196,
+      "held-out R2 gain, full affine over translation": 0.6315849551185541,
+      "_kind": "scatter",
+      "_group": 216
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3582.733434358411,
+      "held-out R2 gain, full affine over translation": 0.6170773119008843,
+      "_kind": "scatter",
+      "_group": 217
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3580.1507394604514,
+      "held-out R2 gain, full affine over translation": 0.6513367898185594,
+      "_kind": "scatter",
+      "_group": 218
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3542.577280512549,
+      "held-out R2 gain, full affine over translation": 0.6191639748555904,
+      "_kind": "scatter",
+      "_group": 219
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3541.937931237201,
+      "held-out R2 gain, full affine over translation": 0.6670498754962907,
+      "_kind": "scatter",
+      "_group": 220
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3526.4950748661695,
+      "held-out R2 gain, full affine over translation": -0.09546496631797652,
+      "_kind": "scatter",
+      "_group": 221
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3552.5788581234433,
+      "held-out R2 gain, full affine over translation": -0.42650048739768975,
+      "_kind": "scatter",
+      "_group": 222
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3572.184598462701,
+      "held-out R2 gain, full affine over translation": -0.6936595695994843,
+      "_kind": "scatter",
+      "_group": 223
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3578.194457273273,
+      "held-out R2 gain, full affine over translation": -0.6010560941415185,
+      "_kind": "scatter",
+      "_group": 224
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3572.452290387456,
+      "held-out R2 gain, full affine over translation": -0.7491827326523272,
+      "_kind": "scatter",
+      "_group": 225
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3574.207796279608,
+      "held-out R2 gain, full affine over translation": -0.6673768107379321,
+      "_kind": "scatter",
+      "_group": 226
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3572.374226145075,
+      "held-out R2 gain, full affine over translation": 0.25957513690226874,
+      "_kind": "scatter",
+      "_group": 227
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3571.1838194708253,
+      "held-out R2 gain, full affine over translation": 2.363868687673775,
+      "_kind": "scatter",
+      "_group": 228
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3576.3375850706507,
+      "held-out R2 gain, full affine over translation": 0.6218285094692406,
+      "_kind": "scatter",
+      "_group": 229
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3580.234688145161,
+      "held-out R2 gain, full affine over translation": 0.729563465775099,
+      "_kind": "scatter",
+      "_group": 230
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3524.146815550722,
+      "held-out R2 gain, full affine over translation": 0.6665266665751268,
+      "_kind": "scatter",
+      "_group": 231
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3545.5191053636727,
+      "held-out R2 gain, full affine over translation": 0.5821168478850615,
+      "_kind": "scatter",
+      "_group": 232
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3531.362121534835,
+      "held-out R2 gain, full affine over translation": 0.29221426387252536,
+      "_kind": "scatter",
+      "_group": 233
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3465.7917852361006,
+      "held-out R2 gain, full affine over translation": -0.06776305726725051,
+      "_kind": "scatter",
+      "_group": 234
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3490.2543157665787,
+      "held-out R2 gain, full affine over translation": -0.30351964810605025,
+      "_kind": "scatter",
+      "_group": 235
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3481.280108945693,
+      "held-out R2 gain, full affine over translation": -0.305458272041231,
+      "_kind": "scatter",
+      "_group": 236
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3530.664875303348,
+      "held-out R2 gain, full affine over translation": -0.29295822909402913,
+      "_kind": "scatter",
+      "_group": 237
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3519.753573488285,
+      "held-out R2 gain, full affine over translation": -0.323919521131684,
+      "_kind": "scatter",
+      "_group": 238
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3575.0208355546106,
+      "held-out R2 gain, full affine over translation": 0.4687367061517147,
+      "_kind": "scatter",
+      "_group": 239
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3579.653335255337,
+      "held-out R2 gain, full affine over translation": 0.2532625997275606,
+      "_kind": "scatter",
+      "_group": 240
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3566.2504942992305,
+      "held-out R2 gain, full affine over translation": 0.8552482206878711,
+      "_kind": "scatter",
+      "_group": 241
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3559.168956551777,
+      "held-out R2 gain, full affine over translation": 0.36246320551302624,
+      "_kind": "scatter",
+      "_group": 242
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3390.7736164663997,
+      "held-out R2 gain, full affine over translation": 1.1034958571801232,
+      "_kind": "scatter",
+      "_group": 243
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3562.014348025738,
+      "held-out R2 gain, full affine over translation": 1.3235743784218932,
+      "_kind": "scatter",
+      "_group": 244
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3497.960304881578,
+      "held-out R2 gain, full affine over translation": 0.4086809831481123,
+      "_kind": "scatter",
+      "_group": 245
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3489.5408315625605,
+      "held-out R2 gain, full affine over translation": 0.38470372292189026,
+      "_kind": "scatter",
+      "_group": 246
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3527.0055272183536,
+      "held-out R2 gain, full affine over translation": -0.15110922130368398,
+      "_kind": "scatter",
+      "_group": 247
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3494.8729062182997,
+      "held-out R2 gain, full affine over translation": -0.03555433143261677,
+      "_kind": "scatter",
+      "_group": 248
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3510.517614425244,
+      "held-out R2 gain, full affine over translation": -0.1523982957188681,
+      "_kind": "scatter",
+      "_group": 249
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3516.11028794474,
+      "held-out R2 gain, full affine over translation": -0.17296452212770008,
+      "_kind": "scatter",
+      "_group": 250
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3576.680934480571,
+      "held-out R2 gain, full affine over translation": 0.8418779153656298,
+      "_kind": "scatter",
+      "_group": 251
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3580.2689951370085,
+      "held-out R2 gain, full affine over translation": 0.7671113497434753,
+      "_kind": "scatter",
+      "_group": 252
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3524.773491475627,
+      "held-out R2 gain, full affine over translation": 0.6870206170745007,
+      "_kind": "scatter",
+      "_group": 253
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3530.1714738195033,
+      "held-out R2 gain, full affine over translation": 0.5339680291213009,
+      "_kind": "scatter",
+      "_group": 254
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3584.0,
+      "held-out R2 gain, full affine over translation": 0.0,
+      "series": "d = 3584",
+      "_kind": "line",
+      "_group": 255
+    },
+    {
+      "effective rank of M - I (of d = 3584)": 3584.0,
+      "held-out R2 gain, full affine over translation": 1.0,
+      "series": "d = 3584",
+      "_kind": "line",
+      "_group": 255
+    }
+  ],
+  "n_series": 256,
+  "total_points": 272,
+  "text": {
+    "suptitle": "Context-side transfer-map structure (252 surviving within-model units)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Weakest sufficient class of the context-side map M, by pair class",
+        "ylabel": "informative pair-arm units",
+        "legend_labels": [
+          "translation family",
+          "rank k <= 128",
+          "full affine"
+        ],
+        "annotations": [
+          "6",
+          "8",
+          "5",
+          "10",
+          "12",
+          "28",
+          "4",
+          "5"
+        ],
+        "xticklabels": [
+          "identity",
+          "framing",
+          "crossed",
+          "provenance",
+          "identity-vs-user",
+          "user-framing"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      },
+      {
+        "title_left": "Per-unit view: the fitted correction is near-full-rank\n(filled = informative, open = screened)",
+        "xlabel": "effective rank of M - I (of d = 3584)",
+        "ylabel": "held-out R2 gain, full affine over translation",
+        "legend_labels": [
+          "d = 3584"
+        ],
+        "xticklabels": [
+          "0",
+          "500",
+          "1000",
+          "1500",
+          "2000",
+          "2500",
+          "3000",
+          "3500",
+          "4000"
+        ],
+        "yticklabels": [
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      }
+    ],
+    "series": [
+      "translation family",
+      "rank k <= 128",
+      "full affine",
+      "d = 3584"
+    ]
+  }
+}

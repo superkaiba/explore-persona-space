@@ -1,0 +1,375 @@
+{
+  "commit": "a7a99f955e",
+  "created": "2026-07-30T03:14:46Z",
+  "figsize": [
+    11.5,
+    4.4
+  ],
+  "points": [
+    {
+      "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)": 4.35,
+      "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)": 4.35,
+      "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)": 4.35,
+      "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)": 1.6839999999999993,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)": 4.35,
+      "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)": 1.5856900378639498,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)": 4.35,
+      "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)": 3.85039999999999,
+      "label": "+0.02",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)": 4.35,
+      "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)": 2.8532457691336113,
+      "label": "+0.02",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)": 0.5,
+      "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)": 0.0174,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)": 1.0,
+      "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)": 0.002999999999999975,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)": 2.0,
+      "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)": 0.03339999999999996,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)": 4.0,
+      "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)": 0.11080000000000004,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)": 0.5,
+      "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)": 0.11600000000000055,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)": 1.0,
+      "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)": 0.20900000000000007,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)": 2.0,
+      "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)": 0.10300000000000109,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)": 4.0,
+      "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)": -0.08393333333333608,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)": 0.5,
+      "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)": 0.6045000000000087,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)": 1.0,
+      "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)": 0.7318083333333298,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)": 2.0,
+      "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)": 0.9252583333333462,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)": 4.0,
+      "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)": 0.4552333333333287,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "steering scale \u03b1": 0.5,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.1803551688019045,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "steering scale \u03b1": 1.0,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.150052417938452,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "steering scale \u03b1": 2.0,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.506149247622165,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "steering scale \u03b1": 4.0,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.585671429284948,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "steering scale \u03b1": 0.5,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.169185764731036,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "steering scale \u03b1": 1.0,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.182614878301297,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "steering scale \u03b1": 2.0,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.298507461301665,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "steering scale \u03b1": 4.0,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.485951335496904,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "steering scale \u03b1": 0.5,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.272050605913762,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "steering scale \u03b1": 1.0,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.244212055022891,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "steering scale \u03b1": 2.0,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.170110889887942,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "steering scale \u03b1": 4.0,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.373600256592355,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "steering scale \u03b1": 0.5,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.371410281211149,
+      "series": "top map direction",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "steering scale \u03b1": 1.0,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.192593181293664,
+      "series": "top map direction",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "steering scale \u03b1": 2.0,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.217674435204337,
+      "series": "top map direction",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "steering scale \u03b1": 4.0,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.459984560749774,
+      "series": "top map direction",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "steering scale \u03b1": 0.5,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.240390891088002,
+      "series": "random control",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "steering scale \u03b1": 1.0,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.279470807970757,
+      "series": "random control",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "steering scale \u03b1": 2.0,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.403144890031947,
+      "series": "random control",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "steering scale \u03b1": 4.0,
+      "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)": 4.4486773852722425,
+      "series": "random control",
+      "_kind": "line",
+      "_group": 13
+    }
+  ],
+  "n_series": 14,
+  "total_points": 38,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Behavioral dose response (filled = raw, open = CJK-excluded)",
+        "xlabel": "steering scale \u03b1 (unit-norm direction; diamonds = all-positions at \u03b1=4)",
+        "ylabel": "judged trait shift, steered \u2212 unsteered (0\u2013100 scale)",
+        "legend_labels": [
+          "evil",
+          "sycophancy",
+          "hallucination"
+        ],
+        "legend_title": "direction = judged trait",
+        "annotations": [
+          "+0.02",
+          "+0.00",
+          "+0.03",
+          "+0.11",
+          "+0.12",
+          "+0.21",
+          "+0.10",
+          "-0.08",
+          "+0.60",
+          "+0.73",
+          "+0.93",
+          "+0.46"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0",
+          "4.5",
+          "5.0"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0",
+          "4.5"
+        ]
+      },
+      {
+        "title_left": "Representation shift vs dose (mostly sampling noise)",
+        "xlabel": "steering scale \u03b1",
+        "ylabel": "mean \u2016\u0394v\u0304\u2016 (answer-summary shift, layer 19)",
+        "legend_labels": [
+          "evil",
+          "sycophancy",
+          "hallucination",
+          "top map direction",
+          "random control"
+        ],
+        "annotations": [
+          "independent-draw noise floor (\u03b1=0 pseudo-shift)"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0",
+          "4.5"
+        ],
+        "yticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ]
+      }
+    ],
+    "series": [
+      "evil",
+      "sycophancy",
+      "hallucination",
+      "top map direction",
+      "random control"
+    ]
+  }
+}

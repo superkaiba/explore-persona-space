@@ -28,3 +28,12 @@ stored chunks (identity by construction — only quantization of persisted fp16
 preds remains, ~1e-5 median rel) over any recapture; (3) fresh resamples must
 reproduce the parent functional verbatim (tail inclusion, seam behavior, no
 added prefix-identity asserts the parent didn't have).
+
+**Index-space sibling (#1775 crash-fix, 2026-07-28):** the same law covers
+stored INDEX fields. #779 n50k chunks' `ci` ("GLOBAL n50k index, manifest
+order") indexes the NEW-only sampling manifest (`_read_manifest` returns
+`d["new"]`, 0..46599) — NOT a round1+new concatenation; a consumer that
+subtracted len(round1)=5000 read 0 rows in range and crashed in production.
+Pin the index space from the producer's manifest builder, and validate the
+mapping BY CONTENT (normalized-prompt positional match + set membership),
+never by index arithmetic alone.

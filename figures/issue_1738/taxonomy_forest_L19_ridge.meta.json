@@ -1,0 +1,333 @@
+{
+  "commit": "f2778ca546",
+  "created": "2026-07-29T09:51:25Z",
+  "figsize": [
+    11.5,
+    7.2
+  ],
+  "points": [
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.13090848206556838,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.1034739823894335,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.06908706777816254,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.04603394017988094,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.03961814684859688,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.03476662529037433,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.022644382434529486,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.021585270694351455,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.017079749570975467,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.010254643709502798,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.010166638300338482,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.004668588941883267,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.0018133979705055037,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.0035191109431765843,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.01469730138645653,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.023111275874076465,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.026737397547043518,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.03790579076177736,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.046183980019255055,
+      "y": 18.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.07083757123636614,
+      "y": 19.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.07934407349371353,
+      "y": 20.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.08398913355886417,
+      "y": 21.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.024542893499411633,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.012533756821575204,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.010898800120736463,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.01970323016067843,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.014260416694594213,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.02566574768923796,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.003539779321764691,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.015491698476387594,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.021025238387566925,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.028128609979725938,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.0009074377539110556,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.03444215748995666,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.01382102233283189,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.016159290357431633,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.030602902067647486,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.013025262245397684,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.0035582147729461555,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.08459770572744535,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.008805467813402634,
+      "y": 18.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.03295004101535687,
+      "y": 19.0,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": 0.03238334713277802,
+      "y": 20.0,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "difference in mean normalized error\n(group minus rest)": -0.0670567386464253,
+      "y": 21.0,
+      "_kind": "scatter",
+      "_group": 43
+    }
+  ],
+  "n_series": 44,
+  "total_points": 44,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "prefix arm",
+        "xlabel": "difference in mean normalized error\n(group minus rest)",
+        "xticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15"
+        ],
+        "yticklabels": [
+          "WildChat corpus (n=4,925)",
+          "explicit content (n=209)",
+          "creative writing (n=1,604)",
+          "roleplay / persona (n=252)",
+          "coding (n=1,586)",
+          "refusal-adjacent request (n=519)",
+          "5+-turn conversations (n=2,489)",
+          "code-formatted answer (n=755)",
+          "math (n=311)",
+          "prose answer (n=5,341)",
+          "3-4-turn conversations (n=3,298)",
+          "answer is a refusal (n=204)",
+          "summarization (n=299)",
+          "advice / how-to (n=1,297)",
+          "harmful / unsafe request (n=267)",
+          "list-formatted answer (n=1,522)",
+          "2-turn conversations (n=4,154)",
+          "other topics (n=82)",
+          "factual Q&A (n=2,996)",
+          "translation (n=414)",
+          "English (n=5,870)",
+          "social chitchat (n=608)"
+        ]
+      },
+      {
+        "title_left": "context arm",
+        "xlabel": "difference in mean normalized error\n(group minus rest)",
+        "xticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      }
+    ]
+  }
+}
