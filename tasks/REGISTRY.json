@@ -6480,8 +6480,8 @@
     "1837": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1837",
-      "status": "approved",
+      "path": "tasks/running/1837",
+      "status": "running",
       "title": "workflow-fix: GCP wedge escalation needs sustained (2-tick) reachability alarm"
     },
     "1838": {
