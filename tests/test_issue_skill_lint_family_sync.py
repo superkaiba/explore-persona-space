@@ -18,13 +18,26 @@ origin/main advancement during the ~30-min gate window can no longer
 red the squash merge with CONFLICTING, and adds two new pin tests
 (family declaration + Step 5a/§4.6 drift guard).
 
+#1807 (2026-07-29) adds the mechanically-gated verdict RE-BIND to the
+Step 10d safe-case block (a post-gate sync commit whose cert-sha..HEAD
+delta is provably origin/main-identical A/M-only re-binds the verdict
+file's line 2 to the new tip instead of forcing a full gate re-run;
+D/R*/C*/T/U rows and non-identical content fail CLOSED behind
+REBIND_OK), moves the #1657 head-sync pre-check AFTER the re-sync +
+re-bind (it must poll the FINAL tip), and adds a Step 9c step-1a
+pre-gate spec-freshness re-sync — a binding REFERENCE to the Step 5a
+family-atomic block, never a third inlined FAMILY_OF copy — so a
+main-side spec fix landing after the Step 5a sync can no longer red the
+9c gate (#1742 class). Pin tests (12) and (13) cover the two additions.
+
 These tests fail the suite if a later SKILL.md editor drops the family
 entries, the boundary-paragraph family exception, the post-gate re-sync
 bullet (or reorders it before the gate's stale-verdict rm), the 9a-ter
 staleness note, reintroduces the full-message commit filter the Step 5a
 sync and the gate section deliberately avoid, drops the family-atomic
-declaration in Step 5a, or lets the Step 10d inline family-atomic block
-drift from Step 5a's family definition.
+declaration in Step 5a, lets the Step 10d inline family-atomic block
+drift from Step 5a's family definition, weakens the #1807 re-bind
+stanza's fail-closed arms, or drops the 9c pre-gate re-sync reference.
 
 NOTE for future SKILL.md editors: these assertions pin literal snippet text.
 A legitimate rewording of the pinned lines in SKILL.md must update the
@@ -350,4 +363,81 @@ def test_step5a_sources_fetched_origin_main():
     # in-block :(glob) comment — that the $SAFE_SPECS-anchored bans miss).
     assert _BARE_CHECKOUT_MAIN not in span, (
         "nothing in the Step 5a span may reference a bare checkout from local main"
+    )
+
+
+# --- (12) Step 10d verdict re-bind stanza (#1807 pins) ----------------------
+
+
+def _automerge_span(text: str) -> str:
+    """The auto-merge subsection: its H4 through the next H4 (same
+    extraction as test (10))."""
+    start = text.index("#### The auto-merge procedure")
+    end = text.index("#### ", start + 4)
+    return text[start:end]
+
+
+def test_step10d_verdict_rebind_present():
+    """#1807: the safe-case block re-binds the SHA-bound verdict to a
+    post-gate sync tip ONLY under the mechanical probe — a --name-status
+    enumeration whose every row is A/M and byte-identical to fetched
+    origin/main. D/R*/C*/T/U rows fail CLOSED unconditionally (critic
+    round-1 Must-Fix: --name-only would read a both-sides-absent deletion
+    as main-identical while the certified landing tree CONTAINED the file
+    via the own-diff overlay); line 1 is COMPOSED from the existing
+    verdict (sed -n 1p), never typed; an unverifiable delta routes to the
+    fail-closed BLOCKED arm (stale verdict consumed, no merge), and the
+    merge itself is variable-gated on REBIND_OK=yes."""
+    span = _automerge_span(_text())
+    assert 'git -C "$WT" diff --name-status "$CERT_SHA" HEAD' in span, (
+        "the re-bind probe must enumerate the cert-sha..HEAD delta with "
+        "--name-status (NOT --name-only — the deletion corner, #1807)"
+    )
+    assert 'A|M) git -C "$WT" diff --quiet origin/main HEAD -- "$p" || DELTA_OK=no ;;' in span, (
+        "A/M rows must keep the fetched-origin/main byte-identity probe"
+    )
+    assert "*)   DELTA_OK=no ;;   # D / R* / C* / T / U — never sync output" in span, (
+        "every non-A/M status row must fail CLOSED unconditionally "
+        "(the sync's `checkout origin/main --` can only add/modify)"
+    )
+    assert "sed -n 1p /tmp/issue-<N>-lint-verdict.txt" in span, (
+        "line 1 must be COMPOSED from the existing verdict (sed -n 1p), never typed"
+    )
+    assert 'if [ "$REBIND_OK" = yes ]; then' in span, (
+        "gh pr ready / gh pr merge must be variable-gated on REBIND_OK=yes "
+        "(never a bare mid-block false as flow control)"
+    )
+    fail_echo = span.index("sync delta NOT verifiable as origin/main-identical A/M-only")
+    blocked_echo = span.index("BLOCKED: verdict re-bind failed", fail_echo)
+    rm_after = span.find("rm -f /tmp/issue-<N>-lint-verdict.txt", blocked_echo)
+    assert rm_after != -1, (
+        "an unverifiable delta must end in the stale verdict being consumed "
+        "(rm -f in the fail-closed BLOCKED arm) — never a merge on an "
+        "unverified tip"
+    )
+
+
+# --- (13) Step 9c pre-gate spec-freshness re-sync (#1807 / #1742 pin) -------
+
+
+def test_step9c_pregate_sync_present():
+    """#1807 fix (b): Step 9c step 1a must run the Step 5a family-atomic
+    spec-freshness sync — a binding REFERENCE, never a third inlined
+    FAMILY_OF copy (which would escape
+    test_step10d_family_atomicity_matches_step5a's drift guard) — BEFORE
+    the selector computes the gate subset, closing the #1742
+    stale-worktree-spec gate-red class."""
+    text = _text()
+    start = text.index("**9c. Test-verdict gate")
+    sel_idx = text.index("select_step9c_tests.py", start)
+    region = text[start:sel_idx]
+    assert "Pre-gate spec-freshness re-sync (#1742)" in region, (
+        "Step 9c step 1a must carry the pre-gate spec-freshness re-sync "
+        "BEFORE the first select_step9c_tests.py mention"
+    )
+    assert "Step 5a family-atomic" in region, (
+        "the 9c re-sync must reference the Step 5a family-atomic block"
+    )
+    assert "never inline a THIRD `FAMILY_OF` copy" in region, (
+        "the 9c re-sync must bind as a reference, not a third inlined copy"
     )
