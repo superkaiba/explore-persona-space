@@ -376,7 +376,10 @@ def main(argv: list[str] | None = None) -> int:
     tokenizer = generation.get_tokenizer()
     model = None
     if not args.skip_capture:
-        model, tokenizer = capture.load_capture_model(device=args.device)
+        # load_capture_model returns the MODEL ONLY (never a tuple) — the
+        # tokenizer stays generation.get_tokenizer()'s pinned instance so
+        # generation and capture share one tokenizer.
+        model = capture.load_capture_model(device=args.device)
 
     manifests = []
     for i, behavior in enumerate(args.behaviors):

@@ -64,6 +64,42 @@ def test_eval_questions_are_disjoint_from_extraction_questions():
         assert queries and not (queries & extraction), behavior
 
 
+def test_gpu_helper_call_shapes_bind():
+    """Signature-bind the GPU-fenced helper calls the local smoke cannot execute.
+
+    Import resolution green-lights a call-arity/return-shape mismatch: the pod's
+    first production-mode smoke crashed on ``model, tokenizer =
+    load_capture_model(...)`` (it returns the MODEL ONLY). These binds fail
+    pre-fix and pass post-fix.
+    """
+    import inspect
+
+    from explore_persona_space.experiments.issue_1739.capture import (
+        capture_rollout_files,
+        load_capture_model,
+    )
+
+    # load_capture_model takes device= and returns a SINGLE object (not a tuple).
+    inspect.signature(load_capture_model).bind(device="cuda")
+    src = inspect.getsource(load_capture_model)
+    assert "return model" in src and "return model," not in src, (
+        "load_capture_model's return shape changed — the pod leg unpacks it as a single model"
+    )
+
+    # capture_rollout_files: positional paths + the kw-only set the pod leg passes.
+    inspect.signature(capture_rollout_files).bind(
+        [object()],
+        store_dir=object(),
+        model=object(),
+        tokenizer=object(),
+        n_layers=28,
+        hidden_dim=3584,
+        device="cuda",
+        fingerprint="fp",
+        batch_size=8,
+    )
+
+
 def _tiny_causal_lm():
     """A 2-layer Qwen2 over the REAL vocab (fake weights ONLY, real arch/ids)."""
     torch = pytest.importorskip("torch")
