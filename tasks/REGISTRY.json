@@ -6027,7 +6027,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1776",
       "status": "followups_running",
-      "title": "Averaged causal Jacobians recover essentially none of the fitted context-to-answer map's predictive power (HIGH confidence)"
+      "title": "Causal Jacobians, averaged or per-context, recover essentially none of the fitted context-to-answer map's predictive power (HIGH confidence)"
     },
     "1777": {
       "has_clean_result": false,
