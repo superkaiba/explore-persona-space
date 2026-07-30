@@ -12104,6 +12104,16 @@ def test_check28_hypothesis_and_slot_family_classifier():
     assert fn("l16 slots") == ["l16"]
     assert fn("H1 vs H2") == ["H1", "H2"]
     assert fn("H3 and H3") == ["H3"]  # repeated-token de-dup pin
+    # H<digit><lowercase-letter> hypothesis-tag form (#1774 widen): the
+    # verbatim incident string (a sidecar title_left that passed the old
+    # single-digit `\bH\d\b` form silently), plus a multi-tag pin.
+    assert fn("Jensen-gap direction concentration (H1c)") == ["H1c"]
+    assert fn("H1a vs H4b") == ["H1a", "H4b"]
+    # Accepted false-positive envelope, documented by design: ANY standalone
+    # H<digit><lowercase letter> token now matches (e.g. `H2o`) — no such
+    # token is a legitimate rendered figure-text label in this project's
+    # domain, and check 28 is WARN-only.
+    assert fn("H2o sample") == ["H2o"]
     # Snake-class non-overlap pin: `f16` inside `f16_slots` never matches the
     # slot-family class (no boundary at `_`), while the digit-bearing snake
     # token itself is flagged exactly once — no double-add.
@@ -12131,7 +12141,9 @@ def test_check28_hypothesis_and_slot_family_classifier():
     assert fn("figures/issue_1072/H3.png") == []  # whole-string path skip
     assert fn("source: figures/issue_1072/H3.png") == []  # path word in prose
     assert fn("see figures/a/f16.png") == []  # path word in prose
+    assert fn("figures/a/H1c.png") == []  # H<digit><letter> form inside a path
     assert verify_task_body._HYPOTHESIS_CODE_RE.search("figures/a/H3.png")
+    assert verify_task_body._HYPOTHESIS_CODE_RE.search("figures/a/H1c.png")
     assert verify_task_body._SLOT_FAMILY_RE.search("figures/a/f16.png")
 
 
