@@ -143,7 +143,10 @@ def main() -> None:
         "schemes": {},
         "doubly": (
             "unavailable — no stitch-MLP predictions exist for the doubly scheme on the Hub "
-            "(P3 fit the stitch-MLP under the prefix and query fold schemes only)"
+            "(P3 fit the stitch-MLP under the prefix and query fold schemes only); "
+            "FILLED by the fu round: see eval_results/issue_1775/"
+            "fu_dedup_refit_pcfold_doubly/delta_beyond_doubly.json "
+            "(scripts/issue1775_doubly_mlp.py)"
         ),
         "note": (
             "post-hoc analyzer re-reduction of the placeholder "

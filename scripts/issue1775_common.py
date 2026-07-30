@@ -62,6 +62,13 @@ def _basis_targets_with_info(Y, basis, **kwargs):
     banked Gate C references were computed with, so full-population PCs are
     the only choice consistent with Gate C comparability (parity wins over
     the plan's per-fold wording; see record_plan_deviation below).
+
+    NEW mode ``pca48_foldpc`` (follow-up round `dedup-refit-pcfold-doubly`,
+    cell 2 — the deviation's DISCHARGE, so no record_plan_deviation here):
+    fits the 48 PCs on TRAIN-FOLD rows only (kwarg ``train_idx``, an int
+    index array), via the SAME parent ``_pca_basis``; every row is then
+    projected into that fold's basis. Returns (Yp, info) with
+    ``info["train_idx_n"]`` recording the basis-fit row count.
     """
     if basis == "pca48":
         record_plan_deviation(
@@ -70,6 +77,21 @@ def _basis_targets_with_info(Y, basis, **kwargs):
             "plan section 4 says train-fold-only; the parent's banked 0.914 read uses "
             "population PCs — parity wins; per-fold-PC sensitivity check listed as follow-up",
         )
+    if basis == "pca48_foldpc":
+        train_idx = kwargs.pop("train_idx", None)
+        if train_idx is None:
+            raise ValueError("basis 'pca48_foldpc' requires train_idx (the fold's train rows)")
+        train_idx = np.asarray(train_idx, dtype=np.int64)
+        from issue1092_fit_grid import _pca_basis
+
+        # ambient shape/target checks ride the parent constructor (identity path)
+        _Y_amb, info = _basis_targets_with_info_1092(Y, "ambient", **kwargs)
+        mu, v = _pca_basis(np.asarray(Y[train_idx], dtype=np.float64), 48)
+        info["basis"] = "pca48_foldpc"
+        info["v_basis"] = v
+        info["mu_basis"] = mu
+        info["train_idx_n"] = int(train_idx.size)
+        return (np.asarray(Y, dtype=np.float64) - mu) @ v, info
     return _basis_targets_with_info_1092(Y, basis, **kwargs)
 
 
@@ -108,6 +130,9 @@ __all__ = [
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 STORE_HF_PREFIX = "issue1092_realistic_crossing"
 OUT_HF_PREFIX = "issue1775_nonlinearity"
+# Follow-up round `dedup-refit-pcfold-doubly` (plan v8): eval-JSON sub-dir shared
+# by the three follow-up cells + the fu dispatcher/sentinel.
+FU_SUB = "fu_dedup_refit_pcfold_doubly"
 VM_STAGE = Path(
     "/mnt/eps-data/thomasjiralerspong/issue_1092_inline_operator/issue1092_realistic_crossing"
 )
