@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -486,4 +487,11 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    rc = main()
+    # C-extension interpreter-shutdown-race workaround; see the corresponding
+    # block in scripts/issue1689_gen_corpus.py for the full rationale +
+    # gotchas.md § PyGILState_Release SIGABRT pointer. All outputs are
+    # flushed/closed before this point; atexit is safely skipped.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(rc if isinstance(rc, int) else 0)
