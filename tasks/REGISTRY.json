@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1869,
+  "highest_id": 1870,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6735,6 +6735,13 @@
       "path": "tasks/completed/187",
       "status": "completed",
       "title": "Chat-template Betley alignment eval on a Gemma2-2b base-LM finetune produces dialogue in only 1 of 8 outputs, but raw-prompt format wasn't tried so dialogue collapse is unidentifiable from chat-template mismatch (MODERATE confidence)"
+    },
+    "1870": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1870",
+      "status": "proposed",
+      "title": "daily-fix: sync KEPT-stash outcome gets durable surfacing"
     },
     "188": {
       "has_clean_result": false,
