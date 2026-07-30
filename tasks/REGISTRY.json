@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1872,
+  "highest_id": 1873,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6756,6 +6756,13 @@
       "path": "tasks/proposed/1872",
       "status": "proposed",
       "title": "daily-fix: register step 5a in workflow.yaml steps enum"
+    },
+    "1873": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1873",
+      "status": "proposed",
+      "title": "daily-held: review #1768 8xH100 width during CPU-bound p8 ph"
     },
     "188": {
       "has_clean_result": false,
