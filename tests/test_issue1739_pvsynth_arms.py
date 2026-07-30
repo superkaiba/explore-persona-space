@@ -454,6 +454,52 @@ def test_u_store_default_follows_store_root(tmp_path):
     assert explicit.u_store == tmp_path / "elsewhere"
 
 
+def test_every_default_input_path_is_per_behavior(tmp_path):
+    """No default may be shared across behaviors (a shared pvsynth store would
+    score one behavior's DV against another's activations)."""
+    args = pva.parse_args(
+        [
+            "--store-root",
+            str(tmp_path / "staged"),
+            "--main-root",
+            str(tmp_path / "main"),
+            "--out-root",
+            str(tmp_path / "pvsynth"),
+        ]
+    )
+    a = pva._behavior_paths(args, "evil")
+    b = pva._behavior_paths(args, "sycophancy")
+    for key in a:
+        assert a[key] != b[key], f"{key} default is SHARED across behaviors: {a[key]}"
+    assert a["pvsynth_store"] == tmp_path / "staged" / "pvsynth_capture_store" / "evil"
+    assert a["train_dv"] == tmp_path / "main" / "dv_dataset" / "evil" / "labeling.json"
+
+
+def test_train_dv_root_override(tmp_path):
+    """--train-dv-root repoints the train DV tree (the staged HF judge/ copy)."""
+    args = pva.parse_args(
+        ["--main-root", str(tmp_path / "main"), "--train-dv-root", str(tmp_path / "hf_dv")]
+    )
+    assert (
+        pva._behavior_paths(args, "sycophancy")["train_dv"]
+        == tmp_path / "hf_dv" / "sycophancy" / "labeling.json"
+    )
+
+
+@pytest.mark.parametrize(
+    "flag", ["--train-store", "--train-dv-json", "--e1-store", "--pvsynth-store", "--train-summary"]
+)
+def test_single_path_override_refused_for_multi_behavior_run(flag, tmp_path):
+    with pytest.raises(SystemExit) as exc:
+        pva.parse_args(["--behaviors", "evil", "sycophancy", flag, str(tmp_path / "x")])
+    assert exc.value.code == 2  # argparse usage error, not a silent mis-scoring
+
+
+def test_single_path_override_allowed_for_one_behavior(tmp_path):
+    args = pva.parse_args(["--behaviors", "evil", "--train-dv-json", str(tmp_path / "dv.json")])
+    assert pva._behavior_paths(args, "evil")["train_dv"] == tmp_path / "dv.json"
+
+
 def test_dv_construct_meta_flags_hallucination_provisional():
     ev = pva.dv_construct_meta("evil")
     assert ev["provisional"] is False and ev["caveats"] == []

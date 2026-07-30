@@ -228,13 +228,21 @@ def own_pool_frozen_layers(
 
 
 def _behavior_paths(args: argparse.Namespace, behavior: str) -> dict[str, Path]:
-    """Resolve every input path for one behavior (flags override the defaults)."""
+    """Resolve every input path for one behavior (flags override the defaults).
+
+    Every default is PER-BEHAVIOR. The pvsynth capture store is uploaded as
+    ``<hf_prefix>/capture_store/<behavior>/`` (one subdir per behavior), so a
+    SHARED store dir would silently score one behavior's DV against another
+    behavior's activations; the train DV mirrors
+    ``<train-dv-root>/<behavior>/labeling.json``, which fits both the committed
+    tree and the staged HF ``judge/dv_dataset`` tree. The single-path overrides
+    are guarded to a one-behavior run (:func:`parse_args`).
+    """
     return {
         "train_store": args.train_store or args.store_root / f"{behavior}_labeling",
-        "train_dv": args.train_dv_json
-        or args.main_root / "dv_dataset" / behavior / "labeling.json",
+        "train_dv": args.train_dv_json or args.train_dv_root / behavior / "labeling.json",
         "e1_store": args.e1_store or args.store_root / f"{behavior}_extraction",
-        "pvsynth_store": args.pvsynth_store or args.store_root / "pvsynth_capture_store",
+        "pvsynth_store": args.pvsynth_store or args.store_root / "pvsynth_capture_store" / behavior,
         "pvsynth_dv": args.pvsynth_dv_json
         or args.out_root / "dv_dataset" / behavior / "labeling.json",
         "train_summary": args.train_summary
@@ -650,6 +658,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="dir holding the staged {behavior}_labeling / _extraction / pvsynth stores",
     )
     ap.add_argument("--train-store", type=Path, default=None)
+    ap.add_argument(
+        "--train-dv-root",
+        type=Path,
+        default=None,
+        help="dir holding <behavior>/labeling.json (default: <--main-root>/dv_dataset; point at a "
+        "staged copy of the HF issue1739_ctxmap/judge/dv_dataset tree for behaviors whose DV is "
+        "not committed)",
+    )
     ap.add_argument("--train-dv-json", type=Path, default=None)
     ap.add_argument("--e1-store", type=Path, default=None)
     ap.add_argument("--pvsynth-store", type=Path, default=None)
@@ -680,6 +696,30 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     # not the one the caller pointed every other store at).
     if args.u_store is None:
         args.u_store = args.store_root / "u_store"
+    if args.train_dv_root is None:
+        args.train_dv_root = args.main_root / "dv_dataset"
+    # A single-path override applied across several behaviors would score one
+    # behavior's inputs against another's — e.g. --train-dv-json for a 3-behavior
+    # run. Use the per-behavior ROOT flags (--store-root / --train-dv-root) or
+    # run one behavior at a time.
+    single_only = (
+        "train_store",
+        "train_dv_json",
+        "e1_store",
+        "pvsynth_store",
+        "pvsynth_dv_json",
+        "train_summary",
+    )
+    if len(args.behaviors) > 1:
+        set_flags = [
+            f"--{f.replace('_', '-')}" for f in single_only if getattr(args, f) is not None
+        ]
+        if set_flags:
+            ap.error(
+                f"{', '.join(set_flags)} name ONE behavior's input but --behaviors has "
+                f"{len(args.behaviors)} ({', '.join(args.behaviors)}); use the per-behavior roots "
+                "(--store-root / --train-dv-root / --main-root / --out-root) or one behavior per run"
+            )
     return args
 
 
