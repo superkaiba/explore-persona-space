@@ -2782,7 +2782,7 @@ markers:
   - kind: "epm:report"
     posted_by: issue-v2 skill
     when: "workflow: v2 tasks only. When the report body (<!-- report-v1 --> sentinel) is mechanically assembled — methodology-writer REPORT MODE sections + plotter figures/captions spliced into the template, with TLDR / Conclusion-and-next-steps placeholders intact (Step 8)"
-    fields: "report body path, sections filled (Motivation / Methodology (shared) / Results incl. per-result Methodology blocks), figure count, placeholders left for Thomas (TLDR, Conclusion and next steps). v1."
+    fields: "report body path, sections filled (Motivation / Methodology (shared) / Results incl. per-result Methodology blocks), figure count, the detailed companion doc path + pinned SHA (docs/reports/issue_<N>_detailed.md), placeholders left for Thomas (TLDR, Conclusion and next steps). v1."
   - kind: "epm:report-verified"
     posted_by: issue-v2 skill (via report-verifier)
     when: "workflow: v2 tasks only. After each report-verifier round (Step 8, AFTER methodology-check PASS); round cap 5. PASS advances the task to awaiting_promotion"

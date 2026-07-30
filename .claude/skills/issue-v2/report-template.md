@@ -30,6 +30,19 @@ This file is the canonical skeleton every v2 producer + verifier reads:
 The report body carries the `<!-- report-v1 -->` sentinel and lives in the task
 `body.md` exactly like a markdown clean-result body.
 
+**Two-document output (2026-07-30).** The body is the SUMMARIZED layer — one
+headline figure per result, compact methodology. It is paired with a
+**detailed companion writeup** at `docs/reports/issue_<N>_detailed.md`
+(committed to the issue branch, SHA-pin-linked from the body's
+`**Detailed writeup:**` line right after the sentinel) that carries the full
+detail: the unabridged Methodology (complete hyperparameter table, worked
+examples), EVERY figure view the plotter produced (aggregate + per-unit + raw
++ alt-groupings, each with its factual caption + SHA-pinned image), and any
+extra tables. The detailed doc is 100% agent-written mechanical assembly —
+the interpretivity rule applies to all of it; it carries NO Takeaways / TLDR /
+Conclusion (claims live only in the body, Thomas's voice). See § The detailed
+companion writeup below.
+
 ---
 
 ## The skeleton (exact)
@@ -40,6 +53,8 @@ Five H2 sections, in this exact order: **Motivation → TLDR → Methodology
 ```markdown
 # Experiment: <one-line question>
 <!-- report-v1 -->
+
+**Detailed writeup:** <SHA-pinned https://github.com/<owner>/<repo>/blob/<40-hex-sha>/docs/reports/issue_<N>_detailed.md>
 
 ## Motivation
 
@@ -207,6 +222,51 @@ The litmus for a Motivation / Methodology sentence: "Would this sentence change
 if the result had come out differently?" If yes, it is interpretation — cut it
 or reframe it as a question. If no (it is true regardless of how the numbers
 landed), it is methodology / motivation — keep it.
+
+### The detailed companion writeup (`docs/reports/issue_<N>_detailed.md`)
+
+The full-detail layer behind the summarized body, mechanically assembled by
+the orchestrator from the same producer outputs (no new authoring agent):
+
+```markdown
+# Detailed writeup — issue <N>: <the H1 question/claim>
+
+*(auto-generated companion to the report body; all content agent-written +
+factual — claims live in the report body only)*
+
+## Motivation
+<copy of the body's Motivation>
+
+## Methodology (full)
+<the methodology-writer's UNABRIDGED output: complete hyperparameter table
+(every value + Source), all worked verbatim examples, splits + CI recipe,
+computed quantities, predictors / baselines / sanity checks, metrics>
+
+## Results — full figure set
+
+### <result 1 name>
+<the result's **Methodology** block (recipe + what-is-plotted)>
+<EVERY view of this result's figures, each: the factual caption + the
+SHA-pinned image — aggregate, per-unit (labeled points), raw alongside
+processed, every alt-grouping the manifest names>
+
+### <result 2 name>
+...
+
+## Extra tables / diagnostics
+<any tables or diagnostic outputs that did not fit the body>
+```
+
+Rules: NO Takeaways / TLDR / Conclusion sections (no Thomas slots — the doc is
+regenerated wholesale on follow-up rounds, so nothing hand-written may live
+here); the interpretivity rule + banned lexicon apply to every line; every
+image is SHA-pinned. The orchestrator commits it by explicit path on the
+issue branch, captures the commit SHA, and splices the body's
+`**Detailed writeup:**` blob link pinned at that SHA. Same-issue follow-up
+rounds regenerate the doc, re-commit, and re-pin the link.
+`verify_report.py` (`detailed-writeup-link`) requires the body link at
+generation time (well-formed + issue-matched); a grandfathered body without
+one only WARNs at promote.
 
 ### The metrics rationale ("why" grounded in the plan, never in the measured value)
 
