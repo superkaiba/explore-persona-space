@@ -4592,32 +4592,31 @@ while True:
     # paragraph in Step 6b for the full rationale + the failure mode
     # the unconditional invocation would trigger (FALSE-POSITIVE
     # `epm:failure v1 missing_handle_sidecar`).
-    # ADAPTIVE POLL INTERVAL (anti-stall redesign §7). Every tick's JSON
-    # line carries a recommended `next_interval` (seconds): 1800 ONLY on
-    # a healthy, quiet, post-early-run `running` tick far from any phase
-    # boundary; 540 otherwise — gate-adjacent, anomalous, early-run
-    # (first ~30 min after launch), and recent-phase-change ticks NEVER
-    # get the long interval, so gates are never delayed. Use the
-    # PREVIOUS tick's emitted value as this tick's sleep; FALL BACK TO
-    # 540 when there is no previous tick yet (first poll after launch)
-    # or the key is absent/unparseable (older poller, garbled JSON
-    # line). NEVER lengthen the sleep on your own initiative: only the
-    # emitted value may raise it above 540, and never after a tick that
-    # reported anything other than healthy-quiet-running. Risk bound: a
-    # stall can now be noticed up to 30 min later in-session — accepted
-    # because the watcher's 10-min passes + the */45 issue-tick cron
-    # bound out-of-session detection independently
-    # (autonomous_session_watch.py / tick_triage.py).
+    # ADAPTIVE POLL INTERVAL (anti-stall redesign §7) — HARD-CLAMPED AT
+    # 540s PER CALL (#1818). Every tick's JSON line still carries a
+    # recommended `next_interval` (seconds): 1800 ONLY on a healthy,
+    # quiet, post-early-run `running` tick far from any phase boundary;
+    # 540 otherwise — gate-adjacent, anomalous, early-run (first ~30 min
+    # after launch), and recent-phase-change ticks never emit the long
+    # value, so gates are never delayed. But the recommendation is
+    # TELEMETRY, not a sleep value: the Bash tool kills ANY call at its
+    # 600000 ms (10-minute) ceiling — background calls included — so a
+    # composed `sleep 1800` dies mid-sleep, the poll never runs, and the
+    # dead call reads as a stale/absent poll on the next wake (#1768,
+    # 2026-07-28). NEVER compose a sleep longer than 540s into a single
+    # background Bash call, here or anywhere in this loop: a longer
+    # cadence is realized only as consecutive ≤540s ticks (or a Monitor
+    # until-loop, the sanctioned long-wait shape — § Long-phase
+    # heartbeat duty). A quiet-tick 1800 recommendation
+    # (POLL_INTERVAL_QUIET_SEC telemetry) is honored AS 540; §7's
+    # turn-savings intent is deferred until a Monitor-based quiet wait
+    # exists.
     #
     # `result` below = the parsed JSON line from the PREVIOUS tick's
     # bg-Bash output (the same `result` the status branch below reads);
-    # it is None on the first iteration — no previous tick yet. The
-    # membership clamp makes the never-lengthen rule MECHANICAL: only
-    # the two known emitted values are honored, anything else (garbled,
-    # bool, surprise number) falls back to 540.
-    interval = 540
-    if result is not None and result.get("next_interval") in (540, 1800):
-        interval = result["next_interval"]
+    # its `next_interval` field is read as telemetry only — it never
+    # sets the sleep.
+    interval = 540  # fixed: both the default AND the per-call MAX (#1818)
     Bash(
         run_in_background=True,
         command=(
@@ -4654,10 +4653,11 @@ while True:
     #                                   signal; see Step 7); run CRON-TEARDOWN
     #                                   (see below); set status:blocked; exit.
     #   status == "running"        -> milestone-already-posted by the poller
-    #                                  if new_milestone was true; loop again,
-    #                                  using result["next_interval"] as the
-    #                                  next sleep (540 fallback — see
-    #                                  ADAPTIVE POLL INTERVAL above).
+    #                                  if new_milestone was true; loop again
+    #                                  with the fixed 540s sleep
+    #                                  (next_interval is telemetry only —
+    #                                  see ADAPTIVE POLL INTERVAL above;
+    #                                  never sleep >540s in one call).
     #                                  If the JSON also has
     #                                  gpu_idle_advisory_posted == true, act
     #                                  per "GPU-idle advisory handling" below
@@ -4678,7 +4678,7 @@ milestone marker like `phase: post_eval`, update the local
 `current_phase` from the milestone before the next tick so the title
 reflects the latest phase.)
 
-The top-of-tick `set_title` refresh plus the ≤30-min clamped interval
+The top-of-tick `set_title` refresh plus the fixed 540s tick interval
 discharge the § Long-phase heartbeat duty (below) for this loop by
 construction; any wait run OUTSIDE this loop shape — a `Monitor`
 until-loop on a VM phase, an ad-hoc bg poll chain, an off-pod Batch-API
@@ -5129,7 +5129,7 @@ deadline-bounded Batch-API poll, a detached VM phase (§ "Detached
 VM-side long compute phases", Step 9 entry guard), or any
 follow-up-round wait at `followups_running` — the orchestrator carries
 BOTH duties below. (The Step 6d.2 polling loop above discharges them by
-construction: the top-of-tick `set_title` refresh + the ≤30-min clamped
+construction: the top-of-tick `set_title` refresh + the fixed 540s
 tick interval. The duty is for every wait that is NOT that loop. A long
 FOREGROUND subagent wait is a named out-of-scope shape — no resumable
 orchestrator turn exists there to discharge the duty; the watcher's K=2

@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1878,
+  "highest_id": 1879,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3756,8 +3756,8 @@
       "goal": "On the #779 fitter-fair-comparison-n1m mapping h: c_last(x) -> v(x) (last-prompt-token activation -> mean-response activation profile, layer 19, Qwen-2.5-7B-Instruct, ~963k LMSYS+WildChat train contexts, pinned val 400 / test 1000 split), characterize what the map is bad at predicting: (1) rank held-out contexts by per-context prediction error and categorize the worst tail (corpus source, language, topic, length, refusal-adjacency) via the project judge; (2) fit a DIRECT map from SAE features of the input to pooled SAE features of the output \u2014 encode per-token activations through public Qwen2.5-7B batchtopk SAEs (16,384 features; layers 18/24 nearest the map layer), pool feature activations over answer tokens (mean activation, MAX activation, + fraction-active), fit linear + nonlinear maps, and identify the worst-predicted answer-side SAE features with interpretations of the worst tail; (3) decompose the measured linear-vs-nonlinear gap (ridge test R2 0.754 vs MLP 0.810-0.813) per-context and per-feature/direction \u2014 which parts are predictable nonlinearly but not linearly, and conversely \u2014 on both the dense map and the SAE->SAE map. Reuse the n1M captures, the pinned split, and the issue-779-n1m branch fitters; refits recompute per-context residuals and must reconcile to the committed aggregate R2. Both mapping arms (prefix-based and context-based) for any newly fit map; a context-arm-only read of the existing n1M map is an explicit stated deviation.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1482",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1482",
+      "status": "awaiting_promotion",
       "title": "The context\u2192answer map's error is category-structured: non-English contexts are predicted better than English, and the linear-vs-nonlinear gap concentrates in low-variance answer directions (HIGH confidence)"
     },
     "1483": {
@@ -5964,17 +5964,17 @@
       "goal": "Characterise what fine-tuning a behavior into a specific context does to the context->answer mapping in activation space, on the model-organism fleet: whether the context vector moves, whether the map itself changes, whether the answer vector moves, what shape the write has and whether it is predictable ahead of time (delta vs r_B vs the marker unembedding row), and which of theory assumptions A7-A11 hold.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/1768",
-      "status": "running",
+      "path": "tasks/interpreting/1768",
+      "status": "interpreting",
       "title": "What fine-tuning a behavior into a context does to the context->answer map (60-arm organism fleet, 15k contexts)"
     },
     "1769": {
       "goal": "Determine when behavioral commitment happens in Qwen-2.5-7B-Instruct: does steering a persona-vector direction r_B only during prefill vs only during decode vs both change on-policy judged behavior expression - i.e., is the answer's behavior already committed in the pre-answer context state, or decided token-by-token during generation?",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1769",
-      "status": "followups_running",
-      "title": "Decode-driven behavioral commitment at \u03b1=2 is convention-robust for evil and sycophancy; hallucination flips to mixed under intrusion-robust scoring (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/1769",
+      "status": "awaiting_promotion",
+      "title": "Decode-driven behavioral commitment is convention-robust for evil across the \u03b1=1.5\u20132 clean window and for sycophancy at \u03b1=2; hallucination reads mixed under intrusion-robust scoring (MODERATE confidence)"
     },
     "1770": {
       "has_clean_result": false,
@@ -6333,8 +6333,8 @@
     "1818": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1818",
-      "status": "running",
+      "path": "tasks/completed/1818",
+      "status": "completed",
       "title": "daily-fix: clamp composed poll sleeps below the Bash cap"
     },
     "1819": {
@@ -6361,8 +6361,8 @@
     "1821": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1821",
-      "status": "running",
+      "path": "tasks/reviewing/1821",
+      "status": "reviewing",
       "title": "daily-fix: bake self-pid exclusion into single-flight probe"
     },
     "1822": {
@@ -6375,22 +6375,22 @@
     "1823": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1823",
-      "status": "proposed",
+      "path": "tasks/archived/1823",
+      "status": "archived",
       "title": "workflow-fix: re-wrap verify_task_body.py line 13224 (the inclusive-cap f-"
     },
     "1824": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1824",
-      "status": "proposed",
+      "path": "tasks/planning/1824",
+      "status": "planning",
       "title": "upload_dir_sharded: batch small-file stores into one upload_folder commit (per-file walk measured ~35 s/file, #1482)"
     },
     "1825": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1825",
-      "status": "proposed",
+      "path": "tasks/approved/1825",
+      "status": "approved",
       "title": "workflow-fix: gotchas entry \u2014 reused-module flag contract trap (same flag, opposite semantics)"
     },
     "1826": {
@@ -6795,9 +6795,16 @@
     "1878": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1878",
-      "status": "running",
+      "path": "tasks/completed/1878",
+      "status": "completed",
       "title": "workflow-fix: gotchas span-family entry \u2014 find-from-0 query mis-anchor in chat-template renders"
+    },
+    "1879": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1879",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body per-result multi-figure (non-pair) check"
     },
     "188": {
       "has_clean_result": false,
