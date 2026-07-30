@@ -1,0 +1,251 @@
+{
+  "commit": "b1c063bddb",
+  "created": "2026-07-30T10:12:21Z",
+  "figsize": [
+    7.5,
+    4.5
+  ],
+  "points": [
+    {
+      "Behavior": -0.22,
+      "Decode fraction $f_d$": 1.0728198520694365,
+      "error": 0.06784003724897025,
+      "series": "Raw",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Behavior": 0.78,
+      "Decode fraction $f_d$": 0.9342644790653961,
+      "error": 0.051633338207243085,
+      "series": "Raw",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Behavior": 1.78,
+      "Decode fraction $f_d$": 0.9276079403845733,
+      "error": 0.08861357590715802,
+      "series": "Raw",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Behavior": 2.0,
+      "Decode fraction $f_d$": 0.8726410385716835,
+      "error": 0.11831842475002269,
+      "series": "Exclusion (excl. CJK)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Behavior": 0.22,
+      "Decode fraction $f_d$": 1.0492120384593504,
+      "error": 0.4582812953391268,
+      "series": "Zeroing (CJK\u21920)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Behavior": 1.22,
+      "Decode fraction $f_d$": 1.266672563240757,
+      "error": 1.054544748634782,
+      "series": "Zeroing (CJK\u21920)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Behavior": 2.22,
+      "Decode fraction $f_d$": 0.8946058144740274,
+      "error": 0.18969624029418747,
+      "series": "Zeroing (CJK\u21920)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Behavior": -0.22,
+      "Decode fraction $f_d$": 1.0728198520694365,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Behavior": 0.78,
+      "Decode fraction $f_d$": 0.9342644790653961,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Behavior": 1.78,
+      "Decode fraction $f_d$": 0.9276079403845733,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Behavior": -0.22,
+      "Decode fraction $f_d$": 1.009397564766114,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Behavior": 0.78,
+      "Decode fraction $f_d$": 0.8802446753246191,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Behavior": 1.78,
+      "Decode fraction $f_d$": 0.8371658758786078,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Behavior": -0.22,
+      "Decode fraction $f_d$": 1.1450776392640545,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Behavior": 0.78,
+      "Decode fraction $f_d$": 0.9835113517391053,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Behavior": 1.78,
+      "Decode fraction $f_d$": 1.0143930276929238,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Behavior": 0.22,
+      "Decode fraction $f_d$": 1.0492120384593504,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Behavior": 1.22,
+      "Decode fraction $f_d$": 1.266672563240757,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Behavior": 2.22,
+      "Decode fraction $f_d$": 0.8946058144740274,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Behavior": 0.22,
+      "Decode fraction $f_d$": 0.6984173354409265,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Behavior": 1.22,
+      "Decode fraction $f_d$": 0.8309026443852153,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Behavior": 2.22,
+      "Decode fraction $f_d$": 0.7146601567835261,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Behavior": 0.22,
+      "Decode fraction $f_d$": 1.6149799261191802,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Behavior": 1.22,
+      "Decode fraction $f_d$": 2.9399921416547796,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Behavior": 2.22,
+      "Decode fraction $f_d$": 1.094052637371901,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Behavior": 0.0,
+      "Decode fraction $f_d$": 0.75,
+      "series": "Decode-driven lb (f_d \u2265 0.75)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Behavior": 1.0,
+      "Decode fraction $f_d$": 0.75,
+      "series": "Decode-driven lb (f_d \u2265 0.75)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Behavior": 0.0,
+      "Decode fraction $f_d$": 0.25,
+      "series": "Prefill-negligible (<0.25)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Behavior": 1.0,
+      "Decode fraction $f_d$": 0.25,
+      "series": "Prefill-negligible (<0.25)",
+      "_kind": "line",
+      "_group": 10
+    }
+  ],
+  "n_series": 11,
+  "total_points": 29,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Lattice classification at \u03b1=3  (n=200 draws/arm, bootstrap n=2000)",
+        "xlabel": "Behavior",
+        "ylabel": "Decode fraction $f_d$",
+        "legend_labels": [
+          "Decode-driven lb (f_d \u2265 0.75)",
+          "Prefill-negligible (<0.25)",
+          "Raw",
+          "Exclusion (excl. CJK)",
+          "Zeroing (CJK\u21920)"
+        ],
+        "annotations": [
+          "N/A",
+          "N/A",
+          "Scheming/Exclusion: N/A \u2014 84.5% CJK intrusion, 30/200 draws remain",
+          "Hallucination/Exclusion: N/A \u2014 92% CJK intrusion, 13/200 draws remain"
+        ],
+        "xticklabels": [
+          "Scheming",
+          "Hallucination",
+          "Sycophancy"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5"
+        ]
+      }
+    ],
+    "series": [
+      "Decode-driven lb (f_d \u2265 0.75)",
+      "Prefill-negligible (<0.25)",
+      "Raw",
+      "Exclusion (excl. CJK)",
+      "Zeroing (CJK\u21920)"
+    ]
+  }
+}
