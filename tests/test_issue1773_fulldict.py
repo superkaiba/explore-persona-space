@@ -232,6 +232,36 @@ def test_assemble_drops_window_values_only_in_full_dictionary(evidence, tmp_path
     assert "values_fp16" not in msg and "<<tok>>" in msg
 
 
+def test_zero_evidence_features_excluded_and_recorded(describe, tmp_path):
+    """A feature with no activating windows renders an empty EX+ block, so the
+    call cannot describe anything: it is dropped from the dispatch set and
+    recorded as `no_evidence` at zero API cost (kept as a reporting stratum)."""
+    import json
+
+    packets = {
+        1: {"feat_id": 1, "ex_pos": [{"text_marked": "a <<x>> b"}]},
+        2: {"feat_id": 2, "ex_pos": []},
+        3: {"feat_id": 3, "ex_pos": [{"text_marked": "c <<y>> d"}]},
+        4: {"feat_id": 4, "ex_pos": []},
+    }
+    keep = describe.exclude_zero_evidence(packets, tmp_path)
+    assert sorted(keep) == [1, 3], "only features with activating evidence are dispatched"
+
+    rec = json.loads((tmp_path / "labels" / "no_evidence_features.json").read_text())
+    assert rec["n_excluded"] == 2 and rec["n_dispatched"] == 2
+    assert rec["feat_ids"] == [2, 4]
+    assert "git_commit" in rec, "the zero-cost record carries reproducibility metadata"
+
+
+def test_exclude_zero_evidence_writes_nothing_when_all_have_evidence(describe, tmp_path):
+    """The committed 16,384-feature path has no zero-evidence features, so the
+    exclusion must be a no-op there — no stray record file, no dropped ids."""
+    packets = {i: {"feat_id": i, "ex_pos": [{"text_marked": "z"}]} for i in range(3)}
+    keep = describe.exclude_zero_evidence(packets, tmp_path)
+    assert sorted(keep) == [0, 1, 2]
+    assert not (tmp_path / "labels" / "no_evidence_features.json").exists()
+
+
 # ── phase 2/3 feature-group sharding ────────────────────────────────────────
 
 

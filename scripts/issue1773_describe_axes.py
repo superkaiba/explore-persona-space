@@ -182,76 +182,42 @@ def _upload_dir(local_dir: Path, prefix: str) -> None:
 # ── describe ─────────────────────────────────────────────────────────────────
 
 
-def load_neighbor_cos(phase0_dir: Path, feat_ids: set[int]) -> dict[int, dict[int, float]]:
-    """Per-feature {neighbour_feat_id: decoder cosine} for the given features.
+def exclude_zero_evidence(packets: dict[int, dict], out_root: Path) -> dict[int, dict]:
+    """Drop features with NO activating windows from the dispatch set.
 
-    Only the zero-activating features need this (to annotate their geometry
-    block), so the map is built for that subset rather than all 131,072 x 8.
-    Returns {} when the phase-0 arrays are absent — the geometry block then
-    renders neighbour text without cosines rather than failing the dispatch.
+    2,560 of the 131,072 dictionary features never fire on the evaluation
+    corpus (phase 0 `n_features_dead_in_fit`), so their packet renders an
+    EMPTY activating-examples block: the prompt has nothing to describe and
+    the call would be paid noise. They are RECORDED here as `no_evidence` at
+    zero API cost and survive as a labelled zero-cost row in the reporting
+    tables. Returns the packets to dispatch.
     """
-    arr = phase0_dir / "phase0_arrays.npz"
-    if not feat_ids or not arr.exists():
-        if feat_ids:
-            _log(f"[geometry] WARNING: {arr} missing; neighbour cosines omitted")
-        return {}
-    z = np.load(arr, allow_pickle=True)
-    fid = np.asarray(z["feat_ids"], dtype=np.int64)
-    nb_idx, nb_cos = np.asarray(z["neighbor_idx"]), np.asarray(z["neighbor_cos"])
-    pos = {int(f): i for i, f in enumerate(fid)}
-    out: dict[int, dict[int, float]] = {}
-    for f in feat_ids:
-        i = pos.get(int(f))
-        if i is None:
-            continue
-        out[int(f)] = {int(fid[j]): float(c) for j, c in zip(nb_idx[i], nb_cos[i], strict=True)}
-    _log(f"[geometry] neighbour cosines loaded for {len(out)}/{len(feat_ids)} features")
-    return out
-
-
-def partition_by_evidence(packets: dict[int, dict]) -> tuple[dict[int, dict], dict[int, dict]]:
-    """Split packets into (activating, zero_activating).
-
-    The two arms take DIFFERENT system prompts, so they must be dispatched
-    separately — mixing them would put one rubric's fingerprint on the other's
-    calls (llm-judging rule 22).
-    """
-    act = {f: p for f, p in packets.items() if not CM.is_zero_activating(p)}
-    zero = {f: p for f, p in packets.items() if CM.is_zero_activating(p)}
-    return act, zero
-
-
-def build_describe_items_geometry(
-    packets: dict[int, dict], ncos: dict[int, dict[int, float]]
-) -> list[tuple[str, str, str, str]]:
-    """Describe items for never-activating features (decoder-geometry prompt)."""
-    items = []
-    for feat_id, pk in sorted(packets.items()):
-        user = CM.build_describe_geometry_user_msg(pk, ncos.get(int(feat_id)))
-        items.append((f"f{feat_id}-desc", f"feat:{feat_id}", "", user))
-    return items
-
-
-def build_axes_items_geometry(
-    packets: dict[int, dict],
-    descriptions: dict[int, str],
-    ncos: dict[int, dict[int, float]],
-    axes=None,
-    draws=CM.N_DRAWS,
-) -> list[tuple[str, str, str, str]]:
-    """Axis items for never-activating features (decoder-geometry prompt)."""
-    items = []
-    for feat_id, pk in sorted(packets.items()):
-        if feat_id < 0:
-            continue
-        desc = descriptions.get(feat_id)
-        for axis in axes or CM.AXES:
-            for d in range(draws):
-                user = CM.build_axis_geometry_user_msg(axis, pk, desc, d, ncos.get(int(feat_id)))
-                items.append(
-                    (CM.axis_custom_id(feat_id, axis, d), f"feat:{feat_id}:{axis}", "", user)
-                )
-    return items
+    keep = {f: p for f, p in packets.items() if p.get("ex_pos")}
+    dropped = sorted(f for f, p in packets.items() if not p.get("ex_pos"))
+    if dropped:
+        rec = out_root / "labels" / "no_evidence_features.json"
+        rec.parent.mkdir(parents=True, exist_ok=True)
+        rec.write_text(
+            json.dumps(
+                {
+                    "reason": (
+                        "zero activating windows — the describe/axis prompt would render an "
+                        "empty activating-examples block; excluded from phases 2-3 at zero "
+                        "API cost and reported as its own stratum"
+                    ),
+                    "n_excluded": len(dropped),
+                    "n_dispatched": len(keep),
+                    "feat_ids": dropped,
+                    **CM.repro_meta(),
+                },
+                indent=1,
+            )
+        )
+        _log(
+            f"[scope] excluded {len(dropped)} zero-evidence features "
+            f"(recorded no_evidence, $0); dispatching {len(keep)}"
+        )
+    return keep
 
 
 def build_describe_items(packets: dict[int, dict]) -> list[tuple[str, str, str, str]]:
@@ -283,89 +249,55 @@ def stage_describe_grouped(args, packets: dict[int, dict]) -> int:
     out_dir = args.out_root / "labels"
     grp_dir = out_dir / "describe_groups"
     grp_dir.mkdir(parents=True, exist_ok=True)
-    act, zero = partition_by_evidence(packets)
-    ncos = load_neighbor_cos(args.phase0_dir, set(zero))
-    _log(f"[describe] {len(packets)} features: {len(act)} activating, {len(zero)} zero-activating")
+    packets = exclude_zero_evidence(packets, args.out_root)
+    groups = feature_groups(sorted(packets), args.describe_group_size)
+    _log(f"[describe] {len(packets)} features -> {len(groups)} groups")
     totals = {"n_items": 0, "n_ok": 0, "content": 0, "transport": 0}
-    # Two ARMS with DIFFERENT system prompts -> separate dispatches (mixing them
-    # would stamp one rubric's fingerprint on the other's calls, llm-judging
-    # rule 22). Tag "g" keeps the activating arm's shard/sentinel names
-    # byte-identical to the pre-two-arm layout, so existing runs resume.
-    arms = [("g", act, CM.DESCRIBER_SYSTEM, lambda s: build_describe_items(s), "activating")]
-    if zero:
-        arms.append(
-            (
-                "zg",
-                zero,
-                CM.DESCRIBER_SYSTEM_GEOMETRY,
-                lambda s: build_describe_items_geometry(s, ncos),
-                "decoder-geometry",
-            )
-        )
-    for tag, arm_packets, system, build_items, arm_label in arms:
-        groups = feature_groups(sorted(arm_packets), args.describe_group_size)
-        _log(f"[describe:{arm_label}] {len(arm_packets)} features -> {len(groups)} groups")
-        for gi, gfeats in enumerate(groups):
-            shard = grp_dir / f"descriptions.{tag}{gi:04d}.jsonl"
-            done = grp_dir / f"descriptions.{tag}{gi:04d}.done.json"
-            if _group_done(done) and not args.regroup:
-                d = json.loads(done.read_text())
-                for k in totals:
-                    totals[k] += int(d.get(k, 0))
-                _log(f"[describe:{arm_label}] group {gi + 1}/{len(groups)} SKIP (done)")
-                continue
-            sub = {f: arm_packets[f] for f in gfeats}
-            items = build_items(sub)
-            _log(
-                f"[describe:{arm_label}] group {gi + 1}/{len(groups)}: "
-                f"dispatching {len(items)} items"
-            )
-            results = _dispatch(
-                items,
-                system=system,
-                max_tokens=CM.DESCRIBE_MAX_TOKENS,
-                checkpoint_dir=args.work / "judge_checkpoints" / "describe" / f"{tag}{gi:04d}",
-                force_batch=args.force_batch,
-                dry_run=args.dry_run,
-            )
-            if args.dry_run:
-                continue
-            rows, drops = [], {"content": 0, "transport": 0}
-            for cid, _q, _c, user in items:
-                res = results.get(cid)
-                if isinstance(res, dict) and res.get("error"):
-                    drops[_classify_error(res)] += 1
-                    continue
-                parsed = parse_describe_result(res)
-                if parsed is None:
-                    drops["content"] += 1
-                    continue
-                feat_id = int(cid[1:].rsplit("-", 1)[0])
-                rows.append(
-                    {
-                        "feat_id": feat_id,
-                        **parsed,
-                        "evidence_mode": ("decoder_geometry" if tag == "zg" else "activating"),
-                        "zero_activating_evidence": tag == "zg",
-                        "prompt_sha16": CM.sha16(user),
-                    }
-                )
-            _write_jsonl(rows, shard)
-            _write_raw(results, args.work / "judge_raw" / f"describe_raw_{tag}{gi:04d}")
-            payload = {"group": f"{tag}{gi}", "n_items": len(items), "n_ok": len(rows), **drops}
-            _write_group_done(done, payload)
+    for gi, gfeats in enumerate(groups):
+        shard = grp_dir / f"descriptions.g{gi:04d}.jsonl"
+        done = grp_dir / f"descriptions.g{gi:04d}.done.json"
+        if _group_done(done) and not args.regroup:
+            d = json.loads(done.read_text())
             for k in totals:
-                totals[k] += int(payload.get(k, 0))
-            _log(
-                f"[describe:{arm_label}] group {gi + 1}/{len(groups)} done: "
-                f"{len(rows)}/{len(items)} ok {drops}"
-            )
+                totals[k] += int(d.get(k, 0))
+            _log(f"[describe] group {gi + 1}/{len(groups)} SKIP (done, n_ok={d.get('n_ok')})")
+            continue
+        sub = {f: packets[f] for f in gfeats}
+        items = build_describe_items(sub)
+        _log(f"[describe] group {gi + 1}/{len(groups)}: dispatching {len(items)} items")
+        results = _dispatch(
+            items,
+            system=CM.DESCRIBER_SYSTEM,
+            max_tokens=CM.DESCRIBE_MAX_TOKENS,
+            checkpoint_dir=args.work / "judge_checkpoints" / "describe" / f"g{gi:04d}",
+            force_batch=args.force_batch,
+            dry_run=args.dry_run,
+        )
+        if args.dry_run:
+            continue
+        rows, drops = [], {"content": 0, "transport": 0}
+        for cid, _q, _c, user in items:
+            res = results.get(cid)
+            if isinstance(res, dict) and res.get("error"):
+                drops[_classify_error(res)] += 1
+                continue
+            parsed = parse_describe_result(res)
+            if parsed is None:
+                drops["content"] += 1
+                continue
+            feat_id = int(cid[1:].rsplit("-", 1)[0])
+            rows.append({"feat_id": feat_id, **parsed, "prompt_sha16": CM.sha16(user)})
+        _write_jsonl(rows, shard)
+        _write_raw(results, args.work / "judge_raw" / f"describe_raw_g{gi:04d}")
+        payload = {"group": gi, "n_items": len(items), "n_ok": len(rows), **drops}
+        _write_group_done(done, payload)
+        for k in totals:
+            totals[k] += int(payload.get(k, 0))
+        _log(f"[describe] group {gi + 1}/{len(groups)} done: {len(rows)}/{len(items)} ok {drops}")
     if args.dry_run:
         return 0
     merged: list[dict] = []
-    # "descriptions.*.jsonl" spans BOTH arms (g = activating, zg = geometry);
-    # the ".done.json" sentinels do not match the .jsonl suffix.
-    for p in sorted(grp_dir.glob("descriptions.*.jsonl")):
+    for p in sorted(grp_dir.glob("descriptions.g*.jsonl")):
         merged.extend(CM.iter_jsonl(p))
     _write_jsonl(merged, out_dir / "descriptions.jsonl")
     (out_dir / "describe_meta.json").write_text(
@@ -404,81 +336,52 @@ def stage_axes_grouped(args, packets: dict[int, dict]) -> int:
             "(a grouped --full axes dispatch with no DESC blocks is a changed instrument)"
         )
     descriptions = {int(r["feat_id"]): r["description"] for r in CM.iter_jsonl(desc_path)}
-    real_packets = {f: p for f, p in packets.items() if f >= 0}
-    act, zero = partition_by_evidence(real_packets)
-    ncos = load_neighbor_cos(args.phase0_dir, set(zero))
+    packets = exclude_zero_evidence(packets, args.out_root)
+    real = sorted(f for f in packets if f >= 0)
+    groups = feature_groups(real, args.axes_group_size)
     _log(
-        f"[axes] {len(real_packets)} features ({len(act)} activating, {len(zero)} "
-        f"zero-activating) x {len(CM.AXES)} axes x {CM.N_DRAWS}"
+        f"[axes] {len(real)} features -> {len(groups)} groups x {len(CM.AXES)} axes x {CM.N_DRAWS}"
     )
     tally: dict[str, dict[str, int]] = {
         a: {"launched": 0, "ok": 0, "content_drops": 0, "transport_losses": 0} for a in CM.AXES
     }
-    arms = [
-        (
-            "g",
-            act,
-            CM.AXIS_SYSTEM_PREAMBLE,
-            lambda s: build_axes_items(s, descriptions),
-            "activating",
+    for gi, gfeats in enumerate(groups):
+        shard = grp_dir / f"axis_labels.g{gi:04d}.jsonl"
+        done = grp_dir / f"axis_labels.g{gi:04d}.done.json"
+        if _group_done(done) and not args.regroup:
+            d = json.loads(done.read_text())
+            for a, t in (d.get("tally") or {}).items():
+                for k in tally.get(a, {}):
+                    tally[a][k] += int(t.get(k, 0))
+            _log(f"[axes] group {gi + 1}/{len(groups)} SKIP (done)")
+            continue
+        sub = {f: packets[f] for f in gfeats}
+        items = build_axes_items(sub, descriptions)
+        _log(f"[axes] group {gi + 1}/{len(groups)}: dispatching {len(items)} items")
+        results = _dispatch(
+            items,
+            system=CM.AXIS_SYSTEM_PREAMBLE,
+            max_tokens=CM.AXES_MAX_TOKENS,
+            checkpoint_dir=args.work / "judge_checkpoints" / "axes" / f"g{gi:04d}",
+            force_batch=args.force_batch,
+            dry_run=args.dry_run,
         )
-    ]
-    if zero:
-        arms.append(
-            (
-                "zg",
-                zero,
-                CM.AXIS_SYSTEM_PREAMBLE_GEOMETRY,
-                lambda s: build_axes_items_geometry(s, descriptions, ncos),
-                "decoder-geometry",
-            )
-        )
-    for tag, arm_packets, system, build_items, arm_label in arms:
-        groups = feature_groups(sorted(arm_packets), args.axes_group_size)
-        _log(f"[axes:{arm_label}] {len(arm_packets)} features -> {len(groups)} groups")
-        for gi, gfeats in enumerate(groups):
-            shard = grp_dir / f"axis_labels.{tag}{gi:04d}.jsonl"
-            done = grp_dir / f"axis_labels.{tag}{gi:04d}.done.json"
-            if _group_done(done) and not args.regroup:
-                d = json.loads(done.read_text())
-                for a, t in (d.get("tally") or {}).items():
-                    for k in tally.get(a, {}):
-                        tally[a][k] += int(t.get(k, 0))
-                _log(f"[axes:{arm_label}] group {gi + 1}/{len(groups)} SKIP (done)")
-                continue
-            sub = {f: arm_packets[f] for f in gfeats}
-            items = build_items(sub)
-            _log(f"[axes:{arm_label}] group {gi + 1}/{len(groups)}: dispatching {len(items)} items")
-            results = _dispatch(
-                items,
-                system=system,
-                max_tokens=CM.AXES_MAX_TOKENS,
-                checkpoint_dir=args.work / "judge_checkpoints" / "axes" / f"{tag}{gi:04d}",
-                force_batch=args.force_batch,
-                dry_run=args.dry_run,
-            )
-            if args.dry_run:
-                continue
-            rows, gkappa = aggregate_axes(items, results)
-            for r in rows:
-                r["evidence_mode"] = "decoder_geometry" if tag == "zg" else "activating"
-                r["zero_activating_evidence"] = tag == "zg"
-            _write_jsonl(rows, shard)
-            _write_raw(results, args.work / "judge_raw" / f"axes_raw_{tag}{gi:04d}")
-            gt = {a: gkappa[a]["drop_report"] for a in CM.AXES}
-            _write_group_done(done, {"group": f"{tag}{gi}", "n_items": len(items), "tally": gt})
-            for a in CM.AXES:
-                for k in tally[a]:
-                    tally[a][k] += int(gt[a].get(k, 0))
-            _log(
-                f"[axes:{arm_label}] group {gi + 1}/{len(groups)} done: "
-                f"{len(rows)} (feat x axis) rows"
-            )
+        if args.dry_run:
+            continue
+        rows, gkappa = aggregate_axes(items, results)
+        _write_jsonl(rows, shard)
+        _write_raw(results, args.work / "judge_raw" / f"axes_raw_g{gi:04d}")
+        gt = {a: gkappa[a]["drop_report"] for a in CM.AXES}
+        _write_group_done(done, {"group": gi, "n_items": len(items), "tally": gt})
+        for a in CM.AXES:
+            for k in tally[a]:
+                tally[a][k] += int(gt[a].get(k, 0))
+        _log(f"[axes] group {gi + 1}/{len(groups)} done: {len(rows)} (feat x axis) rows")
     if args.dry_run:
         return 0
 
     merged_rows: list[dict] = []
-    for p in sorted(grp_dir.glob("axis_labels.*.jsonl")):  # both arms (g, zg)
+    for p in sorted(grp_dir.glob("axis_labels.g*.jsonl")):
         merged_rows.extend(CM.iter_jsonl(p))
     _write_jsonl(merged_rows, out_dir / "axis_labels.jsonl")
     votes: dict[str, list[list[str]]] = {a: [] for a in CM.AXES}
@@ -758,14 +661,6 @@ def main() -> int:
     ap.add_argument("--stage", choices=("describe", "axes", "pilot"))
     ap.add_argument("--import-check", action="store_true")
     ap.add_argument("--evidence-dir", type=Path, default=CM.WORK_DEFAULT / "evidence")
-    # Only read for the zero-activating arm's neighbour cosines; a missing dir
-    # degrades to a geometry block without cosines, never a failed dispatch.
-    ap.add_argument(
-        "--phase0-dir",
-        type=Path,
-        default=CM.OUT_EVAL / "phase0",
-        help="phase-0 output dir (phase0_arrays.npz) for decoder-neighbour cosines",
-    )
     ap.add_argument("--out-root", type=Path, default=CM.OUT_EVAL)
     ap.add_argument("--work", type=Path, default=CM.WORK_DEFAULT)
     ap.add_argument("--limit", type=int, default=DEFAULT_SMOKE_LIMIT)
