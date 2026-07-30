@@ -230,7 +230,7 @@ class _FvePool:
         return torch.cat(self.parts) if self.parts else torch.zeros(0, 1)
 
 
-def _process_chunk(hf, tok, sae, bundle: dict, args, fve_pool: _FvePool | None):
+def _process_chunk(hf, tok, sae, bundle: dict, args, fve_pool: dict | None):
     """One parent chunk -> (sae chunk dict, violations list, stats dict).
 
     Per row: render (parent convention) -> batched span capture -> v_x identity
@@ -275,9 +275,9 @@ def _process_chunk(hf, tok, sae, bundle: dict, args, fve_pool: _FvePool | None):
             )
             continue
         if fve_pool is not None:
-            fve_pool.add(span_in)
-            fve_pool.add(px[i : i + 1])
-            fve_pool.add(cx[i : i + 1])
+            fve_pool["answer_tokens"].add(span_in)
+            fve_pool["context_tokens"].add(px[i : i + 1])
+            fve_pool["context_tokens"].add(cx[i : i + 1])
         f = sae.encode(span_in.to(sae.device))  # (T_in, F) fp32
         pooled = SAEMOD.pool_answer_features(f)
         spd = SAEMOD.sparsify(pooled)
@@ -373,7 +373,13 @@ def _parity_probe(hf, tok, bundle: dict, args) -> dict:
     return {"n_rows": n, "min_cos": float(min(coss)), "median_cos": float(np.median(coss))}
 
 
-def _fve_gate(pool: torch.Tensor, cache_dir: Path, *, smoke_sae=None) -> dict:
+def _fve_gate(
+    pool: torch.Tensor,
+    cache_dir: Path,
+    *,
+    smoke_sae=None,
+    split_pools: dict[str, torch.Tensor] | None = None,
+) -> dict:
     """G-S0: reference-parity fve_l0 at k=64 (primary) + k=128 (robustness twin)
     on the accumulated inlier token pool. ``smoke_sae`` (a tiny from-config SAE)
     substitutes both trainers under --smoke; production loads the pinned suite."""
@@ -399,6 +405,22 @@ def _fve_gate(pool: torch.Tensor, cache_dir: Path, *, smoke_sae=None) -> dict:
             "diag": diag,
             "published_fve": SAEMOD.PUBLISHED_FVE_BY_LAYER[LAYER].get(k),
         }
+        if k == K_PRIMARY and split_pools:
+            # answer- vs context-token FVE split (informational — makes a
+            # marginal combined G-S0 read attributable; the gate binds on the
+            # combined pool above).
+            out[f"k{k}_split"] = {}
+            for name, sub in split_pools.items():
+                if sub.shape[0] < 2:
+                    out[f"k{k}_split"][name] = {"n_tokens": int(sub.shape[0])}
+                    continue
+                sf, sl0, sdiag = sae_k.fve_l0(sub)
+                out[f"k{k}_split"][name] = {
+                    "n_tokens": int(sub.shape[0]),
+                    "fve": float(sf),
+                    "l0": float(sl0),
+                    "diag": sdiag,
+                }
         if smoke_sae is None and k != K_PRIMARY:
             del sae_k
     g = out[f"k{K_PRIMARY}"]
@@ -538,7 +560,10 @@ def run_capture(args) -> int:
     C.phase("sae-capture")
     out_chunks = Path(args.out_dir) / "sae_chunks"
     out_chunks.mkdir(parents=True, exist_ok=True)
-    fve_pool = _FvePool() if pilot else None
+    # split pools so a marginal G-S0 is attributable (answer- vs context-token FVE)
+    fve_pool = (
+        {"answer_tokens": _FvePool(), "context_tokens": _FvePool(cap=50_000)} if pilot else None
+    )
     pilot_rows_seen = 0
     parity: dict | None = None
     violations_all: list[dict] = []
@@ -590,7 +615,8 @@ def run_capture(args) -> int:
         )
         if pilot:
             pilot_rows_seen += stats["n_rows"]
-            enough_tokens = fve_pool is not None and fve_pool.n >= min(
+            pool_n = sum(v.n for v in fve_pool.values()) if fve_pool else 0
+            enough_tokens = fve_pool is not None and pool_n >= min(
                 FVE_TOKEN_FLOOR, args.fve_token_floor
             )
             if pilot_rows_seen >= args.pilot_rows and enough_tokens:
@@ -663,11 +689,12 @@ def _finish_pilot(
     are computed + logged but demoted to informational (gate-calibration
     gotcha); the halt BRANCHES are exercised by the smoke's degenerate probes."""
     C.phase("sae-pilot-gates")
-    pool = fve_pool.tensor()
+    split_pools = {name: fp.tensor() for name, fp in fve_pool.items()}
+    pool = torch.cat([v for v in split_pools.values() if v.shape[0] > 0])
     smoke_sae = None
     if args.smoke_model_dir:
         _hf, _tok, smoke_sae = _smoke_models(Path(args.smoke_model_dir), args, model=False)
-    gate_s0 = _fve_gate(pool, Path(args.sae_cache), smoke_sae=smoke_sae)
+    gate_s0 = _fve_gate(pool, Path(args.sae_cache), smoke_sae=smoke_sae, split_pools=split_pools)
     viol_rate = len(violations_all) / max(1, rows_total)
     med_cos = float(np.median(vx_cos_all)) if vx_cos_all else float("nan")
     rate_rows_per_s = kept_total / max(1e-9, wall_s)
@@ -1749,6 +1776,10 @@ def _smoke(args) -> int:
     assert len(sae_chunks) == 2, [p.name for p in sae_chunks]
     meta = json.loads((base / "cap" / PILOT_META_NAME).read_text())
     assert "gate_s0" in meta and "gate_s1" in meta, sorted(meta)
+    assert set(meta["gate_s0"].get(f"k{K_PRIMARY}_split", {})) == {
+        "answer_tokens",
+        "context_tokens",
+    }, meta["gate_s0"].get(f"k{K_PRIMARY}_split")
     d0 = torch.load(sae_chunks[0], map_location="cpu", weights_only=False)
     for key in (
         "ci",
