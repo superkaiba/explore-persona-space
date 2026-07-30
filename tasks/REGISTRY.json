@@ -6914,8 +6914,8 @@
     "1894": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1894",
-      "status": "planning",
+      "path": "tasks/approved/1894",
+      "status": "approved",
       "title": "workflow-fix: concurrent-committers rule mandates pathspec-limited COMMITS (bare git commit sweeps foreign staged files)"
     },
     "1895": {
