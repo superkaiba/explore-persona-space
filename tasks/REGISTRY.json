@@ -6333,8 +6333,8 @@
     "1818": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1818",
-      "status": "proposed",
+      "path": "tasks/planning/1818",
+      "status": "planning",
       "title": "daily-fix: clamp composed poll sleeps below the Bash cap"
     },
     "1819": {
