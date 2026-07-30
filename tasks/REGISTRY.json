@@ -6249,8 +6249,8 @@
     "1807": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1807",
-      "status": "reviewing",
+      "path": "tasks/completed/1807",
+      "status": "completed",
       "title": "daily-fix: Step 10d/9c \u2014 re-sync before SHA-bound gates"
     },
     "1808": {
