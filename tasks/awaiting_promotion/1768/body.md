@@ -3,7 +3,8 @@ title: Behavior fine-tuning changes the context→answer map in rank order with 
   weights-carried answer shift, with most content arms crossing the refit-noise floor
   and marker arms staying below it (HIGH confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-07-28T18:48:27Z'
 has_clean_result: true
 parent_id: 722
