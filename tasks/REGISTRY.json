@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1854,
+  "highest_id": 1855,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6616,6 +6616,13 @@
       "path": "tasks/proposed/1854",
       "status": "proposed",
       "title": "daily-fix: /daily route-1 code applies run full-ruleset lint"
+    },
+    "1855": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1855",
+      "status": "proposed",
+      "title": "daily-fix: context-headroom check at review-round boundaries"
     },
     "186": {
       "has_clean_result": true,
