@@ -269,6 +269,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--work-dir", type=Path, default=PARENT_WORK_DIR)
     ap.add_argument("--judge-out", type=Path, default=PARENT_JUDGE_OUT)
     ap.add_argument(
+        # UPLOAD_PREFIX_EXEMPT: issue-1769-specific script; the default IS this issue's
+        # parent-run prefix, and assert_prefix_isolation() fail-louds any non-parent
+        # --hf-prefix invocation that leaves parent-default local paths bound — a child
+        # issue reusing this script must pass its own prefix AND rebind every path.
         "--hf-prefix",
         default=HF_OUT_PREFIX,
         help="HF data-repo artifact prefix: raw completions are staged from "

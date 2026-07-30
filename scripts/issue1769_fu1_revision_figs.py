@@ -19,12 +19,16 @@ Usage: ``uv run python scripts/issue1769_fu1_revision_figs.py``
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
+from explore_persona_space.orchestrate.env import load_dotenv
 
-import matplotlib.pyplot as plt
+load_dotenv()  # shared-VM thread caps BEFORE heavy imports (#1144 invariant)
 
-from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style
+import json  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+import matplotlib.pyplot as plt  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style  # noqa: E402
 
 REPO = Path(__file__).resolve().parent.parent
 ANALYSIS = REPO / "eval_results" / "issue_1769" / "analysis"
