@@ -6361,8 +6361,8 @@
     "1821": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1821",
-      "status": "proposed",
+      "path": "tasks/planning/1821",
+      "status": "planning",
       "title": "daily-fix: bake self-pid exclusion into single-flight probe"
     },
     "1822": {
