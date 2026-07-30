@@ -1000,6 +1000,19 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   scope marker recorded `source: proposer-9b-cheap`, `est_gpu_hours: 14`
   — caught only at clean-result-critique (Lens 5b).
 
+- **check 48** (`check_v4_quant_result_figure`, WARN, v4-only, #1832): a
+  figure-less `### <result>` block that is QUANTITATIVE — at least 3
+  standalone numeric tokens in non-code content (inline code + markdown
+  link targets masked; fenced code + `<details>` bodies excluded), or any
+  GFM table row — draws a WARN naming the section with its basis (token
+  count / table). Check 21's figure-less exemption is byte-identical (a
+  qualitative figure-less result still passes both checks); WARN never
+  FAILs — the clean-result-critic keeps the ship/no-ship judgment.
+  Incident: task #1769's fold round shipped its Result-5 three-treatment
+  alpha=2 lattice (the H1-carrying headline) as a `> **Figure.**`-captioned
+  GFM table with zero inline image; the mechanical verifier read PASS and
+  a round-1 LM REVISE was burned.
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -14026,6 +14039,113 @@ def check_v4_result_paragraph_sentences(body: str) -> CheckResult:
     )
 
 
+# ─── v4 figure-less quantitative result check (48, #1832) ────────────────────
+
+# Standalone numeric token: an integer / decimal / percentage that is not
+# embedded in a word, identifier, version tag, or dotted path (`v4`, `fig3`,
+# `1e-3`, `issue_1769` never match — the \w / `.` / `-` guards). `-?` admits
+# negative values; `%?` admits percentages.
+_QUANT_NUMERIC_TOKEN_RE = re.compile(r"(?<![\w.-])-?\d+(?:\.\d+)?%?(?![\w.])")
+# Numeric-token threshold: a figure-less result block with at least this many
+# standalone numeric tokens in non-code content is presumed QUANTITATIVE.
+V4_QUANT_MIN_NUMERIC_TOKENS = 3
+
+
+def _v4_block_is_quantitative(block_lines: list[str]) -> str | None:
+    """Return the quantitative BASIS of a `### <result>` block, or None.
+
+    Fence-aware walk of the block's lines (heading excluded — callers pass
+    ``rlines[line_no + 1 : end_line]``, the check-21 convention). `<details>`
+    bodies are stripped first (collapsed content stays LM-lens territory) and
+    fenced code is skipped; inline code spans and markdown link targets are
+    masked so code literals / URLs never count; image lines are skipped
+    (vacuous for check 48's zero-image callers, kept so the helper is safe
+    standalone). Basis, first match wins:
+
+    - ``"GFM table"`` — any surviving stripped line starting with ``|``;
+    - ``"<n> numeric tokens"`` — at least V4_QUANT_MIN_NUMERIC_TOKENS
+      standalone numeric-token matches across the remaining prose / list /
+      blockquote lines;
+    - ``None`` — neither (a qualitative block).
+    """
+    text = _DETAILS_BLOCK_RE.sub("", "\n".join(block_lines))
+    n_numeric = 0
+    in_fence = False
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith(("```", "~~~")):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if _IMAGE_RE.search(line):
+            continue
+        if s.startswith("|"):
+            return "GFM table"
+        masked = _SENTENCE_INLINE_CODE_RE.sub("CODE", line)
+        masked = _SENTENCE_LINK_TARGET_RE.sub("]", masked)
+        n_numeric += len(_QUANT_NUMERIC_TOKEN_RE.findall(masked))
+    if n_numeric >= V4_QUANT_MIN_NUMERIC_TOKENS:
+        return f"{n_numeric} numeric tokens"
+    return None
+
+
+def check_v4_quant_result_figure(body: str) -> CheckResult:
+    """Check 48 (v4 only, WARN): a figure-less `### <result>` whose block is
+    QUANTITATIVE — at least V4_QUANT_MIN_NUMERIC_TOKENS standalone numeric
+    tokens in non-code content, or any GFM table row — draws a WARN naming
+    the section.
+
+    Check 21 (`check_v4_results_beat`) deliberately exempts EVERY figure-less
+    result (the qualitative carve-out in `_v4_result_beat_gaps`), so a
+    number-dense headline result shipped without any inline figure passes the
+    mechanical verifier silently and burns an LM clean-result-critic round
+    (incident #1769 Result 5: the alpha=2 three-treatment lattice carrying
+    the H1 claim shipped as a `> **Figure.**`-captioned GFM table with zero
+    inline image; caught only by the round-1 LM REVISE). This check is the
+    sibling binding ONLY the figure-less + quantitative intersection —
+    check 21's exemption is byte-identical, and a figure-less QUALITATIVE
+    result still passes both. WARN, NEVER FAIL — a deliberately figure-less
+    quantitative result stays shippable; the clean-result-critic owns the
+    judgment call (#1832). PASSes vacuously on v3 / v2 / legacy bodies.
+    """
+    label = "Quantitative results carry a figure (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(label, True, "## Results missing — check 2 will report")
+    result_h3s = _collect_tldr_h3_names(results)
+    if not result_h3s:
+        return CheckResult(label, True, "no `### <result>` headings — check 3 will report")
+    rlines = results.splitlines()
+    flagged: list[str] = []
+    for idx, (name, line_no) in enumerate(result_h3s):
+        end_line = result_h3s[idx + 1][1] if idx + 1 < len(result_h3s) else len(rlines)
+        block = rlines[line_no + 1 : end_line]
+        if _v4_first_image_index(block) is not None:
+            continue
+        basis = _v4_block_is_quantitative(block)
+        if basis is not None:
+            flagged.append(f"'{name[:48]}' is quantitative ({basis}) but carries no inline figure")
+    if flagged:
+        preview = "; ".join(flagged[:2]) + (" …" if len(flagged) > 2 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(flagged)} of {len(result_h3s)} `### <result>`(s) present quantitative "
+            "content (numbers / a table) with no inline figure — the v4 three-beat "
+            "(what-is-plotted → plot → interpretation) expects one inline figure per "
+            f"result; add a plot or keep figure-less only for qualitative results: {preview}",
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"all {len(result_h3s)} `### <result>`(s) scanned — no figure-less quantitative section",
+    )
+
+
 # ─── v4 bare-issue-ref check (27) ─────────────────────────────────────────────
 
 # Bare issue reference: `#779`, `(#537)`, `#658's`. Bounded to 1-4 digits so an
@@ -14577,6 +14697,9 @@ CHECKS = [
     check_v4_results_beat,  # check 21 (v4, WARN)
     check_v4_no_bare_issue_refs,  # check 27 (v4) — bare `#K` refs + task links, standalone secs
     check_v4_result_paragraph_sentences,  # check 36 (v4, WARN) — ≥4-sentence paras (#1368)
+    # check 48 (v4, WARN) — figure-less quantitative result section
+    # (#1832; incident #1769 Result 5):
+    check_v4_quant_result_figure,
     # check 37 (WARN, v4, #1370) — footer `- Reused ... from [#M](...)` bullets carry a
     # revision/path pin (body-text-only sibling of check 35's metadata-side trigger):
     check_footer_reuse_bullets_pinned,
