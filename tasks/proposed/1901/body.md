@@ -23,6 +23,9 @@ goal: Characterize every mapping-quality metric in use (held-out R², kNN retrie
   and nonlinear context→answer mappings against the full baseline ladder (constant
   train-mean; W = identity; identity + learned bias) on ALL metrics, in both the context-based
   and prefix-based arms.
+relates_to:
+- spec-context-as-vector
+- leak-predictor
 ---
 # Characterize mapping-quality metrics: 1M-context linear + nonlinear maps vs baselines on every metric
 
