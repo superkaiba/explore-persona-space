@@ -6326,8 +6326,8 @@
     "1817": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1817",
-      "status": "approved",
+      "path": "tasks/running/1817",
+      "status": "running",
       "title": "daily-fix: probe real-corpus plan assumptions at smoke time"
     },
     "1818": {
