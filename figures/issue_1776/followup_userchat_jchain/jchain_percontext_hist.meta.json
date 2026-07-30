@@ -1,0 +1,267 @@
+{
+  "commit": "ae2dcb6e15",
+  "created": "2026-07-30T16:51:27Z",
+  "figsize": [
+    7.0,
+    3.8
+  ],
+  "points": [
+    {
+      "log10 rank of the best content token (per context)": 0.060009,
+      "Density": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 0.180026,
+      "Density": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 0.300044,
+      "Density": 7.521454574561863e-05,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 0.420061,
+      "Density": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 0.540079,
+      "Density": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 0.660096,
+      "Density": 0.0002172864654873428,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 0.780114,
+      "Density": 1.6714343499026355e-05,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 0.900131,
+      "Density": 0.0003927870722271194,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 1.020149,
+      "Density": 0.0005181446484698175,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 1.140166,
+      "Density": 0.0008273600032018038,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 1.260184,
+      "Density": 0.004011442439766329,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 1.380201,
+      "Density": 0.0067860234606047076,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 1.500219,
+      "Density": 0.007529811746311367,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 1.620236,
+      "Density": 0.006518593964620285,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 1.740254,
+      "Density": 0.008047956394781184,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 1.860272,
+      "Density": 0.007462954372315275,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 1.980289,
+      "Density": 0.009159460237466433,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 2.100307,
+      "Density": 0.016196198850556585,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 2.220324,
+      "Density": 0.029826745974012504,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 2.340342,
+      "Density": 0.034757477306225276,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 2.460359,
+      "Density": 0.04049885429814097,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 2.580377,
+      "Density": 0.04748544988073383,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 2.700394,
+      "Density": 0.046256945633555396,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 2.820412,
+      "Density": 0.05961170608927766,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 2.940429,
+      "Density": 0.09354182339230092,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 3.060447,
+      "Density": 0.1163151164097243,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 3.180464,
+      "Density": 0.11441803842258481,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 3.300482,
+      "Density": 0.1544656054462525,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 3.420499,
+      "Density": 0.2487345027807605,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 3.540517,
+      "Density": 0.3639966155500461,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 3.660534,
+      "Density": 0.44877176577710937,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 3.780552,
+      "Density": 0.5292680440684185,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 3.900569,
+      "Density": 0.5130885595613611,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 4.020587,
+      "Density": 0.49079162533365994,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 4.140604,
+      "Density": 0.46846126241896074,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 4.260622,
+      "Density": 0.5974625655444505,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 4.380639,
+      "Density": 0.5300703325563718,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 4.500657,
+      "Density": 0.3604197460412545,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 4.620674,
+      "Density": 0.28246404796179564,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 4.740692,
+      "Density": 0.2638609836473793,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 4.860709,
+      "Density": 0.33539001665146256,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 4.980727,
+      "Density": 1.5036724842029179,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 5.100745,
+      "Density": 0.513297488855099,
+      "_kind": "bar"
+    },
+    {
+      "log10 rank of the best content token (per context)": 5.220762,
+      "Density": 0.07742919625923952,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 44,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "log10 rank of the best content token (per context)",
+        "ylabel": "Density",
+        "legend_labels": [
+          "Shuffled pairing (each context's own null rows)",
+          "True pairing (v-hat from J_last_affine)"
+        ],
+        "xticklabels": [
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25",
+          "1.50",
+          "1.75",
+          "2.00"
+        ]
+      }
+    ]
+  }
+}
