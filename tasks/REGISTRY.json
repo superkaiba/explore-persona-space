@@ -6256,8 +6256,8 @@
     "1808": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1808",
-      "status": "planning",
+      "path": "tasks/approved/1808",
+      "status": "approved",
       "title": "daily-fix: driver sha-scan exempts item's own fingerprint"
     },
     "1809": {
