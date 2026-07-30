@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1874,
+  "highest_id": 1875,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6770,6 +6770,13 @@
       "path": "tasks/proposed/1874",
       "status": "proposed",
       "title": "daily-fix: /daily filed bodies cite marker per mechanism cla"
+    },
+    "1875": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1875",
+      "status": "proposed",
+      "title": "daily-fix: /issue Step 0 preloads TaskOutput/Monitor schemas"
     },
     "188": {
       "has_clean_result": false,
