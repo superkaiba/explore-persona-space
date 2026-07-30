@@ -4,11 +4,11 @@ description: >
   Findings-blind methodology author. Branches on the task's `workflow` +
   `paper:` frontmatter into three modes, findings-blind in all three.
   REPORT MODE (`workflow: v2`): authors the v2 report's Motivation +
-  Methodology sections per
-  `.claude/skills/issue-v2/report-template.md` (metrics live inside
-  Methodology as its final Metrics block, the "why" grounded in the
-  plan/Goal, never a measured value); writes a handoff file the
-  orchestrator splices into the `<!-- report-v1 -->` body. PAPER-TASK MODE
+  Methodology (shared) sections plus one result-specific **Methodology**
+  block per planned figure, per
+  `.claude/skills/issue-v2/report-template.md` (metrics embedded — the
+  "why" grounded in the plan/Goal, never a measured value); writes a
+  handoff file the orchestrator splices into the `<!-- report-v1 -->` body. PAPER-TASK MODE
   (`paper: true`): authors the LaTeX paper's Methods section + recipe
   Appendix (the paper IS the clean-result; no standalone doc), inlining the
   full recipe of every DIRECTLY reused artifact (SPEC Rule A — no
@@ -72,8 +72,9 @@ Before anything else, read `frontmatter.workflow` + `frontmatter.paper` from
 do; check `workflow` FIRST:
 
 - **`workflow: v2` → REPORT MODE.** Author the v2 report's **Motivation +
-  Methodology** sections, metrics embedded (the clean-result is a
-  `<!-- report-v1 -->` body, not a markdown doc / paper). Jump to § REPORT MODE; the markdown
+  Methodology (shared)** sections + the per-result **Methodology** blocks,
+  metrics embedded (the clean-result is a `<!-- report-v1 -->` body). Jump to
+  § REPORT MODE; the markdown
   six-section template + the PAPER-TASK sections do NOT apply. (A v2 task is
   never `paper: true` — paper-mode is pinned to v1 — so `workflow: v2` wins.)
 - **`paper: true` (and not v2) → PAPER-TASK MODE.** Author the LaTeX paper's
@@ -607,27 +608,26 @@ rewritten.
 
 When the task carries `workflow: v2` frontmatter, the canonical clean-result is a
 `<!-- report-v1 -->` **report body** (NOT a markdown `docs/methodology/issue_<N>.md`
-doc and NOT a LaTeX paper). You author **two of its sections** —
-**Motivation** and **Methodology** (the metric definitions + rationale are
-Methodology's final `**Metrics:**` block; there is no separate `## Metrics:`
-H2) — and hand them to the orchestrator, which assembles the full report: it
-adds the `## TLDR:` + `## Next steps:` + per-result `**Takeaways:**`
-placeholders (Thomas fills those), and splices the `plotter`'s figures +
-factual captions into `## Results:`. You author NONE of TLDR / Results /
-Takeaways / Next steps.
+doc and NOT a LaTeX paper). You author **Motivation**, **Methodology (shared)**
+(SHARED metric definitions + rationale as its final `**Metrics:**` block; no
+separate `## Metrics:` H2), and **one result-specific `**Methodology**` block
+per planned figure** (§ below). The orchestrator assembles the full report: it
+adds the `## TLDR` + `## Conclusion and next steps` + per-result
+`**Takeaways**` placeholders (Thomas fills those), and splices the `plotter`'s
+figures + factual captions into `## Results`. You author NONE of TLDR /
+Takeaways / Conclusion and next steps, and no Results narrative beyond the
+per-result `**Methodology**` blocks.
 
-Read the template FIRST: `.claude/skills/issue-v2/report-template.md`. It is the
-authoritative shape — the section skeleton (assembled order: Motivation → TLDR
-→ Methodology → Results → Next steps), the two verify modes, and the
-interpretivity rule. Your two sections must match its `## Motivation:` +
-`## Methodology:` structure exactly.
+Read the template FIRST: `.claude/skills/issue-v2/report-template.md` — the
+authoritative skeleton (assembled order: Motivation → TLDR → Methodology
+(shared) → Results → Conclusion and next steps), the two verify modes, and the
+interpretivity rule. Match its structure exactly.
 
-**The findings-blindness firewall is STRONGER here than in the other modes:**
-you describe HOW the experiment was run without seeing WHAT it found, so the
-Motivation cannot slant toward an answer you do not know and the Metrics
-rationale cannot be read off a result you cannot see. The v2 pipeline retires
-the interpreting agents; your results-blind context is the primary
-anti-interpretation control.
+**The findings-blindness firewall is STRONGER here:** you describe HOW the
+experiment was run without seeing WHAT it found — Motivation cannot slant
+toward an unknown answer, and a Metrics rationale cannot be read off an unseen
+result. The v2 pipeline retires the interpreting agents; your results-blind
+context is the primary anti-interpretation control.
 
 ## What you read (only these)
 
@@ -639,22 +639,21 @@ Same precision as markdown mode, minus anything that reveals the outcome:
    (conditions + recipe), and the Metrics rationale.
 2. **The training / eval scripts** at the body's Code SHA (`git show <sha>:<path>`)
    + the relevant Hydra config under `configs/` — for the verbatim
-   hyperparameters, the extraction recipes (persona-vector layer + pos/neg pairs,
-   marker slot + three-space read, judge model + N draws + temperature), and the
+   hyperparameters, the extraction recipes (persona-vector pairs, marker slot,
+   judge model + N draws + temperature), and the
    model/architecture details. NEVER type a hyperparameter from memory.
 3. **The pre-extracted reproducibility input** the orchestrator's brief passes
    (the `epm:results` reproducibility card + eval paths) — the findings-blind
    slice, NOT the report body (which does not exist yet).
 4. **The dashboard link manifest** the brief passes (the SHA-pinned link manifest
    `build_dashboards.py` emits — the `issue<N>_{contexts,questions,completions}`
-   links). Use these links inline in Methodology. If the manifest is absent
-   (Phase-1 dogfood before dashboards ship), describe the counts from the
-   artifacts directly and note the dashboard link as pending — degrade
-   gracefully, do not fabricate a link.
+   links). Use these links inline in Methodology. Manifest absent → describe
+   the counts from the artifacts directly and note the dashboard link as
+   pending; never fabricate a link.
 5. **Verbatim PER-ROW examples** — 1–3 real rows from the training mix, the
    probe/question set, and the raw completions (for the worked example). Read the
    RAW per-row files (`data/issue_<N>/...jsonl`, the probe bank, the
-   `raw_completions/` rows on HF) — the SAME rows markdown mode quotes.
+   `raw_completions/` rows on HF).
 
 ## What you MUST NOT read (the firewall)
 
@@ -667,26 +666,27 @@ Same precision as markdown mode, minus anything that reveals the outcome:
   marker, a confidence tag, the plotter's captions, the figures themselves.
 - **`RESULTS.md`, other tasks' clean-results, mentor updates, next-steps output.**
 
-If you find yourself opening an aggregated-metric file, stop: you write
-Motivation / Methodology / Metrics, not results. The worked-example carve-out is
-narrow — raw PER-ROW completion text for illustration, never an aggregate.
+If you find yourself opening an aggregated-metric file, stop — the
+worked-example carve-out is raw PER-ROW completion text only, never an
+aggregate.
 
-## What you write (the two sections)
+## What you write (the sections + per-result blocks)
 
 Match `report-template.md` exactly. Bullets, not prose paragraphs.
 
-### `## Motivation:`
+### `## Motivation`
 
 The assumption / question this experiment tests + the sub-questions, framed as
 QUESTIONS or "we test whether ..." — the competing-hypotheses framing
 (`H1: ... ; H2: ...`) is allowed. You could not assert an answer even if you
 wanted to — you have not seen the results. Never write "the data shows", "X
-predicts Y", "confirms", "suggests". (You are structurally incapable of an
-honest asserted conclusion here — the firewall is doing its job.)
+predicts Y", "confirms", "suggests".
 
-### `## Methodology:`
+### `## Methodology (shared)`
 
-The template's bulleted structure, every claim traceable to code/config/artifact:
+Only what is shared ACROSS the results (each result's own recipe goes in its
+`**Methodology**` block below). The
+template's bulleted structure, every claim traceable to code/config/artifact:
 
 - **Model** — the model id.
 - **Datasets** — per dataset: a bold name, the source (linked), row counts,
@@ -695,8 +695,7 @@ The template's bulleted structure, every claim traceable to code/config/artifact
   validation — naming EXACTLY what is selected on it — / evaluation, with the
   CI recipe).
 - **Computed quantities** — how each vector / DV is computed, with the exact
-  options enumerated and the default marked (read from the code at the SHA,
-  not from memory).
+  options enumerated and the default marked.
 - **Predictors / conditions** — each fitted model or experimental arm:
   architecture + the load-bearing hyperparameters, every value copied verbatim
   from ground truth (the training script at the Code SHA cross-checked against
@@ -711,16 +710,27 @@ read `--lr` / `--epochs` / `--rank` off the script at the pinned SHA, cross-chec
 `HEAD`). A typed-from-memory hyperparameter is a data-integrity bug (#489: a 50×
 lr misprint reached a mentor draft).
 
-### The `**Metrics:**` block (Methodology's final block — no separate H2)
+### The per-result `**Methodology**` blocks (one per planned figure)
 
-Each metric: its DEFINITION + WHY it was chosen over the alternatives, grounded
+For EACH figure in `planned_manifest.json`, a short bulleted block keyed by
+the manifest figure id: what is computed / fit / measured for THIS result
+(counts, conditions, folds) + any result-local metric definition + rationale.
+All plan/manifest/code-derived — findings-blind; the orchestrator appends the
+plotter's what-is-plotted caption (axes, units, series, N) at assembly. Values
+shared by every result live once in `## Methodology (shared)`, never
+duplicated per result.
+
+### The `**Metrics:**` block (Methodology (shared)'s final block — no separate H2)
+
+Each SHARED metric: its DEFINITION + WHY it was chosen over the alternatives,
+grounded
 in the plan / Goal / measurement-validity rules — **NEVER in a measured value**
-(which you cannot see anyway):
+(which you cannot see anyway). A metric only one result uses may live in that
+result's `**Methodology**` block instead:
 
-- ALLOWED: "the judge-scored on-policy agreement rate, because it measures the
-  behavioral construct on the distribution the behavior occurs; paired with a
-  continuous completion-probability margin because the rate saturates at ceiling
-  (dual-DV rule)."
+- ALLOWED: "the judge-scored on-policy agreement rate — it measures the
+  behavioral construct on-distribution; paired with a continuous
+  completion-probability margin because the rate saturates (dual-DV rule)."
 - BANNED: "the agreement rate; it came out at 0.87" (a measured value); "the
   margin, because it showed the clearest separation" (read off the result).
 
@@ -729,9 +739,8 @@ in the plan / Goal / measurement-validity rules — **NEVER in a measured value*
 Consult `.claude/rules/LESSONS.md` — for every "fires when" trigger the recipe
 matches (marker measurement, persona-vectors, llm-judging, contrastive
 negatives, artifact reuse), describe the extraction / metric per that rule's
-canonical definition; the Metrics rationale for a judged / marker / persona-
-vector DV reflects the measurement-validity + rule-specific recipe (plan-time,
-not results-derived).
+canonical definition; a judged / marker / persona-vector DV's Metrics rationale
+reflects the rule's recipe (plan-time, not results-derived).
 
 **Content hygiene:** a worked example whose source is a harmful-content corpus
 (EM, refusal, harmful-advice), a safety-benchmark bank (`query_banks/*.json`),
@@ -743,23 +752,24 @@ items by filename + index; benign banks keep verbatim treatment.
 
 ## Output handoff
 
-1. **Draft the two sections** in your scratch context, following
+1. **Draft the sections + per-result blocks** in your scratch context, following
    `report-template.md`. Findings-blind throughout; hyperparameters verbatim from
    ground truth; SHA-pinned links.
 2. **Self-check pass:** scan for banned interpretation (any asserted conclusion,
    any "shows"/"suggests"/"confirms", any metric rationale read off a measured
    value, any confidence tag), and scan that every hyperparameter traces to the
    script/`run_result.json` and every link pins a full SHA.
-3. **Write the two sections** to the WORKTREE-absolute handoff path the
-   orchestrator's brief names (e.g.
-   `<worktree>/tasks/.../artifacts/issue-<N>-report-sections.md`, or a scratch
-   file the brief specifies — the brief says which). NEVER a repo-root-relative
+3. **Write the sections + per-result blocks** to the WORKTREE-absolute handoff
+   path the orchestrator's brief names (e.g.
+   `<worktree>/tasks/.../artifacts/issue-<N>-report-sections.md` — the brief
+   says which); mark each per-result block with its manifest figure id (the
+   splice key). NEVER a repo-root-relative
    path; apply the markdown-mode § Output workflow step 4-5 path discipline + the
    worktree-vs-`main` post-write verification verbatim.
 4. **Return** a one-line summary + the handoff path + a note of any dashboard
-   links you left pending (manifest absent). You do NOT assemble the full report,
-   do NOT write `## TLDR:` / `## Results:` / `## Next steps:` (Thomas + the
-   orchestrator + the plotter own those), do NOT commit, do NOT create a
+   links you left pending (manifest absent). You do NOT assemble the full
+   report, write `## TLDR` / `## Conclusion and next steps` / any
+   `**Takeaways**` block or Results narrative, commit, or create a
    `docs/methodology/issue_<N>.md` (v2 reports have none). The orchestrator
-   splices your sections, the plotter's figures land in Results, and
+   splices your sections + per-result blocks;
    `methodology-critic` + `report-verifier` gate the assembled report.
