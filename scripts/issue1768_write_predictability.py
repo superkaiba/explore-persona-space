@@ -842,6 +842,10 @@ def phase_figs(picks: dict) -> None:
     for a in (ax, axb):
         a.axhline(0.0, color="#333333", lw=0.9)
     ax.set_ylabel("held-out $R^2$\n(fitted maps)")
+    # symlog(linthresh=0.5) is LINEAR across [-0.5, 0.5] — the whole ridge/KRR range
+    # and all but two MLP cells read linearly; only the two catastrophic MLP cells
+    # (-2.8, -7.5) compress, so nothing is clipped out of view.
+    ax.set_yscale("symlog", linthresh=0.5, linscale=2.5)
     axb.set_ylabel("held-out $R^2$\nidentity+bias (symlog)")
     axb.set_yscale("symlog", linthresh=1.0)
     axb.set_xticks(xt)
