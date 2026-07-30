@@ -210,6 +210,7 @@ def stream_chunks_with_prompts(
     names = sorted(
         f.path.rsplit("/", 1)[-1]
         for f in hub.retry_transient(
+            # HUB_VERIFY_RETRY_EXEMPT: raw list_repo_tree is wrapped in hub.retry_transient here
             lambda: list(
                 HfApi().list_repo_tree(
                     HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True

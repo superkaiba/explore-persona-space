@@ -1047,7 +1047,7 @@ def _upload_eligible_relpaths(local: Path) -> list[str]:
     actually upload: rglob MINUS the uploader's own excludes. huggingface_hub's
     ``upload_folder`` ALWAYS appends ``DEFAULT_IGNORE_PATTERNS`` (e.g.
     ``**/.cache/huggingface/**`` — the per-file metadata
-    ``hf_hub_download(local_dir=...)`` leaves behind) and ``hub._upload``
+    a ``local_dir=``-style hub download leaves behind) and ``hub._upload``
     always adds ``TRAINING_STATE_IGNORE_PATTERNS``. An UNFILTERED rglob as the
     verify set counts never-uploaded files as missing — a deterministic
     post-upload RuntimeError (round-1 fu Critical,

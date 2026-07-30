@@ -20,10 +20,16 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style
+# #847: .env + shared-VM thread caps bind BEFORE the heavy imports
+# (tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints).
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
 FU_DIR = REPO / "eval_results" / "issue_1775" / "fu_dedup_refit_pcfold_doubly"
