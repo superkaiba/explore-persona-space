@@ -327,6 +327,7 @@ def _probe_adapters(arms: list[X.Arm]) -> list[dict]:
     for a in arms:
         sub = X.adapter_subfolder(a)
         path = f"{sub}/adapter_config.json"
+        # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient at this call site
         ok = hub.retry_transient(
             lambda p=path: api.file_exists(X.HF_MODEL_REPO, p, repo_type="model"),
             what=f"adapter probe {path}",
@@ -366,6 +367,7 @@ def _probe_ft_checkpoints(arms: list[X.Arm]) -> list[dict]:
             misses.append(f"{a.arm_id}: selection step {sel['step']} != pinned {a.step}")
             continue
         sub = X.ft_ckpt_subfolder(a)
+        # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient at this call site
         ok = hub.retry_transient(
             lambda p=f"{sub}/config.json": api.file_exists(
                 X.FT_OVERFLOW_REPO, p, repo_type="model"
@@ -466,6 +468,7 @@ def _probe_mix_sources(arms: list[X.Arm]) -> dict[str, dict]:
     api = HfApi()
 
     def exists(path: str) -> bool:
+        # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient at this call site
         return hub.retry_transient(
             lambda: api.file_exists(X.HF_DATA_REPO, path, repo_type="dataset"),
             what=f"mix probe {path}",
@@ -1220,6 +1223,7 @@ def _stage_reused_panel(cfg: Cfg, tree: str, arm_id: str) -> bool:
     present: dict[str, bool] = {}
     for name in files:
         hub_path = f"{REUSED_PANEL_HF_PREFIX}/{tree}/{hub_name}/{name}"
+        # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient at this call site
         present[name] = hub.retry_transient(
             lambda p=hub_path: api.file_exists(X.HF_DATA_REPO, p, repo_type="dataset"),
             what=f"panel stage probe {hub_path}",
