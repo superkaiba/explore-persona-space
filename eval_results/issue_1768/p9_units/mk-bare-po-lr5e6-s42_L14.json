@@ -1,0 +1,146 @@
+{
+ "smoke": false,
+ "direction": {
+  "arm_id": "mk-bare-po-lr5e6-s42",
+  "method": "lora",
+  "layer": 14,
+  "src_ctx": "default",
+  "n_panel_questions": 20,
+  "w_norm": 4.402208237485289,
+  "w_split_half_cos": 0.22391420240036858,
+  "w_tf_split_half_cos": 0.9830695109019443,
+  "delta_split_half_cos": 0.5146935720067104,
+  "delta_split_half_cos_sharedB_record_only": 0.9275504288027124,
+  "delta_split_half_cos_upper_bound_sharedB": false,
+  "n_mix_rows": 200,
+  "delta_arm": "mk-bare-po-lr5e6-s42",
+  "races": {
+   "delta": {
+    "cos_w": -0.0895484006084638,
+    "cos_w_shared_record_only": 0.07659076750209168,
+    "top_eig_contamination_cos": -0.12991301936028818,
+    "nulls": {
+     "isotropic": {
+      "p2_5": -0.030465139681949818,
+      "p97_5": 0.032053676391910625,
+      "abs_p95": 0.03173774039437155,
+      "n_draws": 2000
+     },
+     "corpus_covariance": {
+      "p2_5": -0.13170463545046576,
+      "p97_5": 0.1315775533439426,
+      "abs_p95": 0.13169647969549939,
+      "n_draws": 2000
+     }
+    },
+    "shuffled_row_null": {
+     "p2_5": -0.3707395051421541,
+     "p97_5": 0.38214639847523746,
+     "abs_p95": 0.3765211070625984,
+     "n_draws": 2000
+    },
+    "covariance_band_contaminated": false,
+    "primary_null_family": "corpus_covariance",
+    "cos_w_tf": -0.1167101351155767
+   },
+   "r_B": {
+    "cos_w": 0.0006916284257664666,
+    "cos_w_shared_record_only": -0.02194812763171157,
+    "top_eig_contamination_cos": 0.024730761123866674,
+    "nulls": {
+     "isotropic": {
+      "p2_5": -0.03183046184415373,
+      "p97_5": 0.0340668799860144,
+      "abs_p95": 0.032898185442724374,
+      "n_draws": 2000
+     },
+     "corpus_covariance": {
+      "p2_5": -0.03435744822532746,
+      "p97_5": 0.03381311914014973,
+      "abs_p95": 0.0341851483755868,
+      "n_draws": 2000
+     }
+    },
+    "shuffled_row_null": {
+     "p2_5": -0.0276461080725376,
+     "p97_5": 0.026851125292531034,
+     "abs_p95": 0.027284170603902473,
+     "n_draws": 2000
+    },
+    "covariance_band_contaminated": false,
+    "primary_null_family": "corpus_covariance",
+    "cos_w_tf": 0.009262597671889587
+   },
+   "W_U_marker_row": {
+    "cos_w": 0.0006916284257664666,
+    "cos_w_shared_record_only": -0.02194812763171157,
+    "top_eig_contamination_cos": 0.024730761123866674,
+    "nulls": {
+     "isotropic": {
+      "p2_5": -0.0312260761592735,
+      "p97_5": 0.032458347689533845,
+      "abs_p95": 0.0318805812519005,
+      "n_draws": 2000
+     },
+     "corpus_covariance": {
+      "p2_5": -0.03336869438177019,
+      "p97_5": 0.03398498302371943,
+      "abs_p95": 0.03367430120792877,
+      "n_draws": 2000
+     }
+    },
+    "shuffled_row_null": {
+     "p2_5": -0.027008338006498468,
+     "p97_5": 0.027579681320078975,
+     "abs_p95": 0.02733989043303992,
+     "n_draws": 2000
+    },
+    "covariance_band_contaminated": false,
+    "primary_null_family": "corpus_covariance",
+    "cos_w_tf": 0.009262597671889587
+   }
+  },
+  "cross_behavior_rb_cos": {
+   "syc": -0.11024030852439488,
+   "imp": 0.07155424638887078,
+   "cas": 0.010942807354940853
+  },
+  "A5_scalar_fit": {
+   "a": -0.03225325158856091,
+   "residual_share": 0.9919810839484658
+  },
+  "A6_rank": {
+   "top1_var_share": 0.07769119290915526,
+   "participation_ratio": 73.01351359826549,
+   "cos_u1_w": 0.1861116538449839,
+   "n_rows": 16400
+  },
+  "A6_rank_tf": {
+   "top1_var_share": 0.3036044335835411,
+   "participation_ratio": 8.327724359221502,
+   "cos_u1_w": 0.16459988715987112,
+   "n_rows": 16400
+  },
+  "baseline_halves": "w:evens(A) delta:odds(B) — disjoint (Must-Fix)"
+ },
+ "gate": {
+  "arm_id": "mk-bare-po-lr5e6-s42",
+  "method": "lora",
+  "layer": 14,
+  "on_policy": {
+   "spearman_rho": 0.0680607183216072,
+   "p_value": 2.650568521005975e-18,
+   "n": 16400
+  },
+  "matched_text": {
+   "spearman_rho": 0.3363717384376478,
+   "p_value": 0.0,
+   "n": 16400
+  },
+  "sigma_n_rows": 15000,
+  "sigma_shrinkage": 0.1,
+  "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+ },
+ "ts": "2026-07-30T10:13:45Z",
+ "issue": 1768
+}

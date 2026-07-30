@@ -1,0 +1,28 @@
+{
+  "fitter": "ridge (shared-Gram primal, parent verbatim)",
+  "selection": "val-lambda (pinned val rows)",
+  "selected_lambda": 0.001,
+  "val_r2_at_selected": 0.6574205412875304,
+  "lambda_grid_edge": "low",
+  "n_train": 88600,
+  "d": 3584,
+  "n_train_unique_x": 20,
+  "note": "rank(X) <= 20 BY CONSTRUCTION \u2014 the query-main-effect read; predictions take <= n_q distinct values (stated caveat)",
+  "holdout_r2": 0.6215976233746421,
+  "holdout_mean_cosine": 0.9514915691372829,
+  "bootstrap": {
+    "r2": {
+      "point": 0.6215976233746421,
+      "lo": 0.6141274290587896,
+      "hi": 0.6289625243483025
+    },
+    "mean_cosine": {
+      "point": 0.9514915691372829,
+      "lo": 0.95040912345555,
+      "hi": 0.9525780001461281
+    },
+    "n_test": 10000
+  },
+  "regime_fp": "998a4daa1f787c9b",
+  "wall_s": 40.0
+}

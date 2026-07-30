@@ -29,6 +29,15 @@
 #      detaches — the fitness kill-gate contract), then fans out all shards
 #      (shard 0 resumes past its pilot chunks via the Hub index):
 #        bash scripts/issue1738_multiturn_launch.sh --sae-arm --num-shards 8 --shard-offset 0
+#   7. CROSSED MANIFEST (fu3 P0, plan v9 §4.1 — foreground CPU; reads the MAIN
+#      manifest from HF, writes issue1738_crossed/sampling_manifest):
+#        bash scripts/issue1738_multiturn_launch.sh --crossed-manifest --manifest-from-hf
+#   8. CROSSED CAPTURE (fu3 S1, plan v9 §4.2 — shard BY PREFIX; uploads to
+#      issue1738_crossed/*, never the parent prefix). Runs the G1/G2/SAE pilot
+#      FOREGROUND on GPU 0 first (designed-halt rc 28/29/30 aborts the launcher
+#      BEFORE the fleet detaches), then fans out all shards (shard 0 resumes
+#      past its pilot chunks via the Hub index):
+#        bash scripts/issue1738_multiturn_launch.sh --crossed --num-shards 8 --shard-offset 0
 #
 # Pod-side: NO VM thread-cap prefix (dedicated GPUs keep full width).
 set -euo pipefail
@@ -54,6 +63,9 @@ BUILD_MANIFEST=0
 KRESAMPLE=0
 BARE_QUERY=0
 SAE_ARM=0
+CROSSED=0
+CROSSED_MANIFEST=0
+CROSSED_PILOT_PREFIXES="${EPM_MT1738_CROSSED_PILOT_PREFIXES:-100}"
 BARE_UPLOAD_PREFIX="issue1738_multiturn/bare_query"
 SAE_UPLOAD_PREFIX="issue1738_multiturn/sae_arm"
 SAE_PILOT_ROWS="${EPM_MT1738_SAE_PILOT_ROWS:-2000}"
@@ -73,6 +85,9 @@ while [ $# -gt 0 ]; do
     --bare-query) BARE_QUERY=1; shift ;;
     --bare-upload-prefix) BARE_UPLOAD_PREFIX="$2"; shift 2 ;;
     --sae-arm) SAE_ARM=1; shift ;;
+    --crossed) CROSSED=1; shift ;;
+    --crossed-manifest) CROSSED_MANIFEST=1; shift ;;
+    --crossed-pilot-prefixes) CROSSED_PILOT_PREFIXES="$2"; shift 2 ;;
     --sae-upload-prefix) SAE_UPLOAD_PREFIX="$2"; shift 2 ;;
     --sae-pilot-rows) SAE_PILOT_ROWS="$2"; shift 2 ;;
     --seeds) SEEDS="$2"; shift 2 ;;
@@ -81,8 +96,8 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-if [ $((BARE_QUERY + KRESAMPLE + SAE_ARM)) -gt 1 ]; then
-  echo "FATAL: --bare-query / --kresample / --sae-arm are mutually exclusive" >&2
+if [ $((BARE_QUERY + KRESAMPLE + SAE_ARM + CROSSED + CROSSED_MANIFEST)) -gt 1 ]; then
+  echo "FATAL: --bare-query / --kresample / --sae-arm / --crossed / --crossed-manifest are mutually exclusive" >&2
   exit 1
 fi
 if [ "$SAE_ARM" -eq 1 ]; then
@@ -98,6 +113,18 @@ if [ "$BUILD_MANIFEST" -eq 1 ]; then
   if [ "$DRY_RUN" -eq 1 ]; then echo "[dry-run] no manifest built."; exit 0; fi
   "${cmd[@]}"
   echo "== manifest + split uploaded; run the capture fan-out with --manifest-from-hf =="
+  exit 0
+fi
+
+# ── mode 7: build + upload the CROSSED manifest (fu3 P0; foreground, CPU) ─────────
+if [ "$CROSSED_MANIFEST" -eq 1 ]; then
+  cmd=(uv run python "$DRIVER" --build-crossed-manifest)
+  [ ${#EXTRA_ARGS[@]} -gt 0 ] && cmd+=("${EXTRA_ARGS[@]}")
+  echo "== issue1738 CROSSED manifest build (fu3 P0; foreground, CPU) =="
+  echo "  ${cmd[*]}"
+  if [ "$DRY_RUN" -eq 1 ]; then echo "[dry-run] no crossed manifest built."; exit 0; fi
+  "${cmd[@]}"
+  echo "== crossed manifest uploaded; run --crossed with --manifest-from-hf (implied) =="
   exit 0
 fi
 
@@ -130,6 +157,7 @@ MODE="capture"
 [ "$KRESAMPLE" -eq 1 ] && MODE="kresample"
 [ "$BARE_QUERY" -eq 1 ] && MODE="bare"
 [ "$SAE_ARM" -eq 1 ] && MODE="sae"
+[ "$CROSSED" -eq 1 ] && MODE="crossed"
 echo "== issue1738 $MODE fan-out: pod owns global shards $SHARD_OFFSET..$LAST of $NUM_SHARDS (G=$GPUS_PER_POD, shard-size=$SHARD_SIZE, pilot-cap=$PILOT_CAP) =="
 
 # sae-arm G-S0/G-S1 pilot: FOREGROUND on GPU 0 BEFORE the fleet detaches — a
@@ -145,6 +173,21 @@ if [ "$SAE_ARM" -eq 1 ] && [ "$DRY_RUN" -eq 0 ]; then
   echo "== sae-arm pilot PASS — fanning out $GPUS_PER_POD shards =="
 fi
 
+# crossed G1/G2/SAE pilot: FOREGROUND on GPU 0 BEFORE the fleet detaches — a
+# designed-halt rc (28 G1 fence / 29 violation rate / 30 G2 sanity) propagates
+# through set -e and aborts the launcher, so the fleet never proceeds past a
+# pilot FAIL (plan v9 §7; the pilot ALSO publishes crossed_pilot_meta.json to
+# the Hub — the fleet shards' authoritative sae_enabled verdict).
+if [ "$CROSSED" -eq 1 ] && [ "$DRY_RUN" -eq 0 ]; then
+  echo "== crossed pilot (G1/G2/SAE) foreground on GPU 0, shard $SHARD_OFFSET =="
+  CUDA_VISIBLE_DEVICES=0 uv run python "$DRIVER" --crossed-capture \
+    --num-shards "$NUM_SHARDS" --shard-index "$SHARD_OFFSET" --device cuda \
+    --shard-size "$SHARD_SIZE" --manifest-from-hf \
+    --pilot-cap "$CROSSED_PILOT_PREFIXES" \
+    ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}
+  echo "== crossed pilot PASS — fanning out $GPUS_PER_POD shards =="
+fi
+
 for g in $(seq 0 $((GPUS_PER_POD - 1))); do
   gidx=$((SHARD_OFFSET + g))
   log="$LOG_DIR/issue-1738-${MODE}-shard${gidx}.log"
@@ -153,6 +196,10 @@ for g in $(seq 0 $((GPUS_PER_POD - 1))); do
     # plan v8 §4.3: sae uploads ride their own prefix; the parent capture
     # prefix is never written by this mode (read-side only).
     cmd=(uv run python "$DRIVER" --phase capture --num-shards "$NUM_SHARDS" --shard-index "$gidx" --device cuda --sae-hf-prefix "$SAE_UPLOAD_PREFIX")
+  elif [ "$CROSSED" -eq 1 ]; then
+    # plan v9 §4.2: crossed uploads ride issue1738_crossed (the driver default);
+    # the parent capture prefix is never written by this mode.
+    cmd=(uv run python "$DRIVER" --crossed-capture --num-shards "$NUM_SHARDS" --shard-index "$gidx" --device cuda --shard-size "$SHARD_SIZE" --manifest-from-hf)
   else
     cmd=(uv run python "$DRIVER" --num-shards "$NUM_SHARDS" --shard-index "$gidx" --device cuda --shard-size "$SHARD_SIZE" --manifest-from-hf)
   fi
@@ -164,7 +211,7 @@ for g in $(seq 0 $((GPUS_PER_POD - 1))); do
     # prefix is never written by this mode.
     cmd+=(--bare-query --upload-prefix "$BARE_UPLOAD_PREFIX")
   fi
-  if [ "$PILOT_CAP" -gt 0 ] 2>/dev/null && [ "$SAE_ARM" -eq 0 ]; then
+  if [ "$PILOT_CAP" -gt 0 ] 2>/dev/null && [ "$SAE_ARM" -eq 0 ] && [ "$CROSSED" -eq 0 ]; then
     cmd+=(--pilot-cap "$PILOT_CAP")
   fi
   [ ${#EXTRA_ARGS[@]} -gt 0 ] && cmd+=("${EXTRA_ARGS[@]}")

@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1881,
+  "highest_id": 1887,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5352,8 +5352,8 @@
       "goal": "Determine, on ONE shared row-paired corpus, whether the context->answer linear map is the SAME operator across five speaker identities (assistant; user; a fiction AI character; an assistant-like human character; an ordinary/random character) and three surface framings (chat template; plain User:/Assistant: text; narrative-prose story), in Qwen2.5-7B base AND instruct, with the user arm run under all three u2 provenances (real LMSYS, haiku-simulated, on-policy) and every non-user condition on-policy from the measured model - and, for every ordered pair, WHICH tier of the mapping-similarity ladder (direct transfer / context offset / answer offset / bias refit / global scaling / rotation / context reparameterization / answer reparameterization / full A.M.B) is the weakest correction that reconciles the two maps. Both mapping arms (prefix and context) are fit for every cell.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1689",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1689",
+      "status": "awaiting_promotion",
       "title": "Changing surface framing costs the context-to-answer map far more than changing speaker identity, and changing both adds little beyond framing's cost (LOW confidence)"
     },
     "169": {
@@ -5738,8 +5738,8 @@
       "goal": "Build the multi-turn analogue of the #779 fitter-fair-comparison-n1m corpus at N\u2248100,000 real multi-turn LMSYS/WildChat conversations (prefix = full conversation history before the last user turn, \u22652 user turns; query = last user turn), generate one on-policy answer per context under the parent decoding recipe, capture layer-{14,19,26} prefix-end + context-end + mean-answer states under the parent capture convention, fit the five parent fitters in BOTH arms (prefix-based AND context-based) on a pinned near-dupe-gated split, and run the #1482 error-characterization pipeline on both arms: (1) prefix-arm transport at scale (held-out R\u00b2 per arm/layer vs the context arm and vs #1092's 0.05\u20130.11); (2) per-context error + judged taxonomy incl. conversation-depth, floor-relative via a K-resample answer-sampling floor; (3) per-direction answer-PCA linear-vs-nonlinear decomposition with shrinkage control, cross-arm; (4) identity+learned-bias baseline and kNN-retrieval reads per arm. Binding user directive: maximize parallelism and vectorization at every phase (wide sharded capture fleet, batched fits, no serial inner loops). Phase 0 CPU manifest probe verifies multi-turn supply before any GPU provisions; a 1-shard pilot re-measures multi-turn throughput before fleet sizing (plan basis ~1,500\u20132,000 ctx/GPU-h vs parent's measured single-turn 3,250).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1738",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1738",
+      "status": "awaiting_promotion",
       "title": "Conversation history alone carries about half the full-context answer-state map on 100k real multi-turn conversations (HIGH confidence)"
     },
     "1739": {
@@ -5964,8 +5964,8 @@
       "goal": "Characterise what fine-tuning a behavior into a specific context does to the context->answer mapping in activation space, on the model-organism fleet: whether the context vector moves, whether the map itself changes, whether the answer vector moves, what shape the write has and whether it is predictable ahead of time (delta vs r_B vs the marker unembedding row), and which of theory assumptions A7-A11 hold.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/1768",
-      "status": "interpreting",
+      "path": "tasks/followups_running/1768",
+      "status": "followups_running",
       "title": "Behavior fine-tuning changes the context\u2192answer map in rank order with its weights-carried answer shift, with most content arms crossing the refit-noise floor and marker arms staying below it (HIGH confidence)"
     },
     "1769": {
@@ -6382,36 +6382,36 @@
     "1824": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1824",
-      "status": "reviewing",
+      "path": "tasks/completed/1824",
+      "status": "completed",
       "title": "upload_dir_sharded: batch small-file stores into one upload_folder commit (per-file walk measured ~35 s/file, #1482)"
     },
     "1825": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1825",
-      "status": "reviewing",
+      "path": "tasks/completed/1825",
+      "status": "completed",
       "title": "workflow-fix: gotchas entry \u2014 reused-module flag contract trap (same flag, opposite semantics)"
     },
     "1826": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1826",
-      "status": "reviewing",
+      "path": "tasks/completed/1826",
+      "status": "completed",
       "title": "workflow-fix: widen check-28 H-code regex to catch H1c-form hypothesis tags"
     },
     "1827": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1827",
-      "status": "proposed",
+      "path": "tasks/completed/1827",
+      "status": "completed",
       "title": "workflow-fix: WARN-tier plan-conditions coverage check (silent condition drop)"
     },
     "1828": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1828",
-      "status": "proposed",
+      "path": "tasks/completed/1828",
+      "status": "completed",
       "title": "workflow-fix: harden _breadcrumb_fields against prose-glued/empty key=value tokens"
     },
     "1829": {
@@ -6431,22 +6431,22 @@
     "1830": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1830",
-      "status": "proposed",
+      "path": "tasks/completed/1830",
+      "status": "completed",
       "title": "workflow-fix: gotchas entry \u2014 sha pins live in a DOMAIN (recompute from producer recipe before asserting)"
     },
     "1831": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1831",
-      "status": "proposed",
+      "path": "tasks/completed/1831",
+      "status": "completed",
       "title": "workflow-fix: pre_reg audit head nouns gain ceiling check/gate family (#1769 escape)"
     },
     "1832": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1832",
-      "status": "proposed",
+      "path": "tasks/completed/1832",
+      "status": "completed",
       "title": "workflow-fix: verify_task_body WARN for quantitative result sections with zero figures"
     },
     "1833": {
@@ -6466,22 +6466,22 @@
     "1835": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1835",
-      "status": "proposed",
+      "path": "tasks/completed/1835",
+      "status": "completed",
       "title": "workflow-fix: SLURM rsync lane strands committed eval_results inputs (extra-sync knob + lane-aware carry-over gate)"
     },
     "1836": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1836",
-      "status": "proposed",
+      "path": "tasks/reviewing/1836",
+      "status": "reviewing",
       "title": "workflow-fix: SLURM sbatch _write_status heartbeat/phase-writer tmp race (BASHPID-unique tmp)"
     },
     "1837": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1837",
-      "status": "proposed",
+      "path": "tasks/running/1837",
+      "status": "running",
       "title": "workflow-fix: GCP wedge escalation needs sustained (2-tick) reachability alarm"
     },
     "1838": {
@@ -6494,8 +6494,8 @@
     "1839": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1839",
-      "status": "proposed",
+      "path": "tasks/running/1839",
+      "status": "running",
       "title": "workflow-fix: gotchas parity family \u2014 tensor device placement (CPU smokes can't exercise CUDA branches)"
     },
     "184": {
@@ -6826,6 +6826,48 @@
       "path": "tasks/proposed/1881",
       "status": "proposed",
       "title": "workflow-fix: verify_task_body judge-health drop-line population reconciliation"
+    },
+    "1882": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1882",
+      "status": "proposed",
+      "title": "workflow-fix: TG file-grain gate arm \u2014 tree-prefix normalization + warnings-line exclusion"
+    },
+    "1883": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1883",
+      "status": "proposed",
+      "title": "workflow-fix: add skill-pin family to Step 5a spec-freshness sync (test_issue_skill_* pin tests)"
+    },
+    "1884": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1884",
+      "status": "proposed",
+      "title": "daily-fix: fix red main: test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints \u2014 add the standard `from explore_persona_s"
+    },
+    "1885": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/1885",
+      "status": "archived",
+      "title": "workflow-fix: lane-aware carry-over gate \u2014 committed inputs unshippable on SLURM rsync lanes"
+    },
+    "1886": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1886",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas cross-machine-seam entry \u2014 SLURM rsync lane drops committed eval_results"
+    },
+    "1887": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1887",
+      "status": "proposed",
+      "title": "harden ridge lambda-selection: inner-group-CV default + GCV dof-cap + n<d degeneracy tripwire + re-read audit of affected published cells"
     },
     "19": {
       "has_clean_result": false,

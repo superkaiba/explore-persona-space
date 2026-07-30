@@ -1,0 +1,175 @@
+{
+  "commit": "46f3eb7d42",
+  "created": "2026-07-30T11:05:01Z",
+  "figsize": [
+    7.5,
+    4.5
+  ],
+  "points": [
+    {
+      "Steering coefficient \u03b1": 1.0,
+      "Behavior increase \u0394_both (score points)": 5.849,
+      "series": "Scheming",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steering coefficient \u03b1": 1.5,
+      "Behavior increase \u0394_both (score points)": 61.60729166666666,
+      "series": "Scheming",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steering coefficient \u03b1": 2.0,
+      "Behavior increase \u0394_both (score points)": 86.0274126984127,
+      "series": "Scheming",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steering coefficient \u03b1": 3.0,
+      "Behavior increase \u0394_both (score points)": 72.43763888888888,
+      "series": "Scheming",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steering coefficient \u03b1": 4.0,
+      "Behavior increase \u0394_both (score points)": 31.55075,
+      "series": "Scheming",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Steering coefficient \u03b1": 1.0,
+      "Behavior increase \u0394_both (score points)": 15.098694444444444,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steering coefficient \u03b1": 1.5,
+      "Behavior increase \u0394_both (score points)": 25.97166666666667,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steering coefficient \u03b1": 2.0,
+      "Behavior increase \u0394_both (score points)": 49.59872751322751,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steering coefficient \u03b1": 3.0,
+      "Behavior increase \u0394_both (score points)": 67.44649206349206,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steering coefficient \u03b1": 4.0,
+      "Behavior increase \u0394_both (score points)": 28.008435185185185,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Steering coefficient \u03b1": 1.0,
+      "Behavior increase \u0394_both (score points)": 3.848000000000001,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Steering coefficient \u03b1": 1.5,
+      "Behavior increase \u0394_both (score points)": 11.318999999999997,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Steering coefficient \u03b1": 2.0,
+      "Behavior increase \u0394_both (score points)": 19.752666666666663,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Steering coefficient \u03b1": 3.0,
+      "Behavior increase \u0394_both (score points)": 47.37525925925926,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Steering coefficient \u03b1": 4.0,
+      "Behavior increase \u0394_both (score points)": 32.51049999999999,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 15,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Dose ladder: behavior strength vs. steering coefficient\n(raw draws; delta from neither-arm baseline, all traits)",
+        "xlabel": "Steering coefficient \u03b1",
+        "ylabel": "Behavior increase \u0394_both (score points)",
+        "legend_labels": [
+          "Scheming",
+          "Hallucination",
+          "Sycophancy",
+          "Interpretable window (\u03b1 \u2264 2)",
+          "CJK-intrusion-affected (\u03b13-4)"
+        ],
+        "annotations": [
+          "5.8",
+          "61.6",
+          "86.0",
+          "72.4",
+          "31.6",
+          "15.1",
+          "26.0",
+          "49.6",
+          "67.4",
+          "28.0",
+          "3.8",
+          "11.3",
+          "19.8",
+          "47.4",
+          "32.5"
+        ],
+        "xticklabels": [
+          "1.0",
+          "1.5",
+          "2.0",
+          "3.0",
+          "4.0"
+        ],
+        "yticklabels": [
+          "\u221240",
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ]
+      }
+    ],
+    "series": [
+      "Scheming",
+      "Hallucination",
+      "Sycophancy"
+    ]
+  }
+}

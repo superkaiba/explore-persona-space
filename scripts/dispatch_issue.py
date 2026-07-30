@@ -1485,6 +1485,20 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         pins = _parse_env_pins(args.env_pin)
         if pins:
             extra["env_pins"] = pins
+    if getattr(args, "extra_sync_path", None):
+        # #1835: SLURM-lane extra rsync paths — validated + dot-anchored at
+        # parse time (main()'s guard; this re-validate cannot raise on the
+        # CLI path) and RE-validated by SlurmBackend.prepare (the handle
+        # sidecar JSON round-trips tuple -> list). Stored as a LIST so the
+        # sidecar serializes cleanly; set only when non-empty (the #934
+        # omit-when-absent discipline). Consumed ONLY by the SLURM lane's
+        # additive extra rsync; inert on GCP / RunPod (their git clones
+        # carry committed inputs already).
+        from explore_persona_space.backends.slurm import validate_extra_sync_paths
+
+        paths = list(validate_extra_sync_paths(args.extra_sync_path))
+        if paths:
+            extra["extra_sync_paths"] = paths
     if getattr(args, "min_gpu_mem_gb", None):
         # GCP A100-40 rung gate (#1468): read by gcp.a100_40_fallback_for_intent
         # — a declared per-GPU requirement strictly above gcp.A100_40_USABLE_GIB
@@ -1941,6 +1955,16 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         "workload_pid": handle_extra.get("workload_pid"),
         "log_path": result.handle.log_path,
     }
+    if getattr(args, "extra_sync_path", None):
+        # #1835 gate->launch drift audit: echo the RESOLVED (normalized,
+        # dot-anchored) extra sync paths into the printed launch JSON line
+        # so the launched set is auditable against the Step 6a.5
+        # `verify_carryover_inputs.py --lane rsync` invocation. The
+        # epm:backend-selected marker is composed router-side with no clean
+        # dispatcher note seam, so the launch JSON line is the record.
+        from explore_persona_space.backends.slurm import validate_extra_sync_paths
+
+        body["extra_sync_paths"] = list(validate_extra_sync_paths(args.extra_sync_path))
     _annotate_launch_body_reconnect_and_lane(body, args=args, result=result)
     if outcome.sidecar_write_error is not None:
         # The launch SUCCEEDED (live VM / job) but the sidecar write
@@ -2659,6 +2683,29 @@ def _build_argparser() -> argparse.ArgumentParser:
         ),
     )
     launch.add_argument(
+        "--extra-sync-path",
+        action="append",
+        default=None,
+        metavar="REPO_REL_PATH",
+        help=(
+            "Repo-relative path (repeatable, #1835) the SLURM rsync lane must "
+            "ADDITIONALLY stage to the cluster scratch — plan-cited committed "
+            "reference inputs (eval_results/issue_<M>/..., ood_eval_results/...) "
+            "that RSYNC_INCLUDE_PATHS omits and RSYNC_EXCLUDE_PATTERNS excludes "
+            "(incident #1689: fellows job 15188 died at first read on a "
+            "gate-certified committed input). Validated + dot-anchored at parse "
+            "time (backends.slurm.validate_extra_sync_paths: repo-relative only, "
+            "no '..'); threads to spec.extra['extra_sync_paths'] -> the handle "
+            "sidecar. Accepted on EVERY lane; consumed only by SlurmBackend."
+            "prepare's separate additive rsync (-a --relative --partial "
+            "--mkpath, NO --delete, NO excludes) — lane-inert elsewhere. Unlike "
+            "--env-pin there is NO --workload-cmd requirement (the knob is "
+            "lane-scoped, not command-scoped). Pass the SAME values to "
+            "scripts/verify_carryover_inputs.py --lane rsync (Step 6a.5) so the "
+            "gate-PASSing set and the launched set cannot drift."
+        ),
+    )
+    launch.add_argument(
         "--min-gpu-mem-gb",
         type=int,
         default=None,
@@ -2905,6 +2952,19 @@ def main(
                 )
             try:
                 _parse_env_pins(args.env_pin)
+            except ValueError as exc:
+                parser.error(str(exc))
+        # #1835: --extra-sync-path validates at parse time (exit 2) —
+        # repo-relative, no '..', non-empty — BEFORE any backend is built.
+        # UNLIKE --env-pin there is deliberately NO --workload-cmd
+        # requirement: the knob is lane-scoped (consumed only by the SLURM
+        # prepare's additive rsync), not command-scoped, so it must ride
+        # hydra launches too.
+        if getattr(args, "extra_sync_path", None):
+            from explore_persona_space.backends.slurm import validate_extra_sync_paths
+
+            try:
+                validate_extra_sync_paths(args.extra_sync_path)
             except ValueError as exc:
                 parser.error(str(exc))
     logging.basicConfig(

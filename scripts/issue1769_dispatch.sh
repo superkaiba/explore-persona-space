@@ -18,6 +18,10 @@
 # Usage:
 #   bash scripts/issue1769_dispatch.sh --all      # full production run
 #   bash scripts/issue1769_dispatch.sh --smoke    # --tiny CPU smoke (local-mirror)
+#   ALPHAS_OVERRIDE="1.5 3.0" HF_PREFIX_OVERRIDE="issue1769_prefill_decode/fu1_alpha_subgrid" \
+#     bash scripts/issue1769_dispatch.sh --all \
+#     --out-root eval_results/issue_1769/phase_g_fu1 \
+#     --bulk-root /workspace/eps-issue-1769-fu1   # fu1 alpha-subgrid (plan v10)
 set -euo pipefail
 
 REPO_ROOT="${REPO_ROOT:-${WORKLOAD_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}}"
@@ -38,12 +42,17 @@ echo $$ > "$LOG_DIR/issue-${ISSUE}.pid"
 export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
 
 SMOKE=0
-for a in "$@"; do
-  case "$a" in
+OUT_ROOT_ARG=""
+BULK_ROOT_ARG=""
+while [ $# -gt 0 ]; do
+  case "$1" in
     --smoke) SMOKE=1 ;;
     --all) ;;
-    *) echo "unknown arg: $a" >&2; exit 2 ;;
+    --out-root) OUT_ROOT_ARG="$2"; shift ;;
+    --bulk-root) BULK_ROOT_ARG="$2"; shift ;;
+    *) echo "unknown arg: $1" >&2; exit 2 ;;
   esac
+  shift
 done
 
 GIT_SHA="$(git rev-parse HEAD)"
@@ -61,7 +70,23 @@ if [ "$SMOKE" -eq 1 ]; then
   OUT_ROOT="data/issue_1769/tiny_smoke/out"
   BULK_ROOT="data/issue_1769/tiny_smoke/bulk"
 fi
-DRIVER=(uv run python scripts/issue1769_run.py "${TINY_FLAG[@]}" --out-root "$OUT_ROOT" --bulk-root "$BULK_ROOT")
+# fu1 (plan v10): explicit fresh roots override the parent-named defaults so
+# no cell_done()/bulk read ever consults a parent path.
+if [ -n "$OUT_ROOT_ARG" ]; then OUT_ROOT="$OUT_ROOT_ARG"; fi
+if [ -n "$BULK_ROOT_ARG" ]; then BULK_ROOT="$BULK_ROOT_ARG"; fi
+# fu1 (plan v10): ALPHAS_OVERRIDE + HF_PREFIX_OVERRIDE thread into the driver;
+# absent envs leave the DRIVER line byte-identical to the parent run's.
+ALPHA_FLAG=()
+if [ -n "${ALPHAS_OVERRIDE:-}" ]; then
+  read -ra ALPHA_FLAG <<< "--alphas ${ALPHAS_OVERRIDE}"
+fi
+HF_PREFIX_FLAG=()
+HF_PREFIX_EFF="issue1769_prefill_decode"
+if [ -n "${HF_PREFIX_OVERRIDE:-}" ]; then
+  HF_PREFIX_FLAG=(--hf-prefix "${HF_PREFIX_OVERRIDE}")
+  HF_PREFIX_EFF="${HF_PREFIX_OVERRIDE}"
+fi
+DRIVER=(uv run python scripts/issue1769_run.py "${TINY_FLAG[@]}" --out-root "$OUT_ROOT" --bulk-root "$BULK_ROOT" "${ALPHA_FLAG[@]}" "${HF_PREFIX_FLAG[@]}")
 
 # GPU width: derived from nvidia-smi in BOTH modes (never a smoke-narrowed
 # pin — smoke on a CPU host naturally runs 1 worker; production fails loud
@@ -167,13 +192,13 @@ fi
 
 # ── results sentinel (poll_pipeline.py contract) ─────────────────────
 echo "[phase=sentinel] writing results sentinel"
-uv run python - "$KIND" "$ISSUE" "$GIT_SHA" "$OUT_ROOT" "$SMOKE" "$KILL_HALT" <<'PY'
+uv run python - "$KIND" "$ISSUE" "$GIT_SHA" "$OUT_ROOT" "$SMOKE" "$KILL_HALT" "$HF_PREFIX_EFF" <<'PY'
 import json
 import sys
 import time
 from pathlib import Path
 
-kind, issue, git_sha, out_root, smoke, kill_halt = sys.argv[1:7]
+kind, issue, git_sha, out_root, smoke, kill_halt, hf_prefix = sys.argv[1:8]
 logs_dir = Path("/workspace/logs")
 if not logs_dir.is_dir():
     logs_dir = Path("logs")
@@ -210,7 +235,7 @@ note = {
     "reproducibility_card": {
         "adapter_paths": "n/a (no training in this experiment)",
         "wandb_url": "n/a (no training metrics)",
-        "hf_artifact_prefixes": ["issue1769_prefill_decode/raw_completions/"],
+        "hf_artifact_prefixes": [f"{hf_prefix}/raw_completions/"],
         "eval_json_paths": eval_paths,
         "seeds": {"generation_seed_base": 42, "bootstrap": 0},
         "git_commit": git_sha,

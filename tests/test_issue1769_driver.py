@@ -206,3 +206,145 @@ def test_shard_partition_covers_all_groups_disjointly():
         cfg.shard = shard
         seen.extend((g["trait"], g["arm"], g["alpha"]) for g in run.shard_groups(cfg, groups))
     assert sorted(seen) == sorted((g["trait"], g["arm"], g["alpha"]) for g in groups)
+
+
+def test_fu1_alphas_and_hf_prefix_overrides_thread_into_config(tmp_path):
+    """fu1 (plan v10): --alphas replaces the ladder, --hf-prefix rebinds every
+    upload path; the fu1 grid enumerates 3 traits x (20 neither + 3 arms x
+    2 alphas x 20q) = 420 cells with zero parent-prefix paths reachable."""
+    args = run.parse_args(
+        [
+            "--out-root",
+            str(tmp_path / "o"),
+            "--bulk-root",
+            str(tmp_path / "b"),
+            "--alphas",
+            "3.0",
+            "1.5",
+            "--hf-prefix",
+            "issue1769_prefill_decode/fu1_alpha_subgrid",
+        ]
+    )
+    cfg = run.build_config(args)
+    assert cfg.alphas == (1.5, 3.0)  # sorted
+    assert cfg.hf_prefix == "issue1769_prefill_decode/fu1_alpha_subgrid"
+    assert len(run.expected_cells(cfg)) == 420
+
+
+def test_default_config_parity_without_new_flags(tmp_path):
+    """No --alphas / --hf-prefix => the parent ladder + parent HF prefix,
+    byte-identical defaults (plan v10 acceptance criterion)."""
+    args = run.parse_args(["--out-root", str(tmp_path / "o"), "--bulk-root", str(tmp_path / "b")])
+    cfg = run.build_config(args)
+    assert cfg.alphas == run.ALPHAS == (1.0, 2.0, 4.0)
+    assert cfg.hf_prefix == run.HF_OUT_PREFIX == "issue1769_prefill_decode"
+    tiny_args = run.parse_args(
+        ["--tiny", "--out-root", str(tmp_path / "to"), "--bulk-root", str(tmp_path / "tb")]
+    )
+    tiny_cfg = run.build_config(tiny_args)
+    assert tiny_cfg.alphas == (1.0, 2.0)  # tiny default ladder unchanged
+    assert tiny_cfg.hf_prefix == run.HF_OUT_PREFIX
+
+
+# ---------------------------------------------------------------------------
+# fu1 judge-phase prefix isolation (concern fu1-judge-phase-parent-prefix-residuals)
+# ---------------------------------------------------------------------------
+
+FU1_PREFIX = "issue1769_prefill_decode/fu1_alpha_subgrid"
+
+
+def test_judge_parse_args_parent_defaults_unchanged():
+    """Flag-less judge defaults stay byte-identical to the parent run's paths."""
+    import issue1769_judge as judge
+
+    args = judge.parse_args([])
+    assert args.hf_prefix == judge.HF_OUT_PREFIX == "issue1769_prefill_decode"
+    assert args.out_root == judge.PARENT_OUT_ROOT == Path("eval_results/issue_1769/phase_g")
+    assert args.completions_root == judge.PARENT_COMPLETIONS_ROOT
+    assert args.work_dir == judge.PARENT_WORK_DIR == Path("data/issue_1769/judge_cache")
+    assert args.judge_out == judge.PARENT_JUDGE_OUT == Path("eval_results/issue_1769/judge")
+    judge.assert_prefix_isolation(args)  # parent prefix + parent defaults: no raise
+
+
+def test_judge_fu1_prefix_isolation_guard(tmp_path):
+    """A non-parent --hf-prefix with ANY parent-default local path fails loud
+    BEFORE staging / API spend (never read parent cells / overwrite the
+    parent's judge_raw, id_map, or committed graded_scores.json)."""
+    import issue1769_judge as judge
+
+    args = judge.parse_args(["--hf-prefix", FU1_PREFIX])
+    with pytest.raises(AssertionError) as exc:
+        judge.assert_prefix_isolation(args)
+    for flag in ("--out-root", "--completions-root", "--work-dir", "--judge-out"):
+        assert flag in str(exc.value)
+    partial = [
+        "--hf-prefix",
+        FU1_PREFIX,
+        "--out-root",
+        str(tmp_path / "phase_g_fu1"),
+        "--completions-root",
+        str(tmp_path / "raw_completions_fu1"),
+        "--work-dir",
+        str(tmp_path / "judge_cache_fu1"),
+    ]
+    with pytest.raises(AssertionError, match="--judge-out"):
+        judge.assert_prefix_isolation(judge.parse_args(partial))
+    full = [*partial, "--judge-out", str(tmp_path / "judge_fu1")]
+    judge.assert_prefix_isolation(judge.parse_args(full))  # all rebound: no raise
+
+
+def test_judge_stage_completions_threads_hf_prefix(tmp_path, monkeypatch):
+    """stage_completions stages from {hf_prefix}/raw_completions and reads the
+    mirror back under the SAME prefix — real body, fake ONLY the network
+    boundary (signature-conformant stage_hub_prefix)."""
+    import issue1769_judge as judge
+
+    from explore_persona_space.orchestrate import hub
+
+    manifest = {
+        "cells": {
+            "evil/both/a1.5/q00": {"completion_file": "both_a1.5_q00_seed42.json"},
+            "evil/pf/a3/q00": {"completion_file": "pf_a3_q00_seed42.json"},
+        }
+    }
+    staged_prefixes: list[str] = []
+
+    def fake_stage_hub_prefix(
+        repo_id,
+        prefix,
+        dest_dir,
+        *,
+        repo_type="dataset",
+        revision=None,
+        token=None,
+        max_workers=6,
+    ):
+        assert repo_id == judge.HF_DATA_REPO and repo_type == "dataset"
+        staged_prefixes.append(prefix)
+        out = []
+        for rec in manifest["cells"].values():
+            p = Path(dest_dir) / FU1_PREFIX / "raw_completions" / "evil" / rec["completion_file"]
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text("{}")
+            out.append(p)
+        return out
+
+    monkeypatch.setattr(hub, "stage_hub_prefix", fake_stage_hub_prefix)
+    completions_root = tmp_path / "raw_completions_fu1"
+    judge.stage_completions(manifest, completions_root, FU1_PREFIX)
+    assert staged_prefixes == [f"{FU1_PREFIX}/raw_completions"]
+    for rec in manifest["cells"].values():
+        assert (completions_root / "evil" / rec["completion_file"]).exists()
+
+
+def test_lattice_input_flags_default_to_parent_constants():
+    """The lattice's --judge-scores / --raw-completions-dir defaults stay the
+    parent constants (flag-less behavior byte-identical)."""
+    import inspect
+
+    import issue1769_alpha2_clean_lattice as lat
+
+    sig_load = inspect.signature(lat.load_graded_scores)
+    assert sig_load.parameters["path"].default == lat.GRADED_SCORES
+    sig_flags = inspect.signature(lat.build_cjk_flags)
+    assert sig_flags.parameters["raw_dir"].default == lat.RAW_COMPLETIONS_DIR
