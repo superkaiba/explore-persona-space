@@ -13,3 +13,9 @@ metadata:
 4. **Stale untracked working-tree copy of a PINNED figure/sidecar (#922 clean-result r2):** the body pins a figure to a raw.githubusercontent URL @ commit SHA; Codex reads the WORKING-TREE path (`figures/issue_<N>/...`) at the repo root, which holds an UNTRACKED pre-regen copy (`git status --porcelain` shows `?? figures/issue_<N>/`), and reports the round-1 label fix "NOT-FIXED" with grep counts from the stale sidecar. Authoritative read is the PINNED BLOB: `git show <pin-sha>:figures/issue_<N>/<file>` for the sidecar categories + `git hash-object <worktree png>` vs `git rev-parse <pin>:<path>` to know whether a Read of the local PNG reflects the pin. #922: pinned meta.json carried all reader-facing labels, 0 banned-token hits; the repo-root untracked copy had 18. Classify Unverified/Discarded; PASS.
 
 Sibling: [[feedback_codex_hardening_beyond_minimal_port_contract]] (plan-pinned-to-parent code gets the same downgrade logic); [[feedback_codex_gitignored_artifacts_as_production_state]] (worktree FILE state rather than code state); [[feedback_codex_raw_branch_diff_misses_surgical_merge]] (branch-stale diff vs the Step 10d surgical merge).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Codex litigates pre-existing / stale state in round N](feedback_codex_litigates_pre_existing_in_round_n.md) — git-provenance family: pre-existing-on-trunk, scope drift, stale-worktree "deletions", cumulative diffs, stale UNTRACKED repo-root copy of a pinned figure/sidecar (#922: `git show <pin>:<path>` is authoritative).

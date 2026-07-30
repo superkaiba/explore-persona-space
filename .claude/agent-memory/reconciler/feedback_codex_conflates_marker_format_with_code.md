@@ -13,3 +13,9 @@ metadata:
 - **C — smoke-evidence presentation nit:** evidence presented narratively rather than fenced-command + exit-0 + digest, while the smoke demonstrably exists and reproduces. Incident: #451 r1 — reconciler independently reproduced the preflight numbers character-for-character + re-ran the 9/9 test file + verified cherry-pick parity; FAIL was about FORMAT, not absence. PASS.
 
 This is the inverse of [[feedback_claude_underclasses_silent_failures]]: Claude under-classes real runtime bugs; Codex over-classes prose nits / stale reads. The reconciler corrects each side to the rubric.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Codex conflates marker format/existence with code](feedback_codex_conflates_marker_format_with_code.md) — marker-shape nits / stale-file marker reads / smoke-presentation nits with "diff not reviewed" → discard, verify Claude's review independently, PASS.

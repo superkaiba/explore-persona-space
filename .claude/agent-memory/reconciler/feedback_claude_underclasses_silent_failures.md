@@ -35,3 +35,9 @@ metadata:
 - #1098 r1 (PASS w/ Minor) — GUARD-WAIVER variant: Claude FOUND the diff-introduced fail-open itself (waived ssh/grep producer redirecting gated text to a file a later shell clause executes, `> f; bash f` — main rc=2 → wt rc=0) but classed it Minor "doc fix, fold into a future touch". Two rationale defects to check for in any guard/waiver severity split: (a) "the two-tool-call form was always invisible to a per-call hook" proves too much — the same argument applies to the pipe form the plan itself closed as a plan-stage Must-Fix BLOCKER (severity of the immediate same-call sibling binds); (b) "refusing X would false-block benign forms" is WRONG accounting when every such shape is rc=2 on main TODAY — a fail-closed refusal is strictly status-quo-preserving (cost = un-waived convenience, a residual FP), the exact accounting the plan used for its own pipe refusal. Also: an unmet plan acceptance criterion (the honest-residual-register clause) that Claude itself scores "±" cannot ride a PASS; "fold into a future touch" is the #509 unenforced-deferral pattern.
 
 Related: [[feedback_codex_conflates_marker_format_with_code]] (the inverse: Codex over-classes prose nits as FAIL); [[feedback_claude_concerns_on_pre_pod_launch_headline_bug]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Claude under-classes silent failures](feedback_claude_underclasses_silent_failures.md) — real silent-failure bug + CONCERNS/Minor verdict → FAIL; classify by what the bug DOES, not fix size; incl. #1098 guard-waiver fail-open ("status-quo-preserving refusal ≠ new false-block"). 13-incident ledger + defenses.

@@ -46,3 +46,9 @@ Renderer-side fix tracked as an infra task (gcp.py `render_startup_script`).
 Burned at #491 attempt 2 (2026-06-11): killed mid-free_gen at 17:03 UTC after
 22/29 cells; prior session had stalled, watcher respawn diagnosed + recovered
 on the live VM.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [GCE metadata runner kills on progress bars](feedback_gcp_metadata_runner_token_too_long.md) — vLLM \r bars overflow bufio.Scanner → SIGPIPE, VM zombies at RUNNING/phase=workload; SSH setsid+nohup relaunch + manual sentinel (#491)

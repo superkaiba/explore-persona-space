@@ -46,3 +46,9 @@ have crashed phase2 (a registered deliverable) mid-run at degraded coverage.
   code-defined question batteries); only phase2 needed the mix. A partial-
   coverage launch is still a degraded-coverage launch when the missing phase
   is a registered deliverable — refuse.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Reused parent train-mix is local-only; GCP lane can't reach it](feedback_reused_train_mix_local_only_gcp_lane.md) — a REUSED parent train mix (single-variable default) is often never uploaded to HF; on the git-clone-only GCP lane it can't reach the VM and has no inline rebuild (parent `--phase p0` is GPU+judge). Trace the dispatcher's `data/...` read path + `list_repo_files` the basename before trusting reuse; fail `infra planned-input-data-missing-on-pod` — #734

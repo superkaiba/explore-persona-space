@@ -37,3 +37,9 @@ subtracted len(round1)=5000 read 0 rows in range and crashed in production.
 Pin the index space from the producer's manifest builder, and validate the
 mapping BY CONTENT (normalized-prompt positional match + set membership),
 never by index arithmetic alone.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Capture convention: read the PRODUCER's code](feedback_capture_convention_read_producer_code.md) — stored-array reconciliation: pin tokenize/span convention from the parent's chunk writer; stream the parent draw, never recapture (#1482 r3)

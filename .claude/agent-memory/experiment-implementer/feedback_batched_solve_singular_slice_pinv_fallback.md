@@ -27,3 +27,9 @@ aff188af67df5f4e12f6398583d54e36834f3602). Deterministic singular test
 fixture: Gram of a constant-column design (col1 = 2*col0, integer-exact) —
 gesv raises reproducibly. Sibling entries: cuSOLVER eigh CPU fallback
 (#1335), numpy SVD gesdd non-convergence (#722 r3).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Batched solve dies on ONE singular slice](feedback_batched_solve_singular_slice_pinv_fallback.md) — np.linalg.solve raises ONCE for a whole (B,k,k) stack; jitter scale-absorbed in fl64; batched-first + per-slice pinv + degenerate_ols flag (#1739 r10)

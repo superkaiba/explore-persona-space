@@ -28,3 +28,9 @@ on the shard pidfiles, or gate each wave in the wrapper by polling the
 previous wave's shard pids, or dispatch one wave per round. Same
 verification family as the "brief flags drift from argparse" check — trust
 the script, not the brief's paraphrase of its blocking behavior.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Detached-spawn launchers cannot be &&-chained into waves](feedback_detached_spawn_launcher_cannot_chain_waves.md) — a fan-out script that setsid-detaches shards (reparented to init) exits after its spawn loop; chaining wave2 && wave3 && wave4 runs ALL waves concurrently (16 shards/8 GPUs) and can wedge the MooseFS mount; grep the script SOURCE for a wait/poll loop before chaining — the brief's "waits on its shard pids" claim is a paraphrase, not ground truth (#1738)

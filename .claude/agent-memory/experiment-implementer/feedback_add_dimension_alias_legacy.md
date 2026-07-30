@@ -14,3 +14,9 @@ When adding a new dimension to an established multi-cell pipeline that has on-di
 **Why:** resume-from-disk skips re-running 15-45 min computations; existing HF artifacts need no re-upload; analyzer/critic code reading legacy keys keeps working; the new dimension's verdict ships as a parallel block instead of silently changing what an existing key means. Anti-pattern — renaming and "updating all callers in one pass" — always misses a caller or invalidates every existing per-cell file.
 
 **Example:** task #399 round-16 (2026-05-27) added an on-policy end-of-content probe beside the first-token probe this way; resume on 84 existing first-token cell files worked with zero re-compute and zero analyzer changes. Cost ~50-100 lines of plumbing.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Add dimension via alias + new key, never rename](feedback_add_dimension_alias_legacy.md) — legacy filenames/keys alias the default value; new values get parallel keys; resume + consumers keep working. #399.

@@ -23,3 +23,9 @@ in either verdict: (1) name the exact gate (agent spec file + line); (2) check
 WHAT it gates (zero-vs-partial, on-pod vs HF-side, count vs existence); (3) if
 the gate doesn't cover the gap, re-derive severity from the artifact itself and
 persist the residue as a CONCERN so Step 5c-ter reads the ledger, not the prose.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Claude cites nonexistent backstop semantics](feedback_claude_cites_nonexistent_backstop_semantics.md) — read the named gate's ACTUAL fail condition (upload-verifier gates zero-files only, never partial coverage) before crediting a downgrade. #594 r1.

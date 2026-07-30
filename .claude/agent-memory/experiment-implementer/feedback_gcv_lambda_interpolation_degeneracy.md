@@ -65,3 +65,9 @@ forced-grid `ridge_leg` (`scripts/issue1345_story_info_probe.py` @ `3ffc51d581`)
 |Δ| < 1e-9 across all four legs. That converts "comparable by assumption" into "comparable by
 construction" for the cost of one ~20-line check, and it is the same discipline
 [[capture-convention-read-the-producer-code]] applies to stored-array conventions.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [GCV lambda interpolation degeneracy](feedback_gcv_lambda_interpolation_degeneracy.md) — n_tr ≲ D: GCV → grid-min λ, R² −2..−46; inner-group-CV fix (#1335); reduced-basis + forced-λ companions (#1345)

@@ -31,3 +31,9 @@ deliberate refusal or a recorded deviation — decide which), (b) compares
 parent-vs-parent or run-vs-run (internal consistency — keep, but never cite it
 as the cross-boundary guard), (c) needs re-pointing to the run's own attestation.
 Smoke each one in BOTH directions after the change.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Deviation path → sweep all pin verifiers](feedback_deviation_path_sweeps_all_pin_verifiers.md) — an authorized artifact deviation flips sibling pin checks; re-point stale parent-pin verifiers to the run's own attestation.

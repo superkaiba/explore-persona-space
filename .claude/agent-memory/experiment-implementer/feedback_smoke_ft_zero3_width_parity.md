@@ -34,3 +34,12 @@ crash's traceback lands in the crash-persisted workload.log (the inner
 `ft_mk4.log` was outside the GCE trap globs and died with the instance).
 Sweep duty: any OTHER in-flight dispatcher cloned from the #1112 family
 needs the same audit before its first pod smoke.
+
+## Merged sibling index rows (#1891 curation, 2026-07-30)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the ~25 KB loader truncation limit (task #1891). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [Smoke keeps ZeRO-3 production width](feedback_smoke_ft_zero3_width_parity.md) — narrowing a ZeRO-3 full-FT smoke to 1 process OOMs at the first optimizer step (~86 GB unsharded on 80 GB); audit every `if cfg.smoke:` width branch when cloning a dispatcher (#1315)
+- [Per-arm-class smoke + source-filtered panel](feedback_per_arm_class_smoke_and_panel_disjointness.md) — a new source-context class crashes the #527/#538 panel-disjointness assert at ModelOrganism sites the smoke never reached; thread fu3w.panel_name_for everywhere + smoke one run per ARM CLASS (#1090 fu5)
+- [--smoke ternary skips the production branch](feedback_smoke_ternary_skips_production_branch.md) — `A if args.smoke else MODULE.CONST` leaves the production branch unexecuted by the smoke; resolve production-only constants at import time (#825 contrast crash)
+- [Smoke per class×regime](feedback_smoke_class_regime_coverage.md) — multi-class dispatchers smoke ≥1 cell per realized behavior-class × regime (#1586)

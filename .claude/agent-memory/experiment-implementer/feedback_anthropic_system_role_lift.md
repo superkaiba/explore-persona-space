@@ -20,3 +20,9 @@ anthropic needs (a) a system-lift (`_gen_params_from_messages` in datagen.py is
 the canonical helper — reuse it), and (b) a tiny LIVE forced probe with a
 system-BEARING message list before production; a mock smoke or a system-less
 live smoke cannot catch the shape bug.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Anthropic system-role lift at dispatcher seams](feedback_anthropic_system_role_lift.md) — Messages API 400s on role:system in messages; lift to top-level system=; live system-bearing probe required (#906)
