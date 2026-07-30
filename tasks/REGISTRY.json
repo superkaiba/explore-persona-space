@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1880,
+  "highest_id": 1881,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6819,6 +6819,13 @@
       "path": "tasks/proposed/1880",
       "status": "proposed",
       "title": "workflow-fix: pod-side results-git push must fetch+rebase (mid-run branch-push race)"
+    },
+    "1881": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1881",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body judge-health drop-line population reconciliation"
     },
     "19": {
       "has_clean_result": false,
