@@ -12,6 +12,20 @@ export EPM_I1345_VARIANT=story_boundary_ablation
 export EPM_STORY_CHARACTER_NAME=Assistant
 
 mkdir -p logs
+
+# Stage the pinned parent matched-n allowlist (gen's load_paired_pool asserts
+# it; track_s.jsonl self-stages from HF, the allowlist does not). --smoke
+# bounds the stem side-download to one shard; the allowlist download is full
+# and pinned either way. Crash 15764: data/issue_1345/** is not rsynced to
+# the SLURM scratch clone, so this MUST run on the compute host.
+if ! uv run python scripts/issue1345_prefetch_reuse.py --smoke --stems instruct_chat_s \
+  > logs/i1345_bnd_prefetch.log 2>&1; then
+  echo "[launch-gen] prefetch_reuse FAILED (allowlist staging) — see logs/i1345_bnd_prefetch.log" >&2
+  tail -20 logs/i1345_bnd_prefetch.log >&2
+  exit 4
+fi
+echo "[launch-gen] allowlist staged (prefetch_reuse rc=0)"
+
 n_gpu="$(nvidia-smi -L | wc -l)"
 if [ "$n_gpu" -lt 1 ]; then
   echo "[launch-gen] no visible GPUs" >&2
