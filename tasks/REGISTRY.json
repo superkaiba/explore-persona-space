@@ -6214,8 +6214,8 @@
     "1802": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1802",
-      "status": "reviewing",
+      "path": "tasks/completed/1802",
+      "status": "completed",
       "title": "daily-fix: new_worktree.sh sets upstream for issue branches"
     },
     "1803": {
