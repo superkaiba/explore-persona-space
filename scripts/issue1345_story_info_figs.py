@@ -94,7 +94,7 @@ def fig_raw_retrieval(out_dir: Path, fig_dir: Path, rounds: list[str]) -> None:
             fontsize=10,
         )
         ax.set_ylim(0, max(max(acc), chance) * 1.25 + 0.02)
-    axes[0].set_ylabel("fraction whose true partner is the nearest neighbour")
+    axes[0].set_ylabel("true partner is nearest neighbour\n(fraction of conversations)")
     axes[0].legend(loc="upper right", fontsize=8)
     savefig_paper(fig, "raw_retrieval_bars", dir=str(fig_dir))
     plt.close(fig)
@@ -180,9 +180,13 @@ def fig_ridge_vs_mlp(out_dir: Path, fig_dir: Path, rounds: list[str]) -> None:
         rotation=18,
         ha="right",
     )
-    ax.set_ylabel("held-out R-squared in the reduced target basis")
+    ax.set_ylabel("held-out R-squared\n(reduced target basis)")
     ax.set_title("Nonlinear probe vs linear ridge, identical folds and inputs")
-    ax.legend(fontsize=8)
+    # Headroom so the bar-value labels cannot collide with the legend.
+    lo = min([*ridge, *mlp, 0.0])
+    hi = max([*ridge, *mlp])
+    ax.set_ylim(lo - 0.05 * (hi - lo), hi + 0.34 * (hi - lo))
+    ax.legend(fontsize=8, loc="upper right", framealpha=0.9)
     savefig_paper(fig, "ridge_vs_mlp_bars", dir=str(fig_dir))
     plt.close(fig)
 
