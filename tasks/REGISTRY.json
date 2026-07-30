@@ -6438,8 +6438,8 @@
     "1831": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1831",
-      "status": "planning",
+      "path": "tasks/approved/1831",
+      "status": "approved",
       "title": "workflow-fix: pre_reg audit head nouns gain ceiling check/gate family (#1769 escape)"
     },
     "1832": {
