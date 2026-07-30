@@ -521,8 +521,9 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   config-code tokens — `@L<digits>` layer pins (`ctx_blk_max@L12`),
   regime-code slugs (snake tokens >=3 segments or digit-bearing:
   `ans_uhdr_max`, `sw_eng_C1`, `cond_4`; 2-segment all-alpha metric names
-  like `log_prob` stay allowed), bare hypothesis codes (`H3` — single
-  digit, case-sensitive, so `H100`/`H200` never match), or slot-family
+  like `log_prob` stay allowed), bare hypothesis codes (`H3`/`H1c` —
+  single digit + optional single lowercase letter, case-sensitive, so
+  `H100`/`H200` never match), or slot-family
   codes (`f16`/`l16` only, #1072). Plain-English condition names are the
   project rule end to end; config slugs belong in the Repro config row /
   provenance keys. Scans string VALUES only (provenance-keyed subtrees
@@ -7808,12 +7809,15 @@ _LAYER_PIN_RE = re.compile(r"\w*@L\d+\b")
 #     all-alpha metric / persona names like `log_prob` are legitimate labels).
 _SNAKE_TOKEN_RE = re.compile(r"\b[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)+\b")
 
-# (c) bare hypothesis codes (`H3`) — plan-registered hypothesis slots
-#     rendered into figure text (#1072: panel title "… (H3)"). SINGLE digit
-#     + case-sensitive by design: `H100`/`H200` GPU names (3 digits) and
-#     `H20` (2 digits, also a GPU name) never match; lowercase `h3` is not
-#     the project's hypothesis-code convention and stays clean.
-_HYPOTHESIS_CODE_RE = re.compile(r"\bH\d\b")
+# (c) bare hypothesis codes (`H3`, `H1c`) — plan-registered hypothesis slots
+#     rendered into figure text (#1072: panel title "… (H3)"; #1774: sidecar
+#     title "… (H1c)" passed the old single-digit form). SINGLE digit +
+#     optional single LOWERCASE letter, case-sensitive by design:
+#     `H100`/`H200` GPU names (3 digits) and `H20` (2 digits, also a GPU
+#     name) never match — no word boundary fires between two digits — and
+#     lowercase `h3` / uppercase-suffix `H1C` are not the project's
+#     hypothesis-tag convention and stay clean.
+_HYPOTHESIS_CODE_RE = re.compile(r"\bH\d[a-z]?\b")
 
 # (d) slot-family codes `f16` / `l16` (first-16 / last-16 answer-slot
 #     families, #1072: xlabel "answer position t (f16 slots)"). Deliberately
@@ -7836,8 +7840,9 @@ def _opaque_code_tokens(text: str) -> list[str]:
     layer pins, and snake_case tokens that are >=3 segments OR carry any
     digit (`ctx_blk_max`, `sw_eng_C1`, `BS_E0`, `cond_4`); 2-segment
     all-alpha tokens (`log_prob`, `judge_rate`, `helpful_assistant`) are
-    allowed; bare hypothesis codes (`H3` — `\bH\d\b`, single digit,
-    case-sensitive) and slot-family codes (`f16`/`l16` only). PATH-SHAPED
+    allowed; bare hypothesis codes (`H3`/`H1c` — `\bH\d[a-z]?\b`, single
+    digit + optional single lowercase letter, case-sensitive) and
+    slot-family codes (`f16`/`l16` only). PATH-SHAPED
     strings (whitespace-free with a path separator —
     file paths, URLs) are exempt from ALL FOUR token scans;
     strings that merely CONTAIN a slash (e.g. a slash-separated rendered
@@ -7922,7 +7927,7 @@ def check_figure_label_codes(body: str) -> CheckResult:
     """Check 28 (WARN): rendered figure text (sidecar ``.meta.json`` values)
     must not carry opaque config-code tokens — ``@L<digits>`` layer pins,
     regime-code slugs (``ctx_blk_max``, ``sw_eng_C1``), bare hypothesis
-    codes (``H3``), or slot-family codes (``f16``/``l16``). Plain-English
+    codes (``H3``/``H1c``), or slot-family codes (``f16``/``l16``). Plain-English
     condition names are the rule end to end (memory
     feedback_no_opaque_condition_codes, SPEC statistical-framing bullet);
     config slugs belong in the Repro config row / provenance keys. Incident
@@ -13219,7 +13224,11 @@ def _finding_prose_cap_results(findings: str) -> tuple[list[str], list[str]]:
         wc = _prose_words(block)
         short = name[:48]
         if wc >= V3_FINDING_PROSE_FAIL_WORDS:
-            fails.append(f"finding '{short}' prose is {wc} words (≥{V3_FINDING_PROSE_FAIL_WORDS})")
+            fails.append(
+                f"finding '{short}' prose is {wc} words (cap: must be "
+                f"<{V3_FINDING_PROSE_FAIL_WORDS}; FAIL fires at "
+                f"≥{V3_FINDING_PROSE_FAIL_WORDS} inclusive)"
+            )
         elif wc > V3_FINDING_PROSE_WARN_WORDS:
             warns.append(f"finding '{short}' prose is {wc} words (>{V3_FINDING_PROSE_WARN_WORDS})")
     return fails, warns

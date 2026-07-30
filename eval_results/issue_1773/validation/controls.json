@@ -1,0 +1,37 @@
+{
+ "shuffled": {
+  "shuffled_detection": {
+   "mean": 0.5141975308641975,
+   "n_features": 135,
+   "ci95": [
+    0.48395061728395067,
+    0.5425925925925926
+   ]
+  },
+  "shuffled_fuzzing": {
+   "mean": 0.5017543859649122,
+   "n_features": 95,
+   "ci95": [
+    0.4701754385964912,
+    0.5307017543859649
+   ]
+  }
+ },
+ "randinit": {
+  "randinit_detection": {
+   "mean": 0.6718346253229973,
+   "n_features": 129,
+   "ci95": [
+    0.6395348837209303,
+    0.7021963824289406
+   ]
+  }
+ },
+ "note": "shuffled-label runs detection AND fuzzing; random-init REPORTED not gated",
+ "git_commit": "d122a947ed764fb9def8c37ec88b79a77fe65d64",
+ "numpy": "2.2.6",
+ "python": "3.11.15",
+ "timestamp_utc": "2026-07-29T06:26:40.985649+00:00",
+ "task": 1773,
+ "seed": 17732026
+}

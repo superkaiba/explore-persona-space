@@ -1,0 +1,389 @@
+{
+  "commit": "e9ef9d9dde",
+  "created": "2026-07-29T22:20:45Z",
+  "figsize": [
+    9.6,
+    3.8
+  ],
+  "points": [
+    {
+      "fold index": -0.24,
+      "per-fold held-out R2\n(48 answer PCs)": 0.8584811638718142,
+      "series": "additive stitch ridge (PRESS)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fold index": 0.76,
+      "per-fold held-out R2\n(48 answer PCs)": 0.8377090327772452,
+      "series": "additive stitch ridge (PRESS)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fold index": 1.76,
+      "per-fold held-out R2\n(48 answer PCs)": 0.8417058977941676,
+      "series": "additive stitch ridge (PRESS)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fold index": 2.76,
+      "per-fold held-out R2\n(48 answer PCs)": 0.8541452742932273,
+      "series": "additive stitch ridge (PRESS)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fold index": 3.76,
+      "per-fold held-out R2\n(48 answer PCs)": 0.8556851486007722,
+      "series": "additive stitch ridge (PRESS)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fold index": 4.76,
+      "per-fold held-out R2\n(48 answer PCs)": 0.8463584091602413,
+      "series": "additive stitch ridge (PRESS)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fold index": -0.12,
+      "per-fold held-out R2\n(48 answer PCs)": 0.870687855413739,
+      "series": "bilinear r = 0 refit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fold index": 0.88,
+      "per-fold held-out R2\n(48 answer PCs)": 0.8490729634012961,
+      "series": "bilinear r = 0 refit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fold index": 1.88,
+      "per-fold held-out R2\n(48 answer PCs)": 0.8526173978511321,
+      "series": "bilinear r = 0 refit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fold index": 2.88,
+      "per-fold held-out R2\n(48 answer PCs)": 0.8640710582752325,
+      "series": "bilinear r = 0 refit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fold index": 3.88,
+      "per-fold held-out R2\n(48 answer PCs)": 0.8658641284933594,
+      "series": "bilinear r = 0 refit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fold index": 4.88,
+      "per-fold held-out R2\n(48 answer PCs)": 0.8599661704270231,
+      "series": "bilinear r = 0 refit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fold index": 0.0,
+      "per-fold held-out R2\n(48 answer PCs)": 0.9164954555170011,
+      "series": "bilinear r = r* (32 prefix / 16 query)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fold index": 1.0,
+      "per-fold held-out R2\n(48 answer PCs)": 0.9021373417243689,
+      "series": "bilinear r = r* (32 prefix / 16 query)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fold index": 2.0,
+      "per-fold held-out R2\n(48 answer PCs)": 0.9055434714912927,
+      "series": "bilinear r = r* (32 prefix / 16 query)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fold index": 3.0,
+      "per-fold held-out R2\n(48 answer PCs)": 0.9106246382086424,
+      "series": "bilinear r = r* (32 prefix / 16 query)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fold index": 4.0,
+      "per-fold held-out R2\n(48 answer PCs)": 0.9173400581058622,
+      "series": "bilinear r = r* (32 prefix / 16 query)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fold index": 5.0,
+      "per-fold held-out R2\n(48 answer PCs)": 0.9058771600872347,
+      "series": "bilinear r = r* (32 prefix / 16 query)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fold index": 0.12,
+      "per-fold held-out R2\n(48 answer PCs)": 0.9270661858444578,
+      "series": "stitch-MLP ensemble (mean of 3 seeds)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "fold index": 1.12,
+      "per-fold held-out R2\n(48 answer PCs)": 0.9142818200017492,
+      "series": "stitch-MLP ensemble (mean of 3 seeds)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "fold index": 2.12,
+      "per-fold held-out R2\n(48 answer PCs)": 0.9154674507997281,
+      "series": "stitch-MLP ensemble (mean of 3 seeds)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "fold index": 3.12,
+      "per-fold held-out R2\n(48 answer PCs)": 0.9185562234342599,
+      "series": "stitch-MLP ensemble (mean of 3 seeds)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "fold index": 4.12,
+      "per-fold held-out R2\n(48 answer PCs)": 0.9275782956764711,
+      "series": "stitch-MLP ensemble (mean of 3 seeds)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "fold index": 5.12,
+      "per-fold held-out R2\n(48 answer PCs)": 0.9174686565528577,
+      "series": "stitch-MLP ensemble (mean of 3 seeds)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "fold index": 0.24,
+      "per-fold held-out R2\n(48 answer PCs)": 0.9189864775199726,
+      "series": "full-context ridge (PRESS)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "fold index": 1.24,
+      "per-fold held-out R2\n(48 answer PCs)": 0.9103430776006058,
+      "series": "full-context ridge (PRESS)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "fold index": 2.24,
+      "per-fold held-out R2\n(48 answer PCs)": 0.9100704324954432,
+      "series": "full-context ridge (PRESS)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "fold index": 3.24,
+      "per-fold held-out R2\n(48 answer PCs)": 0.9130539027210067,
+      "series": "full-context ridge (PRESS)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "fold index": 4.24,
+      "per-fold held-out R2\n(48 answer PCs)": 0.9204427473697443,
+      "series": "full-context ridge (PRESS)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "fold index": 5.24,
+      "per-fold held-out R2\n(48 answer PCs)": 0.9117587645242675,
+      "series": "full-context ridge (PRESS)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "fold index": -0.12,
+      "y": 0.6313238169486015,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "fold index": 0.88,
+      "y": 0.6670628383385195,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "fold index": 1.88,
+      "y": 0.6215616822666729,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "fold index": 2.88,
+      "y": 0.6097014340516668,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "fold index": 3.88,
+      "y": 0.5908356149935141,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "fold index": 4.88,
+      "y": 0.6771452286237845,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "fold index": 0.0,
+      "y": 0.6600859147779161,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fold index": 1.0,
+      "y": 0.6861012379395811,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fold index": 2.0,
+      "y": 0.6527055069292778,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fold index": 3.0,
+      "y": 0.6266163858971108,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fold index": 4.0,
+      "y": 0.6267307069942043,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fold index": 5.0,
+      "y": 0.7066566303913591,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fold index": 0.12,
+      "y": 0.7329543825246495,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "fold index": 1.12,
+      "y": 0.7370035122524305,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "fold index": 2.12,
+      "y": 0.7112256404195425,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "fold index": 3.12,
+      "y": 0.695937592756372,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "fold index": 4.12,
+      "y": 0.7040359391792861,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "fold index": 5.12,
+      "y": 0.7678333568773263,
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Novel-prefix folds",
+        "xlabel": "fold index",
+        "ylabel": "per-fold held-out R2\n(48 answer PCs)",
+        "xticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ],
+        "yticklabels": [
+          "0.82",
+          "0.84",
+          "0.86",
+          "0.88",
+          "0.90",
+          "0.92",
+          "0.94"
+        ]
+      },
+      {
+        "title_left": "Novel-query folds",
+        "xlabel": "fold index",
+        "xticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ],
+        "yticklabels": [
+          "0.575",
+          "0.600",
+          "0.625",
+          "0.650",
+          "0.675",
+          "0.700",
+          "0.725",
+          "0.750",
+          "0.775",
+          "0.800"
+        ]
+      }
+    ],
+    "series": [
+      "additive stitch ridge (PRESS)",
+      "bilinear r = 0 refit",
+      "bilinear r = r* (32 prefix / 16 query)",
+      "stitch-MLP ensemble (mean of 3 seeds)",
+      "full-context ridge (PRESS)"
+    ]
+  }
+}

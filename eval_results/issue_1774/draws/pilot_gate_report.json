@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "git_commit": "6948bdd1fe60c73b63e10b1ec04e633083c91c63",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "timestamp_utc": "2026-07-29T04:41:09.910263+00:00",
+    "store_rev": "e590170619e7691c1a95c7b1bb20bda5fd4065ad",
+    "rb_rev": "037fcbb210bc52c459959b0746cc268fe08bae96",
+    "script": "issue1774_draws.py --stage pilot"
+  },
+  "per_gen_s": 1.250577461719513,
+  "engine_init_s": 19.49153470993042,
+  "n_distinct_draw_pairs": 10,
+  "per_capture_row_s": 0.4766392707824707,
+  "identity_gate": {
+    "n_spot_rows": 8,
+    "max_abs": 0.01963520050048828,
+    "cos_min": 0.9999961256980896,
+    "bar_max_abs": 0.25,
+    "bar_cos_min": 0.999,
+    "pass": true
+  }
+}

@@ -6837,20 +6837,67 @@ def check_exit0_repo_wide_baseline(plan: str, kind: str) -> CheckResult:
 
 # ─── Check 39 — off-pod phase declaration (reads + outputs) ────────────────
 
-_C39_TRIGGER_RE = re.compile(r"(?i)\boff-pod\b|\bvm-side\b")
+# Calibration (DEVELOPMENT-SET numbers, fitted IN-SAMPLE — the tokens were
+# tuned on the same persisted-plan corpus they were measured on; ANY future
+# c39-regex change re-runs the corpus scan and records the realized numbers
+# here — the c33/c27/c32 gate precedent). Re-scan 2026-07-29 (#1796,
+# implementation-time, AS-SHIPPED regex) over 3,004 persisted plan-versions
+# (tasks/*/*/plans/v*.md, 1,264 distinct issues), mirroring the check's
+# gating exactly (stripped-prose per-line trigger; kind==experiment; raw
+# `off_pod_phases:` satisfier; standalone `N/A — no off-pod phase` escape).
+# Inverse-direction tokens KEPT: `vm-produced` — 5 pv triggered (issues
+# #1782/#1796 only, both kind:infra workflow-fix plans discussing this very
+# seam ⇒ kind-exempt), 0 would-WARN; ZERO in-prose non-compliant hits exist
+# in the corpus (#1773's own `VM-produced` prose lives INSIDE its fenced
+# off_pod_phases: block in already-compliant plans, invisible to the
+# stripped-prose trigger by design), so no in-corpus positive control
+# exists and the token is FORWARD-LOOKING per the c38 positive/negative-
+# control convention — the pinned WARN test is the synthetic positive
+# control. `produced on the vm` — 2 pv triggered (#548 v1, #778 v5), both
+# GENUINE cross-phase-read prose ("The off-pod primary read ... is produced
+# on the VM AFTER pod termination") and both ALREADY would-WARN under the
+# pre-#1796 off-pod/vm-side regex ⇒ 0 NEW would-WARNs, empty nuisance
+# class. Tokens DROPPED: `vm-built` / `vm-generated` — 0 corpus hits;
+# secondary variants gated on demonstrated recall (plan #1796 §3),
+# speculative widening declined. `git-clone lane` — 13 pv / 5 issues,
+# 7 would-WARN, nuisance class irreducible: artifact-reuse fitness-check
+# boilerplate (#1090 v5 "fetchability check (h) passes by construction
+# (git-clone lane, ...)") and COMPLIANT staging prose (#920 v1-v3
+# "committed to the issue branch before dispatch so the git-clone lane
+# stages it" — 3 NEW nuisance would-WARNs); dropped per the plan's
+# drop-by-default posture. Recent-era (issue >= 1000) NEW nuisance WARNs
+# from the SHIPPED tokens: 0. AS-SHIPPED delta confirmation: the widened
+# regex changes ZERO plan-version verdicts across the full corpus (0 newly
+# triggered pv, 0 newly would-WARN pv vs the pre-#1796 regex — every
+# shipped-token hit lives in a plan that already triggers on off-pod /
+# vm-side vocabulary elsewhere), i.e. purely forward-looking widening.
+_C39_TRIGGER_RE = re.compile(r"(?i)\boff-pod\b|\bvm-side\b|\bvm-produced\b|\bproduced on the vm\b")
 
 
 def check_off_pod_phase_declaration(plan: str, kind: str) -> CheckResult:
     """WARN-only, conditional, experiment-only: a plan whose non-fenced
     prose names an off-pod / VM-side phase must either carry the fenced
     ``off_pod_phases:`` declaration block (planner-section-reference.md § 9
-    — per phase: runs_on + reads[] with producing phase + permanent source
-    + outputs[] with off-pod dest; the block upload-verifier Steps 2.7/2.8
+    — since #1782 a direction-agnostic CROSS-PHASE READS rule: per phase
+    that reads another phase's outputs, runs_on + reads[] with producing
+    phase + permanent source the CONSUMING machine can fetch + outputs[]
+    with dest; the block upload-verifier Steps 2.7/2.8
     consume, #1535) or declare the standalone escape
-    ``N/A — no off-pod phase``. Mechanizes the #1526 gotchas.md off-pod
-    upload-set bullet at plan time (incident #1482: an off-pod judge died
+    ``N/A — no off-pod phase``. Mechanizes the #1526 gotchas.md
+    cross-machine upload-set bullet at plan time (incident #1482: an
+    off-pod judge died
     at VM launch on pod-only scratch never in the upload set; incident
-    #1426: a planned VM-side phase FAILed the verifier r1 by construction).
+    #1426: a planned VM-side phase FAILed the verifier r1 by construction;
+    incident #1773 — the inverse direction: a GCE phase crashed loading
+    VM-produced inputs never uploaded/staged). KNOWN MECHANICAL RESIDUAL
+    (narrowed by #1796): the trigger now ALSO fires on the corpus-
+    calibrated inverse-direction tokens (`vm-produced` /
+    `produced on the vm` — a pod/GCE/SLURM phase consuming VM-produced
+    inputs); inverse-direction prose using OTHER vocabulary (calibration
+    dropped `git-clone lane` as irreducibly noisy and `vm-built` /
+    `vm-generated` as zero-recall — see the calibration comment above
+    _C39_TRIGGER_RE) remains enforced by planner §9 + critic Methodology
+    item 10 only.
     NEVER FAILs — the trigger is a vocabulary heuristic (the c31/c34
     family), and legacy plans must not bounce retroactively. kind-exempt
     outside experiment: infra/batch/analysis/survey plans rarely dispatch
@@ -6882,10 +6929,13 @@ def check_off_pod_phase_declaration(plan: str, kind: str) -> CheckResult:
         "`off_pod_phases:` block — without the declaration the phase's READS are not "
         "plan-named (upload-verifier Step 2.8 cannot gate them at the cheap-fix window "
         "before the pod dies; the #1482 class) and its OUTPUTS false-FAIL the pod-side "
-        "Step 2.7 gate by construction (#1426). Add the fenced `off_pod_phases:` block "
-        "(template + worked example: planner-section-reference.md § 9 (off_pod_phases)), "
+        "Step 2.7 gate by construction (#1426). The rule is direction-agnostic (#1773): "
+        "declare EVERY dispatched phase that reads another phase's outputs, incl. a "
+        "pod/GCE/SLURM phase consuming VM-produced inputs. Add the fenced "
+        "`off_pod_phases:` block "
+        "(template + worked examples: planner-section-reference.md § 9 (off_pod_phases)), "
         "or declare `N/A — no off-pod phase` on its own line, unwrapped (no "
-        "backticks/quotes), if the vocabulary is incidental and no phase runs off the pod",
+        "backticks/quotes), if the vocabulary is incidental and no such phase exists",
     )
 
 

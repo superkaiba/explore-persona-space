@@ -1193,11 +1193,12 @@ def test_pre_reg_new_nouns_benign_verb_usages_not_flagged():
 
 def test_pre_reg_registered_interval_defining_the_test_not_flagged():
     """'the registered interval defining the test' is the sanctioned
-    Why-this-test CI-definition register — 'interval' and 'test' are
-    deliberately absent from the head-noun list, so `pre_reg` stays
-    silent (the LM critic owns any residual judgment call here). This
-    also pins the sanctioned register against future head-noun
-    extensions (#1553 `estimators?` included)."""
+    Why-this-test CI-definition register — since #1783 the exemption
+    mechanism is the Why-this-test line strip (`_blank_why_this_test_lines`
+    blanks the line from the pre_reg scan source), NOT noun omission:
+    `intervals?`/`tests?` are now IN the head-noun alternation, and
+    `pre_reg` stays silent because the whole line is blanked. This also
+    pins the sanctioned register against future head-noun extensions."""
     body = V4_BODY_CLEAN.replace(
         "The lift holds at every seed in the held-out evaluation.",
         "**Why this test:** the bootstrap CI is the registered interval defining the test.",
@@ -1265,6 +1266,117 @@ def test_pre_reg_1638_new_nouns_benign_verb_usages_not_flagged():
         "the forward hook registered at layer 20 fired; activations "
         "registered on layer hooks; three windows registered in the "
         "dashboard config; the ladder rungs registered under the sweep.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+# ─── pre_reg: the #1092 escape set (fix #1783) ────────────────────────────
+#
+# Seven bare 'registered <noun>' phrasings in #1092's promoted v4 body
+# PASSed the audit across rounds 1-3 (caught only by the LM critic's
+# Lens 7 read); #1783 adds their head nouns
+# (preconditions?/curves?/designs?/legs?/subsamples?/intervals?/tests?)
+# to the alternation and blanks `**Why this test:**` lines from the
+# pre_reg scan source so the sanctioned CI-definition register stays
+# exempt (the mechanism that makes `intervals?`/`tests?` safe to add).
+
+
+@pytest.mark.parametrize(
+    ("phrase", "expected_match"),
+    [
+        ("the registered downgrade precondition", "registered downgrade precondition"),
+        ("the registered confidence intervals", "registered confidence intervals"),
+        ("the registered trait-per-factor leg", "registered trait-per-factor leg"),
+        ("a registered subsample", "registered subsample"),
+        (
+            "two registered operator-identity residual tests",
+            "registered operator-identity residual tests",
+        ),
+        (
+            "the registered monitoring-gap group-size curve",
+            "registered monitoring-gap group-size curve",
+        ),
+        ("the registered design", "registered design"),
+    ],
+)
+def test_pre_reg_1092_escape_phrasings_are_flagged(phrase: str, expected_match: str):
+    """Each of the seven verbatim #1092 escape phrasings trips `pre_reg`
+    in v4 Results prose through the FULL gate pipeline (`audit_body`),
+    and the finding sample carries the expected match text. The
+    'operator-identity residual tests' case pins the 2-intervening-token
+    window; the hyphenated compounds ride the modifier token class."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        f"{phrase}.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, (phrase, findings)
+    assert any(expected_match in s for s in findings["pre_reg"]), (phrase, findings)
+
+
+def test_pre_reg_sanctioned_register_on_why_this_test_line_exempt_v4():
+    """The sanctioned Why-this-test CI-definition register — with its
+    bracketed CI — does NOT trip `pre_reg` in a SCANNED v4 prose section:
+    `_blank_why_this_test_lines` blanks the line from the pre_reg scan
+    source before the generation branch (#1783), even though
+    `intervals?`/`tests?` are now in the head-noun alternation."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "**Why this test:** the bootstrap CI [+0.1, +0.4] is the "
+        "registered interval defining the test.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_sanctioned_register_on_why_this_test_line_exempt_v3():
+    """The same sanctioned register inside a v3 `## Findings` SCANNED
+    prose section stays exempt — the Why-this-test strip applies to ALL
+    generations (the register historically lives in v3 Findings), and
+    blanking only ever REDUCES findings, so grandfathered bodies are
+    never newly FAILed."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed in the held-out evaluation.\n\n"
+        "**Why this test:** the bootstrap CI [+0.1, +0.4] is the "
+        "registered interval defining the test.",
+    )
+    assert body != V3_BODY_WITH_DATA_CODES
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_preregistered_on_why_this_test_line_no_longer_flagged():
+    """DOCUMENTS THE #1783 DEGRADATION: a `pre-registered` mention placed
+    on a Why-this-test line no longer trips `pre_reg` — the whole line is
+    blanked from the scan source, so a pre-reg mention smuggled onto it
+    escapes the mechanical gate. The LM clean-result-critic Lens 7 is the
+    backstop — the same accepted trade as the v4 table-row blanking
+    (cf. `test_pre_reg_in_v4_results_table_is_deliberately_exempt`)."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "**Why this test:** the pre-registered interval [0.1, 0.4] defines the pass bar.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_1783_new_nouns_benign_verb_usages_not_flagged():
+    """Benign verb-register shapes for the #1783 nouns stay clean:
+    noun-BEFORE-verb subjects ('the unit tests registered in pytest',
+    'three curves registered in WandB') and the first-token preposition
+    guard ('registered under the sweep'). Corpus-measured 2026-07-29
+    (1,715 bodies): 0 benign verb-use false positives among the 42 new
+    match starts."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "the unit tests registered in pytest fired; three curves "
+        "registered in WandB; the eval legs registered under the sweep.",
     )
     assert body != V4_BODY_CLEAN
     findings = audit.audit_body(body)

@@ -1,0 +1,88 @@
+{
+  "commit": "c6cb2b9a67",
+  "created": "2026-07-29T21:15:47Z",
+  "figsize": [
+    4.6,
+    3.0
+  ],
+  "points": [
+    {
+      "r": 0.5,
+      "held-out R2": 0.6359111628514325,
+      "_kind": "line"
+    },
+    {
+      "r": 1.0,
+      "held-out R2": 0.6509901151620991,
+      "_kind": "line"
+    },
+    {
+      "r": 2.0,
+      "held-out R2": 0.6566038830165825,
+      "_kind": "line"
+    },
+    {
+      "r": 4.0,
+      "held-out R2": 0.658401885436855,
+      "_kind": "line"
+    },
+    {
+      "r": 8.0,
+      "held-out R2": 0.6615649636714664,
+      "_kind": "line"
+    },
+    {
+      "r": 16.0,
+      "held-out R2": 0.6627481739083225,
+      "_kind": "line"
+    },
+    {
+      "r": 32.0,
+      "held-out R2": 0.6660064920060484,
+      "_kind": "line"
+    },
+    {
+      "r": 64.0,
+      "held-out R2": 0.6660139653570967,
+      "_kind": "line"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "bilinear r-curve (query; exploratory)",
+        "xlabel": "r",
+        "ylabel": "held-out R2",
+        "xticklabels": [
+          "$\\mathdefault{2^{-3}}$",
+          "$\\mathdefault{2^{-2}}$",
+          "$\\mathdefault{2^{-1}}$",
+          "$\\mathdefault{2^{0}}$",
+          "$\\mathdefault{2^{1}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{4}}$",
+          "$\\mathdefault{2^{5}}$",
+          "$\\mathdefault{2^{6}}$",
+          "$\\mathdefault{2^{7}}$",
+          "$\\mathdefault{2^{8}}$"
+        ],
+        "yticklabels": [
+          "0.630",
+          "0.635",
+          "0.640",
+          "0.645",
+          "0.650",
+          "0.655",
+          "0.660",
+          "0.665",
+          "0.670"
+        ]
+      }
+    ]
+  }
+}

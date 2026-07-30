@@ -98,9 +98,11 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # boundary. Head-noun list measured against all 1006
         # promoted/parked bodies on 2026-07-16: 198 marginal hits, every
         # one genuine Lens 7 jargon, 0 verb-use false positives. 'test'
-        # and 'interval' are deliberately absent ('the registered interval
-        # defining the test' is the sanctioned Why-this-test CI-definition
-        # register). (RUF001 noqa: the U+2212/U+2264/U+2265 in the token
+        # and 'interval' were deliberately absent at this round ('the
+        # registered interval defining the test' is the sanctioned
+        # Why-this-test CI-definition register) — RESOLVED by #1783 below,
+        # which blanks Why-this-test lines from the pre_reg scan source
+        # and adds both nouns. (RUF001 noqa: the U+2212/U+2264/U+2265 in the token
         # class are the literal chars being matched, not homoglyphs.)
         # #1475 (2026-07-17) extends the branch for the #1090 round-6
         # escapes: seven head nouns added (cuts?/paths?/clauses?/
@@ -129,8 +131,9 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # OVERSTATES gate-visible coverage (scope-exempt table-row /
         # fence hits are counted). The superset argument is contingent
         # on the [ \t]+-only separators — a future \s widening would
-        # silently break it. 'test' and 'interval' remain deliberately
-        # absent (the sanctioned CI-definition register, see above).
+        # silently break it. 'test' and 'interval' remained deliberately
+        # absent at this round (resolved by #1783 below via the
+        # Why-this-test strip).
         # #1553 (2026-07-19) adds `estimators?` for the #1482 round-4
         # escape: 'the plotted floor is the registered fresh-4 estimator'
         # (Results, k-resample H3 what-is-plotted line) could not match
@@ -187,6 +190,59 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # lookahead does not guard positions 2-3) would flag — a
         # pre-existing property of the #1419 intervening-token window,
         # not new to these nouns.
+        # #1783 (2026-07-29) adds `preconditions?`/`curves?`/`designs?`/
+        # `legs?`/`subsamples?`/`intervals?`/`tests?` for the #1092
+        # promoted-body escape set: seven bare phrasings ('the registered
+        # downgrade precondition', 'the registered confidence intervals',
+        # 'the registered trait-per-factor leg', 'a registered subsample',
+        # 'two registered operator-identity residual tests', 'the
+        # registered monitoring-gap group-size curve', 'the registered
+        # design') PASSed the audit across rounds 1-3 and were caught only
+        # by the LM critic's Lens 7 read. The filing's generalization arm
+        # (`\bregistered\s+\w+` scoped, prep+determiner guard, generic
+        # head) was MEASURED AND REJECTED at plan time: 322 new match
+        # starts with attested benign verb-register false positives
+        # ('Plan deviations registered against §8', #267 — 'against' is
+        # not in the guard; 'Registered stop id [151643]', #1005) — it
+        # fails the #1419 zero-verb-FP bar and imposes a ~300-hit
+        # classification burden per re-measurement. The historical
+        # `test`/`interval` exclusion is resolved MECHANICALLY rather
+        # than by noun omission: the sanctioned Why-this-test
+        # CI-definition register ('the registered interval defining the
+        # test') lives on `**Why this test:**` lines, which
+        # `_blank_why_this_test_lines` now blanks from the pre_reg scan
+        # source for ALL generations (via
+        # `_restrict_pre_reg_to_prose_sections`; blanking only ever
+        # REDUCES findings, so grandfathered bodies cannot be newly
+        # FAILed). Measured 2026-07-29 over all 1,715 tasks/*/*/body.md
+        # (full-pattern old-vs-new match-START diff through the audit's
+        # own scan-source pipeline, re.IGNORECASE): 42 new starts —
+        # #1092 x9 (the 7 incident phrasings + 'registered cross-corpus
+        # supervised-probe transfer test' + a second 'registered
+        # design'), #1315 x4 'registered design', #480 x6 (concordance /
+        # joint-control / rank-partial tests), #778 x4 (min-p /
+        # family-wise tests), #1332 'without registered intervals',
+        # #649 'registered design', #923 'registered falsification
+        # test', + #1783's own incident-quoting body x16 (the #1553
+        # self-quote class) — every one manually classified genuine
+        # pre-registration jargon (deciding question: does 'registered'
+        # here mean PRE-REGISTERED?), 0 benign verb-use false positives.
+        # OLD-minus-NEW match starts: 0; the Why-this-test strip removes
+        # 0 existing corpus hits (a pure safety carve-out). One
+        # same-start TEXT change rides along: #1593's 'registered test
+        # paths' (previously matched via `paths?`) now matches as
+        # 'registered test' — the lazy window stops at the earlier noun;
+        # the match start is unchanged. Named accepted residuals:
+        # (a) a pre-reg mention SMUGGLED onto a Why-this-test line
+        # escapes the mechanical gate — the LM clean-result-critic
+        # Lens 7 remains the backstop (the same trade as the v4
+        # table-row blanking); (b) a sanctioned-register sentence
+        # HARD-WRAPPED so its continuation line lacks the 'why this
+        # test' phrase fires a false positive on the continuation — the
+        # under-trigger direction (report-only severity, loud
+        # hand-adjudication; the same line-scoped property
+        # `_strip_interval_inline_exempt_lines` already has; 0 wrapped
+        # instances in the 2026-07-29 new-hit set).
         r"pre-?registered|pre-?registration|(?<![a-z])pre-reg(?![a-z])|registered hypothesis"
         r"|registered alpha|\bas registered\b|fail at the gate|passed the gate"
         r"|gate-pre-?registered"
@@ -195,7 +251,8 @@ PATTERNS: dict[str, tuple[str, str]] = {
         r"(?:verdicts?|lattices?|margins?|reads?|criteri(?:on|a)|thresholds?|bands?"
         r"|gates?|rules?|endpoints?|contrasts?|floors?|companions?|hypothes[ei]s|alpha"
         r"|cuts?|paths?|clauses?|controls?|levers?|bars?|smokes?|estimators?"
-        r"|layers?|rungs?|windows?)\b",
+        r"|layers?|rungs?|windows?|preconditions?|curves?|designs?|legs?"
+        r"|subsamples?|intervals?|tests?)\b",
         "Pre-registration jargon ('pre-registered', 'as registered', "
         "'fail at the gate', bare 'registered <verdict/margin/read/...>', etc.)",
     ),
@@ -808,6 +865,24 @@ def strip_data_example_blocks(text: str) -> str:
 _PRE_REG_PROSE_SECTIONS = ("takeaways", "what i ran", "findings")
 
 
+def _blank_why_this_test_lines(text: str) -> str:
+    """Blank every line containing the "Why this test" phrase (the Lens 7
+    finding-internal CI-definition carve-out) from the `pre_reg` scan
+    source — the sanctioned register `**Why this test:** ... the
+    registered interval defining the test.` must not trip `pre_reg` now
+    that `intervals?`/`tests?` are in the head-noun alternation (#1783).
+
+    "Blanked" means the line content becomes an empty string (the `\\n`
+    is preserved so line offsets in sample output stay stable) — the
+    `_strip_interval_inline_exempt_lines` convention. Applied for ALL
+    generations (the sanctioned register predates v4); blanking only ever
+    REDUCES findings, so grandfathered v3/v2/legacy bodies cannot be
+    newly FAILed by it. Scoped to `pre_reg` only via the caller
+    `_restrict_pre_reg_to_prose_sections`.
+    """
+    return "\n".join("" if _WHY_THIS_TEST_RE.search(line) else line for line in text.splitlines())
+
+
 def _restrict_pre_reg_to_prose_sections(body: str, text: str) -> str:
     """Return the `pre_reg` scan source for `text`, scoped per the body's
     clean-result generation (three regimes):
@@ -835,6 +910,21 @@ def _restrict_pre_reg_to_prose_sections(body: str, text: str) -> str:
       unchanged, so the prior whole-body `pre_reg` behavior is preserved
       verbatim and we never silently blank an entire legacy body's prose.
 
+    ALL THREE regimes first blank every "Why this test" line via
+    `_blank_why_this_test_lines` (#1783): the sanctioned CI-definition
+    register (`**Why this test:** ... the registered interval defining
+    the test.`) lives on those lines, and blanking them is what makes
+    the historically excluded `intervals?`/`tests?` head nouns safe to
+    include in the `pre_reg` alternation. Named accepted residuals: a
+    pre-reg mention SMUGGLED onto a Why-this-test line escapes the
+    mechanical gate (the LM clean-result-critic Lens 7 is the backstop —
+    the same trade as the v4 table-row blanking), and a sanctioned
+    register sentence HARD-WRAPPED so its continuation line lacks the
+    "why this test" phrase fires a false positive on the continuation
+    (the under-trigger direction: report-only severity, loud
+    hand-adjudication; the same line-scoped property
+    `_strip_interval_inline_exempt_lines` already has).
+
     `text` is the already-cleaned scan source (frontmatter / code / Context
     blockquote / Data example blocks stripped); `body` is the raw body, used
     only for the sentinel gates. "Blanked" means the line content becomes
@@ -855,6 +945,7 @@ def _restrict_pre_reg_to_prose_sections(body: str, text: str) -> str:
     by the v4 branch); on a malformed dual-sentinel body the v4 branch at
     least keeps every prose surface in scope.
     """
+    text = _blank_why_this_test_lines(text)
     if "<!-- clean-result-v4 -->" in body:
         return _blank_table_rows(text)
     if "<!-- clean-result-v3 -->" not in body:

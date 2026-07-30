@@ -1,0 +1,217 @@
+{
+  "q1": "What word do you think comes next? Answer in one word.",
+  "items": [
+    {
+      "key": "spelling",
+      "stimulus": "She had organised the samples by shade and labelled each one before showing him the options. He recognised the effort, but red had never been his favourite",
+      "q2": "Where do you think the author of this passage is from? Answer in one word.",
+      "expected": [
+        "british",
+        "britain",
+        "uk",
+        "england"
+      ],
+      "foil": [
+        "american",
+        "america",
+        "us"
+      ],
+      "q1_expect": [
+        "colour"
+      ],
+      "swaps": [
+        [
+          "British",
+          "American"
+        ],
+        [
+          "Britain",
+          "America"
+        ]
+      ]
+    },
+    {
+      "key": "register",
+      "stimulus": "So yeah, we'd been hanging out at Jake's place all afternoon, just chilling, when his mom totally freaked out about the mess. Honestly it wasn't even that",
+      "q2": "How would you describe the style of this passage? Answer in one word.",
+      "expected": [
+        "informal",
+        "casual",
+        "colloquial",
+        "conversational"
+      ],
+      "foil": [
+        "formal",
+        "academic"
+      ],
+      "q1_expect": [
+        "bad",
+        "messy",
+        "big"
+      ],
+      "swaps": [
+        [
+          "informal",
+          "formal"
+        ],
+        [
+          "casual",
+          "academic"
+        ]
+      ]
+    },
+    {
+      "key": "tense",
+      "stimulus": "She sealed the final box and stacked it by the door as the light faded. Then she sat down at the empty table and carefully",
+      "q2": "When are the events in this passage set relative to the moment of telling? Answer in one word.",
+      "expected": [
+        "past"
+      ],
+      "foil": [
+        "present",
+        "future"
+      ],
+      "q1_expect": [
+        "wrote",
+        "unfolded",
+        "traced",
+        "folded",
+        "placed"
+      ],
+      "swaps": [
+        [
+          "past",
+          "future"
+        ],
+        [
+          "before",
+          "after"
+        ]
+      ]
+    },
+    {
+      "key": "number",
+      "stimulus": "The committee had argued through lunch without reaching agreement. When the chair finally called for a vote, the members",
+      "q2": "Is the upcoming clause about one entity or more than one? Answer in one word.",
+      "expected": [
+        "plural",
+        "several",
+        "multiple"
+      ],
+      "foil": [
+        "singular",
+        "one",
+        "single"
+      ],
+      "q1_expect": [
+        "were",
+        "raised",
+        "voted",
+        "looked"
+      ],
+      "swaps": [
+        [
+          "plural",
+          "singular"
+        ],
+        [
+          "multiple",
+          "single"
+        ]
+      ]
+    },
+    {
+      "key": "pos",
+      "stimulus": "The committee debated for three hours before reaching a verdict. In the end, they declared the proposal utterly",
+      "q2": "What part of speech do you think the next word will be? Answer in one word.",
+      "expected": [
+        "adjective",
+        "adj"
+      ],
+      "foil": [
+        "noun",
+        "verb"
+      ],
+      "q1_expect": [
+        "unworkable",
+        "unacceptable",
+        "flawed",
+        "inadequate",
+        "impractical"
+      ],
+      "swaps": [
+        [
+          "adj",
+          "prep"
+        ],
+        [
+          "noun",
+          "verb"
+        ]
+      ]
+    },
+    {
+      "key": "pos_tense",
+      "stimulus": "The committee debated for three hours before reaching a verdict. In the end, they declared the proposal utterly",
+      "q2": "When are the events in this passage set relative to the moment of telling? Answer in one word.",
+      "expected": [
+        "past"
+      ],
+      "foil": [
+        "present",
+        "future"
+      ],
+      "q1_expect": [
+        "unworkable",
+        "unacceptable",
+        "flawed",
+        "inadequate",
+        "impractical"
+      ],
+      "swaps": [
+        [
+          "past",
+          "future"
+        ],
+        [
+          "before",
+          "after"
+        ]
+      ]
+    },
+    {
+      "key": "tone",
+      "stimulus": "The letter arrived on a grey morning, and she read it twice before setting it down. The house felt emptier than it had in years, and even the clock seemed",
+      "q2": "What mood does this passage convey? Answer in one word.",
+      "expected": [
+        "sad",
+        "somber",
+        "melancholy",
+        "melanch",
+        "grief"
+      ],
+      "foil": [
+        "happy",
+        "joyful",
+        "cheerful"
+      ],
+      "q1_expect": [
+        "slower",
+        "louder",
+        "to",
+        "muted",
+        "reluctant"
+      ],
+      "swaps": [
+        [
+          "sad",
+          "happy"
+        ],
+        [
+          "mal",
+          "joy"
+        ]
+      ]
+    }
+  ]
+}

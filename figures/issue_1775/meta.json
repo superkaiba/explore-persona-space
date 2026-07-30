@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "git_commit": "85dc5a14a336e8467261f59235ec4916b7ab1ff0",
+    "timestamp_utc": "2026-07-29T17:32:13.719550+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "python": "3.11.15",
+    "fold_seed": 0,
+    "n_folds": 6,
+    "smoke": false
+  },
+  "figures": [
+    "expl_detection_holm.png",
+    "expl_lambda_sensitivity.png",
+    "expl_n50k_contamination.png",
+    "expl_per_fold_r2.png",
+    "expl_rcurve_doubly.png",
+    "expl_rcurve_prefix.png",
+    "expl_rcurve_query.png",
+    "hero_gap_closure.png",
+    "hero_ladder_bars.png"
+  ]
+}

@@ -1,0 +1,415 @@
+{
+  "commit": "597ca070ac",
+  "created": "2026-07-30T11:47:18Z",
+  "figsize": [
+    6.0,
+    5.4
+  ],
+  "points": [
+    {
+      "cosine(write, own behavior's read-out)": 0.47979204632450856,
+      "cosine(write, best OTHER behavior's read-out)": 0.45983102286508837,
+      "series": "casual writing style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.46938553989764403,
+      "cosine(write, best OTHER behavior's read-out)": 0.4764158731881421,
+      "series": "casual writing style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.5042431866555434,
+      "cosine(write, best OTHER behavior's read-out)": 0.4672253118204742,
+      "series": "casual writing style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.4596551782881764,
+      "cosine(write, best OTHER behavior's read-out)": 0.4281055892266881,
+      "series": "casual writing style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.29746946210376396,
+      "cosine(write, best OTHER behavior's read-out)": 0.23162947378270207,
+      "series": "casual writing style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.30721783308026357,
+      "cosine(write, best OTHER behavior's read-out)": 0.2591590271265342,
+      "series": "casual writing style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.318367950267384,
+      "cosine(write, best OTHER behavior's read-out)": 0.21158030462722807,
+      "series": "casual writing style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.5779151123217185,
+      "cosine(write, best OTHER behavior's read-out)": 0.4612762580419097,
+      "series": "casual writing style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.349720332220408,
+      "cosine(write, best OTHER behavior's read-out)": 0.3533703036471002,
+      "series": "casual writing style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.6324657180126303,
+      "cosine(write, best OTHER behavior's read-out)": 0.48182237591724253,
+      "series": "casual writing style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.3766197960661247,
+      "cosine(write, best OTHER behavior's read-out)": 0.37403862481153954,
+      "series": "casual writing style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.4434599371517,
+      "cosine(write, best OTHER behavior's read-out)": 0.4017470386229966,
+      "series": "casual writing style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.4601868809215389,
+      "cosine(write, best OTHER behavior's read-out)": 0.4061487769039324,
+      "series": "casual writing style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.5142932442859588,
+      "cosine(write, best OTHER behavior's read-out)": 0.4183350983022758,
+      "series": "casual writing style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.5788680408975726,
+      "cosine(write, best OTHER behavior's read-out)": 0.4343020088258702,
+      "series": "casual writing style",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.7805987782339243,
+      "cosine(write, best OTHER behavior's read-out)": 0.4944293027004984,
+      "series": "impoliteness",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.7957879285106026,
+      "cosine(write, best OTHER behavior's read-out)": 0.5014834857614329,
+      "series": "impoliteness",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.7708036326304474,
+      "cosine(write, best OTHER behavior's read-out)": 0.48405728057221353,
+      "series": "impoliteness",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.7677885691083861,
+      "cosine(write, best OTHER behavior's read-out)": 0.4899922946750627,
+      "series": "impoliteness",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.5178591167643728,
+      "cosine(write, best OTHER behavior's read-out)": 0.3559759496479348,
+      "series": "impoliteness",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.525604075005511,
+      "cosine(write, best OTHER behavior's read-out)": 0.3250269138811069,
+      "series": "impoliteness",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.5002553488589874,
+      "cosine(write, best OTHER behavior's read-out)": 0.35998005619617046,
+      "series": "impoliteness",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.6028771104123567,
+      "cosine(write, best OTHER behavior's read-out)": 0.35309975615791644,
+      "series": "impoliteness",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.8013085923203487,
+      "cosine(write, best OTHER behavior's read-out)": 0.41330901186384,
+      "series": "impoliteness",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.7507611059020021,
+      "cosine(write, best OTHER behavior's read-out)": 0.42475904919783486,
+      "series": "impoliteness",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.7654577789385989,
+      "cosine(write, best OTHER behavior's read-out)": 0.4469428361692462,
+      "series": "impoliteness",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.5170988643280795,
+      "cosine(write, best OTHER behavior's read-out)": 0.3345102126655737,
+      "series": "impoliteness",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.47689243935211967,
+      "cosine(write, best OTHER behavior's read-out)": 0.32094927476339663,
+      "series": "impoliteness",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.5792753008768986,
+      "cosine(write, best OTHER behavior's read-out)": 0.2933640787686003,
+      "series": "impoliteness",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.5702702092770013,
+      "cosine(write, best OTHER behavior's read-out)": 0.2964052031043211,
+      "series": "impoliteness",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.5809068900065292,
+      "cosine(write, best OTHER behavior's read-out)": 0.3513378754100738,
+      "series": "impoliteness",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.5724920262824805,
+      "cosine(write, best OTHER behavior's read-out)": 0.32674544748242823,
+      "series": "impoliteness",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.17268312417073442,
+      "cosine(write, best OTHER behavior's read-out)": 0.4388584694458127,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.15776341672904068,
+      "cosine(write, best OTHER behavior's read-out)": 0.457930137274871,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.2389104858275134,
+      "cosine(write, best OTHER behavior's read-out)": 0.48898062563689687,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.23559751425522937,
+      "cosine(write, best OTHER behavior's read-out)": 0.4696964302951457,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": -0.0595806576542341,
+      "cosine(write, best OTHER behavior's read-out)": 0.033899504058190304,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": -0.08000787386598003,
+      "cosine(write, best OTHER behavior's read-out)": 0.03428180344706155,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": -0.022153080996497133,
+      "cosine(write, best OTHER behavior's read-out)": 0.10619452083443048,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": -0.07096469822882631,
+      "cosine(write, best OTHER behavior's read-out)": 0.08556509136333501,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.06109207911728759,
+      "cosine(write, best OTHER behavior's read-out)": 0.3192050943968484,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.12486824894374715,
+      "cosine(write, best OTHER behavior's read-out)": 0.291597203227769,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.18599861258552425,
+      "cosine(write, best OTHER behavior's read-out)": 0.31451742818998724,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.09899726619659673,
+      "cosine(write, best OTHER behavior's read-out)": 0.2647096849189768,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.10493454674554666,
+      "cosine(write, best OTHER behavior's read-out)": 0.45533825265892325,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.08439340269420698,
+      "cosine(write, best OTHER behavior's read-out)": 0.44459880097851395,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.15579632422538264,
+      "cosine(write, best OTHER behavior's read-out)": 0.47644430675721816,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.11379441423310216,
+      "cosine(write, best OTHER behavior's read-out)": 0.48834452934809763,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.17139720339910294,
+      "cosine(write, best OTHER behavior's read-out)": 0.5083579841451449,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.15825519183332232,
+      "cosine(write, best OTHER behavior's read-out)": 0.5338808313839432,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.2794484818866697,
+      "cosine(write, best OTHER behavior's read-out)": 0.5403381570148226,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(write, own behavior's read-out)": 0.18323216411080812,
+      "cosine(write, best OTHER behavior's read-out)": 0.41750370000749004,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 52,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Read-out specificity of the on-policy write (52 content arms, layer 19)",
+        "xlabel": "cosine(write, own behavior's read-out)",
+        "ylabel": "cosine(write, best OTHER behavior's read-out)",
+        "legend_labels": [
+          "casual writing style",
+          "impoliteness",
+          "sycophancy"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "casual writing style",
+      "impoliteness",
+      "sycophancy"
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1781,
+  "highest_id": 1883,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -725,8 +725,8 @@
       "goal": "On a realistic sparse-crossed prefix x query corpus (~1k real WildChat/LMSYS prefixes incl. >=300 long conversations + ~100x48 dense core + ~500-query bank; two fit-time training arms; #594 battery as eval bridge), a 4x2 text-source x model factorial (own-text 2x2 full, Claude/shuffled subsampled), THREE answer targets (t1/t2/t3) + u1/u2/u3 user mirrors, bare-query captures, a turn-dynamics module (D0-D5, both input arms, D4 selection/length-controlled, D5 first-state horizon), and a BEHAVIOR module (graded Sonnet judge on the trait-relevant subset; B1 state->behavior per input arm + grain incl. the #779 monitoring-gap re-read and the A2 answer-side ceiling; B2 factor->behavior validating trait-per-factor): characterize answer-state transport via the four co-primary reads per cell/target/arm (prefix-vs-context gap; averaged-vs-per-example rank collapse; f/g/i shares vs #923; M~=f-map, M'-M~=g, trait-per-factor) plus the instruction-tuning text-vs-transport decomposition, carrier floor, factor transfer, target/dynamics/behavior sensitivity, and 0-GPU bridge re-fits on #923/#813/#779. Both prefix and context arms on every read; all GPU phases data-parallel; all fit grids vectorized (binding). Pre-approved to 300 GPU-h.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1092",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1092",
+      "status": "awaiting_promotion",
       "title": "Answer-state transport on real conversations runs almost entirely through the query-bearing context state, not the prefix persona state (HIGH confidence)"
     },
     "1093": {
@@ -3756,8 +3756,8 @@
       "goal": "On the #779 fitter-fair-comparison-n1m mapping h: c_last(x) -> v(x) (last-prompt-token activation -> mean-response activation profile, layer 19, Qwen-2.5-7B-Instruct, ~963k LMSYS+WildChat train contexts, pinned val 400 / test 1000 split), characterize what the map is bad at predicting: (1) rank held-out contexts by per-context prediction error and categorize the worst tail (corpus source, language, topic, length, refusal-adjacency) via the project judge; (2) fit a DIRECT map from SAE features of the input to pooled SAE features of the output \u2014 encode per-token activations through public Qwen2.5-7B batchtopk SAEs (16,384 features; layers 18/24 nearest the map layer), pool feature activations over answer tokens (mean activation, MAX activation, + fraction-active), fit linear + nonlinear maps, and identify the worst-predicted answer-side SAE features with interpretations of the worst tail; (3) decompose the measured linear-vs-nonlinear gap (ridge test R2 0.754 vs MLP 0.810-0.813) per-context and per-feature/direction \u2014 which parts are predictable nonlinearly but not linearly, and conversely \u2014 on both the dense map and the SAE->SAE map. Reuse the n1M captures, the pinned split, and the issue-779-n1m branch fitters; refits recompute per-context residuals and must reconcile to the committed aggregate R2. Both mapping arms (prefix-based and context-based) for any newly fit map; a context-arm-only read of the existing n1M map is an explicit stated deviation.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1482",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1482",
+      "status": "awaiting_promotion",
       "title": "The context\u2192answer map's error is category-structured: non-English contexts are predicted better than English, and the linear-vs-nonlinear gap concentrates in low-variance answer directions (HIGH confidence)"
     },
     "1483": {
@@ -5352,9 +5352,9 @@
       "goal": "Determine, on ONE shared row-paired corpus, whether the context->answer linear map is the SAME operator across five speaker identities (assistant; user; a fiction AI character; an assistant-like human character; an ordinary/random character) and three surface framings (chat template; plain User:/Assistant: text; narrative-prose story), in Qwen2.5-7B base AND instruct, with the user arm run under all three u2 provenances (real LMSYS, haiku-simulated, on-policy) and every non-user condition on-policy from the measured model - and, for every ordered pair, WHICH tier of the mapping-similarity ladder (direct transfer / context offset / answer offset / bias refit / global scaling / rotation / context reparameterization / answer reparameterization / full A.M.B) is the weakest correction that reconciles the two maps. Both mapping arms (prefix and context) are fit for every cell.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/1689",
-      "status": "interpreting",
-      "title": "Changing surface framing costs the context-to-answer map far more than changing speaker identity, and changing both costs no more than framing alone (LOW confidence)"
+      "path": "tasks/followups_running/1689",
+      "status": "followups_running",
+      "title": "Changing surface framing costs the context-to-answer map far more than changing speaker identity, and changing both adds little beyond framing's cost (LOW confidence)"
     },
     "169": {
       "has_clean_result": false,
@@ -5736,11 +5736,11 @@
     },
     "1738": {
       "goal": "Build the multi-turn analogue of the #779 fitter-fair-comparison-n1m corpus at N\u2248100,000 real multi-turn LMSYS/WildChat conversations (prefix = full conversation history before the last user turn, \u22652 user turns; query = last user turn), generate one on-policy answer per context under the parent decoding recipe, capture layer-{14,19,26} prefix-end + context-end + mean-answer states under the parent capture convention, fit the five parent fitters in BOTH arms (prefix-based AND context-based) on a pinned near-dupe-gated split, and run the #1482 error-characterization pipeline on both arms: (1) prefix-arm transport at scale (held-out R\u00b2 per arm/layer vs the context arm and vs #1092's 0.05\u20130.11); (2) per-context error + judged taxonomy incl. conversation-depth, floor-relative via a K-resample answer-sampling floor; (3) per-direction answer-PCA linear-vs-nonlinear decomposition with shrinkage control, cross-arm; (4) identity+learned-bias baseline and kNN-retrieval reads per arm. Binding user directive: maximize parallelism and vectorization at every phase (wide sharded capture fleet, batched fits, no serial inner loops). Phase 0 CPU manifest probe verifies multi-turn supply before any GPU provisions; a 1-shard pilot re-measures multi-turn throughput before fleet sizing (plan basis ~1,500\u20132,000 ctx/GPU-h vs parent's measured single-turn 3,250).",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/1738",
-      "status": "running",
-      "title": "Multi-turn prefix-arm map at 100k: build the multi-turn n1M analogue, fit prefix+context arms, characterize both arms' prediction error"
+      "path": "tasks/followups_running/1738",
+      "status": "followups_running",
+      "title": "Conversation history alone carries about half the full-context answer-state map on 100k real multi-turn conversations (HIGH confidence)"
     },
     "1739": {
       "goal": "Determine whether applying the learned context->answer map before projecting the persona vector predicts on-policy behavior expression (evil, trait sycophancy, hallucination) better than context-side projection and direct regression at matched (unlabeled, labeled) data budgets, and whether that advantage grows across a real-data distribution-shift ladder.",
@@ -5962,19 +5962,19 @@
     },
     "1768": {
       "goal": "Characterise what fine-tuning a behavior into a specific context does to the context->answer mapping in activation space, on the model-organism fleet: whether the context vector moves, whether the map itself changes, whether the answer vector moves, what shape the write has and whether it is predictable ahead of time (delta vs r_B vs the marker unembedding row), and which of theory assumptions A7-A11 hold.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/1768",
-      "status": "running",
-      "title": "What fine-tuning a behavior into a context does to the context->answer map (60-arm organism fleet, 15k contexts)"
+      "path": "tasks/interpreting/1768",
+      "status": "interpreting",
+      "title": "Behavior fine-tuning changes the context\u2192answer map in rank order with its weights-carried answer shift, with most content arms crossing the refit-noise floor and marker arms staying below it (HIGH confidence)"
     },
     "1769": {
       "goal": "Determine when behavioral commitment happens in Qwen-2.5-7B-Instruct: does steering a persona-vector direction r_B only during prefill vs only during decode vs both change on-policy judged behavior expression - i.e., is the answer's behavior already committed in the pre-answer context state, or decided token-by-token during generation?",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/approved/1769",
-      "status": "approved",
-      "title": "Prefill-vs-decode behavioral commitment: does r_B steering only during decode change judged behavior expression in a dense full-attention model"
+      "path": "tasks/awaiting_promotion/1769",
+      "status": "awaiting_promotion",
+      "title": "Decode-driven behavioral commitment is convention-robust for evil across the \u03b1=1.5\u20132 clean window and for sycophancy at \u03b1=2; hallucination reads mixed under intrusion-robust scoring (MODERATE confidence)"
     },
     "1770": {
       "has_clean_result": false,
@@ -5999,35 +5999,35 @@
     },
     "1773": {
       "goal": "Build and validate a production pipeline that describes and categorizes SAE features (mechanical axes + five judged axes + a validation harness), producing a per-feature table every map round joins against, and determine whether the judged axes are trustworthy enough to carry a headline or remain a search index only.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/1773",
-      "status": "running",
-      "title": "SAE feature description + categorization pipeline: evidence builder, five judged axes, and validation harness"
+      "path": "tasks/awaiting_promotion/1773",
+      "status": "awaiting_promotion",
+      "title": "SAE feature descriptions detect held-out activations but cannot pick a feature out from its neighbours, leaving all five judged axes usable as a search index only (MODERATE confidence)"
     },
     "1774": {
       "goal": "Characterize the fitted linear context\u2192answer operators across the four arms (prefix-end, context, bare-query, query-averaged) as operators \u2014 algebraic consistency, per-arm channel structure and trait tables, null-space ceilings with causal-inertness tests, and gate-conditional endomorphism reads (decoded SVD, eigen/copying, preservation map, trait gain matrix, fixed point) \u2014 all noise-ceiling-gated, per Task A of docs/ideas/2026-07-28-four-arm-map-theoretical-analysis-plan.md",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/1774",
-      "status": "running",
-      "title": "Linear/operator characterization of the four context\u2192answer map arms (consistency, channels, null spaces, endomorphism reads)"
+      "path": "tasks/awaiting_promotion/1774",
+      "status": "awaiting_promotion",
+      "title": "Linear maps predict held-out answer states from the full context or the bare query but not from the genuinely pre-query prefix state, which keeps only persona-average signal (HIGH confidence)"
     },
     "1775": {
       "goal": "Determine where the linear story of the context\u2192answer map ends: per-arm nonlinearity gain under matched folds (ridge \u2192 RFF/Nystr\u00f6m \u2192 MLP), residual HSIC/dCor detection, fold-structure verification of the banked n50k/n1m fitter comparisons, and the headline test of whether a rank-r bilinear prefix\u00d7query interaction closes the same \u22480.06 R\u00b2 gap the banked 1M nonlinear fits find \u2014 per Task B of docs/ideas/2026-07-28-four-arm-map-theoretical-analysis-plan.md",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/1775",
-      "status": "running",
-      "title": "Nonlinearity of the four-arm context\u2192answer maps: rank-r bilinear interaction vs kernel/MLP gain"
+      "path": "tasks/awaiting_promotion/1775",
+      "status": "awaiting_promotion",
+      "title": "A low-rank bilinear prefix\u2013query interaction closes most but not all of the context\u2192answer map's nonlinear gap (MODERATE confidence)"
     },
     "1776": {
       "goal": "Compute the averaged causal Jacobian J_{C\u2192A} on the #779 corpus; measure what fraction of the fitted ridge map M's predictive power is causal; test which map predicts steered-generation interventions and off-distribution transfer; and test whether the context\u2192answer channel reads from / writes into the J-space verbalizable workspace (Anthropic 2026), all phases unconditional.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/1776",
-      "status": "running",
-      "title": "Jacobian context\u2192answer map (J_C\u2192A) vs fitted ridge M + J-space workspace mediation on Qwen-2.5-7B"
+      "path": "tasks/awaiting_promotion/1776",
+      "status": "awaiting_promotion",
+      "title": "Causal Jacobians, averaged or per-context, recover essentially none of the fitted context-to-answer map's predictive power (HIGH confidence)"
     },
     "1777": {
       "has_clean_result": false,
@@ -6039,30 +6039,156 @@
     "1778": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1778",
-      "status": "reviewing",
+      "path": "tasks/completed/1778",
+      "status": "completed",
       "title": "verify_artifacts_exist crashes on planned-output hf:// globs + wrong repo_type (Step 6a.5 gate)"
     },
     "1779": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1779",
-      "status": "running",
+      "path": "tasks/completed/1779",
+      "status": "completed",
       "title": "workflow-fix: planner \u00a710 \u2014 text/JSON outputs on ephemeral lanes need an HF dest, git-only banned"
     },
     "1780": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1780",
-      "status": "proposed",
+      "path": "tasks/completed/1780",
+      "status": "completed",
       "title": "workflow-fix: gitleaks-aware deferred-commit message in task_workflow"
     },
     "1781": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1781",
-      "status": "planning",
+      "path": "tasks/completed/1781",
+      "status": "completed",
       "title": "workflow-fix: gotchas entry \u2014 real-corpus exact-dupe sha sampling + frozen-pinned-split uniqueness trap"
+    },
+    "1782": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1782",
+      "status": "completed",
+      "title": "workflow-fix: direction-agnostic cross-phase reads[] in off_pod_phases (pod reads VM outputs)"
+    },
+    "1783": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1783",
+      "status": "completed",
+      "title": "workflow-fix: pre_reg audit misses #1092 bare registered-noun escape set"
+    },
+    "1784": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1784",
+      "status": "completed",
+      "title": "workflow-fix: gotchas \u2014 stage_hub_prefix dest is a mirror root (caller layout trap)"
+    },
+    "1785": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1785",
+      "status": "completed",
+      "title": "daily-fix: pin #1743 acceptance grep over .claude/agents/"
+    },
+    "1786": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1786",
+      "status": "completed",
+      "title": "daily-fix: WARN when dispatch handle points at dead attempt"
+    },
+    "1787": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1787",
+      "status": "completed",
+      "title": "daily-fix: pin prefix-less c43 escape in sync test"
+    },
+    "1788": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1788",
+      "status": "completed",
+      "title": "daily-fix: Guard-4 grep -Fxq needs -- (false LOST-UPDATE)"
+    },
+    "1789": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1789",
+      "status": "completed",
+      "title": "daily-fix: spec-freshness awk exclusion keys on subject shap"
+    },
+    "1790": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1790",
+      "status": "completed",
+      "title": "daily-fix: move msg-strip comments out of tg gate pipelines"
+    },
+    "1791": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1791",
+      "status": "completed",
+      "title": "daily-fix: --map-files misuse OSError before #1613 guard"
+    },
+    "1792": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1792",
+      "status": "completed",
+      "title": "daily-fix: scratch-worktree cone + empty-dir residue fixes"
+    },
+    "1793": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1793",
+      "status": "completed",
+      "title": "daily-fix: upload-policy \u2014 pack per-rollout file trees to sh"
+    },
+    "1794": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1794",
+      "status": "completed",
+      "title": "daily-fix: persist uv PATH for non-login shells (GCE + pod)"
+    },
+    "1795": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1795",
+      "status": "completed",
+      "title": "daily-fix: validate batch-judge custom_id grammar pre-submit"
+    },
+    "1796": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1796",
+      "status": "completed",
+      "title": "daily-fix: c39 trigger regex misses inverse-direction reads"
+    },
+    "1797": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1797",
+      "status": "completed",
+      "title": "daily-fix: refusal ladder \u2014 goal channel + content-trigger r"
+    },
+    "1798": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1798",
+      "status": "completed",
+      "title": "daily-fix: plan-compute-sizing \u2014 draws, multipliers, RAM, po"
+    },
+    "1799": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1799",
+      "status": "completed",
+      "title": "daily-fix: gcp crash-persist rc=120 under OOM \u2014 harden"
     },
     "18": {
       "has_clean_result": false,
@@ -6071,12 +6197,152 @@
       "status": "archived",
       "title": "[MEDIUM] Aim 3.6: Non-contrastive at A1-matched hyperparameters"
     },
+    "1800": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1800",
+      "status": "completed",
+      "title": "daily-fix: WARN when GCP workload chain has no persist phase"
+    },
+    "1801": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1801",
+      "status": "completed",
+      "title": "daily-fix: llm-judging \u2014 rule-23 point, tally split, rubric "
+    },
+    "1802": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1802",
+      "status": "completed",
+      "title": "daily-fix: new_worktree.sh sets upstream for issue branches"
+    },
+    "1803": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1803",
+      "status": "completed",
+      "title": "daily-fix: env-pin allowlist gains vetted runtime-tuning key"
+    },
+    "1804": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1804",
+      "status": "completed",
+      "title": "daily-fix: code-reviewer verdict --version collides on long "
+    },
+    "1805": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1805",
+      "status": "completed",
+      "title": "daily-fix: review-time no-flags lint on new scripts in diff"
+    },
+    "1806": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1806",
+      "status": "completed",
+      "title": "daily-fix: escalate-only audit of root stashes + rescue dirs"
+    },
+    "1807": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1807",
+      "status": "completed",
+      "title": "daily-fix: Step 10d/9c \u2014 re-sync before SHA-bound gates"
+    },
+    "1808": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1808",
+      "status": "completed",
+      "title": "daily-fix: driver sha-scan exempts item's own fingerprint"
+    },
+    "1809": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1809",
+      "status": "completed",
+      "title": "daily-fix: chat claims \u2014 sweeps, counts, sunk compute, doc f"
+    },
     "181": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/completed/181",
       "status": "completed",
       "title": "Try persona leakage with non persona prompts"
+    },
+    "1810": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1810",
+      "status": "completed",
+      "title": "daily-fix: pre-split multi-deliverable implementer dispatche"
+    },
+    "1811": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1811",
+      "status": "completed",
+      "title": "daily-fix: implementer memory \u2014 self-reports need evidence"
+    },
+    "1812": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1812",
+      "status": "completed",
+      "title": "daily-fix: 9a-ter \u2014 instrument supersession + addenda charac"
+    },
+    "1813": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1813",
+      "status": "completed",
+      "title": "daily-fix: argv dry-run before dispatching a new phase"
+    },
+    "1814": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1814",
+      "status": "completed",
+      "title": "daily-fix: gotchas \u2014 subsample filters, zones, hub path glob"
+    },
+    "1815": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1815",
+      "status": "completed",
+      "title": "daily-fix: queue-vanish guard defeated by stale phase clock"
+    },
+    "1816": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1816",
+      "status": "completed",
+      "title": "daily-fix: deferred-commit ERROR keeps the failing hook line"
+    },
+    "1817": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1817",
+      "status": "completed",
+      "title": "daily-fix: probe real-corpus plan assumptions at smoke time"
+    },
+    "1818": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1818",
+      "status": "completed",
+      "title": "daily-fix: clamp composed poll sleeps below the Bash cap"
+    },
+    "1819": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1819",
+      "status": "proposed",
+      "title": "daily-held: 70.9MB npz in git eval_results \u2014 size-cap decisi"
     },
     "182": {
       "has_clean_result": true,
@@ -6085,12 +6351,152 @@
       "status": "completed",
       "title": "Persona-CoT REVERSES ARC-C asst-aligned advantage on Qwen2.5-7B-Instruct; truncation \u00d7 tag-injection is the dominant suspect (LOW confidence)"
     },
+    "1820": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1820",
+      "status": "proposed",
+      "title": "daily-held: add task.py set-backend (public API change)"
+    },
+    "1821": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1821",
+      "status": "completed",
+      "title": "daily-fix: bake self-pid exclusion into single-flight probe"
+    },
+    "1822": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1822",
+      "status": "proposed",
+      "title": "daily-held: default chat-drafted programs to advisory readou"
+    },
+    "1823": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/1823",
+      "status": "archived",
+      "title": "workflow-fix: re-wrap verify_task_body.py line 13224 (the inclusive-cap f-"
+    },
+    "1824": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/1824",
+      "status": "reviewing",
+      "title": "upload_dir_sharded: batch small-file stores into one upload_folder commit (per-file walk measured ~35 s/file, #1482)"
+    },
+    "1825": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1825",
+      "status": "completed",
+      "title": "workflow-fix: gotchas entry \u2014 reused-module flag contract trap (same flag, opposite semantics)"
+    },
+    "1826": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1826",
+      "status": "completed",
+      "title": "workflow-fix: widen check-28 H-code regex to catch H1c-form hypothesis tags"
+    },
+    "1827": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/1827",
+      "status": "running",
+      "title": "workflow-fix: WARN-tier plan-conditions coverage check (silent condition drop)"
+    },
+    "1828": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/approved/1828",
+      "status": "approved",
+      "title": "workflow-fix: harden _breadcrumb_fields against prose-glued/empty key=value tokens"
+    },
+    "1829": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1829",
+      "status": "completed",
+      "title": "daily-fix: fix red main: test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints \u2014 call explore_persona_space.orchestrate.e"
+    },
     "183": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/183",
       "status": "archived",
       "title": "Geometry-leakage hypothesis untestable on weak N5 anchor; suggestive bimodal \u03c1 at layers 3+12 on Gaperon (LOW confidence)"
+    },
+    "1830": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1830",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas entry \u2014 sha pins live in a DOMAIN (recompute from producer recipe before asserting)"
+    },
+    "1831": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1831",
+      "status": "proposed",
+      "title": "workflow-fix: pre_reg audit head nouns gain ceiling check/gate family (#1769 escape)"
+    },
+    "1832": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1832",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body WARN for quantitative result sections with zero figures"
+    },
+    "1833": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1833",
+      "status": "completed",
+      "title": "workflow-fix: gotchas entry \u2014 out-arg FILE-vs-DIR kind; misnested deliverables pass .exists() checks"
+    },
+    "1834": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1834",
+      "status": "completed",
+      "title": "workflow-fix: marker-materialized run artifacts must match producer schema"
+    },
+    "1835": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1835",
+      "status": "proposed",
+      "title": "workflow-fix: SLURM rsync lane strands committed eval_results inputs (extra-sync knob + lane-aware carry-over gate)"
+    },
+    "1836": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1836",
+      "status": "proposed",
+      "title": "workflow-fix: SLURM sbatch _write_status heartbeat/phase-writer tmp race (BASHPID-unique tmp)"
+    },
+    "1837": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1837",
+      "status": "proposed",
+      "title": "workflow-fix: GCP wedge escalation needs sustained (2-tick) reachability alarm"
+    },
+    "1838": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1838",
+      "status": "completed",
+      "title": "workflow-fix: GCP->RunPod failover provision crash-safe (adopt residue pod)"
+    },
+    "1839": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1839",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas parity family \u2014 tensor device placement (CPU smokes can't exercise CUDA branches)"
     },
     "184": {
       "has_clean_result": false,
@@ -6099,12 +6505,152 @@
       "status": "archived",
       "title": "EM collapses persona discrimination while benign SFT preserves it (MODERATE confidence)"
     },
+    "1840": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1840",
+      "status": "proposed",
+      "title": "workflow-fix: persistent-wedge bound on the poller zombie-override veto"
+    },
+    "1841": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1841",
+      "status": "proposed",
+      "title": "workflow-fix: Step 6d.2 tick parse must preserve advisory decision fields"
+    },
+    "1842": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1842",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas entry \u2014 Batch custom_id charset+length shape (^[a-zA-Z0-9_-]{1,64}$)"
+    },
+    "1843": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/1843",
+      "status": "archived",
+      "title": "workflow-fix: green test_ruff_policy full-ruleset \u2014 verify_task_body.py:13224 E501"
+    },
+    "1844": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1844",
+      "status": "completed",
+      "title": "workflow-fix: add the expected pair line `tests/test_issue_skill_lint_fami"
+    },
+    "1845": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1845",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas \u2014 batched np.linalg.solve dies on ONE singular slice"
+    },
+    "1846": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1846",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body WARN check \u2014 orphaned result JSONs (sibling of check 31)"
+    },
+    "1847": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1847",
+      "status": "proposed",
+      "title": "daily-fix: bash -n pin test for Step 10d TG fenced blocks"
+    },
+    "1848": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1848",
+      "status": "proposed",
+      "title": "daily-fix: plan_patch.py --file alias + rc-check note"
+    },
+    "1849": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1849",
+      "status": "proposed",
+      "title": "daily-fix: hub._upload fail-loud when file dest looks like a"
+    },
     "185": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/185",
       "status": "archived",
       "title": "EM destroys persona-coupled markers via catastrophic cliff at 10-25 steps, not gradual forgetting (MODERATE confidence)"
+    },
+    "1850": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1850",
+      "status": "proposed",
+      "title": "daily-fix: remote-landing watches need fence deadline + hear"
+    },
+    "1851": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1851",
+      "status": "proposed",
+      "title": "daily-fix: step9c selector misses SKILL.md-pinning tests"
+    },
+    "1852": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1852",
+      "status": "proposed",
+      "title": "daily-fix: env-pin allowlist PYTORCH_CUDA_ALLOC_CONF + help "
+    },
+    "1853": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1853",
+      "status": "proposed",
+      "title": "daily-fix: watcher leaves filed infra tasks undispatched for"
+    },
+    "1854": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1854",
+      "status": "proposed",
+      "title": "daily-fix: /daily route-1 code applies run full-ruleset lint"
+    },
+    "1855": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1855",
+      "status": "proposed",
+      "title": "daily-fix: context-headroom check at review-round boundaries"
+    },
+    "1856": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1856",
+      "status": "proposed",
+      "title": "daily-fix: kill-before-relaunch enumerates live launcher pha"
+    },
+    "1857": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1857",
+      "status": "proposed",
+      "title": "daily-fix: root-code guard binds cert to staged blob, not wo"
+    },
+    "1858": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1858",
+      "status": "proposed",
+      "title": "daily-fix: RunPod failover launcher timeout-bounds sync, rea"
+    },
+    "1859": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1859",
+      "status": "proposed",
+      "title": "daily-fix: repo-root guard allows timeout-prefixed ssh paylo"
     },
     "186": {
       "has_clean_result": true,
@@ -6113,6 +6659,76 @@
       "status": "completed",
       "title": "Persona-flavored chain-of-thought rationales drive cross-persona behavior leakage in wrong-answer SFT on Qwen2.5-7B-Instruct; persona style dominates, contradicting-rationale training partially defends (MODERATE confidence)"
     },
+    "1860": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1860",
+      "status": "proposed",
+      "title": "daily-fix: humanize loop verifies candidate body before set-"
+    },
+    "1861": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1861",
+      "status": "proposed",
+      "title": "daily-fix: repo-root guard recognizes cd-to-worktree via var"
+    },
+    "1862": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1862",
+      "status": "proposed",
+      "title": "daily-fix: detached-VM probe template brackets; choom=failed"
+    },
+    "1863": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1863",
+      "status": "proposed",
+      "title": "daily-fix: poll ticks compute rate/ETA on long same-phase ta"
+    },
+    "1864": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1864",
+      "status": "proposed",
+      "title": "daily-fix: analyzer.md numbers the payload-lint gate pre-com"
+    },
+    "1865": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1865",
+      "status": "proposed",
+      "title": "daily-fix: pod relaunch shape fully detaches stdio"
+    },
+    "1866": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1866",
+      "status": "proposed",
+      "title": "daily-fix: SLURM completed-work-but-FAILED state disambiguat"
+    },
+    "1867": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1867",
+      "status": "proposed",
+      "title": "daily-fix: task.py address-concern accepts --note alias"
+    },
+    "1868": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1868",
+      "status": "proposed",
+      "title": "daily-fix: Step 10d teardown re-runs sync on in-flight advis"
+    },
+    "1869": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1869",
+      "status": "proposed",
+      "title": "daily-fix: deferred-commit sidecar captures the Failed hook "
+    },
     "187": {
       "has_clean_result": true,
       "kind": "experiment",
@@ -6120,12 +6736,110 @@
       "status": "completed",
       "title": "Chat-template Betley alignment eval on a Gemma2-2b base-LM finetune produces dialogue in only 1 of 8 outputs, but raw-prompt format wasn't tried so dialogue collapse is unidentifiable from chat-template mismatch (MODERATE confidence)"
     },
+    "1870": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1870",
+      "status": "proposed",
+      "title": "daily-fix: sync KEPT-stash outcome gets durable surfacing"
+    },
+    "1871": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1871",
+      "status": "proposed",
+      "title": "daily-fix: judge-monitor reads are digest-grain, never full "
+    },
+    "1872": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1872",
+      "status": "proposed",
+      "title": "daily-fix: register step 5a in workflow.yaml steps enum"
+    },
+    "1873": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1873",
+      "status": "proposed",
+      "title": "daily-held: review #1768 8xH100 width during CPU-bound p8 ph"
+    },
+    "1874": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1874",
+      "status": "proposed",
+      "title": "daily-fix: /daily filed bodies cite marker per mechanism cla"
+    },
+    "1875": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1875",
+      "status": "proposed",
+      "title": "daily-fix: /issue Step 0 preloads TaskOutput/Monitor schemas"
+    },
+    "1876": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1876",
+      "status": "proposed",
+      "title": "daily-fix: compliant git-commit forms at snippet sites + blo"
+    },
+    "1877": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1877",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas \u2014 HF download-accel failure matrix (scope disables per workload)"
+    },
+    "1878": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1878",
+      "status": "completed",
+      "title": "workflow-fix: gotchas span-family entry \u2014 find-from-0 query mis-anchor in chat-template renders"
+    },
+    "1879": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1879",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body per-result multi-figure (non-pair) check"
+    },
     "188": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/188",
       "status": "archived",
       "title": "Evolutionary trigger recovery: iterative mutation of top-firing Stage A candidates on Gaperon-1125-1B"
+    },
+    "1880": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1880",
+      "status": "proposed",
+      "title": "workflow-fix: pod-side results-git push must fetch+rebase (mid-run branch-push race)"
+    },
+    "1881": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1881",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body judge-health drop-line population reconciliation"
+    },
+    "1882": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1882",
+      "status": "proposed",
+      "title": "workflow-fix: TG file-grain gate arm \u2014 tree-prefix normalization + warnings-line exclusion"
+    },
+    "1883": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1883",
+      "status": "proposed",
+      "title": "workflow-fix: add skill-pin family to Step 5a spec-freshness sync (test_issue_skill_* pin tests)"
     },
     "19": {
       "has_clean_result": false,

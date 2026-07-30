@@ -1,0 +1,450 @@
+{
+  "commit": "54e88d6449",
+  "created": "2026-07-29T20:54:57Z",
+  "figsize": [
+    10.6,
+    3.9
+  ],
+  "points": [
+    {
+      "x": -0.285,
+      "held-out R2 (48-PC target space)": 0.09834634098719741,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.715,
+      "held-out R2 (48-PC target space)": -0.27984109897015896,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.715,
+      "held-out R2 (48-PC target space)": 0.7399113589661992,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.715,
+      "held-out R2 (48-PC target space)": 0.8490645247096156,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.715,
+      "held-out R2 (48-PC target space)": 0.9141533323752868,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.095,
+      "held-out R2 (48-PC target space)": 0.10971790690873684,
+      "error": 0.0013673300839434008,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.905,
+      "held-out R2 (48-PC target space)": 0.11458290544074223,
+      "error": 0.03646567838191511,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.905,
+      "held-out R2 (48-PC target space)": 0.7599349311597174,
+      "error": 0.0019920509919628127,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.905,
+      "held-out R2 (48-PC target space)": 0.9202518128900063,
+      "error": 0.0032061909660016097,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.095,
+      "held-out R2 (48-PC target space)": 0.10955467736106188,
+      "error": 0.001364404309093542,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.095,
+      "held-out R2 (48-PC target space)": 0.11444551582840763,
+      "error": 0.03646026543385005,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.095,
+      "held-out R2 (48-PC target space)": 0.7593623778156312,
+      "error": 0.0019586380280207094,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.095,
+      "held-out R2 (48-PC target space)": 0.9001098374096649,
+      "error": 0.0028782336259800534,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.285,
+      "held-out R2 (48-PC target space)": 0.10576005510555815,
+      "error": 0.0013366723347794304,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.285,
+      "held-out R2 (48-PC target space)": 0.1106401225160587,
+      "error": 0.0362585072265669,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.285,
+      "held-out R2 (48-PC target space)": 0.7565488143266025,
+      "error": 0.002077036017648526,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.285,
+      "held-out R2 (48-PC target space)": 0.9167832463584413,
+      "error": 0.00317778372982197,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.28500000000000003,
+      "held-out R2 (48-PC target space)": 0.09834634098719741,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.715,
+      "held-out R2 (48-PC target space)": -0.27984109897015896,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.7149999999999999,
+      "held-out R2 (48-PC target space)": 0.7399113589661992,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.715,
+      "held-out R2 (48-PC target space)": 0.8490645247096156,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.715,
+      "held-out R2 (48-PC target space)": 0.9141533323752868,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.28500000000000003,
+      "held-out R2 (48-PC target space)": 0.09834634098719741,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.715,
+      "held-out R2 (48-PC target space)": -0.27984109897015896,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.7149999999999999,
+      "held-out R2 (48-PC target space)": 0.7399113589661992,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.715,
+      "held-out R2 (48-PC target space)": 0.8490645247096156,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.715,
+      "held-out R2 (48-PC target space)": 0.9141533323752868,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": -0.095,
+      "held-out R2 (48-PC target space)": 0.10835339476658347,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.905,
+      "held-out R2 (48-PC target space)": 0.07856203670785544,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.905,
+      "held-out R2 (48-PC target space)": 0.75807346128987,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.905,
+      "held-out R2 (48-PC target space)": 0.9172353771576794,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": -0.095,
+      "held-out R2 (48-PC target space)": 0.11108805493447027,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.905,
+      "held-out R2 (48-PC target space)": 0.15149339347168567,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.905,
+      "held-out R2 (48-PC target space)": 0.7620575632737956,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.905,
+      "held-out R2 (48-PC target space)": 0.9236477590896827,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.095,
+      "held-out R2 (48-PC target space)": 0.1081942642617946,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.095,
+      "held-out R2 (48-PC target space)": 0.07841495377315501,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.095,
+      "held-out R2 (48-PC target space)": 0.7575447624709987,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.095,
+      "held-out R2 (48-PC target space)": 0.8973803291181751,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.095,
+      "held-out R2 (48-PC target space)": 0.11092307287998168,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.095,
+      "held-out R2 (48-PC target space)": 0.1513354846408551,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.095,
+      "held-out R2 (48-PC target space)": 0.7614620385270401,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.095,
+      "held-out R2 (48-PC target space)": 0.9031367963701352,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.28500000000000003,
+      "held-out R2 (48-PC target space)": 0.1044537199968567,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.2850000000000001,
+      "held-out R2 (48-PC target space)": 0.0748517069115544,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.285,
+      "held-out R2 (48-PC target space)": 0.7545361749539712,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.285,
+      "held-out R2 (48-PC target space)": 0.9137702918521095,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.28500000000000003,
+      "held-out R2 (48-PC target space)": 0.10712706466641556,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.2850000000000001,
+      "held-out R2 (48-PC target space)": 0.1473687213646882,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.285,
+      "held-out R2 (48-PC target space)": 0.7586902469892682,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.285,
+      "held-out R2 (48-PC target space)": 0.9201258593117534,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": -0.285,
+      "y": 0.14773311132022315,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 0.715,
+      "y": 0.35310361175142857,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": -0.095,
+      "y": 0.5735453437989835,
+      "error": 0.04782498921285783,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 0.905,
+      "y": 0.7250606393511001,
+      "error": 0.043571649312749317,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 0.095,
+      "y": 0.569981239965725,
+      "error": 0.04769773770158392,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 1.095,
+      "y": 0.7047097442138385,
+      "error": 0.04406419967512182,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 0.285,
+      "y": 0.570981858314492,
+      "error": 0.04684018811331597,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 1.285,
+      "y": 0.7139871741076127,
+      "error": 0.04341719241207037,
+      "_kind": "bar",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 59,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Novel-prefix folds",
+        "ylabel": "held-out R2 (48-PC target space)",
+        "legend_labels": [
+          "ridge (linear)",
+          "RBF kernel",
+          "random features",
+          "MLP",
+          "ridge, inner-val lambda refit\n(PRESS selection degenerate)"
+        ],
+        "xticklabels": [
+          "prefix\nend-state",
+          "prefix-averaged\ncontext state",
+          "bare query\nstate",
+          "prefix + query\nstitch",
+          "full context\n(linear ref.)"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Novel-query folds",
+        "xticklabels": [
+          "bare query\nstate",
+          "prefix + query\nstitch"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "ridge (linear)",
+      "RBF kernel",
+      "random features",
+      "MLP"
+    ]
+  }
+}

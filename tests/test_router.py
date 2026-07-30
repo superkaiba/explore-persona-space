@@ -9125,3 +9125,73 @@ def test_async_failover_exit75_converts_to_no_compute_available(
     finals = _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
     assert finals
     assert finals[-1]["attempts"][-1]["outcome"] == "runpod_still_waiting"
+
+
+# ---------------------------------------------------------------------------
+# #1838 — runpod_provision_intent breadcrumb (Lease field + submit supersession)
+# ---------------------------------------------------------------------------
+
+
+def test_lease_round_trips_runpod_provision_intent():
+    """#1838 (plan test 9): the ``runpod_provision_intent`` Lease field
+    round-trips through to_json/from_json incl. ``reap_count``; a legacy
+    payload WITHOUT the key reads ``None``; a non-dict value tolerantly reads
+    ``None`` — the ``gcp_failover_of`` pattern (mirror of the #1029
+    boot-death-streaks round-trip pin)."""
+    from explore_persona_space.backends.router import Lease
+
+    intent = {
+        "pod_name": "pod-1838",
+        "issue": 1838,
+        "ts": 1234.5,
+        "token": "aabbccdd",
+        "reason": "gcp_queue_vanish_failover_runpod",
+        "reap_count": 1,
+    }
+    lease = Lease(issue=1838, spec_hash="h", attempt_id="a", runpod_provision_intent=dict(intent))
+    round_tripped = Lease.from_json(lease.to_json())
+    assert round_tripped.runpod_provision_intent == intent
+    assert round_tripped.runpod_provision_intent["reap_count"] == 1
+
+    # Malformed payload (a string where the dict belongs) -> None.
+    payload = lease.to_json()
+    payload["runpod_provision_intent"] = "garbage"
+    assert Lease.from_json(payload).runpod_provision_intent is None
+    # Absent key (a pre-#1838 lease on disk) -> None.
+    payload.pop("runpod_provision_intent")
+    assert Lease.from_json(payload).runpod_provision_intent is None
+
+
+def test_lease_after_submit_clears_provision_intent():
+    """#1838 (plan test 8, MF2i site a): ``_lease_after_submit`` supersedes a
+    standing provision intent on BOTH branches — an existing lease carrying an
+    intent returns with it cleared, and the fresh-lease branch returns
+    ``None`` too — so every successful submit (all six call sites inherit
+    this helper) ends the intent episode."""
+    from explore_persona_space.backends.router import Lease, _lease_after_submit
+
+    handle = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="pod-fake-1838",
+        pod_name="pod-1838",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-1838.log",
+        extra={"issue": 1838},
+    )
+    spec = _spec(issue=1838, backend="runpod")
+
+    # Existing-lease branch: standing intent is CLEARED by the submit.
+    existing = Lease(
+        issue=1838,
+        spec_hash="h",
+        attempt_id="att-x",
+        runpod_provision_intent={"pod_name": "pod-1838", "ts": 1.0, "reap_count": 0},
+    )
+    submitted = _lease_after_submit(existing, spec, "runpod", None, handle)
+    assert submitted.runpod_provision_intent is None
+    assert submitted.job_id == "pod-fake-1838"
+
+    # Fresh-lease branch (lease=None): intent is None by construction.
+    fresh = _lease_after_submit(None, spec, "runpod", None, handle)
+    assert fresh.runpod_provision_intent is None
