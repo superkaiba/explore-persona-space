@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -108,7 +109,10 @@ def build_rollouts(
     """batch_judge {persona: {question: [completions]}} for ONE trait rubric.
 
     persona = "<stratum>::<context_id>" (unique by construction — persona keys
-    ride only the custom_id, never the judged text), question = the raw user
+    ride only the custom_id, never the judged text; ``run()`` maps them through
+    Batch-API-safe aliases before dispatch and reverses at result join, since
+    '.' / '::' violate the custom_id charset — see build_alias_maps), question =
+    the raw user
     prompt (the judge sees it verbatim in format_user_msg). Empty completions
     are skipped (recorded per persona) — the capture rig drops them too.
     ``policy`` selects the control-rubric assignment (module docstring).
@@ -140,6 +144,68 @@ def build_rollouts(
             if kept:
                 rollouts[persona] = {c["user"]: [s for _, s in kept]}
     return rollouts, meta
+
+
+# ── Batch-API-safe persona aliases (crash-fix r13, #1776) ─────────────────────
+#
+# Persona keys ("<stratum>::<context_id>") ride the Batch API custom_id verbatim
+# via the batch_judge scheme f"{persona}__{global_idx:05d}__{ri:02d}", and the
+# API rejects any custom_id outside ^[a-zA-Z0-9_-]{1,64}$ with a 400 at
+# batches.create — stratum names carry DOTS (evil_a0.5) and the '::' separator
+# carries COLONS. Fix: a BIJECTIVE charset-safe alias per persona at this seam
+# (collision-asserted over the full realized set), applied to the rollouts fed
+# to the judge and REVERSED at result-join time, so every output artifact
+# (judge_scores.json per_arm/per_cell) keeps the ORIGINAL stratum/context keys.
+# The alias->persona map is persisted (judge_id_map_<trait>.json) BEFORE any
+# judge call so the alias-keyed judge_raw_<trait>.json stays reversible
+# (memory: feedback_batch_custom_id_53_char_budget.md, #1415).
+
+_ALIAS_UNSAFE_RE = re.compile(r"[^a-zA-Z0-9_-]")
+_ALIAS_SAFE_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
+# batch_judge appends "__NNNNN__NN" (11 chars) to the persona key and the Batch
+# API caps custom_id at 64 chars -> the persona-alias budget is 53 (#1415).
+ALIAS_MAX_LEN = 53
+
+
+def build_alias_maps(personas) -> tuple[dict[str, str], dict[str, str]]:
+    """Bijective persona-key -> [a-zA-Z0-9_-] alias map (+ reverse).
+
+    '::' -> '--', '.' -> 'p' (evil_a0.5::c1 -> evil_a0p5--c1); any residual
+    out-of-charset char -> '_'. Asserts per alias: charset fullmatch, length
+    <= ALIAS_MAX_LEN (53: the batch_judge encoder appends 11 chars against the
+    64-char Batch API cap), and NO collisions across the realized persona set
+    (bijectivity). Returns (alias_of, persona_of). Realized worst case (26
+    strata x lmsys/jlens/trait context ids): 48 chars -> custom_id 59 <= 64.
+    """
+    alias_of: dict[str, str] = {}
+    persona_of: dict[str, str] = {}
+    for p in sorted(personas):
+        a = _ALIAS_UNSAFE_RE.sub("_", p.replace("::", "--").replace(".", "p"))
+        assert _ALIAS_SAFE_RE.fullmatch(a), (p, a)
+        assert len(a) <= ALIAS_MAX_LEN, (
+            f"alias {a!r} is {len(a)} chars > {ALIAS_MAX_LEN} budget "
+            f"(Batch custom_id would exceed 64 chars): persona {p!r}"
+        )
+        assert a not in persona_of, (
+            f"alias collision: personas {p!r} and {persona_of[a]!r} both map to {a!r}"
+        )
+        alias_of[p] = a
+        persona_of[a] = p
+    return alias_of, persona_of
+
+
+def rehydrate_cids(scored: dict[str, object], persona_of: dict[str, str]) -> dict[str, object]:
+    """Reverse-map alias-keyed custom_ids back to original-persona-keyed cids.
+
+    cid shape: f"{alias}__{global_idx:05d}__{ri:02d}" — rsplit('__', 2) peels
+    the two fixed numeric suffixes regardless of '__' inside the alias (same
+    convention the aggregators already use). Unknown alias -> loud KeyError.
+    """
+    out: dict[str, object] = {}
+    for cid, v in scored.items():
+        alias, idx, ri = cid.rsplit("__", 2)
+        out[f"{persona_of[alias]}__{idx}__{ri}"] = v
+    return out
 
 
 # ── accounting (rules 9/24 split, REAL classifier) ───────────────────────────
@@ -271,13 +337,25 @@ def run(args) -> int:
             flush=True,
         )
         save_raw = args.out_dir / f"judge_raw_{trait}.json"
+        # Batch-API-safe aliases over the FULL realized persona set (meta covers
+        # empty-completion cells too); id_map persisted BEFORE any judge call so
+        # the alias-keyed judge_raw file stays reversible (module comment above).
+        alias_of, persona_of = build_alias_maps(meta.keys())
+        C76.atomic_write_json(
+            args.out_dir / f"judge_id_map_{trait}.json", {"alias_to_persona": persona_of}
+        )
+        rollouts_aliased = {alias_of[p]: qmap for p, qmap in rollouts.items()}
         scores = C.judge_rollouts_n5(
-            trait, rollouts, save_raw, n_draws=args.n_draws, dry_run=args.dry_run
+            trait, rollouts_aliased, save_raw, n_draws=args.n_draws, dry_run=args.dry_run
         )
         if args.dry_run:
             continue
         raw = json.loads(save_raw.read_text())
-        arms, cells = aggregate_trait(trait, strata, meta, scores, raw["all_scores"])
+        # Reverse-map at result-join time: aggregation + every output artifact
+        # (judge_scores.json) stays keyed by the ORIGINAL stratum/context keys.
+        scores = rehydrate_cids(scores, persona_of)
+        all_scores = rehydrate_cids(raw["all_scores"], persona_of)
+        arms, cells = aggregate_trait(trait, strata, meta, scores, all_scores)
         per_arm[trait] = arms
         per_cell.extend(cells)
     if args.dry_run:
