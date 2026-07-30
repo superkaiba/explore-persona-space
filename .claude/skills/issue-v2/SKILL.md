@@ -437,6 +437,18 @@ Conclusion and next steps):
   placeholder (Thomas's claim slot; nothing else after the image). The
   `**Plot:**` label is RETIRED (2026-07-30) — the image follows the
   Methodology block directly,
+- the body's Results carry ONE headline figure per result — the AGGREGATE view
+  for that manifest figure id; every other view (per-unit, raw, alt-groupings)
+  goes to the detailed companion doc below,
+- assemble the DETAILED companion writeup `docs/reports/issue_<N>_detailed.md`
+  (report-template.md § The detailed companion writeup): Motivation copy + the
+  methodology-writer's unabridged Methodology + per-result blocks + EVERY
+  captions.json view (each factual caption + its SHA-pinned image at the
+  Step-7b SHA) + extra tables; NO Takeaways/TLDR/Conclusion (all agent prose —
+  interpretivity rule applies). Commit it by explicit path on `issue-<N>`,
+  push, capture that commit SHA, and splice the body's `**Detailed writeup:**`
+  blob link (`github.com/<owner>/<repo>/blob/<that SHA>/docs/reports/issue_<N>_detailed.md`)
+  on the line after the `<!-- report-v1 -->` sentinel,
 - leave `## TLDR` and `## Conclusion and next steps` as the literal
   `*(Thomas fills in)*` placeholders,
 - keep the `# Experiment: <question>` H1 with NO confidence tag (Thomas
@@ -476,8 +488,11 @@ worktree-local draft. The promote-mode invocation `--issue <N> --mode promote`
 is unchanged — `body.md` IS the report by then.)
 
 Generation mode REQUIRES the TLDR + Conclusion-and-next-steps placeholders
-intact (and a `**Methodology**` block per Results subsection) and runs the
-interpretivity / lexicon checks on the AGENT-written sections only. On findings,
+intact, a `**Methodology**` block per Results subsection, and the SHA-pinned
+`**Detailed writeup:**` link (`detailed-writeup-link`), and runs the
+interpretivity / lexicon checks on the AGENT-written sections only. The
+report-verifier additionally resolves the detailed doc at its pinned SHA and
+confirms it covers EVERY produced captions.json view. On findings,
 re-run the plotter / methodology-writer / assembly as needed (trigger-dense
 task: findings list by file/marker reference, per the same rule section) and
 re-verify. Post
@@ -546,7 +561,9 @@ Step 10b/10c/10c-bis but with the v2 substitutions:
 
 The **same-issue follow-up loop mechanics** (held at `followups_running`, the new
 finding folded into the EXISTING report body via a fresh plotter +
-methodology-writer + report-verifier pass, re-park at `awaiting_promotion`) are as
+methodology-writer + report-verifier pass — the detailed companion doc is
+REGENERATED wholesale, re-committed, and the body's `**Detailed writeup:**`
+link re-pinned to the fresh SHA — re-park at `awaiting_promotion`) are as
 v1 (`.claude/skills/issue/SKILL.md` § "Step 9b § Same-issue follow-up loop" +
 Step 0 same-issue dispatcher apply verbatim, with the v2 report pipeline
 substituted for the interpretation loop).
