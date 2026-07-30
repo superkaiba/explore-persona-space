@@ -22,6 +22,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1768.md](https://github.com/superkaiba/explore-persona-space/blob/f9ad63adecc2512f0f3ffde0f13beb9e33759fef/docs/methodology/issue_1768.md) · [gist](https://gist.github.com/superkaiba/36e1e690510689f33c0f579951ada3ba)
+
 ## Takeaways
 
 - At 15,000 real-user contexts, 107 of 216 (arm, layer) cells show map change above the refit-noise floor, 102 sit below it, 7 unresolved; 33 of 34 seed pairs agree. The context representation itself barely moves (median relative movement 0.025 at layer 19, n=72 arms) — the map and the emitted text carry the change.
