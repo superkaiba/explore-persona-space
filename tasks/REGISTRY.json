@@ -5974,7 +5974,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1769",
       "status": "followups_running",
-      "title": "Decode-driven behavioral commitment at \u03b1=2 is convention-robust for evil and sycophancy; hallucination flips to mixed under intrusion-robust scoring (MODERATE confidence)"
+      "title": "Decode-driven behavioral commitment is convention-robust for evil across the \u03b1=1.5\u20132 clean window and for sycophancy at \u03b1=2; hallucination reads mixed under intrusion-robust scoring (MODERATE confidence)"
     },
     "1770": {
       "has_clean_result": false,
