@@ -17,12 +17,20 @@ requirements are met by construction, and no fit math is re-derived here.
 
 The HARD requirements, and where each is satisfied:
 
-  * **ONE thin factorization per (cell, slot, fold)** — ``_prep_fold`` /
-    ``_prep_inner_lambda`` are Y-INDEPENDENT, so this module caches them per
-    (unit, X-slot, fold) and reuses the same cache across every Y target, every
-    lambda, every null draw and the reduced-basis companion. A slot appearing in
-    two fit pairs (``prev_turn_end`` feeds both ``prevturn_to_u2`` and
-    ``parent_convention_parity``) is factorized ONCE.
+  * **ONE thin factorization per (cell, slot, fold) of each fit** — inside a fit
+    the fold's Gram eigendecomposition is built ONCE and reused across all 13
+    lambdas, all 40 null draws and the reduced-basis truncation; no per-lambda
+    or per-draw re-solve exists. HONEST SCOPE: the unit of caching is the FIT,
+    not the unit — ``heldout_r2_sweep`` owns its own per-(layer, fold) cache, so
+    an X slot feeding TWO fit pairs (``prev_turn_end`` feeds both
+    ``prevturn_to_u2`` and ``parent_convention_parity``) is factorized once per
+    PAIR, and the reduced-basis companion's own fold loop factorizes again —
+    hence ``FOLD_SOLVES_PER_FIT_PAIR = 2 * N_FOLDS`` in the projection below.
+    That redundancy is deliberate: sharing one cache across fit pairs would mean
+    re-implementing the parent sweep and forfeiting the byte-for-byte Gate-1
+    reproduction, and it is cheap — the factorization measured 8.5 s of a 175 s
+    per-fold total at production shape (n=3800, d=3584, 40 draws), where the
+    batched null term is 163 s.
   * **All 13 lambdas as diagonal rescalings of the cached factorization** —
     ``_ridge_predict_cached`` applies ``1/(w + lam)`` to the cached eigenspectrum;
     no per-lambda re-solve exists anywhere in the path.
