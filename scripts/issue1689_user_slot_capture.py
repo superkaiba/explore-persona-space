@@ -115,20 +115,34 @@ def load_manifest(rendered_dir: Path) -> dict:
         return json.load(fh)
 
 
-def visible_gpu_count() -> int:
-    """Physical GPU count via an `nvidia-smi` SUBPROCESS, never
-    `torch.cuda.device_count()` — the latter reads a possibly-clobbered
-    CUDA_VISIBLE_DEVICES and caches it (gotchas.md, #1112 shape (b))."""
+def visible_devices() -> list[str]:
+    """The physical device IDs this process may use, in allocation order.
+
+    Indexes INTO a pre-set ``CUDA_VISIBLE_DEVICES`` when present, and only falls
+    back to an `nvidia-smi` enumeration when it is unset. Both halves are
+    load-bearing:
+
+      * `nvidia-smi` (never `torch.cuda.device_count()`, which reads a
+        possibly-clobbered CVD and caches it — gotchas.md, #1112 shape (b));
+      * but `nvidia-smi` lists EVERY host GPU regardless of CVD, so on a shared
+        SLURM node (the `fellows` lane — FIRST in the default auto chain) an
+        absolute `0..n-1` fan-out clobbers the scheduler's allocation onto other
+        users' occupied devices (the #1345 crash-fix 15771 shape: vLLM died at
+        19 GiB free). The pre-set allocation wins whenever it exists.
+    """
+    pre = os.environ.get("CUDA_VISIBLE_DEVICES", "").strip()
+    if pre:
+        return [d.strip() for d in pre.split(",") if d.strip()]
     try:
         out = subprocess.run(
-            ["nvidia-smi", "--query-gpu=index", "--format=csv,noheader"],
+            ["nvidia-smi", "--query-gpu=index", "--format=csv,noheader,nounits"],
             capture_output=True,
             text=True,
             check=True,
         )
     except (subprocess.CalledProcessError, FileNotFoundError, OSError):
-        return 0
-    return len([ln for ln in out.stdout.split("\n") if ln.strip()])
+        return []
+    return [ln.strip() for ln in out.stdout.split("\n") if ln.strip()]
 
 
 def assign_units_to_gpus(entries: list[dict], n_gpus: int) -> dict[int, list[str]]:
@@ -665,16 +679,23 @@ def run_dispatch(args) -> int:
     if not entries:
         raise RuntimeError("no units selected")
 
-    n_gpus = args.num_gpus or visible_gpu_count()
+    # `devices` are PHYSICAL ids in allocation order; the plan is keyed on the
+    # LANE index 0..n-1 and mapped through `devices` at launch, so a pre-set
+    # CVD allocation is honored instead of clobbered (see `visible_devices`).
+    devices = visible_devices()
+    if args.num_gpus:
+        devices = devices[: args.num_gpus]
+    n_gpus = len(devices)
     plan = assign_units_to_gpus(entries, n_gpus)
     print(
-        f"[capture] dispatch: {len(entries)} units over {n_gpus} GPUs -> "
-        + json.dumps({str(g): len(v) for g, v in plan.items()}),
+        f"[capture] dispatch: {len(entries)} units over {n_gpus} GPUs "
+        f"(devices {devices}) -> " + json.dumps({devices[g]: len(v) for g, v in plan.items()}),
         flush=True,
     )
 
     procs = []
-    for gpu, unit_ids in plan.items():
+    for lane, unit_ids in plan.items():
+        gpu = devices[lane]
         env = {**os.environ, **_thread_cap_env()}
         # BOTH the launcher-env CVD pin AND the matching --gpu-id: the
         # in-process clobber alone is defeated by any import-time cuInit.

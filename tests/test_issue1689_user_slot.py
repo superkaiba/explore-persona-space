@@ -20,6 +20,7 @@ Pins, in order of the failure they prevent:
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -1274,3 +1275,112 @@ def test_bridge_comparisons_attaches_the_published_end_convention_when_present(t
     assert pub["prefix->answer"] == pytest.approx(0.11)
     assert pub["n_rows_published"] == 3200
     assert "published_reference_absent" not in row
+
+
+def test_visible_devices_indexes_into_a_preset_cvd_allocation(monkeypatch):
+    """`nvidia-smi` lists EVERY host GPU regardless of CVD, so on a shared SLURM
+    node (the `fellows` lane, FIRST in the default auto chain) an absolute
+    0..n-1 fan-out clobbers the scheduler's allocation onto other users'
+    devices (#1345 crash-fix 15771). A pre-set allocation must win."""
+    import scripts.issue1689_user_slot_capture as CAP
+
+    def _boom(*a, **k):  # nvidia-smi must not even be consulted
+        raise AssertionError("nvidia-smi consulted despite a pre-set CVD")
+
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "3,5")
+    monkeypatch.setattr(CAP.subprocess, "run", _boom)
+    assert CAP.visible_devices() == ["3", "5"]
+
+    # Unset CVD -> fall back to the nvidia-smi enumeration.
+    monkeypatch.delenv("CUDA_VISIBLE_DEVICES", raising=False)
+
+    class _Out:
+        stdout = "0\n1\n2\n"
+
+    monkeypatch.setattr(CAP.subprocess, "run", lambda *a, **k: _Out())
+    assert CAP.visible_devices() == ["0", "1", "2"]
+
+    # A dead / absent nvidia-smi yields NO devices, which the dispatcher's
+    # own assignment then refuses loudly rather than silently running on CPU.
+    def _fail(*a, **k):
+        raise FileNotFoundError("nvidia-smi")
+
+    monkeypatch.setattr(CAP.subprocess, "run", _fail)
+    assert CAP.visible_devices() == []
+    with pytest.raises(RuntimeError, match="no visible GPUs"):
+        assign_units_to_gpus([{"unit_id": "u", "model": "m", "n_rows": 1}], 0)
+
+
+def test_dispatch_pins_the_allocated_device_not_the_lane_index(tmp_path, monkeypatch):
+    """The dispatch body must pin the child CVD to the ALLOCATED physical device
+    and pass the MATCHING --gpu-id. Executes the real `run_dispatch` planning +
+    launch path, faking ONLY the subprocess boundary (no GPU needed)."""
+    import scripts.issue1689_user_slot_capture as CAP
+
+    rendered = tmp_path / "rendered"
+    out_root = tmp_path / "store"
+    rendered.mkdir()
+    units = [
+        {
+            "unit_id": f"Qwen_Qwen2.5-7B__chat__{p}",
+            "model": "Qwen/Qwen2.5-7B",
+            "model_dir": "Qwen_Qwen2.5-7B",
+            "n_rows": 10,
+            "token_len_p50": 100,
+        }
+        for p in ("lmsys", "haiku")
+    ]
+    (rendered / "manifest.json").write_text(json.dumps({"units": units}), encoding="utf-8")
+
+    # SLURM-style allocation: physical devices 4 and 6, never 0 and 1.
+    monkeypatch.setattr(CAP, "visible_devices", lambda: ["4", "6"])
+    monkeypatch.setattr(CAP, "run_render_if_missing", lambda args: None)
+
+    launched: list[tuple[str, str]] = []
+
+    class _FakeProc:
+        returncode = 0
+
+        def wait(self):
+            return 0
+
+    real_popen = CAP.subprocess.Popen
+
+    def _fake_popen(cmd, *a, env=None, **kw):
+        # Intercept ONLY the worker launches; everything else (the git-metadata
+        # `subprocess.run`) must reach the real Popen.
+        if not (isinstance(cmd, list) and "--mode" in cmd and "worker" in cmd):
+            return real_popen(cmd, *a, env=env, **kw)
+        gpu_id = cmd[cmd.index("--gpu-id") + 1]
+        launched.append((env["CUDA_VISIBLE_DEVICES"], gpu_id))
+        # stand in for the worker's store write so the dispatch flow continues
+        for uid in cmd[cmd.index("--units") + 1].split(","):
+            sp = out_root / "Qwen_Qwen2.5-7B" / uid / "L19.pt"
+            sp.parent.mkdir(parents=True, exist_ok=True)
+            sp.write_bytes(b"x")
+        return _FakeProc()
+
+    monkeypatch.setattr(CAP.subprocess, "Popen", _fake_popen)
+
+    args = argparse.Namespace(
+        rendered_dir=rendered,
+        out_root=out_root,
+        stage_root=tmp_path / "stage",
+        log_dir=tmp_path / "logs",
+        sentinel=tmp_path / "sentinel.json",
+        units="all",
+        num_gpus=0,
+        batch_size=8,
+        max_rows=0,
+        overwrite=False,
+        smoke=False,
+        skip_upload=True,
+        force_render=False,
+    )
+    assert CAP.run_dispatch(args) == 0
+
+    # BOTH halves of the pin carry the PHYSICAL device, never the lane index.
+    assert sorted(launched) == [("4", "4"), ("6", "6")], launched
+    for cvd, gpu_id in launched:
+        assert cvd == gpu_id, "the CVD pin and --gpu-id must agree (#545)"
+    assert json.loads((tmp_path / "sentinel.json").read_text())["status"] == "ok"
