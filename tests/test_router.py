@@ -52,6 +52,8 @@ from explore_persona_space.backends.router import (
     DEFAULT_AUTO_LANE_ORDER,
     ENV_AUTO_LANE_ORDER,
     ENV_SPOT_MAX_GPU_HOURS,
+    FELLOWS_LADDER_RUNG_WAIT_DEFAULT,
+    FELLOWS_LADDER_RUNG_WAIT_ENV,
     FELLOWS_QUEUE_WAIT_ENV,
     FREE_WAIT_SECONDS,
     MAX_GCP_ATTEMPTS_PER_DAY,
@@ -3372,8 +3374,13 @@ def test_fellows_auto_queue_timeout_scancels_and_falls_through_to_gcp(
     and the chain advances to GCP. The fellows attempt row carries the
     ``park_cap_exceeded`` outcome plus the grep-able
     ``fellows_queue_timeout`` detail token; the final reason stays the
-    existing gcp-launch convention (no new ROUTE_REASON_* constant)."""
+    existing gcp-launch convention (no new ROUTE_REASON_* constant).
+
+    #1899: a fellows AUTO queue timeout now walks the granted-QoS ladder
+    (high-eur -> normal-eur -> low-eur) before falling through — 3
+    launches / 3 scancels / 3 ``park_cap_exceeded`` rows."""
     monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    monkeypatch.setenv(FELLOWS_LADDER_RUNG_WAIT_ENV, "1")  # keep fake-clock parks tiny
     rp = _ExplodingRunpod()
     fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
     gcp = _GcpBackendDouble()
@@ -3383,7 +3390,7 @@ def test_fellows_auto_queue_timeout_scancels_and_falls_through_to_gcp(
         free_backends={"fellows": fellows},
         gcp_backend=gcp,
         lease_store=lease_store,
-        is_started=lambda _b, _h: False,  # fellows never starts
+        is_started=lambda _b, _h: False,  # fellows never starts (any rung)
         is_live_after_cancel=lambda _b, _h: False,
         marker_poster=marker_poster,
         config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
@@ -3392,11 +3399,11 @@ def test_fellows_auto_queue_timeout_scancels_and_falls_through_to_gcp(
     )
     assert result.chosen_kind == "gcp"
     assert result.reason == ROUTE_REASON_AUTO_FALLBACK_GCP
-    assert len(fellows.launches) == 1
-    assert len(fellows.teardowns) == 1  # the scancel
+    assert len(fellows.launches) == 3  # high-eur + normal-eur + low-eur (#1899)
+    assert len(fellows.teardowns) == 3  # one scancel per rung
     assert len(gcp.launches) == 1
     fellows_rows = [a for a in result.attempts if a.kind == "fellows"]
-    assert [a.outcome for a in fellows_rows] == ["park_cap_exceeded"]
+    assert [a.outcome for a in fellows_rows] == ["park_cap_exceeded"] * 3
     assert "fellows_queue_timeout cap=1s" in fellows_rows[0].detail
     assert FELLOWS_QUEUE_WAIT_ENV in fellows_rows[0].detail
 
@@ -3407,6 +3414,9 @@ def test_fellows_queue_wait_env_knob_overrides_park_cap(lease_store, monkeypatch
     the fake clock passes 5 s (5 ``is_started`` probes — NOT 600) and the
     chain advances to GCP."""
     monkeypatch.setenv(FELLOWS_QUEUE_WAIT_ENV, "5")
+    # #1899: pin the fallback-rung cap tiny so the ladder walk (rungs 2-3)
+    # adds exactly 1 probe per rung and the rung-1 knob stays the focus.
+    monkeypatch.setenv(FELLOWS_LADDER_RUNG_WAIT_ENV, "1")
     calls = {"n": 0}
 
     def counting_never_started(_b, _h):
@@ -3428,12 +3438,13 @@ def test_fellows_queue_wait_env_knob_overrides_park_cap(lease_store, monkeypatch
         sleep_fn=lambda _s: None,
     )
     assert result.chosen_kind == "gcp"
-    assert len(fellows.teardowns) == 1
-    # The park ran to the ENV cap (5 fake-clock seconds = 5 probe calls),
-    # not to cfg.free_wait_seconds=600.
-    assert calls["n"] == 5
+    assert len(fellows.teardowns) == 3  # one scancel per ladder rung (#1899)
+    # The rung-1 park ran to the ENV cap (5 fake-clock seconds = 5 probe
+    # calls), not to cfg.free_wait_seconds=600; rungs 2-3 add 1 probe each
+    # at the pinned 1 s fallback-rung cap.
+    assert calls["n"] == 5 + 1 + 1
     fellows_rows = [a for a in result.attempts if a.kind == "fellows"]
-    assert [a.outcome for a in fellows_rows] == ["park_cap_exceeded"]
+    assert [a.outcome for a in fellows_rows] == ["park_cap_exceeded"] * 3
     assert "fellows_queue_timeout cap=5s" in fellows_rows[0].detail
 
 
@@ -9195,3 +9206,322 @@ def test_lease_after_submit_clears_provision_intent():
     # Fresh-lease branch (lease=None): intent is None by construction.
     fresh = _lease_after_submit(None, spec, "runpod", None, handle)
     assert fresh.runpod_provision_intent is None
+
+
+# ---------------------------------------------------------------------------
+# #1899 — fellows granted-QoS fallback ladder (high-eur -> normal-eur -> low-eur)
+# ---------------------------------------------------------------------------
+
+
+class _LadderEventFellows(_FreeLaneBackend):
+    """Fellows double recording ONE ordered launch/teardown event log.
+
+    The shared ``events`` list pins the no-double-submit kill criterion
+    mechanically (#1899 K3): a rung re-submit must only ever FOLLOW the
+    predecessor's confirmed scancel, so the order is launch -> teardown ->
+    launch, never launch -> launch.
+    """
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.events: list[tuple[str, str]] = []
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        handle = super().launch(spec)
+        self.events.append(("launch", spec.extra.get("slurm_qos_override", "primary")))
+        return handle
+
+    def teardown(self, handle: RunHandle) -> None:
+        super().teardown(handle)
+        self.events.append(("teardown", str(handle.job_id)))
+
+
+def test_fellows_ladder_walks_qos_on_park_timeout(
+    lease_store, marker_poster, captured_markers, monkeypatch
+):
+    """#1899 acceptance 1: rung 1 (high-eur, NO overrides) parks past the
+    cap and is scancelled (confirmed dead); the SAME workload is
+    re-submitted with ``spec.extra["slurm_qos_override"] == "normal-eur"``
+    and the rung-2 start yields a RouteResult whose extra carries
+    ``realized_qos``. The event log pins the call ORDER (scancel BEFORE
+    the rung-2 launch — the no-double-submit kill criterion)."""
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    monkeypatch.delenv(FELLOWS_LADDER_RUNG_WAIT_ENV, raising=False)
+    fellows = _LadderEventFellows(kind="fellows", est_start_raw=0.0)
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        # Rung 1 never starts; rung 2 starts on its first probe.
+        is_started=lambda _b, _h: len(fellows.launches) >= 2,
+        is_live_after_cancel=lambda _b, _h: False,  # scancel confirms dead
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "fellows"
+    assert result.reason == ROUTE_REASON_AUTO_STARTED
+    assert len(fellows.launches) == 2
+    # Rung 1: NO extra overrides — the primary submit stays byte-identical.
+    assert "slurm_qos_override" not in fellows.launches[0].extra
+    assert "slurm_partition_override" not in fellows.launches[0].extra
+    # Rung 2: normal-eur, NO partition override (default `general` inherited).
+    assert fellows.launches[1].extra["slurm_qos_override"] == "normal-eur"
+    assert "slurm_partition_override" not in fellows.launches[1].extra
+    # realized_qos rides the result extra + the epm:backend-selected marker.
+    assert result.extra["realized_qos"] == "normal-eur"
+    finals = _by_reason(captured_markers, ROUTE_REASON_AUTO_STARTED)
+    assert finals
+    assert finals[-1]["extra"].get("realized_qos") == "normal-eur"
+    # Call ORDER: rung-1 launch -> rung-1 scancel -> rung-2 launch.
+    assert fellows.events == [
+        ("launch", "primary"),
+        ("teardown", "1000"),
+        ("launch", "normal-eur"),
+    ]
+    launched_rows = [a for a in result.attempts if a.outcome == "launched"]
+    assert launched_rows
+    assert "qos=normal-eur" in launched_rows[-1].detail
+
+
+def test_fellows_ladder_exhausted_advances_to_next_lane(lease_store, monkeypatch):
+    """#1899 acceptance 2: all three rungs park-fail -> the lane returns
+    None and the auto chain proceeds to GCP; the attempts trail carries
+    one ``park_cap_exceeded`` row per rung, each naming the rung's qos,
+    its position, and the env knob governing THAT rung's cap."""
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    monkeypatch.setenv(FELLOWS_LADDER_RUNG_WAIT_ENV, "2")
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,  # never starts, any rung
+        is_live_after_cancel=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(fellows.launches) == 3
+    assert len(fellows.teardowns) == 3
+    assert len(gcp.launches) == 1
+    rows = [a for a in result.attempts if a.kind == "fellows"]
+    assert [a.outcome for a in rows] == ["park_cap_exceeded"] * 3
+    assert "qos=high-eur rung=1/3" in rows[0].detail
+    assert "cap=1s" in rows[0].detail
+    assert FELLOWS_QUEUE_WAIT_ENV in rows[0].detail
+    assert "qos=normal-eur rung=2/3" in rows[1].detail
+    assert "cap=2s" in rows[1].detail
+    assert FELLOWS_LADDER_RUNG_WAIT_ENV in rows[1].detail
+    assert "qos=low-eur rung=3/3" in rows[2].detail
+    assert "cap=2s" in rows[2].detail
+
+
+def test_fellows_ladder_low_eur_rung_carries_partition_override(lease_store, monkeypatch):
+    """#1899 acceptance 3 (router half): the low-eur rung's captured spec
+    carries ``slurm_partition_override == "general,overflow"`` (the
+    cluster-handbook pairing from the fellows row's qos_ladder); the
+    normal-eur rung carries NO partition override."""
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    monkeypatch.setenv(FELLOWS_LADDER_RUNG_WAIT_ENV, "1")
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert len(fellows.launches) == 3
+    assert fellows.launches[1].extra["slurm_qos_override"] == "normal-eur"
+    assert "slurm_partition_override" not in fellows.launches[1].extra
+    assert fellows.launches[2].extra["slurm_qos_override"] == "low-eur"
+    assert fellows.launches[2].extra["slurm_partition_override"] == "general,overflow"
+
+
+@pytest.mark.parametrize(
+    "raw", ["abc", "-5", "0", None], ids=["malformed", "negative", "zero", "unset"]
+)
+def test_fellows_ladder_rung_cap_env_knob_default_300(monkeypatch, raw):
+    """#1899: the per-rung cap helper defaults to 300 s; a missing /
+    malformed / non-positive env value falls back (mirror of the #1609
+    ``_fellows_queue_wait_seconds`` guard semantics)."""
+    from explore_persona_space.backends.router import _fellows_ladder_rung_wait_seconds
+
+    if raw is None:
+        monkeypatch.delenv(FELLOWS_LADDER_RUNG_WAIT_ENV, raising=False)
+    else:
+        monkeypatch.setenv(FELLOWS_LADDER_RUNG_WAIT_ENV, raw)
+    assert FELLOWS_LADDER_RUNG_WAIT_DEFAULT == 300
+    assert _fellows_ladder_rung_wait_seconds() == 300
+
+
+def test_fellows_ladder_rung_cap_env_knob_valid_value_parsed(monkeypatch):
+    """A valid positive value is honored at call time (ops-retunable)."""
+    from explore_persona_space.backends.router import _fellows_ladder_rung_wait_seconds
+
+    monkeypatch.setenv(FELLOWS_LADDER_RUNG_WAIT_ENV, "42")
+    assert _fellows_ladder_rung_wait_seconds() == 42
+
+
+def test_fellows_pinned_lane_does_not_walk_ladder(lease_store, marker_poster, monkeypatch):
+    """#1899 acceptance 5 / D3: an explicit ``backend: fellows`` pin whose
+    job parks past the cap keeps the #1609 ``pinned_queue_wait`` exemption
+    VERBATIM — exactly ONE submit, NO scancel, NO ladder re-submit
+    (walking would destroy the queued high-eur job's priority position)."""
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    monkeypatch.delenv(FELLOWS_LADDER_RUNG_WAIT_ENV, raising=False)
+    fellows = _FreeLaneBackend(kind="fellows")
+    result = route(
+        _spec(backend="fellows"),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,  # still queued at cap
+        is_live_after_cancel=lambda _b, _h: True,  # must never be consulted
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert len(fellows.launches) == 1  # the pin submits ONCE — no walk
+    assert fellows.teardowns == []  # NO scancel
+    assert result.reason == ROUTE_REASON_OVERRIDE
+    assert result.extra.get("pinned_queue_wait") is True
+    assert "slurm_qos_override" not in fellows.launches[0].extra
+
+
+def test_non_fellows_lane_single_pass_unchanged(lease_store, monkeypatch):
+    """#1899 control: a lane with an EMPTY qos_ladder (nibi) keeps today's
+    single-pass semantics byte-identical — one launch (no extra
+    overrides), one scancel, one ``park_cap_exceeded`` row whose detail is
+    exactly ``cancel_outcome=cancelled`` (no qos/rung token) — even with
+    the ladder knob set (fellows-only by design)."""
+    monkeypatch.setenv(FELLOWS_LADDER_RUNG_WAIT_ENV, "1")
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        config=RouterConfig(
+            free_wait_seconds=1,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            lane_order=("nibi", "gcp"),
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(nibi.launches) == 1
+    assert len(nibi.teardowns) == 1
+    assert "slurm_qos_override" not in nibi.launches[0].extra
+    rows = [a for a in result.attempts if a.kind == "nibi"]
+    assert [a.outcome for a in rows] == ["park_cap_exceeded"]
+    assert rows[0].detail == "cancel_outcome=cancelled"
+
+
+def test_non_fellows_started_result_has_no_realized_qos(lease_store):
+    """#1899 control: a nibi START keeps the pre-#1899 detail + empty
+    extra — realized_qos is a fellows-only record."""
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(
+            free_wait_seconds=1,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            lane_order=("nibi", "gcp"),
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    assert result.extra == {}
+    launched = [a for a in result.attempts if a.outcome == "launched"]
+    assert launched
+    assert launched[-1].detail == "park resolved to RUNNING"
+
+
+def test_fellows_ladder_manual_attention_on_rung_raises(lease_store, monkeypatch):
+    """#1899 K3: an unconfirmed-dead cancel on a FALLBACK rung raises
+    ``ManualAttentionRequiredError`` exactly as on rung 1 — the walk never
+    re-submits past an unconfirmed scancel (rung 3 is never reached)."""
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    monkeypatch.setenv(FELLOWS_LADDER_RUNG_WAIT_ENV, "1")
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+
+    def is_live(_b, _h):
+        # Rung-1 cancel confirms dead (1 teardown so far); the rung-2
+        # cancel cannot confirm (2 teardowns) -> manual_attention.
+        return len(fellows.teardowns) >= 2
+
+    with pytest.raises(ManualAttentionRequiredError):
+        route(
+            _spec(backend=None),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"fellows": fellows},
+            gcp_backend=_GcpBackendDouble(),
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=is_live,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert len(fellows.launches) == 2  # rung 3 never submitted
+
+
+def test_fellows_ladder_started_result_records_realized_qos(
+    lease_store, marker_poster, captured_markers, monkeypatch
+):
+    """#1899 acceptance 1 (rung-1 arm): a PRIMARY-rung fellows start
+    records ``realized_qos == "high-eur"`` on the result extra + the
+    epm:backend-selected marker, with NO overrides on the submitted spec."""
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,  # starts immediately on rung 1
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "fellows"
+    assert result.reason == ROUTE_REASON_AUTO_STARTED
+    assert len(fellows.launches) == 1
+    assert "slurm_qos_override" not in fellows.launches[0].extra
+    assert result.extra["realized_qos"] == "high-eur"
+    launched = [a for a in result.attempts if a.outcome == "launched"]
+    assert launched
+    assert "qos=high-eur" in launched[-1].detail
+    finals = _by_reason(captured_markers, ROUTE_REASON_AUTO_STARTED)
+    assert finals
+    assert finals[-1]["extra"].get("realized_qos") == "high-eur"

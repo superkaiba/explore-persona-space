@@ -99,6 +99,25 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
+class QosRung:
+    """One fallback rung of a cluster's granted-QoS ladder (#1899).
+
+    ``qos`` is the ``--qos`` the re-submit renders (threaded per-dispatch
+    via ``spec.extra["slurm_qos_override"]``); ``partition`` optionally
+    overrides the cluster's default ``--partition`` for this rung
+    (``None`` = keep :attr:`ClusterConfig.partition`). The pairing lives
+    HERE (in the cluster table, beside the row that documents it) because
+    QoS↔partition mappings are cluster-handbook facts; the WALK over the
+    rungs is park machinery and lives router-side
+    (``router._try_one_free_lane``). The renderer never reads this table —
+    it reads only the per-dispatch ``spec.extra`` overrides.
+    """
+
+    qos: str
+    partition: str | None = None
+
+
+@dataclass(frozen=True)
 class ClusterConfig:
     """Per-cluster knobs the SLURM backend needs.
 
@@ -180,8 +199,18 @@ class ClusterConfig:
     default preserves the pre-#1609 render byte-for-byte (pinned by the
     snapshot test in ``tests/test_slurm_backend_render.py``):
 
-    * ``qos`` — optional ``--qos`` value (fellows: ``high-eur``). ``None``
-      omits the ``#SBATCH --qos=`` line entirely.
+    * ``qos`` — optional ``--qos`` value: the cluster's PRIMARY tier
+      (fellows: ``high-eur`` — every dispatch submits under it first).
+      ``None`` omits the ``#SBATCH --qos=`` line entirely. A per-dispatch
+      ``spec.extra["slurm_qos_override"]`` / ``["slurm_partition_override"]``
+      supersedes it in :func:`render_sbatch` (#1899 — the router's
+      fallback-ladder re-submits thread those overrides; absent extras
+      render byte-identically).
+    * ``qos_ladder`` — fallback :class:`QosRung` tuple the ROUTER walks
+      (in order, after the primary ``qos``) when a fellows AUTO submit is
+      still PENDING at the park cap (#1899). Default ``()`` = no ladder
+      (every non-fellows lane; single-pass semantics unchanged). The
+      renderer never reads this field.
     * ``mem_gb_per_gpu`` / ``mem_gb_cap`` — the ``--mem`` formula knobs
       (``min(mem_gb_per_gpu * gpus, mem_gb_cap)``). Defaults 64/480
       reproduce the legacy hard-coded formula; fellows uses 128/1800
@@ -249,6 +278,8 @@ class ClusterConfig:
     defines_scratch_env: bool = True
     term_kill_process_group: bool = False
     job_name_suffix: str | None = None
+    # --- #1899 fellows QoS fallback ladder (default () = no ladder) ---
+    qos_ladder: tuple[QosRung, ...] = ()
 
     @property
     def ssh_host(self) -> str:
@@ -363,7 +394,29 @@ CLUSTER_CONFIGS: dict[str, ClusterConfig] = {
         scratch_path="/workspace/superkaiba",
         timezone="UTC",  # probe: date +%Z = UTC (EUR-IS / Iceland)
         partition="general",  # sinfo: general* (default), 14 nodes
-        qos="high-eur",  # non-preemptible; gres/gpu=16/user; 7d MaxWall
+        qos="high-eur",  # PRIMARY tier: non-preemptible; gres/gpu=16/user; 7d MaxWall
+        # #1899 granted-QoS fallback ladder, walked by the router on a
+        # queue-park timeout (AUTO path only — explicit `backend: fellows`
+        # pins never walk). Live `sacctmgr show qos` facts (2026-07-30):
+        #   high-eur    prio 100000  MaxTRESPU gres/gpu=16  7d   preempts low/normal-eur
+        #   normal-eur  prio  50000  MaxTRESPU gres/gpu=16  7d   preempted by high/dev-eur
+        #   low-eur     prio  10000  (no GPU cap)           14d  preempted by high/dev-eur
+        #   dev-eur     prio 200000  gres/gpu=8             1d   srun-interactive ONLY
+        # MaxTRESPU is per-QoS, so normal-eur's 16-GPU/user cap is SEPARATE
+        # headroom from high-eur's, and low-eur is uncapped — the ladder
+        # unlocks capacity exactly when high-eur is self-capped. dev-eur is
+        # DROPPED (sbatch rejected on this cluster — #1609 QoS mapping).
+        # low-eur submits to `general,overflow` per the cluster handbook
+        # (#1609 body). PREEMPTION HONESTY: the -eur family GraceTime is
+        # 00:00:00 (near-immediate SIGTERM -> KillWait -> SIGKILL; the
+        # ~3-min grace belongs to the NON-eur `normal`/`low` rows), so a
+        # lower-tier landing relies on the rule-7 process-group trap +
+        # checkpoint-per-phase resume; `realized_qos` rides the
+        # epm:backend-selected marker for forensics (#1899).
+        qos_ladder=(
+            QosRung("normal-eur"),
+            QosRung("low-eur", partition="general,overflow"),
+        ),
         mem_gb_per_gpu=128,  # cluster rule 2; node ceiling ~251 G/GPU
         # Headroom only (inert at <=8 GPUs: max request 1024G); kept under
         # the node RealMemory 2013000 MB ~= 1965 G.
@@ -1626,10 +1679,16 @@ def render_sbatch(
             f"#SBATCH --output={output_path}",
         ]
     )
-    if cluster.partition:
-        sbatch_headers.append(f"#SBATCH --partition={cluster.partition}")
-    if cluster.qos:
-        sbatch_headers.append(f"#SBATCH --qos={cluster.qos}")
+    # #1899: per-dispatch overrides (threaded by the router's fellows
+    # QoS-ladder re-submits) supersede the cluster row; absent extras the
+    # expressions reduce to the cluster values, so renders without
+    # overrides stay byte-identical (the #1609 snapshot contract).
+    partition = spec.extra.get("slurm_partition_override") or cluster.partition
+    qos = spec.extra.get("slurm_qos_override") or cluster.qos
+    if partition:
+        sbatch_headers.append(f"#SBATCH --partition={partition}")
+    if qos:
+        sbatch_headers.append(f"#SBATCH --qos={qos}")
     if cluster.constraint:
         sbatch_headers.append(f"#SBATCH --constraint={cluster.constraint}")
 
@@ -3304,6 +3363,7 @@ __all__ = [
     "SECRET_ENV_KEYS",
     "WORKING_TREE_OVERLAY_PATHS",
     "ClusterConfig",
+    "QosRung",
     "SbatchPlan",
     "SlurmBackend",
     "Stage",

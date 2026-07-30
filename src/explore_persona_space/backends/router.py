@@ -28,7 +28,15 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    among themselves by tz-corrected ``estimate_start_seconds`` (a ranking
    HINT, never a gate), the best is submitted and parked up to
    ``FREE_WAIT`` (default 600 s) to reach RUNNING; PENDING-at-cap triggers
-   cancel + the next lane. GCP has no synchronous ``route()``-time park —
+   cancel + the next lane. On the fellows lane, a PENDING-at-cap AUTO
+   submit additionally walks the cluster's granted-QoS fallback ladder
+   (high-eur → normal-eur → low-eur, ``ClusterConfig.qos_ladder``) —
+   scancel the parked job, re-submit under the next rung's
+   ``--qos``/``--partition`` overrides, park each fallback rung a shorter
+   ``EPS_FELLOWS_LADDER_RUNG_WAIT_SECONDS`` cap (default 300 s) — before
+   the lane yields (#1899; worst case <=~24 min: 1200 s of parks + up to
+   3x60 s cancel graces). Explicit ``backend: fellows`` pins never walk
+   (the #1609 pinned-queue-wait exemption). GCP has no synchronous ``route()``-time park —
    its "park" is the provision call itself — but a FLEX_START instance that
    stays PENDING (queued for capacity) is bounded by the ASYNC poller's
    queue-wait timeout (``EPS_GCP_QUEUE_WAIT_SECONDS``, task #783), which
@@ -202,7 +210,13 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    # Import-cycle-safe: router.py has NO runtime slurm.py import edge
+    # (verified #1899 — slurm.py never imports router); the ladder is
+    # fetched via a function-scope lazy import in _qos_rungs_for_lane.
+    from explore_persona_space.backends.slurm import QosRung
 
 from explore_persona_space.backends.base import (
     BackendKind,
@@ -248,6 +262,23 @@ FREE_WAIT_SECONDS: int = 600
 #: (``cfg.free_wait_seconds``; production 600 s) — so with the env var
 #: unset, behavior is byte-identical to pre-amendment for EVERY lane.
 FELLOWS_QUEUE_WAIT_ENV = "EPS_FELLOWS_QUEUE_WAIT_SECONDS"
+
+#: Env knob for the PER-RUNG park cap on the fellows QoS fallback ladder
+#: (rungs 2+ — normal-eur / low-eur re-submits; #1899). Rung 1 (the
+#: primary high-eur submit) keeps the :data:`FELLOWS_QUEUE_WAIT_ENV` /
+#: ``cfg.free_wait_seconds`` cap above, so behavior when the ladder never
+#: fires is byte-identical. Read at CALL time; unset/malformed/
+#: non-positive -> :data:`FELLOWS_LADDER_RUNG_WAIT_DEFAULT`.
+FELLOWS_LADDER_RUNG_WAIT_ENV = "EPS_FELLOWS_LADDER_RUNG_WAIT_SECONDS"
+
+#: Default per-rung park cap (seconds) for fellows ladder rungs 2+.
+#: 300 = half the 600 s FREE_WAIT_SECONDS rung-1 cap: total worst-case
+#: lane latency is the cap-sum (600 + 2x300 = 1200 s of parks + up to
+#: 3x60 s cancel graces + 2 re-submits ~= <=~24 min before GCP), and
+#: 300 s comfortably covers the SLURM main+backfill scheduling cycles
+#: (O(30-60 s)) needed to start a job when per-QoS headroom exists
+#: (#1899 plan §11 item 1).
+FELLOWS_LADDER_RUNG_WAIT_DEFAULT: int = 300
 
 #: Default poll interval inside the park watchdog. The SLURM scheduler
 #: state updates on multi-second cycles; faster polling burns ssh round
@@ -1821,6 +1852,46 @@ def _park_cap_for_lane(kind: BackendKind, cfg: RouterConfig) -> int:
     if kind == "fellows":
         return _fellows_queue_wait_seconds(cfg.free_wait_seconds)
     return cfg.free_wait_seconds
+
+
+def _fellows_ladder_rung_wait_seconds() -> int:
+    """Fellows QoS-ladder rung-2+ park cap (#1899): env knob, else 300 s.
+
+    Same guard semantics as :func:`_fellows_queue_wait_seconds`: read at
+    call time; a missing / malformed / non-positive value falls back to
+    :data:`FELLOWS_LADDER_RUNG_WAIT_DEFAULT`.
+    """
+    raw = os.environ.get(FELLOWS_LADDER_RUNG_WAIT_ENV)
+    if raw is None:
+        return FELLOWS_LADDER_RUNG_WAIT_DEFAULT
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return FELLOWS_LADDER_RUNG_WAIT_DEFAULT
+    return val if val > 0 else FELLOWS_LADDER_RUNG_WAIT_DEFAULT
+
+
+def _qos_rungs_for_lane(
+    kind: BackendKind, spec: RunSpec
+) -> tuple[list[QosRung | None], str | None]:
+    """``[None]`` (= the cluster's pinned primary QoS) + the fellows qos_ladder (#1899).
+
+    Returns ``(rungs, primary_qos)``: ``rungs[0]`` is always ``None`` —
+    the primary submit runs with NO spec-extra overrides, so its render,
+    lease keying, and spec hash stay byte-identical to pre-#1899 —
+    followed by the cluster row's :class:`~.slurm.QosRung` fallback
+    entries. ``primary_qos`` is the cluster's own ``qos`` (fellows:
+    ``high-eur``), for ``realized_qos`` bookkeeping. Non-fellows lanes
+    return ``([None], None)`` — the walk degenerates to today's
+    single-pass semantics. No try/except: ``spec.cluster`` is threaded by
+    ``_spec_for_lane``; a lookup failure is a code bug and must fail loud.
+    """
+    if kind != "fellows":
+        return [None], None
+    from explore_persona_space.backends.slurm import get_cluster_config  # lazy import (#1899)
+
+    cluster = get_cluster_config(spec.cluster or "fellows")
+    return [None, *cluster.qos_ladder], cluster.qos
 
 
 def park_until_running_or_cap(
@@ -4815,197 +4886,278 @@ def _try_one_free_lane(
             return result
 
         # Launch (still under the flock — sealing the double-submit race).
+        # #1899: ONE attempt id for the whole lane attempt (per-submit
+        # identity is the SLURM job_id, re-persisted to the sidecar +
+        # lease per rung below). The fellows lane walks its granted-QoS
+        # ladder (high-eur -> normal-eur -> low-eur) on a queue-park
+        # timeout, re-submitting the SAME sbatch with only --qos (and
+        # possibly --partition) changed — every hard cluster rule (mem
+        # formula, NCCL exports, HF_HOME, SIGTERM trap, job-name suffix)
+        # is inherited verbatim from the unchanged cluster row. The <=3
+        # sequential submits, minutes apart, each AFTER a confirmed
+        # scancel of the predecessor, are NOT loop-spam (cluster rule 4).
+        # Non-fellows lanes have an empty ladder, so the loop degenerates
+        # to today's single-pass semantics. Worst-case flock hold grows
+        # to <=~24 min (600 + 2x300 s parks + up to 3 cancel graces + 2
+        # re-submits) — per-ISSUE flock only, same contention class as
+        # the pre-#1899 600 s park.
         threaded_spec, lease = _thread_attempt_id_into(spec, lease, write)
-        try:
-            handle = _prepare_and_launch(backend, threaded_spec, kind=kind, cluster=spec.cluster)
-        except BackendPrepareError as exc:
-            # Provision-class, pre-launch (nothing live) → next lane,
-            # same semantics as a launch failure but with a precise
-            # attempt-trail outcome.
-            attempts.append(
-                RouteAttempt(
-                    kind=kind,
-                    cluster=spec.cluster,
-                    est_start_seconds_raw=est_raw,
-                    est_start_seconds_clamped=est_clamped,
-                    outcome="prepare_failed",
-                    detail=exc.reason,
-                    elapsed_seconds=now_fn() - started_at,
+        rungs, primary_qos = _qos_rungs_for_lane(kind, spec)
+        for rung_idx, rung in enumerate(rungs):
+            if rung is None:
+                # Primary rung: NO extra overrides — render, spec hash,
+                # and lease keying stay byte-identical to pre-#1899.
+                rung_spec = threaded_spec
+            else:
+                rung_spec = replace(
+                    threaded_spec,
+                    extra={
+                        **threaded_spec.extra,
+                        "slurm_qos_override": rung.qos,
+                        **({"slurm_partition_override": rung.partition} if rung.partition else {}),
+                    },
                 )
-            )
-            logger.warning(
-                "route: free lane %s prepare failed (%s); trying next lane.",
-                kind,
-                exc.reason,
-            )
-            return None
-        except Exception as exc:
-            attempts.append(
-                RouteAttempt(
-                    kind=kind,
-                    cluster=spec.cluster,
-                    est_start_seconds_raw=est_raw,
-                    est_start_seconds_clamped=est_clamped,
-                    outcome="launch_failed",
-                    detail=f"{type(exc).__name__}: {exc}",
-                    elapsed_seconds=now_fn() - started_at,
-                )
-            )
-            logger.warning(
-                "route: free lane %s launch failed (%s); trying next lane.",
-                kind,
-                type(exc).__name__,
-            )
-            return None
-
-        # Persist the handle (sidecar hook) + launched id IMMEDIATELY
-        # (still under the flock).
-        _invoke_on_launched(on_launched, handle)
-        write(_lease_after_submit(lease, spec, kind, spec.cluster, handle))
-
-        # Park (still under the flock — wait IS contention surface, but
-        # the lock is per-ISSUE, not cross-issue, so the only callers
-        # serialized are the two we are deliberately serializing).
-        # #1609: the cap is per-lane — fellows honors the
-        # EPS_FELLOWS_QUEUE_WAIT_SECONDS env knob, every other lane keeps
-        # cfg.free_wait_seconds verbatim.
-        cap = _park_cap_for_lane(kind, cfg)
-        started, reason, terminal_status = park_until_running_or_cap(
-            backend=backend,
-            handle=handle,
-            is_started=is_started,
-            cap_seconds=cap,
-            poll_interval=cfg.poll_interval,
-            now_fn=now_fn,
-            sleep_fn=sleep_fn,
-        )
-        if started:
-            return _record_free_lane_started(
-                backend=backend,
-                handle=handle,
-                kind=kind,
-                est_raw=est_raw,
-                est_clamped=est_clamped,
-                spec=spec,
-                attempts=attempts,
-                started_at=started_at,
-                now_fn=now_fn,
-                marker_poster=marker_poster,
-                detail="park resolved to RUNNING",
-            )
-
-        # Park failed. Distinguish "never started" from "started and
-        # FAILED": a fast-failing job transitions PD→R→exit between
-        # polls, so "vanished before observed RUNNING" is NOT proof the
-        # cluster lacked capacity. If the scratch dir holds runtime
-        # artifacts (status.json / job.out), the job DID start — a
-        # WORKLOAD failure that must SURFACE (no GCP escalation: a
-        # workload bug would burn paid credit on a doomed re-run).
-        #
-        # GATED on the job being genuinely GONE (done/dead): ``stalled``
-        # covers LIVE jobs (RUNNING + stale heartbeat; SUSPENDED) and
-        # ``gate`` is a live wait — classifying those here raised BEFORE
-        # the cancel machine and orphaned a live job (round-6 M1, issue
-        # 535 attempt 2). stalled/gate fall through to cancel_and_wait.
-        if reason == "terminal_before_running" and terminal_status in ("done", "dead"):
-            evidence = _probe_started_evidence(started_evidence_probe, backend, handle)
-            if evidence is not None:
+            realized_qos = rung.qos if rung is not None else primary_qos
+            try:
+                handle = _prepare_and_launch(backend, rung_spec, kind=kind, cluster=spec.cluster)
+            except BackendPrepareError as exc:
+                # Provision-class, pre-launch (nothing live) → next lane,
+                # same semantics as a launch failure but with a precise
+                # attempt-trail outcome. No rung-continue on a launch
+                # failure: a broken endpoint will not heal between rungs.
                 attempts.append(
                     RouteAttempt(
                         kind=kind,
                         cluster=spec.cluster,
                         est_start_seconds_raw=est_raw,
                         est_start_seconds_clamped=est_clamped,
-                        outcome="workload_failure",
-                        detail=(
-                            "terminal before RUNNING with runtime artifacts "
-                            f"(phase={evidence.get('phase', '')!r})"
-                        ),
+                        outcome="prepare_failed",
+                        detail=exc.reason,
                         elapsed_seconds=now_fn() - started_at,
                     )
                 )
+                logger.warning(
+                    "route: free lane %s prepare failed (%s); trying next lane.",
+                    kind,
+                    exc.reason,
+                )
+                return None
+            except Exception as exc:
+                attempts.append(
+                    RouteAttempt(
+                        kind=kind,
+                        cluster=spec.cluster,
+                        est_start_seconds_raw=est_raw,
+                        est_start_seconds_clamped=est_clamped,
+                        outcome="launch_failed",
+                        detail=f"{type(exc).__name__}: {exc}",
+                        elapsed_seconds=now_fn() - started_at,
+                    )
+                )
+                logger.warning(
+                    "route: free lane %s launch failed (%s); trying next lane.",
+                    kind,
+                    type(exc).__name__,
+                )
+                return None
+
+            # Persist the handle (sidecar hook) + launched id IMMEDIATELY
+            # (still under the flock). The lease is REBOUND per rung so
+            # each rung's write recomputes from the NEW handle — a future
+            # Lease field must never be clobbered from a stale base
+            # (#1899 review note).
+            _invoke_on_launched(on_launched, handle)
+            lease = _lease_after_submit(lease, spec, kind, spec.cluster, handle)
+            write(lease)
+
+            # Park (still under the flock — wait IS contention surface, but
+            # the lock is per-ISSUE, not cross-issue, so the only callers
+            # serialized are the two we are deliberately serializing).
+            # #1609: the rung-1 cap is per-lane — fellows honors the
+            # EPS_FELLOWS_QUEUE_WAIT_SECONDS env knob, every other lane
+            # keeps cfg.free_wait_seconds verbatim. #1899: fallback rungs
+            # (2+) park the shorter EPS_FELLOWS_LADDER_RUNG_WAIT_SECONDS
+            # cap (default 300 s).
+            cap = (
+                _park_cap_for_lane(kind, cfg)
+                if rung_idx == 0
+                else _fellows_ladder_rung_wait_seconds()
+            )
+            started, reason, terminal_status = park_until_running_or_cap(
+                backend=backend,
+                handle=handle,
+                is_started=is_started,
+                cap_seconds=cap,
+                poll_interval=cfg.poll_interval,
+                now_fn=now_fn,
+                sleep_fn=sleep_fn,
+            )
+            if started:
+                # #1899: fellows starts record the realized QoS tier on
+                # the attempt detail + RouteResult.extra (-> the
+                # epm:backend-selected marker), so a mid-run SIGTERM
+                # death is attributable to a preemptible tier. Non-fellows
+                # lanes keep the pre-#1899 detail/extra byte-identical.
+                return _record_free_lane_started(
+                    backend=backend,
+                    handle=handle,
+                    kind=kind,
+                    est_raw=est_raw,
+                    est_clamped=est_clamped,
+                    spec=spec,
+                    attempts=attempts,
+                    started_at=started_at,
+                    now_fn=now_fn,
+                    marker_poster=marker_poster,
+                    detail=(
+                        f"park resolved to RUNNING (qos={realized_qos})"
+                        if kind == "fellows"
+                        else "park resolved to RUNNING"
+                    ),
+                    extra=({"realized_qos": realized_qos} if kind == "fellows" else None),
+                )
+
+            # Park failed. Distinguish "never started" from "started and
+            # FAILED": a fast-failing job transitions PD→R→exit between
+            # polls, so "vanished before observed RUNNING" is NOT proof the
+            # cluster lacked capacity. If the scratch dir holds runtime
+            # artifacts (status.json / job.out), the job DID start — a
+            # WORKLOAD failure that must SURFACE (no GCP escalation: a
+            # workload bug would burn paid credit on a doomed re-run).
+            # Applies on ANY rung (#1899): a workload bug re-crashes under
+            # every QoS, so walking on would burn queue time for nothing.
+            #
+            # GATED on the job being genuinely GONE (done/dead): ``stalled``
+            # covers LIVE jobs (RUNNING + stale heartbeat; SUSPENDED) and
+            # ``gate`` is a live wait — classifying those here raised BEFORE
+            # the cancel machine and orphaned a live job (round-6 M1, issue
+            # 535 attempt 2). stalled/gate fall through to cancel_and_wait.
+            if reason == "terminal_before_running" and terminal_status in ("done", "dead"):
+                evidence = _probe_started_evidence(started_evidence_probe, backend, handle)
+                if evidence is not None:
+                    attempts.append(
+                        RouteAttempt(
+                            kind=kind,
+                            cluster=spec.cluster,
+                            est_start_seconds_raw=est_raw,
+                            est_start_seconds_clamped=est_clamped,
+                            outcome="workload_failure",
+                            detail=(
+                                "terminal before RUNNING with runtime artifacts "
+                                f"(phase={evidence.get('phase', '')!r})"
+                            ),
+                            elapsed_seconds=now_fn() - started_at,
+                        )
+                    )
+                    _post_terminal_failure_marker(
+                        spec=spec,
+                        marker_poster=marker_poster,
+                        reason=ROUTE_REASON_WORKLOAD_FAILURE,
+                        chosen_kind=kind,
+                        attempts=attempts,
+                        extra={"evidence": evidence},
+                    )
+                    raise WorkloadSurfacedError(
+                        f"{kind} job {handle.job_id} went terminal before RUNNING but "
+                        f"left runtime artifacts (phase={evidence.get('phase', '')!r}) — "
+                        "workload failure, no auto-fallback",
+                        chosen_kind=kind,
+                        evidence=evidence,
+                    )
+
+            # Genuine never-started park failure → cancel state machine,
+            # then KEEP (raced), CONTINUE (cancelled: next rung on a
+            # fellows queue-park timeout, else next lane), or RAISE
+            # (manual_attention).
+            cancel_outcome = cancel_and_wait(
+                backend=backend,
+                handle=handle,
+                is_live_after_cancel=is_live_after_cancel,
+                is_running_after_cancel=is_running_after_cancel,
+                grace_seconds=cfg.cancel_grace_seconds,
+                poll_interval=min(2.0, cfg.poll_interval),
+                now_fn=now_fn,
+                sleep_fn=sleep_fn,
+            )
+            if cancel_outcome == "raced_to_running":
+                race_extra: dict[str, Any] = {"cancel_race": True}
+                if kind == "fellows":
+                    race_extra["realized_qos"] = realized_qos
+                return _record_free_lane_started(
+                    backend=backend,
+                    handle=handle,
+                    kind=kind,
+                    est_raw=est_raw,
+                    est_clamped=est_clamped,
+                    spec=spec,
+                    attempts=attempts,
+                    started_at=started_at,
+                    now_fn=now_fn,
+                    marker_poster=marker_poster,
+                    detail="cancel-race; job started during scancel",
+                    extra=race_extra,
+                )
+
+            # #1609: make the fellows queue-timeout fall-through grep-able on
+            # the attempts trail (no new ROUTE_REASON_* constant — the final
+            # reason stays the existing auto_fallback_gcp / auto_started
+            # convention). #1899: the detail additionally names the rung's
+            # QoS + position and the env knob governing THIS rung's cap.
+            detail = f"cancel_outcome={cancel_outcome}"
+            if kind == "fellows" and reason == "park_cap_exceeded":
+                cap_env = FELLOWS_QUEUE_WAIT_ENV if rung_idx == 0 else FELLOWS_LADDER_RUNG_WAIT_ENV
+                detail += (
+                    f"; fellows_queue_timeout cap={cap}s qos={realized_qos} "
+                    f"rung={rung_idx + 1}/{len(rungs)} ({cap_env})"
+                )
+            attempts.append(
+                RouteAttempt(
+                    kind=kind,
+                    cluster=spec.cluster,
+                    est_start_seconds_raw=est_raw,
+                    est_start_seconds_clamped=est_clamped,
+                    outcome=reason,
+                    detail=detail,
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            if cancel_outcome == "manual_attention":
+                # cancel grace expired without confirming the free-lane job
+                # is dead. Silently escalating (to the next rung OR to GCP)
+                # would risk a duplicate run sharing the attempt-id
+                # namespace → raise so the orchestrator surfaces the
+                # orphaned id + parks. Applies on ANY rung (#1899): an
+                # unconfirmed-dead job is the same double-submit hazard on
+                # every rung.
                 _post_terminal_failure_marker(
                     spec=spec,
                     marker_poster=marker_poster,
-                    reason=ROUTE_REASON_WORKLOAD_FAILURE,
+                    reason=ROUTE_REASON_NO_COMPUTE,
                     chosen_kind=kind,
                     attempts=attempts,
-                    extra={"evidence": evidence},
+                    extra={"manual_attention": True, "orphaned_job_id": str(handle.job_id)},
                 )
-                raise WorkloadSurfacedError(
-                    f"{kind} job {handle.job_id} went terminal before RUNNING but "
-                    f"left runtime artifacts (phase={evidence.get('phase', '')!r}) — "
-                    "workload failure, no auto-fallback",
-                    chosen_kind=kind,
-                    evidence=evidence,
+                raise ManualAttentionRequiredError(
+                    kind=kind,
+                    cluster=spec.cluster,
+                    orphaned_job_id=str(handle.job_id),
+                    attempts=[_attempt_to_dict(a) for a in attempts],
                 )
-
-        # Genuine never-started park failure → cancel state machine,
-        # then KEEP (raced), CONTINUE to next lane (cancelled), or
-        # RAISE (manual_attention).
-        cancel_outcome = cancel_and_wait(
-            backend=backend,
-            handle=handle,
-            is_live_after_cancel=is_live_after_cancel,
-            is_running_after_cancel=is_running_after_cancel,
-            grace_seconds=cfg.cancel_grace_seconds,
-            poll_interval=min(2.0, cfg.poll_interval),
-            now_fn=now_fn,
-            sleep_fn=sleep_fn,
-        )
-        if cancel_outcome == "raced_to_running":
-            return _record_free_lane_started(
-                backend=backend,
-                handle=handle,
-                kind=kind,
-                est_raw=est_raw,
-                est_clamped=est_clamped,
-                spec=spec,
-                attempts=attempts,
-                started_at=started_at,
-                now_fn=now_fn,
-                marker_poster=marker_poster,
-                detail="cancel-race; job started during scancel",
-                extra={"cancel_race": True},
-            )
-
-        # #1609: make the fellows queue-timeout fall-through grep-able on the
-        # attempts trail (no new ROUTE_REASON_* constant — the final reason
-        # stays the existing auto_fallback_gcp / auto_started convention).
-        detail = f"cancel_outcome={cancel_outcome}"
-        if kind == "fellows" and reason == "park_cap_exceeded":
-            detail += f"; fellows_queue_timeout cap={cap}s ({FELLOWS_QUEUE_WAIT_ENV})"
-        attempts.append(
-            RouteAttempt(
-                kind=kind,
-                cluster=spec.cluster,
-                est_start_seconds_raw=est_raw,
-                est_start_seconds_clamped=est_clamped,
-                outcome=reason,
-                detail=detail,
-                elapsed_seconds=now_fn() - started_at,
-            )
-        )
-        if cancel_outcome == "manual_attention":
-            # cancel grace expired without confirming the free-lane job
-            # is dead. Silently escalating to GCP would risk a duplicate
-            # run sharing the attempt-id namespace → raise so the
-            # orchestrator surfaces the orphaned id + parks.
-            _post_terminal_failure_marker(
-                spec=spec,
-                marker_poster=marker_poster,
-                reason=ROUTE_REASON_NO_COMPUTE,
-                chosen_kind=kind,
-                attempts=attempts,
-                extra={"manual_attention": True, "orphaned_job_id": str(handle.job_id)},
-            )
-            raise ManualAttentionRequiredError(
-                kind=kind,
-                cluster=spec.cluster,
-                orphaned_job_id=str(handle.job_id),
-                attempts=[_attempt_to_dict(a) for a in attempts],
-            )
-        return None
+            if not (
+                kind == "fellows"
+                and reason == "park_cap_exceeded"
+                and cancel_outcome == "cancelled"
+            ):
+                # Every non-ladder outcome (non-fellows lanes;
+                # probe_failures_exceeded; stalled/gate-cancelled; ...)
+                # keeps today's exact next-lane semantics.
+                return None
+            # else: fellows queue-park timeout with a CONFIRMED-dead
+            # cancel — fall through to the next granted-QoS rung (#1899).
+            # The no-double-submit invariant holds: raced_to_running
+            # returned above, manual_attention raised above, so a rung
+            # re-submit only ever follows a confirmed `cancelled`.
+        return None  # ladder exhausted → advance to the next lane (GCP)
 
 
 def _record_free_lane_started(
