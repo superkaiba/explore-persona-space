@@ -22,6 +22,13 @@
 #   5. BARE-QUERY CAPTURE (follow-up `bare-query` B1, plan §4.1 — forward-only,
 #      uploads to issue1738_multiturn/bare_query, never the parent prefix):
 #        bash scripts/issue1738_multiturn_launch.sh --bare-query --num-shards 8 --shard-offset 0
+#   6. SAE-ARM CAPTURE (follow-up `sae-arm` S1, plan v8 §4.3 — teacher-forced
+#      SAE forwards over the PARENT chunks; uploads to issue1738_multiturn/sae_arm,
+#      never the parent prefix). Runs the G-S0/G-S1 pilot FOREGROUND on GPU 0
+#      first (a designed-halt rc 26/27 aborts the launcher BEFORE the fleet
+#      detaches — the fitness kill-gate contract), then fans out all shards
+#      (shard 0 resumes past its pilot chunks via the Hub index):
+#        bash scripts/issue1738_multiturn_launch.sh --sae-arm --num-shards 8 --shard-offset 0
 #
 # Pod-side: NO VM thread-cap prefix (dedicated GPUs keep full width).
 set -euo pipefail
@@ -46,7 +53,10 @@ DRY_RUN=0
 BUILD_MANIFEST=0
 KRESAMPLE=0
 BARE_QUERY=0
+SAE_ARM=0
 BARE_UPLOAD_PREFIX="issue1738_multiturn/bare_query"
+SAE_UPLOAD_PREFIX="issue1738_multiturn/sae_arm"
+SAE_PILOT_ROWS="${EPM_MT1738_SAE_PILOT_ROWS:-2000}"
 SEEDS="43,44,45,46"
 SUBSAMPLE_FILE=""
 EXTRA_ARGS=()
@@ -62,15 +72,21 @@ while [ $# -gt 0 ]; do
     --kresample) KRESAMPLE=1; shift ;;
     --bare-query) BARE_QUERY=1; shift ;;
     --bare-upload-prefix) BARE_UPLOAD_PREFIX="$2"; shift 2 ;;
+    --sae-arm) SAE_ARM=1; shift ;;
+    --sae-upload-prefix) SAE_UPLOAD_PREFIX="$2"; shift 2 ;;
+    --sae-pilot-rows) SAE_PILOT_ROWS="$2"; shift 2 ;;
     --seeds) SEEDS="$2"; shift 2 ;;
     --subsample-file) SUBSAMPLE_FILE="$2"; shift 2 ;;
     *) EXTRA_ARGS+=("$1"); shift ;;
   esac
 done
 
-if [ "$BARE_QUERY" -eq 1 ] && [ "$KRESAMPLE" -eq 1 ]; then
-  echo "FATAL: --bare-query and --kresample are mutually exclusive" >&2
+if [ $((BARE_QUERY + KRESAMPLE + SAE_ARM)) -gt 1 ]; then
+  echo "FATAL: --bare-query / --kresample / --sae-arm are mutually exclusive" >&2
   exit 1
+fi
+if [ "$SAE_ARM" -eq 1 ]; then
+  DRIVER="scripts/issue1738_sae_arm.py"
 fi
 
 # ── mode 1: build + upload the sampling manifest (foreground, CPU), then exit ─────
@@ -113,13 +129,33 @@ fi
 MODE="capture"
 [ "$KRESAMPLE" -eq 1 ] && MODE="kresample"
 [ "$BARE_QUERY" -eq 1 ] && MODE="bare"
+[ "$SAE_ARM" -eq 1 ] && MODE="sae"
 echo "== issue1738 $MODE fan-out: pod owns global shards $SHARD_OFFSET..$LAST of $NUM_SHARDS (G=$GPUS_PER_POD, shard-size=$SHARD_SIZE, pilot-cap=$PILOT_CAP) =="
+
+# sae-arm G-S0/G-S1 pilot: FOREGROUND on GPU 0 BEFORE the fleet detaches — a
+# designed-halt rc (26 rate fence / 27 fitness kill) propagates through set -e
+# and aborts the launcher, so the fleet never proceeds past a G-S0 FAIL
+# (plan v8 §7; idempotent: a PASS meta already on the Hub skips the pilot).
+if [ "$SAE_ARM" -eq 1 ] && [ "$DRY_RUN" -eq 0 ]; then
+  echo "== sae-arm pilot (G-S0/G-S1) foreground on GPU 0, shard $SHARD_OFFSET =="
+  CUDA_VISIBLE_DEVICES=0 uv run python "$DRIVER" --phase capture \
+    --num-shards "$NUM_SHARDS" --shard-index "$SHARD_OFFSET" --device cuda \
+    --sae-hf-prefix "$SAE_UPLOAD_PREFIX" --pilot-rows "$SAE_PILOT_ROWS" --pilot-only \
+    ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}
+  echo "== sae-arm pilot PASS — fanning out $GPUS_PER_POD shards =="
+fi
 
 for g in $(seq 0 $((GPUS_PER_POD - 1))); do
   gidx=$((SHARD_OFFSET + g))
   log="$LOG_DIR/issue-1738-${MODE}-shard${gidx}.log"
   pidf="$LOG_DIR/issue-1738-${MODE}-shard${gidx}.pid"
-  cmd=(uv run python "$DRIVER" --num-shards "$NUM_SHARDS" --shard-index "$gidx" --device cuda --shard-size "$SHARD_SIZE" --manifest-from-hf)
+  if [ "$SAE_ARM" -eq 1 ]; then
+    # plan v8 §4.3: sae uploads ride their own prefix; the parent capture
+    # prefix is never written by this mode (read-side only).
+    cmd=(uv run python "$DRIVER" --phase capture --num-shards "$NUM_SHARDS" --shard-index "$gidx" --device cuda --sae-hf-prefix "$SAE_UPLOAD_PREFIX")
+  else
+    cmd=(uv run python "$DRIVER" --num-shards "$NUM_SHARDS" --shard-index "$gidx" --device cuda --shard-size "$SHARD_SIZE" --manifest-from-hf)
+  fi
   if [ "$KRESAMPLE" -eq 1 ]; then
     cmd+=(--kresample --seeds "$SEEDS" --kresample-subsample "$SUBSAMPLE_FILE")
   fi
@@ -128,7 +164,7 @@ for g in $(seq 0 $((GPUS_PER_POD - 1))); do
     # prefix is never written by this mode.
     cmd+=(--bare-query --upload-prefix "$BARE_UPLOAD_PREFIX")
   fi
-  if [ "$PILOT_CAP" -gt 0 ] 2>/dev/null; then
+  if [ "$PILOT_CAP" -gt 0 ] 2>/dev/null && [ "$SAE_ARM" -eq 0 ]; then
     cmd+=(--pilot-cap "$PILOT_CAP")
   fi
   [ ${#EXTRA_ARGS[@]} -gt 0 ] && cmd+=("${EXTRA_ARGS[@]}")

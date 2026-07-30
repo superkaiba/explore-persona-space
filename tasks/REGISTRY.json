@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1846,
+  "highest_id": 1876,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6025,8 +6025,8 @@
       "goal": "Compute the averaged causal Jacobian J_{C\u2192A} on the #779 corpus; measure what fraction of the fitted ridge map M's predictive power is causal; test which map predicts steered-generation interventions and off-distribution transfer; and test whether the context\u2192answer channel reads from / writes into the J-space verbalizable workspace (Anthropic 2026), all phases unconditional.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/1776",
-      "status": "reviewing",
+      "path": "tasks/followups_running/1776",
+      "status": "followups_running",
       "title": "Averaged causal Jacobians recover essentially none of the fitted context-to-answer map's predictive power (HIGH confidence)"
     },
     "1777": {
@@ -6291,29 +6291,29 @@
     "1812": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1812",
-      "status": "reviewing",
+      "path": "tasks/completed/1812",
+      "status": "completed",
       "title": "daily-fix: 9a-ter \u2014 instrument supersession + addenda charac"
     },
     "1813": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1813",
-      "status": "running",
+      "path": "tasks/completed/1813",
+      "status": "completed",
       "title": "daily-fix: argv dry-run before dispatching a new phase"
     },
     "1814": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1814",
-      "status": "running",
+      "path": "tasks/reviewing/1814",
+      "status": "reviewing",
       "title": "daily-fix: gotchas \u2014 subsample filters, zones, hub path glob"
     },
     "1815": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1815",
-      "status": "proposed",
+      "path": "tasks/planning/1815",
+      "status": "planning",
       "title": "daily-fix: queue-vanish guard defeated by stale phase clock"
     },
     "1816": {
@@ -6554,12 +6554,103 @@
       "status": "proposed",
       "title": "workflow-fix: verify_task_body WARN check \u2014 orphaned result JSONs (sibling of check 31)"
     },
+    "1847": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1847",
+      "status": "proposed",
+      "title": "daily-fix: bash -n pin test for Step 10d TG fenced blocks"
+    },
+    "1848": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1848",
+      "status": "proposed",
+      "title": "daily-fix: plan_patch.py --file alias + rc-check note"
+    },
+    "1849": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1849",
+      "status": "proposed",
+      "title": "daily-fix: hub._upload fail-loud when file dest looks like a"
+    },
     "185": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/185",
       "status": "archived",
       "title": "EM destroys persona-coupled markers via catastrophic cliff at 10-25 steps, not gradual forgetting (MODERATE confidence)"
+    },
+    "1850": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1850",
+      "status": "proposed",
+      "title": "daily-fix: remote-landing watches need fence deadline + hear"
+    },
+    "1851": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1851",
+      "status": "proposed",
+      "title": "daily-fix: step9c selector misses SKILL.md-pinning tests"
+    },
+    "1852": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1852",
+      "status": "proposed",
+      "title": "daily-fix: env-pin allowlist PYTORCH_CUDA_ALLOC_CONF + help "
+    },
+    "1853": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1853",
+      "status": "proposed",
+      "title": "daily-fix: watcher leaves filed infra tasks undispatched for"
+    },
+    "1854": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1854",
+      "status": "proposed",
+      "title": "daily-fix: /daily route-1 code applies run full-ruleset lint"
+    },
+    "1855": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1855",
+      "status": "proposed",
+      "title": "daily-fix: context-headroom check at review-round boundaries"
+    },
+    "1856": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1856",
+      "status": "proposed",
+      "title": "daily-fix: kill-before-relaunch enumerates live launcher pha"
+    },
+    "1857": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1857",
+      "status": "proposed",
+      "title": "daily-fix: root-code guard binds cert to staged blob, not wo"
+    },
+    "1858": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1858",
+      "status": "proposed",
+      "title": "daily-fix: RunPod failover launcher timeout-bounds sync, rea"
+    },
+    "1859": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1859",
+      "status": "proposed",
+      "title": "daily-fix: repo-root guard allows timeout-prefixed ssh paylo"
     },
     "186": {
       "has_clean_result": true,
@@ -6568,12 +6659,131 @@
       "status": "completed",
       "title": "Persona-flavored chain-of-thought rationales drive cross-persona behavior leakage in wrong-answer SFT on Qwen2.5-7B-Instruct; persona style dominates, contradicting-rationale training partially defends (MODERATE confidence)"
     },
+    "1860": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1860",
+      "status": "proposed",
+      "title": "daily-fix: humanize loop verifies candidate body before set-"
+    },
+    "1861": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1861",
+      "status": "proposed",
+      "title": "daily-fix: repo-root guard recognizes cd-to-worktree via var"
+    },
+    "1862": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1862",
+      "status": "proposed",
+      "title": "daily-fix: detached-VM probe template brackets; choom=failed"
+    },
+    "1863": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1863",
+      "status": "proposed",
+      "title": "daily-fix: poll ticks compute rate/ETA on long same-phase ta"
+    },
+    "1864": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1864",
+      "status": "proposed",
+      "title": "daily-fix: analyzer.md numbers the payload-lint gate pre-com"
+    },
+    "1865": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1865",
+      "status": "proposed",
+      "title": "daily-fix: pod relaunch shape fully detaches stdio"
+    },
+    "1866": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1866",
+      "status": "proposed",
+      "title": "daily-fix: SLURM completed-work-but-FAILED state disambiguat"
+    },
+    "1867": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1867",
+      "status": "proposed",
+      "title": "daily-fix: task.py address-concern accepts --note alias"
+    },
+    "1868": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1868",
+      "status": "proposed",
+      "title": "daily-fix: Step 10d teardown re-runs sync on in-flight advis"
+    },
+    "1869": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1869",
+      "status": "proposed",
+      "title": "daily-fix: deferred-commit sidecar captures the Failed hook "
+    },
     "187": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/187",
       "status": "completed",
       "title": "Chat-template Betley alignment eval on a Gemma2-2b base-LM finetune produces dialogue in only 1 of 8 outputs, but raw-prompt format wasn't tried so dialogue collapse is unidentifiable from chat-template mismatch (MODERATE confidence)"
+    },
+    "1870": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1870",
+      "status": "proposed",
+      "title": "daily-fix: sync KEPT-stash outcome gets durable surfacing"
+    },
+    "1871": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1871",
+      "status": "proposed",
+      "title": "daily-fix: judge-monitor reads are digest-grain, never full "
+    },
+    "1872": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1872",
+      "status": "proposed",
+      "title": "daily-fix: register step 5a in workflow.yaml steps enum"
+    },
+    "1873": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1873",
+      "status": "proposed",
+      "title": "daily-held: review #1768 8xH100 width during CPU-bound p8 ph"
+    },
+    "1874": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1874",
+      "status": "proposed",
+      "title": "daily-fix: /daily filed bodies cite marker per mechanism cla"
+    },
+    "1875": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1875",
+      "status": "proposed",
+      "title": "daily-fix: /issue Step 0 preloads TaskOutput/Monitor schemas"
+    },
+    "1876": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1876",
+      "status": "proposed",
+      "title": "daily-fix: compliant git-commit forms at snippet sites + blo"
     },
     "188": {
       "has_clean_result": false,

@@ -3918,6 +3918,80 @@ workload command (`.claude/agents/experimenter.md`) — signature-stable
 and probe-covered by the gotchas #1310 pre-launch discipline, not ad-hoc
 workload logic.
 
+**Hand-composed phase argv dry-run (REQUIRED before any instance-booting
+dispatch of a newly-composed argv; #1738).** Before any
+`dispatch_issue.py launch --workload-cmd '<cmd>'` (any lane) whose inner
+driver argv was hand-composed this session — a NEW phase, a follow-up
+round, a plan-§10 command transcription — dry-run the EXACT production
+argv on the VM first. Re-dispatching a byte-identical, previously-probed
+command whose driver's CLI/validation surface is untouched since that
+probe is exempt. FIRST classify the driver's CLI family
+(`grep -n 'parse_args\|@hydra.main' <script>`): a Hydra driver
+(`@hydra.main` — e.g. `scripts/train.py`, `scripts/eval.py`) is probed
+with Hydra's own compose-only check (append `--cfg job` to the exact
+production overrides; it composes the config and exits without running
+the job) — the argparse probe below validates NOTHING for Hydra. For an
+argparse driver, prefer the driver's own `--dry-run` / parse-only flag
+when one exists; otherwise run the generic bounded probe:
+
+```bash
+# Generic argv dry-run — <script.py> + the EXACT production args.
+# Runs the driver through parse_args AND its early post-parse
+# validation, bounded; the driver's own imports run (torch etc.), so
+# allow ~60s.
+timeout --kill-after=10s 60s uv run python - <script.py> <args...> <<'PY'
+import argparse, runpy, sys
+sys.argv = sys.argv[1:]                    # ['<script.py>', <args...>]
+engaged = []
+_orig = argparse.ArgumentParser.parse_args
+def _probe(self, *a, **k):
+    ns = _orig(self, *a, **k)
+    engaged.append(True)
+    print("ARGV-PARSE-OK:", ns, flush=True)
+    # Do NOT exit here: the repo's dominant convention enforces
+    # required inputs POST-parse via
+    # raise SystemExit("--x or --y required") (44 scripts; incident
+    # #1738: issue1738_multiturn_fits.py:1629, rc=1) — post-parse
+    # validation must execute.
+    return ns
+argparse.ArgumentParser.parse_args = _probe
+runpy.run_path(sys.argv[0], run_name="__main__")
+if not engaged:
+    print("ARGV-PROBE-NEVER-ENGAGED", file=sys.stderr); sys.exit(3)
+PY
+```
+
+Read the outcome by MESSAGE, not rc alone:
+
+| Outcome | Reading |
+|---|---|
+| rc=2 (argparse error: missing-required / unknown flag) | Argv defect — fix it on the VM in seconds instead of after a boot cycle. |
+| rc=1 with a validation message after `ARGV-PARSE-OK` (the `SystemExit("--x or --y required")` class) | Argv defect — the #1738 class (Phase-3 attempt 1 omitted the required `--split-file`/`--manifest-*` flag; the workload died rc=1 ~7 s AFTER a full GCE flexstart boot + venv install). |
+| rc=124 (timeout) with `ARGV-PARSE-OK` printed | PASS — parse + early validation survived the window. The timeout is the deliberate side-effect ceiling: the driver may begin real work (mkdir, HF reads) inside it, so probe BEFORE any out-root state you care about. |
+| rc=137 with `ARGV-PARSE-OK` printed | PASS — the `--kill-after` hard-kill variant of the timeout outcome (the driver ignored SIGTERM); same disposition as rc=124. |
+| Nonzero exit AFTER `ARGV-PARSE-OK` whose message names a VM-only environment gap (a pod/GCE-staged path absent locally, CUDA on a no-GPU VM) | Judged pass — state it in one line in the dispatch note. |
+| rc=0 WITH `ARGV-PARSE-OK` printed | Pass — but the ENTIRE workload ran to completion LOCALLY and succeeded; state explicitly that local execution occurred (vanishingly rare for an instance-booting workload — it usually means the dispatch may not be needed at all). |
+| rc=3 + `ARGV-PROBE-NEVER-ENGAGED` | No argparse parser was reached (Hydra or a bespoke CLI) — NEVER a pass; use the family-appropriate check above. |
+| Any exit with NEITHER sentinel printed (e.g. a parser-less script that `sys.exit(0)`s on its own before the guard runs) | NEVER a pass — treat as never-engaged; every pass row above is sentinel-keyed. Use the family-appropriate check above. |
+
+Notes: (a) a bare `--help` probe validates NOTHING about the composed
+argv (help exits 0 before any validation) — `experimenter.md` item 7's
+flag-presence scan is the COMPLEMENT (bogus flags); this probe is the
+missing-input side. (b) For a wrapper `.sh` dispatcher, probe the INNER
+python driver argv the wrapper composes (plus `bash -n <wrapper>` for
+wrapper syntax). (c) A driver calling `parse_known_args` directly
+bypasses the monkeypatch (one direct caller today:
+`src/explore_persona_space/experiments/factor_screen_365/__main__.py`)
+— the never-engaged guard converts that to rc=3 when the script
+returns; a script that exits on its own shows NEITHER sentinel, which
+the table's neither-sentinel row bars from reading as a pass. The guard DETECTS a
+parser-less run after the fact (the script may have executed fully
+within the timeout window before rc=3 returns); PREVENTION rests on the
+first-step CLI-family grep classification plus the timeout ceiling.
+(d) This is a pre-launch PROBE, not a workload — the "Ad-hoc probe
+workloads" committed-script rule above governs workload bodies, not
+this probe (same class as the gotchas #1310 signature probe).
+
 The handle the dispatch helper returns is persisted to
 `.claude/cache/issue-<N>-handle.json` (the bg-Bash poller reads it
 back; see Step 6d.2).
@@ -6013,7 +6087,12 @@ uploaded; a downstream experiment had to re-train two months later. See
 `.claude/agents/upload-verifier.md` § Step 2.5 for the full rationale.
 
 Post `epm:upload-verification v1` event with per-artifact PASS/FAIL +
-URLs.
+URLs. A PASS note MUST carry the literal token `Verdict: PASS` — the
+finalize teardown gate matches `UPLOAD_VERIFICATION_PASS_RE`
+(`task_workflow.py` `re.compile(r"Verdict:\s*PASS\b")`), and a PASS
+note in any other shape is refused as a FAIL at teardown (#1775,
+2026-07-29: a healthy PASS was refused for ~3 min until the regex was
+grepped and the marker reposted).
 
 - **PASS** -> teardown the compute, then move status to `interpreting`
   and proceed to Step 9. (Same-issue follow-up round? At
@@ -7842,7 +7921,11 @@ spawned for v4. After the 9a-bis PASS the orchestrator:
    — immediately after the `<!-- clean-result-v4 -->` sentinel, before
    `## Takeaways` — linking the GitHub blob (SHA-pinned to the `main`
    commit) and the gist (drop the `· [gist](...)` suffix when the gist
-   fail-softed).
+   fail-softed). `<DOC_SHA>` is ALWAYS taken from command output —
+   `DOC_SHA=$(git rev-parse HEAD)` right after the doc commit — never
+   typed or hand-extended from a short SHA (the never-fabricate-SHAs
+   rule; 2026-07-29 on #1738: a hand-extended short SHA 404'd the blob
+   URL and burned a verifier FAIL round).
 6. Posts `epm:methodology-doc-generated v1` (`doc_path` + `commit` +
    `gist_url`).
 
