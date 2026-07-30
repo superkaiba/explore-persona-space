@@ -1,0 +1,279 @@
+{
+ "_meta": {
+  "ts": "2026-07-30T16:49:32Z",
+  "git_commit": "unknown",
+  "torch": "2.8.0+cu128",
+  "transformers": "4.57.6",
+  "issue": 1768,
+  "row_basis_note": "floor measured on the 2,000-row seed-42 TRAIN subsample; the compared shift (decomposition_tf.mean_norm_total) was measured on the 1,000 pinned TEST rows — registered in plan v7 §4.4 conservatism (b) + assumption 4: both row sets are draws from the same corpus distribution and the comparison is a scale read, not row-paired",
+  "conservatisms": "(a) shift is a MEAN while the floor is a p95 — floor errs high; (b) the shift carries ~sqrt(2)x single-capture noise from two independent captures — absorbed inside the 2x falsification band (plan v7 §4.4)",
+  "subsample": {
+   "n": 2000,
+   "seed": 42,
+   "sha256": "0ab9c068eea03ace59abd618ad550431ffc04a6774f36ceb4ccb8d08cb9636c2"
+  },
+  "replicate_design": {
+   "r1": "base-tree row order, tf_batch=8 (production geometry)",
+   "r2": "perm seed 1768, tf_batch=13"
+  },
+  "gpu_names": {
+   "base_content": {
+    "r1": "NVIDIA H200",
+    "r2": "NVIDIA H200"
+   },
+   "cas-pers-con-lr1e5-s42": {
+    "r1": "NVIDIA H200",
+    "r2": "NVIDIA H200"
+   },
+   "imp-pers-con-lr3e5-s42": {
+    "r1": "NVIDIA H200",
+    "r2": "NVIDIA H200"
+   },
+   "syc-pers-con-lr1e5-s42": {
+    "r1": "NVIDIA H200",
+    "r2": "NVIDIA H200"
+   },
+   "mk-pers-con-lr5e6-s42": {
+    "r1": "NVIDIA H200",
+    "r2": "NVIDIA H200"
+   },
+   "imp-pers-ft-con-s42": {
+    "r1": "NVIDIA H200",
+    "r2": "NVIDIA H200"
+   }
+  },
+  "arm_registry_sha256": "47e816f004689df78896c8539d5679265a9eb963cfbf399603f2bafda0a470b5",
+  "smoke": false
+ },
+ "floors": {
+  "base_content": {
+   "14": {
+    "p95": 0.0,
+    "median": 0.0,
+    "n": 2000
+   },
+   "19": {
+    "p95": 0.0,
+    "median": 0.0,
+    "n": 2000
+   },
+   "25": {
+    "p95": 0.0,
+    "median": 0.0,
+    "n": 2000
+   }
+  },
+  "cas-pers-con-lr1e5-s42": {
+   "14": {
+    "p95": 0.0,
+    "median": 0.0,
+    "n": 2000
+   },
+   "19": {
+    "p95": 0.0,
+    "median": 0.0,
+    "n": 2000
+   },
+   "25": {
+    "p95": 0.0,
+    "median": 0.0,
+    "n": 2000
+   }
+  },
+  "imp-pers-con-lr3e5-s42": {
+   "14": {
+    "p95": 0.0,
+    "median": 0.0,
+    "n": 2000
+   },
+   "19": {
+    "p95": 0.0,
+    "median": 0.0,
+    "n": 2000
+   },
+   "25": {
+    "p95": 0.0,
+    "median": 0.0,
+    "n": 2000
+   }
+  },
+  "syc-pers-con-lr1e5-s42": {
+   "14": {
+    "p95": 0.0,
+    "median": 0.0,
+    "n": 2000
+   },
+   "19": {
+    "p95": 0.0,
+    "median": 0.0,
+    "n": 2000
+   },
+   "25": {
+    "p95": 0.0,
+    "median": 0.0,
+    "n": 2000
+   }
+  },
+  "mk-pers-con-lr5e6-s42": {
+   "14": {
+    "p95": 0.0,
+    "median": 0.0,
+    "n": 2000
+   },
+   "19": {
+    "p95": 0.0,
+    "median": 0.0,
+    "n": 2000
+   },
+   "25": {
+    "p95": 0.0,
+    "median": 0.0,
+    "n": 2000
+   }
+  },
+  "imp-pers-ft-con-s42": {
+   "14": {
+    "p95": 0.0,
+    "median": 0.0,
+    "n": 2000
+   },
+   "19": {
+    "p95": 0.0,
+    "median": 0.0,
+    "n": 2000
+   },
+   "25": {
+    "p95": 0.0,
+    "median": 0.0,
+    "n": 2000
+   }
+  }
+ },
+ "fleet_floor_p95": {
+  "14": 0.0,
+  "19": 0.0,
+  "25": 0.0
+ },
+ "floor_spread": {
+  "14": {
+   "max_over_min": 0.0,
+   "flagged_gt_2x": false
+  },
+  "19": {
+   "max_over_min": 0.0,
+   "flagged_gt_2x": false
+  },
+  "25": {
+   "max_over_min": 0.0,
+   "flagged_gt_2x": false
+  }
+ },
+ "degenerate_zero_floors": [
+  [
+   "base_content",
+   14
+  ],
+  [
+   "base_content",
+   19
+  ],
+  [
+   "base_content",
+   25
+  ],
+  [
+   "cas-pers-con-lr1e5-s42",
+   14
+  ],
+  [
+   "cas-pers-con-lr1e5-s42",
+   19
+  ],
+  [
+   "cas-pers-con-lr1e5-s42",
+   25
+  ],
+  [
+   "imp-pers-con-lr3e5-s42",
+   14
+  ],
+  [
+   "imp-pers-con-lr3e5-s42",
+   19
+  ],
+  [
+   "imp-pers-con-lr3e5-s42",
+   25
+  ],
+  [
+   "syc-pers-con-lr1e5-s42",
+   14
+  ],
+  [
+   "syc-pers-con-lr1e5-s42",
+   19
+  ],
+  [
+   "syc-pers-con-lr1e5-s42",
+   25
+  ],
+  [
+   "mk-pers-con-lr5e6-s42",
+   14
+  ],
+  [
+   "mk-pers-con-lr5e6-s42",
+   19
+  ],
+  [
+   "mk-pers-con-lr5e6-s42",
+   25
+  ],
+  [
+   "imp-pers-ft-con-s42",
+   14
+  ],
+  [
+   "imp-pers-ft-con-s42",
+   19
+  ],
+  [
+   "imp-pers-ft-con-s42",
+   25
+  ]
+ ],
+ "degenerate_floor_note": "a floor_p95 of exactly 0 means the replicate pair is bit-identical there; the operative floor is then the fp16 storage quantization step (~1e-3 relative) — recorded per plan v7 §8, never silently substituted",
+ "ratio_table": [],
+ "criteria": {
+  "h3_n_arms": 0,
+  "h3_frac_above_fleet_floor_primary": 0.0,
+  "h3_met": false,
+  "mk_own_floor_ratio_primary": null,
+  "marker_falsified": false,
+  "fleet_marker_min_ratio_primary": null
+ },
+ "same_pass_anchor": {
+  "kind": "same_pass_mixed_geometry",
+  "validity": "pairs from ONE production pass (tree order, production tf_batch): same batch geometry regime but different batch positions; byte-identical-response pairs only (differing-text pairs measure generation variability, not capture noise); under-covers pass-to-pass sources (model reload, kernel algo selection) — a LOWER-bound anchor for the replicate floor",
+  "n_duplicate_sha_groups": 18,
+  "n_identical_response_pairs": 459,
+  "n_pairs_response_text_differs": 21,
+  "per_layer": {
+   "14": {
+    "median": 0.0,
+    "p95": 0.0,
+    "n_pairs": 459
+   },
+   "19": {
+    "median": 0.0,
+    "p95": 0.0,
+    "n_pairs": 459
+   },
+   "25": {
+    "median": 0.0,
+    "p95": 0.0,
+    "n_pairs": 459
+   }
+  }
+ }
+}
