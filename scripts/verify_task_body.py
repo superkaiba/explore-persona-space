@@ -4227,6 +4227,228 @@ def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> 
     return CheckResult(name, False, detail)
 
 
+# ─── Plan-§5 conditions coverage (WARN tier, #1827; incident #1774) ─────────
+# A plan-committed condition dropped WHOLESALE from the clean-result body is
+# invisible to check 11b (which keys on conditions the body NAMES). This
+# check parses the approved plan's §-Conditions table (the `Config slug`
+# column) and WARNs when a slug — or its plain-English row name — appears
+# nowhere in the body. Incident #1774: the plan's `cell_pre_own`
+# (pretrained-reads robustness) condition was silently dropped; the
+# pre-correction body carried zero mentions and every mechanical check
+# passed.
+
+# Heading that opens a conditions section: `## 5. Conditions and Controls`,
+# `### Conditions`, etc. (2-4 hashes, optional leading section number).
+_CONDITIONS_HEADING_RE = re.compile(r"(?im)^#{2,4}\s*(?:\d+\.?\s*)?conditions\b")
+# Header cell naming the config-slug column (`Config slug` / `config-slug`).
+_CONFIG_SLUG_COL_RE = re.compile(r"(?i)config[ -]?slug")
+_COND_BACKTICK_TOKEN_RE = re.compile(r"`([^`]+)`")
+_COND_EMPHASIS_RE = re.compile(r"[*_`]")
+_COND_PARENTHETICAL_RE = re.compile(r"\([^)]*\)")
+# Hyphen family + whitespace → one space (name matching is hyphenation- and
+# linebreak-tolerant: plan `No-intervention baseline` matches body
+# `no intervention baseline` and vice versa). Unicode hyphen/dash variants
+# (U+2010 hyphen, U+2011 non-breaking hyphen, U+2012 figure dash,
+# U+2013 en dash) are spelled as escapes — RUF001 rejects the literals.
+_COND_HYPHEN_WS_RE = re.compile(r"[-\u2010\u2011\u2012\u2013\s]+")
+_MD_TABLE_SEPARATOR_CELL_RE = re.compile(r"^:?-{3,}:?$")
+
+
+def _numeric_plan_versions_newest_first(plan_path: Path) -> list[Path]:
+    """``plans/v<int>.md`` siblings of ``plan_path`` sorted NEWEST-first
+    by integer version suffix (a lexicographic sort mis-orders ``v10.md``
+    before ``v2.md``); non-``v<int>.md`` names fall out of the walk.
+    Falls back to ``[plan_path]`` when no numeric siblings exist (e.g. a
+    bare ``plan.md`` fixture — the check-16 fallback shape)."""
+    versioned: list[tuple[int, Path]] = []
+    for p in plan_path.parent.glob("v*.md"):
+        suffix = p.stem[1:]
+        if suffix.isdigit():
+            versioned.append((int(suffix), p))
+    if not versioned:
+        return [plan_path]
+    return [p for _, p in sorted(versioned, key=lambda t: t[0], reverse=True)]
+
+
+# Cell delimiter: a pipe NOT preceded by a backslash (markdown escapes an
+# in-cell pipe as `\|` — the #1774 table's `E[a\|p,q]` cells).
+_MD_CELL_DELIM_RE = re.compile(r"(?<!\\)\|")
+
+
+def _split_md_table_row(line: str) -> list[str]:
+    """Split one markdown table row into stripped cell strings, honoring
+    `\\|` in-cell pipe escapes and dropping the outer-pipe empties."""
+    cells = _MD_CELL_DELIM_RE.split(line.strip())
+    if cells and not cells[0].strip():
+        cells = cells[1:]
+    if cells and not cells[-1].strip():
+        cells = cells[:-1]
+    return [cell.replace("\\|", "|").strip() for cell in cells]
+
+
+def _parse_plan_conditions_rows(plan_text: str) -> list[tuple[str, str]] | None:
+    """Extract ``(slug, plain_name)`` rows from the first conditions table
+    in ``plan_text`` that carries a config-slug column.
+
+    Returns ``None`` when no conditions heading is followed by such a
+    table (the caller then falls back to an earlier plan version), and
+    ``[]`` when a matching table exists but no data row carries a
+    backtick-wrapped slug token (a NO-OP for the caller). The plain-English
+    name is the FIRST column, emphasis-stripped; rows whose slug cell has
+    no backtick-wrapped token are skipped.
+    """
+    found_table = False
+    rows: list[tuple[str, str]] = []
+    for heading in _CONDITIONS_HEADING_RE.finditer(plan_text):
+        section = plan_text[heading.end() :]
+        next_heading = re.search(r"(?m)^#{1,6}\s", section)
+        if next_heading:
+            section = section[: next_heading.start()]
+        lines = section.splitlines()
+        i = 0
+        while i < len(lines):
+            if not lines[i].lstrip().startswith("|"):
+                i += 1
+                continue
+            # Contiguous markdown table block.
+            block: list[str] = []
+            while i < len(lines) and lines[i].lstrip().startswith("|"):
+                block.append(lines[i])
+                i += 1
+            header = _split_md_table_row(block[0])
+            slug_idx = next(
+                (j for j, cell in enumerate(header) if _CONFIG_SLUG_COL_RE.search(cell)),
+                None,
+            )
+            if slug_idx is None:
+                continue
+            found_table = True
+            for line in block[1:]:
+                cells = _split_md_table_row(line)
+                if all(_MD_TABLE_SEPARATOR_CELL_RE.match(c) for c in cells if c):
+                    continue
+                if len(cells) <= slug_idx:
+                    continue
+                slug_match = _COND_BACKTICK_TOKEN_RE.search(cells[slug_idx])
+                if slug_match is None:
+                    continue
+                plain_name = _COND_EMPHASIS_RE.sub("", cells[0]).strip()
+                rows.append((slug_match.group(1).strip(), plain_name))
+            return rows
+    return rows if found_table else None
+
+
+def _normalize_condition_name(name: str) -> str:
+    """Normalize a plan-table plain-English name for body matching:
+    emphasis stripped, parentheticals dropped, hyphens/whitespace
+    collapsed to single spaces, lowercased."""
+    s = _COND_EMPHASIS_RE.sub("", name)
+    s = _COND_PARENTHETICAL_RE.sub(" ", s)
+    return _COND_HYPHEN_WS_RE.sub(" ", s).strip().lower()
+
+
+def _normalize_condition_body(body: str) -> str:
+    """Body-side counterpart of `_normalize_condition_name` (parentheticals
+    kept — only names carry droppable qualifier parens)."""
+    s = _COND_EMPHASIS_RE.sub("", body)
+    return _COND_HYPHEN_WS_RE.sub(" ", s).lower()
+
+
+def check_plan_conditions_coverage(body: str, *, plan_path: Path | None = None) -> CheckResult:
+    """WARN-tier check (#1827): every condition committed in the approved
+    plan's §-Conditions table (the `Config slug` column) gets SOME body
+    mention — the slug (exact substring) or the plain-English row name
+    (case-insensitive, emphasis-stripped, hyphen/whitespace-tolerant,
+    name parentheticals dropped). An explicit skip/descope sentence naming
+    the slug or the name counts as a mention by construction.
+
+    This check can NEVER FAIL — an uncovered row yields
+    ``CheckResult(..., passed=True, is_warn=True)``. The LM planned-vs-
+    actual lens (clean-result-critic Lens 13) stays authoritative for
+    paraphrase-level drops; this is the mechanical floor for the wholesale
+    drop check 11b cannot see (it keys on conditions the body NAMES).
+    Incident #1774: the plan's `cell_pre_own` (pretrained-reads
+    robustness) condition was dropped unintentionally and no mechanical
+    check fired.
+
+    Plan-version resolution walks ``plans/v<int>.md`` siblings NEWEST-first
+    (numeric sort) and uses the FIRST version containing a parseable
+    conditions table — a follow-up amendment plan may legitimately carry
+    no conditions table, so the walk falls back to the newest prior
+    version that does.
+
+    Two ACCEPTED false-negative directions (both fail toward the status
+    quo; the LM Lens 13 read remains the backstop — deliberately not
+    closed here):
+      (a) a follow-up plan version carrying its OWN smaller conditions
+          table shadows the original table, so the original conditions go
+          unchecked;
+      (b) a slug appearing only inside a Reproducibility-footer artifact
+          path (e.g. ``eval_results/.../cell_pre_own/``) counts as
+          coverage.
+
+    NO-OP PASS when: no plan on disk; no plan version carries a
+    conditions table with a config-slug column; the table parses to zero
+    backtick-slug rows. (Kind gating needs no new code — ``main()``
+    already short-circuits ``kind: infra|batch|survey`` to the N/A
+    verdict, #1724.)
+
+    ADVISORY descope (the #1827 plan's registered kill criterion #1,
+    applied at implementation on measurement): a 12-task spot-check of
+    recent experiment clean-results found the WARN firing on 7 of 10
+    binding bodies, with the flagged rows majority paraphrase-covered
+    (bodies reference conditions by shorthand tokens — "LEACE",
+    "λ-sweep", "shuffled" — that defeat both the slug and full-name
+    match arms; #1769 flagged 18/19 rows of a grid the body reports
+    throughout, and #1489's parameterized slug templates
+    ``cell_instr_{...}`` can never match literally). Per the registered
+    descope the WARN detail is prefixed ``advisory:`` — reporting-only
+    signal for the Lens 13 reviewer, never an acknowledgment-requiring
+    WARN. A row listed here means "no literal slug/name trace"; whether
+    that is a genuine wholesale drop (the #1774 shape) or paraphrase
+    coverage is the LM lens's call.
+    """
+    name = "plan conditions coverage"
+    if plan_path is None or not plan_path.exists():
+        return CheckResult(name, True, "skipped — no approved plan on disk to reconcile against")
+    rows: list[tuple[str, str]] | None = None
+    for plan_file in _numeric_plan_versions_newest_first(plan_path):
+        rows = _parse_plan_conditions_rows(plan_file.read_text(errors="replace"))
+        if rows is not None:
+            break
+    if rows is None:
+        return CheckResult(
+            name,
+            True,
+            "skipped — no plan version carries a conditions table with a config-slug column",
+        )
+    if not rows:
+        return CheckResult(
+            name, True, "skipped — conditions table has zero backtick-wrapped slug rows"
+        )
+    norm_body = _normalize_condition_body(body)
+    uncovered = [
+        (slug, plain_name)
+        for slug, plain_name in rows
+        if not (
+            (slug and slug in body)
+            or ((norm := _normalize_condition_name(plain_name)) and norm in norm_body)
+        )
+    ]
+    if not uncovered:
+        return CheckResult(name, True, f"{len(rows)} plan condition(s) all covered")
+    listed = ", ".join(f"`{slug}` ({plain_name})" for slug, plain_name in uncovered)
+    return CheckResult(
+        name,
+        True,
+        f"advisory: {len(uncovered)} of {len(rows)} plan-§5 condition(s) with no literal "
+        f"slug/name body mention: {listed} — name each in the relevant ### result / Takeaways "
+        "or record the descope per After-Every-Experiment item 8 (reporting-only: paraphrase "
+        "coverage commonly defeats both match arms; clean-result-critic Lens 13 adjudicates)",
+        is_warn=True,
+    )
+
+
 # Check-17 v4 lineage-token scan: the `**Context:**` row must name its
 # lineage (SPEC.md § `**Context:**` row; #958). Matched on fence-stripped +
 # blockquote-stripped footer text — the blockquoted verbatim prompt often
@@ -14556,6 +14778,10 @@ def verify_text(
     # Check 16 (Reproducibility lr matches plan) needs the sibling
     # plans/plan.md, so it also lives outside the body-only CHECKS list.
     results.append(check_repro_lr_matches_plan(body, plan_path=plan_path))
+    # Plan-§5 conditions coverage (WARN tier, #1827; incident #1774) needs
+    # the same sibling plans/plan.md channel as check 16, so it also lives
+    # outside the body-only CHECKS list. It can never FAIL.
+    results.append(check_plan_conditions_coverage(body, plan_path=plan_path))
     # Check 17 (Reproducibility Context provenance row) needs the
     # frontmatter (origin_prompt) + the sibling original-body.md, so it
     # also lives outside the body-only CHECKS list.
