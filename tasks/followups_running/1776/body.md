@@ -2,7 +2,8 @@
 title: Averaged causal Jacobians recover essentially none of the fitted context-to-answer
   map's predictive power (HIGH confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-07-28T21:44:34Z'
 has_clean_result: true
 parent_id: 779
