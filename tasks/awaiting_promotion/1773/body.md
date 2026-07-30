@@ -3,7 +3,8 @@ title: SAE feature descriptions detect held-out activations but cannot pick a fe
   out from its neighbours, leaving all five judged axes usable as a search index only
   (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- keep-running
 created_at: '2026-07-28T21:22:22Z'
 has_clean_result: true
 parent_id: 1482
