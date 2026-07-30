@@ -1,5 +1,5 @@
 """
-CJK-intrusion-robust lattice classification at alpha=2 for issue #1769.
+CJK-intrusion-robust lattice classification at one alpha dose for issue #1769.
 
 Computes, for each of three direction classes (evil, hallucination, sycophancy):
   - EXCLUSION treatment: drop CJK-intruded draws, recompute per-arm means
@@ -9,15 +9,16 @@ Computes, for each of three direction classes (evil, hallucination, sycophancy):
 
 No new data downloads; reads only existing artifacts under:
   - eval_results/issue_1769/judge/graded_scores.json
-  - data/issue_1769/raw_completions/{trait}/{arm}_a2_q{q:02d}_seed42.json
+  - data/issue_1769/raw_completions/{trait}/{arm}_a{alpha:g}_q{q:02d}_seed42.json
 
-Outputs: eval_results/issue_1769/analysis/alpha2_clean_lattice.json
+Outputs: eval_results/issue_1769/analysis/alpha{alpha:g}_clean_lattice.json
 
-Usage: uv run python scripts/issue1769_alpha2_clean_lattice.py
+Usage: uv run python scripts/issue1769_alpha2_clean_lattice.py [--alpha 2.0]
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -35,7 +36,14 @@ import numpy as np  # noqa: E402
 WT = Path(__file__).resolve().parent.parent  # worktree root
 GRADED_SCORES = WT / "eval_results/issue_1769/judge/graded_scores.json"
 RAW_COMPLETIONS_DIR = WT / "data/issue_1769/raw_completions"
-OUT_PATH = WT / "eval_results/issue_1769/analysis/alpha2_clean_lattice.json"
+OUT_DIR = WT / "eval_results/issue_1769/analysis"
+
+
+def out_path_for(alpha: float) -> Path:
+    """Alpha-keyed output path (``{alpha:g}`` matches the driver's ``_fmt``:
+    2.0 -> the committed ``alpha2_clean_lattice.json``, 1.5 -> ``alpha1.5``)."""
+    return OUT_DIR / f"alpha{alpha:g}_clean_lattice.json"
+
 
 # ---------------------------------------------------------------------------
 # CJK unicode range detection
@@ -76,19 +84,21 @@ B_BOOTSTRAP = 2000
 RNG_SEED = 42
 
 
-def load_graded_scores() -> dict[str, Any]:
-    with open(GRADED_SCORES) as f:
+def load_graded_scores(path: Path = GRADED_SCORES) -> dict[str, Any]:
+    """Per-item rows from a judge graded_scores.json (default: the parent
+    run's committed scores; fu1 passes its own ``--judge-scores`` path)."""
+    with open(path) as f:
         d = json.load(f)
     items = list(d["per_item"].values())
     return items
 
 
-def build_score_arrays(items: list[dict]) -> dict[str, dict[str, np.ndarray]]:
+def build_score_arrays(items: list[dict], alpha: float) -> dict[str, dict[str, np.ndarray]]:
     """
     Returns scores[trait][arm] = ndarray shape (N_QUESTIONS, N_DRAWS).
 
     Neither arm uses alpha=None entries (alpha-invariant baseline).
-    Steered arms use alpha=2.0 entries.
+    Steered arms use entries at the requested ``alpha`` dose.
     """
     scores: dict[str, dict[str, np.ndarray]] = {}
     for trait in TRAITS:
@@ -101,7 +111,7 @@ def build_score_arrays(items: list[dict]) -> dict[str, dict[str, np.ndarray]]:
         arm = x["arm"]
         q = x["question_id"]
         draw = x["draw"]
-        alpha = x.get("alpha")
+        item_alpha = x.get("alpha")
 
         gs = x["graded_score"]
         if gs is None:
@@ -109,10 +119,10 @@ def build_score_arrays(items: list[dict]) -> dict[str, dict[str, np.ndarray]]:
             # every treatment's means; surfaced by the coverage WARNING below.
             continue
         # neither baseline: alpha=None
-        if arm == "neither" and alpha is None:
+        if arm == "neither" and item_alpha is None:
             scores[trait]["neither"][q, draw] = float(gs)
-        # steered arms: alpha=2.0
-        elif arm in STEERED_ARMS and alpha == 2.0:
+        # steered arms: the requested alpha dose
+        elif arm in STEERED_ARMS and item_alpha == alpha:
             scores[trait][arm][q, draw] = float(gs)
 
     # Verify coverage
@@ -128,26 +138,32 @@ def build_score_arrays(items: list[dict]) -> dict[str, dict[str, np.ndarray]]:
     return scores
 
 
-def build_cjk_flags(scores: dict[str, dict[str, np.ndarray]]) -> dict[str, dict[str, np.ndarray]]:
+def build_cjk_flags(
+    scores: dict[str, dict[str, np.ndarray]],
+    alpha: float,
+    raw_dir: Path = RAW_COMPLETIONS_DIR,
+) -> dict[str, dict[str, np.ndarray]]:
     """
-    Load raw completion files for steered arms at alpha=2 and compute CJK flags.
+    Load raw completion files for steered arms at the requested alpha and
+    compute CJK flags. ``raw_dir`` is the local raw-completions root
+    (default: the parent run's; fu1 passes ``--raw-completions-dir``).
 
     Returns flags[trait][arm] = bool ndarray shape (N_QUESTIONS, N_DRAWS).
-    Neither arm: all False (we have no raw completions for neither at alpha=2,
+    Neither arm: all False (we have no per-alpha raw completions for neither,
     and the graded scores come from alpha=None entries; CJK intrusion is not
     applicable to the baseline arm in the same file structure).
     """
     flags: dict[str, dict[str, np.ndarray]] = {}
     for trait in TRAITS:
         flags[trait] = {}
-        # neither: no CJK intrusion concern (baseline arm, no alpha=2 raw file)
+        # neither: no CJK intrusion concern (baseline arm, no per-alpha raw file)
         flags[trait]["neither"] = np.zeros((N_QUESTIONS, N_DRAWS), dtype=bool)
 
         for arm in STEERED_ARMS:
             arm_flags = np.zeros((N_QUESTIONS, N_DRAWS), dtype=bool)
-            trait_dir = RAW_COMPLETIONS_DIR / trait
+            trait_dir = raw_dir / trait
             for q in range(N_QUESTIONS):
-                fname = f"{arm}_a2_q{q:02d}_seed42.json"
+                fname = f"{arm}_a{alpha:g}_q{q:02d}_seed42.json"
                 fpath = trait_dir / fname
                 if not fpath.exists():
                     print(f"  WARNING: missing raw completions file: {fpath}", file=sys.stderr)
@@ -337,14 +353,49 @@ def analyze_trait(
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
+    ap.add_argument(
+        "--alpha",
+        type=float,
+        default=2.0,
+        help="steered-arm alpha dose to analyze (default 2.0 — the parent run's dose)",
+    )
+    ap.add_argument(
+        "--judge-scores",
+        type=Path,
+        default=GRADED_SCORES,
+        help="graded_scores.json to read (default: the parent run's committed scores; "
+        "fu1: eval_results/issue_1769/judge_fu1/graded_scores.json)",
+    )
+    ap.add_argument(
+        "--raw-completions-dir",
+        type=Path,
+        default=RAW_COMPLETIONS_DIR,
+        help="local raw-completions root for CJK flags (default: the parent run's; "
+        "fu1: data/issue_1769/raw_completions_fu1)",
+    )
+    args = ap.parse_args()
+    # Prefix-isolation mirror guard (code-review v3 CONCERN
+    # fu1-lattice-partial-invocation-cjk-noop): a non-parent --judge-scores
+    # with --raw-completions-dir left at the parent default would silently
+    # no-op CJK exclusion via the missing-file WARNING branch. Fail loud
+    # pre-analysis instead; the flag-less parent invocation is unaffected.
+    if (args.judge_scores != GRADED_SCORES) != (args.raw_completions_dir != RAW_COMPLETIONS_DIR):
+        sys.exit(
+            "partial fu1 invocation: pass BOTH --judge-scores and "
+            "--raw-completions-dir (or neither, for the parent run) — a "
+            "mixed invocation silently no-ops CJK exclusion"
+        )
+    alpha = args.alpha
+    out_path = out_path_for(alpha)
     rng = np.random.default_rng(RNG_SEED)
 
     print("Loading graded scores...", flush=True)
-    items = load_graded_scores()
-    scores = build_score_arrays(items)
+    items = load_graded_scores(args.judge_scores)
+    scores = build_score_arrays(items, alpha)
 
     print("Computing CJK flags from raw completions...", flush=True)
-    flags = build_cjk_flags(scores)
+    flags = build_cjk_flags(scores, alpha, args.raw_completions_dir)
 
     results = []
     for trait in TRAITS:
@@ -369,11 +420,11 @@ def main() -> None:
                 f"({ci['frac'] * 100:.1f}%)"
             )
 
-    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUT_PATH, "w") as f:
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(out_path, "w") as f:
         json.dump(
             {
-                "description": "CJK-intrusion-robust lattice classification at alpha=2",
+                "description": f"CJK-intrusion-robust lattice classification at alpha={alpha:g}",
                 "issue": 1769,
                 "n_questions": N_QUESTIONS,
                 "n_draws": N_DRAWS,
@@ -389,7 +440,7 @@ def main() -> None:
             f,
             indent=2,
         )
-    print(f"\nOutput written to: {OUT_PATH}")
+    print(f"\nOutput written to: {out_path}")
 
 
 if __name__ == "__main__":
