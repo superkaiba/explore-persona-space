@@ -507,6 +507,23 @@ here, noted for the record). The implementer's
 own same-pod smoke-slice confirmation (element 2) is UNCHANGED and is
 not a "relaunch" under this section.
 
+### Changed-argv relaunch: argv dry-run (REQUIRED unless byte-identical AND the CLI surface is untouched)
+
+A crash-fix relaunch whose command line differs from the crashed
+launch's (a new flag wired by the fix round, a corrected input-source
+flag, a hand-recomposed plan-§10 transcription) — OR whose fix round
+touched the driver's CLI/validation surface (argparse flags, post-parse
+required-input checks) even with a byte-identical argv — runs the argv
+dry-run probe (`.claude/skills/issue/SKILL.md` Step 6b § Hand-composed
+phase argv dry-run, the canonical recipe) on the VM BEFORE
+re-dispatching: the fix-engaged discipline in this file verifies the
+FIX is present; the dry-run verifies the new ARGV survives parse +
+early post-parse validation. First launches of a new phase argv are
+governed by the same SKILL.md clause (incident #1738 Phase-3 attempt 1:
+a required input-source flag omitted from a hand-composed first launch;
+post-parse `SystemExit` rc=1 ~7 s after a full GCE flexstart boot +
+venv install).
+
 ### Crash-fix rounds: symbol-rename whole-tree grep duty (REQUIRED — every retry round; #1728)
 
 Any crash-fix round (or ordinary round) whose diff RENAMES a
