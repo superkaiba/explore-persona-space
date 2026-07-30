@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1845,
+  "highest_id": 1846,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6546,6 +6546,13 @@
       "path": "tasks/proposed/1845",
       "status": "proposed",
       "title": "workflow-fix: gotchas \u2014 batched np.linalg.solve dies on ONE singular slice"
+    },
+    "1846": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1846",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body WARN check \u2014 orphaned result JSONs (sibling of check 31)"
     },
     "185": {
       "has_clean_result": false,
