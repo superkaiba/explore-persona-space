@@ -47,8 +47,10 @@ def _results_block(image: str, *, takeaways: str = PLACEHOLDER) -> str:
     return (
         "### rate by condition\n"
         "Bar chart of the agreement rate per condition.\n"
+        "**Methodology**\n"
+        "- Agreement rate per condition; x-axis: condition, y-axis: rate (0-1); n = 100.\n"
         f"![rate]({image})\n"
-        "**Takeaways:**\n"
+        "**Takeaways**\n"
         f"{takeaways}"
     )
 
@@ -56,19 +58,20 @@ def _results_block(image: str, *, takeaways: str = PLACEHOLDER) -> str:
 def _default_sections(*, image: str = _PINNED_IMAGE) -> list[tuple[str, str]]:
     """The five required sections, in order, with a valid Results subsection.
 
-    Metrics live INSIDE Methodology (the official template folds the former
-    ``## Metrics:`` H2 into a ``**Metrics:**`` block).
+    Shared metrics live INSIDE ``## Methodology (shared)`` (the official
+    template folds the former ``## Metrics:`` H2 into a ``**Metrics:**``
+    block); each Results subsection carries its own ``**Methodology**`` block.
     """
     return [
-        ("## Motivation:", "We hypothesize that base propensity predicts trained leakage."),
-        ("## TLDR:", PLACEHOLDER),
+        ("## Motivation", "We hypothesize that base propensity predicts trained leakage."),
+        ("## TLDR", PLACEHOLDER),
         (
-            "## Methodology:",
+            "## Methodology (shared)",
             "We trained on 100 rows under two conditions: baseline and treatment.\n"
             "- **Metrics:** Agreement rate (0-1), because it proxies the target behavior.",
         ),
-        ("## Results:", _results_block(image)),
-        ("## Next steps:", PLACEHOLDER),
+        ("## Results", _results_block(image)),
+        ("## Conclusion and next steps", PLACEHOLDER),
     ]
 
 
@@ -91,10 +94,10 @@ def _assemble(
 
 
 def _promote_sections(**kw) -> list[tuple[str, str]]:
-    """Default sections with TLDR + Next steps filled (valid at promote time)."""
+    """Default sections with TLDR + Conclusion filled (valid at promote time)."""
     sections = _default_sections(**kw)
-    sections[1] = ("## TLDR:", "Thomas takeaway: the effect held.")
-    sections[-1] = ("## Next steps:", "Run more seeds.")
+    sections[1] = ("## TLDR", "Thomas takeaway: the effect held.")
+    sections[-1] = ("## Conclusion and next steps", "Run more seeds.")
     return sections
 
 
@@ -158,8 +161,8 @@ def test_generation_valid_passes(figs_root):
 
 def test_promote_valid_passes(figs_root):
     sections = _default_sections()
-    sections[1] = ("## TLDR:", "Base propensity predicted trained leakage in the treatment arm.")
-    sections[-1] = ("## Next steps:", "Run the ablation on more seeds.")
+    sections[1] = ("## TLDR", "Base propensity predicted trained leakage in the treatment arm.")
+    sections[-1] = ("## Conclusion and next steps", "Run the ablation on more seeds.")
     ok, results = _run(_assemble(sections), mode="promote", figs_root=figs_root)
     assert ok, [r.render() for r in results if not r.passed]
 
@@ -177,12 +180,97 @@ def test_result_title_accepted_at_promote_only(figs_root):
     assert not _by_name(results_g, "h1-title").passed
 
 
-def test_headings_without_trailing_colons_pass(figs_root):
-    # Thomas's hand-edited reports drop the trailing colons; the verifier
-    # normalizes heading lines, so both forms are accepted.
-    sections = [(h.rstrip(":"), c) for h, c in _default_sections()]
+def test_headings_with_trailing_colons_pass(figs_root):
+    # The canonical headings carry no trailing colon; the verifier normalizes
+    # heading lines, so the colon-suffixed forms are accepted too.
+    sections = [(h + ":", c) for h, c in _default_sections()]
     ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
     assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_grandfathered_old_section_names_pass(figs_root):
+    # Pre-2026-07-30 H2 names (`## Methodology:` / `## Next steps:`) normalize
+    # to the canonical `## Methodology (shared)` / `## Conclusion and next
+    # steps`, so old bodies keep verifying — including the placeholder check
+    # reading the aliased Conclusion section.
+    sections = _default_sections()
+    sections[2] = ("## Methodology:", sections[2][1])
+    sections[4] = ("## Next steps:", PLACEHOLDER)
+    ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
+    assert _by_name(results, "required-sections").passed
+    assert _by_name(results, "conclusion-placeholder").passed
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_grandfathered_old_results_shape_warns_at_promote(figs_root):
+    # A full pre-2026-07-30 body: old H2 names, a `**Plot:**` label,
+    # `**Takeaways:**` with a trailing colon, and NO per-result
+    # `**Methodology**` block — promote mode WARNs (counts as PASS);
+    # generation mode requires the per-result Methodology block and FAILs.
+    old_results = (
+        "### rate by condition\n"
+        "Bar chart of the agreement rate per condition.\n"
+        "**Plot: rate by condition**\n"
+        f"![rate]({_PINNED_IMAGE})\n"
+        "**Takeaways:**\n"
+        "- The effect held: rate 0.7 vs 0.2."
+    )
+    sections = [
+        ("## Motivation:", "We test whether base propensity predicts leakage."),
+        ("## TLDR:", "Thomas takeaway: the effect held."),
+        ("## Methodology:", "We trained on 100 rows.\n- **Metrics:** Agreement rate (0-1)."),
+        ("## Results:", old_results),
+        ("## Next steps:", "Run more seeds."),
+    ]
+    body = _assemble(sections, title="X predicts Y", h1_prefix="Result: ")
+    ok, results = _run(body, mode="promote", figs_root=figs_root)
+    sub = _by_name(results, "results-subsections")
+    assert sub.passed and sub.is_warn and "Methodology" in sub.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_missing_per_result_methodology_fails_generation(figs_root):
+    sections = _default_sections()
+    sections[3] = (
+        "## Results",
+        "### rate\nBar chart of the agreement rate per condition.\n"
+        f"![rate]({_PINNED_IMAGE})\n**Takeaways**\n{PLACEHOLDER}",
+    )
+    ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
+    assert not ok
+    sub = _by_name(results, "results-subsections")
+    assert not sub.passed and "**Methodology**" in sub.detail
+
+
+def test_takeaways_trailing_colon_form_accepted(figs_root):
+    # The grandfathered `**Takeaways:**` label is accepted in both modes.
+    sections = _default_sections()
+    sections[3] = (
+        "## Results",
+        _results_block(_PINNED_IMAGE).replace("**Takeaways**", "**Takeaways:**"),
+    )
+    ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_retired_plot_label_fails_generation(figs_root):
+    # A freshly assembled report must not carry the retired `**Plot:**` label
+    # (promote tolerates it — see the grandfathered-shape test above).
+    sections = _default_sections()
+    sections[3] = (
+        "## Results",
+        "### rate by condition\n"
+        "Bar chart of the agreement rate per condition.\n"
+        "**Methodology**\n"
+        "- Agreement rate per condition; n = 100.\n"
+        "**Plot: rate by condition**\n"
+        f"![rate]({_PINNED_IMAGE})\n"
+        f"**Takeaways**\n{PLACEHOLDER}",
+    )
+    ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
+    assert not ok
+    sub = _by_name(results, "results-subsections")
+    assert not sub.passed and "retired" in sub.detail
 
 
 # ─── Structural failures ────────────────────────────────────────────────
@@ -198,7 +286,7 @@ def test_wrong_order_fails(figs_root):
 
 
 def test_missing_section_fails(figs_root):
-    sections = [s for s in _default_sections() if s[0] != "## Methodology:"]
+    sections = [s for s in _default_sections() if s[0] != "## Methodology (shared)"]
     ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
     assert not ok
     assert not _by_name(results, "required-sections").passed
@@ -877,15 +965,19 @@ def test_mixed_sha_results_pins_both_valid_pass(git_figs_repo):
     assert sha1 != sha2
     sections = _default_sections()
     sections[3] = (
-        "## Results:",
+        "## Results",
         "### rate by condition\n"
         "Bar chart of the agreement rate per condition.\n"
+        "**Methodology**\n"
+        "- Agreement rate per condition; n = 100.\n"
         f"![rate]({_pin(sha1)})\n"
-        f"**Takeaways:**\n{PLACEHOLDER}\n"
+        f"**Takeaways**\n{PLACEHOLDER}\n"
         "### rate per unit\n"
         "Per-unit points behind the aggregate.\n"
+        "**Methodology**\n"
+        "- Per-unit points behind the aggregate; n = 100.\n"
         f"![points]({_pin(sha2, 'figures/issue_5/g.png')})\n"
-        f"**Takeaways:**\n{PLACEHOLDER}",
+        f"**Takeaways**\n{PLACEHOLDER}",
     )
     ok, results = _run(_assemble(sections), mode="generation", figs_root=repo)
     assert _by_name(results, "image-pin-format").passed

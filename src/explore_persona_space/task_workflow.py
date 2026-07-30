@@ -938,9 +938,10 @@ def is_paper_task(fm: dict[str, Any]) -> bool:
 
 
 #: Body sentinel for the v2 report clean-result form (workflow v2 — the
-#: report-only track: Motivation / Methodology (metrics embedded) /
-#: Results-as-plots written by agents; the ``# Result:`` title, TLDR,
-#: per-result Takeaways + Next-steps written by Thomas — official template:
+#: report-only track: Motivation / Methodology (shared) / Results-as-plots
+#: (a per-result ``**Methodology**`` block each) written by agents; the
+#: ``# Result:`` title, TLDR, per-result Takeaways + Conclusion-and-next-steps
+#: written by Thomas — official template:
 #: ``.claude/skills/issue-v2/report-template.md``). Placed on the line after
 #: the H1 title, mirroring the ``<!-- clean-result-v4 -->`` convention.
 #: ``scripts/verify_report.py`` is the mechanical verifier for this form.
