@@ -1539,7 +1539,15 @@ def render_sbatch(
         "      gpu_busy=true",
         "    fi",
         "  fi",
-        '  local tmp="${STATUS_JSON}.tmp"',
+        # Writer-unique tmp (#1836): the background heartbeat subshell and the
+        # main script's phase writers previously shared ONE ${STATUS_JSON}.tmp;
+        # interleaved printf/mv let one writer's mv steal the other's tmp, and
+        # the loser's mv failed under `set -euo pipefail`, killing a healthy
+        # job (fellows job 15192, 2026-07-29). $BASHPID is per-(sub)shell —
+        # unlike $$, which reads the PARENT pid inside the heartbeat subshell —
+        # so each writer gets its own tmp; concurrent mv renames onto the same
+        # dest stay atomic and last-writer-wins.
+        '  local tmp="${STATUS_JSON}.tmp.${BASHPID}"',
         '  printf \'{"phase":"%s","heartbeat_ts":"%s","gpu_busy":%s,"exit_code":"%s"}\\n\' \\',
         '    "$phase" "$heartbeat_ts" "$gpu_busy" "$exit_code" > "$tmp"',
         '  mv "$tmp" "$STATUS_JSON"',
