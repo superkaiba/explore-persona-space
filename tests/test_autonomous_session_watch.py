@@ -21110,6 +21110,334 @@ def test_registry_drift_pass_dry_run_writes_no_state(tmp_path, monkeypatch, caps
     assert "[dry-run] would append registry-drift sidecar row" in out
 
 
+# ── stash/rescue-backlog audit pass (pass 34, #1806) ─────────────────────────
+#
+# Clones the registry-drift (#1439) test shape: pure decide + fingerprint
+# tests, pass-driver tests with the collector / push / path seams stubbed
+# (the pass is in conftest's _FLEET_MUTATING_PASS_NAMES for full-main()
+# tests; these tests OF the pass stub its own seams instead). The
+# missing-rescue-dir + min-age tests drive the REAL collector body with a
+# signature-conformant fake ONLY at the subprocess boundary.
+
+
+def _srescue_isolate(asw, monkeypatch, tmp_path: Path) -> tuple[Path, Path]:
+    """Point the pass's state (AUTONOMOUS_REGISTRY_DIR) + sidecar
+    (PROJECT_ROOT-derived) + rescue root (EPM_ROOT_SYNC_RESCUE_ROOT) at
+    tmp_path; return (state_path, sidecar_path). Mirrors
+    :func:`_rdrift_isolate`."""
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path / "registry")
+    monkeypatch.setattr(asw, "PROJECT_ROOT", tmp_path / "root")
+    (tmp_path / "root").mkdir(parents=True, exist_ok=True)
+    monkeypatch.setenv("EPM_ROOT_SYNC_RESCUE_ROOT", str(tmp_path / "rescue"))
+    return (
+        tmp_path / "registry" / "stash-rescue-audit.json",
+        tmp_path / "root" / ".claude" / "cache" / "stash-rescue-audit-events.jsonl",
+    )
+
+
+# One aged stash (identity = (ct, subject), never stash@{N}) + one aged rescue
+# entry (identity = name; the mtime is an attribute, not identity).
+_SRESCUE_SNAPSHOT = {
+    "stashes": [(1_748_000_000, "On main: WIP stranded autostash")],
+    "rescues": [("20260601-120000-99999", 1_749_000_000.0)],
+}
+
+
+def test_stash_rescue_decide_alert_fp_change_and_ttl():
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    realert = 168 * 3600.0
+    # First appearance (no stored fp): fires.
+    assert asw.decide_stash_rescue_alert("abc", {}, now, realert) is True
+    # Same fp within the TTL: silent.
+    assert (
+        asw.decide_stash_rescue_alert(
+            "abc", {"fp": "abc", "last_alert_ts": now - 100.0}, now, realert
+        )
+        is False
+    )
+    # Same fp STRICTLY past the TTL: re-fires (bounded weekly re-surface).
+    assert (
+        asw.decide_stash_rescue_alert(
+            "abc", {"fp": "abc", "last_alert_ts": now - realert - 1.0}, now, realert
+        )
+        is True
+    )
+    # Boundary: exactly-at-TTL does NOT re-fire (predicate is STRICT >).
+    assert (
+        asw.decide_stash_rescue_alert(
+            "abc", {"fp": "abc", "last_alert_ts": now - realert}, now, realert
+        )
+        is False
+    )
+    # Recomposed backlog set (fp changed): fires regardless of a fresh stamp.
+    assert (
+        asw.decide_stash_rescue_alert("def", {"fp": "abc", "last_alert_ts": now}, now, realert)
+        is True
+    )
+    # Corrupt state fields degrade to fire-as-if-unalerted (isinstance guards).
+    assert asw.decide_stash_rescue_alert("abc", {"fp": 42}, now, realert) is True
+    assert (
+        asw.decide_stash_rescue_alert("abc", {"fp": "abc", "last_alert_ts": "x"}, now, realert)
+        is True
+    )
+
+
+def test_stash_rescue_fingerprint_stable_under_reorder():
+    """Identity-set permutation => same fp (the collector sorts, and the fp
+    sorts again — a listing-order change can never re-push); rescue mtime
+    churn => same fp (mtime is an attribute, not identity); any entry
+    added/removed => different fp."""
+    import autonomous_session_watch as asw
+
+    base = {
+        "stashes": [(100, "a"), (200, "b")],
+        "rescues": [("r1", 1.0), ("r2", 2.0)],
+    }
+    permuted = {
+        "stashes": [(200, "b"), (100, "a")],
+        # mtimes differ too — attributes, never identity.
+        "rescues": [("r2", 5.0), ("r1", 9.0)],
+    }
+    fp = asw._stash_rescue_fingerprint(base)
+    assert fp == asw._stash_rescue_fingerprint(permuted)
+    assert len(fp) == 12
+    # Entry added => different fp.
+    grown = {"stashes": [*base["stashes"], (300, "c")], "rescues": base["rescues"]}
+    assert fp != asw._stash_rescue_fingerprint(grown)
+    # Entry removed => different fp.
+    shrunk = {"stashes": base["stashes"], "rescues": base["rescues"][:1]}
+    assert fp != asw._stash_rescue_fingerprint(shrunk)
+
+
+def test_stash_rescue_pass_fires_and_dedupes(tmp_path, monkeypatch):
+    """First confirmed backlog fires ONE push + a sidecar row; a second
+    same-fp run inside the TTL is push-silent (sidecar audit row only); an
+    empty backlog resets the fp with no push."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _srescue_isolate(asw, monkeypatch, tmp_path)
+    monkeypatch.setenv("EPM_STASH_RESCUE_INTERVAL_HOURS", "0")  # runs 2/3 unthrottled
+    monkeypatch.setattr(
+        asw, "_collect_stash_rescue_backlog", lambda min_age_s, now: _SRESCUE_SNAPSHOT
+    )
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
+
+    assert asw.stash_rescue_audit_pass(dry_run=False) is True
+    assert len(pushes) == 1
+    assert "git stash list" in pushes[0]
+    assert "root-sync-rescue" in pushes[0]
+    assert "#1736" in pushes[0]
+    assert "Nothing was changed automatically" in pushes[0]
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert len(rows) == 1
+    assert rows[0]["kind"] == "stash-rescue-backlog"
+    assert rows[0]["pushed"] is True
+    assert rows[0]["n_stashes"] == 1 and rows[0]["n_rescues"] == 1
+    assert rows[0]["stashes"] == [[1_748_000_000, "On main: WIP stranded autostash"]]
+    assert rows[0]["rescues"] == ["20260601-120000-99999"]
+    state = json.loads(state_path.read_text())
+    assert state["fp"] == rows[0]["fingerprint"]
+    assert isinstance(state["fp"], str) and len(state["fp"]) == 12
+    assert isinstance(state["last_run_ts"], float)
+    assert isinstance(state["last_alert_ts"], float)
+    # Run 2: same fp, within the 168h TTL — sidecar row still appended
+    # (audit trail) with pushed: false, and NO second push.
+    assert asw.stash_rescue_audit_pass(dry_run=False) is False
+    assert len(pushes) == 1
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert len(rows) == 2
+    assert rows[0]["pushed"] is True and rows[1]["pushed"] is False
+    assert rows[0]["fingerprint"] == rows[1]["fingerprint"]
+    # Run 3: backlog cleared — fp reset, no push, no new backlog row.
+    monkeypatch.setattr(
+        asw,
+        "_collect_stash_rescue_backlog",
+        lambda min_age_s, now: {"stashes": [], "rescues": []},
+    )
+    assert asw.stash_rescue_audit_pass(dry_run=False) is False
+    assert len(pushes) == 1
+    assert len(sidecar_path.read_text().splitlines()) == 2
+    assert json.loads(state_path.read_text())["fp"] is None
+
+
+def test_stash_rescue_min_age_filters_fresh_entries(tmp_path, monkeypatch):
+    """A fresh (now) stash / rescue entry is excluded by the min-age gate —
+    sync_repo_root autostashes live seconds and #1751's Step 10d duty covers
+    the fresh window. Drives the REAL collector body; the only fake is a
+    signature-conformant CompletedProcess at the subprocess boundary."""
+    import os as _os
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    now = time.time()
+    rescue = tmp_path / "rescue"
+    rescue.mkdir()
+    monkeypatch.setenv("EPM_ROOT_SYNC_RESCUE_ROOT", str(rescue))
+    old_dir = rescue / "20260401-120000-11111"
+    old_dir.mkdir()
+    _os.utime(old_dir, (now - 30 * 86400, now - 30 * 86400))
+    (rescue / "stash-fresh.patch").write_text("x")  # mtime = now — filtered
+    old_ct = int(now - 30 * 86400)
+    fresh_ct = int(now - 60)
+    stdout = f"{old_ct}\tOn main: old stranded\n{fresh_ct}\tOn main: live autostash\n"
+
+    def _fake_run(argv, **kwargs):
+        return _subprocess.CompletedProcess(argv, 0, stdout=stdout, stderr="")
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    collected = asw._collect_stash_rescue_backlog(7 * 86400.0, now)
+    assert collected["stashes"] == [(old_ct, "On main: old stranded")]
+    assert [n for n, _mt in collected["rescues"]] == ["20260401-120000-11111"]
+
+
+def test_stash_rescue_kill_switch(tmp_path, monkeypatch):
+    """Forbidden-raiser collect stub + state/sidecar files must NOT exist — a
+    broken kill-switch gate would raise into the fail-soft path and write an
+    error sidecar row, so a bare returns-False pin would be vacuous (the
+    registry-drift kill-switch test shape)."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_DISABLE_STASH_RESCUE_AUDIT", "1")
+    state_path, sidecar_path = _srescue_isolate(asw, monkeypatch, tmp_path)
+
+    def _forbidden(*a, **kw):
+        raise AssertionError("no collect / state IO / push under the kill switch")
+
+    monkeypatch.setattr(asw, "_collect_stash_rescue_backlog", _forbidden)
+    monkeypatch.setattr(asw, "_telegram_push", _forbidden)
+    assert asw.stash_rescue_audit_pass(dry_run=False) is False
+    assert not state_path.exists() and not sidecar_path.exists()
+
+
+def test_stash_rescue_collector_readonly(tmp_path, monkeypatch):
+    """ESCALATE-ONLY invariant, argv-pinned: the collector's ONLY subprocess
+    invocation is the read-only `git ... stash list --format=...` form — no
+    pop/drop/apply/clear/push anywhere in the argv (acceptance criterion 3)."""
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    rescue = tmp_path / "rescue"
+    rescue.mkdir()
+    monkeypatch.setenv("EPM_ROOT_SYNC_RESCUE_ROOT", str(rescue))
+    calls: list[list[str]] = []
+
+    def _fake_run(argv, **kwargs):
+        calls.append(list(argv))
+        return _subprocess.CompletedProcess(argv, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    asw._collect_stash_rescue_backlog(7 * 86400.0, time.time())
+    assert calls == [["git", "-C", str(asw.PROJECT_ROOT), "stash", "list", "--format=%ct%x09%gs"]]
+    mutating = {"pop", "drop", "apply", "clear", "push", "create", "store", "branch", "rm"}
+    assert not mutating.intersection(calls[0])
+
+
+def test_stash_rescue_missing_rescue_dir_is_empty_not_error(tmp_path, monkeypatch):
+    """Critic Must-Fix: ENOENT on the rescue dir ITSELF is a LEGITIMATE EMPTY
+    rescue set (lazily created by sync_repo_root.py; deleted after a
+    completed #1736 triage), never a fail-soft error — (a) with an empty
+    stash list the recovered/fp-reset branch is taken (NO error sidecar
+    row); (b) with a non-empty stash list the stash half still surfaces
+    (the absent dir never blinds the whole pass). Drives the REAL collector
+    through the pass; the only fake is the subprocess boundary."""
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _srescue_isolate(asw, monkeypatch, tmp_path)
+    # _srescue_isolate points the rescue root at tmp_path/"rescue" — NEVER
+    # created in this test: os.scandir raises FileNotFoundError (ENOENT).
+    monkeypatch.setenv("EPM_STASH_RESCUE_INTERVAL_HOURS", "0")
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
+
+    # (a) empty stash list too => recovered/fp-reset branch, NO error row.
+    def _fake_run_empty(argv, **kwargs):
+        return _subprocess.CompletedProcess(argv, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run_empty)
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps({"fp": "deadbeefcafe", "last_run_ts": 0.0}))
+    assert asw.stash_rescue_audit_pass(dry_run=False) is False
+    assert not sidecar_path.exists()  # no backlog row AND no error row
+    assert json.loads(state_path.read_text())["fp"] is None  # fp-reset taken
+    assert pushes == []
+
+    # (b) non-empty stash list => the stash half fires with n_rescues == 0.
+    old_ct = int(time.time() - 30 * 86400)
+
+    def _fake_run_one(argv, **kwargs):
+        return _subprocess.CompletedProcess(
+            argv, 0, stdout=f"{old_ct}\tOn main: stranded\n", stderr=""
+        )
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run_one)
+    assert asw.stash_rescue_audit_pass(dry_run=False) is True
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert len(rows) == 1
+    assert rows[0]["kind"] == "stash-rescue-backlog"
+    assert rows[0]["n_stashes"] == 1 and rows[0]["n_rescues"] == 0
+    assert len(pushes) == 1
+
+
+def test_stash_rescue_fail_soft_error_row(tmp_path, monkeypatch, capsys):
+    """A collect failure (git rc != 0 raises there) => stderr + ONE error
+    sidecar row, pass returns False, NO push — and NO fp write, so a failed
+    `git stash list` is NEVER read as "backlog cleared" (the next
+    in-interval tick stays throttled by the attempt stamp)."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _srescue_isolate(asw, monkeypatch, tmp_path)
+
+    def _boom(min_age_s, now):
+        raise RuntimeError("git stash list failed rc=128: boom")
+
+    def _no_push(*a, **kw):
+        raise AssertionError("failed collect must not push")
+
+    monkeypatch.setattr(asw, "_collect_stash_rescue_backlog", _boom)
+    monkeypatch.setattr(asw, "_telegram_push", _no_push)
+    assert asw.stash_rescue_audit_pass(dry_run=False) is False
+    assert "stash-rescue: pass failed (fail-soft): git stash list failed" in (
+        capsys.readouterr().err
+    )
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert len(rows) == 1
+    assert rows[0]["kind"] == "stash-rescue-error"
+    assert "git stash list failed" in rows[0]["error"]
+    # NO fp write on error — only the attempt stamp saved BEFORE the collect
+    # survives, bounding a crashing collect to one error row per interval.
+    state = json.loads(state_path.read_text())
+    assert "fp" not in state
+    assert isinstance(state["last_run_ts"], float)
+
+
+def test_stash_rescue_dry_run_writes_nothing(tmp_path, monkeypatch, capsys):
+    """--dry-run contract (acceptance criterion 6, backing the live smoke):
+    zero state writes, zero sidecar writes, zero pushes (dry_run threads
+    into _telegram_push, whose real body no-ops on it)."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _srescue_isolate(asw, monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        asw, "_collect_stash_rescue_backlog", lambda min_age_s, now: _SRESCUE_SNAPSHOT
+    )
+    calls: list[bool] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: calls.append(dry_run) or False)
+
+    assert asw.stash_rescue_audit_pass(dry_run=True) is True
+    assert calls == [True]  # push observed, dry_run honored
+    assert not state_path.exists() and not sidecar_path.exists()  # zero writes
+    out = capsys.readouterr().out
+    assert "[dry-run] would save stash-rescue state" in out
+    assert "[dry-run] would append stash-rescue sidecar row" in out
+
+
 # ── orphan-wrapper /proc sweep (pass 28, #1215) ──────────────────────────────
 #
 # Pure decision ladder + pure scan classifier + pass-driver tests, following
