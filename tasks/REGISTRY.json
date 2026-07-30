@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1863,
+  "highest_id": 1864,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6686,6 +6686,13 @@
       "path": "tasks/proposed/1863",
       "status": "proposed",
       "title": "daily-fix: poll ticks compute rate/ETA on long same-phase ta"
+    },
+    "1864": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1864",
+      "status": "proposed",
+      "title": "daily-fix: analyzer.md numbers the payload-lint gate pre-com"
     },
     "187": {
       "has_clean_result": true,
