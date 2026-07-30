@@ -47,3 +47,4 @@ tasks/on_hold/1769/events.jsonl:generic-api-key:13
 tasks/archived/1769/events.jsonl:generic-api-key:13
 tasks/followups_running/1092/events.jsonl:generic-api-key:781
 tasks/followups_running/1482/events.jsonl:generic-api-key:334
+scripts/issue1738_sae_arm.py:generic-api-key:1587

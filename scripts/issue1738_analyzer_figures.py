@@ -30,7 +30,16 @@ from explore_persona_space.analysis.paper_plots import (
 
 E = Path("eval_results/issue_1738")
 EB = E / "bare_query"  # bare-query follow-up round outputs (plan §4.3)
+ES = E / "sae_arm"  # sae-arm follow-up round outputs (plan v8 §4.2)
 FIGDIR = "figures/"
+
+SAE_CELL_ORDER = ["sae_prefix", "sae_context", "dense_px_feat", "dense_cx_feat"]
+SAE_CELL_LABELS = {
+    "sae_prefix": "history features",
+    "sae_context": "full-context features",
+    "dense_px_feat": "dense history",
+    "dense_cx_feat": "dense full-context",
+}
 
 ARM_COLORS = {}  # filled in main() from paper_palette_blog
 ARM_LABELS = {"prefix": "prefix arm", "context": "context arm", "bare": "bare-query arm"}
@@ -401,6 +410,148 @@ def fig_forest_bare(btax: dict) -> None:
     plt.close(fig)
 
 
+def fig_sae_hero(sae: dict) -> None:
+    """SAE-arm hero (plan v8 §4.2): pooled holdout R² for the 4 primary cells ->
+    answer-features(mean), 95% bootstrap CIs, shuffled-pairing floor band."""
+    fig, ax = plt.subplots(figsize=(7.0, 4.2))
+    x = np.arange(len(SAE_CELL_ORDER))
+    pts, lo, hi, cols = [], [], [], []
+    for cell in SAE_CELL_ORDER:
+        c = sae["cells"][cell]
+        ci = c["holdout_bootstrap_ci"]["r2"]
+        pts.append(c["holdout_r2"])
+        # errorbar offsets clamped non-negative (gotchas: never raw CI bounds)
+        lo.append(max(0.0, c["holdout_r2"] - ci["lo"]))
+        hi.append(max(0.0, ci["hi"] - c["holdout_r2"]))
+        arm = "prefix" if "px" in cell or "prefix" in cell else "context"
+        cols.append(ARM_COLORS[arm])
+    ax.bar(x, pts, 0.6, yerr=[lo, hi], color=cols, error_kw={"elinewidth": 1.0, "ecolor": "#333"})
+    floor_draws = np.concatenate(
+        [
+            np.asarray(
+                [sae["shuffle_floor"][c]["pooled_mean"], sae["shuffle_floor"][c]["pooled_max"]]
+            )
+            for c in ("sae_prefix", "sae_context")
+        ]
+    )
+    ax.axhspan(
+        float(floor_draws.min()),
+        float(floor_draws.max()),
+        color="#999999",
+        alpha=0.25,
+        zorder=0,
+        label="shuffled-pairing floor (K=20/arm)",
+    )
+    ax.axhline(0.0, color="#666666", lw=0.8)
+    ax.set_xticks(x)
+    ax.set_xticklabels([SAE_CELL_LABELS[c] for c in SAE_CELL_ORDER], rotation=15, ha="right")
+    ax.set_ylabel(f"held-out pooled R² ({sae['split_counts']['holdout']:,} contexts)")
+    ax.set_title("answer-feature recovery by input (SAE space, mean pooling)", loc="left")
+    ax.legend(loc="lower right", fontsize=8)
+    savefig_paper(fig, "issue_1738/sae_hero_r2_by_input", dir=FIGDIR)
+    plt.close(fig)
+
+
+def _sae_perfeature_table() -> dict[str, np.ndarray]:
+    rows = np.genfromtxt(ES / "perfeature_summary.csv", delimiter=",", names=True)
+    return {name: rows[name] for name in rows.dtype.names}
+
+
+def fig_sae_perfeature() -> None:
+    """Low-level per-unit companion: per-feature holdout R², prefix vs context
+    arm (shared 16,384-feature answer set; clipped at -1 for display)."""
+    t = _sae_perfeature_table()
+    fig, ax = plt.subplots(figsize=(5.4, 5.0))
+    xc = np.clip(t["r2_context"], -1, 1)
+    yp = np.clip(t["r2_prefix"], -1, 1)
+    ax.scatter(xc, yp, s=4, alpha=0.25, color=ARM_COLORS["context"])
+    ax.plot([-1, 1], [-1, 1], color="#666666", lw=0.8, ls=":")
+    ax.axhline(0, color="#999999", lw=0.6)
+    ax.axvline(0, color="#999999", lw=0.6)
+    ax.set_xlabel("per-feature held-out R² — full-context arm (clipped at -1)")
+    ax.set_ylabel("per-feature held-out R² — history arm (clipped at -1)")
+    n_c = int(t["carried_context"].sum())
+    n_p = int(t["carried_prefix"].sum())
+    ax.set_title(f"per-feature recovery (carried: context {n_c:,} / prefix {n_p:,})", loc="left")
+    savefig_paper(fig, "issue_1738/sae_perfeature_scatter", dir=FIGDIR)
+    plt.close(fig)
+
+
+def fig_sae_delta() -> None:
+    """Exploratory dump: ΔR²(context − prefix) distribution + covariate reads
+    (activity deciles, within-answer consistency)."""
+    t = _sae_perfeature_table()
+    ok = np.isfinite(t["delta_r2"])
+    delta = t["delta_r2"][ok]
+    act = t["activity"][ok]
+    cons = t["consistency"][ok]
+    fig, axes = plt.subplots(1, 3, figsize=(12.5, 3.8))
+    axes[0].hist(np.clip(delta, -1, 1), bins=60, color=ARM_COLORS["context"])
+    axes[0].axvline(0, color="#666666", lw=0.8)
+    axes[0].set_xlabel("ΔR² (context − prefix), clipped at ±1")
+    axes[0].set_ylabel("features")
+    for ax, cov, lab, logx in (
+        (axes[1], act, "feature activity (fraction of fit rows)", True),
+        (axes[2], cons, "within-answer consistency (mean frac | active)", False),
+    ):
+        ax.scatter(cov, np.clip(delta, -1, 1), s=4, alpha=0.2, color=ARM_COLORS["prefix"])
+        qs = np.nanquantile(cov, np.linspace(0, 1, 11))
+        dec = np.clip(np.searchsorted(qs[1:-1], cov, side="right"), 0, 9)
+        xs = [float(np.nanmedian(cov[dec == k])) for k in range(10)]
+        ys = [float(np.nanmedian(np.clip(delta, -1, 1)[dec == k])) for k in range(10)]
+        ax.plot(xs, ys, color="#333333", lw=1.5, marker="o", ms=3, label="decile median")
+        if logx:
+            ax.set_xscale("log")
+        ax.axhline(0, color="#666666", lw=0.8)
+        ax.set_xlabel(lab)
+        ax.set_ylabel("ΔR² (clipped)")
+        ax.legend(fontsize=7, loc="upper right")
+    savefig_paper(fig, "issue_1738/sae_delta_covariates", dir=FIGDIR)
+    plt.close(fig)
+
+
+def sae_cells_table(sae: dict, mb: dict) -> None:
+    """Pooling-twin + identity/kNN table (exploratory dump, plan §4.2) — CSV
+    beside the JSONs (data-only)."""
+    out = ES / "cells_table.csv"
+    with open(out, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(
+            [
+                "cell",
+                "pooling",
+                "holdout_r2",
+                "ci_lo",
+                "ci_hi",
+                "selected_lambda",
+                "identity_bias_r2_shared",
+                "fitted_r2_shared",
+                "knn_acc1_euclid",
+                "knn_chance1",
+            ]
+        )
+        for cell, c in sae["cells"].items():
+            ci = c["holdout_bootstrap_ci"]["r2"]
+            b = mb["cells"].get(cell, {})
+            ib = b.get("identity_bias", {})
+            knn = b.get("knn", {}).get("euclidean", {})
+            w.writerow(
+                [
+                    cell,
+                    c["pooling"],
+                    f"{c['holdout_r2']:.5f}",
+                    f"{ci['lo']:.5f}",
+                    f"{ci['hi']:.5f}",
+                    c["selected_lambda"],
+                    ib.get("holdout_r2_shared_subset", "inapplicable"),
+                    ib.get("fitted_map_r2_same_subset", ""),
+                    knn.get("acc_at_k", {}).get("1", knn.get("acc_at_k", {}).get(1, "")),
+                    knn.get("chance_at_k", {}).get("1", knn.get("chance_at_k", {}).get(1, "")),
+                ]
+            )
+    print(f"wrote {out}")
+
+
 def main() -> None:
     set_paper_style("blog")
     pal = paper_palette_blog(6)
@@ -425,6 +576,17 @@ def main() -> None:
             fig_forest_bare(json.load(open(btax_p)))
     else:
         print("bare_query fits JSON absent — 3-arm figures skipped (pre-B2)")
+    # sae-arm round additions (plan v8 §4.2) — data-only; render once the
+    # round's artifacts exist under eval_results/issue_1738/sae_arm/.
+    sae_p = ES / "sae_fits.json"
+    if sae_p.exists():
+        sae = json.load(open(sae_p))
+        fig_sae_hero(sae)
+        fig_sae_perfeature()
+        fig_sae_delta()
+        sae_cells_table(sae, json.load(open(ES / "mapping_baselines.json")))
+    else:
+        print("sae_arm fits JSON absent — SAE figures skipped (pre-S2)")
     print("done")
 
 
