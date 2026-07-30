@@ -6466,8 +6466,8 @@
     "1835": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1835",
-      "status": "planning",
+      "path": "tasks/approved/1835",
+      "status": "approved",
       "title": "workflow-fix: SLURM rsync lane strands committed eval_results inputs (extra-sync knob + lane-aware carry-over gate)"
     },
     "1836": {
