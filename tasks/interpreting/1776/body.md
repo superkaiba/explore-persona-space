@@ -4,7 +4,7 @@ title: Averaged causal Jacobians recover essentially none of the fitted context-
 kind: experiment
 tags: []
 created_at: '2026-07-28T21:44:34Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 779
 origin_prompt: 'don''t treat it as a kill switch. just run it then continue till the
   end no matter what (thread: J-space paper vs our context→answer mapping; ''ok combine
