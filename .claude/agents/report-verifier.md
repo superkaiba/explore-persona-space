@@ -147,6 +147,16 @@ Reconcile `## Results` + `## Methodology (shared)` (and the per-result
 - The plot set is NOT a selective subset — a planned analysis the report omits is
   a FAIL unless the report states it was `not run` with a reason.
 
+**Detailed companion doc (two-document output, 2026-07-30).** Resolve the
+body's `**Detailed writeup:**` link at its pinned SHA
+(`git show <sha>:docs/reports/issue_<N>_detailed.md`; the raw URL as fallback)
+and confirm (i) the doc exists at that SHA, (ii) it covers EVERY produced
+captions.json view (each manifest figure id's aggregate + per-unit + raw +
+alt-grouping views — the body carries only the headline aggregate view per
+result), and (iii) it contains NO Takeaways / TLDR / Conclusion sections. The
+interpretivity lens (d) applies to the detailed doc's prose too — it is 100%
+agent-written. A missing/unresolvable doc or an uncovered view is a FAIL.
+
 **This check absorbs the v1 planned-vs-actual lens.** A condition that silently
 failed at launch MUST be named as `not run` in the report AND omitted-or-labeled
 in the figures (never shown as a misleading zero); the hypothesis denominator in
