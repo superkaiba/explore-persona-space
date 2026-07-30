@@ -6013,7 +6013,12 @@ uploaded; a downstream experiment had to re-train two months later. See
 `.claude/agents/upload-verifier.md` § Step 2.5 for the full rationale.
 
 Post `epm:upload-verification v1` event with per-artifact PASS/FAIL +
-URLs.
+URLs. A PASS note MUST carry the literal token `Verdict: PASS` — the
+finalize teardown gate matches `UPLOAD_VERIFICATION_PASS_RE`
+(`task_workflow.py` `re.compile(r"Verdict:\s*PASS\b")`), and a PASS
+note in any other shape is refused as a FAIL at teardown (#1775,
+2026-07-29: a healthy PASS was refused for ~3 min until the regex was
+grepped and the marker reposted).
 
 - **PASS** -> teardown the compute, then move status to `interpreting`
   and proceed to Step 9. (Same-issue follow-up round? At
@@ -7842,7 +7847,11 @@ spawned for v4. After the 9a-bis PASS the orchestrator:
    — immediately after the `<!-- clean-result-v4 -->` sentinel, before
    `## Takeaways` — linking the GitHub blob (SHA-pinned to the `main`
    commit) and the gist (drop the `· [gist](...)` suffix when the gist
-   fail-softed).
+   fail-softed). `<DOC_SHA>` is ALWAYS taken from command output —
+   `DOC_SHA=$(git rev-parse HEAD)` right after the doc commit — never
+   typed or hand-extended from a short SHA (the never-fabricate-SHAs
+   rule; 2026-07-29 on #1738: a hand-extended short SHA 404'd the blob
+   URL and burned a verifier FAIL round).
 6. Posts `epm:methodology-doc-generated v1` (`doc_path` + `commit` +
    `gist_url`).
 
