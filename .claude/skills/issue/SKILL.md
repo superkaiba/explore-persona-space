@@ -3614,6 +3614,23 @@ bypass 6a.5, and extension-less citations. The check ref defaults to
 `origin/issue-<N>`; where the lane's materialization ref is known to differ
 (RunPod `BOOTSTRAP_BRANCH` defaults to `main`), thread `--ref` accordingly.
 
+**Rsync-lane invocation (#1835).** When the task's `backend:` frontmatter
+names an rsync-materialized SLURM lane — every member of
+`router._PER_CLUSTER_LANES` (`nibi` / `fir` / `mila` / `fellows`) plus the
+legacy `cluster` alias — OR is absent/`auto` (the auto chain is
+fellows-FIRST, an rsync lane), run the gate with `--lane rsync` plus any
+plan-named `--extra-sync-path` values: git-reachability is necessary but NOT
+sufficient there — the lane's scratch tree is an rsync of
+`RSYNC_INCLUDE_PATHS` with `eval_results/` excluded, so an in-ref
+`eval_results/...` citation NOT covered by the sync set downgrades to FAIL
+`rsync-lane-not-synced` (#1689: fellows job 15188 died at first read on a
+gate-certified committed input). That FAIL is recoverable IN-STEP, not a
+park: add the covering `--extra-sync-path` value(s) and re-run the gate
+ONCE. Compose the gate call and the later `dispatch_issue.py launch` from
+ONE variable (e.g. `EXTRA_SYNC_ARGS=(--extra-sync-path
+eval_results/issue_<M>/ladder)` threaded to BOTH) so the gate-PASSing set
+and the launched set cannot drift.
+
 #### Step 6a.6: HF write-headroom probe (quota gate, before provisioning)
 
 Step 6a verifies READ access only; a namespace at its public-storage

@@ -39,10 +39,12 @@ from explore_persona_space.backends import (
     stages_for_spec,
 )
 from explore_persona_space.backends.slurm import (
+    EXTRA_SYNC_PATHS_KEY,
     HEARTBEAT_INTERVAL_SECONDS,
     PREFLIGHT_FAIL_MARKER,
     SbatchPlan,
     Stage,
+    build_extra_rsync_command,
     build_rsync_command,
     compute_plan_hash,
     default_gpus_for_intent,
@@ -51,6 +53,7 @@ from explore_persona_space.backends.slurm import (
     parse_job_id,
     render_secrets_env,
     time_budget_hours,
+    validate_extra_sync_paths,
 )
 
 
@@ -2912,3 +2915,161 @@ def test_custom_stage_no_pins_byte_identical() -> None:
         assert not any(
             ln.startswith(f"export {key}=") and ":-issue" not in ln for ln in empty_lines
         ), key
+
+
+# ---------------------------------------------------------------------------
+# #1835 — per-dispatch extra-sync paths (the additive rsync knob)
+# ---------------------------------------------------------------------------
+
+
+def test_build_extra_rsync_command_argv_pin(tmp_path) -> None:
+    """#1835 argv pin: dot-anchored sources, --relative/--partial/--mkpath,
+    and — the load-bearing negatives — NO --delete and NO --exclude, so the
+    main command's eval_results/ exclude can never suppress the transfer and
+    a knob-omitting later launch can never delete a staged extra tree."""
+    (tmp_path / "pyproject.toml").write_text("")
+    argv = build_extra_rsync_command(
+        src_root=tmp_path,
+        dest_root="/scratch/tjiral/eps/issue-137",
+        robot_alias="robot-nibi",
+        extra_paths=("./eval_results/issue_1689/ladder", "./ood_eval_results/issue_5"),
+    )
+    assert argv[0] == "rsync"
+    assert "--relative" in argv
+    assert "--partial" in argv
+    assert "--mkpath" in argv
+    assert "--delete" not in argv
+    assert "--exclude" not in argv
+    assert "./eval_results/issue_1689/ladder" in argv
+    assert "./ood_eval_results/issue_5" in argv
+    assert argv[-1] == "robot-nibi:/scratch/tjiral/eps/issue-137/"
+
+
+def test_build_extra_rsync_command_requires_pyproject_in_src(tmp_path) -> None:
+    with pytest.raises(FileNotFoundError):
+        build_extra_rsync_command(
+            src_root=tmp_path,  # no pyproject.toml -> not a repo root
+            dest_root="/scratch/x",
+            robot_alias="robot-nibi",
+            extra_paths=("./eval_results/issue_1/a",),
+        )
+
+
+def test_validate_extra_sync_paths_rejects() -> None:
+    """#1835 fail-loud pin: absolute + '..' traversal + empty inputs raise
+    ValueError (never a silent skip or a swallowed-except path)."""
+    with pytest.raises(ValueError):
+        validate_extra_sync_paths(["/abs/path"])
+    with pytest.raises(ValueError):
+        validate_extra_sync_paths(["eval_results/../secrets"])
+    with pytest.raises(ValueError):
+        validate_extra_sync_paths([""])
+    with pytest.raises(ValueError):
+        validate_extra_sync_paths(["~/eval_results/x"])
+    with pytest.raises(ValueError):
+        validate_extra_sync_paths(["./"])
+
+
+def test_validate_extra_sync_paths_normalizes_and_dedupes() -> None:
+    """Dot-anchoring is normalized ON, not required from the caller; dedupe
+    is order-preserving; a trailing slash / redundant './' collapses."""
+    out = validate_extra_sync_paths(
+        [
+            "eval_results/issue_1689/ladder",
+            "./eval_results/issue_1689/ladder",
+            "data/sft/",
+            "ood_eval_results/issue_5",
+        ]
+    )
+    assert out == (
+        "./eval_results/issue_1689/ladder",
+        "./data/sft",
+        "./ood_eval_results/issue_5",
+    )
+
+
+def test_slurm_prepare_extra_sync_paths_fires_extra_rsync(tmp_path) -> None:
+    """#1835: prepare runs the ADDITIVE extra rsync when spec.extra carries a
+    non-empty extra_sync_paths — RE-validated (the sidecar JSON round-trips
+    tuple -> list, entries may be un-normalized) and sourced from the SAME
+    resolved rsync_src + dest as the main rsync."""
+    (tmp_path / "pyproject.toml").write_text("")
+    rsynced: list[dict] = []
+    extra_calls: list[dict] = []
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        rsyncer=lambda **kw: rsynced.append(kw),
+        extra_rsyncer=lambda **kw: extra_calls.append(kw),
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+    )
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        hydra_args=("condition=c1_evil_wrong_em",),
+        # A LIST with an un-normalized entry — the JSON-round-trip shape.
+        extra={EXTRA_SYNC_PATHS_KEY: ["eval_results/issue_1689/ladder"]},
+    )
+    backend.prepare(spec)
+    assert len(rsynced) == 1
+    assert len(extra_calls) == 1
+    call = extra_calls[0]
+    assert call["extra_paths"] == ("./eval_results/issue_1689/ladder",)
+    assert call["src_root"] == rsynced[0]["src_root"]
+    assert call["dest_root"] == rsynced[0]["dest_root"]
+    assert call["robot_alias"] == rsynced[0]["robot_alias"]
+
+
+def test_slurm_prepare_knob_absent_extra_rsync_not_called(tmp_path) -> None:
+    """#1835 byte-identity: knob absent (or empty) -> the extra rsyncer never
+    fires and the main rsync call is unchanged."""
+    (tmp_path / "pyproject.toml").write_text("")
+    for extra in ({}, {EXTRA_SYNC_PATHS_KEY: []}):
+        rsynced: list[dict] = []
+        extra_calls: list[dict] = []
+        backend = SlurmBackend(
+            src_root=tmp_path,
+            rsyncer=lambda rec=rsynced, **kw: rec.append(kw),
+            extra_rsyncer=lambda rec=extra_calls, **kw: rec.append(kw),
+            secrets_pusher=lambda **_kw: None,
+            runtime_clearer=lambda **_kw: None,
+        )
+        spec = RunSpec(
+            issue=137,
+            intent="lora-7b",
+            backend="cluster",
+            cluster="nibi",
+            hydra_args=("condition=c1_evil_wrong_em",),
+            extra=extra,
+        )
+        backend.prepare(spec)
+        assert extra_calls == []
+        assert len(rsynced) == 1
+        assert set(rsynced[0]) == {"src_root", "dest_root", "robot_alias"}
+
+
+def test_slurm_prepare_invalid_extra_sync_path_raises_before_extra_rsync(tmp_path) -> None:
+    """#1835: a traversal path smuggled through the sidecar fails LOUD at
+    prepare (ValueError -> BackendPrepareError at the router), never rsyncs."""
+    (tmp_path / "pyproject.toml").write_text("")
+    extra_calls: list[dict] = []
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        rsyncer=lambda **_kw: None,
+        extra_rsyncer=lambda **kw: extra_calls.append(kw),
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+    )
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        hydra_args=("condition=c1_evil_wrong_em",),
+        extra={EXTRA_SYNC_PATHS_KEY: ["eval_results/../secrets"]},
+    )
+    with pytest.raises(ValueError, match="traverse"):
+        backend.prepare(spec)
+    assert extra_calls == []

@@ -21,6 +21,14 @@ extension-less citations. The check ref defaults to origin/issue-<N>; a lane
 whose actual materialization ref differs (RunPod BOOTSTRAP_BRANCH defaults to
 main) can be probed by threading --ref.
 
+Lane-aware (#1835): the SLURM lanes materialize via an RSYNC of
+RSYNC_INCLUDE_PATHS (eval_results/ excluded), not a git clone, so
+git-reachability is necessary but NOT sufficient there — under `--lane rsync`
+an in-ref citation NOT covered by RSYNC_INCLUDE_PATHS ∪ `--extra-sync-path`
+downgrades to FAIL(rsync-lane-not-synced), remediated by re-dispatching with
+the covering `--extra-sync-path` on BOTH this gate and `dispatch_issue.py
+launch`. The default `--lane clone` is byte-identical to pre-#1835 behavior.
+
 Exit codes: 0 = PASS (warns allowed), 1 = >=1 FAIL, 2 = usage / plan unreadable.
 """
 
@@ -337,6 +345,72 @@ def run_check(plan_text: str, *, repo_root: Path, issue: int, check_ref: str) ->
 
 
 # ---------------------------------------------------------------------------
+# Rsync-lane coverage downgrade (#1835 — the SLURM lanes' materialization is an
+# rsync of RSYNC_INCLUDE_PATHS, not a git clone, so git-reachability is
+# necessary but NOT sufficient there).
+# ---------------------------------------------------------------------------
+
+
+def rsync_cover_set(extra_paths: list[str] | None) -> list[str]:
+    """De-dot-anchored RSYNC_INCLUDE_PATHS ∪ normalized --extra-sync-path values.
+
+    Imports the include set from ``explore_persona_space.backends.slurm`` (the
+    single source of truth the lane's ``build_rsync_command`` consumes) so the
+    gate can never drift from the launch. ``validate_extra_sync_paths`` raises
+    ``ValueError`` on a malformed extra path — the caller maps that to exit 2.
+    """
+    from explore_persona_space.backends.slurm import (
+        RSYNC_INCLUDE_PATHS,
+        validate_extra_sync_paths,
+    )
+
+    cover = [p.removeprefix("./") for p in RSYNC_INCLUDE_PATHS]
+    cover.extend(p.removeprefix("./") for p in validate_extra_sync_paths(extra_paths or ()))
+    return list(dict.fromkeys(cover))
+
+
+def rsync_covered(path: str, cover_set: list[str]) -> bool:
+    """True iff `path` is covered by a cover-set prefix (exact or dir-prefix)."""
+    return any(path == p or path.startswith(p + "/") for p in cover_set)
+
+
+def apply_rsync_lane_downgrade(findings: list[Finding], *, cover_set: list[str]) -> list[Finding]:
+    """Post-classification downgrade for rsync-materialized SLURM lanes (#1835).
+
+    A ``Finding(verdict='pass', reason='in-ref')`` whose path is NOT covered by
+    RSYNC_INCLUDE_PATHS ∪ the extra-sync paths downgrades to
+    ``fail`` / ``rsync-lane-not-synced``: the lane's scratch tree is an rsync of
+    the include set with ``eval_results/`` etc. excluded, so a git-reachable
+    citation outside the sync set is guaranteed absent on the instance (#1689:
+    fellows job 15188 died at first read on a gate-certified committed input).
+    Every other verdict/reason — warns, skips, the clone-lane FAILs — is
+    untouched.
+    """
+    out: list[Finding] = []
+    for f in findings:
+        if f.verdict == "pass" and f.reason == "in-ref" and not rsync_covered(f.path, cover_set):
+            prefix = f.path.rsplit("/", 1)[0] if "/" in f.path else f.path
+            out.append(
+                Finding(
+                    f.path,
+                    "fail",
+                    "rsync-lane-not-synced",
+                    (
+                        "git-reachable but NOT in the SLURM lane's rsync set "
+                        "(RSYNC_INCLUDE_PATHS ∪ extra-sync paths) — re-dispatch with "
+                        f"--extra-sync-path {f.path} (or a covering prefix, e.g. "
+                        f"--extra-sync-path {prefix}) on BOTH this gate and "
+                        "dispatch_issue.py launch"
+                    ),
+                    f.channel,
+                )
+            )
+        else:
+            out.append(f)
+    return out
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -379,6 +453,34 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="skip the bounded `git fetch origin issue-<N> main` (tests / corpus sweeps)",
     )
+    parser.add_argument(
+        "--lane",
+        choices=("clone", "rsync"),
+        default="clone",
+        help=(
+            "materialization lane of the dispatch target (#1835): 'clone' "
+            "(GCE / RunPod git clone — the default; byte-identical to the "
+            "pre-#1835 behavior) or 'rsync' (the SLURM lanes — "
+            "router._PER_CLUSTER_LANES: nibi/fir/mila/fellows, plus the legacy "
+            "'cluster' alias — whose scratch tree is an rsync of "
+            "RSYNC_INCLUDE_PATHS: an in-ref citation NOT covered by "
+            "RSYNC_INCLUDE_PATHS ∪ --extra-sync-path downgrades from PASS to "
+            "FAIL(rsync-lane-not-synced))"
+        ),
+    )
+    parser.add_argument(
+        "--extra-sync-path",
+        action="append",
+        default=None,
+        metavar="REPO_REL_PATH",
+        help=(
+            "repo-relative path (repeatable, #1835) the launch will ALSO pass "
+            "to `dispatch_issue.py launch --extra-sync-path`; extends the "
+            "rsync-lane coverage set (validated either lane; the downgrade "
+            "applies only under --lane rsync). Compose this gate call and the "
+            "launch from ONE variable so the two sets cannot drift."
+        ),
+    )
     parser.add_argument("--json", action="store_true", dest="as_json", help="JSON findings")
     args = parser.parse_args(argv)
 
@@ -400,6 +502,21 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ERROR: cannot read plan {plan_path}: {exc}", file=sys.stderr)
         return 2
 
+    # #1835: normalize --extra-sync-path either lane (a malformed path is a
+    # usage error, exit 2 — same contract as dispatch_issue.py's parse-time
+    # guard); the coverage DOWNGRADE applies only under --lane rsync.
+    extra_sync_paths: list[str] = []
+    if args.extra_sync_path:
+        from explore_persona_space.backends.slurm import validate_extra_sync_paths
+
+        try:
+            extra_sync_paths = [
+                p.removeprefix("./") for p in validate_extra_sync_paths(args.extra_sync_path)
+            ]
+        except ValueError as exc:
+            print(f"ERROR: invalid --extra-sync-path: {exc}", file=sys.stderr)
+            return 2
+
     try:
         check_ref = args.ref or resolve_check_ref(repo_root, args.issue, fetch=not args.no_fetch)
         findings = run_check(plan_text, repo_root=repo_root, issue=args.issue, check_ref=check_ref)
@@ -409,6 +526,10 @@ def main(argv: list[str] | None = None) -> int:
         # covers the retry) instead of an uncaught traceback.
         print(f"ERROR: git probe timed out ({exc.cmd}); failing closed", file=sys.stderr)
         return 1
+    if args.lane == "rsync":
+        findings = apply_rsync_lane_downgrade(
+            findings, cover_set=rsync_cover_set(args.extra_sync_path)
+        )
     n_fail = sum(f.verdict == "fail" for f in findings)
     n_warn = sum(f.verdict == "warn" for f in findings)
 
@@ -419,6 +540,8 @@ def main(argv: list[str] | None = None) -> int:
                     "plan": str(plan_path),
                     "issue": args.issue,
                     "check_ref": check_ref,
+                    "lane": args.lane,
+                    "extra_sync_paths": extra_sync_paths,
                     "n_fail": n_fail,
                     "n_warn": n_warn,
                     "findings": [dataclasses.asdict(f) for f in findings],
