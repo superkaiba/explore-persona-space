@@ -71,6 +71,20 @@ fi
 VERIFIED=$(podssh "cat $WORK/fulldict_upload_verified.json 2>/dev/null" || echo "{}")
 log "verified payload: $VERIFIED"
 
+# Pull the evidence packets pod -> VM BEFORE the pod dies. Phases 2-3 read a
+# local evidence dir, and they are the only thing those phases need; having a
+# VM-local copy means the successor runs one command instead of re-staging
+# from the Hub. Best-effort: the HF copy is already verified durable above, so
+# an rsync failure is a convenience loss, never a data loss.
+EV_LOCAL="${EPM_1773_EV_LOCAL:-/mnt/eps-data/thomasjiralerspong/issue1773_fulldict/evidence}"
+mkdir -p "$EV_LOCAL"
+log "rsync evidence pod -> $EV_LOCAL"
+if timeout 3600 rsync -a --info=stats2 "$POD:$WORK/evidence/" "$EV_LOCAL/" >> "$LOG" 2>&1; then
+  log "evidence rsync OK: $(find "$EV_LOCAL" -type f | wc -l) files, $(du -sh "$EV_LOCAL" | cut -f1)"
+else
+  log "evidence rsync FAILED (non-fatal — HF copy is verified durable; phases 2-3 can stage from the Hub)"
+fi
+
 # ── release: terminate the pod, drop the shield ──────────────────────────────
 # Tag comes off FIRST: the issue-wide keep-running shield can refuse a
 # terminate (#1485), and dropping it first means that even if the terminate
