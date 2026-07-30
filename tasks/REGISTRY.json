@@ -6445,8 +6445,8 @@
     "1832": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1832",
-      "status": "planning",
+      "path": "tasks/approved/1832",
+      "status": "approved",
       "title": "workflow-fix: verify_task_body WARN for quantitative result sections with zero figures"
     },
     "1833": {
