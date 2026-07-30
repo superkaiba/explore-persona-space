@@ -91,7 +91,7 @@ relates_to:
 | SAE feature restriction | 16,384 answer-side / 8,192 input-side most-active caps at a 1%-of-train-rows activity floor (878 rows); realized inputs 216 (history) / 530 (context) features | plan v8 §11 (the #1482 recipe at this run's n); fits JSON `restriction` |
 | SAE floors and nulls | shuffled-pairing floor K = 20 draws per arm (penalty pinned, permute within fit, scored on the true holdout); per-feature label-shuffle null at the 95th percentile | plan v8 §11 (the #1482 recipe); fits JSON `shuffle_floor` |
 | Crossed corpus (follow-up round) | 5,000 prefixes × 20 shared bank queries = 100,000 rows; prefixes drawn from this run's manifest (overlap fraction 1.0); depth histogram 2,092 / 1,655 / 1,253 (2 / 3–4 / ≥5 user turns); 2,520 LMSYS / 2,480 WildChat | plan v9 §4.1; crossed `sampling_manifest/meta.json` |
-| Crossed query bank | 20 real final user turns from conversations not used as prefixes; near-dupe-gated against the prefix set and within-bank; byte-frozen, sha-pinned; pool 200 candidates (7 length rejects, 1 within-bank dupe reject); no per-prefix substitutions | plan v9 §4.1; crossed `bank.json`, `meta.json` |
+| Crossed query bank | 20 real final user turns from conversations not used as prefixes; near-dupe-gated against the prefix set and within-bank; byte-frozen, sha-pinned; pool 200 candidates (7 length rejects, 1 within-bank dupe reject); no per-prefix substitutions; one bank query (query id 0) is a bare URL — its 5,000 answers are low-diversity echoes, a disclosed bank-composition quirk | plan v9 §4.1; crossed `bank.json`, `meta.json`; raw-completions spot check |
 | Crossed split | prefix-grouped, pinned: 4,430 / 20 / 50 / 500 prefixes (train / val / test / holdout) → 88,600 / 400 / 1,000 / 10,000 rows; sha-pinned | plan v9 §4.1; `crossed_fits.json` |
 | Crossed fitter | ridge only (parent shared-Gram recipe, same 23-penalty grid); per-row arms select the penalty on the pinned val rows; averaged arm by inner cross-validation within train prefixes | plan v9 §4.3; crossed `cells/*.json` |
 | Crossed gates | throughput pilot 6,439 contexts/GPU-h → 18.0 GPU-h projected, under the 24 GPU-h fence; min pairwise prefix-end cosine 0.48–0.58 per layer (degeneracy bar 0.999); bank byte-identity pass; 0 render violations | plan v9 §7; `crossed_pilot_meta.json` |
@@ -277,7 +277,7 @@ Held-out R² (ridge, the crossed round's sole fitter) for the four input arms on
 
 > **Figure.** *With query identity held to a shared 20-question bank, the history arm collapses and the bare arm becomes the query-main-effect read.* Held-out R², ridge; 95% bootstrap CIs. The bare arm's design matrix has rank at most 20 by construction (20 bank queries tiled over rows), so its bar is the query main effect, not a general query map.
 
-The history map reads 0.046 at layer 19 (95% CI 0.043–0.047) versus 0.379 on the main corpus — not a contradiction: there each history has its own final query, so history-end states carry query identity; the shared bank removes exactly that variance. Bare reads 0.627 (95% CI 0.619–0.634) and full context 0.795 (95% CI 0.791–0.799). Identity-plus-bias R² stays negative in every cell; rank-1 retrieval among 10,000 candidates (cosine) reads 26.6% for context vs 0.05% for history — on this grid the per-row history map is barely discriminative.
+The history map reads 0.046 at layer 19 (95% CI 0.043–0.047) versus 0.379 on the main corpus — not a contradiction: there each history has its own final query, so history-end states carry query identity; the shared bank removes exactly that variance. Bare reads 0.627 (95% CI 0.619–0.634) and full context 0.795 (95% CI 0.791–0.799). Identity-plus-bias R² stays negative in every cell; rank-1 retrieval among 10,000 candidates (cosine) reads 26.6% for context vs 0.05% for history — on this grid the per-row history map is barely discriminative. An LMSYS-only fit scores 0.783 (context) and 0.732 (question-averaged) on WildChat holdout rows: the reads transfer across sub-corpora.
 
 ### On the crossed grid the final query explains nine times more answer-state variance than the whole history
 
@@ -289,19 +289,19 @@ Variance shares of the mean-answer state over the complete 5,000 × 20 grid — 
 
 At layer 19 the shares are query 0.630 / history 0.073 / interaction-plus-residual 0.297 (query 0.62–0.69, history 0.05–0.07 across layers). The history share is the per-row ceiling for any history-only map, so the fitted 0.046 sits near it; the residual bundle is an upper bound on genuine history-query interaction, not an estimate of it. The prior 21k crossed decomposition read the inverse ordering (prefix-dominated, 79 / 11 / 10); its prefixes were constructed persona blocks rather than real histories — a reference only.
 
-Per direction the picture inverts: the top ~20 directions are query-dominated (share up to 0.89), tail directions run interaction-heavy (median 0.68) with history medians ~0.16; the same split holds per sparse-autoencoder answer feature (median query 0.22 vs history 0.05).
+Per direction the picture inverts: the top ~20 directions are query-dominated (share up to 0.89), ranks 21–48 run interaction-heavy (medians: interaction 0.758, history 0.192); the same split holds per sparse-autoencoder answer feature (median query 0.22 vs history 0.05).
 
 ### Averaging the query away recovers the history signal through the same operator that serves the per-row map
 
-Held-out R² at the question-averaged grain (per-prefix means over the 20 bank queries; 500 held-out prefixes): the primary induced read — the per-row context map applied to averaged inputs — beside the independently-fit averaged map (left half of the figure); the disjoint stitch (ridge on concatenated history-end plus bare-query states) vs its parts and the full context, 10,000 rows (right half); 95% bootstrap CIs.
+Held-out R² at the question-averaged grain (per-prefix means, 500 held-out prefixes): the primary induced read — the per-row context map applied to averaged inputs — beside the independently-fit averaged map (left half); the disjoint stitch on concatenated history-end plus bare-query states vs its parts and the full context, 10,000 rows (right half); 95% bootstrap CIs.
 
 ![Induced vs independent question-averaged maps and the disjoint stitch](https://raw.githubusercontent.com/superkaiba/explore-persona-space/ff10d49b354406df737e539a23fa76cd92ae6f87/figures/issue_1738/crossed_induced_vs_independent.png)
 
 > **Figure.** *History determines about three quarters of the query-averaged answer state, and the per-row map already carries that structure.* Left: hatched = the per-row context map applied to per-prefix averages. Right: the stitch sits above bare query alone and below the full context at every layer.
 
-The induced read gives 0.745 at layer 19 (95% CI 0.726–0.762) vs 0.757 (95% CI 0.739–0.773) independently fit — overlapping CIs, reproducing the prior operator-coincidence result at five times the prefixes on natural conversations (a different corpus and split scheme — reference only). Averaging recovers the history-borne information the per-row read hides, with no new map needed.
+The induced read gives 0.745 at layer 19 (95% CI 0.726–0.762) vs 0.757 (0.739–0.773) independent; gaps −0.036/−0.012/−0.006 at layers 14/19/26. The per-row map recovers the averaged map to within a few hundredths — the quantitative form of the prior operator-coincidence read (different corpus and split; the two reads share holdout prefixes, so CI overlap is not a paired criterion).
 
-The stitch reads 0.673 (95% CI 0.666–0.679) vs 0.795 full context: the parts jointly recover 85%. Consistently, the arm operators share output subspaces far below the spectrum-matched random band (mean principal angles 22–30° at k = 48; null 84.2–84.5°) while input subspaces sit near it.
+The stitch reads 0.673 (95% CI 0.666–0.679) vs 0.795 full context: the parts recover 85%. The three non-bare operator pairs share output subspaces at 22–30° mean angle (k=48) vs an 84.2–84.5° random band; bare-involving pairs (rank-limited) read 47–55° vs their own k=19 band (86.3–86.7°); input subspaces sit near their bands, except context–averaged at 68°.
 
 ---
 
