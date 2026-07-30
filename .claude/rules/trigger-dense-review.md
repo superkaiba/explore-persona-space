@@ -78,7 +78,8 @@ reviewers never attempt model pins themselves (pins live on the Agent call).
    verdict body is composed DIRECTLY into its file via the `Write` tool —
    never as inline assistant text or reasoning first — then posted with
    `uv run python scripts/task.py post-marker <N> epm:code-review
-   --version <K> --file <path>` (or the reconciler analogue
+   --file <path>` (OMIT `--version` — it auto-derives max+1; the round
+   lives in the body's head sentinel; #1804) (or the reconciler analogue
    `epm:review-reconcile`; `--file`, never `--note`, because the marker
    body itself is trigger-dense and must ride the file path). The
    reviewer's ordered tool-call sequence on such rounds is `Write` (verdict
