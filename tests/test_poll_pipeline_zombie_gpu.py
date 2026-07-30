@@ -106,6 +106,20 @@ These tests pin:
   ``SESSION_PCPU_TOTAL`` from a SEPARATE ``ps`` pipeline; and the
   direct-call default (``session_pcpu_cores=None``) preserving pre-#1477
   outputs.
+* the #1840 persistent-wedge yield on the namespace veto: the
+  ``wedge_veto_streak`` sidecar counter accumulating ONLY on
+  namespace-vetoed wedge-regime ticks (frozen logs+outputs past the
+  effective window, current-tick ``gpu_idle`` True, no #951/#1477
+  material-CPU evidence) and yielding ``stalled`` /
+  ``persistent_wedge_veto_yield`` at ``WEDGE_VETO_YIELD_TICKS`` with the
+  GPU-idle escalation already posted; every reset condition (fresh
+  log/output, material CPU both ticks, the negative-rate pcpu confirm,
+  busy/unknown GPU, candidate-free tick, non-running verdict); the
+  escalation-absent / kill-switch / degraded-state holds; the inert
+  ``gpu_idle=False`` direct-call default; the #664 fire path
+  byte-unchanged (wedge streak reset on the fire tick); and the
+  ``poll_once`` -> ``_save_state`` threading of ``gpu_idle`` + the
+  persisted streak.
 """
 
 from __future__ import annotations
@@ -868,7 +882,7 @@ def test_zombie_namespace_artifact_alloc_holders_vetoes(
             uvm_live_holders=int(uvm),
             uvm_alloc_holders=int(alloc),
         )
-        assert out == ("running", None, cpu_flag, 0)
+        assert out == ("running", None, cpu_flag, 0, 0)
 
 
 def test_zombie_coordinator_only_falls_through_and_fires(
@@ -1179,7 +1193,7 @@ def test_zombie_total_unknown_or_zero_falls_through_enabled(
             uvm_live_holders=5,
             uvm_alloc_holders=4,
         )
-        assert out == ("stalled", "vllm_worker_dead_zombie_gpu", False, 2)
+        assert out == ("stalled", "vllm_worker_dead_zombie_gpu", False, 2, 0)
 
 
 def test_zombie_namespace_veto_kill_switch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -1648,7 +1662,7 @@ def test_zombie_direct_call_rate_none_default(monkeypatch: pytest.MonkeyPatch) -
         pod="pod-9664",
         cpu_override_active=True,
     )
-    assert out == ("stalled", "vllm_worker_dead_zombie_gpu", False, 2)
+    assert out == ("stalled", "vllm_worker_dead_zombie_gpu", False, 2, 0)
 
 
 def test_save_state_persists_cpu_sample_epoch_and_rate(
@@ -2190,4 +2204,391 @@ def test_zombie_direct_call_pcpu_default_none() -> None:
         cpu_override_active=True,
         session_cpu_rate_cores=-0.93,
     )
-    assert out == ("stalled", "vllm_worker_dead_zombie_gpu", False, 2)
+    assert out == ("stalled", "vllm_worker_dead_zombie_gpu", False, 2, 0)
+
+
+# ── #1840 persistent-wedge yield on the namespace veto ────────────────────────
+
+
+def _wedge_call(**overrides: Any) -> tuple[str, str | None, bool, int, int]:
+    """Direct ``_apply_zombie_override`` call in the #1768 wedge shape:
+    namespace-vetoed (total>0 / resolvable=0 / alloc>0), all logs AND
+    issue-keyed outputs stale far past the 900s effective window, every GPU
+    idle on the current tick, no CPU evidence on either tick, the GPU-idle
+    escalation already posted, and the persisted wedge streak starting at
+    0 — one qualifying tick increments it to 1. Tests override single
+    kwargs to exercise each reset / hold / fire condition."""
+    kwargs: dict[str, Any] = dict(
+        status="running",
+        zombie_gpu_pids=["900001", "900002"],
+        stall_sec=900,
+        last_mtime_ago=60000.0,
+        phase_log_mtime_ago=10**9,
+        shard_log_mtime_ago=10**9,
+        prev_state={
+            "zombie_streak": "0",
+            "wedge_veto_streak": "0",
+            "gpu_idle_escalated_phases": "hf_download",
+        },
+        pod="pod-9664",
+        cpu_override_active=False,
+        gpu_pids_total=8,
+        gpu_pids_resolvable=0,
+        uvm_live_holders=9,
+        uvm_alloc_holders=8,
+        output_mtime_ago=60000.0,
+        gpu_idle=True,
+    )
+    kwargs.update(overrides)
+    return pp._apply_zombie_override(**kwargs)
+
+
+def test_wedge_streak_accumulates_then_yields(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Acceptance criterion 1: consecutive qualifying namespace-vetoed ticks
+    accumulate the wedge streak (each tick suppressed as today) until the
+    threshold, where the veto YIELDS stalled/persistent_wedge_veto_yield.
+    Threshold pinned to 3 for a cheap three-tick replay; the streak is
+    carried tick-to-tick exactly as the ``_save_state`` sidecar would."""
+    monkeypatch.setattr(pp, "WEDGE_VETO_YIELD_TICKS", 3)
+    streak = "0"
+    for expected in (1, 2):
+        out = _wedge_call(
+            prev_state={
+                "zombie_streak": "0",
+                "wedge_veto_streak": streak,
+                "gpu_idle_escalated_phases": "hf_download",
+            }
+        )
+        assert out == ("running", None, False, 0, expected)
+        streak = str(out[4])
+    out = _wedge_call(
+        prev_state={
+            "zombie_streak": "0",
+            "wedge_veto_streak": streak,
+            "gpu_idle_escalated_phases": "hf_download",
+        }
+    )
+    assert out == ("stalled", "persistent_wedge_veto_yield", False, 0, 3)
+
+
+def test_wedge_yield_fires_at_default_threshold(caplog: pytest.LogCaptureFixture) -> None:
+    """At the shipped default threshold (10) the yield fires on the tick the
+    incremented streak reaches it: status stalled, the distinct reason,
+    ``cpu_override_active`` forced False, zombie_streak untouched at 0, and
+    the forensic log.error emitted."""
+    import logging
+
+    with caplog.at_level(logging.ERROR):
+        out = _wedge_call(
+            prev_state={
+                "zombie_streak": "0",
+                "wedge_veto_streak": str(pp.WEDGE_VETO_YIELD_TICKS - 1),
+                "gpu_idle_escalated_phases": "hf_download",
+            },
+            cpu_override_active=True,
+        )
+    assert out == (
+        "stalled",
+        "persistent_wedge_veto_yield",
+        False,
+        0,
+        pp.WEDGE_VETO_YIELD_TICKS,
+    )
+    assert "persistent-wedge veto yield" in caplog.text
+
+
+def test_wedge_fresh_log_resets_streak() -> None:
+    """A namespace-vetoed tick with ANY fresh workload log (within the
+    effective window) is not wedge-shaped: streak resets, veto holds."""
+    out = _wedge_call(
+        last_mtime_ago=100.0,
+        prev_state={
+            "zombie_streak": "0",
+            "wedge_veto_streak": str(pp.WEDGE_VETO_YIELD_TICKS - 1),
+            "gpu_idle_escalated_phases": "hf_download",
+        },
+    )
+    assert out == ("running", None, False, 0, 0)
+
+
+def test_wedge_fresh_output_resets_streak() -> None:
+    """A namespace-vetoed tick with a fresh issue-keyed OUTPUT artifact
+    (#1033's evidence class) is writing results: streak resets, veto holds."""
+    out = _wedge_call(
+        output_mtime_ago=100.0,
+        prev_state={
+            "zombie_streak": "0",
+            "wedge_veto_streak": str(pp.WEDGE_VETO_YIELD_TICKS - 1),
+            "gpu_idle_escalated_phases": "hf_download",
+        },
+    )
+    assert out == ("running", None, False, 0, 0)
+
+
+def test_wedge_material_cpu_both_ticks_resets_streak() -> None:
+    """The #951 evidence class applied WITHIN the vetoed regime: material
+    burn on BOTH ticks refutes a wedge — streak resets, veto holds."""
+    out = _wedge_call(
+        session_cpu_rate_cores=1.9,
+        prev_state={
+            "zombie_streak": "0",
+            "wedge_veto_streak": str(pp.WEDGE_VETO_YIELD_TICKS - 1),
+            "gpu_idle_escalated_phases": "hf_download",
+            "session_cpu_rate_cores": "1.83",
+        },
+    )
+    assert out == ("running", None, False, 0, 0)
+
+
+def test_wedge_single_tick_material_cpu_still_accumulates() -> None:
+    """The material-CPU reset is a BOTH-ticks conjunction (the #951 shape):
+    one material tick with an unknown prior rate keeps accumulating — a
+    #1768 wedge's occasional CPU blip cannot indefinitely defer the yield."""
+    out = _wedge_call(session_cpu_rate_cores=1.9)
+    assert out == ("running", None, False, 0, 1)
+
+
+def test_wedge_negative_rate_pcpu_confirm_resets_streak() -> None:
+    """The #1477 evidence class applied WITHIN the vetoed regime: a parsed
+    negative rate with material same-tick pcpu is live compute — streak
+    resets, veto holds."""
+    out = _wedge_call(
+        session_cpu_rate_cores=-0.93,
+        session_pcpu_cores=1.5,
+        prev_state={
+            "zombie_streak": "0",
+            "wedge_veto_streak": str(pp.WEDGE_VETO_YIELD_TICKS - 1),
+            "gpu_idle_escalated_phases": "hf_download",
+        },
+    )
+    assert out == ("running", None, False, 0, 0)
+
+
+def test_wedge_gpu_busy_tick_resets_streak() -> None:
+    """v2 acceptance criterion 2: a tick with ANY GPU busy (gpu_idle=False)
+    resets the streak — a healthy GPU-computing later phase with a
+    log-quiet, sub-threshold-CPU feeder can never accumulate toward the
+    yield."""
+    out = _wedge_call(
+        gpu_idle=False,
+        prev_state={
+            "zombie_streak": "0",
+            "wedge_veto_streak": str(pp.WEDGE_VETO_YIELD_TICKS - 1),
+            "gpu_idle_escalated_phases": "hf_download",
+        },
+    )
+    assert out == ("running", None, False, 0, 0)
+
+
+def test_wedge_gpu_idle_default_false_is_inert() -> None:
+    """Direct call WITHOUT the new keyword-only ``gpu_idle`` kwarg (every
+    pre-#1840 caller): the False default means unknown-GPU ticks reset the
+    streak — fail-safe toward the veto holding forever (pre-#1840
+    behavior)."""
+    kwargs: dict[str, Any] = dict(
+        status="running",
+        zombie_gpu_pids=["900001"],
+        stall_sec=900,
+        last_mtime_ago=60000.0,
+        phase_log_mtime_ago=10**9,
+        shard_log_mtime_ago=10**9,
+        prev_state={
+            "zombie_streak": "0",
+            "wedge_veto_streak": str(pp.WEDGE_VETO_YIELD_TICKS - 1),
+            "gpu_idle_escalated_phases": "hf_download",
+        },
+        pod="pod-9664",
+        cpu_override_active=False,
+        gpu_pids_total=8,
+        gpu_pids_resolvable=0,
+        uvm_live_holders=9,
+        uvm_alloc_holders=8,
+        output_mtime_ago=60000.0,
+    )
+    out = pp._apply_zombie_override(**kwargs)
+    assert out == ("running", None, False, 0, 0)
+
+
+def test_wedge_candidate_free_tick_resets_streak() -> None:
+    """A candidate-free tick never enters the override block: the recomputed
+    streak persists as 0 (reset), verdict untouched."""
+    out = _wedge_call(
+        zombie_gpu_pids=[],
+        prev_state={
+            "zombie_streak": "0",
+            "wedge_veto_streak": str(pp.WEDGE_VETO_YIELD_TICKS - 1),
+            "gpu_idle_escalated_phases": "hf_download",
+        },
+    )
+    assert out == ("running", None, False, 0, 0)
+
+
+def test_wedge_non_running_status_resets_streak() -> None:
+    """A non-``running`` verdict (done/gate/dead/stalled) never enters the
+    override block: streak resets, verdict passes through untouched."""
+    out = _wedge_call(
+        status="done",
+        prev_state={
+            "zombie_streak": "0",
+            "wedge_veto_streak": str(pp.WEDGE_VETO_YIELD_TICKS - 1),
+            "gpu_idle_escalated_phases": "hf_download",
+        },
+    )
+    assert out == ("done", None, False, 0, 0)
+
+
+def test_wedge_escalation_absent_holds_but_streak_persists() -> None:
+    """The yield conjunction requires the GPU-idle escalation already posted
+    for this run: an absent OR empty ``gpu_idle_escalated_phases`` holds the
+    veto even past the threshold — but the incremented streak still
+    persists (the escalation can land later)."""
+    for prev_state in (
+        {"zombie_streak": "0", "wedge_veto_streak": str(pp.WEDGE_VETO_YIELD_TICKS - 1)},
+        {
+            "zombie_streak": "0",
+            "wedge_veto_streak": str(pp.WEDGE_VETO_YIELD_TICKS - 1),
+            "gpu_idle_escalated_phases": "",
+        },
+    ):
+        out = _wedge_call(prev_state=prev_state)
+        assert out == ("running", None, False, 0, pp.WEDGE_VETO_YIELD_TICKS)
+
+
+def test_wedge_kill_switch_disables_yield(monkeypatch: pytest.MonkeyPatch) -> None:
+    """``EPM_POLL_WEDGE_VETO_YIELD_TICKS <= 0`` disables the yield entirely
+    (acceptance criterion 3, the single-knob kill-switch pattern): even a
+    huge persisted streak with escalation posted keeps the veto holding."""
+    for disabled in (0, -1):
+        monkeypatch.setattr(pp, "WEDGE_VETO_YIELD_TICKS", disabled)
+        out = _wedge_call(
+            prev_state={
+                "zombie_streak": "0",
+                "wedge_veto_streak": "10000",
+                "gpu_idle_escalated_phases": "hf_download",
+            }
+        )
+        assert out == ("running", None, False, 0, 10001)
+
+
+def test_wedge_degraded_streak_state_holds() -> None:
+    """A missing / garbage / None ``wedge_veto_streak`` sidecar value parses
+    to 0 (mirrors the ``prev_zombie_streak`` guard): the veto holds and the
+    counter restarts from 1 — every degraded read fails toward today's
+    behavior."""
+    for prev_state in (
+        {"zombie_streak": "0", "gpu_idle_escalated_phases": "hf_download"},
+        {
+            "zombie_streak": "0",
+            "wedge_veto_streak": "garbage",
+            "gpu_idle_escalated_phases": "hf_download",
+        },
+        {
+            "zombie_streak": "0",
+            "wedge_veto_streak": None,
+            "gpu_idle_escalated_phases": "hf_download",
+        },
+    ):
+        out = _wedge_call(prev_state=prev_state)
+        assert out == ("running", None, False, 0, 1)
+
+
+def test_wedge_664_fire_path_untouched(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Acceptance criterion 4: the #664 true positive (degraded namespace
+    counts -> falls through the namespace branch) is byte-unchanged — the
+    override fires with the SAME reason, and the fire tick resets a stale
+    persisted wedge streak to 0 (the yield lives entirely inside the
+    namespace-veto branch, which this shape never enters)."""
+    monkeypatch.setattr(pp, "WEDGE_VETO_YIELD_TICKS", 1)
+    out = pp._apply_zombie_override(
+        status="running",
+        zombie_gpu_pids=["1262130"],
+        stall_sec=900,
+        last_mtime_ago=2000.0,
+        phase_log_mtime_ago=10**9,
+        shard_log_mtime_ago=10**9,
+        prev_state={
+            "zombie_streak": "1",
+            "wedge_veto_streak": "7",
+            "gpu_idle_escalated_phases": "training",
+        },
+        pod="pod-9664",
+        cpu_override_active=True,
+        gpu_idle=True,
+    )
+    assert out == ("stalled", "vllm_worker_dead_zombie_gpu", False, 2, 0)
+
+
+def test_wedge_poll_once_threads_gpu_idle_and_persists_streak(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """``poll_once`` threads the computed ``gpu_idle`` into the override and
+    the returned wedge streak into ``_save_state``: a namespace-vetoed
+    wedge tick (all GPUs idle, stale logs, no escalation posted yet)
+    increments the persisted counter while the verdict stays ``running``."""
+    monkeypatch.setattr(pp, "ZOMBIE_NAMESPACE_VETO_ENABLED", True)
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-07-28 00:00:01 [phase=hf_download]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5000.0",
+        zombie_pids="900001 900002",
+        gpu_pids_total="2",
+        gpu_pids_resolvable="0",
+        uvm_live_holders="3",
+        uvm_alloc_holders="2",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state = json.loads(_stale_state(now, prev_cpu="4000.0"))
+    state["9664"]["wedge_veto_streak"] = "3"
+    state_file.write_text(json.dumps(state))
+    result = pp.poll_once(
+        issue=9664,
+        pod="pod-9664",
+        log_path="/workspace/logs/issue-9664.log",
+        pid_file="/workspace/logs/issue-9664.pid",
+        state_file=state_file,
+    )
+    assert result.status == "running"
+    assert result.stall_reason is None
+    saved = json.loads(state_file.read_text())["9664"]
+    assert saved["wedge_veto_streak"] == "4"
+    assert saved["zombie_streak"] == "0"
+
+
+def test_wedge_poll_once_end_to_end_yield(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """End-to-end #1768 replay through ``poll_once``: streak one below the
+    default threshold + escalation posted + the full wedge shape -> the
+    tick verdict flips to stalled/persistent_wedge_veto_yield and the
+    reached streak persists."""
+    monkeypatch.setattr(pp, "ZOMBIE_NAMESPACE_VETO_ENABLED", True)
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 60000,
+        tail="2026-07-28 00:00:01 [phase=hf_download]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5000.0",
+        zombie_pids="900001 900002",
+        gpu_pids_total="2",
+        gpu_pids_resolvable="0",
+        uvm_live_holders="3",
+        uvm_alloc_holders="2",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state = json.loads(_stale_state(now, prev_cpu="4000.0"))
+    state["9664"]["wedge_veto_streak"] = str(pp.WEDGE_VETO_YIELD_TICKS - 1)
+    state["9664"]["gpu_idle_escalated_phases"] = "hf_download"
+    state_file.write_text(json.dumps(state))
+    result = pp.poll_once(
+        issue=9664,
+        pod="pod-9664",
+        log_path="/workspace/logs/issue-9664.log",
+        pid_file="/workspace/logs/issue-9664.pid",
+        state_file=state_file,
+    )
+    assert result.status == "stalled"
+    assert result.stall_reason == "persistent_wedge_veto_yield"
+    saved = json.loads(state_file.read_text())["9664"]
+    assert saved["wedge_veto_streak"] == str(pp.WEDGE_VETO_YIELD_TICKS)

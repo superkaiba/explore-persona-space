@@ -53,7 +53,18 @@ FailureClass = Literal["infra", "code"]
 #     the same pod (recipe: `.claude/rules/gotchas.md` crash-orphan
 #     EngineCore entry + `.claude/agent-memory/experimenter/
 #     feedback_vllm_zombie_gpu_pkill_reaper.md`).
-STALL_REASON_INFRA: frozenset[str] = frozenset({"vllm_worker_dead_zombie_gpu"})
+#   - "persistent_wedge_veto_yield": the #864/#1216 namespace veto yielded
+#     after N consecutive suppressed ticks in the wedge regime (#1840 —
+#     alive-but-wedged workers, host-unresolvable PIDs, frozen
+#     logs+outputs, every GPU idle, no material CPU; #1768's ~16h
+#     HF-download futex wedge). Recoverable by an experimenter respawn:
+#     the wedged workers are ALIVE but host-namespace-unresolvable by
+#     construction, so recovery kills them CONTAINER-side by
+#     distinctive-cmdline/session match (`pgrep -af` inside the pod),
+#     never by the nvidia-smi-reported host PID, then relaunches.
+STALL_REASON_INFRA: frozenset[str] = frozenset(
+    {"vllm_worker_dead_zombie_gpu", "persistent_wedge_veto_yield"}
+)
 
 # Infra log patterns (regex, case-insensitive). This module is the source of
 # truth; mirrored by `.claude/skills/issue/failure_patterns.md`. Any match →
