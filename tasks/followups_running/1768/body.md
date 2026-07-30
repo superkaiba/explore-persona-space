@@ -5,6 +5,7 @@ title: Behavior fine-tuning changes the context→answer map in rank order with 
 kind: experiment
 tags:
 - followup-auto
+- followup-manual
 created_at: '2026-07-28T18:48:27Z'
 has_clean_result: true
 parent_id: 722
