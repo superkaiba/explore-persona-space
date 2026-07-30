@@ -343,3 +343,207 @@ def test_eval_rung_call_site_is_guarded_and_writes_to_diag_out():
     assert "if tbl_ev is not None:" in src
     # and the per-lane sink is the file the collector merges
     assert '(args.out_root / "map_diagnostics.json").write_text' in src
+
+
+# --------------------------------------------------------------------------
+# Fan-out round: ONE canonical map path, the fit-SEED reuse guard, and the
+# WIRED save->load->apply round-trip gate.
+#
+# Phase A fits every map in a THROWAWAY invocation that then exits, so the
+# persisted payload is the sole surviving copy of hours of fit and the 6 scoring
+# lanes consume nothing else. These pin the three things that makes safe:
+# writer/reader/stager agree on the path, a payload fit under a different seed is
+# REFUSED (its subsampled U rows differ and the row-COUNT guard cannot see it),
+# and a serialization defect fails LOUD in phase A instead of silently poisoning
+# every lane.
+# --------------------------------------------------------------------------
+
+
+def _stage_module():
+    """Import the staging CLI (kept import-light: no fits/numpy at module top)."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "_i1739_stage_maps", REPO_ROOT / "scripts" / "issue1739_nlmap_stage_maps.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+@pytest.mark.parametrize("kind", [*sorted(fits.NONLINEAR_MAP_KINDS), "linear"])
+def test_map_path_is_the_single_definition_the_writer_uses(tmp_path, kind):
+    """_save_map must persist exactly where _map_path says (and _load_nl_map looks)."""
+    F = _load_script_module()
+    x, y = _pool()
+    layers = [14, 19]
+    if kind == "linear":
+        fitted = fits.fit_linear_map(x, y, device="cpu")
+    else:
+        fitted = fits.fit_nonlinear_map(x, y, kind=kind, device="cpu", seed=0)
+    written = F._save_map(tmp_path, "context_end", "250", fitted, layers, map_seed=0)
+    assert written == F._map_path(tmp_path, "context_end", "250", kind)
+    assert written.exists()
+
+
+def test_stage_maps_filename_matches_fits_map_path(tmp_path):
+    """The stager duplicates the payload basename — pin it against the real thing.
+
+    A silent divergence here means the stager pulls files the lane's reader never
+    opens: every lane re-fits, and nothing fails.
+    """
+    F = _load_script_module()
+    S = _stage_module()
+    for kind in sorted(fits.NONLINEAR_MAP_KINDS):
+        for variant in ("prefix_end", "context_end"):
+            for u_label in ("250", "full"):
+                assert (
+                    S.map_filename(variant, u_label, kind)
+                    == F._map_path(tmp_path, variant, u_label, kind).name
+                )
+
+
+def test_load_nl_map_refuses_a_payload_fit_under_a_different_seed(tmp_path):
+    """seeds[0] draws the subsampled U rows, so a seed mismatch is a DIFFERENT map.
+
+    w_fit_rows == n_u passes regardless (250 == 250), which is exactly why the
+    seed has to be checked separately.
+    """
+    F = _load_script_module()
+    x, y = _pool()
+    layers = [14, 19]
+    n_u = x.shape[1]
+    fitted = fits.fit_nonlinear_map(x, y, kind="mlp", device="cpu", seed=0)
+    F._save_map(tmp_path, "context_end", "250", fitted, layers, map_seed=0)
+
+    args = (tmp_path, "context_end", "250", "mlp", layers, n_u)
+    # same seed -> reused
+    assert F._load_nl_map(*args, map_seed=0) is not None
+    # different seed -> refused (caller re-fits)
+    assert F._load_nl_map(*args, map_seed=1) is None
+    # seed unknown to the caller -> the row-count guard alone still applies
+    assert F._load_nl_map(*args, map_seed=None) is not None
+
+
+def test_load_nl_map_accepts_a_legacy_payload_with_no_recorded_seed(tmp_path):
+    """A pre-guard payload (map_seed absent) is reused loudly, not silently dropped."""
+    import torch
+
+    F = _load_script_module()
+    x, y = _pool()
+    layers = [14, 19]
+    n_u = x.shape[1]
+    fitted = fits.fit_nonlinear_map(x, y, kind="mlp", device="cpu", seed=0)
+    path = F._save_map(tmp_path, "context_end", "250", fitted, layers, map_seed=0)
+
+    blob = torch.load(path, map_location="cpu", weights_only=False)
+    blob["meta"].pop("map_seed")
+    torch.save(blob, path)
+
+    assert F._load_nl_map(tmp_path, "context_end", "250", "mlp", layers, n_u, map_seed=7)
+
+
+@pytest.mark.parametrize("kind", sorted(fits.NONLINEAR_MAP_KINDS))
+def test_map_roundtrip_gate_passes_on_a_genuine_payload(tmp_path, kind):
+    F = _load_script_module()
+    x, y = _pool()
+    layers = [14, 19]
+    n_u = x.shape[1]
+    fitted = fits.fit_nonlinear_map(x, y, kind=kind, device="cpu", seed=0)
+    F._save_map(tmp_path, "context_end", "full", fitted, layers, map_seed=0)
+
+    rec = F._verify_map_roundtrip(
+        tmp_path, "context_end", "full", kind, layers, n_u, fitted, x[:, :8], map_seed=0
+    )
+    assert rec["cos_min"] >= F.MAP_ROUNDTRIP_COS_MIN
+    assert rec["rel_max_abs_diff"] <= F.MAP_ROUNDTRIP_REL_MAX
+    assert rec["n_probe_rows"] == 8
+
+
+def test_map_roundtrip_gate_FAILS_LOUD_on_a_corrupted_payload(tmp_path):
+    """Deliberate corruption: swap the per-layer payloads so layer i gets layer j's map.
+
+    This is the defect class the gate exists for — a layer-misaligned payload
+    still loads, still has the right shapes, still passes every metadata guard,
+    and would silently produce wrong arm scores in all 6 lanes.
+    """
+    import torch
+
+    F = _load_script_module()
+    # distinct per-layer structure so a swap is detectable
+    rng = np.random.default_rng(3)
+    x = rng.normal(size=(2, 40, 6))
+    y = np.stack([np.tanh(x[0] * 2.0), -np.tanh(x[1] * 0.5) + 3.0])
+    layers = [14, 19]
+    n_u = x.shape[1]
+    fitted = fits.fit_nonlinear_map(x, y, kind="mlp", device="cpu", seed=0)
+    path = F._save_map(tmp_path, "context_end", "full", fitted, layers, map_seed=0)
+
+    blob = torch.load(path, map_location="cpu", weights_only=False)
+    blob["payloads"] = list(reversed(blob["payloads"]))  # layer-misaligned
+    torch.save(blob, path)
+
+    with pytest.raises(RuntimeError, match="round-trip gate FAILED"):
+        F._verify_map_roundtrip(
+            tmp_path, "context_end", "full", "mlp", layers, n_u, fitted, x[:, :8], map_seed=0
+        )
+
+
+def test_map_roundtrip_gate_FAILS_LOUD_when_the_payload_fails_the_reader(tmp_path):
+    """A payload the lanes' own reader would reject is a gate FAILURE, not a skip."""
+    import torch
+
+    F = _load_script_module()
+    x, y = _pool()
+    layers = [14, 19]
+    n_u = x.shape[1]
+    fitted = fits.fit_nonlinear_map(x, y, kind="mlp", device="cpu", seed=0)
+    path = F._save_map(tmp_path, "context_end", "full", fitted, layers, map_seed=0)
+
+    blob = torch.load(path, map_location="cpu", weights_only=False)
+    blob["meta"]["diagnostics"] = {}  # drops the held-out map-quality companions
+    torch.save(blob, path)
+
+    with pytest.raises(RuntimeError, match="does not pass _load_nl_map"):
+        F._verify_map_roundtrip(
+            tmp_path, "context_end", "full", "mlp", layers, n_u, fitted, x[:, :8], map_seed=0
+        )
+
+
+# --------------------------------------------------------------------------
+# Staging step: consumer-open verification over a LOCAL fixture mirror.
+# --------------------------------------------------------------------------
+
+
+def test_stage_maps_check_payload_accepts_a_real_payload_and_names_every_defect(tmp_path):
+    F = _load_script_module()
+    S = _stage_module()
+    x, y = _pool()
+    layers = [14, 19]
+    fitted = fits.fit_nonlinear_map(x, y, kind="mlp", device="cpu", seed=0)
+    path = F._save_map(tmp_path / "maps", "context_end", "250", fitted, layers, map_seed=0)
+    # _save_map roots itself at <arg>/maps, so pass the parent to hit tmp_path/maps
+    good = S.check_payload(path, "context_end", "250", "mlp")
+    assert good["ok"], good["reasons"]
+    assert good["map_seed"] == 0
+    assert good["n_layers"] == 2
+
+    missing = S.check_payload(tmp_path / "maps" / "nope.pt", "context_end", "250", "mlp")
+    assert not missing["ok"] and "missing" in missing["reasons"]
+
+    wrong_kind = S.check_payload(path, "context_end", "250", "kernel")
+    assert not wrong_kind["ok"]
+    assert any("map_kind" in r for r in wrong_kind["reasons"])
+
+    wrong_variant = S.check_payload(path, "prefix_end", "250", "mlp")
+    assert not wrong_variant["ok"]
+    assert any("variant" in r for r in wrong_variant["reasons"])
+
+
+def test_stage_maps_expected_keys_covers_the_path2_map_set():
+    S = _stage_module()
+    keys = S.expected_keys(("prefix_end", "context_end"), ("250", "full"), ("mlp", "kernel"))
+    assert len(keys) == 8  # 2 variants x 2 rungs x 2 kinds
+    assert len(set(keys)) == 8
+    assert ("prefix_end", "full", "kernel") in keys

@@ -603,7 +603,13 @@ def _save_rb(tensors_root: Path, behavior: str, regime: str, rb, layers) -> None
 
     out_dir = tensors_root / f"r_b_{regime}"
     out_dir.mkdir(parents=True, exist_ok=True)
-    tmp = out_dir / f"{behavior}.tmp.npz"  # np.savez appends .npz to non-.npz names (#1092)
+    # PID-unique tmp (#1315 fan-out staging race): phase-A fits the two map kinds
+    # CONCURRENTLY under one behavior + one tensors-root, so both processes write
+    # this same r_B destination. A shared tmp name lets one clobber the other's
+    # half-written file and the loser's os.replace dies FileNotFoundError; a
+    # unique tmp + atomic replace onto the shared final path is safe (both write
+    # identical content — same behavior/regime/seed => deterministic).
+    tmp = out_dir / f"{behavior}.tmp.{os.getpid()}.npz"  # savez appends .npz to non-.npz (#1092)
     with tmp.open("wb") as fh:
         np.savez(fh, rb=np.asarray(rb, dtype=np.float16), layers=np.asarray(layers))
     os.replace(tmp, out_dir / f"{behavior}.npz")
@@ -619,7 +625,24 @@ def _git_commit() -> str:
     return proc.stdout.strip() if proc.returncode == 0 else "unknown"
 
 
-def _save_map(tensors_root: Path, variant: str, u_label: str, mapfit, layers) -> Path:
+def _map_path(tensors_root: Path | str, variant: str, u_label: str, kind: str) -> Path:
+    """Canonical persisted-map path — ONE definition for writer, reader and gate.
+
+    Linear rungs keep the historical suffix-free ``.npz`` name; a nonlinear kind
+    gets a ``__<kind>.pt`` sibling. The writer (:func:`_save_map`), the reader
+    (:func:`_load_nl_map`) and the staging step each need this string, and three
+    independent rebuilds is a rename away from a writer that persists where the
+    reader never looks (silently re-fitting every map for the rest of time).
+    """
+    out_dir = Path(tensors_root) / "maps"
+    if kind == "linear":
+        return out_dir / f"{variant}__u{u_label}.npz"
+    return out_dir / f"{variant}__u{u_label}__{kind}.pt"
+
+
+def _save_map(
+    tensors_root: Path, variant: str, u_label: str, mapfit, layers, *, map_seed: int | None = None
+) -> Path:
     """Persist a frozen plain-rung map (plan §10 ``maps/`` class — round-3 C-1).
 
     fp16 W + fp32 standardization params + meta under ``tensors_root/maps/``;
@@ -638,11 +661,10 @@ def _save_map(tensors_root: Path, variant: str, u_label: str, mapfit, layers) ->
 
     import numpy as np
 
-    out_dir = Path(tensors_root) / "maps"
-    out_dir.mkdir(parents=True, exist_ok=True)
     kind = getattr(mapfit, "kind", "linear")
-    suffix = "" if kind == "linear" else f"__{kind}"
-    out = out_dir / f"{variant}__u{u_label}{suffix}.npz"
+    out = _map_path(tensors_root, variant, u_label, kind)
+    out_dir = out.parent
+    out_dir.mkdir(parents=True, exist_ok=True)
     if out.exists():
         return out
     meta = {
@@ -652,6 +674,13 @@ def _save_map(tensors_root: Path, variant: str, u_label: str, mapfit, layers) ->
         "map_kind": kind,
         "w_fit_rows": mapfit.diagnostics.get("w_fit_rows"),
         "solver": mapfit.diagnostics.get("solver"),
+        # The FIT seed. Load-bearing for cross-invocation reuse: for a
+        # SUBSAMPLED U rung the pool rows themselves are drawn with this seed
+        # (_u_pool_for_spec's rng([1739, 9, seeds[0]])), so a payload fit under a
+        # different seed is a map over a DIFFERENT 250 rows — and the row-COUNT
+        # guard (w_fit_rows == n_u) cannot see that. None = a legacy payload
+        # written before this field existed (_load_nl_map accepts it, loudly).
+        "map_seed": None if map_seed is None else int(map_seed),
         "dtype": "w=fp16; mu/sd=fp32",
         "apply": "pred = ((x - x_mu)/x_sd) @ w + y_mu (whitened space)",
         "git_commit": _git_commit(),
@@ -666,9 +695,6 @@ def _save_map(tensors_root: Path, variant: str, u_label: str, mapfit, layers) ->
 
         import torch as _torch
 
-        out = out_dir / f"{variant}__u{u_label}__{kind}.pt"
-        if out.exists():
-            return out
         meta["apply"] = "pred = issue779_ffc_n1m_fits.apply_map(payload[layer], x) (whitened space)"
         meta["dtype"] = "per-layer N1M payload tensors (fp32)"
         # Carry the held-out map-quality diagnostics (per-layer r2_map,
@@ -678,12 +704,12 @@ def _save_map(tensors_root: Path, variant: str, u_label: str, mapfit, layers) ->
         # reads (CLAUDE.md identity+bias / kNN bullet) must survive without
         # re-running the fit. Linear rungs keep their pre-existing meta.
         meta["diagnostics"] = mapfit.diagnostics
-        tmp = out_dir / (out.name + ".tmp")
+        tmp = out_dir / f"{out.name}.tmp.{_os.getpid()}"  # PID-unique: see _save_rb
         _torch.save({"meta": meta, "payloads": list(mapfit.nl_payloads)}, tmp)
         _os.replace(tmp, out)
         logger.info("[fits] %s map payloads persisted -> %s", kind, out)
         return out
-    tmp = out_dir / f"{out.stem}.tmp.npz"  # keep the .npz suffix (#1092 savez trap)
+    tmp = out_dir / f"{out.stem}.tmp.{os.getpid()}.npz"  # keep .npz (#1092); PID-unique
     with tmp.open("wb") as fh:
         np.savez(
             fh,
@@ -772,6 +798,7 @@ def _load_nl_map(
     layers,
     n_u: int,
     device: str = "cpu",
+    map_seed: int | None = None,
 ):
     """Load a persisted NONLINEAR map instead of re-fitting it, or None.
 
@@ -786,17 +813,24 @@ def _load_nl_map(
 
     NONLINEAR KINDS ONLY — the linear path stays byte-identical (this module's
     stated invariant, and pod-1739 is running the linear grid). Guarded: the
-    persisted pool size and layer list must match this rung exactly, and the
-    payload must carry the held-out diagnostics (so ``diag_out`` stays an
+    persisted pool size, layer list and FIT SEED must match this rung exactly,
+    and the payload must carry the held-out diagnostics (so ``diag_out`` stays an
     honest read rather than silently losing the map-quality companions). Any
     mismatch or missing field returns None and the caller re-fits. Kill switch:
     ``EPM_I1739_NL_MAP_REUSE=0``.
+
+    The SEED guard matters once maps are fit in a SEPARATE invocation from the
+    scoring lanes (the phase-A prefetch): for a subsampled U rung the pool rows
+    are drawn with ``seeds[0]``, so a payload fit under another seed is a map
+    over a DIFFERENT subsample — and ``w_fit_rows == n_u`` passes anyway (250 ==
+    250). A payload with no recorded ``map_seed`` predates the field and is
+    accepted with a loud warning rather than silently discarded.
     """
     import os
 
     if kind == "linear" or os.environ.get(NL_MAP_REUSE_ENV, "1") == "0":
         return None
-    path = Path(tensors_root) / "maps" / f"{variant}__u{u_label}__{kind}.pt"
+    path = _map_path(tensors_root, variant, u_label, kind)
     if not path.exists():
         return None
 
@@ -820,6 +854,17 @@ def _load_nl_map(
         reasons.append(f"w_fit_rows {meta.get('w_fit_rows')} != n_u {n_u}")
     if not isinstance(diagnostics, dict) or not diagnostics.get("per_layer"):
         reasons.append("payload carries no per-layer diagnostics")
+    stored_seed = meta.get("map_seed")
+    if stored_seed is None:
+        logger.warning(
+            "[fits] persisted %s map %s carries NO map_seed (pre-guard payload) — "
+            "reusing on the row-count guard alone; a subsampled rung fit under a "
+            "different seed would be a map over different rows",
+            kind,
+            path.name,
+        )
+    elif map_seed is not None and int(stored_seed) != int(map_seed):
+        reasons.append(f"map_seed {stored_seed} != requested {int(map_seed)}")
     if reasons:
         logger.warning(
             "[fits] persisted %s map at %s NOT reused (%s) — re-fitting",
@@ -846,6 +891,100 @@ def _load_nl_map(
         # device the original fit happened to use.
         apply_device=str(device or "cpu"),
     )
+
+
+MAP_ROUNDTRIP_COS_MIN = 0.9999
+MAP_ROUNDTRIP_REL_MAX = 1e-3
+# Probe rows for the gate. 8 rows x 28 layers x 3584 dims fp64 ~= 6.4 MB — small
+# enough to hold beside a full-U fit, wide enough that a per-layer payload
+# misalignment cannot coincidentally agree.
+MAP_ROUNDTRIP_PROBE_ROWS = 8
+
+
+def _verify_map_roundtrip(
+    tensors_root: Path,
+    variant: str,
+    u_label: str,
+    kind: str,
+    layers,
+    n_u: int,
+    mapfit,
+    probe_x,
+    *,
+    map_seed: int | None,
+    device: str = "cpu",
+) -> dict:
+    """WIRED save->load->apply gate for a freshly-persisted nonlinear map.
+
+    The phase-A prefetch fits every map in a THROWAWAY invocation and the
+    scoring lanes consume only the persisted payload, so the payload is the sole
+    surviving copy of hours of fit: a serialization defect (a dropped layer, a
+    truncated dtype, a payload/layer misalignment) would otherwise surface as
+    silently wrong arm scores in every lane. This applies the in-memory fit and
+    the round-tripped payload to the SAME held-out probe rows and fails LOUD on
+    disagreement.
+
+    Loading goes through :func:`_load_nl_map` — the lanes' OWN reader — so the
+    gate also proves the payload passes every reuse guard (layers, row count,
+    seed, diagnostics); a ``None`` return is a gate FAILURE, not a soft skip.
+
+    Tolerance: both sides are the same fp32 payload applied in ONE process, so
+    agreement is near-exact; the bars exist to catch structural defects, which
+    read orders of magnitude away (a wrong/misaligned payload gives cosines far
+    below 0.99). Returns a small record for the log / diagnostics.
+    """
+    import numpy as np
+
+    from explore_persona_space.experiments.issue_1739 import fits
+
+    reloaded = _load_nl_map(
+        tensors_root, variant, u_label, kind, layers, n_u, device=device, map_seed=map_seed
+    )
+    path = _map_path(tensors_root, variant, u_label, kind)
+    if reloaded is None:
+        raise RuntimeError(
+            f"[fits] map round-trip gate FAILED for {path}: the just-persisted payload "
+            "does not pass _load_nl_map's reuse guards (see the warning above) — the "
+            "scoring lanes could never consume it"
+        )
+    pred_mem = np.asarray(fits.apply_map(probe_x, mapfit), dtype=np.float64)
+    pred_disk = np.asarray(fits.apply_map(probe_x, reloaded), dtype=np.float64)
+    if pred_mem.shape != pred_disk.shape:
+        raise RuntimeError(
+            f"[fits] map round-trip gate FAILED for {path}: prediction shape "
+            f"{pred_disk.shape} != in-memory {pred_mem.shape}"
+        )
+    cos_per_layer = []
+    for li in range(pred_mem.shape[0]):
+        a = pred_mem[li].ravel()
+        b = pred_disk[li].ravel()
+        den = float(np.linalg.norm(a) * np.linalg.norm(b))
+        cos_per_layer.append(1.0 if den == 0.0 else float(a @ b / den))
+    max_abs = float(np.max(np.abs(pred_disk - pred_mem))) if pred_mem.size else 0.0
+    scale = float(np.max(np.abs(pred_mem))) if pred_mem.size else 0.0
+    rel = max_abs / (scale + 1e-12)
+    cos_min = min(cos_per_layer) if cos_per_layer else 1.0
+    record = {
+        "path": str(path),
+        "n_probe_rows": int(probe_x.shape[1]),
+        "cos_min": cos_min,
+        "max_abs_diff": max_abs,
+        "rel_max_abs_diff": rel,
+        "cos_min_bar": MAP_ROUNDTRIP_COS_MIN,
+        "rel_max_bar": MAP_ROUNDTRIP_REL_MAX,
+    }
+    if cos_min < MAP_ROUNDTRIP_COS_MIN or rel > MAP_ROUNDTRIP_REL_MAX:
+        raise RuntimeError(
+            f"[fits] map round-trip gate FAILED for {path}: cos_min={cos_min:.6f} "
+            f"(bar {MAP_ROUNDTRIP_COS_MIN}), rel_max_abs_diff={rel:.3e} "
+            f"(bar {MAP_ROUNDTRIP_REL_MAX}) over {record['n_probe_rows']} probe rows"
+        )
+    print(
+        f"[fits] map round-trip gate PASS {path.name} "
+        f"(cos_min={cos_min:.6f} rel={rel:.2e} rows={record['n_probe_rows']})",
+        flush=True,
+    )
+    return record
 
 
 def _record_compose_skip(spec: RunSpec, exc: Exception, compose_skips: list[dict]) -> None:
@@ -1034,7 +1173,9 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
             print(f"[fits] group {gi + 1}/{len(groups)} SKIP compose: {exc}", flush=True)
             continue
         t_map = time.time()
-        wh = fits.fit_whitening(u_x, device=args.device, seed=args.seeds[0])
+        map_kind = getattr(args, "map_kind", "linear")
+        map_seed = int(args.seeds[0])
+        wh = fits.fit_whitening(u_x, device=args.device, seed=map_seed)
         # Plain rungs persist a behavior-INDEPENDENT map; consume it when a
         # sibling invocation already fit it (see _load_nl_map). Nonlinear only.
         mapfit = (
@@ -1042,15 +1183,23 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
                 args.tensors_root,
                 spec0.variant,
                 u_label,
-                getattr(args, "map_kind", "linear"),
+                map_kind,
                 layers,
                 n_u,
                 device=args.device,
+                map_seed=map_seed,
             )
             if spec0.f_u is None
             else None
         )
         map_source = "loaded" if mapfit is not None else "fit"
+        # Held-out probe rows for the round-trip gate, captured BEFORE u_x is
+        # freed (the gate needs whitened inputs, and u_x dies two lines below).
+        probe_x = None
+        if map_source == "fit" and spec0.f_u is None and map_kind != "linear":
+            probe_x = np.array(
+                fits.apply_whitening(u_x, wh)[:, : min(MAP_ROUNDTRIP_PROBE_ROWS, n_u)], copy=True
+            )
         if mapfit is None:
             mapfit = _fit_map(args, fits.apply_whitening(u_x, wh), fits.apply_whitening(u_y, wh))
         if timings is not None:
@@ -1061,7 +1210,25 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
         if spec0.f_u is None:
             # C-1: persist the frozen plain-rung map weights (HF-bound via
             # the tensors upload stage; behavior-independent, idempotent).
-            _save_map(args.tensors_root, spec0.variant, u_label, mapfit, layers)
+            fresh = not _map_path(args.tensors_root, spec0.variant, u_label, map_kind).exists()
+            _save_map(args.tensors_root, spec0.variant, u_label, mapfit, layers, map_seed=map_seed)
+            if fresh and probe_x is not None:
+                # Gate ONLY a payload THIS process wrote: an already-present file
+                # is a sibling's fit, and comparing two independent fits would
+                # test cross-device determinism instead of serialization.
+                diag_out[f"{spec0.variant}|{u_label}"]["roundtrip_gate"] = _verify_map_roundtrip(
+                    args.tensors_root,
+                    spec0.variant,
+                    u_label,
+                    map_kind,
+                    layers,
+                    n_u,
+                    mapfit,
+                    probe_x,
+                    map_seed=map_seed,
+                    device=args.device,
+                )
+            del probe_x
             if tbl_ev is not None:
                 z_ev_w = fits.apply_whitening(tbl_ev.z_by_variant[spec0.variant], wh)
                 za_ev_w = (

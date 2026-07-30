@@ -35,6 +35,7 @@ NL_ROOT="$RESULTS_ROOT/nonlinear_map"
 TENSORS_ROOT="analysis_tensors/issue_1739"
 U_STORE_DIR="data/issue_1739/hf_dl/u_store"
 LOG_DIR="/workspace/logs"
+BRANCH="${EPM_I1739_BRANCH:-issue-1739}"
 
 # The three map-family arms. nl-arm6 = map -> E1 persona-vector projection;
 # nl-arm7 = ridge readout trained on PREDICTED answer vectors; nl-arm8 =
@@ -59,14 +60,56 @@ PLAN_WALL_H="${EPM_I1739_NL_PLAN_WALL_H:-0.83}"
 PILOT_ABORT_MULT="${EPM_I1739_NL_PILOT_ABORT_MULT:-1}"
 # Comma/space list of phases, or "all". Two-leg dispatch (stage,pilot then
 # fits,collect,upload) keeps the round-level STOP decision on measured numbers.
+# The fan-out shape adds `prefetch` (phase A: fit every map ONCE) and
+# `stage_maps` (per lane: pull those payloads down before scoring).
 PHASE="${EPM_I1739_NL_PHASE:-all}"
 
+# ---- phase-A prefetch knobs -------------------------------------------------
+# The prefetch runs under ONE behavior because the map is BEHAVIOR-INDEPENDENT
+# (fit on the shared #1092 U pool; _save_map omits the behavior from the
+# filename). Its labeled/e1 stores just have to exist for the script to run.
+PREFETCH_BEHAVIOR="${EPM_I1739_NL_PREFETCH_BEHAVIOR:-evil}"
+PREFETCH_ARM="${EPM_I1739_NL_PREFETCH_ARM:-arm6_map_proj_e1}"
+PREFETCH_REGIME="${EPM_I1739_NL_PREFETCH_REGIME:-e1}"
+# Cheapest budget in the grid (measured plain group wall ~4.87 s vs 46.2/140.1
+# for the larger rungs). This is the knob behavior_budgets() cannot express.
+PREFETCH_BUDGETS="${EPM_I1739_NL_PREFETCH_BUDGETS:-250}"
+PREFETCH_DRAW="${EPM_I1739_NL_PREFETCH_DRAW:-0}"
+PREFETCH_N_BOOT="${EPM_I1739_NL_PREFETCH_N_BOOT:-20}"
+PREFETCH_N_PERM="${EPM_I1739_NL_PREFETCH_N_PERM:-20}"
+# seeds[0] drives whitening, the map fit AND the subsampled U rung's ROW DRAW,
+# so the prefetch MUST pin it to the lanes' first seed or the u=250 payload is a
+# map over different rows (and _load_nl_map's row-COUNT guard cannot see that;
+# its map_seed guard is what catches a mismatch). Derived, never hand-set.
+PREFETCH_SEED="${SEEDS%% *}"
+
+# ---- per-lane map staging knobs (phase `stage_maps`) -----------------------
+STAGE_MAPS_VARIANTS="${EPM_I1739_NL_STAGE_VARIANTS:-prefix_end context_end}"
+# U-rung LABELS as they appear in the payload filename ('full' stays 'full').
+stage_map_u_labels() {
+  local out=() tok
+  for tok in $USIZES; do out+=("$tok"); done
+  printf '%s\n' "${out[@]}"
+}
+
+# Phases that run ONLY when named explicitly — never under PHASE=all. Both
+# belong to the fan-out shape (phase A publishes maps; each lane stages them),
+# so folding them into "all" would change the legacy single-box dispatch: a
+# single box has nothing on the Hub yet, and stage_maps is fail-loud by design.
+OPT_IN_PHASES="prefetch stage_maps"
+
 want_phase() {
-  # want_phase <name> — true when PHASE is "all" or lists <name>.
-  case "$PHASE" in
-    all) return 0 ;;
-  esac
+  # want_phase <name> — true when PHASE lists <name>, or PHASE is "all" and
+  # <name> is not opt-in-only.
   local p
+  case "$PHASE" in
+    all)
+      for p in $OPT_IN_PHASES; do
+        [ "$p" = "$1" ] && return 1
+      done
+      return 0
+      ;;
+  esac
   for p in ${PHASE//,/ }; do
     [ "$p" = "$1" ] && return 0
   done
@@ -102,9 +145,16 @@ behavior_regimes() {
   esac
 }
 
-fits_args() {
-  # fits_args <behavior> <kind> — the production fits invocation, subset to
-  # the map-family arms with a per-kind out-root.
+map_args() {
+  # map_args <behavior> <kind> — every flag that determines the FITTED MAP, plus
+  # the stores it needs to run at all. Shared by fits_args and prefetch_args so a
+  # prefetched map is bit-for-bit the map the lane would have fit: any future
+  # map-affecting flag added here propagates to BOTH by construction.
+  #
+  # Map-determining set: --map-kind, --u-store, --u-sizes, --tensors-root, and
+  # (implicitly) --variant (default 'both') + seeds[0], which drives whitening,
+  # the map fit AND the subsampled U rung's ROW DRAW. That last one is why
+  # prefetch_args pins seeds[0] to the lane's first seed.
   local b="$1" kind="$2"
   printf '%s\n' \
     --behavior "$b" \
@@ -112,20 +162,56 @@ fits_args() {
     --dv-json "$RESULTS_ROOT/dv_dataset/$b/labeling.json" \
     --u-store "$U_STORE_DIR" \
     --e1-store "$STORE_ROOT/${b}_extraction" \
-    --out-root "$NL_ROOT/$b/$kind" \
     --tensors-root "$TENSORS_ROOT" \
     --device "$FITS_DEVICE" \
     --map-kind "$kind" \
-    --arms $NL_ARMS \
     --config config_a \
+    --u-sizes $USIZES
+}
+
+fits_args() {
+  # fits_args <behavior> <kind> — the production fits invocation, subset to
+  # the map-family arms with a per-kind out-root.
+  local b="$1" kind="$2"
+  map_args "$b" "$kind"
+  printf '%s\n' \
+    --out-root "$NL_ROOT/$b/$kind" \
+    --arms $NL_ARMS \
     --transfer \
     --regimes $(behavior_regimes "$b") \
-    --u-sizes $USIZES \
     --budgets $(behavior_budgets "$b") \
     --draws $DRAWS \
     --seeds $SEEDS \
     --n-boot 500 \
     --n-perm 500
+}
+
+prefetch_args() {
+  # prefetch_args <kind> — phase-A maps-only invocation: the SAME map-determining
+  # flags as a lane, with the cheapest grid that still walks every map key.
+  #
+  # It fits all $USIZES x 2 variants map keys for $kind (the whole path-2 map set)
+  # and pays ~one 250-budget unit group per key for the arm machinery it cannot
+  # skip (~4.9 s measured), against ~2651 s per map fit. Deliberately NOT
+  # map-affecting, so the payloads are identical to a lane's:
+  #   * --out-root THROWAWAY (its arm numbers are discarded; only maps/ survives,
+  #     and maps/ lives under --tensors-root, not --out-root)
+  #   * ONE regime, ONE arm, ONE budget, ONE draw, small null/boot budgets
+  #   * NO --transfer (the eval-rung read is per-BEHAVIOR and belongs to the lanes)
+  #   * --seeds pinned to the lanes' FIRST seed (see map_args)
+  # No --pilot: the pilot gate is a $PLAN_WALL_H fence sized for a full lane, and
+  # this phase is ~1/100th of one — it is structurally exempt, not bypassed.
+  local kind="$1"
+  map_args "$PREFETCH_BEHAVIOR" "$kind"
+  printf '%s\n' \
+    --out-root "$NL_ROOT/_prefetch/$kind" \
+    --arms "$PREFETCH_ARM" \
+    --regimes "$PREFETCH_REGIME" \
+    --budgets $PREFETCH_BUDGETS \
+    --draws "$PREFETCH_DRAW" \
+    --seeds "$PREFETCH_SEED" \
+    --n-boot "$PREFETCH_N_BOOT" \
+    --n-perm "$PREFETCH_N_PERM"
 }
 
 # ---- stage -----------------------------------------------------------------
@@ -140,6 +226,93 @@ if want_phase stage; then
       || { echo "[nlmap] FATAL: dv_dataset/$b missing after stage" >&2; exit 1; }
   done
   echo "[nlmap] phase=stage: complete ($(date -u +%FT%TZ))"
+fi
+
+# ---- prefetch (phase A: fit every map ONCE) --------------------------------
+# Amortization: a map key costs ~2651 s to fit and is identical across the 3
+# behaviors, so the 6-lane fan-out must NOT re-fit it 6 times. This phase fits
+# all (2 variants x |USIZES| rungs) keys per kind, persists them under
+# $TENSORS_ROOT/maps/ (each gated by the fits-side round-trip save->load->apply
+# check), and the `upload` phase publishes them for the lanes' `stage_maps`.
+# Runs the KINDS in PARALLEL (one process per kind, distinct payload filenames;
+# the shared r_B destination is PID-tmp-safe as of this round) — sequential
+# would double phase A's wall.
+if want_phase prefetch; then
+  echo "[nlmap] phase=prefetch: fitting map keys once per kind ($KINDS) $(date -u +%FT%TZ)"
+  echo "[nlmap] phase=prefetch: behavior=$PREFETCH_BEHAVIOR usizes='$USIZES' seed=$PREFETCH_SEED"
+  read -r -a _pf_kinds <<< "$KINDS"
+  # Parallel width = min(visible GPUs, #kinds). NEVER over-subscribe: two
+  # concurrent full-U map fits on ONE device is a co-residency OOM, and a
+  # modulo-pinned wave would do exactly that. 0 GPUs (CPU device) => width 1.
+  NGPU=0
+  if [ "$FITS_DEVICE" != "cpu" ] && command -v nvidia-smi >/dev/null 2>&1; then
+    NGPU=$(nvidia-smi -L 2>/dev/null | grep -c '^GPU ' || true)
+  fi
+  PF_WIDTH="${EPM_I1739_NL_PREFETCH_WIDTH:-0}"
+  if [ "$PF_WIDTH" -le 0 ]; then
+    if [ "$NGPU" -gt 0 ] && [ "$NGPU" -lt "${#_pf_kinds[@]}" ]; then
+      PF_WIDTH="$NGPU"
+    elif [ "$NGPU" -gt 0 ]; then
+      PF_WIDTH="${#_pf_kinds[@]}"
+    else
+      PF_WIDTH=1
+    fi
+  fi
+  echo "[nlmap] phase=prefetch: ngpu=$NGPU width=$PF_WIDTH kinds=${#_pf_kinds[@]}"
+  pf_rc=0
+  for ((base = 0; base < ${#_pf_kinds[@]}; base += PF_WIDTH)); do
+    pf_pids=()
+    pf_slot_kinds=()
+    for ((slot = 0; slot < PF_WIDTH && base + slot < ${#_pf_kinds[@]}; slot++)); do
+      kind="${_pf_kinds[base + slot]}"
+      mapfile -t _pfa < <(prefetch_args "$kind")
+      mkdir -p "$NL_ROOT/_prefetch/$kind"
+      pf_log="$LOG_DIR/issue-1739-nlmap-prefetch-$kind.log"
+      # CVD pinned in the LAUNCHER env, one physical GPU per concurrent kind
+      # (the in-process device string is just "cuda", so the launcher env is the
+      # ONLY thing that separates them — gotchas.md CVD-clobber family).
+      if [ "$NGPU" -gt 0 ]; then
+        CUDA_VISIBLE_DEVICES="$slot" uv run python scripts/issue1739_fits.py "${_pfa[@]}" \
+          > "$pf_log" 2>&1 &
+      else
+        uv run python scripts/issue1739_fits.py "${_pfa[@]}" > "$pf_log" 2>&1 &
+      fi
+      pf_pids+=("$!")
+      pf_slot_kinds+=("$kind")
+      echo "[nlmap] phase=prefetch: $kind launched pid=${pf_pids[-1]} cvd=${slot} log=$pf_log"
+    done
+    for i in "${!pf_pids[@]}"; do
+      if wait "${pf_pids[$i]}"; then
+        echo "[nlmap] phase=prefetch: ${pf_slot_kinds[$i]} OK ($(date -u +%FT%TZ))"
+      else
+        rc=$?
+        echo "[nlmap] phase=prefetch: ${pf_slot_kinds[$i]} FAILED rc=$rc — see" \
+          "$LOG_DIR/issue-1739-nlmap-prefetch-${pf_slot_kinds[$i]}.log" >&2
+        tail -n 40 "$LOG_DIR/issue-1739-nlmap-prefetch-${pf_slot_kinds[$i]}.log" >&2 || true
+        pf_rc=$rc
+      fi
+    done
+  done
+  [ "$pf_rc" -eq 0 ] || { echo "[nlmap] FATAL: prefetch failed" >&2; exit "$pf_rc"; }
+  echo "[nlmap] phase=prefetch: payloads under $TENSORS_ROOT/maps:"
+  ls -la "$TENSORS_ROOT/maps" || true
+  echo "[nlmap] phase=prefetch: complete ($(date -u +%FT%TZ))"
+fi
+
+# ---- stage_maps (per lane: pull phase-A payloads down before scoring) -------
+# Without this a lane's _load_nl_map finds nothing local and silently re-fits
+# every map — the amortization phase A paid for evaporates. Fail-loud.
+if want_phase stage_maps; then
+  echo "[nlmap] phase=stage_maps: staging map payloads -> $TENSORS_ROOT/maps"
+  mapfile -t _ul < <(stage_map_u_labels)
+  uv run python scripts/issue1739_nlmap_stage_maps.py \
+    --tensors-root "$TENSORS_ROOT" \
+    --kinds $KINDS \
+    --variants $STAGE_MAPS_VARIANTS \
+    --u-labels "${_ul[@]}" \
+    --map-seed "$PREFETCH_SEED" \
+    --out "$NL_ROOT/stage_maps_report.json"
+  echo "[nlmap] phase=stage_maps: complete ($(date -u +%FT%TZ))"
 fi
 
 # ---- pilot -----------------------------------------------------------------
@@ -201,11 +374,28 @@ if want_phase collect; then
 fi
 
 # ---- upload ----------------------------------------------------------------
-if want_phase upload; then
+# Split so the fan-out can pick a leg: phase A publishes the map payloads
+# (`upload_tensors`) and each lane publishes only its own results
+# (`upload_results`). A lane re-uploading the identical tensors tree would burn 6
+# Hub commits against the 256/hr repo cap for zero new bytes. `upload` keeps the
+# legacy both-legs behavior so PHASE=all is unchanged.
+if want_phase upload || want_phase upload_tensors; then
   echo "[nlmap] phase=upload: nonlinear map payloads -> HF analysis_tensors"
   uv run python scripts/issue1739_upload.py --stage tensors
-  echo "[nlmap] phase=upload: results -> git (fetch+rebase first; #1880 push race)"
-  uv run python scripts/issue1739_upload.py --stage results-git
+fi
+if want_phase upload || want_phase upload_results; then
+  # #1880 push race: several rounds/lanes write this branch concurrently and the
+  # upload helper only fetch-then-retries (it never rebases), so a stale base
+  # fails BOTH attempts. Advance the clone to the tip FIRST — results are still
+  # uncommitted working-tree files here, so the ff-merge is clean and the
+  # helper's commit lands on the current tip. (Matches
+  # issue1739_pvscore_dispatch.sh; the comment below used to promise this sync
+  # while no fetch actually ran.)
+  echo "[nlmap] phase=upload: syncing clone to origin/$BRANCH before commit"
+  git fetch origin "$BRANCH"
+  git merge --ff-only "origin/$BRANCH"
+  echo "[nlmap] phase=upload: results -> git"
+  uv run python scripts/issue1739_upload.py --stage results-git --branch "$BRANCH"
 fi
 
 # ---- sentinel + terminal line ---------------------------------------------
