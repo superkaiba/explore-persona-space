@@ -6473,8 +6473,8 @@
     "1836": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1836",
-      "status": "running",
+      "path": "tasks/reviewing/1836",
+      "status": "reviewing",
       "title": "workflow-fix: SLURM sbatch _write_status heartbeat/phase-writer tmp race (BASHPID-unique tmp)"
     },
     "1837": {
