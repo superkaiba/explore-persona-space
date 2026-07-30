@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1857,
+  "highest_id": 1858,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6637,6 +6637,13 @@
       "path": "tasks/proposed/1857",
       "status": "proposed",
       "title": "daily-fix: root-code guard binds cert to staged blob, not wo"
+    },
+    "1858": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1858",
+      "status": "proposed",
+      "title": "daily-fix: RunPod failover launcher timeout-bounds sync, rea"
     },
     "186": {
       "has_clean_result": true,
