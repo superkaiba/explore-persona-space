@@ -1,0 +1,103 @@
+{
+  "per_layer": {
+    "L14": {
+      "fitter": "ridge (shared-Gram primal, parent verbatim)",
+      "selection": "val-lambda (pinned val rows)",
+      "selected_lambda": 31622.776601683792,
+      "val_r2_at_selected": 0.6900157230719486,
+      "lambda_grid_edge": null,
+      "n_train": 88600,
+      "d": 7168,
+      "holdout_r2": 0.6625046847742257,
+      "holdout_mean_cosine": 0.9569455813606109,
+      "bootstrap": {
+        "r2": {
+          "point": 0.6625046847742257,
+          "lo": 0.6560914447293901,
+          "hi": 0.6687256603469053
+        },
+        "mean_cosine": {
+          "point": 0.9569455813606109,
+          "lo": 0.9560133774246717,
+          "hi": 0.9578804175116926
+        },
+        "n_test": 10000
+      },
+      "reference_r2": {
+        "context": 0.7535629760957365,
+        "prefix_only": 0.04080121535241288,
+        "bare_only": 0.6215976233746421
+      }
+    },
+    "L19": {
+      "fitter": "ridge (shared-Gram primal, parent verbatim)",
+      "selection": "val-lambda (pinned val rows)",
+      "selected_lambda": 31622.776601683792,
+      "val_r2_at_selected": 0.7028386435698031,
+      "lambda_grid_edge": null,
+      "n_train": 88600,
+      "d": 7168,
+      "holdout_r2": 0.6725020208430004,
+      "holdout_mean_cosine": 0.9547723688213906,
+      "bootstrap": {
+        "r2": {
+          "point": 0.6725020208430004,
+          "lo": 0.6661621424568581,
+          "hi": 0.6788122741384714
+        },
+        "mean_cosine": {
+          "point": 0.9547723688213906,
+          "lo": 0.9537379018004417,
+          "hi": 0.9558081250186243
+        },
+        "n_test": 10000
+      },
+      "reference_r2": {
+        "context": 0.7950205029401468,
+        "prefix_only": 0.04554182688146824,
+        "bare_only": 0.62660115814723
+      }
+    },
+    "L26": {
+      "fitter": "ridge (shared-Gram primal, parent verbatim)",
+      "selection": "val-lambda (pinned val rows)",
+      "selected_lambda": 31622.776601683792,
+      "val_r2_at_selected": 0.749472726994195,
+      "lambda_grid_edge": null,
+      "n_train": 88600,
+      "d": 7168,
+      "holdout_r2": 0.7103431461547515,
+      "holdout_mean_cosine": 0.968561816345216,
+      "bootstrap": {
+        "r2": {
+          "point": 0.7103431461547515,
+          "lo": 0.701599815291529,
+          "hi": 0.7190118707822857
+        },
+        "mean_cosine": {
+          "point": 0.968561816345216,
+          "lo": 0.9675861820689673,
+          "hi": 0.9695171218480987
+        },
+        "n_test": 10000
+      },
+      "reference_r2": {
+        "context": 0.8266888030911883,
+        "prefix_only": 0.02117650749770905,
+        "bare_only": 0.6893601439719051
+      }
+    }
+  },
+  "meta": {
+    "script": "scripts/issue1738_crossed_reads.py",
+    "git_commit": "9a1c79cf1825ae9f1223bc99bab81704602e095c",
+    "hf_prefix": "issue1738_crossed",
+    "layers": "14,19,26",
+    "n_boot": 10000,
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "python": "3.11.15",
+    "started_utc": "2026-07-30T16:22:44Z",
+    "wall_s": 1397.4
+  }
+}

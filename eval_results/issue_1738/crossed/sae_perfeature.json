@@ -1,0 +1,151 @@
+{
+  "n_features_restricted": 16384,
+  "restriction_floor_rows": 886,
+  "n_complete_prefixes": 5000,
+  "n_queries": 20,
+  "perm_seeds": [
+    1738000,
+    1738001,
+    1738002,
+    1738003,
+    1738004,
+    1738005,
+    1738006,
+    1738007,
+    1738008,
+    1738009,
+    1738010,
+    1738011,
+    1738012,
+    1738013,
+    1738014,
+    1738015,
+    1738016,
+    1738017,
+    1738018,
+    1738019
+  ],
+  "density_bands": {
+    "0": {
+      "n": 1639,
+      "share_prefix_mean": 0.063412144780159,
+      "share_query_mean": 0.22456881403923035
+    },
+    "1": {
+      "n": 1638,
+      "share_prefix_mean": 0.0635218471288681,
+      "share_query_mean": 0.21922457218170166
+    },
+    "2": {
+      "n": 1637,
+      "share_prefix_mean": 0.0626220703125,
+      "share_query_mean": 0.24049630761146545
+    },
+    "3": {
+      "n": 1640,
+      "share_prefix_mean": 0.06518568098545074,
+      "share_query_mean": 0.23422163724899292
+    },
+    "4": {
+      "n": 1638,
+      "share_prefix_mean": 0.05999115854501724,
+      "share_query_mean": 0.25492289662361145
+    },
+    "5": {
+      "n": 1637,
+      "share_prefix_mean": 0.05957866460084915,
+      "share_query_mean": 0.2732108235359192
+    },
+    "6": {
+      "n": 1640,
+      "share_prefix_mean": 0.05797542631626129,
+      "share_query_mean": 0.28267186880111694
+    },
+    "7": {
+      "n": 1638,
+      "share_prefix_mean": 0.05665115267038345,
+      "share_query_mean": 0.30861207842826843
+    },
+    "8": {
+      "n": 1638,
+      "share_prefix_mean": 0.05613116919994354,
+      "share_query_mean": 0.3260951042175293
+    },
+    "9": {
+      "n": 1639,
+      "share_prefix_mean": 0.06420152634382248,
+      "share_query_mean": 0.37337979674339294
+    }
+  },
+  "n_dense_latent": 1639,
+  "feature_maps": {
+    "per_row_cx_feat_to_ans_mean": {
+      "holdout_r2": 0.7458838235011515,
+      "selected_lambda": 316.2277660168379,
+      "n_train": 88600,
+      "d_in": 389
+    },
+    "induced_averaged": {
+      "holdout_r2": 0.7624849944143076,
+      "definition": "per-row cx_feat\u2192ans_mean map applied to averaged features"
+    },
+    "independent_averaged": {
+      "holdout_r2": 0.7852174248100737,
+      "selected_lambda": 316.2277660168379,
+      "selection": "inner CV within the train prefixes",
+      "regime_note": "n_train 4430 vs d 389"
+    }
+  },
+  "rb_alignment": {
+    "n_tail": 200,
+    "null_p95_raw": 0.039825439453125,
+    "null_p95_proj": 0.0401611328125,
+    "scaffold_rank": 48,
+    "rb_scaffold_mass_frac": {
+      "evil": 0.4815707802772522,
+      "hallucination": 0.6424394249916077,
+      "sycophancy": 0.5566928386688232
+    }
+  },
+  "mask_robustness": {
+    "n_rows_mask_equal": 100000,
+    "n_rows_mask_differs": 0,
+    "n_rows_all_tokens_outlier": 0,
+    "n_chunks_missing_nm_schema": 0,
+    "note": "cosine(masked, unmasked pooled answer features) per pooling over the mask-differing rows; mask-equal rows are cos=1.0 by construction (row-independent encode); all-outlier rows have an empty masked family",
+    "mean": {
+      "n": 0
+    },
+    "max": {
+      "n": 0
+    },
+    "frac": {
+      "n": 0
+    }
+  },
+  "judged_label_freeze": "0 judge/API calls this round \u2014 evidence artifacts persisted for #1773",
+  "verdict": {
+    "enabled": true,
+    "source": "pilot meta",
+    "gate": {
+      "fve_min": 0.75,
+      "l0_range": [
+        30.0,
+        120.0
+      ],
+      "n_pool_tokens": 150000,
+      "force": "",
+      "fve": 0.7875038988405454,
+      "l0": 66.79158666666666,
+      "diag": {
+        "n_rows": 150000,
+        "n_inlier": 150000,
+        "n_outlier_dropped": 0,
+        "median_norm": 98.89
+      },
+      "gate_pass": true,
+      "enabled": true,
+      "reason": "gate verdict"
+    }
+  }
+}
