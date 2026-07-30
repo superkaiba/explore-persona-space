@@ -452,6 +452,22 @@ class SourceRow:
     judge_score_mean: float | None
 
 
+def _norm_turn(text: str) -> str:
+    """Strip surrounding whitespace from a turn's text.
+
+    Load-bearing for the plain-text label boundary (addendum E / the straddler
+    spec): the persisted on-policy u2 often begins with a space (the model's
+    continuation after ``User: ``), which would render ``\\n\\nUser:  what...``
+    with TWO spaces and put ``X_clean`` on a lone space token instead of the
+    label's ``':'``. Normalizing here makes the boundary canonical on every row
+    — label ``':'`` + one space + the answer's first word — so ``X_straddle``
+    really is the space-merged token the comparison arm is meant to price.
+    A no-op for the constant lmsys u2 (no surrounding whitespace), so Gate-1
+    parity against the parent's chat render is unaffected.
+    """
+    return text.strip()
+
+
 def _source_paths(staged: dict[str, Path], sub: str, stem_prefix: str) -> list[Path]:
     hits = [
         p
@@ -490,7 +506,14 @@ def load_source_rows(unit: Unit, staged: dict[str, Path]) -> tuple[list[SourceRo
                 "no longer holds; re-derive the lmsys provenance before proceeding"
             )
         src = [
-            SourceRow(r["conv_id"], r["u1"], r["a1"], LMSYS_CONST_U2, "const_fallback", None)
+            SourceRow(
+                r["conv_id"],
+                _norm_turn(r["u1"]),
+                _norm_turn(r["a1"]),
+                LMSYS_CONST_U2,
+                "const_fallback",
+                None,
+            )
             for r in rows_raw
         ]
         stats["u2_source"] = "const_fallback"
@@ -508,16 +531,24 @@ def load_source_rows(unit: Unit, staged: dict[str, Path]) -> tuple[list[SourceRo
             rows_raw.extend(_read_jsonl(p))
         src = []
         n_sentinel = 0
+        n_normalized = 0
         for r in rows_raw:
-            u2 = r.get("u2_text") or ""
-            if not u2 or u2 == UNFILLED_SENTINEL:
+            u2_raw = r.get("u2_text") or ""
+            if not u2_raw or u2_raw == UNFILLED_SENTINEL:
+                n_sentinel += 1
+                continue
+            u2 = _norm_turn(u2_raw)
+            if u2 != u2_raw:
+                n_normalized += 1
+            if not u2:
+                # Whitespace-only u2 carries no answer span.
                 n_sentinel += 1
                 continue
             src.append(
                 SourceRow(
                     r["conv_id"],
-                    r["u1"],
-                    r["a1"],
+                    _norm_turn(r["u1"]),
+                    _norm_turn(r["a1"]),
                     u2,
                     unit.provenance,
                     r.get("judge_score_mean"),
@@ -525,6 +556,7 @@ def load_source_rows(unit: Unit, staged: dict[str, Path]) -> tuple[list[SourceRo
             )
         stats["u2_source"] = unit.provenance
         stats["n_dropped_unfilled_sentinel"] = n_sentinel
+        stats["n_u2_whitespace_normalized"] = n_normalized
         if rows_raw and n_sentinel / len(rows_raw) > MAX_DROP_FRACTION:
             raise RuntimeError(
                 f"{unit.unit_id}: {n_sentinel}/{len(rows_raw)} source rows still carry the "
@@ -611,13 +643,19 @@ def chat_text_and_offsets(u1: str, a1: str, u2: str, tokenizer) -> tuple[str, di
         raise RuntimeError(f"chat turn does not end with {CHAT_TURN_SUFFIX!r}")
     u1_start = len(t1) - len(CHAT_TURN_SUFFIX) - len(u1)
     u2_start = len(t3) - len(CHAT_TURN_SUFFIX) - len(u2)
+    a1_start = len(t2) - len(CHAT_TURN_SUFFIX) - len(a1)
     if u1_start < 0 or t1[u1_start : u1_start + len(u1)] != u1:
         raise RuntimeError("u1 content not verbatim at its template tail offset")
     if u2_start < 0 or t3[u2_start : u2_start + len(u2)] != u2:
         raise RuntimeError("u2 content not verbatim at its template tail offset")
+    if not t2.endswith(CHAT_TURN_SUFFIX) or a1_start < 0 or t2[a1_start : a1_start + len(a1)] != a1:
+        raise RuntimeError("a1 content not verbatim at its template tail offset")
     offsets = {
         "first_user_header_end": u1_start,
         "u1_end": u1_start + len(u1),
+        # a1's content start — the char just past the assistant header's `\n`.
+        # The floor-control group's Y_boundary reads straddler-exclusively here.
+        "a1_start": a1_start,
         "prev_turn_end": len(t2),
         "u2_header_end": u2_start,
         "u2_end": u2_start + len(u2),
@@ -651,6 +689,9 @@ def naturalistic_text_and_offsets(u1: str, a1: str, u2: str) -> tuple[str, dict[
     offsets = {
         "first_user_header_end": ends[0],
         "u1_end": ends[1],
+        # a1's content start — just past "\n\nAssistant: ". The floor-control
+        # group's Y_boundary reads straddler-exclusively at that label's ':'.
+        "a1_start": ends[2],
         "prev_turn_end": ends[4],  # end of "{a1}\n\n" — the chat-terminator analog
         "u2_header_end": ends[5],  # end of "\n\nUser: " — PRIMARY
         "u2_end": ends[6],
@@ -707,9 +748,12 @@ def _validate_offsets(unit: Unit, offsets: dict[str, int], text: str) -> None:
     realized defect this round fixes — fail loud."""
     want = set(unit.slots)
     got = set(offsets)
-    if want != got:
+    # AUXILIARY offsets (e.g. `a1_start`, consumed only by the addendum-E
+    # read-group builders) are allowed in the dict but are not stored slots, so
+    # this is a subset check, not equality.
+    if not want <= got:
         raise RuntimeError(
-            f"{unit.unit_id}: slot set mismatch want={sorted(want)} got={sorted(got)}"
+            f"{unit.unit_id}: slot offsets missing {sorted(want - got)} (got {sorted(got)})"
         )
     for name, off in offsets.items():
         if not (0 <= off <= len(text)):
@@ -757,10 +801,17 @@ def render_unit(
     dup_weight_written = 0
     dropped_len: list[dict] = []
     tok_lens: list[int] = []
+    # Read-group NAMES / suffix are row-independent (they depend only on the
+    # framing), so the manifest records the last written row's groups.
+    groups: list[ReadGroup] = []
     with out_path.open("w", encoding="utf-8") as fh:
         for row_idx, (row, dc) in enumerate(zip(kept, dup, strict=True)):
             text, offsets = render_row(unit, row, tok)
             _validate_offsets(unit, offsets, text)
+            # Addendum E: append the deterministic turn-transition suffix (when
+            # the framing needs one) and derive the X x Y read groups. The
+            # SUFFIXED text is what the capture forwards.
+            text, groups = build_read_groups(unit, offsets, text)
             n_tok = len(tok(text, add_special_tokens=False)["input_ids"])
             if n_tok > MAX_TOKENS:
                 # Digest-only record: never the row text (real user content).
@@ -778,6 +829,7 @@ def render_unit(
                         "judge_score_mean": row.judge_score_mean,
                         "text": text,
                         "char_slots": offsets,
+                        "read_groups": [asdict(g) for g in groups],
                         "n_tokens": int(n_tok),
                         "text_sha256": sha256_text(text),
                     }
@@ -804,6 +856,13 @@ def render_unit(
         "straddler_policy": {s: SLOT_STRADDLER_POLICY[s] for s in unit.slots},
         "fit_pairs": [list(p) for p in unit.fit_pairs],
         "primary_fit": PRIMARY_FIT_BY_FRAMING[unit.framing],
+        # Addendum E: the X x Y grid. `read_group_names` drives the capture's
+        # stored grid slots (5 per group) and the fits' 6-combo battery per group.
+        "read_group_names": [g.name for g in groups],
+        "grid_slots": [s for g in groups for s in g.slot_names],
+        "grid_x_kinds": list(GRID_X_KINDS),
+        "grid_y_kinds": list(GRID_Y_KINDS),
+        "transition_suffix": groups[0].suffix_appended if groups else "",
         "rendered_path": str(out_path.relative_to(out_dir)),
         "n_rows": n_written,
         "n_dropped_over_max_tokens": len(dropped_len),
@@ -822,6 +881,209 @@ def render_unit(
         flush=True,
     )
     return entry
+
+
+# ===========================================================================
+# ADDENDA A-E (scope extension, 2026-07-30) — read groups + bridging families
+# ===========================================================================
+#
+# Addendum E consolidates the measurement convention: every cell stores and
+# fits a full X x Y grid around its ANSWER SPAN.
+#
+#   X_clean     last token FULLY BEFORE the answer span (straddler-EXCLUSIVE).
+#               Plain text: the label's ':' — NOT the trailing space, and NOT
+#               the token that fuses that space with the answer's first word.
+#               Chat: the header '\n'. Story: the pre-answer open quote.
+#               PRIMARY.
+#   X_straddle  the token that STARTS the answer span == X_clean + 1. In plain
+#               text this is the space-merged-with-first-answer-word token (the
+#               PARENT's straddler-INCLUSIVE convention); in chat/story it is
+#               simply the first answer token. Comparison arm — it prices what
+#               the parent's convention contributed.
+#   Y_mean      mean activation over the answer span (the #1345/#825 convention).
+#   Y_end       last content token of the answer (the #1689 parent convention).
+#   Y_boundary  the response-slot token BEFORE the next character starts
+#               talking. Realized by a DETERMINISTIC, content-free turn-
+#               transition suffix after the answer (chat `<|im_end|>\n
+#               <|im_start|>user\n` read at the final header '\n'; plain text
+#               `\n\nUser: ` read straddler-exclusive at the ':'), or by an
+#               EXISTING transition already in the text (a floor-control group's
+#               u1 is followed by the real assistant turn; a story answer is
+#               followed by the template's own next-speaker attribution).
+#
+# Why straddler-EXCLUSIVE for every plain-text X (spec clarification,
+# verified live): the parent capture read the naturalistic context slot with
+# `straddler_include=True`, which lands ON the fused token — one token INTO
+# the answer. #1345 deliberately avoided that (`issue1345_common._header_slot`
+# / `_last_fully_contained`, comment "avoiding BPE straddlers"), so matching
+# #1345 is what makes cross-rig comparison clean. Chat header-newline and
+# story quote boundaries are atomic special/punctuation tokens and never fuse,
+# so the two X variants coincide there by construction — labelled as such.
+
+CHAT_TRANSITION_SUFFIX = "<|im_end|>\n<|im_start|>user\n"
+NATURALISTIC_TRANSITION_SUFFIX = "\n\nUser: "
+
+
+@dataclass(frozen=True)
+class ReadGroup:
+    """One answer span + the X/Y read positions around it (addendum E).
+
+    All offsets are CHAR offsets into the unit's rendered ``text``. The capture
+    rig turns each into a token index and emits five stored slots named
+    ``<name>__{X_clean,X_straddle,Y_mean,Y_end,Y_boundary}``.
+
+    ``answer_start`` is the boundary BEFORE the answer's first character;
+    ``answer_end`` is the boundary AFTER its last. ``boundary_end`` is the char
+    offset whose straddler-EXCLUSIVE token is the Y_boundary read (the final
+    header ``\\n`` in chat, the ``:`` of ``\\n\\nUser: `` in plain text, the end
+    of the story template's attribution lead-in).
+    """
+
+    name: str
+    answer_start: int
+    answer_end: int
+    boundary_end: int
+    suffix_appended: str  # "" when the transition already existed in the text
+
+    @property
+    def slot_names(self) -> tuple[str, ...]:
+        return (
+            f"{self.name}__X_clean",
+            f"{self.name}__X_straddle",
+            f"{self.name}__Y_mean",
+            f"{self.name}__Y_end",
+            f"{self.name}__Y_boundary",
+        )
+
+
+GRID_SLOT_KINDS: tuple[str, ...] = ("X_clean", "X_straddle", "Y_mean", "Y_end", "Y_boundary")
+GRID_X_KINDS: tuple[str, ...] = ("X_clean", "X_straddle")
+GRID_Y_KINDS: tuple[str, ...] = ("Y_mean", "Y_end", "Y_boundary")
+
+
+def _chat_read_group_u2(off: dict[str, int], text: str) -> tuple[str, ReadGroup]:
+    """u2-as-answer group for a chat user cell; appends the turn transition."""
+    new_text = text + CHAT_TRANSITION_SUFFIX
+    # Y_boundary reads at the FINAL header newline of the appended suffix.
+    return new_text, ReadGroup(
+        name="u2",
+        answer_start=off["u2_header_end"],
+        answer_end=off["u2_end"],
+        boundary_end=len(new_text),
+        suffix_appended=CHAT_TRANSITION_SUFFIX,
+    )
+
+
+def _chat_read_group_u1(off: dict[str, int], text: str) -> ReadGroup:
+    """Floor-control group: u1 as the answer span.
+
+    No suffix needed — u1's turn is ALREADY followed by the real transition
+    into a1's turn, so `prev_turn_end`-style reads exist in the text. Y_boundary
+    reads straddler-exclusively at the a1 header's newline, which is exactly
+    ``prev_turn_end`` minus a1's content... but the simplest exact anchor is the
+    offset where a1's content starts, whose preceding token is that newline.
+    """
+    return ReadGroup(
+        name="u1",
+        answer_start=off["first_user_header_end"],
+        answer_end=off["u1_end"],
+        # a1's content start == the end of `<|im_end|>\n<|im_start|>assistant\n`
+        boundary_end=off["a1_start"],
+        suffix_appended="",
+    )
+
+
+def chat_read_groups(off: dict[str, int], text: str) -> tuple[str, list[ReadGroup]]:
+    """Chat user cell: the u2 answer group + the u1 floor-control group."""
+    new_text, g_u2 = _chat_read_group_u2(off, text)
+    return new_text, [g_u2, _chat_read_group_u1(off, text)]
+
+
+def naturalistic_read_groups(off: dict[str, int], text: str) -> tuple[str, list[ReadGroup]]:
+    """Naturalistic user cell: u2 answer group (suffix appended) + u1 floor."""
+    new_text = text + NATURALISTIC_TRANSITION_SUFFIX
+    # The `:` of the appended `\n\nUser: ` — straddler-exclusive at the offset
+    # just past it, i.e. len(new_text) - 1 (the trailing space is the straddle).
+    boundary = len(new_text) - 1
+    g_u2 = ReadGroup(
+        name="u2",
+        answer_start=off["u2_header_end"],
+        answer_end=off["u2_end"],
+        boundary_end=boundary,
+        suffix_appended=NATURALISTIC_TRANSITION_SUFFIX,
+    )
+    g_u1 = ReadGroup(
+        name="u1",
+        answer_start=off["first_user_header_end"],
+        answer_end=off["u1_end"],
+        # The EXISTING `\n\nAssistant: ` transition: its ':' sits one char
+        # before a1's content start.
+        boundary_end=off["a1_start"] - 1,
+        suffix_appended="",
+    )
+    return new_text, [g_u2, g_u1]
+
+
+def story_read_groups(off: dict[str, int], text: str) -> tuple[str, list[ReadGroup]]:
+    """Story user cell: u2 answer group; the template's own attribution
+    lead-in (`". The assistant wrote back: `) IS the next-speaker transition,
+    so no suffix is appended and Y_boundary reads at its end."""
+    g = ReadGroup(
+        name="u2",
+        answer_start=off["story_prefix_end"],
+        answer_end=off["u2_end"],
+        boundary_end=off["parent_answer_end"],
+        suffix_appended="",
+    )
+    return text, [g]
+
+
+READ_GROUPS_BY_FRAMING = {
+    "chat": chat_read_groups,
+    "naturalistic": naturalistic_read_groups,
+    "story": story_read_groups,
+}
+
+
+def build_read_groups(unit: Unit, off: dict[str, int], text: str) -> tuple[str, list[ReadGroup]]:
+    """Dispatch to the framing's read-group builder (addendum E).
+
+    Returns the possibly-SUFFIXED text (the transition suffix is appended at
+    render time so the capture forward covers it) plus the groups. Validated by
+    :func:`_validate_read_groups`.
+    """
+    new_text, groups = READ_GROUPS_BY_FRAMING[unit.framing](off, text)
+    _validate_read_groups(unit, groups, new_text)
+    return new_text, groups
+
+
+def _validate_read_groups(unit: Unit, groups: list[ReadGroup], text: str) -> None:
+    """Every group's four char offsets in range and strictly ordered.
+
+    ``answer_start < answer_end <= boundary_end`` — a degenerate answer span
+    (start == end) or a boundary at/inside the answer is exactly the class of
+    defect this round exists to remove, so it fails loud.
+    """
+    if not groups:
+        raise RuntimeError(f"{unit.unit_id}: no read groups")
+    names = [g.name for g in groups]
+    if len(set(names)) != len(names):
+        raise RuntimeError(f"{unit.unit_id}: duplicate read-group names {names}")
+    for g in groups:
+        for label, off in (
+            ("answer_start", g.answer_start),
+            ("answer_end", g.answer_end),
+            ("boundary_end", g.boundary_end),
+        ):
+            if not (0 <= off <= len(text)):
+                raise RuntimeError(
+                    f"{unit.unit_id}/{g.name}: {label}={off} out of range {len(text)}"
+                )
+        if not (g.answer_start < g.answer_end <= g.boundary_end):
+            raise RuntimeError(
+                f"{unit.unit_id}/{g.name}: non-monotonic group offsets "
+                f"start={g.answer_start} end={g.answer_end} boundary={g.boundary_end}"
+            )
 
 
 def main() -> int:

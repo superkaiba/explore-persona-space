@@ -41,6 +41,7 @@ from scripts.issue1689_user_slot_render import (
     SLOT_STRADDLER_POLICY,
     STORY_USER_LABEL_TEMPLATE,
     STORY_USER_TEMPLATE,
+    UNIT_BY_ID,
     build_units,
     naturalistic_text_and_offsets,
     story_text_and_offsets,
@@ -350,13 +351,16 @@ def test_tiny_real_cpu_capture_end_to_end(tmp_path: Path):
     bug this round fixes, so the assertion is that they differ.
     """
     import argparse
+    from dataclasses import asdict
 
     import torch
 
     from scripts.issue1689_user_slot_render import (
         FIT_PAIRS_BY_FRAMING,
+        GRID_SLOT_KINDS,
         PRIMARY_FIT_BY_FRAMING,
         SLOTS_BY_FRAMING,
+        build_read_groups,
         chat_text_and_offsets,
         sha256_text,
     )
@@ -376,6 +380,8 @@ def test_tiny_real_cpu_capture_end_to_end(tmp_path: Path):
                 text, off = chat_text_and_offsets(u1, a1, u2, tok)
             else:
                 text, off = naturalistic_text_and_offsets(u1, a1, u2)
+            unit = UNIT_BY_ID[f"Qwen_Qwen2.5-7B-Instruct__{framing}__onpolicy"]
+            text, groups = build_read_groups(unit, off, text)
             rows.append(
                 {
                     "unit_id": unit_id,
@@ -386,6 +392,7 @@ def test_tiny_real_cpu_capture_end_to_end(tmp_path: Path):
                     "judge_score_mean": 90.0,
                     "text": text,
                     "char_slots": off,
+                    "read_groups": [asdict(g) for g in groups],
                     "n_tokens": len(tok(text, add_special_tokens=False)["input_ids"]),
                     "text_sha256": sha256_text(text),
                 }
@@ -448,3 +455,30 @@ def test_tiny_real_cpu_capture_end_to_end(tmp_path: Path):
         # token positions strictly ordered, matching the char-offset order
         pos = [int(st["slot_token_pos"][s][0]) for s in names]
         assert pos == sorted(pos) and len(set(pos)) == len(pos), dict(zip(names, pos, strict=True))
+        # --- addendum E: the X x Y grid -------------------------------------
+        gnames = list(st["grid_group_names"])
+        assert "u2" in gnames and "u1" in gnames, gnames
+        for gn in gnames:
+            for kind in GRID_SLOT_KINDS:
+                arr = st["grid_slots"][f"{gn}__{kind}"]
+                assert arr.shape == (4, 64), (gn, kind, arr.shape)
+                assert np.isfinite(arr).all(), (gn, kind)
+            gp = st["grid_slot_pos"]
+            xc = int(gp[f"{gn}__X_clean"][0])
+            xs = int(gp[f"{gn}__X_straddle"][0])
+            ye = int(gp[f"{gn}__Y_end"][0])
+            yb = int(gp[f"{gn}__Y_boundary"][0])
+            assert xc < xs <= ye <= yb, (gn, xc, xs, ye, yb)
+            assert xs == xc + 1, (gn, xc, xs)
+            lo, hi = (int(v) for v in st["grid_answer_span"][gn][0])
+            assert (lo, hi) == (xs, ye), (gn, lo, hi, xs, ye)
+            # X_clean and X_straddle are DISTINCT positions, so their vectors
+            # must differ — the straddler-exclusive/inclusive contrast is real.
+            assert not np.array_equal(
+                st["grid_slots"][f"{gn}__X_clean"], st["grid_slots"][f"{gn}__X_straddle"]
+            ), gn
+            # Y_mean over a >1-token span is not any single stored position.
+            if hi > lo:
+                assert not np.array_equal(
+                    st["grid_slots"][f"{gn}__Y_mean"], st["grid_slots"][f"{gn}__Y_end"]
+                ), gn

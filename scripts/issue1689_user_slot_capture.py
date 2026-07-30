@@ -78,6 +78,9 @@ REPO_ROOT = _ensure_repo_root_on_syspath()
 from scripts.issue1689_common import HEADLINE_LAYER, HF_DATA_PREFIX  # noqa: E402
 from scripts.issue1689_user_slot_render import (  # noqa: E402
     DATA_REPO,
+    GRID_SLOT_KINDS,
+    GRID_X_KINDS,
+    GRID_Y_KINDS,
     ROUND_LABEL,
     SLOT_STRADDLER_POLICY,
     base_metadata,
@@ -232,6 +235,49 @@ def resolve_slot_token(
 # ---------------------------------------------------------------------------
 
 
+def resolve_grid_positions(
+    spans: list[tuple[int, int]], group: dict
+) -> tuple[dict[str, int], tuple[int, int], bool]:
+    """Addendum-E X x Y token positions for one read group.
+
+    Returns ``(positions, (answer_first, answer_last), x_straddle_is_merged)``.
+
+      X_clean     last token FULLY BEFORE the answer span (straddler-EXCLUSIVE
+                  — the plain-text label's ':', the chat header's '\\n', the
+                  story open quote). PRIMARY, and the #1345 convention.
+      X_straddle  X_clean + 1 == the token that STARTS the answer. In plain text
+                  that is the space-merged-with-first-answer-word token (the
+                  PARENT's straddler-INCLUSIVE read); in chat/story it is simply
+                  the first answer token — ``x_straddle_is_merged`` says which.
+      Y_end       last token of the answer content (straddler-INCLUSIVE).
+      Y_boundary  the response-slot token before the next character speaks
+                  (straddler-EXCLUSIVE at the transition's own boundary).
+
+    Y_mean is a MEAN over ``answer_first..answer_last`` inclusive, so the span is
+    returned rather than a single index.
+    """
+    x_clean, _ = resolve_slot_token(spans, int(group["answer_start"]), straddler_include=False)
+    x_straddle = x_clean + 1
+    y_end, _ = resolve_slot_token(spans, int(group["answer_end"]), straddler_include=True)
+    y_boundary, _ = resolve_slot_token(spans, int(group["boundary_end"]), straddler_include=False)
+    if not (x_clean < x_straddle <= y_end <= y_boundary):
+        raise RuntimeError(
+            f"group {group['name']}: non-monotonic grid positions "
+            f"X_clean={x_clean} X_straddle={x_straddle} Y_end={y_end} Y_boundary={y_boundary}"
+        )
+    # The straddle token is "merged" when it starts BEFORE the answer's first
+    # character — i.e. it fuses preceding separator text with the answer's first
+    # word (the plain-text case the comparison arm exists to price).
+    x_straddle_is_merged = spans[x_straddle][0] < int(group["answer_start"])
+    positions = {
+        "X_clean": x_clean,
+        "X_straddle": x_straddle,
+        "Y_end": y_end,
+        "Y_boundary": y_boundary,
+    }
+    return positions, (x_straddle, y_end), x_straddle_is_merged
+
+
 def capture_unit(
     entry: dict,
     rows: list[dict],
@@ -252,6 +298,18 @@ def capture_unit(
     acc = {s: np.zeros((n, d_model), dtype=np.float32) for s in slots}
     pos = {s: np.zeros(n, dtype=np.int32) for s in slots}
     seam = {s: np.zeros(n, dtype=np.int8) for s in slots}
+    # Addendum E: 5 grid slots per read group (X_clean, X_straddle, Y_mean,
+    # Y_end, Y_boundary). Group names + membership are row-independent.
+    group_names: list[str] = [g["name"] for g in rows[0].get("read_groups", [])]
+    grid_slot_names = [f"{gn}__{k}" for gn in group_names for k in GRID_SLOT_KINDS]
+    gacc = {s: np.zeros((n, d_model), dtype=np.float32) for s in grid_slot_names}
+    gpos = {
+        f"{gn}__{k}": np.zeros(n, dtype=np.int32)
+        for gn in group_names
+        for k in ("X_clean", "X_straddle", "Y_end", "Y_boundary")
+    }
+    gspan = {gn: np.zeros((n, 2), dtype=np.int32) for gn in group_names}
+    gmerged = {gn: np.zeros(n, dtype=np.int8) for gn in group_names}
     n_tokens = np.zeros(n, dtype=np.int32)
     keep_kwargs = _logits_to_keep_kwargs(model)
     pad_id = tokenizer.pad_token_id
@@ -286,6 +344,17 @@ def capture_unit(
                     )
                 pos[s][i] = tok_i
                 seam[s][i] = 1 if dropped else 0
+            for g in row.get("read_groups", []):
+                gp, (a_first, a_last), merged = resolve_grid_positions(offs, g)
+                if not (0 <= a_first <= a_last < len(ids)):
+                    raise RuntimeError(
+                        f"{entry['unit_id']} row {row['row_index']}: group {g['name']} span "
+                        f"{a_first}..{a_last} out of range {len(ids)}"
+                    )
+                for kind, tok_i in gp.items():
+                    gpos[f"{g['name']}__{kind}"][i] = tok_i
+                gspan[g["name"]][i] = (a_first, a_last)
+                gmerged[g["name"]][i] = 1 if merged else 0
             # Every slot must sit at a DISTINCT position; equal positions are
             # exactly the realized defect this round fixes.
             got = [int(pos[s][i]) for s in slots]
@@ -323,6 +392,35 @@ def capture_unit(
                 # Gather one position per batch row in ONE indexed read.
                 picked = hs[torch.arange(len(ids_list), device=device), idx]  # (B, D)
                 acc[s][start : start + len(ids_list)] = picked.float().cpu().numpy()
+            # Addendum E grid reads — SAME forward, no extra model compute; the
+            # Y_mean is one masked reduce over positions already resident.
+            brange = torch.arange(len(ids_list), device=device)
+            ar = torch.arange(hs.shape[1], device=device).unsqueeze(0)
+            for gn in group_names:
+                for kind in ("X_clean", "X_straddle", "Y_end", "Y_boundary"):
+                    key = f"{gn}__{kind}"
+                    gidx = torch.tensor(
+                        [int(gpos[key][start + j]) for j in range(len(ids_list))],
+                        dtype=torch.long,
+                        device=device,
+                    )
+                    gacc[key][start : start + len(ids_list)] = (
+                        hs[brange, gidx].float().cpu().numpy()
+                    )
+                lo = torch.tensor(
+                    [int(gspan[gn][start + j, 0]) for j in range(len(ids_list))],
+                    dtype=torch.long,
+                    device=device,
+                )
+                hi = torch.tensor(
+                    [int(gspan[gn][start + j, 1]) for j in range(len(ids_list))],
+                    dtype=torch.long,
+                    device=device,
+                )
+                mask = ((ar >= lo.unsqueeze(1)) & (ar <= hi.unsqueeze(1))).to(hs.dtype)
+                denom = mask.sum(1, keepdim=True).clamp(min=1.0)
+                mean = (hs * mask.unsqueeze(-1)).sum(1) / denom
+                gacc[f"{gn}__Y_mean"][start : start + len(ids_list)] = mean.float().cpu().numpy()
         del out, hs
         print(
             f"[capture] {entry['unit_id']} rows {min(start + batch_size, n)}/{n} width={width}",
@@ -333,6 +431,15 @@ def capture_unit(
         "slots": acc,
         "slot_token_pos": pos,
         "seam_flags": seam,
+        # Addendum E grid payload.
+        "grid_slots": gacc,
+        "grid_slot_pos": gpos,
+        "grid_answer_span": gspan,
+        "grid_x_straddle_is_merged": gmerged,
+        "grid_group_names": group_names,
+        "grid_slot_kinds": list(GRID_SLOT_KINDS),
+        "grid_x_kinds": list(GRID_X_KINDS),
+        "grid_y_kinds": list(GRID_Y_KINDS),
         "n_tokens": n_tokens,
         "conv_ids": np.array([r["conv_id"] for r in rows], dtype=object),
         "dup_count": np.array([int(r["dup_count"]) for r in rows], dtype=np.int32),
@@ -355,6 +462,12 @@ def capture_unit(
         "metadata": base_metadata(),
     }
     frac = {s: float(seam[s].mean()) for s in slots}
+    merged_frac = {gn: float(gmerged[gn].mean()) for gn in group_names}
+    print(
+        f"[capture] {entry['unit_id']} grid groups={group_names} "
+        f"x_straddle_merged_frac={merged_frac}",
+        flush=True,
+    )
     print(
         f"[capture] {entry['unit_id']} done n={n} d={d_model} straddler_excluded_frac={frac}",
         flush=True,
