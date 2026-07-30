@@ -46,7 +46,13 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# Before any heavy import: the shared-VM thread caps (#847) are frozen by numpy /
+# torch at IMPORT, so load_dotenv() must run first for them to bind in-process.
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 logger = logging.getLogger("map963k_readout")
 

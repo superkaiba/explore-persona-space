@@ -21,7 +21,13 @@ import argparse
 import json
 from pathlib import Path
 
-import matplotlib
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# Before any heavy import: the shared-VM thread caps (#847) are frozen by
+# numpy / matplotlib at IMPORT, so load_dotenv() must run first to bind them.
+load_dotenv()
+
+import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
@@ -114,11 +120,7 @@ def main(argv: list[str] | None = None) -> int:
         ax.set_title(
             f"{behavior} — map read-out vs judged DV (r_B source: {rb}; "
             "error bars = 1000-draw percentile bootstrap CI over contexts"
-            + (
-                f"; red-shaded: near-constant DV, no arm separates, {n_deg} cells"
-                if n_deg
-                else ""
-            )
+            + (f"; red-shaded: near-constant DV, no arm separates, {n_deg} cells" if n_deg else "")
             + (
                 "; grey-shaded: prefix_end is CONSTANT across contexts, every rho a tie artifact)"
                 if pres.get("prefix_is_constant")
