@@ -6431,8 +6431,8 @@
     "1830": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1830",
-      "status": "approved",
+      "path": "tasks/running/1830",
+      "status": "running",
       "title": "workflow-fix: gotchas entry \u2014 sha pins live in a DOMAIN (recompute from producer recipe before asserting)"
     },
     "1831": {
