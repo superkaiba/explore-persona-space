@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1875,
+  "highest_id": 1876,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6777,6 +6777,13 @@
       "path": "tasks/proposed/1875",
       "status": "proposed",
       "title": "daily-fix: /issue Step 0 preloads TaskOutput/Monitor schemas"
+    },
+    "1876": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1876",
+      "status": "proposed",
+      "title": "daily-fix: compliant git-commit forms at snippet sites + blo"
     },
     "188": {
       "has_clean_result": false,
