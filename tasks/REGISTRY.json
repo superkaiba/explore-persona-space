@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1847,
+  "highest_id": 1848,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6560,6 +6560,13 @@
       "path": "tasks/proposed/1847",
       "status": "proposed",
       "title": "daily-fix: bash -n pin test for Step 10d TG fenced blocks"
+    },
+    "1848": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1848",
+      "status": "proposed",
+      "title": "daily-fix: plan_patch.py --file alias + rc-check note"
     },
     "185": {
       "has_clean_result": false,
