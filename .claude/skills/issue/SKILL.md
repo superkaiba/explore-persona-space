@@ -4645,7 +4645,9 @@ while True:
     # no-op Bash calls to idle (`sleep 1` "yield turn", `true` no-ops):
     # each burns a tool call + context for nothing (33x and 49x in two
     # 2026-06-10 sessions). Read the JSON line from stdout (the LAST
-    # line of the bg-Bash output) and decide:
+    # line of the bg-Bash output — parse per § Tick-parse
+    # field-preservation below; a status-only parse is BANNED) and
+    # decide:
     #
     #   status == "done"           -> exit loop; transition to status:verifying; go to Step 7.
     #   status == "gate"           -> a pod-side sentinel carried a non-empty
@@ -4681,6 +4683,22 @@ while True:
     #                                  before the next tick. If it has
     #                                  gpu_idle_escalation_posted == true, act
     #                                  per "GPU-idle escalation handling" below.
+```
+
+**Tick-parse field-preservation (REQUIRED — #1841; incident #1768).** Any
+compacted/filtered parse of a tick's JSON line MUST print, at minimum, the
+full decision field set: `status`, `current_phase`, `gate`, `stall_reason`,
+`new_milestone`, `next_interval` (telemetry only), `gpu_idle_advisory_posted`,
+`gpu_idle_escalation_posted`, `gpu_width_advisory_posted`,
+`eta_deviation_posted`. A status-only parse is BANNED — it structurally
+discards the very fields the handling sections below branch on (#1768,
+2026-07-29: a status-only compact parse dropped a posted
+[gpu-idle-escalation]; ~15h of idle 8xH100 was heartbeated as healthy). Use
+`d.get(...)` for every field (a mixed-vintage poller may omit newer fields —
+degrade to None, never KeyError). Canonical one-liner:
+
+```
+... | uv run python -c "import json,sys; d=json.loads([l for l in sys.stdin.read().splitlines() if l.strip()][-1]); print('TICK:', ' '.join(f'{k}={d.get(k)}' for k in ('status','current_phase','gate','stall_reason','new_milestone','next_interval','gpu_idle_advisory_posted','gpu_idle_escalation_posted','gpu_width_advisory_posted','eta_deviation_posted')))"
 ```
 
 **Forensics-ingest discipline (#1546):** on a stalled/dead tick — and in any
