@@ -1,6 +1,7 @@
 ---
-title: What fine-tuning a behavior into a context does to the context->answer map
-  (60-arm organism fleet, 15k contexts)
+title: Behavior fine-tuning changes the context→answer map in rank order with its
+  weights-carried answer shift, with most content arms crossing the refit-noise floor
+  and marker arms staying below it (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-28T18:48:27Z'

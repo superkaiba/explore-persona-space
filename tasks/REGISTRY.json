@@ -5966,7 +5966,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1768",
       "status": "interpreting",
-      "title": "What fine-tuning a behavior into a context does to the context->answer map (60-arm organism fleet, 15k contexts)"
+      "title": "Behavior fine-tuning changes the context\u2192answer map in rank order with its weights-carried answer shift, with most content arms crossing the refit-noise floor and marker arms staying below it (HIGH confidence)"
     },
     "1769": {
       "goal": "Determine when behavioral commitment happens in Qwen-2.5-7B-Instruct: does steering a persona-vector direction r_B only during prefill vs only during decode vs both change on-policy judged behavior expression - i.e., is the answer's behavior already committed in the pre-answer context state, or decided token-by-token during generation?",
