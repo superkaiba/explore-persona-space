@@ -6468,6 +6468,15 @@ class GcpBackend(ComputeBackend):
           answered) but a matched sentinel set produced 0 processed markers
           (empty / unparseable body or a transient marker-post failure). NOT a
           reachability problem — the wedge gate must NEVER fire on this class.
+        * ``"control_plane"`` (#1837) — the drain SSH returned non-zero with
+          the gcloud CONTROL-PLANE signature (case-insensitive substring
+          ``could not fetch resource``): the API failed to fetch the instance
+          resource BEFORE any SSH probe ran, so it carries ZERO reachability
+          signal about the guest. Like ``"sentinel_processing"`` it leaves
+          ``PollResult.reachability_alarm`` False (the mapping keys on
+          ``== "transport"``) — the wedge gate must NEVER fire on this class
+          (incident #1739). Unmatched rc != 0 stderr keeps ``"transport"``;
+          the TimeoutExpired branch keeps ``"transport"`` unconditionally.
         * ``""`` — no alarm (clean drain), OR the pre-SSH config skip
           (``issue<=0`` — nothing was probed, so it carries no reachability
           signal).
@@ -6565,14 +6574,27 @@ class GcpBackend(ComputeBackend):
             logger.error("GCP poll: %s", alarm)
             return 0, None, alarm, "", None, "transport"
         if res.returncode != 0:
+            stderr_txt = (res.stderr or "").strip()
+            if "could not fetch resource" in stderr_txt.lower():
+                # CONTROL-PLANE class (#1837): the gcloud API failed to fetch
+                # the instance resource BEFORE any SSH/reachability probe ran —
+                # zero signal about the guest (incident #1739: one transient
+                # "Could not fetch resource: Internal error" on a healthy VM
+                # fired the wedge failover). Never counts toward the wedge
+                # streak: the L6120 mapping (== "transport") leaves
+                # PollResult.reachability_alarm False for this class, the same
+                # doctrinal split as "sentinel_processing".
+                alarm = (
+                    f"gcp sentinel drain SKIPPED by control-plane API error "
+                    f"(rc={res.returncode}): {stderr_txt[:300]}"
+                )
+                logger.error("GCP poll: %s", alarm)
+                return 0, None, alarm, "", None, "control_plane"
             # TRANSPORT class (#669): the drain SSH itself returned non-zero —
             # transport down / permission / timeout. This is the unreachable-VM
             # signature the poller's frozen-phase wedge gate reads (alarm_class
             # "transport" -> PollResult.reachability_alarm=True).
-            alarm = (
-                f"gcp sentinel drain FAILED (rc={res.returncode}): "
-                f"{(res.stderr or '').strip()[:300]}"
-            )
+            alarm = f"gcp sentinel drain FAILED (rc={res.returncode}): {stderr_txt[:300]}"
             logger.error("GCP poll: %s", alarm)
             return 0, None, alarm, "", None, "transport"
 

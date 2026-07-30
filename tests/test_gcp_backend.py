@@ -9773,6 +9773,48 @@ def test_gcp_poll_running_transport_drain_failure_sets_reachability_alarm() -> N
     assert pr.reachability_alarm is True  # transport class -> reachability alarm
 
 
+def test_drain_rc_nonzero_control_plane_stderr_classifies_control_plane() -> None:
+    """R4 (#1837 producer side): an rc!=0 drain whose stderr carries the gcloud
+    CONTROL-PLANE signature ('Could not fetch resource' — case-insensitive) is
+    classified ``alarm_class == "control_plane"``, and via ``poll()`` leaves
+    ``PollResult.reachability_alarm`` False (the mapping keys on
+    ``== "transport"``): the API failed BEFORE any SSH probe ran, so it
+    carries zero wedge signal (incident #1739)."""
+    stderr = "ERROR: (gcloud.compute.ssh) Could not fetch resource: Internal error"
+    # Direct classifier read: the drain tuple's alarm_class.
+    runner = _Runner(ssh_results=[GcloudRunResult(1, "", stderr)])
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    processed, gate, alarm, _tail, _mtime, alarm_class = backend._drain_sentinels(
+        _drain_handle(), "us-central1-a"
+    )
+    assert alarm_class == "control_plane"
+    assert processed == 0 and gate is None
+    assert "control-plane" in alarm  # loud one-line diagnosis, never silent
+
+    # And end-to-end through poll(): reachability_alarm stays False.
+    runner2 = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[GcloudRunResult(1, "", stderr)],
+    )
+    backend2 = GcpBackend(config=_test_config(), runner=runner2, marker_poster=lambda **_: None)
+    pr = backend2.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.reachability_alarm is False  # control_plane class never feeds the wedge
+
+
+def test_drain_rc_nonzero_ssh_connect_failure_stays_transport() -> None:
+    """R4 negative (#1837): an rc=255 guest SSH connect failure (no
+    control-plane signature in stderr) keeps ``alarm_class == "transport"`` —
+    the pre-#1837 unreachable-VM signature is unchanged (fail toward existing
+    behavior on unmatched stderr)."""
+    stderr = "ssh: connect to host 1.2.3.4 port 22: Connection timed out"
+    runner = _Runner(ssh_results=[GcloudRunResult(255, "", stderr)])
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    *_, alarm_class = backend._drain_sentinels(_drain_handle(), "us-central1-a")
+    assert alarm_class == "transport"
+
+
 def test_gcp_poll_running_healthy_drain_leaves_reachability_alarm_false() -> None:
     """M2.5 negative: a RUNNING GCP poll whose drain SSH SUCCEEDS (rc == 0,
     clean drain) leaves ``reachability_alarm = False`` — the VM answered, so it

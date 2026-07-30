@@ -682,14 +682,61 @@ def _gcp_handle_with_clock(*, phase: str, ts: float, incarnation: str | None = N
     return _gcp_handle(extra=extra)
 
 
+def _rewind_wedge_alarm_first_ts(sidecar, seconds: float) -> None:
+    """Age the persisted #1837 alarm streak by ``seconds`` (models real tick spacing)."""
+    payload = json.loads(Path(sidecar).read_text())
+    payload["extra"]["wedge_alarm_first_ts"] = float(
+        payload["extra"]["wedge_alarm_first_ts"] - seconds
+    )
+    Path(sidecar).write_text(json.dumps(payload))
+
+
 def test_poll_running_with_frozen_phase_and_drain_timeout_returns_terminal_wedged(
     tmp_path, monkeypatch, capsys
 ):
-    """Fix 1 POSITIVE (#669, end-to-end): a RUNNING GCP poll whose non-terminal
-    phase ('workload') is frozen past the 15-min floor AND carries a
-    transport-class reachability alarm is escalated to status=dead /
-    terminal_workload_wedged, which the async-failover predicate then matches —
+    """Fix 1 POSITIVE (#669, end-to-end) — UPDATED to the #1837 two-tick
+    contract (R1/R7, a deliberate contract change): a RUNNING GCP poll whose
+    non-terminal phase ('workload') is frozen past the 15-min floor AND
+    carries a transport-class reachability alarm is escalated to status=dead /
+    terminal_workload_wedged only on the SECOND consecutive alarmed tick with
+    first->latest span >= 480s; the async-failover predicate then matches and
     the run fails over to RunPod exactly once."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    # Tick 1: alarmed, but a single tick ARMS the streak and stays running.
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "workload"
+    assert len(rp.launches) == 0
+    assert read_handle_sidecar(sidecar).extra["wedge_alarm_streak"] == 1
+
+    # Model the standard 540s tick cadence (#1818) by aging the persisted
+    # first-alarm ts past the 480s span floor, then tick 2: SUSTAINED alarm ->
+    # wedged -> failed over -> RUNNING-shaped async-failover JSON.
+    _rewind_wedge_alarm_first_ts(sidecar, 500)
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["current_phase"] == "gcp_workload_failover_runpod_async"
+    assert out["status"] == "running"
+    assert len(rp.launches) == 1
+    assert read_handle_sidecar(sidecar).backend == "runpod"
+
+
+def test_single_alarmed_tick_stays_running_and_arms_streak(tmp_path, monkeypatch, capsys):
+    """R1 (#1837): ONE alarmed tick past the staleness floor returns running
+    (no failover — the #1739 single-blip false positive) and persists an armed
+    streak record (streak 1, incarnation-stamped, fresh first_ts) in the
+    sidecar extra so the NEXT tick can confirm or reset it."""
     sidecar = tmp_path / "issue-659-handle.json"
     write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar)
     rp = _PassiveRunpodBackend()
@@ -702,11 +749,183 @@ def test_poll_running_with_frozen_phase_and_drain_timeout_returns_terminal_wedge
     rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
     assert rc == 0
     out = _last_json_line(capsys)
-    # Escalated to wedged -> failed over -> RUNNING-shaped async-failover JSON.
-    assert out["current_phase"] == "gcp_workload_failover_runpod_async"
     assert out["status"] == "running"
-    assert len(rp.launches) == 1
-    assert read_handle_sidecar(sidecar).backend == "runpod"
+    assert out["current_phase"] == "workload"
+    assert len(rp.launches) == 0
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "gcp"
+    assert recovered.extra["wedge_alarm_streak"] == 1
+    assert recovered.extra["wedge_alarm_incarnation"] == "instance-fake-1"  # job_id
+    assert recovered.extra["wedge_alarm_first_ts"] > _time.time() - 60
+
+
+def test_two_alarmed_ticks_within_min_span_stay_running(tmp_path, monkeypatch, capsys):
+    """R1 span guard (#1837): two consecutive alarmed ticks only ~60s apart
+    (below GCP_WEDGE_ALARM_MIN_SPAN_SEC=480) stay running — two rapid
+    back-to-back re-polls can never satisfy the sustained-alarm confirmation."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+    _rewind_wedge_alarm_first_ts(sidecar, 60)  # ticks ~60s apart: span < 480
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "workload"
+    assert len(rp.launches) == 0
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "gcp"
+    assert recovered.extra["wedge_alarm_streak"] == 2  # counted, span not yet met
+
+
+def test_clean_tick_resets_alarm_streak(tmp_path, monkeypatch, capsys):
+    """R3 (#1837): a CLEAN tick (no reachability alarm) between two alarmed
+    ticks resets the streak — the consecutive requirement restarts at 1, so an
+    intermittent blip pattern never accumulates into a wedge."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    # Alarmed tick -> streak 1.
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+    assert read_handle_sidecar(sidecar).extra["wedge_alarm_streak"] == 1
+
+    # Clean tick (alarm False) -> streak keys DROPPED from the sidecar.
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=False)),
+    )
+    assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+    extra = read_handle_sidecar(sidecar).extra
+    assert "wedge_alarm_streak" not in extra
+    assert "wedge_alarm_first_ts" not in extra
+    assert "wedge_alarm_incarnation" not in extra
+
+    # Alarmed again: streak RESTARTS at 1 -> still running, no failover.
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert len(rp.launches) == 0
+    assert read_handle_sidecar(sidecar).extra["wedge_alarm_streak"] == 1
+
+
+def test_alarm_streak_from_prior_incarnation_reads_absent(tmp_path, monkeypatch, capsys):
+    """R2 (#1837, the #1815 incarnation key): a streak stamped under a
+    DIFFERENT launch incarnation (an OLD instance id) reads as ABSENT — the
+    first alarmed tick of the new incarnation re-arms at streak 1 and stays
+    running instead of maturing off the prior attempt's alarms."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    extra = dict(_GCP_EXTRA_659)
+    extra["last_phase"] = "workload"
+    extra["last_phase_change_ts"] = _time.time() - 1000
+    # A prior incarnation's MATURE record: streak 1 aged past the span floor —
+    # if it were honored, this tick would wedge (streak 2, span >= 480).
+    extra["wedge_alarm_streak"] = 1
+    extra["wedge_alarm_first_ts"] = _time.time() - 500
+    extra["wedge_alarm_incarnation"] = "instance-OLD-0"  # != job_id
+    write_handle_sidecar(_gcp_handle(extra=extra), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert len(rp.launches) == 0
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.extra["wedge_alarm_streak"] == 1  # re-armed, not matured
+    assert recovered.extra["wedge_alarm_incarnation"] == "instance-fake-1"
+
+
+def test_phase_advance_resets_alarm_streak(tmp_path, monkeypatch, capsys):
+    """R3 (#1837): a PHASE ADVANCE between alarmed ticks resets the streak —
+    an advancing phase proves the workload alive, so the prior alarm never
+    carries across it."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="phase_A", ts=_time.time() - 1000), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    # Alarmed tick on frozen phase_A -> streak 1.
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("phase_A", reachability_alarm=True)),
+    )
+    assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+    assert read_handle_sidecar(sidecar).extra["wedge_alarm_streak"] == 1
+
+    # Phase ADVANCES (alarm still raised): clock re-stamps, streak dies.
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("phase_B", reachability_alarm=True)),
+    )
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "phase_B"
+    assert len(rp.launches) == 0
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.extra["last_phase"] == "phase_B"
+    assert "wedge_alarm_streak" not in recovered.extra
+    assert "wedge_alarm_first_ts" not in recovered.extra
+
+
+def test_streak_write_failure_never_wedges_first_tick(tmp_path, monkeypatch, capsys):
+    """R6 (#1837 fail-loud pin): a streak WRITE failure (read-only sidecar dir)
+    must not raise and must not silently wedge — the poll returns running (the
+    write failure is logged loudly; the next tick re-reads stale state and
+    UNDER-counts, failing toward running, never a manufactured wedge). Also
+    pins the read-side fail-open: a MISSING sidecar reads (0, None)."""
+    from scripts.backend_poll import _read_wedge_alarm_streak
+
+    # Read-side fail-open: missing sidecar -> (0, None), no raise.
+    assert _read_wedge_alarm_streak(tmp_path / "nope.json", _gcp_handle()) == (0, None)
+
+    ro_dir = tmp_path / "ro"
+    ro_dir.mkdir()
+    sidecar = ro_dir / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    ro_dir.chmod(0o500)  # tmp+rename write of the streak now fails (EACCES)
+    try:
+        rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    finally:
+        ro_dir.chmod(0o700)
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "workload"
+    assert len(rp.launches) == 0
+    # Nothing persisted (the write failed) — the streak stayed in-memory only.
+    assert "wedge_alarm_streak" not in read_handle_sidecar(sidecar).extra
 
 
 def test_poll_running_with_recent_phase_change_stays_running(tmp_path, monkeypatch, capsys):
