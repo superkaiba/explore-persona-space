@@ -6319,8 +6319,8 @@
     "1816": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1816",
-      "status": "planning",
+      "path": "tasks/approved/1816",
+      "status": "approved",
       "title": "daily-fix: deferred-commit ERROR keeps the failing hook line"
     },
     "1817": {
