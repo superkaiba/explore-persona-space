@@ -455,8 +455,9 @@ Step 2.7 reconcile the OUTPUTS at the off-pod destination instead of
 FAILing r1 by construction (#1426). Pod-free / single-machine plans omit
 the block entirely; an off-pod phase named in prose without the block draws
 the verifier's `off-pod-phase-spec-absent` WARN + `verify_plan.py` c39
-WARN (c39's trigger vocabulary does not fire on inverse-direction prose —
-that direction is planner+critic-enforced). Template + worked examples:
+WARN (c39's trigger fires on the calibrated inverse-direction tokens
+`vm-produced` / `produced on the vm` (#1796); OTHER inverse-direction
+phrasings remain planner+critic-enforced). Template + worked examples:
 `.claude/rules/planner-section-reference.md` § 9 (off_pod_phases).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
