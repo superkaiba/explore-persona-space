@@ -293,7 +293,7 @@ The figure plots, for the two fitted chains and four Jacobian variants (anchored
 
 ![Chain token retrieval for fitted maps and Jacobian variants versus shuffled-pairing nulls](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4d58dc0ef3ac962480793b662463729136921fd1/figures/issue_1776/followup_userchat_jchain/jchain_mrr_bars.png)
 
-> **Figure.** *Fitted chains retrieve at 0.0114 and 0.0139 against nulls near 0.0013 (~9–10×); every Jacobian arm sits at its own null band* — 0.00037–0.00055 vs null means 0.00035–0.00041, the largest read grazing its band's 97.5th percentile at 6% above the null mean, ~31× below the fitted chain.
+> **Figure.** *Fitted chains retrieve at 0.0114 and 0.0139 against nulls near 0.0013 (~9–10×); every Jacobian arm sits at its own null band* — 0.00036–0.00055 vs null means 0.00035–0.00041, the largest read grazing its band's 97.5th percentile at 6% above the null mean, ~31× below the fitted chain.
 
 This closes the scale-sensitivity escape on the headline: the rank read is calibration-free, so no rescaling argument can revive the Jacobian, and the fitted map's edge survives in semantics as well as geometry. The prediction that any Jacobian gain would concentrate in prompt-echoed tokens is refuted — the echoed partition is exactly at its null (0.000032 vs 0.000032) — and the fitted chain's gain is not echo-driven either: its non-echoed partition carries the full separation (0.0112 vs null 0.0013). Mechanically, the Jacobian predictions are anchor-dominated — near-identical across contexts, yielding a generic token ranking that a shuffled pairing matches.
 
