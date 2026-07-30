@@ -6375,8 +6375,8 @@
     "1823": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1823",
-      "status": "proposed",
+      "path": "tasks/archived/1823",
+      "status": "archived",
       "title": "workflow-fix: re-wrap verify_task_body.py line 13224 (the inclusive-cap f-"
     },
     "1824": {
