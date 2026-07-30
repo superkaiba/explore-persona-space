@@ -32,8 +32,15 @@ from scripts.issue1689_user_slot_capture import (
     run_worker,
 )
 from scripts.issue1689_user_slot_fits import (
+    LENGTH_SPLIT_ARMS,
+    context_token_lengths,
+    conv_rank_median_split,
     expand_by_dup,
+    fit_length_stratified,
     gate1_parent_parity,
+    measure_fold_basis,
+    project_battery_wall,
+    published_parent_r2,
     verify_truncation_equivalence,
 )
 from scripts.issue1689_user_slot_render import (
@@ -526,3 +533,163 @@ def test_tiny_real_cpu_capture_end_to_end(tmp_path: Path):
                 assert not np.array_equal(
                     st["grid_slots"][f"{gn}__Y_mean"], st["grid_slots"][f"{gn}__Y_end"]
                 ), gn
+
+
+# ---------------------------------------------------------------------------
+# Addendum A: length-stratified refits on the PARENT stores
+# ---------------------------------------------------------------------------
+
+
+def _rendered_shard(tmp_path: Path, name: str, rows: list[dict]) -> Path:
+    p = tmp_path / name
+    with p.open("w", encoding="utf-8") as fh:
+        for r in rows:
+            fh.write(json.dumps(r) + "\n")
+    return p
+
+
+def _nat_row(cid: str, u1: str, u2: str = "Say more.") -> dict:
+    """A naturalistic rendered row in the PARENT's own field shape."""
+    return {
+        "conv_id": cid,
+        "prefix_text_only": f"User: {u1}\n\nAssistant: ok\n\n",
+        "u2_text_marked": f"User: {u2}",
+        "context_tail": "\n\nAssistant: ",
+    }
+
+
+def test_context_token_lengths_dedups_identical_duplicates(tmp_path: Path):
+    """The parent publishes each conversation 3x per condition with a
+    BYTE-IDENTICAL context; the length table must collapse those to one entry
+    (and tokenize once), not raise and not triple-count."""
+    tok = _tokenizer()
+    rows = []
+    for cid, u1 in (("c1", "short one"), ("c2", "a much longer first user turn " * 12)):
+        rows += [_nat_row(cid, u1)] * 3  # the parent's 3-rows-per-conversation shape
+    # split across two shards, so the duplicate group spans files
+    p0 = _rendered_shard(tmp_path, "cond.shard00.jsonl", rows[:3])
+    p1 = _rendered_shard(tmp_path, "cond.shard01.jsonl", rows[3:])
+    lengths, digest = context_token_lengths([p0, p1], tok, "naturalistic")
+    assert sorted(lengths) == ["c1", "c2"]
+    assert digest["n_rendered_rows"] == 6
+    assert digest["n_distinct_convs"] == 2
+    assert digest["duplicate_factor"] == pytest.approx(3.0)
+    assert digest["n_tokenized"] == 2, "only the first occurrence per conv is tokenized"
+    assert lengths["c2"] > lengths["c1"], "longer u1 must yield a longer context"
+
+
+def test_context_token_lengths_raises_on_divergent_duplicate(tmp_path: Path):
+    """A duplicate group whose context text DIVERGES breaks the per-conversation
+    length premise and must fail loud (never silently pick one)."""
+    tok = _tokenizer()
+    rows = [_nat_row("c1", "same"), _nat_row("c1", "DIFFERENT first turn entirely")]
+    p = _rendered_shard(tmp_path, "cond.shard00.jsonl", rows)
+    with pytest.raises(RuntimeError, match="DIVERGENT context text"):
+        context_token_lengths([p], tok, "naturalistic")
+
+
+def test_conv_rank_median_split_matched_n_disjoint_length_separated():
+    """Matched row count, disjoint halves, and a genuine length separation."""
+    # 10 conversations, 3 rows each (the parent's group shape), lengths 10..100
+    conv_ids = [f"c{i}" for i in range(10) for _ in range(3)]
+    lengths = {f"c{i}": 10 * (i + 1) for i in range(10)}
+    split = conv_rank_median_split(conv_ids, lengths, seed=0)
+    si, li = split["short_idx"], split["long_idx"]
+    m = split["meta"]
+    assert si.shape[0] == li.shape[0] == 15
+    assert set(si.tolist()).isdisjoint(li.tolist())
+    assert m["boundary_short_max"] <= m["boundary_long_min"]
+    assert m["short"]["n_convs"] == m["long"]["n_convs"] == 5
+    assert m["dropped_middle_conv_count"] == 0
+    # every conversation stays WHOLE inside one half (conversation-grouped folds
+    # inside a half are only clean if a conv's rows never straddle the split)
+    short_convs = {conv_ids[i] for i in si.tolist()}
+    long_convs = {conv_ids[i] for i in li.tolist()}
+    assert short_convs.isdisjoint(long_convs)
+    for c in short_convs | long_convs:
+        idx = [i for i, cc in enumerate(conv_ids) if cc == c]
+        assert set(idx) <= set(si.tolist()) or set(idx) <= set(li.tolist()), c
+
+
+def test_conv_rank_median_split_drops_middle_conv_when_odd():
+    conv_ids = [f"c{i}" for i in range(7)]
+    lengths = {f"c{i}": i + 1 for i in range(7)}
+    split = conv_rank_median_split(conv_ids, lengths, seed=0)
+    assert split["short_idx"].shape[0] == split["long_idx"].shape[0] == 3
+    assert split["meta"]["dropped_middle_conv_count"] == 1
+
+
+def test_conv_rank_median_split_raises_on_missing_length():
+    with pytest.raises(RuntimeError, match="absent from the rendered length table"):
+        conv_rank_median_split(["a", "b"], {"a": 5}, seed=0)
+
+
+def test_fit_length_stratified_runs_the_real_body_on_both_halves():
+    """Production-body test: the REAL fit path on a tiny parent-shaped store
+    (n_train < d, the production rank regime), both halves fit and matched."""
+    rng = np.random.default_rng(0)
+    n_conv, per_conv, d = 40, 3, 60
+    n = n_conv * per_conv
+    conv_ids = [f"c{i}" for i in range(n_conv) for _ in range(per_conv)]
+    Xp = rng.standard_normal((n, d)).astype(np.float32)
+    Xc = rng.standard_normal((n, d)).astype(np.float32)
+    W = rng.standard_normal((d, d)).astype(np.float32)
+    Y = (Xc @ W + 0.5 * rng.standard_normal((n, d))).astype(np.float32)
+    store = {"X_prefix": Xp, "X_context": Xc, "Y": Y, "conv_ids": conv_ids}
+    lengths = {f"c{i}": 20 + 7 * i for i in range(n_conv)}
+    out = fit_length_stratified(store, lengths, null_draws=3)
+    assert set(out["arms"]) == {name for _, _, name in LENGTH_SPLIT_ARMS}
+    for arm, res in out["arms"].items():
+        assert res["short"]["n_rows"] == res["long"]["n_rows"], arm
+        for half in ("short", "long"):
+            assert np.isfinite(res[half]["r2"]), (arm, half)
+            # every fitted map carries the standing-rule companion reads
+            assert res[half]["identity_bias_r2"] is not None, (arm, half)
+            assert "acc_at_k" in res[half]["knn_euclidean"], (arm, half)
+            assert "acc_at_k" in res[half]["knn_cosine"], (arm, half)
+            assert res[half]["null_shuffle_fit_targets"]["n_draws"] == 3
+        assert res["delta_r2_long_minus_short"] == pytest.approx(
+            res["long"]["r2"] - res["short"]["r2"]
+        )
+        assert "full_refit" not in res, "the full-set refit is opt-in"
+
+
+def test_published_parent_r2_reads_l19_per_arm(tmp_path: Path):
+    ref = {
+        "layers": [14, 18, 19, 26],
+        "n_rows": 7365,
+        "prefix": {"held_out_r2_per_layer": [0.01, 0.02, 0.0751, 0.04]},
+        "context": {"held_out_r2_per_layer": [0.01, 0.02, 0.0835, 0.04]},
+    }
+    (tmp_path / "heldout_r2_M_assistant_chat.json").write_text(json.dumps(ref), encoding="utf-8")
+    got = published_parent_r2(tmp_path, "M", "assistant_chat")
+    assert got["prefix->answer"] == pytest.approx(0.0751)
+    assert got["context->answer"] == pytest.approx(0.0835)
+    assert got["n_rows_published"] == 7365
+    with pytest.raises(FileNotFoundError):
+        published_parent_r2(tmp_path, "M", "assistant_naturalistic")
+
+
+def test_projection_charges_the_grid_and_the_length_split():
+    """The wall fence is only a protection if the projection covers every phase:
+    the addendum-E grid and the addendum-A half-fits must both be charged."""
+    basis = measure_fold_basis(40, 24, null_draws=2)
+    entry = {
+        "unit_id": "u",
+        "n_rows": 40,
+        "model_dir": "M",
+        "framing": "chat",
+        "variant": "base",
+        "fit_pairs": [["a", "b", "primary"]],
+        "read_group_names": ["u2"],
+        "grid_x_kinds": ["X_clean", "X_straddle"],
+        "grid_y_kinds": ["Y_mean", "Y_end", "Y_boundary"],
+    }
+    bare = project_battery_wall([entry], basis, null_draws=2)
+    with_split = project_battery_wall([entry], basis, null_draws=2, length_split_n_rows=[40, 40])
+    assert bare["grid_hours"] > 0, "grid combos must be charged"
+    assert bare["n_grid_combos"] == 6
+    assert bare["length_split_hours"] == 0 and bare["n_length_split_cells"] == 0
+    assert with_split["length_split_hours"] > 0
+    assert with_split["n_length_split_cells"] == 2
+    assert with_split["total_hours"] > bare["total_hours"]

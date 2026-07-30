@@ -301,6 +301,16 @@ def capture_unit(
     # Addendum E: 5 grid slots per read group (X_clean, X_straddle, Y_mean,
     # Y_end, Y_boundary). Group names + membership are row-independent.
     group_names: list[str] = [g["name"] for g in rows[0].get("read_groups", [])]
+    if not group_names:
+        # A rendered set produced BEFORE addendum E carries no read_groups, so the
+        # grid degrades to empty everywhere (self-consistent, and the fits'
+        # projection then charges 0 grid hours) — but say so loudly rather than
+        # leaving the missing X x Y grid to be discovered downstream.
+        print(
+            "[capture] WARN no read_groups on the rendered rows — this render "
+            "predates the addendum-E X x Y grid; re-run the render to capture it",
+            flush=True,
+        )
     grid_slot_names = [f"{gn}__{k}" for gn in group_names for k in GRID_SLOT_KINDS]
     gacc = {s: np.zeros((n, d_model), dtype=np.float32) for s in grid_slot_names}
     gpos = {
