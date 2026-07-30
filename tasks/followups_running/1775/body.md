@@ -24,7 +24,7 @@ backend: gcp
 
 <!-- clean-result-v4 -->
 
-**Methodology:** [docs/methodology/issue_1775.md](https://github.com/superkaiba/explore-persona-space/blob/b4e4139e1021709760ae6bf81d1437080c6f656e/docs/methodology/issue_1775.md) · [gist](https://gist.github.com/superkaiba/146f7cb69c48306ff02b81ea2311af2a)
+**Methodology:** [docs/methodology/issue_1775.md](https://github.com/superkaiba/explore-persona-space/blob/175988e5d1c818e1ccdc8945e3899b28afe11901/docs/methodology/issue_1775.md) · [gist](https://gist.github.com/superkaiba/146f7cb69c48306ff02b81ea2311af2a)
 
 ## Takeaways
 
