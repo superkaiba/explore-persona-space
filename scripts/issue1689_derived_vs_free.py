@@ -69,8 +69,10 @@ from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
 from scripts.issue1689_common import (  # noqa: E402
     HEADLINE_LAYER,
     HF_DATA_PREFIX,
+    K_FLOOR_LIMITED,
     LAMBDA_GRIDS,
     N_FOLDS,
+    PCA_K_CAP,
     RUNG_REACHED_THRESHOLD,
     enumerate_pair_set,
 )
@@ -89,6 +91,71 @@ GATE1_PAIR = (
     ("Qwen_Qwen2.5-7B-Instruct", "assistant_naturalistic"),
 )
 GATE1_ATOL = 1e-3  # plan s7 Gate 1 (GPU-fp64 vs parent tolerance)
+
+
+def fit_basis_of(args) -> str:
+    """Resolve the fit basis ('ambient' | 'reduced'); default 'ambient'.
+
+    getattr-guarded so pre-extension callers / test Namespaces without the
+    attribute keep the parent (ambient) behavior byte-identically.
+    """
+    return getattr(args, "fit_basis", "ambient") or "ambient"
+
+
+def compute_k_unit(
+    folds: "np.ndarray", n: int, d: int, cap: int = PCA_K_CAP
+) -> tuple[int, dict[int, int]]:
+    """k_unit = min(cap, d, floor(min-fold n_train / 2)) over the folds that RUN.
+
+    A fold runs iff n_train >= 3 and n_test >= 1 (the battery loop's own
+    gate); the MINIMUM running-fold n_train sets ONE k per unit so
+    n_train >= 2*k_unit holds on EVERY executed fold (plan v10 s4 item 1).
+    The ``d`` cap is implicit in the plan's production shape (d=3584 > cap)
+    and binding only for dim-limited smokes / tiny worlds — a basis cannot
+    have more than d directions. Returns (k_unit, {fold: n_train}); ({},)
+    when every fold is degenerate (the caller's all-folds-degenerate path).
+    """
+    per_fold: dict[int, int] = {}
+    for k_fold in range(N_FOLDS):
+        n_te = int((folds == k_fold).sum())
+        n_tr = n - n_te
+        if n_tr < 3 or n_te < 1:
+            continue
+        per_fold[k_fold] = n_tr
+    if not per_fold:
+        return 0, {}
+    return int(min(cap, d, min(per_fold.values()) // 2)), per_fold
+
+
+def _pca_basis(stacked, k: int):
+    """Center + thin-SVD stacked TRAIN rows -> (mu, Q (d,k), svals_k, train_frac).
+
+    Q = top-k right singular vectors of the centered stack (one basis per
+    side SHARED across source and target — plan v10 s4 item 2); train_frac
+    is the captured-variance fraction of the stack (sum s_k^2 / sum s^2).
+    Test rows never reach this function (leakage discipline).
+    """
+    mu = stacked.mean(dim=0)
+    ac = stacked - mu
+    _u, s, vh = fl._svd_robust_t(ac)
+    assert k <= vh.shape[0], (k, tuple(vh.shape))
+    q = vh[:k].T.contiguous()
+    tot = float((s**2).sum().item())
+    kept = float((s[:k] ** 2).sum().item())
+    return mu, q, s[:k], (kept / tot if tot > 0 else float("nan"))
+
+
+def _heldout_captured_frac(stacked_te, mu, q) -> float:
+    """Held-out captured-variance fraction of a train-fold basis (plan s4 item 5)."""
+    ac = stacked_te - mu
+    tot = float((ac**2).sum().item())
+    kept = float(((ac @ q) ** 2).sum().item())
+    return kept / tot if tot > 0 else float("nan")
+
+
+def k_floor_limited(k: int) -> bool:
+    """Report-only diagnostic label for tiny-k units (plan v10 s6; no gating)."""
+    return k < K_FLOOR_LIMITED
 
 
 def _git_commit() -> str:
@@ -155,8 +222,14 @@ def regime_meta(args) -> dict:
 
     Rotation-null draws are deliberately NOT here: nulls are a separate
     patch-in pass keyed by their own n_draws field inside the unit JSON.
+
+    ``fit_basis`` enters the key ONLY when non-ambient: the ambient default
+    keeps the meta dict byte-identical to the parent regime, so the parent's
+    realized checkpoints stay resume-valid (alias-the-default convention),
+    while a ``reduced`` run can never satisfy — or be satisfied by — an
+    ambient checkpoint (#722 r3 every-output-affecting-knob rule).
     """
-    return {
+    meta = {
         "battery_version": BATTERY_VERSION,
         "layer": int(args.layer),
         "lambda_grid": str(args.lambda_grid),
@@ -167,6 +240,10 @@ def regime_meta(args) -> dict:
         "row_limit": args.row_limit,
         "dim_limit": args.dim_limit,
     }
+    if fit_basis_of(args) != "ambient":
+        meta["fit_basis"] = fit_basis_of(args)
+        meta["pca_k_cap"] = int(PCA_K_CAP)
+    return meta
 
 
 def unit_key(spec, arm: str) -> str:
@@ -334,6 +411,23 @@ def run_unit(
     tX_T = torch.from_numpy(np.ascontiguousarray(X_T)).to(dev)
     tY_T = torch.from_numpy(np.ascontiguousarray(Y_T)).to(dev)
 
+    # --- Fit basis (plan v10 s4): ambient (parent, byte-identical) or a
+    # per-(pair, arm, fold) shared train-fold-only PCA rank-k basis.
+    reduced = fit_basis_of(args) == "reduced"
+    k_unit = 0
+    per_fold_n_train: dict[int, int] = {}
+    basis_meta: dict[int, dict] = {}
+    basis_spectra: dict[int, tuple] = {}
+    if reduced:
+        k_unit, per_fold_n_train = compute_k_unit(folds, n, d)
+        if per_fold_n_train and k_unit < 1:
+            return {
+                "error": f"k_unit < 1 (min-fold n_train {min(per_fold_n_train.values())})",
+                "retryable": False,
+                "n_common": int(n),
+            }, {}
+    fdim = k_unit if reduced else d  # the dimension every fit/operator lives in
+
     model_labels = (
         ["b_free", "identity_bias"]
         + [f"b_derived_{lab}" for lab in RANK_LABELS]
@@ -341,6 +435,9 @@ def run_unit(
     )
     pooled_pred: dict[str, list[np.ndarray]] = {m: [] for m in model_labels}
     pooled_true: list[np.ndarray] = []
+    # Ambient-reconstruction companion pools (reduced mode only, plan s4 item 5).
+    pooled_pred_amb: dict[str, list[np.ndarray]] = {m: [] for m in model_labels}
+    pooled_true_amb: list[np.ndarray] = []
     per_fold_r2: dict[str, dict[int, float]] = {m: {} for m in model_labels}
     lambdas_chosen: dict[int, dict[str, float]] = {}
     eff_ranks: dict[int, float] = {}
@@ -356,12 +453,46 @@ def run_unit(
         tr = torch.from_numpy(np.where(tr_mask)[0]).to(dev)
         te = torch.from_numpy(np.where(te_mask)[0]).to(dev)
         conv_tr = common[np.where(tr_mask)[0]]
+        if reduced:
+            # Well-posedness invariant (plan s4 item 1): holds by construction
+            # of k_unit; a violation is a recorded unit error [wellposed-assert].
+            n_tr = int(tr.numel())
+            assert n_tr >= 2 * k_unit, (
+                f"well-posedness violated: fold {k_fold} n_train={n_tr} < 2*k_unit={2 * k_unit}"
+            )
+            # ONE basis per side, SHARED across source and target, train-fold
+            # rows ONLY (test rows never touch the basis — plan s4 item 2).
+            mu_x, Q_x, sx_k, fx_tr = _pca_basis(torch.cat([tX_S[tr], tX_T[tr]], dim=0), k_unit)
+            mu_y, Q_y, sy_k, fy_tr = _pca_basis(torch.cat([tY_S[tr], tY_T[tr]], dim=0), k_unit)
+            assert Q_x.shape == (d, k_unit) and Q_y.shape == (d, k_unit), (
+                tuple(Q_x.shape),
+                tuple(Q_y.shape),
+            )
+            xs_tr, xt_tr = (tX_S[tr] - mu_x) @ Q_x, (tX_T[tr] - mu_x) @ Q_x
+            ys_tr, yt_tr = (tY_S[tr] - mu_y) @ Q_y, (tY_T[tr] - mu_y) @ Q_y
+            ys_te, yt_te = (tY_S[te] - mu_y) @ Q_y, (tY_T[te] - mu_y) @ Q_y
+            basis_spectra[k_fold] = (sx_k.cpu().numpy(), sy_k.cpu().numpy())
+            basis_meta[k_fold] = {
+                "n_train": n_tr,
+                "captured_var_train_x": fx_tr,
+                "captured_var_train_y": fy_tr,
+                "captured_var_test_x": _heldout_captured_frac(
+                    torch.cat([tX_S[te], tX_T[te]], dim=0), mu_x, Q_x
+                ),
+                "captured_var_test_y": _heldout_captured_frac(
+                    torch.cat([tY_S[te], tY_T[te]], dim=0), mu_y, Q_y
+                ),
+            }
+        else:
+            xs_tr, xt_tr = tX_S[tr], tX_T[tr]
+            ys_tr, yt_tr = tY_S[tr], tY_T[tr]
+            ys_te, yt_te = tY_S[te], tY_T[te]
         # Train-fold-only fits — the battery's ONLY fitting convention (plan s4
         # item 2): W_S, W_T, M, a, b_S all exclude the fold's test rows.
-        W_S, b_S, lam_ws = fl._fit_ridge_inner_group_cv_t(tX_S[tr], tY_S[tr], conv_tr, lams)
-        W_T, b_T, lam_wt = fl._fit_ridge_inner_group_cv_t(tX_T[tr], tY_T[tr], conv_tr, lams)
-        M, a_M, lam_m = fl._fit_ridge_inner_group_cv_t(tX_S[tr], tX_T[tr], conv_tr, lams)
-        B_free, b_free, lam_bf = fl._fit_ridge_inner_group_cv_t(tY_S[tr], tY_T[tr], conv_tr, lams)
+        W_S, b_S, lam_ws = fl._fit_ridge_inner_group_cv_t(xs_tr, ys_tr, conv_tr, lams)
+        W_T, b_T, lam_wt = fl._fit_ridge_inner_group_cv_t(xt_tr, yt_tr, conv_tr, lams)
+        M, a_M, lam_m = fl._fit_ridge_inner_group_cv_t(xs_tr, xt_tr, conv_tr, lams)
+        B_free, b_free, lam_bf = fl._fit_ridge_inner_group_cv_t(ys_tr, yt_tr, conv_tr, lams)
         lambdas_chosen[k_fold] = {"W_S": lam_ws, "W_T": lam_wt, "M": lam_m, "B_free": lam_bf}
 
         U, s, Vh = fl._svd_robust_t(W_S)
@@ -374,9 +505,19 @@ def run_unit(
         }
         rank_map["effrank"] = k_eff
 
-        Y_true_te = tY_T[te]
+        Y_true_te = yt_te
         pooled_true.append(Y_true_te.cpu().numpy())
-        y_c = tY_S[te] - b_S
+        if reduced:
+            pooled_true_amb.append(tY_T[te].cpu().numpy())
+
+        def _pool(label: str, pred) -> None:
+            """Pool a fold prediction (+ its ambient reconstruction when reduced)."""
+            pooled_pred[label].append(pred.cpu().numpy())
+            per_fold_r2[label][k_fold] = fl._r2_t(Y_true_te, pred)
+            if reduced:
+                pooled_pred_amb[label].append((pred @ Q_y.T + mu_y).cpu().numpy())
+
+        y_c = ys_te - b_S
         mw_s = M @ W_S
         mw_t = M @ W_T
         aw_s = a_M @ W_S + b_S
@@ -384,20 +525,23 @@ def run_unit(
         for lab in RANK_LABELS:
             kk = rank_map[lab]
             xhat = _pinv_apply(y_c, U, s, Vh, kk)
-            pred_d = xhat @ mw_s + aw_s
-            pred_d2 = xhat @ mw_t + aw_t
-            pooled_pred[f"b_derived_{lab}"].append(pred_d.cpu().numpy())
-            pooled_pred[f"b_derived2_{lab}"].append(pred_d2.cpu().numpy())
-            per_fold_r2[f"b_derived_{lab}"][k_fold] = fl._r2_t(Y_true_te, pred_d)
-            per_fold_r2[f"b_derived2_{lab}"][k_fold] = fl._r2_t(Y_true_te, pred_d2)
-        pred_free = tY_S[te] @ B_free + b_free
-        pooled_pred["b_free"].append(pred_free.cpu().numpy())
-        per_fold_r2["b_free"][k_fold] = fl._r2_t(Y_true_te, pred_free)
+            _pool(f"b_derived_{lab}", xhat @ mw_s + aw_s)
+            _pool(f"b_derived2_{lab}", xhat @ mw_t + aw_t)
+        _pool("b_free", ys_te @ B_free + b_free)
         tr_np = np.where(tr_mask)[0]
         te_np = np.where(te_mask)[0]
-        pred_ident = identity_bias_predict(Y_S[tr_np], Y_T[tr_np], Y_S[te_np])
-        pooled_pred["identity_bias"].append(pred_ident)
-        per_fold_r2["identity_bias"][k_fold] = fl._r2(Y_T[te_np], pred_ident)
+        if reduced:
+            ys_tr_np, yt_tr_np = ys_tr.cpu().numpy(), yt_tr.cpu().numpy()
+            ys_te_np, yt_te_np = ys_te.cpu().numpy(), yt_te.cpu().numpy()
+            pred_ident = identity_bias_predict(ys_tr_np, yt_tr_np, ys_te_np)
+            pooled_pred["identity_bias"].append(pred_ident)
+            per_fold_r2["identity_bias"][k_fold] = fl._r2(yt_te_np, pred_ident)
+            q_y_np, mu_y_np = Q_y.cpu().numpy(), mu_y.cpu().numpy()
+            pooled_pred_amb["identity_bias"].append(pred_ident @ q_y_np.T + mu_y_np)
+        else:
+            pred_ident = identity_bias_predict(Y_S[tr_np], Y_T[tr_np], Y_S[te_np])
+            pooled_pred["identity_bias"].append(pred_ident)
+            per_fold_r2["identity_bias"][k_fold] = fl._r2(Y_T[te_np], pred_ident)
 
         if not canonical:  # canonical fold = FIRST completed fold (fold 0 by construction)
             canonical = {
@@ -426,6 +570,14 @@ def run_unit(
     for m in model_labels:
         pred_arr = np.concatenate(pooled_pred[m], axis=0)
         r2_pooled[m] = fl._r2(true_arr, pred_arr)
+
+    # Ambient-reconstruction companion R2 (reduced only, plan s4 item 5):
+    # Q_y @ y_hat_red + mu_y against the RAW ambient y_T, pooled across folds.
+    r2_pooled_amb: dict[str, float] = {}
+    if reduced:
+        true_amb = np.concatenate(pooled_true_amb, axis=0)
+        for m in model_labels:
+            r2_pooled_amb[m] = fl._r2(true_amb, np.concatenate(pooled_pred_amb[m], axis=0))
 
     def _max_read(prefix: str) -> tuple[float, str]:
         vals = {lab: r2_pooled[f"{prefix}_{lab}"] for lab in RANK_LABELS}
@@ -489,9 +641,10 @@ def run_unit(
         del B_op
 
     # Compact bundle (plan s10): M-I top-256 factors fp16, spectra, per-fold R2.
-    Mm = M - _torch.eye(d, dtype=_torch.float64, device=M.device)
+    # In reduced mode every operator lives in the k_unit-dim basis (fdim).
+    Mm = M - _torch.eye(fdim, dtype=_torch.float64, device=M.device)
     Um, sm_v, Vhm = fl._svd_robust_t(Mm)
-    n_keep = min(256, d)
+    n_keep = min(256, fdim)
     rank_grid_r2 = np.array(
         [
             [per_fold_r2[f"b_derived_{lab}"].get(f, np.nan) for f in range(N_FOLDS)]
@@ -509,6 +662,11 @@ def run_unit(
     }
     for name in op_variants:
         bundle[f"svec_{name}"] = svecs[name]
+    if reduced:
+        # Per-fold Q-basis spectra (plan s10 bundle contents).
+        for f_id, (sx_np, sy_np) in basis_spectra.items():
+            bundle[f"q_x_svals_f{f_id}"] = sx_np
+            bundle[f"q_y_svals_f{f_id}"] = sy_np
 
     unit = {
         "meta": regime_meta(args),
@@ -551,6 +709,17 @@ def run_unit(
         "wall_s": round(time.perf_counter() - t0, 2),
         "metadata": _metadata(),
     }
+    if reduced:
+        # Reduced-only fields (plan s4 item 5 + s6 estimator-validity line).
+        # Keyed ADDITIVELY so the ambient unit JSON stays byte-identical.
+        unit["fit_basis"] = "reduced"
+        unit["k_unit"] = int(k_unit)
+        unit["fit_dim"] = int(fdim)
+        unit["k_floor_limited"] = k_floor_limited(k_unit)
+        unit["per_fold_n_train"] = {int(f): int(v) for f, v in per_fold_n_train.items()}
+        unit["pca_basis_per_fold"] = {int(f): v for f, v in basis_meta.items()}
+        unit["r2_pooled_ambient_recon"] = r2_pooled_amb
+        unit["r2_b_free_ambient_recon"] = r2_pooled_amb.get("b_free")
     return unit, bundle
 
 
@@ -661,14 +830,17 @@ def cmd_nulls(args) -> int:
     if not todo:
         print("[dvf-nulls] nothing to do", flush=True)
         return 0
-    # Group by d (dim-limit smokes may differ from production units).
+    # Group by the FIT dimension: k_unit under --fit-basis reduced (rotation
+    # nulls draw in dimension k_unit, plan v10 s4 item 4), else ambient d
+    # (dim-limit smokes may differ from production units). Ambient units carry
+    # no fit_dim field -> fallback d keeps parent outputs consumable verbatim.
     by_d: dict[int, list[int]] = {}
     loaded = []
     for idx, (upath, bpath, unit) in enumerate(todo):
         with np.load(bpath) as z:
             svec_map = {k: z[k] for k in z.files if k.startswith("svec_")}
         loaded.append((upath, bpath, unit, svec_map))
-        by_d.setdefault(int(unit["d"]), []).append(idx)
+        by_d.setdefault(int(unit.get("fit_dim") or unit["d"]), []).append(idx)
     dev = torch.device(args.device)
     for d, idxs in sorted(by_d.items()):
         cmp_rows_a, cmp_rows_b, cmp_keys = [], [], []
@@ -887,52 +1059,130 @@ def cmd_merge(args) -> int:
     return 0
 
 
+GATE1_NOOP_ATOL = 1e-6  # plan v10 s7: pure-refactor guard (fallback GATE1_ATOL)
+
+
+def _gate1_battery_parity(args, lams, report: dict) -> bool:
+    """Gate 1a (plan v10 s7): ambient no-op battery parity vs the PUBLISHED
+    parent per-unit JSON (`derived_vs_free_B/pairs/<parity unit>__context.json`).
+
+    Runs the EXTENDED run_unit with fit_basis FORCED to ambient at full shape
+    and diffs the battery scalars: strict atol 1e-6 (pure refactor), fallback
+    GATE1_ATOL=1e-3 recorded as ``fallback_used`` (GPU-class numerics).
+    Under slice knobs (--row-limit/--dim-limit) the published full-shape
+    scalars are unreachable BY CONSTRUCTION, so the check auto-demotes to an
+    informational record (smoke/production gate-calibration parity, #1345).
+    """
+    spec = GATE1_PAIR
+    (sm, sc), (tm, tc) = spec
+    target = getattr(args, "gate1_battery_target", None) or (
+        REPO_ROOT
+        / "eval_results/issue_1689/derived_vs_free_B/pairs"
+        / f"{unit_key(spec, 'context')}.json"
+    )
+    published = json.loads(Path(target).read_text())
+    amb_args = argparse.Namespace(**vars(args))
+    amb_args.fit_basis = "ambient"
+    cache = _CellCache(args.store_root, args.layer)
+    t0 = time.perf_counter()
+    unit, _bundle = run_unit(cache.get(sm, sc), cache.get(tm, tc), spec, "context", amb_args, lams)
+    wall = time.perf_counter() - t0
+    if "error" in unit:
+        report["battery_parity"] = {"ok": False, "unit_error": unit["error"]}
+        return False
+    diffs = {
+        k: abs(float(published["r2_pooled"][k]) - float(unit["r2_pooled"][k]))
+        for k in published["r2_pooled"]
+    }
+    for scalar in ("g1", "g2", "g1_fixed_effrank", "g2_fixed_effrank"):
+        diffs[scalar] = abs(float(published[scalar]) - float(unit[scalar]))
+    max_diff = max(diffs.values())
+    informational = args.row_limit is not None or args.dim_limit is not None
+    strict_ok = max_diff <= GATE1_NOOP_ATOL
+    fallback_ok = max_diff <= GATE1_ATOL
+    ok = informational or strict_ok or fallback_ok
+    report["battery_parity"] = {
+        "pair": fl.pair_spec_key(spec),
+        "arm": "context",
+        "target_json": str(target),
+        "max_abs_scalar_diff": max_diff,
+        "per_scalar_abs_diff": diffs,
+        "n_common_match": int(published["n_common"]) == int(unit["n_common"]),
+        "verdict_match": published["verdict"] == unit["verdict"],
+        "atol_strict": GATE1_NOOP_ATOL,
+        "atol_fallback": GATE1_ATOL,
+        "fallback_used": bool(not strict_ok and fallback_ok),
+        "informational": informational,
+        "battery_unit_wall_s": round(wall, 1),
+        "ok": ok,
+    }
+    if not informational:
+        report["battery_parity"]["ok"] = ok = ok and (
+            report["battery_parity"]["n_common_match"] and report["battery_parity"]["verdict_match"]
+        )
+    tag = "INFO (sliced shape — published target is full-shape)" if informational else ""
+    print(f"[dvf-gate1] battery no-op parity max|diff|={max_diff:.3e} ok={ok} {tag}", flush=True)
+    return bool(ok)
+
+
 def cmd_gate1(args) -> int:
-    """Gate 1 (plan s7): parity vs the published parent per-pair JSON + timing pilot."""
+    """Gate 1 (plan s7): parity vs the published parent per-pair JSON + timing pilot.
+
+    ``--gate1-checks``: ladder (parent behavior, default) | battery (the
+    wellposed round's ambient no-op parity, plan v10 s7 Gate 1a) | both.
+    """
     lams = (
         fl.LAMBDAS if args.lambda_grid == "ladder13" else fl.resolve_lambda_grid(args.lambda_grid)
     )
     report: dict = {"gate": "gate1", "atol": GATE1_ATOL, "metadata": _metadata()}
     spec = GATE1_PAIR
     (sm, sc), (tm, tc) = spec
-    target_path = args.gate1_target or (
-        REPO_ROOT / "eval_results/issue_1689/ladder" / f"pairs_{sm}_L19" / f"{sc}__{tc}.json"
-    )
-    published = json.loads(Path(target_path).read_text())["arms"]["context"]
-    t0 = time.perf_counter()
-    res = fl.run_pairs_generalized(
-        args.store_root,
-        [spec],
-        layer=args.layer,
-        n_bootstrap_draws=0,
-        n_null_draws=args.gate1_null_draws,
-        engine="torch",
-        device=args.device,
-        checkpoint_dir=None,
-        lambda_grid=args.lambda_grid,
-    )
-    ladder_wall = time.perf_counter() - t0
-    new = res["pairs"][fl.pair_spec_key(spec)]["context"]
-    diffs = {
-        k: abs(published["rung_r2s_point"][k] - new["rung_r2s_point"][k])
-        for k in published["rung_r2s_point"]
-    }
-    max_diff = max(diffs.values())
-    rung_match = int(published["rung_reached_point"]) == int(new["rung_reached_point"])
-    n_match = int(published["n_common"]) == int(new["n_common"])
-    parity_ok = max_diff <= GATE1_ATOL and rung_match and n_match
-    report["parity"] = {
-        "pair": fl.pair_spec_key(spec),
-        "arm": "context",
-        "target_json": str(target_path),
-        "max_abs_rung_r2_diff": max_diff,
-        "per_rung_abs_diff": diffs,
-        "rung_reached_match": rung_match,
-        "n_common_match": n_match,
-        "n_common": int(new["n_common"]),
-        "ladder_unit_wall_s": round(ladder_wall, 1),
-        "ok": parity_ok,
-    }
+    parity_ok = True
+    ladder_wall = 0.0
+    max_diff = float("nan")
+    gate1_checks = getattr(args, "gate1_checks", "ladder") or "ladder"
+    if gate1_checks in ("ladder", "both"):
+        target_path = args.gate1_target or (
+            REPO_ROOT / "eval_results/issue_1689/ladder" / f"pairs_{sm}_L19" / f"{sc}__{tc}.json"
+        )
+        published = json.loads(Path(target_path).read_text())["arms"]["context"]
+        t0 = time.perf_counter()
+        res = fl.run_pairs_generalized(
+            args.store_root,
+            [spec],
+            layer=args.layer,
+            n_bootstrap_draws=0,
+            n_null_draws=args.gate1_null_draws,
+            engine="torch",
+            device=args.device,
+            checkpoint_dir=None,
+            lambda_grid=args.lambda_grid,
+        )
+        ladder_wall = time.perf_counter() - t0
+        new = res["pairs"][fl.pair_spec_key(spec)]["context"]
+        diffs = {
+            k: abs(published["rung_r2s_point"][k] - new["rung_r2s_point"][k])
+            for k in published["rung_r2s_point"]
+        }
+        max_diff = max(diffs.values())
+        rung_match = int(published["rung_reached_point"]) == int(new["rung_reached_point"])
+        n_match = int(published["n_common"]) == int(new["n_common"])
+        parity_ok = max_diff <= GATE1_ATOL and rung_match and n_match
+        report["parity"] = {
+            "pair": fl.pair_spec_key(spec),
+            "arm": "context",
+            "target_json": str(target_path),
+            "max_abs_rung_r2_diff": max_diff,
+            "per_rung_abs_diff": diffs,
+            "rung_reached_match": rung_match,
+            "n_common_match": n_match,
+            "n_common": int(new["n_common"]),
+            "ladder_unit_wall_s": round(ladder_wall, 1),
+            "ok": parity_ok,
+        }
+    battery_ok = True
+    if gate1_checks in ("battery", "both"):
+        battery_ok = _gate1_battery_parity(args, lams, report)
     if args.gate1_timing:
         cache = _CellCache(args.store_root, args.layer)
         source = cache.get(sm, sc)
@@ -943,12 +1193,15 @@ def cmd_gate1(args) -> int:
             "battery_unit_wall_s": round(time.perf_counter() - t0, 1),
             "row_limit": args.row_limit,
             "dim_limit": args.dim_limit,
+            "fit_basis": fit_basis_of(args),
+            "k_unit": unit.get("k_unit"),
             "unit_error": unit.get("error"),
         }
     _atomic_write_json(args.out_root / "gate1_report.json", report)
-    if not parity_ok:
+    if not parity_ok or not battery_ok:
         print(
-            f"[dvf-gate1] PARITY FAIL: max|diff|={max_diff:.3e} rung_match={rung_match}", flush=True
+            f"[dvf-gate1] PARITY FAIL: max|diff|={max_diff:.3e} battery_ok={battery_ok}",
+            flush=True,
         )
         return 7  # distinct rc: designed gate refusal, not an anonymous crash (#1415)
     print(f"[dvf-gate1] PARITY PASS: max|diff|={max_diff:.3e} wall={ladder_wall:.1f}s", flush=True)
@@ -979,6 +1232,18 @@ def cmd_stage(args) -> int:
     wanted = [f for f in files if f.endswith(f"/L{args.layer}.pt")]
     if len(wanted) < 42:
         raise RuntimeError(f"expected 42 L{args.layer}.pt files at the pin, found {len(wanted)}")
+    if args.stage_cells:
+        # Sliced-INPUT smoke knob (same phase code path, fewer files): keep
+        # only the named <model_slug>/<condition> cells. Production passes
+        # nothing and stages all 42.
+        keep = {c.strip() for c in args.stage_cells.split(",") if c.strip()}
+        wanted = [
+            f for f in wanted if f.removeprefix(STORE_HF_PREFIX + "/").rsplit("/", 1)[0] in keep
+        ]
+        if len(wanted) != len(keep):
+            raise RuntimeError(
+                f"--stage-cells: expected {len(keep)} cells, matched {len(wanted)} at the pin"
+            )
     todo = []
     for repo_path in wanted:
         rel = repo_path.removeprefix(STORE_HF_PREFIX + "/")
@@ -1056,6 +1321,95 @@ def cmd_upload(args) -> int:
     return 0
 
 
+def cmd_fence(args) -> int:
+    """Plan v10 s7/s9: pilot-anchored k-weighted fence + kill projection.
+
+    Reads the reduced-pilot unit walls (the dvf + cms parity units written by
+    the pilot pairs/units runs), k-weights them over the full unit list's
+    implied k distribution (k_i ~ min(cap, floor(0.8 * n_common / 2)) from
+    the parent digest's n_common — the plan s2 approximation; per-unit cost
+    ~ (k_i / k_pilot)^2 with a 5% overhead floor, the s9 dense-solve scaling),
+    writes fence_report.json + one parse-friendly stdout line, and under
+    --enforce-kill exits rc=21 when the projected total exceeds
+    --kill-gpu-hours (kill criterion 2 — a DESIGNED halt the dispatcher
+    routes, never an anonymous crash, #1415).
+    """
+    import csv as _csv
+
+    pilot_key = unit_key(GATE1_PAIR, "context")
+    dvf_unit = json.loads((args.out_root / "pairs" / f"{pilot_key}.json").read_text())
+    if "error" in dvf_unit:
+        raise RuntimeError(f"dvf pilot unit errored: {dvf_unit['error']}")
+    dvf_wall = float(dvf_unit["wall_s"])
+    k_pilot = int(dvf_unit.get("k_unit") or dvf_unit["d"])
+    cms_wall = dvf_wall * 3.0  # parent leg's 3x structure-unit heuristic (fallback)
+    cms_wall_measured = False
+    if args.cms_out_root is not None:
+        cms_path = args.cms_out_root / "pairs" / f"{pilot_key}.json"
+        if cms_path.exists():
+            cms_unit = json.loads(cms_path.read_text())
+            if "error" not in cms_unit:
+                cms_wall = float(cms_unit["wall_s"])
+                cms_wall_measured = True
+    weights_dvf: list[float] = []
+    weights_cms: list[float] = []
+    with open(args.digest_csv) as fh:
+        for row in _csv.DictReader(fh):
+            b = row.get("battery")
+            if b not in ("dvf_within", "xm_dvf", "cms_within"):
+                continue
+            try:
+                n_c = float(row["n_common"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            k_i = max(1, min(PCA_K_CAP, int(0.8 * n_c) // 2))
+            w = max(0.05, (k_i / max(k_pilot, 1)) ** 2)
+            if b in ("dvf_within", "xm_dvf"):
+                weights_dvf.append(w)
+            if b in ("cms_within", "xm_dvf"):  # xm structure mirrors the xm dvf list
+                weights_cms.append(w)
+    if not weights_dvf or not weights_cms:
+        raise RuntimeError(f"empty unit weight lists from digest csv {args.digest_csv}")
+    nulls_factor = 1.5  # plan s9: P3 rotation-null battery booked <= 1.5x P2 points
+    proj_dvf_total_s = dvf_wall * sum(weights_dvf) * (1.0 + nulls_factor)
+    proj_cms_s = cms_wall * sum(weights_cms)
+    projected_total_gpu_h = (proj_dvf_total_s + proj_cms_s) / 3600.0
+    nsh = max(int(args.num_shards), 1)
+    fence_s = int(2 * proj_dvf_total_s / nsh) + 900
+    cms_fence_s = int(2 * proj_cms_s / nsh) + 900
+    kill = projected_total_gpu_h > float(args.kill_gpu_hours)
+    _atomic_write_json(
+        args.out_root / "fence_report.json",
+        {
+            "pilot_unit": pilot_key,
+            "dvf_pilot_wall_s": dvf_wall,
+            "cms_pilot_wall_s": cms_wall,
+            "cms_wall_measured": cms_wall_measured,
+            "k_pilot": k_pilot,
+            "n_units_dvf": len(weights_dvf),
+            "n_units_cms": len(weights_cms),
+            "sum_weights_dvf": sum(weights_dvf),
+            "sum_weights_cms": sum(weights_cms),
+            "nulls_factor": nulls_factor,
+            "num_shards": nsh,
+            "projected_total_gpu_h": projected_total_gpu_h,
+            "kill_gpu_hours": float(args.kill_gpu_hours),
+            "kill": kill,
+            "fence_s": fence_s,
+            "cms_fence_s": cms_fence_s,
+            "metadata": _metadata(),
+        },
+    )
+    print(
+        f"[dvf-fence] FENCE={fence_s} CMS_FENCE={cms_fence_s} "
+        f"PROJECTED_GPU_H={projected_total_gpu_h:.2f} KILL={int(kill)}",
+        flush=True,
+    )
+    if kill and args.enforce_kill:
+        return 21  # designed halt (plan s7 kill criterion 2), distinct rc
+    return 0
+
+
 def cmd_write_pairs(args) -> int:
     specs = build_pair_specs(args)
     payload = [[[sm, sc], [tm, tc]] for ((sm, sc), (tm, tc)) in specs]
@@ -1081,8 +1435,16 @@ def main() -> int:
             "upload",
             "write-pairs",
             "migrate-keys",
+            "fence",
         ],
         required=True,
+    )
+    ap.add_argument(
+        "--fit-basis",
+        choices=["ambient", "reduced"],
+        default="ambient",
+        help="fit basis (plan v10): ambient (parent, byte-identical default) or the "
+        "per-(pair, arm, fold) shared train-fold-only PCA rank-k basis",
     )
     ap.add_argument("--store-root", type=Path, default=None)
     ap.add_argument(
@@ -1110,6 +1472,34 @@ def main() -> int:
     ap.add_argument("--gate1-null-draws", type=int, default=40)
     ap.add_argument("--gate1-timing", action="store_true")
     ap.add_argument("--gate1-target", type=Path, default=None)
+    ap.add_argument(
+        "--gate1-checks",
+        choices=["ladder", "battery", "both"],
+        default="ladder",
+        help="gate1 parity legs: ladder (parent default) | battery (plan v10 Gate 1a "
+        "ambient no-op vs the published per-unit JSON) | both",
+    )
+    ap.add_argument("--gate1-battery-target", type=Path, default=None)
+    ap.add_argument(
+        "--stage-cells",
+        type=str,
+        default=None,
+        help="stage: comma-separated <model_slug>/<condition> subset (sliced-input smoke)",
+    )
+    ap.add_argument(
+        "--cms-out-root",
+        type=Path,
+        default=None,
+        help="fence: cms out-root holding the structure pilot unit",
+    )
+    ap.add_argument(
+        "--digest-csv",
+        type=Path,
+        default=REPO_ROOT / "eval_results/issue_1689/analyzer/dvf_unit_digest.csv",
+        help="fence: parent per-unit digest (n_common column drives the k weighting)",
+    )
+    ap.add_argument("--kill-gpu-hours", type=float, default=30.0)
+    ap.add_argument("--enforce-kill", action="store_true")
     ap.add_argument("--stage-headroom-gb", type=float, default=18.0)
     ap.add_argument(
         "--parent-ladder-dir", type=Path, default=Path("eval_results/issue_1689/ladder")
@@ -1130,7 +1520,7 @@ def main() -> int:
     print(
         f"[dvf] phase={args.phase} pair_set={args.pair_set} device={args.device} "
         f"shard={args.shard_index}/{args.num_shards} row_limit={args.row_limit} "
-        f"dim_limit={args.dim_limit}",
+        f"dim_limit={args.dim_limit} fit_basis={fit_basis_of(args)}",
         flush=True,
     )
     dispatch = {
@@ -1142,6 +1532,7 @@ def main() -> int:
         "upload": cmd_upload,
         "write-pairs": cmd_write_pairs,
         "migrate-keys": cmd_migrate_keys,
+        "fence": cmd_fence,
     }
     return dispatch[args.phase](args)
 

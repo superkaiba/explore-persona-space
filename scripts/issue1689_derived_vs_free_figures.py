@@ -439,6 +439,94 @@ def fig6_rank_reached(cms_units, out_figs, *, prefix: str = "fig6") -> None:
     )
 
 
+K_BAND_ORDER = ("pooled", "k<32", "32-127", "128-511", ">=512")
+
+
+def _load_paired_rows(paired_csv: Path) -> list[dict]:
+    import csv
+
+    with open(paired_csv) as fh:
+        return list(csv.DictReader(fh))
+
+
+def fig8_paired_calibration(rows, out_figs, *, prefix: str = "fig8_paired_calibration") -> None:
+    """HERO (plan v10 s6 fig 1): rung-1 shared-readout-supported rate, ambient
+    vs reduced, pooled + per k-band, vs the registered 50% line."""
+    r1 = [r for r in rows if r.get("battery") == "dvf_within" and r.get("parent_rung") == "1"]
+    if not r1:
+        print("[dvf-figs] SKIP fig8 (no rung-1 paired rows)", flush=True)
+        return
+    rates: dict[str, dict[str, float]] = {}
+    for basis in ("ambient", "reduced"):
+        for stratum in K_BAND_ORDER:
+            sub = [r for r in r1 if stratum == "pooled" or r.get("k_band") == stratum]
+            kept = [r for r in sub if r[f"{basis}_verdict"] != "free_map_uninformative"]
+            n_sup = sum(r[f"{basis}_verdict"] == "shared_readout_supported" for r in kept)
+            rates.setdefault(basis, {})[stratum] = (n_sup / len(kept)) if kept else np.nan
+    x = np.arange(len(K_BAND_ORDER))
+    fig, ax = plt.subplots(figsize=(7.5, 4.0))
+    ax.bar(x - 0.2, [rates["ambient"][s] for s in K_BAND_ORDER], 0.38, label="ambient (parent)")
+    ax.bar(x + 0.2, [rates["reduced"][s] for s in K_BAND_ORDER], 0.38, label="reduced (well-posed)")
+    ax.axhline(0.5, color="k", ls="--", lw=1, label="50% calibration line")
+    ax.set_xticks(x, K_BAND_ORDER)
+    ax.set_ylabel("rung-1 shared-readout-supported rate\n(class-0-excluded)")
+    ax.set_xlabel("k-band")
+    ax.set_ylim(0, 1)
+    ax.legend(frameon=False)
+    _save(fig, out_figs, f"{prefix}.png")
+
+
+def fig9_verdict_flip(rows, out_figs, *, prefix: str = "fig9_verdict_flip") -> None:
+    """Paired contrast (plan v10 s6 fig 3): ambient class -> reduced class counts."""
+    dvf = [r for r in rows if r.get("battery") in ("dvf_within", "xm_dvf")]
+    if not dvf:
+        print("[dvf-figs] SKIP fig9 (no paired dvf rows)", flush=True)
+        return
+    mat = np.zeros((len(VERDICT_ORDER), len(VERDICT_ORDER)))
+    idx = {v: i for i, v in enumerate(VERDICT_ORDER)}
+    for r in dvf:
+        a, b = r.get("ambient_verdict"), r.get("reduced_verdict")
+        if a in idx and b in idx:
+            mat[idx[a], idx[b]] += 1
+    fig, ax = plt.subplots(figsize=(6.5, 5.5))
+    im = ax.imshow(mat, cmap="Blues")
+    short = [v.replace("_", "\n") for v in VERDICT_ORDER]
+    ax.set_xticks(range(len(VERDICT_ORDER)), short, fontsize=7)
+    ax.set_yticks(range(len(VERDICT_ORDER)), short, fontsize=7)
+    ax.set_xlabel("reduced (well-posed) verdict")
+    ax.set_ylabel("ambient (parent) verdict")
+    for i in range(len(VERDICT_ORDER)):
+        for j in range(len(VERDICT_ORDER)):
+            if mat[i, j] > 0:
+                ax.text(j, i, int(mat[i, j]), ha="center", va="center", fontsize=8)
+    fig.colorbar(im, ax=ax, shrink=0.8)
+    _save(fig, out_figs, f"{prefix}.png")
+
+
+def fig10_effrank_paired(rows, out_figs, *, prefix: str = "fig10_effrank_paired") -> None:
+    """H-effrank (plan v10 s6 fig 6): eff-rank(M-I)/fit_dim, ambient vs reduced."""
+    cms = [
+        r
+        for r in rows
+        if r.get("battery") in ("cms_within", "cms_xm") and r.get("ambient_eff_rank_frac")
+    ]
+    if not cms:
+        print("[dvf-figs] SKIP fig10 (no paired cms rows)", flush=True)
+        return
+    a = np.array([float(r["ambient_eff_rank_frac"]) for r in cms])
+    b = np.array([float(r["reduced_eff_rank_frac"]) for r in cms])
+    fig, ax = plt.subplots(figsize=(5.0, 5.0))
+    ax.scatter(a, b, s=12, alpha=0.6)
+    lim = (0, 1.02)
+    ax.plot(lim, lim, color="k", lw=1, ls="--")
+    ax.set_xlim(lim)
+    ax.set_ylim(lim)
+    ax.set_xlabel("ambient eff-rank(M-I) / d")
+    ax.set_ylabel("reduced eff-rank(M-I) / k_unit")
+    ax.set_title(f"n={len(cms)}; below diagonal = deflation (H-effrank)")
+    _save(fig, out_figs, f"{prefix}.png")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
@@ -451,9 +539,23 @@ def main() -> int:
         "--crossmodel-root", type=Path, default=Path("eval_results/issue_1689/crossmodel_pairs")
     )
     ap.add_argument(
+        "--crossmodel-struct-dirname",
+        type=str,
+        default=None,
+        help="structure subdir under --crossmodel-root (default: crossmodel_structure, "
+        "with a crossmodel_structure_wellposed fallback probe)",
+    )
+    ap.add_argument(
         "--parent-ladder-dir", type=Path, default=Path("eval_results/issue_1689/ladder")
     )
     ap.add_argument("--out-figs", type=Path, default=Path("figures/issue_1689/derived_vs_free"))
+    ap.add_argument(
+        "--paired-digest",
+        type=Path,
+        default=None,
+        help="paired ambient-vs-reduced delta digest CSV (wellposed round): "
+        "renders the fig8/fig9/fig10 paired set",
+    )
     args = ap.parse_args()
 
     set_paper_style()
@@ -470,10 +572,16 @@ def main() -> int:
     fig6_rank_reached(cms_units, args.out_figs)
 
     # Item 9: battery units live at crossmodel_root, structure units under
-    # crossmodel_root/crossmodel_structure (distinct out-roots — unit-key
+    # crossmodel_root/<struct dirname> (distinct out-roots — unit-key
     # filenames would collide in one pairs/ dir).
     xm_battery = [u for u in _load_units(args.crossmodel_root) if "verdict" in u]
-    xm_struct_root = args.crossmodel_root / "crossmodel_structure"
+    if args.crossmodel_struct_dirname:
+        xm_struct_root = args.crossmodel_root / args.crossmodel_struct_dirname
+    else:
+        xm_struct_root = args.crossmodel_root / "crossmodel_structure"
+        wp = args.crossmodel_root / "crossmodel_structure_wellposed"
+        if not xm_struct_root.exists() and wp.exists():
+            xm_struct_root = wp
     xm_struct = [u for u in _load_units(xm_struct_root) if "weakest_class_point" in u]
     if xm_battery:
         fig1_verdict_heatmap(xm_battery, rungs, args.out_figs, prefix="fig7_crossmodel_verdict")
@@ -482,6 +590,14 @@ def main() -> int:
         fig5_structure(xm_struct, args.out_figs, prefix="fig7_crossmodel_struct")
         fig6_rank_reached(xm_struct, args.out_figs, prefix="fig7_crossmodel_rank")
         fig5d_overlap(xm_struct_root, args.out_figs, prefix="fig7_crossmodel_overlap")
+
+    if args.paired_digest is not None and args.paired_digest.exists():
+        paired_rows = _load_paired_rows(args.paired_digest)
+        fig8_paired_calibration(paired_rows, args.out_figs)
+        fig9_verdict_flip(paired_rows, args.out_figs)
+        fig10_effrank_paired(paired_rows, args.out_figs)
+    elif args.paired_digest is not None:
+        print(f"[dvf-figs] SKIP paired figs (no digest at {args.paired_digest})", flush=True)
     print("[dvf-figs] done", flush=True)
     return 0
 
