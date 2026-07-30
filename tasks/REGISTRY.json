@@ -6396,8 +6396,8 @@
     "1826": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1826",
-      "status": "reviewing",
+      "path": "tasks/completed/1826",
+      "status": "completed",
       "title": "workflow-fix: widen check-28 H-code regex to catch H1c-form hypothesis tags"
     },
     "1827": {
