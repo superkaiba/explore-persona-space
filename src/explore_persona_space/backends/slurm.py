@@ -450,6 +450,15 @@ _DEFAULT_TIME_BUDGETS_HOURS: dict[str, float] = {
     "lora-7b": 6.0,
     "lora": 6.0,  # alias accepted by stages_for_spec + _DEFAULT_GPUS_FOR_INTENT
     "eval": 4.0,
+    # #1896: capture-7b (#752) is a single-GPU forward-pass capture path —
+    # eval-class wall-time (the #940 RunPod translation maps it to "eval").
+    # workload_cmd specs only; hydra-path capture-7b stays fail-fast at
+    # stages_for_spec (no canonical capture Hydra script). NOTE: a
+    # SENTINEL-DEPENDENT capture dispatcher must still pin a
+    # /workspace-contract lane (gcp/runpod) at plan time — on charmander
+    # /workspace exists but nothing drains it (CLAUDE.md fellows SENTINEL
+    # HAZARD).
+    "capture-7b": 4.0,
     "debug": 1.0,
     "ft-7b": 23.5,  # leave a margin under the 24h short-bin cap
     "inf-70b": 12.0,
@@ -511,6 +520,7 @@ _DEFAULT_GPUS_FOR_INTENT: dict[str, int] = {
     "lora-7b": 1,
     "lora": 1,
     "eval": 1,
+    "capture-7b": 1,  # #1896: single-GPU 7B capture — matches GCP a2-ultragpu-1g (#752)
     "debug": 1,
     "ft-7b": 4,
     "inf-70b": 8,

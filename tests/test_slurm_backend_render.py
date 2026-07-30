@@ -261,6 +261,53 @@ def test_cpu_intents_deliberately_absent_from_slurm_intent_tables(intent: str) -
         stages_for_spec(spec)
 
 
+def test_capture_7b_in_slurm_intent_tables() -> None:
+    """#1896 (AC1/AC2): capture-7b resolves in BOTH SLURM intent-default
+    tables — 1 GPU (matches GCP ``a2-ultragpu-1g``, #752) and eval-class
+    4.0h wall-time (the #940 RunPod translation maps capture-7b to
+    ``eval``) — so an auto-lane capture-7b dispatch no longer ValueErrors
+    off the free fellows/SLURM lanes onto paid GCP."""
+    spec = RunSpec(issue=1896, intent="capture-7b", backend="cluster", cluster="nibi")
+    assert default_gpus_for_intent(spec) == 1
+    assert time_budget_hours(spec) == 4.0
+
+
+def test_capture_7b_workload_cmd_renders_end_to_end() -> None:
+    """#1896 (AC3): a capture-7b spec carrying ``workload_cmd`` renders
+    end-to-end through ``stages_for_spec`` (single custom stage) +
+    ``render_sbatch`` — the production dispatch shape — with the
+    intent-table-driven ``--time`` and 1-GPU gres lines."""
+    spec = RunSpec(
+        issue=1896,
+        intent="capture-7b",
+        backend="cluster",
+        cluster="nibi",
+        workload_cmd="bash scripts/issue1896_capture.sh",
+    )
+    plan = stages_for_spec(spec)
+    assert [s.name for s in plan.stages] == ["workload"]
+    assert plan.stages[0].backend == "custom"
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=plan,
+        scratch_dir="/scratch/tjiral/eps/issue-1896",
+    )
+    assert "#SBATCH --time=04:00:00" in script  # 4.0h from _DEFAULT_TIME_BUDGETS_HOURS
+    assert "#SBATCH --gpus-per-node=h100:1" in script  # 1 GPU, nibi typed gres
+
+
+def test_capture_7b_hydra_path_still_raises_at_stages_for_spec() -> None:
+    """#1896 (AC4): hydra-path capture-7b (no ``workload_cmd``) STILL
+    raises at ``stages_for_spec`` — deliberate partial support: there is
+    no canonical capture Hydra script, only the two intent-default tables
+    gained rows. Pins the design so a future reader doesn't misread the
+    remaining ValueError as an oversight."""
+    spec = RunSpec(issue=1896, intent="capture-7b", backend="cluster", cluster="nibi")
+    with pytest.raises(ValueError, match="unsupported intent"):
+        stages_for_spec(spec)
+
+
 # ---------------------------------------------------------------------------
 # job_name + plan-hash
 # ---------------------------------------------------------------------------
