@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1864,
+  "highest_id": 1865,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6693,6 +6693,13 @@
       "path": "tasks/proposed/1864",
       "status": "proposed",
       "title": "daily-fix: analyzer.md numbers the payload-lint gate pre-com"
+    },
+    "1865": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1865",
+      "status": "proposed",
+      "title": "daily-fix: pod relaunch shape fully detaches stdio"
     },
     "187": {
       "has_clean_result": true,
