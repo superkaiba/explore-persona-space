@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1844,
+  "highest_id": 1845,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6017,16 +6017,16 @@
       "goal": "Determine where the linear story of the context\u2192answer map ends: per-arm nonlinearity gain under matched folds (ridge \u2192 RFF/Nystr\u00f6m \u2192 MLP), residual HSIC/dCor detection, fold-structure verification of the banked n50k/n1m fitter comparisons, and the headline test of whether a rank-r bilinear prefix\u00d7query interaction closes the same \u22480.06 R\u00b2 gap the banked 1M nonlinear fits find \u2014 per Task B of docs/ideas/2026-07-28-four-arm-map-theoretical-analysis-plan.md",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1775",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1775",
+      "status": "awaiting_promotion",
       "title": "A low-rank bilinear prefix\u2013query interaction closes most but not all of the context\u2192answer map's nonlinear gap (MODERATE confidence)"
     },
     "1776": {
       "goal": "Compute the averaged causal Jacobian J_{C\u2192A} on the #779 corpus; measure what fraction of the fitted ridge map M's predictive power is causal; test which map predicts steered-generation interventions and off-distribution transfer; and test whether the context\u2192answer channel reads from / writes into the J-space verbalizable workspace (Anthropic 2026), all phases unconditional.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/1776",
-      "status": "interpreting",
+      "path": "tasks/reviewing/1776",
+      "status": "reviewing",
       "title": "Averaged causal Jacobians recover essentially none of the fitted context-to-answer map's predictive power (HIGH confidence)"
     },
     "1777": {
@@ -6277,29 +6277,29 @@
     "1810": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1810",
-      "status": "reviewing",
+      "path": "tasks/completed/1810",
+      "status": "completed",
       "title": "daily-fix: pre-split multi-deliverable implementer dispatche"
     },
     "1811": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1811",
-      "status": "running",
+      "path": "tasks/reviewing/1811",
+      "status": "reviewing",
       "title": "daily-fix: implementer memory \u2014 self-reports need evidence"
     },
     "1812": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1812",
-      "status": "proposed",
+      "path": "tasks/running/1812",
+      "status": "running",
       "title": "daily-fix: 9a-ter \u2014 instrument supersession + addenda charac"
     },
     "1813": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1813",
-      "status": "proposed",
+      "path": "tasks/approved/1813",
+      "status": "approved",
       "title": "daily-fix: argv dry-run before dispatching a new phase"
     },
     "1814": {
@@ -6536,9 +6536,16 @@
     "1844": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1844",
-      "status": "reviewing",
+      "path": "tasks/completed/1844",
+      "status": "completed",
       "title": "workflow-fix: add the expected pair line `tests/test_issue_skill_lint_fami"
+    },
+    "1845": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1845",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas \u2014 batched np.linalg.solve dies on ONE singular slice"
     },
     "185": {
       "has_clean_result": false,
