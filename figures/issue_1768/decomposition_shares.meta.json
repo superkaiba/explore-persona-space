@@ -1,0 +1,41 @@
+{
+  "commit": "uncommitted",
+  "created": "2026-07-30T10:50:46Z",
+  "figsize": [
+    8.0,
+    4.5
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Decomposition of the answer-state shift per arm (terms are non-orthogonal; shares need not sum to 1)",
+        "ylabel": "squared-norm share of the answer-state shift",
+        "legend_labels": [
+          "map change",
+          "input movement",
+          "residual",
+          "residual (matched-text)"
+        ],
+        "xticklabels": [
+          "casual writing style",
+          "impoliteness",
+          "sycophancy",
+          "marker token"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ]
+      }
+    ]
+  }
+}

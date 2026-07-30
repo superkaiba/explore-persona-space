@@ -1,0 +1,48 @@
+{
+  "commit": "597ca070ac",
+  "created": "2026-07-30T10:53:34Z",
+  "figsize": [
+    7.0,
+    5.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Map change tracks the weights-carried answer shift (all 72 arms, layer 19)",
+        "xlabel": "matched-text answer-state shift at layer 19 (mean norm, trained minus base, fixed text)",
+        "ylabel": "map-change statistic D at layer 19",
+        "legend_labels": [
+          "casual writing style",
+          "impoliteness",
+          "sycophancy",
+          "marker token",
+          "LoRA (filled)",
+          "full fine-tune (open)"
+        ],
+        "xticklabels": [
+          "\u22122.5",
+          "0.0",
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20"
+        ]
+      }
+    ]
+  }
+}
