@@ -169,7 +169,10 @@ load-186 VM overload).
    does NOT protect: the artifact path / any unbracketed alternate rides
    the probe's own argv and self-matches — apply the self-exclusion filter
    / per-pid iteration recipes in `.claude/rules/gotchas.md` (SSH-remote
-   ownership-probe entry) alongside the bracket. The same bracket idiom
+   ownership-probe entry) alongside the bracket. For the /issue gate
+   single-flight sites the mechanical fix is `scripts/step9c_baseline.py
+   probe` — self- + ancestor-pid excluding, exit 0 = clear (INVERTED vs
+   pgrep); kill-arms keep raw pgrep for the pid list (#1821). The same bracket idiom
    equally covers OWNERSHIP/liveness probes, including SSH-remote ones —
    `ssh <host> "pgrep -af ..."` re-materializes the pattern in the remote
    shell's argv (see the `.claude/rules/gotchas.md` SSH-remote
@@ -506,6 +509,23 @@ mid-run rebase of `issue-<N>` re-opens the gap there (out of scope
 here, noted for the record). The implementer's
 own same-pod smoke-slice confirmation (element 2) is UNCHANGED and is
 not a "relaunch" under this section.
+
+### Changed-argv relaunch: argv dry-run (REQUIRED unless byte-identical AND the CLI surface is untouched)
+
+A crash-fix relaunch whose command line differs from the crashed
+launch's (a new flag wired by the fix round, a corrected input-source
+flag, a hand-recomposed plan-§10 transcription) — OR whose fix round
+touched the driver's CLI/validation surface (argparse flags, post-parse
+required-input checks) even with a byte-identical argv — runs the argv
+dry-run probe (`.claude/skills/issue/SKILL.md` Step 6b § Hand-composed
+phase argv dry-run, the canonical recipe) on the VM BEFORE
+re-dispatching: the fix-engaged discipline in this file verifies the
+FIX is present; the dry-run verifies the new ARGV survives parse +
+early post-parse validation. First launches of a new phase argv are
+governed by the same SKILL.md clause (incident #1738 Phase-3 attempt 1:
+a required input-source flag omitted from a hand-composed first launch;
+post-parse `SystemExit` rc=1 ~7 s after a full GCE flexstart boot +
+venv install).
 
 ### Crash-fix rounds: symbol-rename whole-tree grep duty (REQUIRED — every retry round; #1728)
 

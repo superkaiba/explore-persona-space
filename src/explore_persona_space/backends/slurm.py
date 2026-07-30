@@ -715,6 +715,124 @@ RSYNC_EXCLUDE_PATTERNS: tuple[str, ...] = (
     "dashboard/",
 )
 
+# ``spec.extra`` key for the per-dispatch extra-sync-paths knob (#1835): a
+# list/tuple of repo-relative paths that ``SlurmBackend.prepare`` stages to
+# the cluster scratch via a SEPARATE additive rsync
+# (``build_extra_rsync_command``) AFTER the main include-set rsync — for
+# plan-cited committed reference INPUTS (``eval_results/issue_<M>/...``)
+# that ``RSYNC_INCLUDE_PATHS`` omits and ``RSYNC_EXCLUDE_PATTERNS``
+# excludes (incident #1689: fellows job 15188 died at first read on a
+# gate-certified committed input). Threaded by ``dispatch_issue.py launch
+# --extra-sync-path`` on every lane; consumed ONLY here (lane-inert
+# elsewhere, like ``env_pins`` on non-workload-cmd paths).
+EXTRA_SYNC_PATHS_KEY = "extra_sync_paths"
+
+
+def validate_extra_sync_paths(paths) -> tuple[str, ...]:
+    """Validate + normalize per-dispatch extra rsync paths (#1835).
+
+    Accepts an iterable of repo-relative path strings and returns an
+    ORDER-PRESERVING deduped tuple, each path normalized to the
+    dot-anchored ``./<repo-relative>`` form ``rsync --relative`` needs
+    (``eval_results/x`` -> ``./eval_results/x``; an already-dot-anchored
+    or trailing-slash input normalizes to the same form). Fails LOUD
+    (``ValueError``) on: a non-string / empty / whitespace-only entry, an
+    absolute or ``~``-anchored path, any ``..`` traversal segment, and a
+    path that normalizes to the repo root itself — a bad path must refuse
+    at parse/prepare time, never rsync anything outside the repo tree.
+    """
+    out: list[str] = []
+    seen: set[str] = set()
+    for raw in paths or ():
+        if not isinstance(raw, str) or not raw.strip():
+            raise ValueError(f"--extra-sync-path entry is empty or not a string: {raw!r}")
+        p = raw.strip()
+        if p.startswith(("/", "~")):
+            raise ValueError(f"--extra-sync-path must be repo-relative, got: {raw!r}")
+        parts = [seg for seg in p.split("/") if seg not in ("", ".")]
+        if not parts:
+            raise ValueError(f"--extra-sync-path resolves to the repo root: {raw!r}")
+        if ".." in parts:
+            raise ValueError(f"--extra-sync-path must not traverse with '..': {raw!r}")
+        normalized = "./" + "/".join(parts)
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        out.append(normalized)
+    return tuple(out)
+
+
+def build_extra_rsync_command(
+    *,
+    src_root: Path,
+    dest_root: str,
+    robot_alias: str,
+    extra_paths: tuple[str, ...],
+) -> list[str]:
+    """Build the ADDITIVE rsync argv for per-dispatch extra paths (#1835).
+
+    Flag set: ``-a --relative --partial --mkpath`` — deliberately NO
+    ``--delete`` and NO ``--exclude`` patterns. The extra paths are
+    committed reference INPUTS (``eval_results/issue_<M>/...``) that the
+    main command's ``RSYNC_EXCLUDE_PATTERNS`` would suppress; a SEPARATE
+    exclude-free invocation sidesteps the exclude/``--delete`` interaction
+    structurally instead of ordering ``--include`` carve-outs inside the
+    main command. Same dot-anchor + ``--relative`` + ``cwd=src_root``
+    contract as :func:`build_rsync_command` (see its docstring for the
+    ``--relative`` rationale); ``extra_paths`` MUST already be
+    validated/dot-anchored (:func:`validate_extra_sync_paths`).
+    """
+    if not (src_root / "pyproject.toml").exists():
+        raise FileNotFoundError(
+            f"build_extra_rsync_command: src_root={src_root!r} has no pyproject.toml "
+            "(repo root expected)."
+        )
+    argv: list[str] = [
+        "rsync",
+        "-a",
+        "--relative",
+        "--partial",
+        "--mkpath",
+    ]
+    argv.extend(list(extra_paths))
+    argv.append(f"{robot_alias}:{dest_root}/")
+    return argv
+
+
+def run_extra_rsync_sync(
+    *,
+    src_root: Path,
+    dest_root: str,
+    robot_alias: str,
+    extra_paths: tuple[str, ...],
+    timeout: int = 600,
+) -> None:
+    """Run the additive extra-paths rsync; raise on non-zero exit (#1835).
+
+    Mirrors :func:`run_rsync_sync` — ``cwd=src_root`` so the dot-anchored
+    sources resolve, timeout 600s, ``check=True`` fails loud (e.g. rsync
+    exit 23 when a cited path is absent from the materialized branch
+    tree: a path present only in the VM working tree but not in the
+    branch commit copies nothing — acceptable fail-loud behavior; the
+    lane-aware carry-over gate is what prevents reaching that state).
+
+    ADDITIVE-ONLY STALENESS PROPERTY: no ``--delete`` is passed, so a
+    file deleted from the source between attempts SURVIVES at the
+    destination — fine for committed reference inputs (content pinned by
+    the branch commit). A later launch that OMITS the knob likewise never
+    deletes previously staged extra trees: the main rsync's ``--delete``
+    only reaches inside its own dot-anchored include trees, and the extra
+    trees (``eval_results/`` etc.) are additionally excluded there.
+    """
+    argv = build_extra_rsync_command(
+        src_root=src_root,
+        dest_root=dest_root,
+        robot_alias=robot_alias,
+        extra_paths=extra_paths,
+    )
+    logger.info("running extra rsync to %s (cwd=%s): %s", robot_alias, src_root, " ".join(argv))
+    subprocess.run(argv, check=True, timeout=timeout, cwd=str(src_root))
+
 
 def build_rsync_command(
     *,
@@ -2294,6 +2412,7 @@ class SlurmBackend(ComputeBackend):
         submitter=None,
         canceller=None,
         rsyncer=None,
+        extra_rsyncer=None,
         poller=None,
         start_estimator=None,
         secrets_pusher=None,
@@ -2319,6 +2438,11 @@ class SlurmBackend(ComputeBackend):
         self._submit = submitter or ssh_submit
         self._cancel = canceller or ssh_scancel
         self._rsync = rsyncer or run_rsync_sync
+        # Additive per-dispatch extra-paths rsync (#1835) — a SEPARATE
+        # injection seam so existing ``rsyncer`` stubs stay untouched;
+        # ``prepare`` fires it only when spec.extra carries a non-empty
+        # ``extra_sync_paths``. Tests inject a recorder.
+        self._extra_rsync = extra_rsyncer or run_extra_rsync_sync
         # Prior-attempt runtime-artifact clearing (status.json / job.out /
         # .current_phase / preflight.json) before every fresh submit; see
         # ``clear_runtime_artifacts``. Tests inject a recorder.
@@ -2400,6 +2524,23 @@ class SlurmBackend(ComputeBackend):
             dest_root=scratch_dir,
             robot_alias=cluster.ssh_host,
         )
+        extra_sync_paths = spec.extra.get(EXTRA_SYNC_PATHS_KEY)
+        if extra_sync_paths:
+            # #1835: additive per-dispatch extra paths (plan-cited committed
+            # reference inputs the include set omits). RE-validate here —
+            # the handle sidecar JSON round-trips tuple -> list, and a
+            # hand-built spec may carry un-normalized paths — so the
+            # dot-anchoring / no-traversal contract is asserted rather than
+            # assumed. Sources come from the SAME resolved ``rsync_src`` as
+            # the main rsync (the materialized branch tree carries committed
+            # eval_results/ by construction — it is a full worktree of the
+            # branch commit).
+            self._extra_rsync(
+                src_root=rsync_src,
+                dest_root=scratch_dir,
+                robot_alias=cluster.ssh_host,
+                extra_paths=validate_extra_sync_paths(extra_sync_paths),
+            )
         secrets = render_secrets_env()
         # Write the secrets file directly via SSH stdin (avoids a tmp
         # file on the VM that could leak). The single-shot dd writes
@@ -3135,6 +3276,7 @@ def git_branch_at(src_root: Path) -> str | None:
 __all__ = [
     "CLUSTER_CONFIGS",
     "DEFAULT_MILA_SSH_ALIAS",
+    "EXTRA_SYNC_PATHS_KEY",
     "HEARTBEAT_INTERVAL_SECONDS",
     "PASSTHROUGH_ENV_KEYS",
     "PREFLIGHT_FAIL_MARKER",
@@ -3149,6 +3291,7 @@ __all__ = [
     "Stage",
     "WorkloadKind",
     "build_clear_runtime_artifacts_command",
+    "build_extra_rsync_command",
     "build_rsync_command",
     "clear_runtime_artifacts",
     "compute_plan_hash",
@@ -3165,6 +3308,7 @@ __all__ = [
     "post_marker_via_task_py",
     "render_sbatch",
     "render_secrets_env",
+    "run_extra_rsync_sync",
     "scp_push_secrets",
     "scratch_dir_for",
     "sentinel_relpath_for",
@@ -3173,4 +3317,5 @@ __all__ = [
     "ssh_submit",
     "stages_for_spec",
     "time_budget_hours",
+    "validate_extra_sync_paths",
 ]

@@ -1,0 +1,5453 @@
+{
+  "commit": "bb7ef19017",
+  "created": "2026-07-30T12:40:30Z",
+  "figsize": [
+    12.6,
+    4.6
+  ],
+  "points": [
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.24699604801619,
+      "split-half cosine of per-cell answer shift": -0.1109343096613884,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.366004535875284,
+      "split-half cosine of per-cell answer shift": 0.22072608768939972,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.24320926904584,
+      "split-half cosine of per-cell answer shift": -0.25156503915786743,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.834810692098905,
+      "split-half cosine of per-cell answer shift": -0.016603507101535797,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.386938966668275,
+      "split-half cosine of per-cell answer shift": -0.17332321405410767,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.272193643091,
+      "split-half cosine of per-cell answer shift": 0.9101521372795105,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.02636169115993,
+      "split-half cosine of per-cell answer shift": 0.08547413349151611,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.30587952604908,
+      "split-half cosine of per-cell answer shift": -0.01170556154102087,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.251743099046514,
+      "split-half cosine of per-cell answer shift": 0.35335928201675415,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.234133124163876,
+      "split-half cosine of per-cell answer shift": 0.32605528831481934,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.16770556032895,
+      "split-half cosine of per-cell answer shift": 0.03003973886370659,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.29727824665311,
+      "split-half cosine of per-cell answer shift": 0.9999997615814209,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.976486478249576,
+      "split-half cosine of per-cell answer shift": 0.2809455394744873,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.11987251300173,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.04007017183,
+      "split-half cosine of per-cell answer shift": 0.1854104995727539,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.310311553158655,
+      "split-half cosine of per-cell answer shift": -0.13731443881988525,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.17053052687041,
+      "split-half cosine of per-cell answer shift": 0.4900496006011963,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.08748581225872,
+      "split-half cosine of per-cell answer shift": 0.4434945583343506,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.96512288441078,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.096301939845276,
+      "split-half cosine of per-cell answer shift": 0.19895143806934357,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.16263554512958,
+      "split-half cosine of per-cell answer shift": -0.22098153829574585,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.091699273675154,
+      "split-half cosine of per-cell answer shift": -0.015046298503875732,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.48411595359955,
+      "split-half cosine of per-cell answer shift": -0.02296454831957817,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.412281078826446,
+      "split-half cosine of per-cell answer shift": 0.13940325379371643,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.4828093802585,
+      "split-half cosine of per-cell answer shift": 0.20781582593917847,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.68834668850808,
+      "split-half cosine of per-cell answer shift": 0.03955493122339249,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.11690697698621,
+      "split-half cosine of per-cell answer shift": -0.4198610782623291,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.055052397105904,
+      "split-half cosine of per-cell answer shift": -0.3839553892612457,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.21401074937465,
+      "split-half cosine of per-cell answer shift": 0.2071930468082428,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.21493048275563,
+      "split-half cosine of per-cell answer shift": 0.08070189505815506,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.69005968876276,
+      "split-half cosine of per-cell answer shift": -0.14781686663627625,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.882594809326925,
+      "split-half cosine of per-cell answer shift": -0.1658729463815689,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.06619874821825,
+      "split-half cosine of per-cell answer shift": 0.07790816575288773,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.67129290187308,
+      "split-half cosine of per-cell answer shift": 0.29932865500450134,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.322275749050455,
+      "split-half cosine of per-cell answer shift": 0.12097527086734772,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.32636584309406,
+      "split-half cosine of per-cell answer shift": -0.06601876765489578,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.03209840707813,
+      "split-half cosine of per-cell answer shift": 0.5729281306266785,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.74858120728608,
+      "split-half cosine of per-cell answer shift": 0.6059148907661438,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.20246618605568,
+      "split-half cosine of per-cell answer shift": 0.07252234220504761,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.18785352195538,
+      "split-half cosine of per-cell answer shift": 0.018671762198209763,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.853761986438855,
+      "split-half cosine of per-cell answer shift": 0.26341190934181213,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.989793334554854,
+      "split-half cosine of per-cell answer shift": 0.24585241079330444,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.14258908006819,
+      "split-half cosine of per-cell answer shift": 0.04662978649139404,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.9244120942348,
+      "split-half cosine of per-cell answer shift": 0.25558221340179443,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.13603250803694,
+      "split-half cosine of per-cell answer shift": -0.03602892905473709,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.184470756867356,
+      "split-half cosine of per-cell answer shift": 0.10392560809850693,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.16949655926387,
+      "split-half cosine of per-cell answer shift": 0.2604788839817047,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.034027085421414,
+      "split-half cosine of per-cell answer shift": 0.333535760641098,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.30903701794645,
+      "split-half cosine of per-cell answer shift": 0.190601646900177,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.38339173857058,
+      "split-half cosine of per-cell answer shift": -0.14675909280776978,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.24081207614164,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.95604244315242,
+      "split-half cosine of per-cell answer shift": -0.3838692307472229,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.34351307094636,
+      "split-half cosine of per-cell answer shift": 0.4248608648777008,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.03523999538323,
+      "split-half cosine of per-cell answer shift": -0.40232956409454346,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.38039015457199,
+      "split-half cosine of per-cell answer shift": 0.09483709186315536,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.892653145780635,
+      "split-half cosine of per-cell answer shift": 0.12437009066343307,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.389216800782194,
+      "split-half cosine of per-cell answer shift": -0.0537242591381073,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.15558413634613,
+      "split-half cosine of per-cell answer shift": 0.09825986623764038,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.84841277741639,
+      "split-half cosine of per-cell answer shift": -0.0002481243573129177,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.08212513200829,
+      "split-half cosine of per-cell answer shift": -0.18543577194213867,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.17412556969288,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.22879783479111,
+      "split-half cosine of per-cell answer shift": 0.06990574300289154,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.91505296876475,
+      "split-half cosine of per-cell answer shift": -0.3776957392692566,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.883756738208696,
+      "split-half cosine of per-cell answer shift": -0.20915411412715912,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.21049613321176,
+      "split-half cosine of per-cell answer shift": -0.08034075796604156,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.04391259578004,
+      "split-half cosine of per-cell answer shift": 0.312173992395401,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.21947640293255,
+      "split-half cosine of per-cell answer shift": -0.032335616648197174,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.35047988061959,
+      "split-half cosine of per-cell answer shift": -0.1610659658908844,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.74840315841226,
+      "split-half cosine of per-cell answer shift": 0.041181780397892,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.2241970291294,
+      "split-half cosine of per-cell answer shift": -0.06990401446819305,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.46676174188393,
+      "split-half cosine of per-cell answer shift": 0.30400627851486206,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.086218288907375,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.9578963541906,
+      "split-half cosine of per-cell answer shift": -0.027539951726794243,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.348660956794895,
+      "split-half cosine of per-cell answer shift": 0.6818809509277344,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.22396162905203,
+      "split-half cosine of per-cell answer shift": 0.047424670308828354,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.384570767694385,
+      "split-half cosine of per-cell answer shift": -0.12700295448303223,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.07429607248717,
+      "split-half cosine of per-cell answer shift": -0.0366305448114872,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.79014543156944,
+      "split-half cosine of per-cell answer shift": 0.4148593842983246,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.13309730882218,
+      "split-half cosine of per-cell answer shift": -0.12334302812814713,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.04914296174719,
+      "split-half cosine of per-cell answer shift": -0.20721159875392914,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.35443095551189,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.20900821209428,
+      "split-half cosine of per-cell answer shift": -0.38960501551628113,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.75288769189122,
+      "split-half cosine of per-cell answer shift": 0.15164902806282043,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.86180922997419,
+      "split-half cosine of per-cell answer shift": 0.33849895000457764,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.38154725914681,
+      "split-half cosine of per-cell answer shift": 0.36561328172683716,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.33054125435446,
+      "split-half cosine of per-cell answer shift": -0.1324668973684311,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.00053915852288,
+      "split-half cosine of per-cell answer shift": -0.3058193027973175,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.16033780085817,
+      "split-half cosine of per-cell answer shift": -0.20042479038238525,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.271993388444045,
+      "split-half cosine of per-cell answer shift": 0.2521139681339264,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.277701083961816,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.379660549028586,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.224721406805386,
+      "split-half cosine of per-cell answer shift": 0.22915337979793549,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.13689291525787,
+      "split-half cosine of per-cell answer shift": -0.09283603727817535,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.09588798380303,
+      "split-half cosine of per-cell answer shift": 0.3025655448436737,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.424535700133305,
+      "split-half cosine of per-cell answer shift": -0.23295778036117554,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.597886431230364,
+      "split-half cosine of per-cell answer shift": -0.27886268496513367,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.12593616872716,
+      "split-half cosine of per-cell answer shift": -0.12953642010688782,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.16885002599601,
+      "split-half cosine of per-cell answer shift": 0.16430915892124176,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.804262759782446,
+      "split-half cosine of per-cell answer shift": 0.47442784905433655,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.24380340328451,
+      "split-half cosine of per-cell answer shift": 0.041271474212408066,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.997779746889144,
+      "split-half cosine of per-cell answer shift": 0.07495435327291489,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.37621119907893,
+      "split-half cosine of per-cell answer shift": -0.13338196277618408,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.12920197899141,
+      "split-half cosine of per-cell answer shift": 0.0024085738696157932,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.32788831019736,
+      "split-half cosine of per-cell answer shift": 0.26582762598991394,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.4653109012928,
+      "split-half cosine of per-cell answer shift": 0.02853313647210598,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.25633239567836,
+      "split-half cosine of per-cell answer shift": 0.24609164893627167,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.94166971414428,
+      "split-half cosine of per-cell answer shift": 0.2756457030773163,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.782020342073835,
+      "split-half cosine of per-cell answer shift": 0.3155748248100281,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.598946029379086,
+      "split-half cosine of per-cell answer shift": 0.21555419266223907,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.132776951703114,
+      "split-half cosine of per-cell answer shift": -0.048369210213422775,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.988458763091415,
+      "split-half cosine of per-cell answer shift": -0.18799668550491333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.1966642720152,
+      "split-half cosine of per-cell answer shift": 0.19297672808170319,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.11274716737933,
+      "split-half cosine of per-cell answer shift": 0.11354281008243561,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.37363556605317,
+      "split-half cosine of per-cell answer shift": 0.22424907982349396,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.16908204560927,
+      "split-half cosine of per-cell answer shift": -0.08098974823951721,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.1640373959046,
+      "split-half cosine of per-cell answer shift": -0.25618869066238403,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.98195506974175,
+      "split-half cosine of per-cell answer shift": -0.31408002972602844,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.27799202468687,
+      "split-half cosine of per-cell answer shift": 0.014723457396030426,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.90213331941125,
+      "split-half cosine of per-cell answer shift": 0.29649773240089417,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.327072359940985,
+      "split-half cosine of per-cell answer shift": 0.559866726398468,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.54158437824753,
+      "split-half cosine of per-cell answer shift": -0.02206786349415779,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.779428490475205,
+      "split-half cosine of per-cell answer shift": 0.06959135085344315,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.544042692162165,
+      "split-half cosine of per-cell answer shift": -0.06598030030727386,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.314819688788575,
+      "split-half cosine of per-cell answer shift": 0.037128087133169174,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.79757445387078,
+      "split-half cosine of per-cell answer shift": 0.06484153121709824,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.91036878778202,
+      "split-half cosine of per-cell answer shift": -0.5758958458900452,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.8479260602995,
+      "split-half cosine of per-cell answer shift": -0.04835714399814606,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.307842233445115,
+      "split-half cosine of per-cell answer shift": 0.09596860408782959,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.95041960248542,
+      "split-half cosine of per-cell answer shift": 0.1391097456216812,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.034093629015814,
+      "split-half cosine of per-cell answer shift": -0.32438597083091736,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.07357063332905,
+      "split-half cosine of per-cell answer shift": -0.10016104578971863,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.29360052157295,
+      "split-half cosine of per-cell answer shift": 0.06932716071605682,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.059274409651714,
+      "split-half cosine of per-cell answer shift": 0.2032015472650528,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.23007071002004,
+      "split-half cosine of per-cell answer shift": 0.08119364082813263,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.1164666852766,
+      "split-half cosine of per-cell answer shift": 0.1139356717467308,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.9494322240871,
+      "split-half cosine of per-cell answer shift": 0.33182287216186523,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.08064343556419,
+      "split-half cosine of per-cell answer shift": -0.05363230034708977,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.92300008370802,
+      "split-half cosine of per-cell answer shift": 0.21543113887310028,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.162228746467434,
+      "split-half cosine of per-cell answer shift": -0.2712235450744629,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.87963344310859,
+      "split-half cosine of per-cell answer shift": 0.2913961112499237,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.887376407676186,
+      "split-half cosine of per-cell answer shift": 0.040854983031749725,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.52484045382631,
+      "split-half cosine of per-cell answer shift": 0.3151141405105591,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.14730394492366,
+      "split-half cosine of per-cell answer shift": 0.1565835177898407,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.147124493631985,
+      "split-half cosine of per-cell answer shift": 0.19937708973884583,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.2884841049794,
+      "split-half cosine of per-cell answer shift": 0.20938609540462494,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.05538574936278,
+      "split-half cosine of per-cell answer shift": 0.40604743361473083,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.10346615813046,
+      "split-half cosine of per-cell answer shift": 0.22708937525749207,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.26688718383297,
+      "split-half cosine of per-cell answer shift": -0.24050968885421753,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.231203960561096,
+      "split-half cosine of per-cell answer shift": -0.011990616098046303,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 44.870775818266885,
+      "split-half cosine of per-cell answer shift": 0.5089399814605713,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.46893564916741,
+      "split-half cosine of per-cell answer shift": 0.00920436717569828,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.11299126417774,
+      "split-half cosine of per-cell answer shift": 0.09546589851379395,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.99658026242145,
+      "split-half cosine of per-cell answer shift": -0.129967600107193,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.03548123250023,
+      "split-half cosine of per-cell answer shift": 0.367553174495697,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.162963663911164,
+      "split-half cosine of per-cell answer shift": 0.22031646966934204,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.66742506365576,
+      "split-half cosine of per-cell answer shift": -0.22413493692874908,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.9667160237698,
+      "split-half cosine of per-cell answer shift": 0.17282114923000336,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.30061897313358,
+      "split-half cosine of per-cell answer shift": 0.07307376712560654,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.726143910477354,
+      "split-half cosine of per-cell answer shift": 0.2616331875324249,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.2602082667137,
+      "split-half cosine of per-cell answer shift": 0.2481313794851303,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.485491604368995,
+      "split-half cosine of per-cell answer shift": 0.2983722686767578,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.201434169484635,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.10326126902916,
+      "split-half cosine of per-cell answer shift": 0.05714871361851692,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.31847776601463,
+      "split-half cosine of per-cell answer shift": -0.14964048564434052,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.43563793778766,
+      "split-half cosine of per-cell answer shift": 0.22406283020973206,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.42651439275435,
+      "split-half cosine of per-cell answer shift": 0.039361558854579926,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.75371846348244,
+      "split-half cosine of per-cell answer shift": 0.1578986942768097,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.312891868084066,
+      "split-half cosine of per-cell answer shift": -0.25803640484809875,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.112497475061765,
+      "split-half cosine of per-cell answer shift": 0.9859349131584167,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.229105202503334,
+      "split-half cosine of per-cell answer shift": 0.10935202986001968,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.24247536359504,
+      "split-half cosine of per-cell answer shift": 0.15567702054977417,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.287784345869525,
+      "split-half cosine of per-cell answer shift": -0.029645103961229324,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.25309304669264,
+      "split-half cosine of per-cell answer shift": -0.18035148084163666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.30409148472405,
+      "split-half cosine of per-cell answer shift": 0.4165309965610504,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.842887484846216,
+      "split-half cosine of per-cell answer shift": 0.03772304207086563,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.46800723901001,
+      "split-half cosine of per-cell answer shift": 0.11933626979589462,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.11691518276974,
+      "split-half cosine of per-cell answer shift": 0.1458471715450287,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.96731032588824,
+      "split-half cosine of per-cell answer shift": 0.19350095093250275,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.42003778991035,
+      "split-half cosine of per-cell answer shift": -0.39393696188926697,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.589931501846515,
+      "split-half cosine of per-cell answer shift": -0.04670889675617218,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.38385703737486,
+      "split-half cosine of per-cell answer shift": -0.0003504403866827488,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.30088982846138,
+      "split-half cosine of per-cell answer shift": -0.06277939677238464,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.02754492365701,
+      "split-half cosine of per-cell answer shift": 0.10641710460186005,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.97849183445337,
+      "split-half cosine of per-cell answer shift": 0.01116259302943945,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.48066465516538,
+      "split-half cosine of per-cell answer shift": -0.1702086478471756,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.975776332414256,
+      "split-half cosine of per-cell answer shift": 0.28852084279060364,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.06569052094006,
+      "split-half cosine of per-cell answer shift": -0.0011578500270843506,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.28234481214297,
+      "split-half cosine of per-cell answer shift": 0.09489438682794571,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.871917217001,
+      "split-half cosine of per-cell answer shift": -0.06226862594485283,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.302757601752624,
+      "split-half cosine of per-cell answer shift": 0.04183175414800644,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.145832111071805,
+      "split-half cosine of per-cell answer shift": 0.016340479254722595,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.56716765007905,
+      "split-half cosine of per-cell answer shift": 0.22505027055740356,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.50113866590706,
+      "split-half cosine of per-cell answer shift": 0.19220584630966187,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.5827786406413,
+      "split-half cosine of per-cell answer shift": 0.35369873046875,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.27102564650682,
+      "split-half cosine of per-cell answer shift": -0.073189377784729,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.856233125119076,
+      "split-half cosine of per-cell answer shift": 0.014500699006021023,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.53800949981213,
+      "split-half cosine of per-cell answer shift": 0.3993692100048065,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.302626467281954,
+      "split-half cosine of per-cell answer shift": 0.6118736267089844,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.39770136304674,
+      "split-half cosine of per-cell answer shift": 0.20049910247325897,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.99431881779917,
+      "split-half cosine of per-cell answer shift": -0.4826420843601227,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.71770755949887,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.76561834178761,
+      "split-half cosine of per-cell answer shift": -0.2030647099018097,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.994407239343445,
+      "split-half cosine of per-cell answer shift": 0.19725070893764496,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.35380378046658,
+      "split-half cosine of per-cell answer shift": -0.02066756784915924,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.09227439290245,
+      "split-half cosine of per-cell answer shift": 0.47646838426589966,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.254707515784816,
+      "split-half cosine of per-cell answer shift": -0.27698367834091187,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.94419075519386,
+      "split-half cosine of per-cell answer shift": -0.04632767289876938,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.72738637864515,
+      "split-half cosine of per-cell answer shift": 0.09838302433490753,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.01830512222933,
+      "split-half cosine of per-cell answer shift": 0.2588050067424774,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.18657904625062,
+      "split-half cosine of per-cell answer shift": -0.2101898044347763,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.38597073277763,
+      "split-half cosine of per-cell answer shift": -0.061450861394405365,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.09870983039596,
+      "split-half cosine of per-cell answer shift": -0.12396270036697388,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.20077189256692,
+      "split-half cosine of per-cell answer shift": 0.21725068986415863,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.11969003839326,
+      "split-half cosine of per-cell answer shift": 0.006522919051349163,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.22723481129092,
+      "split-half cosine of per-cell answer shift": 0.5106208324432373,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.96796434122492,
+      "split-half cosine of per-cell answer shift": 0.4257359802722931,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.15110298109942,
+      "split-half cosine of per-cell answer shift": 0.01918686181306839,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.20887676882194,
+      "split-half cosine of per-cell answer shift": 0.0987161248922348,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.17716849904896,
+      "split-half cosine of per-cell answer shift": 0.04360613226890564,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.27477248872344,
+      "split-half cosine of per-cell answer shift": 0.007418613415211439,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.18732444516082,
+      "split-half cosine of per-cell answer shift": 0.03868883103132248,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.44890285210984,
+      "split-half cosine of per-cell answer shift": -0.2262754589319229,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.17980101855354,
+      "split-half cosine of per-cell answer shift": 0.16935694217681885,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.226437600926026,
+      "split-half cosine of per-cell answer shift": -0.14745891094207764,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.09440466600103,
+      "split-half cosine of per-cell answer shift": 0.05705465376377106,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.12897128997119,
+      "split-half cosine of per-cell answer shift": -0.6104602813720703,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.94447680229507,
+      "split-half cosine of per-cell answer shift": -0.17684541642665863,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.39029623021949,
+      "split-half cosine of per-cell answer shift": 0.3276391327381134,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.974970495586874,
+      "split-half cosine of per-cell answer shift": 0.5982447266578674,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.074135900452916,
+      "split-half cosine of per-cell answer shift": -0.1959933638572693,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.350411163002796,
+      "split-half cosine of per-cell answer shift": -0.574832558631897,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.36124334148613,
+      "split-half cosine of per-cell answer shift": 0.6548882722854614,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.16057131224873,
+      "split-half cosine of per-cell answer shift": -0.026213455945253372,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.755783547377796,
+      "split-half cosine of per-cell answer shift": 0.2717987895011902,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.36572832182389,
+      "split-half cosine of per-cell answer shift": -0.3206084966659546,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.32549086472301,
+      "split-half cosine of per-cell answer shift": 0.028973739594221115,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.90750469613205,
+      "split-half cosine of per-cell answer shift": 0.3117172420024872,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.45318052069862,
+      "split-half cosine of per-cell answer shift": -0.5787076354026794,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.08532504989164,
+      "split-half cosine of per-cell answer shift": 0.3205913007259369,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.979052970961675,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.28453267774106,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.215982392150195,
+      "split-half cosine of per-cell answer shift": 0.2070520967245102,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.31125600024778,
+      "split-half cosine of per-cell answer shift": 0.09316739439964294,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.859162985418884,
+      "split-half cosine of per-cell answer shift": -0.1693061888217926,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.71365752906809,
+      "split-half cosine of per-cell answer shift": 0.1935182809829712,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.10993534636406,
+      "split-half cosine of per-cell answer shift": -0.4805830419063568,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.87568517287589,
+      "split-half cosine of per-cell answer shift": -0.18622347712516785,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.415310547141786,
+      "split-half cosine of per-cell answer shift": 0.49710750579833984,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.171898967474704,
+      "split-half cosine of per-cell answer shift": 0.634053647518158,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.34181462144322,
+      "split-half cosine of per-cell answer shift": 0.6980997323989868,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.175697892343734,
+      "split-half cosine of per-cell answer shift": -0.15308596193790436,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.24566490988002,
+      "split-half cosine of per-cell answer shift": 0.20764832198619843,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.32204321093465,
+      "split-half cosine of per-cell answer shift": 0.07219772785902023,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.07393677900427,
+      "split-half cosine of per-cell answer shift": 0.16526037454605103,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.430284898964885,
+      "split-half cosine of per-cell answer shift": 0.353738009929657,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.14312497523011,
+      "split-half cosine of per-cell answer shift": 0.8183056116104126,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.043178213957376,
+      "split-half cosine of per-cell answer shift": 0.15434908866882324,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.279858105455624,
+      "split-half cosine of per-cell answer shift": -0.0028426642529666424,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.371860319622755,
+      "split-half cosine of per-cell answer shift": 0.41924551129341125,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.203330164595336,
+      "split-half cosine of per-cell answer shift": 0.37406063079833984,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.04497005323011,
+      "split-half cosine of per-cell answer shift": 0.23096223175525665,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.41554639157715,
+      "split-half cosine of per-cell answer shift": 0.32507064938545227,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.8205178019693,
+      "split-half cosine of per-cell answer shift": -0.18737632036209106,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.00288396599111,
+      "split-half cosine of per-cell answer shift": 0.4402885437011719,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.270480722633344,
+      "split-half cosine of per-cell answer shift": -0.2411535680294037,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.92033515042373,
+      "split-half cosine of per-cell answer shift": 0.147098571062088,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.26759856606229,
+      "split-half cosine of per-cell answer shift": 0.11647085845470428,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.24688422049538,
+      "split-half cosine of per-cell answer shift": 0.32085663080215454,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.48528494721454,
+      "split-half cosine of per-cell answer shift": -0.21308577060699463,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.031902412046676,
+      "split-half cosine of per-cell answer shift": 0.02749583125114441,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.104123369089585,
+      "split-half cosine of per-cell answer shift": 0.902347981929779,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.34389542117525,
+      "split-half cosine of per-cell answer shift": -0.1658056229352951,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.646209102448545,
+      "split-half cosine of per-cell answer shift": 0.5237212181091309,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.03561057472864,
+      "split-half cosine of per-cell answer shift": -0.01520315371453762,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.085937317384555,
+      "split-half cosine of per-cell answer shift": 0.07639161497354507,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.07814123681861,
+      "split-half cosine of per-cell answer shift": -0.13309988379478455,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.475881877725925,
+      "split-half cosine of per-cell answer shift": 0.5357933044433594,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.25064203964108,
+      "split-half cosine of per-cell answer shift": 0.019195107743144035,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.815742845324095,
+      "split-half cosine of per-cell answer shift": 0.24726516008377075,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.41733184502315,
+      "split-half cosine of per-cell answer shift": -0.21692867577075958,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.474444458499796,
+      "split-half cosine of per-cell answer shift": -0.02067515067756176,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.14811343163101,
+      "split-half cosine of per-cell answer shift": 0.2691819369792938,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.19019991042699,
+      "split-half cosine of per-cell answer shift": 0.029894879087805748,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.38209614931485,
+      "split-half cosine of per-cell answer shift": 0.030284147709608078,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.03340493752138,
+      "split-half cosine of per-cell answer shift": 0.178161159157753,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.370197141051726,
+      "split-half cosine of per-cell answer shift": 0.5282768607139587,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.31042462761112,
+      "split-half cosine of per-cell answer shift": -0.2678127586841583,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.091866846056014,
+      "split-half cosine of per-cell answer shift": 0.2476903647184372,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 45.91257453154704,
+      "split-half cosine of per-cell answer shift": 0.44633620977401733,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.204198542309726,
+      "split-half cosine of per-cell answer shift": 0.5355774760246277,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.04174443543496,
+      "split-half cosine of per-cell answer shift": 0.060358453541994095,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.51095255642004,
+      "split-half cosine of per-cell answer shift": 0.32853031158447266,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.29662134212498,
+      "split-half cosine of per-cell answer shift": 0.0351838693022728,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.45612113063997,
+      "split-half cosine of per-cell answer shift": 0.2793958783149719,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.29425548383611,
+      "split-half cosine of per-cell answer shift": 0.13757675886154175,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.32632527927125,
+      "split-half cosine of per-cell answer shift": 0.20596741139888763,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.0648502706924,
+      "split-half cosine of per-cell answer shift": 0.25654304027557373,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.42761185664303,
+      "split-half cosine of per-cell answer shift": 0.24156175553798676,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.706774568576755,
+      "split-half cosine of per-cell answer shift": 0.2919078469276428,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.18317811112061,
+      "split-half cosine of per-cell answer shift": 0.6821609735488892,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.21240636807146,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.32114082445241,
+      "split-half cosine of per-cell answer shift": 0.10979567468166351,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.240279929099714,
+      "split-half cosine of per-cell answer shift": -0.2048674076795578,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.18523017533661,
+      "split-half cosine of per-cell answer shift": -0.09515205025672913,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.39514841099204,
+      "split-half cosine of per-cell answer shift": 0.11744355410337448,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.28787061673748,
+      "split-half cosine of per-cell answer shift": -0.17801085114479065,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.72031839846066,
+      "split-half cosine of per-cell answer shift": 0.022150490432977676,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.36065041073878,
+      "split-half cosine of per-cell answer shift": -0.10108141601085663,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.44157799440786,
+      "split-half cosine of per-cell answer shift": -0.05424804985523224,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.59860546699995,
+      "split-half cosine of per-cell answer shift": 0.2720538079738617,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.28541103687386,
+      "split-half cosine of per-cell answer shift": -0.08018867671489716,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.71978413502223,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.20242644686997,
+      "split-half cosine of per-cell answer shift": -0.013462682254612446,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.158518074528466,
+      "split-half cosine of per-cell answer shift": 0.06705284863710403,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.26903324528743,
+      "split-half cosine of per-cell answer shift": 0.3869587779045105,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.331920652008215,
+      "split-half cosine of per-cell answer shift": -0.30174174904823303,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.01027044997524,
+      "split-half cosine of per-cell answer shift": -0.0373489074409008,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.35182630396778,
+      "split-half cosine of per-cell answer shift": 0.09857119619846344,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.943728352390146,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.70863460013637,
+      "split-half cosine of per-cell answer shift": 0.11128614097833633,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.34035076214808,
+      "split-half cosine of per-cell answer shift": 0.07653215527534485,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.200110568826005,
+      "split-half cosine of per-cell answer shift": -0.022145595401525497,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.1335154704291,
+      "split-half cosine of per-cell answer shift": -0.3373544216156006,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.26449238144795,
+      "split-half cosine of per-cell answer shift": 0.3800463080406189,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.30483013289239,
+      "split-half cosine of per-cell answer shift": 0.1656395047903061,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.09947225859716,
+      "split-half cosine of per-cell answer shift": 0.32441818714141846,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.13065122654429,
+      "split-half cosine of per-cell answer shift": -0.16552124917507172,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.313806248734615,
+      "split-half cosine of per-cell answer shift": 0.0004798518493771553,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.23040406305109,
+      "split-half cosine of per-cell answer shift": -0.5031033158302307,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.59540327591958,
+      "split-half cosine of per-cell answer shift": 0.047681692987680435,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.64506759356138,
+      "split-half cosine of per-cell answer shift": -0.3531161844730377,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.36460530089997,
+      "split-half cosine of per-cell answer shift": 0.010413630865514278,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.47899989301363,
+      "split-half cosine of per-cell answer shift": -0.1966618299484253,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.026802906593716,
+      "split-half cosine of per-cell answer shift": -0.06899876892566681,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.51995442735815,
+      "split-half cosine of per-cell answer shift": 0.1476891040802002,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.35295413262168,
+      "split-half cosine of per-cell answer shift": -0.018137631937861443,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.48176707898771,
+      "split-half cosine of per-cell answer shift": 0.09137880057096481,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.76068903289841,
+      "split-half cosine of per-cell answer shift": 0.3598783612251282,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.790385560913904,
+      "split-half cosine of per-cell answer shift": 0.0028661000542342663,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.425837044763355,
+      "split-half cosine of per-cell answer shift": -0.12317181378602982,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.08582023420803,
+      "split-half cosine of per-cell answer shift": -0.11360660940408707,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.50864917285112,
+      "split-half cosine of per-cell answer shift": 0.054708290845155716,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.03227164064288,
+      "split-half cosine of per-cell answer shift": 0.8118531107902527,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.236750108249,
+      "split-half cosine of per-cell answer shift": 0.2276686728000641,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.41128343894009,
+      "split-half cosine of per-cell answer shift": -0.27693572640419006,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.51397734660884,
+      "split-half cosine of per-cell answer shift": 0.2084963321685791,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.37929852233414,
+      "split-half cosine of per-cell answer shift": 0.44301724433898926,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.16239226525305,
+      "split-half cosine of per-cell answer shift": 0.05876300856471062,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.22221694557115,
+      "split-half cosine of per-cell answer shift": -0.11044036597013474,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.581725722812344,
+      "split-half cosine of per-cell answer shift": -0.16823112964630127,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.35922509607836,
+      "split-half cosine of per-cell answer shift": 1.0000005960464478,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.939646400789734,
+      "split-half cosine of per-cell answer shift": -0.1643514633178711,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.571515677067424,
+      "split-half cosine of per-cell answer shift": 0.21165204048156738,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.46466211992837,
+      "split-half cosine of per-cell answer shift": 0.1863510012626648,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.57895388631299,
+      "split-half cosine of per-cell answer shift": 0.6149228811264038,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.27644313340583,
+      "split-half cosine of per-cell answer shift": 0.0463741160929203,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.56763912960665,
+      "split-half cosine of per-cell answer shift": -0.5886380076408386,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.09533376999958,
+      "split-half cosine of per-cell answer shift": -0.27276086807250977,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.50309995271636,
+      "split-half cosine of per-cell answer shift": -0.36680877208709717,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.238004922592985,
+      "split-half cosine of per-cell answer shift": 0.203084796667099,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.52918792623004,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.612011029104096,
+      "split-half cosine of per-cell answer shift": 0.21436575055122375,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.17660246199787,
+      "split-half cosine of per-cell answer shift": 0.14938685297966003,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.34779263012531,
+      "split-half cosine of per-cell answer shift": 0.520811140537262,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.370338656613995,
+      "split-half cosine of per-cell answer shift": -0.3476986289024353,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.658016204460154,
+      "split-half cosine of per-cell answer shift": 0.11947493255138397,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.538239522842446,
+      "split-half cosine of per-cell answer shift": -0.07993707060813904,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.055780613997385,
+      "split-half cosine of per-cell answer shift": -0.09516549110412598,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.47500206517714,
+      "split-half cosine of per-cell answer shift": 0.19902050495147705,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.54687230234478,
+      "split-half cosine of per-cell answer shift": -0.1646403968334198,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.891551473981934,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.94081272581145,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.2265119250165,
+      "split-half cosine of per-cell answer shift": -0.08520134538412094,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.69394279702183,
+      "split-half cosine of per-cell answer shift": 0.7141385078430176,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.02183242534832,
+      "split-half cosine of per-cell answer shift": -0.020482134073972702,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.06073485401882,
+      "split-half cosine of per-cell answer shift": -0.16091935336589813,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.489870548845076,
+      "split-half cosine of per-cell answer shift": 0.06342974305152893,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.61520216521969,
+      "split-half cosine of per-cell answer shift": 0.0029367876704782248,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.19342987815611,
+      "split-half cosine of per-cell answer shift": 0.055444374680519104,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.49563179307302,
+      "split-half cosine of per-cell answer shift": -0.173954039812088,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.389838817357486,
+      "split-half cosine of per-cell answer shift": -0.4620770514011383,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.74028725850468,
+      "split-half cosine of per-cell answer shift": -0.3612937033176422,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.36022039007281,
+      "split-half cosine of per-cell answer shift": 0.26218152046203613,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.608161827992014,
+      "split-half cosine of per-cell answer shift": 0.42831000685691833,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.13482053517143,
+      "split-half cosine of per-cell answer shift": -0.032519444823265076,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.31438028763449,
+      "split-half cosine of per-cell answer shift": -0.2271803468465805,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.336423886559544,
+      "split-half cosine of per-cell answer shift": -0.10218297690153122,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.645376986871305,
+      "split-half cosine of per-cell answer shift": -0.4420500099658966,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.505503259880115,
+      "split-half cosine of per-cell answer shift": 0.26393991708755493,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.1726617171766,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.53109194091998,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.5532578191069,
+      "split-half cosine of per-cell answer shift": 0.2110055387020111,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.332688569420135,
+      "split-half cosine of per-cell answer shift": 0.30753451585769653,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.296184421242046,
+      "split-half cosine of per-cell answer shift": -0.19401876628398895,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.31214918864436,
+      "split-half cosine of per-cell answer shift": 0.6731164455413818,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.93685189850278,
+      "split-half cosine of per-cell answer shift": 0.06894587725400925,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.40778575203115,
+      "split-half cosine of per-cell answer shift": -0.1309036761522293,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.419244482306816,
+      "split-half cosine of per-cell answer shift": 0.5741215944290161,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.14421786906025,
+      "split-half cosine of per-cell answer shift": 0.13849394023418427,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.54621156246876,
+      "split-half cosine of per-cell answer shift": 0.5828441381454468,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.01735826604409,
+      "split-half cosine of per-cell answer shift": 0.02525201067328453,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.22264679465176,
+      "split-half cosine of per-cell answer shift": 0.01593533717095852,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.24179523275211,
+      "split-half cosine of per-cell answer shift": 0.18059198558330536,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.85747745799723,
+      "split-half cosine of per-cell answer shift": 0.13145463168621063,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.960803984185524,
+      "split-half cosine of per-cell answer shift": 0.0344289168715477,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.501257563801566,
+      "split-half cosine of per-cell answer shift": 0.49894237518310547,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.59613081939724,
+      "split-half cosine of per-cell answer shift": -0.5404135584831238,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.45503139100997,
+      "split-half cosine of per-cell answer shift": -0.012555582448840141,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.65605198608834,
+      "split-half cosine of per-cell answer shift": 0.0917852446436882,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.10991557821839,
+      "split-half cosine of per-cell answer shift": -0.08721082657575607,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 46.79053534942195,
+      "split-half cosine of per-cell answer shift": 0.14370480179786682,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.55230447224256,
+      "split-half cosine of per-cell answer shift": -0.09314265102148056,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.06164295883222,
+      "split-half cosine of per-cell answer shift": 0.019360316917300224,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.279000030863514,
+      "split-half cosine of per-cell answer shift": 0.11040858924388885,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.0658885006438,
+      "split-half cosine of per-cell answer shift": -0.09058275818824768,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.62368546423738,
+      "split-half cosine of per-cell answer shift": -0.17879603803157806,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.576887558716855,
+      "split-half cosine of per-cell answer shift": -0.3614659905433655,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.18058408452325,
+      "split-half cosine of per-cell answer shift": 0.11021627485752106,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.58647296115241,
+      "split-half cosine of per-cell answer shift": 0.12433447688817978,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.39091931482993,
+      "split-half cosine of per-cell answer shift": 0.029238678514957428,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.32575279236006,
+      "split-half cosine of per-cell answer shift": 0.0428069531917572,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.37495416551059,
+      "split-half cosine of per-cell answer shift": 0.06728668510913849,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.30991266003751,
+      "split-half cosine of per-cell answer shift": -0.27546656131744385,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.51435131595274,
+      "split-half cosine of per-cell answer shift": 0.05976839363574982,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.438186892610766,
+      "split-half cosine of per-cell answer shift": -0.2911745309829712,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.27323321339154,
+      "split-half cosine of per-cell answer shift": -0.060926653444767,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.61216393645389,
+      "split-half cosine of per-cell answer shift": 0.17583517730236053,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.20773109630904,
+      "split-half cosine of per-cell answer shift": -0.015503307804465294,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.43233341076686,
+      "split-half cosine of per-cell answer shift": -0.04666167497634888,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.46613884281307,
+      "split-half cosine of per-cell answer shift": -0.17057113349437714,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.73030176495913,
+      "split-half cosine of per-cell answer shift": -0.07433496415615082,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.23423965916275,
+      "split-half cosine of per-cell answer shift": 0.0014146645553410053,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.7963706115776,
+      "split-half cosine of per-cell answer shift": -0.03227366507053375,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.4046412379056,
+      "split-half cosine of per-cell answer shift": -0.04321811720728874,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.31210577233686,
+      "split-half cosine of per-cell answer shift": 0.6049938797950745,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.19248181226534,
+      "split-half cosine of per-cell answer shift": -0.08363892883062363,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.50717335476363,
+      "split-half cosine of per-cell answer shift": 0.15861207246780396,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.372833811110596,
+      "split-half cosine of per-cell answer shift": 0.14597058296203613,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.08469768351805,
+      "split-half cosine of per-cell answer shift": 0.3149928152561188,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.07862820593534,
+      "split-half cosine of per-cell answer shift": 0.3402092456817627,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.221720198049866,
+      "split-half cosine of per-cell answer shift": -0.03600474074482918,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.1915984990322,
+      "split-half cosine of per-cell answer shift": 0.2670722007751465,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.6331755979318,
+      "split-half cosine of per-cell answer shift": 0.005868874490261078,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.70448457449254,
+      "split-half cosine of per-cell answer shift": 0.23263531923294067,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.57773990596687,
+      "split-half cosine of per-cell answer shift": 0.07568708062171936,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.45006722250776,
+      "split-half cosine of per-cell answer shift": 0.16096562147140503,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.25354044803885,
+      "split-half cosine of per-cell answer shift": -0.19096322357654572,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.37422080273006,
+      "split-half cosine of per-cell answer shift": 0.09014526009559631,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.581776751507135,
+      "split-half cosine of per-cell answer shift": 0.041838087141513824,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.89334305843083,
+      "split-half cosine of per-cell answer shift": 0.1591612994670868,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.688824801325445,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.39049696392632,
+      "split-half cosine of per-cell answer shift": -0.24793332815170288,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.47010626894272,
+      "split-half cosine of per-cell answer shift": -0.05607691407203674,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.33996377471204,
+      "split-half cosine of per-cell answer shift": 0.3842436671257019,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.26500035601264,
+      "split-half cosine of per-cell answer shift": 0.0015143519267439842,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.41453949944551,
+      "split-half cosine of per-cell answer shift": 0.9122351408004761,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.50950367305128,
+      "split-half cosine of per-cell answer shift": -0.07338129729032516,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.91957539666939,
+      "split-half cosine of per-cell answer shift": 0.12817253172397614,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.47360811748835,
+      "split-half cosine of per-cell answer shift": -0.10368229448795319,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.79993951874086,
+      "split-half cosine of per-cell answer shift": 0.3734511435031891,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.90247227028119,
+      "split-half cosine of per-cell answer shift": -0.29907262325286865,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.48030196756493,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.86254972190406,
+      "split-half cosine of per-cell answer shift": 0.1535184532403946,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.63933385114222,
+      "split-half cosine of per-cell answer shift": -0.20372653007507324,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.3562161762601,
+      "split-half cosine of per-cell answer shift": 0.3698423504829407,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.52689500621222,
+      "split-half cosine of per-cell answer shift": -0.4435272812843323,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.46631945451123,
+      "split-half cosine of per-cell answer shift": 0.05391465499997139,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.402515242513765,
+      "split-half cosine of per-cell answer shift": 0.02035224251449108,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.41090469175126,
+      "split-half cosine of per-cell answer shift": 0.9856753349304199,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.49665232586825,
+      "split-half cosine of per-cell answer shift": 0.03850244730710983,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.569145285120555,
+      "split-half cosine of per-cell answer shift": 0.22891859710216522,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.23937953121032,
+      "split-half cosine of per-cell answer shift": 0.03828948736190796,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.45825308450095,
+      "split-half cosine of per-cell answer shift": -0.35616692900657654,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.08001124451375,
+      "split-half cosine of per-cell answer shift": 0.7336180806159973,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.525798874820055,
+      "split-half cosine of per-cell answer shift": -0.2013019621372223,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.61649986894535,
+      "split-half cosine of per-cell answer shift": 0.010418668389320374,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.50158870958995,
+      "split-half cosine of per-cell answer shift": -0.09098974615335464,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.53206328797968,
+      "split-half cosine of per-cell answer shift": -0.09986445307731628,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.60808577588992,
+      "split-half cosine of per-cell answer shift": 0.07952157407999039,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.29432478894575,
+      "split-half cosine of per-cell answer shift": 0.647789716720581,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.400837785168854,
+      "split-half cosine of per-cell answer shift": -0.008634615689516068,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.588330510953945,
+      "split-half cosine of per-cell answer shift": 0.16242273151874542,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.711071433682285,
+      "split-half cosine of per-cell answer shift": 0.2308526337146759,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.55933035033631,
+      "split-half cosine of per-cell answer shift": 0.4566827416419983,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.0988148555888,
+      "split-half cosine of per-cell answer shift": 0.03524055704474449,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.43775985695378,
+      "split-half cosine of per-cell answer shift": 0.13539303839206696,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.71051510733871,
+      "split-half cosine of per-cell answer shift": 0.646818220615387,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.77728191956252,
+      "split-half cosine of per-cell answer shift": 0.03328549116849899,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.427157538414555,
+      "split-half cosine of per-cell answer shift": 0.03664449602365494,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.255471779449316,
+      "split-half cosine of per-cell answer shift": 0.04756684973835945,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.1649492681182,
+      "split-half cosine of per-cell answer shift": -0.3588205575942993,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.50116924995729,
+      "split-half cosine of per-cell answer shift": -0.017559748142957687,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.73817298863471,
+      "split-half cosine of per-cell answer shift": 0.10606837272644043,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.52851709971385,
+      "split-half cosine of per-cell answer shift": 0.4694361686706543,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.50381401884244,
+      "split-half cosine of per-cell answer shift": -0.2383023351430893,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.36579652924682,
+      "split-half cosine of per-cell answer shift": 0.07186746597290039,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.60085743319839,
+      "split-half cosine of per-cell answer shift": 0.1171412318944931,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.92664223713907,
+      "split-half cosine of per-cell answer shift": 0.7794380187988281,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.51869331284368,
+      "split-half cosine of per-cell answer shift": -0.2603166401386261,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.46763157738824,
+      "split-half cosine of per-cell answer shift": -0.034480512142181396,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.118014938359565,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.004499481035964,
+      "split-half cosine of per-cell answer shift": 0.024348270148038864,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.113746692111356,
+      "split-half cosine of per-cell answer shift": 0.13721849024295807,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.191219875788086,
+      "split-half cosine of per-cell answer shift": -0.12612669169902802,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.16038422311179,
+      "split-half cosine of per-cell answer shift": 0.9733317494392395,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.73819195043967,
+      "split-half cosine of per-cell answer shift": 0.04419020563364029,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.2385787847102,
+      "split-half cosine of per-cell answer shift": -0.42694228887557983,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.627764103241056,
+      "split-half cosine of per-cell answer shift": -0.06919166445732117,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.60747753813031,
+      "split-half cosine of per-cell answer shift": 0.14157986640930176,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.52551760276204,
+      "split-half cosine of per-cell answer shift": -0.048109233379364014,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.13370527333577,
+      "split-half cosine of per-cell answer shift": 0.9999997019767761,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.30757340550304,
+      "split-half cosine of per-cell answer shift": -0.25661197304725647,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.87887874250852,
+      "split-half cosine of per-cell answer shift": -0.32005786895751953,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.137911400154344,
+      "split-half cosine of per-cell answer shift": -0.12332005798816681,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.25268625990789,
+      "split-half cosine of per-cell answer shift": -0.1868470013141632,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.420038369304905,
+      "split-half cosine of per-cell answer shift": 0.4862099587917328,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.66284751800934,
+      "split-half cosine of per-cell answer shift": -0.1434672325849533,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.523509797651215,
+      "split-half cosine of per-cell answer shift": -0.2715108096599579,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.646111039823836,
+      "split-half cosine of per-cell answer shift": -0.008028145879507065,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.193776441757,
+      "split-half cosine of per-cell answer shift": 0.11044369637966156,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.696794148479,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.602857204144705,
+      "split-half cosine of per-cell answer shift": -0.1882987767457962,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.06195886121909,
+      "split-half cosine of per-cell answer shift": -0.09355772286653519,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.84557905197682,
+      "split-half cosine of per-cell answer shift": 0.46987172961235046,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.03369946504382,
+      "split-half cosine of per-cell answer shift": -0.039951957762241364,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.26845566071332,
+      "split-half cosine of per-cell answer shift": -0.8418129086494446,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.47451320415418,
+      "split-half cosine of per-cell answer shift": 0.0811237096786499,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.80995564577689,
+      "split-half cosine of per-cell answer shift": 0.26548492908477783,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.090289942643196,
+      "split-half cosine of per-cell answer shift": -0.5533363819122314,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.96313492023256,
+      "split-half cosine of per-cell answer shift": -0.18666981160640717,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.13636396945002,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.31883330341098,
+      "split-half cosine of per-cell answer shift": -0.019143272191286087,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.31598944700378,
+      "split-half cosine of per-cell answer shift": 0.3126303255558014,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.612436793460645,
+      "split-half cosine of per-cell answer shift": 0.046740829944610596,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.52773409299076,
+      "split-half cosine of per-cell answer shift": -0.1526123434305191,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.149080683832736,
+      "split-half cosine of per-cell answer shift": -0.3385230302810669,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.602444992522216,
+      "split-half cosine of per-cell answer shift": -0.3346717953681946,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.9291203354203,
+      "split-half cosine of per-cell answer shift": -0.1652536541223526,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.75986356976757,
+      "split-half cosine of per-cell answer shift": 0.002872417215257883,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.70837686192088,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.465644482130344,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.70650784866114,
+      "split-half cosine of per-cell answer shift": 0.07438232749700546,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.219066795007606,
+      "split-half cosine of per-cell answer shift": 0.2699132263660431,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.64835365925076,
+      "split-half cosine of per-cell answer shift": -0.02469044364988804,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.438787895129714,
+      "split-half cosine of per-cell answer shift": -0.03547077625989914,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.74332642446986,
+      "split-half cosine of per-cell answer shift": 0.18752500414848328,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.57710263781446,
+      "split-half cosine of per-cell answer shift": -0.34676721692085266,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.18813005357191,
+      "split-half cosine of per-cell answer shift": 0.15409433841705322,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.49259823836838,
+      "split-half cosine of per-cell answer shift": -0.04009795933961868,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.76515536745295,
+      "split-half cosine of per-cell answer shift": 0.5572816729545593,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.1782915287333,
+      "split-half cosine of per-cell answer shift": 0.07819972932338715,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.320815030453836,
+      "split-half cosine of per-cell answer shift": 0.16226521134376526,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.268431747903065,
+      "split-half cosine of per-cell answer shift": -0.04140041023492813,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.08668851488856,
+      "split-half cosine of per-cell answer shift": 0.12490776926279068,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.700917068817425,
+      "split-half cosine of per-cell answer shift": -0.11983785778284073,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.78834932574651,
+      "split-half cosine of per-cell answer shift": 0.30331555008888245,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.66061080176426,
+      "split-half cosine of per-cell answer shift": 0.3586268424987793,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.521242578859315,
+      "split-half cosine of per-cell answer shift": -0.11306731402873993,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.447592153921384,
+      "split-half cosine of per-cell answer shift": 0.2688536047935486,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.520445075131164,
+      "split-half cosine of per-cell answer shift": -0.148074209690094,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.27771102072723,
+      "split-half cosine of per-cell answer shift": 0.36863020062446594,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.68406140011292,
+      "split-half cosine of per-cell answer shift": 0.22948132455348969,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.721973081009594,
+      "split-half cosine of per-cell answer shift": -0.024095214903354645,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.69373588350098,
+      "split-half cosine of per-cell answer shift": 0.359063982963562,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.3278629455703,
+      "split-half cosine of per-cell answer shift": -0.03129390999674797,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.4802010854867,
+      "split-half cosine of per-cell answer shift": 0.24428945779800415,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.41915479525516,
+      "split-half cosine of per-cell answer shift": 0.07000003010034561,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.90774369699184,
+      "split-half cosine of per-cell answer shift": -0.48617154359817505,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.50552405048064,
+      "split-half cosine of per-cell answer shift": -0.036072805523872375,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.9900822765174,
+      "split-half cosine of per-cell answer shift": 0.1476111263036728,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.56022641270777,
+      "split-half cosine of per-cell answer shift": 0.889348566532135,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.93116656226775,
+      "split-half cosine of per-cell answer shift": 0.019773758947849274,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.63189392905564,
+      "split-half cosine of per-cell answer shift": 0.007786207366734743,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.68046992751155,
+      "split-half cosine of per-cell answer shift": -0.28113895654678345,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.46961531671222,
+      "split-half cosine of per-cell answer shift": 0.05432155728340149,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.9677526284537,
+      "split-half cosine of per-cell answer shift": -0.11013210564851761,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.008035561486764,
+      "split-half cosine of per-cell answer shift": -0.20904572308063507,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.149113056316025,
+      "split-half cosine of per-cell answer shift": -0.2836117744445801,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.42889199074007,
+      "split-half cosine of per-cell answer shift": 0.03537026047706604,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.53809962412283,
+      "split-half cosine of per-cell answer shift": -0.16968652606010437,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.63295353803488,
+      "split-half cosine of per-cell answer shift": 0.09673833101987839,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.375485489308815,
+      "split-half cosine of per-cell answer shift": 0.09857437014579773,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.69983231460277,
+      "split-half cosine of per-cell answer shift": -0.18203039467334747,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.3906628104051,
+      "split-half cosine of per-cell answer shift": 0.02759351208806038,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.28447762116324,
+      "split-half cosine of per-cell answer shift": 0.14625711739063263,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.67351042886123,
+      "split-half cosine of per-cell answer shift": -0.2746388614177704,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.231988754223956,
+      "split-half cosine of per-cell answer shift": -0.11821649968624115,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.778328767294724,
+      "split-half cosine of per-cell answer shift": 0.07793714106082916,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.19561081026303,
+      "split-half cosine of per-cell answer shift": 0.0864747166633606,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.48413988637572,
+      "split-half cosine of per-cell answer shift": 0.6612808704376221,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.690555560237584,
+      "split-half cosine of per-cell answer shift": 0.15779513120651245,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.37131548845535,
+      "split-half cosine of per-cell answer shift": 0.3170790374279022,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.37757741030925,
+      "split-half cosine of per-cell answer shift": 0.050625890493392944,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.103986007757676,
+      "split-half cosine of per-cell answer shift": -0.2754541039466858,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.089974133850546,
+      "split-half cosine of per-cell answer shift": -0.003939084708690643,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.34498451297518,
+      "split-half cosine of per-cell answer shift": 0.018605299293994904,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.3238249575913,
+      "split-half cosine of per-cell answer shift": 0.3636236786842346,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.77557962734791,
+      "split-half cosine of per-cell answer shift": 0.054874859750270844,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.5543157612832,
+      "split-half cosine of per-cell answer shift": -0.18388867378234863,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.0653861386236,
+      "split-half cosine of per-cell answer shift": 0.32617026567459106,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.346937132540816,
+      "split-half cosine of per-cell answer shift": 0.024208497256040573,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.73688538178051,
+      "split-half cosine of per-cell answer shift": 0.10861363261938095,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 50.034594192239474,
+      "split-half cosine of per-cell answer shift": 0.029134254902601242,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.65722487343606,
+      "split-half cosine of per-cell answer shift": -0.21158599853515625,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.63827813616487,
+      "split-half cosine of per-cell answer shift": -0.1009528636932373,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 50.025788116043,
+      "split-half cosine of per-cell answer shift": 0.7221866846084595,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.55493213899525,
+      "split-half cosine of per-cell answer shift": -0.11424874514341354,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.483324760416316,
+      "split-half cosine of per-cell answer shift": -0.3300549387931824,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.20728780442708,
+      "split-half cosine of per-cell answer shift": 0.032248951494693756,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.43234597944308,
+      "split-half cosine of per-cell answer shift": 0.28602755069732666,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 50.10527818564954,
+      "split-half cosine of per-cell answer shift": 0.41346392035484314,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.20516465187782,
+      "split-half cosine of per-cell answer shift": 0.9999997615814209,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.56339792670331,
+      "split-half cosine of per-cell answer shift": 0.08102666586637497,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.20851814301192,
+      "split-half cosine of per-cell answer shift": 0.18467913568019867,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.59271893701294,
+      "split-half cosine of per-cell answer shift": -0.18803443014621735,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.782511800863034,
+      "split-half cosine of per-cell answer shift": -0.3285141587257385,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.499687670046704,
+      "split-half cosine of per-cell answer shift": 0.049746423959732056,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.74318681757487,
+      "split-half cosine of per-cell answer shift": -0.3871404826641083,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.74081095637721,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.67235620402673,
+      "split-half cosine of per-cell answer shift": 0.2473295032978058,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.989661999853986,
+      "split-half cosine of per-cell answer shift": 0.031665049493312836,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.75530938849951,
+      "split-half cosine of per-cell answer shift": 0.2533037066459656,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.48436010846642,
+      "split-half cosine of per-cell answer shift": 0.03099074587225914,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.39039411287697,
+      "split-half cosine of per-cell answer shift": 0.0645647868514061,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.34927341312391,
+      "split-half cosine of per-cell answer shift": -0.1282089501619339,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.67956685940875,
+      "split-half cosine of per-cell answer shift": -0.16602371633052826,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.47966954643746,
+      "split-half cosine of per-cell answer shift": 0.0641988068819046,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 50.242891759751075,
+      "split-half cosine of per-cell answer shift": -0.14798912405967712,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 50.02121190140454,
+      "split-half cosine of per-cell answer shift": 0.012930992990732193,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.50696900012342,
+      "split-half cosine of per-cell answer shift": 0.0624564066529274,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.47831718645925,
+      "split-half cosine of per-cell answer shift": -0.0777992457151413,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.98314413832911,
+      "split-half cosine of per-cell answer shift": -0.05959322676062584,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.089760054673754,
+      "split-half cosine of per-cell answer shift": -0.408516526222229,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.447712235173725,
+      "split-half cosine of per-cell answer shift": -0.17644385993480682,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.79828923774885,
+      "split-half cosine of per-cell answer shift": -0.06245960667729378,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.33257560727026,
+      "split-half cosine of per-cell answer shift": -0.34388911724090576,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.44139250672663,
+      "split-half cosine of per-cell answer shift": -0.027180567383766174,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.47281470847633,
+      "split-half cosine of per-cell answer shift": 0.08567220717668533,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.725802124126645,
+      "split-half cosine of per-cell answer shift": -0.17735803127288818,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.594981721205784,
+      "split-half cosine of per-cell answer shift": 0.2577510178089142,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.66112185257204,
+      "split-half cosine of per-cell answer shift": 0.3293876349925995,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.70942093129584,
+      "split-half cosine of per-cell answer shift": 0.21056059002876282,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.56808455704429,
+      "split-half cosine of per-cell answer shift": 0.2327999323606491,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.83824154956217,
+      "split-half cosine of per-cell answer shift": 0.4114198684692383,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.37836028222359,
+      "split-half cosine of per-cell answer shift": 0.03400087729096413,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.20156962609334,
+      "split-half cosine of per-cell answer shift": 0.03448186069726944,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.116382048796886,
+      "split-half cosine of per-cell answer shift": 0.3441292345523834,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.15534755525939,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.422971067613105,
+      "split-half cosine of per-cell answer shift": 0.03747158497571945,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.81811172331408,
+      "split-half cosine of per-cell answer shift": -0.1791028529405594,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.604141689342995,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.41096334761616,
+      "split-half cosine of per-cell answer shift": 0.36518797278404236,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.293136101746086,
+      "split-half cosine of per-cell answer shift": -0.06999709457159042,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.42837858716735,
+      "split-half cosine of per-cell answer shift": -0.3313354253768921,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.45968340365089,
+      "split-half cosine of per-cell answer shift": 0.7653229832649231,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.419325152275206,
+      "split-half cosine of per-cell answer shift": 0.4173702895641327,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.20246391981431,
+      "split-half cosine of per-cell answer shift": -0.06912863999605179,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.441648044719436,
+      "split-half cosine of per-cell answer shift": -0.12218230217695236,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.81488403334477,
+      "split-half cosine of per-cell answer shift": -0.16307593882083893,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.016947764601134,
+      "split-half cosine of per-cell answer shift": -0.11651607602834702,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.500447831888906,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.03026291129187,
+      "split-half cosine of per-cell answer shift": 0.013420946896076202,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.60636190264448,
+      "split-half cosine of per-cell answer shift": -0.06792169064283371,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.373727652272926,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.03917808297683,
+      "split-half cosine of per-cell answer shift": 0.035006631165742874,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.58577554748336,
+      "split-half cosine of per-cell answer shift": 0.023617487400770187,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 50.0149513383881,
+      "split-half cosine of per-cell answer shift": 0.12140075862407684,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.58782288333804,
+      "split-half cosine of per-cell answer shift": -0.09169343113899231,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.851047870945585,
+      "split-half cosine of per-cell answer shift": 0.48525017499923706,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.542723899457776,
+      "split-half cosine of per-cell answer shift": 0.008920169435441494,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.02120229295948,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.683220872656,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.456030173296945,
+      "split-half cosine of per-cell answer shift": -0.2001299262046814,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.19507876808178,
+      "split-half cosine of per-cell answer shift": 0.6973355412483215,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.75680916848078,
+      "split-half cosine of per-cell answer shift": -0.032007332891225815,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.63231439136346,
+      "split-half cosine of per-cell answer shift": -0.5902907848358154,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.429247589820456,
+      "split-half cosine of per-cell answer shift": -0.03826278820633888,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.777617356350525,
+      "split-half cosine of per-cell answer shift": 0.40813058614730835,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.34258200805174,
+      "split-half cosine of per-cell answer shift": 0.07845009118318558,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.721458084685025,
+      "split-half cosine of per-cell answer shift": -0.20889846980571747,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.325484882689175,
+      "split-half cosine of per-cell answer shift": -0.4557304382324219,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.69408869042652,
+      "split-half cosine of per-cell answer shift": -0.2912958264350891,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.28541301386267,
+      "split-half cosine of per-cell answer shift": 0.1914445012807846,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.93289705075528,
+      "split-half cosine of per-cell answer shift": 0.36455368995666504,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.624176875003975,
+      "split-half cosine of per-cell answer shift": -0.10683755576610565,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.91881877899828,
+      "split-half cosine of per-cell answer shift": 0.08380959928035736,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.354988505620035,
+      "split-half cosine of per-cell answer shift": 0.12579283118247986,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.44157440675812,
+      "split-half cosine of per-cell answer shift": -0.4420929551124573,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.7705161996287,
+      "split-half cosine of per-cell answer shift": -0.07421677559614182,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.87467071292267,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.29390228633819,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.81889423807042,
+      "split-half cosine of per-cell answer shift": -0.03368445113301277,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.676877330973596,
+      "split-half cosine of per-cell answer shift": -0.33753660321235657,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.805292335604456,
+      "split-half cosine of per-cell answer shift": 0.2296314388513565,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.48315977822882,
+      "split-half cosine of per-cell answer shift": 0.5513927340507507,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.70159984540078,
+      "split-half cosine of per-cell answer shift": 0.16738852858543396,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.37788893244579,
+      "split-half cosine of per-cell answer shift": 0.16247226297855377,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.2176099080944,
+      "split-half cosine of per-cell answer shift": -0.4356032907962799,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.136901256570845,
+      "split-half cosine of per-cell answer shift": 0.1620408296585083,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.4226726072424,
+      "split-half cosine of per-cell answer shift": 0.11866237968206406,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.42336464439388,
+      "split-half cosine of per-cell answer shift": -0.05756065994501114,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.403255650600826,
+      "split-half cosine of per-cell answer shift": 0.11270904541015625,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.67339875725052,
+      "split-half cosine of per-cell answer shift": -0.06566233187913895,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.060949099990864,
+      "split-half cosine of per-cell answer shift": 0.05251307040452957,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.42744187770164,
+      "split-half cosine of per-cell answer shift": 0.08812343329191208,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.63235415689939,
+      "split-half cosine of per-cell answer shift": 0.26908352971076965,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.41590184373824,
+      "split-half cosine of per-cell answer shift": -0.1906636357307434,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.34137569991233,
+      "split-half cosine of per-cell answer shift": -0.048046451061964035,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 48.983481666712095,
+      "split-half cosine of per-cell answer shift": -0.0222768597304821,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 50.06597475974398,
+      "split-half cosine of per-cell answer shift": -0.07348592579364777,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.28532218013327,
+      "split-half cosine of per-cell answer shift": -0.1384185403585434,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.98144915942478,
+      "split-half cosine of per-cell answer shift": 0.0767812579870224,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.95077147924839,
+      "split-half cosine of per-cell answer shift": -0.07204190641641617,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.62908226647524,
+      "split-half cosine of per-cell answer shift": 0.008073538541793823,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.41744764873433,
+      "split-half cosine of per-cell answer shift": 0.2060297429561615,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.593653882795564,
+      "split-half cosine of per-cell answer shift": 0.2712653875350952,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.27233950649016,
+      "split-half cosine of per-cell answer shift": 0.4569942057132721,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.625782531674496,
+      "split-half cosine of per-cell answer shift": 0.10619118809700012,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.5613380369624,
+      "split-half cosine of per-cell answer shift": 0.13465066254138947,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.693592066987065,
+      "split-half cosine of per-cell answer shift": 0.38180211186408997,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.79820921216095,
+      "split-half cosine of per-cell answer shift": 0.06678485125303268,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.99380962185321,
+      "split-half cosine of per-cell answer shift": 0.014462552964687347,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.46352104137084,
+      "split-half cosine of per-cell answer shift": -0.10847508907318115,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.82144710443982,
+      "split-half cosine of per-cell answer shift": 0.34138596057891846,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.362682604842774,
+      "split-half cosine of per-cell answer shift": -0.18817992508411407,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.33695876311968,
+      "split-half cosine of per-cell answer shift": 0.4529300928115845,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.40608589117016,
+      "split-half cosine of per-cell answer shift": -0.28268319368362427,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.31510858605259,
+      "split-half cosine of per-cell answer shift": 0.08277600258588791,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.805666079583666,
+      "split-half cosine of per-cell answer shift": 0.0776846706867218,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.79141028461543,
+      "split-half cosine of per-cell answer shift": -0.5393099784851074,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.87867793675985,
+      "split-half cosine of per-cell answer shift": 0.1477126032114029,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.55427491768397,
+      "split-half cosine of per-cell answer shift": 0.07319729030132294,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.62919539902182,
+      "split-half cosine of per-cell answer shift": 0.09969127178192139,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.415993250349985,
+      "split-half cosine of per-cell answer shift": -0.17019447684288025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.27285968803756,
+      "split-half cosine of per-cell answer shift": -0.07859562337398529,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.67235453763289,
+      "split-half cosine of per-cell answer shift": 0.14484697580337524,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.62769327782914,
+      "split-half cosine of per-cell answer shift": 0.2865089774131775,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.28384668373557,
+      "split-half cosine of per-cell answer shift": -0.26594287157058716,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.70693311666165,
+      "split-half cosine of per-cell answer shift": -0.2178305685520172,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.12516816435007,
+      "split-half cosine of per-cell answer shift": 0.42807650566101074,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.51585037896887,
+      "split-half cosine of per-cell answer shift": 0.11255289614200592,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.40302154072112,
+      "split-half cosine of per-cell answer shift": 0.16559365391731262,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.4282809459443,
+      "split-half cosine of per-cell answer shift": -0.13348209857940674,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.2897355611937,
+      "split-half cosine of per-cell answer shift": 0.468423455953598,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.79872352286547,
+      "split-half cosine of per-cell answer shift": -0.09227271378040314,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.702087053012285,
+      "split-half cosine of per-cell answer shift": 0.18836194276809692,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.85645506670279,
+      "split-half cosine of per-cell answer shift": -0.057070646435022354,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.593224337161296,
+      "split-half cosine of per-cell answer shift": -0.029473714530467987,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.23608658645103,
+      "split-half cosine of per-cell answer shift": -0.07077009975910187,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 49.4658496205138,
+      "split-half cosine of per-cell answer shift": 0.2036585658788681,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 11.8401,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 23.6803,
+      "split-half cosine of per-cell answer shift": 0.0009798358660191298,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.3606,
+      "split-half cosine of per-cell answer shift": 0.0470272284001112,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 11.8401,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 23.6803,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.3606,
+      "split-half cosine of per-cell answer shift": 0.09518014267086983,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 11.8401,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 23.6803,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.3606,
+      "split-half cosine of per-cell answer shift": 0.013174484018236399,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 11.8401,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "series": "top map direction",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 23.6803,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "series": "top map direction",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.3606,
+      "split-half cosine of per-cell answer shift": 0.020063000731170177,
+      "series": "top map direction",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 11.8401,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "series": "random control",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 23.6803,
+      "split-half cosine of per-cell answer shift": 0.0,
+      "series": "random control",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)": 47.3606,
+      "split-half cosine of per-cell answer shift": 0.019040020182728767,
+      "series": "random control",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.022120812344448914,
+      "y": 14.16,
+      "series": "Jacobian prediction",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.038311444411946054,
+      "y": 13.16,
+      "series": "Jacobian prediction",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.044995358587887925,
+      "y": 12.16,
+      "series": "Jacobian prediction",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.014392097119573793,
+      "y": 11.16,
+      "series": "Jacobian prediction",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.03297163983413231,
+      "y": 10.16,
+      "series": "Jacobian prediction",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.050719545651706166,
+      "y": 9.16,
+      "series": "Jacobian prediction",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.00923481813182864,
+      "y": 8.16,
+      "series": "Jacobian prediction",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.005327435905885376,
+      "y": 7.16,
+      "series": "Jacobian prediction",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.008798198042032437,
+      "y": 6.16,
+      "series": "Jacobian prediction",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.0012518769810690843,
+      "y": 5.16,
+      "series": "Jacobian prediction",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.011584036072343325,
+      "y": 4.16,
+      "series": "Jacobian prediction",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.01695282498423697,
+      "y": 3.16,
+      "series": "Jacobian prediction",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.009020880941916535,
+      "y": 2.16,
+      "series": "Jacobian prediction",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.0025967535966686596,
+      "y": 1.16,
+      "series": "Jacobian prediction",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.008388393142244703,
+      "y": 0.16,
+      "series": "Jacobian prediction",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.022985370580628477,
+      "y": 13.84,
+      "series": "fitted-map prediction",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.03376080302100754,
+      "y": 12.84,
+      "series": "fitted-map prediction",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.041811967482614766,
+      "y": 11.84,
+      "series": "fitted-map prediction",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.018229583511968208,
+      "y": 10.84,
+      "series": "fitted-map prediction",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.03153308553095386,
+      "y": 9.84,
+      "series": "fitted-map prediction",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.044097362384867105,
+      "y": 8.84,
+      "series": "fitted-map prediction",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.012579356902298984,
+      "y": 7.84,
+      "series": "fitted-map prediction",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.009574145400629836,
+      "y": 6.84,
+      "series": "fitted-map prediction",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.006240213117351547,
+      "y": 5.84,
+      "series": "fitted-map prediction",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.02072360763330087,
+      "y": 4.84,
+      "series": "fitted-map prediction",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.049701005951309996,
+      "y": 3.84,
+      "series": "fitted-map prediction",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.0354036471483163,
+      "y": 2.84,
+      "series": "fitted-map prediction",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.011538739389351432,
+      "y": 1.84,
+      "series": "fitted-map prediction",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.004847130376619023,
+      "y": 0.84,
+      "series": "fitted-map prediction",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.003046195574417774,
+      "y": -0.16,
+      "series": "fitted-map prediction",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.022120812344448914,
+      "y": 14.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.038311444411946054,
+      "y": 13.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.044995358587887925,
+      "y": 12.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.014392097119573793,
+      "y": 11.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.03297163983413231,
+      "y": 10.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.050719545651706166,
+      "y": 9.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.00923481813182864,
+      "y": 8.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.005327435905885376,
+      "y": 7.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.008798198042032437,
+      "y": 6.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.0012518769810690843,
+      "y": 5.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.011584036072343325,
+      "y": 4.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.01695282498423697,
+      "y": 3.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.009020880941916535,
+      "y": 2.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.0025967535966686596,
+      "y": 1.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.008388393142244703,
+      "y": 0.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.009416807852861779,
+      "y": 14.16,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.024150280254189756,
+      "y": 13.16,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.02840325699687767,
+      "y": 12.16,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.0048033022171455764,
+      "y": 11.16,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.022046285848286606,
+      "y": 10.16,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.03913271134387458,
+      "y": 9.16,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": -0.005209721955874474,
+      "y": 8.16,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": -0.00943886643249105,
+      "y": 7.16,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": -0.0058355937988620946,
+      "y": 6.16,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": -0.010398228360323102,
+      "y": 5.16,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": -0.0016171212899963785,
+      "y": 4.16,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.00388706403518339,
+      "y": 3.16,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": -0.002863572385775776,
+      "y": 2.16,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": -0.008862548635940763,
+      "y": 1.16,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": -0.0021663809920522796,
+      "y": 0.16,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.034545065109648714,
+      "y": 14.16,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.0540744745488649,
+      "y": 13.16,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.06019344474375594,
+      "y": 12.16,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.023058601026660863,
+      "y": 11.16,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.04367035461054378,
+      "y": 10.16,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.06255322467762627,
+      "y": 9.16,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.023226756206731095,
+      "y": 8.16,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.019771766098211633,
+      "y": 7.16,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.02382168238403968,
+      "y": 6.16,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.01237164852917976,
+      "y": 5.16,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.024772268520651723,
+      "y": 4.16,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.030388809165675653,
+      "y": 3.16,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.021065063618407487,
+      "y": 2.16,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.01370104618275847,
+      "y": 1.16,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.019273988734403412,
+      "y": 0.16,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.022985370580628477,
+      "y": 13.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.03376080302100754,
+      "y": 12.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.041811967482614766,
+      "y": 11.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.018229583511968208,
+      "y": 10.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.03153308553095386,
+      "y": 9.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.044097362384867105,
+      "y": 8.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.012579356902298984,
+      "y": 7.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.009574145400629836,
+      "y": 6.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.006240213117351547,
+      "y": 5.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.02072360763330087,
+      "y": 4.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.049701005951309996,
+      "y": 3.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.0354036471483163,
+      "y": 2.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.011538739389351432,
+      "y": 1.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.004847130376619023,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.003046195574417774,
+      "y": -0.16,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.009219927777236866,
+      "y": 13.84,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.020335190402795664,
+      "y": 12.84,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.026650362369313722,
+      "y": 11.84,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.004200153332297719,
+      "y": 10.84,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.01546985730612533,
+      "y": 9.84,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.028471040838273398,
+      "y": 8.84,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": -0.0057217135587484345,
+      "y": 7.84,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": -0.007935761373151105,
+      "y": 6.84,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": -0.00986189364782818,
+      "y": 5.84,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": -0.00829299396972872,
+      "y": 4.84,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.0202112348451228,
+      "y": 3.84,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.004816098775511014,
+      "y": 2.84,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": -0.0034815824633525772,
+      "y": 1.84,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": -0.00924570630142765,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": -0.010400669451856644,
+      "y": -0.16,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.03663752163866387,
+      "y": 13.84,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.047096461338934116,
+      "y": 12.84,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.055692833814007685,
+      "y": 11.84,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.032322597456462744,
+      "y": 10.84,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.04512039638676781,
+      "y": 9.84,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.06024398254716152,
+      "y": 8.84,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.031041553072091492,
+      "y": 7.84,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.026594061333356858,
+      "y": 6.84,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.02349596893978307,
+      "y": 5.84,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.04825398769827604,
+      "y": 4.84,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.07812172196041761,
+      "y": 3.84,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.06916840641472011,
+      "y": 2.84,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.026133109697156133,
+      "y": 1.84,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.01869420610077512,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "mean cosine(measured shift, operator prediction)": 0.017072720226101602,
+      "y": -0.16,
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 885,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Shift reproducibility: medians leave zero only at the top dose",
+        "xlabel": "steering norm \u03b1 (points: per-cell values at \u03b1=47.4)",
+        "ylabel": "split-half cosine of per-cell answer shift",
+        "legend_labels": [
+          "evil",
+          "sycophancy",
+          "hallucination",
+          "top map direction",
+          "random control"
+        ],
+        "xticklabels": [
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40",
+          "45",
+          "50",
+          "55"
+        ],
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      },
+      {
+        "title_left": "Operator prediction of the shift direction (95% CIs)",
+        "xlabel": "mean cosine(measured shift, operator prediction)",
+        "legend_labels": [
+          "Jacobian prediction",
+          "fitted-map prediction"
+        ],
+        "xticklabels": [
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10"
+        ],
+        "yticklabels": [
+          "evil, \u03b1=12",
+          "evil, \u03b1=24",
+          "evil, \u03b1=47",
+          "sycophancy, \u03b1=12",
+          "sycophancy, \u03b1=24",
+          "sycophancy, \u03b1=47",
+          "hallucination, \u03b1=12",
+          "hallucination, \u03b1=24",
+          "hallucination, \u03b1=47",
+          "top map direction, \u03b1=12",
+          "top map direction, \u03b1=24",
+          "top map direction, \u03b1=47",
+          "random control, \u03b1=12",
+          "random control, \u03b1=24",
+          "random control, \u03b1=47"
+        ]
+      }
+    ],
+    "series": [
+      "evil",
+      "sycophancy",
+      "hallucination",
+      "top map direction",
+      "random control",
+      "Jacobian prediction",
+      "fitted-map prediction"
+    ]
+  }
+}

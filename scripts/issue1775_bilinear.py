@@ -52,6 +52,7 @@ import torch  # noqa: E402
 from issue1092_fit_grid import _project_rb_to_basis  # noqa: E402
 from issue1775_common import (  # noqa: E402
     CELL_PRIMARY,
+    FU_SUB,
     HF_DATA_REPO,
     LAYER_PRIMARY,
     _basis_targets_with_info,
@@ -65,10 +66,12 @@ from issue1775_common import (  # noqa: E402
     fold_pairs,
     hsic_statistic,
     inner_val_split,
+    knn_retrieval,
     load_units_validated,
     null_stats_batched,
     observed_stats,
     p_value,
+    press_fit_predict,
     resolve_store_dir,
     restrict_pairs,
     result_meta,
@@ -419,6 +422,308 @@ def projection_analysis(
     return report, nulls
 
 
+# ── cell 2 (fu round `dedup-refit-pcfold-doubly`): train-fold-only 48-PC bases ────
+
+# r* CARRIED from run-1's inner-val selection (bilinear_fits.json prefix r_star=32);
+# re-selecting r on the new bases would add a second variable (plan section 4 cell 2).
+FOLDPC_R_GRID = (0, 32)
+FOLDPC_REGIME_KEYS = ("scheme", "fold", "r", "basis", "smoke", "row_limit")
+# Designed halt (plan section 8 risk row 3): the fold-PC r=0 GD refit must reproduce
+# the fold-basis stitch PRESS-ridge R2 within 0.02 — a bigger gap is a code bug,
+# never a science read. rc distinct from run-1's 7/21/22/23 (fu_run.sh route_rc).
+FOLDPC_REPRO_RC = 24
+FOLDPC_REPRO_TOL = 0.02
+
+
+def _fold_centered(Yp_f, preds_f, te):
+    """Fold-local test-mean centering (pooled-SS semantics for the committed
+    cluster-bootstrap helper): subtracting the fold's test-row mean from Y AND
+    every pred leaves per-row SE invariant and makes ST fold-local; the global
+    mean over covered rows is then exactly 0, so ``cluster_bootstrap_delta_r2``'s
+    internal centering reproduces per-fold SS pooling."""
+    mu = Yp_f[te].mean(axis=0, keepdims=True)
+    return Yp_f[te] - mu, [p - mu for p in preds_f]
+
+
+def run_foldpc(args) -> int:
+    """Cell 2: rank-{0,32} bilinear refit under per-fold TRAIN-FOLD-ONLY 48-PC
+    target bases (basis mode ``pca48_foldpc``; the recorded run-1 pca48
+    full-population-PC deviation's discharge). Run-1 optimizer protocol
+    verbatim (warm-start fold-basis stitch ridge inside ``bilinear_fit_batched``,
+    wd grid, seeds, early stop); novel-prefix scheme only; r* carried.
+
+    Pooling: per-fold R2 in the fold's own basis via per-fold SS sums;
+    Delta_named(fold-PC) CI = paired prefix-group cluster bootstrap on
+    fold-centered arrays (the committed helper). Smoke: 1 fold x 1 seed x
+    r in {0,32} at row_limit; production-n gates demoted to log lines
+    (#1345 gate-calibration parity).
+    """
+    schemes = [s.strip() for s in (args.schemes or "prefix").split(",") if s.strip()]
+    r_grid = sorted(int(r) for r in args.r_grid.split(",") if r.strip())
+    if schemes != ["prefix"] or tuple(r_grid) != FOLDPC_R_GRID:
+        print(
+            f"[foldpc] REFUSED: --basis pca48_foldpc is restricted to --schemes prefix "
+            f"--r-grid 0,32 (got schemes={schemes} r_grid={r_grid}); r*=32 is CARRIED, "
+            "never re-selected (plan section 4 cell 2)",
+            flush=True,
+        )
+        return 2
+    seeds = [int(s) for s in args.seeds.split(",") if s.strip()]
+    n_draws = 2000
+    max_epochs = BILIN_MAX_EPOCHS
+    if args.smoke:
+        if args.row_limit is None:
+            args.row_limit = 600
+        seeds = seeds[:1]
+        n_draws = 200
+        max_epochs = 40
+    out_dir = eval_dir(FU_SUB)
+    params_dir = tensors_dir("bilinear_params_foldpc")
+    store = resolve_store_dir()
+    ad = build_arm_data(
+        store, CELL_PRIMARY, LAYER_PRIMARY, arms=("stitch",), row_limit=args.row_limit
+    )
+    X = ad.X["stitch"]
+    groups = ad.prefix_ids
+    pairs = restrict_pairs(fold_pairs(ad.rows, len(ad.rows), "prefix"), ad.arm_row_mask["stitch"])
+    folds = [0] if args.smoke else list(range(len(pairs)))
+    units_path = out_dir / "units_foldpc_shard0.jsonl"
+    done = {
+        unit_key(d, FOLDPC_REGIME_KEYS)
+        for d in load_units_validated(units_path, bilinear_row_incomplete)
+    }
+    n = len(ad.rows)
+    t0 = time.monotonic()
+    per_fold: dict[int, dict] = {}
+    n_units = len(folds) * len(r_grid)
+    n_done = 0
+    for f in folds:
+        tr, te = pairs[f]
+        tb = time.monotonic()
+        Ypf, info_f = _basis_targets_with_info(
+            ad.Y_stacked,
+            "pca48_foldpc",
+            train_idx=tr,
+            hidden_dim=3584,
+            targets=["t1", "t2", "t3"],
+            projection_target="t1",
+        )
+        Ypf = np.ascontiguousarray(Ypf, dtype=np.float64)
+        basis_wall = time.monotonic() - tb
+        np.savez(
+            params_dir / f"basis_prefixfoldpc_f{f}.npz",
+            mu=info_f["mu_basis"].astype(np.float32),
+            v=info_f["v_basis"].astype(np.float32),
+            train_idx_n=np.int64(info_f["train_idx_n"]),
+        )
+        if f == folds[0]:
+            print(
+                f"[foldpc] PILOT: fold {f} basis fit {basis_wall:.0f}s on "
+                f"{info_f['train_idx_n']} train rows -> projected basis wall "
+                f"~{basis_wall * len(folds) / 3600:.2f}h over {len(folds)} folds",
+                flush=True,
+            )
+        # fold-basis stitch PRESS ridge (run-1 grid RIDGE_LAMBDAS) — the r=0
+        # reproduction reference + the dereg-component comparator.
+        res_r = press_fit_predict(
+            torch.from_numpy(X[tr]).double(),
+            torch.from_numpy(Ypf[tr]).double(),
+            torch.from_numpy(X[te]).double(),
+            standardize=True,
+        )
+        ridge_pred = res_r["pred"].detach().cpu().numpy()
+        np.save(params_dir / f"pred_prefixfoldpc_f{f}_ridge.npy", ridge_pred.astype(np.float16))
+        np.save(params_dir / f"te_prefixfoldpc_f{f}.npy", te)
+        Xn = _standardize_train(X, tr)
+        fold_rec: dict = {
+            "te": te,
+            "Ypf": Ypf,
+            "ridge_pred": ridge_pred,
+            "basis_wall_s": basis_wall,
+            "preds": {},
+        }
+        for r in r_grid:
+            u = {
+                "scheme": "prefix",
+                "fold": f,
+                "r": r,
+                "basis": "pca48_foldpc",
+                "smoke": bool(args.smoke),
+                "row_limit": args.row_limit,
+            }
+            if unit_key(u, FOLDPC_REGIME_KEYS) in done:
+                rows = [
+                    d
+                    for d in load_units_validated(units_path, bilinear_row_incomplete)
+                    if unit_key(d, FOLDPC_REGIME_KEYS) == unit_key(u, FOLDPC_REGIME_KEYS)
+                ]
+                rec = rows[-1]
+                print(f"[foldpc] RESUME fold={f} r={r} (unit row present)", flush=True)
+            else:
+                res = bilinear_fit_batched(
+                    Xn,
+                    Ypf,
+                    tr,
+                    te,
+                    groups,
+                    r=r,
+                    seeds=seeds,
+                    device=args.device,
+                    max_epochs=max_epochs,
+                )
+                rec = {**u, "epochs_ran": res["epochs_ran"], "variants": []}
+                for var in res["variants"]:
+                    rec["variants"].append(
+                        {
+                            "seed": var["seed"],
+                            "wd": var["wd"],
+                            "inner_val_mse": var["inner_val_mse"],
+                            "r2_te": _r2(Ypf[te], var["pred_te"]),
+                        }
+                    )
+                    np.save(
+                        params_dir
+                        / f"pred_prefixfoldpc_f{f}_r{r}_s{var['seed']}_wd{var['wd']:g}.npy",
+                        var["pred_te"].astype(np.float16),
+                    )
+                    torch.save(
+                        dict(var["params"]),
+                        params_dir
+                        / f"params_prefixfoldpc_f{f}_r{r}_s{var['seed']}_wd{var['wd']:g}.pt",
+                    )
+                append_unit(units_path, rec)
+            # seed-ensemble pooled pred at per-seed best wd (run-1 _pooled_pred form)
+            acc = np.zeros((len(te), Ypf.shape[1]))
+            for s in seeds:
+                v = _best_variant(rec["variants"], s)
+                acc += np.load(
+                    params_dir / f"pred_prefixfoldpc_f{f}_r{r}_s{s}_wd{v['wd']:g}.npy"
+                ).astype(np.float64)
+            fold_rec["preds"][r] = acc / len(seeds)
+            n_done += 1
+            print(
+                f"[foldpc] unit {n_done}/{n_units} fold={f} r={r} "
+                f"elapsed={time.monotonic() - t0:.0f}s",
+                flush=True,
+            )
+        per_fold[f] = fold_rec
+    # ── assembly: per-fold SS pooling + fold-centered paired cluster bootstraps ──
+    d48 = next(iter(per_fold.values()))["Ypf"].shape[1]
+    covered = np.zeros(n, dtype=bool)
+    Yv = np.zeros((n, d48))
+    Av = {r: np.zeros((n, d48)) for r in r_grid}
+    Rv = np.zeros((n, d48))
+    per_fold_out: dict = {}
+    knn_folds: list[dict] = []
+    for f, fr in per_fold.items():
+        te = fr["te"]
+        yv, cent = _fold_centered(
+            fr["Ypf"], [fr["preds"][r] for r in r_grid] + [fr["ridge_pred"]], te
+        )
+        Yv[te] = yv
+        for i, r in enumerate(r_grid):
+            Av[r][te] = cent[i]
+        Rv[te] = cent[len(r_grid)]
+        covered[te] = True
+        per_fold_out[str(f)] = {
+            "n_te": int(len(te)),
+            "basis_wall_s": fr["basis_wall_s"],
+            "r2_ridge_press_fold_basis": _r2(fr["Ypf"][te], fr["ridge_pred"]),
+            **{f"r2_r{r}_fold_basis": _r2(fr["Ypf"][te], fr["preds"][r]) for r in r_grid},
+        }
+        knn_folds.append(
+            {
+                m: knn_retrieval(fr["preds"][max(r_grid)], fr["Ypf"][te], ks=(1, 5, 10), metric=m)
+                for m in ("euclidean", "cosine")
+            }
+        )
+
+    def _pooled_r2_v(pred_v: np.ndarray) -> float:
+        return _r2(Yv[covered], pred_v[covered])
+
+    pooled = {
+        "r2_r0_pooled_ss": _pooled_r2_v(Av[0]),
+        "r2_r32_pooled_ss": _pooled_r2_v(Av[max(r_grid)]),
+        "r2_ridge_press_pooled_ss": _pooled_r2_v(Rv),
+    }
+    delta_named = cluster_bootstrap_delta_r2(
+        Yv, Av[max(r_grid)], Av[0], covered, groups, n_draws=n_draws, seed=0
+    )
+    dereg = cluster_bootstrap_delta_r2(Yv, Av[0], Rv, covered, groups, n_draws=n_draws, seed=0)
+    repro_gap = abs(pooled["r2_r0_pooled_ss"] - pooled["r2_ridge_press_pooled_ss"])
+    repro = {
+        "abs_gap_r0_vs_ridge_press": repro_gap,
+        "tolerance": FOLDPC_REPRO_TOL,
+        "passed": bool(repro_gap <= FOLDPC_REPRO_TOL),
+        "note": (
+            "plan section 8 risk row 3: the r=0 GD refit IS the warm-start/protocol "
+            "check in the fold basis; production gap > tol halts cell 2 (rc=24)"
+        ),
+    }
+    committed_ref = None
+    ref_path = eval_dir("bilinear") / "bilinear_fits.json"
+    if ref_path.exists():
+        ref = json.loads(ref_path.read_text()).get("schemes", {}).get("prefix", {})
+        committed_ref = {
+            "delta_named_full_population_pc": ref.get("delta_named"),
+            "r_star_inner_val": ref.get("r_star_inner_val"),
+        }
+    out = {
+        "meta": result_meta(
+            smoke=bool(args.smoke),
+            basis="pca48_foldpc",
+            r_grid=list(r_grid),
+            seeds=seeds,
+            n_draws=n_draws,
+            row_limit=args.row_limit,
+        ),
+        "scheme": "prefix",
+        "grouping_unit": "prefix_id",
+        "r_star_carried": max(r_grid),
+        "n_rows_covered": int(covered.sum()),
+        "per_fold": per_fold_out,
+        "pooled_per_fold_ss": pooled,
+        "delta_named_foldpc": delta_named,
+        "dereg_component_r0_minus_ridge_press": dereg,
+        "r0_ridge_reproduction": repro,
+        "committed_full_population_reference": committed_ref,
+        "baselines": {
+            "identity_bias": (
+                "inapplicable — d_in 7168 != d_out 48 (stated, per the standing rule)"
+            ),
+            "knn_retrieval_per_fold_r_star": knn_folds,
+        },
+        "note": (
+            "per-fold TRAIN-FOLD-ONLY 48-PC bases (deviation discharge); per-fold R2 "
+            "in the fold's own basis pooled via per-fold SS sums; CIs = paired "
+            "prefix-group cluster bootstrap on fold-centered arrays"
+        ),
+    }
+    atomic_write_json(out_dir / "bilinear_foldpc.json", out)
+    upload_phase_tensors("bilinear_params_foldpc", smoke=bool(args.smoke))
+    upload_phase_eval_json(FU_SUB, smoke=bool(args.smoke))
+    print(
+        f"[foldpc] done in {(time.monotonic() - t0) / 60:.1f} min "
+        f"(delta_named_foldpc={delta_named['delta_r2']:.4f} repro_gap={repro_gap:.4f})",
+        flush=True,
+    )
+    if not repro["passed"]:
+        if args.smoke:
+            print(
+                "[foldpc] repro gap exceeds tol at SMOKE n — informational only "
+                "(#1345 gate-calibration parity; production-n gate unchanged)",
+                flush=True,
+            )
+        else:
+            print(
+                f"[foldpc] REPRO GATE FAILED: |R2(r=0) - R2(ridge_press)| = {repro_gap:.4f} "
+                f"> {FOLDPC_REPRO_TOL} — halting cell 2 (rc={FOLDPC_REPRO_RC})",
+                flush=True,
+            )
+            return FOLDPC_REPRO_RC
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="#1775 P4 rank-r bilinear + interpretation")
     ap.add_argument("--device", default="cuda")
@@ -427,6 +732,13 @@ def main() -> int:
     ap.add_argument("--row-limit", type=int, default=None)
     ap.add_argument("--r-grid", default=",".join(str(r) for r in R_GRID))
     ap.add_argument("--schemes", default=None, help="csv override (e.g. 'doubly' for the r* pass)")
+    ap.add_argument(
+        "--basis",
+        default="pca48",
+        choices=["pca48", "pca48_foldpc"],
+        help="pca48 = run-1 full-population basis; pca48_foldpc = fu-round cell 2 "
+        "(train-fold-only PCs; restricted to --schemes prefix --r-grid 0,32)",
+    )
     ap.add_argument("--num-shards", type=int, default=1)
     ap.add_argument("--shard-index", type=int, default=0)
     ap.add_argument(
@@ -437,6 +749,9 @@ def main() -> int:
     args = ap.parse_args()
     if args.device == "cuda" and not torch.cuda.is_available():
         args.device = "cpu"
+    if args.basis == "pca48_foldpc":
+        # fu-round cell 2: fold-PC sensitivity path (own smoke handling + seeds parse)
+        return run_foldpc(args)
     args.seeds = [int(s) for s in args.seeds.split(",") if s.strip()]
     r_grid = [int(r) for r in args.r_grid.split(",") if r.strip()]
     if args.smoke:

@@ -4265,6 +4265,41 @@ _NONLIVE_INSTANCE_STATUSES: frozenset[str] = frozenset({"TERMINATED", "STOPPED",
 _ZOMBIE_GUEST_PHASES: frozenset[str] = _TERMINAL_GUEST_PHASES | frozenset({"wedged"})
 
 
+def _instance_observation_extras(inst: Mapping[str, Any]) -> dict[str, Any]:
+    """#1815: arm-N provenance extras read off one gcloud list instance dict.
+
+    Returns ``provisioning_model`` (``scheduling.provisioningModel``) +
+    ``gcp_launched_ts`` (``creationTimestamp`` → epoch seconds) for the
+    poller's queue-vanish arm N
+    (``backend_poll._flex_create_never_ran_young``) — BOTH fields ride the
+    SAME ``--format=json`` list response already in hand (the full v1 REST
+    instance resource; the janitor reads ``scheduling.maxRunDuration`` +
+    ``creationTimestamp`` off the same shape), so zero extra API calls.
+    Pre-#1815 reconnect handles lacked both, leaving arm N — and the #1029
+    young-death heuristic — inert on the reconnect path (the #1738 incident
+    handle). Named side effect (deliberate): ``gcp_launched_ts`` arms the
+    previously-inert #1029 heuristic branch for young terminated/not-found
+    deaths of reconnected instances — strictly closer to #1029's design
+    intent (``creationTimestamp`` ≈ the create-return launch ts); no counting
+    semantics change. Every missing/unparseable field simply leaves its key
+    absent, so arm N fail-safes (never fires).
+    """
+    out: dict[str, Any] = {}
+    sched = inst.get("scheduling")
+    if isinstance(sched, dict) and sched.get("provisioningModel"):
+        out["provisioning_model"] = str(sched["provisioningModel"])
+    created = inst.get("creationTimestamp")
+    if isinstance(created, str) and created:
+        try:
+            parsed = datetime.fromisoformat(created.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=UTC)
+            out["gcp_launched_ts"] = parsed.timestamp()
+        except ValueError:
+            pass  # unparseable -> key absent -> arm N fail-safes (never fires)
+    return out
+
+
 def reconnect_or_none(
     *,
     spec: RunSpec,
@@ -4314,6 +4349,16 @@ def reconnect_or_none(
     semantics — a probe flake fails the launch typed and RETRIABLE
     (re-run the same command; idempotent by design, the #736 exit-75
     precedent), never a silent reconnect and never a delete.
+
+    Instance-observation provenance (#1815): the reconnect handle's
+    ``extra`` UNCONDITIONALLY carries ``provisioning_model``
+    (``scheduling.provisioningModel``) + ``gcp_launched_ts``
+    (``creationTimestamp`` → epoch seconds) read from the already-fetched
+    list JSON, so the poller's queue-vanish arm N
+    (``backend_poll._flex_create_never_ran_young``) — and the #1029
+    young-death heuristic — work on reconnect-shaped handles (the #1738
+    incident shape). A missing/unparseable field leaves its key absent
+    (arm N fail-safes).
 
     Failover-prerequisite extras (#1122): when the spec carries a
     workload (``workload_cmd`` or ``hydra_args``), the reconnect
@@ -4410,6 +4455,9 @@ def reconnect_or_none(
         }
         if recovered_attempt_id is not None:
             extra["attempt_id"] = recovered_attempt_id
+        # #1815: instance-observation provenance for the poller's queue-vanish
+        # arm N — unconditional (instance observations, not workload keys).
+        extra.update(_instance_observation_extras(inst))
         # #1122: mirror the launch path's failover-prerequisite keys
         # (#659 MF1/MF2, #909 repo_branch, #677 gpu_count, #1010 footprint)
         # so an exit-75 same-command RERUN's reconnect handle — which

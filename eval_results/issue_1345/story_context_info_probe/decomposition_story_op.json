@@ -1,0 +1,159 @@
+{
+  "calibration_notemplate": {
+    "chat_vC_to_notemplate_vC": {
+      "cosine_mean": 0.9381845946706352,
+      "d_in": 3584,
+      "d_out": 3584,
+      "gcv_lambda_per_fold": [
+        0.1,
+        0.1,
+        0.03162277660168379,
+        0.1,
+        0.1
+      ],
+      "n": 2018,
+      "n_groups": 2018,
+      "n_train_per_fold": 1614,
+      "r2_heldout": 0.5978126544435429,
+      "r2_identity_bias": 0.6043670922369315,
+      "r2_null_draws": 20,
+      "r2_null_mean": -0.04056347783724344,
+      "r2_null_p95": -0.037761675450532925,
+      "retrieval_cosine": {
+        "acc_at_k": {
+          "1": 0.9132804757185332,
+          "5": 0.985629335976214,
+          "10": 0.9905847373637264
+        },
+        "chance_at_k": {
+          "1": 0.0004955401387512388,
+          "5": 0.002477700693756194,
+          "10": 0.004955401387512388
+        },
+        "median_rank": 1.0,
+        "metric": "cosine",
+        "mrr": 0.9481386229802461,
+        "n": 2018,
+        "n_pool": 2018
+      },
+      "retrieval_euclidean": {
+        "acc_at_k": {
+          "1": 0.9157581764122894,
+          "5": 0.9861248761149654,
+          "10": 0.9910802775024777
+        },
+        "chance_at_k": {
+          "1": 0.0004955401387512388,
+          "5": 0.002477700693756194,
+          "10": 0.004955401387512388
+        },
+        "median_rank": 1.0,
+        "metric": "euclidean",
+        "mrr": 0.9495006403693269,
+        "n": 2018,
+        "n_pool": 2018
+      },
+      "underdetermined": true
+    },
+    "chat_vC_to_notemplate_vC_reduced": {
+      "gcv_lambda_per_fold": [
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0
+      ],
+      "k_pca_input": 807,
+      "pca_fit": "per-fold train rows only (no held-out leakage)",
+      "r2_heldout": 0.7269792421168562,
+      "retrieval_cosine": {
+        "acc_at_k": {
+          "1": 0.9013875123885035,
+          "5": 0.9801783944499505,
+          "10": 0.9890981169474727
+        },
+        "chance_at_k": {
+          "1": 0.0004955401387512388,
+          "5": 0.002477700693756194,
+          "10": 0.004955401387512388
+        },
+        "median_rank": 1.0,
+        "metric": "cosine",
+        "mrr": 0.938527787227893,
+        "n": 2018,
+        "n_pool": 2018
+      },
+      "retrieval_euclidean": {
+        "acc_at_k": {
+          "1": 0.904360753221011,
+          "5": 0.9806739345887017,
+          "10": 0.9905847373637264
+        },
+        "chance_at_k": {
+          "1": 0.0004955401387512388,
+          "5": 0.002477700693756194,
+          "10": 0.004955401387512388
+        },
+        "median_rank": 1.0,
+        "metric": "euclidean",
+        "mrr": 0.9407353207871683,
+        "n": 2018,
+        "n_pool": 2018
+      }
+    },
+    "n": 2018,
+    "participation_ratio_notemplate_vC": 38.35046094412036,
+    "raw_retrieval_notemplate_vC_to_chat_vC": {
+      "cosine": {
+        "acc_at_k": {
+          "1": 0.9430128840436075,
+          "5": 0.9866204162537165,
+          "10": 0.9930624380574826
+        },
+        "chance_at_k": {
+          "1": 0.0004955401387512388,
+          "5": 0.002477700693756194,
+          "10": 0.004955401387512388
+        },
+        "median_rank": 1.0,
+        "metric": "cosine",
+        "mrr": 0.962960503609619,
+        "n": 2018,
+        "n_pool": 2018
+      },
+      "euclidean": {
+        "acc_at_k": {
+          "1": 0.931615460852329,
+          "5": 0.9801783944499505,
+          "10": 0.987611496531219
+        },
+        "chance_at_k": {
+          "1": 0.0004955401387512388,
+          "5": 0.002477700693756194,
+          "10": 0.004955401387512388
+        },
+        "median_rank": 1.0,
+        "metric": "euclidean",
+        "mrr": 0.9536027462585799,
+        "n": 2018,
+        "n_pool": 2018
+      },
+      "n": 2018
+    }
+  },
+  "definition": "predictable share = held-out pooled R^2 of the grouped-CV ridge chat v_C -> story v_C (the residual share is 1 - that)",
+  "n": 2018,
+  "participation_ratio": {
+    "chat_vA": 24.32456748920073,
+    "chat_vC": 36.409580874979824,
+    "story_vA": 48.182506409125246,
+    "story_vC": 30.46629184634545
+  },
+  "story_from_chat_r2": 0.18822450296307924,
+  "story_from_chat_r2_reduced": 0.10145176581591198,
+  "variance_totals": {
+    "chat_vC_mean_sq_centered_norm": 2884.73291015625,
+    "story_vA_mean_sq_centered_norm": 1562.662841796875,
+    "story_vC_mean_sq_centered_norm": 1574.79736328125
+  }
+}

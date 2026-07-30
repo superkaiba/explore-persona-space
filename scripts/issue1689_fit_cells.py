@@ -33,7 +33,9 @@ if str(REPO_ROOT) not in sys.path:
 from scripts.issue1689_common import (  # noqa: E402
     CAPTURE_LAYERS,
     HEADLINE_LAYER,
+    LAMBDA_GRIDS,
     N_FOLDS,
+    resolve_lambda_grid,
 )
 
 
@@ -43,6 +45,8 @@ def fit_cell(
     n_folds: int = N_FOLDS,
     null_draws: int = 0,  # nulls done in fit_ladder for pair reads
     lambda_selection: str = "inner-group-cv",
+    lambdas=None,  # None -> parent module LAMBDAS (byte-identical published path)
+    layers: list[int] | None = None,  # None -> all CAPTURE_LAYERS
 ) -> dict:
     """Fit prefix + context arms per layer for one cell using
     `heldout_r2_sweep` (#825), plus identity+learned-bias baseline + kNN
@@ -57,7 +61,7 @@ def fit_cell(
     from scripts.issue825_fit_cells import heldout_r2_sweep
 
     # Load the per-layer bundles for this cell.
-    layers_present = sorted(CAPTURE_LAYERS)
+    layers_present = sorted(CAPTURE_LAYERS) if layers is None else sorted(int(x) for x in layers)
     layer_paths = {
         L: store_path / f"L{L}.pt" for L in layers_present if (store_path / f"L{L}.pt").exists()
     }
@@ -83,12 +87,12 @@ def fit_cell(
     X_context = np.stack(per_layer_X_context, axis=1)
     Y = np.stack(per_layer_Y, axis=1)
 
-    # NOTE: Under lambda_selection="inner-group-cv" the parent
-    # heldout_r2_sweep (scripts/issue825_fit_cells.py) asserts lambdas is
-    # None -- inner-CV selection scans its module-global LAMBDAS grid, which
-    # is np.logspace(-2, 4, 13), byte-identical to our local plan grid. We
-    # therefore do NOT pass a lambdas= kwarg (see .claude/rules/artifact-reuse.md
-    # check (i)).
+    # NOTE (updated, wider-lambda-ceilings follow-up): the parent
+    # heldout_r2_sweep (scripts/issue825_fit_cells.py) now threads a
+    # caller-supplied lambdas= grid through the inner-group-cv selection too
+    # (it previously hard-asserted lambdas is None on that path). The default
+    # lambdas=None scans the parent's module-global LAMBDAS grid,
+    # np.logspace(-2, 4, 13) — byte-identical to the published percell run.
 
     results = {
         "n_rows": int(X_prefix.shape[0]),
@@ -96,6 +100,9 @@ def fit_cell(
         "headline_layer": HEADLINE_LAYER,
         "n_folds": n_folds,
         "lambda_selection": lambda_selection,
+        "lambda_grid": "ladder13 (module default)"
+        if lambdas is None
+        else [float(x) for x in np.asarray(lambdas)],
     }
 
     for arm_name, X_arm in [("prefix", X_prefix), ("context", X_context)]:
@@ -108,6 +115,7 @@ def fit_cell(
             null_draws=null_draws,
             collect_lambdas=True,
             lambda_selection=lambda_selection,
+            lambdas=lambdas,
         )
         arm_summary = {
             "held_out_r2_per_layer": [float(x) for x in sweep["r2_obs"]],
@@ -159,12 +167,29 @@ def main() -> int:
     )
     ap.add_argument("--out", type=Path, required=True, help="output JSON path (heldout_r2.json)")
     ap.add_argument("--smoke", action="store_true")
+    ap.add_argument(
+        "--lambda-grid",
+        choices=sorted(LAMBDA_GRIDS),
+        default="ladder13",
+        help="ridge lambda grid; ladder13 = parent default (byte-identical published path), "
+        "wide19 = logspace(-2,7,19) superset (wider-lambda-ceilings follow-up)",
+    )
+    ap.add_argument(
+        "--layers",
+        type=int,
+        nargs="+",
+        default=None,
+        help="capture layers to fit (default: all CAPTURE_LAYERS; the recheck round passes 19)",
+    )
     args = ap.parse_args()
 
     store_path = args.store_root / args.cell
     n_folds = 2 if args.smoke else N_FOLDS
+    # ladder13 -> lambdas=None: the parent module default, byte-identical to the
+    # published run (never re-materialized caller-side).
+    lambdas = None if args.lambda_grid == "ladder13" else resolve_lambda_grid(args.lambda_grid)
 
-    results = fit_cell(store_path, n_folds=n_folds)
+    results = fit_cell(store_path, n_folds=n_folds, lambdas=lambdas, layers=args.layers)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("w") as fh:
         json.dump(results, fh, indent=2)

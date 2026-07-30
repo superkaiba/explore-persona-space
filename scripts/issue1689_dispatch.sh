@@ -238,6 +238,250 @@ run_phase_analyze() {
         --model "$model_slug" $SMOKE
 }
 
+run_phase_derived_vs_free() {
+    echo "[phase=derived_vs_free]"
+    # Sentinel-INDEPENDENT leg (plan v8 s4): completion = job exit + pushed
+    # result commits; sentinels stay best-effort telemetry.
+    local dvf_root="$EVAL_ROOT/derived_vs_free_B"
+    local cms_root="$EVAL_ROOT/context_map_structure"
+    local xm_root="$EVAL_ROOT/crossmodel_pairs"
+    local xms_root="$EVAL_ROOT/crossmodel_pairs/crossmodel_structure"
+    local dvf_figs="$FIG_ROOT/derived_vs_free"
+    local push_results=1
+    if [ -n "$SMOKE" ]; then
+        # Smoke outputs NEVER land on committed paths (scratch-dir redirect).
+        local scratch="/tmp/issue-1689-dvf-smoke"
+        dvf_root="$scratch/derived_vs_free_B"
+        cms_root="$scratch/context_map_structure"
+        xm_root="$scratch/crossmodel_pairs"
+        xms_root="$scratch/crossmodel_pairs/crossmodel_structure"
+        dvf_figs="$scratch/figures"
+        push_results=0
+    fi
+    mkdir -p "$dvf_root" "$cms_root" "$xm_root" "$xms_root"
+
+    # Fix round 3 (#1689): one-shot key migration BEFORE any resume. Pre-fix
+    # within-model unit checkpoints were UNQUALIFIED (no model in the key), so
+    # base+instruct collided in the shared out-roots (241 base + 11 instruct
+    # of 504 computed; merge double-counted each file for both models). The
+    # migration renames surviving files to their internally-recorded model's
+    # qualified key — retained, never deleted — so only the genuinely-missing
+    # units re-run below. Cross-model roots never had unqualified keys (no-op).
+    echo "[phase=dvf_migrate_keys]"
+    uv run python scripts/issue1689_derived_vs_free.py --phase migrate-keys --out-root "$dvf_root"
+    uv run python scripts/issue1689_derived_vs_free.py --phase migrate-keys --out-root "$cms_root"
+
+    # Within-model merges hard-assert the full 504-unit qualified enumeration
+    # (2 models x 126 ordered pairs x 2 arms) in full mode; smoke pair subsets
+    # carry their own (smaller) exact counts via the merge's missing/dupe gates.
+    local expect_units=()
+    [ -z "$SMOKE" ] && expect_units=(--expect-units 504)
+
+    # Stage the pinned L19 stores (idempotent; consumer layout is
+    # <root>/<model_slug>/<condition>/L19.pt — exact per-file targets).
+    local dvf_store="${DVF_STORE_ROOT:-$DATA_ROOT/hf_dl/issue1689_speaker_lattice/analysis_tensors}"
+    uv run python scripts/issue1689_derived_vs_free.py --phase stage --store-root "$dvf_store"
+
+    # Width derives from DETECTED GPUs (no smoke-conditional narrowing; CVD is
+    # pinned per shard in the launcher env below).
+    local ngpu
+    ngpu=$(nvidia-smi --query-gpu=index --format=csv,noheader 2>/dev/null | wc -l) || ngpu=0
+    local device="cpu" nsh=1
+    if [ "${ngpu:-0}" -ge 1 ]; then device="cuda"; nsh="$ngpu"; fi
+    echo "[derived_vs_free] device=$device shards=$nsh"
+
+    # Scale knobs: smoke slices rows/dims/draws through the SAME drivers +
+    # pair-subset (--pairs-file) threading every phase below.
+    local slice_args=() rot_draws=200 class_draws=40 rank_draws=40 gate1_null=40
+    local within_pairs_args=(--pair-set within-model)
+    local xm_pairs="$xm_root/crossmodel_pair_specs.json"
+    local xm_ladder_draws=(--bootstrap-draws 0 --null-draws 40)
+    if [ -n "$SMOKE" ]; then
+        # One rung-9 within-model pair (rank-rung eligible) + one cross-model pair.
+        printf '%s' '[[["Qwen_Qwen2.5-7B-Instruct","assistant_chat"],["Qwen_Qwen2.5-7B-Instruct","assistant_naturalistic"]]]' \
+            > "$dvf_root/smoke_pair.json"
+        printf '%s' '[[["Qwen_Qwen2.5-7B","assistant_chat"],["Qwen_Qwen2.5-7B-Instruct","assistant_chat"]]]' \
+            > "$xm_root/smoke_xpair.json"
+        within_pairs_args=(--pairs-file "$dvf_root/smoke_pair.json")
+        xm_pairs="$xm_root/smoke_xpair.json"
+        slice_args=(--row-limit 600 --dim-limit 512)
+        rot_draws=5; class_draws=4; rank_draws=2; gate1_null=0
+        xm_ladder_draws=(--bootstrap-draws 0 --null-draws 0)
+    else
+        uv run python scripts/issue1689_derived_vs_free.py --phase write-pairs \
+            --pair-set cross-model --write-pairs-out "$xm_pairs"
+    fi
+
+    # Gate 1 (plan s7): parity vs the published parent pair-arm (always FULL
+    # shape) + timing pilot (production shape in full mode; sliced in smoke).
+    uv run python scripts/issue1689_derived_vs_free.py --phase gate1 \
+        --store-root "$dvf_store" --out-root "$dvf_root" --device "$device" \
+        --gate1-null-draws "$gate1_null" --gate1-timing "${slice_args[@]}"
+
+    # Per-leg fence = 2x the Gate-1 pilot-extrapolated wall (plan s9).
+    local unit_wall fence
+    unit_wall=$(uv run python -c 'import json,sys; d=json.load(open(sys.argv[1])); t=d.get("timing") or {}; print(max(5.0, float(t.get("battery_unit_wall_s") or 60.0)))' "$dvf_root/gate1_report.json")
+    fence=$(uv run python -c 'import sys; w=float(sys.argv[1]); n=int(sys.argv[2]); s=int(sys.argv[3]); print(int(2*w*n/max(s,1)) + 900)' "$unit_wall" 588 "$nsh")
+    # Structure units (item 7 class-null battery + item-8 rank rung) run ~3x a
+    # battery unit — their legs get a 3x fence off the same pilot basis.
+    local cms_fence=$((fence * 3))
+    echo "[derived_vs_free] gate1 unit_wall=${unit_wall}s fence=${fence}s cms_fence=${cms_fence}s"
+
+    # run_sharded <script> <args...>: fan out one shard per GPU (CVD pinned in
+    # the launcher env per shard — the #545 clobber rule), or 1 CPU process.
+    run_sharded() {
+        local leg_fence="${RUN_FENCE:-$fence}"
+        local script="$1"; shift
+        if [ "$nsh" -le 1 ]; then
+            local cvd_prefix=(env)
+            [ "$device" = "cuda" ] && cvd_prefix=(env CUDA_VISIBLE_DEVICES=0)
+            timeout --kill-after=60s "$leg_fence" "${cvd_prefix[@]}" \
+                uv run python "$script" "$@" --device "$device"
+            return $?
+        fi
+        local pids=() i rc=0 p
+        for i in $(seq 0 $((nsh - 1))); do
+            env CUDA_VISIBLE_DEVICES="$i" timeout --kill-after=60s "$leg_fence" \
+                uv run python "$script" "$@" --device cuda \
+                --num-shards "$nsh" --shard-index "$i" \
+                > "$LOG_DIR/dvf-shard-$i.log" 2>&1 &
+            pids+=($!)
+        done
+        for p in "${pids[@]}"; do wait "$p" || rc=$?; done
+        if [ "$rc" -ne 0 ]; then
+            echo "[derived_vs_free] shard failure rc=$rc" >&2
+            tail -n 60 "$LOG_DIR"/dvf-shard-*.log >&2 || true
+            return "$rc"
+        fi
+    }
+
+    # --- Within-model battery (items 1-6) ---
+    echo "[phase=dvf_pairs]"
+    run_sharded scripts/issue1689_derived_vs_free.py --phase pairs \
+        --store-root "$dvf_store" --out-root "$dvf_root" \
+        "${within_pairs_args[@]}" "${slice_args[@]}"
+    echo "[phase=dvf_nulls]"
+    local cvd0=(env)
+    [ "$device" = "cuda" ] && cvd0=(env CUDA_VISIBLE_DEVICES=0)
+    "${cvd0[@]}" timeout --kill-after=60s "$fence" uv run python \
+        scripts/issue1689_derived_vs_free.py --phase nulls --out-root "$dvf_root" \
+        --rotation-draws "$rot_draws" --device "$device"
+    uv run python scripts/issue1689_derived_vs_free.py --phase merge \
+        --out-root "$dvf_root" "${within_pairs_args[@]}" "${expect_units[@]}"
+
+    # --- Cross-model same-condition pairs (item 9): full ladder + battery ---
+    echo "[phase=xm_ladder]"
+    local xm_ladder_json="$xm_root/ladder_crossmodel_L19.json"
+    # Pair-sharded across every visible GPU (plan §9 C7 — the 84-unit ladder
+    # must not run single-process on GPU 0 while siblings idle): shard workers
+    # persist per-pair checkpoints only; the --merge pass assembles the final
+    # JSON fail-loud on any missing/regime-mismatched pair. nsh=1 (CPU or one
+    # GPU) takes run_sharded's single-process branch, which writes the JSON
+    # directly — no merge pass needed.
+    run_sharded scripts/issue1689_fit_ladder.py \
+        --store-root "$dvf_store" \
+        --model-slug Qwen_Qwen2.5-7B-Instruct --layer 19 \
+        --out "$xm_ladder_json" --pairs-file "$xm_pairs" \
+        --checkpoint-dir "$xm_root/xpairs_L19" \
+        --engine torch "${xm_ladder_draws[@]}"
+    if [ "$nsh" -gt 1 ]; then
+        timeout --kill-after=60s "$fence" uv run python \
+            scripts/issue1689_fit_ladder.py --store-root "$dvf_store" \
+            --model-slug Qwen_Qwen2.5-7B-Instruct --layer 19 \
+            --out "$xm_ladder_json" --pairs-file "$xm_pairs" \
+            --checkpoint-dir "$xm_root/xpairs_L19" \
+            --engine torch --device cpu --merge "${xm_ladder_draws[@]}"
+    fi
+    echo "[phase=xm_pairs]"
+    run_sharded scripts/issue1689_derived_vs_free.py --phase pairs \
+        --store-root "$dvf_store" --out-root "$xm_root" \
+        --pairs-file "$xm_pairs" "${slice_args[@]}"
+    "${cvd0[@]}" timeout --kill-after=60s "$fence" uv run python \
+        scripts/issue1689_derived_vs_free.py --phase nulls --out-root "$xm_root" \
+        --rotation-draws "$rot_draws" --device "$device"
+    uv run python scripts/issue1689_derived_vs_free.py --phase merge \
+        --out-root "$xm_root" --pairs-file "$xm_pairs"
+
+    # --- Context-map structure + rank rung (items 7-8 within; item 9 leg) ---
+    echo "[phase=cms_units]"
+    RUN_FENCE="$cms_fence" run_sharded scripts/issue1689_context_map_structure.py --phase units \
+        --store-root "$dvf_store" --out-root "$cms_root" \
+        "${within_pairs_args[@]}" "${slice_args[@]}" \
+        --class-null-draws "$class_draws" --rank-null-draws "$rank_draws"
+    uv run python scripts/issue1689_context_map_structure.py --phase overlap \
+        --out-root "$cms_root"
+    uv run python scripts/issue1689_context_map_structure.py --phase merge \
+        --out-root "$cms_root" "${within_pairs_args[@]}" "${expect_units[@]}"
+    echo "[phase=xm_structure]"
+    RUN_FENCE="$cms_fence" run_sharded scripts/issue1689_context_map_structure.py --phase units \
+        --store-root "$dvf_store" --out-root "$xms_root" \
+        --pairs-file "$xm_pairs" "${slice_args[@]}" \
+        --class-null-draws "$class_draws" --rank-null-draws "$rank_draws" \
+        --crossmodel-ladder-json "$xm_ladder_json"
+    uv run python scripts/issue1689_context_map_structure.py --phase overlap \
+        --out-root "$xms_root"
+    uv run python scripts/issue1689_context_map_structure.py --phase merge \
+        --out-root "$xms_root" --pairs-file "$xm_pairs" \
+        --crossmodel-ladder-json "$xm_ladder_json"
+
+    # --- Figures (local JSONs) ---
+    echo "[phase=dvf_figures]"
+    uv run python scripts/issue1689_derived_vs_free_figures.py \
+        --dvf-root "$dvf_root" --cms-root "$cms_root" \
+        --crossmodel-root "$xm_root" --out-figs "$dvf_figs"
+
+    if [ "$push_results" -eq 1 ]; then
+        # --- Compact-bundle upload (ONE upload_folder commit per out-root) ---
+        echo "[phase=dvf_upload]"
+        local r
+        for r in "$dvf_root" "$cms_root" "$xm_root" "$xms_root"; do
+            uv run python scripts/issue1689_derived_vs_free.py --phase upload --out-root "$r"
+        done
+        # --- Result commit + BARE push, verify-then-assert (#1205/#1325) ---
+        # Fix round 3: NO-OP gracefully on a non-git tree (the fellows/SLURM
+        # rsync lane ships no .git — job 15194 died HERE at the very end; the
+        # VM-side orchestrator lands git artifacts on that lane, per the
+        # pod-side-reporting SLURM result-landing contract).
+        echo "[phase=dvf_push]"
+        if ! git rev-parse --git-dir >/dev/null 2>&1; then
+            echo "[derived_vs_free] dvf_push SKIP: not a git checkout (rsync lane; VM orchestrator lands git artifacts)"
+            echo "[derived_vs_free] leg complete"
+            return 0
+        fi
+        git add "$dvf_root" "$cms_root" "$xm_root" "$dvf_figs"
+        git -c user.name="eps-runner" -c user.email="eps-runner@local" \
+            commit -m "task #1689: derived-vs-free round results (battery + structure + crossmodel + figures)" \
+            || echo "[derived_vs_free] nothing to commit"
+        if ! git push origin issue-1689; then
+            echo "[derived_vs_free] push failed; retrying once" >&2
+            git push origin issue-1689
+        fi
+        local behind
+        behind=$(git rev-list --count origin/issue-1689..HEAD)
+        if [ "$behind" -ne 0 ]; then
+            echo "[derived_vs_free] push-verify FAILED (${behind} unpushed commits)" >&2
+            exit 86
+        fi
+        # Artifact-presence assert: every declared git-destined result file of
+        # THIS round must be in the pushed tree (bundles/*.npz are HF-destined).
+        local missing=0 p
+        while IFS= read -r p; do
+            if [ -z "$(git ls-tree -r origin/issue-1689 --name-only -- "$p")" ]; then
+                echo "[derived_vs_free] MISSING from pushed tree: $p" >&2
+                missing=1
+            fi
+        done < <(
+            find "$dvf_root" "$cms_root" "$xm_root" -name '*.json' -not -path '*/bundles/*'
+            find "$dvf_figs" -name '*.png'
+        )
+        if [ "$missing" -ne 0 ]; then
+            echo "[derived_vs_free] artifact-presence assert FAILED" >&2
+            exit 87
+        fi
+    fi
+    echo "[derived_vs_free] leg complete"
+}
+
 # Dispatch on phase argument.
 case "$PHASE" in
     corpus)   run_phase_corpus ;;
@@ -248,6 +492,7 @@ case "$PHASE" in
     fit_cells|fit) run_phase_fit_cells ;;
     fit_ladder|ladder) run_phase_fit_ladder ;;
     analyze)  run_phase_analyze ;;
+    derived_vs_free) run_phase_derived_vs_free ;;
     all|--smoke|"")
         run_phase_corpus
         run_phase_render

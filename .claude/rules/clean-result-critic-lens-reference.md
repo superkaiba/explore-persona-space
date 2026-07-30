@@ -1230,6 +1230,11 @@ plan_path=$(uv run python scripts/task.py find <N>)/plans/plan.md
 cat "$plan_path"
 ```
 
+A mechanical ADVISORY floor for this lens now exists: `verify_task_body.py`'s
+`plan conditions coverage` check (#1827) WARNs (advisory-prefixed, never FAILs)
+when a plan-§5 `Config slug` row has no literal slug/name body trace — this LM
+lens stays authoritative for paraphrase-level drops and adjudicates each listed row.
+
 Enumerate the plan's planned conditions / cells / factor flips. Heuristics
 for finding them in the plan:
 

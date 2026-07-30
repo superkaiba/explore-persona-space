@@ -184,6 +184,29 @@ LAMBDA_LOG_MIN = -2.0
 LAMBDA_LOG_MAX = 4.0
 LAMBDA_GRID_SIZE = 13
 
+# Named lambda grids (wider-lambda-ceilings follow-up, plan v6 §4).
+# "ladder13" is the parent grid (== issue825_fit_cells.LAMBDAS == the
+# logspace(LAMBDA_LOG_MIN, LAMBDA_LOG_MAX, LAMBDA_GRID_SIZE) above);
+# "wide19" extends it 3 dex at the same 0.5-dex spacing — a strict superset
+# (np.intersect1d(g13, g19).size == 13), so published R²s are reproducible
+# members of the wide scan and any Δceiling is attributable to the added λs.
+LAMBDA_GRIDS: dict[str, tuple[float, float, int]] = {
+    "ladder13": (LAMBDA_LOG_MIN, LAMBDA_LOG_MAX, LAMBDA_GRID_SIZE),
+    "wide19": (LAMBDA_LOG_MIN, 7.0, 19),
+}
+
+
+def resolve_lambda_grid(name: str):
+    """Return the named lambda grid as a float64 numpy array; fail loud on an
+    unknown name. numpy imported lazily (this module stays import-light)."""
+    import numpy as np
+
+    if name not in LAMBDA_GRIDS:
+        raise ValueError(f"unknown lambda grid {name!r} (want one of {sorted(LAMBDA_GRIDS)})")
+    lo, hi, n = LAMBDA_GRIDS[name]
+    return np.logspace(lo, hi, n)
+
+
 N_FOLDS = 5
 N_BOOTSTRAP_DRAWS = 1000
 N_REPARAM_NULL_DRAWS = 200

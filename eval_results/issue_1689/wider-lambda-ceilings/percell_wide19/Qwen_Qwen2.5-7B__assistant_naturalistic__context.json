@@ -1,0 +1,48 @@
+{
+  "meta": {
+    "layer": 19,
+    "n_folds": 5,
+    "seed": 42,
+    "lambda_grid": "wide19",
+    "refit13": false,
+    "git_commit": "109856e8388f4ea480f6a3a27a5a1d5d6419f618",
+    "ts": "2026-07-29T09:09:30Z"
+  },
+  "cell": "assistant_naturalistic",
+  "model": "Qwen_Qwen2.5-7B",
+  "arm": "context",
+  "n_rows": 6666,
+  "published_r2": 0.07340679978356002,
+  "lambda_star_13": [
+    10000.0,
+    10000.0,
+    10000.0,
+    10000.0,
+    10000.0
+  ],
+  "ceiling_r2_19": 0.0780672115022919,
+  "lambdas_selected_19": [
+    31622.776601683792,
+    31622.776601683792,
+    31622.776601683792,
+    31622.776601683792,
+    31622.776601683792
+  ],
+  "lambda_star_19": 31622.776601683792,
+  "selector_19": [
+    "inner-group-cv",
+    "inner-group-cv",
+    "inner-group-cv",
+    "inner-group-cv",
+    "inner-group-cv"
+  ],
+  "edge_hits_19": 0,
+  "delta_r2": 0.004660411718731883,
+  "ceiling_r2_13": null,
+  "lambdas_selected_13_refit": null,
+  "repro_gap": null,
+  "wall_s": {
+    "grid19": 531.1343714669347,
+    "grid13_refit": null
+  }
+}

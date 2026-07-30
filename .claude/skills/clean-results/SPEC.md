@@ -1075,11 +1075,24 @@ Forward-only: each check branches on the sentinel. The v4 checks
     (Numbered 39 because 37–38 are taken by the footer-reuse-pin and
     linked-not-embedded WARN checks, #1421; incident #1005 claimed
     `Disclosure: 8 of 2,400` while showing 6.)
+48. **Figure-less quantitative result** (`check_v4_quant_result_figure`,
+    v4 only, WARN — NEVER FAIL): a `### <result>` block with zero inline
+    `![...]` images that is QUANTITATIVE — ≥3 standalone numeric tokens in
+    non-code content (inline code + link targets masked; fenced code +
+    `<details>` bodies excluded), or any GFM table row — draws a WARN
+    naming the section and its basis (token count / table). Check 21's
+    figure-less exemption is unchanged: a figure-less QUALITATIVE result
+    still passes both checks, and the clean-result-critic keeps the
+    ship/no-ship judgment call. (Numbered 48 because 40–47 are taken by
+    the generation-agnostic + issue-dispatched checks, #1832; incident
+    #1769 Result 5 shipped its H1-carrying three-treatment lattice as a
+    `> **Figure.**`-captioned GFM table with zero inline images, and only
+    the round-1 LM REVISE caught it.)
 
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
 (check 22), HF-URL-resolves (check 23), figure-sidecar opaque
 config-code tokens (check 28, WARN: `@L<digits>` layer pins + regime-code
-slugs + bare hypothesis codes (`H3`) + slot-family codes (`f16`/`l16`) in
+slugs + bare hypothesis codes (`H3`/`H1c`) + slot-family codes (`f16`/`l16`) in
 figure-sidecar-carried text — plain-English condition names only;
 slugs stay in the Repro config row; sidecar-carried strings, not full
 PNG-pixel coverage), and figure prose-numerics vs sidecar plotted values

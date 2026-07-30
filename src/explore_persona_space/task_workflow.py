@@ -938,9 +938,10 @@ def is_paper_task(fm: dict[str, Any]) -> bool:
 
 
 #: Body sentinel for the v2 report clean-result form (workflow v2 — the
-#: report-only track: Motivation / Methodology (metrics embedded) /
-#: Results-as-plots written by agents; the ``# Result:`` title, TLDR,
-#: per-result Takeaways + Next-steps written by Thomas — official template:
+#: report-only track: Motivation / Methodology (shared) / Results-as-plots
+#: (a per-result ``**Methodology**`` block each) written by agents; the
+#: ``# Result:`` title, TLDR, per-result Takeaways + Conclusion-and-next-steps
+#: written by Thomas — official template:
 #: ``.claude/skills/issue-v2/report-template.md``). Placed on the line after
 #: the H1 title, mirroring the ``<!-- clean-result-v4 -->`` convention.
 #: ``scripts/verify_report.py`` is the mechanical verifier for this form.
@@ -1904,12 +1905,29 @@ def _stage_event_ts(event: dict) -> datetime | None:
     return parsed
 
 
+_BREADCRUMB_VALUE_TRAILING_PUNCT = ":;,."
+
+
 def _breadcrumb_fields(note: str) -> dict[str, str]:
-    """Parse a ``stage-dispatch`` note's ``key=value`` tokens (whitespace-split, order-free)."""
+    """Parse a ``stage-dispatch`` note's ``key=value`` tokens (whitespace-split, order-free).
+
+    Hardened (#1828, incident #1689): trailing sentence punctuation is stripped from values
+    (``label=foo:`` -> ``foo``) and binding is FIRST-non-empty-wins — a later bare ``key=``
+    prose substring can neither re-bind an already-parsed field nor bind an empty value.
+    (A lone ``=``-bearing prose token with empty key AND value — the #931
+    ``success = [phase=done]`` shape — previously bound ``fields[""] = ""``; post-change it
+    never binds. No consumer reads key ``""``.) A correction to a bad breadcrumb is posted
+    as a NEW event, never a later same-note token override — within one note the FIRST
+    non-empty binding of a key is authoritative (canonical fields lead the note by
+    convention; prose follows).
+    """
     fields: dict[str, str] = {}
     for token in note.split():
         key, sep, value = token.partition("=")
-        if sep:
+        if not sep:
+            continue
+        value = value.rstrip(_BREADCRUMB_VALUE_TRAILING_PUNCT)
+        if value and key not in fields:
             fields[key] = value
     return fields
 
@@ -6735,6 +6753,62 @@ def _warn_if_commit_stranded(message: str, *, routed: bool) -> None:
         _log.warning("landing check failed (fail-open; mutation unaffected)", exc_info=True)
 
 
+# Pre-commit hook-result line: the hook name padded with dots, NO space before
+# the status token (`ruff.....Failed`). A real pre-commit Skipped line can read
+# `...(no files to check)Skipped` — a non-dot char right before the status —
+# and deliberately does NOT match; do not "loosen" this regex to allow
+# `\s*`/other chars between the dots and the status, that widens the
+# false-positive surface onto plain git stderr (#1816).
+_HOOK_RESULT_RE = re.compile(r"^(?P<name>.{1,120}?)\.{3,}(?P<status>Passed|Skipped|Failed)\s*$")
+_HOOK_BLOCK_MAX_LINES = 12
+_HOOK_BLOCK_MAX_CHARS = 600
+_HOOK_MAX_BLOCKS = 3
+_HOOK_EXCERPT_MAX_CHARS = 1500
+
+
+def _extract_failing_hook_blocks(full_err: str) -> tuple[list[str], str]:
+    """Extract failing pre-commit hook ids + a bounded output excerpt (#1816).
+
+    Scans ``full_err`` for pre-commit hook-result lines (``_HOOK_RESULT_RE``);
+    for each ``Failed`` result line captures a block — the result line plus
+    following lines up to (not including) the next hook-result line or EOF —
+    capped per block at ``_HOOK_BLOCK_MAX_LINES`` lines AND
+    ``_HOOK_BLOCK_MAX_CHARS`` chars, at most ``_HOOK_MAX_BLOCKS`` blocks,
+    total excerpt capped at ``_HOOK_EXCERPT_MAX_CHARS`` chars. The hook id
+    per block is the ``- hook id: <id>`` value when present, else the
+    dot-stripped ``name`` from the result line. Returns
+    ``(failing_hooks, failure_excerpt)``; ``([], "")`` when no ``Failed``
+    result line exists, so the caller's blind-tail fallback stays
+    byte-identical for lock collisions / plain git errors.
+    """
+    lines = full_err.splitlines()
+    results: list[tuple[int, re.Match[str]]] = []
+    for i, ln in enumerate(lines):
+        m = _HOOK_RESULT_RE.match(ln)
+        if m:
+            results.append((i, m))
+    failing_hooks: list[str] = []
+    blocks: list[str] = []
+    for pos, (i, m) in enumerate(results):
+        if m.group("status") != "Failed":
+            continue
+        if len(blocks) >= _HOOK_MAX_BLOCKS:
+            break
+        end = results[pos + 1][0] if pos + 1 < len(results) else len(lines)
+        block_lines = lines[i:end][:_HOOK_BLOCK_MAX_LINES]
+        hook_id = m.group("name").rstrip(".").strip()
+        for bl in block_lines:
+            stripped = bl.strip()
+            if stripped.startswith("- hook id:"):
+                hook_id = stripped.removeprefix("- hook id:").strip()
+                break
+        failing_hooks.append(hook_id)
+        blocks.append("\n".join(block_lines)[:_HOOK_BLOCK_MAX_CHARS])
+    if not blocks:
+        return [], ""
+    return failing_hooks, "\n".join(blocks)[:_HOOK_EXCERPT_MAX_CHARS]
+
+
 def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: int, op: str) -> bool:
     """Commit bookkeeping for an ALREADY-DURABLE append-only mutation (#1030).
 
@@ -6745,7 +6819,12 @@ def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: in
     re-commits re-fail the hook until the finding is resolved (or, for a
     verified false positive, its printed ``Fingerprint:`` line is appended to
     ``.gitleaksignore``); the ERROR + sidecar row carry the extracted
-    fingerprint line(s) (#1780). Raising makes callers retry the WHOLE mutation and
+    fingerprint line(s) (#1780). More generally, when the captured streams
+    hold a pre-commit ``Failed`` hook-result line, the ERROR + sidecar row
+    additionally name the failing hook(s) + a bounded output excerpt
+    (#1816; ``_extract_failing_hook_blocks``) — the blind 500-char
+    ``stderr_tail`` alone routinely loses the failure to later hooks'
+    output. Raising makes callers retry the WHOLE mutation and
     duplicate the append — the 2026-07-03 3x-marker incident on a #823 loop
     session; same rc-contract family as ``scripts/task.py::_safe_echo``
     (#537). So a PRE/AT-commit failure after a successful append LOGS AT
@@ -6822,16 +6901,27 @@ def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: in
                 "line(s) to .gitleaksignore and commit it together with the "
                 "swept paths (#1092 precedent: be36d6dc6a). " + "; ".join(gitleaks_fps)
             )
+        # Failing-hook naming (#1816): on the same FULL streams, name the
+        # failing pre-commit hook(s) + a bounded output excerpt — the blind
+        # 500-char tail routinely shows only LATER hooks' Passed/Skipped
+        # lines while the failing hook's output has scrolled out. Additive:
+        # no Failed hook-result line -> hook_note stays "" and the ERROR
+        # message + sidecar row are byte-identical to the pre-#1816 shape.
+        failing_hooks, failure_excerpt = _extract_failing_hook_blocks(full_err)
+        hook_note = ""
+        if failing_hooks:
+            hook_note = " FAILING HOOK(S): " + ", ".join(failing_hooks) + " — " + failure_excerpt
         _log.error(
             "task #%d: %s applied DURABLY (append landed) but the git commit "
             "failed: %s: %s. Do NOT re-run the mutation (it would duplicate the "
-            "append); the next successful commit touching these paths sweeps it.%s "
+            "append); the next successful commit touching these paths sweeps it.%s%s "
             "Recorded in %s. Manual sweep: git add -- <paths> && git commit.",
             task_id,
             op,
             type(e).__name__,
             stderr_tail,
             gitleaks_note,
+            hook_note,
             DEFERRED_COMMITS_LOG,
         )
         row = {
@@ -6846,6 +6936,9 @@ def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: in
         if gitleaks_fps:
             row["gitleaks_finding"] = True
             row["gitleaks_fingerprints"] = gitleaks_fps
+        if failing_hooks:
+            row["failing_hooks"] = failing_hooks
+            row["failure_excerpt"] = failure_excerpt
         try:
             _append_jsonl_line(DEFERRED_COMMITS_LOG, row)
         except OSError:

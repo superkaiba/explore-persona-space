@@ -1,0 +1,550 @@
+{
+  "commit": "597ca070ac",
+  "created": "2026-07-30T10:52:50Z",
+  "figsize": [
+    7.5,
+    13.5
+  ],
+  "points": [
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 9.479975179805876,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 9.81865387041885,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 12.488295920751604,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 13.639312137414443,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -0.3620178164735215,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 0.7798522522219251,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 1.2452279351506572,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 2.747278890228637,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 2.834041654105839,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 6.819427162613529,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 7.597228312542633,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 8.326522445086667,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 8.810120223536437,
+      "y": 12.0,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 9.635235560723459,
+      "y": 13.0,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 9.696340008585068,
+      "y": 14.0,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 10.70685117359642,
+      "y": 15.0,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 10.918100792674483,
+      "y": 16.0,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 12.87879841277784,
+      "y": 17.0,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 13.31761927969583,
+      "y": 18.0,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 4.2258902807332,
+      "y": 19.0,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 4.2464683442631195,
+      "y": 20.0,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 4.3148976729963415,
+      "y": 21.0,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 4.480372214879374,
+      "y": 22.0,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 6.509657645815766,
+      "y": 23.0,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 6.629152387693434,
+      "y": 24.0,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 12.262266369939447,
+      "y": 25.0,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 12.328270888853648,
+      "y": 26.0,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 12.90595606136192,
+      "y": 27.0,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 13.74156807430047,
+      "y": 28.0,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 14.256059197696075,
+      "y": 29.0,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 14.379633766248627,
+      "y": 30.0,
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 18.711998325308205,
+      "y": 31.0,
+      "_kind": "errorbar",
+      "_group": 31
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 3.5738811053291037,
+      "y": 32.0,
+      "_kind": "errorbar",
+      "_group": 32
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 3.5760174731245318,
+      "y": 33.0,
+      "_kind": "errorbar",
+      "_group": 33
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 10.204431275966048,
+      "y": 34.0,
+      "_kind": "errorbar",
+      "_group": 34
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 14.504513360180667,
+      "y": 35.0,
+      "_kind": "errorbar",
+      "_group": 35
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -4.771037781378471,
+      "y": 36.0,
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -4.679401274315583,
+      "y": 37.0,
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -4.665993901887488,
+      "y": 38.0,
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -4.649996341140369,
+      "y": 39.0,
+      "_kind": "errorbar",
+      "_group": 39
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -1.3661560589675332,
+      "y": 40.0,
+      "_kind": "errorbar",
+      "_group": 40
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -0.5200558510893343,
+      "y": 41.0,
+      "_kind": "errorbar",
+      "_group": 41
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -0.07708805548313968,
+      "y": 42.0,
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 0.2993788130945916,
+      "y": 43.0,
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 0.785865999382974,
+      "y": 44.0,
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 0.8835472118952001,
+      "y": 45.0,
+      "_kind": "errorbar",
+      "_group": 45
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 3.7663450490812984,
+      "y": 46.0,
+      "_kind": "errorbar",
+      "_group": 46
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 3.920686533509482,
+      "y": 47.0,
+      "_kind": "errorbar",
+      "_group": 47
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 5.11499793760453,
+      "y": 48.0,
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 5.8400069603735005,
+      "y": 49.0,
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 7.830205087349388,
+      "y": 50.0,
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": 8.167650089340412,
+      "y": 51.0,
+      "_kind": "errorbar",
+      "_group": 51
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -14.465657583571247,
+      "y": 52.0,
+      "_kind": "errorbar",
+      "_group": 52
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -14.275622275638618,
+      "y": 53.0,
+      "_kind": "errorbar",
+      "_group": 53
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -14.24155251128288,
+      "y": 54.0,
+      "_kind": "errorbar",
+      "_group": 54
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -14.032738373139585,
+      "y": 55.0,
+      "_kind": "errorbar",
+      "_group": 55
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -18.231305395303337,
+      "y": 56.0,
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -17.654038464526508,
+      "y": 57.0,
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -17.46830707166976,
+      "y": 58.0,
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -17.450717015816764,
+      "y": 59.0,
+      "_kind": "errorbar",
+      "_group": 59
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -13.375144770387363,
+      "y": 60.0,
+      "_kind": "errorbar",
+      "_group": 60
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -13.243171080675271,
+      "y": 61.0,
+      "_kind": "errorbar",
+      "_group": 61
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -13.167731805993583,
+      "y": 62.0,
+      "_kind": "errorbar",
+      "_group": 62
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -13.14938719535065,
+      "y": 63.0,
+      "_kind": "errorbar",
+      "_group": 63
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -13.048753698183182,
+      "y": 64.0,
+      "_kind": "errorbar",
+      "_group": 64
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -12.583166577527225,
+      "y": 65.0,
+      "_kind": "errorbar",
+      "_group": 65
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -12.344908866118796,
+      "y": 66.0,
+      "_kind": "errorbar",
+      "_group": 66
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -12.000163430998393,
+      "y": 67.0,
+      "_kind": "errorbar",
+      "_group": 67
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -7.526243011160645,
+      "y": 68.0,
+      "_kind": "errorbar",
+      "_group": 68
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -7.208787555574023,
+      "y": 69.0,
+      "_kind": "errorbar",
+      "_group": 69
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -5.92851622093449,
+      "y": 70.0,
+      "_kind": "errorbar",
+      "_group": 70
+    },
+    {
+      "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)": -4.889316393897378,
+      "y": 71.0,
+      "_kind": "errorbar",
+      "_group": 71
+    }
+  ],
+  "n_series": 72,
+  "total_points": 72,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Map change per arm (content at layer 19, marker at layer 25)",
+        "xlabel": "map-change statistic D = median map difference \u2212 refit-noise floor (95th pct)",
+        "legend_labels": [
+          "casual writing style",
+          "impoliteness",
+          "sycophancy",
+          "marker token",
+          "circle = contrastive regime",
+          "triangle = positive-only regime",
+          "open marker = full fine-tune"
+        ],
+        "xticklabels": [
+          "\u221225",
+          "\u221220",
+          "\u221215",
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25"
+        ],
+        "yticklabels": [
+          "cas-pers-ft-po-s137",
+          "cas-pers-ft-po-s42",
+          "cas-pers-ft-con-s42",
+          "cas-pers-ft-con-s137",
+          "cas-conv-po-lr3e5-s42",
+          "cas-conv-con-lr1e5-s42",
+          "cas-conv-con-lr1e5-s137",
+          "cas-pers-po-lr1e5-s137",
+          "cas-pers-po-lr1e5-s42",
+          "cas-pers-con-lr1e5-s42",
+          "cas-pers-con-lr1e5-s137",
+          "cas-bare-po-lr1e5-s42",
+          "cas-bare-po-lr1e5-s137",
+          "cas-bare-con-lr1e5-s137",
+          "cas-bare-con-lr1e5-s42",
+          "imp-pers-ft-po-s42",
+          "imp-pers-ft-po-s137",
+          "imp-pers-ft-con-s42",
+          "imp-pers-ft-con-s137",
+          "imp-pers-po-lr1e5-s137",
+          "imp-pers-po-lr1e5-s42",
+          "imp-conv-po-lr1e5-s42",
+          "imp-conv-po-lr1e5-s137",
+          "imp-conv-con-lr1e5-s42",
+          "imp-conv-con-lr1e5-s137",
+          "imp-bare-po-lr1e5-s42",
+          "imp-bare-po-lr1e5-s137",
+          "imp-pers-con-lr3e5-s42",
+          "imp-bare-con-lr3e5-s42",
+          "imp-pers-con-lr3e5-s137",
+          "imp-bare-con-lr3e5-s137",
+          "imp-icl-po-lr1e4-s42",
+          "syc-pers-ft-po-s137",
+          "syc-pers-ft-po-s42",
+          "syc-pers-ft-con-s42",
+          "syc-pers-ft-con-s137",
+          "syc-conv-po-lr1e5-s137",
+          "syc-conv-po-lr1e5-s42",
+          "syc-conv-con-lr1e5-s137",
+          "syc-conv-con-lr1e5-s42",
+          "syc-pers-po-lr1e5-s42",
+          "syc-icl-po-lr1e5-s137",
+          "syc-icl-po-lr3e5-s42",
+          "syc-pers-po-lr1e5-s137",
+          "syc-icl-con-lr1e5-s42",
+          "syc-icl-con-lr1e5-s137",
+          "syc-pers-con-lr1e5-s42",
+          "syc-pers-con-lr1e5-s137",
+          "syc-bare-po-lr1e5-s137",
+          "syc-bare-po-lr1e5-s42",
+          "syc-bare-con-lr1e5-s137",
+          "syc-bare-con-lr1e5-s42",
+          "mk-pers-ft-con-s137",
+          "mk-pers-ft-po-s137",
+          "mk-pers-ft-po-s42",
+          "mk-pers-ft-con-s42",
+          "mk-icl-po-lr5e6-s137",
+          "mk-icl-con-lr5e6-s137",
+          "mk-icl-con-lr5e6-s42",
+          "mk-icl-po-lr5e6-s42",
+          "mk-conv-po-lr5e6-s42",
+          "mk-conv-con-lr5e6-s42",
+          "mk-conv-con-lr5e6-s137",
+          "mk-pers-con-lr5e6-s42",
+          "mk-pers-con-lr5e6-s137",
+          "mk-pers-po-lr5e6-s42",
+          "mk-pers-po-lr5e6-s137",
+          "mk-conv-po-lr5e6-s137",
+          "mk-bare-con-lr5e6-s137",
+          "mk-bare-con-lr5e6-s42",
+          "mk-bare-po-lr5e6-s137",
+          "mk-bare-po-lr5e6-s42"
+        ]
+      }
+    ]
+  }
+}

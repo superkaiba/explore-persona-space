@@ -976,6 +976,23 @@ Rationale (#1721): a plan that says "the check at line 142 does Y" against a cod
 
 Copied by reference from planner.md § 12 (the always-on paragraph): when the plan designs or modifies a predicate that classifies a persisted artifact's shape to decide an automated action (watcher fire/keep, guard block/allow, janitor reap, failure classifier class) AND the motivating incident left a persisted artifact, §12 MUST carry one row per predicate arm — including the read/ingest path that feeds it — traced against the actual artifact by path, with each arm evaluated on values MEASURED from it at plan time (row counts, byte sizes, field values — READ, never recalled), and the traced outcome stated. The predicate MUST fire on its own motivating incident; "would not fire" is a design defect to fix before returning the plan. Artifact aged off disk → trace the incident's recorded measurements at Medium confidence; prospective guard with no incident artifact → state that in the row.
 
+### Real-corpus structural assumptions — smoke-slice probe routing
+
+**Trigger (all three conjuncts):** a §12 row that (a) asserts a STRUCTURAL property of a real corpus / dataset / reused artifact — distinct-value counts, field cardinality, per-row uniqueness, template homogeneity, schema/field presence — AND (b) gates an arm / fit / phase via a fail-loud check in the design (an assert / raise the production run executes), AND (c) is only checkable against the data itself, first materialized at smoke time (plan-time grounding — the fact-checker, a grep, a prior body — structurally cannot reach it).
+
+**The duty:** the row's **How to verify** routes to a NAMED smoke-slice probe at **full-CONSUMED-corpus grain** — the property is read over the exact pinned data the production arm actually loads, NEVER the sliced smoke sample alone (a tiny sample can satisfy a premise the full corpus violates), and NEVER the upstream/streaming source (a full-LMSYS scan at smoke time is prohibitive — the #1092 streaming class; the consumed corpus is the object the production assert binds to). Read the property from a manifest/metadata field WHEN one carries it (the cheap 1-row read); when no manifest field carries the property, COMPUTE it from the consumed corpus — manifest presence is not a precondition for the probe.
+
+**Implementer hand-off:** the implementer runs the named probe during smoke and records the MEASURED value in the relevant `### <phase-name>` sub-section under `## Smoke run` (experiment-implementer.md checklist item 3 carries the mirror duty).
+
+**Violated-premise disposition:** a measured violation is a PLAN defect, not a code bug — surface it and bounce to plan amendment / re-scope BEFORE production; leaving it to the production assert is the failure mode this sub-rule closes (#1768: plan assumption A4, `n_distinct_prefix==1`, was hard-asserted in the capture script and false on the real corpus — measured 2, an LMSYS-vs-WildChat template split; the smoke run PASSed on its tiny sample and the p1 pilot assert fired ~55 min after relaunch).
+
+Worked example pair:
+
+- **Correct:** `A4. Every corpus row shares one prompt template (n_distinct_prefix==1). Confidence: Low. Source: guessed from the #779 pinned subset. How to verify: SMOKE-SLICE PROBE — p0 reads n_distinct_prefix from the full consumed-corpus manifest and reports the measured value in ## Smoke run; the p1 prefix-arm gate re-asserts it.`
+- **Wrong:** the same row with `How to verify: the p1 assert will catch it` — that IS the production crash (#1768).
+
+Plan-time critics reviewing §12 check that every row matching the three-conjunct trigger carries the smoke-slice probe routing (prose-only enforcement, the #1287 precedent).
+
 ### General shape
 
 Every §12 row has these four fields at minimum:

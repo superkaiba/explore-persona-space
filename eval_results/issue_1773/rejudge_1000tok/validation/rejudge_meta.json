@@ -1,0 +1,19 @@
+{
+ "prior_max_tokens": 400,
+ "rejudge_max_tokens": 1000,
+ "n_val_items": 6450,
+ "n_dropped_prior": 3518,
+ "n_redispatched": 3518,
+ "recovered": {
+  "detection_recovered": 947,
+  "fuzzing_recovered": 861,
+  "discrimination_recovered": 959
+ },
+ "gating": "REPORT-ONLY - no verdict flip, no trust-lattice gate applied",
+ "git_commit": "72fc5cd3ba783c4f4aee1c494daaa9d9f85d9f87",
+ "numpy": "2.2.6",
+ "python": "3.11.15",
+ "timestamp_utc": "2026-07-30T16:39:53.957610+00:00",
+ "task": 1773,
+ "seed": 17732026
+}

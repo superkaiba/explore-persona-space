@@ -181,7 +181,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | interpretation-critic 7 lenses (overclaims / surprising patterns / alternatives / calibration / missing context / plot-prose match / raw-text plausibility) | interpretation-critic.md | retired: v2 agents do not interpret; the report-verifier interpretivity rubric (hypothesis-to-test allowed / asserted conclusion banned) + the plotter's many views + Thomas's TLDR replace it |
 | clean-result-critic markdown-structure lenses (title / v4-structure / figure three-beat / Takeaways quality / footer / voice / conciseness / mentor-title) | clean-result-critic.md lenses 1-9,12,14 | retired: the report-v1 template + verify_report.py + methodology-critic replace the markdown clean-result body |
 | humanize-on-results (prose TLDR normalization) | /issue humanize loop | retired: v2 agents write no prose TLDR; Thomas writes the TLDR (never lexicon/interpretivity-checked) |
-| methodology-doc export (docs/methodology/issue_<N>.md) | /issue Step 9a-quater | retired: the report's `## Methodology:` section IS the methodology reference |
+| methodology-doc export (docs/methodology/issue_<N>.md) | /issue Step 9a-quater | retired: the report's `## Methodology (shared)` section (+ per-result `**Methodology**` blocks) IS the methodology reference |
 
 ## G. Known GAPs (no v2 owner yet — state what must be built)
 

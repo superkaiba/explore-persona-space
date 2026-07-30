@@ -1038,9 +1038,12 @@ def assert_hub_dir_filecounts(
     stays the late backstop): files already ON the remote repo dir; a dir
     built over the cap INCREMENTALLY via many small commits (per-file /
     per-cell paths — e.g. ``orchestrate.upload_sharded.upload_dir_sharded``,
-    which commits ONE file per commit and is deliberately NOT wired to this
-    guard); and the possibility the server counts directory ENTRIES
-    (subdirs) rather than only files.
+    which since #1824 defaults to chunked bulk commits of
+    ``<= HUB_COMMIT_FILECOUNT_WARN`` files each (the per-file walk remains
+    for forced / over-threshold stores) and is deliberately NOT wired to
+    this guard either way — it logs its own cumulative flat-store WARNING
+    past ``HUB_DIR_FILE_LIMIT`` instead); and the possibility the server
+    counts directory ENTRIES (subdirs) rather than only files.
     """
     counts = count_staged_files_per_repo_dir(
         Path(folder_path),

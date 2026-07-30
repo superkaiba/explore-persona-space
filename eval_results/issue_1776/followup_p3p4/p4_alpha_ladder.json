@@ -1,0 +1,35 @@
+{
+  "trait_norms_l14": {
+    "evil": 14.477554283626175,
+    "sycophancy": 11.840140843097783,
+    "hallucination": 11.143349709834718
+  },
+  "n_ref": 47.360563372391134,
+  "fracs": [
+    0.25,
+    0.5,
+    1.0
+  ],
+  "alphas": [
+    11.8401,
+    23.6803,
+    47.3606
+  ],
+  "alphas_csv": "11.8401,23.6803,47.3606",
+  "basis": "#1415 alpha=4 x median ||r_B[l14]|| (its replicated layer-14 operating point)",
+  "resid_norm_median_c14": 63.3974760933382,
+  "frac_of_resid_norm": [
+    0.1868,
+    0.3735,
+    0.747
+  ],
+  "repro": {
+    "issue": 1776,
+    "git_commit": "a9c47aa847c177d9e9e960019ef46bb8b4a804d2",
+    "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+    "timestamp_utc": "2026-07-30T10:15:53Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "python_version": "3.11.10"
+  }
+}

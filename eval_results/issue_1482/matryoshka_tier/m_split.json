@@ -1,0 +1,23 @@
+{
+  "reused_from": "early-layer round split_indices_early.npz @ HF rev a5048fcee5f4878b8fee28a1cfd78fce84e58a76",
+  "source_shas": {
+    "s_fit_sha256": "9e397255da497a27dd136d639b35fb0126f618f1781ac30845b2368ee539d02d",
+    "s_score_sha256": "338310fa55fbea9c738520c26cb7dd029d48a8c981132aab2eddcae3621c1747"
+  },
+  "realized": {
+    "n_fit": 24000,
+    "n_score": 6000,
+    "s_fit_sha256": "9e397255da497a27dd136d639b35fb0126f618f1781ac30845b2368ee539d02d",
+    "s_score_sha256": "338310fa55fbea9c738520c26cb7dd029d48a8c981132aab2eddcae3621c1747"
+  },
+  "subsample_seed": 14823,
+  "max_chunks": 0,
+  "descope": null,
+  "metadata": {
+    "git_commit": "cc1109ba5826d8dfea2a330c44ee04e099ba57e8",
+    "timestamp_utc": "2026-07-30T02:40:19.186096Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1064-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}
