@@ -6263,8 +6263,8 @@
     "1809": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1809",
-      "status": "running",
+      "path": "tasks/reviewing/1809",
+      "status": "reviewing",
       "title": "daily-fix: chat claims \u2014 sweeps, counts, sunk compute, doc f"
     },
     "181": {
