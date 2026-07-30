@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1859,
+  "highest_id": 1860,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6658,6 +6658,13 @@
       "path": "tasks/completed/186",
       "status": "completed",
       "title": "Persona-flavored chain-of-thought rationales drive cross-persona behavior leakage in wrong-answer SFT on Qwen2.5-7B-Instruct; persona style dominates, contradicting-rationale training partially defends (MODERATE confidence)"
+    },
+    "1860": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1860",
+      "status": "proposed",
+      "title": "daily-fix: humanize loop verifies candidate body before set-"
     },
     "187": {
       "has_clean_result": true,
