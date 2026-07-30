@@ -1,0 +1,447 @@
+{
+ "meta": {
+  "struct_version": "cms-v1",
+  "layer": 19,
+  "lambda_grid": "ladder13",
+  "seed": 42,
+  "n_folds": 5,
+  "rank_grid": [
+   1,
+   2,
+   4,
+   8,
+   16,
+   32,
+   64,
+   128
+  ],
+  "threshold": 0.9,
+  "class_null_draws": 40,
+  "rank_null_draws": 40,
+  "items": "both",
+  "row_limit": null,
+  "dim_limit": null
+ },
+ "n_expected_units": 504,
+ "n_complete": 504,
+ "n_failed": 0,
+ "n_missing": 0,
+ "failures": [],
+ "missing_units": [],
+ "weakest_class_counts": {
+  "Qwen_Qwen2.5-7B|prefix": {
+   "full_affine": 142,
+   "translation": 102,
+   "rank_128": 2,
+   "rank_64": 2
+  },
+  "Qwen_Qwen2.5-7B|context": {
+   "full_affine": 168,
+   "translation": 76,
+   "rank_128": 2
+  },
+  "Qwen_Qwen2.5-7B-Instruct|context": {
+   "full_affine": 6
+  },
+  "Qwen_Qwen2.5-7B-Instruct|prefix": {
+   "translation": 2,
+   "full_affine": 2
+  }
+ },
+ "rank_reached": {
+  "assistant_chat__assistant_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__assistant_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__assistant_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__assistant_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__dana_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__dana_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__dana_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__helios_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__helios_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__helios_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__user_haiku_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__user_haiku_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__user_haiku_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__user_haiku_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__user_haiku_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__user_haiku_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__user_lmsys_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__user_lmsys_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__user_lmsys_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__user_lmsys_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__user_lmsys_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__user_lmsys_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__user_onpolicy_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__user_onpolicy_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__user_onpolicy_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__user_onpolicy_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__user_onpolicy_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__user_onpolicy_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__wren_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__wren_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_chat__wren_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_naturalistic__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_naturalistic__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_naturalistic__assistant_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_naturalistic__assistant_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_story__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_story__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_story__assistant_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "assistant_story__assistant_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "dana_naturalistic__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "dana_naturalistic__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "dana_story__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "dana_story__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "dana_story__assistant_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "dana_story__assistant_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "helios_naturalistic__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "helios_naturalistic__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "helios_story__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "helios_story__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_haiku_chat__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_haiku_chat__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_haiku_chat__user_haiku_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_haiku_chat__user_haiku_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_haiku_naturalistic__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_haiku_naturalistic__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_haiku_naturalistic__user_haiku_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_haiku_naturalistic__user_haiku_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_haiku_story__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_haiku_story__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_haiku_story__user_haiku_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_haiku_story__user_haiku_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_haiku_story__user_lmsys_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_lmsys_chat__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_lmsys_chat__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_lmsys_chat__user_lmsys_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_lmsys_chat__user_lmsys_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_lmsys_chat__user_onpolicy_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_lmsys_naturalistic__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_lmsys_naturalistic__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_lmsys_naturalistic__user_lmsys_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_lmsys_naturalistic__user_lmsys_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_lmsys_story__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_lmsys_story__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_lmsys_story__user_haiku_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_lmsys_story__user_lmsys_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_lmsys_story__user_lmsys_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_lmsys_story__user_onpolicy_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_onpolicy_chat__user_lmsys_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_onpolicy_chat__user_onpolicy_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_onpolicy_chat__user_onpolicy_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_onpolicy_chat__user_onpolicy_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_onpolicy_chat__user_onpolicy_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_onpolicy_naturalistic__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_onpolicy_naturalistic__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_onpolicy_naturalistic__user_onpolicy_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_onpolicy_naturalistic__user_onpolicy_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_onpolicy_naturalistic__user_onpolicy_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_onpolicy_naturalistic__user_onpolicy_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_onpolicy_story__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_onpolicy_story__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_onpolicy_story__user_lmsys_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_onpolicy_story__user_onpolicy_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "user_onpolicy_story__user_onpolicy_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "wren_naturalistic__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "wren_naturalistic__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "wren_story__assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "wren_story__assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  }
+ },
+ "metadata": {
+  "git_commit": "unknown",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "timestamp_utc": "2026-07-30T00:41:39.666487+00:00"
+ }
+}

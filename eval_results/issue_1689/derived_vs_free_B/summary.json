@@ -1,0 +1,83 @@
+{
+ "meta": {
+  "battery_version": "dvf-v1",
+  "layer": 19,
+  "lambda_grid": "ladder13",
+  "seed": 42,
+  "n_folds": 5,
+  "truncation_ranks": [
+   32,
+   128,
+   512
+  ],
+  "threshold": 0.9,
+  "row_limit": null,
+  "dim_limit": null
+ },
+ "n_expected_units": 504,
+ "n_complete": 504,
+ "n_failed": 0,
+ "n_missing": 0,
+ "failures": [],
+ "missing_units": [],
+ "verdict_counts": {
+  "Qwen_Qwen2.5-7B|prefix": {
+   "transfer_map_insufficient": 202,
+   "shared_readout_supported": 2,
+   "readout_changed": 18
+  },
+  "Qwen_Qwen2.5-7B|context": {
+   "transfer_map_insufficient": 150,
+   "shared_readout_supported": 10,
+   "readout_changed": 60
+  },
+  "Qwen_Qwen2.5-7B-Instruct|context": {
+   "transfer_map_insufficient": 12
+  },
+  "Qwen_Qwen2.5-7B-Instruct|prefix": {
+   "transfer_map_insufficient": 10
+  }
+ },
+ "class0_free_map_uninformative_counts": {
+  "Qwen_Qwen2.5-7B|prefix": 20,
+  "Qwen_Qwen2.5-7B|context": 20
+ },
+ "verdict_counts_fixed_effrank": {
+  "Qwen_Qwen2.5-7B|prefix": {
+   "transfer_map_insufficient": 204,
+   "shared_readout_supported": 2,
+   "free_map_uninformative": 20,
+   "readout_changed": 16
+  },
+  "Qwen_Qwen2.5-7B|context": {
+   "transfer_map_insufficient": 152,
+   "shared_readout_supported": 10,
+   "readout_changed": 58,
+   "free_map_uninformative": 20
+  },
+  "Qwen_Qwen2.5-7B-Instruct|context": {
+   "transfer_map_insufficient": 12
+  },
+  "Qwen_Qwen2.5-7B-Instruct|prefix": {
+   "transfer_map_insufficient": 10
+  }
+ },
+ "concordance": {
+  "prefix": {
+   "n": 232,
+   "spearman_rung_g1": -0.7302097408887562,
+   "spearman_rung_g2": 0.073874313423169
+  },
+  "context": {
+   "n": 232,
+   "spearman_rung_g1": -0.6021337709516986,
+   "spearman_rung_g2": -0.08816037468778336
+  }
+ },
+ "metadata": {
+  "git_commit": "unknown",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "timestamp_utc": "2026-07-29T19:54:09.883442+00:00"
+ }
+}
