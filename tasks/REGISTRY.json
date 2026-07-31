@@ -6994,8 +6994,8 @@
     "1903": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1903",
-      "status": "proposed",
+      "path": "tasks/planning/1903",
+      "status": "planning",
       "title": "daily-fix: fix red main: test_issue1689_os_exit_shutdown_bypass.py::test_entrypoint_calls_os_exit[issue1689_user_slot_capture.py] \u2014 make the four issue1689_user_slot entryp"
     },
     "1904": {
