@@ -1000,7 +1000,19 @@ def main() -> None:
         json.dumps(stream_stats["rejects"]),
         time.time() - t_start,
     )
-    sys.exit(0)
+    # Success path: every output is written (+ uploaded in --full) above, and
+    # a bare sys.exit(0) still SIGABRTed rc=134 in interpreter finalization
+    # (PyGILState_Release thread-state race across the combined tokenizers /
+    # datasets / pyarrow teardown — the #654/#952/#1689 class; the #952
+    # `del ds; gc.collect()` guard is in place at both stream sites and the
+    # race persisted, measured 2026-07-31 on this script's own probe run).
+    # Flush explicitly, then skip the poisoned finalize path entirely (the
+    # #1689-sanctioned stronger alternative — safe here: no atexit-dependent
+    # work). Any EXCEPTION before this line still propagates + exits non-zero.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    logging.shutdown()
+    os._exit(0)
 
 
 if __name__ == "__main__":

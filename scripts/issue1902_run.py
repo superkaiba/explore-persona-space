@@ -698,11 +698,21 @@ def _sampling_params(seed: int, ckpt: str, smoke: bool = False):
     )
 
 
-def _flag_records(rows: list[dict], gens: list[dict], seed: int) -> list[dict]:
-    """Per-row rollout records with the symmetric degeneracy flags (plan §4 P2)."""
+def _flag_records(
+    rows: list[dict], gens: list[dict], seed: int, gen_cap: int = C.GEN_MAX_TOKENS
+) -> list[dict]:
+    """Per-row rollout records with the symmetric degeneracy flags (plan §4 P2).
+
+    ``gen_cap`` is the cap the GENERATION actually ran with: at the production
+    cap the two truncation conditions coincide (byte-identical behavior); under
+    the REDUCED smoke cap a ``finish_reason == "length"`` is a smoke-scale
+    artifact, not evidence of production truncation (flags are informational
+    under smoke — gate-calibration rule)."""
     recs: list[dict] = []
     for r, g in zip(rows, gens, strict=True):
-        truncated = C.is_truncated(g["n_tokens"]) or g["finish_reason"] == "length"
+        truncated = C.is_truncated(g["n_tokens"]) or (
+            g["finish_reason"] == "length" and gen_cap >= C.GEN_MAX_TOKENS
+        )
         recs.append(
             {
                 "id": r["id"],
@@ -780,8 +790,9 @@ def phase_gen_ckpt(args: argparse.Namespace, out_root: Path) -> None:
         unit = gen_unit_name(corpus, ckpt, seed)
         t0 = time.time()
         prompts = _gen_prompts(rows, ckpt, tokenizer)
-        gens = _generate_chunked(llm, prompts, _sampling_params(seed, ckpt, smoke=args.smoke))
-        recs = _flag_records(rows, gens, seed)
+        sp = _sampling_params(seed, ckpt, smoke=args.smoke)
+        gens = _generate_chunked(llm, prompts, sp)
+        recs = _flag_records(rows, gens, seed, gen_cap=int(sp.max_tokens))
         local = _gen_rollout_path(out_root, corpus, ckpt, seed)
         _write_jsonl_atomic(local, recs)
         # Persist-before-reduce: rollout TEXT to HF (non-LFS) the moment the
@@ -1518,12 +1529,9 @@ def phase_pilot_ckpt(args: argparse.Namespace, out_root: Path) -> None:
     llm = _vllm_engine(model_id, revision, dims.max_position_embeddings)
     for corpus, rows in ((C.CORPUS_SINGLE, single), (C.CORPUS_MULTI, multi)):
         t0 = time.time()
-        gens = _generate_chunked(
-            llm,
-            _gen_prompts(rows, ckpt, tokenizer),
-            _sampling_params(C.GEN_SEED, ckpt, smoke=args.smoke),
-        )
-        recs = _flag_records(rows, gens, C.GEN_SEED)
+        sp = _sampling_params(C.GEN_SEED, ckpt, smoke=args.smoke)
+        gens = _generate_chunked(llm, _gen_prompts(rows, ckpt, tokenizer), sp)
+        recs = _flag_records(rows, gens, C.GEN_SEED, gen_cap=int(sp.max_tokens))
         _write_jsonl_atomic(pdir / f"gen_{corpus}.jsonl", recs)
         upload_text_payload(pdir / f"gen_{corpus}.jsonl", f"{C.RAW_GEN_HF_PATH}/pilot_{corpus}")
         n_ok = sum(1 for r in recs if not (r["truncated"] or r["repetition_flag"]))
