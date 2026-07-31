@@ -186,6 +186,14 @@ AXIS_EX_NEG_N = 5
 
 CONTENT_DROP_REASONS = ("refusal", "malformed", "out_of_set")
 
+# Consumer-facing per-axis usability marking (#1941 P4). Empty = no axis has
+# been marked; #1941's decide-mark phase fills the `functional_role` entry with
+# an "unusable: ..." or "superseded: ..." string once its registered verdict
+# lattice resolves. Consumers joining against `feature_table_v1.jsonl` axis
+# columns should check this constant (and the per-row `axis_usability` field
+# the same phase adds) before treating a column as reliable.
+AXIS_USABILITY: dict[str, str] = {}
+
 
 def label_permutation(feat_id: int, axis: str, draw_idx: int) -> list[str]:
     """Deterministic per-(feat, axis, draw) permutation of the axis label set.
@@ -391,11 +399,26 @@ def _diverse_pos_subset(ex_pos: list[dict], n: int) -> list[dict]:
     return picked
 
 
-def build_axis_user_msg(axis: str, packet: dict, description: str | None, draw_idx: int) -> str:
+def build_axis_user_msg(
+    axis: str,
+    packet: dict,
+    description: str | None,
+    draw_idx: int,
+    *,
+    sees: tuple[str, ...] | None = None,
+) -> str:
     """One-axis categorization user message with the per-draw PERMUTED label
-    order rendered inline (cache-key differentiation + position-bias control)."""
+    order rendered inline (cache-key differentiation + position-bias control).
+
+    ``sees`` (kw-only, #1941): evidence-block override for the functional_role
+    evidence A/B arms. ``None`` (the default) reads ``AXIS_SEES[axis]`` —
+    byte-identical to the pre-#1941 behavior (pinned by the golden-prompt
+    tests in tests/test_issue1941_fr_diag.py). Block RENDER ORDER is fixed
+    (EX_POS/EX_POS_DIVERSE, EX_NEG, NEAR, OUT, DESC, question) regardless of
+    tuple order.
+    """
     feat_id = int(packet["feat_id"])
-    sees = AXIS_SEES[axis]
+    sees = AXIS_SEES[axis] if sees is None else tuple(sees)
     parts: list[str] = []
     if "EX_POS_DIVERSE" in sees:
         parts.append(
