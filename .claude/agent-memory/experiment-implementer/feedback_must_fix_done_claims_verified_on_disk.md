@@ -32,3 +32,9 @@ against the final tree with output recorded in `### (c) How to verify`
 (concern dispositions go through their own channel — `task.py address-concern`
 — with the verifying evidence named there). Cited-but-unrun tests are named as
 NOT RUN, never as evidence.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Must-Fix DONE claims verified on disk](feedback_must_fix_done_claims_verified_on_disk.md) — read the hunk back + confirm every cited test node id collects (--collect-only) before claiming DONE; a from-memory test name inside an existing file is fabrication when wrong (#1768 r1)

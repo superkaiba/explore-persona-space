@@ -32,3 +32,11 @@ family's layout or a later reread phase unprobed — and probe through the SAME
 staging helper production uses for that pair (a smoke staging per-file via
 `stage_hub_file` to the consumer path validates nothing about a production
 `stage_hub_prefix` mirror; #1481).
+
+## Merged sibling index rows (#1891 curation, 2026-07-30)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the ~25 KB loader truncation limit (task #1891). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [Hub-prefix-mirror staging ≠ consumer layout](feedback_hub_prefix_mirror_vs_consumer_layout.md) — producer uploaded manifest INSIDE the blob folder; pure hub-rel→local-rel mapping + fail-loud entry-file check + smoke against the REAL Hub path shapes (#928).
+- [stage_hub_prefix verbatim mirror needs consumer rebind](feedback_stage_hub_prefix_verbatim_mirror_consumer_rebind.md) — mirror lands dest/<repo path>; rebind consumer root to dest/<prefix>; smoke must use the production staging helper (#1481)
+- [stage_hub_prefix dest is a mirror ROOT](feedback_stage_hub_prefix_dest_is_mirror_root.md) — dest/<repo-relative path> layout; pass root satisfying root/<prefix>==consumed path + (h)(iv) consumer-open probe (#1774)

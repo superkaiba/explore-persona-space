@@ -1,0 +1,1391 @@
+{
+  "commit": "36af9cdf60",
+  "created": "2026-07-30T23:54:13Z",
+  "figsize": [
+    7.4,
+    7.48
+  ],
+  "points": [
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.1401310795502903,
+      "y": 13.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.2770805044570196,
+      "y": 12.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.4279969339730085,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3850772708133125,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.11396831109000688,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.313462112409462,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3753457106828288,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.0038945450617249027,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.06274132841857365,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.006407392520315996,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.011503396990253304,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.006407392520315996,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.05112188849529816,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.006407392520315996,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.1348871745146737,
+      "y": 13.07670769359567,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.14023911633358888,
+      "y": 12.982885963130574,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.1397145843508294,
+      "y": 13.100407417575187,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.14193123855150225,
+      "y": 13.055263048136622,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.14139266668303063,
+      "y": 12.886369657408542,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.13946633615104276,
+      "y": 13.133174258458292,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.14010751898942286,
+      "y": 13.073119116557299,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.13716279393972208,
+      "y": 13.080098005477547,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.14185166252521753,
+      "y": 12.895871817149153,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.1406186652424415,
+      "y": 12.986108062610759,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.1396601208947409,
+      "y": 12.963823446785122,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.14055373897513235,
+      "y": 13.119494196877609,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.142302848527316,
+      "y": 13.040282233622586,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.14134037475647288,
+      "y": 13.090373251715832,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.14073735281922095,
+      "y": 12.984155975671653,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.28145251322097553,
+      "y": 11.923626842099738,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.2701971700652831,
+      "y": 12.015283740364433,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.28214348227287844,
+      "y": 11.877868831709169,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.2798481052319136,
+      "y": 12.091736728157922,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.26778505253398044,
+      "y": 12.036866031754178,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.2782515633830537,
+      "y": 12.072264567223904,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.2796320641902149,
+      "y": 11.959267271076364,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.2758941614611725,
+      "y": 12.131795446830573,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.27867039394784643,
+      "y": 12.110073913970215,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.27572036390787535,
+      "y": 12.077947379180653,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.28262874713982056,
+      "y": 11.91449883819855,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.26816403529646216,
+      "y": 11.99068188104357,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.2784273212801721,
+      "y": 11.872265054420424,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.2804475822750806,
+      "y": 11.903201057778913,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.27694501064856425,
+      "y": 12.051253706907888,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.42275302893739186,
+      "y": 11.06853340365419,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.42810497075630705,
+      "y": 11.13090272508158,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.42758043877354757,
+      "y": 10.951231100278683,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.4297970929742204,
+      "y": 10.963728717689763,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.4292585211057488,
+      "y": 10.991475627157227,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.42733219057376093,
+      "y": 10.9130519805436,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.42797337341214103,
+      "y": 10.896378021493932,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.42502864836244025,
+      "y": 10.993197379343261,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.4297175169479357,
+      "y": 10.923534617734248,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.42848451966515966,
+      "y": 11.047547918511103,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.42752597531745906,
+      "y": 10.982402537284253,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.4284195933978505,
+      "y": 11.093149894896195,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.4301687029500342,
+      "y": 11.05607422856063,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.42920622917919105,
+      "y": 10.947462659586972,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.4286032072419391,
+      "y": 11.093032744390657,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3894492795772685,
+      "y": 10.085334020099104,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.37819393642157606,
+      "y": 9.968493946128449,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3901402486291713,
+      "y": 9.940731869100468,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.38784487158820646,
+      "y": 10.051098741112993,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3757818188902733,
+      "y": 9.899130695410607,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.38624832973934653,
+      "y": 9.91597429669303,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.38762883054650776,
+      "y": 9.862061435530281,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3838909278174655,
+      "y": 10.080338825700599,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3866671603041394,
+      "y": 10.046158239845768,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3837171302641683,
+      "y": 10.057446306015374,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3906255134961134,
+      "y": 10.078604128686152,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.376160801652755,
+      "y": 9.988496417150735,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3864240876364651,
+      "y": 10.01924753486681,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.38844434863137345,
+      "y": 9.899143159475743,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3849417770048571,
+      "y": 9.892068420590073,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.10872440605439027,
+      "y": 9.047152829301332,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.11407634787330545,
+      "y": 8.991906937720078,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.11355181589054597,
+      "y": 9.018266109814732,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.11576847009121882,
+      "y": 9.074199680076488,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.1152298982227472,
+      "y": 9.037721129600165,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.11330356769075933,
+      "y": 9.015002232184239,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.11394475052913944,
+      "y": 9.016578005008716,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.11100002547943866,
+      "y": 8.945106027457532,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.1156888940649341,
+      "y": 8.868628993679023,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.11445589678215806,
+      "y": 8.982280868985061,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.11349735243445747,
+      "y": 8.920083708389468,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.11439097051484892,
+      "y": 8.974388020242898,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.11614008006703258,
+      "y": 9.098952860515087,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.11517760629618945,
+      "y": 8.925503056042295,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.11457458435893753,
+      "y": 8.876324767672939,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3178341211734179,
+      "y": 7.938787489766159,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3065787780177255,
+      "y": 7.942206252174671,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.31852509022532083,
+      "y": 8.04533662412353,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.316229713184356,
+      "y": 8.015969002655558,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3041666604864228,
+      "y": 8.079491498549796,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.31463317133549606,
+      "y": 8.046007791291668,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3160136721426573,
+      "y": 7.9737883212032195,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3122757694136149,
+      "y": 8.08792570770649,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3150520019002888,
+      "y": 7.9067524175741575,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.31210197186031774,
+      "y": 7.866359380477481,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.31901035509226294,
+      "y": 7.88521340101718,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.30454564324890454,
+      "y": 8.062260618167006,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3148089292326145,
+      "y": 7.989325624470388,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.316829190227523,
+      "y": 7.9051560981294084,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.31332661860100663,
+      "y": 8.000292537028942,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3756598111232762,
+      "y": 6.9026473887596875,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3754153733392802,
+      "y": 7.054969705021766,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3755193323478677,
+      "y": 6.984923757160729,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.37549151123198676,
+      "y": 6.966685943307015,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.37537750787001023,
+      "y": 6.944423384961405,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.37543047149202,
+      "y": 7.036479126073289,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3752739867987296,
+      "y": 6.961307530954949,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.37520608698481395,
+      "y": 6.884541977408508,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3755748065984972,
+      "y": 6.893041652593745,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3750453384399749,
+      "y": 7.129331346073864,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.37567795976711005,
+      "y": 7.11440259339813,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.37513471288102884,
+      "y": 7.055917997467009,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3750070120301301,
+      "y": 6.934443589208666,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3751925931081178,
+      "y": 7.131369385657362,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.3751791562295882,
+      "y": 7.078050253110423,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.005688292513147196,
+      "y": 6.060729252964519,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.005388854145116348,
+      "y": 5.985821220600261,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.008577691459585923,
+      "y": 5.9362276373166445,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.00013303672504051678,
+      "y": 5.886989469402979,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.003214689446582715,
+      "y": 6.112728671032276,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.006431046776849941,
+      "y": 5.987617361153411,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.00505190823179931,
+      "y": 5.916661742142664,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.0020413200350100358,
+      "y": 5.945667854762183,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.003635442391979847,
+      "y": 6.022181479303731,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.003885012628878602,
+      "y": 5.909496379222984,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.004346825813693826,
+      "y": 6.099851999545865,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.0023058596643495757,
+      "y": 6.0723854683538585,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.007884724238422847,
+      "y": 6.061449627666263,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.0025942550656725474,
+      "y": 5.980986051137029,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.0015879303098454145,
+      "y": 6.035646475396684,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.06344082465004225,
+      "y": 5.023547431295566,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.06156541622469264,
+      "y": 5.04195704843535,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.062071687683779464,
+      "y": 4.883644409919169,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.06216001890775147,
+      "y": 4.9764260726077705,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.06363970403241115,
+      "y": 4.87165196868133,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.06213913920850789,
+      "y": 4.998317429388465,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.06339364653066604,
+      "y": 4.9523611394531795,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.06269853054442937,
+      "y": 4.900466772882493,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.06269532858270244,
+      "y": 4.888952830962315,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.06225716060317882,
+      "y": 5.024540480209759,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.0626652373024435,
+      "y": 4.907766031190328,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.06265525625695673,
+      "y": 5.119033633145503,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.06264250519477688,
+      "y": 5.022697119116111,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.06399675436166435,
+      "y": 4.957123545269754,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.06309871619460167,
+      "y": 5.025456337614797,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.008077158808956483,
+      "y": 3.866385083888315,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.008321182213098549,
+      "y": 4.128396579707605,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.0012981321547058562,
+      "y": 3.995044962344012,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.0030469608501160943,
+      "y": 4.07916586363008,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.010010218396837339,
+      "y": 3.8831643999782828,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.010628573300828809,
+      "y": 3.9962643326346847,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.0032279046441988663,
+      "y": 3.997397958419266,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.022906421941001488,
+      "y": 4.122591407392996,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.012750806091501123,
+      "y": 4.020083854665301,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.004228182508098628,
+      "y": 3.992577032295947,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.00928252380718216,
+      "y": 3.93475318566573,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.007902949362522973,
+      "y": 3.9528393192559146,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.012237371756323095,
+      "y": 4.005788272692031,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.0017397202176774537,
+      "y": 3.982895208885413,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.01040011436299253,
+      "y": 3.8660513823664924,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.012202893221721911,
+      "y": 3.0913617387744203,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.0103274847963723,
+      "y": 3.1109250161151345,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.010833756255459126,
+      "y": 2.899269744919611,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.01092208747943113,
+      "y": 3.0151301201909337,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.01240177260409081,
+      "y": 2.8904012075179244,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.01090120778018755,
+      "y": 3.0482272260511474,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.012155715102345699,
+      "y": 2.9387454594749225,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.011460599116109027,
+      "y": 3.0446383377137325,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.011457397154382098,
+      "y": 3.063558492000327,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.01101922917485848,
+      "y": 3.075221297736944,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.011427305874123161,
+      "y": 2.890167464867651,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.011417324828636388,
+      "y": 3.11648331663853,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.011404573766456538,
+      "y": 2.9244599174505668,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.012758822933344016,
+      "y": 2.8704755157293302,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.01186078476628133,
+      "y": 3.0153586914296153,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.008077158808956483,
+      "y": 1.9638582394814827,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.008321182213098549,
+      "y": 2.092341128077076,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.0012981321547058562,
+      "y": 2.0863104121780047,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.0030469608501160943,
+      "y": 1.9487988899903603,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.010010218396837339,
+      "y": 2.1268118306195287,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.010628573300828809,
+      "y": 1.9414569946792333,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.0032279046441988663,
+      "y": 2.00421599618488,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.022906421941001488,
+      "y": 1.9316702253589288,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.012750806091501123,
+      "y": 2.12209219961371,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.004228182508098628,
+      "y": 1.9060901889229651,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.00928252380718216,
+      "y": 1.872574973429852,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.007902949362522973,
+      "y": 1.9818271768008506,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.012237371756323095,
+      "y": 2.1378651579356345,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.0017397202176774537,
+      "y": 2.109669634551376,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.01040011436299253,
+      "y": 2.069610245447946,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.05042239226382955,
+      "y": 1.109421897445987,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.052297800689179164,
+      "y": 1.1101650591154018,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.05179152923009234,
+      "y": 1.0052803409082056,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.05170319800612033,
+      "y": 0.948460134512622,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.05022351288146065,
+      "y": 1.0761634809910767,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.05172407770536391,
+      "y": 1.045265153686973,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.050469570383205764,
+      "y": 0.9646241640846388,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.051164686369442436,
+      "y": 0.8864506670572243,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.051167888331169364,
+      "y": 1.0691010911777272,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.05160605631069298,
+      "y": 0.9334889444584021,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.0511979796114283,
+      "y": 1.1223076821494582,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.051207960656915075,
+      "y": 0.9274717610015917,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.051220711719094925,
+      "y": 0.8943722210752161,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.04986646255220745,
+      "y": 1.0927115481949738,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.050764500719270134,
+      "y": 0.9029196086548583,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.008077158808956483,
+      "y": -0.08980487371583307,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.008321182213098549,
+      "y": 0.027827181625836195,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.0012981321547058562,
+      "y": 0.10487737143449005,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.0030469608501160943,
+      "y": -0.0849982935999195,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.010010218396837339,
+      "y": -0.053109371587973464,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": -0.010628573300828809,
+      "y": 0.07767335470752973,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.0032279046441988663,
+      "y": 0.1321113992970709,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.022906421941001488,
+      "y": 0.0002075321366558358,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.012750806091501123,
+      "y": -0.0997086992856498,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.004228182508098628,
+      "y": -0.1360978394417036,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.00928252380718216,
+      "y": -0.07569631160032053,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.007902949362522973,
+      "y": -0.10308977901977412,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.012237371756323095,
+      "y": 0.04974442861160011,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.0017397202176774537,
+      "y": -0.1058868987040113,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Spearman rho difference: map-then-project minus context-native direction": 0.01040011436299253,
+      "y": 0.0017723808537772334,
+      "_kind": "scatter",
+      "_group": 27
+    }
+  ],
+  "n_series": 28,
+  "total_points": 224,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Map-then-project vs context-side projection (largest budgets; dots = per-cell values, n=15 each)",
+        "xlabel": "Spearman rho difference: map-then-project minus context-native direction",
+        "xticklabels": [
+          "\u22120.5",
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1"
+        ],
+        "yticklabels": [
+          "evil \u00b7 E1 \u00b7 context",
+          "evil \u00b7 E1 \u00b7 prefix",
+          "evil \u00b7 E2 \u00b7 context",
+          "evil \u00b7 E2 \u00b7 prefix",
+          "evil \u00b7 E2P \u00b7 context",
+          "evil \u00b7 E2P \u00b7 prefix",
+          "hallucination \u00b7 E1 \u00b7 context",
+          "hallucination \u00b7 E1 \u00b7 prefix",
+          "sycophancy \u00b7 E1 \u00b7 context",
+          "sycophancy \u00b7 E1 \u00b7 prefix",
+          "sycophancy \u00b7 E2 \u00b7 context",
+          "sycophancy \u00b7 E2 \u00b7 prefix",
+          "sycophancy \u00b7 E2P \u00b7 context",
+          "sycophancy \u00b7 E2P \u00b7 prefix"
+        ]
+      }
+    ]
+  }
+}

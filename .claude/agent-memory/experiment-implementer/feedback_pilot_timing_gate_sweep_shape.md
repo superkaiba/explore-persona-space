@@ -32,3 +32,9 @@ dispatcher routes like other kill criteria — never a bare rc=1 that reads as
 an anonymous crash. Worked impl: `phase_pilot` + `_enforce_pilot_gate`
 (rc=7 + pilot_gate_report.json) in `scripts/issue1415_run_phase1.py` @
 a369b06f46.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Pilot timing gates measure at the SWEEP's execution shape](feedback_pilot_timing_gate_sweep_shape.md) — batch-1 pilot vs batched sweep false-fires a correct s/sample threshold (bandwidth-bound decode ≈ batch-independent per-step); replicate to B=gen_batch + normalize; gate refusal = report + distinct rc, never bare rc=1 (#1415)

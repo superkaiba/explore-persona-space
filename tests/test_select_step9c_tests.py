@@ -20,6 +20,7 @@ import importlib.util
 import json
 import math
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -2560,3 +2561,207 @@ def test_json_help_warns_against_stderr_redirect(capsys):
     help_text = capsys.readouterr().out
     assert "stderr" in help_text.lower()
     assert "2>/dev/null" in help_text
+
+
+# --- Skills-pin discovery arm (#1851) ----------------------------------------------
+# A touched .claude/skills/**/*.md selects every tests/**/test_*.py whose raw
+# text references that file's skill-dir-QUALIFIED path (reason
+# skills-pin:<skill path>) — the skills sibling of the rules-pin arm (#1496),
+# ADDITIVE to the WORKFLOW_SURFACE skip (which is unchanged); --map-files
+# unions the same pairs MINUS WORKFLOW_INVARIANT members. Unlike rules-pin
+# the token is NOT the bare basename (every skill shares SKILL.md): a hit is
+# the contiguous .claude/-relative path substring OR the path-join form.
+
+
+# --- Skills-pin: contiguous full-path-literal reference form -----------------------
+def test_skills_pin_contiguous_form_selected(tmp_path: Path):
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_issue_skill_pin.py").write_text(
+        'SKILL = ".claude/skills/issue/SKILL.md"\n'
+    )
+    touched = [".claude/skills/issue/SKILL.md"]
+    tests, untested, reasons = sel.select_tests_with_reasons(touched, repo)
+    assert "tests/test_issue_skill_pin.py" in tests
+    assert reasons["tests/test_issue_skill_pin.py"] == ["skills-pin:.claude/skills/issue/SKILL.md"]
+    assert untested == []  # skills files stay a correct SKIP, never "untested"
+
+
+# --- Skills-pin: path-join reference form, both quote styles -----------------------
+def test_skills_pin_join_form_selected(tmp_path: Path):
+    """The founding-test shape (all three founding tests use the join form):
+    double-quoted Path-join with ``/`` separators AND single-quoted
+    comma-separated components both match."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_join_dq.py").write_text(
+        'text = (ROOT / ".claude" / "skills" / "issue" / "SKILL.md").read_text()\n'
+    )
+    (repo / "tests" / "test_join_sq.py").write_text(
+        "p = Path('.claude', 'skills', 'issue', 'SKILL.md')\n"
+    )
+    tests, _, reasons = sel.select_tests_with_reasons([".claude/skills/issue/SKILL.md"], repo)
+    assert "tests/test_join_dq.py" in tests
+    assert "tests/test_join_sq.py" in tests
+    assert reasons["tests/test_join_dq.py"] == ["skills-pin:.claude/skills/issue/SKILL.md"]
+    assert reasons["tests/test_join_sq.py"] == ["skills-pin:.claude/skills/issue/SKILL.md"]
+
+
+# --- Skills-pin: cross-skill qualification (plan criterion 6) ----------------------
+def test_skills_pin_cross_skill_not_selected(tmp_path: Path):
+    """Touching issue/SKILL.md must NOT select a test referencing only
+    daily/SKILL.md — bare-basename matching is degenerate for SKILL.md (every
+    skill shares the basename), so tokens are skill-dir-qualified."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_daily_only.py").write_text(
+        'DAILY = ".claude/skills/daily/SKILL.md"\n'
+        'JOIN = (ROOT / ".claude" / "skills" / "daily" / "SKILL.md")\n'
+    )
+    tests, _, _ = sel.select_tests_with_reasons([".claude/skills/issue/SKILL.md"], repo)
+    assert "tests/test_daily_only.py" not in tests
+    hits = sel.skills_pin_hits([".claude/skills/issue/SKILL.md"], repo)
+    assert "tests/test_daily_only.py" not in hits
+
+
+# --- Skills-pin: non-SKILL.md skill support files are covered too ------------------
+def test_skills_pin_nested_support_file_selected(tmp_path: Path):
+    """The glob is .claude/skills/**/*.md, not SKILL.md-only: a skill support
+    file (markers.md) maps to its referencing test via the same qualified
+    tokens (the _matches_any /**/ zero-segment collapse covers both depths)."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_markers_pin.py").write_text('M = ".claude/skills/issue/markers.md"\n')
+    tests, _, reasons = sel.select_tests_with_reasons([".claude/skills/issue/markers.md"], repo)
+    assert "tests/test_markers_pin.py" in tests
+    assert reasons["tests/test_markers_pin.py"] == ["skills-pin:.claude/skills/issue/markers.md"]
+
+
+# --- Skills-pin: no skills file touched -> zero hits, ZERO file reads --------------
+def test_skills_pin_no_skills_touched_no_scan(tmp_path: Path, capsys):
+    """Proof of the zero-read early return (mirror of the rules-pin case 56):
+    an undecodable test file is planted; any scan pass reads raw text (the
+    unreadable-file WARN proves a read), so the absence of a skills-pin WARN
+    proves no file was read. A touched non-skills .md (docs/x.md) does not
+    trigger the scan."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_undecodable.py").write_bytes(b"\xff\xfe bad")
+    assert sel.skills_pin_hits(["scripts/widget.py", "docs/x.md"], repo) == {}
+    assert "skills-pin scan cannot read" not in capsys.readouterr().err
+
+
+# --- Skills-pin: monotonicity — the arm only ever GROWS the selection --------------
+def test_skills_pin_selection_only_grows(tmp_path: Path):
+    """Same touched set, tree WITH vs WITHOUT the pin test (mirror of the
+    rules-pin case 57): WITH-selection is a superset and every WITHOUT reason
+    list is preserved verbatim (plan acceptance criterion 4)."""
+    touched = ["scripts/widgetlib.py", ".claude/skills/issue/SKILL.md"]
+    repo_without = _make_tree(tmp_path / "without", ["test_widgetlib.py"])
+    t_without, u_without, r_without = sel.select_tests_with_reasons(touched, repo_without)
+    repo_with = _make_tree(tmp_path / "with", ["test_widgetlib.py"])
+    (repo_with / "tests" / "test_skill_pin.py").write_text('S = ".claude/skills/issue/SKILL.md"\n')
+    t_with, u_with, r_with = sel.select_tests_with_reasons(touched, repo_with)
+    assert set(t_with) >= set(t_without)
+    for test, rs in r_without.items():
+        assert r_with[test] == rs  # pre-existing reason lists preserved verbatim
+    assert "tests/test_skill_pin.py" in t_with
+    assert u_without == u_with == []
+
+
+# --- Skills-pin: unreadable test file WARNs + is skipped; never crashes ------------
+def test_skills_pin_unreadable_test_file_warns_not_crash(tmp_path: Path, capsys):
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_good_skill_pin.py").write_text('S = ".claude/skills/issue/SKILL.md"\n')
+    (repo / "tests" / "test_bad.py").write_bytes(b'S = ".claude/skills/issue/SKILL.md"\n\xff\xfe')
+    tests, untested, _ = sel.select_tests_with_reasons([".claude/skills/issue/SKILL.md"], repo)
+    assert "tests/test_good_skill_pin.py" in tests  # the valid hit still selected
+    assert "tests/test_bad.py" not in tests
+    assert untested == []
+    err = capsys.readouterr().err
+    assert err.count("skills-pin scan cannot read") == 1
+    assert "test_bad.py" in err
+    # 1 failure over the ~42-file fixture tree is < 5%: no aggregate WARN.
+    assert "systemic tests/ breakage" not in err
+
+
+# --- Skills-pin: LIVE-tree drift/regression pin (the #1851 founding pairs) ---------
+def test_skills_pin_live_tree_known_pairs():
+    """DRIFT/REGRESSION PIN: on the LIVE repo tree, a .claude/skills/issue/
+    SKILL.md diff selects the three founding tests of the #1851 gap (all
+    path-join-form references, none in WORKFLOW_INVARIANT) with a skills-pin
+    reason. SUPERSET assert: new pin tests joining later must not break this;
+    a rename of a pinned test legitimately forces a deliberate 1-line update
+    here (that loudness is the point)."""
+    root = Path(sel.__file__).resolve().parents[1]
+    touched = [".claude/skills/issue/SKILL.md"]
+    tests, untested, reasons = sel.select_tests_with_reasons(touched, root)
+    for founding in (
+        "tests/test_issue_skill_file_only_verdict_post.py",
+        "tests/test_ensemble_review_cap.py",
+        "tests/test_issue_skill_workload_cmd_script_pin.py",
+    ):
+        assert founding in tests
+        assert "skills-pin:.claude/skills/issue/SKILL.md" in reasons[founding]
+    assert untested == []  # the WORKFLOW_SURFACE skip is unchanged
+
+
+# --- Skills-pin: --map-files EXCLUDES invariant members; the 9c arm keeps them -----
+def test_cli_map_files_skills_pin_excludes_invariant(tmp_path: Path, capsys):
+    """The rules_pin_pairs asymmetry, skills edition (plan criterion 3):
+    tests/test_workflow_lint.py (a WORKFLOW_INVARIANT member and the only
+    SLOW_TESTS entry) is filtered from the --map-files pairs while a
+    non-invariant referencing test appears; select_tests_with_reasons still
+    carries the skills-pin reason on the invariant member (the union dedupes;
+    the extra reason is informative)."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_workflow_lint.py").write_text('S = ".claude/skills/issue/SKILL.md"\n')
+    (repo / "tests" / "test_issue_skill_pin.py").write_text('S = ".claude/skills/issue/SKILL.md"\n')
+    listing = tmp_path / "payload.txt"
+    listing.write_text(".claude/skills/issue/SKILL.md\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert out.splitlines() == [
+        "tests/test_issue_skill_pin.py\t.claude/skills/issue/SKILL.md"
+    ]  # invariant member filtered; non-invariant pair printed
+    _, _, reasons = sel.select_tests_with_reasons([".claude/skills/issue/SKILL.md"], repo)
+    assert set(reasons["tests/test_workflow_lint.py"]) == {
+        "invariant",
+        "skills-pin:.claude/skills/issue/SKILL.md",
+    }
+
+
+# --- Skills-pin: LIVE-tree generative reachability pin (plan criterion 5) ----------
+def test_skills_pin_reachability_live_tree():
+    """GENERATIVE PIN: with an INDEPENDENT scan (own regex — deliberately NOT
+    the arm's functions, so a bug in _skills_pin_tokens cannot vacuously pass
+    this), for ALL .claude/skills/*/SKILL.md on the live tree, every
+    tests/**/test_*.py referencing that skill's SKILL.md (contiguous OR
+    path-join textual form) is in select_tests(['<that path>'], root)[0] —
+    the union of the invariant set and the skills-pin arm. A future pin test
+    added outside WORKFLOW_INVARIANT can no longer silently fall out of
+    selector coverage (the #1851 founding gap)."""
+    root = Path(sel.__file__).resolve().parents[1]
+    skill_mds = sorted((root / ".claude" / "skills").glob("*/SKILL.md"))
+    assert skill_mds, "live-tree precondition: no .claude/skills/*/SKILL.md found"
+    # One read pass over the live tests/ tree (cached; the per-skill loop
+    # below scans strings, not files).
+    texts: dict[str, str] = {}
+    for tp in sorted((root / "tests").rglob("test_*.py")):
+        try:
+            texts[tp.relative_to(root).as_posix()] = tp.read_text(encoding="utf-8")
+        except (OSError, ValueError):
+            continue
+    sep = r"[\"']\s*[,/]+\s*[\"']"
+    checked_any = False
+    for skill_md in skill_mds:
+        rel = skill_md.relative_to(root).as_posix()  # .claude/skills/<skill>/SKILL.md
+        skill = skill_md.parent.name
+        contiguous = f"skills/{skill}/SKILL.md"
+        join_re = re.compile("[\"']skills" + sep + re.escape(skill) + sep + r"SKILL\.md[\"']")
+        referencing = [t for t, text in texts.items() if contiguous in text or join_re.search(text)]
+        if not referencing:
+            continue  # nothing pins this skill; nothing to be reachable
+        checked_any = True
+        selected, _ = sel.select_tests([rel], root)
+        missing = [t for t in referencing if t not in selected]
+        assert not missing, f"{rel}: referencing tests not selector-reachable: {missing}"
+    # Live-tree sanity: at least one skill (issue) has referencing tests today,
+    # so this pin is never vacuously green.
+    assert checked_any

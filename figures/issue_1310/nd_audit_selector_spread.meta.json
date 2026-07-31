@@ -1,0 +1,1253 @@
+{
+  "commit": "40dfbbf940",
+  "created": "2026-07-31T06:09:41Z",
+  "figsize": [
+    13.5,
+    6.2
+  ],
+  "points": [
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": -0.30000000000000004,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -4.410061305403578,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 0.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -2.7093970094873914,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 1.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -1.5633254746417156,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 2.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -5.044709663920499,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 3.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -5.432095389500246,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 4.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -4.888949648999357,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 5.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -5.441721444259077,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 6.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -5.508389750327754,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 7.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.3066626959763099,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 8.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.2857949716200876,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 9.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.20835831335175703,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 10.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.4405888592953058,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 11.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.06255270392792411,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 12.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.08303749746024258,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 13.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.03679736393744726,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 14.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.25480440502083823,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 15.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.13706265051284872,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 16.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.14850869189803184,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 17.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.14694481686183114,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 18.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.1059273884787365,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 19.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.23214573158074903,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 20.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.24554471676455059,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 21.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.18908934938317856,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 22.7,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.16798462987024343,
+      "series": "ambient pure-GCV",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": -0.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.11397294300939187,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 0.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.05822839470651897,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 1.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.15046455561423622,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 2.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.020988763611871297,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 3.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.17826416355021069,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 4.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.09958659796429092,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 5.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.1887617728893456,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 6.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.17615306808991416,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 7.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.19648846768114947,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 8.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.1974782359913172,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 9.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.21775009509535348,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 10.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.13266438854640195,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 11.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.3548299086061537,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 12.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.40107670413358276,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 13.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.3285635376004241,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 14.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.2328833350537587,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 15.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.13706265051284872,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 16.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.14850869189803184,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 17.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.14694481686183114,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 18.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.1059273884787365,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 19.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.23214573158074903,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 20.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.24554471676455059,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 21.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.18908934938317856,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 22.8,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.16798462987024343,
+      "series": "capped GCV (published)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": -0.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.35954153083363627,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 0.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.3350114675201624,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 1.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.3772232632028588,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 2.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.3087566604142299,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 3.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.2760031541447332,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 4.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.3134085885752199,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 5.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.2511819089646179,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 6.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.2366321307658168,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 7.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.19648846768114947,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 8.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.1974782359913172,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 9.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.21775009509535348,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 10.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.13266438854640195,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 11.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.3548299086061537,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 12.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.40107670413358276,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 13.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.3260692178463829,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 14.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.2328833350537587,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 15.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.13706265051284872,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 16.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.14850869189803184,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 17.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.15911914710246466,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 18.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.1059273884787365,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 19.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.24890261508145695,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 20.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.26414159380964053,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 21.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.18908934938317856,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 22.9,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.16798462987024343,
+      "series": "inner-group-CV",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 0.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.036850835810564364,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 1.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.016094580987885188,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 2.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.024024532532522902,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 3.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.20328252052532414,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 4.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.557427642494162,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 5.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.43379823254935324,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 6.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.5239899082352208,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 7.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.2097932192703651,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 8.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.13789936269229752,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 9.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.13329082149430416,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 10.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.16289811165246937,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 11.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.09178287723965284,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 12.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.2758336822588875,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 13.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.3294590024136522,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 14.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.25616432867128647,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 15.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.15394847804250134,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 16.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.2205554540787935,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 17.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.2789873272177661,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 18.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.22846737569739273,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 19.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.16017399385255993,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 20.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.3992748578524916,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 21.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.4629517207165841,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 22.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.10346876135097327,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 23.0,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.13655091816920573,
+      "series": "reduced PCA basis",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 0.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.11397294300939187,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 1.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.05822839470651897,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 2.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.15046455561423622,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 3.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.020988763611871297,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 4.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.17826416355021069,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 5.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.09958659796429092,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 6.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.1887617728893456,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 7.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.30947590983841433,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 8.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.024437366664115556,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 9.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.025200599747094876,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 10.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.07453404387587903,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 11.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.06774936466637982,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 12.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.1981578661537805,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 13.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.2845595633769544,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 14.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.19702947709966911,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 15.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.04875444303408849,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 16.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.7411493791003054,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 17.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.8542518644361687,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 18.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.5283208294423583,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 19.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.8574717695956151,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 20.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.507802389260336,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 21.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.5416829260744722,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 22.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.5539289003138823,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 23.1,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.7775863076690088,
+      "series": "forced lambda 1e2",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 0.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.3475082096198422,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 1.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.3166151078791153,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 2.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.36895236503934536,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 3.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.2855354806551227,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 4.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.23926125341194127,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 5.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.28405338582635575,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 6.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.2173050211349824,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 7.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.18188846019532223,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 8.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.16360908809185093,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 9.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.15733691149340046,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 10.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.1933798320274297,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 11.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.08406957574965623,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 12.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.3315609502948952,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 13.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.3847809642424036,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 14.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.30908728555566123,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 15.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.19273074999067874,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 16.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.02195378155155603,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 17.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.02199714836263922,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 18.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.08230068032900939,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 19.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": -0.021415918790779198,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 20.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.16034226743483548,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 21.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.1709491835229301,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 22.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.09965194706575542,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 23.2,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.042084952104854745,
+      "series": "forced lambda 1e3",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 0.30000000000000004,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.34177172509979026,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 1.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.32259609890944496,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 2.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.3549902890167578,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 3.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.2966808217544358,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 4.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.27163691710251203,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 5.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.3022049891663712,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 6.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.2434448712602516,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 7.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.2366321307658168,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 8.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.19648846768114947,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 9.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.1974782359913172,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 10.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.21775009509535348,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 11.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.13266438854640195,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 12.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.3498313622350131,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 13.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.39071069288560933,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 14.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.3241166415108331,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 15.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.2328833350537587,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 16.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.13706265051284872,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 17.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.14850869189803184,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 18.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.15911914710246466,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 19.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.1059273884787365,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 20.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.24890261508145695,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 21.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.26414159380964053,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 22.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.18908934938317856,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines": 23.3,
+      "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)": 0.16798462987024343,
+      "series": "forced lambda 1e4",
+      "_kind": "line",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 168,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Held-out $R^2$ per cell under each lambda selector \u2014 ambient pure-GCV collapses, inner-group-CV lifts the per-turn cells",
+        "xlabel": "cell (model \u00b7 persona, cell family) \u2014 per-turn | scene-aggregated | script-format, split by the dotted lines",
+        "ylabel": "held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)",
+        "legend_labels": [
+          "ambient pure-GCV",
+          "capped GCV (published)",
+          "inner-group-CV",
+          "reduced PCA basis",
+          "forced lambda 1e2",
+          "forced lambda 1e3",
+          "forced lambda 1e4"
+        ],
+        "xticklabels": [
+          "base\u00b7Wren\nper",
+          "base\u00b7HELIOS\nper",
+          "base\u00b7Dana\nper",
+          "base\u00b7Vex\nper",
+          "inst\u00b7Wren\nper",
+          "inst\u00b7HELIOS\nper",
+          "inst\u00b7Dana\nper",
+          "inst\u00b7Vex\nper",
+          "base\u00b7Wren\nscene",
+          "base\u00b7HELIOS\nscene",
+          "base\u00b7Dana\nscene",
+          "base\u00b7Vex\nscene",
+          "inst\u00b7Wren\nscene",
+          "inst\u00b7HELIOS\nscene",
+          "inst\u00b7Dana\nscene",
+          "inst\u00b7Vex\nscene",
+          "base\u00b7Wren\nscript",
+          "base\u00b7HELIOS\nscript",
+          "base\u00b7Dana\nscript",
+          "base\u00b7Vex\nscript",
+          "inst\u00b7Wren\nscript",
+          "inst\u00b7HELIOS\nscript",
+          "inst\u00b7Dana\nscript",
+          "inst\u00b7Vex\nscript"
+        ],
+        "yticklabels": [
+          "-5",
+          "-2",
+          "-1",
+          "-0.5",
+          "-0.25",
+          "0",
+          "0.25",
+          "0.5"
+        ]
+      }
+    ],
+    "series": [
+      "ambient pure-GCV",
+      "capped GCV (published)",
+      "inner-group-CV",
+      "reduced PCA basis",
+      "forced lambda 1e2",
+      "forced lambda 1e3",
+      "forced lambda 1e4"
+    ]
+  }
+}

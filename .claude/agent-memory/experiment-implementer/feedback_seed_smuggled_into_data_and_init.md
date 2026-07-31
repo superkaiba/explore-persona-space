@@ -15,3 +15,9 @@ When a per-cell `seed` field feeds BOTH a reused-artifact DATA-MIX path AND the 
 - The mix is content-deterministic (question set × persona panel × contrastive negatives); only the model's parameter init seed needs to vary. Test: assert per-cell `to_664_cell().eval_key` is identical across all H1 seeds AND assert per-cell model-init seed differs.
 
 Sibling rule: single-variable-change discipline (`.claude/agents/consistency-checker.md`) — verify against the realized training-mix builder output, NOT the plan prose.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Seed smuggled into data-mix path AND model-init seed](feedback_seed_smuggled_into_data_and_init.md) — when a per-cell `seed` field feeds BOTH a reused-artifact data-mix path AND the model-init seed, the wrapper crashes on never-built per-seed mixes AND smuggles a second deliberate variable; pin mix-data seed to the parent's materialized baseline (e.g. seed-42), vary model-init seed only, add a fail-loud assert at the call site. #734 r2→r3.

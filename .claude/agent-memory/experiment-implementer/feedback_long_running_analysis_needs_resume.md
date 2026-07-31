@@ -43,3 +43,10 @@ and wrote only at end → all 10 completed layers' results were lost. Round-2
 patch (commit `8a0c2cf848`) added Design A (per-layer atomic JSON + opt-in
 `--resume`); the re-launch survives unbounded crashes (each completed
 layer is a durable checkpoint).
+
+## Merged sibling index rows (#1891 curation, 2026-07-30)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the ~25 KB loader truncation limit (task #1891). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [Long-running analysis needs per-unit atomic writes + --resume](feedback_long_running_analysis_needs_resume.md) — a multi-iteration CPU/GPU analysis script with wall-time ≥1h that writes only end-of-run loses ALL completed work on any mid-run crash; on a shared contended VM (load avg 60+) crashes are likely. Always per-unit atomic JSON + opt-in --resume with fail-loud substrate match. #722 r2.
+- [Eval-rig per-phase checkpoint](feedback_eval_rig_per_phase_checkpoint.md) — persist each sub-phase (gen/logprob/judge) to disk the moment it completes; never write at end-of-seed. #399.

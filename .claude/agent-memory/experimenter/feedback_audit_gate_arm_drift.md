@@ -12,3 +12,9 @@ When length-matching across arms whose generator prompts differ even subtly, exp
 1. Audit gates comparing BPE/length across LLM-generated arms: default ±20-25% of reference mean unless the cross-prompt variance for THAT prompt pair was measured. ±10% only when arms share generator AND prompt verbatim. Keep the smoke-gate and audit-gate formulas in sync (#280 v6 widened one but not the other).
 2. ALL cells FAIL_LENGTH + clean leak scores = the gate, not quality. Don't retry; bounce code-class with fix options in preference order: (a) re-author retry loop with explicit "shorter, target N chars" when out of band, (b) widen band to ±40%, (c) truncate post-author (lossy, last resort).
 3. Pre-launch: grep author/audit scripts for `frac_dev` / `LENGTH_BAND` / `±0.20`-style constants; flag ≤0.20 bands in the launch note as at-risk.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Audit/length bands on Sonnet arms too tight](feedback_audit_gate_arm_drift.md) — cross-prompt BPE drift ~15%, rewrite frac_dev ~33%; default ±20-25%; all-FAIL_LENGTH + clean leak = gate artifact (#280, #467)

@@ -28,3 +28,9 @@ to provably-reconstructable inputs (committed constants), report the rest per
 provenance group. Diagnosis shortcut: cached-side geometry fingerprints
 (cross-question / cross-condition / adjacent-layer cosines from the cached
 tensors alone) discriminate divergence causes with zero GPU.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Artifact-pair provenance coherence](feedback_artifact_pair_provenance_coherence.md) — sha pins ≠ capture-time identity: a question bank REGENERATED after its dependent activation capture (reconstruction.regenerated field; HF last-commit dates) breaks parity + q↔response pairing; assert only on provably-reconstructable inputs. #922 r4.

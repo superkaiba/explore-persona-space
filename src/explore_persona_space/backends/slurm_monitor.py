@@ -47,14 +47,34 @@ before the heartbeat loop starts) shows as ``stalled`` until SLURM
 itself reaps it. Operators can grep the rsync'd job.out for
 ``[phase=preflight-failed]`` to disambiguate.
 
-No sentinel drain on this lane (deliberate)
--------------------------------------------
+Sentinel drain: fellows only (#1898)
+------------------------------------
 
-``sentinels_processed`` is hardcoded ``0`` in every :class:`PollResult`
-this module builds. That is the lane CONTRACT, not a missing drain
-(#608 follow-up verdict, 2026-06-11 — do NOT "fix" it by binding
-``poll_pipeline.drain_sentinels_via`` here). The RunPod/GCP sentinel
-channel (``/workspace/logs/issue-<N>-*.json``) cannot exist on SLURM:
+``sentinels_processed`` is drained ONLY on a cluster whose
+:class:`ClusterConfig` carries ``sentinel_drain=True`` (the fellows /
+charmander row): :func:`drain_cluster_sentinels` runs the shared
+``poll_pipeline.sentinel_drain_shell`` loop over plain
+``ssh <cluster.ssh_host>`` once per poll tick (the exact pattern
+``GcpBackend._drain_sentinels`` established), posts parsed sentinels
+VM-side via the transport-agnostic ``poll_pipeline.drain_sentinels_via``
+(inheriting the ``.processed`` rename idempotency, the ``sentinel_fp``
+dedupe #1084, the ``epm:results`` version rewrite #1095, the envelope
+rescue #899, and the oversize-pointer path), and threads
+``(sentinels_processed, gate)`` into every :class:`PollResult` this
+module builds — a drained BLOCKING gate flips the tick status to
+``"gate"`` (the ``backends/gcp.py`` merge semantics; benign
+``gate=phase``/``smoke``/``dryrun`` signals never flip). NOTE the
+fellows ``/workspace/logs`` is cluster-SHARED and PERSISTENT: a prior
+crashed run's undrained sentinel posts late on the next same-issue
+launch (correct-by-design), and any file matching ``issue-<N>-*.json``
+is schema-parsed, posted, and ``mv -n``-renamed regardless of author
+(documented trust surface — see ``.claude/rules/pod-side-reporting.md``).
+
+On every OTHER SLURM cluster (``sentinel_drain=False`` — DRAC + Mila)
+``sentinels_processed`` stays ``0``. That is the lane CONTRACT for
+those clusters, not a missing drain (#608 follow-up verdict,
+2026-06-11). The RunPod/GCP sentinel channel
+(``/workspace/logs/issue-<N>-*.json``) cannot exist there:
 
 * Compute nodes have no ``/workspace`` and unprivileged jobs cannot
   create one, so the contract's hardcoded sentinel dir is unwritable.
@@ -64,14 +84,14 @@ channel (``/workspace/logs/issue-<N>-*.json``) cannot exist on SLURM:
   ``.processed`` rename are both unexecutable over this transport.
 
 A workload-cmd dispatch script written to the ``/workspace/logs``
-contract fails LOUD here (``mkdir -p /workspace/logs`` → permission
+contract fails LOUD there (``mkdir -p /workspace/logs`` → permission
 denied → non-zero exit under ``set -euo pipefail`` → SLURM ``FAILED``
-→ ``epm:cluster-terminal``), so unlike pre-#608 GCP this lane cannot
+→ ``epm:cluster-terminal``), so unlike pre-#608 GCP those lanes cannot
 silently drop markers from a COMPLETED run. Markers flow via the
 rsync'd ``status.json`` + ``[phase=...]`` log lines, posted VM-side by
 this monitor; a dispatcher that depends on sentinel-carried markers
-(``epm:results`` payloads, ``gate`` fields) must be routed to the GCP
-or RunPod lane at plan time.
+(``epm:results`` payloads, ``gate`` fields) must be routed to a
+drained lane (GCP, RunPod, or fellows) at plan time.
 
 Workload-cmd must block (deliberate; #601 follow-up)
 ----------------------------------------------------
@@ -97,6 +117,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import shlex
 import shutil
 import subprocess
 import time
@@ -268,6 +289,115 @@ def _emit_tail(
     )
 
 
+def drain_cluster_sentinels(
+    issue: int, cluster: ClusterConfig, scratch_dir: str, *, runner=subprocess.run
+) -> tuple[int, str | None]:
+    """Drain ``/workspace/logs`` sentinels on a ``sentinel_drain`` cluster (#1898).
+
+    Returns ``(sentinels_processed, gate)``. Fail-soft by contract: any
+    transport failure (rc!=0, ``TimeoutExpired``) logs and returns
+    ``(0, None)`` — the poll loop is never blocked (MooseFS read-wedge
+    tolerance rides the local ``timeout=60`` bound). Not-``sentinel_drain``
+    clusters (DRAC/Mila): no-op ``(0, None)`` with no ssh call and no
+    ``scripts.poll_pipeline`` import (their #608 no-drain contract).
+
+    Besides the canonical ``/workspace/logs/issue-<N>-*.json`` glob, the
+    drain also scans the job's scratch-dir out_root logs dir as a fallback
+    (the GCP #610 belt — covers a future perms change on the shared root).
+    Posting is VM-side through ``poll_pipeline.drain_sentinels_via`` →
+    ``task_workflow.post_event`` (legal: nothing runs cluster-side, so the
+    pod-side ``task.py``-shellout ban does not apply); the ``.processed``
+    rename runs over the same ssh alias via
+    ``poll_pipeline._ssh_mark_processed``.
+
+    ``runner`` is the test seam for the drain-list ssh (matches the file's
+    dependency-injection convention; ``_ssh_mark_processed`` keeps its own
+    ``subprocess.run`` — tests inject ``mark_processed`` behavior by faking
+    the whole transport at the ``runner`` boundary or monkeypatching the
+    ``poll_pipeline`` module).
+    """
+    if not cluster.sentinel_drain:
+        return 0, None
+    # Lazy import — the gcp.py::_drain_sentinels pattern (production
+    # entrypoints put the repo root on sys.path; __file__-derived fallback
+    # for direct library use).
+    try:
+        from scripts.poll_pipeline import (
+            _ssh_mark_processed,
+            drain_sentinels_via,
+            parse_sentinel_stream,
+            sentinel_drain_shell,
+        )
+    except ModuleNotFoundError:
+        import sys
+
+        repo_root = str(Path(__file__).resolve().parents[3])
+        if repo_root not in sys.path:
+            sys.path.insert(0, repo_root)
+        from scripts.poll_pipeline import (
+            _ssh_mark_processed,
+            drain_sentinels_via,
+            parse_sentinel_stream,
+            sentinel_drain_shell,
+        )
+    fallback = f"{scratch_dir}/eval_results/issue_{issue}/logs/issue-{issue}-*.json"
+    # Wrap in `bash -c` (the GCP transport's idiom, minus its sudo — fellows
+    # files are our own user's): charmander's login shell is ZSH, where the
+    # drain loop's bash-isms fail (`shopt: command not found`) and an empty
+    # glob is a hard `no matches found` error (live acceptance, 2026-07-30).
+    shell = "bash -c " + shlex.quote(sentinel_drain_shell(issue, extra_globs=(fallback,)))
+    try:
+        res = runner(
+            ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", cluster.ssh_host, shell],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=60,
+        )
+    except subprocess.TimeoutExpired:
+        logger.error("fellows sentinel drain ssh timed out (60s) — skipping this tick")
+        return 0, None
+    if res.returncode != 0:
+        logger.error(
+            "fellows sentinel drain FAILED (rc=%d): %s",
+            res.returncode,
+            (res.stderr or "").strip()[:300],
+        )
+        return 0, None
+    sentinels = parse_sentinel_stream(res.stdout or "")
+    processed, gate = drain_sentinels_via(
+        issue=issue,
+        list_sentinels=lambda: sentinels,
+        mark_processed=lambda p: _ssh_mark_processed(cluster.ssh_host, p),
+    )
+    if sentinels and processed == 0:
+        logger.error(  # the #608 fail-loud line — never a silent 0
+            "fellows sentinel drain: %d matched, 0 processed — inspect "
+            "/workspace/logs on %s + poller stderr",
+            len(sentinels),
+            cluster.ssh_host,
+        )
+    return processed, gate
+
+
+def _entry_drain(
+    sentinel_drainer, issue: int, cluster: ClusterConfig, scratch_dir: str
+) -> tuple[int, str | None]:
+    """Belt around the #1898 entry drain: default the seam + never raise.
+
+    A drain bug must never block the poll loop — this wraps the helper's
+    own fail-soft contract in one more ``except Exception`` and returns
+    the no-drain ``(0, None)`` on a raise.
+    """
+    drainer = sentinel_drainer if sentinel_drainer is not None else drain_cluster_sentinels
+    try:
+        return drainer(issue, cluster, scratch_dir)
+    except Exception:
+        logger.exception("sentinel drain raised (fail-soft) — continuing poll tick")
+        return 0, None
+
+
 def build_poll_result(
     *,
     issue: int,
@@ -281,6 +411,7 @@ def build_poll_result(
     marker_poster=None,
     event_reader=None,
     submitted_at: float | None = None,
+    sentinel_drainer=None,
 ) -> PollResult:
     """One-tick poll → :class:`PollResult`.
 
@@ -322,6 +453,11 @@ def build_poll_result(
     * ``event_reader`` — defaults to
       :func:`task_workflow.list_events`. Tests pass a stub returning a
       pre-seeded event trail.
+    * ``sentinel_drainer`` — defaults to
+      :func:`drain_cluster_sentinels` (#1898). Tests pass a stub
+      returning a canned ``(processed, gate)`` tuple. A no-op on
+      ``sentinel_drain=False`` clusters (DRAC/Mila keep
+      ``sentinels_processed=0`` byte-identically).
     * ``submitted_at`` — Unix timestamp of THIS attempt's sbatch submit
       (``handle.extra["submitted_at"]``, stamped by
       ``SlurmBackend.launch``). When provided, artifacts that PREDATE
@@ -351,6 +487,12 @@ def build_poll_result(
         from explore_persona_space.task_workflow import list_events
 
         event_reader = list_events
+    # ---- Sentinel drain (#1898, fellows only) ----
+    # Runs at ENTRY so the TERMINAL tick drains too (the final epm:results
+    # sentinel is drained on the same tick that reads COMPLETED) and the
+    # UNKNOWN persisted-terminal early return below still threads the
+    # drained values. ``_entry_drain`` defaults the seam + never raises.
+    drain_processed, drain_gate = _entry_drain(sentinel_drainer, issue, cluster, scratch_dir)
 
     state = state_querier(robot_alias=cluster.ssh_host, job_id=job_id)
     rsyncer(
@@ -392,7 +534,7 @@ def build_poll_result(
     # fresh read per tick, so a mid-run `task.py add-tag <N> trigger-dense`
     # takes effect on the next tick). VM-side by construction: this monitor
     # composes SSH/rsync from the orchestrator VM — the cluster node has no
-    # git checkout (module docstring § "No sentinel drain on this lane").
+    # git checkout (module docstring § "Sentinel drain: fellows only").
     # Gates ONLY the emitted excerpt surfaces below (the returned PollResult,
     # the epm:cluster-poll note, the persisted-terminal synthesis); detection
     # — the C2 freshness gate above, PREFLIGHT_FAIL_MARKER, phase parsing —
@@ -415,6 +557,8 @@ def build_poll_result(
                 log_tail=log_tail,
                 log_mtime_sec_ago=log_mtime_sec_ago,
                 trigger_dense=trigger_dense,
+                sentinels_processed=drain_processed,
+                gate=drain_gate,
             )
         # No marker either — we genuinely don't know. Default to running
         # so the orchestrator doesn't reap a job we haven't proven dead.
@@ -532,24 +676,31 @@ def build_poll_result(
     # remains the defense-in-depth on RunTime-less fallback ticks.
     next_interval = recommend_lane_next_interval(
         status=base_status,
-        gate=None,
-        sentinels_processed=0,
+        gate=drain_gate,
+        sentinels_processed=drain_processed,
         new_milestone=new_milestone,
         run_age_sec=run_age_sec,
         lane_anomaly=slurm_status != "RUNNING",
     )
 
     return PollResult(
-        status=base_status,
+        # Gate precedence mirrors backends/gcp.py's drain merge: a drained
+        # BLOCKING gate sentinel wins over every other status — the
+        # orchestrator must park at the user gate (Step 6d.4) before
+        # advancing. ``drain_sentinels_via`` surfaces ``gate`` only for a
+        # ``blocks_pipeline: True`` sentinel, so benign ``gate=phase`` /
+        # ``smoke`` / ``dryrun`` signals never flip status (#1898). On
+        # ``sentinel_drain=False`` clusters (DRAC/Mila) the drain is a
+        # no-op and this stays ``base_status`` with ``sentinels_processed=0``
+        # (module docstring § "Sentinel drain: fellows only").
+        status="gate" if drain_gate else base_status,
         current_phase=final_phase,
         new_milestone=new_milestone,
         last_log_mtime_sec_ago=log_mtime_sec_ago,
         pid_alive=base_status == "running",
         log_tail_excerpt=emit_tail[-2000:],
-        gate=None,
-        # Always 0 by lane contract — SLURM has no sentinel channel
-        # (see module docstring § "No sentinel drain on this lane").
-        sentinels_processed=0,
+        gate=drain_gate,
+        sentinels_processed=drain_processed,
         phase_log_mtime_sec_ago=log_mtime_sec_ago,
         shard_log_mtime_sec_ago=log_mtime_sec_ago,
         gpu_util="busy" if status_data.get("gpu_busy") else "idle",
@@ -733,6 +884,8 @@ def _poll_result_from_persisted_terminal(
     log_tail: str,
     log_mtime_sec_ago: int,
     trigger_dense: bool = False,
+    sentinels_processed: int = 0,
+    gate: str | None = None,
 ) -> PollResult:
     """Synthesize a :class:`PollResult` from a persisted terminal marker.
 
@@ -746,6 +899,13 @@ def _poll_result_from_persisted_terminal(
     the synthesized excerpt is the shared #1556 structural digest of the
     (possibly stale) local tail; the additive default keeps every
     pre-#1574 caller byte-identical.
+
+    ``sentinels_processed`` / ``gate`` (#1898): the entry drain's values,
+    threaded so the fellows lane's UNKNOWN-reconnect tick still reports a
+    drain that ran this tick. The additive defaults (``0`` / ``None``) keep
+    the ``sentinel_drain=False`` clusters byte-identical (module docstring
+    § "Sentinel drain: fellows only"), and a drained BLOCKING gate flips
+    status exactly as the main path (the gcp.py merge semantics).
     """
     base_status = persisted.get("status", "dead")
     current_phase = persisted.get("slurm_state", "done").lower()
@@ -759,16 +919,14 @@ def _poll_result_from_persisted_terminal(
         log_mtime_sec_ago=log_mtime_sec_ago,
     )
     return PollResult(
-        status=base_status,
+        status="gate" if gate else base_status,
         current_phase=current_phase,
         new_milestone=False,
         last_log_mtime_sec_ago=log_mtime_sec_ago,
         pid_alive=False,
         log_tail_excerpt=emit_tail[-2000:],
-        gate=None,
-        # Always 0 by lane contract — SLURM has no sentinel channel
-        # (see module docstring § "No sentinel drain on this lane").
-        sentinels_processed=0,
+        gate=gate,
+        sentinels_processed=sentinels_processed,
         phase_log_mtime_sec_ago=log_mtime_sec_ago,
         shard_log_mtime_sec_ago=log_mtime_sec_ago,
         gpu_util="unknown",

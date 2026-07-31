@@ -1,0 +1,36 @@
+{
+  "label": "slot_patch_sufficiency",
+  "arms": {
+    "patch_a0": {
+      "files": [
+        "patch_a0.json"
+      ],
+      "n_rows": 133,
+      "n_samples": 665,
+      "sha256": {
+        "patch_a0.json": "2c83059872985d66"
+      }
+    },
+    "swap_patch": {
+      "files": [
+        "swap_patch.json"
+      ],
+      "n_rows": 133,
+      "n_samples": 665,
+      "sha256": {
+        "swap_patch.json": "54df394f26aca788"
+      }
+    }
+  },
+  "hf_prefix": "issue1776_jacobian",
+  "judge_handoff": "OFF-POD (VM, Batch API) \u2014 CONDITIONAL: run ONLY if eval_results/issue_1776/followup_slotpatch/patch_success.json judge_triggered=true: uv run python scripts/issue1776_swap_judge.py --round patch --raw-dir <staged issue1776_jacobian/raw_completions/steered_slotpatch> --targets eval_results/issue_1776/followup_swap/targets.json --swap-success eval_results/issue_1776/followup_slotpatch/patch_success.json --out-dir eval_results/issue_1776/followup_slotpatch",
+  "repro": {
+    "issue": 1776,
+    "git_commit": "cf2b99ff267df4072d3ab83368ae03538b128135",
+    "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+    "timestamp_utc": "2026-07-31T03:59:44Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "python_version": "3.11.15"
+  }
+}

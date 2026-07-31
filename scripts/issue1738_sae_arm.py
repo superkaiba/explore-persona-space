@@ -133,7 +133,22 @@ SAE_CELLS = (  # (cell name, X source, Y pooling); mean = primary (plan §5)
     ("sae_prefix_frac", "px_feat", "frac"),
     ("sae_context_frac", "cx_feat", "frac"),
 )
-ARM_X = {"sae_prefix": "px", "sae_context": "cx"}  # SAE arms (per-feature reads)
+# ``--with-bare`` (follow-up `sae-bare`): the third input arm the parent design
+# already carries at every OTHER grain (per-context error, taxonomy,
+# per-direction) but not in SAE feature space. ONE-variable delta vs the cells
+# above — the input state, nothing else. Target is UNCHANGED (the mean answer
+# state of the answer generated under the FULL context), so the bare arm
+# predicts a representation produced with information (the history) its input
+# never saw: its R^2 is a LOWER BOUND on query-only transport, not a ceiling.
+BARE_CELLS = (
+    ("sae_bare", "bq_feat", "mean"),
+    ("dense_bq_feat", "bq_dense", "mean"),
+    ("sae_bare_max", "bq_feat", "max"),
+    ("sae_bare_frac", "bq_feat", "frac"),
+)
+ARM_X = {"sae_prefix": "px", "sae_context": "cx", "sae_bare": "bq"}  # per-feature-read arms
+ARM_CELL = {v: k for k, v in ARM_X.items()}
+BARE_FEAT_SUBDIR = "bare_feat"  # per-chunk SAE-encoded bare cache (resume unit)
 
 DEFAULT_OUT_EVAL = PROJECT_ROOT / "eval_results" / "issue_1738" / "sae_arm"
 DEFAULT_OUT_LOCAL = PROJECT_ROOT / "data" / "issue_1738" / "mt100k" / "sae_arm"
@@ -976,6 +991,227 @@ def _build_sae_matrices(
     return X, Y, dense_mm, h_dense
 
 
+# ── bare-query input arm: SAE-encode the STORED bq_last states (--with-bare) ───────
+# No model forward and no re-capture: the bare dense states were captured by the
+# parent `bare-query` round and are streamed from its store. The encode is exactly
+# the px/cx capture-side call (`sae.encode(state)` -> `_sparse_vec`), batched over
+# rows (row-independent affine + elementwise threshold ⇒ identical values).
+
+
+def _bare_chunk_names(args) -> list[str]:
+    if args.local_bare_dir:
+        names = sorted(p.name for p in Path(args.local_bare_dir).glob("*.pt"))
+    else:
+        names = sorted(
+            n
+            for n in N50._remote_index(f"{args.bare_hf_prefix}/{GG.CAPTURE_SUBDIR}")
+            if n.endswith(".pt")
+        )
+    if not names:
+        raise SystemExit(
+            "no bare-query capture chunks found — the bare arm REUSES the parent "
+            f"bare-query store ({args.bare_hf_prefix}/{GG.CAPTURE_SUBDIR}); it never re-captures"
+        )
+    return names
+
+
+def _encode_bare_chunk(sae, path: Path, layer: int) -> dict:
+    """One bare capture chunk -> the px/cx sparse-feature schema at ``layer``.
+
+    Digest-only: ``bare_render`` (real user text) is never read. Values are the
+    capture-side ones — `sae.encode` then nonzero (idx int32 / val fp16) — with
+    the dense state stored fp16, exactly as px_dense19/cx_dense19 are.
+    """
+    d = torch.load(path, map_location="cpu", weights_only=False)
+    layers = [int(x) for x in d["layers"]]
+    assert layer in layers, f"{path.name}: layer {layer} not in captured layers {layers}"
+    x = d["bq_last"][:, layers.index(layer), :].float().contiguous()
+    n = len(d["ci"])
+    assert x.shape[0] == n, (x.shape, n)
+    f = sae.encode(x)
+    idx_parts, val_parts, ptr = [], [], [0]
+    for i in range(n):
+        fi, fv = _sparse_vec(f[i])
+        idx_parts.append(fi)
+        val_parts.append(fv)
+        ptr.append(ptr[-1] + len(fi))
+    return {
+        "ci": [int(c) for c in d["ci"]],
+        "bq_feat_idx": (np.concatenate(idx_parts) if idx_parts else np.zeros(0, np.int32)).astype(
+            np.int32
+        ),
+        "bq_row_ptr": np.asarray(ptr, dtype=np.int64),
+        "bq_feat_val": (np.concatenate(val_parts) if val_parts else np.zeros(0, np.float16)).astype(
+            np.float16
+        ),
+        "bq_dense": x.to(torch.float16),
+        "layer": layer,
+        "src_chunk": path.name,
+        "sae": {"repo": SAEMOD.SAE_REPO, "revision": SAEMOD.SAE_REVISION, "k": sae.k},
+    }
+
+
+def _bare_cache_paths(
+    args, names: list[str], dl_cache: Path, feat_dir: Path, layer: int
+) -> list[Path]:
+    """Stage + SAE-encode every bare chunk (per-chunk cache = the resume unit).
+
+    ``layer`` is the layer the SAE chunks were CAPTURED at (not the CLI default):
+    the bare features must live in the same trainer's space as the px/cx inputs
+    and the answer targets, so it is read from the chunk, never re-declared.
+    """
+    feat_dir.mkdir(parents=True, exist_ok=True)
+    todo = [n for n in names if not (feat_dir / n).exists() or args.no_resume]
+    sae = None
+    if todo:
+        dl_cache.mkdir(parents=True, exist_ok=True)
+        if args.smoke_model_dir:  # tiny from-config SAE — same loader class + encode path
+            _hf, _tok, sae = _smoke_models(Path(args.smoke_model_dir), args, model=False)
+        else:
+            sae = SAEMOD.BatchTopKSAE.load(
+                k=K_PRIMARY,
+                device="cpu" if args.device == "cpu" else "cuda",
+                cache_dir=Path(args.sae_cache),
+                layer=layer,
+            )
+    t0 = time.time()
+    for i, n in enumerate(names):
+        out_p = feat_dir / n
+        if out_p.exists() and not args.no_resume:
+            continue
+        if args.local_bare_dir:
+            src = Path(args.local_bare_dir) / n
+        else:
+            src = Path(
+                PF._download_chunk_with_retry(
+                    C.HF_DATA_REPO, f"{args.bare_hf_prefix}/{GG.CAPTURE_SUBDIR}/{n}", dl_cache
+                )
+            )
+        enc = _encode_bare_chunk(sae, src, layer)
+        tmp = out_p.with_suffix(".pt.tmp")
+        torch.save(enc, tmp)
+        tmp.replace(out_p)
+        if not args.local_bare_dir:
+            src.unlink(missing_ok=True)  # bounded footprint: one staged chunk at a time
+        logger.info(
+            "[bare-encode] %d/%d %s (%d rows, %.0fs elapsed)",
+            i + 1,
+            len(names),
+            n,
+            len(enc["ci"]),
+            time.time() - t0,
+        )
+    return [feat_dir / n for n in names]
+
+
+def _assemble_bare(
+    paths: list[Path], sae_ci: np.ndarray, dict_size: int, fit_mask: np.ndarray, *, layer: int
+):
+    """Reorder the encoded bare rows onto the SAE row order (ci-keyed).
+
+    1:1 coverage assert (the parent bare-arm contract): every SAE-arm ci MUST be
+    present in the bare store; extra bare rows (parent over-length rows the SAE
+    arm dropped) are dropped and counted. Returns (arm dict, meta).
+    """
+    per_chunk: list[dict] = []
+    pos_of: dict[int, tuple[int, int]] = {}
+    n_bare = 0
+    for k, p in enumerate(paths):
+        d = torch.load(p, map_location="cpu", weights_only=False)
+        # a resumed cache from a DIFFERENT layer would silently mix trainer spaces
+        assert int(d["layer"]) == layer, (
+            f"{p.name}: cached bare features are layer {d['layer']}, sae chunks are layer "
+            f"{layer} — delete {p.parent} (or pass --no-resume) and re-encode"
+        )
+        for j, c in enumerate(d["ci"]):
+            assert c not in pos_of, f"duplicate ci {c} across bare chunks"
+            pos_of[c] = (k, j)
+        n_bare += len(d["ci"])
+        per_chunk.append(
+            {
+                "ci": d["ci"],
+                "idx": d["bq_feat_idx"],
+                "ptr": d["bq_row_ptr"],
+                "val": d["bq_feat_val"],
+                "path": p,
+            }
+        )
+    missing = [int(c) for c in sae_ci.tolist() if int(c) not in pos_of]
+    assert not missing, (
+        f"bare store missing {len(missing)} sae-arm ci (first {missing[:5]}) — 1:1 coverage "
+        "violated; backfill the parent bare-query capture rather than dropping rows"
+    )
+    take = [pos_of[int(c)] for c in sae_ci.tolist()]
+    idx_rows, val_rows, ptr = [], [], [0]
+    for k, j in take:
+        pc = per_chunk[k]
+        a, b = int(pc["ptr"][j]), int(pc["ptr"][j + 1])
+        idx_rows.append(pc["idx"][a:b])
+        val_rows.append(pc["val"][a:b])
+        ptr.append(ptr[-1] + (b - a))
+    idx = np.concatenate(idx_rows).astype(np.int64) if idx_rows else np.zeros(0, np.int64)
+    val = np.concatenate(val_rows).astype(np.float32) if val_rows else np.zeros(0, np.float32)
+    ptr_a = np.asarray(ptr, dtype=np.int64)
+    off = np.diff(ptr_a)
+    in_all = np.bincount(idx, minlength=dict_size)
+    in_fit = np.bincount(idx[np.repeat(fit_mask, off)], minlength=dict_size)
+    meta = {
+        "n_bare_rows": int(n_bare),
+        "n_sae_rows": int(len(sae_ci)),
+        "n_extra_dropped": int(n_bare - len(sae_ci)),
+        "n_chunks": len(paths),
+        "l0_mean": float(off.mean()) if len(off) else float("nan"),
+    }
+    logger.info(
+        "[bare-assemble] %d bare rows -> %d sae rows (%d extra dropped), l0_mean=%.1f",
+        meta["n_bare_rows"],
+        meta["n_sae_rows"],
+        meta["n_extra_dropped"],
+        meta["l0_mean"],
+    )
+    return {
+        "idx": idx,
+        "ptr": ptr_a,
+        "val": val,
+        "take": take,
+        "chunks": per_chunk,
+        "in_fit": in_fit,
+        "in_all": in_all,
+    }, meta
+
+
+def _build_bare_matrix(bare: dict, f_in_bq: np.ndarray, mm_dir: Path, h_dense: int):
+    """Restricted CSR X['bq'] + the fp32 dense memmap, both in SAE row order."""
+    n_rows = len(bare["take"])
+    col = np.full(int(f_in_bq.max()) + 1 if len(f_in_bq) else 1, -1, dtype=np.int64)
+    col[f_in_bq] = np.arange(len(f_in_bq))
+    off = np.diff(bare["ptr"])
+    rr = np.repeat(np.arange(n_rows), off)
+    idx = bare["idx"]
+    inb = idx < len(col)
+    cc = np.full(len(idx), -1, dtype=np.int64)
+    cc[inb] = col[idx[inb]]
+    keep = cc >= 0
+    X = sp.coo_matrix(
+        (bare["val"][keep], (rr[keep], cc[keep])), shape=(n_rows, len(f_in_bq))
+    ).tocsr()
+    dense_p = mm_dir / "bq_dense.bin"
+    mm = np.memmap(dense_p, dtype=np.float32, mode="w+", shape=(n_rows, h_dense))
+    # scatter each source chunk's rows to their target positions (one load per chunk)
+    by_chunk: dict[int, list[tuple[int, int]]] = {}
+    for t, (k, j) in enumerate(bare["take"]):
+        by_chunk.setdefault(k, []).append((t, j))
+    for k, pairs in by_chunk.items():
+        d = torch.load(bare["chunks"][k]["path"], map_location="cpu", weights_only=False)
+        dn = d["bq_dense"].to(torch.float32).numpy()
+        assert dn.shape[1] == h_dense, (dn.shape, h_dense)
+        tgt = np.asarray([t for t, _ in pairs], dtype=np.int64)
+        src = np.asarray([j for _, j in pairs], dtype=np.int64)
+        mm[tgt] = dn[src]
+    mm.flush()
+    return X, np.memmap(dense_p, dtype=np.float32, mode="r", shape=(n_rows, h_dense))
+
+
 def _rows(X, rows: np.ndarray) -> np.ndarray:
     """fp32 dense block from CSR or memmap."""
     if sp.issparse(X):
@@ -1198,11 +1434,15 @@ def run_fits(args) -> int:
     parent_fits = json.loads(Path(args.parent_fits_json).read_text())
 
     names = _sae_chunk_names(args, sae_prefix)
+    bare_names = _bare_chunk_names(args) if args.with_bare else []
     fp = hashlib.sha256(
         (
             "\n".join(names)
             + f"|{sae_prefix}|{MAX_FEATURES_OUT}|{MAX_FEATURES_IN}|{SHUFFLE_SEED_BASE}"
             + f"|{args.k_draws}|{args.n_boot}|{[float(x) for x in LAMBDAS]}"
+            # appended ONLY under --with-bare so a no-bare re-run keeps the
+            # parent run's fingerprint (and its cell resume) byte-identical
+            + (f"|bare:{args.bare_hf_prefix}|" + "\n".join(bare_names) if args.with_bare else "")
         ).encode()
     ).hexdigest()
     cache = out_local / "sae_dl"
@@ -1229,37 +1469,53 @@ def run_fits(args) -> int:
         f"identity-gate drop rate {drop_rate:.4f} >= {VIOLATION_RATE_MAX}"
     )
 
+    # bare-query input arm (--with-bare): encode the parent's stored bq_last
+    # states and reorder them onto THIS run's row order before the restriction,
+    # so bq gets the SAME activity floor + cap as px/cx.
+    bare = bare_meta = None
+    arms_in = ("px", "cx")
+    if args.with_bare:
+        C.phase("sae-bare-encode")
+        fit_mask = np.asarray([int(c) in train_ci for c in scan["ci"]], dtype=bool)
+        bare_paths = _bare_cache_paths(
+            args, bare_names, out_local / "bare_dl", out_local / BARE_FEAT_SUBDIR, chunk_layer
+        )
+        bare, bare_meta = _assemble_bare(
+            bare_paths, scan["ci"], dict_size, fit_mask, layer=chunk_layer
+        )
+        scan["in_fit"]["bq"] = bare.pop("in_fit")
+        scan["in_all"]["bq"] = bare.pop("in_all")
+        arms_in = ("px", "cx", "bq")
+        C.phase("sae-fits-assemble")
+
     # feature restriction (#1482 recipe at this run's n; SN.restrict verbatim)
     f_out, floor = SN.restrict(scan["out_fit"], scan["n_fit"], MAX_FEATURES_OUT)
     f_in = {
-        arm: SN.restrict(scan["in_fit"][arm], scan["n_fit"], MAX_FEATURES_IN)[0]
-        for arm in ("px", "cx")
+        arm: SN.restrict(scan["in_fit"][arm], scan["n_fit"], MAX_FEATURES_IN)[0] for arm in arms_in
     }
     logger.info(
-        "[sae-fits] restriction: F_out=%d F_in_px=%d F_in_cx=%d floor=%d",
+        "[sae-fits] restriction: F_out=%d floor=%d %s",
         len(f_out),
-        len(f_in["px"]),
-        len(f_in["cx"]),
         floor,
+        " ".join(f"F_in_{a}={len(f_in[a])}" for a in arms_in),
     )
 
     X, Y, dense_mm, h_dense = _build_sae_matrices(paths, scan, f_out, f_in, mm_dir)
+    if args.with_bare:
+        X["bq"], dense_mm["bq"] = _build_bare_matrix(bare, f_in["bq"], mm_dir, h_dense)
     sets = MTF.split_positions(split, scan["ci"])
     tr, val, ho = sets["train"], sets["val"], sets["holdout"]
     n_tr = len(tr)
-    d_in_max = max(len(f_in["px"]), len(f_in["cx"]))
+    d_in_max = max(len(f_in[a]) for a in arms_in)
     if n_tr < d_in_max and not args.allow_underdetermined:
         raise SystemExit(
             f"n_train={n_tr} < d_in={d_in_max}: estimator-degenerate regime — pass "
             "--allow-underdetermined only for a deliberate smoke shape"
         )
 
-    x_of = {
-        "px_feat": X["px"],
-        "cx_feat": X["cx"],
-        "px_dense": dense_mm["px"],
-        "cx_dense": dense_mm["cx"],
-    }
+    x_of = {f"{a}_feat": X[a] for a in arms_in} | {f"{a}_dense": dense_mm[a] for a in arms_in}
+    cells_spec = SAE_CELLS + (BARE_CELLS if args.with_bare else ())
+    arm_cells = tuple(ARM_CELL[a] for a in arms_in)  # ("sae_prefix", "sae_context"[, "sae_bare"])
     C.phase("sae-fits")
     summary: dict = {
         "fit_point": "multiturn_100k_sae",
@@ -1277,8 +1533,7 @@ def run_fits(args) -> int:
         "split_shas": {k: split["sets"][k]["sha256"] for k in split["sets"]},
         "restriction": {
             "n_f_out": int(len(f_out)),
-            "n_f_in_px": int(len(f_in["px"])),
-            "n_f_in_cx": int(len(f_in["cx"])),
+            **{f"n_f_in_{a}": int(len(f_in[a])) for a in arms_in},
             "activity_floor_rows": int(floor),
             "n_fit_rows": int(scan["n_fit"]),
         },
@@ -1298,9 +1553,9 @@ def run_fits(args) -> int:
     kits: dict[str, dict] = {}
     first_wall: float | None = None
     t_cells0 = time.time()
-    for cell_i, (cell, xsrc, pool) in enumerate(SAE_CELLS):
+    for cell_i, (cell, xsrc, pool) in enumerate(cells_spec):
         if first_wall is not None and MTF._fence_should_halt(
-            time.time() - t_cells0, first_wall, len(SAE_CELLS), args.fence_mult
+            time.time() - t_cells0, first_wall, len(cells_spec), args.fence_mult
         ):
             rep = {
                 "gate": "G-S2",
@@ -1308,7 +1563,7 @@ def run_fits(args) -> int:
                 "elapsed_s": time.time() - t_cells0,
                 "fence_mult": args.fence_mult,
                 "cells_done": cell_i,
-                "cells_total": len(SAE_CELLS),
+                "cells_total": len(cells_spec),
             }
             GG.N1M._atomic_write_json(out_eval / "fence_report.json", rep)
             logger.error("[G-S2] fence tripped: %s", rep)
@@ -1354,7 +1609,7 @@ def run_fits(args) -> int:
         logger.info(
             "[cell] %d/%d %s: holdout R2=%.4f lambda=%g wall=%.0fs",
             cell_i + 1,
-            len(SAE_CELLS),
+            len(cells_spec),
             cell,
             r2_ho,
             kit["selected_lambda"],
@@ -1366,7 +1621,7 @@ def run_fits(args) -> int:
     y_ho_mean = np.asarray(_rows(Y["mean"], ho), dtype=np.float64)
     ss_tot_f, _mu_ho = _perfeature_ss_tot(y_ho_mean)
     perfeat: dict[str, dict] = {}
-    for arm_i, cell in enumerate(("sae_prefix", "sae_context")):
+    for arm_i, cell in enumerate(arm_cells):
         null_p = pf_dir / f"null_{cell}.npz"
         if null_p.exists() and not args.no_resume:
             with np.load(null_p, allow_pickle=False) as z:
@@ -1425,7 +1680,7 @@ def run_fits(args) -> int:
     splithalf: dict[str, float] = {}
     half_a = np.arange(len(ho))[::2]
     half_b = np.arange(len(ho))[1::2]
-    for cell in ("sae_prefix", "sae_context"):
+    for cell in arm_cells:
         with np.load(pred_dir / f"{cell}.npz", allow_pickle=False) as z:
             pred = z["pred16"].astype(np.float64)
         r2f[cell] = _perfeature_r2(pred, y_ho_mean, ss_tot_f)
@@ -1446,18 +1701,18 @@ def run_fits(args) -> int:
     # critic-mandated expected-false-carried companion to any carried count).
     expected_false = 0.05 * n_eval_feats
     loo_above = {}
-    for cell in ("sae_prefix", "sae_context"):
+    for cell in arm_cells:
         nz = perfeat[cell]["null"].astype(np.float64)
         cnt = 0
         for k in range(nz.shape[0]):
             others = np.delete(nz, k, axis=0)
             cnt += int(np.nansum(nz[k] > np.nanquantile(others, 0.95, axis=0)))
         loo_above[cell] = cnt / max(1, nz.shape[0] * nz.shape[1])
+    short = {"sae_prefix": "prefix", "sae_context": "context", "sae_bare": "bare"}
     summary["perfeature"] = {
         "n_features": int(len(f_out)),
         "n_finite_delta": n_eval_feats,
-        "carried_prefix": int(np.nansum(carried["sae_prefix"])),
-        "carried_context": int(np.nansum(carried["sae_context"])),
+        **{f"carried_{short[c]}": int(np.nansum(carried[c])) for c in arm_cells},
         "expected_false_carried_per_arm": float(expected_false),
         "loo_calibration_above_rate": {k: float(v) for k, v in loo_above.items()},
         "splithalf_rank_spearman": {k: float(v) for k, v in splithalf.items()},
@@ -1466,38 +1721,54 @@ def run_fits(args) -> int:
         "spearman_delta_vs_activity": _spearman(delta, np.log10(np.maximum(activity, 1e-9))),
         "spearman_delta_vs_consistency": _spearman(delta, consistency),
     }
+    if args.with_bare:
+        # the mirror-image read the dense arms show (bare fails where the thread
+        # lives in the history; prefix fails where the final query pivots away)
+        d_cb = r2f["sae_context"] - r2f["sae_bare"]
+        d_bp = r2f["sae_bare"] - r2f["sae_prefix"]
+        summary["perfeature"] |= {
+            "delta_context_minus_bare_median": float(np.nanmedian(d_cb)),
+            "delta_bare_minus_prefix_median": float(np.nanmedian(d_bp)),
+            "spearman_r2_bare_vs_prefix": _spearman(r2f["sae_bare"], r2f["sae_prefix"]),
+            "spearman_r2_bare_vs_context": _spearman(r2f["sae_bare"], r2f["sae_context"]),
+        }
     np.savez(
         pf_dir / "perfeature_summary.npz",
         feat_ids=f_out.astype(np.int64),
         activity=activity.astype(np.float32),
         consistency=consistency.astype(np.float32),
-        r2_prefix=r2f["sae_prefix"].astype(np.float32),
-        r2_context=r2f["sae_context"].astype(np.float32),
         delta=delta.astype(np.float32),
-        null_p95_prefix=perfeat["sae_prefix"]["p95"].astype(np.float32),
-        null_p95_context=perfeat["sae_context"]["p95"].astype(np.float32),
-        carried_prefix=carried["sae_prefix"],
-        carried_context=carried["sae_context"],
         fingerprint=np.array(fp),
+        **{f"r2_{short[c]}": r2f[c].astype(np.float32) for c in arm_cells},
+        **{f"null_p95_{short[c]}": perfeat[c]["p95"].astype(np.float32) for c in arm_cells},
+        **{f"carried_{short[c]}": carried[c] for c in arm_cells},
     )
     with open(out_eval / "perfeature_summary.csv", "w") as f:
+        arm_short = [short[c] for c in arm_cells]  # prefix, context[, bare]
         f.write(
-            "feat_id,activity,consistency,r2_prefix,r2_context,delta_r2,"
-            "null_p95_prefix,null_p95_context,carried_prefix,carried_context\n"
+            "feat_id,activity,consistency,"
+            + ",".join(f"r2_{s}" for s in arm_short)
+            + ",delta_r2,"
+            + ",".join(f"null_p95_{s}" for s in arm_short)
+            + ","
+            + ",".join(f"carried_{s}" for s in arm_short)
+            + "\n"
         )
         for i in range(len(f_out)):
             f.write(
                 f"{int(f_out[i])},{activity[i]:.6g},{consistency[i]:.6g},"
-                f"{r2f['sae_prefix'][i]:.6g},{r2f['sae_context'][i]:.6g},{delta[i]:.6g},"
-                f"{perfeat['sae_prefix']['p95'][i]:.6g},"
-                f"{perfeat['sae_context']['p95'][i]:.6g},"
-                f"{int(carried['sae_prefix'][i])},{int(carried['sae_context'][i])}\n"
+                + ",".join(f"{r2f[c][i]:.6g}" for c in arm_cells)
+                + f",{delta[i]:.6g},"
+                + ",".join(f"{perfeat[c]['p95'][i]:.6g}" for c in arm_cells)
+                + ","
+                + ",".join(str(int(carried[c][i])) for c in arm_cells)
+                + "\n"
             )
 
     # ── mapping baselines (standing pair) ─────────────────────────────────────
     C.phase("sae-baselines")
     baselines: dict = {"ks": [1, 5, 10], "metrics": ["euclidean", "cosine"], "cells": {}}
-    for cell, xsrc, pool in SAE_CELLS:
+    for cell, xsrc, pool in cells_spec:
         if pool != "mean":
             continue
         with np.load(pred_dir / f"{cell}.npz", allow_pickle=False) as z:
@@ -1547,7 +1818,7 @@ def run_fits(args) -> int:
             f"empty cells (tr_lm={len(tr_lm)}, val_lm={len(val_lm)}, ho_wc={len(ho_wc)})"
         )
     else:
-        for cell in ("sae_prefix", "sae_context"):
+        for cell in arm_cells:
             arm = ARM_X[cell]
             fac_lm = _GramFactor(X[arm], tr_lm, dev, args.block)
             kit_lm = _fit_cell(
@@ -1566,6 +1837,23 @@ def run_fits(args) -> int:
             }
             del fac_lm, kit_lm
     summary["lmsys_transfer"] = transfer
+    if args.with_bare:
+        summary["bare_arm"] = {
+            **bare_meta,
+            "bare_hf_prefix": args.bare_hf_prefix,
+            "target_note": (
+                "MATCHED-TARGET ASYMMETRY (deliberate, inherited from the parent bare-query "
+                "round): the target is the mean answer-token state of the answer generated "
+                "under the FULL context, so the bare arm predicts a representation produced "
+                "with information (the conversation history) its input never saw. Its R^2 is "
+                "a LOWER BOUND on query-only transport, not a clean ceiling."
+            ),
+            "input_note": (
+                "bare input = the final user turn rendered with an EXPLICIT empty system turn, "
+                "no history, per-row asserts that the tokenizer default system prompt is not "
+                "injected (parent capture; states reused verbatim, never re-captured)"
+            ),
+        }
 
     # pilot meta recap (staged copy into out_eval, plan §6.5). Only a genuinely-
     # absent file (response-bearing 404) is non-fatal — the durable copy uploads
@@ -1608,9 +1896,11 @@ def run_fits(args) -> int:
             )
             if p.is_file()
         ]
+        # --with-bare writes a DIFFERENT analysis set (three arms) — upload it under
+        # its own prefix so the parent two-arm analysis_tensors are never clobbered.
         _upload_sae_analysis(
             args,
-            sae_prefix,
+            args.analysis_hf_prefix or sae_prefix,
             [
                 ("summaries", out_eval, summaries),
                 ("perfeature", pf_dir, None),
@@ -1719,9 +2009,38 @@ def _build_smoke_fixture(base: Path, n_rows: int = 24, n_chunks: int = 2) -> dic
         chunk = GG._stack_chunk_mt(rows, [SMOKE_LAYER], 0, cidx)
         torch.save(chunk, parent_dir / f"shard00_chunk{cidx:04d}.pt")
         ci0 += per
+
+    # bare-query fixture: the parent bare store's OWN chunk shape (bq_last
+    # (n, L, H) + ci + bare_render), covering every parent ci PLUS one extra row
+    # (the parent store's over-length residue) so the assembly's extras-drop and
+    # ci-keyed reorder both execute. Deliberately shuffled ci order per chunk —
+    # a positional (rather than ci-keyed) join would mis-align and be caught.
+    bare_dir = base / "bare_chunks"
+    bare_dir.mkdir(parents=True, exist_ok=True)
+    all_ci = list(range(n_rows)) + [n_rows + 7]  # +1 extra, absent from the parent set
+    g = torch.Generator().manual_seed(17)
+    order = torch.randperm(len(all_ci), generator=g).tolist()
+    shuffled = [all_ci[i] for i in order]
+    per_b = -(-len(shuffled) // n_chunks)
+    for cidx in range(n_chunks):
+        sl = shuffled[cidx * per_b : (cidx + 1) * per_b]
+        if not sl:
+            continue
+        torch.save(
+            {
+                "ci": sl,
+                "bq_last": torch.randn(len(sl), 3, SMOKE_H, generator=g),
+                "layers": [0, SMOKE_LAYER, SMOKE_LAYER + 1],
+                "bare_render": [f"<bare render {c}>" for c in sl],
+                "shard_index": 0,
+                "chunk": cidx,
+            },
+            bare_dir / f"shard00_chunk{cidx:04d}.pt",
+        )
     return {
         "model_dir": model_dir,
         "parent_dir": parent_dir,
+        "bare_dir": bare_dir,
         "n_rows": n_rows,
         "ci": list(range(n_rows)),
     }
@@ -1939,6 +2258,7 @@ def _smoke(args) -> int:
             "n_boot": 50,
             "fence_mult": 50.0,
             "block": 64,
+            "with_bare": False,  # leg 4 pins the no-bare path; leg 4b turns it on
         }
     )
     rc = run_fits(fit_args)
@@ -1959,6 +2279,135 @@ def _smoke(args) -> int:
         len(sf["cells"]),
         sf["shuffle_floor"]["sae_prefix"]["k_draws"],
         csv_rows,
+    )
+
+    # ── leg 4b: fits WITH the bare arm (same entrypoint, --with-bare on) ──────
+    bare_args = argparse.Namespace(
+        **{
+            **vars(fit_args),
+            "with_bare": True,
+            "local_bare_dir": str(fx["bare_dir"]),
+            "smoke_model_dir": str(fx["model_dir"]),
+            "out_eval": base / "eval_bare",
+            "out_local": base / "local_bare",
+        }
+    )
+    rc = run_fits(bare_args)
+    assert rc == 0, f"bare-arm fits smoke rc={rc}"
+    sb = json.loads((base / "eval_bare" / "sae_fits.json").read_text())
+    assert len(sb["cells"]) == len(SAE_CELLS) + len(BARE_CELLS), sorted(sb["cells"])
+    for c in ("sae_bare", "sae_bare_max", "sae_bare_frac", "dense_bq_feat"):
+        assert c in sb["cells"], sorted(sb["cells"])
+        assert np.isfinite(sb["cells"][c]["holdout_r2"]), (c, sb["cells"][c])
+    assert set(sb["shuffle_floor"]) == {"sae_prefix", "sae_context", "sae_bare"}
+    assert sb["restriction"]["n_f_in_bq"] >= 1, sb["restriction"]
+    # the extra bare row must be DROPPED, not silently joined positionally
+    assert sb["bare_arm"]["n_extra_dropped"] == 1, sb["bare_arm"]
+    assert sb["bare_arm"]["n_sae_rows"] == sf["n_rows"], (sb["bare_arm"], sf["n_rows"])
+    assert sb["assembly_fingerprint"] != sf["assembly_fingerprint"], (
+        "with-bare fingerprint collided with the no-bare run"
+    )
+    mbb = json.loads((base / "eval_bare" / "mapping_baselines.json").read_text())
+    assert "holdout_r2_shared_subset" in mbb["cells"]["sae_bare"]["identity_bias"]
+    assert "inapplicable" in mbb["cells"]["dense_bq_feat"]["identity_bias"]
+    assert mbb["cells"]["sae_bare"]["knn"]["cosine"]["chance_at_k"]["1"] > 0
+    hdr = (base / "eval_bare" / "perfeature_summary.csv").read_text().split("\n")[0]
+    for col in ("r2_prefix", "r2_context", "r2_bare", "carried_bare", "null_p95_bare"):
+        assert col in hdr.split(","), (col, hdr)
+    with np.load(base / "local_bare" / "perfeature" / "perfeature_summary.npz") as z:
+        assert "r2_bare" in z, sorted(z)
+    # ci-keyed reorder must be ORDER-INDEPENDENT: re-encode from a re-chunked
+    # copy of the same bare rows and assert the same holdout R2 (a positional
+    # join would move rows and change it).
+    shuf_dir = base / "bare_chunks_reshuffled"
+    shuf_dir.mkdir()
+    pool_ci: list[int] = []
+    pool_bq: list[torch.Tensor] = []
+    bl: list[int] = []
+    for p in sorted(fx["bare_dir"].glob("*.pt")):
+        dbb = torch.load(p, map_location="cpu", weights_only=False)
+        pool_ci.extend(int(c) for c in dbb["ci"])
+        pool_bq.append(dbb["bq_last"])
+        bl = list(dbb["layers"])
+    assert bl, "bare fixture produced no chunks"
+    allbq = torch.cat(pool_bq)
+    rev = list(range(len(pool_ci)))[::-1]
+    for cidx, s in enumerate(range(0, len(rev), 7)):
+        sel = rev[s : s + 7]
+        torch.save(
+            {
+                "ci": [pool_ci[i] for i in sel],
+                "bq_last": allbq[sel],
+                "layers": bl,
+                "bare_render": ["<x>"] * len(sel),
+                "shard_index": 0,
+                "chunk": cidx,
+            },
+            shuf_dir / f"shard00_chunk{cidx:04d}.pt",
+        )
+    rc = run_fits(
+        argparse.Namespace(
+            **{
+                **vars(bare_args),
+                "local_bare_dir": str(shuf_dir),
+                "out_eval": base / "eval_bare2",
+                "out_local": base / "local_bare2",
+            }
+        )
+    )
+    assert rc == 0
+    sb2 = json.loads((base / "eval_bare2" / "sae_fits.json").read_text())
+    for c in ("sae_bare", "dense_bq_feat"):
+        a, b = sb["cells"][c]["holdout_r2"], sb2["cells"][c]["holdout_r2"]
+        assert abs(a - b) < 1e-9, f"{c}: ci-keyed reorder not order-independent ({a} vs {b})"
+    # coverage gate: a bare store MISSING a parent ci must fail loud, not drop rows
+    gap_dir = base / "bare_chunks_gap"
+    gap_dir.mkdir()
+    for p in sorted(fx["bare_dir"].glob("*.pt")):
+        dg = torch.load(p, map_location="cpu", weights_only=False)
+        keep = [j for j, c in enumerate(dg["ci"]) if int(c) != fx["ci"][0]]
+        torch.save(
+            {**dg, "ci": [dg["ci"][j] for j in keep], "bq_last": dg["bq_last"][keep]},
+            gap_dir / p.name,
+        )
+    try:
+        run_fits(
+            argparse.Namespace(
+                **{
+                    **vars(bare_args),
+                    "local_bare_dir": str(gap_dir),
+                    "out_eval": base / "eval_bare3",
+                    "out_local": base / "local_bare3",
+                }
+            )
+        )
+        raise AssertionError("bare coverage gate did not fire")
+    except AssertionError as e:
+        assert "1:1 coverage" in str(e), e
+    # empty-store gate
+    empty_dir = base / "bare_chunks_empty"
+    empty_dir.mkdir()
+    try:
+        run_fits(
+            argparse.Namespace(
+                **{
+                    **vars(bare_args),
+                    "local_bare_dir": str(empty_dir),
+                    "out_eval": base / "eval_bare4",
+                    "out_local": base / "local_bare4",
+                }
+            )
+        )
+        raise AssertionError("empty bare store did not fire")
+    except SystemExit as e:
+        assert "never re-captures" in str(e), e
+    logger.info(
+        "[smoke] bare-arm leg OK: %d cells (sae_bare R2=%.4f, dense_bq_feat R2=%.4f), "
+        "extras dropped=%d, reorder-invariance + coverage/empty gates fired",
+        len(sb["cells"]),
+        sb["cells"]["sae_bare"]["holdout_r2"],
+        sb["cells"]["dense_bq_feat"]["holdout_r2"],
+        sb["bare_arm"]["n_extra_dropped"],
     )
 
     # ── leg 5: degenerate fits probes ─────────────────────────────────────────
@@ -2045,6 +2494,24 @@ def main() -> int:
     )
     ap.add_argument("--local-capture-dir", default="", help="read parent chunks locally (smoke)")
     ap.add_argument("--local-sae-dir", default="", help="read sae chunks locally (smoke)")
+    ap.add_argument(
+        "--with-bare",
+        action="store_true",
+        help="fits: add the bare-query input arm (sae_bare mean/max/frac + dense_bq_feat) by "
+        "SAE-encoding the parent bare-query store's STORED bq_last states — no re-capture",
+    )
+    ap.add_argument(
+        "--bare-hf-prefix",
+        default=f"{GG.HF_PREFIX}/bare_query",
+        help="parent bare-query capture prefix (READ side, --with-bare)",
+    )
+    ap.add_argument("--local-bare-dir", default="", help="read bare chunks locally (smoke)")
+    ap.add_argument(
+        "--analysis-hf-prefix",
+        default="",
+        help="override the analysis_tensors upload prefix (default: --sae-hf-prefix). Pass a "
+        "distinct prefix for a --with-bare run so the parent two-arm analysis is not clobbered",
+    )
     ap.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_LOCAL / "capture")
     ap.add_argument("--sae-cache", default=str(PROJECT_ROOT / "data" / "issue_1738" / "sae_cache"))
     ap.add_argument("--no-upload", action="store_true")

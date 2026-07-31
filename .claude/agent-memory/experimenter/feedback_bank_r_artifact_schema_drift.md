@@ -15,3 +15,9 @@ R_personas = R['completions'].keys() if 'completions' in R else R.keys()
 assert set(bank) == set(R_personas)
 ```
 Repeat for R_train. On FAIL, post `epm:failure v1 failure_class: code reason: r_eval_bank_schema_mismatch` with the missing/extra lists; do NOT launch. The bank is canonical — either re-upload a matching R or re-run Phase 1 r-generate; a plan's "REUSE" claim is unsafe without both artifacts pinned to the same bank hash. Recommend the implementer add a startup schema gate (fail-loud before train, not mid-loop). Same family: [[feedback_filter_tightening_corpus_count]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Bank vs R-artifact schema drift](feedback_bank_r_artifact_schema_drift.md) — issue_472 bank + R_eval not pinned to one snapshot; assert set(bank)==set(R) pre-launch or KeyError fires AFTER train+upload (#477 v4)

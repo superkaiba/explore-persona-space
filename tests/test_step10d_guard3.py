@@ -1448,6 +1448,29 @@ def test_tg_leg_node_grain_subtraction():
         ), "the verdict must OR the node-grain file beside the file-grain hit set"
 
 
+def test_tg_blocks_bash_parseable(tmp_path):
+    """#1847 (origin #1790): both Step 10d TG executable fences must parse
+    under `bash -n`. Orchestrators execute these blocks verbatim; the
+    substring pins above are structurally blind to a comment/formatting edit
+    that breaks parseability (#1790: msg-strip comments spliced inside the
+    node-grain pipelines broke both fences while every pin stayed green).
+    Convention matches the #1253 strong pin: substitute `<N>` -> a dummy
+    numeric id, write to a file, assert `bash -n` rc==0. Note: a comment
+    line placed after a trailing `|` is valid bash, so the negative smoke
+    is not exhaustive comment coverage."""
+    text = _skill_text()
+    for i, block in enumerate(_tg_blocks(text)):
+        # _tg_blocks segments start with the fence language tag ("bash\n");
+        # strip it so bash -n sees only the block body.
+        body = block.split("\n", 1)[1] if block.startswith("bash") else block
+        script = tmp_path / f"tg_block_{i}.sh"
+        script.write_text(body.replace("<N>", "1790"), encoding="utf-8")
+        bn = subprocess.run(["bash", "-n", str(script)], capture_output=True, text=True)
+        assert bn.returncode == 0, (
+            f"bash -n failed on TG block {i} (the #1790 regression class):\n{bn.stderr}"
+        )
+
+
 # --------------------------------------------------------------------------
 # Task #1753 — landing-union overlay (generalizes #1456 to every payload
 # path), Guard-4 recovery ordering, landing-bytes cap-bump rule

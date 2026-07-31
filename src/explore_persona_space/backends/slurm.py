@@ -99,6 +99,25 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
+class QosRung:
+    """One fallback rung of a cluster's granted-QoS ladder (#1899).
+
+    ``qos`` is the ``--qos`` the re-submit renders (threaded per-dispatch
+    via ``spec.extra["slurm_qos_override"]``); ``partition`` optionally
+    overrides the cluster's default ``--partition`` for this rung
+    (``None`` = keep :attr:`ClusterConfig.partition`). The pairing lives
+    HERE (in the cluster table, beside the row that documents it) because
+    QoS↔partition mappings are cluster-handbook facts; the WALK over the
+    rungs is park machinery and lives router-side
+    (``router._try_one_free_lane``). The renderer never reads this table —
+    it reads only the per-dispatch ``spec.extra`` overrides.
+    """
+
+    qos: str
+    partition: str | None = None
+
+
+@dataclass(frozen=True)
 class ClusterConfig:
     """Per-cluster knobs the SLURM backend needs.
 
@@ -180,8 +199,18 @@ class ClusterConfig:
     default preserves the pre-#1609 render byte-for-byte (pinned by the
     snapshot test in ``tests/test_slurm_backend_render.py``):
 
-    * ``qos`` — optional ``--qos`` value (fellows: ``high-eur``). ``None``
-      omits the ``#SBATCH --qos=`` line entirely.
+    * ``qos`` — optional ``--qos`` value: the cluster's PRIMARY tier
+      (fellows: ``high-eur`` — every dispatch submits under it first).
+      ``None`` omits the ``#SBATCH --qos=`` line entirely. A per-dispatch
+      ``spec.extra["slurm_qos_override"]`` / ``["slurm_partition_override"]``
+      supersedes it in :func:`render_sbatch` (#1899 — the router's
+      fallback-ladder re-submits thread those overrides; absent extras
+      render byte-identically).
+    * ``qos_ladder`` — fallback :class:`QosRung` tuple the ROUTER walks
+      (in order, after the primary ``qos``) when a fellows AUTO submit is
+      still PENDING at the park cap (#1899). Default ``()`` = no ladder
+      (every non-fellows lane; single-pass semantics unchanged). The
+      renderer never reads this field.
     * ``mem_gb_per_gpu`` / ``mem_gb_cap`` — the ``--mem`` formula knobs
       (``min(mem_gb_per_gpu * gpus, mem_gb_cap)``). Defaults 64/480
       reproduce the legacy hard-coded formula; fellows uses 128/1800
@@ -203,6 +232,19 @@ class ClusterConfig:
       cgroups already reap children, so the default stays ``False``.
     * ``job_name_suffix`` — appended to :func:`job_name` (fellows rule 8:
       job names include the user, ``-superkaiba``).
+
+    Field added for the fellows sentinel drain (#1898) — default ``False``
+    keeps every DRAC/Mila render + poll byte-identical:
+
+    * ``sentinel_drain`` — ``True`` ONLY where (a) the SSH alias is an
+      UNRESTRICTED shell (no forced-command allowlist) AND (b) a
+      cluster-shared ``/workspace`` is readable+writable from the SSH
+      endpoint, so the VM-side poller can run
+      ``poll_pipeline.sentinel_drain_shell`` over plain ssh
+      (:func:`slurm_monitor.drain_cluster_sentinels`). fellows=True
+      (probe 2026-07-30: ``/workspace`` drwxrwxrwx superkaiba,
+      ``/workspace/logs`` pre-existing); DRAC/Mila=False (robot wrapper
+      allowlists only sbatch/scancel/squeue/scp/rsync — #608).
     """
 
     name: str
@@ -249,6 +291,16 @@ class ClusterConfig:
     defines_scratch_env: bool = True
     term_kill_process_group: bool = False
     job_name_suffix: str | None = None
+    # Sentinel-drain capability (#1898): True ONLY where (a) the SSH alias is
+    # an UNRESTRICTED shell (no forced-command allowlist) AND (b) a
+    # cluster-shared /workspace is readable+writable from the SSH endpoint,
+    # so the VM-side poller can run poll_pipeline.sentinel_drain_shell over
+    # plain ssh. fellows=True (probe 2026-07-30: /workspace drwxrwxrwx
+    # superkaiba, /workspace/logs pre-existing); DRAC/Mila=False (robot
+    # wrapper allowlists only sbatch/scancel/squeue/scp/rsync — #608).
+    sentinel_drain: bool = False
+    # --- #1899 fellows QoS fallback ladder (default () = no ladder) ---
+    qos_ladder: tuple[QosRung, ...] = ()
 
     @property
     def ssh_host(self) -> str:
@@ -363,7 +415,29 @@ CLUSTER_CONFIGS: dict[str, ClusterConfig] = {
         scratch_path="/workspace/superkaiba",
         timezone="UTC",  # probe: date +%Z = UTC (EUR-IS / Iceland)
         partition="general",  # sinfo: general* (default), 14 nodes
-        qos="high-eur",  # non-preemptible; gres/gpu=16/user; 7d MaxWall
+        qos="high-eur",  # PRIMARY tier: non-preemptible; gres/gpu=16/user; 7d MaxWall
+        # #1899 granted-QoS fallback ladder, walked by the router on a
+        # queue-park timeout (AUTO path only — explicit `backend: fellows`
+        # pins never walk). Live `sacctmgr show qos` facts (2026-07-30):
+        #   high-eur    prio 100000  MaxTRESPU gres/gpu=16  7d   preempts low/normal-eur
+        #   normal-eur  prio  50000  MaxTRESPU gres/gpu=16  7d   preempted by high/dev-eur
+        #   low-eur     prio  10000  (no GPU cap)           14d  preempted by high/dev-eur
+        #   dev-eur     prio 200000  gres/gpu=8             1d   srun-interactive ONLY
+        # MaxTRESPU is per-QoS, so normal-eur's 16-GPU/user cap is SEPARATE
+        # headroom from high-eur's, and low-eur is uncapped — the ladder
+        # unlocks capacity exactly when high-eur is self-capped. dev-eur is
+        # DROPPED (sbatch rejected on this cluster — #1609 QoS mapping).
+        # low-eur submits to `general,overflow` per the cluster handbook
+        # (#1609 body). PREEMPTION HONESTY: the -eur family GraceTime is
+        # 00:00:00 (near-immediate SIGTERM -> KillWait -> SIGKILL; the
+        # ~3-min grace belongs to the NON-eur `normal`/`low` rows), so a
+        # lower-tier landing relies on the rule-7 process-group trap +
+        # checkpoint-per-phase resume; `realized_qos` rides the
+        # epm:backend-selected marker for forensics (#1899).
+        qos_ladder=(
+            QosRung("normal-eur"),
+            QosRung("low-eur", partition="general,overflow"),
+        ),
         mem_gb_per_gpu=128,  # cluster rule 2; node ceiling ~251 G/GPU
         # Headroom only (inert at <=8 GPUs: max request 1024G); kept under
         # the node RealMemory 2013000 MB ~= 1965 G.
@@ -397,6 +471,12 @@ CLUSTER_CONFIGS: dict[str, ClusterConfig] = {
             ("UV_PYTHON", "/usr/bin/python3.11"),
             ("UV_PYTHON_INSTALL_DIR", "/workspace/superkaiba/uv-python"),
         ),
+        # Sentinel drain ON (#1898): charmander's key is a NORMAL
+        # unrestricted shell and /workspace/logs pre-exists cluster-shared
+        # (write-probe 2026-07-30: touch + mv -n + rm all succeeded), so
+        # the VM-side poller drains /workspace/logs/issue-<N>-*.json each
+        # tick (slurm_monitor.drain_cluster_sentinels).
+        sentinel_drain=True,
         # Flipped True after the #1609 §7 live acceptance PASS (job 11092,
         # 2026-07-23: sbatch accepted under qos=high-eur/partition=general,
         # RUNNING on node-2, workload printed the GPU + HF_HOME_WRITABLE +
@@ -450,6 +530,15 @@ _DEFAULT_TIME_BUDGETS_HOURS: dict[str, float] = {
     "lora-7b": 6.0,
     "lora": 6.0,  # alias accepted by stages_for_spec + _DEFAULT_GPUS_FOR_INTENT
     "eval": 4.0,
+    # #1896: capture-7b (#752) is a single-GPU forward-pass capture path —
+    # eval-class wall-time (the #940 RunPod translation maps it to "eval").
+    # workload_cmd specs only; hydra-path capture-7b stays fail-fast at
+    # stages_for_spec (no canonical capture Hydra script). NOTE: a
+    # SENTINEL-DEPENDENT capture dispatcher must still pin a
+    # /workspace-contract lane (gcp/runpod) at plan time — on charmander
+    # /workspace exists but nothing drains it (CLAUDE.md fellows SENTINEL
+    # HAZARD).
+    "capture-7b": 4.0,
     "debug": 1.0,
     "ft-7b": 23.5,  # leave a margin under the 24h short-bin cap
     "inf-70b": 12.0,
@@ -511,6 +600,7 @@ _DEFAULT_GPUS_FOR_INTENT: dict[str, int] = {
     "lora-7b": 1,
     "lora": 1,
     "eval": 1,
+    "capture-7b": 1,  # #1896: single-GPU 7B capture — matches GCP a2-ultragpu-1g (#752)
     "debug": 1,
     "ft-7b": 4,
     "inf-70b": 8,
@@ -1546,6 +1636,35 @@ def _env_pin_export_lines(spec: RunSpec) -> list[str]:
     ]
 
 
+def _sentinel_precreate_lines(cluster: ClusterConfig, spec: RunSpec) -> list[str]:
+    """#1898: custom-stage ``/workspace/logs`` pre-create for drained clusters.
+
+    On a ``sentinel_drain`` cluster (fellows) the RunPod/GCP
+    ``/workspace/logs/issue-<N>-*.json`` marker contract HOLDS — the
+    VM-side poller drains it over plain ssh each tick
+    (``slurm_monitor.drain_cluster_sentinels``) — so the prelude
+    pre-creates the canonical dir fail-SOFT: a non-sentinel workload must
+    not die on a shared-root perms change, while a sentinel-writing
+    dispatcher's own ``mkdir -p /workspace/logs`` still fails loud under
+    its ``set -euo pipefail`` (the #608 semantics, preserved). On
+    DRAC/Mila (``sentinel_drain=False``, the #608 follow-up contract)
+    there is NO sentinel channel — compute nodes have no ``/workspace``
+    and the robot wrapper cannot run the drain shell (see slurm_monitor's
+    module docstring): returns ``[]`` so those renders stay
+    byte-identical; a dispatch script that depends on sentinel-carried
+    markers (epm:results payloads, gate fields) fails loud at its own
+    ``mkdir`` there and must be routed to a drained lane
+    (gcp/runpod/fellows) at plan time.
+    """
+    if not cluster.sentinel_drain:
+        return []
+    return [
+        "mkdir -p /workspace/logs 2>/dev/null || echo "
+        '"[eps] WARN: /workspace/logs not creatable; sentinel writers '
+        f'should fall back to $SCRATCH_JOB_DIR/eval_results/issue_{spec.issue}/logs"'
+    ]
+
+
 def render_sbatch(
     *,
     spec: RunSpec,
@@ -1616,10 +1735,16 @@ def render_sbatch(
             f"#SBATCH --output={output_path}",
         ]
     )
-    if cluster.partition:
-        sbatch_headers.append(f"#SBATCH --partition={cluster.partition}")
-    if cluster.qos:
-        sbatch_headers.append(f"#SBATCH --qos={cluster.qos}")
+    # #1899: per-dispatch overrides (threaded by the router's fellows
+    # QoS-ladder re-submits) supersede the cluster row; absent extras the
+    # expressions reduce to the cluster values, so renders without
+    # overrides stay byte-identical (the #1609 snapshot contract).
+    partition = spec.extra.get("slurm_partition_override") or cluster.partition
+    qos = spec.extra.get("slurm_qos_override") or cluster.qos
+    if partition:
+        sbatch_headers.append(f"#SBATCH --partition={partition}")
+    if qos:
+        sbatch_headers.append(f"#SBATCH --qos={qos}")
     if cluster.constraint:
         sbatch_headers.append(f"#SBATCH --constraint={cluster.constraint}")
 
@@ -1933,15 +2058,11 @@ def render_sbatch(
             # repo), so repo-relative `bash scripts/...` resolves.
             # Heartbeat / status.json / [phase=...] markers wrap it
             # unchanged.
-            # NO sentinel channel on this lane (#608 follow-up): the
-            # RunPod/GCP `/workspace/logs/issue-<N>-*.json` marker
-            # contract does NOT hold on SLURM — compute nodes have no
-            # /workspace and the robot wrapper cannot run the drain
-            # shell (see slurm_monitor's module docstring). A dispatch
-            # script that depends on sentinel-carried markers
-            # (epm:results payloads, gate fields) fails loud at its
-            # `mkdir -p /workspace/logs` and must be routed to the
-            # gcp/runpod lane at plan time.
+            # Sentinel channel is PER-CLUSTER (#1898): see
+            # ``_sentinel_precreate_lines`` — a fail-soft
+            # `/workspace/logs` pre-create on `sentinel_drain` clusters
+            # (fellows), byte-identical no-op on DRAC/Mila.
+            stage_blocks.extend(_sentinel_precreate_lines(cluster, spec))
             # MUST-BLOCK contract (#601 follow-up): the command must run
             # the workload to completion in the foreground. The terminal
             # [phase=done] + status.json "done" blocks below execute the
@@ -2944,6 +3065,27 @@ class SlurmBackend(ComputeBackend):
         cluster = get_cluster_config(handle.cluster) if handle.cluster else None
         if cluster is None:
             raise ValueError(f"SlurmBackend.fetch_results: handle has no cluster ({handle!r})")
+        # Final sentinel drain (#1898 belt, sentinel_drain clusters only):
+        # closes the "sentinel written in the last seconds after the
+        # terminal poll tick" race — finalize runs this method, so one last
+        # drain here catches a straggler the entry-placement tick drain
+        # missed. Lazy import (the SlurmBackend.poll pattern) to avoid the
+        # slurm <-> slurm_monitor module cycle; fail-soft on top of the
+        # helper's own fail-soft contract (a drain failure must never block
+        # the results pull).
+        if cluster.sentinel_drain:
+            issue = handle.extra.get("issue")
+            if issue is not None:
+                try:
+                    from explore_persona_space.backends.slurm_monitor import (
+                        drain_cluster_sentinels,
+                    )
+
+                    drain_cluster_sentinels(int(issue), cluster, handle.scratch_dir)
+                except Exception:
+                    logger.warning(
+                        "fetch_results final sentinel drain failed (fail-soft)", exc_info=True
+                    )
         # Pull eval_results/ + figures/ from $SCRATCH_JOB_DIR back to repo root.
         # ``--mkpath`` on the pull direction too (rsync sometimes needs it for
         # the local destination chain).
@@ -3294,6 +3436,7 @@ __all__ = [
     "SECRET_ENV_KEYS",
     "WORKING_TREE_OVERLAY_PATHS",
     "ClusterConfig",
+    "QosRung",
     "SbatchPlan",
     "SlurmBackend",
     "Stage",

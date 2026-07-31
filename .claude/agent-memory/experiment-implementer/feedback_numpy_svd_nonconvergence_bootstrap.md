@@ -38,3 +38,9 @@ refit loop):**
 Incident: #722 round 3 (2026-06-28) — `_pca_basis_v0`'s unguarded
 `np.linalg.svd` crashed the whole GCP fit at sycophancy L7 on a degenerate
 M⁺-refit bootstrap resample; the 3 em cells had fit clean.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [numpy SVD non-convergence on bootstrap resamples](feedback_numpy_svd_nonconvergence_bootstrap.md) — np.linalg.svd (gesdd) raises LinAlgError on rank-deficient bootstrap resamples in small clusters; fall back to scipy gesvd AND per-pair skip-guard the bootstrap loop (count skips, >5% = CONCERN). Deterministic on same data → code fix, NOT RunPod failover. #722 r3.

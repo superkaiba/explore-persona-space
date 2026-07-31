@@ -273,6 +273,26 @@ to stalled by the zombie-GPU probe.
     assert classify_failure(body, stall_reason="vllm_worker_dead_zombie_gpu") == "infra"
 
 
+def test_persistent_wedge_veto_yield_routes_infra() -> None:
+    """#1840: a `status=stalled` tick whose `stall_reason` is
+    `persistent_wedge_veto_yield` (the namespace veto yielded after N
+    consecutive wedge-regime ticks — #1768's alive-but-wedged HF download)
+    routes `infra` directly: the wedge's log tail is silent (no traceback /
+    OOM line), so the regex fallback would misroute it to the conservative
+    `code` default. Recovery is an experimenter respawn (container-side
+    kill of the wedged workers by cmdline/session match, then relaunch),
+    NOT a code fix."""
+    body = """## Stall detected
+
+The namespace veto yielded after 10 consecutive suppressed ticks with all
+logs and outputs frozen, every GPU idle, and the GPU-idle escalation posted.
+"""
+    # Without the stall_reason this body matches no infra pattern -> code.
+    assert classify_failure(body) == "code"
+    # With the known stall_reason it routes infra.
+    assert classify_failure(body, stall_reason="persistent_wedge_veto_yield") == "infra"
+
+
 def test_explicit_field_wins_over_stall_reason() -> None:
     """An explicit `failure_class:` field keeps top precedence over a
     known `stall_reason`."""

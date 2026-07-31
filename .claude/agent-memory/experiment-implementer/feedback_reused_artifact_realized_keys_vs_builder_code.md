@@ -20,3 +20,9 @@ regenerate via the parent loader with fail-loud source/length asserts PLUS a
 deterministic re-capture alignment gate against the artifact's stored tensors
 (row ALIGNMENT is the invariant, not the field's presence). Make the smoke
 fixture default to the PRODUCTION artifact shape.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Reused artifact's realized keys vs builder code](feedback_reused_artifact_realized_keys_vs_builder_code.md) — verify a reused artifact's OWN keys, not its builder code; regenerate + alignment-gate a missing regenerable field (#1073)

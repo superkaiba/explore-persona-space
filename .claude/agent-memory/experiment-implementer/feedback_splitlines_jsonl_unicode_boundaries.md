@@ -25,3 +25,9 @@ way. Treat any `.splitlines()` over JSONL content — read OR count — as a
 review blocker; `__doc__.splitlines()` etc. over known-ASCII is fine. Fix
 commit: 9e821f906f (3 sites: dispatch heredoc, u2_gen count assert,
 gen_conversations fixture parse).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [splitlines shreds JSONL with Unicode line boundaries](feedback_splitlines_jsonl_unicode_boundaries.md) — never read/count JSONL via str.splitlines(); raw U+2028/NEL in ensure_ascii=False user text shreds records (#825); use file iteration or split("\n")

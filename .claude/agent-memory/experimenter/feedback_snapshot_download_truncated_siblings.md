@@ -26,3 +26,9 @@ full-tree enumeration before `allow_patterns` applies. There, use SCOPED
 `git show 22388e4b3d:scripts/issue833_gcp_phase_d.sh` until #833's merge
 lands it on main; twin memory:
 `../experiment-implementer/feedback_hf_snapshot_download_full_tree_enumeration.md`).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [snapshot_download silent-empty family](feedback_snapshot_download_truncated_siblings.md) — allow_patterns vs truncated siblings → 0 files, no warning; verify list_repo_files; list_repo_tree+hf_hub_download; --adapter-path recovery (#375, #399, #558); on the ~1M-file DATA repo use scoped list_repo_tree ONLY — list_repo_files times out (#833)

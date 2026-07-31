@@ -16,3 +16,9 @@ Marker rigs with `MarkerOnlyDataCollator(suppress_at_post_response_slot=True)` c
 4. The smoke must include a LONG NEG row that previously truncated, proving: guard fires at bad budget, passes at good budget, collator reproduces the crash on a truncated row, collator yields post-response im_end loss at the good budget.
 
 Generalizes to any post-response-slot-loss rig: validate row size at build time, not 5 minutes into an epoch. Related: [[ruff-strips-unused-imports]], [[max_new_tokens >> trained len]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [CPU build-time guard for max_length truncation](feedback_cpu_build_time_guard_for_truncation.md) — re-tokenize every row at pool-build and fail loud over budget; smoke needs a long NEG row. #480.

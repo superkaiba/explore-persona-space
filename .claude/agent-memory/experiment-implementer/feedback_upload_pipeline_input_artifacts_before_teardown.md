@@ -20,3 +20,9 @@ trusted blind.
 rubrics) as a mandatory pre-teardown upload (text always uploads,
 CLAUDE.md persist-by-default); on a loss, check the judge-dispatch dirs
 before declaring anything unrecoverable. (#779 round 5, commit 412df7073f.)
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Upload pipeline-INPUT artifacts before teardown](feedback_upload_pipeline_input_artifacts_before_teardown.md) — tiny pod-generated inputs upload before teardown; judge-dispatch items/results = verbatim recovery + rubric re-validation lever (#779 r5)

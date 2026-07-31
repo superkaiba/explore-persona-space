@@ -15,3 +15,9 @@ A checkpoint-resolution helper (`_ensure_adapter_local`, `resolve_checkpoint`, �
 3. **Post-download invariant failed** — files downloaded but the sentinel (`config.json`/`adapter_config.json`) absent → RuntimeError naming the invariant and files attempted.
 
 Each None must be definitionally tied to "the operator should re-train"; a downloader-internal bug never is.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Eval-script silent 'not present' misdiagnosis](feedback_eval_script_silent_not_present_misdiagnosis.md) — split helper None into genuine-missing vs pattern-mismatch/invariant RuntimeErrors; never imply "re-train" on a downloader bug. #399.
