@@ -4851,6 +4851,45 @@ expensive". Both are advisory-only: neither changes the status verdict, and
 the poller stops nothing. This handling is additive to the `status=running`
 branch.
 
+**Same-phase rate/ETA duty (#1863; incident #1482).** When ≥3 consecutive
+poll ticks report the SAME `current_phase` with no `new_milestone`
+(≈25–30 min at the fixed 540 s tick; the #1482 ticks were 30-min), a
+phase-name liveness read is no longer enough — the orchestrator MUST
+compute a throughput read instead of echoing phase-name liveness
+indefinitely. Phase-label equivalence: a phase label differing only in an
+advancing numeric/progress token (`E2 upload at shard17` vs
+`E2 upload at shard23`, `cell 4/24` vs `cell 7/24`) is the SAME phase for
+this trigger — and that advancing token IS the progress counter to use.
+Input availability: on the trigger tick and every subsequent same-phase
+tick, the compacted #1841 tick parse ADDITIONALLY prints
+`log_tail_excerpt` (the #1841 field set is a minimum, so printing more is
+legal), or the orchestrator re-reads the tick's raw JSON line for it —
+the rate read's input must actually be in context, or the no-counter
+fallback below silently swallows the duty. The duty: extract the phase's
+monotonic progress counter from the tick evidence (the advancing label
+token, `log_tail_excerpt`, or a sentinel progress field — `shard NN`,
+`file K/M`, `cell i/N`), compute `rate = Δunits / Δwall` over the
+same-phase tick window, and project `ETA ≈ remaining units ÷ rate`.
+Record ONE `[phase-rate]` line in the session text and in the NEXT
+periodic liveness `epm:progress` note — once per liveness note, not per
+tick (this reuses `epm:progress`; NO new marker kind). Routing: this is a
+detection duty only, NOT a new gate — auto-continue is preserved; a
+pathological projection routes through EXISTING machinery: the
+compute-deviation / vectorize mid-run trigger for fit / battery /
+factorization phases (`.claude/rules/vectorize-many-cell-fits.md`
+§ Mid-run trigger), and CLAUDE.md "CPU-only phases don't hold GPU pods" +
+the #1824 bulk `upload_folder` recipe for per-file upload tails — never
+keep echoing "healthy" against a multi-hour projection. No-counter
+fallback: when no progress counter is readable from the tick evidence,
+state once `no progress counter readable — liveness only` and treat the
+absence as a signal to add a per-unit progress line (the
+pod-side-reporting.md / code-style.md per-unit progress-line convention)
+on the next code round. Worked example (#1482): five consecutive 30-min
+ticks each reported "Healthy — E2 upload at shardNN"; the first actual
+rate read gave ~98 files/h ⇒ a ~33 h projection for the remaining files,
+by which point ~5.4 h of idle-A100 billing had already accrued; recovery
+(one bulk `upload_folder` commit, the #1824 fix) took ~1 h.
+
 **Per-lane planned-cell reconciliation (on every lane/phase completion —
 #1481).** Planned-vs-actual coverage already has a terminal check
 (After-Every-Experiment item 8 / `verify_task_body.py` check 11b / the
@@ -5250,7 +5289,11 @@ live-escalation debounce covers it.)
    dead phase from recovery for up to 90 min and is the banned inverse
    of the false-respawn this duty prevents. (Pid-bearing detached-phase
    breadcrumbs stay authoritative over heartbeat notes — tick_triage
-   #1051.)
+   #1051.) On a long same-phase stretch — keyed on elapsed same-phase
+   time (≥~60–90 min) or ≥2 heartbeat resumes in the same phase, NOT the
+   3-tick count (heartbeat cadence is ~45–60 min) — the heartbeat
+   evidence ALSO includes the Step 6d.2 § Same-phase rate/ETA duty's
+   `[phase-rate]` read (#1863): alive ≠ progressing.
 
 **Remote-landing watches carry a producer-fence deadline (#1850;
 incidents #1738/#1739, 2026-07-29).** Any watch whose wake condition is
