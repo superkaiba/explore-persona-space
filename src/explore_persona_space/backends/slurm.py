@@ -232,6 +232,19 @@ class ClusterConfig:
       cgroups already reap children, so the default stays ``False``.
     * ``job_name_suffix`` — appended to :func:`job_name` (fellows rule 8:
       job names include the user, ``-superkaiba``).
+
+    Field added for the fellows sentinel drain (#1898) — default ``False``
+    keeps every DRAC/Mila render + poll byte-identical:
+
+    * ``sentinel_drain`` — ``True`` ONLY where (a) the SSH alias is an
+      UNRESTRICTED shell (no forced-command allowlist) AND (b) a
+      cluster-shared ``/workspace`` is readable+writable from the SSH
+      endpoint, so the VM-side poller can run
+      ``poll_pipeline.sentinel_drain_shell`` over plain ssh
+      (:func:`slurm_monitor.drain_cluster_sentinels`). fellows=True
+      (probe 2026-07-30: ``/workspace`` drwxrwxrwx superkaiba,
+      ``/workspace/logs`` pre-existing); DRAC/Mila=False (robot wrapper
+      allowlists only sbatch/scancel/squeue/scp/rsync — #608).
     """
 
     name: str
@@ -278,6 +291,14 @@ class ClusterConfig:
     defines_scratch_env: bool = True
     term_kill_process_group: bool = False
     job_name_suffix: str | None = None
+    # Sentinel-drain capability (#1898): True ONLY where (a) the SSH alias is
+    # an UNRESTRICTED shell (no forced-command allowlist) AND (b) a
+    # cluster-shared /workspace is readable+writable from the SSH endpoint,
+    # so the VM-side poller can run poll_pipeline.sentinel_drain_shell over
+    # plain ssh. fellows=True (probe 2026-07-30: /workspace drwxrwxrwx
+    # superkaiba, /workspace/logs pre-existing); DRAC/Mila=False (robot
+    # wrapper allowlists only sbatch/scancel/squeue/scp/rsync — #608).
+    sentinel_drain: bool = False
     # --- #1899 fellows QoS fallback ladder (default () = no ladder) ---
     qos_ladder: tuple[QosRung, ...] = ()
 
@@ -450,6 +471,12 @@ CLUSTER_CONFIGS: dict[str, ClusterConfig] = {
             ("UV_PYTHON", "/usr/bin/python3.11"),
             ("UV_PYTHON_INSTALL_DIR", "/workspace/superkaiba/uv-python"),
         ),
+        # Sentinel drain ON (#1898): charmander's key is a NORMAL
+        # unrestricted shell and /workspace/logs pre-exists cluster-shared
+        # (write-probe 2026-07-30: touch + mv -n + rm all succeeded), so
+        # the VM-side poller drains /workspace/logs/issue-<N>-*.json each
+        # tick (slurm_monitor.drain_cluster_sentinels).
+        sentinel_drain=True,
         # Flipped True after the #1609 §7 live acceptance PASS (job 11092,
         # 2026-07-23: sbatch accepted under qos=high-eur/partition=general,
         # RUNNING on node-2, workload printed the GPU + HF_HOME_WRITABLE +
@@ -1609,6 +1636,35 @@ def _env_pin_export_lines(spec: RunSpec) -> list[str]:
     ]
 
 
+def _sentinel_precreate_lines(cluster: ClusterConfig, spec: RunSpec) -> list[str]:
+    """#1898: custom-stage ``/workspace/logs`` pre-create for drained clusters.
+
+    On a ``sentinel_drain`` cluster (fellows) the RunPod/GCP
+    ``/workspace/logs/issue-<N>-*.json`` marker contract HOLDS — the
+    VM-side poller drains it over plain ssh each tick
+    (``slurm_monitor.drain_cluster_sentinels``) — so the prelude
+    pre-creates the canonical dir fail-SOFT: a non-sentinel workload must
+    not die on a shared-root perms change, while a sentinel-writing
+    dispatcher's own ``mkdir -p /workspace/logs`` still fails loud under
+    its ``set -euo pipefail`` (the #608 semantics, preserved). On
+    DRAC/Mila (``sentinel_drain=False``, the #608 follow-up contract)
+    there is NO sentinel channel — compute nodes have no ``/workspace``
+    and the robot wrapper cannot run the drain shell (see slurm_monitor's
+    module docstring): returns ``[]`` so those renders stay
+    byte-identical; a dispatch script that depends on sentinel-carried
+    markers (epm:results payloads, gate fields) fails loud at its own
+    ``mkdir`` there and must be routed to a drained lane
+    (gcp/runpod/fellows) at plan time.
+    """
+    if not cluster.sentinel_drain:
+        return []
+    return [
+        "mkdir -p /workspace/logs 2>/dev/null || echo "
+        '"[eps] WARN: /workspace/logs not creatable; sentinel writers '
+        f'should fall back to $SCRATCH_JOB_DIR/eval_results/issue_{spec.issue}/logs"'
+    ]
+
+
 def render_sbatch(
     *,
     spec: RunSpec,
@@ -2002,15 +2058,11 @@ def render_sbatch(
             # repo), so repo-relative `bash scripts/...` resolves.
             # Heartbeat / status.json / [phase=...] markers wrap it
             # unchanged.
-            # NO sentinel channel on this lane (#608 follow-up): the
-            # RunPod/GCP `/workspace/logs/issue-<N>-*.json` marker
-            # contract does NOT hold on SLURM — compute nodes have no
-            # /workspace and the robot wrapper cannot run the drain
-            # shell (see slurm_monitor's module docstring). A dispatch
-            # script that depends on sentinel-carried markers
-            # (epm:results payloads, gate fields) fails loud at its
-            # `mkdir -p /workspace/logs` and must be routed to the
-            # gcp/runpod lane at plan time.
+            # Sentinel channel is PER-CLUSTER (#1898): see
+            # ``_sentinel_precreate_lines`` — a fail-soft
+            # `/workspace/logs` pre-create on `sentinel_drain` clusters
+            # (fellows), byte-identical no-op on DRAC/Mila.
+            stage_blocks.extend(_sentinel_precreate_lines(cluster, spec))
             # MUST-BLOCK contract (#601 follow-up): the command must run
             # the workload to completion in the foreground. The terminal
             # [phase=done] + status.json "done" blocks below execute the
@@ -3013,6 +3065,27 @@ class SlurmBackend(ComputeBackend):
         cluster = get_cluster_config(handle.cluster) if handle.cluster else None
         if cluster is None:
             raise ValueError(f"SlurmBackend.fetch_results: handle has no cluster ({handle!r})")
+        # Final sentinel drain (#1898 belt, sentinel_drain clusters only):
+        # closes the "sentinel written in the last seconds after the
+        # terminal poll tick" race — finalize runs this method, so one last
+        # drain here catches a straggler the entry-placement tick drain
+        # missed. Lazy import (the SlurmBackend.poll pattern) to avoid the
+        # slurm <-> slurm_monitor module cycle; fail-soft on top of the
+        # helper's own fail-soft contract (a drain failure must never block
+        # the results pull).
+        if cluster.sentinel_drain:
+            issue = handle.extra.get("issue")
+            if issue is not None:
+                try:
+                    from explore_persona_space.backends.slurm_monitor import (
+                        drain_cluster_sentinels,
+                    )
+
+                    drain_cluster_sentinels(int(issue), cluster, handle.scratch_dir)
+                except Exception:
+                    logger.warning(
+                        "fetch_results final sentinel drain failed (fail-soft)", exc_info=True
+                    )
         # Pull eval_results/ + figures/ from $SCRATCH_JOB_DIR back to repo root.
         # ``--mkpath`` on the pull direction too (rsync sometimes needs it for
         # the local destination chain).

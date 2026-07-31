@@ -1,0 +1,271 @@
+{
+  "commit": "4417c57e12",
+  "created": "2026-07-31T00:21:52Z",
+  "figsize": [
+    11.0,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "Participation ratio (effective number of directions)": 41.5279550857212,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "Participation ratio (effective number of directions)": 42.2627547653701,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "Participation ratio (effective number of directions)": 41.95397873177134,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "Participation ratio (effective number of directions)": 33.669274924968306,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.74,
+      "Participation ratio (effective number of directions)": 34.14634387816027,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.74,
+      "Participation ratio (effective number of directions)": 33.60019957282374,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.74,
+      "Participation ratio (effective number of directions)": 33.68293163778482,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.74,
+      "Participation ratio (effective number of directions)": 33.55386327989032,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.74,
+      "Participation ratio (effective number of directions)": 33.25154542902241,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.74,
+      "Participation ratio (effective number of directions)": 37.01473205561074,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 9.74,
+      "Participation ratio (effective number of directions)": 36.584248675845124,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 10.74,
+      "Participation ratio (effective number of directions)": 36.54733289246098,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Context\nlayer 14 ridge",
+      "Participation ratio (effective number of directions)": 145.13482740378527,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Prefix\nlayer 14 ridge",
+      "Participation ratio (effective number of directions)": 60.323502471949915,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Bare-query\nlayer 14 ridge",
+      "Participation ratio (effective number of directions)": 94.31142244526683,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context\nlayer 19 ridge",
+      "Participation ratio (effective number of directions)": 111.61884408633874,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Prefix\nlayer 19 ridge",
+      "Participation ratio (effective number of directions)": 47.91732075829899,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Bare-query\nlayer 19 ridge",
+      "Participation ratio (effective number of directions)": 65.50637880713339,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context\nlayer 19 MLP",
+      "Participation ratio (effective number of directions)": 121.5204808543361,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Prefix\nlayer 19 MLP",
+      "Participation ratio (effective number of directions)": 47.642527906766865,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Bare-query\nlayer 19 MLP",
+      "Participation ratio (effective number of directions)": 67.0069622955644,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context\nlayer 26 ridge",
+      "Participation ratio (effective number of directions)": 180.81283939061143,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Prefix\nlayer 26 ridge",
+      "Participation ratio (effective number of directions)": 104.18962311812483,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Bare-query\nlayer 26 ridge",
+      "Participation ratio (effective number of directions)": 116.4890310736003,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "Participation ratio (effective number of directions)": 2425.8832443235747,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "Participation ratio (effective number of directions)": 2388.6229526272696,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "Participation ratio (effective number of directions)": 2412.869738380729,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "Participation ratio (effective number of directions)": 2406.1315292434338,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.26,
+      "Participation ratio (effective number of directions)": 2380.830994873577,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.26,
+      "Participation ratio (effective number of directions)": 2369.0197174698883,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.26,
+      "Participation ratio (effective number of directions)": 2368.4835262370084,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.26,
+      "Participation ratio (effective number of directions)": 2368.856372079221,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 8.26,
+      "Participation ratio (effective number of directions)": 2352.846866913917,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 9.26,
+      "Participation ratio (effective number of directions)": 2378.297755224976,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 10.26,
+      "Participation ratio (effective number of directions)": 2393.673386324379,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 11.26,
+      "Participation ratio (effective number of directions)": 2314.614717994497,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 36,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Effective rank of the residual sits between the two references in every cell (log scale; 3,584 dimensions available)",
+        "ylabel": "Participation ratio (effective number of directions)",
+        "legend_labels": [
+          "Target-covariance reference",
+          "Observed residual",
+          "Isotropic reference"
+        ],
+        "xticklabels": [
+          "Context\nlayer 14 ridge",
+          "Prefix\nlayer 14 ridge",
+          "Bare-query\nlayer 14 ridge",
+          "Context\nlayer 19 ridge",
+          "Prefix\nlayer 19 ridge",
+          "Bare-query\nlayer 19 ridge",
+          "Context\nlayer 19 MLP",
+          "Prefix\nlayer 19 MLP",
+          "Bare-query\nlayer 19 MLP",
+          "Context\nlayer 26 ridge",
+          "Prefix\nlayer 26 ridge",
+          "Bare-query\nlayer 26 ridge"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ]
+      }
+    ],
+    "series": [
+      "Target-covariance reference",
+      "Observed residual",
+      "Isotropic reference"
+    ]
+  }
+}

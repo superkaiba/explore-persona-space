@@ -368,8 +368,9 @@ Run the structural verifier against the plan version just persisted:
   standalone WITHOUT the N/A prefix; the `N/A — no sentinel dependence`
   form is also accepted. Use it when the `/workspace/...` sentinel
   vocabulary is quoted but nothing in the run posts through sentinels; a
-  genuinely sentinel-signaling plan instead pins a /workspace-contract
-  lane — `backend: gcp` / `backend: runpod`).
+  genuinely sentinel-signaling plan instead pins a drained lane —
+  `backend: gcp` / `backend: runpod` / `backend: fellows` (the fellows
+  drain landed at #1898)).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).

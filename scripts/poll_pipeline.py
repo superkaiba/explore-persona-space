@@ -2287,10 +2287,12 @@ def sentinel_drain_shell(issue: int, extra_globs: tuple[str, ...] = ()) -> str:
     and the GCP gcloud-ssh transport (``backends.gcp`` — which wraps it in
     ``sudo -n bash -c`` because the GCE startup script writes the sentinel
     tree as root, mode 600; incident #608) so the two lanes can never drift
-    on the loop shape. The SLURM lane deliberately has NO drain transport:
-    compute nodes have no ``/workspace`` and the robot forced-command
-    wrapper cannot execute this shell — see ``backends/slurm_monitor.py``
-    § "No sentinel drain on this lane" (#608 follow-up).
+    on the loop shape. The DRAC/Mila SLURM lanes have NO drain transport
+    (robot forced-command wrapper; compute nodes lack ``/workspace`` —
+    #608); the FELLOWS lane drains via
+    ``backends/slurm_monitor.drain_cluster_sentinels`` (#1898), which
+    shares this loop shape — see ``backends/slurm_monitor.py``
+    § "Sentinel drain: fellows only".
 
     ``extra_globs`` appends transport-specific fallback patterns to the
     canonical glob (incident #610: the issue-610 GCP dispatcher found

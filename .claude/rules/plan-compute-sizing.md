@@ -294,20 +294,24 @@ disk row; no verify_plan.py backstop in v1 of this block.
 
 
 **Sentinel-signaling workloads need a /workspace-contract lane — never
-rely on auto's SLURM fallback.** If the plan's dispatch script posts
-markers via pod-side sentinel files (`/workspace/logs/issue-<N>-*.json` —
-gate sentinels, `epm:results` payloads), the plan MUST pin a lane that
-honors that contract: `backend: gcp` (GCE instances mirror RunPod's
-`/workspace` — `GcpConfig.vm_scratch_dir`) or an explicit
-`backend: runpod` override with its residual gap named. Do NOT leave such
-a workload on `auto`: a GCP capacity failure falls through to the SLURM
-lanes, where compute nodes have no `/workspace` and the robot wrapper
-cannot run the sentinel drain — the dispatcher fails loud at its
-`mkdir -p /workspace/logs` and burns the SLURM submission (#608, commit
-3022ff7bc). If the plan needs a SLURM lane, the dispatcher must use the
-SLURM signaling contract instead — `status.json` heartbeat +
-`[phase=...]` log lines (see `backends/slurm_monitor.py` module
-docstring § "No sentinel drain on this lane"). State the choice in §9:
+rely on auto's DRAC/Mila SLURM fallback.** If the plan's dispatch script
+posts markers via pod-side sentinel files
+(`/workspace/logs/issue-<N>-*.json` — gate sentinels, `epm:results`
+payloads), the plan SHOULD pin a DRAINED lane: `backend: gcp` (GCE
+instances mirror RunPod's `/workspace` —
+`GcpConfig.vm_scratch_dir`), `backend: fellows` (the charmander
+cluster-shared `/workspace`, drained by the VM-side poller each tick via
+`slurm_monitor.drain_cluster_sentinels` — #1898), or an explicit
+`backend: runpod` override with its residual gap named. Leaving such a
+workload on `auto` is discouraged: a fellows + GCP capacity failure
+falls through to the DRAC/Mila SLURM lanes, where compute nodes have no
+`/workspace` and the robot wrapper cannot run the sentinel drain — the
+dispatcher fails loud at its `mkdir -p /workspace/logs` and burns the
+SLURM submission (#608, commit 3022ff7bc). If the plan needs a DRAC/Mila
+lane, the dispatcher must use the SLURM signaling contract instead —
+`status.json` heartbeat + `[phase=...]` log lines (see
+`backends/slurm_monitor.py` module docstring § "Sentinel drain: fellows
+only"). State the choice in §9:
 either the pinned lane + why, or "no sentinel dependence — auto-safe."
 
 

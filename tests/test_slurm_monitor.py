@@ -1347,3 +1347,306 @@ def test_query_slurm_state_invalid_job_id_is_unknown(monkeypatch) -> None:
     )
     state = query_slurm_state(robot_alias="robot-nibi", job_id="15859991")
     assert state["status"] == "UNKNOWN"
+
+
+# ---------------------------------------------------------------------------
+# Fellows sentinel drain (#1898) — drain_cluster_sentinels + threading
+# ---------------------------------------------------------------------------
+#
+# The drain reuses scripts/poll_pipeline.py's transport-agnostic helpers
+# (sentinel_drain_shell / parse_sentinel_stream / drain_sentinels_via /
+# _ssh_mark_processed) over plain `ssh charmander`. The drain-list ssh is
+# faked at the injected ``runner=`` boundary; the VM-side post + the
+# `.processed` rename are intercepted on the ``scripts.poll_pipeline``
+# module object (the SAME module drain_cluster_sentinels lazy-imports
+# from, so call-time name lookups resolve to the patches — the
+# test_poll_pipeline_sentinels.py convention).
+
+
+def _fellows():
+    return get_cluster_config("fellows")
+
+
+def _pp_module():
+    """The scripts.poll_pipeline module object drain_cluster_sentinels
+    lazy-imports from (repo root is on sys.path under pytest)."""
+    import scripts.poll_pipeline as pp
+
+    return pp
+
+
+def _drain_body(
+    *,
+    kind: str = "epm:progress",
+    gate: str | None = None,
+    blocks_pipeline: bool | None = None,
+    note: str = "fellows drain test",
+) -> str:
+    body = {
+        "sentinel_schema_version": 1,
+        "task_id": 9999,
+        "kind": kind,
+        "version": 1,
+        "note": note,
+        "by": "pod-sentinel",
+        "ts": "2026-07-30T00:00:00+00:00",
+    }
+    if gate is not None:
+        body["gate"] = gate
+    if blocks_pipeline is not None:
+        body["blocks_pipeline"] = blocks_pipeline
+    return json.dumps(body)
+
+
+def _drain_stream(*pairs: tuple[str, str]) -> str:
+    """The SENTINEL_START/END stdout shape sentinel_drain_shell emits."""
+    out: list[str] = []
+    for path, body in pairs:
+        out.append(f"SENTINEL_START {path}")
+        out.append(body)
+        out.append("SENTINEL_END")
+    return "\n".join(out) + ("\n" if out else "")
+
+
+class _DrainRunner:
+    """Fake for the drain-list ssh (the ``runner=`` seam)."""
+
+    def __init__(self, *, stdout: str = "", returncode: int = 0, raise_timeout: bool = False):
+        self.stdout = stdout
+        self.returncode = returncode
+        self.raise_timeout = raise_timeout
+        self.calls: list[list[str]] = []
+
+    def __call__(self, cmd, **kwargs):
+        assert cmd[0] == "ssh", f"expected ssh argv, got {cmd!r}"
+        self.calls.append(cmd)
+        if self.raise_timeout:
+            raise subprocess.TimeoutExpired(cmd, 60)
+        return subprocess.CompletedProcess(
+            args=cmd, returncode=self.returncode, stdout=self.stdout, stderr="boom"
+        )
+
+
+def _patch_pp(monkeypatch):
+    """Intercept the VM-side post + rename on the poll_pipeline module.
+
+    Returns (posts, mv_calls). ``list_events`` is stubbed to "no prior
+    events" so the #1084 fp-dedupe read never touches real task state
+    (the test_poll_pipeline_sentinels.py ``_stub_no_prior_events``
+    convention).
+    """
+    pp = _pp_module()
+    posts: list[dict] = []
+    mv_calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(pp, "post_event", lambda *a, **kw: posts.append(kw) or {})
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])
+    monkeypatch.setattr(
+        pp, "_ssh_mark_processed", lambda host, path: mv_calls.append((host, path)) or True
+    )
+    return posts, mv_calls
+
+
+def test_drain_parses_and_posts_multi_sentinel_stream(monkeypatch) -> None:
+    from explore_persona_space.backends.slurm_monitor import drain_cluster_sentinels
+
+    posts, mv_calls = _patch_pp(monkeypatch)
+    p1 = "/workspace/logs/issue-9999-epm_progress-100.json"
+    p2 = "/workspace/logs/issue-9999-epm_progress-200.json"
+    runner = _DrainRunner(stdout=_drain_stream((p1, _drain_body()), (p2, _drain_body())))
+    processed, gate = drain_cluster_sentinels(
+        9999, _fellows(), "/workspace/superkaiba/eps/issue-9999", runner=runner
+    )
+    assert (processed, gate) == (2, None)
+    assert len(posts) == 2
+    assert [c[1] for c in mv_calls] == [p1, p2]
+    assert all(host == "charmander" for host, _ in mv_calls)
+
+
+def test_drain_gate_field_threads_and_flips_status(tmp_path: Path, monkeypatch) -> None:
+    """#1898 critic round-1 Must-Fix 1: a drained BLOCKING gate flips the
+    tick to status "gate" (the gcp.py merge, Step 6d.4 park); a benign
+    ``gate=phase`` / ``blocks_pipeline: False`` sentinel never flips."""
+    from explore_persona_space.backends.slurm_monitor import drain_cluster_sentinels
+
+    # (a) drain level: blocks_pipeline=True surfaces the gate; the benign
+    # phase-progress signal posts but is NOT surfaced.
+    posts, _ = _patch_pp(monkeypatch)
+    blocking = _drain_body(kind="epm:fact-candidates", gate="confirm-x", blocks_pipeline=True)
+    benign = _drain_body(kind="epm:progress", gate="phase", blocks_pipeline=False)
+    runner = _DrainRunner(
+        stdout=_drain_stream(
+            ("/workspace/logs/issue-9999-epm_fact-candidates-1.json", blocking),
+            ("/workspace/logs/issue-9999-epm_progress-2.json", benign),
+        )
+    )
+    processed, gate = drain_cluster_sentinels(
+        9999, _fellows(), "/workspace/superkaiba/eps/issue-9999", runner=runner
+    )
+    assert (processed, gate) == (2, "confirm-x")
+    assert len(posts) == 2
+
+    # (b) build_poll_result threads the gate AND flips status to "gate".
+    job_id = "9401"
+    now = datetime.now(tz=UTC)
+    fresh_ts = now.isoformat().replace("+00:00", "Z")
+    _seed_local_state(
+        tmp_path,
+        job_id,
+        status_json_body={"phase": "sft", "heartbeat_ts": fresh_ts, "gpu_busy": True},
+        job_out_lines=["[phase=sft]"],
+    )
+    common = dict(
+        issue=9999,
+        job_id=job_id,
+        cluster=_fellows(),
+        scratch_dir="/workspace/superkaiba/eps/issue-9999",
+        log_path="/workspace/superkaiba/eps/issue-9999/job.out",
+        state_querier=lambda *, robot_alias, job_id: {"status": "RUNNING", "exit_code": None},
+        rsyncer=lambda **_: None,
+        now_fn=lambda: now.timestamp(),
+        marker_poster=lambda **_kw: None,
+        event_reader=lambda _issue: [],
+    )
+    poll = build_poll_result(**common, sentinel_drainer=lambda i, c, s: (1, "confirm-x"))
+    assert poll.status == "gate"
+    assert poll.gate == "confirm-x"
+    assert poll.sentinels_processed == 1
+
+    # (c) a benign drain round (gate never surfaced by drain_sentinels_via)
+    # leaves the base status untouched.
+    poll = build_poll_result(**common, sentinel_drainer=lambda i, c, s: (1, None))
+    assert poll.status == "running"
+    assert poll.gate is None
+    assert poll.sentinels_processed == 1
+
+
+def test_drain_transport_failure_fail_soft(tmp_path: Path, monkeypatch) -> None:
+    """rc!=0 AND TimeoutExpired both log + return (0, None); a drainer
+    that RAISES is belted by build_poll_result (normal PollResult)."""
+    from explore_persona_space.backends.slurm_monitor import drain_cluster_sentinels
+
+    _patch_pp(monkeypatch)
+    processed, gate = drain_cluster_sentinels(
+        9999,
+        _fellows(),
+        "/workspace/superkaiba/eps/issue-9999",
+        runner=_DrainRunner(returncode=255),
+    )
+    assert (processed, gate) == (0, None)
+    processed, gate = drain_cluster_sentinels(
+        9999,
+        _fellows(),
+        "/workspace/superkaiba/eps/issue-9999",
+        runner=_DrainRunner(raise_timeout=True),
+    )
+    assert (processed, gate) == (0, None)
+
+    def _raising_drainer(i, c, s):
+        raise RuntimeError("drain bug")
+
+    job_id = "9402"
+    now = datetime.now(tz=UTC)
+    _seed_local_state(tmp_path, job_id, status_json_body=None, job_out_lines=["[phase=sft]"])
+    poll = build_poll_result(
+        issue=9999,
+        job_id=job_id,
+        cluster=_fellows(),
+        scratch_dir="/workspace/superkaiba/eps/issue-9999",
+        log_path="/workspace/superkaiba/eps/issue-9999/job.out",
+        state_querier=lambda *, robot_alias, job_id: {"status": "RUNNING", "exit_code": None},
+        rsyncer=lambda **_: None,
+        now_fn=lambda: now.timestamp(),
+        marker_poster=lambda **_kw: None,
+        event_reader=lambda _issue: [],
+        sentinel_drainer=_raising_drainer,
+    )
+    assert poll.sentinels_processed == 0
+    assert poll.gate is None
+
+
+def test_drain_mark_processed_failure_leaves_sentinel_for_retry(monkeypatch) -> None:
+    """A False rename still counts per drain_sentinels_via's contract (the
+    marker POSTED; the next tick's #1084 fp-dedupe replay retries the
+    rename only — pinned in poll_pipeline's own tests)."""
+    from explore_persona_space.backends.slurm_monitor import drain_cluster_sentinels
+
+    pp = _pp_module()
+    posts, _ = _patch_pp(monkeypatch)
+    monkeypatch.setattr(pp, "_ssh_mark_processed", lambda host, path: False)
+    runner = _DrainRunner(
+        stdout=_drain_stream(("/workspace/logs/issue-9999-epm_progress-1.json", _drain_body()))
+    )
+    processed, gate = drain_cluster_sentinels(
+        9999, _fellows(), "/workspace/superkaiba/eps/issue-9999", runner=runner
+    )
+    assert (processed, gate) == (1, None)
+    assert len(posts) == 1
+
+
+def test_non_sentinel_drain_cluster_makes_no_ssh_call(tmp_path: Path) -> None:
+    """Acceptance criterion 3 (#1898): sentinel_drain=False clusters make
+    ZERO drain ssh calls and keep sentinels_processed=0 exactly as today
+    — no poll_pipeline import either (the gate precedes the lazy import)."""
+    from explore_persona_space.backends.slurm_monitor import drain_cluster_sentinels
+
+    def _forbidden_runner(cmd, **kwargs):
+        raise AssertionError(f"drain ssh must not run for this cluster: {cmd!r}")
+
+    for name in ("nibi", "mila"):
+        processed, gate = drain_cluster_sentinels(
+            9999, get_cluster_config(name), "/scratch/x/eps/issue-9999", runner=_forbidden_runner
+        )
+        assert (processed, gate) == (0, None)
+
+    # build_poll_result on a DRAC cluster (default drainer): no ssh, 0/None.
+    job_id = "9403"
+    now = datetime.now(tz=UTC)
+    _seed_local_state(tmp_path, job_id, status_json_body=None, job_out_lines=["[phase=sft]"])
+    poll = build_poll_result(
+        issue=9999,
+        job_id=job_id,
+        cluster=_nibi(),
+        scratch_dir="/scratch/tjiral/eps/issue-9999",
+        log_path="/scratch/tjiral/eps/issue-9999/job.out",
+        state_querier=lambda *, robot_alias, job_id: {"status": "RUNNING", "exit_code": None},
+        rsyncer=lambda **_: None,
+        now_fn=lambda: now.timestamp(),
+        marker_poster=lambda **_kw: None,
+        event_reader=lambda _issue: [],
+    )
+    assert poll.sentinels_processed == 0
+    assert poll.gate is None
+    assert poll.status == "stalled"  # no heartbeat — base semantics untouched
+
+
+def test_drain_shell_includes_scratch_fallback_glob(monkeypatch) -> None:
+    """The composed drain shell carries BOTH the canonical /workspace/logs
+    glob AND the scratch-dir out_root fallback (the GCP #610 belt), and is
+    wrapped in `bash -c` — charmander's login shell is zsh, where the
+    drain loop's bash-isms fail (`shopt: command not found`; the
+    2026-07-30 live-acceptance finding)."""
+    from explore_persona_space.backends.slurm_monitor import drain_cluster_sentinels
+
+    _patch_pp(monkeypatch)
+    runner = _DrainRunner(stdout="")
+    drain_cluster_sentinels(9999, _fellows(), "/workspace/superkaiba/eps/issue-9999", runner=runner)
+    assert len(runner.calls) == 1
+    argv = runner.calls[0]
+    assert argv[-2] == "charmander"
+    shell = argv[-1]
+    assert shell.startswith("bash -c ")  # zsh-proof remote invocation
+    assert "/workspace/logs/issue-9999-*.json" in shell
+    assert (
+        "/workspace/superkaiba/eps/issue-9999/eval_results/issue_9999/logs/issue-9999-*.json"
+        in shell
+    )
+
+
+def test_fellows_config_sentinel_drain_true_drac_mila_false() -> None:
+    """Config pin (#1898): the drain capability is fellows-ONLY (fir read
+    off the raw table — get_cluster_config raises on available=False)."""
+    from explore_persona_space.backends.slurm import CLUSTER_CONFIGS
+
+    assert get_cluster_config("fellows").sentinel_drain is True
+    for name in ("nibi", "fir", "mila"):
+        assert CLUSTER_CONFIGS[name].sentinel_drain is False, name
