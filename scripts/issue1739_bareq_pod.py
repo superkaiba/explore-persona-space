@@ -486,8 +486,18 @@ def bit_equality_gate(args, tokenizer, model, sample: list[dict]) -> dict:
     fresh, fresh_meta = store_io.load_summaries(
         probe_root / "bareq", (BARE_KIND,), layers, hidden_dim=args.hidden_dim
     )
+    wc_store = Path(args.wcrung_store)
+    if not wc_store.exists():
+        # The committed wcrung capture store is HF-resident (6 GB, 1,721 files at
+        # issue1739_ctxmap/wildchat_rung/capture_store/wildchat) — a fresh clone
+        # has no local copy (att-20260731-150348 crashed here). Reuse the arms
+        # runner's test-pinned staging (skip-if-present, probe-verified).
+        from scripts.issue1739_wcrung_arms_run import stage_wcrung_store
+
+        wc_store = stage_wcrung_store(argparse.Namespace(store_root=args.stage_root))
+        print(f"[bareq] staged wcrung capture store from HF -> {wc_store}", flush=True)
     stored, stored_meta = store_io.load_summaries(
-        Path(args.wcrung_store), (BARE_KIND,), layers, hidden_dim=args.hidden_dim
+        wc_store, (BARE_KIND,), layers, hidden_dim=args.hidden_dim
     )
     key = "context_id"
     pos = {r.get(key): i for i, r in enumerate(stored_meta)}
