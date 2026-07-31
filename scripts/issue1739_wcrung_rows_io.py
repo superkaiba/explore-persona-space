@@ -224,6 +224,10 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         default=Path("eval_results/issue_1739/wildchat_rung/contexts/wcrung.json"),
     )
+    # This transport is bound to #1739's wildchat rung by construction (the shard
+    # stem, the manifest schema, and the sampler row shape are all that rung's),
+    # so the default names that rung's own subtree; --hf-prefix overrides.
+    # UPLOAD_PREFIX_EXEMPT: wildchat-rung-specific rows transport; flag overrides
     ap.add_argument("--hf-prefix", default="issue1739_ctxmap/wildchat_rung/contexts")
     ap.add_argument("--stage-dir", type=Path, default=None, help="default: <rows-json>_shards/")
     ap.add_argument("--dry-run", action="store_true")
