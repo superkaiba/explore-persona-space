@@ -1,0 +1,87 @@
+{
+  "arm": "forced_lambda",
+  "cell_id": "base__R_instruct_r3_prefix",
+  "committed_r2": 0.11661613300452556,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 22.19,
+  "forced_lambda": {
+    "1e+02": {
+      "fold_se": 0.012848285237688375,
+      "r2_per_fold": [
+        -0.3043021561847603,
+        -0.3338808237122388,
+        -0.31347804966714543,
+        -0.26776794401730886,
+        -0.2693439024931761
+      ],
+      "r2_pooled": -0.29741612719924215,
+      "selected_lambda_per_fold": [
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0
+      ]
+    },
+    "1e+03": {
+      "fold_se": 0.007088825826866312,
+      "r2_per_fold": [
+        0.06138122086407183,
+        0.03226542512492048,
+        0.05098019589673419,
+        0.07353843094501133,
+        0.06505663243391513
+      ],
+      "r2_pooled": 0.05681112445451819,
+      "selected_lambda_per_fold": [
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0
+      ]
+    },
+    "1e+04": {
+      "fold_se": 0.004036164674178987,
+      "r2_per_fold": [
+        0.13229136667939922,
+        0.11081106498723459,
+        0.12480444702924864,
+        0.13343581039376173,
+        0.1261813718540209
+      ],
+      "r2_pooled": 0.12558394957855779,
+      "selected_lambda_per_fold": [
+        10000.0,
+        10000.0,
+        10000.0,
+        10000.0,
+        10000.0
+      ]
+    }
+  },
+  "issue": 1345,
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T03:45:47Z"
+  },
+  "n_train_min": 1678,
+  "published_claim_ref": "eval_results/issue_1345/cells_R_instruct_r3_prefix.json @ L19",
+  "resume_key": {
+    "arm": "forced_lambda",
+    "cell_id": "base__R_instruct_r3_prefix",
+    "issue": 1345,
+    "selector_regime": "forced_lambda",
+    "store_rev": "e151f8fd30a466cd9e2f05b9b86cf6dde76bca74"
+  },
+  "selection_bearing": true,
+  "selector_config": {
+    "gcv_dof_cap": null,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": false
+  },
+  "variant": "base"
+}

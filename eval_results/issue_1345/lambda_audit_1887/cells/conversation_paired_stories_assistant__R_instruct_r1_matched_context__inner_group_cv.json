@@ -1,0 +1,95 @@
+{
+  "arm": "inner_group_cv",
+  "cell_id": "conversation_paired_stories_assistant__R_instruct_r1_matched_context",
+  "committed_r2": 0.24258391652474653,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 11.38,
+  "fold_se": 0.003224955563892355,
+  "issue": 1345,
+  "knn": {
+    "cosine": {
+      "acc_at_k": {
+        "1": 0.5233472029588534,
+        "5": 0.7868700878409616,
+        "10": 0.8640776699029126
+      },
+      "chance_at_k": {
+        "1": 0.0004623208506703652,
+        "5": 0.002311604253351826,
+        "10": 0.004623208506703652
+      },
+      "median_rank": 1.0,
+      "metric": "cosine",
+      "mrr": 0.643896047203767,
+      "n": 2163,
+      "n_pool": 2163
+    },
+    "euclidean": {
+      "acc_at_k": {
+        "1": 0.5145631067961165,
+        "5": 0.7817845584835876,
+        "10": 0.864539990753583
+      },
+      "chance_at_k": {
+        "1": 0.0004623208506703652,
+        "5": 0.002311604253351826,
+        "10": 0.004623208506703652
+      },
+      "median_rank": 1.0,
+      "metric": "euclidean",
+      "mrr": 0.634967872215791,
+      "n": 2163,
+      "n_pool": 2163
+    }
+  },
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T05:46:51Z"
+  },
+  "n_train_min": 1730,
+  "n_train_per_fold": [
+    1730,
+    1730,
+    1730,
+    1731,
+    1731
+  ],
+  "published_claim_ref": "eval_results/issue_1345/conversation_paired_stories_assistant/matched_row/cells_R_instruct_r1_matched_context.json @ L19",
+  "r2_per_fold": [
+    0.654162397869325,
+    0.6477341991714821,
+    0.6425864109086636,
+    0.643688195360581,
+    0.634506489312249
+  ],
+  "r2_pooled": 0.644524320178538,
+  "resume_key": {
+    "arm": "inner_group_cv",
+    "cell_id": "conversation_paired_stories_assistant__R_instruct_r1_matched_context",
+    "issue": 1345,
+    "selector_regime": "inner_group_cv",
+    "store_rev": "e151f8fd30a466cd9e2f05b9b86cf6dde76bca74+allow:matched:77f73466e0a7a3d7f29f31aaa8f0dd9372431045"
+  },
+  "selected_lambda_per_fold": [
+    1000.0,
+    1000.0,
+    1000.0,
+    1000.0,
+    1000.0
+  ],
+  "selector_config": {
+    "gcv_dof_cap": 0.9,
+    "lambda_selection": "inner-group-cv",
+    "legacy_unguarded": false
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": false,
+    "n_train": 1730,
+    "reasons": []
+  },
+  "variant": "conversation_paired_stories_assistant"
+}

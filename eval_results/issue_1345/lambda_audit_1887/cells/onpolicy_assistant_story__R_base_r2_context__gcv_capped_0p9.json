@@ -1,0 +1,59 @@
+{
+  "arm": "gcv_capped_0p9",
+  "cell_id": "onpolicy_assistant_story__R_base_r2_context",
+  "committed_r2": 0.5782882733523877,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 25.75,
+  "fold_se": 0.0015768731658479132,
+  "issue": 1345,
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T06:05:29Z"
+  },
+  "n_train_min": 3779,
+  "n_train_per_fold": [
+    3779,
+    3779,
+    3779,
+    3779,
+    3780
+  ],
+  "published_claim_ref": "eval_results/issue_1345/onpolicy_assistant_story/cells_R_base_r2_context.json @ L19",
+  "r2_per_fold": [
+    0.57595463538478,
+    0.5835445441884665,
+    0.5803826933029796,
+    0.5753771203600114,
+    0.5763389587373008
+  ],
+  "r2_pooled": 0.5782882733523875,
+  "resume_key": {
+    "arm": "gcv_capped_0p9",
+    "cell_id": "onpolicy_assistant_story__R_base_r2_context",
+    "issue": 1345,
+    "selector_regime": "gcv_capped_0p9",
+    "store_rev": "e151f8fd30a466cd9e2f05b9b86cf6dde76bca74+allow:matched:87c5a80269d4e91f307f8a77e0c0cbdd741b3ce2"
+  },
+  "selected_lambda_per_fold": [
+    1000.0,
+    1000.0,
+    1000.0,
+    1000.0,
+    1000.0
+  ],
+  "selector_config": {
+    "gcv_dof_cap": 0.9,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": false
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": false,
+    "n_train": 3779,
+    "reasons": []
+  },
+  "variant": "onpolicy_assistant_story"
+}
