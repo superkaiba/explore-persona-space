@@ -398,6 +398,101 @@ def phase_gen(args) -> int:
     return 0
 
 
+# ── phase: upload ────────────────────────────────────────────────────────────
+
+HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
+HF_PREFIX = "issue1773_register_steer"
+SHARD_BYTES = 9_000_000  # keep every shard on the always-open non-LFS path
+
+
+def phase_upload(args) -> int:
+    """Shard the raw generations under the 10 MB LFS force-route and push them.
+
+    Raw generations are the artifact the whole validator is derived from, so they
+    land on the data repo BEFORE the pod is released -- one bulk commit, then an
+    exact-set verify against a fresh listing.
+    """
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+    from explore_persona_space.orchestrate.env import load_dotenv
+
+    load_dotenv()
+    out_dir = args.out_dir
+    stage = out_dir / "_hf_stage"
+    if stage.exists():
+        for p in stage.iterdir():
+            p.unlink()
+    stage.mkdir(parents=True, exist_ok=True)
+
+    expected: list[str] = []
+    for name in ("generations.jsonl", "baseline.jsonl"):
+        src = out_dir / name
+        if not src.exists():
+            continue
+        stem = name.removesuffix(".jsonl")
+        shard, size, idx = [], 0, 0
+        parts: list[tuple[str, int]] = []
+
+        def _flush(shard, idx, stem, parts):
+            if not shard:
+                return
+            fn = f"{stem}.shard{idx:03d}.jsonl"
+            (stage / fn).write_text("".join(shard))
+            parts.append((fn, len(shard)))
+
+        with open(src, encoding="utf-8") as fh:
+            for line in fh:
+                if not line.strip():
+                    continue
+                b = len(line.encode())
+                if size + b > SHARD_BYTES and shard:
+                    _flush(shard, idx, stem, parts)
+                    shard, size, idx = [], 0, idx + 1
+                shard.append(line)
+                size += b
+        _flush(shard, idx, stem, parts)
+        (stage / f"{stem}.manifest.json").write_text(
+            json.dumps(
+                {"source": name, "shards": [{"file": f, "lines": n} for f, n in parts]}, indent=1
+            )
+        )
+        expected += [f for f, _ in parts] + [f"{stem}.manifest.json"]
+
+    for extra in ("gen_meta.json", "validator.json", "per_feature.jsonl"):
+        if (out_dir / extra).exists():
+            (stage / extra).write_text((out_dir / extra).read_text())
+            expected.append(extra)
+    if not expected:
+        raise SystemExit(f"nothing to upload under {out_dir}")
+
+    api = HfApi()
+    # deterministic guard, outside the retry wrapper: a raise here is never transient
+    hub.assert_hub_dir_filecounts(stage, HF_PREFIX)
+    _log(f"uploading {len(expected)} files -> {HF_DATA_REPO}:{HF_PREFIX}/")
+    hub.retry_transient(
+        lambda: api.upload_folder(
+            folder_path=str(stage),
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=HF_PREFIX,
+            commit_message=f"issue #1773 register steering-transfer raw generations ({_utc()})",
+        ),
+        what=f"upload_folder {HF_PREFIX}",
+    )
+    missing = hub.verify_repo_paths_uploaded(
+        api,
+        HF_DATA_REPO,
+        [f"{HF_PREFIX}/{f}" for f in expected],
+        path_in_repo=HF_PREFIX,
+        repo_type="dataset",
+    )
+    if missing:
+        raise SystemExit(f"upload verify FAILED, {len(missing)} missing: {sorted(missing)[:5]}")
+    _log(f"[phase=upload_done] verified {len(expected)} files on {HF_DATA_REPO}:{HF_PREFIX}/")
+    return 0
+
+
 # ── phase: judge ─────────────────────────────────────────────────────────────
 
 
@@ -684,7 +779,7 @@ def phase_analyze(args) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--phase", required=True, choices=("gen", "judge", "analyze"))
+    ap.add_argument("--phase", required=True, choices=("gen", "upload", "judge", "analyze"))
     ap.add_argument("--layer", type=int, default=19)
     ap.add_argument("--k", type=int, default=64)
     ap.add_argument("--alpha", type=float, default=1.0)
@@ -715,7 +810,12 @@ def main() -> int:
         default=Path("eval_results/issue_1773/labels/descriptions.jsonl"),
     )
     args = ap.parse_args()
-    return {"gen": phase_gen, "judge": phase_judge, "analyze": phase_analyze}[args.phase](args)
+    return {
+        "gen": phase_gen,
+        "upload": phase_upload,
+        "judge": phase_judge,
+        "analyze": phase_analyze,
+    }[args.phase](args)
 
 
 if __name__ == "__main__":
