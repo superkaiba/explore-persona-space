@@ -1,0 +1,580 @@
+{
+  "commit": "82fa479c29",
+  "created": "2026-07-31T13:35:30Z",
+  "figsize": [
+    12.0,
+    6.6
+  ],
+  "points": [
+    {
+      "state the persona vector is projected on": -0.27,
+      "Spearman $\\rho$ at frozen layer": 0.30861374325367724,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "state the persona vector is projected on": "ctx",
+      "Spearman $\\rho$ at frozen layer": 0.33146945079335455,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "state the persona vector is projected on": 0.27,
+      "Spearman $\\rho$ at frozen layer": 0.41600309736464464,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "state the persona vector is projected on": 0.73,
+      "Spearman $\\rho$ at frozen layer": 0.030769938567521776,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "state the persona vector is projected on": "prefix",
+      "Spearman $\\rho$ at frozen layer": -0.030769938567521776,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "state the persona vector is projected on": 1.27,
+      "Spearman $\\rho$ at frozen layer": -0.030769938567521776,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "state the persona vector is projected on": 1.73,
+      "Spearman $\\rho$ at frozen layer": 0.43600652488443115,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "state the persona vector is projected on": "map(ctx)",
+      "Spearman $\\rho$ at frozen layer": 0.48709309921127164,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "state the persona vector is projected on": 2.27,
+      "Spearman $\\rho$ at frozen layer": 0.5771829871515332,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "state the persona vector is projected on": 2.73,
+      "Spearman $\\rho$ at frozen layer": 0.030769938567521776,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "state the persona vector is projected on": "map(pre)",
+      "Spearman $\\rho$ at frozen layer": -0.030769938567521776,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "state the persona vector is projected on": 3.27,
+      "Spearman $\\rho$ at frozen layer": -0.030769938567521776,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "state the persona vector is projected on": 3.73,
+      "Spearman $\\rho$ at frozen layer": 0.28865703479217075,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "state the persona vector is projected on": "TRUE ans.",
+      "Spearman $\\rho$ at frozen layer": 0.23962505156568367,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "state the persona vector is projected on": 4.27,
+      "Spearman $\\rho$ at frozen layer": 0.4920727077297659,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "state the persona vector is projected on": -0.27,
+      "y": 0.25460738446074305,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "state the persona vector is projected on": "ctx",
+      "y": 0.3417957329231008,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "state the persona vector is projected on": 0.27,
+      "y": 0.45668992399782754,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "state the persona vector is projected on": 0.73,
+      "y": 0.0030329483658930742,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "state the persona vector is projected on": "prefix",
+      "y": -0.0030329483658930742,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "state the persona vector is projected on": 1.27,
+      "y": -0.0030329483658930742,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "state the persona vector is projected on": 1.73,
+      "y": 0.3763751959780937,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "state the persona vector is projected on": "map(ctx)",
+      "y": 0.450258667237984,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "state the persona vector is projected on": 2.27,
+      "y": 0.5274331748869349,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "state the persona vector is projected on": 2.73,
+      "y": 0.0030329483658930742,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "state the persona vector is projected on": "map(pre)",
+      "y": -0.0030329483658930742,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "state the persona vector is projected on": 3.27,
+      "y": -0.0030329483658930742,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "state the persona vector is projected on": 3.73,
+      "y": 0.36706336555897573,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "state the persona vector is projected on": "TRUE ans.",
+      "y": 0.3315700095341071,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "state the persona vector is projected on": 4.27,
+      "y": 0.5110356209885744,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "state the persona vector is projected on": -0.27,
+      "Spearman $\\rho$ at frozen layer": -0.14444999866989328,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "state the persona vector is projected on": "ctx",
+      "Spearman $\\rho$ at frozen layer": -0.12790881638306714,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "state the persona vector is projected on": 0.27,
+      "Spearman $\\rho$ at frozen layer": 0.265379439349715,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "state the persona vector is projected on": 0.73,
+      "Spearman $\\rho$ at frozen layer": -0.049110673064152476,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "state the persona vector is projected on": "prefix",
+      "Spearman $\\rho$ at frozen layer": -0.04769805477554032,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "state the persona vector is projected on": 1.27,
+      "Spearman $\\rho$ at frozen layer": 0.04460520875631347,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "state the persona vector is projected on": 1.73,
+      "Spearman $\\rho$ at frozen layer": -0.0492572286303771,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "state the persona vector is projected on": "map(ctx)",
+      "Spearman $\\rho$ at frozen layer": -0.055336609754611694,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "state the persona vector is projected on": 2.27,
+      "Spearman $\\rho$ at frozen layer": 0.18316703283678992,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "state the persona vector is projected on": 2.73,
+      "Spearman $\\rho$ at frozen layer": 0.050456534031571174,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "state the persona vector is projected on": "map(pre)",
+      "Spearman $\\rho$ at frozen layer": 0.046927424605379145,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "state the persona vector is projected on": 3.27,
+      "Spearman $\\rho$ at frozen layer": 0.03199586941634971,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "state the persona vector is projected on": 3.73,
+      "Spearman $\\rho$ at frozen layer": 0.14195081956374142,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "state the persona vector is projected on": "TRUE ans.",
+      "Spearman $\\rho$ at frozen layer": 0.23011500530484905,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "state the persona vector is projected on": 4.27,
+      "Spearman $\\rho$ at frozen layer": 0.3437530831443958,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "state the persona vector is projected on": -0.27,
+      "y": 0.4651809035937197,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "state the persona vector is projected on": "ctx",
+      "y": 0.24131016559238144,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "state the persona vector is projected on": 0.27,
+      "y": -0.22238792168270327,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "state the persona vector is projected on": 0.73,
+      "y": -0.14840552042717617,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "state the persona vector is projected on": "prefix",
+      "y": -0.14760773725139342,
+      "_kind": "bar",
+      "_group": 49
+    },
+    {
+      "state the persona vector is projected on": 1.27,
+      "y": 0.17990507237328937,
+      "_kind": "bar",
+      "_group": 50
+    },
+    {
+      "state the persona vector is projected on": 1.73,
+      "y": 0.5181581862143823,
+      "_kind": "bar",
+      "_group": 51
+    },
+    {
+      "state the persona vector is projected on": "map(ctx)",
+      "y": 0.5513872553939475,
+      "_kind": "bar",
+      "_group": 52
+    },
+    {
+      "state the persona vector is projected on": 2.27,
+      "y": -0.347053557114044,
+      "_kind": "bar",
+      "_group": 53
+    },
+    {
+      "state the persona vector is projected on": 2.73,
+      "y": 0.16422996275084442,
+      "_kind": "bar",
+      "_group": 54
+    },
+    {
+      "state the persona vector is projected on": "map(pre)",
+      "y": 0.17641781574557452,
+      "_kind": "bar",
+      "_group": 55
+    },
+    {
+      "state the persona vector is projected on": 3.27,
+      "y": 0.16068376295574066,
+      "_kind": "bar",
+      "_group": 56
+    },
+    {
+      "state the persona vector is projected on": 3.73,
+      "y": 0.3483474397974475,
+      "_kind": "bar",
+      "_group": 57
+    },
+    {
+      "state the persona vector is projected on": "TRUE ans.",
+      "y": 0.6991763345325603,
+      "_kind": "bar",
+      "_group": 58
+    },
+    {
+      "state the persona vector is projected on": 4.27,
+      "y": -0.08768912875869903,
+      "_kind": "bar",
+      "_group": 59
+    },
+    {
+      "state the persona vector is projected on": -0.27,
+      "y": -0.2988654728950825,
+      "_kind": "bar",
+      "_group": 60
+    },
+    {
+      "state the persona vector is projected on": "ctx",
+      "y": -0.22472776290742302,
+      "_kind": "bar",
+      "_group": 61
+    },
+    {
+      "state the persona vector is projected on": 0.27,
+      "y": 0.49866555848721983,
+      "_kind": "bar",
+      "_group": 62
+    },
+    {
+      "state the persona vector is projected on": 0.73,
+      "y": 0.05164240966617493,
+      "_kind": "bar",
+      "_group": 63
+    },
+    {
+      "state the persona vector is projected on": "prefix",
+      "y": 0.051431708259451196,
+      "_kind": "bar",
+      "_group": 64
+    },
+    {
+      "state the persona vector is projected on": 1.27,
+      "y": -0.05887284915790114,
+      "_kind": "bar",
+      "_group": 65
+    },
+    {
+      "state the persona vector is projected on": 1.73,
+      "y": -0.14391392217506985,
+      "_kind": "bar",
+      "_group": 66
+    },
+    {
+      "state the persona vector is projected on": "map(ctx)",
+      "y": -0.2210271977894348,
+      "_kind": "bar",
+      "_group": 67
+    },
+    {
+      "state the persona vector is projected on": 2.27,
+      "y": 0.463428614719743,
+      "_kind": "bar",
+      "_group": 68
+    },
+    {
+      "state the persona vector is projected on": 2.73,
+      "y": -0.05306172502100001,
+      "_kind": "bar",
+      "_group": 69
+    },
+    {
+      "state the persona vector is projected on": "map(pre)",
+      "y": -0.05998262479902597,
+      "_kind": "bar",
+      "_group": 70
+    },
+    {
+      "state the persona vector is projected on": 3.27,
+      "y": -0.052089374316602384,
+      "_kind": "bar",
+      "_group": 71
+    },
+    {
+      "state the persona vector is projected on": 3.73,
+      "y": 0.27064210378108844,
+      "_kind": "bar",
+      "_group": 72
+    },
+    {
+      "state the persona vector is projected on": "TRUE ans.",
+      "y": 0.12439613546384942,
+      "_kind": "bar",
+      "_group": 73
+    },
+    {
+      "state the persona vector is projected on": 4.27,
+      "y": 0.5261404183269763,
+      "_kind": "bar",
+      "_group": 74
+    }
+  ],
+  "n_series": 75,
+  "total_points": 75,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "sycophancy \u2014 AITA",
+        "xlabel": "state the persona vector is projected on",
+        "ylabel": "Spearman $\\rho$ at frozen layer",
+        "legend_labels": [
+          "E1 synthetic (paper-faithful)",
+          "E2 matched-pair natural",
+          "E2p pooled natural"
+        ],
+        "annotations": [
+          "n=1304 contexts"
+        ],
+        "xticklabels": [
+          "ctx",
+          "prefix",
+          "map(ctx)",
+          "map(pre)",
+          "TRUE ans."
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 held-out train dist.",
+        "xlabel": "state the persona vector is projected on",
+        "annotations": [
+          "n=16000 contexts;  faded = in-sample for E2/E2p"
+        ],
+        "xticklabels": [
+          "ctx",
+          "prefix",
+          "map(ctx)",
+          "map(pre)",
+          "TRUE ans."
+        ]
+      },
+      {
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "hallucination \u2014 NQ-Open",
+        "xlabel": "state the persona vector is projected on",
+        "ylabel": "Spearman $\\rho$ at frozen layer",
+        "annotations": [
+          "n=3167 contexts"
+        ],
+        "xticklabels": [
+          "ctx",
+          "prefix",
+          "map(ctx)",
+          "map(pre)",
+          "TRUE ans."
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "hallucination \u2014 SimpleQA",
+        "xlabel": "state the persona vector is projected on",
+        "annotations": [
+          "n=4021 contexts"
+        ],
+        "xticklabels": [
+          "ctx",
+          "prefix",
+          "map(ctx)",
+          "map(pre)",
+          "TRUE ans."
+        ]
+      },
+      {
+        "title_left": "hallucination \u2014 held-out train dist.",
+        "xlabel": "state the persona vector is projected on",
+        "annotations": [
+          "n=16000 contexts;  faded = in-sample for E2/E2p"
+        ],
+        "xticklabels": [
+          "ctx",
+          "prefix",
+          "map(ctx)",
+          "map(pre)",
+          "TRUE ans."
+        ]
+      }
+    ],
+    "series": [
+      "E1 synthetic (paper-faithful)",
+      "E2 matched-pair natural",
+      "E2p pooled natural"
+    ]
+  }
+}
