@@ -5,7 +5,7 @@ title: Base behavioral propensity predicts where a trained behavior is expressed
 kind: experiment
 tags: []
 created_at: '2026-07-30T23:28:44Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1768
 origin_prompt: 'Help me to plan this experiment with these model organisms: What is
   the best leakage predictor (8 candidate similarity reads pre/post finetuning, map-mediated
