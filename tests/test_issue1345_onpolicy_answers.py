@@ -1341,3 +1341,91 @@ def test_judge_run_uses_prepared_rows_not_raw_uploads():
     assert "judge_prep" in src, "must default to the prepared-rows dir"
     assert "issue1345_judge_rows_prep.py first" in src, "a missing prep must say what to run"
     assert "OMP_NUM_THREADS=8" in src, "shared-VM thread caps"
+
+
+# ---------------------------------------------------------------------------
+# 3h. Judge-leg SUMMARY — halted cells never pooled, drop split never blended
+# ---------------------------------------------------------------------------
+def _summ_module(monkeypatch):
+    monkeypatch.setenv("EPM_I1345_VARIANT", "story_boundary_ablation")
+    monkeypatch.setenv("EPM_STORY_CHARACTER_NAME", "Assistant")
+    import issue1345_judge_legs_summarize as summ
+
+    return summ
+
+
+def _report(tag, mean, *, halted=False, content=0, total=1500, refusal=0, transport=0):
+    return {
+        "leg": "ai_likeness",
+        "tag": tag,
+        "n_items": 300,
+        "n_scored_items": 300,
+        "n_total_draws": total,
+        "n_dropped_draws_content": content,
+        "n_refusal_draws": refusal,
+        "n_transport_lost_draws": transport,
+        "means": {
+            "pooled": {"n": 300, "mean": mean},
+            "capped": {"n": 0, "mean": None},
+            "natural": {"n": 300, "mean": mean},
+        },
+        "sample_design": {"realized_n": 300, "yield_floor_halted_cell": halted, "seed": 1345},
+        "selection_caveat": "halted" if halted else None,
+    }
+
+
+def test_summary_excludes_halted_cells_from_the_cross_cell_mean(monkeypatch):
+    """A halted cell's kept rows are a SELECTED subset — averaging it into a
+    cross-cell figure would launder the selection into the headline. It is
+    reported individually instead, with its caveat."""
+    summ = _summ_module(monkeypatch)
+    reps = [_report("char_helios", 50.0), _report("char_wren", 90.0, halted=True)]
+    blk = summ.summarize(reps)["ai_likeness"]
+    assert blk["cross_cell_mean_complete_only"] == 50.0, "the halted 90.0 must not be averaged in"
+    assert blk["halted_cells"] == ["char_wren"] and blk["complete_cells"] == ["char_helios"]
+    assert "EXCLUDED" in blk["cross_cell_note"] and "char_wren" in blk["cross_cell_note"]
+    # ...but the halted cell is still PRESENT as a row, never dropped.
+    assert {r["cell"] for r in blk["cells"]} == {"char_helios", "char_wren"}
+    halted_row = next(r for r in blk["cells"] if r["cell"] == "char_wren")
+    assert halted_row["yield_floor_halted"] and halted_row["selection_caveat"]
+
+
+def test_summary_keeps_the_three_way_drop_split_unblended(monkeypatch):
+    """rule 24: content and transport never blended; REFUSAL is a SUBSET of
+    content, so it must not be added to it."""
+    summ = _summ_module(monkeypatch)
+    row = summ.cell_row(_report("char_vex", 60.0, content=10, refusal=4, transport=7))
+    d = row["drops"]
+    assert d["content"] == 10 and d["content_refusal_subset"] == 4 and d["transport"] == 7
+    assert d["content"] + d["transport"] == 17, "the two classes stay separately reported"
+    assert d["content_share"] == round(10 / 1500, 6)
+
+
+def test_summary_flags_a_truncation_signature_drop_share(monkeypatch):
+    """A rule-23 drop share is flagged for re-judge, not averaged through."""
+    summ = _summ_module(monkeypatch)
+    assert summ.DROP_FLAG_SHARE == 0.02
+    clean = summ.cell_row(_report("a", 50.0, content=2))
+    dirty = summ.cell_row(_report("b", 50.0, content=500))
+    assert clean["drop_flag"] is False and dirty["drop_flag"] is True
+    blk = summ.summarize([_report("a", 50.0, content=2), _report("b", 50.0, content=500)])
+    assert blk["ai_likeness"]["flagged_cells"] == ["b"]
+
+
+def test_summary_default_dir_cannot_drift_from_the_driver(monkeypatch):
+    """The driver writes under EPM_I1345_JUDGE_OUT; the summary must read the
+    SAME var, not the judge CLI's variant-scoped EVAL_DIR default."""
+    from pathlib import Path
+
+    monkeypatch.setenv("EPM_I1345_JUDGE_OUT", "/tmp/some/other/place")
+    import importlib
+
+    import issue1345_judge_legs_summarize as summ
+
+    importlib.reload(summ)
+    assert Path("/tmp/some/other/place") == summ.DEFAULT_LEGS_DIR
+    driver = Path("scripts/issue1345_judge_legs_run.sh").read_text()
+    assert "EPM_I1345_JUDGE_OUT" in driver
+    monkeypatch.delenv("EPM_I1345_JUDGE_OUT")
+    importlib.reload(summ)
+    assert Path("eval_results/issue_1345/judge_legs") == summ.DEFAULT_LEGS_DIR
