@@ -1,0 +1,14 @@
+{
+ "unit": "syc-pers-con-lr1e5-s42@r_long",
+ "gen_wall_s": 286.6479346752167,
+ "tf_wall_s": 260.0710344314575,
+ "unit_wall_h": 0.1518663803074095,
+ "booked_unit_gpu_h": 1.0,
+ "ratio": 0.1518663803074095,
+ "smoke": false,
+ "ts": "2026-07-31T13:13:11Z",
+ "git_commit": "unknown",
+ "torch": "2.8.0+cu128",
+ "transformers": "4.57.6",
+ "issue": 1768
+}
