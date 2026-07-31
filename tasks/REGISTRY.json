@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1915,
+  "highest_id": 1916,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7088,6 +7088,13 @@
       "path": "tasks/proposed/1915",
       "status": "proposed",
       "title": "daily-fix: rsync_covered checks RSYNC_EXCLUDE_PATTERNS"
+    },
+    "1916": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1916",
+      "status": "proposed",
+      "title": "daily-fix: judge max_tokens floor 600 for JSON rubrics"
     },
     "192": {
       "goal": "Test whether one fictional medical fact, taught under a teaching-persona system prompt, transfers to ordinary-assistant and other non-teach evaluation frames.",
