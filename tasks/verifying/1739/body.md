@@ -18,110 +18,124 @@ goal: Determine whether applying the learned context->answer map before projecti
 relates_to:
 - spec-context-as-vector
 ---
-# Behavior prediction through the context→answer map
+# Map-then-project persona-vector prediction trails matched-budget context-side baselines across three behaviors (HIGH confidence)
+
+<!-- clean-result-v4 -->
+
+## Takeaways
+
+- Map-then-project trails the context-native direction: the Spearman rho difference is reliably below zero in 712 of 810 evil, 134 of 270 hallucination, and 230 of 810 sycophancy cells.
+- Direct ridge on context activations is the strongest deployable predictor at the largest budgets: rho 0.71 (evil), 0.58 (hallucination), 0.74 (sycophancy), near the true-answer oracle (0.65 to 0.82).
+- Refitting the map with half in-domain contexts flips the evil difference from -0.30 to +0.05 to +0.35 (single draw and seed) — the generic-corpus map, not projection itself, fails.
+- The prefix-to-answer map never learns (held-out R-squared at or below zero at every unlabeled budget); prefix-side prediction is dead for sycophancy and hallucination, informative only for jailbreak prefixes.
+- Caveats: both evil transfer rungs fail the spread floor; 3-7% of rollouts carry CJK intrusion correlating +0.17 with two DVs; the planned teacher-forced margin companion DV was not computed.
 
 ## Goal
 
-Determine whether applying the learned context->answer map before projecting the persona vector predicts on-policy behavior expression (evil, trait sycophancy, hallucination) better than context-side projection and direct regression at matched (unlabeled, labeled) data budgets, and whether that advantage grows across a real-data distribution-shift ladder.
+**This experiment in context:** Persona-vector monitoring projects an answer-derived behavior direction onto context activations — a datatype mismatch this experiment tries to correct by applying the learned context-to-answer map first, scoring each context by projecting the mapped activation instead of the raw one. It reuses the [#1092](https://eps.superkaiba.com/tasks/1092) WildChat+LMSYS activation store as the unlabeled map corpus, the [#779](https://eps.superkaiba.com/tasks/779) direction-extraction recipe, and the [#722](https://eps.superkaiba.com/tasks/722)/[#779](https://eps.superkaiba.com/tasks/779) batched map-fitting stack. The primary comparison fixed in the plan: map-then-project versus the context-native direction at matched unlabeled and labeled budgets, across three behaviors and a real-data distribution-shift ladder.
 
-## Overview
+**Broader narrative:** If a map learned from cheap unlabeled text closed the context/answer datatype gap, behavior monitors could reach a target accuracy with far fewer behavior labels and degrade more gracefully off-distribution. The measured answer is that on generic-corpus maps it does not — direct regression on context activations stays the default monitoring predictor, and map benefits appear only when the map is fit on in-domain contexts.
 
-Persona-vector monitoring (arXiv 2507.21509) projects the persona vector `v_B` — a mean over
-**answer** activations — onto the **context** vector. This experiment corrects that datatype
-mismatch by applying our learned context→answer map `M` first and projecting onto the predicted
-answer vector: `⟨v_B, M(x)⟩` instead of `⟨v_B, x⟩`.
+## Methodology
 
-Direct regression from context to expression asymptotically upper-bounds any function of the
-context, so the claim is NOT "we beat direct regression at scale". It is a **sample-efficiency +
-robustness** claim: map-based methods reach a given accuracy with far fewer behavior labels, and
-the advantage grows with distribution shift.
+**Design:** Prediction experiment on Qwen2.5-7B-Instruct — no fine-tuning; all arms are read-outs over frozen activations. 16 predictor arms (5 context-side, 5 map-based, 2 true-answer oracles, 4 controls) score every context; the target is on-policy behavior expression. Grid per behavior: 2 mapping variants (prefix-based and context-based, both run per the standing rule) x direction regimes (E1 = synthetic contrastive system-prompt pairs per the persona-vectors recipe; E2 = matched natural pairs; E2p = pooled natural; hallucination E1 only) x unlabeled map budget U in {250; 5,000; 18,793 = full store} x labeled budget L in {250; 2,500; 8,000 for evil / 16,000 otherwise} x 5 label draws x 3 seeds — 810 evil grid cells + 16 evil composition cells, 810 sycophancy, 270 hallucination (1,906 total), plus 90 reversed-transfer evil cells (train on hh-rlhf red-team, evaluate on the held-out jailbreak slice + ToxicChat). Per cell: group-level 5-fold round-robin cross-validation (conversation / persona / jailbreak-family groups), all 28 layers swept, frozen-best-layer rho with selection-inherited paired-bootstrap intervals (500 draws) plus nested layer selection, and a max-over-arms-and-layers permutation null (500 draws).
 
-## Plan
+**Training:** **N/A — no model training.** Evaluation/generation hyperparameters:
 
-**THE FULL PLAN IS AT `docs/map_behavior_prediction_plan.md` (committed on `main`).** Read it
-before planning anything. It was developed over an extended interactive design session with a
-four-way verified dataset survey behind it, and it already fixes: the matched-budget protocol,
-the method roster (16 arms), the two/three PV extraction regimes (E1/E2/E2p), the per-behavior
-real train/OOD-eval pairs with a verified contamination map, the DV recipe, the metrics, four
-hard preconditions, and the compute estimate. Do not re-derive it; refine it.
+| Hyperparameter | Value | Source |
+|---|---|---|
+| Base model | Qwen/Qwen2.5-7B-Instruct | `constants.py` `MODEL_NAME` @ `eb084ff2c4` |
+| Rollouts per context (K) | 5 | `constants.py` `K_ROLLOUTS` |
+| Generation temperature / max new tokens | 1.0 / 1,024 | `generation.py` `GEN_TEMPERATURE`, `GEN_MAX_NEW_TOKENS` |
+| Judge model | claude-sonnet-4-5-20250929 | `constants.py` `JUDGE_MODEL` (project pin) |
+| Judge draws per completion / temperature | 3 / 1.0 | `constants.py` `N_JUDGE_DRAWS`, `JUDGE_TEMPERATURE` |
+| Judge max tokens | 400; 800 re-judge for truncation-affected items | `constants.py`; `judge_summary.json` `rejudge_800` |
+| Ridge lambda grid (map + regression arms) | 0.01 to 1,000 (6 log steps) | `constants.py` `RIDGE_LAMBDAS` (store-producing-run lineage) |
+| MLP arms | width 512, one hidden layer, max 300 epochs | `constants.py` `MLP_HIDDEN`, `MLP_MAX_EPOCHS` |
+| Folds / bootstrap draws / permutation draws | 5 group-level / 500 / 500 | `constants.py` `N_FOLDS`, `N_BOOT`, `N_PERM` |
+| Direction extraction (E1) | 5 pos/neg pairs x 20 questions x 10 rollouts, judge-filtered | plan §0 (arXiv 2507.21509 recipe) |
+| Activation store | reused WildChat+LMSYS store, rev `e5901706`, fp16, 28 layers x 3,584 | `constants.py` `STORE_REVISION` |
 
-Browser copy:
-https://github.com/superkaiba/explore-persona-space/blob/main/docs/map_behavior_prediction_plan.md
+**Evaluation:** Primary DV per context = mean over K=5 on-policy rollouts of graded judge scores: evil and sycophancy use a 0-100 trait rubric (3 judge draws per completion, mean-aggregated; malformed/refusal returns dropped, never coerced), hallucination uses the fraction of rollouts judged fabricated under a three-way correct/abstained/fabricated rubric. Judge content-drops: 46,602 evil draws (29% — refusals on jailbreak-completion content; 1,811 of 10,666 evil contexts lost every draw and are excluded), 5,859 sycophancy draws (2.3%); zero transport losses; a truncation re-judge at 800 max tokens recovered 356 evil and 652 sycophancy all-dropped items. Predictor validity = Spearman rho between the arm's predicted score and the DV on held-out group folds; the headline read is map-then-project minus context-native with paired-bootstrap intervals. Undefined rank correlations (tie-degenerate projections) are recorded as missing, never coerced, and the singular-slice degenerate-fit fallback fired in zero of 1,906 cells. The spread floor (SD at least 10 of 100 and under 80% of contexts in the bottom bin) passes on every train rung (SD 26.3 evil, 13.2 sycophancy, 40.5 hallucination rescaled) and on the hallucination/sycophancy eval rungs; it fails on both evil transfer rungs (hh-rlhf red-team SD 0.9; ToxicChat 93% bottom bin). The planned teacher-forced fixed-pool margin companion DV was not computed, so the graded rate carries all results alone; item-aligned split-half ceilings are 0.89 (evil) and 0.88 (sycophancy), and none was computed for hallucination.
 
-## Non-negotiable compute constraints (user directive, verbatim emphasis)
+**Data extraction:** The map M is a ridge fit from store `context_end` (or `prefix_end`) activations to answer-span mean activations, fit on U rows of the reused WildChat+LMSYS activation store (18,793 rows after excluding the 2,400 eval-only battery rows; the plan's U=50,000 rung realized as the 18,793-row full store). Behavior corpora — evil: in-the-wild jailbreak prefixes crossed with forbidden questions, 6,468 train contexts with a DV (transfer rungs: hh-rlhf red-team 1,868, ToxicChat 519); hallucination: TriviaQA rc.nocontext, 16,000 train contexts (transfer: NQ-Open 3,167, SimpleQA 4,021); sycophancy: Reddit personal-advice posts, 16,000 train contexts (transfer: ELEPHANT AITA 1,304). A CJK language-intrusion scan over all 255,791 rollout completions found 6.5% (evil), 6.2% (hallucination), and 3.4% (sycophancy) intruded rows; the per-context intrusion fraction correlates with the DV at rho +0.17 for evil and hallucination and -0.01 for sycophancy — a shared-target nuisance both arms of every comparison score against, reported next to the transfer adjudications below.
 
-The originating instruction was: **"MAKE SURE IT PARALLELIZES AND VECTORIZES AS MUCH AS
-POSSIBLE."** Treat this as a hard plan constraint, not advice. The plan-time efficiency review
-and the implementation review both bind on it.
+**Sample training/evaluation data + completions:** Per the trigger-dense content-hygiene rule for this task (jailbreak corpus + unscreened real-user text), no rollout text is quoted; rows are referenced by context id and numeric record, and full text lives in the linked artifacts. Cherry-picked high/zero-DV rows; all rows: [labeling JSONs](https://github.com/superkaiba/explore-persona-space/tree/6686d45da9076893c0e5c93f57a2b1040defd0fb/eval_results/issue_1739/dv_dataset) and [raw rollouts on HF](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/issue1739_ctxmap).
 
-1. **Vectorize every inner loop before launch.** This experiment is dominated by many-cell fits:
-   ~16 arms × 3 behaviors × 4+ eval rungs × ~6 `L` values × ≥5 labeled draws × seeds × a layer
-   sweep. A serial per-cell fit loop here is the #722/#778/#823 failure mode at a larger scale and
-   would run for days. Route the MLP/nonlinear fits through the canonical batched helper
-   `src/explore_persona_space/analysis/vectorized_mlp_skill.py`. Route ridge/linear fits through
-   batched Gram/dual-space solves with a SHARED factorization across folds and layers — never a
-   fresh `svd`/`lstsq`/GCV solve per cell. Batch the paired-bootstrap and null batteries as one
-   GEMM over all draws, never a Python loop over draws.
-2. **Saturate every provisioned GPU.** Generation, activation capture, and the layer sweep all
-   shard cleanly. Declare the shardable width via `--gpus N` so the GCP auto lane walks the WIDE
-   `a2-ultragpu` rungs first. A serial single-GPU phase on a multi-GPU pod is a plan defect.
-   Conversely, do not hold a wide pod through the narrow or API-bound phases — release/downsize
-   per the per-phase GPU-width rule.
-3. **vLLM batched generation only.** Never sequential HF `model.generate()`.
-4. **Batch API for judging.** The judge set is large (three behaviors × train + eval × `K`≥3
-   draws); route through `eval.batch_judge` / the multi-org dispatcher, never a hand-rolled
-   call loop.
-5. **Size every fit/battery phase from a MEASURED 1-cell pilot** through the production
-   entrypoint at production shape before launching the full sweep. Projected wall-time > ~1h
-   without a batched inner loop ⇒ STOP and vectorize first.
-6. **Sequence the pod release before the judge wave** so no GPU idles through API-bound work.
+| Behavior | Firing examples (DV) | Non-firing examples (DV 0.0) |
+|---|---|---|
+| evil | `evil-train-cross-000555` (100.0), `evil-train-cross-001236` (100.0), `evil-train-cross-001266` (100.0) | `evil-eval-hhrt-000000`, `evil-eval-hhrt-000001`, `evil-eval-hhrt-000002` |
+| hallucination | `hallucination-eval-nqopen-000003` (1.0), `hallucination-eval-nqopen-000006` (1.0), `hallucination-eval-nqopen-000008` (1.0) | `hallucination-eval-nqopen-000010`, `hallucination-eval-nqopen-000017`, `hallucination-eval-nqopen-000019` |
+| sycophancy | `sycophancy-train-train-006815` (88.5), `sycophancy-train-train-000252` (85.7), `sycophancy-train-train-012247` (82.3) | `sycophancy-eval-aita-000116`, `sycophancy-eval-aita-000161`, `sycophancy-eval-aita-000166` |
 
-## Preconditions — gates before committing the full spend
+A 5-row random spot check (seed 42) per behavior showed coherent records (evil mostly 0 with occasional 80-100 scores, sycophancy 20-40, hallucination fabrication fractions), small per-row drop counts, and zero transport losses.
 
-Run these FIRST; do not jump to the full experiment.
+## Results
 
-1. **Yield pilot (MANDATORY).** No published compliance number exists for Qwen-2.5-7B on our
-   actual real corpora. Judge ~300 contexts per behavior per candidate set at `K`≥3 and measure
-   the realized expression histogram. ~$50–100 and ~1 GPU-h per behavior. The only transferable
-   anchor is ~18.7% compliance on curated AdvBench+HarmBench prompts (arXiv 2512.12066), which is
-   an optimistic ceiling.
-2. **Spread floor + pre-registered fallback.** Inter-context SD ≥ 10 on 0–100 and < 80% of
-   contexts in the bottom bin. If evil fails on every real set, the teacher-forced margin becomes
-   its primary DV — do not silently substitute synthetic data.
-3. **Artifact-reuse check.** Resolve whether #722 / #779 / #952 / #1092 WildChat/LMSYS activation
-   stores exist on HF and are reuse-fit — the single biggest swing on the GPU estimate. In-repo
-   code reuse is already confirmed (`analysis/mapping_baselines.py`,
-   `analysis/vectorized_mlp_skill.py`, `experiments/issue_779/fit_h.py` + `metrics.py`, the #763
-   predictor stack).
-4. **Access.** All required datasets are verified open on `superkaiba1`. Re-confirm before
-   launch; nothing needs a gated request on the critical path.
+### Map-then-project loses to the context-native direction almost everywhere
 
-## Scope caveats to carry into the clean-result
+What is plotted: the mean difference in held-out Spearman rho, map-then-project minus context-native, at the largest budgets, one row per behavior x regime x mapping variant; dots are the 15 draw-by-seed cells, whiskers the 95% interval.
 
-- Independence for sycophancy is real at the community/item level but NOT at the platform/genre
-  level (both sides are English Reddit personal-advice text from the same era); we cannot dedup
-  against ELEPHANT's non-public r/relationships slice.
-- `HuggingFaceGECLM/REDDIT_submissions` states no license; used on the precedent that ELEPHANT is
-  itself Reddit-scraped and CC0-released.
-- TriviaQA and NQ-Open are both heavily contaminated (2017/2019, in lm-eval-harness and standard
-  pretraining mixes). Absolute hallucination rates are compromised; the design rests on method
-  deltas.
-- Evil's labeled axis is bounded by ~1,405 independent DAN prefixes — report group-count-effective
-  N alongside row count; its scaling curve is not directly comparable to sycophancy's.
+![Forest plot of headline rho differences per slice](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6686d45da9076893c0e5c93f57a2b1040defd0fb/figures/issue_1739/hero_headline_delta_forest.png)
 
-## Hygiene
+> **Figure.** *Map-then-project sits below the context-native baseline in nearly every slice.* Rho difference at the largest budgets; E1 = synthetic-pair direction, E2 = matched natural, E2P = pooled natural; context/prefix = mapping variant; dots are per-cell values (n=15 per row).
 
-Harmful corpora referenced by filename + row count only; analysis over aggregate JSONs,
-annotation fields, and judge labels; no raw jailbreak or harmful text paged into agent context
-(the `guard_harmful_bank_read.sh` hook enforces this). Implementer and reviewer briefs carry
-neutral mechanistic vocabulary from the FIRST pass, not after a refusal kill.
+Every evil slice and the context-side hallucination slice are negative (means -0.06 to -0.43); the paired-bootstrap interval sits wholly below zero in 15 of 15 largest-budget context-variant cells for all three behaviors under the synthetic-pair direction — the plan's falsification criterion, met on the context variant. The one reliably positive slice is sycophancy with the pooled-natural direction (+0.05, 15 of 15 cells above zero) — an order of magnitude smaller than the losses elsewhere.
 
-## Provenance
+### Direct ridge regression on context activations dominates every monitoring arm
 
-Originated from an extended interactive design session on 2026-07-27/28 (plan doc committed at
-`docs/map_behavior_prediction_plan.md`, commits `14edb6d066` → `cab240dfc3`). Four verified
-dataset-survey subagents fed the data decisions; their findings are recorded in the plan doc
-including the contamination map and the disqualification record.
+What is plotted: mean held-out rho for all 16 arms at the largest budgets (context variant), four panels; dots are per-cell values.
 
-Launch instruction (verbatim): "run in background with happy coder and MAKE SURE IT PARALLELIZES
-AND VECTORIZES AS MUCH AS POSSIBLE"
+![All 16 arms at the canonical slice](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6686d45da9076893c0e5c93f57a2b1040defd0fb/figures/issue_1739/arm_overview_canonical.png)
+
+> **Figure.** *Direct ridge on context activations tops every deployable arm.* Per-arm mean Spearman rho (frozen layer) with 95% intervals; blue = context-side arms, yellow = map-based, gray = true-answer oracles, pink = controls.
+
+Direct ridge reaches 0.71 / 0.58 / 0.74, close to the true-answer regression oracle (0.82 / 0.65 / 0.77); every projection arm sits below it. Map-based regression arms match plain context ridge but never exceed it, and the shuffled-pretrain control equals them exactly — map features add nothing a shuffled map does not. The best arm clears the max-over-arms-and-layers permutation null in all 1,906 cells (p near 0.002; median best rho 0.55 to 0.74 versus a null ceiling near 0.07): context activations carry strong signal the map route fails to use.
+
+### More labels do not rescue the map arm
+
+What is plotted: mean held-out rho versus labeled budget L (log scale) for five key arms, context variant, synthetic-pair direction, full unlabeled pool; shaded bands are 95% intervals over the 15 cells per point.
+
+![Rho versus labeled budget](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6686d45da9076893c0e5c93f57a2b1040defd0fb/figures/issue_1739/scaling_rho_vs_l.png)
+
+> **Figure.** *Extra labels grow the regression arms, not the map arm.* Projection arms are nearly flat in L (labels only pick the layer); regression arms grow with L but dip at L=2,500.
+
+Map-then-project stays flat in L while regression arms grow, and at the smallest budget (L=250) it ties or trails direct ridge (evil 0.54 vs 0.52; sycophancy pooled-natural 0.52 vs 0.59) — the sample-efficiency case for the generic map does not materialize at any budget. Regression arms dip at L=2,500 in all three behaviors (train folds hold about 2,000 rows against dimension 3,584, the near-interpolation regime for ridge), so regression reads at that one budget are conservative; the budget-endpoint comparisons are unaffected.
+
+### No robustness advantage on transfer rungs that pass the spread floor
+
+What is plotted: mean held-out rho per evaluation rung (train, then transfer), context variant, synthetic-pair direction, largest budgets; asterisks mark rungs failing the DV spread floor.
+
+![Distribution-shift ladder](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6686d45da9076893c0e5c93f57a2b1040defd0fb/figures/issue_1739/shift_ladder.png)
+
+> **Figure.** *Direct ridge transfers best on every floor-passing rung.* Transfer ladder per behavior; evil's two transfer rungs (starred) fail the spread floor — their near-zero correlations are reads over an almost-constant DV.
+
+Where the floor passes, direct ridge transfers best: hallucination 0.40 and 0.40 (NQ-Open, SimpleQA) against map-then-project's 0.20 and 0.27; sycophancy 0.73 (AITA) against 0.35. Evil's apparent map edge on ToxicChat (0.32 vs 0.25) sits on a rung with 93% of contexts in the DV bottom bin — convention-dependent, not robustness evidence — and on hh-rlhf red-team every arm reads near zero. The reversed-direction evil configuration collapses all 16 arms to rho 0.09 to 0.21; a growing map advantage under shift is unsupported wherever the DV is measurable.
+
+### An in-domain map flips the headline difference positive (preliminary)
+
+What is plotted: the evil composition cells — the rho difference (map-then-project minus context-native) when the 5,000-row map pool is fully generic versus half in-domain, both variants, colored by labeled budget; one dot per cell (single draw and seed).
+
+![Composition cells: in-domain map flips the sign](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6686d45da9076893c0e5c93f57a2b1040defd0fb/figures/issue_1739/compose_fu_flip.png)
+
+> **Figure.** *A half-in-domain map pool flips the difference positive.* Evil composition cells; generic-pool maps sit below zero, half-in-domain maps above it at every budget; each dot is one cell (single draw and seed) — preliminary.
+
+Generic pools give -0.08 to -0.31; half-in-domain pools flip every budget to +0.05 to +0.35, and at L=250 map-then-project (0.53 to 0.56) far exceeds direct ridge (0.17 to 0.19) — the small-label composition hypothesis holds only with an in-domain map. All 14 realized cells are n=1 (single draw and seed): a preliminary direction for follow-up, not a confirmed effect. Two planned cells were skipped with a recorded infeasible-pool reason.
+
+### The context map learns; the prefix map does not
+
+What is plotted: held-out map quality on the shared store by U rung — best-layer R-squared for the map and its identity-plus-learned-bias baseline, and kNN retrieval accuracy at k=1 with chance, for both maps.
+
+![Map quality by unlabeled budget](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6686d45da9076893c0e5c93f57a2b1040defd0fb/figures/issue_1739/map_quality_ladder.png)
+
+> **Figure.** *Only the context-to-answer map learns on the generic store.* Map diagnostics (identical across behaviors); context-to-answer R-squared rises 0.18 to 0.79 with U while prefix-to-answer never exceeds zero.
+
+The context-to-answer map is real: R-squared 0.18 / 0.41 / 0.79 across the U ladder, far above identity-plus-bias, kNN accuracy 0.28 against chance 0.0003. The prefix-to-answer map never learns — R-squared at or below zero, retrieval near chance: on organic chat the prefix does not predict the answer representation.
+
+Downstream, all prefix-side arms read near zero for sycophancy and hallucination (159 sycophancy prefix cells return undefined rank correlations from tie-degenerate projections). Prefix-side conclusions are scoped to evil, whose jailbreak prefixes vary.
+
+---
+
+**Repro:** ~96 GPU-h cumulative (three parallel A100-80 lanes for the fit phase; generation/capture on the primary pod; judging via the Anthropic Batch API off-pod). Code `eb084ff2c4` (run) and `6686d45da9` (analysis figures), branch `issue-1739`. Eval artifacts: `eval_results/issue_1739/{evil,hallucination,sycophancy}/arm_results/all_arms_spearman.json` (826 / 270 / 810 cells; per-cell records in `arm_results/percell/cells.jsonl`), `eval_results/issue_1739/evil_config_b/` (90 reversed-transfer cells), `eval_results/issue_1739/dv_dataset/*/labeling.json`, `eval_results/issue_1739/{evil,hallucination}/pilot_report.json`, map diagnostics per behavior, and the per-cell headline table `figures/issue_1739/headline_deltas_percell.csv`. Raw rollouts + judge outputs: HF `superkaiba1/explore-persona-space-data` under [`issue1739_ctxmap/raw_completions/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/1ade7beb35b51249f26a2a2ecacb770003b4dbcc/issue1739_ctxmap/raw_completions) and [`issue1739_ctxmap/judge/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/1ade7beb35b51249f26a2a2ecacb770003b4dbcc/issue1739_ctxmap/judge) (listing verified via `list_repo_tree`, 2026-07-30). Reused artifacts — #1092 activation store rev `e5901706` (fit: same base model, both mapping arms, all 28 layers, sha-pinned) and #779 direction bank rev `037fcbb`. Planned-vs-actual: 2 of 828 evil composition cells skipped (recorded infeasible pool recipe); the U=50,000 rung realized as the 18,793-row full store; paired bootstrap ran 500 draws against the plan's 2,000 for the final run; the teacher-forced margin companion DV was not computed; sycophancy restored 453 of its 810 cells from a crash resume (final coverage complete); config slugs `arm1_ctx_e1` ... `arm16_surface_feat`, regimes `e1/e2/e2p`, variants `prefix_end/context_end`.
+
+**Context:** fresh direction (no parent) — task created 2026-07-28 from the 2026-07-27/28 interactive design session (plan at `docs/map_behavior_prediction_plan.md`). Originating prompt (verbatim): "run in background with happy coder and MAKE SURE IT PARALLELIZES AND VECTORIZES AS MUCH AS POSSIBLE". Run completed 2026-07-29; first analyzer pass 2026-07-30. Conciseness note: total prose runs over the 800-word budget — acknowledged; six result sections were kept to cover the 1,906-cell grid.
