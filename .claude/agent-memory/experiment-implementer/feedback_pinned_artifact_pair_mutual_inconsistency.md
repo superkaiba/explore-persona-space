@@ -39,3 +39,9 @@ indexes (frozen R).
 Post-hoc REGENERATION ordering (an input regenerated AFTER its dependent
 capture) is the sibling failure class — now checklist item (j) in
 `.claude/rules/artifact-reuse.md` (#922).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Pinned artifact pairs can disagree](feedback_pinned_artifact_pair_mutual_inconsistency.md) — assert per-(persona,q) coverage against the READ-side artifact; descope with a coverage field, never regenerate frozen R. #601.

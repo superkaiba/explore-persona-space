@@ -25,3 +25,9 @@ a read-side-only fallback (a fresh pod running smoke-first still has nothing
 staged). When writing any `--smoke` rebinding dispatcher, audit every
 downstream read for parent-input paths and pin them to non-rebinding
 constants.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Smoke-root rebinding orphans parent inputs](feedback_smoke_root_rebind_orphans_parent_inputs.md) — pin parent inputs to a NON-rebinding constant and stage before the --smoke early-return. #542.

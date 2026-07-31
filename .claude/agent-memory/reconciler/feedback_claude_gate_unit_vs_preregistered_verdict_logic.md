@@ -60,3 +60,9 @@ type: feedback
 - #601 r2 code — `matched_series` built once in logp space then reused in the margin-space classify call; the saturation-safe co-read corrupted exactly in the regime it guards; half-parameterized dual-space tell → FAIL.
 - #778 amend r1 stats — headline "cross-cell FWER max-statistic p < 0.05" multiply-readable (shape 10): statistic SCALE unnamed (raw |r| max over cells with n=24 finetune null caps 0.93–0.97 grazing obs 0.87–0.91 vs narrow monitoring nulls — dominated max ⇒ uninterpretable; min-p/standardized never written), cell SET unnamed (BH's "15 cells" parallel implies finetune inclusion while §6 pre-declares finetune "NEVER carries the headline"), joint null unregistered (per-cell `SEED_BASE[family]+cell_idx` streams, no draw-pairing rule). Persisted per-draw arrays don't rescue a registered headline conjunct.
 - #922 r1 stats — H1 confirm registered against zero (copy-previous) while the plan's OWN §5 control table registers the shuffle band as the chance line AND §8 rates the inside-band outcome Medium-likely → false-positive CONFIRM reachable (shape 4 + affirmative misfire; band computed/plotted/persisted did NOT rescue); H4 "decays toward/below by k=32" confirm vs "stays above through k=32" falsify double-assigns the above-but-declining modal curve + "mid/late layers" unpinned (shapes 4/10). Claude wrote the H1 defect + fix verbatim in its own concern #2 and still APPROVEd (shape 12).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Claude treats pre-registered verdict-logic gate defects as analyzer-recoverable](feedback_claude_gate_unit_vs_preregistered_verdict_logic.md) — defective registered gates/kills/lattices: data-recoverability never rescues; barred-amendment tell; 35+ incident ledger (#547…#614). REVISE/FAIL.

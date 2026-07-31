@@ -26,3 +26,9 @@ round: batched small-matrix torch CPU ops (bmm/eigh over a (B,480,480) batch)
 hold ~1 core while a serial fat-matrix gesdd threads ~3 — wall speedup under
 contention was only ~1.7× (5× core-normalized) vs the ~50× FLOP estimate;
 measure, and pair vectorization with process-level per-cell fan-out.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Rank-deficient PCA target = algorithm-coupled estimator](feedback_rank_deficient_pca_target_algorithm_coupled.md) — probe the centered spectrum at the k boundary BEFORE vectorizing a per-resample top-k SVD pipeline; rank<k means the SVD null-basis IS part of the statistic (serial-only) + raise as science concern; batched small-matrix CPU torch ≈1 core vs threaded serial gesdd (#833 r5)

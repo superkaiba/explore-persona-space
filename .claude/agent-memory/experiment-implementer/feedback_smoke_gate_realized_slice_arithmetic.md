@@ -16,3 +16,11 @@ the realized n_rows (K = the gate's floor), keep production geometry untouched,
 and pin the arithmetic with a fails-pre-fix test plus a tiny-real leg that
 asserts the checkpoint dirs exist on disk (config math alone does not prove
 Trainer save behavior). (#1489 crash-fix r5, commit 63c10815.)
+
+## Merged sibling index rows (#1891 curation, 2026-07-30)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the ~25 KB loader truncation limit (task #1891). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [Smoke-slice sizes must satisfy downstream min-N asserts](feedback_smoke_slice_min_n_downstream_asserts.md) — derive smoke slice floors from downstream `assert len >= k` consumers, not plan prose (#1315 r4)
+- [Smoke-scale gates](feedback_smoke_scale_gates.md) — production-n-calibrated verdicts (anchor tolerances, yield floors) bind spuriously at smoke n; demote to informational under --smoke, keep production pins (#1345)
+- [Smoke-gate floors from realized slice arithmetic](feedback_smoke_gate_realized_slice_arithmetic.md) — derive smoke epochs/steps from realized n_rows, never an assumed cap; pin with a fails-pre-fix test + on-disk checkpoint assert (#1489 r5)

@@ -34,3 +34,9 @@ The fix pattern (do this in ANY new real-corpus streaming builder):
 
 Sibling lesson: `feedback_tiny_real_cpu_e2e.md` (#906) — same principle,
 GPU-pipeline flavor. This is the data-ingestion flavor.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Real-corpus streaming filters need tiny-real probes](feedback_real_corpus_streaming_filters_tiny_real_probe.md) — WildChat/LMSYS store FULL language names + per-dataset moderation shapes; assumed field semantics rejected 100% of rows while synthetic smokes stayed green; bounded tiny-real probe + per-filter reject counters (#1092 P0)

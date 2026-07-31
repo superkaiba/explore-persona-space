@@ -29,3 +29,9 @@ feeds PAIRED arms (instruct/pretrained dynamics), drop the over-budget pair
 from BOTH arms so row sets stay aligned, and persist a kept/dropped digest.
 Worked example: `_filter_dynamics_panel_by_rendered_length` in
 scripts/issue1092_gpu_phase.py + tests/test_issue1092_round8.py.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Rendered-length token budgets (train rows + capture panels)](feedback_marker_row_token_budget.md) — raw-token keep-filters under-count rendered length; budget at render time with the consumer's exact render+tokenizer; pair-drop across paired arms (#906 r13, #1092 launch 8)

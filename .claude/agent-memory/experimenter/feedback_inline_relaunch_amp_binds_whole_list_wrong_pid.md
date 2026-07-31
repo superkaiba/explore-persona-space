@@ -30,3 +30,9 @@ Cleaner: parenthesize so `&` binds tight — `cd X && { setsid nohup bash -c
 "..." > log 2>&1 < /dev/null & printf "%s\n" "$!" > pid.tmp && mv ...; }` —
 or use the canonical launcher-script pattern (experimenter.md § During
 Execution step 1), which avoids all of this.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Inline relaunch `&` binds the whole `cd && setsid` list — wrong pid in pidfile](feedback_inline_relaunch_amp_binds_whole_list_wrong_pid.md) — `$!` captures the un-setsid'd wrapper subshell (HUP-vulnerable, holds the ssh channel open so the local ssh client hangs); repoint pidfile at the setsid session leader (SESS==PID, spans an `a && b` chain) and kill the lingering local ssh client by exact pid, then re-probe survival (#1768 r3)

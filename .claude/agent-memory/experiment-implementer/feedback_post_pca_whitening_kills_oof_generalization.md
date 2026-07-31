@@ -24,3 +24,9 @@ standardization is applied, it is the whitening. Caveat: #722 reported
 noise tail) — the pathology is regime-dependent, so verify per design rather
 than assuming either way. (Impl: `press_fit_predict(standardize=False)` +
 `build_part._std` in `scripts/issue923_fit_decomposition.py`.)
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Post-PCA whitening kills OOF ridge generalization](feedback_post_pca_whitening_kills_oof_generalization.md) — standardize AMBIENT then PCA-project, never per-PCA-dim; rotation-invariance oracle; #923 (+0.13 → −6.4).

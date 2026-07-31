@@ -47,3 +47,9 @@ SPEC before crediting:
 **Net rule:** verify Lens 2 (bare #N) and Lens 5 (reuse path (b)) FIRST on
 any clean-result split — they are the two grounded FAILs; any ONE → REVISE.
 Then strip the L4/L6/L12/L15 over-fire as SPEC misreads. #722 r1.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Clean-result bare-#N refs + missing reuse path (Lens 2/5)](feedback_clean_result_bare_issue_refs_and_reuse_path.md) — v4 split: bare #N in Methodology table Source col / Results caption (L2) + reuse bullet missing the permanent path (b) (L5) are grounded FAILs Claude PASSes; discard the L4/L6/L12/L15 Codex over-fire as SPEC misreads. #722 r1.

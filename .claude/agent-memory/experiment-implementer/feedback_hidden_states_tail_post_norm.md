@@ -24,3 +24,9 @@ direction-preserving.
 smoke of norm/scale-sensitive code on a tiny random model MUST first perturb
 the relevant norm weights NON-uniformly (`norm.weight.copy_(rand*2+0.1)`) —
 uniform `mul_/add_` on the all-ones init stays uniform and masks the bug.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [hidden_states[-1] is POST-final-norm](feedback_hidden_states_tail_post_norm.md) — hs tail = lm_head input; hook for last-layer residuals; perturb non-uniformly in tiny-model tests. #597.

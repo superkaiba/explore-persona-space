@@ -32,3 +32,9 @@ such a crash — probe `pgrep -af '^VLLM::EngineCore'` and kill by exact PID
 before any relaunch (they self-expire at 5 min but can strand HBM).
 Beware pgrep self-match over raw SSH: use bracketed patterns
 (`EngineCor[e]`) since the probe pattern is in your own argv.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Fan-out handshake timeout masks a single fast-crashing unit](feedback_fanout_handshake_timeout_masks_single_unit_crash.md) — "ALL units hit the vLLM 5-min front-end handshake timeout" is usually the SYMPTOM of one unit crashing instantly (driver raises on first failure, abandons sibling front-ends; their EngineCores time out 5 min later); read the EARLIEST/smallest unit log's traceback before classifying infra (#1112 a4→a5)

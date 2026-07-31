@@ -16,3 +16,9 @@ Use `"accent"` for reference/overlay lines.
 **How to apply:** when forking any `issue*_make_figures.py`, grep the existing
 script's `paper_palette_role(` calls and stick to the five valid names; the
 figures smoke phase (run the script end-to-end on a fixture) is what catches it.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [paper_palette_role valid names](feedback_paper_palette_role_names.md) — only accent/baseline/control/neutral/primary; "secondary" ValueErrors at render.

@@ -9,3 +9,9 @@ In a bash launcher with a background heartbeat subshell (`( while true; do echo 
 **Why:** bash delivers default-disposition TERM to the subshell immediately, but children are never signaled; pipe EOF requires ALL fd holders dead.
 
 **How to apply:** deterministic teardown in the trap — `kill -STOP "$HB_PID"` (freeze so no new sleep forks) → `pkill -P "$HB_PID"` (reap the in-flight sleep while parentage is intact; after the subshell dies, `-P` no longer matches the reparented child) → `kill -CONT "$HB_PID"` → `kill "$HB_PID"`. Alternative: run the heartbeat under its own `setsid` and `kill -- -PGID` (but then `$$` inside is no longer the driver pid — pass it explicitly).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [bg heartbeat sleep child holds pipe](feedback_bg_heartbeat_sleep_child_holds_pipe.md) — killed subshell's in-flight sleep holds stdout; STOP→pkill-child→CONT→TERM in the trap. #601.

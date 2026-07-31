@@ -13,3 +13,9 @@ Before accepting a brief's "fast single-shot data prep, wait inline" claim, grep
 1. Launch with the detachment trio `setsid nohup ... < /dev/null > log 2>&1 &` (never bare `nohup ... &`), capturing the PID per pod-side-reporting.md § Pid-file launch contract: preferred = the launcher script whose `echo $$ > /workspace/logs/issue-<N>.pid` overwrites pre-exec (after `exec`, `$$` IS the driver); rare no-launcher relaunch = atomic tmp+mv (`printf '%s\n' "$PID" > /workspace/logs/issue-<N>.pid.tmp && mv /workspace/logs/issue-<N>.pid.tmp /workspace/logs/issue-<N>.pid`). post `epm:failure v1 failure_class: infra` ("data-gen in progress" + launch command), EXIT. Verify detachment via `ps -p <pid> -o ppid` (PPID 1). Use log-file mtime, not tail, for freshness — stdout is buffered to files.
 2. Recommend to the implementer: persist `batch.id` to disk right after create so a re-run ATTACHES via `retrieve()` instead of re-submitting (and re-paying); raise/configure the poll cap to ≥4h for >5K-request batches.
 3. Diagnostic when a batch looks stuck: hit non-batch `/v1/messages` with a tiny request — <2s response means the API is healthy and your batch is just queued; an error/hang means a real outage.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Anthropic batches are long-running](feedback_datagen_anthropic_batch_long_running.md) — grep for messages.batches.create before any inline wait; 10-90 min typical, 0/N for >60 min is normal; persist batch_id (#331, #382)

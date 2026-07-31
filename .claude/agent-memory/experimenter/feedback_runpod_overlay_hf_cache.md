@@ -14,3 +14,9 @@ Bootstrap's HF-cache redirect is not always idempotent against a pre-existing `/
 ssh ... 'df -h / | tail -1 && env | grep HF_HOME && test -L /root/.cache/huggingface && echo "symlink: OK" || echo "REAL DIR — WILL OVERFLOW"'
 ```
 HF_HOME unset, symlink check failed, or `/` <80% free → bounce before launching. Adding HF_HOME to the nohup command is NOT sufficient — subprocesses (vLLM EngineCore, the Hub downloader) re-resolve `~/.cache` from `$HOME`; the symlink is the only durable repair.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [RunPod overlay HF cache trap](feedback_runpod_overlay_hf_cache.md) — /root/.cache/huggingface as REAL dir overflows the 50G overlay on eval; preflight the symlink, env var alone insufficient (#356)

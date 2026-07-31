@@ -24,3 +24,10 @@ which must NOT gate). Annotate per-node tail fractions (`boot_frac_below`/
 gating failures AND >=1 gating cell. (Incident: #825 epm:failure-lesson v11,
 code-review v26 FAIL → v27 PASS; supersedes
 feedback_small_cell_bootstrap_ci_degeneracy.md.)
+
+## Merged sibling index rows (#1891 curation, 2026-07-30)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the ~25 KB loader truncation limit (task #1891). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [small-cell bootstrap-CI degeneracy in mechanized gates](feedback_small_cell_bootstrap_ci_degeneracy.md) — [SUPERSEDED by rank-space tail gating] strict float coverage is itself epsilon-fragile (#825 r11)
+- [rank-space bootstrap tail-mass gating](feedback_rank_space_bootstrap_tail_gating.md) — gate CI validity on >alpha/2 draws strictly each side of a same-GEMM anchor; never float-space lo<point<hi or a cross-arithmetic point (#825 r11 rev4)

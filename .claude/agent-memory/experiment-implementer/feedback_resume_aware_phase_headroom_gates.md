@@ -23,3 +23,11 @@ resume scan uses — zero pending ⇒ skip the gate (one INFO line); partial
 untouched). Fresh runs must compute byte-identical need (pin it). The
 wave-level pending-aware gate is usually already the in-file template.
 (#1586 fu round 8.)
+
+## Merged sibling index rows (#1891 curation, 2026-07-30)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the ~25 KB loader truncation limit (task #1891). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [Resume-aware phase-entry headroom gates](feedback_resume_aware_phase_headroom_gates.md) — a blanket fresh-run floor at phase entry deadlocks a resume whose own done artifacts occupy the disk; skip/scale need by PENDING cells, wave-gate template (#1586 fu crash 5)
+- [Mid-run Hub-verified ckpt reap + restage-on-missing](feedback_midrun_verified_upload_ckpt_reap.md) — keep-for-later checkpoints are re-stageable duplicates once upload-verified; fleet of completed cells starves the next phase's headroom floor; reap on verified upload, restage via the single resolver (#1586 fu r5)
+- [Chained smoke-then-full out-root residue](feedback_chained_smoke_leg_out_root_residue.md) — smoke && full per-leg out-roots leave the smoke leg's keep-cell rungs unowned (~44 GB) and starve the full leg's headroom assert; full leg reaps the DERIVED sibling smoke root at first phase entry (#1586 fu r3)

@@ -42,3 +42,9 @@ bundle (see feedback_centroids_pt_structured_dict.md). For a new `*.pt`
 or `*.json` artifact published by #472-line code: read the writer's
 `torch.save({...})` or `json.dumps({...})` block first to confirm the
 wrapper schema before writing the consumer.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [i472 JSON payloads wrap data](feedback_i472_json_payloads_wrap_data.md) — persona_bank/R_train/R_eval wrap data under payload keys; use the canonical load_* helpers. #505.

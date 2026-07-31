@@ -64,3 +64,9 @@ silent-shrink/fail-fast FAIL from the same review is also phantom — still grep
 the literals (the discard must be evidence-anchored), but expect the hits to be
 zero. The recurring tell: a precise-looking line number that, when read, lands on
 a coverage-REPORTING / unrelated line, plus a quoted symbol grep proves absent.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Codex fabricates a code citation for a silent-shrink BLOCKER](feedback_codex_fabricated_code_citation_silent_shrink.md) — `file:line` + quoted code body (`r_plus.get`/`skipped_no_rplus` emitting `status: ok`) that doesn't exist (grep 0 hits); the real path runs fail-loud CoverageError validators before analysis → PASS. #667 r1.

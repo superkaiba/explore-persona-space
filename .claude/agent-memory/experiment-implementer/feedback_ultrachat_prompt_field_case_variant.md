@@ -23,3 +23,9 @@ genuine structural mismatches. Minor related note: heredoc-stdin python
 one-liners that combine `datasets` streaming with a torch import can SIGABRT
 (exit 134) at interpreter teardown AFTER printing results — write diagnostics
 to a file and grep the printed line; file-based scripts exited 0 cleanly.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [UltraChat prompt field case-variant](feedback_ultrachat_prompt_field_case_variant.md) — use messages[0] text + casefold-strip check, never byte equality with `prompt`.

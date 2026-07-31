@@ -15,3 +15,9 @@ add_request with max_model_len 8192 — issue #1738 Phase 4a, engine-core death 
 **Why:** filters live at the phase that applies them; id lists predate them.
 **How to apply:** any resample/re-generation phase consuming ids carved before a
 filter-bearing phase gets an admission gate + skipped-sidecar BEFORE generation.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Subsample re-admission filter](feedback_subsample_readmission_filter.md) — re-apply the producer's admission filter before consuming split-time id lists (#1738 r5)
