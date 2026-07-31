@@ -5966,7 +5966,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1768",
       "status": "followups_running",
-      "title": "Behavior fine-tuning changes the context\u2192answer map in rank order with its weights-carried answer shift, with most content arms crossing the refit-noise floor and marker arms staying below it (HIGH confidence)"
+      "title": "Fine-tuning-induced map change is context-dependent: sycophancy arms trained with a conversation or demonstration prefix cross the refit-noise floor only once their trained prefix is present (HIGH confidence)"
     },
     "1769": {
       "goal": "Determine when behavioral commitment happens in Qwen-2.5-7B-Instruct: does steering a persona-vector direction r_B only during prefill vs only during decode vs both change on-policy judged behavior expression - i.e., is the answer's behavior already committed in the pre-answer context state, or decided token-by-token during generation?",

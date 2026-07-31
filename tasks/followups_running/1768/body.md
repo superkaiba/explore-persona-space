@@ -1,7 +1,7 @@
 ---
-title: Behavior fine-tuning changes the context→answer map in rank order with its
-  weights-carried answer shift, with most content arms crossing the refit-noise floor
-  and marker arms staying below it (HIGH confidence)
+title: 'Fine-tuning-induced map change is context-dependent: sycophancy arms trained
+  with a conversation or demonstration prefix cross the refit-noise floor only once
+  their trained prefix is present (HIGH confidence)'
 kind: experiment
 tags:
 - followup-auto
