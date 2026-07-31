@@ -10,6 +10,8 @@ origin_prompt: 'run all these: ... 2. Per-context SAE-space error read. The one 
   that would settle the bare-vs-prefix mirror-image question. Per-feature agreement
   doesn''t test it'
 workflow: v1
+goal: Settle whether the bare-query and prefix arms are **mirror images** in SAE feature
+  space, as they demonstrably are in the dense per-context taxonomy.
 ---
 ## Goal
 

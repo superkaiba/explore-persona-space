@@ -7323,6 +7323,7 @@
       "title": "Does the map's residual interaction have low-rank structure, or is it per-pair idiosyncratic?"
     },
     "1946": {
+      "goal": "Settle whether the bare-query and prefix arms are **mirror images** in SAE feature space, as they demonstrably are in the dense per-context taxonomy.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/1946",
