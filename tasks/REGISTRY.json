@@ -6662,8 +6662,8 @@
     "1860": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1860",
-      "status": "approved",
+      "path": "tasks/running/1860",
+      "status": "running",
       "title": "daily-fix: humanize loop verifies candidate body before set-"
     },
     "1861": {
