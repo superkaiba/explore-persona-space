@@ -28,6 +28,16 @@ DRIVER="scripts/issue1768_ckpt_dynamics.py"
 cd "$REPO_ROOT"
 if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
 export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
+
+# Hub-download accelerators, SHELL-level because huggingface_hub.constants
+# freezes HF_HUB_ENABLE_HF_TRANSFER at import (upload-policy.md). A detached
+# setsid launch inherits neither bootstrap's session env nor an interactive
+# profile, so without these the 1,236 adapter fetches run the slow pure-python
+# path — measured on this pod: ~4.4 MB/s aggregate across 4 workers, i.e.
+# download-bound at ~4.7h for ~74 GB, with 64 CPUs idle and the GPUs at 0.5s
+# of work per unit. hf_transfer 0.1.9 is installed; only the flag was missing.
+export HF_HUB_ENABLE_HF_TRANSFER="${HF_HUB_ENABLE_HF_TRANSFER:-1}"
+export HF_XET_HIGH_PERFORMANCE="${HF_XET_HIGH_PERFORMANCE:-1}"
 mkdir -p "$LOG_DIR" "$OUT_ROOT" "$RESULTS_DIR"
 
 echo "[dispatch] leg=$LEG out_root=$OUT_ROOT ngpu=$NGPU commit=$(git rev-parse --short HEAD)"

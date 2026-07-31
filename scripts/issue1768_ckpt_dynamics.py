@@ -214,6 +214,32 @@ def enumerate_ladders(out_root: Path, refresh: bool = False) -> dict:
     return json.loads(path.read_text())
 
 
+def rung_priority(steps: list[int], selected: int) -> list[int]:
+    """Rungs ordered so ANY PREFIX spans the ladder (farthest-point traversal).
+
+    The selected (verdict) rung first — it anchors the parity gate and the
+    cos-vs-verdict reference — then the endpoints, then repeatedly whichever
+    remaining rung is farthest from everything already chosen. A prefix of
+    length k is therefore a near-uniform k-point subsample of the ladder, so a
+    run stopped early yields COARSER curves for every arm rather than complete
+    curves for the alphabetically-early arms and nothing for the rest.
+    """
+    remaining = sorted(set(steps))
+    out: list[int] = []
+    if selected in remaining:
+        out.append(selected)
+        remaining.remove(selected)
+    for end in [remaining[0], remaining[-1]] if remaining else []:
+        if end in remaining:
+            out.append(end)
+            remaining.remove(end)
+    while remaining:
+        far = max(remaining, key=lambda s: (min(abs(s - o) for o in out), s))
+        out.append(far)
+        remaining.remove(far)
+    return out
+
+
 def capture_units(
     ladders: dict, arms_filter=(), limit: int = 0, max_per_arm: int = 0
 ) -> list[dict]:
@@ -223,6 +249,12 @@ def capture_units(
     checkpoint (no ladder), so their verdict-rung read is reused verbatim from
     round 1 at zero GPU cost — see `analyze`'s `ft_verdict_only` rows and the
     coverage report's `ft_skipped_by_design`.
+
+    Units are ordered by LADDER-SPREAD RANK, then arm — `rung_priority` pass 0
+    (every arm's verdict rung) before pass 1, and so on — so a run stopped early
+    degrades to coarser curves across ALL arms instead of full curves for the
+    alphabetically-early arms and nothing for the rest. Index-modulo sharding
+    over this order keeps each shard's own prefix spread the same way.
     """
     wanted_arms = set(arms_filter or ())
     units: list[dict] = []
@@ -231,21 +263,21 @@ def capture_units(
             continue
         if lad["method"] != "lora":
             continue
-        steps = list(lad["steps"])
-        if max_per_arm and len(steps) > max_per_arm:
-            # smoke sizing: keep the SELECTED rung (so the round-1 parity gate
-            # and the cos-vs-verdict path both fire) plus the lowest rungs.
-            # NB: a distinct name — reusing `wanted_arms` here silently skipped
-            # every arm after the first (caught by the two-arm smoke).
-            sel = lad["selected_step"]
-            kept_steps = [sel] if sel in steps else []
-            kept_steps += [s for s in steps if s not in kept_steps][: max_per_arm - len(kept_steps)]
-            steps = sorted(kept_steps)
-        for step in steps:
+        ordered = rung_priority(list(lad["steps"]), lad["selected_step"])
+        if max_per_arm:
+            # smoke / descope sizing: the first k spread-ranked rungs, which
+            # always include the SELECTED rung (so the round-1 parity gate and
+            # the cos-vs-verdict path both fire).
+            # NB: a distinct name from `wanted_arms` — reusing that name here
+            # silently skipped every arm after the first (caught by the two-arm
+            # smoke; pinned by test_max_per_arm_keeps_selected_rung_*).
+            ordered = ordered[:max_per_arm]
+        for rank, step in enumerate(ordered):
             units.append(
                 {
                     "arm_id": arm_id,
                     "step": step,
+                    "spread_rank": rank,
                     "repo": lad["repo"],
                     "subfolder": f"{lad['prefix']}/checkpoint-{step}",
                     "beh_key": lad["beh_key"],
@@ -253,7 +285,7 @@ def capture_units(
                     "selected_step": lad["selected_step"],
                 }
             )
-    units.sort(key=lambda u: (u["arm_id"], u["step"]))
+    units.sort(key=lambda u: (u["spread_rank"], u["arm_id"]))
     return units[:limit] if limit else units
 
 

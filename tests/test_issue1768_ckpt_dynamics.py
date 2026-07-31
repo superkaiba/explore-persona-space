@@ -324,9 +324,70 @@ def test_capture_units_excludes_ft_and_is_deterministic():
     }
     units = dyn.capture_units(ladders)
     assert [u["arm_id"] for u in units] == ["z-lora"] * 3
-    assert [u["step"] for u in units] == [10, 20, 30]
-    assert units[0]["subfolder"] == "p/z/checkpoint-10"
+    # spread order: verdict rung first, then the endpoints
+    assert [u["step"] for u in units] == [20, 10, 30]
+    assert units[0]["subfolder"] == "p/z/checkpoint-20"
     assert dyn.capture_units(ladders, arms_filter=("a-ft",)) == []
+
+
+def test_rung_priority_prefixes_span_the_ladder():
+    steps = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+    order = dyn.rung_priority(steps, selected=25)
+    assert order[0] == 25, order  # verdict rung anchors the parity gate
+    assert set(order[1:3]) == {5, 50}, order  # then both endpoints
+    assert sorted(order) == steps  # a permutation — no rung dropped or duplicated
+    # every prefix of length k >= 3 covers the ladder's full range
+    for k in range(3, len(order) + 1):
+        pref = order[:k]
+        assert min(pref) == 5 and max(pref) == 50, (k, pref)
+    # and the prefix stays roughly uniform: the largest gap shrinks monotonically
+    import itertools
+
+    gaps = []
+    for k in range(3, len(order) + 1):
+        pref = sorted(order[:k])
+        gaps.append(max(b - a for a, b in itertools.pairwise(pref)))
+    assert gaps == sorted(gaps, reverse=True), gaps
+
+
+def test_rung_priority_handles_missing_selected_and_singletons():
+    assert dyn.rung_priority([10, 20, 30], selected=99)[:2] == [10, 30]  # sel absent
+    assert dyn.rung_priority([7], selected=7) == [7]
+    assert dyn.rung_priority([7, 9], selected=9) == [9, 7]
+
+
+def test_capture_units_interleaves_arms_so_a_prefix_covers_all():
+    """A truncated run must yield coarser curves for EVERY arm, never complete
+    curves for the early arms and nothing for the rest."""
+    ladders = {}
+    for name in ("a-arm", "b-arm", "c-arm"):
+        ladders[name] = {
+            "arm_id": name,
+            "method": "lora",
+            "kind": "content",
+            "beh_key": "syc",
+            "ctx_key": "pers",
+            "regime": "con",
+            "seed": 42,
+            "lr": 1e-5,
+            "selected_step": 20,
+            "repo": "r",
+            "prefix": f"p/{name}",
+            "steps": [10, 20, 30, 40],
+        }
+    units = dyn.capture_units(ladders)
+    assert len(units) == 12
+    # the first pass is every arm's verdict rung, one per arm
+    first = units[:3]
+    assert {u["arm_id"] for u in first} == {"a-arm", "b-arm", "c-arm"}
+    assert {u["step"] for u in first} == {20}
+    # any prefix of >= 3 units touches all three arms
+    for k in (3, 6, 9, 12):
+        assert {u["arm_id"] for u in units[:k]} == {"a-arm", "b-arm", "c-arm"}, k
+    # and index-modulo sharding preserves that spread per shard
+    for shard in range(2):
+        mine = [u for i, u in enumerate(units) if i % 2 == shard]
+        assert {u["arm_id"] for u in mine} == {"a-arm", "b-arm", "c-arm"}, shard
 
 
 def test_max_per_arm_keeps_selected_rung_for_every_named_arm():
@@ -354,6 +415,8 @@ def test_max_per_arm_keeps_selected_rung_for_every_named_arm():
     for u in units:
         by_arm.setdefault(u["arm_id"], []).append(u["step"])
     assert set(by_arm) == {"m-one", "m-two"}, by_arm  # fails pre-fix (only m-one)
-    assert by_arm["m-one"] == [10, 30] and by_arm["m-two"] == [5, 25]
+    # spread order: the verdict rung first, then the far endpoint
+    assert by_arm["m-one"] == [30, 10], by_arm  # steps [10,20,30,40], sel 30
+    assert by_arm["m-two"] == [25, 5], by_arm  # steps [5,15,25],    sel 25
     for arm, steps in by_arm.items():
         assert ladders[arm]["selected_step"] in steps, (arm, steps)
