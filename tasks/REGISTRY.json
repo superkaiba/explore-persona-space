@@ -7254,8 +7254,8 @@
     "1937": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1937",
-      "status": "approved",
+      "path": "tasks/running/1937",
+      "status": "running",
       "title": "workflow-fix: gotchas entry \u2014 fellows shared-node GPU width + vLLM util sizing"
     },
     "194": {
