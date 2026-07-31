@@ -7319,8 +7319,8 @@
       "goal": "Determine whether the context\u2192answer map's dominant (context \u00d7 direction) interaction residual admits recoverable low-rank bilinear structure (H1) or is per-pair idiosyncratic (H2), by pointing #1775's rank-r bilinear machinery at the #1482 residual pair space against a permuted-pairing null with the answer-sampling floor netted out.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/1945",
-      "status": "planning",
+      "path": "tasks/approved/1945",
+      "status": "approved",
       "title": "Does the map's residual interaction have low-rank structure, or is it per-pair idiosyncratic?"
     },
     "1946": {
