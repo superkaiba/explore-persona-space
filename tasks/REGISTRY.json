@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1921,
+  "highest_id": 1922,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7138,6 +7138,13 @@
       "path": "tasks/proposed/1921",
       "status": "proposed",
       "title": "daily-fix: four CLAUDE.md discipline clauses"
+    },
+    "1922": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1922",
+      "status": "proposed",
+      "title": "daily-held: triage root-sync KEPT stash 319c2bf16e7c"
     },
     "193": {
       "has_clean_result": false,
