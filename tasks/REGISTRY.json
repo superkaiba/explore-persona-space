@@ -7057,8 +7057,8 @@
     "1911": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1911",
-      "status": "proposed",
+      "path": "tasks/planning/1911",
+      "status": "planning",
       "title": "workflow-fix: document the 'CMD -c ... || echo 0' double-print trap in gotchas.md"
     },
     "1912": {
