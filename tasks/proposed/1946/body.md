@@ -12,6 +12,8 @@ origin_prompt: 'run all these: ... 2. Per-context SAE-space error read. The one 
 workflow: v1
 goal: Settle whether the bare-query and prefix arms are **mirror images** in SAE feature
   space, as they demonstrably are in the dense per-context taxonomy.
+relates_to:
+- spec-context-as-vector
 ---
 ## Goal
 
