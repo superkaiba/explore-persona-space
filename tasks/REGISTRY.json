@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1920,
+  "highest_id": 1921,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7131,6 +7131,13 @@
       "path": "tasks/proposed/1920",
       "status": "proposed",
       "title": "daily-fix: living_docs.py bounded index.lock retry"
+    },
+    "1921": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1921",
+      "status": "proposed",
+      "title": "daily-fix: four CLAUDE.md discipline clauses"
     },
     "193": {
       "has_clean_result": false,
