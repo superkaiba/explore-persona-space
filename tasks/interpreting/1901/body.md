@@ -1,6 +1,6 @@
 ---
-title: 'Characterize mapping-quality metrics: 1M-context linear + nonlinear maps vs
-  baselines on every metric'
+title: Held-out variance explained and retrieval accuracy dissociate in both directions
+  across the context-to-answer estimator ladder (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-30T23:49:53Z'
