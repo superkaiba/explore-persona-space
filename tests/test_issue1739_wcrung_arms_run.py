@@ -353,3 +353,25 @@ def test_all_hub_call_sites_bind_the_real_signatures():
         inspect.signature(target).bind(*pos, **kws)
         checked += 1
     assert checked >= 4, f"expected >=4 hub call sites bound, checked {checked}"
+
+
+def test_reduced_layer_set_auto_enables_force_own_pool_frozen(tmp_path):
+    """The wrapper cannot compose the crashing probe argv (committed-frozen +
+    reduced layers): a non-full layer list auto-adds the escape flag."""
+    args = _args(tmp_path, layers=[0, 1])
+    cmd = run.score_cmd("evil", args)
+    assert "--force-own-pool-frozen" in cmd
+    assert cmd[cmd.index("--n-layers") + 1] == "2"
+
+
+def test_full_layer_grid_keeps_committed_frozen(tmp_path):
+    """At the full grid the committed indices are meaningful — no auto flag."""
+    args = _args(tmp_path, layers=list(range(run.FULL_GRID_N_LAYERS)))
+    cmd = run.score_cmd("evil", args)
+    assert "--force-own-pool-frozen" not in cmd
+    assert cmd[cmd.index("--n-layers") + 1] == "28"
+
+
+def test_explicit_flag_forces_own_pool_even_at_full_width(tmp_path):
+    args = _args(tmp_path, layers=list(range(28)), force_own_pool_frozen=True)
+    assert "--force-own-pool-frozen" in run.score_cmd("evil", args)

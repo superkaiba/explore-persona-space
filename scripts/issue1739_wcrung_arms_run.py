@@ -76,6 +76,9 @@ SENTINEL_NAME = "wcrung_arms_done.json"
 STAGE_MANIFEST = "slice_manifest.json"
 # store_io shard written by every capture store — the staging completion probe.
 STORE_PROBE = "row_index_shard00.jsonl"
+# The committed train grid this rung freezes against. A run with FEWER layers
+# cannot use committed-frozen indices (they index this full grid).
+FULL_GRID_N_LAYERS = 28
 
 
 def _log(msg: str) -> None:
@@ -256,7 +259,7 @@ def wait_for_stage(behavior: str, args, errors: list[BaseException]) -> None:
 def score_cmd(behavior: str, args) -> list[str]:
     """The scorer argv for one behavior (no --wcrung-store: the staged path IS
     the driver's ``--store-root`` default)."""
-    return [
+    cmd = [
         sys.executable,
         str(_REPO_ROOT / "scripts" / "issue1739_wcrung_arms.py"),
         "--behaviors",
@@ -278,6 +281,14 @@ def score_cmd(behavior: str, args) -> list[str]:
         "--n-layers",
         str(len(args.layers)),
     ]
+    # Committed-frozen layers are indices into the FULL 28-layer grid, so a
+    # reduced-layer run (the probe shape) MUST select frozen layers within its
+    # own layer set — the driver fail-louds otherwise. Auto-enable for any
+    # non-full layer list so the probe invocation cannot forget it; the explicit
+    # flag still forces it at full width.
+    if args.force_own_pool_frozen or len(args.layers) < FULL_GRID_N_LAYERS:
+        cmd.append("--force-own-pool-frozen")
+    return cmd
 
 
 def score_behavior(behavior: str, args) -> int:
@@ -330,6 +341,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=int,
         default=4 * 3600,
         help="per-behavior staging fence; 2x the ~40 min worst-case tar at ~30 MB/s x3 behaviors",
+    )
+    ap.add_argument(
+        "--force-own-pool-frozen",
+        action="store_true",
+        help="select frozen layers on each behavior's own train pool instead of the "
+        "committed train summary (auto-enabled for any reduced --layers set)",
     )
     ap.add_argument("--skip-upload", action="store_true")
     ap.add_argument("--stage-only", action="store_true")

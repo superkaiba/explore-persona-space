@@ -598,6 +598,95 @@ def test_committed_summary_path_is_used_when_present(rig):
 # ---------------------------------------------------------------------------
 
 
+def _committed_summary(path: Path, *, frozen_idx: int, n_layers: int = 28) -> Path:
+    """A committed train summary whose argmax lands at ``frozen_idx`` of n_layers."""
+    rhos = [0.1] * n_layers
+    rhos[frozen_idx] = 0.9
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            _summary(
+                [
+                    _arm_row(a, list(rhos), variant=v)
+                    for a in ROSTER
+                    for v in ("context_end", "prefix_end")
+                ]
+            )
+        )
+    )
+    return path
+
+
+def test_committed_frozen_under_reduced_layer_probe_fails_loud(rig):
+    """REGRESSION PIN: the probe shape must not IndexError (or silently clamp).
+
+    modal_frozen_layers returns an INDEX into the committed row's 28-entry
+    rho_per_layer. Under a 2-layer probe, `layers[<committed idx ~15>]` raised
+    IndexError in production — and evaluate_transfer would ALSO have clamped
+    (fl = min(idx, shape-1)), scoring the wrong layer silently. The guard fires
+    BEFORE the transfer compute and names the escape flag.
+    """
+    main_root = rig["out_root"].parent / "main"
+    _committed_summary(main_root / "evil" / "arm_results" / "all_arms_spearman.json", frozen_idx=15)
+    argv = rig["argv"](["evil"])  # the rig is a 2-layer shape
+    argv[argv.index("--main-root") + 1] = str(main_root)
+
+    assert _run(argv) == 2
+    failures = json.loads((rig["out_root"] / "wcrung_arms_failures.json").read_text())
+    err = failures[0]["error"]
+    assert "committed-frozen layers are indices into the FULL" in err, err
+    assert "--force-own-pool-frozen" in err, "the error must name the actionable escape"
+    assert "IndexError" not in err, "must fail loud with guidance, not a raw IndexError"
+
+
+def test_reduced_layer_probe_succeeds_with_force_own_pool_frozen(rig):
+    """The prescribed probe escape actually works end to end."""
+    main_root = rig["out_root"].parent / "main"
+    _committed_summary(main_root / "evil" / "arm_results" / "all_arms_spearman.json", frozen_idx=15)
+    argv = [*rig["argv"](["evil"]), "--force-own-pool-frozen"]
+    argv[argv.index("--main-root") + 1] = str(main_root)
+
+    assert _run(argv) == 0
+    payload = json.loads((rig["out_root"] / "evil" / "all_arms_spearman.json").read_text())
+    assert all(
+        v == "own-train-pool-selection" for v in payload["meta"]["frozen_layer_source"].values()
+    )
+    for p in payload["per_layer_rows"]:
+        assert p["frozen_layer_idx"] in range(len(LAYERS))
+        assert p["frozen_layer"] in LAYERS
+
+
+def test_full_grid_committed_frozen_is_identity_indexed():
+    """Full-grid semantics: committed index is in range AND layers[i] == i.
+
+    This is what makes the production drive correct: the committed value is an
+    INDEX (arms.frozen_layer_idx = argmax over rho_per_layer), and the full grid
+    is identity, so layers[idx] == idx == the layer number. If the committed
+    value were a LAYER NUMBER instead, the full drive would be wrong too — this
+    pins the distinction.
+    """
+    from explore_persona_space.experiments.issue_1739 import arms
+
+    full = list(range(28))
+    assert full == list(range(len(full))), "full grid must be identity"
+    rhos = [0.1] * 28
+    rhos[17] = 0.9
+    assert arms.frozen_layer_idx(rhos) == 17, "frozen_layer_idx returns an INDEX"
+    assert full[17] == 17, "identity: index and layer number coincide at full grid"
+    wca._assert_committed_frozen_indexable(
+        {a: 27 for a in ROSTER}, full, "evil", "context_end", Path("s.json")
+    )
+
+
+def test_guard_rejects_non_prefix_layer_subset_even_when_in_range():
+    """A non-identity subset can be IN RANGE yet point at the wrong layer."""
+    layers = [5, 10, 15, 20]  # index 2 would mean layer 15, not layer 2
+    with pytest.raises(RuntimeError, match="not an identity prefix"):
+        wca._assert_committed_frozen_indexable(
+            {"arm1_ctx_e1": 2}, layers, "evil", "context_end", Path("s.json")
+        )
+
+
 def test_wcrung_store_default_follows_store_root(tmp_path):
     args = wca.parse_args(["--store-root", str(tmp_path / "sr")])
     assert wca.resolve_wcrung_store(args) == tmp_path / "sr" / "wcrung_capture_store" / "wildchat"
