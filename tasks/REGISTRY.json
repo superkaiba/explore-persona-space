@@ -6620,8 +6620,8 @@
     "1855": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1855",
-      "status": "reviewing",
+      "path": "tasks/completed/1855",
+      "status": "completed",
       "title": "daily-fix: context-headroom check at review-round boundaries"
     },
     "1856": {
