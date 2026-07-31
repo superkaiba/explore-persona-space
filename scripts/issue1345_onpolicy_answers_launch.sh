@@ -36,7 +36,11 @@ mkdir -p logs
 
 if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
 
-STAGED="${EPM_I1345_STAGED_DIR:-data/issue_1345/char_vex}"
+# Shared staged inputs. Default is the ROUND's own variant dir, which exists on
+# the fellows scratch; a VM-only character-variant dir (data/issue_1345/char_*)
+# is NOT present there, so defaulting to one would fail on the production lane.
+# Override with EPM_I1345_STAGED_DIR when staging elsewhere.
+STAGED="${EPM_I1345_STAGED_DIR:-data/issue_1345/story_boundary_ablation}"
 N_ROWS="${EPM_I1345_N_ROWS:-0}"          # 0 = whole filtered pool
 EXTRA_ARGS="${EPM_I1345_EXTRA_ARGS:-}"   # e.g. --smoke, --skip-upload
 
@@ -86,13 +90,6 @@ for d in "${ALLOC[@]}"; do
 done
 n_gpu="${#DEVICES[@]}"
 echo "[op-launch] device source=${SRC} allocated=${ALLOC[*]:-none} usable=${DEVICES[*]:-none}"
-# Zero-GPU testability affordance (the launcher sibling of the gen script's
-# --verify-pool): print the resolution and exit, so the width/id/filter logic is
-# smoke-exercisable as the SHIPPED code rather than a drifting copy.
-if [ -n "${EPM_I1345_RESOLVE_ONLY:-}" ]; then
-  echo "RESOLVED source=${SRC} alloc=${ALLOC[*]:-none} usable=${DEVICES[*]:-none} n=${n_gpu}"
-  exit 0
-fi
 if [ "$n_gpu" -lt 1 ]; then
   echo "[op-launch] no usable GPUs (every allocated device below ${MIN_FREE_MIB} MiB free)" >&2
   exit 3
@@ -115,6 +112,49 @@ CELLS=(
 if [ -n "${EPM_I1345_CELLS:-}" ]; then
   IFS=';' read -ra CELLS <<< "$EPM_I1345_CELLS"
   echo "[op-launch] cell list overridden (${#CELLS[@]} cells)"
+fi
+
+# ---------------------------------------------------------------------------
+# Staged-input pre-flight — fail BEFORE any cell builds an engine
+# ---------------------------------------------------------------------------
+# The comparator shapes (bare_text / chat) join the matched-n allowlist against
+# the parent corpus, so a wrong or unstaged --matched-dir otherwise surfaces only
+# after a cell has already loaded a 7B model. story_slot reads the sha-pinned V1
+# bundle from HF instead and needs no allowlist. Checked here, once, for the
+# realized cell list — a burned provision costs far more than this probe.
+needs_matched=0
+for spec in "${CELLS[@]}"; do
+  IFS='|' read -r _v shape _m _c <<< "$spec"
+  [ "$shape" != "story_slot" ] && needs_matched=1
+done
+if [ "$needs_matched" -eq 1 ]; then
+  allowlist="$STAGED/matched_n/matched_subsets_parent.json"
+  if [ ! -f "$allowlist" ]; then
+    echo "[op-launch] FATAL: matched-n allowlist missing: $allowlist" >&2
+    echo "[op-launch] the bare_text/chat cells join it against the parent corpus." >&2
+    echo "[op-launch] Either point EPM_I1345_STAGED_DIR at a dir that has" >&2
+    echo "[op-launch] matched_n/matched_subsets_parent.json, or stage it first:" >&2
+    echo "[op-launch]   EPM_I1345_VARIANT=<variant> uv run python \\" >&2
+    echo "[op-launch]     scripts/issue1345_prefetch_reuse.py --smoke --stems instruct_chat_s" >&2
+    echo "[op-launch] Candidates present on this host:" >&2
+    for cand in data/issue_1345/*/matched_n/matched_subsets_parent.json; do
+      [ -f "$cand" ] && echo "[op-launch]   ${cand%/matched_n/*}" >&2
+    done
+    exit 3
+  fi
+  echo "[op-launch] staged inputs OK: $allowlist"
+fi
+mkdir -p "$STAGED/hf_dl"
+
+# Zero-GPU pre-launch check (the launcher sibling of the gen script's
+# --verify-pool): resolve devices, run the staged-input pre-flight, print the
+# resolution and exit WITHOUT building any engine. Placed after the pre-flight so
+# it answers "would this launch succeed?", not merely "which devices resolved" —
+# and so both pre-flight branches are exercisable as the SHIPPED code.
+if [ -n "${EPM_I1345_RESOLVE_ONLY:-}" ]; then
+  echo "RESOLVED source=${SRC} alloc=${ALLOC[*]:-none} usable=${DEVICES[*]:-none} n=${n_gpu}"
+  echo "PREFLIGHT staged_dir=${STAGED} needs_matched=${needs_matched} cells=${#CELLS[@]}"
+  exit 0
 fi
 
 run_cell() {

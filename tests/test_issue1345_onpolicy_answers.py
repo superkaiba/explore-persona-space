@@ -80,14 +80,26 @@ def stub_dir(tmp_path_factory) -> Path:
     return d
 
 
-def _resolve(stub_dir: Path, **env_over) -> subprocess.CompletedProcess:
-    """Run the SHIPPED launcher in resolve-only mode with a stubbed nvidia-smi."""
+@pytest.fixture(scope="module")
+def staged_ok(tmp_path_factory) -> Path:
+    """A staged-inputs dir the launcher pre-flight accepts (hermetic: never the
+    repo's real data/ tree, so these tests do not depend on staged artifacts)."""
+    d = tmp_path_factory.mktemp("staged_ok")
+    (d / "matched_n").mkdir()
+    (d / "matched_n" / "matched_subsets_parent.json").write_text("{}")
+    return d
+
+
+def _resolve(stub_dir: Path, staged: Path | None = None, **env_over) -> subprocess.CompletedProcess:
+    """Run the SHIPPED launcher in pre-launch-check mode with a stubbed nvidia-smi."""
     env = {
         "PATH": f"{stub_dir}:{os.environ.get('PATH', '')}",
         "HOME": os.environ.get("HOME", "/tmp"),
         "EPM_I1345_RESOLVE_ONLY": "1",
         "REPO_ROOT": str(REPO_ROOT),
     }
+    if staged is not None:
+        env["EPM_I1345_STAGED_DIR"] = str(staged)
     env.update({k: v for k, v in env_over.items() if v is not None})
     return subprocess.run(
         ["bash", str(LAUNCHER)], capture_output=True, text=True, env=env, timeout=300
@@ -127,17 +139,18 @@ def _resolve(stub_dir: Path, **env_over) -> subprocess.CompletedProcess:
         ({"CUDA_VISIBLE_DEVICES": "3,4"}, "env-cvd", "3 4"),
     ],
 )
-def test_device_resolution_sources(stub_dir, env_over, want_source, want_usable):
-    p = _resolve(stub_dir, **env_over)
+def test_device_resolution_sources(stub_dir, staged_ok, env_over, want_source, want_usable):
+    p = _resolve(stub_dir, staged_ok, **env_over)
     assert p.returncode == 0, p.stderr
     assert f"source={want_source}" in p.stdout, p.stdout
     assert f"usable={want_usable}" in p.stdout, p.stdout
 
 
-def test_overlong_id_list_clamps_to_allocation_width(stub_dir):
+def test_overlong_id_list_clamps_to_allocation_width(stub_dir, staged_ok):
     """An id list longer than SLURM_GPUS_ON_NODE is CLAMPED, not honored."""
     p = _resolve(
         stub_dir,
+        staged_ok,
         SLURM_JOB_ID="1",
         SLURM_GPUS_ON_NODE="2",
         CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7",
@@ -148,9 +161,9 @@ def test_overlong_id_list_clamps_to_allocation_width(stub_dir):
     assert "n=2" in p.stdout
 
 
-def test_slurm_without_allocation_vars_fails_loud(stub_dir):
+def test_slurm_without_allocation_vars_fails_loud(stub_dir, staged_ok):
     """The #1902 core invariant: NEVER fall back to the physical count on SLURM."""
-    p = _resolve(stub_dir, SLURM_JOB_ID="1")
+    p = _resolve(stub_dir, staged_ok, SLURM_JOB_ID="1")
     assert p.returncode == 3, (p.returncode, p.stdout, p.stderr)
     assert "refusing to fall back to the" in p.stderr
     assert "#1902" in p.stderr
@@ -158,10 +171,11 @@ def test_slurm_without_allocation_vars_fails_loud(stub_dir):
     assert "usable=0 1 2 3 4 5 6 7" not in p.stdout
 
 
-def test_free_memory_filter_drops_tenant_held_devices(stub_dir):
+def test_free_memory_filter_drops_tenant_held_devices(stub_dir, staged_ok):
     """Devices another tenant is holding are skipped before any cell launches."""
     p = _resolve(
         stub_dir,
+        staged_ok,
         SLURM_JOB_ID="1",
         SLURM_GPUS_ON_NODE="4",
         CUDA_VISIBLE_DEVICES="0,1,2,3",
@@ -189,6 +203,55 @@ def test_all_devices_held_refuses_to_launch(stub_dir):
     )
     assert p.returncode == 3, (p.returncode, p.stdout, p.stderr)
     assert "no usable GPUs" in p.stderr
+
+
+def test_preflight_refuses_a_staged_dir_without_the_allowlist(stub_dir, tmp_path):
+    """A wrong --matched-dir must fail BEFORE any cell loads a 7B model.
+
+    The comparator cells join the matched-n allowlist against the parent corpus,
+    so an unstaged dir otherwise surfaces only after a provision is already spent.
+    """
+    empty = tmp_path / "no_allowlist"
+    empty.mkdir()
+    p = _resolve(stub_dir, empty, CUDA_VISIBLE_DEVICES="0,1")
+    assert p.returncode == 3, (p.returncode, p.stdout, p.stderr)
+    assert "matched-n allowlist missing" in p.stderr
+    # It must name the remedy AND the candidates, not just fail.
+    assert "issue1345_prefetch_reuse.py" in p.stderr
+    assert "Candidates present on this host" in p.stderr
+
+
+def test_preflight_skipped_for_a_story_slot_only_cell_list(stub_dir, tmp_path):
+    """story_slot reads the sha-pinned V1 bundle — it needs no allowlist."""
+    empty = tmp_path / "no_allowlist_slot"
+    empty.mkdir()
+    p = _resolve(
+        stub_dir,
+        empty,
+        CUDA_VISIBLE_DEVICES="0,1",
+        EPM_I1345_CELLS="onpolicy_answers_slot_base|story_slot|pretrained|Assistant",
+    )
+    assert p.returncode == 0, (p.returncode, p.stdout, p.stderr)
+    assert "needs_matched=0" in p.stdout
+    assert "matched-n allowlist missing" not in p.stderr
+
+
+def test_preflight_passes_and_reports_on_a_good_staged_dir(stub_dir, staged_ok):
+    p = _resolve(stub_dir, staged_ok, CUDA_VISIBLE_DEVICES="0,1")
+    assert p.returncode == 0, p.stderr
+    assert "staged inputs OK" in p.stdout
+    assert "needs_matched=1" in p.stdout
+    assert f"staged_dir={staged_ok}" in p.stdout
+    # RESOLVE_ONLY is a FULL pre-launch check: it must never launch a cell.
+    assert "starting onpolicy_answers" not in p.stdout
+
+
+def test_launcher_default_staged_dir_is_the_round_variant():
+    """A VM-only char_* dir is NOT on the fellows scratch — defaulting to one
+    would fail on the production lane (team-lead, 2026-07-31)."""
+    src = LAUNCHER.read_text()
+    assert "EPM_I1345_STAGED_DIR:-data/issue_1345/story_boundary_ablation" in src
+    assert "EPM_I1345_STAGED_DIR:-data/issue_1345/char_" not in src
 
 
 def test_launcher_pins_cvd_per_cell():
