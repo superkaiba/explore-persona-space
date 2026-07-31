@@ -522,7 +522,7 @@ if want_phase upload || want_phase upload_tensors; then
   echo "[nlmap] phase=upload: nonlinear map payloads -> HF analysis_tensors"
   uv run python scripts/issue1739_upload.py --stage tensors
 fi
-if want_phase upload || want_phase upload_results; then
+if want_phase upload || want_phase upload_results || want_phase compose; then
   # #1880 push race: several rounds/lanes write this branch concurrently and the
   # upload helper only fetch-then-retries (it never rebases), so a stale base
   # fails BOTH attempts. Advance the clone to the tip FIRST — results are still
@@ -531,6 +531,8 @@ if want_phase upload || want_phase upload_results; then
   # issue1739_pvscore_dispatch.sh; the comment below used to promise this sync
   # while no fetch actually ran.)
   echo "[nlmap] phase=upload: syncing clone to origin/$BRANCH before commit"
+  git checkout -- eval_results/issue_1739/nonlinear_map/map_quality.json 2>/dev/null || true
+  rm -f eval_results/issue_1739/nonlinear_map/stage_maps_report.json
   git fetch origin "$BRANCH"
   git merge --ff-only "origin/$BRANCH"
   echo "[nlmap] phase=upload: results -> git"
