@@ -6676,8 +6676,8 @@
     "1862": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1862",
-      "status": "reviewing",
+      "path": "tasks/completed/1862",
+      "status": "completed",
       "title": "daily-fix: detached-VM probe template brackets; choom=failed"
     },
     "1863": {
