@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1942,
+  "highest_id": 1943,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7299,6 +7299,13 @@
       "path": "tasks/proposed/1942",
       "status": "proposed",
       "title": "Hoist shared-node vLLM util resolver into a shared module (dedupe #1902 + #1345 copies)"
+    },
+    "1943": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1943",
+      "status": "proposed",
+      "title": "workflow-fix: judge instruments round-trip the parse contract before dry-run counts"
     },
     "195": {
       "has_clean_result": false,
