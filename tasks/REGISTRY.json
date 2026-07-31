@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1929,
+  "highest_id": 1930,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7201,6 +7201,13 @@
       "path": "tasks/on_hold/193",
       "status": "on_hold",
       "title": "Spreading out persona space in midtraining or posttraining to prevent EM"
+    },
+    "1930": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1930",
+      "status": "proposed",
+      "title": "daily-fix: 9a-ter inline routing (50GB->bigmem, fits->GPU)"
     },
     "194": {
       "has_clean_result": false,
