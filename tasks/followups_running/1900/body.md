@@ -3,7 +3,8 @@ title: Base behavioral propensity predicts where a trained behavior is expressed
   but pre-fine-tuning answer similarity is the only predictor of the fine-tuning-induced
   change (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-07-30T23:28:44Z'
 has_clean_result: true
 parent_id: 1768
