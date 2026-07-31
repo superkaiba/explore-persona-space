@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1938,
+  "highest_id": 1939,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7264,6 +7264,13 @@
       "path": "tasks/proposed/1938",
       "status": "proposed",
       "title": "workflow-fix: gotchas.md entry \u2014 VAST /workspace EBADF from posix_fallocate"
+    },
+    "1939": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1939",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md entry \u2014 SLURM git-less scratch crashes metadata git shellouts"
     },
     "194": {
       "has_clean_result": false,
