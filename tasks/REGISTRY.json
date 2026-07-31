@@ -6739,8 +6739,8 @@
     "1870": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1870",
-      "status": "approved",
+      "path": "tasks/running/1870",
+      "status": "running",
       "title": "daily-fix: sync KEPT-stash outcome gets durable surfacing"
     },
     "1871": {
