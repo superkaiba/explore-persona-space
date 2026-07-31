@@ -517,6 +517,24 @@ def test_registry_stems_are_all_op_suffixed_and_unique(monkeypatch):
         assert op_stem != cap.stem_for(key, "instruct"), key
 
 
+def test_onpolicy_stems_keep_the_bnd_prefix_so_slot_COUNT_is_inferred(monkeypatch):
+    """The fits size a bundle by prefix: 5 slots iff format_key startswith "bnd_".
+
+    `expect = len(BND_SLOT_ORDER) if cell["format_key"].startswith("bnd_") else 2`
+    — so an on-policy stem that LOST the prefix (e.g. if the prov suffix were
+    moved to the FRONT: "op_bnd_chat") would be loaded as a 2-slot parent store
+    and silently mis-read the whole X x Y grid. The suffix must stay a SUFFIX.
+    """
+    cap = _cap_module(monkeypatch)
+    for key in cap.ONPOLICY_STORES:
+        for prov in cap.PROVENANCES:
+            fmt = cap.format_key(key, prov)
+            assert fmt.startswith("bnd_"), (
+                f"{key}/{prov} -> {fmt!r} lost the bnd_ prefix; the fits would size it "
+                "as a 2-slot store and mis-read the 5-slot grid"
+            )
+
+
 # ---------------------------------------------------------------------------
 # 3c. Fits provenance dimension — the paired arm of the same lattice
 # ---------------------------------------------------------------------------
