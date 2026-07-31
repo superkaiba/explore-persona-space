@@ -1,0 +1,40 @@
+{
+ "leg": "bareq_score",
+ "rung": "bareq",
+ "behaviors": [
+  {
+   "behavior": "evil",
+   "legs": [
+    "1",
+    "2"
+   ],
+   "leg2_noop": false,
+   "n_transfer_rows": 12,
+   "summary": "eval_results/issue_1739/bareq_map/evil/all_arms_spearman.json"
+  }
+ ],
+ "legs_requested": [
+  "1",
+  "2"
+ ],
+ "variants": [
+  "context_end",
+  "prefix_end"
+ ],
+ "n_layers": 28,
+ "leg2_behaviors": [
+  "evil"
+ ],
+ "caveats": [
+  "#1092's 0.02 was bare->answer-ACTIVATIONS at SAE grain, so it is an analogy, not a numerically comparable floor for bare->judged-DV"
+ ],
+ "git_commit": "882d1360f9622b0c2979e237e2012c05a299dd4c",
+ "env_versions": {
+  "python": "3.11.15",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128"
+ },
+ "judge_called": false,
+ "wall_s": 1902.3,
+ "ts": "2026-07-31T19:05:55Z"
+}
