@@ -310,6 +310,7 @@ def build_capture_rows(args, tokenizer) -> list[dict]:
                     "kind": "leg2_query_bank",
                     "prefix_text": prefix_text,
                     "prompt_text": prompt_text,
+                    "completion": "",
                     "n_member_contexts": len(e["context_ids"]),
                 }
             )
@@ -328,6 +329,7 @@ def build_capture_rows(args, tokenizer) -> list[dict]:
                     "multi_turn": multi,
                     "prefix_text": prefix_text,
                     "prompt_text": prompt_text,
+                    "completion": "",
                 }
             )
     if not rows:
@@ -456,13 +458,20 @@ def run_pilot(args, rows: list[dict], tokenizer, model) -> int:
 
 
 def bit_equality_gate(args, tokenizer, model, sample: list[dict]) -> dict:
-    """Re-capture a sample of SINGLE-TURN wcrung rows; require EXACT equality.
+    """Re-capture a sample of SINGLE-TURN wcrung rows; require rep equivalence.
 
     Single-turn rows render byte-identically bare (their original render already
-    had no prefix), so their existing wcrung reps ARE their bare reps. The gate
-    is therefore exact equality, not a cosine threshold — a stricter check than
-    #825's 0.99998 recapture cosine, and it is what licenses reusing the 987
-    single-turn reps instead of re-capturing them.
+    had no prefix), so their existing wcrung reps ARE their bare reps — at the
+    INPUT level. At the OUTPUT level exact array equality cannot be required:
+    bf16 padded-batch kernel numerics differ with batch composition even for
+    byte-identical input tokens (single-position states jitter ~1e-6, amplified
+    in deep layers — the #779 calibration in gotchas), and this re-capture
+    necessarily batches differently than the committed wcrung capture did. The
+    gate is therefore the calibrated two-bar cosine: per-row EARLY-layer cosine
+    >= 0.999 over the first 4 layers (mask/render/row-mapping bugs corrupt
+    layer 0 immediately, reading ~0.4-0.86) AND flattened all-layer cosine
+    >= 0.995 (>=4x headroom over measured worst bf16 deviation). The
+    bit-identical count is retained as informational output only.
     """
     import numpy as np
 
@@ -482,7 +491,16 @@ def bit_equality_gate(args, tokenizer, model, sample: list[dict]) -> dict:
     )
     key = "context_id"
     pos = {r.get(key): i for i, r in enumerate(stored_meta)}
+    n_early = min(4, len(layers))
     checked, exact = 0, 0
+    worst_early, worst_flat = 1.0, 1.0
+
+    def _cos(u: np.ndarray, v: np.ndarray) -> float:
+        u = u.astype(np.float64).ravel()
+        v = v.astype(np.float64).ravel()
+        denom = float(np.linalg.norm(u) * np.linalg.norm(v))
+        return float(u @ v / denom) if denom else 0.0
+
     for i, r in enumerate(fresh_meta):
         cid = str(r.get(key, "")).removeprefix("wc-")
         j = pos.get(cid)
@@ -493,20 +511,36 @@ def bit_equality_gate(args, tokenizer, model, sample: list[dict]) -> dict:
         b = np.stack([stored[(BARE_KIND, ly)][j] for ly in layers])
         if np.array_equal(a, b):
             exact += 1
+        early = min(_cos(a[k], b[k]) for k in range(n_early))
+        flat = _cos(a, b)
+        worst_early = min(worst_early, early)
+        worst_flat = min(worst_flat, flat)
+    passed = bool(checked) and worst_early >= 0.999 and worst_flat >= 0.995
     result = {
         "ran": True,
         "n_sampled": len(sample),
         "n_joined": checked,
         "n_bit_identical": exact,
-        "gate": "exact array equality (single-turn bare render == original render)",
-        "passed": bool(checked and exact == checked),
+        "worst_early_layer_cos": worst_early,
+        "worst_flattened_cos": worst_flat,
+        "gate": (
+            "two-bar cosine (early-layer >= 0.999 over first "
+            f"{n_early} layers, flattened >= 0.995; bf16 batch-composition "
+            "jitter licensed per the #779 calibration) — bit-identical count informational"
+        ),
+        "passed": passed,
     }
-    if not result["passed"]:
+    if not passed:
         raise RuntimeError(
-            f"BIT-equality gate FAILED: {exact}/{checked} single-turn rows bit-identical to the "
-            "committed wcrung store — the 987 single-turn reps may NOT be reused as bare reps"
+            f"single-turn reuse gate FAILED: worst early-layer cos {worst_early:.6f} "
+            f"(bar 0.999) / worst flattened cos {worst_flat:.6f} (bar 0.995) over "
+            f"{checked} joined rows — the 987 single-turn reps may NOT be reused as bare reps"
         )
-    print(f"[phase=bit_gate] PASS {exact}/{checked} bit-identical", flush=True)
+    print(
+        f"[phase=bit_gate] PASS {checked} rows: worst early cos {worst_early:.6f}, "
+        f"worst flat cos {worst_flat:.6f} ({exact} bit-identical)",
+        flush=True,
+    )
     return result
 
 
