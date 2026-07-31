@@ -406,6 +406,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_orchestrator_turn_discipline_pointer.py",
     # NEW (#1810) — SKILL.md Step 4b pre-split multi-deliverable dispatch pin
     "tests/test_issue_skill_presplit_dispatch_pin.py",
+    # NEW (#1850) — SKILL.md remote-landing producer-fence deadline + Monitor heartbeat pin
+    "tests/test_issue_skill_remote_landing_watch_pin.py",
     # NEW (#1572) — staged-index verification pin
     "tests/test_issue_skill_staged_index_verification.py",
     # NEW (#1751) — SKILL.md KEPT-stash surfacing duty pin
