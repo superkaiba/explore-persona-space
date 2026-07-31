@@ -481,54 +481,71 @@ def capture(args: argparse.Namespace, gen_manifest: dict, model, tokenizer) -> d
     return cap_manifest
 
 
+def _import_check() -> int:
+    """Resolve EVERY deferred import on the REAL branch (#1689 Axis 1).
+
+    Lives in its OWN function, NOT inline in ``main()``, and that is
+    load-bearing rather than cosmetic. An ``import X`` is a BINDING, so the
+    compiler marks X a local of the enclosing function for its WHOLE body —
+    including the normal path that never executes the import-check branch. An
+    inline block importing the bare name ``capture`` therefore made
+    ``main()``'s later call to the MODULE-LEVEL ``def capture(...)`` read an
+    unbound local, crashing with ``UnboundLocalError`` at the phase-2 entry
+    after generation had already completed. Hoisting the block confines every
+    such binding here, where nothing reads a module-level name, so no future
+    import added to this list can shadow a module-level symbol in ``main()``.
+    Pinned compile-time by test_main_locals_do_not_shadow_module_level_symbols.
+    """
+    from explore_persona_space.analysis.representation_shift import (  # noqa: F401
+        _reap_vllm_engine,
+    )
+    from explore_persona_space.experiments.issue_1739 import (  # noqa: F401
+        capture,
+        constants,
+        generation,
+    )
+    from explore_persona_space.experiments.issue_1739.capture import (  # noqa: F401
+        capture_rollout_files,
+        load_capture_model,
+    )
+    from explore_persona_space.experiments.issue_1739.constants import (  # noqa: F401
+        HIDDEN_DIM,
+        K_ROLLOUTS,
+        N_LAYERS,
+    )
+    from explore_persona_space.experiments.issue_1739.generation import (  # noqa: F401
+        GEN_MAX_NEW_TOKENS,
+        GEN_TEMPERATURE,
+        generate_labeling,
+        get_tokenizer,
+    )
+    from explore_persona_space.orchestrate import hub  # noqa: F401
+    from explore_persona_space.orchestrate.hub import (  # noqa: F401
+        DEFAULT_DATASET_REPO,
+        _upload,
+        stage_hub_prefix,
+    )
+    from scripts.issue1739_pack import pack_raw_tree  # noqa: F401
+    from scripts.issue1739_wcrung_contexts import render_row_prompt  # noqa: F401
+    from scripts.issue1739_wcrung_rows_io import (  # noqa: F401
+        load_rows as _load_shard_rows,
+    )
+    from scripts.issue1739_wcrung_rows_io import (  # noqa: F401
+        stage_rows_from_hub,
+    )
+
+    print("[import-check] OK: all deferred imports resolved", flush=True)
+    sys.stdout.flush()
+    sys.stderr.flush()
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     args = _parse_args(argv)
 
     if args.import_check:
-        # Resolve EVERY deferred import on the REAL branch (#1689 Axis 1).
-        from explore_persona_space.analysis.representation_shift import (  # noqa: F401
-            _reap_vllm_engine,
-        )
-        from explore_persona_space.experiments.issue_1739 import (  # noqa: F401
-            capture,
-            constants,
-            generation,
-        )
-        from explore_persona_space.experiments.issue_1739.capture import (  # noqa: F401
-            capture_rollout_files,
-            load_capture_model,
-        )
-        from explore_persona_space.experiments.issue_1739.constants import (  # noqa: F401
-            HIDDEN_DIM,
-            K_ROLLOUTS,
-            N_LAYERS,
-        )
-        from explore_persona_space.experiments.issue_1739.generation import (  # noqa: F401
-            GEN_MAX_NEW_TOKENS,
-            GEN_TEMPERATURE,
-            generate_labeling,
-            get_tokenizer,
-        )
-        from explore_persona_space.orchestrate import hub  # noqa: F401
-        from explore_persona_space.orchestrate.hub import (  # noqa: F401
-            DEFAULT_DATASET_REPO,
-            _upload,
-            stage_hub_prefix,
-        )
-        from scripts.issue1739_pack import pack_raw_tree  # noqa: F401
-        from scripts.issue1739_wcrung_contexts import render_row_prompt  # noqa: F401
-        from scripts.issue1739_wcrung_rows_io import (  # noqa: F401
-            load_rows as _load_shard_rows,
-        )
-        from scripts.issue1739_wcrung_rows_io import (  # noqa: F401
-            stage_rows_from_hub,
-        )
-
-        print("[import-check] OK: all deferred imports resolved", flush=True)
-        sys.stdout.flush()
-        sys.stderr.flush()
-        return 0
+        return _import_check()
 
     from explore_persona_space.experiments.issue_1739 import capture as capture_mod
     from explore_persona_space.experiments.issue_1739 import generation

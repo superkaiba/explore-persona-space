@@ -309,6 +309,110 @@ def test_generation_resumes_and_regenerates_nothing(tmp_path, monkeypatch):
 # --- GPU-bound capture: signature smoke ------------------------------------
 
 
+def test_main_locals_do_not_shadow_module_level_symbols():
+    """REGRESSION PIN: no local of main() may shadow a module-level symbol.
+
+    An ``import X`` inside a function is a BINDING, so the compiler marks X a
+    local of that function for its ENTIRE body — including paths that never
+    execute the import. main()'s inline --import-check block imported the bare
+    name ``capture``, which made the phase-2 call to the module-level
+    ``def capture(...)`` read an unbound local: UnboundLocalError at the
+    capture-phase entry, AFTER generation had completed on a billed GPU.
+
+    ``_import_check`` is the sanctioned exception and the fix itself: the
+    import bindings are CONFINED there, and that function reads no
+    module-level name, so nothing it binds can shadow anything.
+    """
+    import types
+
+    mod_names = {n for n in dir(pod) if not n.startswith("__")}
+    offenders: list[str] = []
+    for fname in dir(pod):
+        fn = getattr(pod, fname)
+        if not isinstance(fn, types.FunctionType) or fn.__module__ != pod.__name__:
+            continue
+        if fname == "_import_check":
+            continue  # the containment function — see docstring
+        for shadowed in sorted(mod_names & set(fn.__code__.co_varnames)):
+            offenders.append(f"{fname}() shadows module-level {shadowed!r}")
+    assert not offenders, (
+        "local binding(s) shadow a module-level symbol — a branch that never "
+        "runs still makes the name a function-wide local:\n  " + "\n  ".join(offenders)
+    )
+    # the specific name that crashed production, pinned by itself
+    assert "capture" not in pod.main.__code__.co_varnames
+
+
+def test_main_phase2_reaches_module_level_capture(tmp_path, monkeypatch, capsys):
+    """FIX-ENGAGED SIGNAL: main()'s REAL phase-2 line executes.
+
+    The pre-fix suite passed because the e2e ran with --skip-capture (which
+    bypasses the crash site) and the signature test called
+    capture_rollout_files DIRECTLY. This drives main() WITHOUT --skip-capture
+    so the production line `cap_manifest = capture(args, ...)` actually runs,
+    with only the GPU boundaries faked (model load + the batched capture call)
+    and uploads skipped. Pre-fix this raises UnboundLocalError: 'capture'.
+    """
+    rows = [_row(0, turns=0), _row(1, turns=2)]
+    _write_rows(tmp_path, rows)
+
+    def fake_vllm_generate(prompts, *, n, temperature, max_tokens, seeds):
+        return [
+            [{"text": f"completion {i}-{k}", "finish_reason": "stop"} for k in range(n)]
+            for i in range(len(prompts))
+        ]
+
+    from explore_persona_space.experiments.issue_1739 import capture as capture_mod
+    from explore_persona_space.experiments.issue_1739 import generation
+
+    monkeypatch.setattr(generation, "_default_vllm_generate", fake_vllm_generate)
+    monkeypatch.setattr(generation, "get_tokenizer", lambda *a, **k: _FakeTokenizer())
+    monkeypatch.setattr(pod, "reap_generation_engine", lambda *a, **k: None)
+
+    seen: dict = {}
+
+    def fake_load_capture_model(*, device):
+        seen["device"] = device
+        return object()
+
+    def fake_capture_rollout_files(paths, **kw):
+        seen["n_paths"] = len(paths)
+        seen["kwargs"] = kw
+        Path(kw["store_dir"]).mkdir(parents=True, exist_ok=True)
+        return {"n_rows": len(paths), "n_shards": 1}
+
+    monkeypatch.setattr(capture_mod, "load_capture_model", fake_load_capture_model)
+    monkeypatch.setattr(capture_mod, "capture_rollout_files", fake_capture_rollout_files)
+
+    with pytest.raises(SystemExit) as exc:
+        pod.main(
+            [
+                "--out-root",
+                str(tmp_path),
+                "--store-root",
+                str(tmp_path / "store"),
+                "--k-rollouts",
+                "2",
+                "--skip-upload",
+                "--device",
+                "cpu",
+            ]
+        )
+    assert exc.value.code == 0
+
+    # The module-level capture() really ran: it globbed the rollouts, passed
+    # the generation fingerprint through, and printed its own phase line.
+    assert seen["n_paths"] == len(rows) * 2, seen
+    assert seen["kwargs"]["fingerprint"], "generation fingerprint not threaded"
+    assert seen["device"] == "cpu"
+    out = capsys.readouterr().out
+    assert "[phase=wcrung_capture] rows=" in out, out[-2000:]
+    assert "[phase=done]" in out
+
+    sentinel = json.loads((tmp_path / pod.SENTINEL_NAME).read_text())
+    assert sentinel["capture_rows"] == len(rows) * 2, "capture manifest not folded into sentinel"
+
+
 def test_capture_call_shape_binds_against_real_signature():
     """The GPU-bound capture entrypoint's signature matches this caller."""
     import inspect
