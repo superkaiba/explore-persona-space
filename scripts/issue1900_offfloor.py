@@ -967,6 +967,10 @@ def recompute_mapcols(
     assert wpred.shape == c0.shape, (wpred.shape, c0.shape)
     df["p8a"] = np.linalg.norm(wpred, axis=1)
     df["p8b"] = G._ccos(wpred, rb[entry["beh_key"]][LAYER], None)
+    # Producer-side sha-dedup (r1 Critical 1 sibling): keep the mapcols
+    # parquet sha-unique so the F3 rewrite join is well-defined regardless of
+    # producer version; keep="first" is value-safe (dup shas never in subsets).
+    df = df[~df["sha"].duplicated(keep="first")].reset_index(drop=True)
     out.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(out, index=False)
     return out
@@ -1195,6 +1199,14 @@ def rewrite_arm_parquet(roots: Roots, entry: dict, subset: set[str]) -> Path:
             repo_type="dataset",
         )
     mc = pd.read_parquet(mapcols_path).set_index("sha")
+    # r1 Critical 1: the #1768 stores carry 18 dup-sha rows (100 rows) and
+    # `load_corpus_cell` keeps them, so a production mapcols parquet is
+    # dup-sha; `Series.map` on a non-unique-index Series raises pandas
+    # InvalidIndexError. keep="first" is VALUE-SAFE: dup shas are never
+    # subset members (excluded from the candidate pool; asserted absent from
+    # the parent subset in `_assumption1_probe`), so only never-raced
+    # non-subset rows can read a first-occurrence value.
+    mc = mc[~mc.index.duplicated(keep="first")]
     covered = tab.loc[tab["in_judge_subset"], "sha"].isin(mc.index)
     assert covered.all(), (arm_id, int((~covered).sum()), "mapcols missing subset shas")
     for col in MAP_COLS:

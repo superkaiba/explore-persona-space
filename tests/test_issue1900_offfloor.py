@@ -133,6 +133,47 @@ def test_estimation_work_root_disjoint_from_selection():
             assert est_dir != sel_dir and est_dir.name != sel_dir.name
 
 
+def test_rewrite_arm_parquet_survives_dup_sha_frames(tmp_path):
+    """r1 Critical 1 regression: the #1768 stores carry duplicate-sha rows
+    (16,400 rows / 16,318 unique in the parent parquet; `load_corpus_cell`
+    keeps them), so BOTH the parent parquet AND the mapcols parquet can be
+    dup-sha. Pre-fix, `tab["sha"].map(mc[col])` on the non-unique mapcols
+    index raised pandas InvalidIndexError in production F3 (smoke fixtures
+    were sha-unique by construction, so the smoke could not catch it)."""
+    import pandas as pd
+
+    off = _off()
+    roots = off.Roots(data=tmp_path / "data", evalr=tmp_path / "eval", smoke=True)
+    arm = "imp-pers-con-lr3e5-s42"
+    # parent parquet: shas a, b, b, c — b duplicated (never a subset member)
+    parent = pd.DataFrame(
+        {
+            "sha": ["a", "b", "b", "c"],
+            "in_judge_subset": [False, False, False, False],
+            **{col: [10.0, 20.0, 21.0, 30.0] for col in off.MAP_COLS},
+        }
+    )
+    ppath = roots.p1_root / "parent_tables" / f"{arm}_L{off.LAYER}.parquet"
+    ppath.parent.mkdir(parents=True)
+    parent.to_parquet(ppath, index=False)
+    # mapcols parquet: dup-sha too (the pre-dedup producer shape)
+    mc = pd.DataFrame(
+        {"sha": ["a", "b", "b", "c"], **{col: [1.0, 2.0, 3.0, 4.0] for col in off.MAP_COLS}}
+    )
+    mpath = roots.columns_dir / f"{arm}_L{off.LAYER}_mapcols.parquet"
+    mpath.parent.mkdir(parents=True)
+    mc.to_parquet(mpath, index=False)
+
+    out = off.rewrite_arm_parquet(roots, {"arm_id": arm}, {"a", "c"})  # pre-fix: raises
+    tab = pd.read_parquet(out)
+    assert len(tab) == 4, "dup rows must be preserved in the rewritten parquet"
+    assert list(tab["in_judge_subset"]) == [True, False, False, True]
+    for col in off.MAP_COLS:
+        assert tab.loc[0, col] == 1.0 and tab.loc[3, col] == 4.0  # refit values on subset rows
+        assert tab.loc[0, f"{col}_parentmap"] == 10.0  # parent values preserved (record-only)
+        assert tab.loc[1, col] == tab.loc[2, col] == 2.0  # keep="first"; non-raced dup rows
+
+
 def test_planted_selection_checkpoint_never_visible_from_estimation_root(tmp_path):
     """A selection-draw checkpoint planted under the selection root is not
     resolvable through the estimation root's namespace (path-level isolation)."""
