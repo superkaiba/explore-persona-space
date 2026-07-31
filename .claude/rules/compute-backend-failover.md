@@ -473,11 +473,14 @@ parked `EPS_FELLOWS_LADDER_RUNG_WAIT_SECONDS` — default 300 s — each;
 explicit `backend: fellows` pins never walk the ladder) advances INTO the
 ladder below; RunPod stays the terminal rung. Rollback: flip the fellows `CLUSTER_CONFIGS` row to
 `available=False` or set `EPM_AUTO_LANE_ORDER=gcp,nibi,fir,mila` (both
-instant, no code revert). Sentinel hazard: charmander HAS a `/workspace`, so
-a sentinel-writing dispatcher auto-routed onto fellows writes sentinels
-nobody drains (silent marker loss, vs #608's fail-loud on DRAC/Mila) —
-sentinel-dependent workloads still pin a /workspace-contract lane
-(gcp/runpod) at plan time.
+instant, no code revert). Sentinel drain: fellows is a DRAINED lane as of
+#1898 — the VM-side poller drains `/workspace/logs/issue-<N>-*.json` over
+`ssh charmander` each poll tick (`slurm_monitor.drain_cluster_sentinels`,
+same contract as RunPod/GCP); the residual hazard is DRAC/Mila only (no
+`/workspace` — the dispatcher dies fail-loud at `mkdir`, #608, burning the
+submission), so a sentinel-dependent workload pins a drained lane
+(gcp/runpod/fellows) at plan time or accepts the auto-lane fall-through
+risk (verify_plan c43 WARNs).
 
 The GCP ladder (`backends/router._gcp_ladder_specs`) is keyed on job LENGTH
 (`_is_short_job`: known GPU-hours ≤ `EPS_GCP_SPOT_MAX_GPU_HOURS`, default 2,
