@@ -37,3 +37,9 @@ reach the Goal without an amendment for the skipped items). Sibling pattern to
 feedback_codex_skips_data_construction_arithmetic.md (trace the persisted
 artifact yourself) — same fix, opposite reviewer: here it is CLAUDE who skips
 the per-item disk arithmetic and Codex who does it.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Claude trusts a per-item disk assumption framed as a code claim](feedback_claude_trusts_disk_assumption_framed_as_code_claim.md) — "all N drifts have valid body.md" verified by a code read, not a per-folder ls; 12/13 were bodyless husks → reconcile skips them, PASS unreachable. Re-run the enumeration. #724 r1.

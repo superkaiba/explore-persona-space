@@ -1,0 +1,2102 @@
+{
+  "commit": "cda8a67abe",
+  "created": "2026-07-31T00:00:26Z",
+  "figsize": [
+    13.0,
+    7.0
+  ],
+  "points": [
+    {
+      "x": 16.0,
+      "Variance-component share": 0.09950048279980492,
+      "series": "Context (which conversation) \u2014 Context arm",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 32.0,
+      "Variance-component share": 0.07067131935591786,
+      "series": "Context (which conversation) \u2014 Context arm",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 64.0,
+      "Variance-component share": 0.046542432937554515,
+      "series": "Context (which conversation) \u2014 Context arm",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 128.0,
+      "Variance-component share": 0.02910663544580014,
+      "series": "Context (which conversation) \u2014 Context arm",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 256.0,
+      "Variance-component share": 0.017274269830474344,
+      "series": "Context (which conversation) \u2014 Context arm",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 512.0,
+      "Variance-component share": 0.010323464970535632,
+      "series": "Context (which conversation) \u2014 Context arm",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 16.0,
+      "Variance-component share": 0.05318952812972715,
+      "series": "Context (which conversation) \u2014 Prefix arm",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 32.0,
+      "Variance-component share": 0.038400244278076104,
+      "series": "Context (which conversation) \u2014 Prefix arm",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 64.0,
+      "Variance-component share": 0.024324977671667244,
+      "series": "Context (which conversation) \u2014 Prefix arm",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 128.0,
+      "Variance-component share": 0.013855499631030641,
+      "series": "Context (which conversation) \u2014 Prefix arm",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 256.0,
+      "Variance-component share": 0.007658418746152921,
+      "series": "Context (which conversation) \u2014 Prefix arm",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 512.0,
+      "Variance-component share": 0.004201687748962612,
+      "series": "Context (which conversation) \u2014 Prefix arm",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "Variance-component share": 0.08768775050493406,
+      "series": "Context (which conversation) \u2014 Bare-query arm",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 32.0,
+      "Variance-component share": 0.0611088244121463,
+      "series": "Context (which conversation) \u2014 Bare-query arm",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 64.0,
+      "Variance-component share": 0.03871688977729378,
+      "series": "Context (which conversation) \u2014 Bare-query arm",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 128.0,
+      "Variance-component share": 0.02300927963477506,
+      "series": "Context (which conversation) \u2014 Bare-query arm",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 256.0,
+      "Variance-component share": 0.013119929449708518,
+      "series": "Context (which conversation) \u2014 Bare-query arm",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 512.0,
+      "Variance-component share": 0.0074725642256049125,
+      "series": "Context (which conversation) \u2014 Bare-query arm",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 16.0,
+      "Variance-component share": 0.049656439130447,
+      "series": "Direction (which answer axis) \u2014 Context arm",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 32.0,
+      "Variance-component share": 0.065231259266978,
+      "series": "Direction (which answer axis) \u2014 Context arm",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 64.0,
+      "Variance-component share": 0.08196272973902483,
+      "series": "Direction (which answer axis) \u2014 Context arm",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 128.0,
+      "Variance-component share": 0.10021188819138699,
+      "series": "Direction (which answer axis) \u2014 Context arm",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 256.0,
+      "Variance-component share": 0.11700332762047239,
+      "series": "Direction (which answer axis) \u2014 Context arm",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 512.0,
+      "Variance-component share": 0.13018176174559395,
+      "series": "Direction (which answer axis) \u2014 Context arm",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 16.0,
+      "Variance-component share": 0.06931782309339216,
+      "series": "Direction (which answer axis) \u2014 Prefix arm",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 32.0,
+      "Variance-component share": 0.08435661794651889,
+      "series": "Direction (which answer axis) \u2014 Prefix arm",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 64.0,
+      "Variance-component share": 0.0991445948675115,
+      "series": "Direction (which answer axis) \u2014 Prefix arm",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 128.0,
+      "Variance-component share": 0.11274652833592103,
+      "series": "Direction (which answer axis) \u2014 Prefix arm",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 256.0,
+      "Variance-component share": 0.12302461092777385,
+      "series": "Direction (which answer axis) \u2014 Prefix arm",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 512.0,
+      "Variance-component share": 0.12987335652358872,
+      "series": "Direction (which answer axis) \u2014 Prefix arm",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 16.0,
+      "Variance-component share": 0.06011759450771509,
+      "series": "Direction (which answer axis) \u2014 Bare-query arm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 32.0,
+      "Variance-component share": 0.08353444981826874,
+      "series": "Direction (which answer axis) \u2014 Bare-query arm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 64.0,
+      "Variance-component share": 0.10604271073520699,
+      "series": "Direction (which answer axis) \u2014 Bare-query arm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 128.0,
+      "Variance-component share": 0.12635603941647922,
+      "series": "Direction (which answer axis) \u2014 Bare-query arm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 256.0,
+      "Variance-component share": 0.14205931491640017,
+      "series": "Direction (which answer axis) \u2014 Bare-query arm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 512.0,
+      "Variance-component share": 0.15290805840813293,
+      "series": "Direction (which answer axis) \u2014 Bare-query arm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 16.0,
+      "Variance-component share": 0.8508430780697481,
+      "series": "Interaction (this context x this direction) \u2014 Context arm",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 32.0,
+      "Variance-component share": 0.8640974213771041,
+      "series": "Interaction (this context x this direction) \u2014 Context arm",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 64.0,
+      "Variance-component share": 0.8714948373234206,
+      "series": "Interaction (this context x this direction) \u2014 Context arm",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 128.0,
+      "Variance-component share": 0.8706814763628129,
+      "series": "Interaction (this context x this direction) \u2014 Context arm",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 256.0,
+      "Variance-component share": 0.8657224025490533,
+      "series": "Interaction (this context x this direction) \u2014 Context arm",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 512.0,
+      "Variance-component share": 0.8594947732838705,
+      "series": "Interaction (this context x this direction) \u2014 Context arm",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 16.0,
+      "Variance-component share": 0.8774926487768807,
+      "series": "Interaction (this context x this direction) \u2014 Prefix arm",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 32.0,
+      "Variance-component share": 0.877243137775405,
+      "series": "Interaction (this context x this direction) \u2014 Prefix arm",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 64.0,
+      "Variance-component share": 0.8765304274608212,
+      "series": "Interaction (this context x this direction) \u2014 Prefix arm",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 128.0,
+      "Variance-component share": 0.8733979720330483,
+      "series": "Interaction (this context x this direction) \u2014 Prefix arm",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 256.0,
+      "Variance-component share": 0.8693169703260731,
+      "series": "Interaction (this context x this direction) \u2014 Prefix arm",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 512.0,
+      "Variance-component share": 0.8659249557274487,
+      "series": "Interaction (this context x this direction) \u2014 Prefix arm",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 16.0,
+      "Variance-component share": 0.8521946549873509,
+      "series": "Interaction (this context x this direction) \u2014 Bare-query arm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 32.0,
+      "Variance-component share": 0.855356725769585,
+      "series": "Interaction (this context x this direction) \u2014 Bare-query arm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 64.0,
+      "Variance-component share": 0.8552403994874992,
+      "series": "Interaction (this context x this direction) \u2014 Bare-query arm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 128.0,
+      "Variance-component share": 0.8506346809487457,
+      "series": "Interaction (this context x this direction) \u2014 Bare-query arm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 256.0,
+      "Variance-component share": 0.8448207556338913,
+      "series": "Interaction (this context x this direction) \u2014 Bare-query arm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 512.0,
+      "Variance-component share": 0.8396193773662621,
+      "series": "Interaction (this context x this direction) \u2014 Bare-query arm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 16.0,
+      "y": 0.1273869029504111,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 32.0,
+      "y": 0.08675545709075846,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 64.0,
+      "y": 0.05472146802450069,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 128.0,
+      "y": 0.032920472640679266,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 256.0,
+      "y": 0.01885134077770634,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 512.0,
+      "y": 0.010511903849707915,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 16.0,
+      "y": 0.08349051226835622,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 32.0,
+      "y": 0.05462541262616282,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 64.0,
+      "y": 0.032792506160372055,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 128.0,
+      "y": 0.018121855990468973,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 256.0,
+      "y": 0.009781354553981908,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 512.0,
+      "y": 0.005200372173044997,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 16.0,
+      "y": 0.10108877667947147,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 32.0,
+      "y": 0.06987883026732593,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 64.0,
+      "y": 0.04301686451923875,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 128.0,
+      "y": 0.024983783415894585,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 256.0,
+      "y": 0.013933785077578132,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 512.0,
+      "y": 0.00759913596603887,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 16.0,
+      "y": 0.05674882596036859,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 32.0,
+      "y": 0.0729364531401187,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 64.0,
+      "y": 0.09271872174363785,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 128.0,
+      "y": 0.11146050340372068,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 256.0,
+      "y": 0.12774327396407748,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 512.0,
+      "y": 0.14033184999468445,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 16.0,
+      "y": 0.09057927486136519,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 32.0,
+      "y": 0.11058082112022041,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 64.0,
+      "y": 0.13195628775942334,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 128.0,
+      "y": 0.14960839506163595,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 256.0,
+      "y": 0.16259065498943726,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 512.0,
+      "y": 0.17105725752802214,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 16.0,
+      "y": 0.07509025285655244,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 32.0,
+      "y": 0.09807174703471488,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 64.0,
+      "y": 0.12289965915886752,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 128.0,
+      "y": 0.14316213068280942,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 256.0,
+      "y": 0.15827463950277043,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 512.0,
+      "y": 0.16840672157702988,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 16.0,
+      "y": 0.8158642710892203,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 32.0,
+      "y": 0.8403080897691229,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 64.0,
+      "y": 0.8525598102318614,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 128.0,
+      "y": 0.8556190239556001,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 256.0,
+      "y": 0.8534053852582162,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 512.0,
+      "y": 0.8491562461556077,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 16.0,
+      "y": 0.8259302128702786,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 32.0,
+      "y": 0.8347937662536168,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 64.0,
+      "y": 0.8352512060802046,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 128.0,
+      "y": 0.8322697489478951,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 256.0,
+      "y": 0.8276279904565809,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 512.0,
+      "y": 0.8237423702989328,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 16.0,
+      "y": 0.8238209704639761,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 32.0,
+      "y": 0.8320494226979591,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 64.0,
+      "y": 0.8340834763218936,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 128.0,
+      "y": 0.831854085901296,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 256.0,
+      "y": 0.8277915754196514,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 512.0,
+      "y": 0.8239941424569313,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 16.0,
+      "y": 0.11988768812407102,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 32.0,
+      "y": 0.0795687830555741,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 64.0,
+      "y": 0.04852901969370571,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 128.0,
+      "y": 0.027961257599652158,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 256.0,
+      "y": 0.01603156177134516,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 512.0,
+      "y": 0.008963386416233461,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 16.0,
+      "y": 0.08904933910445179,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 32.0,
+      "y": 0.05750807592037957,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 64.0,
+      "y": 0.03552443563292805,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 128.0,
+      "y": 0.02111893740810936,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 256.0,
+      "y": 0.011881275421456804,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 512.0,
+      "y": 0.006407870175998098,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 16.0,
+      "y": 0.11474294281644004,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 32.0,
+      "y": 0.07202067310751917,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 64.0,
+      "y": 0.04192475135434809,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 128.0,
+      "y": 0.024536781225536743,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 256.0,
+      "y": 0.013883564353243767,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 512.0,
+      "y": 0.007585590495331709,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 16.0,
+      "y": 0.04446357216759421,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 32.0,
+      "y": 0.050356589234184734,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 64.0,
+      "y": 0.05748535358856027,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 128.0,
+      "y": 0.06399080365489992,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 256.0,
+      "y": 0.07003322491026015,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 512.0,
+      "y": 0.07550223990965227,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 16.0,
+      "y": 0.05017897986310929,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 32.0,
+      "y": 0.06545578590673215,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 64.0,
+      "y": 0.07980146976663562,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 128.0,
+      "y": 0.09235840944869161,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 256.0,
+      "y": 0.10292251299978768,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 512.0,
+      "y": 0.1107920156892494,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 16.0,
+      "y": 0.0421689009523239,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 32.0,
+      "y": 0.05184094982313464,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 64.0,
+      "y": 0.06137976273723114,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 128.0,
+      "y": 0.06912384560982301,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 256.0,
+      "y": 0.07561637123175949,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 512.0,
+      "y": 0.0807036356290377,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 16.0,
+      "y": 0.8356487397083348,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 32.0,
+      "y": 0.8700746277102412,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 64.0,
+      "y": 0.893985626717734,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 128.0,
+      "y": 0.9080479387454479,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 256.0,
+      "y": 0.9139352133183947,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 512.0,
+      "y": 0.9155343736741143,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 16.0,
+      "y": 0.860771681032439,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 32.0,
+      "y": 0.8770361381728882,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 64.0,
+      "y": 0.8846740946004363,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 128.0,
+      "y": 0.886522653143199,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 256.0,
+      "y": 0.8851962115787554,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 512.0,
+      "y": 0.8828001141347525,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 16.0,
+      "y": 0.843088156231236,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 32.0,
+      "y": 0.8761383770693462,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 64.0,
+      "y": 0.8966954859084209,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 128.0,
+      "y": 0.9063393731646402,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 256.0,
+      "y": 0.9105000644149968,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 512.0,
+      "y": 0.9117107738756306,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "Variance-component share": 0.1538863945227612,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "Variance-component share": 0.12425117303393032,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "Variance-component share": 0.09432155775287682,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "Variance-component share": 0.08125303837884684,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "Variance-component share": 0.07592985203647486,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "Variance-component share": 0.08357981158966123,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "Variance-component share": 0.13738234473986136,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "Variance-component share": 0.1173658680019245,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "Variance-component share": 0.09503357894232115,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "Variance-component share": 0.07950544628513861,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "Variance-component share": 0.07562255701637327,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "Variance-component share": 0.082762802811922,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "Variance-component share": 0.14261576131936243,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "Variance-component share": 0.12275623788287213,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "Variance-component share": 0.09967405685800898,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "Variance-component share": 0.08607984239199648,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "Variance-component share": 0.07979276899531479,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "Variance-component share": 0.08619013020574479,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "Variance-component share": 0.022240841829096386,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "Variance-component share": 0.025181892097770872,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "Variance-component share": 0.02745859241832754,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "Variance-component share": 0.023690672741239056,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "Variance-component share": 0.018060666204643003,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "Variance-component share": 0.01311488409074818,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "Variance-component share": 0.012347946381589755,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "Variance-component share": 0.012385382583444227,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "Variance-component share": 0.011282011151454885,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "Variance-component share": 0.007506222718564527,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "Variance-component share": 0.004302359564668342,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "Variance-component share": 0.002631478453815689,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "Variance-component share": 0.0190178628861494,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "Variance-component share": 0.015448968040726867,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "Variance-component share": 0.013678280951487931,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "Variance-component share": 0.011055084366885983,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "Variance-component share": 0.008237424080873041,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "Variance-component share": 0.006519213799325389,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "Variance-component share": 0.8238727636481424,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "Variance-component share": 0.8505669348682987,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "Variance-component share": 0.8782198498287956,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "Variance-component share": 0.8950562888799141,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "Variance-component share": 0.9060094817588822,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "Variance-component share": 0.9033053043195907,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "Variance-component share": 0.8502697088785489,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "Variance-component share": 0.8702487494146313,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "Variance-component share": 0.893684409906224,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "Variance-component share": 0.9129883309962968,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "Variance-component share": 0.9200750834189584,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "Variance-component share": 0.9146057187342622,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "Variance-component share": 0.8383663757944881,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "Variance-component share": 0.861794794076401,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "Variance-component share": 0.8866476621905031,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "Variance-component share": 0.9028650732411174,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "Variance-component share": 0.9119698069238122,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "Variance-component share": 0.9072906559949299,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "y": 0.1584453492729171,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "y": 0.12165334872991769,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "y": 0.10065762022693145,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "y": 0.08406880797807131,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "y": 0.07315830087356638,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "y": 0.07368899897716308,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "y": 0.13687753913962886,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "y": 0.10622445149163708,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "y": 0.08884613069111891,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "y": 0.0731694873379504,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "y": 0.07049468319231873,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "y": 0.07595786185419687,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "y": 0.14402079495902062,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "y": 0.12217329813982952,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "y": 0.10575669213894129,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "y": 0.09192695509735141,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "y": 0.0837248556891111,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "y": 0.0837333659901767,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "y": 0.02039848054911724,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "y": 0.02690162681824126,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "y": 0.026847808977849365,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "y": 0.025991700327235176,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "y": 0.02296475909438432,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "y": 0.01741791753768219,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "y": 0.012941579124058217,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "y": 0.015252553798571156,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "y": 0.01224812756574237,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "y": 0.00887837818684472,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "y": 0.005419472514473542,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "y": 0.0029438505028865944,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "y": 0.02168814027236147,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "y": 0.017435320775041042,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "y": 0.013642025724630028,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "y": 0.011656792693789081,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "y": 0.009133204243024641,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "y": 0.006719945353004841,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "y": 0.8211561701779656,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "y": 0.851445024451841,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "y": 0.8724945707952193,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "y": 0.8899394916946936,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "y": 0.9038769400320493,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "y": 0.9088930834851547,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "y": 0.8501808817363129,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "y": 0.8785229947097917,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "y": 0.8989057417431388,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "y": 0.9179521344752049,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "y": 0.9240858442932077,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "y": 0.9210982876429166,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "y": 0.8342910647686179,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "y": 0.8603913810851294,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "y": 0.8806012821364287,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "y": 0.8964162522088595,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "y": 0.9071419400678643,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "y": 0.9095466886568184,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "y": 0.16056262660371984,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "y": 0.14026759182055337,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "y": 0.11222705388164297,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "y": 0.0812531724819868,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "y": 0.0724254080012078,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "y": 0.06558484101215166,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "y": 0.10681276448337634,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "y": 0.10220365076752147,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "y": 0.09570076193728441,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "y": 0.08312119711802163,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "y": 0.0723805368700714,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "y": 0.062466509749497766,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "y": 0.14959900263838904,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "y": 0.1338542262020102,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "y": 0.1069739773112255,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "y": 0.0903691840193549,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "y": 0.08258763913022539,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "y": 0.07250952526804288,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "y": 0.01140818752959909,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "y": 0.01163469923632822,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "y": 0.014351045690744524,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "y": 0.017089615655978992,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "y": 0.0169842510229209,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "y": 0.01489069391097722,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "y": 0.007225222730985295,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "y": 0.006818358882626634,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "y": 0.005989684833214161,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "y": 0.004277918416135921,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "y": 0.002930396791211646,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "y": 0.0020649247725090325,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "y": 0.007460648343271741,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "y": 0.008906435964033087,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "y": 0.009306764961453703,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "y": 0.00800136470877007,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "y": 0.0071847427339307695,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "y": 0.00650966792760687,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "y": 0.8280291858666811,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "y": 0.8480977089431184,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "y": 0.8734219004276125,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "y": 0.9016572118620343,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "y": 0.9105903409758713,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "y": 0.9195244650768712,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "y": 0.8859620127856384,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "y": 0.8909779903498518,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "y": 0.8983095532295015,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "y": 0.9126008844658424,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "y": 0.924689066338717,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "y": 0.9354685654779932,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Number of answer directions k": 16.0,
+      "y": 0.8429403490183394,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Number of answer directions k": 32.0,
+      "y": 0.8572393378339567,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Number of answer directions k": 64.0,
+      "y": 0.8837192577273209,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Number of answer directions k": 128.0,
+      "y": 0.901629451271875,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Number of answer directions k": 256.0,
+      "y": 0.9102276181358439,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Number of answer directions k": 512.0,
+      "y": 0.9209808068043502,
+      "_kind": "line",
+      "_group": 53
+    }
+  ],
+  "n_series": 54,
+  "total_points": 324,
+  "text": {
+    "suptitle": "Stability of the decomposition across basis size, arm and layer (line style = arm)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "layer 14 \u2014 raw",
+        "ylabel": "Variance-component share",
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "layer 19 \u2014 raw"
+      },
+      {
+        "title_left": "layer 26 \u2014 raw"
+      },
+      {
+        "title_left": "layer 14 \u2014 normalized",
+        "xlabel": "Number of answer directions k",
+        "ylabel": "Variance-component share",
+        "xticklabels": [
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{4}}$",
+          "$\\mathdefault{2^{5}}$",
+          "$\\mathdefault{2^{6}}$",
+          "$\\mathdefault{2^{7}}$",
+          "$\\mathdefault{2^{8}}$",
+          "$\\mathdefault{2^{9}}$",
+          "$\\mathdefault{2^{10}}$",
+          "$\\mathdefault{2^{11}}$"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "layer 19 \u2014 normalized",
+        "xlabel": "Number of answer directions k",
+        "xticklabels": [
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{4}}$",
+          "$\\mathdefault{2^{5}}$",
+          "$\\mathdefault{2^{6}}$",
+          "$\\mathdefault{2^{7}}$",
+          "$\\mathdefault{2^{8}}$",
+          "$\\mathdefault{2^{9}}$",
+          "$\\mathdefault{2^{10}}$",
+          "$\\mathdefault{2^{11}}$"
+        ]
+      },
+      {
+        "title_left": "layer 26 \u2014 normalized",
+        "xlabel": "Number of answer directions k",
+        "xticklabels": [
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{4}}$",
+          "$\\mathdefault{2^{5}}$",
+          "$\\mathdefault{2^{6}}$",
+          "$\\mathdefault{2^{7}}$",
+          "$\\mathdefault{2^{8}}$",
+          "$\\mathdefault{2^{9}}$",
+          "$\\mathdefault{2^{10}}$",
+          "$\\mathdefault{2^{11}}$"
+        ]
+      }
+    ],
+    "series": [
+      "Context (which conversation) \u2014 Context arm",
+      "Context (which conversation) \u2014 Prefix arm",
+      "Context (which conversation) \u2014 Bare-query arm",
+      "Direction (which answer axis) \u2014 Context arm",
+      "Direction (which answer axis) \u2014 Prefix arm",
+      "Direction (which answer axis) \u2014 Bare-query arm",
+      "Interaction (this context x this direction) \u2014 Context arm",
+      "Interaction (this context x this direction) \u2014 Prefix arm",
+      "Interaction (this context x this direction) \u2014 Bare-query arm"
+    ]
+  }
+}

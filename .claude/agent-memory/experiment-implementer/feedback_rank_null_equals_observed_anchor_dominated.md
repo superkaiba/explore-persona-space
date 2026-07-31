@@ -39,3 +39,9 @@ because a constant shift explains the variance".
 
 Related: [[feedback_parity_gate_determinate_data_blind]],
 [[feedback_rank_space_bootstrap_tail_gating]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Rank-space null EQUALS observed when v̂ is anchor-dominated](feedback_rank_null_equals_observed_anchor_dominated.md) — MRR/retrieval at its shuffled-pairing null diagnoses prediction VARIANCE across contexts, not direction; report the ||u||-vs-||y−ymu|| amplitude ratio (#1776 jchain)

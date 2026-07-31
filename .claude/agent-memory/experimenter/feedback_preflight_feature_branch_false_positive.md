@@ -51,3 +51,9 @@ check; recipes kept for pre-#554 pods):**
    the reviewed commit. CAUTION: never keep the merge content — at #550 it
    auto-merged sft.py/callbacks.py from main; the revert is what protects
    the reviewed tree.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Preflight feature-branch false positive](feedback_preflight_feature_branch_false_positive.md) — FIXED at source by #554 (2026-06-12, branch-aware preflight); tolerance/pre-clear is LEGACY for pre-#554 pods only; behind-origin/issue-<N> + fetch-failed ERRORs are REAL (#383, #550)

@@ -19,3 +19,9 @@ duplicate content before writing any uniqueness assert that quantifies over
 it, (3) scope postconditions to what the fix guarantees (train-unique +
 train∩pinned = ∅ + exact counts), never global. (#1768 crash-fix round,
 fix 07823360; root cause confirmed.)
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [real-corpus exact dupes break sha-keyed samples](feedback_real_corpus_exact_dupes_sha_sample.md) — dedup in-draw with pinned-row priority; measure a frozen pinned split before asserting global sha-uniqueness (#1768)

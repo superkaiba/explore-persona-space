@@ -23,3 +23,10 @@ max_steps < min_steps), crashing the phase-4 verdict after a 17/17-complete swee
 **How to apply:** when wiring any periodic-probe callback into cells of heterogeneous T,
 check every gate (min_steps, eval_every, warmup skips) against the SHORTEST cell, and
 smoke the telemetry on that shortest cell, not just the default smoke cell.
+
+## Merged sibling index rows (#1891 curation, 2026-07-30)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the ~25 KB loader truncation limit (task #1891). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [Threshold-gated telemetry never fires on short runs](feedback_threshold_gated_telemetry_short_runs.md) — min_steps≥T cells ship NO trajectory file; gate the stop, not the probe. #601.
+- [Gate the stop predicate, never the telemetry](feedback_gate_stop_predicate_not_telemetry.md) — check every gate against the SHORTEST cell + smoke its telemetry output. #601.

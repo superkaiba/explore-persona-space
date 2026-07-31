@@ -23,3 +23,9 @@ metadata:
 **Promoted:** this recipe is now an always-on primary-reviewer step — `code-reviewer.md` Step 3.7 (Bug-class sibling sweep) + Rule 14, mirrored into `codex-code-reviewer.md`, with the sibling family threaded into the round-N+1 implementer brief (`SKILL.md`) and an implementer class-hardening carve-out (`experiment-implementer.md`). This memory remains the reconciler's disagreement-time fallback and the fuller 7-step protocol (#802).
 
 Companions: [[feedback_claude_underclasses_silent_failures]] (partial-fix-pattern blindness across parallel files — same disease); [[feedback_claude_misses_fix_regressions]]; [[feedback_claude_misses_producer_consumer_key_mismatch]]; [[feedback_claude_scaffolded_pipeline_not_plumbed]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Claude misses same-file siblings (sibling-scan family)](feedback_claude_misses_same_file_siblings.md) — must-fix-table walks miss the bug CLASS: sibling code paths, render branches, resamplers (set-vs-list comp), scripts, figure-vs-analyze layers (now promoted to code-reviewer Step 3.7).

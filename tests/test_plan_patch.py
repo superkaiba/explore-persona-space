@@ -4,9 +4,11 @@ Pins the anchor-normalized plan-patch helper: 3-stage matching
 (exact -> ws-normalized -> ws+case-normalized, unique-match-only, no
 fall-through on ambiguity), exit codes 0/2/3, the nearest-match report,
 line-based insert modes / byte-exact replace, ``--verify-contains``,
-``--dry-run``, atomic byte-preserving writes, and the guards added from the
+``--dry-run``, atomic byte-preserving writes, the guards added from the
 critic-ensemble round (empty/whitespace anchor, degenerate nearest-match
-windows, non-UTF-8 input, the 10 MB size guard).
+windows, non-UTF-8 input, the 10 MB size guard), and the ``--file`` target
+alias (#1848: positional-or-``--file``, exactly one; both/neither exits 2
+with the file untouched; the ``--help`` epilog's no-pipe/rc-check note).
 
 The final test is the durability pin: ``scripts/plan_patch.py`` must stay
 named inside the Edit-success gate prose of BOTH plan-revision recipes
@@ -330,6 +332,62 @@ def test_insert_empty_payload_rejected(tmp_path, capsys):
     err = capsys.readouterr().err
     assert rc == 2
     assert "insert payload must be non-empty" in err
+
+
+# --- target spelling: positional vs --file (#1848) -------------------------------
+
+
+def test_file_option_alias_parity_with_positional(tmp_path, capsys):
+    # `--file <path>` behaves identically to the positional form: same
+    # APPLIED sentinel, same diff, same write.
+    pos = tmp_path / "pos.md"
+    opt = tmp_path / "opt.md"
+    before = "intro\nthe target sentence.\ntail\n"
+    pos.write_text(before, encoding="utf-8")
+    opt.write_text(before, encoding="utf-8")
+
+    rc_pos = _run(pos, "--anchor", "the target sentence.", "--replace", "REVISED.")
+    out_pos = capsys.readouterr().out
+    rc_opt = _run("--file", opt, "--anchor", "the target sentence.", "--replace", "REVISED.")
+    out_opt = capsys.readouterr().out
+
+    assert rc_pos == 0 and rc_opt == 0
+    assert "PLAN-PATCH APPLIED (exact match at lines 2-2" in out_pos
+    assert "PLAN-PATCH APPLIED (exact match at lines 2-2" in out_opt
+    assert pos.read_text(encoding="utf-8") == opt.read_text(encoding="utf-8")
+    # Identical output modulo the path each form named.
+    assert out_pos.replace(str(pos), "<F>") == out_opt.replace(str(opt), "<F>")
+
+
+def test_both_positional_and_file_option_exit_2_untouched(tmp_path, capsys):
+    pos = tmp_path / "pos.md"
+    opt = tmp_path / "opt.md"
+    pos.write_text("positional target\n", encoding="utf-8")
+    opt.write_text("option target\n", encoding="utf-8")
+    rc = _run(pos, "--file", opt, "--anchor", "target", "--replace", "X")
+    err = capsys.readouterr().err
+    assert rc == 2
+    assert "PLAN-PATCH FAILED" in err
+    assert "positional FILE" in err and "--file FILE" in err  # names both spellings
+    assert pos.read_text(encoding="utf-8") == "positional target\n"
+    assert opt.read_text(encoding="utf-8") == "option target\n"
+
+
+def test_neither_target_spelling_exit_2(capsys):
+    rc = _run("--anchor", "anything", "--replace", "X")
+    err = capsys.readouterr().err
+    assert rc == 2
+    assert "PLAN-PATCH FAILED" in err
+    assert "positional FILE" in err and "--file FILE" in err  # names both spellings
+
+
+def test_help_epilog_carries_no_pipe_rc_note():
+    # The --help epilog warns against piping the gate chain through filters
+    # (a pipe masks the exit code the Edit-success gate's && chain relies on).
+    help_text = pp.build_parser().format_help()
+    assert "Never pipe plan_patch.py" in help_text
+    assert "masks the exit code" in help_text
+    assert "--file" in help_text
 
 
 # --- CLI smoke + durability pin --------------------------------------------------

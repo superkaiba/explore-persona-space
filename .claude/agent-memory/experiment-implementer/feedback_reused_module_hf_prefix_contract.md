@@ -55,3 +55,9 @@ fence and add a production-shaped leg for it before the branch's first
 production run. (Cycle 6: fix commit
 `3e576922aea19fc270cab9ea4e4096ffffc9b10f`; the 8-call-site audit found the
 crash site was the only remaining gap.)
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Reused-module + cross-script wiring contract](feedback_reused_module_hf_prefix_contract.md) — audit flags AND every arg/ns field vs the consumer's reads (paths, None-defaults, call args); grep callee args. at authoring; smoke-fenced branches need a production-shaped leg (#1776 c2+c3+c6)

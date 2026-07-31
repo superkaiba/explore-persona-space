@@ -2854,6 +2854,56 @@ def test_render_sbatch_fellows_job_name_matches_job_name_fn() -> None:
     assert f"#SBATCH --job-name={expected}" in script
 
 
+def test_render_sbatch_fellows_precreates_workspace_logs_fail_soft() -> None:
+    """#1898: a ``sentinel_drain`` cluster's custom-stage prelude
+    pre-creates ``/workspace/logs`` FAIL-SOFT (``|| echo WARN``) BEFORE
+    the workload command, so pod-contract sentinel writers run unchanged
+    while a non-sentinel workload never dies on a shared-root perms
+    change (a sentinel-writing dispatcher's own ``mkdir -p`` under its
+    ``set -euo pipefail`` keeps the #608 fail-loud semantics)."""
+    fellows = _fellows()
+    spec = _fellows_spec()
+    script = render_sbatch(
+        spec=spec,
+        cluster=fellows,
+        plan=stages_for_spec(spec),
+        scratch_dir="/workspace/superkaiba/eps/issue-1609",
+    )
+    assert "mkdir -p /workspace/logs 2>/dev/null || echo" in script
+    assert "[eps] WARN: /workspace/logs not creatable" in script
+    assert "$SCRATCH_JOB_DIR/eval_results/issue_1609/logs" in script
+    # The stanza precedes the workload command (writers see the dir).
+    assert script.index("mkdir -p /workspace/logs") < script.index("nvidia-smi -L")
+    # Script must still be valid bash.
+    proc = subprocess.run(
+        ["bash", "-n", "/dev/stdin"], input=script, text=True, capture_output=True
+    )
+    assert proc.returncode == 0, proc.stderr
+
+
+def test_render_sbatch_drac_mila_no_workspace_logs_stanza() -> None:
+    """#1898 negative: ``sentinel_drain=False`` clusters render NO
+    pre-create stanza — their custom-cmd renders stay byte-identical
+    (the pre-#1609 snapshot test above pins the full bytes; this is the
+    targeted stanza-absence read)."""
+    for cluster_name in ("nibi", "mila"):
+        cluster = get_cluster_config(cluster_name)
+        spec = RunSpec(
+            issue=1609,
+            intent="lora-7b",
+            backend="cluster",
+            cluster=cluster_name,
+            workload_cmd="echo ok",
+        )
+        script = render_sbatch(
+            spec=spec,
+            cluster=cluster,
+            plan=stages_for_spec(spec),
+            scratch_dir=f"{cluster.scratch_path}/eps/issue-1609",
+        )
+        assert "mkdir -p /workspace/logs" not in script, cluster_name
+
+
 def test_assert_repo_branch_synced_accepts_detached_materialized_tree(tmp_path) -> None:
     """#1609 regression (fails pre-fix): ``materialize_branch_src`` builds a
     DETACHED worktree at the branch commit, where the named-branch resolver

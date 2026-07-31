@@ -24,3 +24,9 @@ metadata:
 - #560 r1 — upload phase smoked via grep + parser dry-run; both pro-PASS defenses code-disproven (the `--tag` plumbing fully isolates a real smoke; count asserts skip tagged runs). Implementers build exactly these affordances — read the tag/assert plumbing; a cheap real smoke skipped is indefensible. Step 0.6 is run-time proof (token, perms, verify path), not static correctness.
 
 Related: [[feedback_codex_conflates_marker_format_with_code]]; [[feedback_claude_concerns_on_smoke_gate]] (the Claude-side inverse).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Codex Step 0.6 literal vs purpose](feedback_codex_step_06_literal_vs_purpose.md) — decisive variable = gate topology: PASS when a demonstrated pre-launch gate runs the changed code for real; FAIL when first real run would be production (#551/#560).

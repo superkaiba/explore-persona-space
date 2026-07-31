@@ -22,3 +22,9 @@ scaling fields (`use_rslora`, `lora_alpha`, `r`) and run a 1-adapter apply-and-r
 parity probe against the parent's committed numbers on the CURRENT stack; pin the read
 gauge explicitly (staged scaling-patched copy + sha256/scaling provenance per read).
 Reference implementation: `neg_setpoint_601/artifacts.py::stage_parity_read_adapter`.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [LoRA application-scaling contract](feedback_lora_application_scaling_contract.md) — rsLoRA α/√r vs classic α/r flips repeater behavior; probe both scalings + pin the read gauge. #601.

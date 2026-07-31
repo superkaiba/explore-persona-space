@@ -27,3 +27,9 @@ the smoke will deterministically fail at crosseval — bounce code-class
 immediately with the subset-propagation fix named, instead of diagnosing
 post-hoc. The train-phase + upload evidence from the failed smoke is still
 valid (cite it in the failure note so the implementer round doesn't redo it).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [PASS_UNIFIED smoke eval ignores overrides](feedback_pass_unified_smoke_eval_ignores_overrides.md) — i464-line eval enumerates the FULL grid; fresh-issue smoke deterministically 404s at crosseval; grep eval for OVERRIDE hooks (#546)

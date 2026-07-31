@@ -45,3 +45,9 @@ must catch.
 
 Related: [[claude-underclasses-silent-failures]] — same pattern of
 Claude reviewer correctly flagging an issue but mis-classing the verdict.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Claude misses Lens 7 statistical framing](feedback_claude_misses_lens7_statistical_framing.md) — always re-scan for named tests (Wilson/Fisher/Mann-Whitney), ±, derived intervals in prose/captions before trusting a Claude PASS (Lens 11 in pre-renumbering verdicts). #378.

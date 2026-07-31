@@ -15,3 +15,9 @@ All three say the bypass needs operator error outside the encoded flow → Real-
 **Committed-evidence-snapshot variant (#601 r7):** "committed phase0_gate.json is obsolete schema, pass:false" — the plan MANDATED committing exactly that file as pre-amendment EVIDENCE; production never consumes the git copy (driver unconditionally recomputes + rewrites the pod-side gate; launcher reads the pod path). Fast checks: (a) did the plan order the artifact committed as evidence? (b) does any production reader consume the git copy? (c) does the gate-write run unconditionally after the skip pools? PASS + CONCERN to re-commit post-run.
 
 Companion: [[feedback_codex_litigates_pre_existing_in_round_n]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Codex treats gitignored worktree artifacts as production state](feedback_codex_gitignored_artifacts_as_production_state.md) — reachability walk: git propagation, canonical-flow creation, pre-existence; plan-mandated evidence snapshots aren't production gates. #543/#570/#601.

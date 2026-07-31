@@ -3847,15 +3847,17 @@ the #825 pattern), or use the set-u-safe default expansion inline:
 `--workload-cmd 'REPO_ROOT="${WORKLOAD_ROOT:-$PWD}" bash scripts/<driver>.sh'`
 (every lane cds to the checkout root first; `${VAR:-default}` is safe
 under `set -u`). (g)
-**Sentinel-signaling dispatchers must not rely on auto's SLURM fallback**
-— a dispatch script that posts markers via pod-side sentinel files
-(`/workspace/logs/issue-<N>-*.json`) works only on the /workspace-contract
-lanes (gcp/runpod): SLURM compute nodes have no `/workspace`, so the
-script fails loud at `mkdir -p /workspace/logs` and burns the submission
-(#608, commit 3022ff7bc); pin `backend: gcp` (or runpod with a named
-residual gap), or convert the dispatcher to the SLURM signaling contract
-(`status.json` heartbeat + `[phase=...]` log lines) before routing auto
-(planner.md §9 names this constraint at plan time). (h) **Boot-disk
+**Sentinel-signaling dispatchers must not rely on auto's DRAC/Mila SLURM
+fallback** — a dispatch script that posts markers via pod-side sentinel
+files (`/workspace/logs/issue-<N>-*.json`) works on the DRAINED lanes
+(gcp/runpod/fellows — the fellows drain landed at #1898 via
+`slurm_monitor.drain_cluster_sentinels`): DRAC/Mila compute nodes have no
+`/workspace`, so the script fails loud at `mkdir -p /workspace/logs` and
+burns the submission (#608, commit 3022ff7bc); pin one of the three
+drained lanes (`backend: gcp` / `backend: fellows`, or runpod with a
+named residual gap), or convert the dispatcher to the SLURM signaling
+contract (`status.json` heartbeat + `[phase=...]` log lines) before
+routing auto (planner.md §9 names this constraint at plan time). (h) **Boot-disk
 sizing on the gcp/auto lanes comes from the plan's Reproducibility pod
 row, threaded via `--boot-disk-gb` on EVERY launch — relaunches after a
 code-fix round included** — the GCP lane defaults the boot disk to
@@ -5212,6 +5214,46 @@ live-escalation debounce covers it.)
    of the false-respawn this duty prevents. (Pid-bearing detached-phase
    breadcrumbs stay authoritative over heartbeat notes — tick_triage
    #1051.)
+
+**Remote-landing watches carry a producer-fence deadline (#1850;
+incidents #1738/#1739, 2026-07-29).** Any watch whose wake condition is
+a REMOTE artifact landing — an HF file/prefix appearing, a
+pod/GCE-produced output, a sentinel drained from another box — carries
+an explicit overall DEADLINE = the producer's own lifetime bound (the
+GCE `--max-run-duration` fence, the pod TTL, a Batch-API `expires_at`)
++ ~15-30 min grace, on top of the per-segment ≤45-min cap (item 1): a
+landing keyed on a dead producer NEVER fires, so without the deadline
+the watch reads as healthy idle forever (#1738: an until-loop keyed on
+an HF chunk landing ran silently past the producing GCE instance's
+~15:08Z poweroff; no assistant turn 14:32→17:53Z until the watcher
+respawned). On deadline expiry the watch exits DEADLINE and the session
+RE-CHECKS THE PRODUCER — instance/pod status (`gcloud … describe` /
+`pod.py list-ephemeral`), the crash-persist prefixes
+(`issue<N>_partial/` / `issue<N>_done/`) — and routes to the
+failure/recovery path; it never blind re-arms the same landing watch.
+Item 2(i)'s per-resume verify covers the PRODUCER, not merely "the
+landing has not appeared yet". This generalizes the deadline-bounded
+`batch_judge` poll (#658/#663), which bounds on the batch's own
+`expires_at`.
+
+**Monitor heartbeat emission (#1850).** A long-interval `Monitor`
+until-loop ADDITIONALLY emits a no-op heartbeat line roughly every
+15-30 min (every 2-3 cycles of a long-interval loop — time-anchored, so
+a short-interval loop does not over-wake), e.g.
+`[watch-heartbeat] <UTC time> waiting on <what>` via an echo inside the
+loop — each stdout line is a notification, so heartbeats WAKE the
+session at a known cadence, giving item 2's verify-then-heartbeat its
+resume opportunity mechanically AND making a dead/lost Monitor
+distinguishable from a healthy quiet one: at any later wake (tick,
+notification), a heartbeat gap of ≳2-3 expected intervals means the
+Monitor died — re-arm it after the kill-before-relaunch probe
+(`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch), never
+assume it is still watching (#1739: after one healthy Monitor wake the
+session idled ~58 min with no wake on a 3-lane GCP run; the watcher
+stall-alert was the only recovery). The `[watch-heartbeat]` line is
+Monitor stdout only — NEVER a task marker; the `[long-phase-heartbeat]`
+`epm:progress` marker convention (item 2) is separate shared machinery
+and is untouched.
 
 Revival trigger for the deferred watcher-side option (b) (#1207
 §11-R4): a STALLED-DETECTOR-lane force-respawn of a session carrying a
@@ -7456,8 +7498,11 @@ explicit eval-data path):
    `figures/issue_<N>/` outputs); Read each regenerated PNG and confirm
    non-empty axes + plotted series
    (§ Inline measurement-design + figure-sanity duties above) BEFORE
-   presenting or committing it; then commit + push to `main` so the body
-   can SHA-pin them per the existing analyzer.md Step 3 rule. Push BARE:
+   presenting or committing it; then commit (pathspec-limited —
+   `git commit -m <msg> -- <paths>`; a bare repo-root commit sweeps a
+   concurrent session's staged files, #1894 / CLAUDE.md § Concurrent
+   repo-root committers) + push to `main` so the body can SHA-pin them
+   per the existing analyzer.md Step 3 rule. Push BARE:
    `git push origin main || uv run python scripts/sync_repo_root.py` —
    never piped (Step 10d § "Bare push / merge snippets"; sync_repo_root
    exit 0 can mean in-flight — landing not guaranteed, see the canonical
