@@ -5,7 +5,9 @@ The wildchat rung's capture store was produced by ``issue1739_wcrung_pod.py``
 (GPU leg) and its three per-behavior DV datasets by
 ``issue1739_wcrung_score.py`` (judge + DV leg). This entrypoint is the THIRD
 leg: it consumes those artifacts read-only and scores the plan's transfer
-roster (:data:`arms.TRANSFER_ARMS` — the 6 arms) on the wildchat rung, per
+roster (:data:`arms.TRANSFER_ARMS_WIDE` by default — the 6 core ladder arms
+plus the fitted arms 5/7/8/12; ``--arms core`` reproduces the original 6-arm
+column exactly) on the wildchat rung, per
 behavior x variant, over all 28 layers, at the TRAIN-frozen layer. Its output
 is the writeup's FOURTH evaluation column, directly comparable to the
 committed train / OOD / pvsynth columns because it uses the same DV shape,
@@ -460,7 +462,7 @@ def score_behavior(args, behavior: str) -> dict:  # noqa: C901 — one linear pe
     u_fit_rows = np.flatnonzero(store_io.fit_pool_mask(u_meta))
 
     budget_l = args.budget or len(tbl.ctx_order)
-    roster = list(args.arms) if args.arms else list(arms.TRANSFER_ARMS)
+    roster = arms.resolve_transfer_roster(args.arms)
     n_boot = int(args.n_boot) if args.n_boot else arms.N_BOOT
     ckpt = args.out_root / behavior / "percell" / "wcrung_transfer.jsonl"
     ckpt.parent.mkdir(parents=True, exist_ok=True)
@@ -618,6 +620,22 @@ def score_behavior(args, behavior: str) -> dict:  # noqa: C901 — one linear pe
             {"arm": slug, "reason": reason, "variant": variant}
             for slug, reason in sorted(arm_skips.items())
         ]
+        skips_u += arms.roster_accounting_skips(roster, scores_ev, arm_skips, variant=variant)
+        # Per-context frozen-layer predictions: the durable subset-re-analysis
+        # input (any later per-context / per-quantile read becomes a pure
+        # re-analysis instead of another re-score). Same schema as the
+        # bare-query scorer's preds JSONL.
+        arms.write_preds_jsonl(
+            args.out_root / behavior / "preds" / f"wcrung_preds.{variant}.jsonl",
+            arms.transfer_preds_rows(
+                scores_ev,
+                np.asarray(tbl_ev.dv, dtype=np.float64),
+                tbl_ev.ctx_order,
+                frozen_by_arm,
+                provenance={**prov, "n_eval_pooled": len(tbl_ev.ctx_order)},
+                layers=tuple(layers),
+            ),
+        )
         # Per-layer rho over ALL layers (the frozen-layer row above is the
         # selection-clean headline; this is the full-profile companion).
         dv_ev = np.asarray(tbl_ev.dv, dtype=np.float64)
@@ -756,7 +774,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     ap.add_argument("--regime", default="e1", choices=("e1", "e2", "e2p"))
     ap.add_argument(
-        "--arms", nargs="+", default=None, help="roster subset (default: TRANSFER_ARMS)"
+        "--arms",
+        nargs="+",
+        default=None,
+        metavar="ROSTER|SLUG",
+        help="transfer roster: 'wide' (default — the 6 core ladder arms plus the fitted "
+        "arms 5/7/8/12), 'core' (the original 6, reproduces the committed column exactly), "
+        "or an explicit arm-slug list",
     )
     ap.add_argument("--layers", type=int, nargs="+", default=None, help="default: all --n-layers")
     ap.add_argument("--n-layers", type=int, default=28)
@@ -911,6 +935,11 @@ def main(argv: list[str] | None = None) -> int:
     load_dotenv()  # HF token for the U-pool staging leg
 
     out_paths = [args.out_root / b / "all_arms_spearman.json" for b in args.behaviors]
+    out_paths += [
+        args.out_root / b / "preds" / f"wcrung_preds.{v}.jsonl"
+        for b in args.behaviors
+        for v in args.variants
+    ]
     _assert_outputs_safe(out_paths, out_root=args.out_root, allow=args.allow_overwrite_committed)
 
     commit = _git_commit()
@@ -943,7 +972,7 @@ def main(argv: list[str] | None = None) -> int:
                 "config": "config_a",
                 "regimes": [args.regime],
                 "variants": list(args.variants),
-                "arms": sorted(args.arms) if args.arms else sorted(arms.TRANSFER_ARMS),
+                "arms": sorted(arms.resolve_transfer_roster(args.arms)),
                 "layers": [int(x) for x in (args.layers or list(range(args.n_layers)))],
                 "n_contexts": res["n_eval_contexts"],
                 "n_train_contexts": res["n_train_contexts"],

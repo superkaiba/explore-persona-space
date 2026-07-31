@@ -130,6 +130,15 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "the smoke lowers it to 2 — its per-rung slice is 2 contexts)",
     )
     ap.add_argument(
+        "--transfer-arms",
+        nargs="+",
+        default=None,
+        metavar="ROSTER|SLUG",
+        help="eval-rung transfer roster: 'wide' (default — the 6 core ladder arms plus "
+        "the fitted arms 5/7/8/12), 'core' (the original 6, reproduces the committed "
+        "transfer columns exactly), or an explicit arm-slug list",
+    )
+    ap.add_argument(
         "--pilot",
         action="store_true",
         help="§9 pilot gate: run ONE production-shape unit (max L, full U, first "
@@ -1353,6 +1362,9 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
             "compose_skips": compose_skips,
             "transfer_min_n": int(args.transfer_min_n) if tbl_ev is not None else None,
             "transfer_eval_rungs": sorted(tbl_ev.rungs) if tbl_ev is not None else None,
+            "transfer_arms": sorted(arms.resolve_transfer_roster(args.transfer_arms))
+            if tbl_ev is not None
+            else None,
         },
         extra=extra,
     )
@@ -1433,7 +1445,8 @@ def _run_transfer_for_group(
     """Distribution-shift ladder leg for one plain-rung regime GROUP (M-A).
 
     Per (L, draw, seed) unit: score every eval-split context with the
-    :data:`arms.TRANSFER_ARMS` fit on the FULL train cell (never on eval
+    the resolved transfer roster (``--transfer-arms``, default
+    :data:`arms.TRANSFER_ARMS_WIDE`) fit on the FULL train cell (never on eval
     DV) and emit one row per (arm, eval rung) at the TRAIN-frozen layer,
     plus one ``train_in_split`` row per arm (the in-distribution anchor).
     Round-8 batching, output-identical per (unit, regime): the unit loop
@@ -1463,10 +1476,11 @@ def _run_transfer_for_group(
                     rec = json.loads(line)
                     tdone[rec["unit_key"]] = rec
     n_boot = int(args.n_boot) if args.n_boot else arms.N_BOOT
+    roster = arms.resolve_transfer_roster(getattr(args, "transfer_arms", None))
     regime_extra = {
         "transfer": True,
         "transfer_min_n": int(args.transfer_min_n),
-        "transfer_arms": sorted(arms.TRANSFER_ARMS),
+        "transfer_arms": sorted(roster),
         "n_eval_table": len(tbl_ev.ctx_order),
         "n_boot": n_boot,
         "layers_subset": [int(x) for x in layers],
@@ -1481,11 +1495,17 @@ def _run_transfer_for_group(
                 m[(r0["budget_l"], r0["draw"], r0["seed"])] = rec
         rec_by_unit.append(m)
     dv_ev = np.asarray(tbl_ev.dv, dtype=np.float64)
-    rb_dep = [a for a in arms.TRANSFER_ARMS if a != "arm4_ridge_ctx"]
+    # rb-INDEPENDENT arms (ridge/MLP fits over z / mp / za) depend only on the
+    # realized ROW SET, so one fit is shared across the group's regimes; the
+    # rb-DEPENDENT projections are cached per (regime, row set, seed). The
+    # split is registry-driven so a widened roster routes its new fitted arms
+    # (5/7/8/12) into the shared cache automatically instead of refitting them
+    # once per regime.
+    rb_indep, rb_dep = arms.partition_transfer_roster(roster)
     units = [(b, d, s) for b in spec0.budgets for d in spec0.draws for s in spec0.seeds]
     rows_all: list[dict] = []
     skips_all: list[dict] = []
-    arm4_cache: dict[str, tuple[dict, dict]] = {}
+    rbindep_cache: dict[str, tuple[dict, dict]] = {}
     rbdep_cache: dict[tuple, tuple[dict, dict]] = {}
     t0 = time.time()
     for k, (budget_l, draw, seed) in enumerate(units):
@@ -1510,19 +1530,19 @@ def _run_transfer_for_group(
                     "(main grid must run the same units first)"
                 )
             rs_key = hashlib.sha1(cell.row_idx.tobytes()).hexdigest()
-            if rs_key not in arm4_cache:
-                arm4_cache[rs_key] = arms.run_transfer_cell(
+            if rb_indep and rs_key not in rbindep_cache:
+                rbindep_cache[rs_key] = arms.run_transfer_cell(
                     datas[r],
                     cell,
                     z_ev_w,
                     dv_ev,
                     za_ev=za_ev_w,
-                    arms=["arm4_ridge_ctx"],
+                    arms=rb_indep,
                     device=args.device,
                     ridge_folds=(0,),
                 )
             ck = (spec.regime, rs_key, int(seed))
-            if ck not in rbdep_cache:
+            if rb_dep and ck not in rbdep_cache:
                 rbdep_cache[ck] = arms.run_transfer_cell(
                     datas[r],
                     cell,
@@ -1533,8 +1553,8 @@ def _run_transfer_for_group(
                     device=args.device,
                     ridge_folds=(0,),
                 )
-            s4, sk4 = arm4_cache[rs_key]
-            sd, skd = rbdep_cache[ck]
+            s4, sk4 = rbindep_cache.get(rs_key, ({}, {}))
+            sd, skd = rbdep_cache.get(ck, ({}, {}))
             scores_ev = {**sd, **s4}
             arm_skips = {**skd, **sk4}
             frozen_by_arm = {
@@ -1555,6 +1575,9 @@ def _run_transfer_for_group(
                 {"arm": slug, "reason": reason, "budget_l": budget_l, "draw": draw, "seed": seed}
                 for slug, reason in sorted(arm_skips.items())
             ]
+            skips_u += arms.roster_accounting_skips(
+                roster, scores_ev, arm_skips, budget_l=budget_l, draw=draw, seed=seed
+            )
             # In-distribution anchor: the unit's own in-split OOF read per ladder arm.
             for row in rec["arms"]:
                 if row["arm"] in scores_ev:

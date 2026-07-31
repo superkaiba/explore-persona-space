@@ -284,12 +284,15 @@ def test_tiny_real_e2e_scores_wildchat_rung(rig, capsys):
     assert "unit 1/2" in capsys.readouterr().out
 
 
-def test_full_six_arm_default_roster_all_resolve_real(rig):
-    """Every arm the plan names produces a REAL scored row (no silent skips).
+def test_full_default_roster_all_resolve_real(rig):
+    """Every arm the DEFAULT roster names produces a REAL scored row (no silent skips).
 
     The other e2e tests use a 4-arm subset for speed; this one drops --arms so
-    the DEFAULT roster (arms.TRANSFER_ARMS, all 6) runs, and asserts each arm
-    resolved its production computation path rather than being skipped.
+    the DEFAULT roster runs, and asserts each arm resolved its production
+    computation path rather than being skipped. The default is the WIDE roster
+    (the 6 core ladder arms + the fitted arms 5/7/8/12) as of the grid-fill
+    round — the four added arms were already scored on the train rung and are
+    now filled in on every eval rung too.
     """
     from explore_persona_space.experiments.issue_1739 import arms
 
@@ -298,17 +301,39 @@ def test_full_six_arm_default_roster_all_resolve_real(rig):
     assert _run(argv) == 0
     payload = json.loads((rig["out_root"] / "evil" / "all_arms_spearman.json").read_text())
     scored = {r["arm"] for r in payload["transfer_rows"]}
-    assert scored == set(arms.TRANSFER_ARMS), (
-        f"arms missing a REAL scored row: {sorted(set(arms.TRANSFER_ARMS) - scored)}; "
+    assert scored == set(arms.TRANSFER_ARMS_WIDE), (
+        f"arms missing a REAL scored row: {sorted(set(arms.TRANSFER_ARMS_WIDE) - scored)}; "
         f"skips={payload['transfer_skips']}"
     )
+    # the widened arms in particular must be REAL rows, not skips
+    for slug in ("arm5_mlp_ctx", "arm7_map_ridge_pred", "arm8_map_ridge_true", "arm12_oracle_reg"):
+        assert slug in scored, f"{slug} did not resolve; skips={payload['transfer_skips']}"
     # per-layer profiles too, and no arm silently skipped
-    assert {p["arm"] for p in payload["per_layer_rows"]} == set(arms.TRANSFER_ARMS)
+    assert {p["arm"] for p in payload["per_layer_rows"]} == set(arms.TRANSFER_ARMS_WIDE)
     assert not payload["transfer_skips"], payload["transfer_skips"]
     # the control + oracle arms are real families, not stubs
     fam = {p["arm"]: p["family"] for p in payload["per_layer_rows"]}
     assert fam["arm13_shuffled_map"] == "control"
+    assert fam["arm12_oracle_reg"] == "oracle"
     assert "unknown" not in fam.values()
+    # per-context preds sidecar: one row per (arm, eval context), frozen layer
+    preds = rig["out_root"] / "evil" / "preds" / "wcrung_preds.context_end.jsonl"
+    rows = [json.loads(x) for x in preds.read_text(encoding="utf-8").split("\n") if x.strip()]
+    n_ev = len(rig["ev_kept"]["evil"])
+    assert {r["arm"] for r in rows} == set(arms.TRANSFER_ARMS_WIDE)
+    assert len(rows) == len(arms.TRANSFER_ARMS_WIDE) * n_ev
+    assert {r["context_id"] for r in rows} == set(rig["ev_kept"]["evil"])
+
+
+def test_core_roster_reproduces_the_committed_six_arm_column(rig):
+    """`--arms core` still scores exactly the original 6 — the committed column."""
+    from explore_persona_space.experiments.issue_1739 import arms
+
+    argv = [a for a in rig["argv"](["evil"]) if a != "--arms" and a not in ROSTER]
+    assert _run(argv + ["--arms", "core"]) == 0
+    payload = json.loads((rig["out_root"] / "evil" / "all_arms_spearman.json").read_text())
+    assert {r["arm"] for r in payload["transfer_rows"]} == set(arms.TRANSFER_ARMS)
+    assert payload["meta"]["arms"] == sorted(arms.TRANSFER_ARMS)
 
 
 def test_one_shared_store_scores_three_behaviors_independently(rig):
