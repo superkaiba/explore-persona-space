@@ -9066,9 +9066,13 @@ def test_c43_arm_b_ws_logs_path_warns():
     assert r.status == "WARN"
     assert "plan-compute-sizing.md" in r.detail
     assert "Sentinel-signaling workloads" in r.detail  # the rule section
-    assert "#608" in r.detail  # the SLURM mkdir crash
-    assert "drains the sentinels" in r.detail  # the fellows silent-loss hazard
-    assert "backend: gcp" in r.detail and "backend: runpod" in r.detail  # pin remedy
+    assert "#608" in r.detail  # the DRAC/Mila fail-loud mkdir burn
+    assert "fail-loud" in r.detail  # the residual hazard class (#1898)
+    assert "DRAINED lane as of #1898" in r.detail  # fellows named as drained
+    assert "silent marker loss" not in r.detail  # the pre-#1898 hazard is gone
+    # pin remedy names all three drained lanes
+    assert "backend: gcp" in r.detail and "backend: runpod" in r.detail
+    assert "backend: fellows" in r.detail
     assert "no sentinel dependence — auto-safe" in r.detail  # escape remedy
 
 
@@ -9092,6 +9096,27 @@ def test_c43_dispatch_flag_backend_runpod_passes():
     plan = C43_1775_SHAPED + (
         "\n```bash\nuv run python scripts/dispatch_issue.py launch --issue 9999 "
         "--backend runpod --intent lora-7b\n```\n"
+    )
+    assert _status(plan, C43) == "PASS"
+
+
+def test_c43_backend_fellows_pin_passes():
+    # #1898: fellows is a DRAINED lane (slurm_monitor.drain_cluster_sentinels
+    # drains its /workspace/logs each poll tick), so a `backend: fellows`
+    # pin satisfies exactly as gcp/runpod.
+    plan = C43_1775_SHAPED + "\nPinned lane: backend: fellows (drained as of #1898).\n"
+    _, by_id = _run(plan)
+    r = by_id[C43]
+    assert r.status == "PASS"
+    assert "lane pinned" in r.detail
+    assert "fellows" in r.detail
+
+
+def test_c43_dispatch_flag_backend_fellows_passes():
+    # #1898: the fenced `--backend fellows` dispatch-flag form satisfies too.
+    plan = C43_1775_SHAPED + (
+        "\n```bash\nuv run python scripts/dispatch_issue.py launch --issue 9999 "
+        "--backend fellows --intent lora-7b\n```\n"
     )
     assert _status(plan, C43) == "PASS"
 

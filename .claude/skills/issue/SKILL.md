@@ -3847,15 +3847,17 @@ the #825 pattern), or use the set-u-safe default expansion inline:
 `--workload-cmd 'REPO_ROOT="${WORKLOAD_ROOT:-$PWD}" bash scripts/<driver>.sh'`
 (every lane cds to the checkout root first; `${VAR:-default}` is safe
 under `set -u`). (g)
-**Sentinel-signaling dispatchers must not rely on auto's SLURM fallback**
-— a dispatch script that posts markers via pod-side sentinel files
-(`/workspace/logs/issue-<N>-*.json`) works only on the /workspace-contract
-lanes (gcp/runpod): SLURM compute nodes have no `/workspace`, so the
-script fails loud at `mkdir -p /workspace/logs` and burns the submission
-(#608, commit 3022ff7bc); pin `backend: gcp` (or runpod with a named
-residual gap), or convert the dispatcher to the SLURM signaling contract
-(`status.json` heartbeat + `[phase=...]` log lines) before routing auto
-(planner.md §9 names this constraint at plan time). (h) **Boot-disk
+**Sentinel-signaling dispatchers must not rely on auto's DRAC/Mila SLURM
+fallback** — a dispatch script that posts markers via pod-side sentinel
+files (`/workspace/logs/issue-<N>-*.json`) works on the DRAINED lanes
+(gcp/runpod/fellows — the fellows drain landed at #1898 via
+`slurm_monitor.drain_cluster_sentinels`): DRAC/Mila compute nodes have no
+`/workspace`, so the script fails loud at `mkdir -p /workspace/logs` and
+burns the submission (#608, commit 3022ff7bc); pin one of the three
+drained lanes (`backend: gcp` / `backend: fellows`, or runpod with a
+named residual gap), or convert the dispatcher to the SLURM signaling
+contract (`status.json` heartbeat + `[phase=...]` log lines) before
+routing auto (planner.md §9 names this constraint at plan time). (h) **Boot-disk
 sizing on the gcp/auto lanes comes from the plan's Reproducibility pod
 row, threaded via `--boot-disk-gb` on EVERY launch — relaunches after a
 code-fix round included** — the GCP lane defaults the boot disk to
