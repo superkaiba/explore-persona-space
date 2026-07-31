@@ -317,6 +317,8 @@ def capture_unit(cfg: CAP.Cfg, unit_id: str, rows: list[dict]) -> Path:
 
 def upload_unit(cfg: CAP.Cfg, unit_id: str) -> None:
     """One bulk folder commit per unit + exact-set verify (before any fit)."""
+    from huggingface_hub import HfApi
+
     from explore_persona_space.orchestrate import hub
 
     out_dir = cfg.out_root / "lasttoken" / unit_id
@@ -325,7 +327,11 @@ def upload_unit(cfg: CAP.Cfg, unit_id: str) -> None:
     hub._upload(out_dir, X.HF_DATA_REPO, "dataset", prefix, raise_on_error=True)
     expected = [f"{prefix}/{p.name}" for p in sorted(out_dir.iterdir()) if p.is_file()]
     missing = hub.verify_repo_paths_uploaded(
-        X.HF_DATA_REPO, expected, path_in_repo=prefix, repo_type="dataset"
+        HfApi(token=os.environ.get("HF_TOKEN")),
+        X.HF_DATA_REPO,
+        expected,
+        path_in_repo=prefix,
+        repo_type="dataset",
     )
     assert not missing, f"{unit_id}: upload verify missing {missing}"
     logger.info("[lt-upload] %s verified %d files at %s", unit_id, len(expected), prefix)
@@ -358,15 +364,23 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     if args.import_check:
-        from explore_persona_space.analysis.representation_shift import (  # noqa: F401
-            _build_generation_prompts,
-        )
-        from explore_persona_space.orchestrate import hub  # noqa: F401
+        import inspect
+
+        from explore_persona_space.orchestrate import hub
 
         import issue1768_capture as _c  # noqa: F401
         import issue1768_cells as _x  # noqa: F401
 
-        print("import-check ok")
+        # signature-bind the upload/verify call shapes: import resolution alone
+        # green-lights an arity mismatch that only fires at the terminal upload
+        # (#1332), which is exactly how the pilot's verify leg crashed.
+        inspect.signature(hub.verify_repo_paths_uploaded).bind(
+            object(), object(), object(), path_in_repo="p", repo_type="dataset"
+        )
+        inspect.signature(hub._upload).bind(
+            object(), object(), object(), object(), raise_on_error=True
+        )
+        print("import-check ok (upload/verify call shapes bind)")
         return 0
 
     assert args.out_root is not None, "--out-root is required outside --import-check"
