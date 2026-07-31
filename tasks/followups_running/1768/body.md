@@ -1,7 +1,7 @@
 ---
 title: 'Fine-tuning-induced map change is context-dependent: sycophancy arms trained
-  with a conversation or demonstration prefix cross the refit-noise floor only once
-  their trained prefix is present (HIGH confidence)'
+  on conversation history cross the refit-noise floor only once their trained prefix
+  is present (HIGH confidence)'
 kind: experiment
 tags:
 - followup-auto
