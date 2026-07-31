@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1933,
+  "highest_id": 1934,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7229,6 +7229,13 @@
       "path": "tasks/proposed/1933",
       "status": "proposed",
       "title": "update #1345 Takeaway bullet 5: slot-position reads re-fit by lambda audit (deficit survives); every-layer statements stay ambient-only"
+    },
+    "1934": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1934",
+      "status": "proposed",
+      "title": "Fence-tolerant judge JSON parse: 2.02% of judged calls drop on markdown fences, not truncation"
     },
     "194": {
       "has_clean_result": false,
