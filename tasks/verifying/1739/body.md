@@ -1,7 +1,6 @@
 ---
-title: 'Behavior prediction through the context->answer map: does applying the map
-  before persona-vector projection beat context-side projection and direct regression,
-  and how does the advantage scale with labels and distribution shift?'
+title: Map-then-project persona-vector prediction trails matched-budget context-side
+  baselines across three behaviors (HIGH confidence)
 kind: experiment
 tags:
 - trigger-dense
