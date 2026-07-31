@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1935,
+  "highest_id": 1936,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7243,6 +7243,13 @@
       "path": "tasks/proposed/1935",
       "status": "proposed",
       "title": "workflow-fix: exclude plan-declared outputs from carry-over bare-name resolution"
+    },
+    "1936": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1936",
+      "status": "proposed",
+      "title": "workflow-fix: widen check-30 count-noun vocabulary (chunks/sidecars + modifier-separated)"
     },
     "194": {
       "has_clean_result": false,
