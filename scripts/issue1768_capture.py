@@ -322,6 +322,23 @@ def _cleanup_merged(cleanup: Path | None) -> None:
         shutil.rmtree(cleanup, ignore_errors=True)
 
 
+def _assert_model_dir_alive(model_path: str, cleanup: Path | None) -> None:
+    """Fail LOUD (named) when a unit's resolved LOCAL model dir vanished
+    mid-unit. A vanished shared dir means a same-`_model_key` sibling's
+    exit-cleanup deleted it (the `_fanout_phase` co-scheduling guard exists to
+    prevent exactly that); without this assert the failure surfaces as a
+    misleading huggingface_hub HFValidationError treating the local path as a
+    Hub repo id (job 16120). No-op for repo-id resolutions (cleanup None)."""
+    if cleanup is not None and not Path(model_path).is_dir():
+        raise RuntimeError(
+            f"[shared-model-dir-vanished] {model_path} no longer exists mid-unit — "
+            "a concurrent same-arm unit's exit-cleanup deleted the shared "
+            "merged/staged model dir (merge -> consume -> delete lifecycle); the "
+            "_fanout_phase _model_key guard must keep same-key units from "
+            "running concurrently"
+        )
+
+
 # ── p0: registry + adapter probe + corpus inputs ─────────────────────────────
 
 
@@ -886,6 +903,7 @@ def run_corpus_unit(cfg: Cfg, unit_id: str) -> None:
     model_path, cleanup = _resolve_unit_model(cfg, unit_id)
     try:
         rows = _load_or_generate_rows(cfg, out_dir, unit_id, model_path)
+        _assert_model_dir_alive(model_path, cleanup)
         tokenizer = AutoTokenizer.from_pretrained(model_path)
         kept, dropped, seam_counts, n_prefix = _attach_spans(tokenizer, prompts, rows)
         valid_frac = len(kept) / max(1, len(rows))
@@ -907,6 +925,7 @@ def run_corpus_unit(cfg: Cfg, unit_id: str) -> None:
                 "n_distinct_prefix": n_prefix,
             },
         )
+        _assert_model_dir_alive(model_path, cleanup)
         pooled = _teacher_forced_span_means(
             model_path,
             kept,
@@ -982,6 +1001,7 @@ def run_corpus_tf_unit(cfg: Cfg, arm_id: str) -> None:
     rows = _read_rows_with_spans(base_dir)
     model_path, cleanup = _resolve_unit_model(cfg, arm_id)
     try:
+        _assert_model_dir_alive(model_path, cleanup)
         pooled = _teacher_forced_span_means(
             model_path,
             rows,
@@ -2279,6 +2299,25 @@ def _unit_ready(cfg: Cfg, phase: str, unit_arg: str) -> bool:
     return True
 
 
+def _model_key(cfg: Cfg, unit_arg: str) -> str | None:
+    """Shared LOCAL-model-dir key: units with equal keys resolve — and at exit
+    DELETE — the same `merged/<arm>` (or `ft_ckpt/<arm>`) dir, so two live
+    same-key units race the merge -> consume -> delete lifecycle: the first
+    finisher's exit-cleanup rmtree's the shared dir from under the survivor,
+    whose next `from_pretrained` on the vanished RELATIVE path falls through
+    transformers' isdir check into Hub repo-id validation (job 16120: lad2
+    co-scheduled imp-pers@r_{long,mid,short}; @r_mid exited first and its
+    cleanup killed both live siblings with HFValidationError). Same unit
+    extraction as `_needs_merge`; None = no shared local dir (base_* units
+    and model_override resolve repo ids / a shared snapshot — cleanup None)."""
+    if cfg.model_override:
+        return None
+    unit = unit_arg.split(":")[-1].split("@")[0]
+    if unit.startswith("base_"):
+        return None
+    return unit
+
+
 def _fanout_phase(cfg: Cfg, phase: str, phase_tag: str) -> None:
     _phase(phase_tag)
     units = _pending_units(cfg, phase)
@@ -2314,6 +2353,10 @@ def _fanout_phase(cfg: Cfg, phase: str, phase_tag: str) -> None:
             if not queue:
                 break
             active_merges = sum(1 for _p, ua, _t in running.values() if _needs_merge(cfg, ua))
+            # same-model-key serialization: never co-schedule two units sharing
+            # one merged/ft-staged dir — each deletes it at exit (job 16120)
+            live_keys = {_model_key(cfg, ua) for _p, ua, _t in running.values()}
+            live_keys.discard(None)
             nxt_i = next(
                 (
                     i
@@ -2321,6 +2364,7 @@ def _fanout_phase(cfg: Cfg, phase: str, phase_tag: str) -> None:
                     if (ua in barrier or not barrier_live)
                     and (not _needs_merge(cfg, ua) or active_merges < merge_slots)
                     and _unit_ready(cfg, phase, ua)
+                    and _model_key(cfg, ua) not in live_keys
                 ),
                 None,
             )
@@ -3504,6 +3548,7 @@ def _prefixed_capture_core(
             max_model_len=max_model_len,
         )
         gen_wall = time.time() - t0
+        _assert_model_dir_alive(model_path, cleanup)
         tokenizer = AutoTokenizer.from_pretrained(model_path)
         kept, dropped, seam_counts, n_prefix = _attach_spans(
             tokenizer,
@@ -3533,6 +3578,7 @@ def _prefixed_capture_core(
             },
         )
         t1 = time.time()
+        _assert_model_dir_alive(model_path, cleanup)
         pooled = _teacher_forced_span_means(
             model_path,
             kept,
@@ -3612,6 +3658,7 @@ def run_pfx_tf_unit(cfg: Cfg, unit_arg: str) -> None:
     rows = _read_rows_with_spans(base_dir)
     model_path, cleanup = _resolve_unit_model(cfg, arm_id)
     try:
+        _assert_model_dir_alive(model_path, cleanup)
         pooled = _teacher_forced_span_means(
             model_path,
             rows,
