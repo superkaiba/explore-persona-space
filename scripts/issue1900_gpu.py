@@ -145,6 +145,26 @@ def _atomic_json(path: Path, obj) -> None:
     os.replace(tmp, path)
 
 
+def ensure_out_dirs(cfg: Cfg) -> None:
+    """Create EVERY out-subdir this run's writers append/replace into.
+
+    Called at main() entry AND at worker_main() entry: pathlib append-open
+    (``out.open("a")``) creates NO parents, and a worker subprocess must never
+    assume a dir another process created (crash-fix r7, fellows job 16100:
+    workers 0+3 died FileNotFoundError opening validation/tf_margin_*.jsonl
+    — the ``validation/`` parent existed in no process). Individual writers
+    KEEP their local parent-mkdir guards (defense in depth; a future writer
+    under a NEW subdir stays self-sufficient); this is the process-level
+    floor, and its log line is the r7 fix-engaged signal per process.
+    """
+    dirs = [cfg.out_root, cfg.out_root / "logs", cfg.out_root / "config"]
+    dirs += [cfg.out_root / name for name in OUT_DIRS]
+    dirs.append(cfg.out_root / "anchors" / "post")
+    for d in dirs:
+        d.mkdir(parents=True, exist_ok=True)
+    logger.info("[fs] out dirs ensured under %s (%d dirs)", cfg.out_root, len(dirs))
+
+
 def _phase(name: str) -> None:
     print(f"[phase={name}]", flush=True)
 
@@ -784,13 +804,18 @@ def _p1a_pass_name(item: dict) -> str:
     return f"{model_tag}__on__{item['text_unit']}"
 
 
+def p1a_out_path(cfg: Cfg, item: dict) -> Path:
+    """P1a slots parquet path — SHARED by run_p1a_pass + fs-dryrun."""
+    return cfg.out_root / "marker_tf" / f"{_p1a_pass_name(item)}_slots.parquet"
+
+
 def run_p1a_pass(
     cfg: Cfg, pool: ModelPool, item: dict, subset: list[str], arms_by_id: dict
 ) -> Path:
     import pandas as pd
 
     name = _p1a_pass_name(item)
-    out = cfg.out_root / "marker_tf" / f"{name}_slots.parquet"
+    out = p1a_out_path(cfg, item)
     if out.exists():
         return out
     t0 = time.time()
@@ -1009,13 +1034,23 @@ def run_mirror_parity(cfg: Cfg, pool: ModelPool, arms_by_id: dict) -> dict:
 # ── P1b: anchors (base per mix; post per LoRA arm) ───────────────────────────
 
 
+def p1b_base_out_path(cfg: Cfg, mix_arm_id: str) -> Path:
+    """P1b base-anchor path — SHARED by run_p1b_base_anchor + fs-dryrun."""
+    return cfg.out_root / "anchors" / f"{mix_arm_id}.pt"
+
+
+def p1b_post_out_path(cfg: Cfg, arm_id: str) -> Path:
+    """P1b post-anchor path — SHARED by run_p1b_post_anchor + fs-dryrun."""
+    return cfg.out_root / "anchors" / "post" / f"{arm_id}.pt"
+
+
 def run_p1b_base_anchor(cfg: Cfg, item: dict) -> Path:
     import torch
 
     from explore_persona_space.analysis.representation_shift import _teacher_forced_span_means
 
     mix = item["mix_arm_id"]
-    out = cfg.out_root / "anchors" / f"{mix}.pt"
+    out = p1b_base_out_path(cfg, mix)
     if out.exists():
         return out
     rows, mix_meta = _mix_rows(cfg, mix)  # FULL consumed grain (plan §12.1)
@@ -1087,7 +1122,7 @@ def run_p1b_post_anchor(cfg: Cfg, pool: ModelPool, item: dict, arms_by_id: dict)
     arm_id = item["arm_id"]
     entry = arms_by_id[arm_id]
     assert entry["method"] == "lora", (arm_id, "post anchors are LoRA-only (plan §4 P1b)")
-    out = cfg.out_root / "anchors" / "post" / f"{arm_id}.pt"
+    out = p1b_post_out_path(cfg, arm_id)
     if out.exists():
         return out
     rows, _mix_meta = _mix_rows(cfg, entry["mix_arm_id"])
@@ -1117,6 +1152,14 @@ def run_p1b_post_anchor(cfg: Cfg, pool: ModelPool, item: dict, arms_by_id: dict)
 P1C_ARM = "syc-pers-po-lr1e5-s42"
 
 
+def p1c_out_paths(cfg: Cfg, side: str) -> tuple[Path, Path]:
+    """(jsonl, done) paths for one P1c side — SHARED by run_p1c_side + fs-dryrun."""
+    return (
+        cfg.out_root / "validation" / f"tf_margin_{side}.jsonl",
+        cfg.out_root / "validation" / f"tf_margin_{side}.done.json",
+    )
+
+
 def run_p1c_side(
     cfg: Cfg, pool: ModelPool, item: dict, subset: list[str], arms_by_id: dict
 ) -> Path:
@@ -1132,8 +1175,9 @@ def run_p1c_side(
     from explore_persona_space.eval.margin import build_fixed_pairs, compute_tf_margin
 
     side = item["side"]  # "arm" | "base"
-    out = cfg.out_root / "validation" / f"tf_margin_{side}.jsonl"
-    done = cfg.out_root / "validation" / f"tf_margin_{side}.done.json"
+    out, done = p1c_out_paths(cfg, side)
+    # r7 (job 16100): append-open creates NO parents — guard before ANY open("a").
+    out.parent.mkdir(parents=True, exist_ok=True)
     if done.exists():
         return out
     jf = json.loads((cfg.out_root / "config" / "judge_filter.json").read_text())
@@ -1222,14 +1266,28 @@ def _judge_splits(shas: list[str], subset: set[str], n_val: int = 800):
     return tr, val, judge
 
 
+def p1d_fit_name(item: dict, arms_by_id: dict) -> str:
+    """Fit-output stem for a P1d item — SHARED by run_p1d_fit + fs-dryrun."""
+    kind = item["fit_kind"]
+    if kind == "m0":
+        return f"m0_L{item['layer']}"
+    assert kind in ("mplus", "wmap"), kind
+    entry = arms_by_id[item["arm_id"]]
+    return f"{kind}_{entry['arm_id']}_L{entry['primary_layer']}"
+
+
+def p1d_out_paths(cfg: Cfg, name: str) -> tuple[Path, Path]:
+    """(pt, json) paths for one P1d fit — SHARED by _fit_and_persist + fs-dryrun."""
+    return cfg.out_root / "maps" / f"{name}.pt", cfg.out_root / "maps" / f"{name}.json"
+
+
 def _fit_and_persist(cfg: Cfg, name: str, Xd, Yd, tr, val, te) -> Path:
     """One `_fit_map` refit + identity+bias/kNN reads + payload persist."""
     import torch
 
     import issue1768_fit as F
 
-    out_pt = cfg.out_root / "maps" / f"{name}.pt"
-    out_js = cfg.out_root / "maps" / f"{name}.json"
+    out_pt, out_js = p1d_out_paths(cfg, name)
     if out_pt.exists() and out_js.exists():
         return out_pt
     t0 = time.time()
@@ -1268,14 +1326,14 @@ def run_p1d_fit(cfg: Cfg, item: dict, subset: list[str], arms_by_id: dict) -> Pa
         layer = item["layer"]
         c0, v0, shas = _base_matrices(cfg, "base_content", layer)
         tr, val, te = _judge_splits(shas, sub)
-        return _fit_and_persist(cfg, f"m0_L{layer}", c0, v0, tr, val, te)
+        return _fit_and_persist(cfg, p1d_fit_name(item, arms_by_id), c0, v0, tr, val, te)
     if kind == "mplus":
         entry = arms_by_id[item["arm_id"]]
         layer = entry["primary_layer"]
         cell = F.load_corpus_cell(entry["arm_id"], layer, cfg.i1768_root)
         tr, val, te = _judge_splits(cell["sha"], sub)
         return _fit_and_persist(
-            cfg, f"mplus_{entry['arm_id']}_L{layer}", cell["Cplus"], cell["Vplus"], tr, val, te
+            cfg, p1d_fit_name(item, arms_by_id), cell["Cplus"], cell["Vplus"], tr, val, te
         )
     assert kind == "wmap", kind
     entry = arms_by_id[item["arm_id"]]
@@ -1303,7 +1361,7 @@ def run_p1d_fit(cfg: Cfg, item: dict, subset: list[str], arms_by_id: dict) -> Pa
     tr = perm[800:]
     te = np.arange(n_pool, n_pool + len(tgt_judge))
     assert len(tr) > 3_584, (len(tr), "wmap n_train > d")
-    return _fit_and_persist(cfg, f"wmap_{entry['arm_id']}_L{layer}", Xd, Yd, tr, val, te)
+    return _fit_and_persist(cfg, p1d_fit_name(item, arms_by_id), Xd, Yd, tr, val, te)
 
 
 def wmap_siblings(entries: list[dict], target: dict) -> list[str]:
@@ -1409,7 +1467,7 @@ def _panel_anchor(cfg: Cfg, entry: dict, layer: int) -> tuple[np.ndarray, np.nda
 def _load_map_payload(cfg: Cfg, name: str):
     import torch
 
-    p = cfg.out_root / "maps" / f"{name}.pt"
+    p = p1d_out_paths(cfg, name)[0]
     if not p.exists():
         return None
     return torch.load(p, map_location="cpu", weights_only=False)["payload"]
@@ -1423,6 +1481,11 @@ def _apply_map(payload, rows: np.ndarray) -> np.ndarray:
     return np.asarray(n1m.apply_map(payload, rows, torch.device(_device())), dtype=np.float64)
 
 
+def p1e_out_path(cfg: Cfg, arm_id: str, layer: int) -> Path:
+    """P1e predictor-table path — SHARED by run_p1e_table + fs-dryrun."""
+    return cfg.out_root / "predictor_tables" / f"{arm_id}_L{layer}.parquet"
+
+
 def run_p1e_table(
     cfg: Cfg, entry: dict, layer: int, subset: set[str], sigma_by_layer: dict, rb: dict
 ) -> Path:
@@ -1432,7 +1495,7 @@ def run_p1e_table(
     import issue1768_fit as F
 
     arm_id = entry["arm_id"]
-    out = cfg.out_root / "predictor_tables" / f"{arm_id}_L{layer}.parquet"
+    out = p1e_out_path(cfg, arm_id, layer)
     if out.exists():
         return out
     cell = F.load_corpus_cell(arm_id, layer, cfg.i1768_root)
@@ -1585,7 +1648,7 @@ def run_p1e_table(
 def _load_map_payload_post(cfg: Cfg, arm_id: str):
     import torch
 
-    p = cfg.out_root / "anchors" / "post" / f"{arm_id}.pt"
+    p = p1b_post_out_path(cfg, arm_id)
     if not p.exists():
         return None
     return torch.load(p, map_location="cpu", weights_only=False)
@@ -1624,8 +1687,13 @@ def phase_tables(cfg: Cfg, entries: list[dict], subset: list[str]) -> dict:
 SHARD_BYTES = 9_000_000  # <9 MB — non-LFS Hub path (upload-policy line-split rule)
 
 
+def p1f_out_dir(cfg: Cfg) -> Path:
+    """P1f judge-inputs dir — SHARED by run_p1f_unit + fs-dryrun."""
+    return cfg.out_root / "judge_inputs"
+
+
 def run_p1f_unit(cfg: Cfg, unit_id: str, subset: list[str], prompt_by_sha: dict) -> list[Path]:
-    out_dir = cfg.out_root / "judge_inputs"
+    out_dir = p1f_out_dir(cfg)
     done = out_dir / f"{unit_id}.done.json"
     if done.exists():
         return [out_dir / n for n in json.loads(done.read_text())["shards"]]
@@ -1791,6 +1859,7 @@ def run_item(cfg: Cfg, pool: ModelPool, item: dict, subset: list[str], arms_by_i
 
 def worker_main(cfg: Cfg, subset: list[str], arms_payload: dict) -> None:
     """Per-GPU worker: run items where idx % n_slots == worker_slot."""
+    ensure_out_dirs(cfg)  # r7: workers never assume main-process-created dirs
     entries = _arm_entries(cfg, arms_payload)
     arms_by_id = {a["arm_id"]: a for a in entries}
     items = build_items(cfg, entries)
@@ -1900,6 +1969,174 @@ def run_ft_mix_probe(cfg: Cfg) -> dict:
     }
 
 
+# ── fs-dryrun (crash-fix r7): CPU-only writer-path exercise ─────────────────
+
+
+def _dryrun_entries() -> list[dict]:
+    """Synthetic arm registry spanning every item class `build_items` emits.
+
+    Fields limited to what the item-registry / path logic reads (arm_id,
+    kind, method, beh_key, mix_arm_id, primary_layer, ctx_key) — the dryrun
+    never loads models, stores, or the HF config. Includes P1C_ARM so the
+    p1c items are emitted even with smoke=False (build_items gates p1c on
+    its presence), plus a wmap sibling, a marker LoRA, a marker FT, and a
+    content FT arm — every registry branch.
+    """
+
+    def arm(arm_id: str, kind: str, method: str, beh_key: str) -> dict:
+        return {
+            "arm_id": arm_id,
+            "kind": kind,
+            "method": method,
+            "beh_key": beh_key,
+            "mix_arm_id": f"{arm_id}-mix",
+            "primary_layer": 19,
+            "ctx_key": "pers",
+        }
+
+    return [
+        arm(P1C_ARM, "content", "lora", "syc"),
+        arm("dry-content-lora-b", "content", "lora", "syc"),
+        arm("dry-marker-lora", "marker", "lora", "mk"),
+        arm("dry-marker-ft", "marker", "ft", "mk"),
+        arm("dry-content-ft", "content", "ft", "imp"),
+    ]
+
+
+def run_fs_dryrun(cfg: Cfg) -> dict:
+    """CPU-only filesystem dry-run of EVERY writer path (crash-fix r7).
+
+    Exercises the full main+worker directory-creation and writer-path logic
+    with tiny stub payloads — no CUDA, no models, no network: creates the
+    out-dirs exactly as main()/worker_main() do (``ensure_out_dirs``), then
+    for a simulated 4-slot worker layout (the fellows job-16100 shape) writes
+    a stub artifact at EVERY path the production run writes — via the SHARED
+    path helpers (p1a_out_path .. p1f_out_dir; no duplicated composition) and
+    the SAME write primitive + parent-dir guard behavior as each production
+    writer (parquet via to_parquet, .pt via tmp+os.replace, the P1c JSONL via
+    the job-16100 append-open, JSON via _atomic_json) — then replicates
+    phase_upload's local enumeration arithmetic (no hub calls). Writes land
+    under ``<out_root>/fs_dryrun/`` (never the production paths — a stub must
+    not satisfy a resume predicate) and are removed on success; a failure
+    leaves the scratch tree for forensics and exits nonzero. Exit 0 = every
+    production writer path is constructible in a fresh process.
+    """
+    import shutil
+
+    import pandas as pd
+    import torch
+
+    scratch = cfg.out_root / "fs_dryrun"
+    if scratch.exists():
+        shutil.rmtree(scratch)
+    dcfg = dataclasses.replace(cfg, out_root=scratch, upload=False)
+    entries = _dryrun_entries()
+    arms_by_id = {a["arm_id"]: a for a in entries}
+    items = build_items(dcfg, entries)
+    phases_seen: dict[str, int] = {}
+    tiny = pd.DataFrame({"sha": ["s0"], "v": [0.0]})
+
+    def _stub_pt(out: Path) -> None:
+        # mirrors run_p1b_* / _fit_and_persist: mkdir -> tmp in-dir -> os.replace
+        out.parent.mkdir(parents=True, exist_ok=True)
+        tmp = out.with_suffix(".pt.tmp")
+        torch.save({"fs_dryrun": True}, tmp)
+        os.replace(tmp, out)
+
+    # main-process sequence (mirrors main()): out_root mkdir + ensure_out_dirs
+    dcfg.out_root.mkdir(parents=True, exist_ok=True)
+    ensure_out_dirs(dcfg)
+    # config mirror stubs (production: hub.stage_hub_file -> out_root/config/<name>,
+    # which mkdirs target.parent itself — hub.py stage_hub_file)
+    for name in ("subset.json", "arms.json", "margin_chain.json", "judge_filter.json"):
+        _atomic_json(dcfg.out_root / "config" / name, {"fs_dryrun": True})
+    # pre-fleet main-process writers (stage done / P1a gate / mirror parity)
+    _atomic_json(dcfg.out_root / "p1_stage.done.json", {"fs_dryrun": True})
+    _atomic_json(dcfg.out_root / "marker_tf" / "adapter_gate.json", {"fs_dryrun": True})
+    _atomic_json(dcfg.out_root / "marker_tf" / "mirror_parity.json", {"fs_dryrun": True})
+    # simulated worker fan-out
+    n_slots = 4
+    logdir = dcfg.out_root / "logs"
+    logdir.mkdir(parents=True, exist_ok=True)  # mirrors _spawn_workers
+    for slot in range(n_slots):
+        wcfg = dataclasses.replace(dcfg, worker_slot=slot, n_slots=n_slots)
+        ensure_out_dirs(wcfg)  # mirrors worker_main() entry (idempotent)
+        with (logdir / f"worker{slot}.log").open("a") as fh:  # _spawn_workers log
+            fh.write("[fs-dryrun]\n")
+        for idx, item in enumerate(items):
+            if idx % wcfg.n_slots != wcfg.worker_slot:
+                continue
+            ph = item["phase"]
+            phases_seen[ph] = phases_seen.get(ph, 0) + 1
+            if ph == "p1a":
+                out = p1a_out_path(wcfg, item)
+                out.parent.mkdir(parents=True, exist_ok=True)  # run_p1a_pass guard
+                tiny.to_parquet(out, index=False)
+                _atomic_json(out.with_suffix(".meta.json"), {"fs_dryrun": True})
+            elif ph == "p1b_base":
+                _stub_pt(p1b_base_out_path(wcfg, item["mix_arm_id"]))
+            elif ph == "p1b_post":
+                _stub_pt(p1b_post_out_path(wcfg, item["arm_id"]))
+            elif ph == "p1c":
+                out, done = p1c_out_paths(wcfg, item["side"])
+                out.parent.mkdir(parents=True, exist_ok=True)  # run_p1c_side r7 guard
+                if out.exists():  # resume-read branch parity
+                    with out.open(encoding="utf-8") as fh:
+                        fh.read()
+                with out.open("a", encoding="utf-8") as fh:  # the job-16100 crash op
+                    fh.write(json.dumps({"fs_dryrun": True}) + "\n")
+                print(f"[fs-dryrun] p1c {item['side']}: validation/ append-open OK", flush=True)
+                _atomic_json(done, {"fs_dryrun": True})
+            elif ph == "p1d":
+                pt, js = p1d_out_paths(wcfg, p1d_fit_name(item, arms_by_id))
+                _stub_pt(pt)  # _fit_and_persist write shape
+                _atomic_json(js, {"fs_dryrun": True})
+            else:
+                raise AssertionError(f"fs-dryrun: unstubbed item phase {ph}")
+        _atomic_json(logdir / f"worker{slot}.done.json", {"fs_dryrun": True, "slot": slot})
+    # post-fleet main-process writers (gate parity / P1e tables / P1f shards)
+    _atomic_json(dcfg.out_root / "maps" / "gate_parity.json", {"fs_dryrun": True})
+    for e in entries:
+        for li in dcfg.table_layers():
+            out = p1e_out_path(dcfg, e["arm_id"], li)
+            out.parent.mkdir(parents=True, exist_ok=True)  # run_p1e_table guard
+            tiny.to_parquet(out, index=False)
+            _atomic_json(out.with_suffix(".meta.json"), {"fs_dryrun": True})
+    units = [e["arm_id"] for e in entries if e["kind"] == "content"] + ["base_content"]
+    for u in units:  # run_p1f_unit flush() + done-sentinel write shape
+        p = p1f_out_dir(dcfg) / f"{u}.shard00.jsonl"
+        p.parent.mkdir(parents=True, exist_ok=True)  # flush() guard
+        p.write_text(json.dumps({"fs_dryrun": True}) + "\n", encoding="utf-8")
+        _atomic_json(p1f_out_dir(dcfg) / f"{u}.done.json", {"fs_dryrun": True, "shards": [p.name]})
+    _atomic_json(dcfg.out_root / "gpu_phase_summary.json", {"fs_dryrun": True})
+    _atomic_json(dcfg.out_root / "p1_done.json", {"fs_dryrun": True})
+    # phase_upload local-enumeration arithmetic (no hub calls)
+    n_upload = 0
+    for name in OUT_DIRS:
+        local = dcfg.out_root / name
+        if not local.exists():
+            continue
+        files = sorted(p for p in local.rglob("*") if p.is_file() and not p.name.endswith(".tmp"))
+        prefix = f"{dcfg.hf_prefix}/{name}"
+        n_upload += len([f"{prefix}/{p.relative_to(local)}" for p in files])
+    required = {"p1a", "p1b_base", "p1b_post", "p1c", "p1d"}
+    missing = required - set(phases_seen)
+    assert not missing, f"fs-dryrun: item phases never exercised: {sorted(missing)}"
+    assert n_upload > 0, "fs-dryrun: upload enumeration saw zero files"
+    summary = {
+        "n_slots": n_slots,
+        "n_items": len(items),
+        "phases": phases_seen,
+        "n_upload_enumerated": n_upload,
+        "n_paths_written": sum(1 for p in dcfg.out_root.rglob("*") if p.is_file()),
+        "out_root": str(cfg.out_root),
+        "smoke": cfg.smoke,
+    }
+    shutil.rmtree(scratch)
+    print(f"[fs-dryrun] OK {json.dumps(summary)}", flush=True)
+    return summary
+
+
 # ── entrypoint ───────────────────────────────────────────────────────────────
 
 
@@ -1970,6 +2207,13 @@ def main() -> None:
         action="store_true",
         help="(h)(iv) 1-file staging + consumer-open probe; CPU-runnable; exit 0",
     )
+    ap.add_argument(
+        "--fs-dryrun",
+        action="store_true",
+        help="CPU-only writer-path dry-run: every sub-phase's output paths + a "
+        "simulated 4-worker slot layout, tiny stub payloads, no CUDA/models/network; "
+        "exit 0 = every path constructible (crash-fix r7)",
+    )
     args = ap.parse_args()
     if args.import_check:
         _run_import_check()
@@ -1984,9 +2228,13 @@ def main() -> None:
         n_slots=args.n_slots,
     )
     cfg.out_root.mkdir(parents=True, exist_ok=True)
+    if args.fs_dryrun:
+        run_fs_dryrun(cfg)  # CPU-only writer-path dry-run (crash-fix r7); no CUDA/network
+        sys.exit(0)
     if args.stage_probe:
         run_stage_probe(cfg)  # CPU-runnable (h)(iv) probe — VM pre-dispatch leg
         sys.exit(0)
+    ensure_out_dirs(cfg)  # r7 process-level floor (parent AND worker pass through here)
     subset, arms_payload = load_run_config(cfg)
     if cfg.smoke:
         pass  # subset order deterministic; smoke row cap applied per unit
