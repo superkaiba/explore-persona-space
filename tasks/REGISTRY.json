@@ -6669,8 +6669,8 @@
     "1861": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1861",
-      "status": "reviewing",
+      "path": "tasks/completed/1861",
+      "status": "completed",
       "title": "daily-fix: repo-root guard recognizes cd-to-worktree via var"
     },
     "1862": {
