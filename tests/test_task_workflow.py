@@ -3260,6 +3260,107 @@ def test_cli_concern_summary_at_cap_passes_untouched(concerns_task, capsys):
     assert "evidence" not in row
 
 
+def test_cli_address_concern_accepts_note_alias(monkeypatch, capsys):
+    """#1867: `--note` parses as an argparse alias of `--summary` on
+    address-concern (dest=summary), exercised through the REAL parser via
+    main() with sys.argv monkeypatched (a pre-built Namespace cannot pin
+    the parser surface). Pre-fix this argv exited 2 (unrecognized
+    argument). The library function is monkeypatched to capture kwargs —
+    no repo state is touched."""
+    task_cli = _import_task_cli()
+    captured = {}
+
+    def fake_address_concern(
+        task_id, concern_id, *, addressed_by, addressed_at_round, summary=None
+    ):
+        captured.update(
+            task_id=task_id,
+            concern_id=concern_id,
+            addressed_by=addressed_by,
+            addressed_at_round=addressed_at_round,
+            summary=summary,
+        )
+        return {"event": "addressed", "concern_id": concern_id}
+
+    monkeypatch.setattr(task_cli, "address_concern", fake_address_concern)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "task.py",
+            "address-concern",
+            "1",
+            "--concern-id",
+            "x",
+            "--by",
+            "implementer",
+            "--round",
+            "1",
+            "--note",
+            "fixed by rekeying",
+        ],
+    )
+    task_cli.main()
+    assert captured["summary"] == "fixed by rekeying"
+    assert captured["task_id"] == 1
+    assert captured["concern_id"] == "x"
+    assert captured["addressed_by"] == "implementer"
+    assert captured["addressed_at_round"] == 1
+    assert "WARNING" not in capsys.readouterr().err
+
+
+def test_cli_raise_concern_accepts_note_alias(monkeypatch, capsys):
+    """#1867: `--note` parses as an alias of the REQUIRED `--summary` on
+    raise-concern — providing --note alone satisfies the required
+    argument. Same real-parser-through-main() mechanism as the
+    address-concern alias test."""
+    task_cli = _import_task_cli()
+    captured = {}
+
+    def fake_raise_concern(
+        task_id, concern_id, *, severity, summary, raised_by, raised_at_round, evidence=None
+    ):
+        captured.update(
+            task_id=task_id,
+            concern_id=concern_id,
+            severity=severity,
+            summary=summary,
+            raised_by=raised_by,
+            raised_at_round=raised_at_round,
+            evidence=evidence,
+        )
+        return {"event": "raised", "concern_id": concern_id}
+
+    monkeypatch.setattr(task_cli, "raise_concern", fake_raise_concern)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "task.py",
+            "raise-concern",
+            "1",
+            "--concern-id",
+            "x",
+            "--severity",
+            "CONCERN",
+            "--by",
+            "code-reviewer",
+            "--round",
+            "1",
+            "--note",
+            "probe position undefined",
+        ],
+    )
+    task_cli.main()
+    assert captured["summary"] == "probe position undefined"
+    assert captured["severity"] == "CONCERN"
+    assert captured["task_id"] == 1
+    assert captured["raised_by"] == "code-reviewer"
+    assert captured["raised_at_round"] == 1
+    assert captured["evidence"] is None
+    assert "WARNING" not in capsys.readouterr().err
+
+
 # ─── paper-stub support (`paper: true` clean-result track) ─────────────────
 
 
