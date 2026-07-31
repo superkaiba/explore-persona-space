@@ -140,6 +140,9 @@ def main() -> int:
     # ---- model ------------------------------------------------------------
     model_id = "Qwen/Qwen2.5-7B-Instruct"
     tok = AutoTokenizer.from_pretrained(model_id)
+    # Qwen2.5 defaults to right-padding; batched generate() then continues past
+    # the pads on every row but the longest.
+    tok.padding_side = "left"
     model = AutoModelForCausalLM.from_pretrained(
         model_id, torch_dtype=torch.bfloat16, device_map="cuda"
     )
