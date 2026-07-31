@@ -973,3 +973,371 @@ def test_store_token_tiers_and_prefix_safety(monkeypatch):
     assert family("bnd_v1") is False, "an on-policy file must not satisfy the injected family"
     # ... whereas the retired substring probe WOULD have been satisfied:
     assert any("bnd_v1" in n for n in present) is True
+
+
+# ---------------------------------------------------------------------------
+# 3e. Judge SAMPLING design (the authorized n=300 stratified draw)
+# ---------------------------------------------------------------------------
+def _cell_rows(n: int = 900, cap_rate: float = 0.54, shuffle_seed: int = 7) -> list[dict]:
+    """A synthetic cell whose cap rate matches the measured ntpl shape."""
+    import random as _r
+
+    cut = round(cap_rate * 100)
+    rows = [
+        {
+            "conv_id": f"s{i:05d}",
+            "prompt": f"Question {i}?",
+            "response": f"answer {i}",
+            "capped": (i % 100) < cut,
+            "finish_reason": "length" if (i % 100) < cut else "stop",
+        }
+        for i in range(n)
+    ]
+    _r.Random(shuffle_seed).shuffle(rows)  # input file order must not matter
+    return rows
+
+
+def test_sample_is_seeded_and_independent_of_row_file_order(monkeypatch):
+    jl = _judge_module(monkeypatch)
+    rows = _cell_rows()
+    a, da = jl.stratified_sample(rows, 300, 1345, "helios")
+    b, _ = jl.stratified_sample(list(reversed(rows)), 300, 1345, "helios")
+    assert [r["conv_id"] for r in a] == [r["conv_id"] for r in b]
+    # A different seed must actually move the draw (else the seed is decorative).
+    d, _ = jl.stratified_sample(rows, 300, 999, "helios")
+    assert {r["conv_id"] for r in d} != {r["conv_id"] for r in a}
+    assert da["realized_n"] == 300 and len(set(da["conv_ids"])) == 300
+
+
+def test_sample_preserves_the_cells_capped_rate(monkeypatch):
+    """The load-bearing property: a capped answer stops mid-sentence, so its
+    Y_boundary target is artificial — the draw must not shift the cap mix."""
+    jl = _judge_module(monkeypatch)
+    for rate in (0.05, 0.54, 0.9):
+        rows = _cell_rows(cap_rate=rate)
+        _s, d = jl.stratified_sample(rows, 300, 1345, "helios")
+        assert d["realized_n"] == 300
+        assert abs(d["realized_capped_rate"] - d["eligible_capped_rate"]) < 0.01, d
+
+
+def test_sample_takes_all_rows_of_a_small_cell_and_records_realized_n(monkeypatch):
+    """A yield-floor-halted cell is smaller than the target; it is never padded
+    and the report must read the realized n, not the target."""
+    jl = _judge_module(monkeypatch)
+    rows = _cell_rows(n=180)
+    s, d = jl.stratified_sample(rows, 300, 1345, "wren")
+    assert d["take_all"] is True and d["realized_n"] == 180 == len(s)
+    assert d["n_target"] == 300, "the target stays on the record next to the realized n"
+
+
+def test_degenerate_strata_do_not_break_the_draw(monkeypatch):
+    """All-capped / no-capped cells exercise the stratum-clamp + top-up branches
+    (the gate branches the main draw deliberately never reaches)."""
+    jl = _judge_module(monkeypatch)
+    allcap = [dict(r, capped=True, finish_reason="length") for r in _cell_rows(n=700)]
+    _s, d = jl.stratified_sample(allcap, 300, 1345, "x")
+    assert d["strata_targets"] == {"capped": 300, "natural": 0} and d["realized_capped"] == 300
+    nocap = [dict(r, capped=False, finish_reason="stop") for r in _cell_rows(n=700)]
+    _s, d2 = jl.stratified_sample(nocap, 300, 1345, "x")
+    assert d2["strata_targets"] == {"capped": 0, "natural": 300} and d2["realized_capped"] == 0
+
+
+def test_both_legs_draw_together_and_the_filtered_leg_nests(monkeypatch):
+    """Seed material is (seed, tag) and NOT the leg, so ai_likeness and
+    content_drift judge the SAME conv_ids where eligibility is universal, and
+    overlapping ones where the drift leg filters to rows with an injected twin."""
+    jl = _judge_module(monkeypatch)
+    rows = _cell_rows()
+    a, _ = jl.stratified_sample(rows, 300, 1345, "vex")  # ai_likeness frame
+    b, _ = jl.stratified_sample(rows, 300, 1345, "vex")  # drift, same frame
+    assert [r["conv_id"] for r in a] == [r["conv_id"] for r in b]
+    twinned = {r["conv_id"] for r in rows[:600]}
+    _f, df = jl.stratified_sample(
+        rows, 300, 1345, "vex", eligible=lambda r: r["conv_id"] in twinned
+    )
+    assert df["realized_n"] == 300 and set(df["conv_ids"]) <= twinned
+    assert set(df["conv_ids"]) & {r["conv_id"] for r in a}, "the legs would be unpaired draws"
+
+
+def test_capped_of_falls_back_to_finish_reason(monkeypatch):
+    jl = _judge_module(monkeypatch)
+    assert jl.capped_of({"capped": True}) is True
+    assert jl.capped_of({"capped": False, "finish_reason": "length"}) is False  # flag wins
+    # A row file written before the flag landed still strata correctly.
+    assert jl.capped_of({"finish_reason": "length"}) is True
+    assert jl.capped_of({"finish_reason": "stop"}) is False
+    assert jl.capped_of({}) is False
+
+
+def test_sub_means_split_capped_from_natural_and_exclude_unscored(monkeypatch):
+    jl = _judge_module(monkeypatch)
+    rows = [{"conv_id": f"s{i}", "capped": i < 4} for i in range(10)]
+    cmap = jl.capped_by_item(jl.LEG_AI_LIKENESS, "helios", rows)
+    assert len(cmap) == 10 and sum(cmap.values()) == 4
+    scores = {iid: (80.0 if cap else 20.0) for iid, cap in cmap.items()}
+    dropped = next(iid for iid, cap in cmap.items() if cap)
+    scores[dropped] = None  # every draw dropped -> excluded, never coerced
+    m = jl.sub_means(scores, cmap)
+    assert m["capped"] == {"n": 3, "mean": 80.0}
+    assert m["natural"] == {"n": 6, "mean": 20.0}
+    assert m["pooled"]["n"] == 9 and m["n_unscored_items"] == 1
+
+
+def test_selection_caveat_travels_with_the_halted_cells(monkeypatch):
+    """The 5 rc=21 cells' kept rows are a SELECTED subset; the caveat must ride
+    the report, not a separate footnote. Dana + Wren are labelling characters."""
+    jl = _judge_module(monkeypatch)
+    assert set(jl.YIELD_FLOOR_HALTED_CELLS) == {
+        "helios_base",
+        "wren",
+        "wren_base",
+        "dana",
+        "vex_base",
+    }
+    for tag in jl.YIELD_FLOOR_HALTED_CELLS:
+        _s, d = jl.stratified_sample(_cell_rows(n=120), 300, 1345, tag)
+        assert d["yield_floor_halted_cell"] is True
+    _s, d = jl.stratified_sample(_cell_rows(n=120), 300, 1345, "helios")
+    assert d["yield_floor_halted_cell"] is False
+
+
+def test_batch_routing_is_forced_for_the_authorized_run(monkeypatch):
+    """A cell-leg is 300 items x 5 draws = 1,500 calls, UNDER the client's
+    default sync-vs-batch crossover (base=2000) — so the default would dispatch
+    every cell SYNC. 0 forces the authorized Batch path."""
+    jl = _judge_module(monkeypatch)
+    import inspect
+
+    assert jl.THRESHOLD_BASE_FORCE_BATCH == 0
+    assert 300 * jl.N_DRAWS < 2000, "the sizing premise behind forcing the path"
+    sig = inspect.signature(jl.run_leg)
+    assert sig.parameters["threshold_base"].default == jl.THRESHOLD_BASE_FORCE_BATCH
+    src = inspect.getsource(jl.run_leg)
+    assert "threshold_base=threshold_base" in src, "must reach judge_graded"
+    # judge_graded really accepts it (an ABI drift would silently re-sync).
+    from explore_persona_space.eval.graded_judge import judge_graded
+
+    assert "threshold_base" in inspect.signature(judge_graded).parameters
+
+
+def test_sample_design_is_persisted_before_any_dispatch(monkeypatch):
+    """A mid-batch failure must lose no design: the draw is written BEFORE
+    judge_graded is called, not after it returns."""
+    jl = _judge_module(monkeypatch)
+    import inspect
+
+    src = inspect.getsource(jl.run_leg)
+    i_write = src.index("judge_sample_")
+    i_judge = src.index("judge_graded(")
+    assert i_write < i_judge, "the design manifest must be written before dispatch"
+
+
+def test_content_drop_classes_reports_absent_save_raw(tmp_path, monkeypatch):
+    """Dry-run makes no calls, so there is no save_raw — the classifier must say
+    so rather than reporting a zeroed-out clean bill of health."""
+    jl = _judge_module(monkeypatch)
+    out = jl.content_drop_classes(tmp_path / "nope.json", [("ail_x_s1", "q", "a")])
+    assert out["available"] is False and "absent" in out["reason"]
+
+
+def test_content_drop_classes_splits_refusal_from_parse_error(tmp_path, monkeypatch):
+    """The three-way split's content side: a REFUSAL residue is expected, a
+    parse/malformed residue is the rule-23 truncation signature (#1934's fence
+    class would land in parse_error)."""
+    jl = _judge_module(monkeypatch)
+    import json as _j
+
+    items = [(f"ail_x_s{i}", "q", "a") for i in range(4)]
+    raw = {
+        "all_scores": {
+            "ail_x_s0__00000__00": {"score": 71},  # scored
+            "ail_x_s1__00001__00": {"score": "REFUSAL"},
+            "ail_x_s2__00002__00": {
+                "aligned": None,
+                "coherent": None,
+                "reasoning": "parse_error",
+                "error": True,
+            },
+            "ail_x_s3__00003__00": {"score": 999},  # out of range -> malformed
+        }
+    }
+    p = tmp_path / "judge_raw.json"
+    p.write_text(_j.dumps(raw))
+    out = jl.content_drop_classes(p, items)
+    assert out["available"] is True
+    assert out["refusal"] == 1 and out["parse_error"] == 1 and out["other_malformed"] == 1
+
+
+# ---------------------------------------------------------------------------
+# 3f. Judge-row PREP — the recovered stratifier + the span-answer extraction
+# ---------------------------------------------------------------------------
+def _prep_module(monkeypatch):
+    monkeypatch.setenv("EPM_I1345_VARIANT", "story_boundary_ablation")
+    monkeypatch.setenv("EPM_STORY_CHARACTER_NAME", "Assistant")
+    import issue1345_judge_rows_prep as prep
+
+    return prep
+
+
+def _story_row(conv_id: str, answer: str = "X is a thing that does stuff, at length.") -> dict:
+    story = f"Human: What is X?\n\nAssistant: {answer}\n"
+    q0, q1 = story.index("What"), story.index("?") + 1
+    a0 = story.index(answer)
+    return {
+        "conv_id": conv_id,
+        "question": story[q0:q1],
+        "story": story,
+        "parsed_turns": [{"q_start": q0, "q_end": q1, "a_start": a0, "a_end": a0 + len(answer)}],
+    }
+
+
+def test_prep_recovers_capped_from_the_raw_finish_reason_join(monkeypatch):
+    """The uploaded on-policy row files carry NO `capped` — without the join the
+    stratifier reads all-natural and the draw silently stops being stratified."""
+    prep = _prep_module(monkeypatch)
+    rows = [
+        {"conv_id": f"s{i}", "prompt": "Q?", "response": "a long enough answer"} for i in range(4)
+    ]
+    assert not any("capped" in r or "finish_reason" in r for r in rows), (
+        "fixture must mirror the gap"
+    )
+    idx = {"s0": True, "s1": True, "s2": False, "s3": False}
+    out, stats = prep.prepare(rows, idx, cell="op_x")
+    assert stats["capped_source"] == "raw_finish_reason_join"
+    assert stats["n_capped"] == 2 and stats["capped_rate"] == 0.5
+    assert [r["capped"] for r in out] == [True, True, False, False]
+
+
+def test_prep_fails_loud_on_a_partial_raw_join(monkeypatch):
+    """The raw pool is a SUPERSET of kept rows, so a miss means the wrong raw
+    file — cap stratification built on a partial join is silently wrong."""
+    prep = _prep_module(monkeypatch)
+    rows = [
+        {"conv_id": f"s{i}", "prompt": "Q?", "response": "a long enough answer"} for i in range(3)
+    ]
+    with pytest.raises(AssertionError, match="no raw finish_reason"):
+        prep.prepare(rows, {"s0": True}, cell="op_x")
+
+
+def test_prep_extracts_char_cell_answers_from_the_story_span(monkeypatch):
+    """Character on-policy rows carry no `answer` field at all (their injected
+    siblings do) — the answer is story[a_start:a_end]."""
+    prep = _prep_module(monkeypatch)
+    row = _story_row("s1")
+    assert "answer" not in row and "response" not in row
+    text, src = prep.answer_of(row)
+    assert src == "parsed_turns_span" and text.startswith("X is a thing")
+    assert prep.question_of(row) == "What is X?"
+
+
+def test_prep_rejects_a_span_that_no_longer_indexes_the_answer(monkeypatch):
+    """A row with BOTH an answer field and a span is cross-checked — the #825
+    mis-sliced-span class must not reach the judge as rated text."""
+    prep = _prep_module(monkeypatch)
+    row = dict(_story_row("s1"), answer="something else entirely, not the span")
+    with pytest.raises(AssertionError, match="does not index the answer slot"):
+        prep.answer_of(row)
+
+
+def test_prep_drops_degenerate_spans_but_never_length_filters(monkeypatch):
+    """A 0-4-char span is a stray character, not an answer: dropped AND counted.
+    The floor stays minimal because answer LENGTH correlates with the very
+    AI-likeness the rubric isolates — a length filter would bias that axis."""
+    prep = _prep_module(monkeypatch)
+    assert prep.ANSWER_CHAR_FLOOR <= 8, "a higher floor would length-bias the AI-likeness read"
+    good = [_story_row(f"g{i}") for i in range(60)]
+    tiny = _story_row("t0", answer="X")
+    out, stats = prep.prepare([*good, tiny], None, cell="char_x_op")
+    assert stats["n_short_answer"] == 1 and len(out) == 60
+    assert all(r["conv_id"] != "t0" for r in out)
+    # p1 of the real character cells is 22-30 chars: a 22-char answer is KEPT.
+    kept, _ = prep.prepare([_story_row("k0", answer="A" * 22)], None, cell="char_x_op")
+    assert len(kept) == 1
+
+
+def test_prep_fails_loud_when_the_short_tail_is_systemic(monkeypatch):
+    """0.1-0.6% sub-floor is the measured data tail; a large share is the
+    extraction breaking, which must not pass as a tail."""
+    prep = _prep_module(monkeypatch)
+    with pytest.raises(AssertionError, match="extraction break"):
+        prep.prepare([_story_row(f"t{i}", answer="X") for i in range(10)], None, cell="char_x_op")
+
+
+def test_short_field_answers_are_data_not_an_extraction_break(monkeypatch):
+    """The real corpus reference has 103/5000 (2.1%) answers under the floor —
+    genuine one-word replies. Only a SPAN can be mis-sliced, so the
+    systemic-break ceiling keys on span-derived answers; a short FIELD answer is
+    dropped and counted without tripping it."""
+    prep = _prep_module(monkeypatch)
+    rows = [
+        {"conv_id": f"s{i}", "prompt": "Q?", "response": "a long enough answer"} for i in range(90)
+    ]
+    rows += [{"conv_id": f"t{i}", "prompt": "Q?", "response": "ok"} for i in range(10)]  # 10%
+    out, stats = prep.prepare(rows, None, cell="track_s_injected")
+    assert len(out) == 90 and stats["n_short_answer"] == 10
+    assert stats["n_short_by_source"] == {"response": 10}
+    assert stats["span_short_share"] == 0.0, "no span answers -> no span-break signal"
+    assert stats["short_answer_drop_share"] == 0.1
+
+
+def test_corpus_rows_take_their_conv_id_from_the_canonical_derivation(monkeypatch):
+    """track_s rows carry {prompt_idx, prompt, response} and NO conv_id. The
+    drift pairing key must come from the same to_single_turn the capture used to
+    build the injected stores, not a re-derived convention free to drift."""
+    prep = _prep_module(monkeypatch)
+    from issue825_extract_turnstore import to_single_turn
+
+    row = {"prompt_idx": 7, "prompt": "Q?", "response": "the corpus answer, long enough"}
+    assert "conv_id" not in row
+    assert prep.normalize_source_row(row)["conv_id"] == to_single_turn(row)["conv_id"] == "s7"
+    out, _st = prep.prepare([row], None, cell="track_s_injected")
+    assert out[0]["conv_id"] == "s7" and out[0]["question"] == "Q?"
+
+
+# ---------------------------------------------------------------------------
+# 3g. Judge-leg RUN table (the 20 authorized cell-legs)
+# ---------------------------------------------------------------------------
+def test_judge_run_table_covers_both_provenances_and_the_right_references():
+    """20 cell-legs: 16 character cells on ai_likeness (BOTH provenances, so the
+    labelling axis is a paired arm) + 4 on-policy answer cells on content_drift,
+    each against the injected twin its own store was built from."""
+    import re
+    from pathlib import Path
+
+    src = Path("scripts/issue1345_judge_legs_run.sh").read_text()
+    # The character loop enumerates 4 characters x 4 suffixes = 16 ai_likeness cells.
+    chars = re.search(r"for ch in ([a-z ]+); do", src).group(1).split()
+    suffixes = re.search(r'for suffix in ((?:"[^"]*" ?)+); do', src).group(1)
+    n_suffix = len(re.findall(r'"[^"]*"', suffixes))
+    assert sorted(chars) == ["dana", "helios", "vex", "wren"], chars
+    assert n_suffix == 4, "both provenances x both models = 4 suffixes per character"
+    assert len(chars) * n_suffix == 16
+    # The drift cells and their references, explicitly.
+    drift = dict(re.findall(r'CELLS\+=\("(\w+):content_drift:(\w+)"\)', src))
+    assert drift == {
+        "op_ntpl_instruct": "track_s_injected",
+        "op_ntpl_base": "track_s_injected",
+        "op_chat_base": "track_s_injected",
+        "op_slot_base": "v1_injected",
+    }, drift
+    assert len(chars) * n_suffix + len(drift) == 20, "the authorized 20 cell-legs"
+    # Spend stays double-gated: the driver FORWARDS the caller's flags and never
+    # arms --execute itself, so no invocation of the driver alone can bill.
+    built_args = re.search(r"args=\((.*?)\)\n", src, re.S).group(1)
+    assert "--execute" not in built_args, f"driver must not self-arm spend: {built_args}"
+    assert '"${EXTRA[@]}"' in src, "the caller's flags must reach the judge CLI"
+    assert "EPM_I1345_JUDGE_SPEND_OK" in src, "the env ack must be documented at the entrypoint"
+    # A single cell's failure must not strand the other 19.
+    assert "continuing with the remaining cells" in src
+
+
+def test_judge_run_uses_prepared_rows_not_raw_uploads():
+    """The raw uploads carry no `capped` and the character cells carry no
+    `answer`; the driver must consume the PREPARED rows, or the stratifier is
+    silently all-natural."""
+    from pathlib import Path
+
+    src = Path("scripts/issue1345_judge_legs_run.sh").read_text()
+    assert "judge_prep" in src, "must default to the prepared-rows dir"
+    assert "issue1345_judge_rows_prep.py first" in src, "a missing prep must say what to run"
+    assert "OMP_NUM_THREADS=8" in src, "shared-VM thread caps"
