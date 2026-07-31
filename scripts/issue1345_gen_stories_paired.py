@@ -145,6 +145,15 @@ assert "\n" not in PERSONA_DESC, (
     f"EPM_I1345_PERSONA_DESC must be a single line (got {PERSONA_DESC!r}) — it is "
     "spliced into a one-sentence character intro"
 )
+# A char_* variant WITHOUT a description would silently generate the bare
+# "an AI assistant named X" intro — wrong for the non-AI panel members (Dana is
+# "an ordinary, unremarkable everyday person"), invisible until someone reads the
+# stories, and the exact axis the AI-likeness judge leg measures. Fail at import.
+assert not (c.VARIANT.startswith("char_") and not PERSONA_DESC), (
+    f"variant {c.VARIANT!r} is a character arm but EPM_I1345_PERSONA_DESC is empty — "
+    "the wrapper would assert AI-ness for every character; export the description "
+    "verbatim from issue1310_common.PERSONAS"
+)
 _CHAR_INTRO = (
     f"a character named {c.STORY_CHARACTER_NAME}, {PERSONA_DESC}"
     if PERSONA_DESC

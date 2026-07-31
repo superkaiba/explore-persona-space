@@ -545,9 +545,23 @@ def render_comparator(comparator: str, convs: list[dict], tokenizer) -> tuple[li
     return rendered, stats
 
 
-def load_comparator_convs(dl_dir: Path, keep_ids: set[str] | None) -> list[dict]:
-    """Pinned parent track-S rows -> single-turn conversations (parent recipe)."""
-    path = c.stage_pinned_file(c.PARENT_TRACK_S_JSONL, dl_dir)
+def load_comparator_convs(
+    dl_dir: Path, keep_ids: set[str] | None, *, convs_jsonl: Path | None = None
+) -> list[dict]:
+    """Pinned parent track-S rows -> single-turn conversations (parent recipe).
+
+    ``convs_jsonl`` overrides the source with a local `{conv_id, prompt,
+    response}` JSONL — the ON-POLICY answer rows from
+    `issue1345_onpolicy_answers_gen.py`, whose `prompt`/`response` keys
+    `ex.to_single_turn` maps to u1/a1 exactly as it does the pinned rows. Absent
+    the flag this is byte-identical to the pinned-parent path.
+    """
+    if convs_jsonl is not None:
+        path = convs_jsonl
+        assert path.exists(), f"--convs-jsonl source missing: {path}"
+        print(f"[capture] comparator convs from {path} (on-policy override)", flush=True)
+    else:
+        path = c.stage_pinned_file(c.PARENT_TRACK_S_JSONL, dl_dir)
     rows = c.read_jsonl(path)
     assert rows, f"no rows in {path}"
     convs = [ex.to_single_turn(r) for r in rows]
@@ -761,6 +775,24 @@ def main() -> None:
         "LAUNCHER env (gotchas.md CVD family) — this value is recorded in the sidecar "
         "and asserted consistent with the visible device count",
     )
+    ap.add_argument(
+        "--convs-jsonl",
+        type=Path,
+        default=None,
+        help="--comparator ONLY: read the conversations from a local {conv_id, prompt, "
+        "response} JSONL (the on-policy answer rows) instead of the pinned parent "
+        "track-S corpus. Requires --skip-upload AND a non-default --out-dir: the store "
+        "stem is provenance-blind until the on-policy store keys land, so an on-policy "
+        "capture must not write the teacher-forced comparator's paths",
+    )
+    ap.add_argument(
+        "--stories-jsonl",
+        type=Path,
+        default=None,
+        help="--arm ONLY: read the kept stories from a local {conv_id, story, answer, "
+        "parsed_turns} JSONL (the on-policy story-slot rows) instead of this round's "
+        "gen output / the pinned V1 bundle. Same clobber guard as --convs-jsonl",
+    )
     ap.add_argument("--skip-upload", action="store_true", help="local-only (smoke plumbing)")
     ap.add_argument("--smoke", action="store_true", help="first 8 rows; causal check ON")
     ap.add_argument(
@@ -784,6 +816,26 @@ def main() -> None:
     assert bool(args.arm) != bool(args.comparator), (
         "pass exactly one of --arm (an ablation arm) or --comparator (chat / no_template)"
     )
+    # Clobber guard for BOTH on-policy source overrides: `stem_for` /
+    # `persist_store` / the sidecar `regime` derive the store paths from the
+    # arm-or-comparator key ALONE, so an on-policy capture would overwrite its
+    # teacher-forced twin's store on both surfaces. Refuse until the
+    # provenance-distinct store keys are registered.
+    if args.convs_jsonl is not None:
+        assert args.comparator, "--convs-jsonl applies to --comparator captures only"
+    if args.stories_jsonl is not None:
+        assert args.arm, "--stories-jsonl applies to --arm captures only"
+    for flag, val in (("--convs-jsonl", args.convs_jsonl), ("--stories-jsonl", args.stories_jsonl)):
+        if val is None:
+            continue
+        assert args.skip_upload, (
+            f"{flag} requires --skip-upload: the store stem is provenance-blind, so the "
+            "upload would overwrite the teacher-forced store on HF"
+        )
+        assert args.out_dir != c.TURNSTORE_DIR, (
+            f"{flag} requires a non-default --out-dir (got the canonical "
+            f"{c.TURNSTORE_DIR}): the local shards would overwrite the teacher-forced store"
+        )
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
     key: str
@@ -815,7 +867,19 @@ def main() -> None:
     model, tokenizer, model_id = ex.load_model(args.model, tiny_model_dir=args.tiny_model_dir)
 
     if args.arm:
-        if key == V1_ARM:
+        if args.stories_jsonl is not None:
+            # On-policy story-slot rows: same kept-stories schema, local source.
+            assert args.stories_jsonl.exists(), (
+                f"--stories-jsonl source missing: {args.stories_jsonl}"
+            )
+            stories = c.read_jsonl(args.stories_jsonl)
+            assert stories, f"{args.stories_jsonl} is empty"
+            print(
+                f"[capture] kept stories from {args.stories_jsonl} "
+                f"({len(stories)} rows, on-policy override)",
+                flush=True,
+            )
+        elif key == V1_ARM:
             stories = load_v1_stories(args.dl_dir)
         else:
             kept = bg.kept_path(args.stories_dir, key)
@@ -828,7 +892,7 @@ def main() -> None:
         rendered, render_stats = render_arm(key, stories, tokenizer)
     else:
         keep_ids = arm_kept_conv_ids(args.stories_dir, bg.GEN_ARMS, v1_dl_dir=args.dl_dir)
-        convs = load_comparator_convs(args.dl_dir, keep_ids)
+        convs = load_comparator_convs(args.dl_dir, keep_ids, convs_jsonl=args.convs_jsonl)
         if args.smoke:
             convs = convs[:8]
             print(f"[smoke] limiting to {len(convs)} {key} conversations", flush=True)
