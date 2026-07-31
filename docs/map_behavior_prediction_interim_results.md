@@ -7,17 +7,21 @@
 > Task: <https://eps.superkaiba.com/tasks/1739>. Full pre-registered plan:
 > [`docs/map_behavior_prediction_plan.md`](map_behavior_prediction_plan.md).
 >
-> **New in this update (2026-07-31)** — four result families, all in
+> **New in this update (2026-07-31)** — five result families, all in
 > [§ New in this update](#new-in-this-update-2026-07-31):
-> (1) a **fourth evaluation column**, random held-out WildChat, where the map arm is the best
-> feasible method on evil and hallucination; (2) **nonlinear maps (MLP, kernel ridge) lose to the
-> linear map** on every behavior — the round-B question answered negatively; (3) the **evil
-> composition-factor gain does not replicate** on sycophancy or hallucination for the projection
-> arm — it reverses, which corrects takeaway 7 below; (4) the **naturalistic persona-vector
-> regime ladder** extended to sycophancy (E2p on top, as for evil) and hallucination
-> (sign-unstable — construct failure). Everything in `## Results` below is unchanged and is
-> **context, previously reported**. The sycophancy main lane's own full fold is still pending;
-> its numbers appear here only where they serve these four families.
+> (1) the **bare-query round** — stripping the prefix and showing the predictor only the user
+> query *raises* sycophancy prediction, *flips the sign* on hallucination, and *destroys* evil,
+> which localizes each behavior's predictive variance (it also carries an **unresolved
+> null-arm anomaly** — read that flag before using its numbers); (2) a **fourth evaluation
+> column**, random held-out WildChat, where the map arm is the best feasible method on evil and
+> hallucination; (3) **nonlinear maps (MLP, kernel ridge) lose to the linear map** on every
+> behavior — the round-B question answered negatively; (4) the **evil composition-factor gain
+> does not replicate** on sycophancy or hallucination for the projection arm — it reverses, which
+> corrects takeaway 7 below; (5) the **naturalistic persona-vector regime ladder** extended to
+> sycophancy (E2p on top, as for evil) and hallucination (sign-unstable — construct failure).
+> Everything in `## Results` below is unchanged and is **context, previously reported**. The
+> sycophancy main lane's own full fold is still pending; its numbers appear here only where they
+> serve these families.
 
 ## Motivation
 
@@ -71,8 +75,133 @@ experiment exists to test); **PV proj. on context** is Persona Vectors' own meth
 persona vector directly on the context state); **direct ridge** regresses expression on the
 context state from labels; **oracle** projects the persona vector on the model's *true* answer
 state (an upper bound that needs the answer already generated); **shuffled map** is the
-nonsense-map control. All four sections report both input states — the pre-query **prefix end
-state** and the full **context end state** (context = prefix + user query).
+nonsense-map control. Two input states recur throughout: the pre-query **prefix end state** and
+the full **context end state** (context = prefix + user query). Every section below reports both,
+with one stated exception — the bare-query round, whose prefix variant is a degenerate constant by
+construction and is therefore reported as a null probe rather than an arm sweep.
+
+### Does the bare user query predict the behavior? (new — bare-query round)
+
+If the map arm predicts behavior from the full context, how much of that is the *query* versus
+the *prefix* (the persona, jailbreak framing, or conversation history that precedes it)? This
+round answers that by changing **only the predictor's input render**.
+
+Design, stated exactly. The **behavior labels are unchanged** — the same WildChat-rung judged DV
+described in the fourth-column section below, scored on rollouts the model generated under the **full
+context**. Only the predictor side changes: the final user query is re-rendered **bare**
+(chat-template head + query, prefix stripped) and activations are captured at that render. No new
+generation and no new judging (`judge_called: false` in `bareq_score_done.json`), so the DV, the
+eval set and the frozen layers are held fixed and the render is the single manipulated variable.
+
+The manipulation is only well-posed where a real prefix existed, and the artifacts record which
+case each behavior is in (`meta.render_match`, whose `agrees_with_expected` is `true` for all
+three):
+
+- **Sycophancy and hallucination corpora are *already* bare.** Their train contexts carry a
+  constant template head on every row — measured over all 16,000 train rows, per-layer cosine
+  ≥ 0.9995 (sycophancy) and ≥ 0.9991 (hallucination). So their committed ridge-on-context maps
+  *are already* bare-query maps, and a dedicated bare fit would be "the identical fit on the
+  identical inputs" — recorded as an explicit `leg2_noop`. Only the **eval-side render** changes
+  for these two; the leg is render-**matched**.
+- **Evil's train pool is prefix-crossed** (390 unique queries spread over 8,000 contexts, ≈20.5
+  contexts per query; measured train-prefix cosine falls to 0.657 early / 0.049 flat over 6,468
+  rows — decisively not constant), so it needed a **dedicated bare-fit leg 2** with by-query group
+  folds (`group-roundrobin-k5`, 390 queries, no query straddling a fold, 1,140–1,351 rows per
+  fold). Evil's leg 1 — the context-trained arms applied to bare reps — is render-**mismatched by
+  construction** and is shown only as the intermediate.
+
+What is plotted: Spearman ρ per arm against the judged DV, one panel per behavior, one bar per
+render condition; error bars are the 95% bootstrap CI over contexts from each row's `ci_frozen`,
+drawn as non-negative offsets. **Colour encodes the render condition only** (purple = full
+context, teal = bare query with train-fit arms, brown = evil's dedicated bare fit) — deliberately
+a different palette from the map-family and regime figures elsewhere in this writeup. Coverage per
+behavior: roughly half the eval contexts took a fresh bare capture (1,008 of 1,982 sycophancy /
+1,004 of 1,967 hallucination / 1,009 of 1,987 evil) and the rest reused their committed
+WildChat-rung rep, which for a single-turn context *is* its bare rep — re-verified here by a
+reuse-licence gate that passed on all three.
+
+![bare query vs full context](../figures/issue_1739/interim_writeup/bareq_vs_full.png)
+
+> **Sycophancy is query-driven — the bare query is not just sufficient, it is better.** map → PV
+> proj. rises from +0.122 [+0.075, +0.172] on the full context to **+0.200 [+0.154, +0.241]** on
+> the bare query, and direct ridge is unchanged (+0.193 vs +0.190). Dropping the conversational
+> prefix *helps* the projection arm here, which suggests the prefix was contributing noise rather
+> than signal for this behavior.
+>
+> **Hallucination is prefix-driven, and the sign flips.** map → PV proj. goes from +0.111
+> [+0.062, +0.157] to **−0.065 [−0.114, −0.020]** — from significantly positive to significantly
+> negative. The query alone does not carry the fabrication signal; whatever the arm was tracking
+> lived in the surrounding context.
+>
+> **Evil is prefix-driven most starkly of the three.** On its dedicated bare fit, map → PV proj.
+> reads **−0.067 [−0.109, −0.019]** and direct ridge **−0.081 [−0.128, −0.028]**, against +0.157
+> for the full-context map arm. That is the expected direction for this corpus: the eliciting
+> content *is* the DAN-style prefix, so a predictor shown only the forbidden question has nothing
+> to read. Two caveats specific to evil: its WildChat-rung DV is **floored** (mean 0.42, sd 4.43 —
+> the fourth-column disclosure applies unchanged), so treat the collapse as directionally
+> consistent rather than a precise effect size; and evil's leg 1 (+0.110) is render-mismatched by
+> construction, which is why the dedicated leg-2 fit is the read that counts.
+>
+> **Internal consistency check that came for free:** the oracle arm — which projects the persona
+> vector on the model's TRUE answer state — is numerically *identical* across renders on all three
+> behaviors (+0.084 sycophancy, +0.178 hallucination, +0.156 evil). It should be, because it never
+> looks at the input render, and its invariance confirms the DV and eval set really were held
+> fixed while only the predictor's input changed.
+>
+> **Cross-behavior takeaway, stated plainly:** whether the bare query predicts the behavior tracks
+> **where that behavior's variance comes from**. Sycophancy is a property of what the user asks
+> (query-driven), so the query suffices. Hallucination and evil are properties of the surrounding
+> context — the topic-and-history framing and the jailbreak prefix respectively — so stripping the
+> prefix removes the signal outright.
+
+**Open flag — the by-construction-null arms do not read zero, and this is unresolved.** Two
+independent null arms in this round return small but CI-significant values where they must read
+chance, so the round's CIs should be treated as provisional until it is explained.
+
+![bare query null probe](../figures/issue_1739/interim_writeup/bareq_null_probe_layers.png)
+
+> (a) Evil's leg-2 **shuffled-map control reads +0.068 [+0.025, +0.107]** — a nonsense map clearing
+> zero. (b) The leg-1 **prefix null probe** returns `verdict: ANOMALY` on all three behaviors. Its
+> logic (`scripts/issue1739_bareq_score.py::_null_probe`) is: the bare render's prefix position is
+> a constant vector, so its projection must be rank-degenerate and ρ must be NaN or bracket zero;
+> the verdict is `degenerate-as-predicted` only when constancy holds **and** no CI excludes zero.
+> Here constancy *passed* (`constant: true`, per-layer cosine ≥ 0.9999 early / 0.9991 flat) yet
+> **all 28 layers returned finite ρ and at least one CI excluded zero**, with |ρ| reaching 0.093
+> (sycophancy), 0.120 (hallucination) and 0.055 (evil). The scorer's own note is unambiguous: *"A
+> non-chance read is a capture/indexing bug, not a finding."*
+>
+> Two things bound the flag without resolving it. **Scope:** the probe reads the *prefix* position,
+> whereas every headline number above is on `bare_context_end`, which legitimately varies with the
+> query — so the anomaly does not directly invalidate the headline reads. **Tolerance:** the
+> constancy bars are bf16 padded-batch cosines, explicitly *"NOT exact equality"*, and the record
+> shows `max_abs_dev_from_row0 = 2.375` — the reps are constant to that tolerance, not bit-identical,
+> so residual structure exists that Spearman can rank. Whether that residual is sufficient to
+> produce a CI-excluding-zero ρ at n ≈ 1,982, or whether there is a genuine capture/indexing
+> defect, **is not resolved by these artifacts** — and both anomalies share the same shape
+> (a by-construction null at |ρ| ≈ 0.07–0.12), so they plausibly share a cause. Note also that the
+> diagnostic which would have investigated it never ran: the caller skips the prefix arm sweep
+> whenever constancy is *verified*, and the "run the sweep as the anomaly diagnostic" branch fires
+> only on a constancy *failure* — so this ANOMALY is recorded but undiagnosed.
+
+Three further limitations of this round:
+
+- **The multi-turn-only subset could not be computed, so the reported contrasts are lower bounds
+  on the multi-turn effect.** 987 of the 2,000 eval contexts are single-turn, and for those the
+  bare render *is* the original render — they contribute zero contrast by construction and dilute
+  the pooled ρ. The clean read would be the multi-turn subset alone, but this round persisted no
+  per-context predictions: each `percell/bareq_leg1_transfer.jsonl` holds two aggregate records
+  (coverage, null probe, the same six arm rows as the summary) and there is no `preds/` directory,
+  unlike the main lane. Recovering the split needs a re-score, not a re-analysis.
+- **Evil's leg 2 scores only on the WildChat rung.** Its own OOD rungs were skipped because the
+  query bank was captured train-only, so none of the 2,387 eval-split contexts has a bare rep
+  (`leg2_eval_block_notes`); re-capturing with all rungs would be needed.
+- **The prefix-variant arm sweep is skipped on all three behaviors** as a degenerate null variant
+  (`frozen_source: "n/a — degenerate null variant (arm sweep skipped)"`), so this round reports no
+  prefix-render arm scores — only the null probe above.
+
+One prior-work caveat carried verbatim from the round's own record
+(`bareq_score_done.json`): *"#1092's 0.02 was bare->answer-ACTIVATIONS at SAE grain, so it is an
+analogy, not a numerically comparable floor for bare->judged-DV."*
 
 ### A fourth evaluation column: random held-out WildChat (new)
 
@@ -394,26 +523,35 @@ Training the labeled readouts on hh-rlhf red-team dialogues and evaluating on DA
 These fold the four new families in § New in this update. The carried-forward takeaways from the
 previous cut follow in the next block, with corrections marked.
 
-1. **Nonlinearity in the map is not the missing ingredient.** An MLP map and a kernel-ridge map
+1. **Whether the bare user query predicts a behavior localizes that behavior's predictive
+   variance.** Stripping the prefix and showing the predictor only the query *raises* sycophancy
+   (map → PV proj. +0.122 → +0.200), *flips the sign* on hallucination (+0.111 → −0.065), and
+   *destroys* evil (+0.157 full-context → −0.067 on a dedicated bare fit). Sycophancy is a
+   property of what the user asks; hallucination and evil are properties of the surrounding
+   context. **Caveat before use:** this round carries an unresolved anomaly — two
+   by-construction-null arms read |ρ| ≈ 0.07–0.12 where they must read chance — and its
+   single-turn half (987/2,000 contexts) dilutes the pooled contrast, so the effects above are
+   directional lower bounds, not settled effect sizes.
+2. **Nonlinearity in the map is not the missing ingredient.** An MLP map and a kernel-ridge map
    both lose to the linear ridge map on all three behaviors (pooled median Δρ −0.015 and −0.038;
    better in only 30% and 24% of matched cells), and lose most exactly where the linear map works
    best. Round B's question is answered negatively; the linear map stays the operating choice.
-2. **On ordinary user traffic the map arm is the best feasible predictor for evil and
+3. **On ordinary user traffic the map arm is the best feasible predictor for evil and
    hallucination.** On the new random-WildChat column the map → PV projection matches the oracle
    on evil (+0.157 vs +0.156) and reaches +0.111 on hallucination where Persona Vectors' own
    context projection is significantly *negative* (−0.107) — the strongest evidence yet that
    mapping into answer space before projecting recovers signal the context-side projection
    cannot. Sycophancy is the counterexample (direct ridge +0.190 leads).
-3. **Extracting the persona vector from natural data is the robust half of the regime result.**
+4. **Extracting the persona vector from natural data is the robust half of the regime result.**
    Pooled-natural E2p is top for every sycophancy read (map(context) → PV proj. 0.577 on
    out-of-sample AITA, the best sycophancy predictor measured), replicating evil's E2p-on-top
    ordering; the E1-vs-E2 order does not replicate, so "natural beats synthetic" is what carries,
    not the full ladder.
-4. **For hallucination the persona vector fails as a construct in a newly explicit way:** its
+5. **For hallucination the persona vector fails as a construct in a newly explicit way:** its
    correlation flips *sign* across evaluation rungs for the same read and regime (12 of 15
    read × regime combinations sign-inconsistent). Any hallucination conclusion about "the map"
    remains bottlenecked by the direction.
-5. **Eliciting map data is a per-arm lever, not a map-quality lever.** Replacing half a fixed map
+6. **Eliciting map data is a per-arm lever, not a map-quality lever.** Replacing half a fixed map
    pool with unlabeled behavior-eliciting contexts *hurt* the projection arm in 6 of 6 new cells
    (sycophancy and hallucination) while *helping* the real-answer-trained readout in 6 of 6 — the
    opposite direction from the evil projection result, which this corrects (see takeaway 7 below).
@@ -426,11 +564,29 @@ previous cut follow in the next block, with corrections marked.
 4. For hallucination the persona vector itself fails as a construct on natural data (oracle projection ρ = 0.04 in-distribution) — any conclusion about "the map" for this behavior is bottlenecked by the direction, and the direct-regression framing (or a better direction) is required.
 5. Readout/deployment consistency matters more than realism: regressions trained on **predicted** answer vectors and applied to predicted vectors (evil 0.71, hallu 0.60) far outperform regressions trained on **real** answer vectors and applied to predicted ones (0.51 / 0.38).
 6. **The persona-vectors synthetic suite inflates projection performance by +0.26–0.57 ρ over real distributions** (all three behaviors ≈0.65–0.80 on the suite; a shuffled-map control alone reaches 0.54 on sycophancy) — the suite measures instructed-behavior separability, not natural elicitation.
-7. Map *training data* matters more than map size in-distribution but less under scale: 2,500 unlabeled eliciting contexts beat 18,793 generic pairs for the projection read (evil compose cells), while the frozen 963k generic map beats the 18.8k map on evil and mostly on hallucination — and loses on sycophancy. **CORRECTED 2026-07-31:** the first clause is evil-specific. On sycophancy and hallucination the same substitution *lowered* the projection read in 6 of 6 cells (while raising the real-answer-trained readout in 6 of 6) — see new takeaway 5 and § Unlabeled behavior-eliciting map data above.
+7. Map *training data* matters more than map size in-distribution but less under scale: 2,500 unlabeled eliciting contexts beat 18,793 generic pairs for the projection read (evil compose cells), while the frozen 963k generic map beats the 18.8k map on evil and mostly on hallucination — and loses on sycophancy. **CORRECTED 2026-07-31:** the first clause is evil-specific. On sycophancy and hallucination the same substitution *lowered* the projection read in 6 of 6 cells (while raising the real-answer-trained readout in 6 of 6) — see new takeaway 6 and § Unlabeled behavior-eliciting map data above.
 
 ## Provenance
 
-**2026-07-31 update (the four new families).** Numbers + figures computed by
+**2026-07-31 bare-query round.** Numbers + figures by
+`scripts/issue1739_bareq_fold.py` (aggregation + rendering only; no fits, no GPU, no judge calls),
+from artifacts committed on branch `issue-1739` at commit `86bce0e94b`:
+`eval_results/issue_1739/bareq_map/{evil,sycophancy,hallucination}/{all_arms_spearman.json,map_diagnostics.json,percell/bareq_leg1_transfer.jsonl}`
+plus `bareq_map/{bareq_queries.json,bareq_score_done.json,bareq_score_failures.json}`. The
+full-context comparison column is the same HF-resident WildChat-rung result folded above
+(`issue1739_ctxmap/wildchat_rung/arm_results/<behavior>/all_arms_spearman.json`). Design labels
+(`render_match`, `leg2_noop`, `leg1_null_probe`, fold scheme, query bank) are read from each
+summary's `meta`; the null-probe verdict logic is
+`scripts/issue1739_bareq_score.py::_null_probe`. Aggregates dumped to
+`/tmp/i1739_bareq_stats.json`. Figures:
+`figures/issue_1739/interim_writeup/{bareq_vs_full,bareq_null_probe_layers}.png`.
+Known gaps carried in the section: the ANOMALY null-probe verdict is undiagnosed; no per-context
+predictions were persisted, so the multi-turn-only subset is not computable without a re-score;
+evil's leg 2 covers the WildChat rung only. `bareq_score_failures.json` records one earlier
+leg-2 failure (missing query manifest) that was resolved before the committed run — the completed
+summary carries all 12 evil transfer rows across both legs.
+
+**2026-07-31 update (the four earlier families).** Numbers + figures computed by
 `scripts/issue1739_writeup_fold.py` (aggregation + rendering only, no fits), from artifacts on
 branch `issue-1739` at commit `4c5a2b28c3` unless noted:
 

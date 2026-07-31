@@ -1,0 +1,334 @@
+{
+  "commit": "145af6aa91",
+  "created": "2026-07-31T19:26:58Z",
+  "figsize": [
+    12.4,
+    4.9
+  ],
+  "points": [
+    {
+      "Spearman $\\rho$ vs judged expression": 0.061045,
+      "y": 0.12208923716807271,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.100168,
+      "y": 0.20033589551923164,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.09508,
+      "y": 0.19015989341519268,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.096603,
+      "y": 0.19320635708068928,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.042134,
+      "y": 0.08426817677603524,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.042134,
+      "y": 0.08426817677603524,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.00638,
+      "y": 0.012760244230850374,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.007333,
+      "y": 0.014666473513451324,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.00638,
+      "y": 0.012760244230850374,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.007333,
+      "y": 0.014666473513451324,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.005623,
+      "y": -0.011246758117024249,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.00663,
+      "y": 0.013259101764462336,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.055343,
+      "y": 0.1106850043455737,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.03242,
+      "y": -0.06483911013471,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.006276,
+      "y": -0.012551199670331255,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.008768,
+      "y": 0.017535629043725076,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.088813,
+      "y": 0.1776250067441395,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.088813,
+      "y": 0.1776250067441395,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.053283,
+      "y": -0.10656516179586661,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.043541,
+      "y": -0.08708136914685885,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.053283,
+      "y": -0.10656516179586661,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.043541,
+      "y": -0.08708136914685885,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.037234,
+      "y": -0.07446705314755472,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.013533,
+      "y": -0.027065254461625006,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.0783,
+      "y": 0.15659940239839015,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.055172,
+      "y": 0.1103449355653389,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.033584,
+      "y": -0.06716815220224041,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.040547,
+      "y": 0.08109327121306614,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.027375,
+      "y": 0.054750594871841966,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.040655,
+      "y": -0.08131075469567142,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.077885,
+      "y": 0.15576916013499797,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.077885,
+      "y": 0.15576916013499797,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.077885,
+      "y": 0.15576916013499797,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.020939,
+      "y": 0.04187845802566634,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.003133,
+      "y": -0.006266225010684816,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.001691,
+      "y": 0.003381803875829451,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.020939,
+      "y": 0.04187845802566634,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.003133,
+      "y": -0.006266225010684816,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.001691,
+      "y": 0.003381803875829451,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.018444,
+      "y": -0.03688746501886956,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.015801,
+      "y": -0.03160266640473985,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.034045,
+      "y": 0.0680898245982501,
+      "_kind": "bar",
+      "_group": 41
+    }
+  ],
+  "n_series": 42,
+  "total_points": 42,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "sycophancy",
+        "xlabel": "Spearman $\\rho$ vs judged expression",
+        "annotations": [
+          "n=1982 contexts; leg-1 render matched"
+        ],
+        "xticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ],
+        "yticklabels": [
+          "map -> PV proj.",
+          "direct ridge: context -> expression",
+          "oracle: PV proj. on TRUE answer",
+          "PV proj. on context (paper method)",
+          "identity+bias -> PV proj.",
+          "control: shuffled map -> PV proj."
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "xlabel": "Spearman $\\rho$ vs judged expression",
+        "annotations": [
+          "n=1967 contexts; leg-1 render matched"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ]
+      },
+      {
+        "title_left": "evil",
+        "xlabel": "Spearman $\\rho$ vs judged expression",
+        "annotations": [
+          "n=1987 contexts; leg-1 render mismatched"
+        ],
+        "xticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ]
+      }
+    ],
+    "series": [
+      "full-context render (predictor sees prefix + query)",
+      "bare-query render, train-fit arms applied",
+      "bare-query render, dedicated bare fit (evil leg 2)"
+    ]
+  }
+}
