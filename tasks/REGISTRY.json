@@ -6571,8 +6571,8 @@
     "1849": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1849",
-      "status": "running",
+      "path": "tasks/reviewing/1849",
+      "status": "reviewing",
       "title": "daily-fix: hub._upload fail-loud when file dest looks like a"
     },
     "185": {
