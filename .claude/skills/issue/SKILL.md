@@ -7177,15 +7177,26 @@ audit log records it, and proceed straight to 9a-ter.
 3. Loop until all axes score ≤ 1 OR **3 orchestrator-level cycles**
    reached.
 4. If the loop revised the prose surfaces, write the new body to
-   `/tmp/issue-<N>-humanize-loop.md`, then update via:
+   `/tmp/issue-<N>-humanize-loop.md`, then VERIFY THE CANDIDATE FILE
+   FIRST and apply only on PASS (#1860; the pre-#1860 apply-then-verify
+   order left a briefly-live non-compliant body on a FAILing candidate —
+   incident #1775):
    ```bash
-   uv run python scripts/task.py set-body <N> --file /tmp/issue-<N>-humanize-loop.md
-   uv run python "$REPO_ROOT"/scripts/verify_task_body.py --issue <N>  # main-checkout copy, never the worktree's (spec-stale risk, incident #496)
+   uv run python "$REPO_ROOT"/scripts/verify_task_body.py --file /tmp/issue-<N>-humanize-loop.md  # main-checkout copy, never the worktree's (spec-stale risk, incident #496)
+   uv run python scripts/task.py set-body <N> --file /tmp/issue-<N>-humanize-loop.md  # ONLY on candidate PASS
+   uv run python "$REPO_ROOT"/scripts/verify_task_body.py --issue <N>  # post-apply confirm: frontmatter-coupled checks --file cannot see (e.g. H1 == frontmatter title)
    ```
-   The verifier MUST still PASS — the humanize loop is not allowed to
-   produce a body that breaks Lens 1-15 mechanical checks. If it does:
-   revert to the pre-loop body and surface the conflict to the user
-   (this is rare; the loop only edits prose, not structure).
+   The CANDIDATE verifier MUST PASS before the apply — the humanize loop
+   is not allowed to produce a body that breaks Lens 1-15 mechanical
+   checks. On a candidate FAIL: iterate ON THE CANDIDATE FILE (fix the
+   flagged prose), up to 2 candidate-fix iterations (independent of the
+   rubric's 3-cycle cap); if no passing candidate emerges, apply NOTHING
+   — the pre-loop body (which already passed the Step 9a verify) stays
+   live, and the step-5 note records the residual via the existing
+   "exited at cap, residual debt: ..." grammar. The live body is only
+   ever replaced by a verified-PASS candidate. If the post-apply --issue
+   confirm FAILs (rare — frontmatter-coupled drift only): revert to the
+   pre-loop body and surface the conflict to the user, as before.
 5. Post `epm:humanize-loop v1` on the source task with the final 6-axis
    scores + a one-line note ("converged in cycle K" or "exited at cap,
    residual debt: axis X scored 2 — flagged to user"). When the ban gate
@@ -7930,8 +7941,14 @@ dispatching this round's critics.
    (a) does its OWN cheap re-run of `verify_task_body.py --issue <N>` on
    the canonical body and confirms the remaining FAILs are all in the
    presentation-only set; (b) applies the critic's `### Procedural
-   fixes` edits to the body inline via `task.py set-body <N> --file ...`
-   and re-runs the verifier to PASS; (c) treats the critic's verdict as
+   fixes` edits to a staged candidate copy, verifies the CANDIDATE to
+   PASS (`verify_task_body.py --file`, main-checkout copy), applies it
+   via `task.py set-body <N> --file ...` (verify-first, #1860 — never
+   leave a briefly-live FAILing body), and re-runs
+   `verify_task_body.py --issue <N>` to PASS (post-apply confirm — the
+   `--issue`-side coverage the `--file` candidate check cannot see:
+   frontmatter-coupled checks, kind short-circuit, concerns-audit);
+   (c) treats the critic's verdict as
    PASS for the ensemble rule — this is "review incomplete → fix the
    procedural item inline + re-dispatch", NOT a consumed REVISE round
    (the round counter does NOT increment). Log one chat line:

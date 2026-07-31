@@ -404,6 +404,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_gate_scope_brief_pin.py",
     # NEW (#1627) — SKILL.md Step 9c/10d gate single-flight probe pin (#1606)
     "tests/test_issue_skill_gate_single_flight.py",
+    # NEW (#1860) — SKILL.md 9a-humanize + 9a-bis strip verify-candidate-first
+    # apply-ordering pin (verify --file before set-body; post-apply --issue confirm)
+    "tests/test_issue_skill_humanize_verify_first_pin.py",
     # Registration rider (#1673) — the pre-existing #1500 inline-payload-gate
     # pin file was never registered (the #1546 unregistered-pin class); it now
     # also pins the worker-brief composition duty (#1673).
