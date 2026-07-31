@@ -622,10 +622,11 @@ def test_rubrics_are_anchored_and_reason_then_score(monkeypatch, leg):
     r = jl.RUBRIC[leg]
     for anchor in ("  0 ", "  50 ", "  100 "):  # rule 6: endpoints + midpoint
         assert anchor in r, f"{leg} rubric lacks the {anchor.strip()} anchor"
-    assert "SCORE: <integer 0-100>" in r
-    # rule 7: the reasoning instruction must PRECEDE the score line.
-    assert r.index("reasoning") < r.index("SCORE: <integer"), leg
-    assert r.rstrip().endswith("SCORE: <integer 0-100>"), leg
+    # The harness FORCES a JSON reply, so the score arrives as a JSON field, not
+    # a bare `SCORE:` line (that format never parsed — see 3d-bis below).
+    assert '"score": an integer from 0 to 100' in r, leg
+    # rule 7: the reasoning must be requested BEFORE the score.
+    assert r.index('"reasoning"') < r.index('"score"'), leg
 
 
 def test_ai_likeness_rubric_names_its_confusable_neighbours(monkeypatch):
@@ -699,3 +700,85 @@ def test_answer_and_question_readers_accept_both_row_schemas(monkeypatch):
     assert jl._question_of({"conv_id": "s1", "question": "q2"}) == "q2"
     with pytest.raises(AssertionError, match="neither"):
         jl._answer_of({"conv_id": "s1"})
+
+
+# ---------------------------------------------------------------------------
+# 3d-bis. Rubric <-> HARNESS CONTRACT (the bug the #1916 flag surfaced)
+# ---------------------------------------------------------------------------
+# graded_judge passes the rubric as a USER TEMPLATE and substitutes {question} /
+# {answer} into it, while appending a `{"score": ...}` JSON wrapper to the judge
+# SYSTEM prompt. A rubric missing the placeholders sends the judge NO content to
+# rate; a rubric asking for a bare `SCORE: <int>` line never parses. Both would
+# drop ~100% of draws while looking perfectly reasonable in review.
+@pytest.mark.parametrize("leg", ["ai_likeness", "content_drift"])
+def test_rubric_carries_the_substitution_placeholders(monkeypatch, leg):
+    jl = _judge_module(monkeypatch)
+    r = jl.RUBRIC[leg]
+    assert "{question}" in r, f"{leg}: judge would receive no question"
+    assert "{answer}" in r, f"{leg}: judge would receive no answer to rate"
+
+
+@pytest.mark.parametrize("leg", ["ai_likeness", "content_drift"])
+def test_rubric_substitutes_exactly_as_the_harness_does(monkeypatch, leg):
+    """Mirror graded_judge's own format_user_msg substitution."""
+    jl = _judge_module(monkeypatch)
+    filled = jl.RUBRIC[leg].replace("{question}", "Q-SENTINEL").replace("{answer}", "A-SENTINEL")
+    assert "Q-SENTINEL" in filled and "A-SENTINEL" in filled
+    # No unsubstituted slot may survive into the judge prompt.
+    assert "{question}" not in filled and "{answer}" not in filled
+
+
+@pytest.mark.parametrize("leg", ["ai_likeness", "content_drift"])
+def test_rubric_requests_json_with_reasoning_before_score(monkeypatch, leg):
+    """The harness forces JSON; rule 7 still wants the reasoning generated first."""
+    jl = _judge_module(monkeypatch)
+    r = jl.RUBRIC[leg]
+    assert "single JSON object" in r, leg
+    assert '"reasoning"' in r and '"score"' in r, leg
+    assert r.index('"reasoning"') < r.index('"score"'), f"{leg}: score must come last"
+    # The retired bare-line format must not linger anywhere.
+    assert "SCORE: <integer" not in r, leg
+
+
+@pytest.mark.parametrize("leg", ["ai_likeness", "content_drift"])
+def test_expected_reply_shape_parses_to_a_score(monkeypatch, leg):
+    """Round-trip a REALISTIC reply through the harness's OWN parse + reduce."""
+    _jl = _judge_module(monkeypatch)
+    from explore_persona_space.eval.graded_judge import _score_from_parsed
+    from explore_persona_space.eval.utils import parse_judge_json
+
+    reply = (
+        '{"reasoning": "It hedges and enumerates, which I set aside; the '
+        'giveaway is the uniform clause rhythm.", "score": 73}'
+    )
+    parsed = parse_judge_json(reply)
+    assert parsed is not None, "the requested reply shape does not parse"
+    assert _score_from_parsed(parsed) == 73, parsed
+
+
+def test_parse_is_fence_tolerant(monkeypatch):
+    """#1934: ~2% of judged calls drop on markdown fences, not truncation.
+
+    parse_judge_json falls back to first-`{` raw_decode, so a fenced reply still
+    parses — recorded here so the per-arm drop report is not misread as content
+    drops. The hazard this pins: prose BEFORE the JSON containing a stray `{`
+    would anchor the fallback on the wrong brace, which is why both rubrics put
+    the reasoning INSIDE the object rather than ahead of it.
+    """
+    _jl = _judge_module(monkeypatch)
+    from explore_persona_space.eval.graded_judge import _score_from_parsed
+    from explore_persona_space.eval.utils import parse_judge_json
+
+    fenced = '```json\n{"reasoning": "clear enough", "score": 41}\n```'
+    assert _score_from_parsed(parse_judge_json(fenced)) == 41
+    preamble = 'Here is my assessment:\n{"reasoning": "ok", "score": 5}'
+    assert _score_from_parsed(parse_judge_json(preamble)) == 5
+    # The instructed-refusal path stays a DROP, never a coerced number (rule 9).
+    assert _score_from_parsed(parse_judge_json('{"score": "REFUSAL"}')) is None
+
+
+def test_max_tokens_meets_the_json_rubric_floor(monkeypatch):
+    """#1916 raises the floor to 600 for JSON-shaped rubrics; ours carry a
+    reasoning field ahead of the score, so the raised floor binds."""
+    jl = _judge_module(monkeypatch)
+    assert jl.JUDGE_MAX_TOKENS >= 600

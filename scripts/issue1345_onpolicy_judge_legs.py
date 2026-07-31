@@ -81,9 +81,13 @@ LEG_SLUG = {LEG_AI_LIKENESS: "ail", LEG_CONTENT_DRIFT: "drift"}
 JUDGE_MODEL = c.JUDGE_MODEL  # claude-sonnet-4-5-20250929 (rule 11, ONE judge)
 N_DRAWS = 5  # rule 4 (>= 5)
 JUDGE_TEMPERATURE = 1.0  # explicit via graded_temperature (draws must vary)
-# rule 23: a reason-then-score rubric needs >= ~300 response tokens or the score
-# token is never emitted and the draw is silently censored as a parse error.
-JUDGE_MAX_TOKENS = 320
+# rule 23 + #1916: the harness FORCES a JSON reply (graded_judge appends a
+# `{"score": ...}` wrapper to the judge SYSTEM prompt), and our rubrics carry a
+# "reasoning" field ahead of the score, so these are JSON-SHAPED rubrics and the
+# raised 600-token floor applies — not the 300 bare-reason-then-integer floor.
+# Under-budgeting truncates the reply BEFORE its closing brace and every draw
+# parse-drops silently.
+JUDGE_MAX_TOKENS = 600
 
 # Spend fail-safe: --execute AND this env var, both, or the run stays dry.
 SPEND_ACK_ENV = "EPM_I1345_JUDGE_SPEND_OK"
@@ -96,6 +100,12 @@ ITEM_ID_MAX = 53
 AI_LIKENESS_RUBRIC = """\
 You rate how strongly ONE response reads as having been written by an ARTIFICIAL \
 INTELLIGENCE rather than by a human being.
+
+QUESTION THE RESPONSE ANSWERS:
+{question}
+
+RESPONSE TO RATE:
+{answer}
 
 Score 0-100 on this single axis:
   0    Unmistakably human-written. Nothing about it suggests a machine author.
@@ -115,14 +125,21 @@ A warm, helpful, fluent, well-organized response can be entirely human. A curt, 
 theatrical, error-laden, or villainous response can be entirely machine-written. \
 Rate the TEXTURE OF THE AUTHORSHIP, not the personality being portrayed.
 
-First give 2-3 sentences of reasoning that explicitly says which cues you used \
-and which of the confusable properties above you set aside. Then finish with \
-EXACTLY one final line:
-SCORE: <integer 0-100>"""
+Reply with a single JSON object carrying these keys IN THIS ORDER:
+  "reasoning": 2-3 sentences naming which cues you used and which of the \
+confusable properties above you set aside
+  "score": an integer from 0 to 100
+Put "reasoning" FIRST so the reasoning is written before the score is committed."""
+
 
 CONTENT_DRIFT_RUBRIC = """\
 You rate how completely a RESPONSE conveys the same substantive content as a \
 REFERENCE answer to the same question.
+
+QUESTION BOTH ANSWER:
+{question}
+
+{answer}
 
 Score 0-100 on this single axis:
   0    Unrelated content — none of the reference's substance is present, or it \
@@ -140,10 +157,12 @@ Judge ONLY substantive content. Do NOT reward or penalize:
 Extra content in the RESPONSE that does not contradict the reference does not \
 lower the score; a substantive CONTRADICTION does.
 
-First give 2-3 sentences of reasoning naming which substantive claims match, \
-which are missing, and which are contradicted. Then finish with EXACTLY one \
-final line:
-SCORE: <integer 0-100>"""
+Reply with a single JSON object carrying these keys IN THIS ORDER:
+  "reasoning": 2-3 sentences naming which substantive claims match, which are \
+missing, and which are contradicted
+  "score": an integer from 0 to 100
+Put "reasoning" FIRST so the reasoning is written before the score is committed."""
+
 
 RUBRIC = {LEG_AI_LIKENESS: AI_LIKENESS_RUBRIC, LEG_CONTENT_DRIFT: CONTENT_DRIFT_RUBRIC}
 
