@@ -205,6 +205,7 @@ def _load_split_json(prefix: str, stem: str, dest: Path) -> dict:
     api = HfApi()
     entries = hub.retry_transient(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient (list materialized inside)
             api.list_repo_tree(REPO, path_in_repo=prefix, repo_type="dataset", recursive=False)
         ),
         what=f"list_repo_tree {prefix}",
