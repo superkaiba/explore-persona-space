@@ -6592,8 +6592,8 @@
     "1851": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1851",
-      "status": "approved",
+      "path": "tasks/running/1851",
+      "status": "running",
       "title": "daily-fix: step9c selector misses SKILL.md-pinning tests"
     },
     "1852": {
