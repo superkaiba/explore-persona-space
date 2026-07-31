@@ -112,6 +112,10 @@ ENV_PIN_ALLOWED_KEYS: frozenset[str] = frozenset(
         "MKL_NUM_THREADS",
         "OPENBLAS_NUM_THREADS",
         "NUMEXPR_NUM_THREADS",
+        # #1852: the CUDA allocator knob — gotchas.md CUDA-OOM remedy #1
+        # (expandable_segments:True; peak-resident caveat lives there too).
+        # Same runtime-tuning family as the #1803 set above.
+        "PYTORCH_CUDA_ALLOC_CONF",
     }
 )
 
