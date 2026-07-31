@@ -31,6 +31,9 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1901.md](https://github.com/superkaiba/explore-persona-space/blob/0297eb5f435aab6000b123871f57b67105bb495b/docs/methodology/issue_1901.md) · [gist](https://gist.github.com/superkaiba/1bba8ec6a80f3d3f137e5286d9d3f501)
+
+
 ## Takeaways
 
 - **Both dissociation directions realized: identity plus bias scores acc@1 0.53 at pooled R² −0.92 (n=1000); a shrinkage-limited prefix ridge scores R² +0.54 at retrieval 0.04 (chance 0.02).**
