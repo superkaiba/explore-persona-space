@@ -9,8 +9,9 @@ produces, under `data/issue_1900/out/`:
 - ``marker_tf/``          P1a: 13 unit-passes x judge-subset rows, four floats
                           per slot per model side (marker rule storage contract)
 - ``anchors/``            P1b: per-mix base anchors (A_ctx/A_ans + even/odd
-                          halves + per-row context vectors for P9) and per-LoRA-
-                          arm post anchors (A+_ctx/A+_ans)
+                          halves + split-half reliability cos + low_n_flag,
+                          plan §12.1 v6; per-row context vectors for P9) and
+                          per-LoRA-arm post anchors (A+_ctx/A+_ans)
 - ``validation/``         P1c: TF fixed +/- margin (sycophancy, 300 contexts)
 - ``maps/``               P1d: 33 ridge refits on judge-row-EXCLUDED splits
                           (leak-through-M guard) + identity+bias/kNN reads
@@ -83,7 +84,9 @@ SMOKE_ARMS = ("imp-pers-con-lr3e5-s42", "mk-pers-con-lr5e6-s42")  # 1 content + 
 SMOKE_ROWS = 64
 SMOKE_MARGIN_CONTEXTS = 8
 FT_SMOKE_ARM = "syc-pers-ft-con-s42"  # smoke covers one FT-mapped mix (plan §8)
-P9_KS = (4, 16, 64)  # §11: k=16 primary; {4,64} sensitivity ride the same table
+P9_KS = (4, 16, 64)  # §11: k=16 primary; {4,64} sensitivity ride the same table (k capped at n)
+ANCHOR_HARD_FLOOR_ROWS = 8  # plan §12.1 (v6): even/odd split-half needs >=4 rows/side
+ANCHOR_LOW_N_ROWS = 40  # plan §12.1 (v6): 8 <= n < 40 -> LOUD WARN + persisted low_n_flag
 DEVIATION_MULT = 2.0  # compute_deviation_over_2x boundary
 # Plan §9 measured bases (per-call, at production shape):
 BASIS_TF_PASS_S = 288.0  # #1768 pnf: ~0.04 GPU-h per 2,000-row TF pass -> 4,000 rows
@@ -722,6 +725,38 @@ def _mix_rows(cfg: Cfg, mix_arm_id: str) -> tuple[list[dict], dict]:
     return C._mix_positive_rows(_capture_cfg(cfg), arm)
 
 
+def check_anchor_mix_floor(mix_arm_id: str, n_rows: int) -> bool:
+    """Plan §12.1 (v6) anchor-mix row-count contract; returns the low-n flag.
+
+    Hard floor n >= ANCHOR_HARD_FLOOR_ROWS (the even/odd split-half needs >=4
+    rows per side); 8 <= n < ANCHOR_LOW_N_ROWS is the measured real-data regime
+    — delta_tf pos.jsonl carries EXACTLY 20 rows per content mix at CORPUS_PIN
+    and marker mixes carry 200 marker-positive rows (HF-probed 2026-07-31) —
+    and is a LOUD WARN plus a persisted per-mix ``low_n_flag``, never a kill.
+    """
+    assert n_rows >= ANCHOR_HARD_FLOOR_ROWS, (
+        mix_arm_id,
+        n_rows,
+        f"anchor mix hard floor n >= {ANCHOR_HARD_FLOOR_ROWS} (plan §12.1 v6)",
+    )
+    low_n = n_rows < ANCHOR_LOW_N_ROWS
+    if low_n:
+        logger.warning(
+            "[anchors] mix %s n=%d < %d — low-n flag set, split-half reliability persisted",
+            mix_arm_id,
+            n_rows,
+            ANCHOR_LOW_N_ROWS,
+        )
+    return low_n
+
+
+def _split_half_cos(even, odd) -> float:
+    """Cosine between the even/odd half-mean anchors (per-mix split-half reliability)."""
+    e = even.float().numpy().astype(np.float64)
+    o = odd.float().numpy().astype(np.float64)
+    return float(e @ o / (np.linalg.norm(e) * np.linalg.norm(o) + 1e-12))
+
+
 # ── P1a: marker three-space TF capture ───────────────────────────────────────
 
 
@@ -796,6 +831,9 @@ def run_p1a_adapter_smoke(cfg: Cfg, pool: ModelPool, arms_by_id: dict) -> dict:
     ]
     entry = next((a for a in marker_lora if a["arm_id"] == "mk-pers-con-lr5e6-s42"), marker_lora[0])
     rows, mix_meta = _mix_rows(cfg, entry["mix_arm_id"])
+    # Slice caps at the realized mix n mechanically; measured at CORPUS_PIN
+    # (2026-07-31): the marker mix carries 200 marker-positive rows, so the
+    # 50-row read is fully filled (content mixes carry 20 — plan §12.1 v6).
     rows = rows[:ADAPTER_SMOKE_ROWS]
     ids_lists = [_slot_ids(r) for r in rows]
     base_recs = _slot_stats_from_ids(pool.base(), ids_lists, cfg.tf_batch)
@@ -919,6 +957,7 @@ def run_p1b_base_anchor(cfg: Cfg, item: dict) -> Path:
     if out.exists():
         return out
     rows, mix_meta = _mix_rows(cfg, mix)  # FULL consumed grain (plan §12.1)
+    low_n = check_anchor_mix_floor(mix, len(rows))  # hard >=8; WARN + flag at 8-39
     pooled = _teacher_forced_span_means(
         X.BASE_MODEL,
         rows,
@@ -935,6 +974,7 @@ def run_p1b_base_anchor(cfg: Cfg, item: dict) -> Path:
     payload: dict = {
         "mix_arm_id": mix,
         "n_rows": len(rows),
+        "low_n_flag": low_n,  # plan §12.1 (v6): 8 <= n < 40 reliability flag
         "mix_meta": mix_meta,
         "A_ctx": {},
         "A_ans": {},
@@ -942,6 +982,8 @@ def run_p1b_base_anchor(cfg: Cfg, item: dict) -> Path:
         "A_ctx_odd": {},
         "A_ans_even": {},
         "A_ans_odd": {},
+        "split_half_cos_ctx": {},  # per-layer even/odd half-mean cosine (reliability)
+        "split_half_cos_ans": {},
         "rows_ctx": {},
         "tbar_cos": {},
         "meta": _meta(),
@@ -955,6 +997,12 @@ def run_p1b_base_anchor(cfg: Cfg, item: dict) -> Path:
         payload["A_ctx_odd"][li] = ctx[1::2].mean(dim=0)
         payload["A_ans_even"][li] = ans[0::2].mean(dim=0)
         payload["A_ans_odd"][li] = ans[1::2].mean(dim=0)
+        payload["split_half_cos_ctx"][li] = _split_half_cos(
+            payload["A_ctx_even"][li], payload["A_ctx_odd"][li]
+        )
+        payload["split_half_cos_ans"][li] = _split_half_cos(
+            payload["A_ans_even"][li], payload["A_ans_odd"][li]
+        )
         payload["rows_ctx"][li] = ctx.to(torch.float32)
         a = payload["A_ans"][li].numpy()
         t = tb["tbar"][li].float().numpy()
@@ -981,6 +1029,7 @@ def run_p1b_post_anchor(cfg: Cfg, pool: ModelPool, item: dict, arms_by_id: dict)
     if out.exists():
         return out
     rows, _mix_meta = _mix_rows(cfg, entry["mix_arm_id"])
+    low_n = check_anchor_mix_floor(entry["mix_arm_id"], len(rows))
     with pool.for_entry(cfg, entry) as model:
         pooled = _span_means_loaded(
             model, pool.tokenizer(), rows, list(cfg.layers), ("context", "response"), cfg.tf_batch
@@ -989,6 +1038,7 @@ def run_p1b_post_anchor(cfg: Cfg, pool: ModelPool, item: dict, arms_by_id: dict)
         "arm_id": arm_id,
         "mix_arm_id": entry["mix_arm_id"],
         "n_rows": len(rows),
+        "low_n_flag": low_n,  # plan §12.1 (v6)
         "A_ctx_plus": {li: pooled["context"][li].mean(dim=0) for li in cfg.layers},
         "A_ans_plus": {li: pooled["response"][li].mean(dim=0) for li in cfg.layers},
         "meta": _meta(),
@@ -1449,6 +1499,16 @@ def run_p1e_table(
             "arm_id": arm_id,
             "layer": layer,
             "n_rows": int(len(df)),
+            "n_mix_rows": int(sims.shape[1]),
+            # P9 k is capped at the realized mix n (plan §12.1 v6): p9_k{k} =
+            # mean of top-min(k, n_mix) row cosines, so at n_mix=20 p9_k64
+            # realizes k=n and the plan sensitivity set {4, min(16,n), n} maps
+            # onto p9_k4 / p9_k16 / p9_k64 as available.
+            "p9_k_effective": {str(k): int(min(k, sims.shape[1])) for k in P9_KS},
+            "p9_k16_half_effective": {
+                "even": int(min(16, (sims.shape[1] + 1) // 2)),
+                "odd": int(min(16, sims.shape[1] // 2)),
+            },
             "anchor_centering": "cosines centered by the corpus row-mean of the x-side "
             "space (c̄0 / v̄0 / mean-mapped); delta-space cosines (m3/m4/p8b) raw",
             "m3_m4_definition": "cos of the per-row delta to the ARM-MEAN delta "
@@ -1759,12 +1819,22 @@ def _fleet_deviations(cfg: Cfg, n_gpus: int) -> list[dict]:
 
 
 def run_ft_mix_probe(cfg: Cfg) -> dict:
-    """Smoke structural probe: the FT-mapped mix loads at full grain (§12.1/§12.2)."""
+    """Smoke structural probe: the FT-mapped mix loads at full grain (§12.1/§12.2).
+
+    Gate = check_anchor_mix_floor: hard-fail only below 8 rows; 8 <= n < 40 is
+    the measured 20-rows/content-mix regime at CORPUS_PIN — LOUD WARN, no kill.
+    """
     arms_all = json.loads((cfg.out_root / "config" / "arms.json").read_text())["arms"]
     ft = next(a for a in arms_all if a["arm_id"] == FT_SMOKE_ARM)
     rows, meta = _mix_rows(cfg, ft["mix_arm_id"])
-    assert len(rows) >= 40, (ft["mix_arm_id"], len(rows), "anchor mix floor (plan §12.1)")
-    return {"ft_arm": FT_SMOKE_ARM, "mix_arm_id": ft["mix_arm_id"], "n_rows": len(rows), **meta}
+    low_n = check_anchor_mix_floor(ft["mix_arm_id"], len(rows))
+    return {
+        "ft_arm": FT_SMOKE_ARM,
+        "mix_arm_id": ft["mix_arm_id"],
+        "n_rows": len(rows),
+        "low_n_flag": low_n,
+        **meta,
+    }
 
 
 # ── entrypoint ───────────────────────────────────────────────────────────────
