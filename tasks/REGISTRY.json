@@ -6627,8 +6627,8 @@
     "1856": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1856",
-      "status": "running",
+      "path": "tasks/reviewing/1856",
+      "status": "reviewing",
       "title": "daily-fix: kill-before-relaunch enumerates live launcher pha"
     },
     "1857": {
