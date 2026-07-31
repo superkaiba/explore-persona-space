@@ -85,7 +85,57 @@ KNN_KS = (1, 5, 10)
 SLIM_KEYS = ("slots", "profiles", "nll")
 # Arms whose story<->chat reparam ladder runs by default (brief: V2 + V4 at
 # minimum — V3 rides along because the ladder is cheap once the stores are open).
+# V5 is deliberately OUT: its pre-registered contrasts (below) are grid/comparator
+# reads, not ladder reads, so the default stays byte-identical in compute for the
+# already-planned run. Opt in per run with `--reparam-arms v5`.
 DEFAULT_REPARAM_ARMS = (bg.ARM_V2, bg.ARM_V3, bg.ARM_V4)
+
+# Pre-registered per-arm contrasts: which ALREADY-COMPUTED verdict fields decide
+# the arm's question, named at BUILD time so the analyzer cannot pick a different
+# pair post hoc. Reads only — no new compute.
+PRE_REGISTERED_CONTRASTS: dict[str, dict] = {
+    bg.ARM_V5: {
+        "boundary_form": {
+            "question": (
+                "is V1's anchor effect carried by the PROSE ATTRIBUTION or by the "
+                "pretraining-familiar turn syntax? V5 holds the story constant and "
+                "swaps the attribution for a bare turn label."
+            ),
+            "decided_by": "CI overlap, V5 vs the boundary-present V1 anchor",
+            "read_fields": [
+                "headline.r2_reduced_basis_primary + headline.ci",
+                "xy_grid.v1_anchor (same X x Y grid on the re-captured V1 store)",
+                "paired_deltas (matched-row V5-vs-V1 bootstrap)",
+            ],
+            "interpretation": (
+                "V5 ~ V1 (CIs overlap) => the boundary FORM does not matter, the "
+                "boundary's presence does; V5 ~ V2 (boundary-absent) => V1's effect "
+                "needs the prose attribution specifically."
+            ),
+        },
+        "residual_story_cost": {
+            "question": (
+                "at MATCHED boundary syntax (both read at a 'User: '-style ':'), how "
+                "much of the story-vs-chat gap survives?"
+            ),
+            "decided_by": "CI overlap, V5 vs the no_template comparator",
+            "read_fields": [
+                "vs_matched_chat.no_template_same_rows (matched-row parent r2 read)",
+                "xy_grid.comparators.no_template (round-own X x Y comparator grid)",
+            ],
+            "interpretation": (
+                "CIs overlap => the residual story cost at matched boundary syntax is "
+                "not resolvable at this n; V5 below no_template => a story-frame cost "
+                "remains after the boundary syntax is matched."
+            ),
+        },
+        "note": (
+            "both contrasts read the SAME fields every other arm already emits — V5 "
+            "adds no new statistic, only the pre-registration of which comparison "
+            "answers which question."
+        ),
+    },
+}
 
 # V1 anchor: the landed conversation_paired_stories_assistant reads. Literals are
 # documentation cross-checks; the values are read LIVE from the committed JSONs.
@@ -1215,6 +1265,14 @@ def build_verdict(
             "no_template_same_rows": {k: nt_cell.get(k) for k in ("r2", "ci")},
         },
         "paired_deltas": paired,
+        # Pre-registered contrast map (arms that have one; reads only — see
+        # PRE_REGISTERED_CONTRASTS). Absent-by-default keeps every other arm's
+        # verdict shape unchanged.
+        **(
+            {"pre_registered_contrasts": PRE_REGISTERED_CONTRASTS[arm]}
+            if arm in PRE_REGISTERED_CONTRASTS
+            else {}
+        ),
         "reparam_story_vs_chat": reparam,
         # The consolidated X x Y measurement grid (addendum): the arm's own grid,
         # the same grid on each round-own comparator store, AND the same grid on
@@ -1614,7 +1672,16 @@ def main() -> None:
                 arm,
                 cell_summary,
                 paired_by_arm.get(arm, {}),
-                reparam_by_arm.get(arm, {"skipped": "reparam phase not run"}),
+                reparam_by_arm.get(
+                    arm,
+                    {
+                        "skipped": (
+                            "arm outside --reparam-arms scope"
+                            if arm not in reparam_arms
+                            else "reparam phase not run"
+                        )
+                    },
+                ),
                 grid_by_store.get(arm, {"skipped": "grid phase not run"}),
                 {k: grid_by_store[k] for k in BND_COMPARATORS if k in grid_by_store},
                 n_kept=len(arm_convs[arm]),
@@ -1646,10 +1713,15 @@ def main() -> None:
             },
         )
         for arm, v in verdicts.items():
+            # The headline carries the two NAMED reads (`r2_reduced_basis_primary`
+            # / `r2_ambient_gcv_continuity`) — a bare `r2` key was renamed away
+            # when the well-posedness companions landed, so print both names.
+            anchor = v["vs_v1_anchor_committed"]["anchor"]
             print(
                 f"[verdict] {bg.ARM_SLUG[arm]} L{LAYER} {bc.HEADLINE_SLOT} "
-                f"R2={v['headline'].get('r2')} vs V1 anchor "
-                f"{v['vs_v1_anchor_committed']['anchor'] and v['vs_v1_anchor_committed']['anchor']['r2']}",
+                f"R2_reduced={v['headline'].get('r2_reduced_basis_primary')} "
+                f"R2_ambient_gcv={v['headline'].get('r2_ambient_gcv_continuity')} "
+                f"vs V1 anchor(ambient) {anchor and anchor['r2']}",
                 flush=True,
             )
     print(f"[done] boundary-ablation fits -> {args.out_dir}", flush=True)

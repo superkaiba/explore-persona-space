@@ -13,8 +13,9 @@ X — read positions (single-token slots, storage order = BND_SLOT_ORDER):
   prefix       last token fully contained before the question content
   ctx_qend     last token fully contained before the question's end
   context      last token fully contained before the arm's ANSWER BOUNDARY —
-               the attribution-marker end for V1/V3/V4, the START of the
-               blank-line run for V2, the role header's end for the comparators
+               the attribution-marker end for V1/V3/V4, the bare turn label's
+               ':' for V5, the START of the blank-line run for V2, the role
+               header's end for the comparators
   ctx_preans   X_CLEAN: last token fully contained before the answer's first
                char (straddler-EXCLUSIVE, the #1345 `_last_fully_contained` /
                `_header_slot` convention)
@@ -172,6 +173,19 @@ TRANSITION: dict[str, dict] = {
         "suffix": "\n\nSam then asked:",
         "anchor_from_end": 0,
         "read_anchor": "the ':' of the next-speaker attribution",
+    },
+    # V5's answer is UNQUOTED (bare script-style label), so there is no closing
+    # quote to reproduce — closer is "". Its transition MATCHES the no_template
+    # comparator's `User: ` turn syntax (read at the ':'), which is what makes
+    # V5-vs-no_template a matched-boundary-syntax contrast. One deliberate
+    # difference from that comparator: a SINGLE newline (script-style turn
+    # spacing, consistent with V5's own single-newline label line) vs the
+    # comparator's blank-line `\n\nUser: ` narrative spacing.
+    bg.ARM_V5: {
+        "closer": "",
+        "suffix": "\nUser: ",
+        "anchor_from_end": 1,
+        "read_anchor": "the ':' of 'User: ' (script-style, single newline)",
     },
     "chat": {
         "closer": "",
