@@ -6634,8 +6634,8 @@
     "1857": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1857",
-      "status": "reviewing",
+      "path": "tasks/completed/1857",
+      "status": "completed",
       "title": "daily-fix: root-code guard binds cert to staged blob, not wo"
     },
     "1858": {
