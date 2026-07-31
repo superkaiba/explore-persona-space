@@ -235,6 +235,10 @@ def score_behavior(behavior: str, args) -> int:
         "--n-layers",
         str(len(args.layers)),
     ]
+    if args.arms:
+        # Roster passthrough: 'wide' (scorer default), 'core', 'wide-nomlp', or
+        # an explicit slug list. Omitted here means the scorer's own default.
+        cmd += ["--arms", *args.arms]
     _log(f"[phase=score behavior={behavior}] {' '.join(cmd[1:])}")
     t0 = time.time()
     proc = subprocess.run(cmd, cwd=str(_REPO_ROOT), check=False, env=args.child_env)
@@ -268,6 +272,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--behaviors", nargs="+", default=list(STAGE_ORDER))
     ap.add_argument("--variants", nargs="+", default=["context_end", "prefix_end"])
+    ap.add_argument(
+        "--arms",
+        nargs="+",
+        default=None,
+        metavar="ROSTER|SLUG",
+        help="transfer roster passed through to the scorer: 'wide' (its default), "
+        "'core', 'wide-nomlp', or an explicit arm-slug list",
+    )
     ap.add_argument("--layers", type=int, nargs="+", default=list(range(28)))
     ap.add_argument("--store-root", type=Path, default=Path("data/issue_1739/hf_dl"))
     ap.add_argument("--train-dv-root", type=Path, default=None)
