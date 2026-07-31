@@ -33,8 +33,8 @@ relates_to:
 
 ## Takeaways
 
-- **Both dissociation directions realized: identity plus bias scores acc@1 0.53 at pooled R² −0.92 (n=1000); a shrinkage-limited prefix ridge scores R² +0.54 at chance-level retrieval 0.04.**
-- Fitted maps beat every baseline on all non-saturated metrics; the nonlinear-over-ridge acc@1 gap grows with pool size, 0.036 at 1,000 candidates to 0.101 at 100,000.
+- **Both dissociation directions realized: identity plus bias scores acc@1 0.53 at pooled R² −0.92 (n=1000); a shrinkage-limited prefix ridge scores R² +0.54 at retrieval 0.04 (chance 0.02).**
+- At the 963k training regime, fitted maps beat every baseline on all non-saturated metrics; the nonlinear-over-ridge acc@1 gap grows with pool size, 0.036 at 1,000 candidates to 0.101 at 100,000.
 - Shuffled-pair nulls collapse to metric-specific floors; raw cosine's floor is 0.68 and the constant train-mean scores 0.798, so absolute cosine says little without the null.
 - Retrieval hubs are corpus-structured: test rows are 1% of the 100,000 pool yet 61-70 of fitted maps' top-100 cosine hubs; the correction still buys the fitted maps 0.03-0.10 acc@1 (weak baselines gain more, up to +0.195).
 - The identity-vs-fitted retrieval flip tracks training-set size: ridge falls 0.81 to 0.065 acc@1 as training rows drop 963k to 50; identity plus bias stays near 0.50.
@@ -125,9 +125,9 @@ One point per estimator and training regime: pooled held-out R² (horizontal, sy
 
 A single context-independent shift picks the right answer from 1,000 candidates half the time (0.532) while explaining less variance than the mean predictor (R² −0.920 vs −0.045); the constant mean sits at exact chance (0.001) with the least-bad R². The orderings invert; neither metric subsumes the other.
 
-### Fitted maps dominate, and the nonlinear retrieval edge grows with pool size
+### The nonlinear edge over ridge grows with candidate-pool size
 
-Left half: acc@1 (euclidean, n=1000) against candidate-pool size per 963k-train estimator. Right half: paired nonlinear-over-ridge acc@1 gaps, 95% bootstrap whiskers on shared draws. Companion: each true answer's rank among 100,000 candidates.
+acc@1 (euclidean, n=1000) against candidate-pool size per 963k-train estimator on the left; on the right, paired nonlinear-over-ridge acc@1 gaps with 95% bootstrap whiskers on shared draws. Companion: each true answer's rank among 100,000 candidates.
 
 ![Accuracy versus pool size and nonlinear minus ridge gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/76a1a9826dbb9d55945a0ee23667f2bf61020584/figures/issue_1901/pool_decay_and_nonlinear_gap.png)
 
@@ -149,25 +149,25 @@ Per metric panel: observed value per estimator (dot) against its 200-draw shuffl
 
 No metric shows a non-collapsing null on the fitted maps' pipeline — the instrument reads as sound. Cosine is the deliberate exception: a mismatched prediction-target pair still scores 0.68 because activation space shares a dominant mean direction, so mean-cosine values above roughly 0.7 say little; never headline a map on cosine without this floor.
 
-### Retrieval hubs are corpus-structured, and the hubness correction helps everywhere
+### Retrieval hubs are corpus-structured; the CSLS correction helps every estimator
 
-The left panel shows the corpus composition of each estimator's top-100 cosine hubs at the 100,000 pool, with the pool-composition reference. Right half: paired CSLS-minus-cosine acc@1 gains per estimator and pool, 95% bootstrap whiskers (n=1000).
+The left panel shows the corpus composition of each estimator's top-100 cosine hubs at the 100,000 pool, with the pool-composition reference. The right panel plots paired CSLS-minus-cosine acc@1 gains per estimator and pool (95% bootstrap whiskers, n=1000).
 
 ![Hub corpus composition and CSLS gain versus pool size](https://raw.githubusercontent.com/superkaiba/explore-persona-space/76a1a9826dbb9d55945a0ee23667f2bf61020584/figures/issue_1901/hub_composition_csls.png)
 
 > **Figure.** *Hubs sit where each estimator's predictions land.* Fitted maps' hubs are test-row-dominated (61-70 of 100 against 1% of pool); identity-family hubs are train-region LMSYS distractors (87 of 100). CSLS gains span +0.027 (width-32768 map, pool 20,000) to +0.097 (ridge, pool 100,000).
 
-Cosine 10-occurrence skewness reaches 13.6-25.8 against a Gaussian reference of 3.2; the euclidean excess is modest (23.8 vs 20.8) — mostly a cosine phenomenon. Hubs follow each estimator's prediction region: the correction partly compensates corpus and density structure, not only generic hubness; it helps weak estimators most (identity copy +0.195 at pool 1,000) — so plain kNN understates weak baselines.
+Cosine 10-occurrence skewness reaches 13.6-25.8 against a Gaussian reference of 3.2; the euclidean excess is modest (23.8 vs 20.8) — mostly a cosine phenomenon. Hubs follow each estimator's prediction region, so part of the CSLS gain compensates corpus and density structure beyond generic hubness; it helps weak estimators most (identity copy +0.195 at pool 1,000) — so plain kNN understates weak baselines.
 
-### The retrieval flip is a small-training-set property, and pooled R² fails in the opposite direction there
+### At small training sets the retrieval ranking flips while pooled R² fails the other way
 
-Left half: ridge versus identity-plus-bias acc@1 across four training regimes (963,444 / 3,600 / 50 context rows; prefix leave-one-family-out ≈43), euclidean, chance dashed per regime. Right half: per-family prefix ridge R² behind the pooled value.
+Ridge versus identity-plus-bias acc@1 across four training regimes (963,444 / 3,600 / 50 context rows; prefix leave-one-family-out ≈43; euclidean; chance dashed per regime), paired with the per-family prefix ridge R² behind the pooled value.
 
 ![Accuracy across training regimes and per family prefix R squared](https://raw.githubusercontent.com/superkaiba/explore-persona-space/76a1a9826dbb9d55945a0ee23667f2bf61020584/figures/issue_1901/regime_flip_and_family_breakdown.png)
 
 > **Figure.** *Ridge's discriminability is bought with training data; the bias estimate is not.* Ridge falls 0.805, 0.720, 0.065, 0.04 across the regimes while identity plus bias holds 0.532, 0.503, 0.501, 0.84. All seven prefix families sit at or below zero R² against a pooled +0.54; prefix R² is estimator-degenerate (≈43 rows, 3,584 dimensions), never compared to context-arm values.
 
-The prefix arm reproduces the banked dissociation to the digit; the n=50 context rung reproduces the flip with data, pool, and folds fixed — a small-training-set property (prefix-specific contributions bounded, not excluded). The mirror failure: shrunk predictions near the fold mean track family membership with no per-context discriminability; the n=50 rung repeats it (R² +0.384, acc@1 0.065). The R² ordering never flips.
+The prefix arm reproduces the previously measured dissociation (identity-plus-bias acc@1 0.84 vs ridge 0.04) to the digit; the n=50 context rung reproduces the flip with data, pool, and folds fixed — a small-training-set property (prefix-specific contributions bounded, not excluded). The mirror failure: shrunk predictions near the fold mean track family membership with no per-context discriminability; the n=50 rung repeats it (R² +0.384, acc@1 0.065). The R² ordering never flips.
 
 ---
 **Repro:** 0 GPU-h — VM CPU only, ~71 min wall (context battery 1,884 s; distractor stream 448 s; prefix battery 1,886 s; 19.7 GB peak RSS, above the plan's 12 GB projection and its 16 GB reroute line, and the launch-time OOM-priority protection silently failed via a pid-capture artifact — a rerun should route to a `cpu-mid` instance). Battery driver: [scripts/issue1901_metric_battery.py](https://github.com/superkaiba/explore-persona-space/blob/76a1a9826dbb9d55945a0ee23667f2bf61020584/scripts/issue1901_metric_battery.py), run at worktree commit `680f322678` (JSON-metadata code SHA `c63eca8d1e`; characterization amended at `d36c7c5dc5`); body figures regenerated by [scripts/issue1901_body_figures.py](https://github.com/superkaiba/explore-persona-space/blob/76a1a9826dbb9d55945a0ee23667f2bf61020584/scripts/issue1901_body_figures.py) at commit `76a1a9826d`. Eval JSONs: [metric_battery tree](https://github.com/superkaiba/explore-persona-space/tree/76a1a9826dbb9d55945a0ee23667f2bf61020584/eval_results/issue_1901/metric_battery) (`context_arm.json`, `prefix_arm.json`, `metric_characterization.json`, `distractor_manifest.json`, `boot_draws_context.json`, `boot_draws_prefix.json`). Figures + sidecars: [figures/issue_1901 tree](https://github.com/superkaiba/explore-persona-space/tree/76a1a9826dbb9d55945a0ee23667f2bf61020584/figures/issue_1901). Distractor pool npz: [HF issue1901_metrics/analysis_tensors](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/2f64d6e8022bb0f797148e11b628ae70a999ebcb/issue1901_metrics/analysis_tensors). Reused artifacts: Reused weight payloads from [#779](https://eps.superkaiba.com/tasks/779): [issue779_monitoring/n1m_readout/weights](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/687eb8b42cd01e1279fd857655e895e284440524/issue779_monitoring/n1m_readout/weights) — fit: the exact banked mixed-corpus fits; applied-vs-banked ridge R² delta 8.1e-11, all 12 payload key checks PASS. Reused context/answer capture bundle from [#779](https://eps.superkaiba.com/tasks/779) (`pass_b/train_context_vectors.pt`, byte-size-asserted 6,021,122,751) plus the seeded distractor stream from its capture chunks — fit: same pinned split, same layers. Reused prefix battery stores from [#722](https://eps.superkaiba.com/tasks/722) ([eval_results/issue_722/identity_bias_knn](https://github.com/superkaiba/explore-persona-space/tree/76a1a9826dbb9d55945a0ee23667f2bf61020584/eval_results/issue_722/identity_bias_knn) + the `c_C`/`v_A` stores its loaders resolve) — fit: verbatim leave-one-family-out fold structure; reproduces the banked read exactly. Config slugs for the ladder rungs: `const_mean`, `identity_copy`, `identity_bias`, `scaled_identity_3600`, `diagonal_only_3600`, `ridge`, `mlp_w8192`, `mlp_w32768`, `krr_nystrom`, `n3600_arm` (`const_mean_3600`, `identity_bias_3600`, `ridge_3600`), `ridge_n50_fixedlam`, `identity_bias_n50`, `prefix_arm`, `perm_null`.
