@@ -473,7 +473,7 @@ def assemble_row(
             "parsed_turns": [turn],
             "shape": shape,
             "model": model_key,
-            "provenance": "on_policy",
+            "provenance": c.PROV_ONPOLICY,
             "trailing_quote_stripped": stripped,
             "prefix_chars": a_start,
         }, "ok"
@@ -488,7 +488,7 @@ def assemble_row(
         "response": answer,
         "shape": shape,
         "model": model_key,
-        "provenance": "on_policy",
+        "provenance": c.PROV_ONPOLICY,
     }, "ok"
 
 
@@ -656,7 +656,7 @@ def write_yield_report(out_dir: Path, shape: str, model_key: str, fp: str, paylo
         "variant": c.VARIANT,
         "shape": shape,
         "model": model_key,
-        "provenance": "on_policy",
+        "provenance": c.PROV_ONPOLICY,
         "consumer": SHAPE_CONSUMER[shape],
         "bundle_fingerprint": fp,
         "story_character_name": c.STORY_CHARACTER_NAME,
@@ -680,7 +680,7 @@ def persist_bundle(out_dir: Path, shape: str, model_key: str, fp: str, smoke: bo
         "variant": c.VARIANT,
         "shape": shape,
         "model": model_key,
-        "provenance": "on_policy",
+        "provenance": c.PROV_ONPOLICY,
         "consumer": SHAPE_CONSUMER[shape],
         "bundle_fingerprint": fp,
         "files": files,

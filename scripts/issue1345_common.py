@@ -275,6 +275,42 @@ REGIME_FORMAT = {
     # loaded as a 2-slot store by stem collision.
     "r4slot": "stories_paired_slots",
 }
+
+# ---------------------------------------------------------------------------
+# Answer PROVENANCE — who WROTE the answer a store reads
+# ---------------------------------------------------------------------------
+# A STORE-KEY dimension, orthogonal to regime/format. Two stores can share the
+# render, the transition suffix, the slot grid and the conv_id set and still
+# differ in the one thing the on-policy-vs-injected program measures: whether
+# the answer was EMBEDDED verbatim (`injected` — the boundary-ablation arms and
+# every parent comparator) or WRITTEN BY THE MEASURED MODEL (`onpolicy`).
+#
+# Naming note: both provenances are captured by a teacher-forced forward pass,
+# so "teacher_forced" would name the CAPTURE METHOD, not this axis — the axis is
+# authorship. `injected` mirrors the plan's own term for the verbatim-embed arms.
+#
+# The suffix is EMPTY for `injected`, so every pre-existing stem, cell id and HF
+# path is byte-unchanged; `onpolicy` appends `_op`. Defined HERE (the shared
+# module) so the capture, the fits and any future consumer key off ONE
+# definition rather than duplicate suffix maps that can drift apart.
+#
+# ORTHOGONAL to the `r4op` REGIME (a prior round's on-policy STORY companion):
+# that is a regime-level format key, this is a per-store authorship dimension.
+# `r4op x onpolicy` is not a realized combination.
+PROV_INJECTED = "injected"
+PROV_ONPOLICY = "onpolicy"
+PROVENANCES = (PROV_INJECTED, PROV_ONPOLICY)
+_PROV_SUFFIX = {PROV_INJECTED: "", PROV_ONPOLICY: "_op"}
+
+
+def prov_suffix(provenance: str) -> str:
+    """Stem/cell-id suffix for a provenance ('' for injected, '_op' otherwise)."""
+    assert provenance in PROVENANCES, (
+        f"unknown provenance {provenance!r} — expected one of {PROVENANCES}"
+    )
+    return _PROV_SUFFIX[provenance]
+
+
 ARMS = ("prefix", "context")
 # Slot order in the #1345 stores: the extractor sorts slots by token position
 # and the prefix slot always precedes the context slot (asserted at render).
@@ -410,26 +446,41 @@ PAIRED_PAIR_R4 = ("r1", STORY_REGIME) if STORY_REGIME_ARMED else None
 _REGIME_CELL_TOKEN = {"r4op": "r4_op_companion"}
 
 
-def cell_id(model: str, regime: str, arm: str) -> str:
-    """Canonical cell id, e.g. R_instruct_r1_context (plan §6.5 naming)."""
-    return f"R_{MODEL_SLUG[model]}_{_REGIME_CELL_TOKEN.get(regime, regime)}_{arm}"
+def cell_id(model: str, regime: str, arm: str, provenance: str = PROV_INJECTED) -> str:
+    """Canonical cell id, e.g. R_instruct_r1_context (plan §6.5 naming).
+
+    The `injected` default appends nothing, so every pre-existing cell id is
+    byte-unchanged; an `onpolicy` cell reads R_instruct_r1_op_context.
+    """
+    token = _REGIME_CELL_TOKEN.get(regime, regime) + prov_suffix(provenance)
+    return f"R_{MODEL_SLUG[model]}_{token}_{arm}"
 
 
-def stem_for(model: str, regime: str) -> str:
-    """Turnstore stem for a (model, regime), e.g. instruct_chat_s."""
-    return f"{model}_{REGIME_FORMAT[regime]}_{TRACK}"
+def format_key_for(regime: str, provenance: str = PROV_INJECTED) -> str:
+    """Store format key for a (regime, provenance) — `chat`, `chat_op`, ..."""
+    return f"{REGIME_FORMAT[regime]}{prov_suffix(provenance)}"
 
 
-def _cell(model: str, regime: str, arm: str) -> dict:
+def stem_for(model: str, regime: str, provenance: str = PROV_INJECTED) -> str:
+    """Turnstore stem for a (model, regime, provenance), e.g. instruct_chat_s.
+
+    An `onpolicy` store NEVER collides with its injected twin at the same
+    (variant, model, regime): instruct_chat_s vs instruct_chat_op_s.
+    """
+    return f"{model}_{format_key_for(regime, provenance)}_{TRACK}"
+
+
+def _cell(model: str, regime: str, arm: str, provenance: str = PROV_INJECTED) -> dict:
     """One fit_cells-compatible cell dict (registry single source)."""
     return {
-        "cell_id": cell_id(model, regime, arm),
+        "cell_id": cell_id(model, regime, arm, provenance),
         "model_key": model,
-        "format_key": REGIME_FORMAT[regime],
+        "format_key": format_key_for(regime, provenance),
         "track": TRACK,
         "slot_index": ARM_SLOT_INDEX[arm],
         "target_turn_index": TARGET_TURN_INDEX[regime],
         "regime": regime,
+        "provenance": provenance,
         "arm": arm,
     }
 

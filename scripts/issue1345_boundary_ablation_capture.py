@@ -208,26 +208,27 @@ def transition_for(key: str) -> dict:
     return TRANSITION[key]
 
 
-# Answer PROVENANCE — who wrote the answer the store reads. It is a STORE-KEY
+# Answer PROVENANCE — who WROTE the answer the store reads. A STORE-KEY
 # dimension, not a render dimension: the render/transition for an on-policy chat
-# row is identical to its teacher-forced twin's (same segments, same suffix), but
-# the two must never share a store stem / HF path / sidecar regime, or the
-# on-policy capture silently overwrites the injected one. The `_op` suffix is
-# what makes both provenances co-resident and independently uploadable.
-PROV_TEACHER_FORCED = "teacher_forced"
-PROV_ON_POLICY = "on_policy"
-PROVENANCES = (PROV_TEACHER_FORCED, PROV_ON_POLICY)
-PROV_SUFFIX = {PROV_TEACHER_FORCED: "", PROV_ON_POLICY: "_op"}
+# row is identical to its injected twin's (same segments, same suffix), but the
+# two must never share a store stem / HF path / sidecar regime, or the on-policy
+# capture silently overwrites the injected one.
+#
+# The constants + suffix map live in `issue1345_common` so the capture, the fits
+# and every future consumer key off ONE definition — a duplicate suffix map here
+# could drift from the fits' and silently split the two arms apart.
+PROV_INJECTED = c.PROV_INJECTED
+PROV_ONPOLICY = c.PROV_ONPOLICY
+PROVENANCES = c.PROVENANCES
 
 
-def format_key(key: str, provenance: str = PROV_TEACHER_FORCED) -> str:
+def format_key(key: str, provenance: str = PROV_INJECTED) -> str:
     """Store format key — a DISTINCT stem per (arm/comparator x provenance).
 
-    The default `teacher_forced` returns the historical value byte-for-byte, so
-    every existing store stem / HF path / fits registry entry is unchanged.
+    The default `injected` returns the historical value byte-for-byte, so every
+    existing store stem / HF path / fits registry entry is unchanged.
     """
-    assert provenance in PROVENANCES, f"unknown provenance {provenance!r}"
-    suffix = PROV_SUFFIX[provenance]
+    suffix = c.prov_suffix(provenance)
     if key == V1_ARM:
         return f"bnd_{V1_SLUG}{suffix}"
     if key in bg.ARM_SLUG:
@@ -236,8 +237,72 @@ def format_key(key: str, provenance: str = PROV_TEACHER_FORCED) -> str:
     return {"chat": "bnd_chat", "no_template": "bnd_ntpl"}[key] + suffix
 
 
-def stem_for(key: str, model_key: str = bg.MODEL_KEY, provenance: str = PROV_TEACHER_FORCED) -> str:
+def stem_for(key: str, model_key: str = bg.MODEL_KEY, provenance: str = PROV_INJECTED) -> str:
     return f"{model_key}_{format_key(key, provenance)}_{TRACK}"
+
+
+# ---------------------------------------------------------------------------
+# ON-POLICY store registry (the #1345 on-policy-vs-injected program)
+# ---------------------------------------------------------------------------
+# Which store keys have an ON-POLICY twin, and how each one's rows are produced.
+# Declarative so the capture entrypoint AND the fits enumeration resolve the
+# on-policy stores without hand-edits — the same single-source pattern the
+# variant registry uses (commit 00a6f829e8).
+#
+# The ablation arms (V2..V5) are DELIBERATELY absent: their construction IS the
+# verbatim injection, so "on-policy V3" is not a meaningful store — the arm's
+# boundary form cannot be held fixed while the model writes freely. The
+# on-policy-capable keys are the two comparators (whose render is just a turn)
+# plus the V1 anchor (whose story prefix can be frozen while the answer slot is
+# regenerated).
+#
+# The 16 CHARACTER-cell stores need no entries here: each runs under its own
+# `EPM_I1345_VARIANT` (commit 00a6f829e8), so `c._VSUB` already scopes its dirs
+# and HF prefixes, and its stem comes from `c.stem_for(model, regime)` with the
+# r4/r4op regimes — a different registry, already resolvable.
+ONPOLICY_STORES: dict[str, dict] = {
+    "no_template": {
+        "gen_shape": "bare_text",
+        "source_flag": "--convs-jsonl",
+        "capture_mode": "--comparator no_template",
+        "rows": "onpolicy_rows_op_ntpl_<model>.jsonl",
+        "isolates": "the model's OWN bare-text answer, same User:/Assistant: render",
+    },
+    "chat": {
+        "gen_shape": "chat",
+        "source_flag": "--convs-jsonl",
+        "capture_mode": "--comparator chat",
+        "rows": "onpolicy_rows_op_chat_<model>.jsonl",
+        "isolates": "the model's OWN chat-template answer, same segments",
+    },
+    V1_ARM: {
+        "gen_shape": "story_slot",
+        "source_flag": "--stories-jsonl",
+        "capture_mode": f"--arm {V1_SLUG}",
+        "rows": "onpolicy_rows_op_slot_<model>.jsonl",
+        "isolates": "the model's OWN answer in the FROZEN V1 story prefix",
+    },
+}
+
+
+def has_onpolicy_twin(key: str) -> bool:
+    """Does this store key have a registered on-policy twin?"""
+    return key in ONPOLICY_STORES
+
+
+def onpolicy_store_spec(key: str) -> dict:
+    """The on-policy twin's production spec (fail loud on an unregistered key)."""
+    assert key in ONPOLICY_STORES, (
+        f"{key!r} has no registered on-policy twin — registered keys: "
+        f"{sorted(ONPOLICY_STORES)}. The ablation arms are injection-BY-CONSTRUCTION "
+        "and deliberately have none."
+    )
+    return ONPOLICY_STORES[key]
+
+
+def onpolicy_stems(model_key: str = bg.MODEL_KEY) -> dict[str, str]:
+    """Every registered on-policy store's expected stem, keyed by store key."""
+    return {k: stem_for(k, model_key, PROV_ONPOLICY) for k in ONPOLICY_STORES}
 
 
 def hf_tensor_prefix(smoke: bool) -> str:
@@ -698,7 +763,7 @@ def persist_store(
     key: str,
     smoke: bool,
     extra: dict,
-    provenance: str = PROV_TEACHER_FORCED,
+    provenance: str = PROV_INJECTED,
 ) -> None:
     """Upload this arm's/comparator's shards + sidecars + manifest to HF.
 
@@ -803,8 +868,8 @@ def main() -> None:
     ap.add_argument(
         "--provenance",
         choices=PROVENANCES,
-        default=PROV_TEACHER_FORCED,
-        help="who wrote the answers this store reads. `on_policy` suffixes the store "
+        default=PROV_INJECTED,
+        help="who WROTE the answers this store reads. `onpolicy` suffixes the store "
         "stem / HF path / sidecar regime with `_op` so an on-policy store is "
         "co-resident with its teacher-forced twin instead of overwriting it; it "
         "REQUIRES an on-policy row source (--convs-jsonl / --stories-jsonl)",
@@ -815,7 +880,7 @@ def main() -> None:
         default=None,
         help="--comparator ONLY: read the conversations from a local {conv_id, prompt, "
         "response} JSONL (the on-policy answer rows) instead of the pinned parent "
-        "track-S corpus. Requires --provenance on_policy",
+        "track-S corpus. Requires --provenance onpolicy",
     )
     ap.add_argument(
         "--stories-jsonl",
@@ -823,7 +888,7 @@ def main() -> None:
         default=None,
         help="--arm ONLY: read the kept stories from a local {conv_id, story, answer, "
         "parsed_turns} JSONL (the on-policy story-slot rows) instead of this round's "
-        "gen output / the pinned V1 bundle. Requires --provenance on_policy",
+        "gen output / the pinned V1 bundle. Requires --provenance onpolicy",
     )
     ap.add_argument("--skip-upload", action="store_true", help="local-only (smoke plumbing)")
     ap.add_argument("--smoke", action="store_true", help="first 8 rows; causal check ON")
@@ -857,16 +922,16 @@ def main() -> None:
         assert args.comparator, "--convs-jsonl applies to --comparator captures only"
     if args.stories_jsonl is not None:
         assert args.arm, "--stories-jsonl applies to --arm captures only"
-    on_policy_source = args.convs_jsonl is not None or args.stories_jsonl is not None
-    if on_policy_source:
-        assert args.provenance == PROV_ON_POLICY, (
+    onpolicy_source = args.convs_jsonl is not None or args.stories_jsonl is not None
+    if onpolicy_source:
+        assert args.provenance == PROV_ONPOLICY, (
             "an on-policy row source (--convs-jsonl / --stories-jsonl) requires "
-            f"--provenance {PROV_ON_POLICY}: under the default the store would overwrite "
+            f"--provenance {PROV_ONPOLICY}: under the default the store would overwrite "
             "its teacher-forced twin's stem + HF path"
         )
-    if args.provenance == PROV_ON_POLICY:
-        assert on_policy_source, (
-            f"--provenance {PROV_ON_POLICY} requires an on-policy row source "
+    if args.provenance == PROV_ONPOLICY:
+        assert onpolicy_source, (
+            f"--provenance {PROV_ONPOLICY} requires an on-policy row source "
             "(--convs-jsonl for a comparator, --stories-jsonl for an arm) — otherwise the "
             "store carries teacher-forced rows under an on-policy stem"
         )

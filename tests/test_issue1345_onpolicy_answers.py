@@ -1,6 +1,6 @@
 """Issue #1345 on-policy-vs-injected program — permanent invariants.
 
-Three guard families, all zero-GPU:
+Five guard families, all zero-GPU and zero-API:
 
 1. Launcher DEVICE RESOLUTION (#1902). Fellows SLURM nodes are GPU-SHARED and
    `nvidia-smi` ignores CUDA_VISIBLE_DEVICES, so a detected-count fan-out
@@ -13,10 +13,22 @@ Three guard families, all zero-GPU:
    a hardcoded fraction demands that share of TOTAL regardless of what other
    tenants hold, and EngineCore raises at init.
 
-3. Provenance STORE KEYS: the `teacher_forced` default must reproduce every
-   historical stem byte-for-byte (the live rounds' HF paths and fits registry
-   entries must not move) while `on_policy` is distinct, so an on-policy capture
-   is co-resident with its injected twin instead of overwriting it.
+3. Provenance STORE KEYS, capture side: the `injected` default must reproduce
+   every historical stem byte-for-byte (the live rounds' HF paths and fits
+   registry entries must not move) while `onpolicy` is distinct, so an on-policy
+   capture is co-resident with its injected twin instead of overwriting it. The
+   axis is AUTHORSHIP — both provenances are captured teacher-forced.
+
+3b/3c. The SECOND stem_for (the FITS registry in issue1345_common) plus the
+   fits' own grid enumeration: same byte-identity-by-default contract, and the
+   on-policy grid must be a MATCHED PAIR of the identical lattice (same slots, Y
+   targets, conv_id space) gated on store presence — so the fits run unchanged
+   before the on-policy captures land and pick the paired arm up automatically.
+
+3d. Judge legs: rubric discipline (anchored, reason-then-score, confusable
+   neighbours named per llm-judging rule 25) and the SPEND FAIL-SAFE — both the
+   `--execute` flag AND the env ack are required, so no accidental invocation
+   can bill the Batch API while spend is held.
 """
 
 from __future__ import annotations
@@ -267,16 +279,16 @@ def _cap_module(monkeypatch):
 
 
 @pytest.mark.parametrize(("key", "legacy"), sorted(LEGACY_FORMAT_KEYS.items()))
-def test_teacher_forced_format_keys_are_byte_identical(monkeypatch, key, legacy):
+def test_injected_format_keys_are_byte_identical(monkeypatch, key, legacy):
     cap = _cap_module(monkeypatch)
     assert cap.format_key(key) == legacy
-    assert cap.format_key(key, cap.PROV_TEACHER_FORCED) == legacy
+    assert cap.format_key(key, cap.PROV_INJECTED) == legacy
 
 
 @pytest.mark.parametrize(("key", "legacy"), sorted(LEGACY_FORMAT_KEYS.items()))
 def test_on_policy_format_keys_are_distinct(monkeypatch, key, legacy):
     cap = _cap_module(monkeypatch)
-    op_key = cap.format_key(key, cap.PROV_ON_POLICY)
+    op_key = cap.format_key(key, cap.PROV_ONPOLICY)
     assert op_key == f"{legacy}_op"
     assert op_key != legacy
 
@@ -305,5 +317,322 @@ def test_main_threads_provenance_at_every_key_site(monkeypatch):
         "provenance=args.provenance",
     ):
         assert frag in src, frag
-    # An un-threaded call would silently write the teacher-forced stem.
+    # An un-threaded call would silently write the injected stem.
     assert "stem_for(key, args.model)" not in src
+
+
+def test_capture_reuses_the_shared_prov_constants(monkeypatch):
+    """ONE definition: a duplicate suffix map in the capture could drift."""
+    cap = _cap_module(monkeypatch)
+    import issue1345_common as common
+
+    assert cap.PROV_INJECTED is common.PROV_INJECTED
+    assert cap.PROV_ONPOLICY is common.PROV_ONPOLICY
+    assert cap.PROVENANCES is common.PROVENANCES
+    assert (common.PROV_INJECTED, common.PROV_ONPOLICY) == ("injected", "onpolicy")
+    # The axis is AUTHORSHIP, not capture method: both provenances are captured
+    # teacher-forced, so "teacher_forced" must not be a provenance value.
+    assert "teacher_forced" not in common.PROVENANCES
+
+
+# ---------------------------------------------------------------------------
+# 3b. The FITS-side registry in issue1345_common (a SECOND stem_for)
+# ---------------------------------------------------------------------------
+# The historical fits stems/cell ids, which the live rounds' fit outputs key on.
+LEGACY_FITS = {
+    ("instruct", "r1"): ("instruct_chat_s", "R_instruct_r1_context"),
+    ("instruct", "r2"): ("instruct_naturalistic_s", "R_instruct_r2_context"),
+    ("instruct", "r3"): ("instruct_stories_s", "R_instruct_r3_context"),
+    ("pretrained", "r1"): ("pretrained_chat_s", "R_base_r1_context"),
+}
+
+
+def _common(monkeypatch):
+    monkeypatch.setenv("EPM_I1345_VARIANT", "")
+    import issue1345_common as common
+
+    return common
+
+
+@pytest.mark.parametrize(("mk", "want"), sorted(LEGACY_FITS.items()))
+def test_fits_stem_and_cell_id_byte_identical_by_default(monkeypatch, mk, want):
+    """The injected default must not move ANY existing fits stem or cell id."""
+    common = _common(monkeypatch)
+    model, regime = mk
+    want_stem, want_cell = want
+    assert common.stem_for(model, regime) == want_stem
+    assert common.stem_for(model, regime, common.PROV_INJECTED) == want_stem
+    assert common.cell_id(model, regime, "context") == want_cell
+    assert common.cell_id(model, regime, "context", common.PROV_INJECTED) == want_cell
+
+
+@pytest.mark.parametrize(("mk", "want"), sorted(LEGACY_FITS.items()))
+def test_fits_onpolicy_stem_and_cell_id_are_distinct(monkeypatch, mk, want):
+    common = _common(monkeypatch)
+    model, regime = mk
+    want_stem, want_cell = want
+    op_stem = common.stem_for(model, regime, common.PROV_ONPOLICY)
+    op_cell = common.cell_id(model, regime, "context", common.PROV_ONPOLICY)
+    assert op_stem != want_stem and op_cell != want_cell
+    # The suffix rides the FORMAT token, so the track suffix stays terminal.
+    assert op_stem.endswith(f"_{common.TRACK}")
+    assert "_op_" in op_stem
+
+
+def test_fits_prov_suffix_contract(monkeypatch):
+    common = _common(monkeypatch)
+    assert common.prov_suffix(common.PROV_INJECTED) == ""
+    assert common.prov_suffix(common.PROV_ONPOLICY) == "_op"
+    with pytest.raises(AssertionError):
+        common.prov_suffix("guessed")
+
+
+def test_fits_cell_dict_carries_provenance(monkeypatch):
+    """Every cell dict must name its provenance so the fits can pair the arms."""
+    common = _common(monkeypatch)
+    inj = common._cell("instruct", "r1", "context")
+    onp = common._cell("instruct", "r1", "context", common.PROV_ONPOLICY)
+    assert inj["provenance"] == common.PROV_INJECTED
+    assert onp["provenance"] == common.PROV_ONPOLICY
+    assert inj["cell_id"] != onp["cell_id"]
+    assert inj["format_key"] != onp["format_key"]
+    # Everything else about the pair is IDENTICAL — that is what makes them a
+    # matched pair of the same lattice rather than two unrelated cells.
+    for k in ("model_key", "track", "slot_index", "target_turn_index", "regime", "arm"):
+        assert inj[k] == onp[k], k
+
+
+def test_all_cells_unchanged_by_the_new_dimension(monkeypatch):
+    """all_cells() still emits ONLY injected cells — no silent lattice growth."""
+    common = _common(monkeypatch)
+    cells = common.all_cells()
+    assert cells, "all_cells() is empty"
+    assert all(cl["provenance"] == common.PROV_INJECTED for cl in cells)
+    ids = [cl["cell_id"] for cl in cells]
+    assert len(ids) == len(set(ids)), "duplicate cell ids"
+    assert not any("_op_" in i for i in ids), "an on-policy cell leaked into all_cells()"
+
+
+# ---------------------------------------------------------------------------
+# 3b. On-policy store registry
+# ---------------------------------------------------------------------------
+def test_registry_covers_exactly_the_onpolicy_capable_keys(monkeypatch):
+    """The ablation arms are injection-BY-CONSTRUCTION and must NOT be listed."""
+    cap = _cap_module(monkeypatch)
+    import issue1345_boundary_ablation_gen as bgen
+
+    assert set(cap.ONPOLICY_STORES) == {"chat", "no_template", cap.V1_ARM}
+    for arm in bgen.GEN_ARMS:
+        assert arm not in cap.ONPOLICY_STORES, f"{arm} must have no on-policy twin"
+        assert not cap.has_onpolicy_twin(arm)
+    for key in cap.ONPOLICY_STORES:
+        assert cap.has_onpolicy_twin(key)
+
+
+def test_registry_spec_is_complete_and_fails_loud(monkeypatch):
+    cap = _cap_module(monkeypatch)
+    for key, spec in cap.ONPOLICY_STORES.items():
+        for field in ("gen_shape", "source_flag", "capture_mode", "rows", "isolates"):
+            assert spec.get(field), f"{key} missing {field}"
+        # The declared source flag must match the capture mode it pairs with.
+        if spec["capture_mode"].startswith("--comparator"):
+            assert spec["source_flag"] == "--convs-jsonl", key
+        else:
+            assert spec["source_flag"] == "--stories-jsonl", key
+    with pytest.raises(AssertionError, match="no registered on-policy twin"):
+        cap.onpolicy_store_spec("v2_boundary_absent")
+
+
+def test_registry_stems_are_all_op_suffixed_and_unique(monkeypatch):
+    cap = _cap_module(monkeypatch)
+    stems = cap.onpolicy_stems("instruct")
+    assert set(stems) == set(cap.ONPOLICY_STORES)
+    assert all("_op_" in s for s in stems.values()), stems
+    assert len(set(stems.values())) == len(stems), stems
+    # And each differs from its INJECTED twin's stem.
+    for key, op_stem in stems.items():
+        assert op_stem != cap.stem_for(key, "instruct"), key
+
+
+# ---------------------------------------------------------------------------
+# 3c. Fits provenance dimension — the paired arm of the same lattice
+# ---------------------------------------------------------------------------
+def _fits_module(monkeypatch):
+    monkeypatch.setenv("EPM_I1345_VARIANT", "story_boundary_ablation")
+    monkeypatch.setenv("EPM_STORY_CHARACTER_NAME", "Assistant")
+    import issue1345_boundary_ablation_fits as fits
+
+    return fits
+
+
+def test_fits_injected_grid_is_byte_unchanged(monkeypatch):
+    """Every pre-existing grid cell id must be untouched by the new dimension."""
+    fits = _fits_module(monkeypatch)
+    cells = fits.grid_cells("chat")
+    ids = [cl["cell_id"] for cl in cells]
+    assert all("_op_" not in i for i in ids), ids
+    assert all(cl["provenance"] == "injected" for cl in cells)
+    assert all(cl["format_key"] == "bnd_chat" for cl in cells)
+    # The default and the explicit injected call agree exactly.
+    assert ids == [cl["cell_id"] for cl in fits.grid_cells("chat", "injected")]
+
+
+def test_fits_onpolicy_grid_is_a_matched_pair(monkeypatch):
+    """Identical lattice shape; ONLY authorship (and hence the key) differs."""
+    fits = _fits_module(monkeypatch)
+    inj = fits.grid_cells("chat")
+    onp = fits.grid_cells("chat", "onpolicy")
+    assert len(inj) == len(onp) > 0
+    for a, b in zip(inj, onp, strict=True):
+        assert a["cell_id"] != b["cell_id"]
+        assert a["format_key"] != b["format_key"]
+        assert b["format_key"] == a["format_key"] + "_op"
+        assert b["provenance"] == "onpolicy"
+        # Everything that makes it the SAME lattice point is identical.
+        for k in (
+            "model_key",
+            "track",
+            "slot_index",
+            "target_turn_index",
+            "slot",
+            "y_target",
+            "arm",
+        ):
+            assert a[k] == b[k], k
+    ids = [cl["cell_id"] for cl in inj + onp]
+    assert len(ids) == len(set(ids)), "injected/on-policy cell ids collide"
+
+
+def test_fits_paired_enumeration_is_presence_gated(monkeypatch, tmp_path):
+    """No on-policy store on disk -> zero cells, and the run is unaffected."""
+    fits = _fits_module(monkeypatch)
+    keys = ["chat", "no_template", fits.bc.V1_ARM]
+    cells, present = fits.onpolicy_paired_cells(tmp_path, keys)
+    assert cells == []
+    assert present == dict.fromkeys(keys, False)
+
+    # Land ONE on-policy store (npz contract) -> only that twin joins.
+    stem = f"{fits.bg.MODEL_KEY}_{fits.bc.format_key('chat', 'onpolicy')}_{fits.bc.TRACK}"
+    (tmp_path / f"{stem}.npz").write_bytes(b"")
+    cells, present = fits.onpolicy_paired_cells(tmp_path, keys)
+    assert present["chat"] is True
+    assert present["no_template"] is False
+    assert cells and all(cl["provenance"] == "onpolicy" for cl in cells)
+    assert {cl["bnd_arm"] for cl in cells} == {"chat"}
+    assert len(cells) == len(fits.grid_cells("chat", "onpolicy"))
+
+
+def test_fits_paired_enumeration_skips_the_ablation_arms(monkeypatch, tmp_path):
+    """An ablation arm has no on-policy twin — skipped silently, never reported."""
+    fits = _fits_module(monkeypatch)
+    import issue1345_boundary_ablation_gen as bgen
+
+    cells, present = fits.onpolicy_paired_cells(tmp_path, list(bgen.GEN_ARMS))
+    assert cells == []
+    assert present == {}, "an ablation arm must not appear in the presence report"
+
+
+# ---------------------------------------------------------------------------
+# 3d. Judge legs — protocol + spend fail-safe (zero API calls)
+# ---------------------------------------------------------------------------
+def _judge_module(monkeypatch):
+    monkeypatch.setenv("EPM_I1345_VARIANT", "story_boundary_ablation")
+    monkeypatch.setenv("EPM_STORY_CHARACTER_NAME", "Assistant")
+    import issue1345_onpolicy_judge_legs as jl
+
+    return jl
+
+
+def test_judge_protocol_matches_the_llm_judging_rules(monkeypatch):
+    jl = _judge_module(monkeypatch)
+    import issue1345_common as common
+
+    assert jl.JUDGE_MODEL == common.JUDGE_MODEL == "claude-sonnet-4-5-20250929"  # rule 11
+    assert jl.N_DRAWS >= 5  # rule 4
+    assert jl.JUDGE_TEMPERATURE > 0  # draws must actually vary
+    assert jl.JUDGE_MAX_TOKENS >= 300  # rule 23 (reason-then-score floor)
+
+
+@pytest.mark.parametrize("leg", ["ai_likeness", "content_drift"])
+def test_rubrics_are_anchored_and_reason_then_score(monkeypatch, leg):
+    jl = _judge_module(monkeypatch)
+    r = jl.RUBRIC[leg]
+    for anchor in ("  0 ", "  50 ", "  100 "):  # rule 6: endpoints + midpoint
+        assert anchor in r, f"{leg} rubric lacks the {anchor.strip()} anchor"
+    assert "SCORE: <integer 0-100>" in r
+    # rule 7: the reasoning instruction must PRECEDE the score line.
+    assert r.index("reasoning") < r.index("SCORE: <integer"), leg
+    assert r.rstrip().endswith("SCORE: <integer 0-100>"), leg
+
+
+def test_ai_likeness_rubric_names_its_confusable_neighbours(monkeypatch):
+    """rule 25: an unnamed neighbour rides the contrast (the #1482 class).
+
+    The four characters vary on politeness / formality / competence /
+    theatricality — all correlated with naive AI-ness without being it.
+    """
+    jl = _judge_module(monkeypatch)
+    r = jl.RUBRIC[jl.LEG_AI_LIKENESS].lower()
+    for neighbour in ("politeness", "formality", "verbosity", "competence", "theatricality"):
+        assert neighbour in r, f"AI-likeness rubric does not name the neighbour {neighbour!r}"
+    assert "must not move the score" in r
+
+
+def test_content_drift_rubric_is_substance_only(monkeypatch):
+    jl = _judge_module(monkeypatch)
+    r = jl.RUBRIC[jl.LEG_CONTENT_DRIFT].lower()
+    for excluded in ("wording", "length", "tone", "formatting", "persona"):
+        assert excluded in r, f"content-drift rubric does not exclude {excluded!r}"
+    assert "contradict" in r
+
+
+def test_spend_requires_BOTH_the_flag_and_the_env_ack(monkeypatch):
+    """No accidental invocation can bill the Batch API."""
+    jl = _judge_module(monkeypatch)
+    monkeypatch.delenv(jl.SPEND_ACK_ENV, raising=False)
+    assert jl.spend_allowed(False)[0] is False
+    assert jl.spend_allowed(True)[0] is False, "the flag alone must NOT authorize spend"
+    monkeypatch.setenv(jl.SPEND_ACK_ENV, "1")
+    assert jl.spend_allowed(False)[0] is False, "the env alone must NOT authorize spend"
+    assert jl.spend_allowed(True)[0] is True
+    monkeypatch.setenv(jl.SPEND_ACK_ENV, "yes")
+    assert jl.spend_allowed(True)[0] is False, "only the literal '1' authorizes spend"
+
+
+def test_item_ids_are_batch_safe(monkeypatch):
+    """charset ^[A-Za-z0-9_-]$ and <= 53 chars (the 11-char draw-suffix budget)."""
+    jl = _judge_module(monkeypatch)
+    import re
+
+    for leg in jl.LEGS:
+        iid = jl.item_id(leg, "helios", "s12345")
+        assert re.fullmatch(r"[A-Za-z0-9_-]+", iid), iid
+        assert len(iid) <= jl.ITEM_ID_MAX
+    # Illegal characters are sanitized, never passed through.
+    assert re.fullmatch(r"[A-Za-z0-9_-]+", jl.item_id("ai_likeness", "a.b:c/d", "s1"))
+    # An over-long id fails loud rather than 400-ing the first batches.create.
+    with pytest.raises(AssertionError, match="chars >"):
+        jl.item_id("ai_likeness", "x" * 60, "s1")
+
+
+def test_content_drift_pairs_on_conv_id_and_counts_unpaired(monkeypatch):
+    jl = _judge_module(monkeypatch)
+    rows = [{"conv_id": f"s{i}", "prompt": "Q?", "response": f"onpolicy {i}"} for i in range(3)]
+    refs = [{"conv_id": "s0", "prompt": "Q?", "answer": "injected 0"}]
+    items, counts = jl.build_content_drift_items(rows, refs, "vex")
+    assert counts == {"paired": 1, "no_reference": 2}
+    assert len(items) == 1
+    # The reference must ride the user message so the rubric stays pointwise.
+    _iid, _q, user = items[0]
+    assert "REFERENCE ANSWER:" in user and "injected 0" in user
+    assert "RESPONSE TO RATE:" in user and "onpolicy 0" in user
+
+
+def test_answer_and_question_readers_accept_both_row_schemas(monkeypatch):
+    jl = _judge_module(monkeypatch)
+    assert jl._answer_of({"conv_id": "s1", "response": "a"}) == "a"  # comparator rows
+    assert jl._answer_of({"conv_id": "s1", "answer": "b"}) == "b"  # kept-stories rows
+    assert jl._question_of({"conv_id": "s1", "prompt": "q"}) == "q"
+    assert jl._question_of({"conv_id": "s1", "question": "q2"}) == "q2"
+    with pytest.raises(AssertionError, match="neither"):
+        jl._answer_of({"conv_id": "s1"})

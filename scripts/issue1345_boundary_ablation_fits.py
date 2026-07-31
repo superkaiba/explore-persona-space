@@ -190,31 +190,42 @@ Y_TAG = {bc.Y_MEAN: "ymean", bc.Y_BOUNDARY: "ybnd"}
 GRID_TAG = {**bg.ARM_SLUG, bc.V1_ARM: bc.V1_SLUG}
 
 
-def grid_cell_id(store_key: str, slot: str, y: str) -> str:
-    """Cell id for one (store, X slot, Y target) grid point."""
-    tag = GRID_TAG.get(store_key, store_key)
+def grid_cell_id(store_key: str, slot: str, y: str, provenance: str = c.PROV_INJECTED) -> str:
+    """Cell id for one (store, X slot, Y target, provenance) grid point.
+
+    The `injected` default appends nothing, so every pre-existing grid cell id
+    is byte-unchanged; the on-policy twin reads ..._bnd_chat_op_context__ymean.
+    """
+    tag = GRID_TAG.get(store_key, store_key) + c.prov_suffix(provenance)
     return f"R_{bg.MODEL_KEY}_bnd_{tag}_{slot}__{Y_TAG[y]}"
 
 
-def grid_cells(store_key: str) -> list[dict]:
+def grid_cells(store_key: str, provenance: str = c.PROV_INJECTED) -> list[dict]:
     """The store's full X x Y grid: every BND slot crossed with both Y targets.
 
-    ``store_key`` is an ablation arm (V2/V3/V4), the re-captured V1 anchor, or a
-    round-own comparator (``chat`` / ``no_template``) — all carry the identical
+    ``store_key`` is an ablation arm (V2/V3/V4/V5), the re-captured V1 anchor, or
+    a round-own comparator (``chat`` / ``no_template``) — all carry the identical
     5-slot x 2-target store shape, which is what makes the grid comparable
     across them (the V1 row is the boundary-PRESENT anchor the ablation arms are
     read against at matched (read position x target)).
+
+    ``provenance`` selects WHO WROTE the answers the store reads. An `onpolicy`
+    grid is the matched PAIRED ARM of the identical lattice — same slots, same Y
+    targets, same conv_id space, same store shape — differing only in authorship,
+    which is exactly the contrast the on-policy-vs-injected program measures.
     """
+    fmt = bc.format_key(store_key, provenance)
     return [
         {
-            "cell_id": grid_cell_id(store_key, slot, y),
+            "cell_id": grid_cell_id(store_key, slot, y, provenance),
             "model_key": bg.MODEL_KEY,
-            "format_key": bc.format_key(store_key),
+            "format_key": fmt,
             "track": bc.TRACK,
             "slot_index": idx,
             "target_turn_index": bc.Y_TARGET_INDEX[y],
-            "regime": bc.format_key(store_key),
+            "regime": fmt,
             "bnd_arm": store_key,
+            "provenance": provenance,
             "slot": slot,
             "y_target": y,
             "arm": SLOT_MAP_ARM[slot],
@@ -227,6 +238,31 @@ def grid_cells(store_key: str) -> list[dict]:
 def arm_cells(arm: str) -> list[dict]:
     """The ablation arm's own X x Y grid cells."""
     return grid_cells(arm)
+
+
+def onpolicy_paired_cells(
+    turnstore_dir: Path, store_keys: list[str]
+) -> tuple[list[dict], dict[str, bool]]:
+    """The on-policy PAIRED grid rows for every store whose twin is on disk.
+
+    Presence-gated exactly like the injected comparator stores: a registered
+    on-policy twin joins the lattice when ITS store is present, and is reported
+    as absent otherwise — so the fits run unchanged before the on-policy captures
+    land, and pick the paired arm up automatically once they do (no ad-hoc run).
+    Unregistered keys (the ablation arms, which are injection-BY-CONSTRUCTION)
+    are skipped silently — they have no meaningful on-policy twin.
+    """
+    cells: list[dict] = []
+    present: dict[str, bool] = {}
+    for key in store_keys:
+        if not bc.has_onpolicy_twin(key):
+            continue
+        fmt = bc.format_key(key, c.PROV_ONPOLICY)
+        ok = store_present(turnstore_dir, bg.MODEL_KEY, fmt)
+        present[key] = ok
+        if ok:
+            cells += grid_cells(key, c.PROV_ONPOLICY)
+    return cells, present
 
 
 def comparator_cells(arm: str, label: str) -> list[dict]:
@@ -1458,6 +1494,24 @@ def main() -> None:
         print(
             f"[fits] X x Y V1 store {bc.format_key(bc.V1_ARM)} absent — the grid has NO "
             "boundary-present anchor row (run capture --arm v1)",
+            flush=True,
+        )
+
+    # ON-POLICY paired arm of the SAME lattice (the on-policy-vs-injected
+    # program): every registered on-policy twin whose store is on disk joins here
+    # with identical slots / Y targets / conv_id space, so injected-vs-onpolicy is
+    # reported as a matched pair rather than a separate ad-hoc run. Presence-gated,
+    # so this is a no-op until the on-policy captures land.
+    op_cells, op_present = onpolicy_paired_cells(
+        args.turnstore_dir, [*bnd_comparators_available, bc.V1_ARM]
+    )
+    cells += op_cells
+    if op_present:
+        landed = sorted(k for k, ok in op_present.items() if ok)
+        missing = sorted(k for k, ok in op_present.items() if not ok)
+        print(
+            f"[fits] on-policy paired arm: {len(op_cells)} cells from {landed or 'none'}"
+            + (f"; absent (skipped): {missing}" if missing else ""),
             flush=True,
         )
 
