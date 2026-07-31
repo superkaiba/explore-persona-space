@@ -6711,8 +6711,8 @@
     "1867": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1867",
-      "status": "reviewing",
+      "path": "tasks/completed/1867",
+      "status": "completed",
       "title": "daily-fix: task.py address-concern accepts --note alias"
     },
     "1868": {
