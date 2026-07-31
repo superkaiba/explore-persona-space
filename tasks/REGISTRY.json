@@ -6746,8 +6746,8 @@
     "1871": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1871",
-      "status": "approved",
+      "path": "tasks/running/1871",
+      "status": "running",
       "title": "daily-fix: judge-monitor reads are digest-grain, never full "
     },
     "1872": {
