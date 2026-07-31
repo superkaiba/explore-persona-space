@@ -123,6 +123,9 @@ TEXT_SHARD_MAX_BYTES = 9_000_000
 # Smoke slice (dispatcher --smoke; plan §4 hard-requirement escapes).
 SMOKE_SINGLE_N = 32
 SMOKE_MULTI_N = 16
+# Smoke generation cap (scale dial only): random/tiny answers survive the
+# truncation flag (n < GEN_MAX_TOKENS) so any nonzero yield proceeds.
+SMOKE_GEN_MAX_TOKENS = 192
 
 # Per-phase disk floors (GB) — §9 disk rows, pending-scaled at phase entry.
 HEADROOM_BASE_GB = {"pilot": 6.0, "gen": 4.0, "capture": 4.0}
@@ -540,9 +543,80 @@ def _tokenizer(model_id: str, revision: str | None):
     return AutoTokenizer.from_pretrained(model_id, revision=revision)
 
 
+class _HfFallbackEngine:
+    """HF `generate()` engine with a vLLM-shaped ``generate(prompts, sp)``
+    surface — the SMOKE-only engine substitution (``EPM_ISSUE1902_GEN_ENGINE=hf``)
+    for hosts where vLLM cannot run the tiny smoke model (CPU VM). The phase
+    BODY (prompt render, chunking, flags, persistence) is byte-identical; only
+    the engine call substitutes — a NAMED smoke deviation, never a production
+    path (production keeps vLLM; the dispatcher never sets the env)."""
+
+    def __init__(self, model_id: str, revision: str | None, max_model_len: int):
+        self.max_model_len = max_model_len
+        self.tokenizer = _tokenizer(model_id, revision)
+        if self.tokenizer.pad_token_id is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+        import torch
+
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        self.model = _load_hf_model(model_id, revision, device)
+        self.device = device
+
+    def generate(self, prompts: list[str], sp, use_tqdm: bool = False):
+        """Batched sampling generate (batch 8, left-pad); returns objects
+        shaped like vLLM RequestOutput (``.outputs[0].{text,token_ids,
+        finish_reason}``). Stop sequences applied post-hoc on decoded text."""
+        import torch
+
+        del use_tqdm
+        tok = self.tokenizer
+        tok.padding_side = "left"
+        results = []
+        gen = torch.Generator(device="cpu").manual_seed(int(getattr(sp, "seed", 42) or 42))
+        for i in range(0, len(prompts), 8):
+            chunk = prompts[i : i + 8]
+            enc = tok(chunk, return_tensors="pt", padding=True, add_special_tokens=False)
+            enc = {k: v.to(self.device) for k, v in enc.items()}
+            torch.manual_seed(int(gen.initial_seed()) + i)
+            with torch.no_grad():
+                out = self.model.generate(
+                    **enc,
+                    do_sample=True,
+                    temperature=float(sp.temperature),
+                    top_p=float(sp.top_p),
+                    max_new_tokens=int(sp.max_tokens),
+                    pad_token_id=tok.pad_token_id,
+                )
+            n_in = enc["input_ids"].shape[1]
+            for row in out:
+                new_ids = row[n_in:].tolist()
+                if tok.eos_token_id in new_ids:
+                    new_ids = new_ids[: new_ids.index(tok.eos_token_id)]
+                    finish = "stop"
+                else:
+                    finish = "length" if len(new_ids) >= int(sp.max_tokens) else "stop"
+                text = tok.decode(new_ids, skip_special_tokens=True)
+                for s in getattr(sp, "stop", None) or []:
+                    if s in text:
+                        text = text.split(s, 1)[0]
+                        new_ids = tok.encode(text, add_special_tokens=False)
+                        finish = "stop"
+                o = type("Out", (), {})()
+                o.text, o.token_ids, o.finish_reason = text, new_ids, finish
+                res = type("Res", (), {})()
+                res.outputs = [o]
+                results.append(res)
+        return results
+
+
 def _vllm_engine(model_id: str, revision: str | None, max_model_len: int):
     """One engine config for ALL cells (plan §4 P2): #1324 knobs ON
-    (enforce_eager + prefix caching off) via ``hang_mitigations=True``."""
+    (enforce_eager + prefix caching off) via ``hang_mitigations=True``.
+    ``EPM_ISSUE1902_GEN_ENGINE=hf`` substitutes the smoke-only HF engine
+    (recorded engine deviation; see :class:`_HfFallbackEngine`)."""
+    if os.environ.get("EPM_ISSUE1902_GEN_ENGINE") == "hf":
+        logger.warning("[gen] EPM_ISSUE1902_GEN_ENGINE=hf — SMOKE HF engine substitution")
+        return _HfFallbackEngine(model_id, revision, max_model_len)
     from explore_persona_space.eval.generation import create_vllm_engine
 
     return create_vllm_engine(
@@ -594,15 +668,31 @@ def _gen_prompts(rows: list[dict], ckpt: str, tokenizer) -> list[str]:
     return prompts
 
 
-def _sampling_params(seed: int, ckpt: str):
+def _sampling_params(seed: int, ckpt: str, smoke: bool = False):
+    """#779-verbatim sampling params; ``smoke`` caps max_tokens ONLY (a
+    compute-SCALE dial — production geometry untouched; degeneracy flags are
+    informational under smoke)."""
+    max_tokens = C.GEN_MAX_TOKENS if not smoke else min(C.GEN_MAX_TOKENS, SMOKE_GEN_MAX_TOKENS)
+    stop = list(C.PLAIN_STOP_SEQUENCES) if ckpt == "B" else None
+    if os.environ.get("EPM_ISSUE1902_GEN_ENGINE") == "hf":
+        # smoke HF engine: a vllm import buys nothing on a CPU host.
+        from types import SimpleNamespace
+
+        return SimpleNamespace(
+            n=1,
+            temperature=C.GEN_TEMPERATURE,
+            top_p=C.GEN_TOP_P,
+            max_tokens=max_tokens,
+            seed=seed,
+            stop=stop,
+        )
     from vllm import SamplingParams
 
-    stop = list(C.PLAIN_STOP_SEQUENCES) if ckpt == "B" else None
     return SamplingParams(
         n=1,
         temperature=C.GEN_TEMPERATURE,
         top_p=C.GEN_TOP_P,
-        max_tokens=C.GEN_MAX_TOKENS,
+        max_tokens=max_tokens,
         seed=seed,
         stop=stop,
     )
@@ -690,7 +780,7 @@ def phase_gen_ckpt(args: argparse.Namespace, out_root: Path) -> None:
         unit = gen_unit_name(corpus, ckpt, seed)
         t0 = time.time()
         prompts = _gen_prompts(rows, ckpt, tokenizer)
-        gens = _generate_chunked(llm, prompts, _sampling_params(seed, ckpt))
+        gens = _generate_chunked(llm, prompts, _sampling_params(seed, ckpt, smoke=args.smoke))
         recs = _flag_records(rows, gens, seed)
         local = _gen_rollout_path(out_root, corpus, ckpt, seed)
         _write_jsonl_atomic(local, recs)
@@ -1227,17 +1317,20 @@ def phase_capture_ckpt(args: argparse.Namespace, out_root: Path, ckpts: list[str
             }
         )
     robust_n = ROBUST_NATIVE_N if not args.smoke else len(single_rows)
-    units.append(
-        {
-            "unit": f"capture_{ckpt}_robustnative_{C.CORPUS_SINGLE}",
-            "rows": single_rows[:robust_n],
-            "src": ckpt,
-            "corpus": C.CORPUS_SINGLE,
-            "render": "native",
-            "seed": C.GEN_SEED,
-            "subdir": f"robust_native/{ckpt}/{C.CORPUS_SINGLE}",
-        }
-    )
+    if ckpt != "B":
+        # Base has NO chat template (plan A3): its native render IS the plain
+        # render (§4 P2), so the robustness read only differs for S/D/R.
+        units.append(
+            {
+                "unit": f"capture_{ckpt}_robustnative_{C.CORPUS_SINGLE}",
+                "rows": single_rows[:robust_n],
+                "src": ckpt,
+                "corpus": C.CORPUS_SINGLE,
+                "render": "native",
+                "seed": C.GEN_SEED,
+                "subdir": f"robust_native/{ckpt}/{C.CORPUS_SINGLE}",
+            }
+        )
 
     regimes = {
         u["unit"]: unit_regime(
@@ -1426,7 +1519,9 @@ def phase_pilot_ckpt(args: argparse.Namespace, out_root: Path) -> None:
     for corpus, rows in ((C.CORPUS_SINGLE, single), (C.CORPUS_MULTI, multi)):
         t0 = time.time()
         gens = _generate_chunked(
-            llm, _gen_prompts(rows, ckpt, tokenizer), _sampling_params(C.GEN_SEED, ckpt)
+            llm,
+            _gen_prompts(rows, ckpt, tokenizer),
+            _sampling_params(C.GEN_SEED, ckpt, smoke=args.smoke),
         )
         recs = _flag_records(rows, gens, C.GEN_SEED)
         _write_jsonl_atomic(pdir / f"gen_{corpus}.jsonl", recs)
@@ -1457,7 +1552,10 @@ def phase_pilot_ckpt(args: argparse.Namespace, out_root: Path) -> None:
         unflagged = {
             i: a for i, a in answers.items() if not (a["truncated"] or a["repetition_flag"])
         }
-        renders = ["plain", "native"] if corpus == C.CORPUS_SINGLE else ["plain"]
+        # Base has NO chat template (plan A3) — its "native" render IS the
+        # plain render (§4 P2), so a separate native capture leg for B would
+        # both crash (apply_chat_template raises) and duplicate the plain leg.
+        renders = ["plain", "native"] if corpus == C.CORPUS_SINGLE and ckpt != "B" else ["plain"]
         for render in renders:
             t0 = time.time()
             stats = capture_cell(
@@ -1624,7 +1722,7 @@ def _timed_shard_upload(out_root: Path, hidden: int, smoke: bool) -> dict[str, A
     upload_dir_sharded(
         tdir,
         C.HF_DATA_REPO,
-        f"{C.HF_PREFIX}/pilot_timing/shard",
+        C.PILOT_TIMING_HF_PATH,
         repo_type="dataset",
         verify=True,
         delete_local=True,
@@ -1813,6 +1911,20 @@ def _import_check() -> None:
     )
     from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded  # noqa: F401
 
+    # P4 fits module + ITS deferred stack (unit C).
+    from issue1902_fits import run_fits  # noqa: F401
+    from issue825_crossmodel_map_transfer import principal_angles  # noqa: F401
+    from issue825_map_alignment import _procrustes_cosine_null  # noqa: F401
+
+    from explore_persona_space.analysis.mapping_baselines import (  # noqa: F401
+        identity_bias_predict,
+        knn_retrieval,
+    )
+    from explore_persona_space.analysis.representation_shift import (  # noqa: F401
+        cka_per_layer,
+        linear_cka,
+    )
+
     print("[import-check] OK: all deferred imports resolved", flush=True)
 
 
@@ -1882,13 +1994,12 @@ def main() -> None:
     )
 
     if args.phase == "fits":
-        print(
-            "[fits] P4 lands in unit C as scripts/issue1902_fits.py — this is the "
-            "registration point only (dispatcher wires it when the module exists).",
-            file=sys.stderr,
-            flush=True,
-        )
-        sys.exit(2)
+        from issue1902_fits import run_fits
+
+        run_fits(args, out_root, ckpts)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        sys.exit(0)
     if args.phase == "stage":
         phase_stage(args, out_root)
     elif args.phase == "pilot":

@@ -65,6 +65,10 @@ CKPTS="$CKPTS_FULL"
 
 SMOKE_FLAG=()
 [ -n "$SMOKE" ] && SMOKE_FLAG=(--smoke)
+# Smoke HF WRITE paths divert under _smoke so a smoke re-run can never
+# overwrite production rollouts/store/eval-mirror (read paths — the corpus
+# prefix — stay production; issue1902_common.HF_WRITE_PREFIX).
+[ -n "$SMOKE" ] && export EPM_ISSUE1902_HF_WRITE_PREFIX="issue1902_stage_map/_smoke"
 
 # The FULL leg reaps the derived smoke root at entry (chained smoke-then-full
 # out-root residue starves the quota'd lane's headroom asserts; #1586 fu r3).
@@ -183,13 +187,12 @@ if phase_wanted capture; then
 fi
 
 if phase_wanted fits; then
-  # P4 placeholder — unit C lands scripts/issue1902_fits.py and wires it here.
-  if [ -f scripts/issue1902_fits.py ]; then
-    echo "[phase=fits]"
-    run_single fits --phase fits
-  else
-    echo "[dispatch] phase fits: scripts/issue1902_fits.py not present — unit C placeholder, skipping"
-  fi
+  # P4 (unit C): fits + transfer + operator battery. Single process, ALL
+  # visible GPUs (device-pinned worker threads inside issue1902_fits — no
+  # per-leg CVD pin needed); gate B / parity / pilot halts exit rc=7. P5
+  # (issue1902_figures.py) runs VM-SIDE off the committed JSONs — NOT here.
+  echo "[phase=fits]"
+  run_single fits --phase fits
 fi
 
 echo "[dispatch] chain complete (mode=$MODE ckpts='$CKPTS')"

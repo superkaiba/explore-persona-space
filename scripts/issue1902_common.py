@@ -33,6 +33,7 @@ filename + index + counts only.
 from __future__ import annotations
 
 import json
+import os
 from collections import Counter
 from pathlib import Path
 from typing import NamedTuple
@@ -48,6 +49,15 @@ MODEL_IDS: dict[str, str] = {
     "D": "allenai/OLMo-2-1124-7B-DPO",
     "R": "allenai/OLMo-2-1124-7B-Instruct",
 }
+
+# Smoke-only model remap (the tiny-real standard, #906): when set, EVERY
+# checkpoint id resolves to ONE local directory holding a tiny random-weights
+# Olmo2 model over the REAL vocab (real tokenizer). This is an env-gated
+# model-ID substitution, never a code-path fork — every phase body runs
+# byte-identically. Production never sets it.
+_SMOKE_MODEL_DIR = os.environ.get("EPM_ISSUE1902_SMOKE_MODEL_DIR")
+if _SMOKE_MODEL_DIR:
+    MODEL_IDS = {c: _SMOKE_MODEL_DIR for c in CKPTS}
 
 # Name of the P1 pilot report that carries the BINDING revision pins
 # (plan §10: pinned at P1 launch; every P2/P3/robustness load passes
@@ -82,20 +92,41 @@ def load_revision_pins(pilot_report_path: Path | str) -> dict[str, str]:
 
 
 def resolve_revision(ckpt: str, pins: dict[str, str | None] | None) -> str | None:
-    """Revision to pass to a HF load for ``ckpt`` (None = unpinned, pre-P1 only)."""
+    """Revision to pass to a HF load for ``ckpt`` (None = unpinned, pre-P1 only).
+
+    A ``local:`` pin (smoke model-dir remap) resolves to None — HF revision
+    kwargs are meaningless for a local directory load.
+    """
     _check_ckpt(ckpt)
     if pins is None:
         return None
-    return pins.get(ckpt)
+    pin = pins.get(ckpt)
+    if pin is not None and str(pin).startswith("local:"):
+        return None
+    return pin
 
 
 def pin_revisions_now() -> dict[str, str]:
     """Resolve each checkpoint repo's CURRENT main sha (P1 calls this ONCE at
-    launch and persists the result into ``pilot_report.json``)."""
+    launch and persists the result into ``pilot_report.json``).
+
+    Local-directory model ids (the smoke remap) pin to a ``local:<sha16>`` of
+    the directory's config.json so the pin stays content-addressed without a
+    Hub call."""
+    import hashlib
+
     from huggingface_hub import HfApi
 
+    pins: dict[str, str] = {}
     api = HfApi()
-    return {c: str(api.model_info(MODEL_IDS[c]).sha) for c in CKPTS}
+    for c in CKPTS:
+        mid = MODEL_IDS[c]
+        if Path(mid).is_dir():
+            digest = hashlib.sha256((Path(mid) / "config.json").read_bytes()).hexdigest()[:16]
+            pins[c] = f"local:{digest}"
+        else:
+            pins[c] = str(api.model_info(mid).sha)
+    return pins
 
 
 # ── model dims (AutoConfig-derived — NEVER hardcoded) ────────────────────────
@@ -141,10 +172,16 @@ def capture_layers(num_layers: int) -> tuple[int, ...]:
 
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 HF_PREFIX = "issue1902_stage_map"
+# READ paths (corpus staging) stay on the production prefix; WRITE paths
+# (rollouts, store, eval mirror, pilot timing) divert under
+# EPM_ISSUE1902_HF_WRITE_PREFIX so a smoke run NEVER overwrites production
+# artifacts (the dispatcher exports `<prefix>/_smoke` under --smoke).
+HF_WRITE_PREFIX = os.environ.get("EPM_ISSUE1902_HF_WRITE_PREFIX", HF_PREFIX)
 CORPUS_HF_PATH = f"{HF_PREFIX}/corpus"
-RAW_GEN_HF_PATH = f"{HF_PREFIX}/raw_completions/gen"  # + /{single|multi}/{ckpt}.json
-STORE_HF_PATH = f"{HF_PREFIX}/analysis_tensors/issue1902_store"
-EVAL_MIRROR_HF_PATH = f"{HF_PREFIX}/eval_results_mirror"
+RAW_GEN_HF_PATH = f"{HF_WRITE_PREFIX}/raw_completions/gen"  # + /{single|multi}/{ckpt}.json
+STORE_HF_PATH = f"{HF_WRITE_PREFIX}/analysis_tensors/issue1902_store"
+EVAL_MIRROR_HF_PATH = f"{HF_WRITE_PREFIX}/eval_results_mirror"
+PILOT_TIMING_HF_PATH = f"{HF_WRITE_PREFIX}/pilot_timing/shard"
 
 # ── corpora ──────────────────────────────────────────────────────────────────
 
