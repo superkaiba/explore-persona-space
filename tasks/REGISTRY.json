@@ -6648,8 +6648,8 @@
     "1859": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1859",
-      "status": "running",
+      "path": "tasks/reviewing/1859",
+      "status": "reviewing",
       "title": "daily-fix: repo-root guard allows timeout-prefixed ssh paylo"
     },
     "186": {
