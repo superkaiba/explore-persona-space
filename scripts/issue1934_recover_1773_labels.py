@@ -290,6 +290,15 @@ def p3_gate_stats(n_success_parsed: int, failed: list[dict], floor: float = P3_G
     }
 
 
+def p3_halt_decision(verdict: str, smoke: bool) -> bool:
+    """Production HALTs on a non-PASS p3 gate; --smoke demotes the verdict to
+    an INFORMATIONAL log line (the gate-calibration smoke rule, #1345 class:
+    a 0.20 floor calibrated at production n≈2.6k is structurally noisy at
+    n=5 — one failed draw reads 20-100%). The gate STILL computes, logs, and
+    persists identically under smoke; only the rc-halt is production-only."""
+    return verdict != "PASS" and not smoke
+
+
 def classify_response_shape(raw: str | None) -> str:
     """Census classifier over fresh raw judge texts (plan §4.4, critic SF2).
 
@@ -756,9 +765,14 @@ def p3_describe(cfg: RecoveryCfg) -> None:
         f"nonempty={gate['n_nonempty']}, empty={gate['n_empty']}, "
         f"refusal_cut={gate['n_refusal_cut']}); census={dict(census)}"
     )
-    if gate["verdict"] != "PASS":
+    if p3_halt_decision(gate["verdict"], cfg.smoke):
         _log(f"[p3_describe] HALT — parse-fail gate >= {P3_GATE_FLOOR} (report: {report_path})")
         sys.exit(RC_P3_GATE_HALT)
+    if gate["verdict"] != "PASS":
+        _log(
+            "[p3_describe] SMOKE: gate verdict HALT is INFORMATIONAL at smoke n "
+            "(production halt path is unit-pinned; #1345 gate-calibration rule)"
+        )
 
 
 def p4_axes(cfg: RecoveryCfg) -> None:

@@ -98,6 +98,15 @@ class TestP3Gate:
         stats = R.p3_gate_stats(n_success_parsed=0, failed=[_f(""), _f("")])
         assert stats["verdict"] == "HALT"
 
+    def test_halt_decision_production_halts_smoke_demotes(self):
+        """The rc-halt is PRODUCTION-only; --smoke demotes a HALT verdict to
+        informational (#1345 gate-calibration class: a 0.20 floor at n=5 is
+        structurally noisy). The gate computation itself is mode-invariant."""
+        assert R.p3_halt_decision("HALT", smoke=False) is True
+        assert R.p3_halt_decision("HALT", smoke=True) is False
+        assert R.p3_halt_decision("PASS", smoke=False) is False
+        assert R.p3_halt_decision("PASS", smoke=True) is False
+
 
 class TestShapeCensus:
     def test_empty(self):
