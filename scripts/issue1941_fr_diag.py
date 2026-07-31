@@ -1681,6 +1681,76 @@ def make_figures(
     fig.tight_layout()
     fig.savefig(figs_root / "drop_rates_by_arm.png", dpi=200)
     plt.close(fig)
+
+    # production drop-taxonomy stacked bar (from drop_taxonomy.json when present;
+    # the per-ARM taxonomy-CLASS breakdown needs an arm raw-text classification
+    # pass — raised as a registered concern, not silently skipped)
+    tax_path = out_root / "drop_taxonomy.json"
+    if tax_path.exists():
+        tax = json.loads(tax_path.read_text())
+        tax_axes = [a for a in (AXIS, "abstraction") if a in tax.get("axes", {})]
+        fig, ax = plt.subplots(figsize=(6.4, 3.6))
+        bottoms = np.zeros(len(tax_axes))
+        for cls in TAXONOMY_CLASSES:
+            vals = np.array([tax["axes"][a]["taxonomy"].get(cls, 0) for a in tax_axes], dtype=float)
+            ax.bar(np.arange(len(tax_axes)), vals, bottom=bottoms, label=cls)
+            bottoms += vals
+        ax.set_xticks(np.arange(len(tax_axes)), tax_axes)
+        ax.set_ylabel("classified content drops (production raw text)")
+        ax.legend(fontsize=7)
+        fig.tight_layout()
+        fig.savefig(figs_root / "drop_taxonomy_production.png", dpi=200)
+        plt.close(fig)
+
+    # side_ratio-by-majority-label violins per arm (convergent mechanical read)
+    frame = load_frame()
+    arm_rows = load_arm_rows(out_root)
+    fig, axes2 = plt.subplots(1, len(arms), figsize=(3.0 * len(arms), 3.4), sharey=True)
+    axes2 = np.atleast_1d(axes2)
+    for ax_i, a in zip(axes2, arms):
+        data, labs = [], []
+        maj = {int(r["feat_id"]): r["label"] for r in arm_rows.get(a, [])}
+        for c in FR_CATS:
+            vals = [
+                frame["side_ratio"][f]
+                for f, lab in maj.items()
+                if lab == c and f in frame["side_ratio"]
+            ]
+            if vals:
+                data.append(vals)
+                labs.append(f"{c}\n(n={len(vals)})")
+        if data:
+            ax_i.violinplot(data, showmedians=True)
+            ax_i.set_xticks(np.arange(1, len(labs) + 1), labs, fontsize=6)
+        ax_i.set_title(names.get(a, a), fontsize=8)
+    axes2[0].set_ylabel("side_ratio (answer-side firing share)")
+    fig.tight_layout()
+    fig.savefig(figs_root / "side_ratio_by_label.png", dpi=200)
+    plt.close(fig)
+
+    # per-item unanimity covariate scatters (phase0 diagnostics, when present)
+    diag_path = out_root / "phase0_diagnostics.json"
+    if diag_path.exists():
+        cov = json.loads(diag_path.read_text()).get("covariates", {})
+        keys = [k for k in ("n_ex_pos", "activity", "side_ratio") if cov.get(k)]
+        if keys and cov.get("unanimity"):
+            u = np.array(cov["unanimity"], dtype=float)
+            rng = np.random.default_rng(0)  # display jitter only
+            fig, axes3 = plt.subplots(1, len(keys), figsize=(3.2 * len(keys), 3.2))
+            axes3 = np.atleast_1d(axes3)
+            for ax_i, k in zip(axes3, keys):
+                v = np.array(cov[k], dtype=float)
+                ax_i.scatter(v, u + rng.uniform(-0.06, 0.06, len(u)), s=2, alpha=0.15)
+                rho = (cov.get("spearman_vs_unanimity") or {}).get(k)
+                ax_i.set_xlabel(k, fontsize=8)
+                ax_i.set_title(
+                    f"spearman={rho:.3f}" if isinstance(rho, int | float) else "spearman=n/a",
+                    fontsize=8,
+                )
+            axes3[0].set_ylabel("draw unanimity (0/1, jittered)")
+            fig.tight_layout()
+            fig.savefig(figs_root / "unanimity_covariates.png", dpi=200)
+            plt.close(fig)
     _log(f"[analyze] figures -> {figs_root}")
 
 
