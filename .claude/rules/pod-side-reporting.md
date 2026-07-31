@@ -99,8 +99,13 @@ marker will be silently skipped. Three requirements, no exceptions:
    (skipping `*.processed`) on EVERY tick and renames each
    successfully-posted sentinel to `<path>.processed` (`mv -n`;
    `poll_pipeline.py::_ssh_mark_processed`; the GCP lane renames
-   identically via `backends/gcp.py::_mark_sentinel_processed`; SLURM
-   has no sentinel channel). Post each sentinel ONCE, never rewrite it
+   identically via `backends/gcp.py::_mark_sentinel_processed`; on
+   SLURM, DRAC/Mila have no sentinel channel while the FELLOWS lane
+   drains + renames identically via
+   `slurm_monitor.drain_cluster_sentinels` (#1898) — this whole
+   read-back-tolerance item, incl. the drain-rename tolerance (#1311),
+   binds fellows dispatchers exactly as RunPod ones). Post each
+   sentinel ONCE, never rewrite it
    in place — a rewrite whose `.processed` twin already exists is
    un-renameable under `mv -n` and re-attempted/warned every tick. A
    dispatcher that READS its own sentinels (resume predicate, per-cell
@@ -125,7 +130,13 @@ marker will be silently skipped. Three requirements, no exceptions:
    renamed anyway. Incident #1090 fu3/fu4 (code-review r1): per-run
    sentinels doubled as resume/finalize state; the drain renamed them
    mid-run → requeue races + a production reproducibility_card covering
-   only 23-24 of 35 cells.
+   only 23-24 of 35 cells. Fellows trust surface (#1898):
+   `/workspace/logs` on charmander is cluster-shared and PERSISTENT — a
+   prior crashed run's undrained sentinel posts late on the next
+   same-issue launch (correct-by-design), and any file matching
+   `issue-<N>-*.json` is schema-parsed, posted, and `mv -n`-renamed
+   regardless of author (documented trust surface, not defended
+   against).
 
 Rationale: task #448 (2026-05-31) — the pod-side dispatcher completed all
 cells cleanly but (a) never emitted `[phase=done]` and (b) wrote its
