@@ -1,0 +1,171 @@
+{
+  "commit": "d36c7c5dc5",
+  "created": "2026-07-31T05:06:21Z",
+  "figsize": [
+    13.2,
+    4.8
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "dot = observed; violin = 200-draw null": -0.044533745181768225,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "dot = observed; violin = 200-draw null": -2.5386961213769705,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "dot = observed; violin = 200-draw null": -0.9195990073009372,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "dot = observed; violin = 200-draw null": 0.754170841830715,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "dot = observed; violin = 200-draw null": 0.813419461228615,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": 0.7980954544977003,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 0.6373079291072773,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "y": 0.7272169500283703,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": 0.9546373164327934,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "y": 0.9654665671588937,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "y": 0.001,
+      "label": "analytic chance 1/1000",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "y": 0.254,
+      "label": "analytic chance 1/1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "y": 0.532,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "y": 0.805,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "y": 0.85,
+      "_kind": "scatter",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 15,
+  "text": {
+    "suptitle": "Shuffled-pair nulls collapse to metric-specific floors; cosine's floor is high",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "pooled R-squared",
+        "ylabel": "dot = observed; violin = 200-draw null",
+        "xticklabels": [
+          "constant\ntrain-mean",
+          "identity\ncopy",
+          "identity\n+ bias",
+          "linear map\n(ridge)",
+          "neural map\n(w=32768)"
+        ],
+        "yticklabels": [
+          "\u22124",
+          "\u22123",
+          "\u22122",
+          "\u22121",
+          "0",
+          "1",
+          "2"
+        ]
+      },
+      {
+        "title_left": "mean cosine",
+        "xticklabels": [
+          "constant\ntrain-mean",
+          "identity\ncopy",
+          "identity\n+ bias",
+          "linear map\n(ridge)",
+          "neural map\n(w=32768)"
+        ],
+        "yticklabels": [
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "retrieval acc@1 (pool 1000)",
+        "annotations": [
+          "analytic chance 1/1000"
+        ],
+        "xticklabels": [
+          "constant\ntrain-mean",
+          "identity\ncopy",
+          "identity\n+ bias",
+          "linear map\n(ridge)",
+          "neural map\n(w=32768)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}
