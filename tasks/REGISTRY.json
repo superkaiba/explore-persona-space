@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1902,
+  "highest_id": 1903,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6990,6 +6990,13 @@
       "path": "tasks/proposed/1902",
       "status": "proposed",
       "title": "How each post-training stage (SFT \u2192 DPO \u2192 RLVR) reshapes the context\u2192answer activation map (OLMo-2 checkpoint chain)"
+    },
+    "1903": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1903",
+      "status": "proposed",
+      "title": "daily-fix: fix red main: test_issue1689_os_exit_shutdown_bypass.py::test_entrypoint_calls_os_exit[issue1689_user_slot_capture.py] \u2014 make the four issue1689_user_slot entryp"
     },
     "191": {
       "has_clean_result": false,
