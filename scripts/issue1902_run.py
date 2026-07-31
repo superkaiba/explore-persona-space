@@ -372,6 +372,35 @@ def mark_unit_done(out_root: Path, unit: str, regime: dict[str, Any], info: dict
     )
 
 
+def capture_unit_store_dirs(
+    store: Path, ckpt: str, u: dict[str, Any], layers: list[int]
+) -> list[Path]:
+    """Store leaf dirs one capture unit writes (grid: answer cell + shared ctx
+    cell; subdir units: the cell + its own ctx sub-leaf)."""
+    if u["subdir"] is None:
+        return [
+            (store / C.answer_store_relpath(ckpt, u["src"], u["corpus"], layers[0])).parent,
+            (store / C.ctx_store_relpath(ckpt, u["corpus"], layers[0])).parent,
+        ]
+    return [store / u["subdir"], store / u["subdir"] / "ctx"]
+
+
+def capture_unit_artifacts_present(
+    store: Path, ckpt: str, u: dict[str, Any], layers: list[int]
+) -> bool:
+    """Local store artifacts for one capture unit (row_index + every layer).
+
+    The capture resume predicate is sentinel AND (artifacts present OR the
+    leg's VERIFIED upload record): a done-sentinel alone must never
+    fast-forward past deleted-but-never-uploaded artifacts (#1315 class;
+    concern p3-delete-local-starves-p4-store — post-delete-local the record
+    licenses the skip and P4 re-stages from HF)."""
+    return all(
+        (d / "row_index.jsonl").exists() and all((d / f"L{layer}.pt").exists() for layer in layers)
+        for d in capture_unit_store_dirs(store, ckpt, u, layers)
+    )
+
+
 def headroom_gate(out_root: Path, phase: str, pending_units: int, per_unit_gb: float) -> None:
     """Resume-aware out-root headroom assert (plan-compute-sizing mount rule)."""
     if pending_units <= 0:
@@ -901,7 +930,14 @@ def phase_gen_finalize(args: argparse.Namespace, out_root: Path, ckpts: list[str
                 "corpus": corpus,
                 "min_n_tr": min_n_tr,
                 "d": dims_d,
-                "note": "re-balance fold-group assignment before fitting (plan §7 gate A')",
+                "note": (
+                    "fold assignment is ALREADY greedy size-balanced "
+                    "(assign_fold_groups: largest group into the smallest fold), so no "
+                    "deterministic re-balance remains — min_n_tr <= d means the corpus "
+                    "cannot support the fit at this d without a plan amendment "
+                    "(splitting a group would break group-level fold integrity; "
+                    "plan §7 gate A')"
+                ),
             }
         logger.info(
             "[gateAprime] %s: n=%d (target %d, floor %d) min_n_tr=%d",
@@ -1233,21 +1269,48 @@ def capture_cell(
     }
 
 
-def _upload_ckpt_store(out_root: Path, ckpt: str, *, verify_only: bool = False) -> dict[str, Any]:
+def capture_store_roots(store: Path, ckpt: str) -> list[Path]:
+    """Every store subtree the capture/pilot phases write for checkpoint
+    ``ckpt`` — the upload-eligibility UNION (#825 uploader-parity class;
+    concern store-upload-misses-reliability-robust-pilot-subtrees): the grid
+    subtree PLUS reliability / robust_native / pilot (incl. the pilot A12
+    ``*_fp32`` twins, which live under ``pilot/<ckpt>``)."""
+    return [
+        store / ckpt,
+        store / "reliability" / ckpt,
+        store / "robust_native" / ckpt,
+        store / "pilot" / ckpt,
+    ]
+
+
+def _upload_ckpt_store(out_root: Path, ckpt: str) -> dict[str, Any]:
     """Per-checkpoint incremental store upload -> verify -> conditional
-    delete-local (plan §4 P3; upload_dir_sharded owns verify + overflow)."""
+    delete-local (plan §4 P3; upload_dir_sharded owns verify + overflow).
+    Enumerates ALL capture subtrees the leg owns (``capture_store_roots``) —
+    plan §10 declares the whole store class persisted with
+    ``discarded_artifacts: []``."""
     from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded
 
     store = _store_root(out_root)
-    ckpt_root = store / ckpt
-    if not ckpt_root.is_dir():
-        raise FileNotFoundError(f"no store written under {ckpt_root}")
+    roots = capture_store_roots(store, ckpt)
+    if not roots[0].is_dir():
+        raise FileNotFoundError(f"no store written under {roots[0]}")
+    present = [r for r in roots if r.is_dir()]
+    absent = [r.relative_to(store).as_posix() for r in roots if not r.is_dir()]
+    if absent:
+        # robust_native is legitimately absent for B (A3: native IS plain);
+        # pilot/<ckpt> is absent when the pilot leg ran on another out-root.
+        logger.info("[store-upload] ckpt %s: absent subtrees skipped: %s", ckpt, absent)
     st = os.statvfs(out_root)
     free_gb = st.f_bavail * st.f_frsize / 1e9
     delete_local = free_gb < DELETE_LOCAL_FREE_GB
-    results: dict[str, Any] = {"delete_local": delete_local, "free_gb_before": round(free_gb, 1)}
+    results: dict[str, Any] = {
+        "delete_local": delete_local,
+        "free_gb_before": round(free_gb, 1),
+        "absent_subtrees": absent,
+    }
     leaf_dirs = sorted(
-        {p.parent for p in ckpt_root.rglob("*") if p.is_file()},
+        {p.parent for root in present for p in root.rglob("*") if p.is_file()},
         key=lambda p: str(p),
     )
     for leaf in leaf_dirs:
@@ -1258,7 +1321,7 @@ def _upload_ckpt_store(out_root: Path, ckpt: str, *, verify_only: bool = False) 
             f"{C.STORE_HF_PATH}/{rel}",
             repo_type="dataset",
             verify=True,
-            delete_local=delete_local and not verify_only,
+            delete_local=delete_local,
         )
         results[rel] = {
             "uploaded": len(res.uploaded),
@@ -1357,7 +1420,21 @@ def phase_capture_ckpt(args: argparse.Namespace, out_root: Path, ckpts: list[str
         )
         for u in units
     }
-    pending = [u for u in units if not unit_done(out_root, u["unit"], regimes[u["unit"]])]
+    upload_regime = unit_regime(args, phase="capture_upload", ckpt=ckpt, layers=layers)
+    upload_unit = f"capture_upload_{ckpt}"
+    # Artifact-aware resume (#1315 class): a done-sentinel counts only when the
+    # unit's store artifacts are still local OR the leg's VERIFIED upload
+    # record exists (post-delete-local, P4 re-stages from HF).
+    leg_uploaded = unit_done(out_root, upload_unit, upload_regime)
+    store = _store_root(out_root)
+    pending = [
+        u
+        for u in units
+        if not (
+            unit_done(out_root, u["unit"], regimes[u["unit"]])
+            and (leg_uploaded or capture_unit_artifacts_present(store, ckpt, u, layers))
+        )
+    ]
     headroom_gate(out_root, "capture", len(pending), CAPTURE_PER_CELL_GB)
     print(f"[phase=capture] ckpt={ckpt} units={len(pending)}/{len(units)}", flush=True)
     if pending:
@@ -1396,9 +1473,7 @@ def phase_capture_ckpt(args: argparse.Namespace, out_root: Path, ckpts: list[str
                 torch.cuda.empty_cache()
         except Exception:  # noqa: BLE001 — cache release is best-effort on CPU hosts
             pass
-    upload_regime = unit_regime(args, phase="capture_upload", ckpt=ckpt, layers=layers)
-    upload_unit = f"capture_upload_{ckpt}"
-    if not unit_done(out_root, upload_unit, upload_regime):
+    if not leg_uploaded:
         results = _upload_ckpt_store(out_root, ckpt)
         mark_unit_done(out_root, upload_unit, upload_regime, results)
 
@@ -1743,6 +1818,21 @@ def _timed_shard_upload(out_root: Path, hidden: int, smoke: bool) -> dict[str, A
     }
 
 
+def capture_rows_per_leg(n_ckpts: int, isect_by_corpus: dict[str, int]) -> int:
+    """Max-leg P3 capture-row projection (review r1 M2): each activation-ckpt
+    leg captures ``n_ckpts`` answer-source cells over the FULL realized
+    intersection of EACH corpus — ``phase_capture_ckpt`` filters by manifest
+    ids with NO cap — plus the robustness read (non-B legs; kept in the
+    max-leg projection) and the two reliability subsets. The old
+    ``2 * min(isect, INTERSECTION_TARGET)`` basis under-projected up to ~2x
+    on realized intersections above target and/or asymmetric corpora."""
+    return int(
+        n_ckpts * sum(int(v) for v in isect_by_corpus.values())
+        + ROBUST_NATIVE_N
+        + 2 * C.RELIABILITY_SUBSET_N
+    )
+
+
 def phase_pilot_finalize(args: argparse.Namespace, out_root: Path, ckpts: list[str]) -> None:
     """P1 finalize: pilot_report.json (revision pins BINDING from here on),
     Gate A projection, bf16 two-bar gate verdict, A12 ΔR², flip rule, timing
@@ -1822,15 +1912,12 @@ def phase_pilot_finalize(args: argparse.Namespace, out_root: Path, ckpts: list[s
         and "per_row_wall_s" in legs[m][key]
     ]
     per_row = max(walls) if walls else float("nan")
-    isect = min(g["projected_after_resample"] for g in gate_a.values())
-    rows_per_m = (
-        len(ckpts) * 2 * min(isect, C.INTERSECTION_TARGET)
-        + ROBUST_NATIVE_N
-        + 2 * C.RELIABILITY_SUBSET_N
-    )
+    isect_by_corpus = {c: int(g["projected_after_resample"]) for c, g in gate_a.items()}
+    rows_per_m = capture_rows_per_leg(len(ckpts), isect_by_corpus)
     projected_wall_h = rows_per_m * per_row / 3600.0
     report["capture_cost"] = {
         "per_row_wall_s": per_row,
+        "projected_intersection_by_corpus": isect_by_corpus,
         "rows_per_ckpt_leg": rows_per_m,
         "projected_wall_h_per_leg": round(projected_wall_h, 2),
         "planned_wall_h": CAPTURE_PLANNED_WALL_H,

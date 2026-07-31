@@ -146,9 +146,10 @@ def _write_store(out_root: Path) -> None:
 
 
 class _FakeShardResult:
-    uploaded: list = []
-    skipped_existing: list = []
-    rerouted: list = []
+    def __init__(self) -> None:
+        self.uploaded: list = []
+        self.skipped_existing: list = []
+        self.rerouted: list = []
 
 
 def _args(smoke: bool = True) -> argparse.Namespace:
@@ -317,7 +318,7 @@ def test_boot_r2_known_values():
 
 def test_fold_skip_gate(fits_env, monkeypatch):
     """A fold with <2 eval rows records a skip (designed handling, no crash)."""
-    out_root, eval_dir, _ = fits_env
+    out_root, _, _ = fits_env
     ctx = F.FitsContext(_args(smoke=True), out_root, CKPTS)
     idx = ctx.corpora["single"]
     monkeypatch.setattr(
@@ -352,3 +353,189 @@ def test_fit_h_return_info_backward_compat():
     p, w, info = fn(X, Y, Xe, return_weights=True, return_info=True)
     assert w.shape == (2, 4, 3) and info["dof"].shape == (2,)
     assert np.all(info["dof"] > 0)
+
+
+# ── C2: StoreCache duplicate-insert race (concern storecache-lru-…-race) ─────
+
+
+def test_storecache_concurrent_miss_single_insert(tmp_path, monkeypatch):
+    """Two workers missing the SAME shard concurrently insert ONCE (no
+    duplicate _order token, no double-counted bytes) and a later over-cap
+    eviction walks the LRU without KeyError. Fails pre-fix: the duplicate
+    _order token makes the L2 load's eviction hit an already-evicted key."""
+    import threading
+
+    import torch
+
+    d = tmp_path / "store" / "B" / "ctx" / "single"
+    d.mkdir(parents=True)
+    for name in ("L0.pt", "L1.pt", "L2.pt"):
+        torch.save({"w": torch.zeros(64, 8, dtype=torch.float16), "row_ids": ["a"]}, d / name)
+    # cap ~3 KB: each cached entry is ~2 KB fp32, so 2 entries force eviction
+    cache = F.StoreCache(tmp_path / "store", cap_gb=3e-6)
+    barrier = threading.Barrier(2, timeout=10)
+    real_load = torch.load
+
+    def barrier_load(*a, **kw):
+        out = real_load(*a, **kw)
+        barrier.wait()  # both threads finish loading BEFORE either inserts
+        return out
+
+    monkeypatch.setattr(torch, "load", barrier_load)
+    errs: list[BaseException] = []
+
+    def worker():
+        try:
+            cache._load("B/ctx/single/L0.pt")
+        except BaseException as e:
+            errs.append(e)
+
+    threads = [threading.Thread(target=worker) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert not errs, errs
+    assert cache._order.count("B/ctx/single/L0.pt") == 1
+    assert len(cache._order) == len(cache._files) == 1
+    monkeypatch.setattr(torch, "load", real_load)
+    cache._load("B/ctx/single/L1.pt")
+    cache._load("B/ctx/single/L2.pt")  # eviction walks _order — pre-fix KeyError
+    assert len(cache._order) == len(cache._files)
+    assert cache._bytes <= cache.cap or len(cache._order) == 1
+
+
+# ── C1: HF re-stage of a delete-local-reaped store (plan §4 P4 "otherwise") ──
+
+
+def _mark_leg_uploaded(out_root: Path) -> None:
+    for m in CKPTS:
+        R.mark_unit_done(
+            out_root,
+            f"capture_upload_{m}",
+            {"phase": "capture_upload", "ckpt": m},
+            {"delete_local": True},
+        )
+
+
+def test_fits_restage_from_hub_after_delete_local(fits_env, monkeypatch, tmp_path):
+    """C1 (concern p3-delete-local-starves-p4-store): with the leg's VERIFIED
+    upload record present, run_fits re-stages the reaped store prefixes from
+    HF and completes end-to-end. Real staging bodies execute
+    (ensure_store_staged -> _restage_store_prefix -> hub.stage_hub_file);
+    fakes sit ONLY at the huggingface_hub network boundary (autospec'd)."""
+    import shutil
+
+    import huggingface_hub
+
+    from explore_persona_space.orchestrate import hub
+
+    out_root, eval_dir, _ = fits_env
+    store = R._store_root(out_root)
+    mirror = tmp_path / "hub_mirror"
+    shutil.copytree(store, mirror)  # the "uploaded" bytes
+    _mark_leg_uploaded(out_root)
+    shutil.rmtree(store / "B")  # P3 delete-local reaped the grid subtree...
+    shutil.rmtree(store / "reliability" / "B")  # ...and the reliability twin
+
+    def fake_repo_info(self, repo_id, **kw):
+        assert repo_id == C.HF_DATA_REPO
+        return mock.Mock(sha="deadbeefcafe")
+
+    def fake_list(api, repo_id, prefix, repo_type="dataset", revision=None):
+        assert repo_id == C.HF_DATA_REPO and prefix.startswith(f"{C.STORE_HF_PATH}/")
+        rel_prefix = prefix[len(C.STORE_HF_PATH) + 1 :]
+        base = mirror / rel_prefix
+        return [
+            f"{C.STORE_HF_PATH}/{rel_prefix}/{p.relative_to(base).as_posix()}"
+            for p in sorted(base.rglob("*"))
+            if p.is_file()
+        ]
+
+    def fake_download(repo_id, filename, **kw):
+        src = mirror / filename[len(C.STORE_HF_PATH) + 1 :]
+        dst = Path(kw["local_dir"]) / filename
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(src, dst)
+        return str(dst)
+
+    monkeypatch.setattr(
+        huggingface_hub.HfApi,
+        "repo_info",
+        mock.create_autospec(huggingface_hub.HfApi.repo_info, side_effect=fake_repo_info),
+    )
+    monkeypatch.setattr(
+        hub,
+        "list_hf_files_under_path",
+        mock.create_autospec(hub.list_hf_files_under_path, side_effect=fake_list),
+    )
+    monkeypatch.setattr(
+        huggingface_hub,
+        "hf_hub_download",
+        mock.create_autospec(huggingface_hub.hf_hub_download, side_effect=fake_download),
+    )
+    F.run_fits(_args(smoke=True), out_root, CKPTS)
+    # the consumer loaded from the STAGED result (staged-layout consumer-open)
+    assert (store / "B" / "ctx" / "single" / "row_index.jsonl").exists()
+    assert (store / "reliability" / "B" / "single" / "seed43" / "L0.pt").exists()
+    assert (eval_dir / "fits" / "grid_cells.json").exists()
+
+
+def test_fits_missing_store_without_upload_record_fails_loud(fits_env):
+    """C1 negative: HARD leaves missing with NO verified upload record is the
+    genuine run-capture-first case — fail loud, never a silent re-stage."""
+    import shutil
+
+    out_root, _, _ = fits_env
+    shutil.rmtree(R._store_root(out_root) / "B")
+    with pytest.raises(FileNotFoundError, match="run --phase capture first"):
+        F.ensure_store_staged(out_root, CKPTS)
+
+
+def test_fits_missing_soft_leaves_without_record_warn_only(fits_env):
+    """C1 soft tier: reliability/robust leaves missing with no upload record
+    only warn (their consumers' graceful branches own the degradation)."""
+    import shutil
+
+    out_root, _, _ = fits_env
+    shutil.rmtree(R._store_root(out_root) / "reliability" / "B")
+    assert F.ensure_store_staged(out_root, CKPTS) == {}
+
+
+def test_ensure_store_staged_noop_when_local_complete(fits_env):
+    """Local store intact -> zero staging, zero network (plan §4 P4 local-first)."""
+    out_root, _, _ = fits_env
+    assert F.ensure_store_staged(out_root, CKPTS) == {}
+
+
+# ── C3: upload roots cover every writer + every P4-consumed leaf ─────────────
+
+
+def test_capture_store_roots_cover_writers_and_p4_leaves():
+    """C3 (concern store-upload-misses-reliability-robust-pilot-subtrees):
+    the union of upload-leg roots path-prefix-covers every store dir the
+    capture/pilot writers produce AND every P4-consumed leaf."""
+    store = Path("/store")
+    ckpts = list(C.CKPTS)
+
+    def covered(rel: str, roots: list[str]) -> bool:
+        return any(rel == r or rel.startswith(r + "/") for r in roots)
+
+    for m in ckpts:
+        roots = [r.relative_to(store).as_posix() for r in R.capture_store_roots(store, m)]
+        writers = [f"{m}/{src}/{corpus}" for src in ckpts for corpus in C.CORPORA]
+        writers += [f"{m}/{C.CTX_SOURCE}/{corpus}" for corpus in C.CORPORA]
+        writers += [f"reliability/{m}/{C.CORPUS_SINGLE}/seed{s}" for s in C.RELIABILITY_SEEDS]
+        writers += [f"robust_native/{m}/{C.CORPUS_SINGLE}"]
+        # pilot cells incl. the A12 fp32 twin (capture_cell keep_fp32 layout)
+        writers += [
+            f"pilot/{m}/plain/{C.CORPUS_SINGLE}",
+            f"pilot/{m}/native/{C.CORPUS_SINGLE}",
+            f"pilot/{m}/plain_fp32/{C.CORPUS_SINGLE}",
+        ]
+        for w in writers:
+            assert covered(w, roots), f"writer subtree not upload-eligible: {w}"
+        hard, soft = F.expected_store_leaves(m, ckpts)
+        for leaves in (*hard.values(), *soft.values()):
+            for leaf in leaves:
+                assert covered(leaf, roots), f"P4-consumed leaf not upload-eligible: {leaf}"

@@ -382,3 +382,64 @@ def test_tiny_real_fp32_twin_store(tiny_olmo2, tmp_path):
     assert fp16["w"].dtype == torch.float16 and fp32["w"].dtype == torch.float32
     assert torch.allclose(fp16["w"].float(), fp32["w"], atol=1e-2)
     assert (tmp_path / "store" / "pilot/R/plain_fp32/single/ctx/L0.pt").exists()
+
+
+# ── C1 resume side: artifact-aware capture done-predicate (#1315 class) ──────
+
+
+def test_capture_unit_artifacts_present_and_dirs(tmp_path):
+    """A done-sentinel alone must not fast-forward past deleted, never-uploaded
+    artifacts: the predicate reads the unit's REAL store leaves (row_index +
+    every layer), for both the grid and subdir unit shapes."""
+    import shutil
+
+    store = R._store_root(tmp_path / "out")
+    layers = [0, 1]
+    u_sub = {"subdir": f"reliability/B/{C.CORPUS_SINGLE}/seed43", "src": "B", "corpus": "single"}
+    for d in R.capture_unit_store_dirs(store, "B", u_sub, layers):
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "row_index.jsonl").write_text("{}\n", encoding="utf-8")
+        for layer in layers:
+            (d / f"L{layer}.pt").write_bytes(b"x")
+    assert R.capture_unit_artifacts_present(store, "B", u_sub, layers)
+    shutil.rmtree(store / "reliability")
+    assert not R.capture_unit_artifacts_present(store, "B", u_sub, layers)
+
+    u_grid = {"subdir": None, "src": "R", "corpus": "single"}
+    dirs = R.capture_unit_store_dirs(store, "B", u_grid, layers)
+    assert dirs[0].as_posix().endswith("B/R/single")
+    assert dirs[1].as_posix().endswith(f"B/{C.CTX_SOURCE}/single")
+    assert not R.capture_unit_artifacts_present(store, "B", u_grid, layers)
+    for d in dirs:
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "row_index.jsonl").write_text("{}\n", encoding="utf-8")
+        for layer in layers:
+            (d / f"L{layer}.pt").write_bytes(b"x")
+    assert R.capture_unit_artifacts_present(store, "B", u_grid, layers)
+    # a partially-deleted leaf (one layer gone) reads NOT present
+    (dirs[0] / "L1.pt").unlink()
+    assert not R.capture_unit_artifacts_present(store, "B", u_grid, layers)
+
+
+# ── M2: capture-cost projection basis (uncapped per-corpus sums) ─────────────
+
+
+def test_capture_rows_per_leg_uses_uncapped_per_corpus_sums():
+    """Review r1 M2: the projection consumes each corpus's OWN projected
+    intersection UNCAPPED (capture filters by manifest ids with no cap); the
+    old 2*min(isect, target) basis under-projects on asymmetric corpora and
+    on realized intersections above INTERSECTION_TARGET."""
+    isect = {"single": 12_000, "multi": 9_000}
+    rows = R.capture_rows_per_leg(4, isect)
+    assert rows == 4 * 21_000 + R.ROBUST_NATIVE_N + 2 * C.RELIABILITY_SUBSET_N
+    old_basis = (
+        4 * 2 * min(min(isect.values()), C.INTERSECTION_TARGET)
+        + R.ROBUST_NATIVE_N
+        + 2 * C.RELIABILITY_SUBSET_N
+    )
+    assert rows > old_basis
+    # symmetric at-target corpora: new basis == old basis (no regression)
+    at_target = {"single": C.INTERSECTION_TARGET, "multi": C.INTERSECTION_TARGET}
+    assert R.capture_rows_per_leg(4, at_target) == 4 * 2 * C.INTERSECTION_TARGET + (
+        R.ROBUST_NATIVE_N + 2 * C.RELIABILITY_SUBSET_N
+    )

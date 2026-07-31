@@ -280,13 +280,23 @@ class StoreCache:
         out["__row_ids__"] = np.asarray(d["row_ids"])
         nbytes = sum(a.nbytes for a in out.values())
         with self._lock:
+            if relpath in self._files:
+                # A concurrent worker won the miss race while we loaded outside
+                # the lock: discard OUR copy and return the cached entry — an
+                # unconditional insert duplicates the _order token + double-counts
+                # bytes, and the first eviction over the cap then KeyErrors
+                # (concern storecache-lru-duplicate-insert-race).
+                self._order.remove(relpath)
+                self._order.append(relpath)
+                return self._files[relpath]
             self._files[relpath] = out
             self._order.append(relpath)
             self._bytes += nbytes
             while self._bytes > self.cap and len(self._order) > 1:
                 old = self._order.pop(0)
-                self._bytes -= sum(a.nbytes for a in self._files[old].values())
-                del self._files[old]
+                evicted = self._files.pop(old, None)  # pop-with-skip: never KeyError
+                if evicted is not None:
+                    self._bytes -= sum(a.nbytes for a in evicted.values())
         return out
 
     def answer(self, ckpt: str, src: str, corpus: str, layer: int, ids: list[str]) -> np.ndarray:
@@ -303,6 +313,159 @@ class StoreCache:
 
     def subdir(self, relpath: str) -> dict[str, np.ndarray]:
         return self._load(relpath)
+
+
+# ── local-store presence + HF re-stage (plan §4 P4 "re-staged from HF via
+#    stage_hub_prefix otherwise"; concern p3-delete-local-starves-p4-store) ────
+
+
+def _store_hub_relpath(hub_path: str) -> str:
+    """PURE hub-path -> store-relative mapping (#928: ONE shared map feeds the
+    missing-check, the fetch targets, and the completeness re-check)."""
+    prefix = f"{C.STORE_HF_PATH}/"
+    if not hub_path.startswith(prefix):
+        raise ValueError(f"hub path {hub_path!r} outside the store prefix {prefix!r}")
+    return hub_path[len(prefix) :]
+
+
+def expected_store_leaves(
+    ckpt: str, ckpts: list[str]
+) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
+    """P4-consumed store leaf dirs per top-level restage prefix (store-relative).
+
+    HARD leaves (grid: ctx + answer cells) crash P4 outright when absent;
+    SOFT leaves (reliability / robust_native) have graceful consumer branches
+    but silently degrade the registered §6 reads when delete-local reaped them.
+    """
+    hard = {
+        ckpt: [f"{ckpt}/{C.CTX_SOURCE}/{corpus}" for corpus in C.CORPORA]
+        + [f"{ckpt}/{src}/{corpus}" for src in ckpts for corpus in C.CORPORA]
+    }
+    soft = {
+        f"reliability/{ckpt}": [
+            f"reliability/{ckpt}/{C.CORPUS_SINGLE}/seed{s}" for s in C.RELIABILITY_SEEDS
+        ]
+    }
+    if ckpt != "B":
+        soft[f"robust_native/{ckpt}"] = [
+            f"robust_native/{ckpt}/{C.CORPUS_SINGLE}",
+            f"robust_native/{ckpt}/{C.CORPUS_SINGLE}/ctx",
+        ]
+    return hard, soft
+
+
+def _leaf_complete(store: Path, rel: str) -> bool:
+    """A leaf is consumable iff it holds >=1 layer shard (row ids ride inside
+    the .pt); the grid CTX leaf additionally needs the row_index.jsonl that
+    CorpusIndex hard-reads."""
+    d = store / rel
+    if not any(d.glob("L*.pt")):
+        return False
+    if rel.split("/")[1:2] == [C.CTX_SOURCE]:
+        return (d / "row_index.jsonl").exists()
+    return True
+
+
+def _restage_store_prefix(store: Path, prefix_rel: str) -> int:
+    """Scoped-listing + per-file staged restore of ONE store prefix from HF.
+
+    `hub.stage_hub_file` takes an EXACT per-file target (no #1774 mirror-root
+    trap), is atomic + retried, and skips already-present files, so a partial
+    delete heals idempotently. One resolved revision covers every file (#833).
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    hub_prefix = f"{C.STORE_HF_PATH}/{prefix_rel}"
+    info = hub.retry_transient(
+        lambda: api.repo_info(C.HF_DATA_REPO, repo_type="dataset"),
+        what=f"repo_info({C.HF_DATA_REPO})",
+    )
+    revision = str(info.sha)
+    files = hub.list_hf_files_under_path(
+        api, C.HF_DATA_REPO, hub_prefix, repo_type="dataset", revision=revision
+    )
+    if not files:
+        raise FileNotFoundError(f"no files on HF under {C.HF_DATA_REPO}:{hub_prefix}")
+    targets = {f: store / _store_hub_relpath(f) for f in files}
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        futs = [
+            pool.submit(
+                hub.stage_hub_file,
+                C.HF_DATA_REPO,
+                f,
+                tgt,
+                repo_type="dataset",
+                revision=revision,
+            )
+            for f, tgt in targets.items()
+        ]
+        for fut in futs:
+            fut.result()  # re-raises — fail-loud
+    return len(files)
+
+
+def ensure_store_staged(out_root: Path, ckpts: list[str]) -> dict[str, int]:
+    """Plan §4 P4 first line: fits read the LOCAL store when present; when P3's
+    verified upload -> delete-local reaped it, RE-STAGE the missing per-ckpt
+    prefixes from HF before any fit.
+
+    The capture leg's verified upload record (state/capture_upload_<m>.done.json,
+    written only after upload_dir_sharded verify=True) — NOT bare local
+    existence — is what licenses proceeding past deleted artifacts (#1315
+    class): HARD leaves missing with NO record fail loud (run capture first);
+    SOFT leaves missing with no record only warn (their consumers' graceful
+    branches own genuinely-absent stores, e.g. partial fixtures)."""
+    store = R._store_root(out_root)
+    restaged: dict[str, int] = {}
+    for m in ckpts:
+        hard, soft = expected_store_leaves(m, ckpts)
+        upload_record = R._state_dir(out_root) / f"capture_upload_{m}.done.json"
+        missing_hard = {
+            p: [leaf for leaf in ls if not _leaf_complete(store, leaf)] for p, ls in hard.items()
+        }
+        missing_hard = {p: ls for p, ls in missing_hard.items() if ls}
+        missing_soft = {
+            p: [leaf for leaf in ls if not _leaf_complete(store, leaf)] for p, ls in soft.items()
+        }
+        missing_soft = {p: ls for p, ls in missing_soft.items() if ls}
+        if not upload_record.exists():
+            if missing_hard:
+                sample = sorted(x for ls in missing_hard.values() for x in ls)[:4]
+                raise FileNotFoundError(
+                    f"store leaves missing for ckpt {m} (e.g. {sample}) with no verified "
+                    f"upload record at {upload_record} — run --phase capture first"
+                )
+            if missing_soft:
+                logger.warning(
+                    "[fits] ckpt %s: soft store leaves missing with no upload record "
+                    "(reliability/robust reads will degrade): %s",
+                    m,
+                    missing_soft,
+                )
+            continue
+        to_stage = sorted(set(missing_hard) | set(missing_soft))
+        if not to_stage:
+            continue
+        n = sum(_restage_store_prefix(store, p) for p in to_stage)
+        by_prefix = {**hard, **soft}
+        still = [leaf for p in to_stage for leaf in by_prefix[p] if not _leaf_complete(store, leaf)]
+        if still:
+            raise FileNotFoundError(
+                f"HF re-stage left store leaves incomplete for ckpt {m}: {still} "
+                f"(hub prefix {C.STORE_HF_PATH})"
+            )
+        restaged[m] = n
+        print(
+            f"[fits] re-staged {n} store files for ckpt {m} "
+            f"from {C.HF_DATA_REPO}:{C.STORE_HF_PATH} (prefixes {to_stage})",
+            flush=True,
+        )
+    return restaged
 
 
 def discover_layers(store: Path, ckpt: str, corpus: str) -> list[int]:
@@ -522,6 +685,8 @@ def run_sweep_unit(ctx: FitsContext, device: str, *, m: str, corpus: str, fold: 
         ctx.write_unit(unit, {"skipped": True, "n_tr": int(tr.sum()), "n_ev": int(ev.sum())})
         logger.warning("[fits] %s SKIPPED (fold gate: n_tr=%d n_ev=%d)", unit, tr.sum(), ev.sum())
         return {}
+    from explore_persona_space.analysis.mapping_baselines import identity_bias_predict
+
     arms = [ARM_CTX] + ([ARM_PRE] if corpus == C.CORPUS_MULTI else [])
     _, percell = ctx.unit_paths()
     out: dict[str, Any] = {"n_tr": int(tr.sum()), "n_ev": int(ev.sum()), "arms": {}}
@@ -543,9 +708,6 @@ def run_sweep_unit(ctx: FitsContext, device: str, *, m: str, corpus: str, fold: 
                 res, tot, cos = _per_ctx_ss(preds[li], y_ev, y_tr_mean)
                 gi = c0 + li
                 res_all[gi], tot_all[gi], cos_all[gi] = res, tot, cos
-                from explore_persona_space.analysis.mapping_baselines import (
-                    identity_bias_predict,
-                )
 
                 id_pred = identity_bias_predict(Xtr[li], Ytr[li], Xev[li])
                 per_layer[str(layer)] = {
@@ -1026,6 +1188,10 @@ def run_xfer_unit(ctx: FitsContext, device: str, *, i: str, j: str, fold: int) -
         "baselines": _cell_baselines(u_j[tr], w_jj[tr], u_j[ev], y_tgt, gl_final),
     }
     _, percell = ctx.unit_paths()
+    # Grain note (review r1 Minor): transfer percell SS persists at layer*
+    # ONLY — plan §4 step 5 defines transfer at layer*, resolving the step-3
+    # band-grain ambiguity toward step 5 (the analyzer must not expect
+    # band-grain transfer SS).
     _savez_atomic(
         percell / f"xfer_{i}{j}_f{fold}.npz",
         row_idx=np.flatnonzero(ev),
@@ -1822,6 +1988,14 @@ def finalize(ctx: FitsContext, selection: dict, parity: dict, wall_h: float) -> 
         "parity_gate": parity,
         "pilot_timings": ctx.pilot_timings[:8],
         "wall_h": wall_h,
+        # Baseline-pair scope (plan §4 step 8 reading; review r1 Minor): the
+        # 17-layer sweep carries identity+bias PER LAYER with kNN retrieval
+        # read at the selected band via the grid/star cells; MLP diagonals are
+        # a nonlinear-headroom diagnostic and carry no identity/kNN pair.
+        "baseline_scope": {
+            "sweep": "identity+bias per layer; kNN retrieval at the band (grid/star cells)",
+            "mlp": "nonlinear-headroom diagnostic only — no identity/kNN pair",
+        },
     }
     R._write_json_atomic(eval_dir / "fits" / "layer_sweep.json", sweep_out)
 
@@ -2041,6 +2215,7 @@ def run_fits(args: argparse.Namespace, out_root: Path, ckpts: list[str]) -> None
     """P4 driver (called by issue1902_run --phase fits)."""
     t_start = time.time()
     print(f"[phase=fits] ckpts={ckpts} smoke={bool(args.smoke)}", flush=True)
+    ensure_store_staged(out_root, ckpts)
     ctx = FitsContext(args, out_root, ckpts)
     R.headroom_gate(out_root, "fits", 1, 4.0)
     logger.info(
