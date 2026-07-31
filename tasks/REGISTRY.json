@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1919,
+  "highest_id": 1920,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7124,6 +7124,13 @@
       "path": "tasks/completed/192",
       "status": "completed",
       "title": "Fact teaching transferred to non-teach assistant frames across two analyzable seeds under either teach prompt (MODERATE confidence)"
+    },
+    "1920": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1920",
+      "status": "proposed",
+      "title": "daily-fix: living_docs.py bounded index.lock retry"
     },
     "193": {
       "has_clean_result": false,
