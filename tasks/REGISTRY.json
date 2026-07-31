@@ -6919,6 +6919,7 @@
       "title": "workflow-fix: concurrent-committers rule mandates pathspec-limited COMMITS (bare git commit sweeps foreign staged files)"
     },
     "1895": {
+      "goal": "Does the context\u2192answer map predict the same structure the SAE represents? Two ways of decomposing the same answer activation have been measured separately and never compared: the map's **predictable subspace** (which directions of `v_A` the fitted map recovers) and the SAE's **representable subspace** (which directions its dictionary reconstructs). This task asks whether they coincide, and whether targeting the SAE's reconstruction instead of the raw activation changes what the map can do.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/1895",

@@ -10,6 +10,13 @@ origin_prompt: 'can we run these experiments: - Is what oir model able to recons
   the same as what SAEs find - Map from continuous features to SAE features (or reconstructed
   activation)? Also compare to simple baselines with SAE featurs'
 workflow: v1
+goal: 'Does the context→answer map predict the same structure the SAE represents?
+  Two ways of decomposing the same answer activation have been measured separately
+  and never compared: the map''s **predictable subspace** (which directions of `v_A`
+  the fitted map recovers) and the SAE''s **representable subspace** (which directions
+  its dictionary reconstructs). This task asks whether they coincide, and whether
+  targeting the SAE''s reconstruction instead of the raw activation changes what the
+  map can do.'
 ---
 ## Goal
 
