@@ -4,7 +4,6 @@ title: 'The fitted context-to-answer map reads a correlate, not a cause: Jacobia
   at its input slot moves nothing (HIGH confidence)'
 kind: experiment
 tags:
-- followup-auto
 - followup-manual
 created_at: '2026-07-28T21:44:34Z'
 has_clean_result: true
