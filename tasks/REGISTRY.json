@@ -6697,8 +6697,8 @@
     "1865": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1865",
-      "status": "reviewing",
+      "path": "tasks/completed/1865",
+      "status": "completed",
       "title": "daily-fix: pod relaunch shape fully detaches stdio"
     },
     "1866": {
