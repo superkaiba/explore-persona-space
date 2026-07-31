@@ -1,6 +1,7 @@
 ---
-title: Causal Jacobians, averaged or per-context, recover essentially none of the
-  fitted context-to-answer map's predictive power (HIGH confidence)
+title: 'The fitted context-to-answer map reads a correlate, not a cause: Jacobians
+  recover essentially none of its predictive power and even full-state substitution
+  at its input slot moves nothing (HIGH confidence)'
 kind: experiment
 tags:
 - followup-auto
