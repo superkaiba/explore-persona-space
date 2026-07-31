@@ -3877,6 +3877,167 @@ def test_NCX3_real_mutation_before_taskpy_double_still_blocks():
     assert _run(cmd) == 2
 
 
+# ---------------------------------------------------------------------------
+# #1861 — exit-guarded worktree cd => STICKY scope; name-generalized $VAR
+# latch; arming-separator restriction + cd-clause scope invalidation.
+#
+# MUST ALLOW: an exit-guarded worktree cd (`|| exit N`, or the brace-group
+# `|| { ...; exit N; }` form) PROVES every clause past the guard tail runs
+# with cwd inside the worktree — either the cd succeeded, or the shell exited
+# first — so later NL/;-separated gated ops are scoped. The `WT=` assignment
+# latch arms for ANY variable name (e.g. the SKILL.md Step 4a conventional
+# WORKTREE) under the same #1058 proof obligations.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || exit 1\ngit checkout -- figures/x",
+            id="S1-exitguard_bare_literal_nl",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/issue-9; cd "$WT" || exit 1; git restore .',
+            id="S2-exitguard_bare_wt_seq",
+        ),
+        pytest.param(
+            'WORKTREE=.claude/worktrees/issue-9\ncd "$WORKTREE" || exit 1\n'
+            "git checkout main -- specs.md",
+            id="S3-exitguard_bare_generalized_name",
+        ),
+        pytest.param(
+            'cd .claude/worktrees/issue-9 || { echo "FATAL: cd failed" >&2; exit 1; }\n'
+            "git reset --hard origin/main",
+            id="S4-exitguard_group_literal",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/issue-9; cd "$WT" || { echo "FATAL: cd failed" >&2; exit 1; }\n'
+            "git checkout -- figures/x",
+            id="S5-exitguard_group_wt",
+        ),
+        pytest.param(
+            'WORKTREE=.claude/worktrees/issue-9; cd "$WORKTREE" && git checkout -- figures/x',
+            id="G1-worktree_var_name_and_chain",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || exit 1\nuv run pytest -q\ngit checkout -- x",
+            id="S6-sticky_survives_benign_clause",
+        ),
+        pytest.param(
+            "true && cd .claude/worktrees/issue-9 || exit 1\ngit restore .",
+            id="S7-and_preceded_cd_with_exitguard",
+        ),
+    ],
+)
+def test_1861_exitguard_sticky_and_generalized_name_allows(cmd):
+    """Exit-guarded worktree cds scope later clauses; any var name arms (#1861)."""
+    assert _run(cmd) == 0
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — #1861 fail-closed set. The sticky proof requires (a) the cd
+# clause provably executed in the parent shell (an OR- or PIPE-preceded cd
+# never arms), (b) a provably-exiting OR-tail (bare `exit [N]`, or a brace
+# group whose final pre-`}` clause is an unconditionally-reached exit — no
+# `return`, no non-exiting tail, no AND-guarded exit, no nested `{`), and
+# (c) a terminator not defused by a following PIPE/BG separator. The tail's
+# own clauses stay UNSCOPED (they run on the cd-failure path at the root),
+# and ANY later cwd-changing clause — including paren-prefixed subshell
+# spellings — voids both the plain latch and the sticky scope. The
+# name-generalized latch still requires the exact assigned name (no prefix
+# collision) and a non-command-substitution worktree-literal RHS.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "cd .claude/worktrees/issue-9\ngit restore .",
+            id="X1-unguarded_nl_literal",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/issue-9\ncd "$WT"\ngit restore .',
+            id="X2-unguarded_nl_wt",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || echo oops\ngit restore .",
+            id="X3-nonexiting_tail_echo",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || { echo FATAL >&2; }\ngit restore .",
+            id="X4-group_without_exit",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || { test -f x && exit 1; }\ngit restore .",
+            id="X5-and_guarded_exit_in_group",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || { git reset --hard; exit 1; }",
+            id="X6-gated_op_inside_guard_group",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || return 1\ngit restore .",
+            id="X7-return_tail",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || exit 1 | tee /tmp/log\ngit restore .",
+            id="X8-exit_terminator_into_pipe",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || exit 1 & git restore .",
+            id="X9-exit_terminator_into_bg",
+        ),
+        pytest.param(
+            'cd .claude/worktrees/issue-9 || { echo "FATAL" >&2; exit 1; } | tee /tmp/log\n'
+            "git restore .",
+            id="X10-group_close_into_pipe",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || exit 1\n(cd /tmp/z && git reset --hard)",
+            id="X11-paren_subshell_cd_after_sticky",
+        ),
+        pytest.param(
+            "false || cd .claude/worktrees/issue-9 && git restore .",
+            id="X12-or_preceded_cd_never_arms",
+        ),
+        pytest.param(
+            "echo x | cd .claude/worktrees/issue-9 && git restore .",
+            id="X13-pipe_preceded_cd_never_arms",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || exit 1\ncd /home/user/elsewhere\ngit restore .",
+            id="X14-post_sticky_nonworktree_cd",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/issue-9; WT=$(mktemp -d); cd "$WT" && git restore .',
+            id="X15-reassign_command_substitution",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/issue-9\ncd "$WT2" && git checkout main -- specs.md',
+            id="X16-name_mismatch_prefix_collision",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || { { exit 1; }; }\ngit restore .",
+            id="X17-nested_brace_refusal",
+        ),
+    ],
+)
+def test_1861_sticky_fail_closed_blocks(cmd):
+    """Unproven guard tails / arming separators / voided scopes never allow (#1861)."""
+    assert _run(cmd) == 2
+
+
+def test_1861_sticky_arm_b_local_main_merge_still_blocked(monkeypatch):
+    """#1554 Arm B applies unchanged under sticky scope (#1861 acceptance 5).
+
+    A sticky worktree-scoped `git merge main` declines with the Arm B label —
+    the exit-guard grant must not widen the bare-local-main merge fence.
+    """
+    monkeypatch.delenv(_WT_LM_HATCH, raising=False)
+    proc = _run_full("cd .claude/worktrees/issue-9 || exit 1\ngit merge main")
+    assert proc.returncode == 2, proc.stderr
+    assert _WT_LM_ARM_B_LABEL in proc.stderr
+    assert _WT_LM_HATCH in proc.stderr
+
+
 def test_zz_production_sidecar_untouched_by_suite():
     """The suite must never create/append the PRODUCTION deny sidecar (#1528).
 
