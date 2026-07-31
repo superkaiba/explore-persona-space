@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1923,
+  "highest_id": 1924,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7152,6 +7152,13 @@
       "path": "tasks/proposed/1923",
       "status": "proposed",
       "title": "daily-held: re-add VM SSH key to RunPod team key list"
+    },
+    "1924": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1924",
+      "status": "proposed",
+      "title": "daily-fix: Monitor quiet-wait branch for Step 6d.2 poll"
     },
     "193": {
       "has_clean_result": false,
