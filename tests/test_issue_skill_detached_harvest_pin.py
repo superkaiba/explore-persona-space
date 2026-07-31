@@ -145,3 +145,60 @@ def test_mirror_duty_lists_carry_harvest() -> None:
         assert path.exists(), f"missing {path}"
         text = _norm(path.read_text(encoding="utf-8"))
         assert "harvest=" in text, f"{path.name} mirror duty-list lacks the harvest= token"
+
+
+def test_probe_bracket_and_choom_bigrss_routing_pinned() -> None:
+    """#1482: bracketed probes; choom bounded retry; big-RSS off-VM routing.
+
+    (a) The detached block carries the Probe-bracket rule (every pattern-based
+    liveness / ownership / kill probe uses the bracket idiom; an ALIVE read
+    from an UNBRACKETED probe is UNVERIFIED evidence; cites #1482 + the
+    gotchas ownership-probe entry), and the Successor / re-entry rule's
+    pattern-based FALLBACK probe clause repeats it. (b) The earlyoom
+    paragraph's on-failure path is ONE BOUNDED retry — a seconds bound plus
+    "whichever comes FIRST", never an open-ended wait. (c) The big-RSS
+    routing clause (post-retry choom=failed at projected peak RSS >= ~16 GiB
+    routes the phase off the VM) is pinned in BOTH SKILL.md's earlyoom region
+    and code-style.md's amended on-failure sentence.
+    """
+    text = _skill_text()
+    block = _norm(_region(text, DETACHED_HEADING, SUCCESSOR_HEADING))
+    # (a) Probe-bracket rule inside the detached block.
+    assert "bracket idiom" in block, "detached block lacks the Probe-bracket rule"
+    assert "UNBRACKETED" in block and "UNVERIFIED" in block, (
+        "Probe-bracket rule lacks the unbracketed-ALIVE-is-unverified clause"
+    )
+    assert "#1482" in block, "Probe-bracket rule does not cite #1482"
+    assert "ownership-probe" in block, "Probe-bracket rule lacks the gotchas cross-ref"
+    successor = _norm(_region(text, SUCCESSOR_HEADING, GUARD_HEADING))
+    assert "bracket idiom" in successor, (
+        "Successor rule's pattern-based fallback probe lacks the bracket idiom"
+    )
+    assert "UNBRACKETED" in successor and "UNVERIFIED" in successor, (
+        "Successor rule lacks the unbracketed-probe-ALIVE-is-unverified clause"
+    )
+    # (b) Bounded retry: RE-RUN ONCE + a seconds bound + "whichever comes FIRST".
+    assert re.search(r"RE-RUN (it|the sweep) ONCE", block), (
+        "earlyoom paragraph lacks the RE-RUN-once bounded retry"
+    )
+    assert re.search(r"~?30-60\s*s\b", block), (
+        "choom bounded-retry sentence lacks the ~30-60 s seconds bound"
+    )
+    assert "whichever comes FIRST" in block, (
+        "choom bounded-retry sentence lacks the whichever-comes-FIRST bound token"
+    )
+    # (c) Big-RSS routing clause, in SKILL.md's earlyoom region ...
+    assert re.search(r"16 GiB.{0,220}routing the phase OFF", block), (
+        "earlyoom paragraph lacks the >= ~16 GiB post-retry choom=failed off-VM routing default"
+    )
+    # ... and in code-style.md's amended mirror sentence.
+    cs = _norm(CODE_STYLE_MD.read_text(encoding="utf-8"))
+    assert re.search(r"RE-RUN (it|the sweep) ONCE", cs), (
+        "code-style.md nohup bullet lacks the RE-RUN-once bounded retry"
+    )
+    assert re.search(r"~?30-60\s*s\b", cs) and "whichever comes FIRST" in cs, (
+        "code-style.md nohup bullet lacks the bounded-retry seconds bound"
+    )
+    assert re.search(r"16 GiB.{0,80}route the phase off", cs), (
+        "code-style.md nohup bullet lacks the >= ~16 GiB off-VM routing clause"
+    )
