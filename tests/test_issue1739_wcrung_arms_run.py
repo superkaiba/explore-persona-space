@@ -11,6 +11,7 @@ TypeError on a billed instance (the #1332 signature-bind class — the shipped
 from __future__ import annotations
 
 import inspect
+import json
 import subprocess
 import sys
 from argparse import Namespace
@@ -375,3 +376,57 @@ def test_full_layer_grid_keeps_committed_frozen(tmp_path):
 def test_explicit_flag_forces_own_pool_even_at_full_width(tmp_path):
     args = _args(tmp_path, layers=list(range(28)), force_own_pool_frozen=True)
     assert "--force-own-pool-frozen" in run.score_cmd("evil", args)
+
+
+# --- staged-slice regime coverage (probe-then-full-drive trap) --------------
+
+
+def _slice_manifest(dest: Path, *, layers: list[int], kinds=run.KINDS) -> Path:
+    dest.mkdir(parents=True, exist_ok=True)
+    p = dest / run.STAGE_MANIFEST
+    p.write_text(json.dumps({"layers": layers, "kinds": list(kinds)}))
+    return p
+
+
+def test_staged_slice_absent_manifest_is_a_fresh_stage(tmp_path):
+    covered, why = run.staged_slice_covers(tmp_path / "evil_labeling", kinds=run.KINDS, layers=[0])
+    assert covered is False
+    assert why == "", "a missing manifest is a fresh stage, not a re-stage"
+
+
+def test_staged_slice_exact_regime_is_covered(tmp_path):
+    dest = tmp_path / "evil_labeling"
+    _slice_manifest(dest, layers=list(range(28)))
+    covered, why = run.staged_slice_covers(dest, kinds=run.KINDS, layers=list(range(28)))
+    assert covered is True and why == ""
+
+
+def test_staged_slice_wider_regime_covers_narrower_request(tmp_path):
+    dest = tmp_path / "evil_labeling"
+    _slice_manifest(dest, layers=list(range(28)))
+    assert run.staged_slice_covers(dest, kinds=run.KINDS, layers=[0, 1])[0] is True
+
+
+def test_narrow_probe_manifest_does_not_satisfy_the_full_drive(tmp_path):
+    """THE TRAP: a 2-layer probe must not let the 28-layer drive skip staging."""
+    dest = tmp_path / "evil_labeling"
+    _slice_manifest(dest, layers=[0, 1])
+    covered, why = run.staged_slice_covers(dest, kinds=run.KINDS, layers=list(range(28)))
+    assert covered is False
+    assert "narrower than requested" in why
+    assert "26 layer(s) absent" in why
+
+
+def test_staged_slice_missing_kind_is_not_covered(tmp_path):
+    dest = tmp_path / "evil_labeling"
+    _slice_manifest(dest, layers=list(range(28)), kinds=("t1",))
+    covered, why = run.staged_slice_covers(dest, kinds=run.KINDS, layers=list(range(28)))
+    assert covered is False and "kinds absent" in why
+
+
+def test_staged_slice_corrupt_manifest_triggers_restage(tmp_path):
+    dest = tmp_path / "evil_labeling"
+    dest.mkdir(parents=True)
+    (dest / run.STAGE_MANIFEST).write_text("{not json")
+    covered, why = run.staged_slice_covers(dest, kinds=run.KINDS, layers=[0])
+    assert covered is False and "unreadable" in why

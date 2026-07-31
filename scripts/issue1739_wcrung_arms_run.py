@@ -195,6 +195,39 @@ def stage_extraction(behavior: str, args, token: str) -> None:
     _log(f"[phase=stage_extraction] {behavior} -> {dest}")
 
 
+def staged_slice_covers(
+    dest: Path, *, kinds: tuple[str, ...], layers: list[int]
+) -> tuple[bool, str]:
+    """Does an existing slice_manifest COVER the requested (kinds x layers)?
+
+    The slice manifest records the regime it was written for. A bare existence
+    check would let a narrow probe run (``--layers 0 1``) satisfy a later
+    full-grid drive, which then fails downstream on the missing layer arrays
+    instead of at staging. Returns ``(covered, reason_if_not)``; a missing or
+    unreadable manifest is "not covered" with an empty reason (a fresh stage,
+    not a re-stage).
+    """
+    manifest_path = dest / STAGE_MANIFEST
+    if not manifest_path.is_file():
+        return False, ""
+    try:
+        m = json.loads(manifest_path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        return False, f"unreadable {STAGE_MANIFEST} ({type(exc).__name__}) — re-staging"
+    have_layers = {int(x) for x in m.get("layers", [])}
+    have_kinds = set(m.get("kinds", []))
+    missing_layers = sorted(set(int(x) for x in layers) - have_layers)
+    missing_kinds = sorted(set(kinds) - have_kinds)
+    if not missing_layers and not missing_kinds:
+        return True, ""
+    bits = []
+    if missing_layers:
+        bits.append(f"{len(missing_layers)} layer(s) absent (e.g. {missing_layers[:4]})")
+    if missing_kinds:
+        bits.append(f"kinds absent {missing_kinds}")
+    return False, f"staged regime is narrower than requested: {'; '.join(bits)}"
+
+
 def stage_all(args, token: str, errors: list[BaseException]) -> None:
     """Background staging thread: shared inputs, then each train store in order."""
     try:
@@ -204,9 +237,17 @@ def stage_all(args, token: str, errors: list[BaseException]) -> None:
         for behavior in args.behaviors:
             stage_extraction(behavior, args, token)
             dest = args.store_root / f"{behavior}_labeling"
-            if (dest / STAGE_MANIFEST).exists():
-                _log(f"[phase=stage] {behavior}: slice_manifest present, skip")
+            covered, why = staged_slice_covers(dest, kinds=KINDS, layers=args.layers)
+            if covered:
+                _log(f"[phase=stage] {behavior}: slice_manifest covers this regime, skip")
                 continue
+            if why:
+                # A manifest exists but was written for a NARROWER regime — the
+                # probe-then-full-drive shape. Existence alone would skip here and
+                # the store would later fail to load the missing layer arrays, one
+                # wasted cycle later. stream_slice is resumable and re-writes
+                # nothing already present, so re-stage the delta.
+                _log(f"[phase=stage] {behavior}: re-staging — {why}")
             _log(
                 f"[phase=stage] {behavior}: streaming {TAR_GIB.get(behavior, 0):.1f} GiB tar "
                 f"({len(KINDS)} kinds x {len(args.layers)} layers) -> {dest}"
