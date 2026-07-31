@@ -1,0 +1,99 @@
+{
+  "arm": "committed_replay",
+  "cell_id": "conversation_paired_stories_assistant__R_instruct_r1_context",
+  "committed_r2": 0.654218395189838,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 21.07,
+  "fold_se": 0.002033525505400482,
+  "issue": 1345,
+  "knn": {
+    "cosine": {
+      "acc_at_k": {
+        "1": 0.5393734123624048,
+        "5": 0.7571972904318375,
+        "10": 0.8190093141405589
+      },
+      "chance_at_k": {
+        "1": 0.00021168501270110075,
+        "5": 0.0010584250635055038,
+        "10": 0.0021168501270110076
+      },
+      "median_rank": 1.0,
+      "metric": "cosine",
+      "mrr": 0.6416877215585258,
+      "n": 4724,
+      "n_pool": 4724
+    },
+    "euclidean": {
+      "acc_at_k": {
+        "1": 0.5167231160033869,
+        "5": 0.745766299745978,
+        "10": 0.8158340389500424
+      },
+      "chance_at_k": {
+        "1": 0.00021168501270110075,
+        "5": 0.0010584250635055038,
+        "10": 0.0021168501270110076
+      },
+      "median_rank": 1.0,
+      "metric": "euclidean",
+      "mrr": 0.6246036469767546,
+      "n": 4724,
+      "n_pool": 4724
+    }
+  },
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T05:23:30Z"
+  },
+  "n_train_min": 3779,
+  "n_train_per_fold": [
+    3779,
+    3779,
+    3779,
+    3779,
+    3780
+  ],
+  "published_claim_ref": "eval_results/issue_1345/conversation_paired_stories_assistant/cells_R_instruct_r1_context.json @ L19",
+  "r2_per_fold": [
+    0.6498009214909579,
+    0.6609081447832207,
+    0.6545888393343804,
+    0.6501977044361849,
+    0.6556798696833912
+  ],
+  "r2_pooled": 0.6542183951898377,
+  "resume_key": {
+    "arm": "committed_replay",
+    "cell_id": "conversation_paired_stories_assistant__R_instruct_r1_context",
+    "issue": 1345,
+    "selector_regime": {
+      "gcv_dof_cap": null,
+      "lambda_selection": "gcv",
+      "legacy_unguarded": true
+    },
+    "store_rev": "e151f8fd30a466cd9e2f05b9b86cf6dde76bca74+allow:matched:77f73466e0a7a3d7f29f31aaa8f0dd9372431045"
+  },
+  "selected_lambda_per_fold": [
+    1000.0,
+    1000.0,
+    1000.0,
+    1000.0,
+    1000.0
+  ],
+  "selector_config": {
+    "gcv_dof_cap": null,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": true
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": false,
+    "n_train": 3779,
+    "reasons": []
+  },
+  "variant": "conversation_paired_stories_assistant"
+}

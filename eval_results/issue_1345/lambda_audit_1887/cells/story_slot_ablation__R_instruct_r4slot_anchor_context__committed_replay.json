@@ -1,0 +1,65 @@
+{
+  "arm": "committed_replay",
+  "cell_id": "story_slot_ablation__R_instruct_r4slot_anchor_context",
+  "committed_r2": -0.3055801205963524,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 3.19,
+  "fold_se": 0.006504595784621109,
+  "issue": 1345,
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T06:50:27Z"
+  },
+  "n_train_min": 1730,
+  "n_train_per_fold": [
+    1730,
+    1730,
+    1730,
+    1731,
+    1731
+  ],
+  "published_claim_ref": "eval_results/issue_1345/story_slot_ablation/cells_R_instruct_r4slot_anchor_context.json @ L19",
+  "r2_per_fold": [
+    -0.3291617113761358,
+    -0.29075156808402913,
+    -0.30263355955185167,
+    -0.29810202489300264,
+    -0.3079712133193666
+  ],
+  "r2_pooled": -0.30558012059634954,
+  "resume_key": {
+    "arm": "committed_replay",
+    "cell_id": "story_slot_ablation__R_instruct_r4slot_anchor_context",
+    "issue": 1345,
+    "selector_regime": {
+      "gcv_dof_cap": null,
+      "lambda_selection": "gcv",
+      "legacy_unguarded": true
+    },
+    "store_rev": "c8ffc7a8d7412fd0492dd0b3a0e2e9f6374f80c7+allow:git:slot_row_coverage.json"
+  },
+  "selected_lambda_per_fold": [
+    0.01,
+    0.01,
+    0.01,
+    0.01,
+    0.01
+  ],
+  "selector_config": {
+    "gcv_dof_cap": null,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": true
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": true,
+    "n_train": 1730,
+    "reasons": [
+      "n_lt_d_lambda_at_grid_edge"
+    ]
+  },
+  "variant": "story_slot_ablation"
+}

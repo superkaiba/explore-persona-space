@@ -1,0 +1,97 @@
+{
+  "arm": "reduced_basis_k",
+  "cell_id": "conversation_paired_stories_assistant__R_instruct_r4_tf_on_companion_context",
+  "committed_r2": 0.06892898455274388,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 0.16,
+  "fold_se": 0.01527148047784929,
+  "issue": 1345,
+  "k": 46,
+  "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+  "knn": {
+    "cosine": {
+      "acc_at_k": {
+        "1": 0.05128205128205128,
+        "5": 0.11965811965811966,
+        "10": 0.24786324786324787
+      },
+      "chance_at_k": {
+        "1": 0.008547008547008548,
+        "5": 0.042735042735042736,
+        "10": 0.08547008547008547
+      },
+      "median_rank": 26.0,
+      "metric": "cosine",
+      "mrr": 0.11579159616070504,
+      "n": 117,
+      "n_pool": 117
+    },
+    "euclidean": {
+      "acc_at_k": {
+        "1": 0.02564102564102564,
+        "5": 0.15384615384615385,
+        "10": 0.2905982905982906
+      },
+      "chance_at_k": {
+        "1": 0.008547008547008548,
+        "5": 0.042735042735042736,
+        "10": 0.08547008547008547
+      },
+      "median_rank": 25.0,
+      "metric": "euclidean",
+      "mrr": 0.1004806032489254,
+      "n": 117,
+      "n_pool": 117
+    }
+  },
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T05:51:38Z"
+  },
+  "n_train_min": 93,
+  "n_train_per_fold": [
+    93,
+    93,
+    94,
+    94,
+    94
+  ],
+  "published_claim_ref": "eval_results/issue_1345/conversation_paired_stories_assistant/matched_row/cells_R_instruct_r4_tf_on_companion_context.json @ L19",
+  "r2_per_fold": [
+    0.13143850541187752,
+    0.09040271149742496,
+    0.12229356557722226,
+    0.13115643606773986,
+    0.05236473445678003
+  ],
+  "r2_pooled": 0.10444623690784083,
+  "resume_key": {
+    "arm": "reduced_basis_k",
+    "cell_id": "conversation_paired_stories_assistant__R_instruct_r4_tf_on_companion_context",
+    "issue": 1345,
+    "selector_regime": "reduced_basis_k",
+    "store_rev": "1ef6def108678c458a03d190c8105ced55fe58a7+allow:matched:77f73466e0a7a3d7f29f31aaa8f0dd9372431045"
+  },
+  "selected_lambda_per_fold": [
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0
+  ],
+  "selector_config": {
+    "gcv_dof_cap": null,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": false
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": false,
+    "n_train": 93,
+    "reasons": []
+  },
+  "variant": "conversation_paired_stories_assistant"
+}

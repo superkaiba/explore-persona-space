@@ -7,7 +7,7 @@
     "forced_lambda"
   ],
   "issue": 825,
-  "n_cells": 1,
+  "n_cells": 2,
   "replay_gate": {
     "gate": "PASS",
     "n_cells_with_reference": 1,
@@ -15,5 +15,5 @@
     "n_unrefittable": 0,
     "pass_fraction": 1.0
   },
-  "ts": "2026-07-31T03:24:24Z"
+  "ts": "2026-07-31T07:03:29Z"
 }

@@ -1,0 +1,95 @@
+{
+  "arm": "inner_group_cv",
+  "cell_id": "conversation_paired_stories_assistant__R_instruct_r4_context",
+  "committed_r2": -0.3055801205963524,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 11.62,
+  "fold_se": 0.0036735459509877133,
+  "issue": 1345,
+  "knn": {
+    "cosine": {
+      "acc_at_k": {
+        "1": 0.18261673601479428,
+        "5": 0.3874248728617661,
+        "10": 0.49699491447064265
+      },
+      "chance_at_k": {
+        "1": 0.0004623208506703652,
+        "5": 0.002311604253351826,
+        "10": 0.004623208506703652
+      },
+      "median_rank": 11.0,
+      "metric": "cosine",
+      "mrr": 0.28313566395553696,
+      "n": 2163,
+      "n_pool": 2163
+    },
+    "euclidean": {
+      "acc_at_k": {
+        "1": 0.16273693943596856,
+        "5": 0.36893203883495146,
+        "10": 0.4613962089690245
+      },
+      "chance_at_k": {
+        "1": 0.0004623208506703652,
+        "5": 0.002311604253351826,
+        "10": 0.004623208506703652
+      },
+      "median_rank": 13.0,
+      "metric": "euclidean",
+      "mrr": 0.265108162940265,
+      "n": 2163,
+      "n_pool": 2163
+    }
+  },
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T05:43:50Z"
+  },
+  "n_train_min": 1730,
+  "n_train_per_fold": [
+    1730,
+    1730,
+    1730,
+    1731,
+    1731
+  ],
+  "published_claim_ref": "eval_results/issue_1345/conversation_paired_stories_assistant/cells_R_instruct_r4_context.json @ L19",
+  "r2_per_fold": [
+    0.44653174092940184,
+    0.43878547019461733,
+    0.4271931711915995,
+    0.43547733109123055,
+    0.42716303072816364
+  ],
+  "r2_pooled": 0.43502959165812227,
+  "resume_key": {
+    "arm": "inner_group_cv",
+    "cell_id": "conversation_paired_stories_assistant__R_instruct_r4_context",
+    "issue": 1345,
+    "selector_regime": "inner_group_cv",
+    "store_rev": "1ef6def108678c458a03d190c8105ced55fe58a7"
+  },
+  "selected_lambda_per_fold": [
+    3162.2776601683795,
+    3162.2776601683795,
+    3162.2776601683795,
+    3162.2776601683795,
+    3162.2776601683795
+  ],
+  "selector_config": {
+    "gcv_dof_cap": 0.9,
+    "lambda_selection": "inner-group-cv",
+    "legacy_unguarded": false
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": false,
+    "n_train": 1730,
+    "reasons": []
+  },
+  "variant": "conversation_paired_stories_assistant"
+}
