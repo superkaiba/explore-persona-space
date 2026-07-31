@@ -1,5 +1,5 @@
 ---
-description: Pod-side dispatcher result-reporting contract (sentinel files, poll_pipeline.py drain, epm:results payload, pod-side sentinel READ-BACK tolerance under the .processed drain-rename (#1311)) + pid-file launch contract (rewrite on EVERY (re)launch, #813) + relaunch-descope record & handle-sidecar currency (#1689) + legacy pod-side preflight gates; relocated verbatim from experiment-implementer.md, #829
+description: Pod-side dispatcher result-reporting contract (sentinel files, poll_pipeline.py drain, epm:results payload, pod-side sentinel READ-BACK tolerance under the .processed drain-rename (#1311)) + pid-file launch contract (rewrite on EVERY (re)launch, #813) + relaunch-descope record & handle-sidecar currency (#1689) + full-stdio-detach on ssh-remote (re)launch (#1768) + legacy pod-side preflight gates; relocated verbatim from experiment-implementer.md, #829
 paths:
   - "scripts/*dispatch*"
   - "scripts/poll_pipeline.py"
@@ -282,7 +282,7 @@ relaunch, a watch-session correction — not just first launches:
    `.claude/agents/experimenter.md` § During Execution steps 1/1b) and
    (ii) `$!` of the detached child captured in the SAME command chain
    as the launch — the launcher-less pod form
-   (`setsid nohup ... < /dev/null & printf '%s\n' "$!" > <pid>.tmp && mv <pid>.tmp <pid>`,
+   (`setsid nohup ... < /dev/null >> <log> 2>&1 & printf '%s\n' "$!" > <pid>.tmp && mv <pid>.tmp <pid>`,
    experimenter.md § During Execution) and the VM-side analogue
    (SKILL.md § Detached VM-side long compute phases, whose `bash -c`
    wrapper is the load-bearing `$!`-capture shape under job control).
@@ -355,6 +355,35 @@ relaunch, a watch-session correction — not just first launches:
    with NO marker, and the handle kept pointing at the OLD attempt's
    `.completion-sentinel.json` — both found only by a user-requested
    manual audit (#1689 epm:progress v64).
+1f. **Full stdio detach on every ssh-remote (re)launch — the wrapper is
+   never the signal.** The remote launch command MUST redirect ALL THREE
+   stdio fds in the SAME command: `< /dev/null` for stdin AND
+   `> <log> 2>&1` (or `>> <log> 2>&1`) for stdout/stderr. `setsid` +
+   `nohup` alone do NOT release the ssh channel: sshd waits for EOF on
+   the remote stdout/stderr, so a detached child that inherits those fds
+   keeps the channel open and the LOCAL ssh client hangs indefinitely
+   (standard ssh fd semantics; same-run corroboration: #1768
+   `epm:failure-lesson v2` — "it holds the ssh channel open so the local
+   client hangs"). The local wrapper's lifetime is NEVER a signal: bound
+   the local ssh call with a backstop
+   (`timeout --kill-after=10s 60s ssh ...`) and verify the launch via
+   the pid file + log breadcrumbs (items 1/1d), never via the wrapper
+   staying alive. The `&`-precedence trap: in
+   `ssh pod 'cd X && setsid nohup <cmd> > log 2>&1 < /dev/null & echo $! > pidfile'`
+   the trailing `&` backgrounds the ENTIRE `cd && setsid` list, so `$!`
+   is an un-setsid'd wrapper subshell — HUP-vulnerable and (when any fd
+   is attached) the very process holding the channel. Mitigation: make
+   `&` bind to the setsid unit alone via a brace group
+   (`cd X && { setsid nohup <cmd> < /dev/null > log 2>&1 & echo $! ... ; }`),
+   or repoint the pidfile at the setsid session leader (SESS==PID) per
+   the #1768 r3 failure-lesson. Worked example (incident #1768 relaunch
+   #4, 2026-07-30): the pod-side relaunch executed ~01:05Z left the
+   local ssh wrapper hanging (~2.5 h, then killed — mechanism recorded
+   as inferred-not-reproduced in the /daily 2026-07-29 problem sweep);
+   the launching session died with `epm:run-launched` unposted, and the
+   watcher-respawned successor back-posted `epm:run-launched v4` at
+   03:47:35Z after an identity-verified probe — a ~2.7 h window in which
+   the healthy run was invisible to the poller's marker-pid probe.
 2. **The fresh `epm:run-launched` carries the SAME live pid (`pid=`) AND
    `pid_file=`** (SKILL.md § "Any relaunch must re-post `epm:run-launched`").
    `poll_pipeline.py` computes `pid_alive = pidfile_pid_alive OR
