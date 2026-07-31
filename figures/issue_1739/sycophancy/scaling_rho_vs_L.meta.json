@@ -1,0 +1,1140 @@
+{
+  "commit": "795f474712",
+  "created": "2026-07-30T23:07:39Z",
+  "figsize": [
+    15.600000000000001,
+    4.0
+  ],
+  "points": [
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.24883214367530856,
+      "series": "Stacked combiner",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.2344561069289686,
+      "series": "Stacked combiner",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.36943353526295575,
+      "series": "Stacked combiner",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.3855941579539847,
+      "series": "Oracle-project-true-answer",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.38171756726770384,
+      "series": "Oracle-project-true-answer",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.3790689566586616,
+      "series": "Oracle-project-true-answer",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.5887942145135063,
+      "series": "Oracle-regression-true-answer",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.5197229130152722,
+      "series": "Oracle-regression-true-answer",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.7761070682462994,
+      "series": "Oracle-regression-true-answer",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.17850711940048486,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.18831976626232386,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.13891187805610433,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.1274329064793617,
+      "series": "Shuffled-pretrain control",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.3207898246332917,
+      "series": "Shuffled-pretrain control",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.34285973153480326,
+      "series": "Shuffled-pretrain control",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.1412625017142361,
+      "series": "Text-only sentence-embedding",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.3701884589042149,
+      "series": "Text-only sentence-embedding",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.41468438616315273,
+      "series": "Text-only sentence-embedding",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.28344250156136014,
+      "series": "Trivial surface features",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.3412093189551952,
+      "series": "Trivial surface features",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.3470226787279019,
+      "series": "Trivial surface features",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.1828734333932839,
+      "series": "PV-project-context (E1)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.19213922794256016,
+      "series": "PV-project-context (E1)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.1381690341522637,
+      "series": "PV-project-context (E1)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.22048583340285602,
+      "series": "Context-native direction",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.22381106234333384,
+      "series": "Context-native direction",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.21027575348998187,
+      "series": "Context-native direction",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.15586569789226443,
+      "series": "Identity+learned-bias",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.14093803444089317,
+      "series": "Identity+learned-bias",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.1379203951244254,
+      "series": "Identity+learned-bias",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.2478316713965402,
+      "series": "Ridge on whitened context",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.23395290815446226,
+      "series": "Ridge on whitened context",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.36961357472905265,
+      "series": "Ridge on whitened context",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.24241243216905856,
+      "series": "MLP on whitened context",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.31987682509034404,
+      "series": "MLP on whitened context",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.34965168777661954,
+      "series": "MLP on whitened context",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.23110023210626765,
+      "series": "Map-project (headline)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.2505561063204791,
+      "series": "Map-project (headline)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.18719093959332284,
+      "series": "Map-project (headline)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.1132253709543182,
+      "series": "Map-regression predicted answer",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.3207492172665558,
+      "series": "Map-regression predicted answer",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.3428577201847188,
+      "series": "Map-regression predicted answer",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.22210654713290476,
+      "series": "Map-regression true answer",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.14011530078031184,
+      "series": "Map-regression true answer",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.25724269118711296,
+      "series": "Map-regression true answer",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.14607589553631342,
+      "series": "Pretrain-then-finetune (L2-SP)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.3207757937861374,
+      "series": "Pretrain-then-finetune (L2-SP)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.34285948234267627,
+      "series": "Pretrain-then-finetune (L2-SP)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.24682894137710865,
+      "series": "Stacked combiner",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.22855511728500685,
+      "series": "Stacked combiner",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.36436768559687865,
+      "series": "Stacked combiner",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.3845952992472938,
+      "series": "Oracle-project-true-answer",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.38158836388761663,
+      "series": "Oracle-project-true-answer",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.3792940954904174,
+      "series": "Oracle-project-true-answer",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.5819196013401963,
+      "series": "Oracle-regression-true-answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.4985857226751395,
+      "series": "Oracle-regression-true-answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.7742741577617611,
+      "series": "Oracle-regression-true-answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.2315752962361656,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.1394428145901261,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.10028577074021001,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.20336481936042186,
+      "series": "Shuffled-pretrain control",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.31801907796696194,
+      "series": "Shuffled-pretrain control",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.36030894957703613,
+      "series": "Shuffled-pretrain control",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.1412625017142361,
+      "series": "Text-only sentence-embedding",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.3701884589042149,
+      "series": "Text-only sentence-embedding",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.41468438616315273,
+      "series": "Text-only sentence-embedding",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.28344250156136014,
+      "series": "Trivial surface features",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.3412093189551952,
+      "series": "Trivial surface features",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.3470226787279019,
+      "series": "Trivial surface features",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.2972842298728064,
+      "series": "PV-project-context (E1)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.1976504985976825,
+      "series": "PV-project-context (E1)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.1443844359693792,
+      "series": "PV-project-context (E1)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.22018632586061324,
+      "series": "Context-native direction",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.2166589212819566,
+      "series": "Context-native direction",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.20001853321592367,
+      "series": "Context-native direction",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.15292228487244255,
+      "series": "Identity+learned-bias",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.14506308036852292,
+      "series": "Identity+learned-bias",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.1438368167238349,
+      "series": "Identity+learned-bias",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.24682894137710865,
+      "series": "Ridge on whitened context",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.22813600323231828,
+      "series": "Ridge on whitened context",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.3643669413496577,
+      "series": "Ridge on whitened context",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.23208582024388155,
+      "series": "MLP on whitened context",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.31520221664274006,
+      "series": "MLP on whitened context",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.3412824831602964,
+      "series": "MLP on whitened context",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.31301973670713046,
+      "series": "Map-project (headline)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.18880074797765953,
+      "series": "Map-project (headline)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.1380737520667151,
+      "series": "Map-project (headline)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.2033077874973332,
+      "series": "Map-regression predicted answer",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.318063182263134,
+      "series": "Map-regression predicted answer",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.36032508911320604,
+      "series": "Map-regression predicted answer",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.17666904069005537,
+      "series": "Map-regression true answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.08840361449188612,
+      "series": "Map-regression true answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.11477048385951157,
+      "series": "Map-regression true answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.2035664860391921,
+      "series": "Pretrain-then-finetune (L2-SP)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.3183376261565521,
+      "series": "Pretrain-then-finetune (L2-SP)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.360329016467684,
+      "series": "Pretrain-then-finetune (L2-SP)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.24858834227791518,
+      "series": "Stacked combiner",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.22253212376085982,
+      "series": "Stacked combiner",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.36186498733595346,
+      "series": "Stacked combiner",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.3864573562506452,
+      "series": "Oracle-project-true-answer",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.38401693602023496,
+      "series": "Oracle-project-true-answer",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.381497303900977,
+      "series": "Oracle-project-true-answer",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.5816054307111667,
+      "series": "Oracle-regression-true-answer",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.490166090816006,
+      "series": "Oracle-regression-true-answer",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.7730596328889967,
+      "series": "Oracle-regression-true-answer",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.2222565589712183,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.12822607637307418,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.090645928717879,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.22894419621046663,
+      "series": "Shuffled-pretrain control",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.32881602451020603,
+      "series": "Shuffled-pretrain control",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.36649393237342065,
+      "series": "Shuffled-pretrain control",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.1412625017142361,
+      "series": "Text-only sentence-embedding",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.3701884589042149,
+      "series": "Text-only sentence-embedding",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.41468438616315273,
+      "series": "Text-only sentence-embedding",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.28344250156136014,
+      "series": "Trivial surface features",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.3412093189551952,
+      "series": "Trivial surface features",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.3470226787279019,
+      "series": "Trivial surface features",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.29140955887489434,
+      "series": "PV-project-context (E1)",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.19155150748450028,
+      "series": "PV-project-context (E1)",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.1390742179301838,
+      "series": "PV-project-context (E1)",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.22989348258241082,
+      "series": "Context-native direction",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.22369444516711662,
+      "series": "Context-native direction",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.20934044596004533,
+      "series": "Context-native direction",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.14792697204315527,
+      "series": "Identity+learned-bias",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.14018684074241813,
+      "series": "Identity+learned-bias",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.1384853388430301,
+      "series": "Identity+learned-bias",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.24858804344755242,
+      "series": "Ridge on whitened context",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.22219231552365726,
+      "series": "Ridge on whitened context",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.36219259721388253,
+      "series": "Ridge on whitened context",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.23168420161809958,
+      "series": "MLP on whitened context",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.3125816574401962,
+      "series": "MLP on whitened context",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.33965761091365415,
+      "series": "MLP on whitened context",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.4418834401027184,
+      "series": "Map-project (headline)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.28248817259855624,
+      "series": "Map-project (headline)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.2086903360679485,
+      "series": "Map-project (headline)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.2289040281903804,
+      "series": "Map-regression predicted answer",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.3291886344933774,
+      "series": "Map-regression predicted answer",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.3665835645525791,
+      "series": "Map-regression predicted answer",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.2473828504592211,
+      "series": "Map-regression true answer",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.13400778262020285,
+      "series": "Map-regression true answer",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.24420493380361458,
+      "series": "Map-regression true answer",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho": 0.23113232249332066,
+      "series": "Pretrain-then-finetune (L2-SP)",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho": 0.32944285637599263,
+      "series": "Pretrain-then-finetune (L2-SP)",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "Spearman rho": 0.366585601835964,
+      "series": "Pretrain-then-finetune (L2-SP)",
+      "_kind": "line",
+      "_group": 47
+    }
+  ],
+  "n_series": 48,
+  "total_points": 144,
+  "text": {
+    "suptitle": "Crossover scaling: rho vs labeled budget L",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "U = 250",
+        "xlabel": "labeled budget L (log scale)",
+        "ylabel": "Spearman rho",
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "U = 5000",
+        "xlabel": "labeled budget L (log scale)",
+        "ylabel": "Spearman rho",
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "U = 18793",
+        "xlabel": "labeled budget L (log scale)",
+        "ylabel": "Spearman rho",
+        "legend_labels": [
+          "Stacked combiner",
+          "Oracle-project-true-answer",
+          "Oracle-regression-true-answer",
+          "Shuffled-map control",
+          "Shuffled-pretrain control",
+          "Text-only sentence-embedding",
+          "Trivial surface features",
+          "PV-project-context (E1)",
+          "Context-native direction",
+          "Identity+learned-bias",
+          "Ridge on whitened context",
+          "MLP on whitened context",
+          "Map-project (headline)",
+          "Map-regression predicted answer",
+          "Map-regression true answer",
+          "Pretrain-then-finetune (L2-SP)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ],
+    "series": [
+      "Stacked combiner",
+      "Oracle-project-true-answer",
+      "Oracle-regression-true-answer",
+      "Shuffled-map control",
+      "Shuffled-pretrain control",
+      "Text-only sentence-embedding",
+      "Trivial surface features",
+      "PV-project-context (E1)",
+      "Context-native direction",
+      "Identity+learned-bias",
+      "Ridge on whitened context",
+      "MLP on whitened context",
+      "Map-project (headline)",
+      "Map-regression predicted answer",
+      "Map-regression true answer",
+      "Pretrain-then-finetune (L2-SP)"
+    ]
+  }
+}
