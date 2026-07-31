@@ -115,3 +115,9 @@ overleaf_paper/
 # --smoke relocates every WRITE-target dir under a sibling smoke_scope/ so
 # mock artifacts never land at canonical production paths (review r1 C1(iii)).
 **/smoke_scope/
+
+# #1768/#1900 verdict-manifest lane-staging fallback cache — the READ path is
+# pinned inside issue1768_cells._load_manifest (module-adjacent by contract,
+# the SLURM rsync-exclude workaround), so it must live in scripts/; runtime
+# cache, never committed (r2 Minor 5 hygiene).
+scripts/.i1768_verdict_manifest.json

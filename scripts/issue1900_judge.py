@@ -700,6 +700,9 @@ def main() -> None:
         if args.dry_run:
             _phase("done")
             sys.exit(0)
+        # text/JSON uploads ALWAYS (upload policy): pilot judge reasoning texts
+        # persist even when the verdict refuses full mode (rc=7) — r2 Minor 4.
+        _upload_raw(args.work_dir)
         verdict = pilot_verdict(payloads, list(PILOT_ARMS))
         _atomic_json(args.out_dir / "pilot_verdict.json", verdict)
         print(
