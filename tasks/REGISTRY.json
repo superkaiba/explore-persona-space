@@ -6641,8 +6641,8 @@
     "1858": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1858",
-      "status": "planning",
+      "path": "tasks/approved/1858",
+      "status": "approved",
       "title": "daily-fix: RunPod failover launcher timeout-bounds sync, rea"
     },
     "1859": {
