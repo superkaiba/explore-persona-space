@@ -1044,6 +1044,13 @@ def test_bare_arg_resolving_to_nothing_keeps_status_quo_allow():
             'WT=".claude/worktrees/issue-9"; cd "$WT" && uv run pytest -q',
             id="R17-non_git_under_latch",
         ),
+        # #1861: relocated from the BLOCK battery — name generalization makes this
+        # fully-compliant arming latch; the prefix-collision half lives in
+        # X16-name_mismatch_prefix_collision
+        pytest.param(
+            'WT2=".claude/worktrees/issue-9"\ncd "$WT2" && git checkout main -- specs.md',
+            id="R12-wt2_name",
+        ),
     ],
 )
 def test_wt_variable_cd_latch_allows(cmd):
@@ -1113,10 +1120,6 @@ def test_wt_variable_cd_latch_allows(cmd):
         pytest.param(
             'WT=".claude/worktrees/issue-9"; cd "$WT/../.." && git restore .',
             id="R13-dotdot_escape",
-        ),
-        pytest.param(
-            'WT2=".claude/worktrees/issue-9"\ncd "$WT2" && git checkout main -- specs.md',
-            id="R12-wt2_name",
         ),
         pytest.param(
             'WT=".claude/worktrees/issue-779"\n'
