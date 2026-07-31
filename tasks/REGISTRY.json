@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1941,
+  "highest_id": 1942,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6683,15 +6683,15 @@
     "1863": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1863",
-      "status": "reviewing",
+      "path": "tasks/completed/1863",
+      "status": "completed",
       "title": "daily-fix: poll ticks compute rate/ETA on long same-phase ta"
     },
     "1864": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1864",
-      "status": "reviewing",
+      "path": "tasks/completed/1864",
+      "status": "completed",
       "title": "daily-fix: analyzer.md numbers the payload-lint gate pre-com"
     },
     "1865": {
@@ -7292,6 +7292,13 @@
       "path": "tasks/proposed/1941",
       "status": "proposed",
       "title": "functional_role axis: kappa 0.318 reproduces at both scales \u2014 the only axis with no contrastive evidence"
+    },
+    "1942": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1942",
+      "status": "proposed",
+      "title": "Hoist shared-node vLLM util resolver into a shared module (dedupe #1902 + #1345 copies)"
     },
     "195": {
       "has_clean_result": false,

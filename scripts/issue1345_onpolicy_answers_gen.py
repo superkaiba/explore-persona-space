@@ -78,6 +78,13 @@ for _p in (str(_SCRIPT_DIR), str(_REPO_ROOT / "src")):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
+# vLLM reads this at IMPORT time. `main()` loads a tokenizer (CUDA-adjacent)
+# before building the engine, so the default `fork()` duplicates poisoned parent
+# state into EngineCore, which dies 1-4 s after init with no traceback of its own
+# (#628). Set HERE rather than relying on the transitive `gp` import: a future
+# import cleanup would silently reopen the class.
+os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
+
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
@@ -123,6 +130,20 @@ ONPOLICY_MAX_NEW_TOKENS = c.STORY_MAX_NEW_TOKENS
 MAX_MODEL_LEN = g.MAX_MODEL_LEN
 PROMPT_TOKEN_BUDGET = MAX_MODEL_LEN - ONPOLICY_MAX_NEW_TOKENS - 64
 ANSWER_CHAR_MIN = gp.ANSWER_CHAR_MIN
+
+# vLLM `gpu_memory_utilization` is a fraction of TOTAL device memory, so a fixed
+# value demands that share regardless of what other tenants hold — on a
+# GPU-SHARED fellows SLURM node (no GPU cgroup isolation; ~58 GiB/device held by
+# other tenants, measured 2026-07-31) a hardcoded 0.85 demands 118 GiB of a
+# 139.8 GiB H200 and EngineCore raises ValueError at init (#1902 crash 1).
+# Recipe ported from `scripts/issue1902_common.py::vllm_util_for_free` (that
+# helper is STRANDED on the unmerged issue-1902 branch, so importing it would
+# break on main); the CAP is this round's exclusive-host value, not #1902's 0.55.
+VLLM_UTIL_CAP = 0.85
+GPU_FREE_MARGIN_GIB = 6.0
+# Below this fraction of TOTAL, 7B bf16 weights (~15 GiB) + a minimum KV cache
+# cannot fit — fail loud instead of dying cryptically inside EngineCore init.
+VLLM_UTIL_FLOOR = 0.20
 
 # Smoke slice: enough rows that the validation + drop-accounting paths run, and
 # the yield floor resolves to 1 so ANY kept row proceeds (g.resolve_yield_floor).
@@ -202,6 +223,49 @@ def build_gen_prompt(row: dict, *, shape: str) -> str:
     if shape == SHAPE_STORY_SLOT:
         return row["prefix"]
     return answer_slot_prefix(row["question"], chat=shape == SHAPE_CHAT)
+
+
+def vllm_util_for_free(free_bytes: int, total_bytes: int) -> float:
+    """`gpu_memory_utilization` computed from LIVE free device memory (#1902).
+
+    Returns ``min(VLLM_UTIL_CAP, (free - margin) / total)``; raises below
+    ``VLLM_UTIL_FLOOR`` (weights + a minimum KV cache cannot fit — another
+    tenant holds the device; re-dispatch, never silently degrade).
+    """
+    if total_bytes <= 0:
+        raise RuntimeError(f"nonsensical total device memory: {total_bytes} bytes")
+    free_gib = free_bytes / 2**30
+    total_gib = total_bytes / 2**30
+    util = min(VLLM_UTIL_CAP, (free_gib - GPU_FREE_MARGIN_GIB) / total_gib)
+    if util < VLLM_UTIL_FLOOR:
+        raise RuntimeError(
+            f"GPU too full for a vLLM engine: free={free_gib:.1f} GiB of {total_gib:.1f} GiB "
+            f"total -> computed gpu_memory_utilization {util:.3f} < floor {VLLM_UTIL_FLOOR} "
+            f"after the {GPU_FREE_MARGIN_GIB:.0f} GiB margin. On a GPU-SHARED node (fellows "
+            "H200) another tenant holds the device — re-dispatch when it frees, or pin a "
+            "different allocated GPU."
+        )
+    return util
+
+
+def resolve_vllm_util() -> float:
+    """Live-probed engine util, or the cap when CUDA is unavailable (CPU smoke)."""
+    try:
+        import torch
+
+        if not torch.cuda.is_available():
+            return VLLM_UTIL_CAP
+        free_b, total_b = torch.cuda.mem_get_info()
+    except (ImportError, RuntimeError) as exc:  # no CUDA / no driver — CPU path
+        print(f"[gpu] mem_get_info unavailable ({exc}); using cap {VLLM_UTIL_CAP}", flush=True)
+        return VLLM_UTIL_CAP
+    util = vllm_util_for_free(free_b, total_b)
+    print(
+        f"[gpu] free={free_b / 2**30:.1f} GiB total={total_b / 2**30:.1f} GiB "
+        f"-> gpu_memory_utilization={util:.3f} (cap {VLLM_UTIL_CAP})",
+        flush=True,
+    )
+    return util
 
 
 # ---------------------------------------------------------------------------
@@ -291,13 +355,17 @@ def filter_pool_by_prompt_budget(
     Load-time length validation (#952): one over-budget prompt is a hard vLLM
     `add_request` ValueError that kills the whole engine mid-production.
     """
-    kept, counts = [], {"prompt_over_budget": 0}
+    kept, counts = [], {"prompt_over_budget": 0, "max_prompt_tokens": 0}
     for row in pool:
         prompt = build_gen_prompt(row, shape=shape)
         n_tok = len(tokenizer(prompt, add_special_tokens=False)["input_ids"])
         if n_tok > PROMPT_TOKEN_BUDGET:
             counts["prompt_over_budget"] += 1
             continue
+        # MEASURED max, recorded in the yield report + manifest: the budget is
+        # satisfied-by-headroom rather than by a frozen literal, so a corpus
+        # change re-measures itself instead of silently eating the margin.
+        counts["max_prompt_tokens"] = max(counts["max_prompt_tokens"], n_tok)
         kept.append(row)
     print(
         f"[seeds] prompt-budget filter ({shape}, budget {PROMPT_TOKEN_BUDGET} tok): "
@@ -356,12 +424,18 @@ def _strip_one_trailing_quote(text: str) -> tuple[str, bool]:
     return out, False
 
 
-def assemble_row(pool_row: dict, answer_text: str, *, shape: str, model_key: str) -> dict | None:
-    """One emitted row in the CONSUMER's own schema, or None when degenerate."""
+def assemble_row(
+    pool_row: dict, answer_text: str, *, shape: str, model_key: str
+) -> tuple[dict | None, str]:
+    """One emitted row in the CONSUMER's own schema, plus a drop reason.
+
+    Returns ``(row, "ok")`` or ``(None, <named reason>)`` so `keep_rows` can
+    account every drop class separately instead of collapsing them.
+    """
     if shape == SHAPE_STORY_SLOT:
         answer, stripped = _strip_one_trailing_quote(answer_text)
         if len(answer) < ANSWER_CHAR_MIN:
-            return None
+            return None, "answer_too_short"
         prefix = pool_row["prefix"]
         turn = dict(pool_row["turn"])
         a_start = int(turn["a_start"])
@@ -384,6 +458,14 @@ def assemble_row(pool_row: dict, answer_text: str, *, shape: str, model_key: str
         assert story[turn["a_end"] :] == '"', (
             f"{pool_row['conv_id']}: the story must close the answer quote exactly once"
         )
+        # The ARM path re-gates every row with the V1 answer-ANCHORED gate, which
+        # refuses `answer_occurrences_multi` — and `render_arm`'s re-gate is an
+        # ASSERT, not a skip, so ONE multi-occurrence row kills the whole capture
+        # mid-GPU-run. The answer always sits at the story tail here, so the only
+        # realistic collision is a short answer echoed in the instruct-written
+        # prefix; drop it at CPU cost with a named reason instead.
+        if story.count(answer) != 1:
+            return None, "answer_not_unique_in_story"
         return {
             "conv_id": pool_row["conv_id"],
             "story": story,
@@ -394,11 +476,11 @@ def assemble_row(pool_row: dict, answer_text: str, *, shape: str, model_key: str
             "provenance": "on_policy",
             "trailing_quote_stripped": stripped,
             "prefix_chars": a_start,
-        }
+        }, "ok"
 
     answer = answer_text.strip()
     if len(answer) < ANSWER_CHAR_MIN:
-        return None
+        return None, "answer_too_short"
     # Comparator-convs schema: `to_single_turn` maps prompt -> u1, response -> a1.
     return {
         "conv_id": pool_row["conv_id"],
@@ -407,7 +489,7 @@ def assemble_row(pool_row: dict, answer_text: str, *, shape: str, model_key: str
         "shape": shape,
         "model": model_key,
         "provenance": "on_policy",
-    }
+    }, "ok"
 
 
 def validate_row(row: dict, tokenizer, *, shape: str) -> bool:
@@ -502,6 +584,7 @@ def keep_rows(
         "raw": len(raw_rows),
         "kept": 0,
         "answer_too_short": 0,
+        "answer_not_unique_in_story": 0,
         "render_none": 0,
         "finish_length_capped": 0,
         "trailing_quote_stripped": 0,
@@ -515,9 +598,10 @@ def keep_rows(
         )
         if raw.get("finish_reason") == "length":
             counts["finish_length_capped"] += 1
-        row = assemble_row(pool_row, raw["answer_text"], shape=shape, model_key=model_key)
+        row, reason = assemble_row(pool_row, raw["answer_text"], shape=shape, model_key=model_key)
         if row is None:
-            counts["answer_too_short"] += 1
+            assert reason in counts, f"unaccounted drop reason {reason!r}"
+            counts[reason] += 1
             continue
         if not validate_row(row, tokenizer, shape=shape):
             counts["render_none"] += 1
@@ -722,13 +806,13 @@ def main() -> None:
     if args.verify_pool:
         # Zero-GPU preflight: prove the pool resolves, the prompts fit, and one
         # row renders through the consumer's own function before any pod boots.
-        probe = assemble_row(
+        probe, probe_reason = assemble_row(
             pool[0],
             pool[0].get("source_answer", "x" * (ANSWER_CHAR_MIN + 8)),
             shape=args.shape,
             model_key=args.model,
         )
-        assert probe is not None, "probe row assembled to None — answer floor / span bug"
+        assert probe is not None, f"probe row assembled to None ({probe_reason})"
         assert validate_row(probe, tokenizer, shape=args.shape), (
             "probe row failed the consumer's own render — span/format bug before any GPU spend"
         )
@@ -747,7 +831,9 @@ def main() -> None:
         seed=c.GEN_SEED,
         dtype="bfloat16",
         max_model_len=MAX_MODEL_LEN,
-        gpu_memory_utilization=0.85,
+        # Live-probed, NOT hardcoded: a GPU-SHARED fellows node would otherwise
+        # crash at EngineCore init (#1902).
+        gpu_memory_utilization=resolve_vllm_util(),
         enforce_eager=os.environ.get("EPM_VLLM_ENFORCE_EAGER", "0") == "1",
         enable_prefix_caching=(
             False if os.environ.get("EPM_VLLM_DISABLE_PREFIX_CACHING", "0") == "1" else None
