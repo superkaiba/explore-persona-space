@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1949,
+  "highest_id": 1950,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7359,6 +7359,13 @@
       "path": "tasks/archived/195",
       "status": "archived",
       "title": "Spreading out priors in midtraining"
+    },
+    "1950": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1950",
+      "status": "proposed",
+      "title": "workflow-fix: inline lint gate purges stale pycache before its pytest sweep"
     },
     "196": {
       "has_clean_result": false,
