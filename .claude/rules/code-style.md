@@ -73,8 +73,11 @@ CLAUDE.md as always-on rules; the rest live here and load when you touch code.)
   the pid verify, protect from earlyoom collateral kills:
   `bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PHASE_PID"`
   (session-wide; children inherit; −600 not −1000 so a runaway fit still dies first; pipefail
-  makes an empty/failed pgrep FAIL the sweep — `choom=ok` only when the sweep pipeline exited
-  zero; on any failure proceed unprotected and record `choom=failed`).
+  makes an empty/failed pgrep FAIL the sweep — `choom=ok` only when a sweep run's pipeline exited
+  zero; on failure RE-RUN the sweep ONCE — when the real python3 child appears or after
+  ≤ ~30-60 s, whichever comes FIRST — then record the final `choom=ok|failed`; post-retry
+  `choom=failed` at projected peak RSS ≥ ~16 GiB → route the phase off the VM per SKILL.md
+  § "Detached VM-side long compute phases"; sub-16-GiB phases proceed unprotected).
   Record `pid=$PHASE_PID` + the log path + `choom=ok|failed` + `harvest=<abs output path>` (the
   § Harvest contract's declared results location; #1656) in the stage-dispatch breadcrumb
   (SKILL.md § Detached VM-side long compute phases — incl. the collateral-kill signature and the
