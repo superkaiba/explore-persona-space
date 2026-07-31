@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1925,
+  "highest_id": 1926,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7166,6 +7166,13 @@
       "path": "tasks/proposed/1925",
       "status": "proposed",
       "title": "daily-fix: pre-commit hook for agent-memory index size"
+    },
+    "1926": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1926",
+      "status": "proposed",
+      "title": "daily-fix: SLURM intent tables cover all GCP GPU intents"
     },
     "193": {
       "has_clean_result": false,
