@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1918,
+  "highest_id": 1919,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7109,6 +7109,13 @@
       "path": "tasks/proposed/1918",
       "status": "proposed",
       "title": "daily-fix: route-1 fix closes the open task it credits"
+    },
+    "1919": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1919",
+      "status": "proposed",
+      "title": "daily-fix: pilot at production shape; sampled GPU-util claim"
     },
     "192": {
       "goal": "Test whether one fictional medical fact, taught under a teaching-persona system prompt, transfers to ordinary-assistant and other non-teach evaluation frames.",
