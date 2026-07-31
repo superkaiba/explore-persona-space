@@ -62,16 +62,20 @@ that shape; the former block fixture N1 moved to the masking allow list as
 M9). Any refused candidate leaves the input byte-identical, keeping today's
 disposition.
 As of #1463 both mechanisms gain a ``gcloud compute ssh`` head (optional
-literal ``timeout <num>[.frac][smhd]?`` wrapper, gcloud-arm only): a
+literal ``timeout <num>[.frac][smhd]?`` wrapper): a
 ``gcloud compute ssh <instance> --command='<payload>'`` clause executes its
 payload ON the GCE instance via the local ssh(1) wrapper (SDK 576.0.0 help +
 a live ``--dry-run`` argv probe), so the driver-loop waiver and the masking
 pre-pass treat it exactly like the clause-initial ``ssh`` head, under the
 identical fail-closed refusal arms (founding incident #825, 2026-07-16; the
-ssh variant was #1336, closed by #1413). Everything outside the narrow head —
-release tracks, non-timeout wrappers, ``timeout`` flag forms, redirect /
-expansion / proxy-token shapes, double-quoted multi-statement payloads —
-keeps today's blocked disposition (GN-series pins).
+ssh variant was #1336, closed by #1413). As of #1859 the SAME literal
+timeout wrapper is accepted on the bare ``ssh`` head too (the former
+N12/NM5 asymmetry pins flipped to positive fixtures S15/M10; founding
+incident: two #1769 failover-path false blocks). Everything outside the
+narrow heads — release tracks, non-timeout wrappers (nohup / env-prefix /
+abs-path / variable heads), ``timeout`` flag forms, redirect / expansion /
+proxy-token shapes — keeps today's blocked disposition (GN- and
+N36-N43-series pins).
 """
 
 from __future__ import annotations
@@ -1609,6 +1613,20 @@ def test_heredoc_bare_shellout_mention_still_blocks():
             "ssh pod-779 'git reset --hard origin/main' 2> /dev/null",
             id="S14-spaced_dev_null_exempt",
         ),
+        pytest.param(
+            # The former N12-wrapped_ssh_not_waived block fixture, flipped
+            # by #1859: the literal `timeout <num>` wrapper is accepted on
+            # the ssh head (parity with the gcloud arm's GS4).
+            "timeout 240 ssh pod-779 'git reset --hard'",
+            id="S15-timeout_wrapped_ssh_waived",
+        ),
+        pytest.param(
+            # Fractional + suffixed duration — pins the full
+            # `<num>[.frac][smhd]?` shape of the wrapper grammar on the
+            # ssh arm (#1859).
+            "timeout 1.5m ssh pod-779 'git reset --hard origin/main'",
+            id="S16-timeout_fractional_suffixed_wrapped_ssh_waived",
+        ),
     ],
 )
 def test_ssh_remote_git_clause_waiver_allows(cmd):
@@ -1824,7 +1842,12 @@ def test_grep_pipe_unsafe_consumer_blocks(cmd):
         pytest.param("grep -f <(git clean -fd) x", id="N9-grep_procsub_in"),
         pytest.param("rg --pre 'git reset --hard' pat file", id="N10-rg_pre_local_exec"),
         pytest.param("ssh pod-779 'git status'; git reset --hard", id="N11-no_latch_local_tail"),
-        pytest.param("timeout 240 ssh pod-779 'git reset --hard'", id="N12-wrapped_ssh_not_waived"),
+        # N12-wrapped_ssh_not_waived MOVED (#1859) to the single-statement
+        # waiver allow list above as S15-timeout_wrapped_ssh_waived: the
+        # literal `timeout <num>[.frac][smhd]?` wrapper is now accepted on
+        # the ssh head (parity with the #1463 gcloud arm's GS4) — the flip
+        # is Goal-mandated, not a regression. Non-timeout wrappers keep
+        # their blocked disposition (N36-N43 below).
         pytest.param(
             "ssh -o PermitLocalCommand=yes -o LocalCommand='git reset --hard' host",
             id="N13-localcommand_local_exec",
@@ -1946,6 +1969,54 @@ def test_grep_pipe_unsafe_consumer_blocks(cmd):
             "ssh pod-779 'git reset --hard' > '/dev/null'",
             id="N35-single_quoted_dev_null_target_fail_closed",
         ),
+        # N36-N43 pin the #1859 ssh-arm timeout-wrapper boundaries (mirrors
+        # of the gcloud arm's GN-series pins): ONLY the literal
+        # `timeout <num>[.frac][smhd]?` prefix is tolerated, and the
+        # wrapper lifts NONE of the waiver's refusal arms.
+        pytest.param(
+            # Flag form NOT waived (mirror GN14).
+            "timeout --signal=KILL 120 ssh pod-779 'git reset --hard'",
+            id="N36-timeout_flag_form_not_waived",
+        ),
+        pytest.param(
+            # `-k` flag form NOT waived (mirror GN8's beyond-timeout class).
+            "timeout -k 5 240 ssh pod-779 'git reset --hard'",
+            id="N37-timeout_k_flag_form_not_waived",
+        ),
+        pytest.param(
+            # The wrapped head does NOT lift the consumer-independent
+            # PIPE-producer refusal (parity with N23 / GN7).
+            "timeout 240 ssh pod-779 'git reset --hard' | tail -5",
+            id="N38-wrapped_head_pipe_producer_still_blocks",
+        ),
+        pytest.param(
+            # The wrapped head does NOT lift the shared-repo-path
+            # never-waive (parity with N5).
+            "timeout 240 ssh vm 'git"
+            " --git-dir=/home/thomasjiralerspong/explore-persona-space/.git"
+            " reset --hard'",
+            id="N39-wrapped_head_repo_root_path_still_blocks",
+        ),
+        pytest.param(
+            # The wrapped head does NOT lift the ProxyCommand local-exec
+            # refusal (parity with N7/N16).
+            "timeout 240 ssh -o ProxyCommand='git reset --hard' host 'git status'",
+            id="N40-wrapped_head_proxycommand_still_blocks",
+        ),
+        pytest.param(
+            # The numeric group is REQUIRED — a bare `timeout ssh ...` head
+            # is not the literal wrapper shape.
+            "timeout ssh pod-779 'git reset --hard'",
+            id="N41-timeout_without_duration_not_waived",
+        ),
+        pytest.param(
+            "nohup ssh pod-779 'git reset --hard'",
+            id="N42-nohup_wrapped_ssh_not_waived",
+        ),
+        pytest.param(
+            "/usr/bin/ssh pod-779 'git reset --hard'",
+            id="N43-abs_path_ssh_single_statement_not_waived",
+        ),
     ],
 )
 def test_remote_waiver_fail_closed_blocks(cmd):
@@ -1966,9 +2037,10 @@ def test_remote_waiver_fail_closed_blocks(cmd):
 # R5 no quote char before the candidate; R6/R7 no cd + /tmp/ or
 # .claude/worktrees/ latch vocabulary in candidate/prefix; R8 no WT= text —
 # and ANY refusal leaves the input byte-identical, so every refused shape
-# keeps today's disposition (all 27 NM fixtures below were verified rc=2
+# keeps today's disposition (all 27 original NM fixtures were verified rc=2
 # against the UNMODIFIED guard before the mask landed — the pre-change
-# red-team gate). The allow side (a masked-and-waived clause) must pass in
+# red-team gate; NM5 flipped to the M10 positive at #1859).
+# The allow side (a masked-and-waived clause) must pass in
 # either repo state, matching the #1098 convention.
 # Where a predicate arm overlaps a #1098 ladder refusal, the block fixture
 # uses an allow-arm-anchored CONTAMINATION payload: a mid-payload
@@ -2024,6 +2096,14 @@ def test_remote_waiver_fail_closed_blocks(cmd):
             "ssh pod-779 'cd /workspace/explore-persona-space && git reset --hard origin/main'",
             id="M9-former_N1_residual_closed",
         ),
+        pytest.param(
+            # The former NM5-wrapped_ssh_multi_statement block fixture,
+            # flipped by #1859: the mask candidate head accepts the literal
+            # `timeout <num>` wrapper on the ssh arm (parity with the
+            # #1463 gcloud arm's GM fixtures).
+            "timeout 240 ssh pod-779 'cd /w && git reset --hard'",
+            id="M10-timeout_wrapped_multi_statement",
+        ),
     ],
 )
 def test_ssh_multi_statement_payload_masking_allows(cmd):
@@ -2054,10 +2134,11 @@ def test_ssh_multi_statement_payload_masking_allows(cmd):
             "ssh vm 'cd /home/thomasjiralerspong/explore-persona-space && git reset --hard'",
             id="NM4-repo_path_literal_spelling",
         ),
-        pytest.param(
-            "timeout 240 ssh pod-779 'cd /w && git reset --hard'",
-            id="NM5-wrapped_ssh_multi_statement",
-        ),
+        # NM5-wrapped_ssh_multi_statement MOVED (#1859) to the masking
+        # allow list above as M10-timeout_wrapped_multi_statement — the
+        # literal `timeout <num>` wrapper is accepted on the ssh mask
+        # candidate head (parity with the #1463 gcloud arm). Non-timeout
+        # wrappers keep blocking (NM6/NM7 below; N36-N43 single-statement).
         pytest.param(
             "$SSHCMD pod-779 'cd /w && git reset --hard'",
             id="NM6-variable_ssh_multi_statement",
@@ -2619,8 +2700,9 @@ def test_man_git_am_revert_allowed():
 # positionals land after the host in the constructed local ssh argv, i.e.
 # they ride as the REMOTE command). As of #1463 the driver-loop waiver
 # (cond (1)) and the mask pre-pass gain a `gcloud compute ssh` head — with
-# an optional literal `timeout <num>[.frac][smhd]?` wrapper, gcloud-arm
-# only — routed through the SAME ssh refusal arms (waiver conds
+# an optional literal `timeout <num>[.frac][smhd]?` wrapper, extended to
+# the bare `ssh` head by #1859 — routed through the SAME ssh refusal arms
+# (waiver conds
 # (2)/(3)/(3b)/(4); mask R1-R8). Founding incident: #825
 # (2026-07-16T13:18:53Z false block); #1336 hit the ssh variant pre-#1413.
 # The GN-series pins fail-closed dispositions (all verified rc=2 against
