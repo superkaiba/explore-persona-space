@@ -1,0 +1,52 @@
+{
+ "meta": {
+  "ts": "2026-07-31T10:34:55Z",
+  "git_commit": "5f2b220a42ab09d0930e0a992099713dfe9695c8",
+  "numpy": "2.2.6",
+  "issue": 1900,
+  "corpus_pin": "c07267285d2cdbf3e0401ddc3e3accae50e496a7"
+ },
+ "criteria_thresholds": {
+  "A_max_content_drop_rate": 0.1,
+  "B_min_sd": 3.0,
+  "B_min_share_ge10": 0.05,
+  "C_min_split_half": 0.5
+ },
+ "split_half_convention": "mean pairwise inter-draw Spearman over complete items, Spearman-Brown to N=3 (registered line (8))",
+ "per_unit": {
+  "imp-pers-po-lr1e5-s42": {
+   "criterion_A_content_drop_rate": 0.0006666666666666666,
+   "criterion_A_pass": true,
+   "criterion_B_sd": 9.568197736615033,
+   "criterion_B_share_ge10": 0.056,
+   "criterion_B_race_eligible": true,
+   "criterion_C_split_half": 0.79067363901173,
+   "criterion_C_pass": true
+  },
+  "imp-pers-con-lr3e5-s42": {
+   "criterion_A_content_drop_rate": 0.0006666666666666666,
+   "criterion_A_pass": true,
+   "criterion_B_sd": 7.108832087901262,
+   "criterion_B_share_ge10": 0.044,
+   "criterion_B_race_eligible": false,
+   "criterion_C_split_half": 0.8056538981540832,
+   "criterion_C_pass": true
+  },
+  "base_imp": {
+   "criterion_A_content_drop_rate": 0.0026666666666666666,
+   "criterion_A_pass": true,
+   "criterion_B_sd": 5.317309543725078,
+   "criterion_B_share_ge10": 0.028,
+   "criterion_B_race_eligible": false,
+   "criterion_C_split_half": 0.7324024607554914,
+   "criterion_C_pass": true
+  }
+ },
+ "criterion_A_pass_all": true,
+ "criterion_A_resize_branch": null,
+ "criterion_C_pass_all": true,
+ "criterion_C_descope_branch": null,
+ "n_arms_race_eligible": 1,
+ "branch": "one_pass_B__replace_flat_arm_per_ladder: imp-pers-con-lr3e5-s137",
+ "proceed_full": false
+}

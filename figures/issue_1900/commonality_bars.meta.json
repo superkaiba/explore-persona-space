@@ -1,0 +1,1069 @@
+{
+  "commit": "5f2b220a42",
+  "created": "2026-07-31T13:39:19Z",
+  "figsize": [
+    8.0,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "casual writing / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0043912008919132495,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "casual writing / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.00033774159323696207,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "casual writing / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 4.298848367279007e-07,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "casual writing / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 8.822531114338616e-06,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s137)",
+      "rank-R^2 commonality component": 0.00021412645300666888,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.00040227590548680414,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "impoliteness / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0027582897420004304,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "impoliteness / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0008233154839242252,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "sycophancy / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.01616780849169208,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "sycophancy / conversation / contrastive (s42)",
+      "rank-R^2 commonality component": 0.005827896894856077,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "sycophancy / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.019801914269412246,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "sycophancy / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.012954022201538518,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "casual writing / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "casual writing / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "casual writing / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "casual writing / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s137)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "impoliteness / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "impoliteness / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy / conversation / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "casual writing / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.008880298326164104,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "casual writing / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.014595017513867048,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "casual writing / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0248988918890658,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "casual writing / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0374314562368081,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s137)",
+      "rank-R^2 commonality component": 0.043617126903084724,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.04815282599415027,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "impoliteness / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.038164012341801445,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "impoliteness / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.042177419875475186,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "sycophancy / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0024881795285031094,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "sycophancy / conversation / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0013261929794579075,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "sycophancy / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.00506703108582629,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "sycophancy / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0033220313666249,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "casual writing / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "casual writing / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "casual writing / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "casual writing / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s137)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "impoliteness / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "impoliteness / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "sycophancy / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "sycophancy / conversation / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "sycophancy / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "sycophancy / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "casual writing / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.37550238495978994,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "casual writing / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.41750048428529185,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "casual writing / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.3607545402961372,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "casual writing / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.4028963950842327,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s137)",
+      "rank-R^2 commonality component": 0.06698675061746318,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.07386949530667708,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "impoliteness / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.07262083450779022,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "impoliteness / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.08278543886073142,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "sycophancy / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.28676581781849697,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "sycophancy / conversation / contrastive (s42)",
+      "rank-R^2 commonality component": 0.3975579536731694,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "sycophancy / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.28493382844923776,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "sycophancy / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.36492278526927235,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "casual writing / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "casual writing / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "casual writing / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "casual writing / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s137)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "impoliteness / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "impoliteness / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "sycophancy / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "sycophancy / conversation / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "sycophancy / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "sycophancy / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "casual writing / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0030710255580408408,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "casual writing / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.002868001315735502,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "casual writing / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0023281183225668522,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "casual writing / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.003933420388198994,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s137)",
+      "rank-R^2 commonality component": 0.00030613376947152826,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "impoliteness / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "impoliteness / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "sycophancy / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "sycophancy / conversation / contrastive (s42)",
+      "rank-R^2 commonality component": 4.836256618845347e-05,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "sycophancy / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "sycophancy / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "casual writing / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "casual writing / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "casual writing / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "casual writing / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s137)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s42)",
+      "rank-R^2 commonality component": -3.2097698856592416e-05,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "impoliteness / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": -0.002445073772215922,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "impoliteness / persona / positive-only (s42)",
+      "rank-R^2 commonality component": -0.0007580393789384798,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "sycophancy / bare / contrastive (s42)",
+      "rank-R^2 commonality component": -0.002087549890935181,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "sycophancy / conversation / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "sycophancy / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": -0.003685940429710044,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "sycophancy / persona / positive-only (s42)",
+      "rank-R^2 commonality component": -0.0024287252195467346,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "casual writing / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "casual writing / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0002996309227399907,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "casual writing / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0016538188752174277,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "casual writing / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.001508234518276308,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s137)",
+      "rank-R^2 commonality component": 0.002205195945111038,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.002825790771518899,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "impoliteness / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.005244776087200087,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "impoliteness / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0037715647405595076,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "sycophancy / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.12109860238242709,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "sycophancy / conversation / contrastive (s42)",
+      "rank-R^2 commonality component": 0.1156069290197097,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "sycophancy / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.12990589134144925,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "sycophancy / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.13946160503203708,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "casual writing / bare / contrastive (s42)",
+      "rank-R^2 commonality component": -0.0009905829557870227,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "casual writing / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "casual writing / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "casual writing / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s137)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "impoliteness / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "impoliteness / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "sycophancy / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "sycophancy / conversation / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "sycophancy / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "sycophancy / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "casual writing / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "casual writing / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.02377762240568615,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "casual writing / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.026762779332824116,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "casual writing / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.03332050375860551,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s137)",
+      "rank-R^2 commonality component": 0.029635054278674966,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.03285103296441205,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "impoliteness / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0292731703786554,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "impoliteness / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.03282154215153765,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "sycophancy / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.01717234977070381,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "sycophancy / conversation / contrastive (s42)",
+      "rank-R^2 commonality component": 0.011639896216710688,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "sycophancy / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.019391782696542514,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "sycophancy / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.020356194993667143,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "casual writing / bare / contrastive (s42)",
+      "rank-R^2 commonality component": -0.003678794170718036,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "casual writing / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "casual writing / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "casual writing / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s137)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "impoliteness / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "impoliteness / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "sycophancy / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "sycophancy / conversation / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "sycophancy / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "sycophancy / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "casual writing / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "casual writing / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "casual writing / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "casual writing / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s137)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "impoliteness / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "impoliteness / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "sycophancy / bare / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "sycophancy / conversation / contrastive (s42)",
+      "rank-R^2 commonality component": 0.005310125091350315,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "sycophancy / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "sycophancy / persona / positive-only (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "casual writing / bare / contrastive (s42)",
+      "rank-R^2 commonality component": -0.0010080381814832062,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "casual writing / persona / contrastive (s42)",
+      "rank-R^2 commonality component": -0.0024112860937529623,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "casual writing / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": -0.003270723197840053,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "casual writing / persona / positive-only (s42)",
+      "rank-R^2 commonality component": -0.003861958026012191,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s137)",
+      "rank-R^2 commonality component": -0.002668450826715296,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s42)",
+      "rank-R^2 commonality component": -0.003022680330350136,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "impoliteness / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": -0.003097554168633332,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "impoliteness / persona / positive-only (s42)",
+      "rank-R^2 commonality component": -0.003173091124355931,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "sycophancy / bare / contrastive (s42)",
+      "rank-R^2 commonality component": -0.012622667078748151,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "sycophancy / conversation / contrastive (s42)",
+      "rank-R^2 commonality component": 0.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "sycophancy / persona / contrastive full-FT (s42)",
+      "rank-R^2 commonality component": -0.014710491605003706,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "sycophancy / persona / positive-only (s42)",
+      "rank-R^2 commonality component": -0.015812590699377904,
+      "_kind": "bar",
+      "_group": 13
+    }
+  ],
+  "n_series": 14,
+  "total_points": 168,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Commonality decomposition of leakage rank-R^2 over {P1, P2, P7}",
+        "ylabel": "rank-R^2 commonality component",
+        "legend_labels": [
+          "unique: context sim",
+          "unique: answer sim",
+          "unique: base propensity",
+          "shared: ctx+ans",
+          "shared: ctx+base",
+          "shared: ans+base",
+          "shared: all three"
+        ],
+        "xticklabels": [
+          "casual writing / bare / contrastive (s42)",
+          "casual writing / persona / contrastive (s42)",
+          "casual writing / persona / contrastive full-FT (s42)",
+          "casual writing / persona / positive-only (s42)",
+          "impoliteness / persona / contrastive (s137)",
+          "impoliteness / persona / contrastive (s42)",
+          "impoliteness / persona / contrastive full-FT (s42)",
+          "impoliteness / persona / positive-only (s42)",
+          "sycophancy / bare / contrastive (s42)",
+          "sycophancy / conversation / contrastive (s42)",
+          "sycophancy / persona / contrastive full-FT (s42)",
+          "sycophancy / persona / positive-only (s42)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "unique: context sim",
+      "unique: answer sim",
+      "unique: base propensity",
+      "shared: ctx+ans",
+      "shared: ctx+base",
+      "shared: ans+base",
+      "shared: all three"
+    ]
+  }
+}

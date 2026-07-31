@@ -1,0 +1,28 @@
+{
+ "units": [
+  "cas-pers-con-lr1e5-s42",
+  "cas-pers-po-lr1e5-s42",
+  "cas-bare-con-lr1e5-s42",
+  "cas-pers-ft-con-s42",
+  "imp-pers-con-lr3e5-s42",
+  "imp-pers-con-lr3e5-s137",
+  "imp-pers-po-lr1e5-s42",
+  "imp-pers-ft-con-s42",
+  "syc-bare-con-lr1e5-s42",
+  "syc-conv-con-lr1e5-s42",
+  "syc-pers-po-lr1e5-s42",
+  "syc-pers-ft-con-s42",
+  "base_syc",
+  "base_imp",
+  "base_cas"
+ ],
+ "n_units": 15,
+ "n_total_draws": 180000,
+ "n_content_dropped_draws": 1938,
+ "n_transport_lost_draws": 0,
+ "ts": "2026-07-31T13:32:47Z",
+ "git_commit": "5f2b220a42ab09d0930e0a992099713dfe9695c8",
+ "numpy": "2.2.6",
+ "issue": 1900,
+ "corpus_pin": "c07267285d2cdbf3e0401ddc3e3accae50e496a7"
+}
