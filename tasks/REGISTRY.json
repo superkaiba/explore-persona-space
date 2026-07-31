@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1932,
+  "highest_id": 1933,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7222,6 +7222,13 @@
       "path": "tasks/proposed/1932",
       "status": "proposed",
       "title": "correct #1310 Takeaway bullet 3 + title qualifier per nd-estimator/lambda audits (per-turn deflation was a lambda-selection artifact)"
+    },
+    "1933": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1933",
+      "status": "proposed",
+      "title": "update #1345 Takeaway bullet 5: slot-position reads re-fit by lambda audit (deficit survives); every-layer statements stay ambient-only"
     },
     "194": {
       "has_clean_result": false,
