@@ -60,6 +60,7 @@ import datetime
 import hashlib
 import json
 import logging
+import multiprocessing
 import os
 import resource
 import subprocess
@@ -146,6 +147,7 @@ WC_SMOKE_MANIFEST_KEEP = 20
 WC_SMOKE_N_TARGETS = 12  # >= K_CSLS + 2 = 12 (csls asserts k < n_pool AND k <= n_query)
 WC_SCREEN_PILOT_ROWS = 20_000  # transposed-screen pilot rows (plan §9 w0 basis)
 WC_SCREEN_BUDGET_S = 3_600.0  # abort threshold: projected screen wall > 2x this => halt
+WC_SCREEN_WORKERS = 8  # screen fan-out width (env override EPM_WC_SCREEN_WORKERS)
 WC_ARMS_SMOKE = ("const_mean", "identity_copy", "identity_bias", "ridge")  # plan smoke clause
 WC_DRAWS_SEED_OFFSET = 1919  # wc battery Draws seed = cfg.seed + this (recorded)
 
@@ -2330,7 +2332,20 @@ class _CandidateGate(N1G.NearDupeGate):
     """Transposed NearDupeGate (the plan v7 ~10-line extension): the CANDIDATES
     are the indexed targets; train-pool rows stream through matching_targets(),
     which returns WHICH candidate indices the row collides with (exact-normalized
-    match or char-ngram Jaccard >= thresh). Refusal-safe: indices/counts only."""
+    match or char-ngram Jaccard >= thresh). Refusal-safe: indices/counts only.
+
+    matching_targets() is the VECTORIZED counting path (one ragged posting
+    gather + np.bincount => exact |g INTERSECT tg| per candidate — the same
+    integers the serial per-candidate ``len(g & tg)`` computes, and the same
+    float64 ``inter / union >= thresh`` compare, so survivor sets are IDENTICAL
+    by construction; the equivalence gate in tests/test_issue1901_wildchat.py
+    pins it). The pre-vectorization serial body is retained as
+    matching_targets_serial_reference() ONLY for that gate (vectorize rule
+    Supersede contract: contained serial twin). Rationale: the w0 pilot
+    measured 12,338.9 us/row -> projected 11,907 s over 965k rows; a 200-row
+    profile put 92% of that (11,353 us/row) in the per-candidate Jaccard loop
+    (~918 candidates x ~173k C-level set-intersection ops per row) and 859
+    us/row in the posting-union loop the bincount replaces."""
 
     def __init__(
         self,
@@ -2342,8 +2357,52 @@ class _CandidateGate(N1G.NearDupeGate):
         self._exact_idx: dict[str, list[int]] = {}
         for i, c in enumerate(candidates):
             self._exact_idx.setdefault(N1G._norm(c), []).append(i)
+        # CSR posting index over the candidate ngram vocabulary (built once;
+        # read-only afterwards => fork-shared across screen workers via COW).
+        self._n_cand = len(candidates)
+        self._vocab: dict[str, int] = {}
+        posting_arrays: list[np.ndarray] = []
+        for ng, tis in self.inv.items():
+            self._vocab[ng] = len(posting_arrays)
+            posting_arrays.append(np.fromiter(tis, dtype=np.int32, count=len(tis)))
+        lens = np.array([a.size for a in posting_arrays], dtype=np.int64)
+        self._post_offsets = np.zeros(len(posting_arrays) + 1, dtype=np.int64)
+        np.cumsum(lens, out=self._post_offsets[1:])
+        self._post_flat = (
+            np.concatenate(posting_arrays) if posting_arrays else np.zeros(0, dtype=np.int32)
+        )
+        self._tg_sizes = np.array([len(tg) for tg in self.target_ngrams], dtype=np.int64)
 
     def matching_targets(self, prompt: str) -> set[int]:
+        """Exact vectorized read: inv[ng] holds ti iff ng in tg, so counting
+        posting hits over ng in g IS |g INTERSECT tg| per candidate."""
+        n = N1G._norm(prompt)
+        hits: set[int] = set(self._exact_idx.get(n, ()))
+        g = N1G._char_ngrams(n, self.ngram)
+        if not g:
+            return hits
+        vocab = self._vocab
+        ids_list = [vocab[ng] for ng in g if ng in vocab]
+        if not ids_list:
+            return hits
+        ids = np.asarray(ids_list, dtype=np.int64)
+        starts = self._post_offsets[ids]
+        lens = self._post_offsets[ids + 1] - starts
+        total = int(lens.sum())
+        csum = np.cumsum(lens)
+        gather = np.repeat(starts - (csum - lens), lens) + np.arange(total, dtype=np.int64)
+        inter = np.bincount(self._post_flat[gather], minlength=self._n_cand)
+        # union >= len(g) >= 1 here, so the division is always defined; the
+        # float64 divide matches the serial reference's int/int division exactly
+        union = len(g) + self._tg_sizes - inter
+        matched = np.flatnonzero((inter > 0) & (inter / union >= self.thresh))
+        hits.update(int(ti) for ti in matched)
+        return hits
+
+    def matching_targets_serial_reference(self, prompt: str) -> set[int]:
+        """Pre-vectorization serial body — retained ONLY as the oracle for the
+        equivalence gate (unit test + the real-slice check); production code
+        paths call matching_targets()."""
         n = N1G._norm(prompt)
         hits: set[int] = set(self._exact_idx.get(n, ()))
         g = N1G._char_ngrams(n, self.ngram)
@@ -2478,50 +2537,110 @@ def _wc_exclusion_set(
     return hexes, {**fp_meta, "n_fps": len(hexes), "rebuilt": True}
 
 
+# Fork-shared read-only state for the screen worker pool. Set by
+# _wc_screen_candidates immediately before the fork (children inherit the gate
+# + texts via copy-on-write; nothing is pickled per task beyond index bounds).
+_SCREEN_GATE: _CandidateGate | None = None
+_SCREEN_TEXTS: list[str] | None = None
+
+
+def _screen_chunk_worker(bounds: tuple[int, int]) -> list[int]:
+    """Screen train rows [start, end) against the fork-inherited candidate gate;
+    returns the matched candidate indices (sorted, small)."""
+    start, end = bounds
+    assert _SCREEN_GATE is not None and _SCREEN_TEXTS is not None, "fork state unset"
+    matched: set[int] = set()
+    for j in range(start, end):
+        matched |= _SCREEN_GATE.matching_targets(_SCREEN_TEXTS[j])
+    return sorted(matched)
+
+
 def _wc_screen_candidates(
-    cfg: Cfg, cand_prompts: list[str], pool: list[dict], round1: list[str]
+    cfg: Cfg,
+    cand_prompts: list[str],
+    pool: list[dict],
+    round1: list[str],
+    workers: int | None = None,
 ) -> tuple[list[int], dict]:
     """Transposed train-pool near-dupe screen: candidates indexed, 960k+5k train
-    rows streamed through. Pilot-timed on the first WC_SCREEN_PILOT_ROWS rows;
-    projected wall > 2x WC_SCREEN_BUDGET_S HALTs (plan §9 w0 abort threshold)."""
+    rows streamed through the vectorized counting path (per-candidate Jaccard
+    via one bincount — _CandidateGate.matching_targets), fanned out across fork
+    workers. Pilot-timed SERIALLY on the first WC_SCREEN_PILOT_ROWS rows;
+    projected wall (pilot elapsed + per-row x remaining / workers) > 2x
+    WC_SCREEN_BUDGET_S HALTs (plan §9 w0 abort threshold, recalibrated to the
+    vectorized + parallel execution shape)."""
+    if workers is None:
+        workers = max(1, int(os.environ.get("EPM_WC_SCREEN_WORKERS", str(WC_SCREEN_WORKERS))))
     gate = _CandidateGate(cand_prompts)
     train_texts = [r["prompt"] for r in pool] + list(round1)
     n_rows = len(train_texts)
     matched: set[int] = set()
     t0 = time.time()
     pilot: dict = {}
-    for j, p in enumerate(train_texts):
-        matched |= gate.matching_targets(p)
-        done = j + 1
-        if done == WC_SCREEN_PILOT_ROWS and n_rows > WC_SCREEN_PILOT_ROWS:
-            per = (time.time() - t0) / done
-            proj = per * n_rows
-            pilot = {
-                "pilot_rows": done,
-                "per_row_us": round(per * 1e6, 2),
-                "projected_wall_s": round(proj, 1),
-                "budget_s": WC_SCREEN_BUDGET_S,
-            }
-            logger.info(
-                "[w0] screen pilot: %.1fus/row -> projected %.0fs over %d rows",
-                per * 1e6,
-                proj,
-                n_rows,
+
+    # serial pilot leg (same per-row path the workers run)
+    n_pilot = min(WC_SCREEN_PILOT_ROWS, n_rows)
+    for j in range(n_pilot):
+        matched |= gate.matching_targets(train_texts[j])
+    if n_rows > WC_SCREEN_PILOT_ROWS:
+        elapsed = time.time() - t0
+        per = elapsed / n_pilot
+        proj = elapsed + per * (n_rows - n_pilot) / workers
+        pilot = {
+            "pilot_rows": n_pilot,
+            "per_row_us": round(per * 1e6, 2),
+            "workers": workers,
+            "projected_wall_s": round(proj, 1),
+            "budget_s": WC_SCREEN_BUDGET_S,
+        }
+        logger.info(
+            "[w0] screen pilot: %.1fus/row -> projected %.0fs over %d rows (%d workers)",
+            per * 1e6,
+            proj,
+            n_rows,
+            workers,
+        )
+        if proj > 2 * WC_SCREEN_BUDGET_S:
+            raise RuntimeError(
+                f"[w0] transposed screen projected {proj:.0f}s > 2x budget "
+                f"{WC_SCREEN_BUDGET_S:.0f}s — halting before the burn (plan §9 w0 "
+                "abort threshold; vectorize or re-scope before rerunning)"
             )
-            if proj > 2 * WC_SCREEN_BUDGET_S:
-                raise RuntimeError(
-                    f"[w0] transposed screen projected {proj:.0f}s > 2x budget "
-                    f"{WC_SCREEN_BUDGET_S:.0f}s — halting before the burn (plan §9 w0 "
-                    "abort threshold; vectorize or re-scope before rerunning)"
+
+    # remainder: fan out across fork workers (read-only gate/texts via COW)
+    remaining = n_rows - n_pilot
+    if remaining > 0 and workers > 1:
+        global _SCREEN_GATE, _SCREEN_TEXTS
+        chunk = max(5_000, -(-remaining // (workers * 4)))
+        bounds = [(s, min(s + chunk, n_rows)) for s in range(n_pilot, n_rows, chunk)]
+        _SCREEN_GATE, _SCREEN_TEXTS = gate, train_texts
+        try:
+            ctx = multiprocessing.get_context("fork")
+            with ctx.Pool(processes=workers) as mp_pool:
+                for k, part in enumerate(mp_pool.imap_unordered(_screen_chunk_worker, bounds), 1):
+                    matched.update(part)
+                    logger.info(
+                        "[w0] screen chunk %d/%d done (%d candidates matched) elapsed=%.0fs",
+                        k,
+                        len(bounds),
+                        len(matched),
+                        time.time() - t0,
+                    )
+        finally:
+            _SCREEN_GATE = None
+            _SCREEN_TEXTS = None
+    elif remaining > 0:
+        for j in range(n_pilot, n_rows):
+            matched |= gate.matching_targets(train_texts[j])
+            if (j + 1) % 200_000 == 0:
+                logger.info(
+                    "[w0] screen %d/%d rows (%d candidates matched) elapsed=%.0fs",
+                    j + 1,
+                    n_rows,
+                    len(matched),
+                    time.time() - t0,
                 )
-        if done % 200_000 == 0:
-            logger.info(
-                "[w0] screen %d/%d rows (%d candidates matched) elapsed=%.0fs",
-                done,
-                n_rows,
-                len(matched),
-                time.time() - t0,
-            )
+
     survivors = [i for i in range(len(cand_prompts)) if i not in matched]
     stats = {
         "n_train_rows_screened": n_rows,
@@ -2529,14 +2648,16 @@ def _wc_screen_candidates(
         "n_matched_dropped": len(matched),
         "n_survivors": len(survivors),
         "wall_s": round(time.time() - t0, 1),
+        "workers": workers,
         "pilot": pilot,
         "near_dupe": {"ngram": gate.ngram, "jaccard_thresh": gate.thresh},
     }
     logger.info(
-        "[w0] transposed screen: %d/%d candidates dropped (%.0fs)",
+        "[w0] transposed screen: %d/%d candidates dropped (%.0fs, %d workers)",
         len(matched),
         len(cand_prompts),
         stats["wall_s"],
+        workers,
     )
     return survivors, stats
 
