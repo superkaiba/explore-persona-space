@@ -6683,8 +6683,8 @@
     "1863": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1863",
-      "status": "running",
+      "path": "tasks/reviewing/1863",
+      "status": "reviewing",
       "title": "daily-fix: poll ticks compute rate/ETA on long same-phase ta"
     },
     "1864": {
