@@ -6550,8 +6550,8 @@
     "1846": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1846",
-      "status": "running",
+      "path": "tasks/reviewing/1846",
+      "status": "reviewing",
       "title": "workflow-fix: verify_task_body WARN check \u2014 orphaned result JSONs (sibling of check 31)"
     },
     "1847": {
