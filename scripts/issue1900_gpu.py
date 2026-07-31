@@ -742,7 +742,7 @@ def check_anchor_mix_floor(mix_arm_id: str, n_rows: int) -> bool:
     low_n = n_rows < ANCHOR_LOW_N_ROWS
     if low_n:
         logger.warning(
-            "[anchors] mix %s n=%d < %d — low-n flag set, split-half reliability persisted",
+            "[anchors] mix %s n=%d < %d — low-n flag set (plan §12.1 v6)",
             mix_arm_id,
             n_rows,
             ANCHOR_LOW_N_ROWS,
@@ -1782,6 +1782,7 @@ def _spawn_workers(cfg: Cfg, argv_tail: list[str]) -> None:
         fh.close()
         if rc != 0:
             failed.append((slot, rc))
+            # JSONL_SPLITLINES_EXEMPT: worker .log tail read (free-text log lines), not JSONL rows
             tail = log.read_text(encoding="utf-8", errors="replace").splitlines()[-120:]
             print(f"[fanout] worker {slot} FAILED rc={rc}; log tail:", flush=True)
             print("\n".join(tail), flush=True)
