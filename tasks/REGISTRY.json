@@ -6557,8 +6557,8 @@
     "1847": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1847",
-      "status": "reviewing",
+      "path": "tasks/completed/1847",
+      "status": "completed",
       "title": "daily-fix: bash -n pin test for Step 10d TG fenced blocks"
     },
     "1848": {
