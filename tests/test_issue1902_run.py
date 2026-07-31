@@ -529,3 +529,12 @@ def test_load_hf_model_capture_floor_fail_loud(monkeypatch):
     monkeypatch.setattr(torch.cuda, "mem_get_info", lambda *_a: (int(20 * GIB), int(139.8 * GIB)))
     with pytest.raises(RuntimeError, match="too full for the capture model"):
         R._load_hf_model("dummy/model", None, "cuda:0")
+
+
+def test_git_sha_degrades_on_gitless_lane(monkeypatch, tmp_path):
+    """Fellows/SLURM rsync copy has no .git (#1902 job 16142) — never crash metadata."""
+    monkeypatch.delenv("EPS_GIT_SHA", raising=False)
+    monkeypatch.setattr(R, "PROJECT_ROOT", tmp_path)
+    assert R._git_sha() == "unavailable-no-git-checkout"
+    monkeypatch.setenv("EPS_GIT_SHA", "deadbeef123")
+    assert R._git_sha() == "deadbeef123"

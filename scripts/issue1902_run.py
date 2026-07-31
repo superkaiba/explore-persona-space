@@ -149,15 +149,27 @@ def _now_iso() -> str:
 
 
 def _git_sha() -> str:
+    """Repo sha for reproducibility metadata; degrades on git-less lanes.
+
+    The fellows/SLURM rsync copy has NO git checkout (the seam
+    fits._commit_eval_results already tolerates — #1902 job 16142 crashed
+    here rc=128 writing the pilot leg report). EPS_GIT_SHA env wins when
+    set; the canonical sha also rides the launch marker + handle sidecar.
+    """
+    env_sha = os.environ.get("EPS_GIT_SHA", "").strip()
+    if env_sha:
+        return env_sha
     out = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         cwd=PROJECT_ROOT,
         capture_output=True,
         text=True,
-        check=True,
+        check=False,
         env={**os.environ},
     )
-    return out.stdout.strip()
+    if out.returncode == 0:
+        return out.stdout.strip()
+    return "unavailable-no-git-checkout"
 
 
 def _metadata() -> dict[str, Any]:

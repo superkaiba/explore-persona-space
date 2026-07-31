@@ -777,10 +777,16 @@ def _write_jsonl(path: Path, rows: list[dict]) -> None:
 
 
 def _git_sha() -> str:
+    """Repo sha for provenance; degrades on git-less lanes (fellows/SLURM rsync — #1902)."""
+    env_sha = os.environ.get("EPS_GIT_SHA", "").strip()
+    if env_sha:
+        return env_sha
     out = subprocess.run(
-        ["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, capture_output=True, text=True, check=True
+        ["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, capture_output=True, text=True, check=False
     )
-    return out.stdout.strip()
+    if out.returncode == 0:
+        return out.stdout.strip()
+    return "unavailable-no-git-checkout"
 
 
 def _env_versions() -> dict[str, str]:
