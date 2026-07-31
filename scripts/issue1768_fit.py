@@ -665,14 +665,19 @@ def panel_fit_for_arm(
 #       upload (plan §10 fellows-lane note).
 
 # plan §4.5 file names; round 4 EXTENDS the map with the three rung labels
-# (the designed KeyError-loud extension point — plan v10 §4.5): rung percell
-# files are `<arm>_L<L>_r_<rung>.json` under on_target_r4/.
+# and round 5 with the three b_rel labels (the designed KeyError-loud
+# extension point — plan v10/v13 §4.5): rung percell files are
+# `<arm>_L<L>_r_<rung>.json` under on_target_r4/; b_rel percell files are
+# `<arm>_L<L>_b_rel<j>.json` under on_target_r5/.
 PFX_PERCELL_SUFFIX = {
     "own": "own",
     "ctrl": "control",
     "r_short": "r_short",
     "r_mid": "r_mid",
     "r_long": "r_long",
+    "b_rel1": "b_rel1",
+    "b_rel2": "b_rel2",
+    "b_rel3": "b_rel3",
 }
 
 
@@ -692,19 +697,31 @@ def _lad_results(results_dir: Path) -> Path:
     return Path(results_dir) / "on_target_r4"
 
 
+def _brl_out(out_root: Path) -> Path:
+    return Path(out_root) / "on_target_r5"
+
+
+def _brl_results(results_dir: Path) -> Path:
+    return Path(results_dir) / "on_target_r5"
+
+
 def pfx_cell_paths(
     out_root: Path, results_dir: Path, arm_id: str, layer: int, cond_label: str
 ) -> tuple[Path, Path, Path]:
     """The ONE canonical (fits_json, fit_state_npz, percell_json) path triple
     per pfx/lad cell. Producer (`_pfx_fit_core`) and consumer
-    (`phase_pfx7`/`phase_lad7`) BOTH compose paths through this helper so a
-    writer/reader name drift cannot recur (r3-v2 Critical 1: the ctrl fits
-    JSON was written `_ctrl` and read `_control`). ``cond_label`` ∈
-    {"own", "ctrl", "bare_n"} (round-3 trees, on_target/) or a round-4 rung
-    label in `X.R4_CONDS` (on_target_r4/ trees)."""
-    is_rung = cond_label in X.R4_CONDS
-    res = _lad_results(results_dir) if is_rung else _pfx_results(results_dir)
-    state_root = _lad_out(out_root) if is_rung else _pfx_out(out_root)
+    (`phase_pfx7`/`phase_lad7`/`phase_brl7`) BOTH compose paths through this
+    helper so a writer/reader name drift cannot recur (r3-v2 Critical 1: the
+    ctrl fits JSON was written `_ctrl` and read `_control`). ``cond_label`` ∈
+    {"own", "ctrl", "bare_n"} (round-3 trees, on_target/), a round-4 rung
+    label in `X.R4_CONDS` (on_target_r4/ trees), or a round-5 b_rel label in
+    `X.R5_CONDS` (on_target_r5/ trees)."""
+    if cond_label in X.R5_CONDS:
+        res, state_root = _brl_results(results_dir), _brl_out(out_root)
+    elif cond_label in X.R4_CONDS:
+        res, state_root = _lad_results(results_dir), _lad_out(out_root)
+    else:
+        res, state_root = _pfx_results(results_dir), _pfx_out(out_root)
     if cond_label == "bare_n":
         suffix = "bare_n"
         stem = f"{arm_id}_L{layer}"
@@ -1354,14 +1371,16 @@ def _pfx_cell_inputs(
     for p in (fits_path, npz_path):
         if not p.exists():
             if cond_label == "bare_n":
-                rerun = "pfx6 (round 4: stage the r3 bare_n cell — lad7 staging)"
+                rerun = "pfx6 (round 4/5: stage the r3 bare_n cell — lad7/brl7 staging)"
             elif cond_label in X.R4_CONDS:
-                rerun = "lad5"
+                rerun = "lad5 (round 5: stage the r4 percell — brl7 staging)"
+            elif cond_label in X.R5_CONDS:
+                rerun = "brl5"
             else:
                 rerun = "pfx5"
             raise RuntimeError(
-                f"[pfx7/lad7] missing {p} — cell {arm_id}_L{layer}@{cond_label} not fitted; "
-                f"re-run {rerun} (a partially-fanned shard may have been aborted)"
+                f"[pfx7/lad7/brl7] missing {p} — cell {arm_id}_L{layer}@{cond_label} not "
+                f"fitted; re-run {rerun} (a partially-fanned shard may have been aborted)"
             )
     with np.load(npz_path) as z:
         state = {k: z[k] for k in z.files}
@@ -2204,6 +2223,811 @@ def phase_lad8(
         logger.info("[lad8] results-mirror upload disabled (--no-upload)")
 
 
+# ── brl: round-5 behavior-relevant panel fits + contrasts (plan v13) ────────
+#
+# brl5  per-prefix fits + floors (36 cells = 4 arms x 3 layers x 3 prefixes;
+#       no TF maps — Method delta carried) + the base-bare M0 refit (pfx6
+#       machinery) -> on_target_r5/{fits,percell,fit_state} +
+#       m0_brel_effect.json. Launched (arm x prefix)-sharded 8-way FROM THE
+#       START (plan §4.5/§8: job 16134's `_fanout_fit_arms` sharded the 4
+#       arms onto 4 of 8 GPUs — the fit tail ran at width 4 with 9 serial
+#       cells per shard; pair shards run 12-way work-conserving).
+# brl7  contrast reduce: ΔD = D_brel − D_bare@n per (arm, layer, prefix) vs
+#       the ROUND-3 bare_n cells + the registered behavior-relevance-vs-
+#       identity m-contrasts vs the r3 ctrl/own + r4 r_long committed percell
+#       vectors, (sha, qidx)-joined over the pinned 1,000 test rows +
+#       gap-closure + the dose-interpolated secondary read ->
+#       map_change_brel.json.
+# brl8  prefix-mapping arm (both-arms rule): per-prefix Δ-reads + pooled
+#       prefix->response fits (3 b_rel conds, rank-limited) + the base-side
+#       content read vs the r4 dose anchors -> prefix_brel_reads.json +
+#       results mirror.
+
+BRL_R_RESULTS = "on_target_r5/inputs/r_results"  # brl_build's Hub mirror prefix
+
+
+def _brl_fit_arms(smoke: bool, arms_filter: tuple[str, ...]) -> list[str]:
+    if arms_filter:
+        want = set(arms_filter)
+        unknown = want - set(X.R5_ARMS)
+        assert not unknown, f"--arms outside the r5 arm set: {sorted(unknown)}"
+        return [a for a in X.R5_ARMS if a in want]
+    if smoke:
+        return ["syc-pers-con-lr1e5-s42"]  # plan §4 smoke-parity arm
+    return list(X.R5_ARMS)
+
+
+def _brl_conds(smoke: bool, conds_filter: tuple[str, ...] = ()) -> tuple[str, ...]:
+    if conds_filter:
+        unknown = set(conds_filter) - set(X.R5_CONDS)
+        assert not unknown, f"--conds outside the r5 condition set: {sorted(unknown)}"
+        return tuple(c for c in X.R5_CONDS if c in set(conds_filter))
+    return ("b_rel1",) if smoke else X.R5_CONDS
+
+
+def _stage_brl_panel(out_root: Path) -> dict:
+    """The brl_build-pinned panel at the fit side: local out-root -> repo
+    commit copy -> Hub (fail-loud both-miss); returns the loaded panel."""
+    from explore_persona_space.orchestrate import hub
+
+    path = Path(out_root) / "on_target_r5" / "inputs" / "prefix_ladder_r5.json"
+    if not path.exists():
+        repo_copy = (
+            REPO_ROOT
+            / "eval_results"
+            / "issue_1768"
+            / "on_target_r5"
+            / "inputs"
+            / "prefix_ladder_r5.json"
+        )
+        if repo_copy.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(repo_copy, path)
+        else:
+            hub.stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/on_target_r5/inputs/prefix_ladder_r5.json",
+                path,
+                repo_type="dataset",
+            )
+    return X.load_r5_brel_panel(out_root)
+
+
+def _stage_r4_ladder(out_root: Path) -> dict:
+    """The r4 rung ladder at the fit side (realized r_mid/r_long tokens for
+    the dose-interpolated secondary read): local -> repo -> Hub."""
+    from explore_persona_space.orchestrate import hub
+
+    path = Path(out_root) / "on_target_r4" / "inputs" / "prefix_ladder.json"
+    if not path.exists():
+        repo_copy = (
+            REPO_ROOT / "eval_results" / "issue_1768" / "on_target_r4" / "inputs"
+        ) / "prefix_ladder.json"
+        if repo_copy.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(repo_copy, path)
+        else:
+            hub.stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/on_target_r4/inputs/prefix_ladder.json",
+                path,
+                repo_type="dataset",
+            )
+    return X.load_r4_ladder(out_root)
+
+
+def load_brl_cell(arm_id: str, cond: str, layer: int, out_root: Path) -> dict:
+    """on_target_r5 stores -> fit matrices for one (arm, prefix, layer); no TF
+    store this round (plan v13 Method delta, carried from r4)."""
+    root = _brl_out(out_root)
+    base = _load_store(root / "corpus_capture" / X.r5_base_unit(cond) / "pooled.pt")
+    plus = _load_store(root / "corpus_capture" / X.r5_trained_unit(arm_id, cond) / "pooled.pt")
+    sample = X.load_pfx_sample(out_root)
+    return _join_pfx_cell(f"{arm_id}@{cond}", layer, base, plus, None, sample)
+
+
+def fit_brl_cell(
+    out_root: Path, results_dir: Path, arm_id: str, cond: str, layer: int, smoke: bool
+) -> dict:
+    cell = load_brl_cell(arm_id, cond, layer, out_root)
+    return _pfx_fit_core(
+        out_root,
+        results_dir,
+        arm_id,
+        layer,
+        cond,
+        cell,
+        smoke,
+        run_transfer_fold=True,  # plan §6: LMSYS<->WildChat fold inherited on b_rel fits
+    )
+
+
+def _fanout_fit_pairs(
+    phase: str,
+    pairs: list[tuple[str, str]],
+    out_root: Path,
+    results_dir: Path,
+    layers,
+    smoke: bool,
+    upload: bool,
+    hf_prefix: str | None,
+) -> bool:
+    """(arm x cond)-pair subprocess fan-out across every visible GPU — the
+    brl5 width fix (plan §4.5/§8: job 16134's arm-sharded `_fanout_fit_arms`
+    left 4 of 8 GPUs idle through the whole lad5 fit tail). Work-conserving
+    queue: one subprocess per pair (`--arms <a> --conds <c> --worker`), at
+    most one live per GPU, CVD-pinned per shard (#545). Returns False when
+    the caller should run in-process (<=1 GPU or <=1 pair); per-cell
+    dest.exists() resume makes shard re-runs idempotent."""
+    gpus = _physical_gpus()
+    if len(gpus) <= 1 or len(pairs) <= 1:
+        return False
+    log_dir = _brl_out(out_root) / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    queue = list(pairs)
+    running: dict[int, tuple[subprocess.Popen, tuple[str, str], float]] = {}
+    log_handles: list = []
+    done_count = 0
+    try:
+        while queue or running:
+            for gpu in [g for g in gpus if g not in running]:
+                if not queue:
+                    break
+                arm, cond = queue.pop(0)
+                cmd = [
+                    "uv",
+                    "run",
+                    "python",
+                    str(Path(__file__).resolve()),
+                    "--out-root",
+                    str(out_root),
+                    "--results-dir",
+                    str(results_dir),
+                    "--phases",
+                    phase,
+                    "--arms",
+                    arm,
+                    "--conds",
+                    cond,
+                    "--layers",
+                    ",".join(str(x) for x in layers),
+                    "--worker",
+                ]
+                if smoke:
+                    cmd.append("--smoke")
+                if not upload:
+                    cmd.append("--no-upload")
+                if hf_prefix:
+                    cmd += ["--hf-prefix", hf_prefix]
+                env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(gpu)}
+                logf = (log_dir / f"{phase}_{arm}_{cond}.log").open("a")
+                log_handles.append(logf)
+                proc = subprocess.Popen(cmd, cwd=REPO_ROOT, env=env, stdout=logf, stderr=logf)
+                running[gpu] = (proc, (arm, cond), time.time())
+                logger.info(
+                    "[%s] pair shard %s@%s on gpu %d (pid %d)", phase, arm, cond, gpu, proc.pid
+                )
+            time.sleep(3)
+            for gpu, (proc, pair, t0) in list(running.items()):
+                rc = proc.poll()
+                if rc is None:
+                    continue
+                del running[gpu]
+                arm, cond = pair
+                if rc != 0:
+                    for sib_proc, sib_pair, _t in running.values():
+                        logger.warning("[%s] terminating sibling %s on failure", phase, sib_pair)
+                        sib_proc.terminate()
+                    deadline = time.time() + 15
+                    for sib_proc, _sib_pair, _t in running.values():
+                        try:
+                            sib_proc.wait(timeout=max(0.1, deadline - time.time()))
+                        except subprocess.TimeoutExpired:
+                            sib_proc.kill()
+                    running.clear()
+                    tail_path = log_dir / f"{phase}_{arm}_{cond}.log"
+                    tail = tail_path.read_text()[-4000:] if tail_path.exists() else "(no log)"
+                    raise RuntimeError(
+                        f"[{phase}] pair shard {arm}@{cond} exited rc={rc}\n"
+                        f"--- log tail ---\n{tail}"
+                    )
+                done_count += 1
+                print(
+                    f"[{phase}] unit {done_count}/{len(pairs)} {arm}@{cond} "
+                    f"elapsed={time.time() - t0:.0f}s",
+                    flush=True,
+                )
+    finally:
+        for h in log_handles:
+            h.close()
+    return True
+
+
+def phase_brl5(
+    out_root: Path,
+    results_dir: Path,
+    layers,
+    smoke: bool,
+    arms_filter,
+    conds_filter: tuple[str, ...] = (),
+    *,
+    worker: bool = False,
+    upload: bool = True,
+    hf_prefix: str | None = None,
+) -> None:
+    _phase("brl5_brel_fits")
+    arms = _brl_fit_arms(smoke, arms_filter)
+    conds = _brl_conds(smoke, conds_filter)
+    pairs = [(a, c) for a in arms for c in conds]
+    fanned = not worker and _fanout_fit_pairs(
+        "brl5", pairs, out_root, results_dir, layers, smoke, upload, hf_prefix
+    )
+    if not fanned:
+        cells = [(a, c, layer) for a, c in pairs for layer in layers]
+        for k, (a, c, layer) in enumerate(cells):
+            t0 = time.time()
+            fit_brl_cell(out_root, results_dir, a, c, layer, smoke)
+            print(
+                f"[brl5] unit {k + 1}/{len(cells)} {a}@{c}_L{layer} "
+                f"elapsed={time.time() - t0:.0f}s",
+                flush=True,
+            )
+    if not worker:
+        # base-bare M0 refit (plan §9 brl5 row: +3 base-bare cells) — the b_rel
+        # base units vs the ROUND-1 bare store, the pfx6 machinery (as lad5 did).
+        _stage_lad_bare_base(out_root)
+        _m0_prefix_effect(
+            out_root,
+            results_dir,
+            layers,
+            smoke,
+            arms,
+            base_units=[X.r5_base_unit(c) for c in conds],
+            store_root=_brl_out(out_root),
+            dest=_brl_results(results_dir) / "m0_brel_effect.json",
+            log_tag="brl5",
+        )
+
+
+def _stage_r_results_inputs(out_root: Path, results_dir: Path, arms, layers) -> None:
+    """Ensure the ROUND-3 + ROUND-4 contrast inputs sit at the `pfx_cell_paths`
+    read locations: r3 percell {own, control, bare_n} + fits_bare_n JSONs and
+    r4 percell {r_mid, r_long} JSONs (repo tree else the brl_build `r_results`
+    HF mirror, whose layout is results_dir-relative), plus the bare_n
+    fit_state npz (round-3 HF fit_state prefix — never in git). r_short rides
+    the mirror for figures only — brl7 never reads it, so it is not staged.
+    Idempotent; fail-loud on both-miss."""
+    from explore_persona_space.orchestrate import hub
+
+    repo_root = REPO_ROOT / "eval_results" / "issue_1768"
+    for arm in arms:
+        for layer in layers:
+            for cond in ("own", "ctrl", "bare_n", "r_mid", "r_long"):
+                fits_path, npz_path, percell_path = pfx_cell_paths(
+                    out_root, results_dir, arm, layer, cond
+                )
+                needed = [percell_path] + ([fits_path] if cond == "bare_n" else [])
+                for p in needed:
+                    if p.exists():
+                        continue
+                    rel = p.relative_to(Path(results_dir))
+                    src = repo_root / rel
+                    if src.exists():
+                        p.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(src, p)
+                    else:
+                        hub.stage_hub_file(
+                            X.HF_DATA_REPO,
+                            f"{X.HF_PREFIX}/{BRL_R_RESULTS}/{rel.as_posix()}",
+                            p,
+                            repo_type="dataset",
+                        )
+                if cond == "bare_n" and not npz_path.exists():
+                    hub.stage_hub_file(
+                        X.HF_DATA_REPO,
+                        f"{X.HF_PREFIX}/on_target/fit_state/{npz_path.name}",
+                        npz_path,
+                        repo_type="dataset",
+                    )
+
+
+def brl_behavior_relevance_verdict(ci_brel_ctrl: list[float], ci_brel_rlong: list[float]) -> str:
+    """Plan v13 §3 behavior-relevance-vs-identity lattice, per (persona arm,
+    prefix j) at L19 (DISJOINT + exhaustive): Behavior-relevance-consistent ⇔
+    CI95(m_brel_j − m_ctrl).hi >= 0 AND CI95(m_brel_j − m_rlong).lo > 0;
+    Identity-consistent ⇔ CI95(m_brel_j − m_ctrl).hi < 0; Mixed otherwise."""
+    if ci_brel_ctrl[1] < 0:
+        return "Identity-consistent"
+    if ci_brel_ctrl[1] >= 0 and ci_brel_rlong[0] > 0:
+        return "Behavior-relevance-consistent"
+    return "Mixed"
+
+
+def brl_comparator_verdict(ci_brel_own: list[float]) -> str:
+    """Plan v13 §3 comparator content-proximity lattice (DISJOINT + exhaustive)."""
+    if ci_brel_own[0] > 0:
+        return "Above-own"
+    if ci_brel_own[1] < 0:
+        return "Below-own"
+    return "Indistinguishable"
+
+
+def brl_arm_majority(labels: list[str]) -> str:
+    """Plan v13 §3 arm-level label: the majority label over the arm's 3 prefix
+    draws (>= 2/3); no majority ⇔ Mixed. Deterministic iteration order."""
+    assert len(labels) == 3, labels
+    for lab in ("Behavior-relevance-consistent", "Identity-consistent", "Mixed"):
+        if labels.count(lab) >= 2:
+            return lab
+    return "Mixed"
+
+
+def _brl_dose_interp_rows(
+    mid_rows: list, long_rows: list, t_real: float, t_mid: float, t_long: float
+) -> tuple[list, float]:
+    """Registered SECONDARY read input (plan §8 row 2): per-context neutral
+    reference at the prefix's realized T — linear interpolation of the r4
+    r_mid/r_long per-context deltas in log-token space, keyed (sha, qidx).
+    Returns (interp rows in the percell row shape, the interpolation weight w
+    on the r_long side)."""
+    w = (np.log(t_real) - np.log(t_mid)) / (np.log(t_long) - np.log(t_mid))
+    mid_map = {(r["sha"], int(r["qidx"])): float(r["delta"]) for r in mid_rows}
+    long_map = {(r["sha"], int(r["qidx"])): float(r["delta"]) for r in long_rows}
+    assert len(mid_map) == len(mid_rows) and len(long_map) == len(long_rows)
+    shared = sorted(set(mid_map) & set(long_map))
+    assert shared, "no shared (sha, qidx) rows between the r_mid and r_long percell sides"
+    rows = [
+        {
+            "sha": sha,
+            "qidx": qidx,
+            "delta": (1.0 - w) * mid_map[(sha, qidx)] + w * long_map[(sha, qidx)],
+        }
+        for sha, qidx in shared
+    ]
+    return rows, float(w)
+
+
+def _brl_m_row(
+    out_root: Path,
+    results_dir: Path,
+    arm: str,
+    layer: int,
+    conds,
+    smoke: bool,
+    ai: int,
+    realized: dict,
+    r4_realized: dict,
+) -> dict:
+    """Raw per-context medians m per b_rel prefix + the registered m-contrasts
+    vs the round-3 ctrl/own AND round-4 r_long committed percell rows (plan §3
+    contrasts (ii)/(iii)), gap-closure fractions, and the dose-interpolated
+    neutral reference; the r3/r4-side legs are production-only (smoke covers
+    the b_rel medians — the production-mode pytest executes the full branch)."""
+    brel_rows = {c: _load_percell_rows(out_root, results_dir, arm, layer, c) for c in conds}
+    row: dict = {
+        "arm_id": arm,
+        "layer": int(layer),
+        "m_brel": {c: float(np.median([r["delta"] for r in rr])) for c, rr in brel_rows.items()},
+        "realized_tokens": {c: realized[c] for c in conds},
+    }
+    if smoke:
+        row["note"] = "smoke: m-contrast legs fenced (need r3 own/ctrl + r4 rung percell)"
+        return row
+    own_rows = _load_percell_rows(out_root, results_dir, arm, layer, "own")
+    ctrl_rows = _load_percell_rows(out_root, results_dir, arm, layer, "ctrl")
+    rlong_rows = _load_percell_rows(out_root, results_dir, arm, layer, "r_long")
+    rmid_rows = _load_percell_rows(out_root, results_dir, arm, layer, "r_mid")
+    seed = X.FLOOR_SEED + 15000 + int(layer) * 100 + ai * 10
+    m_own = float(np.median([r["delta"] for r in own_rows]))
+    m_ctrl = float(np.median([r["delta"] for r in ctrl_rows]))
+    m_rlong = float(np.median([r["delta"] for r in rlong_rows]))
+    m_rmid = float(np.median([r["delta"] for r in rmid_rows]))
+    con: dict = {}
+    dose: dict = {}
+    gap: dict = {}
+    for j, c in enumerate(conds):
+        con[f"{c}_minus_ctrl"] = _paired_m_contrast(
+            brel_rows[c], ctrl_rows, seed + 1 + j * 10, expect_pairs=X.N_TEST, smoke=smoke
+        )
+        con[f"{c}_minus_rlong"] = _paired_m_contrast(
+            brel_rows[c], rlong_rows, seed + 2 + j * 10, expect_pairs=X.N_TEST, smoke=smoke
+        )
+        con[f"{c}_minus_own"] = _paired_m_contrast(
+            brel_rows[c], own_rows, seed + 3 + j * 10, expect_pairs=X.N_TEST, smoke=smoke
+        )
+        m_b = row["m_brel"][c]
+        gap[c] = (m_b - m_rlong) / (m_ctrl - m_rlong) if (m_ctrl - m_rlong) != 0 else None
+        interp_rows, w = _brl_dose_interp_rows(
+            rmid_rows,
+            rlong_rows,
+            float(realized[c]),
+            float(r4_realized["r_mid"]),
+            float(r4_realized["r_long"]),
+        )
+        dose[c] = {
+            "interp_weight_on_rlong": w,
+            "realized_tokens": realized[c],
+            "contrast_vs_interp": _paired_m_contrast(
+                brel_rows[c], interp_rows, seed + 4 + j * 10, expect_pairs=X.N_TEST, smoke=smoke
+            ),
+            "note": (
+                "dose-interpolated neutral reference (plan §8 row 2): per-context "
+                "linear interp of the r4 r_mid/r_long deltas in log-token space at "
+                "the prefix's realized T"
+            ),
+        }
+    row["m_own"] = m_own
+    row["m_ctrl"] = m_ctrl
+    row["m_rlong"] = m_rlong
+    row["m_rmid"] = m_rmid
+    row["contrasts"] = con
+    row["gap_closure"] = gap
+    row["dose_interp"] = dose
+    return row
+
+
+def phase_brl7(
+    out_root: Path, results_dir: Path, layers, smoke: bool, arms_filter, *, force: bool = False
+) -> None:
+    _phase("brl7_brel_contrast")
+    res = _brl_results(results_dir)
+    dest = res / "map_change_brel.json"
+    if dest.exists() and not force:
+        # skip-if-output-exists guard (the lad7 resume-guard convention);
+        # `--force` recomputes deliberately.
+        logger.info("[brl7] map_change_brel.json present — resume skip (--force to recompute)")
+        return
+    arms = _brl_fit_arms(smoke, arms_filter)
+    conds = _brl_conds(smoke)
+    if not smoke:
+        _stage_r_results_inputs(out_root, results_dir, arms, layers)
+    panel = _stage_brl_panel(out_root)
+    realized = {c: panel["prefixes"][c]["realized_tokens"] for c in X.R5_CONDS}
+    in_band = {c: panel["prefixes"][c]["in_band"] for c in X.R5_CONDS}
+    shared_q = {c: panel["prefixes"][c]["question_shared_request_ids"] for c in X.R5_CONDS}
+    r4_ladder = _stage_r4_ladder(out_root) if not smoke else None
+    r4_realized = (
+        {c: r4_ladder["rungs"][c]["realized_tokens"] for c in X.R4_CONDS}
+        if r4_ladder is not None
+        else {}
+    )
+    # plan §3: verdict lattices bind at the pre-registered primary layer L19
+    # (all four arms are content arms); tiny-layer smokes/tests anchor on the
+    # first available layer (the phase_lad7 convention).
+    primary = 19 if 19 in {int(x) for x in layers} else int(layers[0])
+
+    cells: dict[str, dict] = {}
+    m_table: dict[str, dict] = {}
+    for arm in arms:
+        ai = X.R5_ARMS.index(arm)
+        for layer in layers:
+            bare_state = None
+            bare_fit = None
+            try:
+                bare_fit, bare_state = _pfx_cell_inputs(out_root, results_dir, arm, layer, "bare_n")
+            except RuntimeError:
+                if not smoke:
+                    raise
+                logger.info(
+                    "[brl7] smoke: bare_n cell absent for %s L%d — ΔD leg skipped "
+                    "(production-mode pytest covers it)",
+                    arm,
+                    layer,
+                )
+            for cond in conds:
+                brel_fit, brel_state = _pfx_cell_inputs(out_root, results_dir, arm, layer, cond)
+                seed = X.FLOOR_SEED + 13000 + int(layer) * 100 + ai * 10 + X.R5_CONDS.index(cond)
+                row = {
+                    "arm_id": arm,
+                    "method": brel_fit["method"],
+                    "layer": int(layer),
+                    "prefix": cond,
+                    "realized_tokens": realized[cond],
+                    "in_band": in_band[cond],
+                    "primary_layer": int(layer) == primary,
+                    "D_brel": brel_fit["map_change"]["D"],
+                    "D_brel_ci95": brel_fit["map_change"]["D_ci95"],
+                    "verdict_brel": brel_fit["map_change"]["verdict"],
+                }
+                if bare_state is not None:
+                    row["D_bare_n"] = bare_fit["map_change"]["D"]
+                    row["D_bare_n_ci95"] = bare_fit["map_change"]["D_ci95"]
+                    row["contrast"] = _paired_d_contrast(
+                        brel_state,
+                        bare_state,
+                        seed,
+                        positive="Prefix-amplified",
+                        negative="Prefix-attenuated",
+                    )
+                cells[f"{arm}_L{layer}_{cond}"] = row
+                print(f"[brl7] contrast {arm}_L{layer}_{cond}", flush=True)
+            m_table[f"{arm}_L{layer}"] = _brl_m_row(
+                out_root, results_dir, arm, layer, conds, smoke, ai, realized, r4_realized
+            )
+    brel_verdicts: dict[str, dict] = {}
+    comparator = None
+    for arm in arms:
+        mrow = m_table.get(f"{arm}_L{primary}")
+        if not mrow or "contrasts" not in mrow:
+            continue
+        con = mrow["contrasts"]
+        if arm == X.R5_COMPARATOR_ARM:
+            comparator = {
+                "arm_id": arm,
+                "per_prefix": {
+                    c: {
+                        "verdict": brl_comparator_verdict(con[f"{c}_minus_own"]["diff_ci95"]),
+                        "contrast_vs_own": con[f"{c}_minus_own"],
+                        "secondary_vs_rlong": con[f"{c}_minus_rlong"],
+                    }
+                    for c in conds
+                },
+            }
+        else:
+            per_prefix = {
+                c: brl_behavior_relevance_verdict(
+                    con[f"{c}_minus_ctrl"]["diff_ci95"], con[f"{c}_minus_rlong"]["diff_ci95"]
+                )
+                for c in conds
+            }
+            brel_verdicts[arm] = {
+                "per_prefix": per_prefix,
+                "arm_label": (
+                    brl_arm_majority([per_prefix[c] for c in X.R5_CONDS])
+                    if len(conds) == 3
+                    else "n/a — partial condition subset"
+                ),
+            }
+    arm_labels = [v["arm_label"] for v in brel_verdicts.values()]
+    summary = {
+        "cells": cells,
+        "m_table": m_table,
+        "behavior_relevance_verdicts": brel_verdicts,
+        "comparator_content_proximity": comparator,
+        "success_criteria": {
+            "n_persona_arms_identity_consistent": arm_labels.count("Identity-consistent"),
+            "n_persona_arms_behavior_relevance_consistent": arm_labels.count(
+                "Behavior-relevance-consistent"
+            ),
+            "n_persona_arms_mixed": arm_labels.count("Mixed"),
+            "n_persona_arms": len(arm_labels),
+        },
+        "realized_tokens": realized,
+        "in_band": in_band,
+        "question_shared_request_ids": shared_q,
+        "pairing_fallback_engaged": panel["pairing"]["fallback_engaged"],
+        "join_convention": (
+            "(sha, qidx) exact join over the pinned test rows; 1,000 pairs asserted in "
+            "production (sha-only would collapse to the 942-unique-sha set)"
+        ),
+        "n_cells": len(cells),
+        "smoke": smoke,
+        **_meta(),
+    }
+    _atomic_json(dest, summary)
+    logger.info(
+        "[brl7] %d cells; arm labels %s; comparator=%s",
+        len(cells),
+        {a: v["arm_label"] for a, v in brel_verdicts.items()},
+        None
+        if comparator is None
+        else {c: v["verdict"] for c, v in comparator["per_prefix"].items()},
+    )
+
+
+def _brl_results_upload(out_root: Path, results_dir: Path, hf_prefix: str | None) -> None:
+    """Results mirror (plan §10): on_target_r5 eval_results JSONs + fit_state
+    npz to the data repo. ``hf_prefix`` REQUIRED (the #1005 clobber rule)."""
+    from explore_persona_space.orchestrate import hub
+
+    if not hf_prefix:
+        raise ValueError(
+            "_brl_results_upload requires an explicit hf_prefix (no hardcoded "
+            "issue-prefix fallback at an upload destination — #1005 class)"
+        )
+    res = _brl_results(results_dir)
+    url = hub._upload(
+        res,
+        repo_id=X.HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{hf_prefix}/on_target_r5/eval_results",
+    )
+    if not url:
+        raise RuntimeError(f"brl8 results-mirror upload of {res} returned no path")
+    state = _brl_out(out_root) / "fit_state"
+    if state.exists():
+        url = hub._upload(
+            state,
+            repo_id=X.HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=f"{hf_prefix}/on_target_r5/fit_state",
+        )
+        if not url:
+            raise RuntimeError(f"brl8 fit_state upload of {state} returned no path")
+
+
+def phase_brl8(
+    out_root: Path,
+    results_dir: Path,
+    layers,
+    smoke: bool,
+    arms_filter,
+    *,
+    upload: bool = True,
+    hf_prefix: str | None = None,
+) -> None:
+    _phase("brl8_prefix_arm_reads")
+    arms = _brl_fit_arms(smoke, arms_filter)
+    conds = _brl_conds(smoke)
+    res = _brl_results(results_dir)
+    dest = res / "prefix_brel_reads.json"
+    if not dest.exists():
+        import torch
+
+        dev = _device()
+        sample = X.load_pfx_sample(out_root)
+        panel = _stage_brl_panel(out_root)
+        realized = {c: panel["prefixes"][c]["realized_tokens"] for c in X.R5_CONDS}
+        groups: dict[str, list[str]] = {"base:base_content": [X.r5_base_unit(c) for c in conds]}
+        for a in arms:
+            groups[f"arm:{a}"] = [X.r5_trained_unit(a, c) for c in conds]
+        stores = {
+            u: _load_store(_brl_out(out_root) / "corpus_capture" / u / "pooled.pt")
+            for us in groups.values()
+            for u in us
+        }
+        # (a) per-prefix Δ-reads: trained − base prefix span-mean movement (the
+        # conv comparator's read on its own-corpus content is the new cell)
+        delta_reads = []
+        for a in arms:
+            for c in conds:
+                unit, base_unit = X.r5_trained_unit(a, c), X.r5_base_unit(c)
+                for layer in layers:
+                    p_tr = stores[unit]["arms"]["prefix"][layer].float().mean(dim=0)
+                    p_b = stores[base_unit]["arms"]["prefix"][layer].float().mean(dim=0)
+                    delta_reads.append(
+                        {
+                            "arm_id": a,
+                            "prefix": c,
+                            "realized_tokens": realized[c],
+                            "layer": int(layer),
+                            "prefix_delta_norm": float((p_tr - p_b).norm()),
+                            "prefix_cos": float(
+                                torch.nn.functional.cosine_similarity(p_tr, p_b, dim=0)
+                            ),
+                            "prefix_norm_base": float(p_b.norm()),
+                            "prefix_norm_trained": float(p_tr.norm()),
+                        }
+                    )
+        # (b) pooled prefix->response fits per model group (rank <= 3 distinct
+        # b_rel prefixes — reported rank-limited + exploratory, the r3/r4
+        # pfx8/lad8 convention; no r3-condition pooling this round, plan §4.5)
+        pooled_fits = {}
+        for gname, units in groups.items():
+            for layer in layers:
+                Xs, Ys, qs = [], [], []
+                for u in units:
+                    Xs.append(_store_span_rows(stores[u], "prefix", layer))
+                    Ys.append(_store_span_rows(stores[u], "response", layer))
+                    qs.append(np.asarray([int(q) for q in stores[u]["row_question_idx"]]))
+                Xd, Yd, qidx = np.concatenate(Xs), np.concatenate(Ys), np.concatenate(qs)
+                split = _pfx_split_from_qidx(qidx, sample)
+                tr, val, te = _split_idx(split)
+                pred_te, meta, _payload = _fit_map(
+                    Xd, Yd, tr, val, te, dev, allow_underdetermined=True
+                )
+                pooled_fits[f"{gname}_L{layer}"] = {
+                    "group": gname,
+                    "layer": int(layer),
+                    "n_units_pooled": len(units),
+                    "n_distinct_prefix_conditions": len(units),
+                    "rank_limited": True,
+                    "selected_lambda": meta["selected_lambda"],
+                    **_map_reads(pred_te, Yd[te]),
+                    "identity_bias": _identity_bias_reads(Xd[tr], Yd[tr], Xd[te], Yd[te]),
+                }
+                print(f"[brl8] pooled prefix fit {gname}_L{layer}", flush=True)
+        # (c) base-side content read: M0_brel vs M0_bare (brl5's
+        # m0_brel_effect) + the r4 neutral/r3 anchors for the dose comparison
+        brel_eff_path = res / "m0_brel_effect.json"
+        assert brel_eff_path.exists(), (
+            str(brel_eff_path),
+            "m0_brel_effect.json missing — re-run brl5 (parent leg)",
+        )
+        brel_eff = json.loads(brel_eff_path.read_text())["cells"]
+        base_read: dict = {"b_rel": {}, "r4_anchors": {}, "r3_anchors": {}}
+        for c in conds:
+            bu = X.r5_base_unit(c)
+            for layer in layers:
+                key = f"{bu}_L{layer}"
+                assert key in brel_eff, (key, "base cell missing from m0_brel_effect.json")
+                base_read["b_rel"][f"{c}_L{layer}"] = {
+                    "prefix": c,
+                    "realized_tokens": realized[c],
+                    **brel_eff[key],
+                }
+        if smoke:
+            base_read["note"] = "smoke: r3/r4 anchors fenced (staging is production)"
+        else:
+            from explore_persona_space.orchestrate import hub
+
+            r4_eff_path = _lad_results(results_dir) / "m0_rung_effect.json"
+            if not r4_eff_path.exists():
+                src = REPO_ROOT / "eval_results" / "issue_1768" / "on_target_r4"
+                if (src / "m0_rung_effect.json").exists():
+                    r4_eff_path.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(src / "m0_rung_effect.json", r4_eff_path)
+                else:
+                    hub.stage_hub_file(
+                        X.HF_DATA_REPO,
+                        f"{X.HF_PREFIX}/{BRL_R_RESULTS}/on_target_r4/m0_rung_effect.json",
+                        r4_eff_path,
+                        repo_type="dataset",
+                    )
+            r4_eff = json.loads(r4_eff_path.read_text())["cells"]
+            r4_ladder = _stage_r4_ladder(out_root)
+            for c in X.R4_CONDS:
+                for layer in layers:
+                    key = f"{X.r4_base_unit(c)}_L{layer}"
+                    if key in r4_eff:
+                        base_read["r4_anchors"][f"{c}_L{layer}"] = {
+                            "rung": c,
+                            "realized_tokens": r4_ladder["rungs"][c]["realized_tokens"],
+                            **r4_eff[key],
+                        }
+            anch_path = _pfx_results(results_dir) / "m0_prefix_effect.json"
+            if not anch_path.exists():
+                src = REPO_ROOT / "eval_results" / "issue_1768" / "on_target"
+                if (src / "m0_prefix_effect.json").exists():
+                    anch_path.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(src / "m0_prefix_effect.json", anch_path)
+                else:
+                    hub.stage_hub_file(
+                        X.HF_DATA_REPO,
+                        f"{X.HF_PREFIX}/{BRL_R_RESULTS}/on_target/m0_prefix_effect.json",
+                        anch_path,
+                        repo_type="dataset",
+                    )
+            anch = json.loads(anch_path.read_text())["cells"]
+            for bu in ("base_content@pers", "base_content@conv", "base_content@icl_syc"):
+                for layer in layers:
+                    key = f"{bu}_L{layer}"
+                    if key in anch:
+                        base_read["r3_anchors"][key] = anch[key]
+        _atomic_json(
+            dest,
+            {
+                "panel": {
+                    c: {
+                        "context_id": panel["prefixes"][c]["context_id"],
+                        "request_ids": panel["prefixes"][c]["request_ids"],
+                        "realized_tokens": realized[c],
+                        "in_band": panel["prefixes"][c]["in_band"],
+                        "question_shared_request_ids": panel["prefixes"][c][
+                            "question_shared_request_ids"
+                        ],
+                    }
+                    for c in X.R5_CONDS
+                },
+                "prefix_delta_reads": delta_reads,
+                "pooled_prefix_fits": pooled_fits,
+                "base_content_read": base_read,
+                "note": (
+                    "prefix-based mapping arm at the identifiable level (both-arms rule): "
+                    "pooled fits rank <= 3 distinct b_rel prefix conditions — rank-limited, "
+                    "exploratory (r3/r4 pfx8/lad8 convention; the v7 >=100-distinct re-open "
+                    "threshold untouched)"
+                ),
+                "smoke": smoke,
+                **_meta(),
+            },
+        )
+    if upload:
+        _brl_results_upload(out_root, results_dir, hf_prefix)
+    else:
+        logger.info("[brl8] results-mirror upload disabled (--no-upload)")
+
+
 # ── phase drivers ────────────────────────────────────────────────────────────
 
 
@@ -2312,6 +3136,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--phases", default="p8,p9")
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--arms", default="")
+    ap.add_argument("--conds", default="", help="b_rel condition filter (brl5 pair shards)")
     ap.add_argument("--layers", default=",".join(str(x) for x in X.LAYERS))
     ap.add_argument("--rb-dir", type=Path, default=None, help="fixture rb dir (smoke)")
     ap.add_argument("--wu-model", default=None, help="W_U source model path (smoke)")
@@ -2343,6 +3168,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     layers = tuple(int(x) for x in args.layers.split(","))
     arms_filter = tuple(a for a in args.arms.split(",") if a)
+    conds_filter = tuple(c for c in args.conds.split(",") if c)
     phases = tuple(p for p in args.phases.split(",") if p)
     upload = not args.no_upload
     hf_prefix = resolve_fit_hf_prefix(args.smoke, args.hf_prefix)
@@ -2412,6 +3238,32 @@ def main(argv: list[str] | None = None) -> int:
             )
         elif phase == "lad8":
             phase_lad8(
+                args.out_root,
+                args.results_dir,
+                layers,
+                args.smoke,
+                arms_filter,
+                upload=upload,
+                hf_prefix=hf_prefix,
+            )
+        elif phase == "brl5":
+            phase_brl5(
+                args.out_root,
+                args.results_dir,
+                layers,
+                args.smoke,
+                arms_filter,
+                conds_filter,
+                worker=args.worker,
+                upload=upload,
+                hf_prefix=hf_prefix,
+            )
+        elif phase == "brl7":
+            phase_brl7(
+                args.out_root, args.results_dir, layers, args.smoke, arms_filter, force=args.force
+            )
+        elif phase == "brl8":
+            phase_brl8(
                 args.out_root,
                 args.results_dir,
                 layers,

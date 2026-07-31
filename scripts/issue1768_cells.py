@@ -695,3 +695,99 @@ def register_r4_ladder_contexts(out_root: Path) -> None:
                 "plan v10 §4.2 lad_build)"
             ),
         )
+
+
+# ── round 5: behavior-relevant never-trained prefix panel (plan v13) ─────────
+
+R5_CONDS = ("b_rel1", "b_rel2", "b_rel3")
+# Same 4 arms as round 4 (plan v13 §4.1: the 3 content persona-trained arms
+# carrying the anchor excess + the conversation-trained comparator whose
+# training corpus the panel comes from).
+R5_ARMS: tuple[str, ...] = R4_ARMS
+R5_COMPARATOR_ARM = R4_COMPARATOR_ARM
+R5_PERSONA_ARMS = R4_PERSONA_ARMS
+R5_PANEL_FAMILY = "fu3_syc_pool"
+R5_CONTEXT_ID_BY_COND = {
+    "b_rel1": "brel_prefix_1",
+    "b_rel2": "brel_prefix_2",
+    "b_rel3": "brel_prefix_3",
+}
+R5_COND_BY_CONTEXT_ID = {v: k for k, v in R5_CONTEXT_ID_BY_COND.items()}
+R5_TURN_ROLES = ("user", "assistant", "user", "assistant")  # 2 chained exchanges
+
+
+def r5_trained_unit(arm_id: str, cond: str) -> str:
+    assert cond in R5_CONDS, cond
+    assert arm_id in R5_ARMS, arm_id
+    return f"{arm_id}@{cond}"
+
+
+def r5_base_unit(cond: str) -> str:
+    """Shared base unit per b_rel prefix — arm-independent, content decode."""
+    assert cond in R5_CONDS, cond
+    return f"base_content@{cond}"
+
+
+def r5_unit_context_id(unit_id: str) -> str:
+    """Any r5 unit id (`<arm>@b_rel*` or `base_content@b_rel*`) -> context id."""
+    _name, _, tag = unit_id.partition("@")
+    assert tag in R5_CONDS, (unit_id, "not an r5 panel unit id")
+    return R5_CONTEXT_ID_BY_COND[tag]
+
+
+def load_r5_brel_panel(out_root: Path) -> dict:
+    """The brl_build-pinned behavior-relevant panel (recipes + manifest);
+    fail-loud shape check: exactly the 3 registered prefixes, each a 4-turn
+    alternating (user, assistant, user, assistant) prefix with non-empty
+    capped contents (plan v13 §4.2 prefix shape). The r4 2-turn loader
+    (`load_r4_ladder`) is deliberately NOT reused — round isolation: this
+    loader owns the r5 4-turn shape check (plan §10 reused-code note)."""
+    path = Path(out_root) / "on_target_r5" / "inputs" / "prefix_ladder_r5.json"
+    panel = json.loads(path.read_text())
+    prefixes = panel["prefixes"]
+    assert sorted(prefixes) == sorted(R5_CONDS), (str(path), sorted(prefixes))
+    for cond, rec in prefixes.items():
+        assert rec["context_id"] == R5_CONTEXT_ID_BY_COND[cond], (cond, rec["context_id"])
+        turns = rec["prefix_turns"]
+        roles = tuple(t["role"] for t in turns)
+        assert roles == R5_TURN_ROLES, (cond, roles)
+        assert all(t["content"].strip() for t in turns), (cond, "empty turn content")
+        assert all(len(t["content"]) <= 2000 for t in turns), (cond, "turn over the 2000 cap")
+        assert len(rec["request_ids"]) == 2, (cond, rec["request_ids"])
+    return panel
+
+
+def register_r5_brel_contexts(out_root: Path) -> None:
+    """Register the 3 b_rel prefixes into CONTEXTS from the pinned panel JSON
+    (idempotent; EXPLICIT — never at import time; the
+    `register_r4_ladder_contexts` pattern). Fail-loud on a missing panel, a
+    non-4-turn shape, or a FOREIGN pre-existing binding (anything not a
+    fu3_syc_pool-family prefix)."""
+    from explore_persona_space.artifacts.context import CONTEXTS, Context
+
+    panel = load_r5_brel_panel(out_root)
+    for cond in R5_CONDS:
+        rec = panel["prefixes"][cond]
+        cid = rec["context_id"]
+        existing = CONTEXTS.get(cid)
+        if existing is not None:
+            if existing.family != R5_PANEL_FAMILY:
+                raise ValueError(
+                    f"CONTEXTS[{cid!r}] is already bound to a non-{R5_PANEL_FAMILY} "
+                    f"context (family={existing.family!r}); refusing to shadow the "
+                    "plan-§4.2 b_rel panel binding"
+                )
+            continue
+        turns = tuple({"role": t["role"], "content": t["content"]} for t in rec["prefix_turns"])
+        CONTEXTS[cid] = Context(
+            context_id=cid,
+            kind="prefix",
+            family=R5_PANEL_FAMILY,
+            prefix_turns=turns,
+            source=(
+                f"on_target_r5/inputs/prefix_ladder_r5.json prefix {cond} — "
+                "behavior-relevant NEVER-TRAINED 4-turn prefix from the fu3 "
+                f"C3-conv sycophancy datagen surplus (request_ids "
+                f"{list(rec['request_ids'])}; plan v13 §4.2 brl_build)"
+            ),
+        )

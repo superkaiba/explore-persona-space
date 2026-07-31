@@ -164,12 +164,13 @@ def cmd_seed_rows(args) -> None:
         print(f"[fixture] seeded {len(rows)} rows -> {out_dir}")
 
 
-def cmd_seed_lad_rows(args) -> None:
-    """Seed raw-row shards for round-4 lad2 units (`<name>@r_*`) via REAL HF
-    greedy generation on the tiny model through the production prompt render
-    (`_build_generation_prompts` with the rung's `prior_turns` — the exact
-    kwargs the production engine call passes); the driver's gen-resume path
-    then runs span+TF+pooling for real. vLLM itself is GPU-only (carve-out)."""
+def _seed_prefixed_rows(args, register_fn, unit_cid_fn, tree: str, tag: str) -> None:
+    """Shared lad/brl row seeder: raw-row shards for prefixed capture units
+    via REAL HF greedy generation on the tiny model through the production
+    prompt render (`_build_generation_prompts` with the prefix's
+    `prior_turns` — the exact kwargs the production engine call passes); the
+    driver's gen-resume path then runs span+TF+pooling for real. vLLM itself
+    is GPU-only (carve-out)."""
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -180,7 +181,7 @@ def cmd_seed_lad_rows(args) -> None:
     )
 
     out_root = Path(args.out_root)
-    X.register_r4_ladder_contexts(out_root)
+    register_fn(out_root)
     sample = X.load_pfx_sample(out_root)
     prompts = [r["prompt"] for r in sample["rows"]]
     tok = AutoTokenizer.from_pretrained(args.model)
@@ -189,8 +190,8 @@ def cmd_seed_lad_rows(args) -> None:
     from explore_persona_space.artifacts.context import CONTEXTS
 
     for unit in args.units.split(","):
-        ctx = CONTEXTS[X.r4_unit_context_id(unit)]
-        out_dir = out_root / "on_target_r4" / "corpus_capture" / unit
+        ctx = CONTEXTS[unit_cid_fn(unit)]
+        out_dir = out_root / tree / "corpus_capture" / unit
         if (out_dir / "raw_rows.done.json").exists():
             print(f"[fixture] {unit}: rows already seeded")
             continue
@@ -229,7 +230,21 @@ def cmd_seed_lad_rows(args) -> None:
             rows.append(row)
         cap._append_shard(out_dir, rows)
         cap._atomic_json(out_dir / "raw_rows.done.json", {"n_rows": len(rows), "fixture": True})
-        print(f"[fixture] seeded {len(rows)} lad rows -> {out_dir}")
+        print(f"[fixture] seeded {len(rows)} {tag} rows -> {out_dir}")
+
+
+def cmd_seed_lad_rows(args) -> None:
+    """Round-4 lad2 units (`<name>@r_*`) — see `_seed_prefixed_rows`."""
+    _seed_prefixed_rows(
+        args, X.register_r4_ladder_contexts, X.r4_unit_context_id, "on_target_r4", "lad"
+    )
+
+
+def cmd_seed_brl_rows(args) -> None:
+    """Round-5 brl2 units (`<name>@b_rel*`) — see `_seed_prefixed_rows`."""
+    _seed_prefixed_rows(
+        args, X.register_r5_brel_contexts, X.r5_unit_context_id, "on_target_r5", "brl"
+    )
 
 
 def cmd_seed_panels(args) -> None:
@@ -303,6 +318,10 @@ def main() -> int:
     sl.add_argument("--out-root", required=True)
     sl.add_argument("--model", required=True)
     sl.add_argument("--units", required=True)
+    sb = sub.add_parser("seed-brl-rows")
+    sb.add_argument("--out-root", required=True)
+    sb.add_argument("--model", required=True)
+    sb.add_argument("--units", required=True)
     p = sub.add_parser("seed-panels")
     p.add_argument("--out-root", required=True)
     p.add_argument("--arms", required=True)
@@ -317,6 +336,7 @@ def main() -> int:
         "build": cmd_build,
         "seed-rows": cmd_seed_rows,
         "seed-lad-rows": cmd_seed_lad_rows,
+        "seed-brl-rows": cmd_seed_brl_rows,
         "seed-panels": cmd_seed_panels,
         "seed-rb": cmd_seed_rb,
     }[args.cmd](args)
