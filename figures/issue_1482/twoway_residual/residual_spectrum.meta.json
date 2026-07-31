@@ -1,0 +1,3828 @@
+{
+  "commit": "db30643423",
+  "created": "2026-07-31T00:20:59Z",
+  "figsize": [
+    13.0,
+    12.4
+  ],
+  "points": [
+    {
+      "x": 1.0,
+      "Share of residual energy": 0.04823887966744981,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "Share of residual energy": 0.08635059621867984,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "Share of residual energy": 0.12437715772797482,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "Share of residual energy": 0.17436493680803347,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 16.0,
+      "Share of residual energy": 0.240472332718561,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 32.0,
+      "Share of residual energy": 0.323174331171013,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 64.0,
+      "Share of residual energy": 0.42354679070946943,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 128.0,
+      "Share of residual energy": 0.5352355073472046,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 256.0,
+      "Share of residual energy": 0.6551096541481805,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 512.0,
+      "Share of residual energy": 0.7797664229972607,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1024.0,
+      "Share of residual energy": 0.8942809538261216,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Share of residual energy": 0.0017700723277449676,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Share of residual energy": 0.003138241791443449,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "Share of residual energy": 0.005547466802386385,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "Share of residual energy": 0.009538687399730504,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "Share of residual energy": 0.016742765365907585,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 32.0,
+      "Share of residual energy": 0.030333621918268838,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 64.0,
+      "Share of residual energy": 0.055732440551680355,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 128.0,
+      "Share of residual energy": 0.10232914817829857,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 256.0,
+      "Share of residual energy": 0.1855116538631519,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 512.0,
+      "Share of residual energy": 0.32694809990155554,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1024.0,
+      "Share of residual energy": 0.5460384690311225,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Share of residual energy": 0.09229587388881101,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Share of residual energy": 0.16332636939615286,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "Share of residual energy": 0.2638593985182768,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "Share of residual energy": 0.3645834118494508,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 16.0,
+      "Share of residual energy": 0.4747665715258758,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 32.0,
+      "Share of residual energy": 0.5814386006968869,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 64.0,
+      "Share of residual energy": 0.6805729354501047,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 128.0,
+      "Share of residual energy": 0.7654619176268324,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 256.0,
+      "Share of residual energy": 0.8399038673762634,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 512.0,
+      "Share of residual energy": 0.9065446315214993,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1024.0,
+      "Share of residual energy": 0.9607097382688466,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Share of residual energy": 0.05489873029312187,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "Share of residual energy": 0.09775895595098444,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "Share of residual energy": 0.1402414147120573,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "Share of residual energy": 0.1973868535403659,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 16.0,
+      "Share of residual energy": 0.2739531366998189,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 32.0,
+      "Share of residual energy": 0.37167880217829274,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 64.0,
+      "Share of residual energy": 0.4904355822272246,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 128.0,
+      "Share of residual energy": 0.6280876841976315,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 256.0,
+      "Share of residual energy": 0.7759972107387942,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 512.0,
+      "Share of residual energy": 0.9129259333760528,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1024.0,
+      "Share of residual energy": 0.994535326855792,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "y": 0.09527559704733131,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 0.14236374402136362,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": 0.1967580254174751,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "y": 0.27173344939602007,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 16.0,
+      "y": 0.36289858534060127,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 32.0,
+      "y": 0.4637707784984824,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 64.0,
+      "y": 0.568240246837902,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 128.0,
+      "y": 0.6688070473475227,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 256.0,
+      "y": 0.7630892719811494,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 512.0,
+      "y": 0.8523204664242305,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1024.0,
+      "y": 0.9304948078285228,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 0.0012650950724760347,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.0023437736200448305,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.0043991683681899015,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "y": 0.008320104165578922,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 16.0,
+      "y": 0.015789031653080557,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 32.0,
+      "y": 0.029903985769982943,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 64.0,
+      "y": 0.05622308860915509,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 128.0,
+      "y": 0.10435502012249694,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 256.0,
+      "y": 0.18983195462905164,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 512.0,
+      "y": 0.33389507572162574,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1024.0,
+      "y": 0.5543469518752374,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 0.08999211101910064,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "y": 0.1608494991781221,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "y": 0.2609723558162023,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "y": 0.36303494327327274,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 16.0,
+      "y": 0.47330937740577345,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 32.0,
+      "y": 0.5802078024780417,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 64.0,
+      "y": 0.6798147688725278,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 128.0,
+      "y": 0.7650961385906335,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 256.0,
+      "y": 0.8399013397412203,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 512.0,
+      "y": 0.9068984521562808,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1024.0,
+      "y": 0.9610642855382897,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": 0.10662443425080495,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": 0.15786126485528887,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 0.21724704219098734,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "y": 0.298789276340994,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 16.0,
+      "y": 0.3981926490722026,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 32.0,
+      "y": 0.508864882169742,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 64.0,
+      "y": 0.6232456375260078,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 128.0,
+      "y": 0.7370918473819239,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 256.0,
+      "y": 0.8468416567546472,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 512.0,
+      "y": 0.9414433299896114,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1024.0,
+      "y": 0.9960484298775305,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 0.060201671825050776,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": 0.10730938774735177,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "y": 0.158643100350507,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 8.0,
+      "y": 0.23004540790157926,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 16.0,
+      "y": 0.3143855676885458,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 32.0,
+      "y": 0.40803902278551873,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 64.0,
+      "y": 0.5085782635773286,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 128.0,
+      "y": 0.6115859151751994,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 256.0,
+      "y": 0.7150314899192455,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 512.0,
+      "y": 0.819547670135701,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1024.0,
+      "y": 0.9140787450171501,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": 0.0014503665967741878,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "y": 0.0026334014876863627,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "y": 0.0047497606499953965,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 8.0,
+      "y": 0.008602421011050123,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 16.0,
+      "y": 0.0158315355662868,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 32.0,
+      "y": 0.02958133339594481,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 64.0,
+      "y": 0.05527469644131897,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 128.0,
+      "y": 0.10253150111672178,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 256.0,
+      "y": 0.18685271294690062,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 512.0,
+      "y": 0.3298237111473219,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1024.0,
+      "y": 0.5500049772804085,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": 0.09140437013070683,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "y": 0.1618432269057593,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "y": 0.2620884599346601,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 8.0,
+      "y": 0.3632272416491679,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 16.0,
+      "y": 0.47408895012736835,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 32.0,
+      "y": 0.5807279528195556,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 64.0,
+      "y": 0.68019035334121,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 128.0,
+      "y": 0.765218978232297,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 256.0,
+      "y": 0.8398022671152606,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 512.0,
+      "y": 0.9066681604607133,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1024.0,
+      "y": 0.9608800145725588,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "y": 0.0645092314085876,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "y": 0.1184275386171914,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "y": 0.17685698391533064,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 8.0,
+      "y": 0.2552346407815368,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 16.0,
+      "y": 0.35024196928395795,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 32.0,
+      "y": 0.45635789455227727,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 64.0,
+      "y": 0.5713052154100042,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 128.0,
+      "y": 0.6929833289490722,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 256.0,
+      "y": 0.8172183335156538,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 512.0,
+      "y": 0.9294250292805786,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1024.0,
+      "y": 0.9954201105971243,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "Share of residual energy": 0.05742257123137236,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "Share of residual energy": 0.10286205281022356,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "Share of residual energy": 0.1444916144825225,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 8.0,
+      "Share of residual energy": 0.20176756596653492,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 16.0,
+      "Share of residual energy": 0.27591715872339906,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 32.0,
+      "Share of residual energy": 0.3637139711622024,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 64.0,
+      "Share of residual energy": 0.4633265149261408,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 128.0,
+      "Share of residual energy": 0.5716049724061286,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 256.0,
+      "Share of residual energy": 0.6832049713008129,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 512.0,
+      "Share of residual energy": 0.7957644592326871,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1024.0,
+      "Share of residual energy": 0.9006022003200549,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "Share of residual energy": 0.0016788677481282372,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "Share of residual energy": 0.003045386337405956,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "Share of residual energy": 0.005635710368450955,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 8.0,
+      "Share of residual energy": 0.009856726795723133,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 16.0,
+      "Share of residual energy": 0.017365829459823862,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 32.0,
+      "Share of residual energy": 0.03128800790039196,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 64.0,
+      "Share of residual energy": 0.057010388691867725,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 128.0,
+      "Share of residual energy": 0.10403912436234364,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 256.0,
+      "Share of residual energy": 0.18786350258995244,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 512.0,
+      "Share of residual energy": 0.32992362191611635,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1024.0,
+      "Share of residual energy": 0.5490421778993703,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "Share of residual energy": 0.10243942677451083,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "Share of residual energy": 0.18274588606547768,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "Share of residual energy": 0.2970417848123336,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 8.0,
+      "Share of residual energy": 0.40704994300393366,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 16.0,
+      "Share of residual energy": 0.5248671823268668,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 32.0,
+      "Share of residual energy": 0.6365017040197638,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 64.0,
+      "Share of residual energy": 0.7329001033312554,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 128.0,
+      "Share of residual energy": 0.8135492151968644,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 256.0,
+      "Share of residual energy": 0.8779730326707832,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 512.0,
+      "Share of residual energy": 0.9302210327552585,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1024.0,
+      "Share of residual energy": 0.9708204530739568,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "Share of residual energy": 0.06702997633019969,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "Share of residual energy": 0.11911553176467611,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "Share of residual energy": 0.16492251684165585,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 8.0,
+      "Share of residual energy": 0.23092371803469391,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 16.0,
+      "Share of residual energy": 0.31773559269976187,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 32.0,
+      "Share of residual energy": 0.42083185877927154,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 64.0,
+      "Share of residual energy": 0.5383748402258909,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 128.0,
+      "Share of residual energy": 0.6699722636814337,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 256.0,
+      "Share of residual energy": 0.8068634885612863,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 512.0,
+      "Share of residual energy": 0.9303895115334828,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1024.0,
+      "Share of residual energy": 0.9979988267333574,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "y": 0.10292248672780047,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "y": 0.16556628241899923,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.0,
+      "y": 0.22853852545378814,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 8.0,
+      "y": 0.3095102780664826,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 16.0,
+      "y": 0.4101765433533625,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 32.0,
+      "y": 0.5171607303796881,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 64.0,
+      "y": 0.6232981877142307,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 128.0,
+      "y": 0.7218212313564604,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 256.0,
+      "y": 0.8079679686214126,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 512.0,
+      "y": 0.8821465087728388,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1024.0,
+      "y": 0.9445495409121892,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "y": 0.001119906438458478,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "y": 0.0021964146748233286,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.0,
+      "y": 0.004204730774378491,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 8.0,
+      "y": 0.00804444833128863,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 16.0,
+      "y": 0.015465763503827811,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 32.0,
+      "y": 0.02957280411830782,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 64.0,
+      "y": 0.05593052504972156,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 128.0,
+      "y": 0.10430017004388403,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 256.0,
+      "y": 0.190272722198096,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 512.0,
+      "y": 0.33517969046724616,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1024.0,
+      "y": 0.5563020331506,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "y": 0.10044127547036702,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "y": 0.18041867112466417,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.0,
+      "y": 0.2947797994601624,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 8.0,
+      "y": 0.40450030750866833,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 16.0,
+      "y": 0.5235835929863932,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 32.0,
+      "y": 0.6360369731265748,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 64.0,
+      "y": 0.7324778817902938,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 128.0,
+      "y": 0.8132566042886163,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 256.0,
+      "y": 0.8779039023744426,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 512.0,
+      "y": 0.9303599633547973,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1024.0,
+      "y": 0.9710571646931805,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "y": 0.11227922212554656,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "y": 0.17754350177303854,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.0,
+      "y": 0.24774755194019807,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 8.0,
+      "y": 0.3358624791511441,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 16.0,
+      "y": 0.44311210795309247,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 32.0,
+      "y": 0.5596092459944926,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 64.0,
+      "y": 0.6743425558473095,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 128.0,
+      "y": 0.7831515827998035,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 256.0,
+      "y": 0.8800496617314714,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 512.0,
+      "y": 0.9576640390775278,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1024.0,
+      "y": 0.9983399270826366,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "y": 0.07589009619934382,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "y": 0.13618776683529318,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.0,
+      "y": 0.19484280705496113,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 8.0,
+      "y": 0.2763203676126329,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 16.0,
+      "y": 0.37151738385576205,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 32.0,
+      "y": 0.4724029312848816,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 64.0,
+      "y": 0.5743319950709054,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 128.0,
+      "y": 0.6735961212448888,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 256.0,
+      "y": 0.7656375122654491,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 512.0,
+      "y": 0.8519301287343602,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1024.0,
+      "y": 0.9290249539761295,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "y": 0.0012317966360157124,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.0,
+      "y": 0.0023943752137606466,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.0,
+      "y": 0.004479580152042414,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 8.0,
+      "y": 0.008440627398124281,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 16.0,
+      "y": 0.01599574324900584,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 32.0,
+      "y": 0.03019597326834773,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 64.0,
+      "y": 0.056730924708932505,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 128.0,
+      "y": 0.10536682693426501,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 256.0,
+      "y": 0.1917380616603275,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 512.0,
+      "y": 0.3369722740628607,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1024.0,
+      "y": 0.5579787257514025,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "y": 0.10249209168410718,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.0,
+      "y": 0.18266796775539274,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.0,
+      "y": 0.2976495782785646,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 8.0,
+      "y": 0.40743020227306626,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 16.0,
+      "y": 0.526032328936488,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 32.0,
+      "y": 0.6375134151052855,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 64.0,
+      "y": 0.7335728054298962,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 128.0,
+      "y": 0.814294559512597,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 256.0,
+      "y": 0.878586846156116,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 512.0,
+      "y": 0.9307480478762972,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1024.0,
+      "y": 0.9712288264430734,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 0.09187265277162522,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.1535883145032627,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.0,
+      "y": 0.22005336270069623,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 8.0,
+      "y": 0.3057843269619692,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 16.0,
+      "y": 0.4120616703318661,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 32.0,
+      "y": 0.524500174638373,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 64.0,
+      "y": 0.6378349237486646,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 128.0,
+      "y": 0.7518855886421151,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 256.0,
+      "y": 0.8585616346966561,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 512.0,
+      "y": 0.9494177446778488,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1024.0,
+      "y": 0.9982711324227782,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "Share of residual energy": 0.054184659019577266,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.0,
+      "Share of residual energy": 0.0988042590641866,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 4.0,
+      "Share of residual energy": 0.13938854114482208,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 8.0,
+      "Share of residual energy": 0.19525426152241565,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 16.0,
+      "Share of residual energy": 0.2641201808770653,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 32.0,
+      "Share of residual energy": 0.3454093281119296,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 64.0,
+      "Share of residual energy": 0.43924720419477864,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 128.0,
+      "Share of residual energy": 0.5417513200387126,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 256.0,
+      "Share of residual energy": 0.6510754602491035,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 512.0,
+      "Share of residual energy": 0.7677143406815958,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1024.0,
+      "Share of residual energy": 0.881939131524827,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "Share of residual energy": 0.0017281336728962645,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "Share of residual energy": 0.0032640589082727797,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 4.0,
+      "Share of residual energy": 0.006166193806041519,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "Share of residual energy": 0.010862475347470877,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 16.0,
+      "Share of residual energy": 0.018823366926189782,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 32.0,
+      "Share of residual energy": 0.033237061658928445,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 64.0,
+      "Share of residual energy": 0.05960505292738392,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 128.0,
+      "Share of residual energy": 0.10748358079333041,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 256.0,
+      "Share of residual energy": 0.19219577119350859,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 512.0,
+      "Share of residual energy": 0.3349982891726544,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1024.0,
+      "Share of residual energy": 0.5538277694453632,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "Share of residual energy": 0.10288422971713922,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 2.0,
+      "Share of residual energy": 0.18258887182661473,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 4.0,
+      "Share of residual energy": 0.29649828430780567,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "Share of residual energy": 0.40708059495734744,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 16.0,
+      "Share of residual energy": 0.5248035400473242,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 32.0,
+      "Share of residual energy": 0.6371882468005307,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 64.0,
+      "Share of residual energy": 0.7334005951021139,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 128.0,
+      "Share of residual energy": 0.8141523246007308,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 256.0,
+      "Share of residual energy": 0.8784517224725894,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 512.0,
+      "Share of residual energy": 0.9306076794889485,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1024.0,
+      "Share of residual energy": 0.9710573799016992,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "Share of residual energy": 0.06287577551803449,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.0,
+      "Share of residual energy": 0.11492405995694695,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 4.0,
+      "Share of residual energy": 0.16111697639111236,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 8.0,
+      "Share of residual energy": 0.2250910773707424,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 16.0,
+      "Share of residual energy": 0.3060104612742963,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 32.0,
+      "Share of residual energy": 0.4034395989482058,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 64.0,
+      "Share of residual energy": 0.5176960229082789,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 128.0,
+      "Share of residual energy": 0.6469592174691353,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 256.0,
+      "Share of residual energy": 0.7872356332513966,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 512.0,
+      "Share of residual energy": 0.9190774232717475,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1024.0,
+      "Share of residual energy": 0.9965763142525444,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "y": 0.10522253229910766,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.0,
+      "y": 0.16723567896054045,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 4.0,
+      "y": 0.22888425227154674,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 8.0,
+      "y": 0.308683058271969,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 16.0,
+      "y": 0.40665347373318983,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 32.0,
+      "y": 0.5102195667353818,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 64.0,
+      "y": 0.6122494851093225,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 128.0,
+      "y": 0.7083672226235909,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 256.0,
+      "y": 0.7941993613885459,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 512.0,
+      "y": 0.8698575498576484,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1024.0,
+      "y": 0.9356003586439345,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.0,
+      "y": 0.0011205611017314644,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2.0,
+      "y": 0.002216949495380365,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 4.0,
+      "y": 0.0042705876383075545,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 8.0,
+      "y": 0.008182974563740111,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 16.0,
+      "y": 0.01567870037078865,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 32.0,
+      "y": 0.029945542820168747,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 64.0,
+      "y": 0.05653979643224007,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 128.0,
+      "y": 0.10519824229055004,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 256.0,
+      "y": 0.19160625361770633,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 512.0,
+      "y": 0.3369717290077499,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 1024.0,
+      "y": 0.5582712119532127,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 1.0,
+      "y": 0.1036034125871737,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 2.0,
+      "y": 0.18315233742847958,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 4.0,
+      "y": 0.2970819037241625,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 8.0,
+      "y": 0.4072510425920351,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 16.0,
+      "y": 0.5257570121407922,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 32.0,
+      "y": 0.6375965355938077,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 64.0,
+      "y": 0.7336189649127944,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 128.0,
+      "y": 0.814270131648169,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 256.0,
+      "y": 0.8785411859756613,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 512.0,
+      "y": 0.930760834461848,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 1024.0,
+      "y": 0.9712375363599212,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 1.0,
+      "y": 0.11495557292517264,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 2.0,
+      "y": 0.18163202832604455,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 4.0,
+      "y": 0.2507567567105464,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 8.0,
+      "y": 0.33693128275402695,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 16.0,
+      "y": 0.4418151339383013,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 32.0,
+      "y": 0.5542656707980126,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 64.0,
+      "y": 0.6651289308308175,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 128.0,
+      "y": 0.7721609726914445,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 256.0,
+      "y": 0.8699832357950306,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 512.0,
+      "y": 0.9509703459085666,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 1024.0,
+      "y": 0.9969323182950831,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 1.0,
+      "y": 0.0751624386487714,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 2.0,
+      "y": 0.1351307262803801,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 4.0,
+      "y": 0.19324405195778935,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 8.0,
+      "y": 0.27422592894354814,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 16.0,
+      "y": 0.36665156160321455,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 32.0,
+      "y": 0.46447981286494305,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 64.0,
+      "y": 0.5631564693493347,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 128.0,
+      "y": 0.6592714019400273,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 256.0,
+      "y": 0.7497249636312828,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 512.0,
+      "y": 0.8372587609564042,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 1024.0,
+      "y": 0.918326927057509,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 1.0,
+      "y": 0.00126527925363847,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 2.0,
+      "y": 0.0024739178650995375,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 4.0,
+      "y": 0.004620251805669897,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 8.0,
+      "y": 0.008691768627035574,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 16.0,
+      "y": 0.016434809570982024,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 32.0,
+      "y": 0.030807910296657925,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 64.0,
+      "y": 0.05753151973880291,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 128.0,
+      "y": 0.10652182104660605,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 256.0,
+      "y": 0.19348601798104018,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 512.0,
+      "y": 0.3394107869020746,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 1024.0,
+      "y": 0.5605592084890695,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 1.0,
+      "y": 0.10285873867106017,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 2.0,
+      "y": 0.184489766513815,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 4.0,
+      "y": 0.2994477551535904,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 8.0,
+      "y": 0.40949279252340737,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 16.0,
+      "y": 0.5272554341880739,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 32.0,
+      "y": 0.638907599442817,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 64.0,
+      "y": 0.7347155272826204,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 128.0,
+      "y": 0.8151166725290485,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 256.0,
+      "y": 0.8792092785304212,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 512.0,
+      "y": 0.9311890655920294,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 1024.0,
+      "y": 0.9714430497730363,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 1.0,
+      "y": 0.09147351012619288,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 2.0,
+      "y": 0.15346515019554743,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 4.0,
+      "y": 0.21909748453529782,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 8.0,
+      "y": 0.30459216550466234,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 16.0,
+      "y": 0.40828703716977016,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 32.0,
+      "y": 0.5177503907062672,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 64.0,
+      "y": 0.628768522453996,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 128.0,
+      "y": 0.7406516463168539,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 256.0,
+      "y": 0.8477756807339839,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 512.0,
+      "y": 0.9422210405543292,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 1024.0,
+      "y": 0.9969220298332974,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Top-k residual directions": 1.0,
+      "Share of residual energy": 0.05511912398396956,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Top-k residual directions": 2.0,
+      "Share of residual energy": 0.07836999508354496,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Top-k residual directions": 4.0,
+      "Share of residual energy": 0.108886034025764,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Top-k residual directions": 8.0,
+      "Share of residual energy": 0.14616640460877095,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Top-k residual directions": 16.0,
+      "Share of residual energy": 0.19272994258552853,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Top-k residual directions": 32.0,
+      "Share of residual energy": 0.2549504378416356,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Top-k residual directions": 64.0,
+      "Share of residual energy": 0.33380889808401737,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Top-k residual directions": 128.0,
+      "Share of residual energy": 0.43164815999115064,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Top-k residual directions": 256.0,
+      "Share of residual energy": 0.5527508594912931,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Top-k residual directions": 512.0,
+      "Share of residual energy": 0.692123496354592,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Top-k residual directions": 1024.0,
+      "Share of residual energy": 0.8350206911516176,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Top-k residual directions": 1.0,
+      "Share of residual energy": 0.0013082501807206305,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Top-k residual directions": 2.0,
+      "Share of residual energy": 0.002521157762848029,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Top-k residual directions": 4.0,
+      "Share of residual energy": 0.004855107256082152,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Top-k residual directions": 8.0,
+      "Share of residual energy": 0.00933365331939722,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Top-k residual directions": 16.0,
+      "Share of residual energy": 0.01769585675366187,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Top-k residual directions": 32.0,
+      "Share of residual energy": 0.03276462068061787,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Top-k residual directions": 64.0,
+      "Share of residual energy": 0.05971661461225467,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Top-k residual directions": 128.0,
+      "Share of residual energy": 0.10787573939790145,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Top-k residual directions": 256.0,
+      "Share of residual energy": 0.19260779788492907,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Top-k residual directions": 512.0,
+      "Share of residual energy": 0.3348366513252048,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Top-k residual directions": 1024.0,
+      "Share of residual energy": 0.5529929195663674,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Top-k residual directions": 1.0,
+      "Share of residual energy": 0.12546258196711496,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Top-k residual directions": 2.0,
+      "Share of residual energy": 0.17589212167401203,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Top-k residual directions": 4.0,
+      "Share of residual energy": 0.2572544001266063,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Top-k residual directions": 8.0,
+      "Share of residual energy": 0.3664217673959543,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Top-k residual directions": 16.0,
+      "Share of residual energy": 0.46825874697196035,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Top-k residual directions": 32.0,
+      "Share of residual energy": 0.5577562580231173,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Top-k residual directions": 64.0,
+      "Share of residual energy": 0.6422027284212143,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Top-k residual directions": 128.0,
+      "Share of residual energy": 0.7235664413895585,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Top-k residual directions": 256.0,
+      "Share of residual energy": 0.8030357411556759,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Top-k residual directions": 512.0,
+      "Share of residual energy": 0.8788454525660668,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Top-k residual directions": 1024.0,
+      "Share of residual energy": 0.9444023335519515,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Top-k residual directions": 1.0,
+      "Share of residual energy": 0.06039038009647725,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Top-k residual directions": 2.0,
+      "Share of residual energy": 0.08913364335743552,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Top-k residual directions": 4.0,
+      "Share of residual energy": 0.12644100870912775,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Top-k residual directions": 8.0,
+      "Share of residual energy": 0.17174055455608953,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Top-k residual directions": 16.0,
+      "Share of residual energy": 0.2291357534249937,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Top-k residual directions": 32.0,
+      "Share of residual energy": 0.30461267103676243,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Top-k residual directions": 64.0,
+      "Share of residual energy": 0.4026223553624857,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Top-k residual directions": 128.0,
+      "Share of residual energy": 0.5302318238962824,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Top-k residual directions": 256.0,
+      "Share of residual energy": 0.6878519664663107,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Top-k residual directions": 512.0,
+      "Share of residual energy": 0.8560373731104778,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Top-k residual directions": 1024.0,
+      "Share of residual energy": 0.9799608728249647,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Top-k residual directions": 1.0,
+      "y": 0.06485695500043526,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Top-k residual directions": 2.0,
+      "y": 0.10096154305969965,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Top-k residual directions": 4.0,
+      "y": 0.14638331538899457,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Top-k residual directions": 8.0,
+      "y": 0.21031021950847764,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Top-k residual directions": 16.0,
+      "y": 0.29171600240685,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Top-k residual directions": 32.0,
+      "y": 0.37890960732460777,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Top-k residual directions": 64.0,
+      "y": 0.47705430866944176,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Top-k residual directions": 128.0,
+      "y": 0.5814363644006746,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Top-k residual directions": 256.0,
+      "y": 0.6893185724223818,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Top-k residual directions": 512.0,
+      "y": 0.7957406537583406,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Top-k residual directions": 1024.0,
+      "y": 0.8942728615388819,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Top-k residual directions": 1.0,
+      "y": 0.0011349923083457678,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Top-k residual directions": 2.0,
+      "y": 0.0022433874195627577,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Top-k residual directions": 4.0,
+      "y": 0.0043656642328731305,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Top-k residual directions": 8.0,
+      "y": 0.00837690628073501,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Top-k residual directions": 16.0,
+      "y": 0.015896875470687594,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Top-k residual directions": 32.0,
+      "y": 0.030003376619961487,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Top-k residual directions": 64.0,
+      "y": 0.056284295386783055,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Top-k residual directions": 128.0,
+      "y": 0.10434201293148264,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Top-k residual directions": 256.0,
+      "y": 0.18966693993980935,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Top-k residual directions": 512.0,
+      "y": 0.33339263543869024,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Top-k residual directions": 1024.0,
+      "y": 0.5532750316203502,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Top-k residual directions": 1.0,
+      "y": 0.12682413879663335,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Top-k residual directions": 2.0,
+      "y": 0.17796873860586918,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Top-k residual directions": 4.0,
+      "y": 0.2582218829963879,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Top-k residual directions": 8.0,
+      "y": 0.3673054674760954,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Top-k residual directions": 16.0,
+      "y": 0.46920177122175466,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Top-k residual directions": 32.0,
+      "y": 0.5582550447563812,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Top-k residual directions": 64.0,
+      "y": 0.6426567690159638,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Top-k residual directions": 128.0,
+      "y": 0.7237897420100574,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Top-k residual directions": 256.0,
+      "y": 0.8032293572467427,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Top-k residual directions": 512.0,
+      "y": 0.8789136100522629,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Top-k residual directions": 1024.0,
+      "y": 0.9444962588583948,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Top-k residual directions": 1.0,
+      "y": 0.0718634416165747,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Top-k residual directions": 2.0,
+      "y": 0.11144970132749885,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Top-k residual directions": 4.0,
+      "y": 0.16352379090801045,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Top-k residual directions": 8.0,
+      "y": 0.23658141150182033,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Top-k residual directions": 16.0,
+      "y": 0.32558362066888435,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Top-k residual directions": 32.0,
+      "y": 0.4228190527028691,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Top-k residual directions": 64.0,
+      "y": 0.5324918496942347,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Top-k residual directions": 128.0,
+      "y": 0.6541338574673943,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Top-k residual directions": 256.0,
+      "y": 0.7823589159036586,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Top-k residual directions": 512.0,
+      "y": 0.9032081860541336,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Top-k residual directions": 1024.0,
+      "y": 0.986229605398449,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Top-k residual directions": 1.0,
+      "y": 0.06649084854153316,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Top-k residual directions": 2.0,
+      "y": 0.09800137246181481,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Top-k residual directions": 4.0,
+      "y": 0.14285351778768915,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Top-k residual directions": 8.0,
+      "y": 0.1945674073442485,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Top-k residual directions": 16.0,
+      "y": 0.25573701742483085,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Top-k residual directions": 32.0,
+      "y": 0.3310673369104932,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Top-k residual directions": 64.0,
+      "y": 0.4146710277224949,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Top-k residual directions": 128.0,
+      "y": 0.5105962933333161,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Top-k residual directions": 256.0,
+      "y": 0.6218606687710845,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Top-k residual directions": 512.0,
+      "y": 0.74380895852377,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Top-k residual directions": 1024.0,
+      "y": 0.8644336452210265,
+      "series": "Observed residual",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Top-k residual directions": 1.0,
+      "y": 0.0014785255331584352,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Top-k residual directions": 2.0,
+      "y": 0.002873855830538164,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Top-k residual directions": 4.0,
+      "y": 0.0054325695779219,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Top-k residual directions": 8.0,
+      "y": 0.009953381785024222,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Top-k residual directions": 16.0,
+      "y": 0.018396183649371862,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Top-k residual directions": 32.0,
+      "y": 0.03405385368990692,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Top-k residual directions": 64.0,
+      "y": 0.06267843204389151,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Top-k residual directions": 128.0,
+      "y": 0.11347268538204809,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Top-k residual directions": 256.0,
+      "y": 0.20086484468262736,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Top-k residual directions": 512.0,
+      "y": 0.34494998666713816,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Top-k residual directions": 1024.0,
+      "y": 0.5624753855717537,
+      "series": "Isotropic reference (matched row energy)",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Top-k residual directions": 1.0,
+      "y": 0.12657576898733147,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Top-k residual directions": 2.0,
+      "y": 0.1789326340456643,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Top-k residual directions": 4.0,
+      "y": 0.25888014264661935,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Top-k residual directions": 8.0,
+      "y": 0.367466045662918,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Top-k residual directions": 16.0,
+      "y": 0.4696559506654756,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Top-k residual directions": 32.0,
+      "y": 0.5591045038331234,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Top-k residual directions": 64.0,
+      "y": 0.6434842911178661,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Top-k residual directions": 128.0,
+      "y": 0.7248553583942142,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Top-k residual directions": 256.0,
+      "y": 0.8045688806679934,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Top-k residual directions": 512.0,
+      "y": 0.8802676189537267,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Top-k residual directions": 1024.0,
+      "y": 0.9453973552993373,
+      "series": "Target-covariance reference",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Top-k residual directions": 1.0,
+      "y": 0.06799458171570909,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Top-k residual directions": 2.0,
+      "y": 0.10837692559584676,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Top-k residual directions": 4.0,
+      "y": 0.16056802269235426,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Top-k residual directions": 8.0,
+      "y": 0.21919169017690196,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Top-k residual directions": 16.0,
+      "y": 0.291437583428332,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Top-k residual directions": 32.0,
+      "y": 0.37754957531236183,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Top-k residual directions": 64.0,
+      "y": 0.4773371584390062,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Top-k residual directions": 128.0,
+      "y": 0.5970389007542098,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Top-k residual directions": 256.0,
+      "y": 0.7370852207483521,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Top-k residual directions": 512.0,
+      "y": 0.8806290187367392,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Top-k residual directions": 1024.0,
+      "y": 0.9835087501489974,
+      "series": "Observed, answer-noise removed",
+      "_kind": "line",
+      "_group": 47
+    }
+  ],
+  "n_series": 48,
+  "total_points": 528,
+  "text": {
+    "suptitle": "The residual is far more concentrated than isotropic noise, and far less concentrated than the answer space it lives in",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Context layer 14 ridge",
+        "ylabel": "Share of residual energy",
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Prefix layer 14 ridge"
+      },
+      {
+        "title_left": "Bare-query layer 14 ridge"
+      },
+      {
+        "title_left": "Context layer 19 ridge",
+        "ylabel": "Share of residual energy",
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Prefix layer 19 ridge"
+      },
+      {
+        "title_left": "Bare-query layer 19 ridge"
+      },
+      {
+        "title_left": "Context layer 19 MLP",
+        "ylabel": "Share of residual energy",
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Prefix layer 19 MLP"
+      },
+      {
+        "title_left": "Bare-query layer 19 MLP"
+      },
+      {
+        "title_left": "Context layer 26 ridge",
+        "xlabel": "Top-k residual directions",
+        "ylabel": "Share of residual energy",
+        "xticklabels": [
+          "$\\mathdefault{2^{-3}}$",
+          "$\\mathdefault{2^{-1}}$",
+          "$\\mathdefault{2^{1}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{5}}$",
+          "$\\mathdefault{2^{7}}$",
+          "$\\mathdefault{2^{9}}$",
+          "$\\mathdefault{2^{11}}$",
+          "$\\mathdefault{2^{13}}$"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Prefix layer 26 ridge",
+        "xlabel": "Top-k residual directions",
+        "xticklabels": [
+          "$\\mathdefault{2^{-3}}$",
+          "$\\mathdefault{2^{-1}}$",
+          "$\\mathdefault{2^{1}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{5}}$",
+          "$\\mathdefault{2^{7}}$",
+          "$\\mathdefault{2^{9}}$",
+          "$\\mathdefault{2^{11}}$",
+          "$\\mathdefault{2^{13}}$"
+        ]
+      },
+      {
+        "title_left": "Bare-query layer 26 ridge",
+        "xlabel": "Top-k residual directions",
+        "xticklabels": [
+          "$\\mathdefault{2^{-3}}$",
+          "$\\mathdefault{2^{-1}}$",
+          "$\\mathdefault{2^{1}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{5}}$",
+          "$\\mathdefault{2^{7}}$",
+          "$\\mathdefault{2^{9}}$",
+          "$\\mathdefault{2^{11}}$",
+          "$\\mathdefault{2^{13}}$"
+        ]
+      }
+    ],
+    "series": [
+      "Observed residual",
+      "Isotropic reference (matched row energy)",
+      "Target-covariance reference",
+      "Observed, answer-noise removed"
+    ]
+  }
+}

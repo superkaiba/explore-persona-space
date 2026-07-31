@@ -1,0 +1,432 @@
+{
+  "commit": "4417c57e12",
+  "created": "2026-07-31T00:21:07Z",
+  "figsize": [
+    13.6,
+    4.2
+  ],
+  "points": [
+    {
+      "Subspace size k": 8.0,
+      "Subspace overlap between halves": 0.9478025299779864,
+      "series": "Observed (two disjoint context halves)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Subspace size k": 16.0,
+      "Subspace overlap between halves": 0.8737254525021858,
+      "series": "Observed (two disjoint context halves)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Subspace size k": 64.0,
+      "Subspace overlap between halves": 0.8409428146305873,
+      "series": "Observed (two disjoint context halves)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Subspace size k": 256.0,
+      "Subspace overlap between halves": 0.7100462477902362,
+      "series": "Observed (two disjoint context halves)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Subspace size k": 8.0,
+      "Subspace overlap between halves": 0.9523704272524128,
+      "series": "Same covariance, no further structure",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Subspace size k": 16.0,
+      "Subspace overlap between halves": 0.9152493426995342,
+      "series": "Same covariance, no further structure",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Subspace size k": 64.0,
+      "Subspace overlap between halves": 0.8603418706748043,
+      "series": "Same covariance, no further structure",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Subspace size k": 256.0,
+      "Subspace overlap between halves": 0.759086970990591,
+      "series": "Same covariance, no further structure",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Subspace size k": 8.0,
+      "Subspace overlap between halves": 0.002003707470652484,
+      "series": "Unrelated random subspaces",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Subspace size k": 16.0,
+      "Subspace overlap between halves": 0.004573517895205818,
+      "series": "Unrelated random subspaces",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Subspace size k": 64.0,
+      "Subspace overlap between halves": 0.017886594360020585,
+      "series": "Unrelated random subspaces",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Subspace size k": 256.0,
+      "Subspace overlap between halves": 0.07145813594462148,
+      "series": "Unrelated random subspaces",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Subspace size k": 8.0,
+      "y": 0.9555399190680072,
+      "series": "Observed (two disjoint context halves)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Subspace size k": 16.0,
+      "y": 0.9282314725716427,
+      "series": "Observed (two disjoint context halves)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Subspace size k": 64.0,
+      "y": 0.8610849039608991,
+      "series": "Observed (two disjoint context halves)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Subspace size k": 256.0,
+      "y": 0.723824121619947,
+      "series": "Observed (two disjoint context halves)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Subspace size k": 8.0,
+      "y": 0.9706195089946306,
+      "series": "Same covariance, no further structure",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Subspace size k": 16.0,
+      "y": 0.9435797243703631,
+      "series": "Same covariance, no further structure",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Subspace size k": 64.0,
+      "y": 0.8759725834381591,
+      "series": "Same covariance, no further structure",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Subspace size k": 256.0,
+      "y": 0.7687734927642609,
+      "series": "Same covariance, no further structure",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Subspace size k": 8.0,
+      "y": 0.0023684392141868457,
+      "series": "Unrelated random subspaces",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Subspace size k": 16.0,
+      "y": 0.004834415349503628,
+      "series": "Unrelated random subspaces",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Subspace size k": 64.0,
+      "y": 0.01818820230575668,
+      "series": "Unrelated random subspaces",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Subspace size k": 256.0,
+      "y": 0.07137284963243296,
+      "series": "Unrelated random subspaces",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Subspace size k": 8.0,
+      "y": 0.8790575339656961,
+      "series": "Observed (two disjoint context halves)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Subspace size k": 16.0,
+      "y": 0.9283706507172819,
+      "series": "Observed (two disjoint context halves)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Subspace size k": 64.0,
+      "y": 0.899452087305711,
+      "series": "Observed (two disjoint context halves)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Subspace size k": 256.0,
+      "y": 0.7885779596730003,
+      "series": "Observed (two disjoint context halves)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Subspace size k": 8.0,
+      "y": 0.9042475780811602,
+      "series": "Same covariance, no further structure",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Subspace size k": 16.0,
+      "y": 0.957721765810701,
+      "series": "Same covariance, no further structure",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Subspace size k": 64.0,
+      "y": 0.9129938405180439,
+      "series": "Same covariance, no further structure",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Subspace size k": 256.0,
+      "y": 0.8209281359488467,
+      "series": "Same covariance, no further structure",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Subspace size k": 8.0,
+      "y": 0.0024077446768716337,
+      "series": "Unrelated random subspaces",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Subspace size k": 16.0,
+      "y": 0.004229050657093485,
+      "series": "Unrelated random subspaces",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Subspace size k": 64.0,
+      "y": 0.01759875153113562,
+      "series": "Unrelated random subspaces",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Subspace size k": 256.0,
+      "y": 0.0711810130060399,
+      "series": "Unrelated random subspaces",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Subspace size k": 8.0,
+      "y": 0.9551019061244652,
+      "series": "Observed (two disjoint context halves)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Subspace size k": 16.0,
+      "y": 0.9266854595708698,
+      "series": "Observed (two disjoint context halves)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Subspace size k": 64.0,
+      "y": 0.888259917280021,
+      "series": "Observed (two disjoint context halves)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Subspace size k": 256.0,
+      "y": 0.7547638417592,
+      "series": "Observed (two disjoint context halves)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Subspace size k": 8.0,
+      "y": 0.9770416891405542,
+      "series": "Same covariance, no further structure",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Subspace size k": 16.0,
+      "y": 0.9224946933699593,
+      "series": "Same covariance, no further structure",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Subspace size k": 64.0,
+      "y": 0.9018436409645445,
+      "series": "Same covariance, no further structure",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Subspace size k": 256.0,
+      "y": 0.795641155924733,
+      "series": "Same covariance, no further structure",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Subspace size k": 8.0,
+      "y": 0.0021138079550592054,
+      "series": "Unrelated random subspaces",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Subspace size k": 16.0,
+      "y": 0.004508871391027254,
+      "series": "Unrelated random subspaces",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Subspace size k": 64.0,
+      "y": 0.018007825526438485,
+      "series": "Unrelated random subspaces",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Subspace size k": 256.0,
+      "y": 0.07130965081760175,
+      "series": "Unrelated random subspaces",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 48,
+  "text": {
+    "suptitle": "Do disjoint halves of the conversations fail in the same directions?",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Context layer 14 ridge",
+        "xlabel": "Subspace size k",
+        "ylabel": "Subspace overlap between halves",
+        "xticklabels": [
+          "$\\mathdefault{2^{1}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{4}}$",
+          "$\\mathdefault{2^{5}}$",
+          "$\\mathdefault{2^{6}}$",
+          "$\\mathdefault{2^{7}}$",
+          "$\\mathdefault{2^{8}}$",
+          "$\\mathdefault{2^{9}}$",
+          "$\\mathdefault{2^{10}}$"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Context layer 19 ridge",
+        "xlabel": "Subspace size k",
+        "xticklabels": [
+          "$\\mathdefault{2^{1}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{4}}$",
+          "$\\mathdefault{2^{5}}$",
+          "$\\mathdefault{2^{6}}$",
+          "$\\mathdefault{2^{7}}$",
+          "$\\mathdefault{2^{8}}$",
+          "$\\mathdefault{2^{9}}$",
+          "$\\mathdefault{2^{10}}$"
+        ]
+      },
+      {
+        "title_left": "Prefix layer 19 ridge",
+        "xlabel": "Subspace size k",
+        "xticklabels": [
+          "$\\mathdefault{2^{1}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{4}}$",
+          "$\\mathdefault{2^{5}}$",
+          "$\\mathdefault{2^{6}}$",
+          "$\\mathdefault{2^{7}}$",
+          "$\\mathdefault{2^{8}}$",
+          "$\\mathdefault{2^{9}}$",
+          "$\\mathdefault{2^{10}}$"
+        ]
+      },
+      {
+        "title_left": "Bare-query layer 19 ridge",
+        "xlabel": "Subspace size k",
+        "xticklabels": [
+          "$\\mathdefault{2^{1}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{4}}$",
+          "$\\mathdefault{2^{5}}$",
+          "$\\mathdefault{2^{6}}$",
+          "$\\mathdefault{2^{7}}$",
+          "$\\mathdefault{2^{8}}$",
+          "$\\mathdefault{2^{9}}$",
+          "$\\mathdefault{2^{10}}$"
+        ]
+      }
+    ],
+    "series": [
+      "Observed (two disjoint context halves)",
+      "Same covariance, no further structure",
+      "Unrelated random subspaces"
+    ]
+  }
+}
