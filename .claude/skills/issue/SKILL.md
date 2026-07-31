@@ -7458,8 +7458,11 @@ explicit eval-data path):
    `figures/issue_<N>/` outputs); Read each regenerated PNG and confirm
    non-empty axes + plotted series
    (§ Inline measurement-design + figure-sanity duties above) BEFORE
-   presenting or committing it; then commit + push to `main` so the body
-   can SHA-pin them per the existing analyzer.md Step 3 rule. Push BARE:
+   presenting or committing it; then commit (pathspec-limited —
+   `git commit -m <msg> -- <paths>`; a bare repo-root commit sweeps a
+   concurrent session's staged files, #1894 / CLAUDE.md § Concurrent
+   repo-root committers) + push to `main` so the body can SHA-pin them
+   per the existing analyzer.md Step 3 rule. Push BARE:
    `git push origin main || uv run python scripts/sync_repo_root.py` —
    never piped (Step 10d § "Bare push / merge snippets"; sync_repo_root
    exit 0 can mean in-flight — landing not guaranteed, see the canonical
