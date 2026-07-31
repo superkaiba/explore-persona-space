@@ -1,0 +1,63 @@
+{
+  "arm": "committed_replay",
+  "cell_id": "control__S_instruct_chat",
+  "committed_r2": 0.6730940896676356,
+  "control": true,
+  "d": 3584,
+  "elapsed_s": 65.38,
+  "fold_se": 0.012827730594779548,
+  "issue": 825,
+  "metadata": {
+    "git_commit": "36b53d81de79d5383041ff7b168cb16b85be1092",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T03:18:46Z"
+  },
+  "n_train_min": 4000,
+  "n_train_per_fold": [
+    4000,
+    4000,
+    4000,
+    4000,
+    4000
+  ],
+  "published_claim_ref": "banked S1@5000 unguarded L19 (issue825_trackm_settle_battery docstring / trackm_settle outputs)",
+  "r2_per_fold": [
+    0.6981846755203033,
+    0.657724167070943,
+    0.6470788379347263,
+    0.6510338834195748,
+    0.7086380838535309
+  ],
+  "r2_pooled": 0.6730940896675953,
+  "resume_key": {
+    "arm": "committed_replay",
+    "cell_id": "control__S_instruct_chat",
+    "issue": 825,
+    "selector_regime": {
+      "gcv_dof_cap": null,
+      "lambda_selection": "gcv",
+      "legacy_unguarded": true
+    },
+    "store_rev": "issue825 turnstore (battery staging)"
+  },
+  "selected_lambda_per_fold": [
+    1000.0,
+    316.22776601683796,
+    316.22776601683796,
+    316.22776601683796,
+    1000.0
+  ],
+  "selector_config": {
+    "gcv_dof_cap": null,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": true
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": false,
+    "n_train": 4000,
+    "reasons": []
+  },
+  "variant": "n_gt_d_control"
+}

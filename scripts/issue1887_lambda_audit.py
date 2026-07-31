@@ -1234,9 +1234,11 @@ def _loader_1639(stage_root, key):
 
 
 def cells_825_control(repo_root: Path, stage_root: Path, pilot: int) -> list[CellSpec]:
-    """n > d negative-control leg: #825 full-corpus S-track cells (n=4,724 >
-    d=3,584 — structurally immune per the task body); expected |delta| <= 0.05
-    vs committed on every corrected arm. PILOT-GATED."""
+    """n > d negative-control leg: #825 full-corpus S-track cells (realized
+    n=5,000 rows -> n_train_min=4,000 > d=3,584 at 5 folds; the plan's
+    "n=4,724" figure conflated the #1345 row-allowlist count — structurally
+    immune per the task body either way); expected |delta| <= 0.05 vs
+    committed on every corrected arm. PILOT-GATED."""
     import issue825_selector_audit as sa  # ALL_CELLS: (model, fmt, track, si, ti)
 
     # Banked committed reference (battery module docstring / settle outputs):
