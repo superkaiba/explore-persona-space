@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1913,
+  "highest_id": 1914,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7074,6 +7074,13 @@
       "path": "tasks/proposed/1913",
       "status": "proposed",
       "title": "workflow-fix: SLURM rsync races the live shared tree \u2014 partial sync shipped 3/4 committed entrypoints; verify post-sync or archive-snapshot the source"
+    },
+    "1914": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1914",
+      "status": "proposed",
+      "title": "daily-fix: widen body-audit condition-label regex H1c forms"
     },
     "192": {
       "goal": "Test whether one fictional medical fact, taught under a teaching-persona system prompt, transfers to ordinary-assistant and other non-teach evaluation frames.",
