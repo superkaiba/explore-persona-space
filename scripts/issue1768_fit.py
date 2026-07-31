@@ -1818,11 +1818,19 @@ def lad_own_suppression_verdict(ci_long_own: list[float]) -> str:
     return "Indeterminate"
 
 
-def phase_lad7(out_root: Path, results_dir: Path, layers, smoke: bool, arms_filter) -> None:
+def phase_lad7(
+    out_root: Path, results_dir: Path, layers, smoke: bool, arms_filter, *, force: bool = False
+) -> None:
     _phase("lad7_ladder_contrast")
+    res = _lad_results(results_dir)
+    dest = res / "map_change_ladder.json"
+    if dest.exists() and not force:
+        # skip-if-output-exists guard, matching the sibling phases' convention
+        # (concern `lad7-no-resume-guard`); `--force` recomputes deliberately.
+        logger.info("[lad7] map_change_ladder.json present — resume skip (--force to recompute)")
+        return
     arms = _lad_fit_arms(smoke, arms_filter)
     conds = _lad_conds(smoke)
-    res = _lad_results(results_dir)
     if not smoke:
         _stage_r3_contrast_inputs(out_root, results_dir, arms, layers)
     ladder = X.load_r4_ladder(out_root)
@@ -2310,6 +2318,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--worker", action="store_true", help="internal: in-process arm shard")
     ap.add_argument("--no-upload", action="store_true", help="pfx8 results-mirror upload off")
     ap.add_argument("--hf-prefix", default=None, help="upload prefix (smoke: <prefix>_smoke)")
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="recompute lad7 even when map_change_ladder.json exists (resume-guard override)",
+    )
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args(argv)
     if args.import_check:
@@ -2394,7 +2407,9 @@ def main(argv: list[str] | None = None) -> int:
                 hf_prefix=hf_prefix,
             )
         elif phase == "lad7":
-            phase_lad7(args.out_root, args.results_dir, layers, args.smoke, arms_filter)
+            phase_lad7(
+                args.out_root, args.results_dir, layers, args.smoke, arms_filter, force=args.force
+            )
         elif phase == "lad8":
             phase_lad8(
                 args.out_root,

@@ -1763,6 +1763,36 @@ def test_lad_band_specs_screens_and_selection():
     assert cap.lad_screen_reject({**base, "conversation": swapped}) == "bad_roles"
     empty = [{"role": "user", "content": "  "}, {"role": "assistant", "content": "x"}]
     assert cap.lad_screen_reject({**base, "conversation": empty}) == "empty_content"
+    # r2 content-language screen (exclusion 6, concern r-long-rung-content-
+    # language): English METADATA + Cyrillic CONTENT rejects (the r1 r_long
+    # idx-9098 class — fails pre-fix: lad_screen_reject returned None)
+    cyr = "".join(chr(c) for c in range(0x0430, 0x0450))  # Cyrillic a..ya
+    assert cap.lad_content_language_ok("Hello there friend", "I am fine, thanks!") is True
+    assert cap.lad_content_language_ok(cyr * 4, f"reply {cyr}") is False
+    assert cap.lad_content_language_ok("12 34", "!! ??") is False  # alpha==0 fail-safe
+    assert cap.lad_content_language_ok("a" * 95, cyr[:5]) is True  # ratio == 0.95 boundary
+    assert cap.lad_content_language_ok("a" * 94, cyr[:6]) is False  # 0.94 < threshold
+    cyr_conv = [
+        {"role": "user", "content": f"please translate {cyr * 8}"},
+        {"role": "assistant", "content": cyr * 8},
+    ]
+    assert cap.lad_screen_reject({**base, "conversation": cyr_conv}) == "content_language"
+    # cid-stripped content sha BINDS where the recipe sha was vacuous (Minor):
+    # identical content under different cids collides on the CONTENT sha
+    import types as _types
+
+    turns_ab = (
+        {"role": "user", "content": "same question"},
+        {"role": "assistant", "content": "same answer"},
+    )
+    shim_a = _types.SimpleNamespace(
+        context_id="cid_a", system=None, prefix_turns=turns_ab, user_wrap=None
+    )
+    shim_b = _types.SimpleNamespace(
+        context_id="cid_b", system=None, prefix_turns=turns_ab, user_wrap=None
+    )
+    assert cap._pfx_prefix_sha(shim_a) != cap._pfx_prefix_sha(shim_b)  # the vacuity
+    assert cap._lad_content_sha(shim_a) == cap._lad_content_sha(shim_b)  # the bind
     # exclusion screens 1-3 (degenerate probes)
     excl = {
         "conv_turns": (("user", "trained q"), ("assistant", "trained a")),
@@ -1835,6 +1865,7 @@ def test_lad_recheck_exclusions_tampered_ladder(tmp_path, monkeypatch):
 
     excl = {
         "trained_shas": {"pers": "TS1", "conv": "TS2", "icl": "TS3"},
+        "trained_content_shas": {"pers": "CS1", "conv": "CS2", "icl": "CS3"},
         "conv_turns": (("user", "trained q"), ("assistant", "trained a")),
         "persona_system": "PERSONA-SYS",
         "icl_demo_texts": ["ICL-DEMO"],
@@ -1865,6 +1896,126 @@ def test_lad_recheck_exclusions_tampered_ladder(tmp_path, monkeypatch):
     )
     with pytest.raises(AssertionError, match="builder exclusion violated"):
         cap._lad_recheck_exclusions(cfg, _Tok(), tampered)
+    # r2 content-language screen at the kill-d re-assert: Cyrillic content
+    # under a structurally-valid rung fails loud (the r1 r_long idx-9098 class)
+    cyr = "".join(chr(c) for c in range(0x0430, 0x0450))
+    tampered2 = json.loads(json.dumps(ladder))
+    tampered2["rungs"]["r_long"]["prefix_turns"][1]["content"] = f"otvet {cyr} {cyr}"
+    with pytest.raises(AssertionError, match="content-language screen"):
+        cap._lad_recheck_exclusions(cfg, _Tok(), tampered2)
+
+
+def test_lad_build_widen_census_parity_and_stale_screen_rebuild(tmp_path, monkeypatch):
+    """r4-r2 phase probes over the REAL `phase_lad_build` body (only the
+    stream scan / registry / Hub boundaries faked, signature-conformant):
+    (a) a shortage->widen->success SINGLE invocation keeps the belt census
+    keys in the written ladder (fails pre-fix: the widened rescan's counters
+    rebind dropped them); (b) the manifest carries the content-language
+    screen config; (c) a current-screen dest REPUBLISHES without rescanning;
+    (d) a stale-screen dest REBUILDS (regime-keyed resume); (e) a non-Latin
+    TRAINED prefix trips the construction-asymmetry STOP."""
+    import issue1768_capture as cap
+    import transformers
+
+    class _Tok:
+        def __call__(self, text, add_special_tokens=False):
+            return {"input_ids": [0] * len(text.split())}
+
+    class _AT:
+        @staticmethod
+        def from_pretrained(*a, **k):
+            return _Tok()
+
+    monkeypatch.setattr(transformers, "AutoTokenizer", _AT)
+    needle = "known query about the tides"  # >= belt floor; 'hi' below it
+    excl = {
+        "trained_shas": {"pers": "TS1", "conv": "TS2", "icl": "TS3"},
+        "trained_content_shas": {"pers": "CS1", "conv": "CS2", "icl": "CS3"},
+        "conv_turns": (
+            ("user", "a trained question of nine whitespace tokens here ok"),
+            ("assistant", " ".join(["reply"] * 31)),
+        ),
+        "persona_system": "PERSONA SYS UNIT",  # t_pers=3; t_conv=40
+        "icl_demo_texts": ["ICL-DEMO"],
+    }
+
+    def cand(idx, t, h):
+        return {
+            "index": idx,
+            "T": t,
+            "dist": 0.0,
+            "conversation_hash": h,
+            "turns": [
+                {"role": "user", "content": "fresh latin question"},
+                {"role": "assistant", "content": "novel latin reply"},
+            ],
+        }
+
+    good = {"r_short": [cand(1, 3, "A")], "r_mid": [cand(2, 11, "B")], "r_long": [cand(3, 40, "C")]}
+    calls = {"n": 0}
+
+    def fake_scan(cfg, tok, specs, excl_, sha_set, scan_cap):
+        calls["n"] += 1
+        if calls["n"] == 1:  # first 50k scan: shortage everywhere
+            return {c: [] for c in X.R4_CONDS}, {"language": 5}, scan_cap, "rev"
+        # the widened rescan REBINDS counters from the cursor (production shape)
+        return {c: list(v) for c, v in good.items()}, {"language": 9}, scan_cap, "rev"
+
+    published: dict = {}
+    monkeypatch.setattr(cap, "_lad_scan", fake_scan)
+    monkeypatch.setattr(cap, "_lad_trained_exclusion_material", lambda: excl)
+    monkeypatch.setattr(cap, "_lad_full_grain_samples", lambda cfg: (set(), ["hi", needle]))
+    monkeypatch.setattr(cap, "_lad_build_publish", lambda cfg, ladder: published.update(ladder))
+    cap.phase_lad_build(cap.Cfg(out_root=tmp_path, phases=()))
+    assert calls["n"] == 2  # shortage -> pre-registered widening fired
+    ladder = json.loads((tmp_path / "on_target_r4" / "inputs" / "prefix_ladder.json").read_text())
+    assert ladder["counters"]["belt_needles_total"] == 2  # (a) fails pre-fix
+    assert ladder["counters"]["belt_needles_below_floor_excluded"] == 1
+    scr = ladder["exclusions"]["content_language_screen"]  # (b)
+    assert scr["min_latin_ratio"] == cap.LAD_CONTENT_LATIN_MIN_RATIO
+    assert any("content-language" in s for s in ladder["exclusions"]["screens"])
+    assert ladder["scan"]["widened"] is True
+    # (c) current-screen dest -> republish WITHOUT rescanning
+    published.clear()
+    cap.phase_lad_build(cap.Cfg(out_root=tmp_path, phases=()))
+    assert calls["n"] == 2 and published["rungs"] == ladder["rungs"]
+    # (d) stale-screen dest (predates the content-language screen) -> REBUILD
+    stale_root = tmp_path / "stale"
+    stale = json.loads(json.dumps(ladder))
+    del stale["exclusions"]["content_language_screen"]
+    cap._atomic_json(stale_root / "on_target_r4" / "inputs" / "prefix_ladder.json", stale)
+    cap.phase_lad_build(cap.Cfg(out_root=stale_root, phases=()))
+    assert calls["n"] == 3  # rescan happened (regime-keyed rebuild)
+    rebuilt = json.loads(
+        (stale_root / "on_target_r4" / "inputs" / "prefix_ladder.json").read_text()
+    )
+    assert "content_language_screen" in rebuilt["exclusions"]
+    # (e) non-Latin TRAINED prefix -> construction-asymmetry STOP
+    cyr = "".join(chr(c) for c in range(0x0430, 0x0450))
+    excl_bad = {**excl, "conv_turns": (("user", cyr * 3), ("assistant", cyr))}
+    monkeypatch.setattr(cap, "_lad_trained_exclusion_material", lambda: excl_bad)
+    with pytest.raises(AssertionError, match="construction asymmetry"):
+        cap.phase_lad_build(cap.Cfg(out_root=tmp_path / "b", phases=()))
+
+
+def test_lad7_resume_guard_and_force(tmp_path, monkeypatch):
+    """Concern `lad7-no-resume-guard`: dest-exists SKIPS (even production
+    mode, BEFORE any r3 staging / ladder load); `--force` recomputes. Fails
+    pre-fix: the no-force call reached the ladder load and raised."""
+    import issue1768_fit as fit
+
+    res = fit._lad_results(tmp_path / "res")
+    res.mkdir(parents=True)
+    (res / "map_change_ladder.json").write_text("{}")
+
+    def boom(*a, **k):
+        raise RuntimeError("recompute-reached")
+
+    monkeypatch.setattr(fit, "_stage_r3_contrast_inputs", boom)
+    monkeypatch.setattr(fit.X, "load_r4_ladder", boom)
+    fit.phase_lad7(tmp_path, tmp_path / "res", (0,), False, ())  # guard skip: no raise
+    with pytest.raises(RuntimeError, match="recompute-reached"):
+        fit.phase_lad7(tmp_path, tmp_path / "res", (0,), True, (), force=True)
 
 
 def test_lad_unit_sets_pending_and_smoke_coverage(tmp_path):
@@ -2071,7 +2222,20 @@ def test_lad4_resume_skip_and_recount(tmp_path, monkeypatch):
     store = tmp_path / "on_target_r4" / "corpus_capture" / "base_content@r_long"
     store.mkdir(parents=True)
     (store / "pooled.pt").write_bytes(b"x")
+    # r4-r2 Minor: the exact-set verify covers EVERY per-unit artifact file,
+    # not pooled.pt alone (rollout shards + spans + manifest ride the same
+    # folder commit and are now in the verified set)
+    (store / "raw_rows_0000.jsonl").write_text("{}\n")
+    (store / "rows_spans.json").write_text("{}")
+    (store / "manifest.json").write_text("{}")
+    exp = cap._lad_expected_uploads(cfg)
+    assert [p.rsplit("/", 1)[1] for p in exp] == [
+        "pooled.pt",
+        "raw_rows_0000.jsonl",
+        "rows_spans.json",
+        "manifest.json",
+    ]
     cap.phase_lad4(cfg)
     assert calls == list(cap.LAD_UPLOAD_TREES)
     done = json.loads((tmp_path / "on_target_r4" / "upload_done.json").read_text())
-    assert done["n_verified"] == 1
+    assert done["n_verified"] == 4
