@@ -27,6 +27,7 @@ Subcommands::
                                                      [--no-scratch-fallback]
                                                      [--no-src-shadow] [--json]
     uv run python scripts/step9c_baseline.py tmproot
+    uv run python scripts/step9c_baseline.py probe   (--pattern REGEX | --issue N)
 
 Exit codes (pinned by ``tests/test_step9c_baseline.py``):
 
@@ -59,7 +60,25 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
              a misconfigured explicit ``EPM_STEP9C_TMPDIR`` override (#1408)
 ``tmproot``
   0          always — prints the resolved gate temp-write root, or nothing
+``probe``
+  0          CLEAR — no live FOREIGN ``/proc/*/cmdline`` match (safe to launch)
+  3          >=1 live foreign match (one ``pid<TAB>args`` line per match on stdout)
+  2          usage error (argparse: neither/both of ``--pattern``/``--issue``) / bad regex
 ===========  ==========================================================================
+
+``probe`` (#1821) is the gate single-flight liveness check with MECHANICAL
+self- + ancestor-pid exclusion (``/proc/<pid>/status`` PPid walk to pid 1; a
+walk failure shrinks the exclusion set — fail toward a loud false LIVE, never
+a silent skip). It replaces the remembered "separate FOREGROUND call +
+bracketed pgrep" placement rule at the SKILL.md ``Single-flight probe
+(#1606)`` sites: the bracket idiom shields only the PATTERN text and is
+defeated whenever the enclosing call's argv carries the real unbracketed
+artifact path (#1742; 2026-07-26 session ``2b779905``). Exit semantics are
+deliberately INVERTED vs pgrep (0 = clear) so ``probe && launch`` composes;
+until-loop compositions use the fixed-regex ``--issue`` form only (an exit-2
+bad-regex inside an until-loop would otherwise wait forever). NO other
+exclusion classes: a transient concurrent foreign ``--pattern`` probe reads as
+a loud, self-resolving false LIVE — the fail-safe direction.
 
 Safety invariants (plan #1022 v3 R1-R7): the refresh NEVER runs ``pytest tests/``
 wholesale (only the predictable Step 9c workflow-invariant universe — 61 files
@@ -134,6 +153,7 @@ import getpass
 import importlib.util
 import json
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -1942,6 +1962,100 @@ def cmd_tmproot(args: argparse.Namespace) -> int:
     return 0
 
 
+# --- probe -----------------------------------------------------------------------
+
+
+def _ancestor_pids() -> set[int]:
+    """Return this process's pid plus its full ancestor chain (PPid walk to pid 1).
+
+    Walks ``/proc/<pid>/status`` ``PPid:`` rows from ``os.getpid()`` upward. ANY
+    read/parse failure stops the walk — failing toward a SMALLER exclusion set
+    (a missed exclusion surfaces as a loud false LIVE at the probe, never a
+    silently skipped foreign match). Linux-only, like the probe itself.
+    """
+    pids: set[int] = set()
+    pid = os.getpid()
+    while pid >= 1 and pid not in pids:
+        pids.add(pid)
+        if pid == 1:
+            break
+        try:
+            status = Path(f"/proc/{pid}/status").read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            break
+        ppid: int | None = None
+        for line in status.splitlines():
+            if line.startswith("PPid:"):
+                try:
+                    ppid = int(line.split(":", 1)[1].strip())
+                except ValueError:
+                    ppid = None
+                break
+        if ppid is None or ppid < 1:
+            break
+        pid = ppid
+    return pids
+
+
+def _probe_matches(pattern: re.Pattern[str]) -> list[tuple[int, str]]:
+    """Scan ``/proc/*/cmdline`` for live FOREIGN processes matching ``pattern``.
+
+    Excludes exactly the prober's own pid + full ancestor chain (AC-1 of plan
+    #1821 — NO other exclusion classes: a concurrent foreign probe reads as a
+    loud, self-resolving false LIVE, the fail-safe direction). Empty cmdlines
+    (kernel threads / zombies) are skipped; ENOENT/permission races mid-scan
+    are tolerated. Returns ``(pid, space-joined argv)`` per match, pid-sorted.
+    """
+    excluded = _ancestor_pids()
+    matches: list[tuple[int, str]] = []
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit():
+            continue
+        pid = int(entry.name)
+        if pid in excluded:
+            continue
+        try:
+            raw = (entry / "cmdline").read_bytes()
+        except OSError:
+            continue  # ENOENT race (process exited mid-scan) / permission
+        if not raw:
+            continue  # kernel thread or zombie: empty cmdline
+        argv_text = raw.replace(b"\x00", b" ").decode("utf-8", errors="replace").strip()
+        if pattern.search(argv_text):
+            matches.append((pid, argv_text))
+    return sorted(matches)
+
+
+def cmd_probe(args: argparse.Namespace) -> int:
+    """Gate single-flight liveness probe with mechanical self-/ancestor-pid exclusion (#1821).
+
+    Replaces the remembered probe-placement rule (a separate FOREGROUND
+    ``pgrep`` call + bracket idiom) that #1742 re-hit: the bracket shields only
+    the PATTERN text and cannot help when the enclosing call's argv carries the
+    real unbracketed artifact path (the documented #1606 trap). Exit semantics
+    are DELIBERATELY inverted vs pgrep (0 = clear) so ``probe && launch``
+    composes naturally: 0 = CLEAR (no foreign match — safe to launch); 3 = >=1
+    live foreign match (one ``pid<TAB>args`` line each on stdout); 2 = bad
+    regex (argparse itself exits 2 on --pattern/--issue misuse). ``--issue N``
+    derives ``step9c-junit-issue-<N>\\.xml`` internally so the probe's own argv
+    never carries the junit filename; until-loops use the ``--issue`` form ONLY
+    (fixed, valid regex — an exit-2 inside an until-loop would wait forever).
+    """
+    if args.issue is not None:
+        pattern_text = rf"step9c-junit-issue-{args.issue}\.xml"
+    else:
+        pattern_text = args.pattern
+    try:
+        pattern = re.compile(pattern_text)
+    except re.error as exc:
+        _log(f"probe: bad regex {pattern_text!r}: {exc}")
+        return 2
+    matches = _probe_matches(pattern)
+    for pid, argv_text in matches:
+        print(f"{pid}\t{argv_text}")
+    return 3 if matches else 0
+
+
 # --- CLI -------------------------------------------------------------------------
 
 
@@ -2024,6 +2138,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the resolved gate temp-write root (empty = no routing); always exit 0",
     )
     p_tmproot.set_defaults(func=cmd_tmproot)
+
+    p_probe = sub.add_parser(
+        "probe",
+        help="single-flight liveness probe (self-/ancestor-pid excluding): "
+        "0 = clear / 3 = live foreign match / 2 = bad regex",
+    )
+    probe_target = p_probe.add_mutually_exclusive_group(required=True)
+    probe_target.add_argument(
+        "--pattern",
+        help="extended regex matched (re.search) against space-joined /proc/<pid>/cmdline",
+    )
+    probe_target.add_argument(
+        "--issue",
+        type=int,
+        help=r"derive the Step 9c gate pattern step9c-junit-issue-<N>\.xml internally "
+        "(the probe's own argv never carries the junit filename)",
+    )
+    p_probe.set_defaults(func=cmd_probe)
     return parser
 
 
