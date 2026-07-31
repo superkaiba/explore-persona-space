@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1940,
+  "highest_id": 1941,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7285,6 +7285,13 @@
       "path": "tasks/proposed/1940",
       "status": "proposed",
       "title": "workflow-fix: figure-sidecar opaque-code check misses bare P/M candidate codes"
+    },
+    "1941": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1941",
+      "status": "proposed",
+      "title": "functional_role axis: kappa 0.318 reproduces at both scales \u2014 the only axis with no contrastive evidence"
     },
     "195": {
       "has_clean_result": false,
