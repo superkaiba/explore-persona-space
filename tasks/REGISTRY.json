@@ -6971,8 +6971,8 @@
       "goal": "On the model-organism fleet at per-prompt grain (the #1768 16,400-real-user-prompt corpus), determine which per-context predictor computable BEFORE fine-tuning best predicts per-context leakage of the trained behavior (graded judge DV for content arms; three-space log P(marker) for marker arms), whether base behavioral propensity survives as the champion, and whether context-vector similarity's predictive power is mediated by answer-side similarity; post-FT and delta candidates form a separate mechanistic panel, and every similarity candidate is computed against both the training-context-centroid and panel-source-context anchors.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/1900",
-      "status": "planning",
+      "path": "tasks/approved/1900",
+      "status": "approved",
       "title": "Leakage-predictor horse race at per-prompt grain: pre-FT geometry vs base propensity, with answer-side mediation test"
     },
     "1901": {
