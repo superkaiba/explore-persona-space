@@ -17,6 +17,8 @@ goal: 'Does the context→answer map predict the same structure the SAE represen
   its dictionary reconstructs). This task asks whether they coincide, and whether
   targeting the SAE''s reconstruction instead of the raw activation changes what the
   map can do.'
+relates_to:
+- spec-context-as-vector
 ---
 ## Goal
 
