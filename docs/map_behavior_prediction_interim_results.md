@@ -199,8 +199,9 @@ Three further limitations of this round:
   conditions, so they contribute zero contrast by construction and dilute the pooled ρ. It follows
   that sycophancy's pooled **+0.078** bare-over-full advantage must originate *entirely* in the
   multi-turn rows, the only rows whose input changed at all. (Rank correlation over a pooled set is
-  not additive across subsets, so the multi-turn-only effect is larger than +0.078 — but not simply
-  double it.) The clean read would be the multi-turn subset alone, but this round persisted no
+  not additive across subsets, so the dilution argument gives the *direction* — the multi-turn-only
+  effect should exceed +0.078 — without pinning the factor; it is not simply double.) The clean
+  read would be the multi-turn subset alone, but this round persisted no
   per-context predictions: each `percell/bareq_leg1_transfer.jsonl` holds two aggregate records
   (coverage, null probe, the same six arm rows as the summary) and there is no `preds/` directory,
   unlike the main lane. Recovering the split needs a re-score, not a re-analysis.
