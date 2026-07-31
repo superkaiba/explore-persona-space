@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1909,
+  "highest_id": 1910,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7046,6 +7046,13 @@
       "path": "tasks/archived/191",
       "status": "archived",
       "title": "What does EM do to the assistant persona vector? And any persona vector in general"
+    },
+    "1910": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1910",
+      "status": "proposed",
+      "title": "workflow-fix: fact-checker verifies realized grain of row-grain reuse rows"
     },
     "192": {
       "goal": "Test whether one fictional medical fact, taught under a teaching-persona system prompt, transfers to ordinary-assistant and other non-teach evaluation frames.",
