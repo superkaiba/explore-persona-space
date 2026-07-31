@@ -6736,8 +6736,10 @@ orchestrator launches DIRECTLY as bg-Bash (a Phase-D-style fit, an
 aggregation / permutation battery) MUST be launched fully detached:
 
     PHASE_PID=$(bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
-    ps -p "$PHASE_PID" -o args=   # verify the pid is the workload; on mismatch
-                                  # recover via pgrep -f '<distinctive invocatio[n]>'
+    ps -p "$PHASE_PID" -o args=   # verify the pid is the workload; on mismatch recover via a
+                                  # BRACKETED pattern probe — pgrep -f '<distinctive invocatio[n]>'
+                                  # (bracket ONE char: an unbracketed pattern matches this probe's
+                                  # OWN argv — gotchas.md ownership-probe entry)
     bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PHASE_PID" >/dev/null \
       || echo "[warn] choom failed or swept nothing — phase is earlyoom-UNPROTECTED (record choom=failed)"
 
@@ -6761,6 +6763,17 @@ log path space-free; #833's own breadcrumbs already carried a RELATIVE `log=`
 genuinely new #833 field, and `harvest=` is the § Harvest contract's declared
 results location, new with #1656), and the `external-markers triaged:` line
 (§ Pre-dispatch external-marker triage above).
+
+**Probe-bracket rule (#1482).** Every pattern-based liveness / ownership / kill
+probe against a detached phase — `pgrep -f` / `pkill -f`, local or over SSH —
+uses the bracket idiom (`patter[n]`: bracket ONE character so the pattern can
+never match the probe's own command line). An ALIVE read from an UNBRACKETED
+pattern probe is UNVERIFIED evidence — never heartbeat evidence, and never a
+reason to skip the failure path (#1482: two unbracketed pgrep probes
+self-matched their own wrapper and read ALIVE, hiding an earlyoom kill for
+~50 min before the leg was re-dispatched to GCP). The full recipe — bracket +
+self-exclusion filter / per-pid iteration + the separate-Bash-call rule — is
+owned by the `.claude/rules/gotchas.md` ownership-probe entry.
 
 **Harvest contract (declared AT LAUNCH — a closed session never strands finished
 results; #1310, #1656).** Detachment protects the RUN; this clause protects the
@@ -6814,17 +6827,34 @@ the leader AND any already-forked child; children forked later inherit
 every default-adj neighbor while staying killable — NOT `-1000`, which earlyoom
 and the kernel OOM killer skip entirely, so a genuinely runaway fit must still
 die first. Lowering adj needs CAP_SYS_RESOURCE, hence `sudo -n` (passwordless
-on the VM); on failure the launch PROCEEDS unprotected with the `[warn]` +
+on the VM). **On a failed sweep: ONE bounded retry → record the final state →
+route-or-proceed — a deterministic chain, never a wedge.** When the sweep fails
+(or swept nothing), RE-RUN it ONCE — when the workload's real python3 child
+appears OR after ≤ ~30-60 s, whichever comes FIRST (#1315 observed the gap
+live: choom on the launch pids did not stick to the python3 child `uv run`
+spawned moments later — a child forked before its parent's adjustment lands
+inherits nothing, and the one-shot sweep never revisits; this bounded retry IS
+that re-run, now the default rather than an option). A phase with no such
+child (a pure-bash stage, or the workload died pre-fork) skips the wait:
+record `choom=failed` and proceed straight to the disposition below. Record
+the FINAL post-retry state as `choom=ok|failed` — `choom=ok` ONLY when a sweep
+run's pipeline itself exited zero (original or retry); anything else records
+`choom=failed` (token vocabulary unchanged). Disposition on post-retry
+`choom=failed`: a phase with projected peak RSS ≥ ~16 GiB (already past the
+compute-character element-4 off-VM threshold, so a VM launch of one is doubly
+exposed) DEFAULTS to routing the phase OFF the shared VM — `cpu-mid` /
+`cpu-bigmem` by footprint, CLAUDE.md § CPU-only phases — instead of silently
+proceeding unprotected; proceeding VM-local anyway requires a one-line stated
+reason in the breadcrumb note (prose beside the token). Phases below ~16 GiB
+keep the existing default: the launch PROCEEDS unprotected with the `[warn]` +
 `choom=failed` breadcrumb token — never block a launch on choom, and never read
 the sweep as guaranteed protection (it re-orders earlyoom's victim selection;
-it does not exempt the phase). (#1315 observed the gap live: choom on the
-launch pids did not stick to the python3 child `uv run` spawned moments later —
-a child forked before its parent's adjustment lands inherits nothing, and the
-one-shot sweep never revisits; optionally re-run the sweep once the workload's
-real python3 pid appears. choom stays best-effort — MALLOC_ARENA_MAX=2 in the
-launch prefix is the real fix for the arena-fragmentation memory class.)
-Record `choom=ok` ONLY when the sweep pipeline
-itself exited zero; anything else records `choom=failed`. The −600 derivation
+it does not exempt the phase). The ≥ ~16 GiB case is a ROUTING decision (route
+or justify), never a blocking gate — no step in the fail → retry → final-state
+→ route-or-justify chain may wait indefinitely. choom stays best-effort —
+MALLOC_ARENA_MAX=2 in the
+launch prefix is the real fix for the arena-fragmentation memory class.
+The −600 derivation
 assumes this VM's current `--prefer` +300 python bonus (`/etc/default/earlyoom`);
 re-derive from the decomposition above if that config changes.
 **Collateral-kill signature + second-kill pod pivot.** Phase dead rc=143
@@ -6871,7 +6901,11 @@ current stage+round's most recent breadcrumb carries `pid=`, probe
 `ps -p <pid> -o args=` BEFORE any re-dispatch decision — the SAME identity
 verify as at launch, never a bare liveness check (on a shared VM a recycled
 pid would otherwise "re-attach" to a stranger and suppress the needed
-relaunch). Alive AND args match the distinctive invocation → the phase is IN
+relaunch). A pattern-based FALLBACK probe (pid absent / recycled — `pgrep -f`
+against the distinctive invocation) uses the bracket idiom per the
+§ Probe-bracket rule above; an ALIVE read from an UNBRACKETED pattern probe is
+UNVERIFIED evidence and never suppresses the relaunch path. Alive AND args
+match the distinctive invocation → the phase is IN
 FLIGHT regardless of breadcrumb age (a detached multi-hour phase posts no
 markers while computing): RE-ATTACH — poll the pid, `tail` the breadcrumb's
 `log=` for real progress (alive ≠ progressing; the log is the progress
