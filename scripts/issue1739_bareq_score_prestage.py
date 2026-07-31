@@ -52,9 +52,23 @@ def _stage(prefix: str, dest: Path, mirror_root: Path) -> None:
     print(f"[bareq-prestage] {prefix} -> {dest}", flush=True)
 
 
+MANIFEST_HF = "issue1739_ctxmap/bareq_map/manifests/bareq_queries.json"
+MANIFEST_DEST = Path("eval_results/issue_1739/bareq_map/bareq_queries.json")
+
+
 def main() -> int:
     _stage(ARM_PREFIX, ARM_DEST, STORE_ROOT / "_armmirror")
     _stage(BQ_PREFIX, BQ_DEST, STORE_ROOT / "_bqmirror")
+    # leg 2's query bank (produced by the capture box's extract phase, uploaded
+    # under manifests/) — the scorer requires it at its out_root
+    # (att-20260731-161235 failed evil/leg2 on exactly this).
+    if not MANIFEST_DEST.is_file():
+        hub.stage_hub_file(
+            hub.DEFAULT_DATASET_REPO, MANIFEST_HF, MANIFEST_DEST, repo_type="dataset"
+        )
+        print(f"[bareq-prestage] {MANIFEST_HF} -> {MANIFEST_DEST}", flush=True)
+    else:
+        print(f"[bareq-prestage] present, skip: {MANIFEST_DEST}", flush=True)
     return 0
 
 
