@@ -288,6 +288,75 @@ def _verify_keys_subprocess(path: Path, keys: tuple[str, ...]) -> None:
     logger.info("[stage] realized-keys PASS (%s): %s", path.name, proc.stdout.strip()[-200:])
 
 
+def _adapter_dir(cfg: Cfg, entry: dict) -> Path:
+    """Consumer-side adapter dir under the staged VERBATIM prefix mirror.
+
+    ``hub.stage_hub_prefix(repo, subfolder, dest)`` lands files at
+    ``dest/<repo-relative path>`` (verbatim mirror), so the staged
+    ``adapter_config.json`` lives at ``dest/<adapter_subfolder>/`` — never at
+    ``dest/`` itself (the #928/#1481 staged-layout class; r1 Critical 1).
+    """
+    return cfg.stage_root / "adapters" / entry["arm_id"] / entry["adapter_subfolder"]
+
+
+def _ft_dir(cfg: Cfg, entry: dict) -> Path:
+    """Consumer-side full-FT checkpoint dir (same verbatim-mirror arithmetic)."""
+    return cfg.stage_root / "ft_ckpt" / entry["arm_id"] / entry["ft_subfolder"]
+
+
+def run_stage_probe(cfg: Cfg) -> dict:
+    """(h)(iv) 1-file staging probe + consumer-open (CPU-runnable, pre-dispatch).
+
+    One probe per (source-family x staged consumer) pair: stages ONLY the
+    KB-scale config file of one LoRA arm and of the marker-FT arm at the EXACT
+    verbatim-mirror layout production staging produces (``stage_hub_prefix``
+    lands files at ``dest/<repo-relative path>``), then runs each consumer's
+    own FIRST open against the staged tree — ``ModelPool.adapter``'s
+    adapter_config.json read + gauge assert, and ``AutoConfig.from_pretrained``
+    on the FT dir (``full_checkpoint``'s config resolution). Fails loud BEFORE
+    the ~45-50 GB production staging / any model load (#928/#1481; artifact-
+    reuse (h)(iv)). Runs standalone via ``--stage-probe`` (VM pre-dispatch CPU
+    leg) AND at the top of every main-flow run.
+    """
+    from transformers import AutoConfig
+
+    from explore_persona_space.eval.marker_logprob import assert_gauge_free_adapter_config
+    from explore_persona_space.orchestrate import hub
+
+    _phase("stage_probe")
+    _, arms_payload = load_run_config(cfg)
+    by_id = {a["arm_id"]: a for a in arms_payload["arms"]}
+    lora = by_id[SMOKE_ARMS[1]]  # marker LoRA smoke arm
+    ft = by_id["mk-pers-ft-con-s42"]  # the ONE model-loaded FT arm (P1a)
+    # 1-file stages expressed as dest/<repo-relative path> — the exact
+    # `stage_hub_prefix` mirror arithmetic (`dest_dir / f`, hub.py).
+    a_dest = cfg.stage_root / "adapters" / lora["arm_id"]
+    a_rel = f"{lora['adapter_subfolder']}/adapter_config.json"
+    hub.stage_hub_file(lora["adapter_repo"], a_rel, a_dest / a_rel, repo_type="model")
+    f_dest = cfg.stage_root / "ft_ckpt" / ft["arm_id"]
+    f_rel = f"{ft['ft_subfolder']}/config.json"
+    hub.stage_hub_file(ft["ft_repo"], f_rel, f_dest / f_rel, repo_type="model")
+    # consumer-side opens (the consumers' own path arithmetic — the seam under test)
+    acfg = json.loads((_adapter_dir(cfg, lora) / "adapter_config.json").read_text())
+    assert_gauge_free_adapter_config(acfg, context=str(_adapter_dir(cfg, lora)))
+    ft_cfg = AutoConfig.from_pretrained(str(_ft_dir(cfg, ft)))
+    rec = {
+        "lora_arm": lora["arm_id"],
+        "adapter_config_open": str(_adapter_dir(cfg, lora) / "adapter_config.json"),
+        "ft_arm": ft["arm_id"],
+        "ft_config_open": str(_ft_dir(cfg, ft) / "config.json"),
+        "ft_config_model_type": str(ft_cfg.model_type),
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "git_commit": _git_commit(),
+    }
+    print(
+        "[stage-probe] PASS "
+        + json.dumps({k: rec[k] for k in ("lora_arm", "ft_arm", "ft_config_model_type")}),
+        flush=True,
+    )
+    return rec
+
+
 def phase_stage(cfg: Cfg, subset: list[str], arms_payload: dict) -> None:
     """Stage every P1 input (per-file scoped downloads @ pin; never snapshot)."""
     from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
@@ -322,16 +391,28 @@ def phase_stage(cfg: Cfg, subset: list[str], arms_payload: dict) -> None:
     # delta_tf tbar per distinct mix (pos files staged lazily by _mix_positive_rows)
     for mix in sorted({a["mix_arm_id"] for a in entries}):
         _stage_prefix(cfg, f"{X.HF_PREFIX}/delta_tf/{mix}/tbar.pt", revision=CORPUS_PIN)
-    # adapters (14 LoRA arms) + the marker FT checkpoint (overflow repo)
+    # adapters (14 LoRA arms) + the marker FT checkpoint (overflow repo).
+    # stage_hub_prefix is a VERBATIM prefix mirror (files land at
+    # dest/<repo-relative path>), so consumers open dest/<subfolder> via
+    # _adapter_dir/_ft_dir — asserted per staged arm HERE, at stage time,
+    # BEFORE any model load (artifact-reuse (h)(iv); #928/#1481 class).
     from explore_persona_space.orchestrate import hub
 
     for a in entries:
         if a["method"] == "lora":
             dest = cfg.stage_root / "adapters" / a["arm_id"]
             hub.stage_hub_prefix(a["adapter_repo"], a["adapter_subfolder"], dest, repo_type="model")
+            probe = _adapter_dir(cfg, a) / "adapter_config.json"
         elif a["kind"] == "marker":  # mk-pers-ft-con-s42 full checkpoint
             dest = cfg.stage_root / "ft_ckpt" / a["arm_id"]
             hub.stage_hub_prefix(a["ft_repo"], a["ft_subfolder"], dest, repo_type="model")
+            probe = _ft_dir(cfg, a) / "config.json"
+        else:  # content FT arms: consumed via banked stores only (no model load)
+            continue
+        assert probe.exists(), (
+            f"staged-layout consumer-open FAIL for {a['arm_id']}: {probe} missing after "
+            "staging — consumer dir != verbatim-mirror layout ((h)(iv); #928/#1481)"
+        )
     # realized-keys verification: one mechanized run per family + in-process sweep
     base_pooled = root / "corpus_capture" / "base_content" / "pooled.pt"
     _verify_keys_subprocess(base_pooled, ("arms", "row_sha", "row_question_idx"))
@@ -432,10 +513,10 @@ class ModelPool:
         if entry is None:
             yield self.base()
         elif entry["method"] == "lora":
-            with self.adapter(cfg.stage_root / "adapters" / entry["arm_id"]) as m:
+            with self.adapter(_adapter_dir(cfg, entry)) as m:
                 yield m
         else:
-            with self.full_checkpoint(cfg.stage_root / "ft_ckpt" / entry["arm_id"]) as m:
+            with self.full_checkpoint(_ft_dir(cfg, entry)) as m:
                 yield m
 
 
@@ -742,6 +823,73 @@ def run_p1a_adapter_smoke(cfg: Cfg, pool: ModelPool, arms_by_id: dict) -> dict:
         med_abs_dz,
     )
     return gate
+
+
+def run_mirror_parity(cfg: Cfg, pool: ModelPool, arms_by_id: dict) -> dict:
+    """Smoke-only numeric-parity gate: in-code mirrors vs their originals (r2, Minor 6).
+
+    (a) `_span_means_loaded` (loaded-model mirror) vs the plan-named
+        `analysis.representation_shift._teacher_forced_span_means` (path-loading
+        helper) on ONE batch of 8 real mix rows, base model both sides:
+        per-(span, layer) cosine of the mean vectors >= 0.999 (same weights,
+        same rows, same right-pad batching — a real mirror bug craters this).
+    (b) `_slot_stats_from_ids` batched left-pad read vs a batch=1 no-pad read
+        of the SAME id lists: |delta| <= 0.25 per four-float field (bf16
+        batch-composition jitter budget), measured max reported. The original
+        `compute_marker_slot_stats` re-tokenizes STRINGS, which the BPE-seam
+        rule forbids on id-carrying rows (the documented reason the mirror
+        exists), so text-vs-id parity is deliberately NOT asserted — the seam
+        under test is the mirror's own batching arithmetic.
+    """
+    from explore_persona_space.analysis.representation_shift import _teacher_forced_span_means
+
+    _phase("p1_mirror_parity")
+    out = cfg.out_root / "marker_tf" / "mirror_parity.json"
+    if out.exists():
+        return json.loads(out.read_text())
+    entry = next(a for a in arms_by_id.values() if a["kind"] == "content")
+    rows, _mm = _mix_rows(cfg, entry["mix_arm_id"])
+    rows = rows[:8]
+    mirror = _span_means_loaded(
+        pool.base(), pool.tokenizer(), rows, list(cfg.layers), ("context", "response"), cfg.tf_batch
+    )
+    helper = _teacher_forced_span_means(
+        X.BASE_MODEL,
+        rows,
+        [entry["mix_arm_id"]],
+        layers=list(cfg.layers),
+        spans=("context", "response"),
+        device=_device(),
+        dtype=_dtype(),
+        tf_batch_size=cfg.tf_batch,
+    )
+    span_stats = {}
+    for span in ("context", "response"):
+        for li in cfg.layers:
+            a = mirror[span][li].mean(dim=0).numpy()
+            b = helper[span][li].mean(dim=0).numpy()
+            cos = float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-12))
+            span_stats[f"{span}_L{li}"] = {
+                "cos": cos,
+                "max_abs_diff": float(np.max(np.abs(a - b))),
+            }
+            assert cos >= 0.999, (span, li, cos, "span-means mirror diverged from helper")
+    del helper, mirror
+    _cuda_gc()
+    mk = next(a for a in arms_by_id.values() if a["kind"] == "marker")
+    ids_lists = [_slot_ids(r) for r in list(_read_raw_rows(cfg, mk["arm_id"]).values())[:8]]
+    batched = _slot_stats_from_ids(pool.base(), ids_lists, batch_size=8)
+    serial = [_slot_stats_from_ids(pool.base(), [ids], batch_size=1)[0] for ids in ids_lists]
+    slot_max = {
+        k: max(abs(fb[k] - fs[k]) for fb, fs in zip(batched, serial))
+        for k in ("logp", "z_marker", "z_eos", "logZ")
+    }
+    for k, v in slot_max.items():
+        assert v <= 0.25, (k, v, "batched-vs-serial slot-stats drift over bf16 budget")
+    rec = {"span_means": span_stats, "slot_stats_max_abs_diff": slot_max, **_meta()}
+    _atomic_json(out, rec)
+    logger.info("[mirror-parity] PASS: %s", json.dumps(slot_max))
+    return rec
 
 
 # ── P1b: anchors (base per mix; post per LoRA arm) ───────────────────────────
@@ -1245,6 +1393,14 @@ def run_p1e_table(
     for k in P9_KS:
         kk = min(k, sims.shape[1])
         df[f"p9_k{k}"] = sims_sorted[:, :kk].mean(axis=1)
+    # P9 split-half companions (k=16 primary): mix-row halves under the SAME
+    # even/odd convention as the anchor halves (rows_ctx row order == ctx) —
+    # persists the P9 reliability-ceiling inputs the plan §6 robustness
+    # line (2) needs (concern p9-reliability-ceiling-not-persisted, r2).
+    for h, sl in (("even", slice(0, None, 2)), ("odd", slice(1, None, 2))):
+        sims_h = np.sort(sims[:, sl], axis=1)[:, ::-1]
+        kk16 = min(16, sims_h.shape[1])
+        df[f"p9_k16_{h}"] = sims_h[:, :kk16].mean(axis=1)
     # mechanistic panel
     post = _load_map_payload_post(cfg, arm_id) if entry["method"] == "lora" else None
     if post is not None:
@@ -1607,7 +1763,7 @@ def _run_import_check() -> None:
     import pandas  # noqa: F401
     import torch  # noqa: F401
     from peft import PeftModel  # noqa: F401
-    from transformers import AutoModelForCausalLM, AutoTokenizer  # noqa: F401
+    from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer  # noqa: F401
 
     import issue1768_capture as C
     import issue1768_directions as D
@@ -1662,6 +1818,11 @@ def main() -> None:
     ap.add_argument("--worker-slot", type=int, default=None, help=argparse.SUPPRESS)
     ap.add_argument("--n-slots", type=int, default=1, help=argparse.SUPPRESS)
     ap.add_argument("--import-check", action="store_true", help="resolve deferred imports; exit")
+    ap.add_argument(
+        "--stage-probe",
+        action="store_true",
+        help="(h)(iv) 1-file staging + consumer-open probe; CPU-runnable; exit 0",
+    )
     args = ap.parse_args()
     if args.import_check:
         _run_import_check()
@@ -1676,6 +1837,9 @@ def main() -> None:
         n_slots=args.n_slots,
     )
     cfg.out_root.mkdir(parents=True, exist_ok=True)
+    if args.stage_probe:
+        run_stage_probe(cfg)  # CPU-runnable (h)(iv) probe — VM pre-dispatch leg
+        sys.exit(0)
     subset, arms_payload = load_run_config(cfg)
     if cfg.smoke:
         pass  # subset order deterministic; smoke row cap applied per unit
@@ -1686,6 +1850,7 @@ def main() -> None:
         sys.exit(0)
 
     t_start = time.time()
+    run_stage_probe(cfg)  # (h)(iv) consumer-open seam gate BEFORE CUDA + heavy staging
     _device()  # preamble: fail loud with no CUDA (plan §9 preamble assert)
     entries = _arm_entries(cfg, arms_payload)
     arms_by_id = {a["arm_id"]: a for a in entries}
@@ -1695,6 +1860,8 @@ def main() -> None:
         logger.info("[smoke] FT-mix probe: %s", probe)
     pool = ModelPool(_device(), _dtype())
     gate = run_p1a_adapter_smoke(cfg, pool, arms_by_id)
+    if cfg.smoke:
+        run_mirror_parity(cfg, pool, arms_by_id)
     del pool
     _cuda_gc()
     _phase("p1_fleet")

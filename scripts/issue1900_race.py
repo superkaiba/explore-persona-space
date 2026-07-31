@@ -280,9 +280,15 @@ def _stage_from_hf(root: Path, rel_paths: list[str]) -> None:
         logger.info("[stage] staged %d P1 files from %s", len(missing), HF_PREFIX)
 
 
+class MissingRaceInput(RuntimeError):
+    """A required staged input file is absent (typed so `exploration_grid`'s
+    skip stays narrow — every OTHER failure keeps its fail-fast character)."""
+
+
 def load_scores(judge_dir: Path, name: str) -> dict:
     path = judge_dir / f"arm_scores_{name}.json"
-    assert path.exists(), f"missing judge scores: {path}"
+    if not path.exists():
+        raise MissingRaceInput(f"missing judge scores: {path}")
     return json.loads(path.read_text())
 
 
@@ -393,16 +399,49 @@ def assemble_marker_arm(
 
 
 def _arm_seed(arm_id: str) -> int:
-    """Deterministic per-arm seed (shared draw STREAM index pairs arms by draw)."""
+    """Deterministic per-arm seed — WITHIN-ARM permutation null ONLY.
+
+    The bootstrap deliberately does NOT use this: the champion's across-arm
+    per-draw median requires ONE shared draw stream across arms (plan §4 P3
+    registered pairing; see `_family_shared_shas` — the r1 Major 3 fix).
+    """
     import hashlib as _h
 
     return SEED * 1_000 + int(_h.sha256(arm_id.encode()).hexdigest()[:6], 16) % 100_000
 
 
-def run_arm_battery(asm: dict, out_dir: Path, b_draws: int, n_perm: int) -> dict:
-    """Bootstrap + permutation battery for one arm; persists npz + JSON."""
+def _family_shared_shas(asms: list[dict]) -> tuple[list[str], str]:
+    """Sorted sha intersection across a family's realized frames + its digest.
+
+    Plan §4 P3 registered convention: "arm-level pairing preserved by
+    resampling contexts within every arm with the shared draw stream". Every
+    arm's bootstrap resamples THIS pool in THIS order with the ONE module
+    seed, so the per-draw index stream is IDENTICAL across arms and draw b
+    names the same context multiset in every arm — the across-arm median is
+    sha-paired. (The 12 arms share one judge subset, so per-arm sampling
+    errors are positively correlated; independent per-arm streams would
+    mis-state the median's variance — anti-conservative P(win)/CI.)
+    """
+    import hashlib as _h
+
+    shared = sorted(set.intersection(*[set(a["frame"]["sha"]) for a in asms]))
+    assert len(shared) >= MIN_ROWS, (len(shared), "family shared-sha pool below MIN_ROWS")
+    return shared, _h.sha256("\n".join(shared).encode()).hexdigest()[:16]
+
+
+def run_arm_battery(
+    asm: dict, out_dir: Path, b_draws: int, n_perm: int, shared: tuple[list[str], str]
+) -> dict:
+    """Bootstrap + permutation battery for one arm; persists npz + JSON.
+
+    The bootstrap resamples the FAMILY-SHARED sha pool (same order + the ONE
+    module seed across arms -> identical per-draw index streams; sha-level
+    champion pairing, plan §4 P3). Observed rho and the permutation null keep
+    the arm's FULL realized row set (within-arm by design).
+    """
     arm_id = asm["arm"]["arm_id"]
     frame, raced, dv_names = asm["frame"], asm["raced"], asm["dv_names"]
+    shared_shas, shared_hash = shared
     arm_json = out_dir / f"arm_{arm_id}.json"
     regime = {
         "b_draws": b_draws,
@@ -411,6 +450,8 @@ def run_arm_battery(asm: dict, out_dir: Path, b_draws: int, n_perm: int) -> dict
         "raced": raced,
         "dv_names": dv_names,
         "n": asm["n_realized"],
+        "n_shared": len(shared_shas),
+        "shared_sha_hash": shared_hash,
     }
     if arm_json.exists():
         prior = json.loads(arm_json.read_text())
@@ -425,7 +466,9 @@ def run_arm_battery(asm: dict, out_dir: Path, b_draws: int, n_perm: int) -> dict
     )
     dvs = np.column_stack([frame[d].to_numpy(float) for d in dv_names])
     t0 = time.time()
-    boot, n_degen = bootstrap_battery(x, dvs, b_draws, _arm_seed(arm_id))
+    sha_pos = {s: i for i, s in enumerate(frame["sha"])}
+    pos = np.array([sha_pos[s] for s in shared_shas], dtype=np.int64)
+    boot, n_degen = bootstrap_battery(x[pos], dvs[pos], b_draws, SEED)
     perm = perm_null(x, dvs[:, 0], n_perm, _arm_seed(arm_id))
     obs = observed_rho(x, dvs)
     perm_max = perm.max(axis=1)  # SIGNED max — per-draw re-selection (registered)
@@ -440,8 +483,10 @@ def run_arm_battery(asm: dict, out_dir: Path, b_draws: int, n_perm: int) -> dict
         rho=boot,
         candidates=np.array(raced),
         dv_names=np.array(dv_names),
-        seed=_arm_seed(arm_id),
+        seed=SEED,  # ONE shared seed — champion_read asserts cross-arm equality
         n=asm["n_realized"],
+        n_shared=len(shared_shas),
+        shared_sha_hash=np.array(shared_hash),
     )
     np.savez(
         out_dir / f"perm_{arm_id}.npz",
@@ -485,10 +530,20 @@ def run_arm_battery(asm: dict, out_dir: Path, b_draws: int, n_perm: int) -> dict
 def champion_read(arm_ids: list[str], out_dir: Path, dv_index: int, dv_label: str) -> dict:
     """Across-arm-median winner with per-draw re-selection over the shared panel."""
     boots, raced_sets = {}, []
+    seeds, stream_hashes = set(), set()
     for a in arm_ids:
         z = np.load(out_dir / f"boot_{a}.npz", allow_pickle=False)
         boots[a] = (z["rho"], list(z["candidates"]))
         raced_sets.append(set(z["candidates"]))
+        seeds.add(int(z["seed"]))
+        stream_hashes.add(str(z["shared_sha_hash"]))
+    # pairing invariant (plan §4 P3): every arm's boot rides the SAME seed and
+    # the SAME shared-sha pool -> draw b is the same context multiset per arm.
+    assert len(seeds) == 1 and len(stream_hashes) == 1, (
+        seeds,
+        stream_hashes,
+        "champion pairing broken: arms carry different bootstrap draw streams",
+    )
     panel = sorted(set.intersection(*raced_sets))
     stacks = []
     for a in arm_ids:
@@ -802,16 +857,18 @@ def robustness_lines(
         for cand, (ce, co) in {
             "p1": ("p1_tc_even", "p1_tc_odd"),
             "p2": ("p2_tc_even", "p2_tc_odd"),
+            "p9": ("p9_k16_even", "p9_k16_odd"),  # persisted by the r2 P1e amendment
         }.items():
             if ce in f.columns and co in f.columns and f[ce].notna().all():
                 r = _spearman_np(f[ce].to_numpy(float), f[co].to_numpy(float))
                 rel = 2 * r / (1 + r) if (1 + r) > 1e-9 else None
                 ent[cand] = {"split_half_r": r, "sb_rel": rel}
-        ent["p9"] = {
-            "sb_rel": None,
-            "note": "per-training-row similarity halves not persisted in the P1e "
-            "table (rows_ctx lives pod-side) — ceiling not computable post-hoc",
-        }
+            elif cand == "p9":
+                ent["p9"] = {
+                    "sb_rel": None,
+                    "note": "p9_k16_{even,odd} columns absent (pre-r2 P1e table) — "
+                    "ceiling not computable post-hoc",
+                }
         ceilings[a["arm"]["arm_id"]] = ent
     lines["line2"] = {
         "anchor_split_half_ceilings": ceilings,
@@ -926,7 +983,7 @@ def exploration_grid(
                     if arm["kind"] == "content"
                     else assemble_marker_arm(arm, tables_dir, marker_dir, layer=layer)
                 )
-            except (AssertionError, FileNotFoundError) as e:
+            except (MissingRaceInput, FileNotFoundError) as e:  # missing inputs ONLY
                 logger.info("[explore] %s L%d skipped: %s", arm["arm_id"], layer, e)
                 continue
             f = asm["frame"]
@@ -1050,7 +1107,8 @@ def build_smoke_inputs(smoke_root: Path, config_dir: Path) -> None:
     rcn = c0[:SMOKE_ANCHOR_ROWS] - cbar
     rcn /= np.linalg.norm(rcn, axis=1, keepdims=True) + 1e-12
     c0n = (c0 - cbar) / (np.linalg.norm(c0 - cbar, axis=1, keepdims=True) + 1e-12)
-    sims = np.sort(c0n @ rcn.T, axis=1)[:, ::-1]
+    sims_raw = c0n @ rcn.T
+    sims = np.sort(sims_raw, axis=1)[:, ::-1]
 
     def table_frame() -> pd.DataFrame:
         df = pd.DataFrame({"sha": shas, "corpus": corpus, "in_judge_subset": True})
@@ -1070,6 +1128,9 @@ def build_smoke_inputs(smoke_root: Path, config_dir: Path) -> None:
         df["p8a"] = np.linalg.norm(mpred - mbar, axis=1)
         df["p8b"] = ccos(mpred - mbar, d_beh, np.zeros_like(d_beh))
         df["p9_k16"] = sims[:, :16].mean(axis=1)
+        for h, sl in (("even", slice(0, None, 2)), ("odd", slice(1, None, 2))):
+            sims_h = np.sort(sims_raw[:, sl], axis=1)[:, ::-1]
+            df[f"p9_k16_{h}"] = sims_h[:, : min(16, sims_h.shape[1])].mean(axis=1)
         df["m1_tc"] = ccos(cp, cp[:SMOKE_ANCHOR_ROWS].mean(0), cp.mean(0))
         df["m2_tc"] = np.nan
         df["m3"] = ccos(cp - c0, (cp - c0).mean(0), np.zeros_like(cbar))
@@ -1273,17 +1334,29 @@ def main() -> None:
     marker = [a for a in arms if a["kind"] == "marker"]
     content_asm, marker_asm = [], []
     all_units = content + marker
-    for k, arm in enumerate(all_units):
-        t0 = time.time()
+    # assemble ALL arms first: the per-FAMILY shared sha pool (champion pairing,
+    # plan §4 P3) is the intersection of realized frames, known only after
+    # assembly; batteries then resample that pool with the ONE shared stream.
+    for arm in all_units:
         asm = (
             assemble_content_arm(arm, tables_dir, judge_dir)
             if arm["kind"] == "content"
             else assemble_marker_arm(arm, tables_dir, marker_dir)
         )
         (content_asm if arm["kind"] == "content" else marker_asm).append(asm)
-        run_arm_battery(asm, out_dir, args.b_draws, args.n_perm)
+    shared_by_kind = {}
+    if content_asm:
+        shared_by_kind["content"] = _family_shared_shas(content_asm)
+    if marker_asm:
+        shared_by_kind["marker"] = _family_shared_shas(marker_asm)
+    for kind, sh in shared_by_kind.items():
+        logger.info("[p3] %s family shared-sha pool: %d rows (hash %s)", kind, len(sh[0]), sh[1])
+    for k, asm in enumerate(content_asm + marker_asm):
+        t0 = time.time()
+        run_arm_battery(asm, out_dir, args.b_draws, args.n_perm, shared_by_kind[asm["arm"]["kind"]])
         print(
-            f"[p3] unit {k + 1}/{len(all_units)} {arm['arm_id']} n={asm['n_realized']} "
+            f"[p3] unit {k + 1}/{len(all_units)} {asm['arm']['arm_id']} n={asm['n_realized']} "
+            f"n_shared={len(shared_by_kind[asm['arm']['kind']][0])} "
             f"elapsed={time.time() - t0:.1f}s",
             flush=True,
         )
