@@ -31,6 +31,7 @@ import argparse  # noqa: E402
 import json  # noqa: E402
 import logging  # noqa: E402
 import os  # noqa: E402
+import shutil  # noqa: E402
 import subprocess  # noqa: E402
 import time  # noqa: E402
 
@@ -663,7 +664,16 @@ def panel_fit_for_arm(
 #       pooled rank-limited prefix->response fits; then the results mirror
 #       upload (plan §10 fellows-lane note).
 
-PFX_PERCELL_SUFFIX = {"own": "own", "ctrl": "control"}  # plan §4.5 file names
+# plan §4.5 file names; round 4 EXTENDS the map with the three rung labels
+# (the designed KeyError-loud extension point — plan v10 §4.5): rung percell
+# files are `<arm>_L<L>_r_<rung>.json` under on_target_r4/.
+PFX_PERCELL_SUFFIX = {
+    "own": "own",
+    "ctrl": "control",
+    "r_short": "r_short",
+    "r_mid": "r_mid",
+    "r_long": "r_long",
+}
 
 
 def _pfx_out(out_root: Path) -> Path:
@@ -674,16 +684,27 @@ def _pfx_results(results_dir: Path) -> Path:
     return Path(results_dir) / "on_target"
 
 
+def _lad_out(out_root: Path) -> Path:
+    return Path(out_root) / "on_target_r4"
+
+
+def _lad_results(results_dir: Path) -> Path:
+    return Path(results_dir) / "on_target_r4"
+
+
 def pfx_cell_paths(
     out_root: Path, results_dir: Path, arm_id: str, layer: int, cond_label: str
 ) -> tuple[Path, Path, Path]:
     """The ONE canonical (fits_json, fit_state_npz, percell_json) path triple
-    per pfx cell. Producer (`_pfx_fit_core`) and consumer (`phase_pfx7`) BOTH
-    compose paths through this helper so a writer/reader name drift cannot
-    recur (r3-v2 Critical 1: the ctrl fits JSON was written `_ctrl` and read
-    `_control`). ``cond_label`` ∈ {"own", "ctrl", "bare_n"}; file suffixes are
-    the plan §4.5 names {own, control, bare_n}."""
-    res = _pfx_results(results_dir)
+    per pfx/lad cell. Producer (`_pfx_fit_core`) and consumer
+    (`phase_pfx7`/`phase_lad7`) BOTH compose paths through this helper so a
+    writer/reader name drift cannot recur (r3-v2 Critical 1: the ctrl fits
+    JSON was written `_ctrl` and read `_control`). ``cond_label`` ∈
+    {"own", "ctrl", "bare_n"} (round-3 trees, on_target/) or a round-4 rung
+    label in `X.R4_CONDS` (on_target_r4/ trees)."""
+    is_rung = cond_label in X.R4_CONDS
+    res = _lad_results(results_dir) if is_rung else _pfx_results(results_dir)
+    state_root = _lad_out(out_root) if is_rung else _pfx_out(out_root)
     if cond_label == "bare_n":
         suffix = "bare_n"
         stem = f"{arm_id}_L{layer}"
@@ -692,7 +713,7 @@ def pfx_cell_paths(
         suffix = PFX_PERCELL_SUFFIX[cond_label]  # KeyError = unknown condition, loud
         stem = f"{arm_id}_L{layer}_{suffix}"
         fits = res / "fits" / f"{stem}.json"
-    npz = _pfx_out(out_root) / "fit_state" / f"{stem}.npz"
+    npz = state_root / "fit_state" / f"{stem}.npz"
     percell = res / "percell" / f"{arm_id}_L{layer}_{suffix}.json"
     return fits, npz, percell
 
@@ -721,39 +742,46 @@ def _store_span_rows(store: dict, span: str, layer: int) -> np.ndarray:
     return np.asarray(store["arms"][span][layer].float().numpy(), dtype=np.float64)
 
 
-def _join_pfx_cell(tag: str, layer: int, base: dict, plus: dict, tf: dict, sample: dict) -> dict:
+def _join_pfx_cell(
+    tag: str, layer: int, base: dict, plus: dict, tf: dict | None, sample: dict
+) -> dict:
     """Store triple -> fit matrices, rows joined by question_idx (UNIQUE within
     the pfx sample — the pinned valtest block carries duplicate SHAS, so qidx
-    is the exact pairing key; shas ride along for reporting)."""
+    is the exact pairing key; shas ride along for reporting). ``tf=None`` is
+    the round-4 rung shape (no matched-text TF trees — plan v10 Method delta
+    (b)): the returned cell then carries no ``Vplus_tf`` key and
+    `_pfx_fit_core` skips the Mplus_tf map."""
     C0 = _store_span_rows(base, "context", layer)
     V0 = _store_span_rows(base, "response", layer)
     Cp = _store_span_rows(plus, "context", layer)
     Vp = _store_span_rows(plus, "response", layer)
-    Vtf = _store_span_rows(tf, "response", layer)
+    Vtf = None if tf is None else _store_span_rows(tf, "response", layer)
     base_q = list(base["row_question_idx"])
     plus_ix = {q: i for i, q in enumerate(plus["row_question_idx"])}
-    tf_ix = {q: i for i, q in enumerate(tf["row_question_idx"])}
-    keep = [i for i, q in enumerate(base_q) if q in plus_ix and q in tf_ix]
+    tf_ix = None if tf is None else {q: i for i, q in enumerate(tf["row_question_idx"])}
+    keep = [i for i, q in enumerate(base_q) if q in plus_ix and (tf_ix is None or q in tf_ix)]
     assert len(keep) >= 0.9 * len(base_q), (tag, layer, len(keep), len(base_q))
     b = np.asarray(keep)
     p = np.asarray([plus_ix[base_q[i]] for i in keep])
-    t_ = np.asarray([tf_ix[base_q[i]] for i in keep])
     qidx = np.asarray([base_q[i] for i in keep])
     rows = sample["rows"]
     for i, q in zip(keep, qidx, strict=True):  # sha-level alignment fail-loud
         assert base["row_sha"][i] == rows[int(q)]["sha"], (tag, int(q), base["row_sha"][i])
-    return {
+    cell = {
         "C0": C0[b],
         "V0": V0[b],
         "Cplus": Cp[p],
         "Vplus": Vp[p],
-        "Vplus_tf": Vtf[t_],
         "sha": [rows[int(q)]["sha"] for q in qidx],
         "qidx": qidx,
         "src_qidx": np.asarray([rows[int(q)]["src_qidx"] for q in qidx]),
         "split": _pfx_split_from_qidx(qidx, sample),
         "corpus": np.asarray([rows[int(q)]["corpus"] for q in qidx]),
     }
+    if tf is not None:
+        t_ = np.asarray([tf_ix[base_q[i]] for i in keep])
+        cell["Vplus_tf"] = Vtf[t_]
+    return cell
 
 
 def load_pfx_cell(arm_id: str, cond: str, layer: int, out_root: Path) -> dict:
@@ -859,11 +887,13 @@ def _pfx_fit_core(
     tr, val, te = _split_idx(cell["split"])
     fits = {}
     payloads = {}
-    for name, (Xd, Yd) in {
+    maps = {
         "M0": (cell["C0"], cell["V0"]),
         "Mplus": (cell["Cplus"], cell["Vplus"]),
-        "Mplus_tf": (cell["Cplus"], cell["Vplus_tf"]),
-    }.items():
+    }
+    if "Vplus_tf" in cell:  # round-4 rung cells carry no TF tree (Method delta (b))
+        maps["Mplus_tf"] = (cell["Cplus"], cell["Vplus_tf"])
+    for name, (Xd, Yd) in maps.items():
         # allow_underdetermined: the pfx n_train=3,000 < d=3,584 opt-in
         # (plan v8 §10 (l) / §12 assumption 5)
         pred_te, meta, payload = _fit_map(Xd, Yd, tr, val, te, dev, allow_underdetermined=True)
@@ -926,12 +956,13 @@ def _pfx_fit_core(
         "fits": fits,
         "map_change": block,
         "decomposition": _decomposition_block(cell, payloads["M0"], payloads["Mplus"], dev),
-        "decomposition_tf": _decomposition_block(
-            cell, payloads["M0"], payloads["Mplus_tf"], dev, tf=True
-        ),
         "smoke": smoke,
         **_meta(),
     }
+    if "Mplus_tf" in payloads:
+        result["decomposition_tf"] = _decomposition_block(
+            cell, payloads["M0"], payloads["Mplus_tf"], dev, tf=True
+        )
     if run_transfer_fold:  # plan §6: the LMSYS<->WildChat fold on OWN cells
         result["transfer_fold"] = _transfer_fold(cell, dev, allow_underdetermined=True)
     _atomic_json(dest, result)
@@ -964,22 +995,37 @@ def fit_bare_n_cell(
 
 
 def _m0_prefix_effect(
-    out_root: Path, results_dir: Path, layers, smoke: bool, arms: list[str]
+    out_root: Path,
+    results_dir: Path,
+    layers,
+    smoke: bool,
+    arms: list[str],
+    *,
+    base_units: list[str] | None = None,
+    store_root: Path | None = None,
+    dest: Path | None = None,
+    log_tag: str = "pfx6",
 ) -> None:
     """Exploratory: does the PREFIX alone change the BASE map (plan §4.5 pfx7
     extras — M0_own vs M0_bare)? Per (base@prefix unit, layer): fit M0 on the
     prefixed base store and on the round-1 bare store (same shas, same n),
-    then Δ_med between the two maps on both cells' shared test grids."""
-    dest = _pfx_results(results_dir) / "m0_prefix_effect.json"
+    then Δ_med between the two maps on both cells' shared test grids.
+
+    Round 4 threads ``base_units`` = the rung base units, ``store_root`` =
+    on_target_r4, ``dest`` = m0_rung_effect.json (the lad8 dose-curve input);
+    defaults preserve the round-3 behavior byte-identically."""
+    dest = dest or (_pfx_results(results_dir) / "m0_prefix_effect.json")
     if dest.exists():
         return
     dev = _device()
     sample = X.load_pfx_sample(out_root)
-    base_units = sorted({X.pfx_base_unit(a, c) for a in arms for c in _pfx_conds(smoke, a)})
+    if base_units is None:
+        base_units = sorted({X.pfx_base_unit(a, c) for a in arms for c in _pfx_conds(smoke, a)})
+    store_root = store_root or _pfx_out(out_root)
     out = {}
     for bu in base_units:
         bare_name = bu.split("@")[0]  # base_content | base_mk
-        own_store = _load_store(_pfx_out(out_root) / "corpus_capture" / bu / "pooled.pt")
+        own_store = _load_store(store_root / "corpus_capture" / bu / "pooled.pt")
         bare_store = _load_store(
             _bare_store_path(out_root, "corpus_capture", bare_name, "pooled.pt")
         )
@@ -1027,7 +1073,7 @@ def _m0_prefix_effect(
                 **reads,
                 "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)",
             }
-            print(f"[pfx6] m0_prefix_effect {bu}_L{layer}", flush=True)
+            print(f"[{log_tag}] m0_prefix_effect {bu}_L{layer}", flush=True)
     _atomic_json(dest, {"cells": out, "smoke": smoke, **_meta()})
 
 
@@ -1307,9 +1353,14 @@ def _pfx_cell_inputs(
     fits_path, npz_path, _ = pfx_cell_paths(out_root, results_dir, arm_id, layer, cond_label)
     for p in (fits_path, npz_path):
         if not p.exists():
-            rerun = "pfx6" if cond_label == "bare_n" else "pfx5"
+            if cond_label == "bare_n":
+                rerun = "pfx6 (round 4: stage the r3 bare_n cell — lad7 staging)"
+            elif cond_label in X.R4_CONDS:
+                rerun = "lad5"
+            else:
+                rerun = "pfx5"
             raise RuntimeError(
-                f"[pfx7] missing {p} — cell {arm_id}_L{layer}@{cond_label} not fitted; "
+                f"[pfx7/lad7] missing {p} — cell {arm_id}_L{layer}@{cond_label} not fitted; "
                 f"re-run {rerun} (a partially-fanned shard may have been aborted)"
             )
     with np.load(npz_path) as z:
@@ -1540,6 +1591,611 @@ def _pfx_results_upload(out_root: Path, results_dir: Path, hf_prefix: str | None
             raise RuntimeError(f"pfx8 fit_state upload of {state} returned no path")
 
 
+# ── lad: round-4 rung fits + ladder contrasts (plan v10) ────────────────────
+#
+# lad5  per-rung fits + floors (36 cells = 4 arms x 3 layers x 3 rungs; no TF
+#       maps — Method delta (b)) + the base-bare M0 dose refit (pfx6 machinery)
+#       -> on_target_r4/{fits,percell,fit_state} + m0_rung_effect.json.
+# lad7  contrast reduce: ΔD = D_rung − D_bare@n per (arm, layer, rung) vs the
+#       ROUND-3 bare_n cells + the registered m-contrasts (m_long−m_ctrl,
+#       m_long−m_short, comparator m_long−m_own), (sha, qidx)-joined over the
+#       pinned 1,000 test rows -> map_change_ladder.json.
+# lad8  prefix-mapping arm (both-arms rule): per-rung prefix Δ-reads + pooled
+#       prefix->response fits (base pools r3 pers/conv/icl + 3 rungs) + the
+#       base-map dose curve -> prefix_ladder_reads.json + results mirror.
+
+LAD_R3_MIRROR = "on_target_r4/inputs/r3_results"  # lad_build's Hub mirror prefix
+
+
+def _lad_fit_arms(smoke: bool, arms_filter: tuple[str, ...]) -> list[str]:
+    if arms_filter:
+        want = set(arms_filter)
+        unknown = want - set(X.R4_ARMS)
+        assert not unknown, f"--arms outside the r4 arm set: {sorted(unknown)}"
+        return [a for a in X.R4_ARMS if a in want]
+    if smoke:
+        return ["syc-pers-con-lr1e5-s42"]  # plan §4 smoke-parity arm
+    return list(X.R4_ARMS)
+
+
+def _lad_conds(smoke: bool) -> tuple[str, ...]:
+    return ("r_long",) if smoke else X.R4_CONDS
+
+
+def load_lad_cell(arm_id: str, cond: str, layer: int, out_root: Path) -> dict:
+    """on_target_r4 stores -> fit matrices for one (arm, rung, layer); no TF
+    store this round (plan v10 Method delta (b))."""
+    root = _lad_out(out_root)
+    base = _load_store(root / "corpus_capture" / X.r4_base_unit(cond) / "pooled.pt")
+    plus = _load_store(root / "corpus_capture" / X.r4_trained_unit(arm_id, cond) / "pooled.pt")
+    sample = X.load_pfx_sample(out_root)
+    return _join_pfx_cell(f"{arm_id}@{cond}", layer, base, plus, None, sample)
+
+
+def fit_lad_cell(
+    out_root: Path, results_dir: Path, arm_id: str, cond: str, layer: int, smoke: bool
+) -> dict:
+    cell = load_lad_cell(arm_id, cond, layer, out_root)
+    return _pfx_fit_core(
+        out_root,
+        results_dir,
+        arm_id,
+        layer,
+        cond,
+        cell,
+        smoke,
+        run_transfer_fold=True,  # plan §6: LMSYS<->WildChat fold inherited on rung fits
+    )
+
+
+def _stage_lad_bare_base(out_root: Path) -> None:
+    """Parent pre-stage (the #1315 fanout-shared-staging lesson) of the
+    round-1 bare base_content store the lad5 dose refit consumes."""
+    from explore_persona_space.orchestrate import hub
+
+    target = _bare_store_path(out_root, "corpus_capture", "base_content", "pooled.pt")
+    if not target.exists():
+        logger.info("[lad5] staging round-1 base_content store for the dose refit")
+        hub.stage_hub_file(
+            X.HF_DATA_REPO,
+            f"{X.HF_PREFIX}/corpus_capture/base_content/pooled.pt",
+            target,
+            repo_type="dataset",
+        )
+
+
+def phase_lad5(
+    out_root: Path,
+    results_dir: Path,
+    layers,
+    smoke: bool,
+    arms_filter,
+    *,
+    worker: bool = False,
+    upload: bool = True,
+    hf_prefix: str | None = None,
+) -> None:
+    _phase("lad5_rung_fits")
+    arms = _lad_fit_arms(smoke, arms_filter)
+    fanned = not worker and _fanout_fit_arms(
+        "lad5", arms, out_root, results_dir, layers, smoke, upload, hf_prefix
+    )
+    if not fanned:
+        cells = [(a, c, layer) for a in arms for c in _lad_conds(smoke) for layer in layers]
+        for k, (a, c, layer) in enumerate(cells):
+            t0 = time.time()
+            fit_lad_cell(out_root, results_dir, a, c, layer, smoke)
+            print(
+                f"[lad5] unit {k + 1}/{len(cells)} {a}@{c}_L{layer} "
+                f"elapsed={time.time() - t0:.0f}s",
+                flush=True,
+            )
+    if not worker:
+        # base-bare M0 dose refit (plan §9 lad5 row: +3 base-bare cells) — the
+        # rung base units vs the ROUND-1 bare store, the pfx6 machinery.
+        _stage_lad_bare_base(out_root)
+        _m0_prefix_effect(
+            out_root,
+            results_dir,
+            layers,
+            smoke,
+            arms,
+            base_units=[X.r4_base_unit(c) for c in _lad_conds(smoke)],
+            store_root=_lad_out(out_root),
+            dest=_lad_results(results_dir) / "m0_rung_effect.json",
+            log_tag="lad5",
+        )
+
+
+def _stage_r3_contrast_inputs(out_root: Path, results_dir: Path, arms, layers) -> None:
+    """Ensure the ROUND-3 contrast inputs sit at the `pfx_cell_paths` read
+    locations: percell {own, control, bare_n} + fits_bare_n JSONs (repo tree
+    else the lad_build HF mirror) and the bare_n fit_state npz (round-3 HF
+    fit_state prefix — never in git). Idempotent; fail-loud on both-miss."""
+    from explore_persona_space.orchestrate import hub
+
+    repo_r3 = REPO_ROOT / "eval_results" / "issue_1768" / "on_target"
+    for arm in arms:
+        for layer in layers:
+            for cond in ("own", "ctrl", "bare_n"):
+                fits_path, npz_path, percell_path = pfx_cell_paths(
+                    out_root, results_dir, arm, layer, cond
+                )
+                needed = [percell_path] + ([fits_path] if cond == "bare_n" else [])
+                for p in needed:
+                    if p.exists():
+                        continue
+                    rel = p.relative_to(_pfx_results(results_dir))
+                    src = repo_r3 / rel
+                    if src.exists():
+                        p.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(src, p)
+                    else:
+                        hub.stage_hub_file(
+                            X.HF_DATA_REPO,
+                            f"{X.HF_PREFIX}/{LAD_R3_MIRROR}/{rel.as_posix()}",
+                            p,
+                            repo_type="dataset",
+                        )
+                if cond == "bare_n" and not npz_path.exists():
+                    hub.stage_hub_file(
+                        X.HF_DATA_REPO,
+                        f"{X.HF_PREFIX}/on_target/fit_state/{npz_path.name}",
+                        npz_path,
+                        repo_type="dataset",
+                    )
+
+
+def _load_percell_rows(out_root: Path, results_dir: Path, arm: str, layer: int, cond: str) -> list:
+    _, _, percell = pfx_cell_paths(out_root, results_dir, arm, layer, cond)
+    assert percell.exists(), (str(percell), "percell rows missing — staging/lad5 incomplete")
+    return json.loads(percell.read_text())["rows"]
+
+
+def _paired_m_contrast(
+    a_rows: list, b_rows: list, seed: int, *, expect_pairs: int | None = None, smoke: bool = False
+) -> dict:
+    """Paired contrast of raw per-context medians m_a − m_b over rows joined
+    by the EXPLICIT (sha, qidx) key (plan v10 §3 + the r4 consistency-checker
+    advisory: the pinned test block carries duplicate SHAS — 942 unique of
+    1,000 — so a sha-only dict join silently collapses rows; (sha, qidx) is a
+    true 1,000-row pairing since qidx is unique within the shared pfx sample).
+    Production asserts EXACTLY ``expect_pairs`` pairs (kill criterion (c)
+    class); the assert demotes to a log line under smoke (#1345 rule).
+    Bootstrap: ONE shared row-index resample applied to both sides per draw
+    (batched median over the draw axis — no per-draw python loop)."""
+    a_map = {(r["sha"], int(r["qidx"])): float(r["delta"]) for r in a_rows}
+    b_map = {(r["sha"], int(r["qidx"])): float(r["delta"]) for r in b_rows}
+    assert len(a_map) == len(a_rows), "duplicate (sha, qidx) keys on contrast side a"
+    assert len(b_map) == len(b_rows), "duplicate (sha, qidx) keys on contrast side b"
+    shared = sorted(set(a_map) & set(b_map))
+    if expect_pairs is not None:
+        if smoke:
+            logger.info(
+                "[lad7] smoke: m-contrast join %d pairs (production expects %d — demoted)",
+                len(shared),
+                expect_pairs,
+            )
+        else:
+            assert len(shared) == expect_pairs, (
+                len(shared),
+                expect_pairs,
+                "lad7 m-contrast (sha, qidx) join drift (kill criterion c class)",
+            )
+    assert shared, "no shared (sha, qidx) rows between m-contrast sides"
+    a = np.asarray([a_map[k] for k in shared])
+    b = np.asarray([b_map[k] for k in shared])
+    rng = np.random.default_rng(seed)
+    n = len(shared)
+    ridx = rng.integers(0, n, (N_CI_DRAWS, n))
+    draws = np.median(a[ridx], axis=1) - np.median(b[ridx], axis=1)
+    ci = [float(np.quantile(draws, 0.025)), float(np.quantile(draws, 0.975))]
+    return {
+        "n_pairs": n,
+        "m_a": float(np.median(a)),
+        "m_b": float(np.median(b)),
+        "diff": float(np.median(a) - np.median(b)),
+        "diff_ci95": ci,
+        "join": "(sha, qidx) exact",
+    }
+
+
+def lad_richness_verdict(ci_long_ctrl: list[float], ci_long_short: list[float]) -> str:
+    """Plan v10 §3 richness-vs-identity lattice (DISJOINT + exhaustive)."""
+    if ci_long_ctrl[1] < 0:
+        return "Identity-consistent"
+    if ci_long_ctrl[1] >= 0 and ci_long_short[0] > 0:
+        return "Richness-consistent"
+    return "Mixed"
+
+
+def lad_own_suppression_verdict(ci_long_own: list[float]) -> str:
+    """Plan v10 §3 comparator own-suppression lattice (DISJOINT + exhaustive)."""
+    if ci_long_own[0] > 0:
+        return "Own-suppressed"
+    if ci_long_own[1] < 0:
+        return "Not-suppressed"
+    return "Indeterminate"
+
+
+def phase_lad7(out_root: Path, results_dir: Path, layers, smoke: bool, arms_filter) -> None:
+    _phase("lad7_ladder_contrast")
+    arms = _lad_fit_arms(smoke, arms_filter)
+    conds = _lad_conds(smoke)
+    res = _lad_results(results_dir)
+    if not smoke:
+        _stage_r3_contrast_inputs(out_root, results_dir, arms, layers)
+    ladder = X.load_r4_ladder(out_root)
+    realized = {c: ladder["rungs"][c]["realized_tokens"] for c in X.R4_CONDS}
+    # plan §3: verdict lattices bind at the pre-registered primary layer L19
+    # (all four arms are content arms); tiny-layer smokes/tests anchor on the
+    # first available layer (the phase_p8 anchor-layer convention).
+    primary = 19 if 19 in {int(x) for x in layers} else int(layers[0])
+
+    cells: dict[str, dict] = {}
+    m_table: dict[str, dict] = {}
+    for arm in arms:
+        ai = X.R4_ARMS.index(arm)
+        for layer in layers:
+            bare_state = None
+            bare_fit = None
+            try:
+                bare_fit, bare_state = _pfx_cell_inputs(out_root, results_dir, arm, layer, "bare_n")
+            except RuntimeError:
+                if not smoke:
+                    raise
+                logger.info(
+                    "[lad7] smoke: bare_n cell absent for %s L%d — ΔD leg skipped "
+                    "(production-mode pytest covers it)",
+                    arm,
+                    layer,
+                )
+            for cond in conds:
+                rung_fit, rung_state = _pfx_cell_inputs(out_root, results_dir, arm, layer, cond)
+                seed = X.FLOOR_SEED + 9000 + int(layer) * 100 + ai * 10 + X.R4_CONDS.index(cond)
+                row = {
+                    "arm_id": arm,
+                    "method": rung_fit["method"],
+                    "layer": int(layer),
+                    "rung": cond,
+                    "realized_tokens": realized[cond],
+                    "primary_layer": int(layer) == primary,
+                    "D_rung": rung_fit["map_change"]["D"],
+                    "D_rung_ci95": rung_fit["map_change"]["D_ci95"],
+                    "verdict_rung": rung_fit["map_change"]["verdict"],
+                }
+                if bare_state is not None:
+                    row["D_bare_n"] = bare_fit["map_change"]["D"]
+                    row["D_bare_n_ci95"] = bare_fit["map_change"]["D_ci95"]
+                    row["contrast"] = _paired_d_contrast(
+                        rung_state,
+                        bare_state,
+                        seed,
+                        positive="Rung-amplified",
+                        negative="Rung-attenuated",
+                    )
+                cells[f"{arm}_L{layer}_{cond}"] = row
+                print(f"[lad7] contrast {arm}_L{layer}_{cond}", flush=True)
+            m_table[f"{arm}_L{layer}"] = _lad_m_row(
+                out_root, results_dir, arm, layer, conds, smoke, ai, realized
+            )
+    richness = {}
+    own_supp = None
+    for arm in arms:
+        mrow = m_table.get(f"{arm}_L{primary}")
+        if not mrow or "contrasts" not in mrow:
+            continue
+        con = mrow["contrasts"]
+        if arm == X.R4_COMPARATOR_ARM:
+            own_supp = {
+                "arm_id": arm,
+                "verdict": lad_own_suppression_verdict(con["long_minus_own"]["diff_ci95"]),
+                "contrast": con["long_minus_own"],
+            }
+        else:
+            richness[arm] = lad_richness_verdict(
+                con["long_minus_ctrl"]["diff_ci95"], con["long_minus_short"]["diff_ci95"]
+            )
+    n_rich = sum(1 for v in richness.values() if v == "Richness-consistent")
+    n_ident = sum(1 for v in richness.values() if v == "Identity-consistent")
+    summary = {
+        "cells": cells,
+        "m_table": m_table,
+        "richness_verdicts": richness,
+        "own_suppression": own_supp,
+        "success_criteria": {
+            "n_persona_arms_richness_consistent": n_rich,
+            "n_persona_arms_identity_consistent": n_ident,
+            "n_persona_arms": len(richness),
+            "comparator_verdict": (own_supp or {}).get("verdict"),
+        },
+        "realized_tokens": realized,
+        "join_convention": (
+            "(sha, qidx) exact join over the pinned test rows; 1,000 pairs asserted in "
+            "production (sha-only would collapse to the 942-unique-sha set)"
+        ),
+        "n_cells": len(cells),
+        "smoke": smoke,
+        **_meta(),
+    }
+    _atomic_json(res / "map_change_ladder.json", summary)
+    logger.info(
+        "[lad7] %d cells; richness-consistent %d / identity-consistent %d of %d persona arms; "
+        "comparator=%s",
+        len(cells),
+        n_rich,
+        n_ident,
+        len(richness),
+        (own_supp or {}).get("verdict"),
+    )
+
+
+def _lad_m_row(
+    out_root: Path,
+    results_dir: Path,
+    arm: str,
+    layer: int,
+    conds,
+    smoke: bool,
+    ai: int,
+    realized: dict,
+) -> dict:
+    """Raw per-context medians m per rung + the registered m-contrasts vs the
+    round-3 own/ctrl percell rows (plan §3 contrasts (ii)/(iii) + the dose
+    ordering); the r3-side legs are production-only (smoke covers rung medians
+    — the production-mode pytest executes the full branch)."""
+    rung_rows = {c: _load_percell_rows(out_root, results_dir, arm, layer, c) for c in conds}
+    row: dict = {
+        "arm_id": arm,
+        "layer": int(layer),
+        "m_rung": {c: float(np.median([r["delta"] for r in rr])) for c, rr in rung_rows.items()},
+        "realized_tokens": {c: realized[c] for c in conds},
+    }
+    if smoke:
+        row["note"] = "smoke: m-contrast legs fenced (need own/ctrl + all rungs)"
+        return row
+    own_rows = _load_percell_rows(out_root, results_dir, arm, layer, "own")
+    ctrl_rows = _load_percell_rows(out_root, results_dir, arm, layer, "ctrl")
+    seed = X.FLOOR_SEED + 11000 + int(layer) * 100 + ai * 10
+    con = {
+        "long_minus_ctrl": _paired_m_contrast(
+            rung_rows["r_long"], ctrl_rows, seed + 1, expect_pairs=X.N_TEST, smoke=smoke
+        ),
+        "long_minus_short": _paired_m_contrast(
+            rung_rows["r_long"], rung_rows["r_short"], seed + 2, expect_pairs=X.N_TEST, smoke=smoke
+        ),
+        "long_minus_own": _paired_m_contrast(
+            rung_rows["r_long"], own_rows, seed + 3, expect_pairs=X.N_TEST, smoke=smoke
+        ),
+        "mid_minus_short": _paired_m_contrast(
+            rung_rows["r_mid"], rung_rows["r_short"], seed + 4, expect_pairs=X.N_TEST, smoke=smoke
+        ),
+        "long_minus_mid": _paired_m_contrast(
+            rung_rows["r_long"], rung_rows["r_mid"], seed + 5, expect_pairs=X.N_TEST, smoke=smoke
+        ),
+    }
+    row["m_own"] = float(np.median([r["delta"] for r in own_rows]))
+    row["m_ctrl"] = float(np.median([r["delta"] for r in ctrl_rows]))
+    row["contrasts"] = con
+    return row
+
+
+def _lad_pooled_store_path(out_root: Path, unit: str) -> Path:
+    tag = unit.partition("@")[2]
+    root = _lad_out(out_root) if tag in X.R4_CONDS else _pfx_out(out_root)
+    return root / "corpus_capture" / unit / "pooled.pt"
+
+
+def _stage_r3_stores_for_pooled(out_root: Path, arms: list[str]) -> None:
+    """Stage the round-3 prefixed stores the lad8 pooled fits consume (base
+    pers/conv/icl + each arm's own/ctrl) — idempotent, canonical local paths."""
+    from explore_persona_space.orchestrate import hub
+
+    units = ["base_content@pers", "base_content@conv", "base_content@icl_syc"]
+    for a in arms:
+        units += [X.pfx_trained_unit(a, c) for c in X.pfx_conditions_for(a)]
+    for u in sorted(set(units)):
+        target = _pfx_out(out_root) / "corpus_capture" / u / "pooled.pt"
+        if not target.exists():
+            logger.info("[lad8] staging r3 store %s", u)
+            hub.stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/on_target/corpus_capture/{u}/pooled.pt",
+                target,
+                repo_type="dataset",
+            )
+
+
+def _lad_results_upload(out_root: Path, results_dir: Path, hf_prefix: str | None) -> None:
+    """Results mirror (plan §10): on_target_r4 eval_results JSONs + fit_state
+    npz to the data repo. ``hf_prefix`` REQUIRED (the #1005 clobber rule)."""
+    from explore_persona_space.orchestrate import hub
+
+    if not hf_prefix:
+        raise ValueError(
+            "_lad_results_upload requires an explicit hf_prefix (no hardcoded "
+            "issue-prefix fallback at an upload destination — #1005 class)"
+        )
+    res = _lad_results(results_dir)
+    url = hub._upload(
+        res,
+        repo_id=X.HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{hf_prefix}/on_target_r4/eval_results",
+    )
+    if not url:
+        raise RuntimeError(f"lad8 results-mirror upload of {res} returned no path")
+    state = _lad_out(out_root) / "fit_state"
+    if state.exists():
+        url = hub._upload(
+            state,
+            repo_id=X.HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=f"{hf_prefix}/on_target_r4/fit_state",
+        )
+        if not url:
+            raise RuntimeError(f"lad8 fit_state upload of {state} returned no path")
+
+
+def phase_lad8(
+    out_root: Path,
+    results_dir: Path,
+    layers,
+    smoke: bool,
+    arms_filter,
+    *,
+    upload: bool = True,
+    hf_prefix: str | None = None,
+) -> None:
+    _phase("lad8_prefix_arm_dose")
+    arms = _lad_fit_arms(smoke, arms_filter)
+    conds = _lad_conds(smoke)
+    res = _lad_results(results_dir)
+    dest = res / "prefix_ladder_reads.json"
+    if not dest.exists():
+        import torch
+
+        dev = _device()
+        sample = X.load_pfx_sample(out_root)
+        ladder = X.load_r4_ladder(out_root)
+        realized = {c: ladder["rungs"][c]["realized_tokens"] for c in X.R4_CONDS}
+        groups: dict[str, list[str]] = {"base:base_content": [X.r4_base_unit(c) for c in conds]}
+        for a in arms:
+            groups[f"arm:{a}"] = [X.r4_trained_unit(a, c) for c in conds]
+        if not smoke:  # pool the ROUND-3 prefix conditions too (plan §4.5 lad8b)
+            _stage_r3_stores_for_pooled(out_root, arms)
+            groups["base:base_content"] += [
+                "base_content@pers",
+                "base_content@conv",
+                "base_content@icl_syc",
+            ]
+            for a in arms:
+                groups[f"arm:{a}"] += [X.pfx_trained_unit(a, c) for c in X.pfx_conditions_for(a)]
+        groups = {g: sorted(set(us)) for g, us in groups.items()}
+        stores = {
+            u: _load_store(_lad_pooled_store_path(out_root, u))
+            for us in groups.values()
+            for u in us
+        }
+        # (a) per-rung prefix Δ-reads: trained − base prefix span-mean movement
+        delta_reads = []
+        for a in arms:
+            for c in conds:
+                unit, base_unit = X.r4_trained_unit(a, c), X.r4_base_unit(c)
+                for layer in layers:
+                    p_tr = stores[unit]["arms"]["prefix"][layer].float().mean(dim=0)
+                    p_b = stores[base_unit]["arms"]["prefix"][layer].float().mean(dim=0)
+                    delta_reads.append(
+                        {
+                            "arm_id": a,
+                            "rung": c,
+                            "realized_tokens": realized[c],
+                            "layer": int(layer),
+                            "prefix_delta_norm": float((p_tr - p_b).norm()),
+                            "prefix_cos": float(
+                                torch.nn.functional.cosine_similarity(p_tr, p_b, dim=0)
+                            ),
+                            "prefix_norm_base": float(p_b.norm()),
+                            "prefix_norm_trained": float(p_tr.norm()),
+                        }
+                    )
+        # (b) pooled prefix->response fits per model group (rank-limited)
+        pooled_fits = {}
+        for gname, units in groups.items():
+            for layer in layers:
+                Xs, Ys, qs = [], [], []
+                for u in units:
+                    Xs.append(_store_span_rows(stores[u], "prefix", layer))
+                    Ys.append(_store_span_rows(stores[u], "response", layer))
+                    qs.append(np.asarray([int(q) for q in stores[u]["row_question_idx"]]))
+                Xd, Yd, qidx = np.concatenate(Xs), np.concatenate(Ys), np.concatenate(qs)
+                split = _pfx_split_from_qidx(qidx, sample)
+                tr, val, te = _split_idx(split)
+                pred_te, meta, _payload = _fit_map(
+                    Xd, Yd, tr, val, te, dev, allow_underdetermined=True
+                )
+                pooled_fits[f"{gname}_L{layer}"] = {
+                    "group": gname,
+                    "layer": int(layer),
+                    "n_units_pooled": len(units),
+                    "n_distinct_prefix_conditions": len(units),
+                    "rank_limited": True,
+                    "selected_lambda": meta["selected_lambda"],
+                    **_map_reads(pred_te, Yd[te]),
+                    "identity_bias": _identity_bias_reads(Xd[tr], Yd[tr], Xd[te], Yd[te]),
+                }
+                print(f"[lad8] pooled prefix fit {gname}_L{layer}", flush=True)
+        # (c) base-map dose curve: M0_rung vs M0_bare (lad5's m0_rung_effect)
+        # + the round-3 anchors (m0_prefix_effect, committed/mirrored)
+        rung_eff_path = res / "m0_rung_effect.json"
+        assert rung_eff_path.exists(), (
+            str(rung_eff_path),
+            "m0_rung_effect.json missing — re-run lad5 (parent leg)",
+        )
+        rung_eff = json.loads(rung_eff_path.read_text())["cells"]
+        dose: dict = {"rungs": {}, "r3_anchors": {}}
+        for c in conds:
+            bu = X.r4_base_unit(c)
+            for layer in layers:
+                key = f"{bu}_L{layer}"
+                assert key in rung_eff, (key, "dose cell missing from m0_rung_effect.json")
+                dose["rungs"][f"{c}_L{layer}"] = {
+                    "rung": c,
+                    "realized_tokens": realized[c],
+                    **rung_eff[key],
+                }
+        if smoke:
+            dose["note"] = "smoke: r3 anchors fenced (m0_prefix_effect staging is production)"
+        else:
+            anch_path = _pfx_results(results_dir) / "m0_prefix_effect.json"
+            if not anch_path.exists():
+                from explore_persona_space.orchestrate import hub
+
+                hub.stage_hub_file(
+                    X.HF_DATA_REPO,
+                    f"{X.HF_PREFIX}/{LAD_R3_MIRROR}/m0_prefix_effect.json",
+                    anch_path,
+                    repo_type="dataset",
+                )
+            anch = json.loads(anch_path.read_text())["cells"]
+            for bu in ("base_content@pers", "base_content@conv", "base_content@icl_syc"):
+                for layer in layers:
+                    key = f"{bu}_L{layer}"
+                    if key in anch:
+                        dose["r3_anchors"][key] = anch[key]
+        _atomic_json(
+            dest,
+            {
+                "ladder": {
+                    c: {
+                        "context_id": ladder["rungs"][c]["context_id"],
+                        "conversation_hash": ladder["rungs"][c]["conversation_hash"],
+                        "dataset_index": ladder["rungs"][c]["dataset_index"],
+                        "realized_tokens": realized[c],
+                        "target_tokens": ladder["rungs"][c]["target_tokens"],
+                    }
+                    for c in X.R4_CONDS
+                },
+                "prefix_delta_reads": delta_reads,
+                "pooled_prefix_fits": pooled_fits,
+                "dose_curve": dose,
+                "note": (
+                    "prefix-based mapping arm at the identifiable level (both-arms rule): "
+                    "pooled fits rank <= n distinct prefix conditions (base pools the r3 "
+                    "pers/conv/icl prefixes + the 3 rungs in production) — rank-limited, "
+                    "exploratory (r3 pfx8 convention; the v7 >=100-distinct re-open "
+                    "threshold untouched)"
+                ),
+                "smoke": smoke,
+                **_meta(),
+            },
+        )
+    if upload:
+        _lad_results_upload(out_root, results_dir, hf_prefix)
+    else:
+        logger.info("[lad8] results-mirror upload disabled (--no-upload)")
+
+
 # ── phase drivers ────────────────────────────────────────────────────────────
 
 
@@ -1718,6 +2374,29 @@ def main(argv: list[str] | None = None) -> int:
             phase_pfx7(args.out_root, args.results_dir, layers, args.smoke, arms_filter)
         elif phase == "pfx8":
             phase_pfx8(
+                args.out_root,
+                args.results_dir,
+                layers,
+                args.smoke,
+                arms_filter,
+                upload=upload,
+                hf_prefix=hf_prefix,
+            )
+        elif phase == "lad5":
+            phase_lad5(
+                args.out_root,
+                args.results_dir,
+                layers,
+                args.smoke,
+                arms_filter,
+                worker=args.worker,
+                upload=upload,
+                hf_prefix=hf_prefix,
+            )
+        elif phase == "lad7":
+            phase_lad7(args.out_root, args.results_dir, layers, args.smoke, arms_filter)
+        elif phase == "lad8":
+            phase_lad8(
                 args.out_root,
                 args.results_dir,
                 layers,
