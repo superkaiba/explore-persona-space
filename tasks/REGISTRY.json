@@ -6690,8 +6690,8 @@
     "1864": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1864",
-      "status": "proposed",
+      "path": "tasks/planning/1864",
+      "status": "planning",
       "title": "daily-fix: analyzer.md numbers the payload-lint gate pre-com"
     },
     "1865": {
