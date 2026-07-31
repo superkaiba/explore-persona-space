@@ -214,6 +214,15 @@ prefetch_args() {
     --n-perm "$PREFETCH_N_PERM"
 }
 
+# Definitions-only escape hatch: with EPM_I1739_NL_DEFS_ONLY set, sourcing this
+# script yields the config + arg builders and runs NO phase body and NOT the
+# terminal sentinel/`[phase=done]` tail. That lets the tests assert on the
+# SHIPPING arg composition (tests/test_issue1739_nlmap.py) instead of a copy that
+# can drift from it. Unset in production, so the live path is untouched.
+if [ -n "${EPM_I1739_NL_DEFS_ONLY:-}" ]; then
+  return 0 2>/dev/null || exit 0
+fi
+
 # ---- stage -----------------------------------------------------------------
 if want_phase stage; then
   echo "[nlmap] phase=stage: pre-staging inputs via issue1739_leg2.sh"
@@ -399,6 +408,20 @@ if want_phase upload || want_phase upload_results; then
 fi
 
 # ---- sentinel + terminal line ---------------------------------------------
+# ONLY a leg that actually SCORED may write the results sentinel + [phase=done]:
+# those two ARE the poller's completion contract, so a phase-A (`prefetch`) or
+# staging-only leg emitting them would drain as `epm:results` and read the whole
+# round as finished after zero arm scores. PHASE=all and every lane include
+# `fits`, so their behavior is unchanged.
+if ! want_phase fits; then
+  # NOTE: this message must never spell the terminal phase token literally —
+  # poll_pipeline.py greps `[phase=<name>]` out of the log tail, so writing it
+  # here would BE the completion signal this branch exists to withhold
+  # (pod-side-reporting.md: that token is reserved for the one terminal line).
+  echo "[nlmap] partial leg (phase='$PHASE'): no scoring ran, so NO results" \
+    "sentinel and no terminal phase marker — this leg is deliberately non-terminal."
+  exit 0
+fi
 uv run python -c "
 import json, pathlib, time
 p = pathlib.Path('$LOG_DIR/issue-1739-nlmap-results.json')

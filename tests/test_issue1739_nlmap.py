@@ -547,3 +547,314 @@ def test_stage_maps_expected_keys_covers_the_path2_map_set():
     assert len(keys) == 8  # 2 variants x 2 rungs x 2 kinds
     assert len(set(keys)) == 8
     assert ("prefix_end", "full", "kernel") in keys
+
+
+# --------------------------------------------------------------------------
+# Fan-out dispatcher composition + the MEASURED-basis projector.
+#
+# The prefetch is only sound if its map-determining flags are IDENTICAL to a
+# lane's: a divergence there means phase A fits a DIFFERENT map than the lane
+# would have, the lane loads it anyway (row count matches), and every arm score
+# in that lane is quietly wrong. These pin that by parsing the real dispatcher.
+# --------------------------------------------------------------------------
+
+DISPATCH_SH = REPO_ROOT / "scripts" / "issue1739_nlmap_dispatch.sh"
+FANOUT_SH = REPO_ROOT / "scripts" / "issue1739_nlmap_fanout.sh"
+
+
+def _dispatch_args(func: str, *func_args: str, env: dict | None = None) -> list[str]:
+    """Source the real dispatcher's arg builders and print one builder's output.
+
+    Sources the script with PHASE set to a no-op so no phase body executes, then
+    calls the requested builder — so this reads the SHIPPING composition, not a
+    copy of it.
+    """
+    import os
+
+    body = f"{func} {' '.join(func_args)}"
+    proc = subprocess.run(
+        ["bash", "-c", f'set -euo pipefail\nsource "{DISPATCH_SH}" >/dev/null 2>&1\n{body}'],
+        capture_output=True,
+        text=True,
+        cwd=REPO_ROOT,
+        env={
+            **os.environ,
+            "EPM_I1739_NL_DEFS_ONLY": "1",
+            "EPM_I1739_NL_PHASE": "__none__",
+            **(env or {}),
+        },
+    )
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    return proc.stdout.split()
+
+
+# Flags whose value determines the FITTED MAP. A prefetched payload is only the
+# lane's map if every one of these agrees (plus seeds[0], asserted separately).
+MAP_DETERMINING_FLAGS = (
+    "--map-kind",
+    "--u-store",
+    "--u-sizes",
+    "--tensors-root",
+    "--config",
+)
+
+
+def _flag_values(argv: list[str], flag: str) -> list[str]:
+    """Values following ``flag`` up to the next ``--option`` (nargs-aware)."""
+    out: list[str] = []
+    if flag not in argv:
+        return out
+    for tok in argv[argv.index(flag) + 1 :]:
+        if tok.startswith("--"):
+            break
+        out.append(tok)
+    return out
+
+
+@pytest.mark.parametrize("kind", ["mlp", "kernel"])
+def test_prefetch_args_match_lane_args_on_every_map_determining_flag(kind):
+    env = {"EPM_I1739_NL_USIZES": "250 full", "EPM_I1739_NL_SEEDS": "0 1"}
+    lane = _dispatch_args("fits_args", "evil", kind, env=env)
+    pre = _dispatch_args("prefetch_args", kind, env=env)
+    for flag in MAP_DETERMINING_FLAGS:
+        assert _flag_values(lane, flag), f"lane is missing {flag}"
+        assert _flag_values(pre, flag) == _flag_values(lane, flag), flag
+    # seeds[0] drives whitening, the map fit AND the subsampled U rung's rows.
+    assert _flag_values(pre, "--seeds") == [_flag_values(lane, "--seeds")[0]]
+
+
+@pytest.mark.parametrize("kind", ["mlp", "kernel"])
+def test_prefetch_args_are_the_cheap_grid_and_skip_transfer(kind):
+    """The prefetch must not pay a lane's grid: one budget/draw/regime/arm, no transfer."""
+    env = {"EPM_I1739_NL_USIZES": "250 full", "EPM_I1739_NL_SEEDS": "0 1"}
+    pre = _dispatch_args("prefetch_args", kind, env=env)
+    assert _flag_values(pre, "--budgets") == ["250"]
+    assert _flag_values(pre, "--draws") == ["0"]
+    assert len(_flag_values(pre, "--regimes")) == 1
+    assert len(_flag_values(pre, "--arms")) == 1
+    assert "--transfer" not in pre, "the eval-rung read is per-BEHAVIOR; lanes own it"
+    assert "--pilot" not in pre, "the pilot fence is sized for a lane, not this phase"
+    # throwaway out-root: never a lane's results dir
+    out_root = _flag_values(pre, "--out-root")[0]
+    assert "_prefetch" in out_root, out_root
+
+
+def test_prefetch_walks_every_path2_map_key():
+    """--u-sizes must cover the FULL rung set, else a lane re-fits the missing rung."""
+    env = {"EPM_I1739_NL_USIZES": "250 full", "EPM_I1739_NL_SEEDS": "0 1"}
+    pre = _dispatch_args("prefetch_args", "mlp", env=env)
+    assert _flag_values(pre, "--u-sizes") == ["250", "full"]
+    # --variant is left at the fits default ("both"), covering both variants.
+    assert "--variant" not in pre
+
+
+def _phases_for(phase_env: str) -> set[str]:
+    """Which phase bodies the dispatcher would run for a given PHASE value."""
+    import os
+
+    names = "stage prefetch stage_maps pilot fits collect upload upload_tensors upload_results"
+    script = (
+        f'set -euo pipefail\nsource "{DISPATCH_SH}" >/dev/null 2>&1\n'
+        f'for n in {names}; do want_phase "$n" && echo "$n"; done; true'
+    )
+    proc = subprocess.run(
+        ["bash", "-c", script],
+        capture_output=True,
+        text=True,
+        cwd=REPO_ROOT,
+        env={
+            **os.environ,
+            "EPM_I1739_NL_DEFS_ONLY": "1",
+            "EPM_I1739_NL_PHASE": phase_env,
+        },
+    )
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    return set(proc.stdout.split())
+
+
+def test_phase_all_is_unchanged_by_the_fanout_round():
+    """PHASE=all must NOT pick up the fan-out-only phases.
+
+    A single box has nothing on the Hub yet and stage_maps is fail-loud, so
+    folding these into "all" would break the legacy dispatch.
+    """
+    got = _phases_for("all")
+    assert "prefetch" not in got
+    assert "stage_maps" not in got
+    # legacy set intact, including both upload legs via the `upload` alias
+    assert {"stage", "pilot", "fits", "collect", "upload"} <= got
+
+
+def test_opt_in_phases_run_when_named():
+    assert _phases_for("prefetch") == {"prefetch"}
+    assert _phases_for("stage,stage_maps,pilot,fits,collect,upload_results") == {
+        "stage",
+        "stage_maps",
+        "pilot",
+        "fits",
+        "collect",
+        "upload_results",
+    }
+
+
+def test_lane_phase_list_excludes_the_tensors_upload():
+    """6 lanes re-uploading the identical tensors tree = 6 wasted Hub commits."""
+    lane_phases = _phases_for("stage,stage_maps,pilot,fits,collect,upload_results")
+    assert "upload_tensors" not in lane_phases
+    assert "upload" not in lane_phases
+
+
+# ---- projector arithmetic (mirrors compose_pilot_report) --------------------
+
+
+def _project_module():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "_i1739_nlmap_project", REPO_ROOT / "scripts" / "issue1739_nlmap_project.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_projector_lane_arithmetic_matches_compose_pilot_report():
+    """The projector must reproduce the in-run gate's own model, not a lookalike."""
+    F = _load_script_module()
+    P = _project_module()
+    lane = P.project_lane("evil", "mlp", maps_staged=True)
+
+    # Same inputs, fed to the REAL compose_pilot_report.
+    n_keys = lane.n_plain_map_keys
+    gate = F.compose_pilot_report(
+        n_map_fits=0,  # maps staged
+        map_fit_s=P.MAP_FIT_S,
+        unit_group_walls={b: P.wall_for_budget(b) for b in lane.budgets},
+        n_plain_groups={b: lane.n_plain_groups_per_budget for b in lane.budgets},
+        n_compose_units={},
+        transfer_s=lane.n_transfer_units * P.TRANSFER_UNIT_S,
+        n_pilot_transfer_units=lane.n_transfer_units,
+        n_transfer_units=lane.n_transfer_units,
+        plan_wall_h=lane.plan_wall_h,
+        abort_mult=1.0,
+    )
+    assert gate["projected_wall_h"] == pytest.approx(lane.projected_h, rel=1e-9)
+    assert n_keys == 4  # 2 variants x 2 U rungs
+
+
+def test_projector_lane_is_cheaper_with_maps_staged_than_refitting():
+    """The whole point of phase A: a lane must not carry the map-fit term."""
+    P = _project_module()
+    staged = P.project_lane("evil", "mlp", maps_staged=True)
+    refit = P.project_lane("evil", "mlp", maps_staged=False)
+    assert staged.terms["map_s"] == 0.0
+    assert refit.terms["map_s"] == pytest.approx(4 * P.MAP_FIT_S)
+    assert refit.projected_h > staged.projected_h
+
+
+def test_projector_plan_wall_is_fenced_above_the_projection():
+    """PLAN_WALL_H handed to the lanes must leave dispersion headroom."""
+    P = _project_module()
+    lane = P.project_lane("sycophancy", "kernel", maps_staged=True, fence_mult=1.5)
+    assert lane.plan_wall_h >= lane.projected_h
+    assert lane.plan_wall_h == pytest.approx(round(lane.projected_h * 1.5, 2))
+
+
+def test_projector_hallucination_is_cheaper_than_the_3_regime_behaviors():
+    P = _project_module()
+    h = P.project_lane("hallucination", "mlp", maps_staged=True)
+    e = P.project_lane("evil", "mlp", maps_staged=True)
+    assert h.n_regimes == 1 and e.n_regimes == 3
+    assert h.projected_h < e.projected_h
+
+
+def test_fanout_runbook_mode_composes_without_executing(tmp_path):
+    """`runbook` mode must write the runbook and provision/run NOTHING."""
+    import os
+
+    out = tmp_path / "runbook.md"
+    proc = subprocess.run(
+        ["bash", str(FANOUT_SH), "runbook"],
+        capture_output=True,
+        text=True,
+        cwd=REPO_ROOT,
+        env={**os.environ, "EPM_I1739_NL_RUNBOOK": str(out)},
+    )
+    assert proc.returncode == 0, proc.stderr[-3000:]
+    text = out.read_text()
+    # one lane block per (behavior, kind)
+    for behavior in ("evil", "sycophancy", "hallucination"):
+        for kind in ("mlp", "kernel"):
+            assert f"### lane {behavior} / {kind}" in text
+    assert text.count("bash scripts/issue1739_nlmap_dispatch.sh") == 6
+    assert "bash scripts/issue1739_nlmap_fanout.sh phase-a" in text
+    # lanes stage maps and never re-upload tensors
+    assert "stage,stage_maps,pilot,fits,collect,upload_results" in text
+    assert "upload_tensors" not in text.split("## Step 2")[1].split("## Notes")[0]
+    # the projection is carried, from the measured basis
+    assert "MEASURED basis" in text
+
+
+def test_fanout_rejects_an_unknown_mode():
+    proc = subprocess.run(
+        ["bash", str(FANOUT_SH), "provision-everything"],
+        capture_output=True,
+        text=True,
+        cwd=REPO_ROOT,
+    )
+    assert proc.returncode == 2
+    assert "unknown mode" in proc.stderr
+
+
+def test_only_a_scoring_leg_emits_the_results_sentinel_and_phase_done(tmp_path):
+    """`[phase=done]` + the results sentinel ARE the poller's completion contract.
+
+    A phase-A (`prefetch`) or staging-only leg emitting them would drain as
+    `epm:results` and read the whole round as finished after zero arm scores.
+    Probed with `uv` stubbed so no real fit/staging/git runs.
+    """
+    import os
+
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    (bindir / "uv").write_text('#!/usr/bin/env bash\necho "UV: $*" >> "$WIRE_LOG"\nexit 0\n')
+    (bindir / "uv").chmod(0o755)
+    wire = tmp_path / "inv.txt"
+    patched = tmp_path / "dispatch.sh"
+    patched.write_text(
+        DISPATCH_SH.read_text().replace(
+            'LOG_DIR="/workspace/logs"', f'LOG_DIR="{tmp_path / "logs"}"'
+        )
+    )
+
+    def run(phase: str):
+        wire.write_text("")
+        env = {
+            **os.environ,
+            "PATH": f"{bindir}:{os.environ['PATH']}",
+            "WIRE_LOG": str(wire),
+            "EPM_I1739_NL_PHASE": phase,
+            "EPM_I1739_NL_KINDS": "mlp",
+            "EPM_I1739_NL_BEHAVIORS": "evil",
+            "EPM_I1739_FITS_DEVICE": "cpu",
+        }
+        proc = subprocess.run(
+            ["bash", str(patched)], capture_output=True, text=True, cwd=REPO_ROOT, env=env
+        )
+        assert proc.returncode == 0, proc.stderr[-2000:]
+        return proc.stdout, wire.read_text()
+
+    for partial in ("prefetch", "stage_maps"):
+        out, invocations = run(partial)
+        assert "[phase=done]" not in out, f"{partial} leg claimed completion"
+        assert "sentinel written" not in invocations, f"{partial} leg wrote a results sentinel"
+        assert "deliberately non-terminal" in out
+        # the message must not SPELL the token either: the poller greps it
+        # out of the log tail, so the words would be the signal.
+        assert "phase=done" not in out
+
+    # a leg that DID score keeps the contract
+    out, invocations = run("fits,collect")
+    assert "[phase=done]" in out
+    assert "sentinel written" in invocations

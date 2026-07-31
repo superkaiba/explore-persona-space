@@ -217,7 +217,14 @@ def stage(
             "would silently re-fit every one of them (rerun phase-A / its upload, or pass "
             "--allow-missing to accept the re-fit cost deliberately)"
         )
-    if bad:
+    if dry_run:
+        # No checks ran, so say nothing about verification: a "verified 0/8" line
+        # here reads like a failure when it only means "dry-run".
+        print(
+            f"[stage-maps] dry-run: {len(to_stage)}/{len(keys)} expected payload(s) "
+            "present on the Hub; no download, no verification"
+        )
+    elif bad:
         print(
             f"[stage-maps] WARNING: {len(bad)}/{len(keys)} payload(s) unusable; "
             "--allow-missing set, so the lane will RE-FIT them",
