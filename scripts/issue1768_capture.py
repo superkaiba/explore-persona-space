@@ -2194,6 +2194,12 @@ def _pending_units(cfg: Cfg, phase: str) -> list[str]:
             for u in _lad_unit_set(cfg)
             if not (root / "on_target_r4" / "corpus_capture" / u / "pooled.pt").exists()
         ]
+    if phase == "brl2":
+        return [
+            u
+            for u in _brl_unit_set(cfg)
+            if not (root / "on_target_r5" / "corpus_capture" / u / "pooled.pt").exists()
+        ]
     raise ValueError(phase)
 
 
@@ -2220,6 +2226,8 @@ def run_unit(cfg: Cfg, unit_arg: str) -> None:
         run_pfx_tf_unit(cfg, rest)
     elif phase == "lad2":
         run_lad_corpus_unit(cfg, rest)
+    elif phase == "brl2":
+        run_brl_corpus_unit(cfg, rest)
     else:
         raise ValueError(unit_arg)
 
@@ -4829,6 +4837,896 @@ def phase_lad4(cfg: Cfg) -> None:
     )
 
 
+# ── brl: round-5 behavior-relevant never-trained prefix panel (plan v13) ─────
+#
+# brl_build  VM-side (CPU, pre-dispatch): fu3 C3-conv sycophancy pool join ->
+#            trained-row exclusion (issue1481 train_mix) -> banked-judge
+#            filter (6-row pin) -> deterministic 15-pairing enumeration ->
+#            3 two-exchange 4-turn prefixes at the r4 r_long band ->
+#            prefix_ladder_r5.json + repo commit copy + HF upload + the
+#            r3+r4 r_results mirror. NO WildChat scan (the pool is 36 rows —
+#            the lad_build scan/cursor/widening machinery is deleted from
+#            this twin; plan §9 row 1).
+# brl0  panel-corpus render + budgets + FULL-GRAIN exclusion re-assert (CPU).
+# brl1  pilot: syc-pers-con-lr1e5-s42 @ the longest realized-T prefix (kill a).
+# brl2  panel capture (15 units: 12 trained + 3 base@b_rel; content decode).
+# brl4  on_target_r5 tree upload + exact-set verify (BEFORE fits; #825).
+
+BRL_FU3_PREFIX = "issue1090_fu3/C3-conv-con-sycophancy-claude/datagen"
+BRL_MIX_PREFIX = "issue1481_conpos_grid/po_mixes/syc-conv/mix"
+BRL_POOL_FILES = ("pos.jsonl", "raw_pos.jsonl", "judge_rows.jsonl", "pool_meta.json")
+BRL_MIX_FILES = ("train_mix.jsonl", "mix_meta.json")
+BRL_N_RAW = 36
+BRL_N_EMITTED = 20
+BRL_N_KEPT_TOTAL = 26  # pool_meta arithmetic: 26 kept = 20 emitted + 6 surplus
+# Plan §4.2 step 3 pinned EXPECTED kept never-trained set (request_id -> banked
+# judge mean-of-5); a mismatch = the Hub artifact drifted (kill criterion b,
+# failure_class: data).
+BRL_EXPECTED_KEPT = {
+    "pos-00001": 95.0,
+    "pos-00006": 95.0,
+    "pos-00011": 95.0,
+    "pos-00014": 85.0,
+    "pos-00017": 85.0,
+    "pos-00030": 68.5,
+}
+BRL_BAND = (547.5, 912.5)  # r4 r_long band, verbatim (plan §11; re-asserted vs the r4 ladder)
+BRL_BOOKED_UNIT_GPU_H = 0.2  # plan §9 brl1 row (r4 REALIZED pilot 0.152 GPU-h + margin)
+BRL_PILOT_ARM = "syc-pers-con-lr1e5-s42"  # plan §4.4 brl1 (also the smoke-parity arm)
+BRL_UPLOAD_TREES = (
+    "on_target_r5/inputs",
+    "on_target_r5/pilot",
+    "on_target_r5/corpus_capture",
+)
+BRL_R_RESULTS = "on_target_r5/inputs/r_results"  # plan §4.2 lane-transport mirror prefix
+
+
+def _brl_root(cfg: Cfg) -> Path:
+    return cfg.out_root / "on_target_r5"
+
+
+def _brl_inputs(cfg: Cfg) -> Path:
+    return _brl_root(cfg) / "inputs"
+
+
+def _brl_repo_panel_path() -> Path:
+    """The committed (git) copy of the pinned panel (plan §10 git dest)."""
+    return (
+        REPO_ROOT
+        / "eval_results"
+        / "issue_1768"
+        / "on_target_r5"
+        / "inputs"
+        / "prefix_ladder_r5.json"
+    )
+
+
+def _brl_stage_pool(cfg: Cfg) -> dict[str, Path]:
+    """Stage the fu3 pool + issue1481 mix files (plan §4.2 sources) under
+    on_target_r5/inputs/pool/ — idempotent; PRODUCTION Hub prefixes (the pool
+    is a production input even under --smoke)."""
+    from explore_persona_space.orchestrate import hub
+
+    dest = _brl_inputs(cfg) / "pool"
+    out: dict[str, Path] = {}
+    for prefix, names in ((BRL_FU3_PREFIX, BRL_POOL_FILES), (BRL_MIX_PREFIX, BRL_MIX_FILES)):
+        for name in names:
+            target = dest / name
+            if not target.exists():
+                hub.stage_hub_file(X.HF_DATA_REPO, f"{prefix}/{name}", target, repo_type="dataset")
+            out[name] = target
+    return out
+
+
+def _brl_jsonl_rows(path: Path) -> list[dict]:
+    """Text-mode JSONL iteration (never splitlines — the #825/#950 rule)."""
+    return [json.loads(line) for line in path.open(encoding="utf-8") if line.strip()]
+
+
+def _brl_msg_qc(row: dict, tag: str) -> tuple[str, str]:
+    """(question, completion) of a pos/mix row: `prompt` = a message list whose
+    LAST user turn carries the question; `completion` = exactly one assistant
+    message (schema probed against the pinned artifacts, 2026-07-31)."""
+    users = [m for m in row["prompt"] if m.get("role") == "user"]
+    assert users, (tag, "no user turn in a pos/mix row prompt")
+    comp = row["completion"]
+    assert isinstance(comp, list) and len(comp) == 1 and comp[0]["role"] == "assistant", (
+        tag,
+        "unexpected completion shape (want [one assistant message])",
+    )
+    return users[-1]["content"], comp[0]["content"]
+
+
+def _brl_derive_kept(pool: dict[str, Path]) -> tuple[list[dict], dict]:
+    """Plan §4.2 steps 1-3: pool join -> trained-row exclusion (sha-pair vs the
+    20 emitted rows, independently re-derived from train_mix.jsonl) -> banked
+    judge-acceptance filter. Every count + the pinned 6-row set asserted
+    (kill criterion b: a mismatch = the Hub artifact drifted,
+    failure_class: data). Returns (kept rows with `_judge_mean`/`_shared_q`
+    annotations, the derivation record for the panel manifest)."""
+    pos = _brl_jsonl_rows(pool["pos.jsonl"])
+    raw = _brl_jsonl_rows(pool["raw_pos.jsonl"])
+    judge = _brl_jsonl_rows(pool["judge_rows.jsonl"])
+    mix = _brl_jsonl_rows(pool["train_mix.jsonl"])
+    meta = json.loads(pool["pool_meta.json"].read_text())
+    assert len(raw) == BRL_N_RAW and len(pos) == BRL_N_EMITTED, (len(raw), len(pos))
+    jr = {r["request_id"]: r for r in judge}
+    n_join = sum(1 for r in raw if r["request_id"] in jr)
+    assert n_join == BRL_N_RAW, (n_join, "raw_pos -> judge_rows join must be 36/36 (plan §4.2)")
+    emitted = {tuple(map(X.prompt_sha, _brl_msg_qc(r, "pos"))) for r in pos}
+    assert len(emitted) == BRL_N_EMITTED, len(emitted)
+    mix_pairs = {tuple(map(X.prompt_sha, _brl_msg_qc(r, "mix"))) for r in mix}
+    assert emitted <= mix_pairs, (
+        "emitted (question, completion) sha pairs not all present in train_mix.jsonl "
+        "(plan §4.2 step 2: independent exclusion-set re-derivation)"
+    )
+    never = [
+        r
+        for r in raw
+        if (X.prompt_sha(r["question"]), X.prompt_sha(r["completion"])) not in emitted
+    ]
+    kept = sorted((r for r in never if jr[r["request_id"]]["kept"]), key=lambda r: r["request_id"])
+    realized = {r["request_id"]: float(jr[r["request_id"]]["mean"]) for r in kept}
+    assert realized == BRL_EXPECTED_KEPT, (
+        realized,
+        BRL_EXPECTED_KEPT,
+        "kill criterion (b): kept never-trained set != the plan-pinned 6 rows "
+        "(the Hub pool drifted) — failure_class: data",
+    )
+    n_kept_total = sum(1 for r in raw if jr[r["request_id"]]["kept"])
+    assert n_kept_total == BRL_N_KEPT_TOTAL, (
+        n_kept_total,
+        "pool_meta reconciliation: 26 kept == 20 emitted + 6 surplus (plan §4.2 step 3)",
+    )
+    assert (
+        meta["positive"]["kept"] == BRL_N_KEPT_TOTAL
+        and meta["positive"]["emitted"] == BRL_N_EMITTED
+    ), meta.get("positive")
+    emitted_q = {X.prompt_sha(_brl_msg_qc(r, "pos")[0]) for r in pos}
+    for r in kept:
+        r["_judge_mean"] = realized[r["request_id"]]
+        r["_shared_q"] = X.prompt_sha(r["question"]) in emitted_q
+    derivation = {
+        "n_raw": len(raw),
+        "n_emitted": BRL_N_EMITTED,
+        "n_never_trained": len(never),
+        "n_kept_never_trained": len(kept),
+        "n_kept_total": n_kept_total,
+        "judge_instrument": {
+            "judge_model": meta["judge_model"],
+            "threshold": meta["threshold"],
+            "n_judge_draws": meta["n_judge_draws"],
+        },
+        "emitted_qc_sha16_pairs": sorted([list(p) for p in emitted]),
+        "pool_shas": {
+            name: hashlib.sha256(path.read_bytes()).hexdigest() for name, path in pool.items()
+        },
+    }
+    return kept, derivation
+
+
+def brl_pairings(ids: list[str]) -> list[list[tuple[str, str]]]:
+    """All perfect matchings of the ids into unordered pairs ((n-1)!! = 15 at
+    n=6; plan §4.2 step 6 enumeration)."""
+    rem = sorted(ids)
+    if not rem:
+        return [[]]
+    first = rem[0]
+    out = []
+    for j in range(1, len(rem)):
+        for sub in brl_pairings(rem[1:j] + rem[j + 1 :]):
+            out.append([(first, rem[j])] + sub)
+    return out
+
+
+def _brl_canon(pairing) -> tuple[tuple[str, str], ...]:
+    return tuple(sorted(tuple(sorted(pair)) for pair in pairing))
+
+
+def brl_select_pairing(
+    T: dict[str, int], band: tuple[float, float] = BRL_BAND
+) -> tuple[list[tuple[str, str]], int, list[dict]]:
+    """Plan §4.2 step 6 registered pairing rule: over all perfect pairings,
+    maximize the in-band prefix count; tie-break (i) maximal min-prefix T,
+    (ii) lexicographically smallest sorted request_id tuple. Returns
+    (winning canonical pairing, its in-band count, the full enumeration
+    record for the manifest)."""
+    lo, hi = band
+
+    def key(p):
+        ts = [T[a] + T[b] for a, b in p]
+        n_in = sum(1 for t in ts if lo <= t <= hi)
+        return (-n_in, -min(ts), _brl_canon(p))
+
+    allp = brl_pairings(list(T))
+    assert len(allp) == 15, (len(allp), "6-exchange perfect-matching count")
+    record = []
+    for p in allp:
+        canon = _brl_canon(p)
+        ts = {f"{a}+{b}": T[a] + T[b] for a, b in canon}
+        record.append(
+            {
+                "pairs": [list(x) for x in canon],
+                "pair_tokens": ts,
+                "n_in_band": sum(1 for t in ts.values() if lo <= t <= hi),
+                "min_pair_tokens": min(ts.values()),
+            }
+        )
+    win = min(allp, key=key)
+    canon = list(_brl_canon(win))
+    n_in = sum(1 for a, b in canon if lo <= T[a] + T[b] <= hi)
+    return canon, n_in, record
+
+
+def brl_assign_conds(
+    pairing: list[tuple[str, str]], judge_means: dict[str, float]
+) -> dict[str, tuple[str, str]]:
+    """Deterministic cond-label assignment: pairs in ASCENDING total banked
+    judge mean (tie: ascending min request_id) -> b_rel1, b_rel2, b_rel3.
+    Reproduces the plan-§4.2 advisory labeling on the predicted pairing;
+    labels are naming only — every registered read is label-symmetric and the
+    question-shared split keys on the manifest flags, never the label."""
+    ordered = sorted(pairing, key=lambda p: (judge_means[p[0]] + judge_means[p[1]], min(p)))
+    return dict(zip(X.R5_CONDS, ordered, strict=True))
+
+
+def brl_prefix_reject(
+    turns: list[dict], excl: dict, sha_set: set[str], query_texts: list[str]
+) -> str | None:
+    """Never-trained / content-novel screens for ONE rendered b_rel prefix
+    (plan §4.2 exclusions 3-4 + shape 6): first-violation name, or None.
+    Recipe/content-sha screens (exclusion 2) run at the shim level in the
+    builder + recheck (they need the r4 ladder's banked shas)."""
+    roles = tuple(t["role"] for t in turns)
+    if roles != X.R5_TURN_ROLES:
+        return "bad_roles"
+    contents = [t["content"] for t in turns]
+    if not all(c.strip() for c in contents):
+        return "empty_content"
+    if any(len(c) > LAD_TURN_CONTENT_CAP for c in contents):
+        return "turn_over_cap"
+    for i in (0, 2):  # each USER turn's sha vs the FULL round-1 query-sha set
+        if X.prompt_sha(contents[i]) in sha_set:
+            return "query_sha_overlap"
+    needles = lad_belt_needles(query_texts)
+    if any(q in c for c in contents for q in needles):
+        return "belt_query_text_substring"
+    if any(excl["persona_system"] in c for c in contents):
+        return "trained_context_containment"
+    for demo in excl["icl_demo_texts"]:
+        if any(demo in c for c in contents):
+            return "trained_context_containment"
+    return None
+
+
+def _brl_r4_ladder(cfg: Cfg) -> dict:
+    """The pinned r4 rung ladder (the r_long band source + the banked
+    trained/rung recipe shas for exclusion 2): local lad staging path ->
+    repo commit copy -> Hub (fail-loud both-miss). Asserts the banked band
+    equals the plan-§11 pin verbatim."""
+    path = _lad_inputs(cfg) / "prefix_ladder.json"
+    if not path.exists():
+        repo_copy = _lad_repo_ladder_path()
+        if repo_copy.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(repo_copy, path)
+        else:
+            from explore_persona_space.orchestrate import hub
+
+            hub.stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/on_target_r4/inputs/prefix_ladder.json",
+                path,
+                repo_type="dataset",
+            )
+    ladder = json.loads(path.read_text())
+    band = tuple(ladder["rungs"]["r_long"]["band"])
+    assert band == BRL_BAND, (band, BRL_BAND, "r4 r_long band drift vs the plan §11 pin")
+    return ladder
+
+
+def _brl_banned_shas(r4_ladder: dict) -> tuple[set[str], set[str]]:
+    """(banned recipe shas, banned content shas) for exclusion 2: the 3
+    trained-prefix shas (banked in the r4 ladder exclusions block) + the 3 r4
+    rung recipe shas (plan §4.2 exclusion 2, values banked — never re-derived
+    here)."""
+    banned_recipe = set(r4_ladder["exclusions"]["trained_prefix_recipe_shas"].values()) | {
+        r4_ladder["rungs"][c]["recipe_sha256"] for c in X.R4_CONDS
+    }
+    banned_content = set(r4_ladder["exclusions"]["trained_prefix_content_shas"].values())
+    return banned_recipe, banned_content
+
+
+def _brl_prefix_record(
+    cond: str, pair: tuple[str, str], kept_by_id: dict[str, dict], T: dict[str, int]
+) -> dict:
+    """One panel prefix record: 2 exchanges (ascending request_id), 4
+    alternating turns under the content[:2000] recipe (plan §4.2 step 4-5)."""
+    import types
+
+    a, b = sorted(pair)
+    turns = []
+    for rid in (a, b):
+        r = kept_by_id[rid]
+        turns.append({"role": "user", "content": r["question"][:LAD_TURN_CONTENT_CAP]})
+        turns.append({"role": "assistant", "content": r["completion"][:LAD_TURN_CONTENT_CAP]})
+    t_total = T[a] + T[b]
+    rec = {
+        "context_id": X.R5_CONTEXT_ID_BY_COND[cond],
+        "prefix_turns": turns,
+        "request_ids": [a, b],
+        "exchanges": [
+            {
+                "request_id": rid,
+                "question_id": kept_by_id[rid]["question_id"],
+                "variant_id": kept_by_id[rid]["variant_id"],
+                "judge_mean": kept_by_id[rid]["_judge_mean"],
+                "content_tokens": T[rid],
+                "q_sha16": X.prompt_sha(kept_by_id[rid]["question"]),
+                "c_sha16": X.prompt_sha(kept_by_id[rid]["completion"]),
+                "truncated": (
+                    len(kept_by_id[rid]["question"]) > LAD_TURN_CONTENT_CAP
+                    or len(kept_by_id[rid]["completion"]) > LAD_TURN_CONTENT_CAP
+                ),
+                "question_shared_with_trained": kept_by_id[rid]["_shared_q"],
+            }
+            for rid in (a, b)
+        ],
+        "realized_tokens": t_total,
+        "band": list(BRL_BAND),
+        "in_band": BRL_BAND[0] <= t_total <= BRL_BAND[1],
+        "question_shared_request_ids": [rid for rid in (a, b) if kept_by_id[rid]["_shared_q"]],
+        "turns_sha256": lad_turns_sha(turns),
+    }
+    shim = types.SimpleNamespace(
+        context_id=rec["context_id"], system=None, prefix_turns=tuple(turns), user_wrap=None
+    )
+    rec["recipe_sha256"] = _pfx_prefix_sha(shim)
+    rec["content_sha256"] = _lad_content_sha(shim)
+    return rec
+
+
+def _brl_per_arm_mix_overlap(cfg: Cfg, prefixes: dict[str, dict]) -> dict:
+    """Disclosure-only per-ARM per-turn text-overlap counts vs each arm's OWN
+    training mix (plan §4.2 question-sharing disclosure; unresolvable ->
+    'unknown', never a gate)."""
+    from explore_persona_space.orchestrate import hub
+
+    reg_path = cfg.out_root / "arm_registry.json"
+    if not reg_path.exists():
+        hub.stage_hub_file(X.HF_DATA_REPO, f"{X.HF_PREFIX}/arm_registry.json", reg_path)
+    reg = json.loads(reg_path.read_text())
+    src_by_arm = reg.get("mix_pos_sources", {})
+    out: dict[str, dict] = {}
+    for arm in X.R5_ARMS:
+        src = src_by_arm.get(arm)
+        if not src or "pos_path" not in src:
+            out[arm] = {"overlap": "unknown", "reason": "no mix_pos_sources registry entry"}
+            continue
+        local = _brl_inputs(cfg) / "mix_overlap" / arm / Path(src["pos_path"]).name
+        if not local.exists():
+            hub.stage_hub_file(X.HF_DATA_REPO, src["pos_path"], local, repo_type="dataset")
+        qs: set[str] = set()
+        cs: set[str] = set()
+        for line in local.open(encoding="utf-8"):
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            try:
+                q, c = _brl_msg_qc(row, arm)
+            except (AssertionError, KeyError, TypeError):
+                continue  # non-positive layout rows (disclosure-only tolerance)
+            qs.add(X.prompt_sha(q))
+            cs.add(X.prompt_sha(c))
+        per_prefix = {}
+        for cond, rec in prefixes.items():
+            per_prefix[cond] = {
+                "n_question_overlap": sum(1 for e in rec["exchanges"] if e["q_sha16"] in qs),
+                "n_completion_overlap": sum(1 for e in rec["exchanges"] if e["c_sha16"] in cs),
+            }
+        out[arm] = {"overlap": per_prefix, "pos_path": src["pos_path"]}
+    return out
+
+
+def _brl_mirror_r_results(cfg: Cfg) -> None:
+    """Unconditional idempotent pre-dispatch mirror of the COMMITTED r3+r4
+    result inputs to HF `{prefix}/on_target_r5/inputs/r_results/` (plan §4.2
+    lane transport: the fellows lane rsync-excludes eval_results/). Layout =
+    the repo-relative paths under eval_results/issue_1768/, so the pod-side
+    staging arithmetic is `results_dir`-relative. ONE upload_folder commit
+    (never a per-file loop — the #664 504-storm rule)."""
+    from explore_persona_space.orchestrate import hub
+
+    src_root = REPO_ROOT / "eval_results" / "issue_1768"
+    mirror = _brl_inputs(cfg) / "r_results"
+    rels = ["on_target/map_change_on_target.json", "on_target/m0_prefix_effect.json"]
+    rels += [
+        f"on_target/percell/{a}_L{layer}_{s}.json"
+        for a in X.R5_ARMS
+        for layer in X.LAYERS
+        for s in ("bare_n", "control", "own")
+    ]
+    rels += [f"on_target/fits_bare_n/{a}_L{layer}.json" for a in X.R5_ARMS for layer in X.LAYERS]
+    rels += [
+        f"on_target_r4/percell/{a}_L{layer}_{s}.json"
+        for a in X.R5_ARMS
+        for layer in X.LAYERS
+        for s in X.R4_CONDS  # r_long is the comparator; r_short/r_mid ride for figures + dose
+    ]
+    rels += [
+        "on_target_r4/map_change_ladder.json",
+        "on_target_r4/m0_rung_effect.json",
+        "on_target_r4/inputs/prefix_ladder.json",
+    ]
+    for rel in rels:
+        src = src_root / rel
+        assert src.exists(), (
+            f"[brl_build] r_results mirror source missing from the repo tree: {src}"
+        )
+        dst = mirror / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if not dst.exists():
+            shutil.copy2(src, dst)
+    url = hub._upload(
+        mirror,
+        repo_id=X.HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{cfg.hf_prefix}/{BRL_R_RESULTS}",
+    )
+    if not url:
+        raise RuntimeError("[brl_build] r_results mirror upload returned no path")
+    logger.info("[brl_build] r_results mirror uploaded (%d files)", len(rels))
+
+
+def _brl_build_publish(cfg: Cfg, panel: dict) -> None:
+    """Repo-copy the pinned panel for the pre-dispatch git commit + upload it
+    and the r_results mirror to the Hub. Production only: a smoke run must
+    never touch the committed path or the production bucket (the smoke
+    hf_prefix is `_smoke`-suffixed anyway; the repo copy is the committed
+    artifact the smoke-output rule protects)."""
+    from explore_persona_space.orchestrate import hub
+
+    src = _brl_inputs(cfg) / "prefix_ladder_r5.json"
+    if cfg.smoke:
+        logger.info("[brl_build] smoke: repo-copy + Hub publish skipped (production-only)")
+        return
+    repo_copy = _brl_repo_panel_path()
+    if not repo_copy.exists() or repo_copy.read_text() != src.read_text():
+        repo_copy.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, repo_copy)
+        logger.info("[brl_build] panel copied to %s (commit pre-dispatch)", repo_copy)
+    if not cfg.upload:
+        logger.info("[brl_build] upload disabled (--no-upload)")
+        return
+    url = hub._upload(
+        src,
+        repo_id=X.HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{cfg.hf_prefix}/on_target_r5/inputs/prefix_ladder_r5.json",
+        upload_as_file=True,
+    )
+    if not url:
+        raise RuntimeError("[brl_build] prefix_ladder_r5.json upload returned no path")
+    _brl_mirror_r_results(cfg)
+
+
+def phase_brl_build(cfg: Cfg) -> None:
+    """brl_build (VM-side CPU, pre-dispatch): the §4.2 panel derivation in
+    full — every step re-computed and asserted at FULL grain in smoke AND
+    production (the pool is 36 rows; #1817). Smoke differs ONLY in skipping
+    the repo-copy/Hub publish."""
+    _phase("brl_build")
+    _status(cfg, "brl_build")
+    from transformers import AutoTokenizer
+
+    dest = _brl_inputs(cfg) / "prefix_ladder_r5.json"
+    if dest.exists():
+        logger.info("[brl_build] prefix_ladder_r5.json present — resume skip; re-publishing")
+        _brl_build_publish(cfg, json.loads(dest.read_text()))
+        return
+    pool = _brl_stage_pool(cfg)
+    kept, derivation = _brl_derive_kept(pool)  # steps 1-3 + the 6-row pin (kill b)
+    kept_by_id = {r["request_id"]: r for r in kept}
+    r4_ladder = _brl_r4_ladder(cfg)
+    banned_recipe, banned_content = _brl_banned_shas(r4_ladder)
+    excl = _lad_trained_exclusion_material()
+    sha_set, query_texts = _lad_full_grain_samples(cfg)
+    # Panel token counts ALWAYS use the PRODUCTION tokenizer (plan §11) — the
+    # r4 band anchors were measured under it; a model_override never rebinds it.
+    tok = AutoTokenizer.from_pretrained(X.BASE_MODEL)
+    T = {}
+    for r in kept:
+        q = r["question"][:LAD_TURN_CONTENT_CAP]
+        c = r["completion"][:LAD_TURN_CONTENT_CAP]
+        T[r["request_id"]] = len(tok(q, add_special_tokens=False)["input_ids"]) + len(
+            tok(c, add_special_tokens=False)["input_ids"]
+        )
+    pairing, n_in_band, enumeration = brl_select_pairing(T)
+    if n_in_band < 2:
+        raise RuntimeError(
+            f"[brl_build] kill criterion (b): only {n_in_band} in-band prefix(es) under "
+            "EVERY pairing — the tokenizer-ratio surprise exceeded the pre-registered "
+            "fallback (plan §4.2 step 7); failure_class: data (re-plan the band, never "
+            "silently widen)"
+        )
+    if n_in_band < 3:
+        logger.info(
+            "[brl_build] pre-registered fallback engaged: best pairing has %d/3 in-band "
+            "prefixes (plan §4.2 step 7) — out-of-band realized T recorded; the "
+            "dose-interpolated secondary read de-confounds it",
+            n_in_band,
+        )
+    assign = brl_assign_conds(pairing, {rid: kept_by_id[rid]["_judge_mean"] for rid in T})
+    prefixes = {
+        cond: _brl_prefix_record(cond, pair, kept_by_id, T) for cond, pair in assign.items()
+    }
+    # Mechanical exclusion screens (plan §4.2 exclusions 1-6), each an assert:
+    used_ids: list[str] = []
+    for cond, rec in prefixes.items():
+        reason = brl_prefix_reject(rec["prefix_turns"], excl, sha_set, query_texts)
+        assert reason is None, (cond, reason, "builder exclusion violated")
+        for e in rec["exchanges"]:  # (1) trained-row disjointness, re-asserted per exchange
+            assert [e["q_sha16"], e["c_sha16"]] not in derivation["emitted_qc_sha16_pairs"], (
+                cond,
+                e["request_id"],
+            )
+        assert rec["recipe_sha256"] not in banned_recipe, (cond, "recipe sha collides")
+        assert rec["content_sha256"] not in banned_content, (cond, "content sha collides")
+        used_ids += list(rec["request_ids"])
+    assert len(used_ids) == 6 and len(set(used_ids)) == 6, ("exclusion 5", used_ids)
+    panel = {
+        "prefixes": prefixes,
+        "pairing": {
+            "rule": (
+                "max in-band count over all 15 perfect pairings; tie-break (i) max "
+                "min-prefix T, (ii) lexicographically smallest sorted request_id tuple "
+                "(plan §4.2 step 6)"
+            ),
+            "assignment_rule": (
+                "pairs -> b_rel1..b_rel3 in ascending total banked judge mean "
+                "(tie: ascending min request_id)"
+            ),
+            "n_in_band": n_in_band,
+            "fallback_engaged": n_in_band < 3,
+            "enumeration": enumeration,
+        },
+        "band_source": "r4 prefix_ladder.json rungs.r_long.band (verbatim; plan §11)",
+        "derivation": derivation,
+        "exclusions": {
+            "trained_prefix_recipe_shas": r4_ladder["exclusions"]["trained_prefix_recipe_shas"],
+            "trained_prefix_content_shas": r4_ladder["exclusions"]["trained_prefix_content_shas"],
+            "r4_rung_recipe_shas": {c: r4_ladder["rungs"][c]["recipe_sha256"] for c in X.R4_CONDS},
+            "belt_min_query_chars": LAD_BELT_MIN_QUERY_CHARS,
+            "screens": [
+                "trained-row (question, completion) sha-pair disjointness vs the 20 "
+                "emitted rows + train_mix positives",
+                "trained-prefix + r4-rung recipe/content sha disjointness",
+                "query-corpus sha disjointness (each user turn vs the full round-1 "
+                f"sample) + substring belt (needles >= {LAD_BELT_MIN_QUERY_CHARS} chars)",
+                "trained-context non-containment (persona system + icl demos)",
+                "cross-prefix request_id distinctness (each of the 6 used exactly once)",
+                "shape (user, assistant, user, assistant); non-empty capped contents",
+            ],
+            "language_screens": (
+                "N/A — curated English datagen bank, judge-filtered (plan §4.2: stated, "
+                "not screened)"
+            ),
+        },
+        "per_arm_mix_overlap": _brl_per_arm_mix_overlap(cfg, prefixes),
+        "smoke": cfg.smoke,
+        **_meta(),
+    }
+    _atomic_json(dest, panel)
+    logger.info(
+        "[brl_build] panel pinned: %s (n_in_band=%d, fallback=%s)",
+        {c: prefixes[c]["request_ids"] for c in X.R5_CONDS},
+        n_in_band,
+        n_in_band < 3,
+    )
+    _brl_build_publish(cfg, panel)
+
+
+def _brl_stage_inputs(cfg: Cfg) -> None:
+    """brl0 staging: pinned panel (local -> repo checkout -> Hub, fail-loud
+    both-miss) + the pfx sample (production: the round-3 corpus_sample_pfx
+    VERBATIM from the Hub — never re-derived; --smoke derives the tiny sample
+    via the round-3 `_build_pfx_sample` path, the lad0 convention)."""
+    from explore_persona_space.orchestrate import hub
+
+    panel_path = _brl_inputs(cfg) / "prefix_ladder_r5.json"
+    if not panel_path.exists():
+        repo_copy = _brl_repo_panel_path()
+        if repo_copy.exists():
+            panel_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(repo_copy, panel_path)
+        else:
+            hub.stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/on_target_r5/inputs/prefix_ladder_r5.json",
+                panel_path,
+                repo_type="dataset",
+            )
+    canonical = _pfx_inputs(cfg) / "corpus_sample_pfx.json"
+    if not canonical.exists():
+        if cfg.smoke:
+            _build_pfx_sample(cfg)  # fixture-derived tiny sample (p0 --smoke ran)
+        else:
+            hub.stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/on_target/inputs/corpus_sample_pfx.json",
+                canonical,
+                repo_type="dataset",
+            )
+
+
+def _brl_recheck_exclusions(cfg: Cfg, tok, panel: dict) -> dict:
+    """Kill criterion (d): re-assert the §4.2 exclusion set + band membership
+    against the FULL pinned panel, the FULL-grain samples, AND a fresh pool
+    re-derivation (never the smoke slice — the #1817 rule). Any violation =
+    builder bug, fail loud."""
+    import types
+
+    pool = _brl_stage_pool(cfg)
+    kept, _derivation = _brl_derive_kept(pool)  # re-derives + re-asserts the 6-row pin
+    kept_by_id = {r["request_id"]: r for r in kept}
+    excl = _lad_trained_exclusion_material()
+    sha_set, query_texts = _lad_full_grain_samples(cfg)
+    r4_ladder = _brl_r4_ladder(cfg)
+    banned_recipe, banned_content = _brl_banned_shas(r4_ladder)
+    out = {}
+    used_ids: list[str] = []
+    for cond in X.R5_CONDS:
+        rec = panel["prefixes"][cond]
+        turns = rec["prefix_turns"]
+        reason = brl_prefix_reject(turns, excl, sha_set, query_texts)
+        assert reason is None, (cond, reason, "builder exclusion violated (kill d)")
+        for e in rec["exchanges"]:
+            r = kept_by_id[e["request_id"]]
+            assert e["q_sha16"] == X.prompt_sha(r["question"]), (cond, e["request_id"])
+            assert e["c_sha16"] == X.prompt_sha(r["completion"]), (cond, e["request_id"])
+        t_tokens = sum(len(tok(t["content"], add_special_tokens=False)["input_ids"]) for t in turns)
+        assert t_tokens == rec["realized_tokens"], (
+            cond,
+            t_tokens,
+            rec["realized_tokens"],
+            "tokenizer drift vs the build-time count",
+        )
+        lo, hi = rec["band"]
+        assert (lo <= t_tokens <= hi) == rec["in_band"], (cond, t_tokens, rec["band"])
+        shim = types.SimpleNamespace(
+            context_id=rec["context_id"], system=None, prefix_turns=tuple(turns), user_wrap=None
+        )
+        assert _pfx_prefix_sha(shim) == rec["recipe_sha256"], (cond, "recipe sha drift")
+        assert rec["recipe_sha256"] not in banned_recipe, (cond, "recipe sha collides (kill d)")
+        assert _lad_content_sha(shim) not in banned_content, (cond, "content sha collides")
+        assert lad_turns_sha(turns) == rec["turns_sha256"], (cond, "turns sha drift")
+        used_ids += list(rec["request_ids"])
+        out[cond] = {
+            "request_ids": rec["request_ids"],
+            "realized_tokens": t_tokens,
+            "band": rec["band"],
+            "in_band": rec["in_band"],
+            "screens": "ALL PASS (full grain)",
+        }
+    assert len(used_ids) == 6 and len(set(used_ids)) == 6, ("exclusion 5", used_ids)
+    n_in = sum(1 for c in X.R5_CONDS if panel["prefixes"][c]["in_band"])
+    assert n_in >= 2, (n_in, "kill criterion (b) class: fewer than 2 in-band prefixes")
+    return out
+
+
+def _brl_cond_record(cfg: Cfg, context_id: str) -> dict:
+    conds = json.loads((_brl_inputs(cfg) / "conditions.json").read_text())["conditions"]
+    assert context_id in conds, (context_id, "b_rel condition not built at brl0", sorted(conds))
+    return conds[context_id]
+
+
+def phase_brl0(cfg: Cfg) -> None:
+    """brl0: panel-corpus render + budgets + FULL-grain exclusion re-assert."""
+    _phase("brl0_panel_corpus")
+    _status(cfg, "brl0_panel_corpus")
+    from transformers import AutoTokenizer
+
+    _brl_stage_inputs(cfg)
+    sample = X.load_pfx_sample(cfg.out_root)
+    done = _brl_inputs(cfg) / "build_done.json"
+    if done.exists():
+        logger.info("[brl0] build_done.json present — resume skip")
+        return
+    X.register_r5_brel_contexts(cfg.out_root)
+    panel = X.load_r5_brel_panel(cfg.out_root)
+    tok = AutoTokenizer.from_pretrained(cfg.model_override or X.BASE_MODEL)
+    conds: dict[str, dict] = {}
+    for cond in X.R5_CONDS:
+        cid = X.R5_CONTEXT_ID_BY_COND[cond]
+        ctx = _lad_registry_context(cid)
+        budgets = _pfx_budget(tok, ctx, sample["rows"])  # content overflow FAILS LOUD
+        prefix_tokens = len(tok(ctx.render(tok, ""), add_special_tokens=False)["input_ids"])
+        rec_panel = panel["prefixes"][cond]
+        rec = {
+            "tag": cond,
+            "context_id": cid,
+            "prefix_sha256": _pfx_prefix_sha(ctx),
+            "recipe": _pfx_prefix_recipe(ctx),
+            "prefix_tokens": prefix_tokens,
+            "realized_content_tokens": rec_panel["realized_tokens"],
+            "band": rec_panel["band"],
+            "in_band": rec_panel["in_band"],
+            "request_ids": rec_panel["request_ids"],
+            "message_shape": {
+                "has_system": ctx.system is not None,
+                "n_prefix_turns": len(ctx.prefix_turns),
+                "has_user_wrap": ctx.user_wrap is not None,
+            },
+            "budgets": budgets,
+            "n_rows": len(sample["rows"]),
+        }
+        conds[cid] = rec
+        _atomic_json(
+            _brl_inputs(cfg) / f"corpus_{cond}.json",
+            {
+                **rec,
+                "rows_sha256": hashlib.sha256(
+                    "\n".join(r["sha"] for r in sample["rows"]).encode("utf-8")
+                ).hexdigest(),
+                **_meta(),
+            },
+        )
+    _atomic_json(_brl_inputs(cfg) / "conditions.json", {"conditions": conds, **_meta()})
+    recheck = _brl_recheck_exclusions(cfg, tok, panel)  # kill criterion (d)
+    _atomic_json(_brl_inputs(cfg) / "exclusion_recheck.json", {"prefixes": recheck, **_meta()})
+    _atomic_json(
+        done,
+        {"n_rows": len(sample["rows"]), "conditions": sorted(conds), **_meta()},
+    )
+    logger.info("[brl0] panel corpora + budgets + exclusion re-assert done (%d conds)", len(conds))
+
+
+def run_brl_corpus_unit(cfg: Cfg, unit_id: str) -> None:
+    """brl2 unit: b_rel-prefixed greedy gen -> TF span-means (prefix+ctx+resp),
+    via the SAME `_prefixed_capture_core` the pfx2/lad2 units run. The panel
+    registrar runs idempotently at point of use (fresh fan-out subprocesses
+    inherit no registry state — the #1090-fu6/#1315 lessons)."""
+    X.register_r5_brel_contexts(cfg.out_root)
+    cid = X.r5_unit_context_id(unit_id)
+    _prefixed_capture_core(
+        cfg,
+        unit_id,
+        root=_brl_root(cfg),
+        cid=cid,
+        cond_rec=_brl_cond_record(cfg, cid),
+        ctx=_lad_registry_context(cid),
+    )
+
+
+def _brl_pilot_cond(cfg: Cfg) -> str:
+    """Pilot condition: the LONGEST realized-T prefix (worst case; plan §4.4
+    brl1). Smoke pins b_rel1 so the pilot unit matches the smoke unit set."""
+    if cfg.smoke:
+        return "b_rel1"
+    panel = X.load_r5_brel_panel(cfg.out_root)
+    return max(X.R5_CONDS, key=lambda c: panel["prefixes"][c]["realized_tokens"])
+
+
+def phase_brl1(cfg: Cfg) -> None:
+    """brl1: ONE unit at production shape (worst-case longest prefix); gen +
+    TF walls measured separately (kill criterion a)."""
+    _phase("brl1_pilot")
+    _status(cfg, "brl1_pilot")
+    unit = X.r5_trained_unit(BRL_PILOT_ARM, _brl_pilot_cond(cfg))
+    run_brl_corpus_unit(cfg, unit)
+    man = json.loads((_brl_root(cfg) / "corpus_capture" / unit / "manifest.json").read_text())
+    unit_wall_h = (man.get("gen_wall_s", 0.0) + man.get("tf_wall_s", 0.0)) / 3600.0
+    ratio = unit_wall_h / BRL_BOOKED_UNIT_GPU_H
+    _atomic_json(
+        _brl_root(cfg) / "pilot" / "pilot_report.json",
+        {
+            "unit": unit,
+            "gen_wall_s": man.get("gen_wall_s"),
+            "tf_wall_s": man.get("tf_wall_s"),
+            "unit_wall_h": unit_wall_h,
+            "booked_unit_gpu_h": BRL_BOOKED_UNIT_GPU_H,
+            "ratio": ratio,
+            "smoke": cfg.smoke,
+            **_meta(),
+        },
+    )
+    print(f"[brl1] pilot {unit} wall={unit_wall_h:.2f}h ratio={ratio:.2f}", flush=True)
+    _pfx_pilot_gate(ratio, cfg.smoke, tag="brl1", booked=BRL_BOOKED_UNIT_GPU_H)
+
+
+def _brl_arms(cfg: Cfg) -> list[str]:
+    """The round-5 arm scope (plan §4.1 — same 4 arms as r4); --arms filters
+    INSIDE it; smoke = the plan-§4 smoke-parity arm."""
+    if cfg.arms:
+        want = set(cfg.arms)
+        unknown = want - set(X.R5_ARMS)
+        assert not unknown, f"--arms outside the r5 arm set: {sorted(unknown)}"
+        return [a for a in X.R5_ARMS if a in want]
+    if cfg.smoke:
+        return [BRL_PILOT_ARM]
+    return list(X.R5_ARMS)
+
+
+def _brl_conds_capture(cfg: Cfg) -> tuple[str, ...]:
+    return ("b_rel1",) if cfg.smoke else X.R5_CONDS
+
+
+def _brl_unit_set(cfg: Cfg) -> list[str]:
+    """brl2 units: shared base@b_rel units first, then arm@b_rel units
+    (production: 3 + 12 = 15; smoke: base_content@b_rel1 + pilot@b_rel1)."""
+    arms = _brl_arms(cfg)
+    conds = _brl_conds_capture(cfg)
+    bases = [X.r5_base_unit(c) for c in conds]
+    trained = [X.r5_trained_unit(a, c) for a in arms for c in conds]
+    return bases + trained
+
+
+def _brl_expected_uploads(cfg: Cfg) -> list[str]:
+    """Exact-set verify list: EVERY per-unit artifact file the corpus_capture
+    tree carries — pooled.pt + manifest/spans/done sentinels + the raw-row
+    rollout shards (the lad4 convention)."""
+    expected = []
+    tree = "on_target_r5/corpus_capture"
+    local_tree = cfg.out_root / tree
+    if local_tree.exists():
+        for unit_dir in sorted(local_tree.iterdir()):
+            if not (unit_dir / "pooled.pt").exists():
+                continue
+            names = ["pooled.pt"]
+            names += [p.name for p in sorted(unit_dir.glob("raw_rows_*.jsonl"))]
+            for extra in ("raw_rows.done.json", "rows_spans.json", "manifest.json"):
+                if (unit_dir / extra).exists():
+                    names.append(extra)
+            expected += [f"{cfg.hf_prefix}/{tree}/{unit_dir.name}/{n}" for n in names]
+    return expected
+
+
+def phase_brl4(cfg: Cfg) -> None:
+    """brl4: on_target_r5 tree upload + exact-set verify — BEFORE fits (#825)."""
+    _phase("brl4_store_upload")
+    _status(cfg, "brl4_store_upload")
+    if not cfg.upload:
+        logger.info("[brl4] upload disabled (--no-upload)")
+        return
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    expected = _brl_expected_uploads(cfg)
+    done_path = _brl_root(cfg) / "upload_done.json"
+    if done_path.exists():
+        prior = json.loads(done_path.read_text())
+        if prior.get("n_verified") == len(expected):
+            logger.info(
+                "[brl4] upload_done.json matches the expected store count (%d) — resume skip",
+                len(expected),
+            )
+            return
+        logger.info(
+            "[brl4] expected store count changed (%s -> %d) — re-uploading",
+            prior.get("n_verified"),
+            len(expected),
+        )
+    uploaded = {}
+    for name in BRL_UPLOAD_TREES:
+        dest = _upload_tree(cfg, name)
+        if dest:
+            uploaded[name] = dest
+    if expected:
+        missing = hub.verify_repo_paths_uploaded(
+            HfApi(),
+            X.HF_DATA_REPO,
+            expected,
+            path_in_repo=f"{cfg.hf_prefix}/on_target_r5",
+            repo_type="dataset",
+        )
+        assert not missing, f"brl4 verify: {len(missing)} store files missing on Hub: {missing[:5]}"
+    _atomic_json(
+        done_path,
+        {"uploaded": uploaded, "n_verified": len(expected), **_meta()},
+    )
+
+
 # ── entry ────────────────────────────────────────────────────────────────────
 
 
@@ -4964,6 +5862,10 @@ PHASE_HEADROOM_GB = {
     # ~1.5 GB + staged inputs + one transient merged model <=15 GB => the
     # driver asserts >=60 GB free at lad2 entry.
     "lad2": 60.0,
+    # brl2 (plan v13 §9 storage block): identical 15-unit shape to lad2 —
+    # new stores ~5.3 GB + rollout text ~1.5 GB + staged inputs ~0.3 GB +
+    # one transient merged model <=15 GB => >=60 GB free asserted at entry.
+    "brl2": 60.0,
 }
 # pnf: ~2 GB staged base text + one transient merged/ft model <=16 GB + ~0.5 GB
 # stores (plan v7 §9 storage block); resume-aware gate below skips it when all
@@ -5027,6 +5929,16 @@ def main(argv: list[str] | None = None) -> int:
             _fanout_phase(cfg, "lad2", "lad2_rung_capture")
         elif phase == "lad4":
             phase_lad4(cfg)
+        elif phase == "brl_build":
+            phase_brl_build(cfg)
+        elif phase == "brl0":
+            phase_brl0(cfg)
+        elif phase == "brl1":
+            phase_brl1(cfg)
+        elif phase == "brl2":
+            _fanout_phase(cfg, "brl2", "brl2_brel_capture")
+        elif phase == "brl4":
+            phase_brl4(cfg)
         else:
             raise ValueError(f"unknown phase {phase}")
     _status(cfg, "done")
