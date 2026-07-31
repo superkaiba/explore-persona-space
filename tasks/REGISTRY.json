@@ -6599,8 +6599,8 @@
     "1852": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1852",
-      "status": "planning",
+      "path": "tasks/approved/1852",
+      "status": "approved",
       "title": "daily-fix: env-pin allowlist PYTORCH_CUDA_ALLOC_CONF + help "
     },
     "1853": {
