@@ -49,15 +49,28 @@ import json
 import os
 import queue
 import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
 from typing import Any
 
-import numpy as np
+_SCRIPTS_DIR = Path(__file__).resolve().parent
+_PROJECT_ROOT = _SCRIPTS_DIR.parent
+for _p in (str(_SCRIPTS_DIR), str(_PROJECT_ROOT / "src")):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
-import issue1902_common as C
-import issue1902_run as R
+# load_dotenv() BEFORE any heavy import so the shared-VM thread caps (#847)
+# bind in-process (tests/test_shared_vm_thread_caps.py, the #1146 predicate).
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
+
+import issue1902_common as C  # noqa: E402
+import issue1902_run as R  # noqa: E402
 
 logger = R.logger
 
