@@ -59,6 +59,19 @@ plan_wall_for() { # plan_wall_for <behavior> -> fenced per-lane hours (MEASURED 
     --u-rungs "$(printf '%s\n' $P2_USIZES | wc -l)"
 }
 
+# ---- scope addendum: LINEAR composition-factor cells ------------------------
+# Approved addendum (hallucination + sycophancy): f_U x f_L at U=5000, LINEAR
+# map, E1, both variants, over each behavior's own L ladder. These ride an
+# EXISTING lane's box (no new instances) as a SEPARATE dispatcher invocation —
+# the map kind differs from the lane's, so they need their own out-root and
+# their own pilot fence (the lane's PLAN_WALL_H is untouched).
+COMPOSE_BEHAVIORS="${EPM_I1739_NL_COMPOSE_BEHAVIORS:-hallucination sycophancy}"
+compose_host_kind() { printf '%s' "${KINDS%% *}"; } # first kind = the host lane
+
+compose_wall_for() { # compose_wall_for <behavior> -> fenced compose hours
+  uv run python scripts/issue1739_nlmap_project.py --compose-plan-wall-for "$1"
+}
+
 lane_env() { # lane_env <behavior> <kind> -> the env assignments for one lane
   local b="$1" kind="$2" wall
   wall="$(plan_wall_for "$b")"
@@ -187,6 +200,50 @@ tmp="$RUNBOOK.tmp"
       echo
     done
   done
+  echo '## Step 3 — scope addendum: LINEAR composition-factor cells'
+  echo
+  echo 'f_U x f_L at U=5000, LINEAR map, E1, both variants, over each behaviour'"'"'s'
+  echo 'own L ladder — matching the compose cells already committed for evil.'
+  echo 'These ride an EXISTING lane'"'"'s box (no new instances) but are a SEPARATE'
+  echo 'dispatcher invocation: the map kind differs from the lane'"'"'s, so they get'
+  echo 'their own out-root (`.../compose_linear`) and their own derived pilot'
+  echo 'fence. The nonlinear lanes'"'"' `PLAN_WALL_H` is untouched.'
+  echo
+  echo 'Run each AFTER its host lane'"'"'s own phases finish (the GPU is then free);'
+  echo 'a lane box that is already torn down needs its own provision instead.'
+  echo
+  for b in $COMPOSE_BEHAVIORS; do
+    hk="$(compose_host_kind)"
+    echo "### compose cells: $b  (host lane \`$(lane_slug "$b" "$hk")\` = $b / $hk)"
+    echo
+    echo '```bash'
+    echo "EPM_I1739_NL_BEHAVIORS='$b' \\"
+    echo "EPM_I1739_NL_COMPOSE_BEHAVIORS='$b' \\"
+    echo "EPM_I1739_NL_PHASE='compose' \\"
+    echo "  bash scripts/issue1739_nlmap_dispatch.sh"
+    echo '```'
+    echo
+    echo "Derived compose fence: \`$(compose_wall_for "$b")\`h (measured LINEAR basis)."
+    echo
+  done
+  echo '**Cost of the addendum** (projector, MEASURED LINEAR basis):'
+  echo
+  echo '```'
+  uv run python scripts/issue1739_nlmap_project.py --compose \
+    --compose-behaviors $COMPOSE_BEHAVIORS
+  echo '```'
+  echo
+  echo 'The default anchor set is each behaviour'"'"'s FULL L ladder. To trim to the'
+  echo 'two cheap anchors (the `250 2500` subset), set'
+  echo '`EPM_I1739_NL_COMPOSE_BUDGETS="250 2500"` on the invocation — the fence'
+  echo 'derives from whatever anchors are passed, so it re-sizes automatically:'
+  echo
+  echo '```'
+  EPM_I1739_NL_COMPOSE_BUDGETS='250 2500' \
+    uv run python scripts/issue1739_nlmap_project.py --compose \
+      --compose-behaviors $COMPOSE_BEHAVIORS --compose-anchors 250 2500
+  echo '```'
+  echo
   echo '## Notes'
   echo
   echo '- `stage_maps` and `prefetch` are opt-in phases: `PHASE=all` never runs'
@@ -197,6 +254,12 @@ tmp="$RUNBOOK.tmp"
   echo '- A lane whose pilot projects past its fenced `PLAN_WALL_H` exits rc=7'
   echo '  (a DESIGNED halt with `pilot_report.json`, not a crash) — re-size from'
   echo '  that report rather than raising the fence blindly.'
+  echo '- The Step-3 compose cells expect an f_u>0/f_l=0 combo to SKIP at the'
+  echo '  top anchor (empty residual eliciting pool once L covers the train set)'
+  echo '  — evil recorded the same skip as a missing `fu0.5_fl0.0` label at'
+  echo '  L=8000. The projector reports it as `skipped_combos_at_top`; the fence'
+  echo '  is sized on the UNSKIPPED (planned) count, so the skip only ever'
+  echo '  under-runs the fence.'
   echo "- Every lane pins seeds[0]=${P2_SEEDS%% *}, matching the seed phase A fit the"
   echo '  maps under. `_load_nl_map` refuses a payload whose recorded `map_seed`'
   echo '  differs: for a subsampled U rung the pool ROWS depend on that seed, and'

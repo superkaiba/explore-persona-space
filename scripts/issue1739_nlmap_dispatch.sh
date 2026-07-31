@@ -83,6 +83,53 @@ PREFETCH_N_PERM="${EPM_I1739_NL_PREFETCH_N_PERM:-20}"
 # its map_seed guard is what catches a mismatch). Derived, never hand-set.
 PREFETCH_SEED="${SEEDS%% *}"
 
+# ---- composition-factor knobs (phase `compose`; scope addendum) -------------
+# §4b composition crossings for the behaviors the MAIN grid gated OUT: that
+# dispatcher appends --compose only `if [ "$b" = "evil" ]`, so evil has committed
+# compose cells and the other two have none. This phase runs the SAME crossings
+# (constants.COMPOSITION_F_U x COMPOSITION_F_L = {0, 0.5} x {0, 1}) at U=5000 for
+# hallucination + sycophancy.
+#
+# LINEAR map, matching evil's committed compose cells so the comparison is
+# cell-for-cell. That is WHY this is its own invocation rather than extra cells
+# inside a lane: --map-kind is ONE flag per process, so a linear compose cell
+# cannot ride inside an mlp/kernel invocation. It still rides the lane's INSTANCE
+# (no new pods) and gets its OWN out-root (--map-kind is a resume/output regime
+# key — crash-fix-rounds.md § Per-leg out-roots) and its OWN pilot fence, which
+# is what keeps the nonlinear lanes' fence untouched.
+COMPOSE_BEHAVIORS="${EPM_I1739_NL_COMPOSE_BEHAVIORS:-hallucination sycophancy}"
+COMPOSE_MAP_KIND="${EPM_I1739_NL_COMPOSE_MAP_KIND:-linear}"
+COMPOSE_U_SIZE="${EPM_I1739_NL_COMPOSE_U_SIZE:-5000}"
+COMPOSE_REGIME="${EPM_I1739_NL_COMPOSE_REGIME:-e1}"
+# compose_run_specs enumerates plain rungs too (there is no compose-ONLY mode),
+# so pin the plain axis to the CHEAPEST rung: it is unavoidable overhead, not a
+# deliverable (those linear plain cells are already committed by the main grid).
+COMPOSE_PLAIN_USIZES="${EPM_I1739_NL_COMPOSE_PLAIN_USIZES:-250}"
+# L-anchors. Default = the behavior's FULL ladder, per the addendum ("L in
+# {250, 2500} plus any larger L whose residual eliciting pool is non-empty"): at
+# the max anchor the f_l=0 cells have an EMPTY residual pool and are recorded as
+# compose_skips (evil's committed labels show exactly this — fu0.5_fl0.0 present
+# at L250/L2500, absent at L8000), while f_u=0 and f_l=1 still fill. Trim to
+# '250 2500' to drop the max anchor: it is the single most expensive one
+# (see scripts/issue1739_nlmap_project.py --compose for the arithmetic).
+compose_budgets() {
+  if [ -n "${EPM_I1739_NL_COMPOSE_BUDGETS:-}" ]; then echo "$EPM_I1739_NL_COMPOSE_BUDGETS"; return; fi
+  behavior_budgets "$1"
+}
+# Per-behavior compose fence, DERIVED from the measured LINEAR basis (the
+# committed per-behavior pilot_report.json) rather than hand-copied: the
+# projector mirrors _run_pilot's own counters, so the fence tracks the anchor
+# set compose_budgets() actually passes. Fail-loud — a fence we cannot derive
+# is not a fence we may guess (plan-compute-sizing.md § measured basis).
+compose_plan_wall_h() {
+  if [ -n "${EPM_I1739_NL_COMPOSE_PLAN_WALL_H:-}" ]; then
+    echo "$EPM_I1739_NL_COMPOSE_PLAN_WALL_H"
+    return
+  fi
+  uv run python scripts/issue1739_nlmap_project.py \
+    --compose-plan-wall-for "$1" --compose-anchors $(compose_budgets "$1")
+}
+
 # ---- per-lane map staging knobs (phase `stage_maps`) -----------------------
 STAGE_MAPS_VARIANTS="${EPM_I1739_NL_STAGE_VARIANTS:-prefix_end context_end}"
 # U-rung LABELS as they appear in the payload filename ('full' stays 'full').
@@ -96,7 +143,7 @@ stage_map_u_labels() {
 # belong to the fan-out shape (phase A publishes maps; each lane stages them),
 # so folding them into "all" would change the legacy single-box dispatch: a
 # single box has nothing on the Hub yet, and stage_maps is fail-loud by design.
-OPT_IN_PHASES="prefetch stage_maps"
+OPT_IN_PHASES="prefetch stage_maps compose"
 
 want_phase() {
   # want_phase <name> — true when PHASE lists <name>, or PHASE is "all" and
@@ -145,6 +192,21 @@ behavior_regimes() {
   esac
 }
 
+store_args() {
+  # store_args <behavior> — the stores/paths/device every invocation needs to run
+  # at all, independent of which map family or grid it scores.
+  local b="$1"
+  printf '%s\n' \
+    --behavior "$b" \
+    --labeled-store "$STORE_ROOT/${b}_labeling" \
+    --dv-json "$RESULTS_ROOT/dv_dataset/$b/labeling.json" \
+    --u-store "$U_STORE_DIR" \
+    --e1-store "$STORE_ROOT/${b}_extraction" \
+    --tensors-root "$TENSORS_ROOT" \
+    --device "$FITS_DEVICE" \
+    --config config_a
+}
+
 map_args() {
   # map_args <behavior> <kind> — every flag that determines the FITTED MAP, plus
   # the stores it needs to run at all. Shared by fits_args and prefetch_args so a
@@ -156,16 +218,9 @@ map_args() {
   # the map fit AND the subsampled U rung's ROW DRAW. That last one is why
   # prefetch_args pins seeds[0] to the lane's first seed.
   local b="$1" kind="$2"
+  store_args "$b"
   printf '%s\n' \
-    --behavior "$b" \
-    --labeled-store "$STORE_ROOT/${b}_labeling" \
-    --dv-json "$RESULTS_ROOT/dv_dataset/$b/labeling.json" \
-    --u-store "$U_STORE_DIR" \
-    --e1-store "$STORE_ROOT/${b}_extraction" \
-    --tensors-root "$TENSORS_ROOT" \
-    --device "$FITS_DEVICE" \
     --map-kind "$kind" \
-    --config config_a \
     --u-sizes $USIZES
 }
 
@@ -212,6 +267,37 @@ prefetch_args() {
     --seeds "$PREFETCH_SEED" \
     --n-boot "$PREFETCH_N_BOOT" \
     --n-perm "$PREFETCH_N_PERM"
+}
+
+compose_args() {
+  # compose_args <behavior> — the §4b composition sub-grid for ONE behavior.
+  #
+  # Deliberately NOT map_args: the map kind is LINEAR here (evil's committed
+  # compose family) and the plain U axis is pinned to the cheapest rung, so
+  # sharing map_args would either drag the nonlinear kind in or re-run the whole
+  # nonlinear U ladder. Composition cells draw their OWN pool
+  # (_u_pool_for_spec's f_u branch: generic half from the #1092 store, eliciting
+  # half from the behavior's labeling capture store, f_l gating overlap with the
+  # L cell's contexts), so their map key is per-cell and each fits its own map.
+  #
+  # No --transfer: compose specs contribute ZERO transfer units by construction
+  # (compose_pilot_report counts transfer over plain specs only), so passing it
+  # would buy nothing and make the throwaway plain rungs pay for it.
+  local b="$1"
+  store_args "$b"
+  printf '%s\n' \
+    --map-kind "$COMPOSE_MAP_KIND" \
+    --u-sizes $COMPOSE_PLAIN_USIZES \
+    --out-root "$NL_ROOT/$b/compose_$COMPOSE_MAP_KIND" \
+    --arms $NL_ARMS \
+    --regimes "$COMPOSE_REGIME" \
+    --budgets $(compose_budgets "$b") \
+    --draws 0 \
+    --seeds 0 \
+    --compose \
+    --compose-u-size "$COMPOSE_U_SIZE" \
+    --n-boot 500 \
+    --n-perm 500
 }
 
 # Definitions-only escape hatch: with EPM_I1739_NL_DEFS_ONLY set, sourcing this
@@ -367,6 +453,50 @@ if want_phase fits; then
       uv run python scripts/issue1739_fits.py "${_fa[@]}"
       echo "[nlmap] phase=fits behavior=$b kind=$kind done $(date -u +%FT%TZ)"
     done
+  done
+fi
+
+# ---- compose (scope addendum: §4b crossings for hallu + syc) ---------------
+# Rides a lane's INSTANCE but is its OWN invocation (LINEAR map — see the knob
+# block) with its OWN out-root and OWN pilot fence, so the lane's nonlinear
+# projection/fence is untouched. Only the behaviors in BOTH $BEHAVIORS and
+# $COMPOSE_BEHAVIORS run, so a lane pinned to one behavior runs only its own
+# cells and the 6-lane fan-out never duplicates them.
+if want_phase compose; then
+  for b in $BEHAVIORS; do
+    case " $COMPOSE_BEHAVIORS " in
+      *" $b "*) ;;
+      *)
+        echo "[nlmap] phase=compose: $b not in COMPOSE_BEHAVIORS ('$COMPOSE_BEHAVIORS') — skip"
+        continue
+        ;;
+    esac
+    mapfile -t _ca < <(compose_args "$b")
+    _cpw="$(compose_plan_wall_h "$b")"
+    echo "[nlmap] phase=compose $b start $(date -u +%FT%TZ) map_kind=$COMPOSE_MAP_KIND" \
+      "u_size=$COMPOSE_U_SIZE anchors='$(compose_budgets "$b")' fence=${_cpw}h"
+    # Same designed-halt contract as the nonlinear pilot: rc=7 is a fenced STOP
+    # with a report, never a bare crash.
+    set +e
+    uv run python scripts/issue1739_fits.py "${_ca[@]}" --pilot \
+      --plan-wall-h "$_cpw" --pilot-abort-mult "$PILOT_ABORT_MULT"
+    prc=$?
+    set -e
+    if [ "$prc" -eq 7 ]; then
+      echo "[nlmap] COMPOSE PILOT REFUSED (rc=7) at $b: projected wall exceeds" \
+        "${PILOT_ABORT_MULT}x${_cpw}h — see" \
+        "$NL_ROOT/$b/compose_$COMPOSE_MAP_KIND/pilot_report.json" >&2
+      exit 7
+    fi
+    [ "$prc" -eq 0 ] || { echo "[nlmap] FATAL: compose pilot $b rc=$prc" >&2; exit "$prc"; }
+    uv run python scripts/issue1739_fits.py "${_ca[@]}"
+    # The compose cells ARE the deliverable here, so fail loud if the summary is
+    # absent; the max-anchor f_l=0 skips are recorded INSIDE it (compose_skips),
+    # which is the expected shape, not a failure.
+    _csum="$NL_ROOT/$b/compose_$COMPOSE_MAP_KIND/arm_results/all_arms_spearman.json"
+    [ -f "$_csum" ] || { echo "[nlmap] FATAL: compose $b produced no $_csum" >&2; exit 1; }
+    echo "[nlmap] phase=compose $b done $(date -u +%FT%TZ); realized compose labels:"
+    grep -o 'compose[0-9]*_fu[0-9.]*_fl[0-9.]*_L[0-9]*' "$_csum" | sort -u | sed 's/^/  /' || true
   done
 fi
 

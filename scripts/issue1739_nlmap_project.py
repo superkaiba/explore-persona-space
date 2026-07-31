@@ -49,6 +49,20 @@ BEHAVIOR_REGIMES = {"evil": 3, "sycophancy": 3, "hallucination": 1}
 BEHAVIOR_BUDGETS = {"evil": (250, 2500, 8000)}
 DEFAULT_BUDGETS = (250, 2500, 16000)
 
+# ---------------------------------------------------------------------------
+# MEASURED basis for the LINEAR compose cells (scope addendum) — a DIFFERENT
+# measurement from the nonlinear basis above: read verbatim from the committed
+# per-behavior `eval_results/issue_1739/<b>/pilot_report.json` (linear map kind).
+# ---------------------------------------------------------------------------
+COMPOSE_MAP_FIT_S = {"hallucination": 221.9603476524353, "sycophancy": 161.81467533111572}
+COMPOSE_UNIT_GROUP_WALL_S: dict[str, dict[int, float]] = {
+    "hallucination": {250: 26.793855905532837, 2500: 135.74404406547546, 16000: 844.9238767623901}
+}
+# sycophancy's own linear pilot recorded `unit_group_walls_s: {}` (a resumed
+# out-root skipped every unit), so its group walls are PROXIED from
+# hallucination's — same 250/2500/16000 ladder, same map kind. Stated, not hidden.
+COMPOSE_WALL_PROXY = {"sycophancy": "hallucination"}
+
 
 @dataclass(frozen=True)
 class Grid:
@@ -137,6 +151,106 @@ def project_lane(
             "transfer_arith": f"{n_transfer} units x {TRANSFER_UNIT_S}s",
         },
     )
+
+
+def compose_combos() -> tuple[tuple[float, float], ...]:
+    """The f_U x f_L combos `compose_run_specs` actually enumerates.
+
+    Mirrors its `seen`-dedup: f_u == 0 is composition-degenerate, so every
+    f_l collapses onto (0.0, 0.0). Read from the shipped constants so the
+    count tracks the code rather than a hand-copied 3.
+    """
+    from explore_persona_space.experiments.issue_1739.constants import (
+        COMPOSITION_F_L,
+        COMPOSITION_F_U,
+    )
+
+    seen: list[tuple[float, float]] = []
+    for f_u in COMPOSITION_F_U:
+        for f_l in COMPOSITION_F_L:
+            key = (float(f_u), float(f_l) if f_u > 0 else 0.0)
+            if key not in seen:
+                seen.append(key)
+    return tuple(seen)
+
+
+def compose_wall_for(behavior: str, budget: int) -> float:
+    """Measured LINEAR group wall for a budget, following the proxy chain."""
+    src = COMPOSE_WALL_PROXY.get(behavior, behavior)
+    walls = COMPOSE_UNIT_GROUP_WALL_S.get(src)
+    if not walls:
+        raise KeyError(f"no measured linear group walls for behavior {behavior!r} (src {src!r})")
+    return walls.get(int(budget), max(walls.values()))
+
+
+def project_compose(
+    behavior: str,
+    *,
+    anchors: tuple[int, ...] | None = None,
+    n_variants: int = 2,
+    plain_u_rungs: int = 1,
+    fence_mult: float = 1.5,
+) -> dict:
+    """Compose-cell projection for the scope addendum (LINEAR map kind).
+
+    Mirrors `_run_pilot`'s counters exactly (`issue1739_fits.py`):
+
+        n_map_fits      = n_plain_map_keys + n_variants * n_combos * n_anchors
+        n_plain_groups  = {b: n_plain_map_keys}            (1 draw, 1 seed)
+        n_compose_units = {b: n_variants * n_combos}
+        transfer        = 0                                (no --transfer)
+
+    `n_map_fits` counts a distinct key per (variant, f_u, f_l, anchor) because
+    `_map_key` includes `budgets` — including the f_u == 0 combos, whose map is
+    anchor-independent in principle. The gate counts them, so the PLANNED
+    projection counts them: `planned_h` is the fence basis. `realized_h`
+    additionally subtracts the max-anchor skip (an f_u > 0, f_l == 0 combo has
+    an EMPTY residual eliciting pool when L covers the whole train set — the
+    skip evil recorded as `fu0.5_fl0.0` absent at L=8000) and is informational.
+    """
+    behavior_top = budgets_for(behavior)[-1]
+    anchors = tuple(int(b) for b in (anchors if anchors is not None else budgets_for(behavior)))
+    combos = compose_combos()
+    n_plain_map_keys = n_variants * plain_u_rungs
+    n_compose_per_anchor = n_variants * len(combos)
+
+    map_s = (n_plain_map_keys + n_compose_per_anchor * len(anchors)) * COMPOSE_MAP_FIT_S[behavior]
+    wall_sum = sum(compose_wall_for(behavior, b) for b in anchors)
+    plain_s = n_plain_map_keys * wall_sum
+    compose_s = n_compose_per_anchor * wall_sum
+    planned_h = (map_s + plain_s + compose_s) / 3600.0
+
+    # Realized: drop the residual-pool-empty combos at a max-train-set anchor.
+    skipped = [c for c in combos if c[0] > 0 and c[1] == 0.0] if behavior_top in anchors else []
+    n_skipped_cells = n_variants * len(skipped)
+    realized_map_s = map_s - n_skipped_cells * COMPOSE_MAP_FIT_S[behavior]
+    realized_compose_s = compose_s - n_skipped_cells * compose_wall_for(behavior, behavior_top)
+    realized_h = (realized_map_s + plain_s + realized_compose_s) / 3600.0
+
+    return {
+        "behavior": behavior,
+        "map_kind": "linear",
+        "anchors": list(anchors),
+        "combos": [list(c) for c in combos],
+        "n_variants": n_variants,
+        "n_map_fits": n_plain_map_keys + n_compose_per_anchor * len(anchors),
+        "n_plain_groups_per_budget": n_plain_map_keys,
+        "n_compose_units_per_anchor": n_compose_per_anchor,
+        "planned_h": planned_h,
+        "realized_h": realized_h,
+        "plan_wall_h": round(planned_h * fence_mult, 2),
+        "skipped_combos_at_top": [list(c) for c in skipped],
+        "n_skipped_cells": n_skipped_cells,
+        "walls_proxied_from": COMPOSE_WALL_PROXY.get(behavior),
+        "terms": {
+            "map_s": map_s,
+            "plain_s": plain_s,
+            "compose_s": compose_s,
+            "arith": f"({n_plain_map_keys} + {n_compose_per_anchor}x{len(anchors)}) map fits x "
+            f"{COMPOSE_MAP_FIT_S[behavior]:.2f}s + "
+            f"({n_plain_map_keys} + {n_compose_per_anchor}) groups x {wall_sum:.2f}s",
+        },
+    }
 
 
 def project_phase_a(
@@ -248,6 +362,30 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         metavar="BEHAVIOR",
         help="print ONLY that behavior's plan_wall_h (for EPM_I1739_NL_PLAN_WALL_H)",
     )
+    ap.add_argument(
+        "--compose",
+        action="store_true",
+        help="project the LINEAR compose cells (scope addendum) instead of the nl lanes",
+    )
+    ap.add_argument(
+        "--compose-behaviors",
+        nargs="+",
+        default=["hallucination", "sycophancy"],
+        help="behaviors carrying compose cells (addendum: hallucination + sycophancy)",
+    )
+    ap.add_argument(
+        "--compose-anchors",
+        nargs="+",
+        type=int,
+        default=None,
+        help="L anchors for the compose cells (default: the behavior's own budget ladder)",
+    )
+    ap.add_argument(
+        "--compose-plan-wall-for",
+        default=None,
+        metavar="BEHAVIOR",
+        help="print ONLY that behavior's compose plan_wall_h (EPM_I1739_NL_COMPOSE_PLAN_WALL_H)",
+    )
     return ap.parse_args(argv)
 
 
@@ -259,6 +397,44 @@ def main(argv: list[str] | None = None) -> int:
         n_draws=args.draws,
         n_seeds=args.seeds,
     )
+    anchors = tuple(args.compose_anchors) if args.compose_anchors else None
+    if args.compose_plan_wall_for:
+        rep = project_compose(
+            args.compose_plan_wall_for, anchors=anchors, fence_mult=args.fence_mult
+        )
+        print(rep["plan_wall_h"])
+        return 0
+    if args.compose:
+        reps = [
+            project_compose(b, anchors=anchors, fence_mult=args.fence_mult)
+            for b in args.compose_behaviors
+        ]
+        if args.json:
+            print(json.dumps({"compose": reps}, indent=2))
+            return 0
+        print("== issue-1739 compose-cell projection (LINEAR basis, scope addendum) ==")
+        combos = reps[0]["combos"] if reps else []
+        print(f"  f_U x f_L combos (dedup'd): {combos}")
+        for r in reps:
+            proxy = (
+                f", walls proxied from {r['walls_proxied_from']}" if r["walls_proxied_from"] else ""
+            )
+            print(
+                f"    {r['behavior']:<14} L={r['anchors']}  {r['n_map_fits']} map fits, "
+                f"{r['n_compose_units_per_anchor']} compose cells/anchor{proxy}"
+            )
+            print(f"      {r['terms']['arith']}")
+            print(
+                f"      planned {r['planned_h']:.2f} h (fence basis)  "
+                f"realized {r['realized_h']:.2f} h "
+                f"(−{r['n_skipped_cells']} max-anchor skips: {r['skipped_combos_at_top']})  "
+                f"plan_wall_h {r['plan_wall_h']}"
+            )
+        print(
+            f"  COMPOSE TOTAL: planned {sum(r['planned_h'] for r in reps):.2f} GPU-h, "
+            f"realized {sum(r['realized_h'] for r in reps):.2f} GPU-h"
+        )
+        return 0
     if args.plan_wall_for:
         lane = project_lane(
             args.plan_wall_for, "mlp", grid=grid, maps_staged=True, fence_mult=args.fence_mult

@@ -1,6 +1,6 @@
 # issue-1739 nonlinear-map round — fan-out runbook
 
-Generated 2026-07-30T23:27:57Z at `11f67d4df3d7f4422d9643cda060b3285835463b` on branch `issue-1739`.
+Generated 2026-07-31T00:36:00Z at `e488e5bca58ad2c0a808cadf81db812d260e38e2` on branch `issue-1739`.
 Composed by `scripts/issue1739_nlmap_fanout.sh runbook` — nothing was executed.
 
 ## Projection (MEASURED basis — see scripts/issue1739_nlmap_project.py)
@@ -134,6 +134,71 @@ EPM_I1739_NL_PHASE='stage,stage_maps,pilot,fits,collect,upload_results' \
   bash scripts/issue1739_nlmap_dispatch.sh
 ```
 
+## Step 3 — scope addendum: LINEAR composition-factor cells
+
+f_U x f_L at U=5000, LINEAR map, E1, both variants, over each behaviour's
+own L ladder — matching the compose cells already committed for evil.
+These ride an EXISTING lane's box (no new instances) but are a SEPARATE
+dispatcher invocation: the map kind differs from the lane's, so they get
+their own out-root (`.../compose_linear`) and their own derived pilot
+fence. The nonlinear lanes' `PLAN_WALL_H` is untouched.
+
+Run each AFTER its host lane's own phases finish (the GPU is then free);
+a lane box that is already torn down needs its own provision instead.
+
+### compose cells: hallucination  (host lane `nlhallmlp` = hallucination / mlp)
+
+```bash
+EPM_I1739_NL_BEHAVIORS='hallucination' \
+EPM_I1739_NL_COMPOSE_BEHAVIORS='hallucination' \
+EPM_I1739_NL_PHASE='compose' \
+  bash scripts/issue1739_nlmap_dispatch.sh
+```
+
+Derived compose fence: `5.21`h (measured LINEAR basis).
+
+### compose cells: sycophancy  (host lane `nlsycomlp` = sycophancy / mlp)
+
+```bash
+EPM_I1739_NL_BEHAVIORS='sycophancy' \
+EPM_I1739_NL_COMPOSE_BEHAVIORS='sycophancy' \
+EPM_I1739_NL_PHASE='compose' \
+  bash scripts/issue1739_nlmap_dispatch.sh
+```
+
+Derived compose fence: `4.71`h (measured LINEAR basis).
+
+**Cost of the addendum** (projector, MEASURED LINEAR basis):
+
+```
+== issue-1739 compose-cell projection (LINEAR basis, scope addendum) ==
+  f_U x f_L combos (dedup'd): [[0.0, 0.0], [0.5, 0.0], [0.5, 1.0]]
+    hallucination  L=[250, 2500, 16000]  20 map fits, 6 compose cells/anchor
+      (2 + 6x3) map fits x 221.96s + (2 + 6) groups x 1007.46s
+      planned 3.47 h (fence basis)  realized 2.88 h (−2 max-anchor skips: [[0.5, 0.0]])  plan_wall_h 5.21
+    sycophancy     L=[250, 2500, 16000]  20 map fits, 6 compose cells/anchor, walls proxied from hallucination
+      (2 + 6x3) map fits x 161.81s + (2 + 6) groups x 1007.46s
+      planned 3.14 h (fence basis)  realized 2.58 h (−2 max-anchor skips: [[0.5, 0.0]])  plan_wall_h 4.71
+  COMPOSE TOTAL: planned 6.61 GPU-h, realized 5.46 GPU-h
+```
+
+The default anchor set is each behaviour's FULL L ladder. To trim to the
+two cheap anchors (the `250 2500` subset), set
+`EPM_I1739_NL_COMPOSE_BUDGETS="250 2500"` on the invocation — the fence
+derives from whatever anchors are passed, so it re-sizes automatically:
+
+```
+== issue-1739 compose-cell projection (LINEAR basis, scope addendum) ==
+  f_U x f_L combos (dedup'd): [[0.0, 0.0], [0.5, 0.0], [0.5, 1.0]]
+    hallucination  L=[250, 2500]  14 map fits, 6 compose cells/anchor
+      (2 + 6x2) map fits x 221.96s + (2 + 6) groups x 162.54s
+      planned 1.22 h (fence basis)  realized 1.22 h (−0 max-anchor skips: [])  plan_wall_h 1.84
+    sycophancy     L=[250, 2500]  14 map fits, 6 compose cells/anchor, walls proxied from hallucination
+      (2 + 6x2) map fits x 161.81s + (2 + 6) groups x 162.54s
+      planned 0.99 h (fence basis)  realized 0.99 h (−0 max-anchor skips: [])  plan_wall_h 1.49
+  COMPOSE TOTAL: planned 2.21 GPU-h, realized 2.21 GPU-h
+```
+
 ## Notes
 
 - `stage_maps` and `prefetch` are opt-in phases: `PHASE=all` never runs
@@ -144,6 +209,12 @@ EPM_I1739_NL_PHASE='stage,stage_maps,pilot,fits,collect,upload_results' \
 - A lane whose pilot projects past its fenced `PLAN_WALL_H` exits rc=7
   (a DESIGNED halt with `pilot_report.json`, not a crash) — re-size from
   that report rather than raising the fence blindly.
+- The Step-3 compose cells expect an f_u>0/f_l=0 combo to SKIP at the
+  top anchor (empty residual eliciting pool once L covers the train set)
+  — evil recorded the same skip as a missing `fu0.5_fl0.0` label at
+  L=8000. The projector reports it as `skipped_combos_at_top`; the fence
+  is sized on the UNSKIPPED (planned) count, so the skip only ever
+  under-runs the fence.
 - Every lane pins seeds[0]=0, matching the seed phase A fit the
   maps under. `_load_nl_map` refuses a payload whose recorded `map_seed`
   differs: for a subsampled U rung the pool ROWS depend on that seed, and

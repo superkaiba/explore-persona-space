@@ -652,7 +652,9 @@ def _phases_for(phase_env: str) -> set[str]:
     """Which phase bodies the dispatcher would run for a given PHASE value."""
     import os
 
-    names = "stage prefetch stage_maps pilot fits collect upload upload_tensors upload_results"
+    names = (
+        "stage prefetch stage_maps pilot fits collect upload upload_tensors upload_results compose"
+    )
     script = (
         f'set -euo pipefail\nsource "{DISPATCH_SH}" >/dev/null 2>&1\n'
         f'for n in {names}; do want_phase "$n" && echo "$n"; done; true'
@@ -767,6 +769,159 @@ def test_projector_hallucination_is_cheaper_than_the_3_regime_behaviors():
     e = P.project_lane("evil", "mlp", maps_staged=True)
     assert h.n_regimes == 1 and e.n_regimes == 3
     assert h.projected_h < e.projected_h
+
+
+# ---- compose cells (scope addendum: LINEAR f_U x f_L crossings) -------------
+
+
+def _compose_counters(F, behavior_budgets, *, n_variants=2, plain_u_rungs=("250",)):
+    """Derive the gate's OWN counters by running the SHIPPING enumerator.
+
+    Mirrors `_run_pilot`'s counting block against `compose_run_specs`, so a
+    projector that disagrees with this is disagreeing with the real grid.
+    """
+    from collections import Counter
+
+    from explore_persona_space.experiments.issue_1739.constants import (
+        COMPOSITION_F_L,
+        COMPOSITION_F_U,
+    )
+
+    specs = F.compose_run_specs(
+        variants=tuple(F.VARIANTS)[:n_variants],
+        regimes=("e1",),
+        u_sizes=tuple(int(u) for u in plain_u_rungs),
+        budgets=tuple(behavior_budgets),
+        draws=(0,),
+        seeds=(0,),
+        compose=True,
+        compose_u_size=5000,
+        f_u_grid=tuple(COMPOSITION_F_U),
+        f_l_grid=tuple(COMPOSITION_F_L),
+    )
+    plain = [s for s in specs if s.f_u is None]
+    return {
+        "n_map_fits": len({F._map_key(s) for s in specs}),
+        "n_plain_map_keys": len({F._map_key(s) for s in plain}),
+        "n_compose_units": dict(Counter(int(s.budgets[0]) for s in specs if s.f_u is not None)),
+    }
+
+
+@pytest.mark.parametrize("behavior", ["hallucination", "sycophancy"])
+def test_compose_args_are_the_linear_addendum_grid(behavior):
+    """The compose invocation must be LINEAR, E1, u=5000, and transfer-free."""
+    argv = _dispatch_args("compose_args", behavior)
+    assert _flag_values(argv, "--map-kind") == ["linear"]
+    assert _flag_values(argv, "--regimes") == ["e1"]
+    assert _flag_values(argv, "--compose-u-size") == ["5000"]
+    assert "--compose" in argv
+    # Transfer is the nonlinear lanes' term; a compose invocation must not pay it.
+    assert "--transfer" not in argv
+    # Its OWN out-root, so the nonlinear lane's resume regime is untouched.
+    assert _flag_values(argv, "--out-root") == [
+        f"eval_results/issue_1739/nonlinear_map/{behavior}/compose_linear"
+    ]
+    # One draw, one seed: the deterministic reference cell.
+    assert _flag_values(argv, "--draws") == ["0"]
+    assert _flag_values(argv, "--seeds") == ["0"]
+
+
+def test_compose_args_budgets_track_the_behavior_ladder_and_the_env_override():
+    """Cross-source pin: the projector MIRRORS the dispatcher's ladder table.
+
+    `project.budgets_for` duplicates `behavior_budgets()`; if they drift the
+    derived fence stops matching the anchors the lane actually passes.
+    """
+    P = _project_module()
+    for behavior in ("hallucination", "sycophancy"):
+        argv = _dispatch_args("compose_args", behavior)
+        assert [int(b) for b in _flag_values(argv, "--budgets")] == list(P.budgets_for(behavior)), (
+            behavior
+        )
+    trimmed = _dispatch_args(
+        "compose_args", "hallucination", env={"EPM_I1739_NL_COMPOSE_BUDGETS": "250 2500"}
+    )
+    assert _flag_values(trimmed, "--budgets") == ["250", "2500"]
+
+
+def test_compose_is_opt_in_and_never_runs_under_phase_all():
+    """PHASE=all must stay byte-identical to the pre-addendum lane sequence."""
+    assert "compose" not in _phases_for("all")
+    assert "compose" in _phases_for("compose")
+
+
+def test_projector_compose_counters_match_the_shipping_enumerator():
+    """The compose projection's counts must equal compose_run_specs' own."""
+    F = _load_script_module()
+    P = _project_module()
+    for behavior in ("hallucination", "sycophancy"):
+        rep = P.project_compose(behavior)
+        want = _compose_counters(F, rep["anchors"])
+        assert rep["n_map_fits"] == want["n_map_fits"], behavior
+        assert rep["n_plain_groups_per_budget"] == want["n_plain_map_keys"], behavior
+        # One count per anchor, all equal (n_variants x dedup'd combos).
+        assert set(want["n_compose_units"]) == set(rep["anchors"]), behavior
+        assert set(want["n_compose_units"].values()) == {rep["n_compose_units_per_anchor"]}, (
+            behavior
+        )
+
+
+def test_projector_compose_arithmetic_matches_compose_pilot_report():
+    """Same cross-check as the lane test, on the compose term."""
+    F = _load_script_module()
+    P = _project_module()
+    rep = P.project_compose("hallucination")
+    walls = {b: P.compose_wall_for("hallucination", b) for b in rep["anchors"]}
+    gate = F.compose_pilot_report(
+        n_map_fits=rep["n_map_fits"],
+        map_fit_s=P.COMPOSE_MAP_FIT_S["hallucination"],
+        unit_group_walls=walls,
+        n_plain_groups={b: rep["n_plain_groups_per_budget"] for b in rep["anchors"]},
+        n_compose_units={b: rep["n_compose_units_per_anchor"] for b in rep["anchors"]},
+        transfer_s=0.0,
+        n_pilot_transfer_units=0,
+        n_transfer_units=0,
+        plan_wall_h=rep["plan_wall_h"],
+        abort_mult=1.0,
+    )
+    assert gate["projected_wall_h"] == pytest.approx(rep["planned_h"], rel=1e-9)
+    # The fence must sit ABOVE the projection the gate itself computes.
+    assert rep["plan_wall_h"] >= rep["planned_h"]
+    assert not gate["abort"]
+
+
+def test_projector_compose_predicts_the_max_anchor_residual_pool_skip():
+    """f_u>0 & f_l==0 has an EMPTY residual pool at a full-train-set anchor."""
+    P = _project_module()
+    full = P.project_compose("hallucination")
+    assert full["skipped_combos_at_top"] == [[0.5, 0.0]]
+    assert full["n_skipped_cells"] == 2  # one per variant
+    assert full["realized_h"] < full["planned_h"]
+    # A trimmed ladder never reaches the full train set -> no skip, realized == planned.
+    trimmed = P.project_compose("hallucination", anchors=(250, 2500))
+    assert trimmed["skipped_combos_at_top"] == []
+    assert trimmed["realized_h"] == pytest.approx(trimmed["planned_h"])
+    assert trimmed["planned_h"] < full["planned_h"]
+
+
+def test_compose_fence_is_derived_from_the_projector_not_hardcoded():
+    """The dispatcher's fence must equal the measured-basis projection."""
+    P = _project_module()
+    for behavior in ("hallucination", "sycophancy"):
+        want = P.project_compose(behavior)["plan_wall_h"]
+        got = _dispatch_args("compose_plan_wall_h", behavior)
+        assert got == [str(want)], (behavior, got, want)
+
+
+def test_compose_sycophancy_walls_are_proxied_and_say_so():
+    """A proxied basis must be reported, never silently substituted."""
+    P = _project_module()
+    assert P.COMPOSE_UNIT_GROUP_WALL_S.get("sycophancy") in (None, {})
+    rep = P.project_compose("sycophancy")
+    assert rep["walls_proxied_from"] == "hallucination"
+    assert P.compose_wall_for("sycophancy", 250) == P.compose_wall_for("hallucination", 250)
+    with pytest.raises(KeyError):
+        P.compose_wall_for("nonexistent_behavior", 250)
 
 
 def test_fanout_runbook_mode_composes_without_executing(tmp_path):
