@@ -87,6 +87,9 @@ def _run_gate(
         # the repo MID-GATE (after read_payload snapshots) for TOCTOU cases.
         env["EPM_INLINE_GATE_LINT_CMD"] += f" && {lint_cmd_extra}"
     env["EPM_INLINE_CERT_PATH"] = str(tmp_path / "cert.txt")
+    # Zero the #1857 settle-and-re-hash retry delay: subprocess TOCTOU cases
+    # stay deterministic-fast (the retry still RUNS — it just doesn't wait).
+    env["EPM_CERT_REHASH_DELAY_S"] = "0"
     return subprocess.run(
         [
             sys.executable,
@@ -513,7 +516,10 @@ def test_added_line_ranges_parses_u0_hunks(tmp_path: Path) -> None:
     assert ilg.added_line_ranges(repo, "scripts/other.py") == []
 
 
-def test_write_cert_toctou_refuses_edited_path(tmp_path: Path) -> None:
+def test_write_cert_toctou_refuses_edited_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("EPM_CERT_REHASH_DELAY_S", "0")  # keep the #1857 retry instant
     repo = _make_repo(tmp_path)
     (repo / "scripts" / "sib.py").write_text("print(0)\n", encoding="utf-8")
     snapshots = ilg.read_payload(["scripts/mod.py", "scripts/sib.py"], repo)
@@ -525,6 +531,67 @@ def test_write_cert_toctou_refuses_edited_path(tmp_path: Path) -> None:
     assert certified == ["scripts/sib.py"]
     lines = cert.read_text(encoding="utf-8").splitlines()
     assert len(lines) == 1 and lines[0].endswith(" scripts/sib.py"), lines
+
+
+def test_write_cert_transient_flip_recovers_after_rehash(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#1857 (a): a TRANSIENT worktree flip — mismatch at the first pass,
+    settled back to the read_payload snapshot by the retry re-hash — is
+    certified as normal (cert line carries the snapshot sha), no TOCTOU."""
+    repo = _make_repo(tmp_path)
+    target = repo / "scripts" / "mod.py"
+    original = target.read_text(encoding="utf-8")
+    snapshots = ilg.read_payload(["scripts/mod.py"], repo)
+    target.write_text("transient flip\n", encoding="utf-8")
+
+    def _settle(_delay: float) -> None:
+        # Deterministic stand-in for the settle window: the concurrent
+        # writer restores the snapshot content during the retry delay.
+        target.write_text(original, encoding="utf-8")
+
+    monkeypatch.setattr(ilg.time, "sleep", _settle)
+    cert = tmp_path / "cert.txt"
+    certified, toctou = ilg.write_cert(["scripts/mod.py"], snapshots, cert, repo)
+    assert certified == ["scripts/mod.py"] and toctou == [], (certified, toctou)
+    lines = cert.read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 1, lines
+    assert lines[0].split()[2] == snapshots["scripts/mod.py"], lines
+
+
+def test_write_cert_stable_mismatch_sleeps_once_and_stays_toctou(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#1857 (b): a STABLE mismatch takes exactly ONE settle sleep, the
+    re-hash still mismatches, and the verdict stays TOCTOU (no cert line)."""
+    repo = _make_repo(tmp_path)
+    snapshots = ilg.read_payload(["scripts/mod.py"], repo)
+    (repo / "scripts" / "mod.py").write_text("edited mid-gate\n", encoding="utf-8")
+    slept: list[float] = []
+    monkeypatch.setattr(ilg.time, "sleep", lambda s: slept.append(s))
+    cert = tmp_path / "cert.txt"
+    certified, toctou = ilg.write_cert(["scripts/mod.py"], snapshots, cert, repo)
+    assert toctou == ["scripts/mod.py"] and certified == [], (certified, toctou)
+    assert len(slept) == 1, slept
+    assert not cert.exists(), "stable mismatch must not write a cert line"
+
+
+def test_write_cert_malformed_rehash_delay_falls_back_and_still_toctous(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#1857: a malformed EPM_CERT_REHASH_DELAY_S never crashes write_cert —
+    the default delay is used and a stable mismatch still refuses the cert
+    (fail toward TOCTOU/block, never a skipped re-check)."""
+    repo = _make_repo(tmp_path)
+    snapshots = ilg.read_payload(["scripts/mod.py"], repo)
+    (repo / "scripts" / "mod.py").write_text("edited mid-gate\n", encoding="utf-8")
+    monkeypatch.setenv("EPM_CERT_REHASH_DELAY_S", "not-a-number")
+    slept: list[float] = []
+    monkeypatch.setattr(ilg.time, "sleep", lambda s: slept.append(s))
+    cert = tmp_path / "cert.txt"
+    certified, toctou = ilg.write_cert(["scripts/mod.py"], snapshots, cert, repo)
+    assert toctou == ["scripts/mod.py"] and certified == [], (certified, toctou)
+    assert slept == [2.0], slept
 
 
 def test_write_cert_trims_to_last_500_lines_atomically(tmp_path: Path) -> None:
