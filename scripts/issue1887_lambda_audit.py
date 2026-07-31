@@ -1252,10 +1252,16 @@ def cells_825_control(repo_root: Path, stage_root: Path, pilot: int) -> list[Cel
                 un = (rec.get("unguarded_ridge") or {}).get("19")
                 if un is not None and cid in sa.ALL_CELLS:
                     banked[cid] = float(un)
+    cids = [c for c in ("S_instruct_chat", "S_pretrained_chat") if c in sa.ALL_CELLS]
+    if pilot:
+        cids = cids[:pilot]
+    assert cids, "no #825 control cells enumerated"
+    # r3 crash-fix: materialize the parent layout BEFORE run_units — the r2
+    # adapter staged nothing for this leg and the P0 pilot died at
+    # load_cell_xy's direct cwd-relative np.load (FileNotFoundError).
+    _stage_825_parent_layout(cids)
     specs: list[CellSpec] = []
-    for cid in ("S_instruct_chat", "S_pretrained_chat"):
-        if cid not in sa.ALL_CELLS:
-            continue
+    for cid in cids:
         specs.append(
             CellSpec(
                 issue=825,
@@ -1273,10 +1279,55 @@ def cells_825_control(repo_root: Path, stage_root: Path, pilot: int) -> list[Cel
                 committed_selector=dict(COMMITTED_SELECTOR_BY_ISSUE[825]),
             )
         )
-    if pilot:
-        specs = specs[:pilot]
-    assert specs, "no #825 control cells enumerated"
     return specs
+
+
+def _stage_825_parent_layout(cids: list[str]) -> None:
+    """Materialize the parent-layout S-track npz spans the #825 consumer opens.
+
+    ``issue825_trackm_settle_battery.load_cell_xy`` does a DIRECT cwd-relative
+    ``np.load(S_STORE_DIR / f"{model}_{fmt}_s.npz")`` with NO
+    hub-download-on-miss, so the audit must create that exact layout before
+    ``run_units`` (artifact-reuse check (h)(iv) — staged-layout consumer-open).
+    Staging goes through the parent line's OWN helper ``cm.extract_stem``
+    (default pin ``cm.HF_REV`` = deb7a4523b… — the plan §10 reuse row; verified
+    2026-07-30 via scoped ``list_repo_tree`` at that pin:
+    ``issue825_userbase_map/analysis_tensors`` carries instruct_chat_s /
+    pretrained_chat_s x 10 .pt shards each). ``extract_stem`` drops each
+    ~2.1 GB shard immediately after extraction, so disk peak is ~3 GB per stem
+    (re-downloadable cache; idempotent on the cached npz). Ends with the
+    consumer-open probe: stat + lazy ``np.load`` key check of every staged
+    span at the exact path the consumer opens; raises RuntimeError on a miss.
+    """
+    import issue825_crossmodel_map_transfer as cm
+    import issue825_selector_audit as sa
+    import issue825_trackm_settle_battery as bat
+
+    dl_dir = Path(bat.S_STORE_DIR)
+    stems: list[str] = []
+    for cid in cids:
+        model, fmt, track, _si, _ti = sa.ALL_CELLS[cid]
+        assert track == "s", f"{cid}: only S-track #825 control cells are wired (track={track!r})"
+        stems.append(f"{model}_{fmt}_s")
+    for stem in stems:
+        cm.extract_stem(stem, dl_dir)
+    # (h)(iv) consumer-open probe (cheap: np.load on an npz is lazy — it reads
+    # only the zip directory, never the 430 MB payload).
+    for stem in stems:
+        span = dl_dir / f"{stem}.npz"
+        if not span.is_file():
+            raise RuntimeError(
+                f"[audit][825] staged-layout consumer-open miss: {span} absent after "
+                f"staging — load_cell_xy opens this cwd-relative parent-layout path "
+                f"directly (no hub fallback); cwd={Path.cwd()}"
+            )
+        with np.load(span, allow_pickle=False) as d:
+            missing = {"slots", "profiles", "conv_ids"} - set(d.files)
+        if missing:
+            raise RuntimeError(
+                f"[audit][825] staged span {span} lacks keys {sorted(missing)} — "
+                "not a valid 4-layer S-track turnstore npz"
+            )
 
 
 def _loader_825(cid):
@@ -1298,7 +1349,9 @@ ADAPTERS = {1345: cells_1345, 1310: cells_1310, 1639: cells_1639, 825: cells_825
 # Measured via scoped list_repo_tree at the pinned revisions (2026-07-30 r2
 # probe): #1345 = 92.17 GB parent turnstore + 5.56/4.92/7.01 GB variant stores
 # ~= 110 GB (supersedes the plan §8 10-40 GB estimate); #1310/#1639 share the
-# 8.04 GB store_onpolicy prefix.
+# 8.04 GB store_onpolicy prefix. #825: ~21.4 GB TRANSFER per stem (10 x
+# ~2.1 GB shards at deb7a452, r3 probe) but cm.extract_stem removes each shard
+# after extraction -> disk peak ~3 GB + 0.43 GB npz per stem; 15.0 is ample.
 STAGING_GB = {1345: 110.0, 1310: 10.0, 1639: 10.0, 825: 15.0}
 
 

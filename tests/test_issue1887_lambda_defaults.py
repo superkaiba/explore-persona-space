@@ -582,3 +582,94 @@ def test_unrefittable_cell_row_and_gate_exclusion(tmp_path):
     assert gate["gate"] == "PASS"
     md = (tmp_path / "corrections_table.md").read_text()
     assert "un-refittable — store not resolvable" in md
+
+
+# ---------------------------------------------------------------------------
+# 9. r3 crash-fix (staged-layout consumer-open miss, artifact-reuse (h)(iv)):
+#    the 825 adapter materializes the parent layout load_cell_xy opens.
+#    Pure — extract_stem (the HF-download boundary) is faked signature-
+#    conformantly; the staging body, cid->stem mapping, and consumer-open
+#    probe run for real.
+# ---------------------------------------------------------------------------
+def _fake_extract_stem_writing(calls):
+    """Signature-conformant fake of cm.extract_stem that writes a tiny valid
+    4-layer S-track npz at the parent-layout path (boundary fake only)."""
+
+    def fake_extract(stem, dl_dir, revision=None):
+        calls.append((stem, Path(dl_dir)))
+        p = Path(dl_dir) / f"{stem}.npz"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        np.savez(
+            p,
+            slots=np.zeros((1, 2, 4, 3), dtype=np.float16),
+            profiles=np.zeros((1, 4, 4, 3), dtype=np.float16),
+            conv_ids=np.asarray(["c0"]),
+            layers=np.asarray([14, 18, 19, 26]),
+        )
+        return p
+
+    return fake_extract
+
+
+def test_825_stage_parent_layout_body(tmp_path, monkeypatch):
+    """The staging body maps cids to parent stems, stages via the parent's own
+    helper at the CONSUMER's S_STORE_DIR, and the probe passes on a valid npz
+    (fails FileNotFoundError-style pre-fix: nothing staged this layout)."""
+    import issue825_trackm_settle_battery as bat
+
+    audit = _audit()
+    store = tmp_path / "data" / "issue_825" / "hf_dl" / "map_alignment"
+    monkeypatch.setattr(bat, "S_STORE_DIR", store)
+    calls: list[tuple[str, Path]] = []
+    monkeypatch.setattr(cm, "extract_stem", _fake_extract_stem_writing(calls))
+    audit._stage_825_parent_layout(["S_instruct_chat"])
+    assert calls == [("instruct_chat_s", store)]
+    assert (store / "instruct_chat_s.npz").is_file()
+
+
+def test_825_consumer_open_probe_fails_loud(tmp_path, monkeypatch):
+    """A staging that does NOT materialize the consumer's exact path is caught
+    at enumeration time with the mapping explanation — never a bare
+    FileNotFoundError inside run_units (the P0 crash shape)."""
+    import issue825_trackm_settle_battery as bat
+
+    audit = _audit()
+    monkeypatch.setattr(bat, "S_STORE_DIR", tmp_path / "absent")
+    monkeypatch.setattr(
+        cm, "extract_stem", lambda stem, dl_dir, revision=None: Path(dl_dir) / f"{stem}.npz"
+    )
+    with pytest.raises(RuntimeError, match="staged-layout consumer-open miss"):
+        audit._stage_825_parent_layout(["S_instruct_chat"])
+
+
+def test_825_probe_rejects_wrong_keys(tmp_path, monkeypatch):
+    """A present-but-wrong-shape npz (missing turnstore keys) fails loud too."""
+    import issue825_trackm_settle_battery as bat
+
+    audit = _audit()
+    store = tmp_path / "ma"
+    monkeypatch.setattr(bat, "S_STORE_DIR", store)
+
+    def fake_extract(stem, dl_dir, revision=None):
+        p = Path(dl_dir) / f"{stem}.npz"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        np.savez(p, wrong=np.zeros(1))
+        return p
+
+    monkeypatch.setattr(cm, "extract_stem", fake_extract)
+    with pytest.raises(RuntimeError, match="lacks keys"):
+        audit._stage_825_parent_layout(["S_instruct_chat"])
+
+
+def test_825_cells_stage_at_enumeration_for_pilot_slice(tmp_path, monkeypatch):
+    """cells_825_control stages the parent layout at ENUMERATION time (before
+    run_units) for exactly the pilot-sliced cells (the r3 crash-fix wiring)."""
+    audit = _audit()
+    staged: list[list[str]] = []
+    monkeypatch.setattr(audit, "_stage_825_parent_layout", lambda cids: staged.append(list(cids)))
+    specs = audit.cells_825_control(tmp_path, tmp_path, pilot=1)
+    assert staged == [["S_instruct_chat"]]
+    assert [s.cell_id for s in specs] == ["control__S_instruct_chat"]
+    specs_full = audit.cells_825_control(tmp_path, tmp_path, pilot=0)
+    assert staged[1] == ["S_instruct_chat", "S_pretrained_chat"]
+    assert len(specs_full) == 2
