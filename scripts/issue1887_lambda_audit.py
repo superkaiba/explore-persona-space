@@ -86,6 +86,62 @@ COMMITTED_SELECTOR_BY_ISSUE = {
     825: LEGACY_UNGUARDED,  # n>d negative-control leg (committed #825 default)
 }
 
+# ---------------------------------------------------------------------------
+# Pinned store revisions (concerns i1887-1310-store-rev-unpinned +
+# i1887-variant-store-staging; plan A4/§5.4). Every pin below is the FULL
+# last-commit oid of its prefix, probed 2026-07-30 via scoped
+# list_repo_tree + get_paths_info(expand=True) — evidence in the r2
+# epm:results marker on task #1887.
+#
+# #1310/#1639: ALL 58 files under store_onpolicy/ landed in ONE commit
+# (2026-07-16T10:34:45Z, "issue1310: onpolicy prefill activation store"), and
+# the prefix has never been touched since — a unique, single-version store
+# (8.04 GB). Dating note (plan item (j)): the #1310 fits (cell metadata
+# 2026-07-14T23:38..07-15T04:43Z) PREDATE the upload — persist-after-run, so
+# the wall-clock "store last-modified predates the fits" ordering is inverted
+# for #1310; with exactly one store version ever on HF the pin is unambiguous
+# and the per-cell replay gate (|dR2| <= REPLAY_GATE_TOL) is the byte-identity
+# check. The #1639 tier15 fits (git 261c71f9e56e, 2026-07-25Z) POSTdate the
+# upload — ordering holds strictly there.
+I1310_STORE_PREFIX = "issue1310_char_map/analysis_tensors/store_onpolicy"
+I1310_STORE_REV = "687e5b348ef850308069c228534fef38cf53015a"
+
+# #1345: the parent-run turnstore prefix carries ALL five parent-format stems
+# ({instruct,pretrained}_{chat,naturalistic}_s + instruct_stories_s; 90 files,
+# 92.17 GB, uploaded 2026-07-16T03:57..04:38Z, untouched since) — so every
+# r1/r2/r3 cell of every variant stages from it. Variant-prefixed stores exist
+# on HF ONLY for the three paired/slot variants below (each single-upload,
+# shard files predating that variant's committed fits by 10 min..6 h); the
+# other variants (assistant_named_story, conversation_paired_stories,
+# followup_cjk_excluded) have NO store of their own — their cells consume the
+# parent stems. ladder_rungs + conversation_paired_stories_assistant_base
+# carry no cells_*.json and are never enumerated.
+I1345_PARENT_STORE_PREFIX = "issue1345_framing/analysis_tensors/turnstore"
+I1345_PARENT_STORE_REV = "e151f8fd30a466cd9e2f05b9b86cf6dde76bca74"
+I1345_PARENT_MATCHED_PATH = "issue1345_framing/inputs/matched_n/matched_subsets.json"
+I1345_PARENT_MATCHED_REV = "a5738c957cd41ef8e7985716064ade67717a890d"
+# format_key values whose stems live in the PARENT turnstore prefix.
+I1345_PARENT_FORMATS = ("chat", "naturalistic", "stories")
+I1345_VARIANT_STORE_REVS = {
+    # 14 files, 5.56 GB (instruct_stories_paired_s + instruct_stories_paired_op_s)
+    "conversation_paired_stories_assistant": "1ef6def108678c458a03d190c8105ced55fe58a7",
+    # 10 files, 4.92 GB (instruct_stories_paired_op_s)
+    "onpolicy_assistant_story": "eca4accbf8eef9d4eebe546dbc8f3131c4031df4",
+    # 13 files, 7.01 GB (instruct_stories_paired_slots_s)
+    "story_slot_ablation": "c8ffc7a8d7412fd0492dd0b3a0e2e9f6374f80c7",
+}
+# Variant matched_subsets.json pins (probed 2026-07-30; contents verified:
+# cpa r4_convs=2163 / op_companion_convs=117, oas r4_convs=2018, both
+# shared_r1r2_convs=4724 — matching the committed cells' n_allowlist).
+# story_slot_ablation has NO matched file on HF: its allowlist is the
+# committed slot_row_coverage.json registered set (n=2163, in git).
+I1345_VARIANT_MATCHED_REVS = {
+    "assistant_named_story": "c06fffa6c5420faa8f883ce86d7d26fe4995dca2",
+    "conversation_paired_stories": "25d0b70afb6777edd4575fd3d66d2b5441cd8d40",
+    "conversation_paired_stories_assistant": "77f73466e0a7a3d7f29f31aaa8f0dd9372431045",
+    "onpolicy_assistant_story": "87c5a80269d4e91f307f8a77e0c0cbdd741b3ce2",
+}
+
 
 # ---------------------------------------------------------------------------
 # Cell / fold plumbing
@@ -372,6 +428,14 @@ def run_units(cells: list[CellSpec], arms: tuple[str, ...], out_dir: Path) -> No
     total = len(units)
     done = 0
     for cell in cells:
+        if cell.load is None:
+            done += len(arms)
+            print(
+                f"[audit] unit {done}/{total} {cell.issue}/{cell.cell_id} SKIP all arms: "
+                f"{cell.notes}",
+                flush=True,
+            )
+            continue
         folds: list[FoldData] | None = None
         for arm in arms:
             done += 1
@@ -491,9 +555,45 @@ def _verdict(row: dict) -> str:
     return "shifted"
 
 
+UNREFITTABLE_VERDICT = "un-refittable — store not resolvable"
+
+
 def build_corrections_table(cells: list[CellSpec], out_dir: Path) -> dict:
     rows = []
     for cell in cells:
+        if cell.load is None:
+            # Plan §5.4: an unresolvable-store cell is NAMED with its reason —
+            # never a whole-audit failure, and never counted in the replay gate.
+            rows.append(
+                {
+                    "issue": cell.issue,
+                    "cell_id": cell.cell_id,
+                    "variant": cell.variant,
+                    "control": cell.control,
+                    "n_train": None,
+                    "d": None,
+                    "committed_selector": cell.committed_selector,
+                    "committed_r2": cell.committed_r2,
+                    "replay_r2": None,
+                    "replay_delta": None,
+                    "corrected_gcv_capped_r2": None,
+                    "corrected_inner_cv_r2": None,
+                    "corrected_reduced_basis_r2": None,
+                    "reduced_basis_fold_se": None,
+                    "reduced_basis_k": None,
+                    "forced_lambda_r2": {},
+                    "knn_at_1": None,
+                    "knn_chance": None,
+                    "tripwire": None,
+                    "published_claim_ref": cell.published_claim_ref,
+                    "null_rerun": NULL_RERUN_NOTE,
+                    "ci_survival": CI_NOTE,
+                    "mapping_baseline_note": IDENTITY_BASELINE_NOTE,
+                    "verdict_label": UNREFITTABLE_VERDICT,
+                    "notes": cell.notes,
+                }
+            )
+            continue
         units = {arm: _load_unit(out_dir, cell.cell_id, arm) for arm in ARMS}
         replay = units.get("committed_replay") or {}
         capped = units.get("gcv_capped_0p9") or {}
@@ -551,7 +651,12 @@ def build_corrections_table(cells: list[CellSpec], out_dir: Path) -> dict:
             )
         rows.append(row)
     n_gated = sum(1 for r in rows if r["verdict_label"] == "replay-failed (excluded)")
-    with_ref = [r for r in rows if r.get("committed_r2") is not None]
+    n_unrefittable = sum(1 for r in rows if r["verdict_label"] == UNREFITTABLE_VERDICT)
+    with_ref = [
+        r
+        for r in rows
+        if r.get("committed_r2") is not None and r["verdict_label"] != UNREFITTABLE_VERDICT
+    ]
     table = {
         "metadata": {
             "script": "scripts/issue1887_lambda_audit.py",
@@ -567,6 +672,7 @@ def build_corrections_table(cells: list[CellSpec], out_dir: Path) -> dict:
         "replay_gate": {
             "n_cells_with_reference": len(with_ref),
             "n_replay_failed": n_gated,
+            "n_unrefittable": n_unrefittable,
             "pass_fraction": (None if not with_ref else 1.0 - n_gated / len(with_ref)),
             "gate": "PASS" if (not with_ref or n_gated / len(with_ref) <= 0.10) else "FAIL",
         },
@@ -604,11 +710,14 @@ def _write_corrections_md(path: Path, table: dict) -> None:
     for r in table["rows"]:
         fl = r.get("forced_lambda_r2") or {}
         forced = "/".join(_f(fl.get(f"{lam:.0e}")) for lam in FORCED_LAMBDAS)
+        verdict = r["verdict_label"]
+        if r.get("notes"):  # un-refittable rows carry their reason (plan §5.4)
+            verdict = f"{verdict} — {r['notes']}"
         lines.append(
             f"| {r['cell_id']} | {r['variant']} | {r['n_train']} | {r['d']} "
             f"| {_f(r['committed_r2'])} | {_f(r['replay_delta'])} "
             f"| {_f(r['corrected_gcv_capped_r2'])} | {_f(r['corrected_inner_cv_r2'])} "
-            f"| {_f(r['corrected_reduced_basis_r2'])} | {forced} | {r['verdict_label']} |"
+            f"| {_f(r['corrected_reduced_basis_r2'])} | {forced} | {verdict} |"
         )
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines) + "\n")
@@ -716,16 +825,47 @@ def _headline_pos(payload: dict) -> tuple[int, int]:
     return li, li
 
 
+def _resolve_1345_store(variant: str, format_key: str) -> tuple[str, str, str] | None:
+    """(prefix, pinned revision, flat staging subdir) for a cell's turnstore
+    stem — parent-format stems resolve at the parent turnstore pin (shared
+    flat dir, staged once across variants); paired/slot stems at their
+    variant's pinned prefix. None = un-refittable (no pinned HF source)."""
+    if format_key in I1345_PARENT_FORMATS:
+        return I1345_PARENT_STORE_PREFIX, I1345_PARENT_STORE_REV, "parent_turnstore"
+    if variant in I1345_VARIANT_STORE_REVS:
+        return (
+            f"issue1345_framing/{variant}/analysis_tensors/turnstore",
+            I1345_VARIANT_STORE_REVS[variant],
+            f"{variant}_turnstore",
+        )
+    return None
+
+
+def _allowlist_ref_1345(variant: str, payload: dict) -> str | None:
+    """Short resume-key token naming the cell's row-identity source (None =
+    full store). Rides the CellSpec store_rev so the resume predicate
+    invalidates on an allowlist-pin change, not only a store-pin change."""
+    if payload.get("cjk_exclusion"):
+        return "payload:cjk_exclusion"
+    if not payload.get("row_allowlist_applied"):
+        return None
+    if variant == "story_slot_ablation":
+        return "git:slot_row_coverage.json"
+    rev = I1345_PARENT_MATCHED_REV if variant == "base" else I1345_VARIANT_MATCHED_REVS[variant]
+    return f"matched:{rev}"
+
+
 def cells_1345(repo_root: Path, stage_root: Path, pilot: int) -> list[CellSpec]:
     """#1345 matched-row + variant + followup + slot cells (plan §3.5).
 
-    Enumerated from the committed JSONs; stores staged via the parents' own
-    staging (issue1345_common pinned-shard downloads through the canonical
-    retry-wrapped hub helpers); folds/rows: committed conv-grouped K=5 seed 0
-    + the matched-row allowlists, reused unchanged. PILOT-GATED.
+    Enumerated from the committed JSONs; stores staged per-stem from the
+    PINNED prefixes in `_resolve_1345_store` (concern
+    i1887-variant-store-staging); folds/rows: committed conv-grouped K=5
+    seed 0 + the variant-resolved allowlists, reused unchanged. A cell whose
+    store has no pinned HF source is enumerated with ``load=None`` and lands
+    in the corrections table as `un-refittable — store not resolvable`
+    (plan §5.4) — never a whole-audit failure. PILOT-GATED.
     """
-    import issue1345_common as c1345  # parent staging + constants
-
     eval_dir = repo_root / "eval_results/issue_1345"
     # Realized 2026-07-30 layout: some variants carry cells at the dir top,
     # some under matched_row/ — enumerate BOTH per variant (plan §13 allows
@@ -763,19 +903,40 @@ def cells_1345(repo_root: Path, stage_root: Path, pilot: int) -> list[CellSpec]:
             seen.add(unit_id)
             li, _ = _headline_pos(payload)
             committed = float(payload["r2_per_layer_obs"][li])
-            n_allow = payload.get("n_allowlist")
+            common = dict(
+                issue=1345,
+                cell_id=unit_id,
+                variant=variant,
+                committed_r2=committed,
+                published_claim_ref=str(p.relative_to(repo_root)) + f" @ L{li}",
+                seed=int(payload.get("metadata", {}).get("seed", 0)),
+                compute_knn="stories" in variant or "story" in str(cell_dict),
+                committed_selector=dict(COMMITTED_SELECTOR_BY_ISSUE[1345]),
+            )
+            store = _resolve_1345_store(variant, cell_dict["format_key"])
+            if store is None:
+                stem = f"{cell_dict['model_key']}_{cell_dict['format_key']}_{cell_dict['track']}"
+                specs.append(
+                    CellSpec(
+                        **common,
+                        store_rev="unresolvable",
+                        load=None,
+                        notes=(
+                            f"un-refittable — store not resolvable (stem {stem!r}: no pinned "
+                            f"HF turnstore prefix for variant {variant!r}; plan §5.4)"
+                        ),
+                    )
+                )
+                continue
+            prefix, rev, subdir = store
+            allow_ref = _allowlist_ref_1345(variant, payload)
             specs.append(
                 CellSpec(
-                    issue=1345,
-                    cell_id=unit_id,
-                    variant=variant,
-                    committed_r2=committed,
-                    published_claim_ref=str(p.relative_to(repo_root)) + f" @ L{li}",
-                    store_rev=c1345.PIN_REV if hasattr(c1345, "PIN_REV") else "pinned",
-                    load=_loader_1345(repo_root, stage_root, variant, cell_dict, payload, li),
-                    seed=int(payload.get("metadata", {}).get("seed", 0)),
-                    compute_knn="stories" in variant or "story" in str(cell_dict),
-                    committed_selector=dict(COMMITTED_SELECTOR_BY_ISSUE[1345]),
+                    **common,
+                    store_rev=(rev if allow_ref is None else f"{rev}+allow:{allow_ref}"),
+                    load=_loader_1345(
+                        repo_root, stage_root, variant, cell_dict, payload, li, prefix, rev, subdir
+                    ),
                 )
             )
     if pilot:
@@ -784,38 +945,129 @@ def cells_1345(repo_root: Path, stage_root: Path, pilot: int) -> list[CellSpec]:
     return specs
 
 
-def _loader_1345(repo_root, stage_root, variant, cell_dict, payload, li):
+def _stage_1345_stem(prefix: str, revision: str, stem: str, dest: Path) -> None:
+    """Stage ONE stem's pt shards + sidecar JSONs from a PINNED prefix into a
+    flat dir (scoped listing + retried per-file download; skip-if-present)."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    files = hub.list_hf_files_under_path(
+        HfApi(token=os.environ.get("HF_TOKEN")),
+        HF_DATA_REPO,
+        prefix,
+        repo_type="dataset",
+        revision=revision,
+    )
+    want = sorted(
+        f
+        for f in files
+        if Path(f).name.startswith(f"{stem}_shard") and f.endswith((".pt", ".json"))
+    )
+    assert want, f"no shards for stem {stem!r} under {prefix}@{revision}"
+    for f in want:
+        target = dest / Path(f).name
+        if not target.is_file():
+            hub.stage_hub_file(HF_DATA_REPO, f, target, repo_type="dataset", revision=revision)
+
+
+_1345_MATCHED_CACHE: dict = {}
+
+
+def _matched_1345(stage_root: Path, variant: str) -> dict:
+    """Stage + parse the PINNED matched_subsets.json ('base' = the parent's)."""
+    if variant not in _1345_MATCHED_CACHE:
+        from explore_persona_space.orchestrate import hub
+
+        if variant == "base":
+            path, rev = I1345_PARENT_MATCHED_PATH, I1345_PARENT_MATCHED_REV
+        else:
+            rev = I1345_VARIANT_MATCHED_REVS[variant]
+            path = f"issue1345_framing/{variant}/inputs/matched_n/matched_subsets.json"
+        target = stage_root / "issue1345" / variant / "matched_n" / "matched_subsets.json"
+        if not target.is_file():
+            hub.stage_hub_file(HF_DATA_REPO, path, target, repo_type="dataset", revision=rev)
+        _1345_MATCHED_CACHE[variant] = json.loads(target.read_text())
+    return _1345_MATCHED_CACHE[variant]
+
+
+def _resolve_1345_allowlist(repo_root, stage_root, variant, cell_dict, payload):
+    """Committed row identity per cell (concern i1887-variant-store-staging):
+
+    - story_slot_ablation: the committed slot_row_coverage.json registered
+      set (slot cells AND the chat matched comparator all fit on it —
+      issue1345_slot_verdict.run_fits allowlist_fn).
+    - ``_tf_on_companion_`` cells: the variant matched file's
+      per_model_r4_pair op_companion_convs; ``_matched_`` cells: r4_convs.
+    - full r1/r2 cells: shared_r1r2_convs (the variant's own matched file;
+      the parent's for base cells).
+    Fail-loud n parity against the committed payload's n_allowlist.
+    """
+    if not payload.get("row_allowlist_applied"):
+        return None
+    cid = cell_dict["cell_id"]
+    if variant == "story_slot_ablation":
+        cov = json.loads(
+            (
+                repo_root / "eval_results/issue_1345/story_slot_ablation/slot_row_coverage.json"
+            ).read_text()
+        )
+        allowlist = cov["registered_conv_ids"]
+    else:
+        matched = _matched_1345(stage_root, variant)
+        if "_tf_on_companion_" in cid:
+            allowlist = matched["per_model_r4_pair"][cell_dict["model_key"]]["op_companion_convs"]
+        elif "_matched_" in cid:
+            allowlist = matched["per_model_r4_pair"][cell_dict["model_key"]]["r4_convs"]
+        else:
+            allowlist = matched["shared_r1r2_convs"]
+    n_committed = payload.get("n_allowlist")
+    assert allowlist and (n_committed is None or len(allowlist) == int(n_committed)), (
+        f"{cid}: resolved allowlist n={len(allowlist or [])} != committed "
+        f"n_allowlist={n_committed} — allowlist provenance drift"
+    )
+    return allowlist
+
+
+def _loader_1345(repo_root, stage_root, variant, cell_dict, payload, li, prefix, rev, subdir):
     def _load() -> list[FoldData]:
         import issue1345_common as c1345
         import issue1345_fit_cells as f1345
+        from issue1345_followup_cjk_excluded import filter_bundle_rows
 
-        # Stage the variant's turnstore shards via the parent's own pinned
-        # staging (retry-wrapped hub download). PILOT-GATED: variant-prefixed
-        # stores stage under the variant HF prefix (issue1345_framing_<v>).
-        turnstore_dir = stage_root / "issue1345" / variant / "turnstore"
-        turnstore_dir.mkdir(parents=True, exist_ok=True)
-        stem = c1345.stem_for(cell_dict["model_key"], cell_dict.get("regime", "r1"))
-        for shard in c1345.list_parent_shards(stem):
-            c1345.stage_pinned_file(shard, turnstore_dir)
-        bundle = f1345.load_regime_bundle(
-            turnstore_dir, cell_dict["model_key"], cell_dict.get("regime", "r1")
+        # Stage ONLY this cell's stem from its pinned prefix (parent-format
+        # stems share one flat dir across variants; variant stems land under
+        # their own subdir — see _resolve_1345_store).
+        stem_dir = stage_root / "issue1345" / subdir
+        stem_dir.mkdir(parents=True, exist_ok=True)
+        stem = f"{cell_dict['model_key']}_{cell_dict['format_key']}_{cell_dict['track']}"
+        _stage_1345_stem(prefix, rev, stem, stem_dir)
+        # Bundle load keyed on the cell dict's OWN format_key (never the
+        # env-gated c1345.REGIME_FORMAT registry, which lacks the variant
+        # regimes r4/r4op/r4slot outside EPM_I1345_VARIANT runs).
+        bundle = fit825._load_bundle_any(
+            stem_dir,
+            cell_dict["model_key"],
+            cell_dict["format_key"],
+            cell_dict["track"],
+            wanted_keys=f1345.SLIM_KEYS,
         )
-        allowlist = None
-        if payload.get("row_allowlist_applied"):
-            # The matched-n allowlist lives at c1345.MATCHED_DIR locally, with
-            # the pinned HF copy at c1345.REUSE_MATCHED_PATH (staged on miss).
-            matched_dir = c1345.MATCHED_DIR
-            if not (matched_dir / "matched_subsets.json").is_file():
-                matched_dir = stage_root / "issue1345" / "matched_n"
-                matched_dir.mkdir(parents=True, exist_ok=True)
-                if not (matched_dir / "matched_subsets.json").is_file():
-                    c1345.stage_pinned_file(c1345.REUSE_MATCHED_PATH, matched_dir)
-            matched = f1345.load_matched(matched_dir)
-            allowlist = matched["shared_r1r2_convs"]
-            assert len(allowlist) == (payload.get("n_allowlist") or len(allowlist)), (
-                f"{cell_dict['cell_id']}: staged allowlist n={len(allowlist)} != committed "
-                f"n_allowlist={payload.get('n_allowlist')} — allowlist provenance drift"
+        expect_slots = len(c1345.SLOT_STORE_ORDER) if cell_dict.get("regime") == "r4slot" else 2
+        c1345.assert_pt_bundle(
+            bundle, expect_slots=expect_slots, expect_layers=fit825.EXPECTED_LAYERS
+        )
+        cjk = payload.get("cjk_exclusion")
+        if cjk:
+            # The committed cjk cells fit the FULL r3 store minus the
+            # payload-recorded excluded story ids (self-contained provenance;
+            # committed reference: rows 2108 -> 1983 after dropping 24 stories).
+            bundle, digest = filter_bundle_rows(bundle, set(cjk["excluded_story_ids"]))
+            assert digest["n_stories_dropped"] == int(cjk["n_excluded_stories"]), digest
+            assert digest["n_rows_after"] == int(payload["metadata"]["n"]), (
+                digest,
+                payload["metadata"]["n"],
             )
+        allowlist = _resolve_1345_allowlist(repo_root, stage_root, variant, cell_dict, payload)
         xy = fit825._apply_row_allowlist(
             fit825._cell_xy(bundle, cell_dict), allowlist, cell_dict["cell_id"]
         )
@@ -845,7 +1097,7 @@ def cells_1310(repo_root: Path, stage_root: Path, pilot: int) -> list[CellSpec]:
                 variant="xpersona",
                 committed_r2=committed,
                 published_claim_ref=str(p.relative_to(repo_root)) + f" @ L{li}",
-                store_rev="issue1310_char_map (rev pinned at P0 — plan A4)",
+                store_rev=I1310_STORE_REV,
                 load=_loader_1310(stage_root, cell_id, payload, li),
                 seed=int(payload.get("metadata", {}).get("seed", 0)),
                 committed_selector=dict(COMMITTED_SELECTOR_BY_ISSUE[1310]),
@@ -865,11 +1117,14 @@ def _loader_1310(stage_root, cell_id, payload, li):
         import issue1310_fit as f1310
         from explore_persona_space.orchestrate import hub
 
-        prefix = "issue1310_char_map/analysis_tensors/store_onpolicy"
-        store_root = stage_root / "issue1310" / prefix
+        store_root = stage_root / "issue1310" / I1310_STORE_PREFIX
         if not store_root.is_dir() or not any(store_root.iterdir()):
             hub.stage_hub_prefix(
-                HF_DATA_REPO, prefix, stage_root / "issue1310", repo_type="dataset"
+                HF_DATA_REPO,
+                I1310_STORE_PREFIX,
+                stage_root / "issue1310",
+                repo_type="dataset",
+                revision=I1310_STORE_REV,
             )
         model_kind = "base" if cell_id.startswith("base") else "instruct"
         if model_kind not in _1310_STORE_CACHE:
@@ -917,7 +1172,7 @@ def cells_1639(repo_root: Path, stage_root: Path, pilot: int) -> list[CellSpec]:
                     str((tier15 / "results.json").relative_to(repo_root))
                     + f" directions[{key}].naive.r2_foldmean"
                 ),
-                store_rev="issue1310_char_map (rev pinned at P0 — plan A4)",
+                store_rev=I1310_STORE_REV,
                 load=_loader_1639(stage_root, key),
                 committed_selector=dict(COMMITTED_SELECTOR_BY_ISSUE[1639]),
             )
@@ -934,11 +1189,14 @@ def _loader_1639(stage_root, key):
         import issue1639_tier15_intercept_refit as t15
         from explore_persona_space.orchestrate import hub
 
-        prefix = "issue1310_char_map/analysis_tensors/store_onpolicy"
-        store_root = stage_root / "issue1310" / prefix
+        store_root = stage_root / "issue1310" / I1310_STORE_PREFIX
         if not store_root.is_dir() or not any(store_root.iterdir()):
             hub.stage_hub_prefix(
-                HF_DATA_REPO, prefix, stage_root / "issue1310", repo_type="dataset"
+                HF_DATA_REPO,
+                I1310_STORE_PREFIX,
+                stage_root / "issue1310",
+                repo_type="dataset",
+                revision=I1310_STORE_REV,
             )
         # Realized tier15 direction-key format (read from the committed
         # results.json, 2026-07-30): "<model>.<src>-><tgt>" e.g.
@@ -1037,7 +1295,11 @@ def _loader_825(cid):
 
 
 ADAPTERS = {1345: cells_1345, 1310: cells_1310, 1639: cells_1639, 825: cells_825_control}
-STAGING_GB = {1345: 30.0, 1310: 10.0, 1639: 10.0, 825: 15.0}  # plan §8: 10-40 GB
+# Measured via scoped list_repo_tree at the pinned revisions (2026-07-30 r2
+# probe): #1345 = 92.17 GB parent turnstore + 5.56/4.92/7.01 GB variant stores
+# ~= 110 GB (supersedes the plan §8 10-40 GB estimate); #1310/#1639 share the
+# 8.04 GB store_onpolicy prefix.
+STAGING_GB = {1345: 110.0, 1310: 10.0, 1639: 10.0, 825: 15.0}
 
 
 # ---------------------------------------------------------------------------

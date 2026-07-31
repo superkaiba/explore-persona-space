@@ -472,3 +472,113 @@ def test_trackm_settle_battery_ridge_r2_runs_unrefused():
     assert np.isfinite(r_un["0"]) and np.isfinite(r_g["0"])
     assert fit825.GCV_DOF_CAP == 0.9
     assert fit825.LEGACY_UNGUARDED_GCV is False
+
+
+# ---------------------------------------------------------------------------
+# 8. r2 concern fixes (i1887-1310-store-rev-unpinned + i1887-variant-store-
+#    staging): pinned store revisions + variant store/allowlist routing.
+#    Pure — no HF calls, no staging.
+# ---------------------------------------------------------------------------
+def _audit():
+    import issue1887_lambda_audit as audit
+
+    return audit
+
+
+def _is_full_sha(s: str) -> bool:
+    return len(s) == 40 and set(s) <= set("0123456789abcdef")
+
+
+def test_store_rev_pins_are_full_shas():
+    audit = _audit()
+    pins = [
+        audit.I1310_STORE_REV,
+        audit.I1345_PARENT_STORE_REV,
+        audit.I1345_PARENT_MATCHED_REV,
+        *audit.I1345_VARIANT_STORE_REVS.values(),
+        *audit.I1345_VARIANT_MATCHED_REVS.values(),
+    ]
+    assert len(pins) == 3 + 3 + 4
+    for pin in pins:
+        assert _is_full_sha(pin), pin
+
+
+def test_1310_resume_key_carries_the_real_store_rev():
+    """The resume predicate invalidates on store drift — no placeholder string
+    (concern i1887-1310-store-rev-unpinned)."""
+    audit = _audit()
+    cell = audit.CellSpec(
+        issue=1310,
+        cell_id="instruct_Dana",
+        variant="xpersona",
+        committed_r2=0.0,
+        published_claim_ref="ref",
+        store_rev=audit.I1310_STORE_REV,
+        load=lambda: [],
+    )
+    key = audit._resume_key(cell, "inner_group_cv")
+    assert key["store_rev"] == audit.I1310_STORE_REV
+    assert _is_full_sha(key["store_rev"])
+
+
+def test_1345_store_resolution_map():
+    audit = _audit()
+    # Parent-format stems -> the parent turnstore pin, ONE shared flat dir.
+    for fmt in ("chat", "naturalistic", "stories"):
+        prefix, rev, subdir = audit._resolve_1345_store("assistant_named_story", fmt)
+        assert prefix == audit.I1345_PARENT_STORE_PREFIX
+        assert rev == audit.I1345_PARENT_STORE_REV
+        assert subdir == "parent_turnstore"
+    # Variant-prefixed stems -> that variant's pinned prefix.
+    prefix, rev, subdir = audit._resolve_1345_store("story_slot_ablation", "stories_paired_slots")
+    assert prefix == "issue1345_framing/story_slot_ablation/analysis_tensors/turnstore"
+    assert rev == audit.I1345_VARIANT_STORE_REVS["story_slot_ablation"]
+    assert subdir == "story_slot_ablation_turnstore"
+    # No pinned source -> None (the un-refittable path, plan §5.4).
+    assert audit._resolve_1345_store("ladder_rungs", "stories_paired") is None
+
+
+def test_1345_allowlist_ref_tokens():
+    audit = _audit()
+    assert audit._allowlist_ref_1345("base", {"row_allowlist_applied": False}) is None
+    assert (
+        audit._allowlist_ref_1345("followup_cjk_excluded", {"cjk_exclusion": {"x": 1}})
+        == "payload:cjk_exclusion"
+    )
+    assert (
+        audit._allowlist_ref_1345("story_slot_ablation", {"row_allowlist_applied": True})
+        == "git:slot_row_coverage.json"
+    )
+    ref = audit._allowlist_ref_1345("onpolicy_assistant_story", {"row_allowlist_applied": True})
+    assert ref == f"matched:{audit.I1345_VARIANT_MATCHED_REVS['onpolicy_assistant_story']}"
+    ref = audit._allowlist_ref_1345("base", {"row_allowlist_applied": True})
+    assert ref == f"matched:{audit.I1345_PARENT_MATCHED_REV}"
+
+
+def test_unrefittable_cell_row_and_gate_exclusion(tmp_path):
+    """A load=None cell is SKIPPED by run_units and lands in the corrections
+    table as a named un-refittable row, excluded from the replay gate
+    (plan §5.4 — never a whole-audit failure)."""
+    audit = _audit()
+    cell = audit.CellSpec(
+        issue=1345,
+        cell_id="ladder_rungs__hypothetical",
+        variant="ladder_rungs",
+        committed_r2=0.5,
+        published_claim_ref="ref",
+        store_rev="unresolvable",
+        load=None,
+        notes="un-refittable — store not resolvable (stem 'x': no pinned HF turnstore prefix)",
+    )
+    audit.run_units([cell], audit.ARMS, tmp_path)  # skips every arm, writes nothing
+    assert not (tmp_path / "cells").exists()
+    table = audit.build_corrections_table([cell], tmp_path)
+    row = table["rows"][0]
+    assert row["verdict_label"] == audit.UNREFITTABLE_VERDICT
+    assert row["notes"].startswith("un-refittable")
+    gate = table["replay_gate"]
+    assert gate["n_unrefittable"] == 1
+    assert gate["n_cells_with_reference"] == 0  # excluded from the gate denominator
+    assert gate["gate"] == "PASS"
+    md = (tmp_path / "corrections_table.md").read_text()
+    assert "un-refittable — store not resolvable" in md
