@@ -4863,5 +4863,6 @@ if __name__ == "__main__":
     # insufficient), which would kill the `capture && fit` workload chain
     # after a COMPLETED phase. Every output is already durably written
     # (atomic tmp+os.replace) and both streams are flushed above, so the
-    # skipped finalization has nothing left to do.
-    os._exit(rc)
+    # skipped finalization has nothing left to do. Canonical coerced form
+    # (the tests/test_issue1689_os_exit_shutdown_bypass.py idiom).
+    os._exit(rc if isinstance(rc, int) else 0)
