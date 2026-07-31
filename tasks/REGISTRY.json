@@ -6704,8 +6704,8 @@
     "1866": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1866",
-      "status": "reviewing",
+      "path": "tasks/completed/1866",
+      "status": "completed",
       "title": "daily-fix: SLURM completed-work-but-FAILED state disambiguat"
     },
     "1867": {
