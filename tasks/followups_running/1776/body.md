@@ -3,8 +3,7 @@ title: 'The fitted context-to-answer map reads a correlate, not a cause: Jacobia
   recover essentially none of its predictive power and even full-state substitution
   at its input slot moves nothing (HIGH confidence)'
 kind: experiment
-tags:
-- followup-manual
+tags: []
 created_at: '2026-07-28T21:44:34Z'
 has_clean_result: true
 parent_id: 779
