@@ -1,0 +1,305 @@
+{
+  "commit": "cd3112d001",
+  "created": "2026-07-31T21:22:15Z",
+  "figsize": [
+    11.0,
+    3.6
+  ],
+  "points": [
+    {
+      "parent run rho (full subset)": 0.6081321239471436,
+      "off-floor rho": 0.5897113084793091,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent run rho (full subset)": 0.6626960635185242,
+      "off-floor rho": 0.6527145504951477,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent run rho (full subset)": 0.6212086081504822,
+      "off-floor rho": 0.6021702289581299,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent run rho (full subset)": 0.6586830019950867,
+      "off-floor rho": 0.659256100654602,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent run rho (full subset)": 0.3100943863391876,
+      "off-floor rho": 0.3333796262741089,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent run rho (full subset)": 0.3263792097568512,
+      "off-floor rho": 0.31355521082878113,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent run rho (full subset)": 0.32255423069000244,
+      "off-floor rho": 0.3602961599826813,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent run rho (full subset)": 0.3408893048763275,
+      "off-floor rho": 0.3846617341041565,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent run rho (full subset)": 0.6421952843666077,
+      "off-floor rho": 0.5734683871269226,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent run rho (full subset)": 0.7280901670455933,
+      "off-floor rho": 0.6705367565155029,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent run rho (full subset)": 0.6477050185203552,
+      "off-floor rho": 0.5926473140716553,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent run rho (full subset)": 0.7133911848068237,
+      "off-floor rho": 0.6523823142051697,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent run rho (full subset)": 0.0739162266254425,
+      "off-floor rho": 0.06781094521284103,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent run rho (full subset)": 0.03307610750198364,
+      "off-floor rho": 0.020434092730283737,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent run rho (full subset)": 0.02667590044438839,
+      "off-floor rho": 0.016870567575097084,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent run rho (full subset)": 0.03985553979873657,
+      "off-floor rho": 0.03197643905878067,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent run rho (full subset)": -0.007549615576863289,
+      "off-floor rho": -0.07805483788251877,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent run rho (full subset)": -0.01316332258284092,
+      "off-floor rho": -0.0468851774930954,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent run rho (full subset)": -0.04960249364376068,
+      "off-floor rho": -0.11501159518957138,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent run rho (full subset)": -0.02576245740056038,
+      "off-floor rho": -0.10735870152711868,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent run rho (full subset)": -0.35008060932159424,
+      "off-floor rho": -0.3304886519908905,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent run rho (full subset)": 0.3560813069343567,
+      "off-floor rho": 0.3493037521839142,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent run rho (full subset)": -0.3623693585395813,
+      "off-floor rho": -0.37065646052360535,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent run rho (full subset)": -0.36629846692085266,
+      "off-floor rho": -0.37114569544792175,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent run rho (full subset)": 0.08523198962211609,
+      "off-floor rho": 0.07643646001815796,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent run rho (full subset)": 0.19705162942409515,
+      "off-floor rho": 0.18917420506477356,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent run rho (full subset)": 0.22520893812179565,
+      "off-floor rho": 0.21702398359775543,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent run rho (full subset)": 0.26612669229507446,
+      "off-floor rho": 0.26223254203796387,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent run rho (full subset)": 0.2662518322467804,
+      "off-floor rho": 0.20033051073551178,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent run rho (full subset)": 0.2791939377784729,
+      "off-floor rho": 0.20673540234565735,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent run rho (full subset)": 0.24878646433353424,
+      "off-floor rho": 0.21021626889705658,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent run rho (full subset)": 0.2665855288505554,
+      "off-floor rho": 0.19805611670017242,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent run rho (full subset)": 0.07035846263170242,
+      "off-floor rho": 0.07407854497432709,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent run rho (full subset)": 0.13536830246448517,
+      "off-floor rho": 0.16597479581832886,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent run rho (full subset)": 0.07786130905151367,
+      "off-floor rho": 0.08794596046209335,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent run rho (full subset)": 0.07373541593551636,
+      "off-floor rho": 0.06903723627328873,
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 36,
+  "text": {
+    "suptitle": "Per-arm Spearman rho, parent vs off-floor (graded LEVEL; descriptive)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Base behavioral propensity",
+        "xlabel": "parent run rho (full subset)",
+        "ylabel": "off-floor rho",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title": "Context similarity (pre)",
+        "xlabel": "parent run rho (full subset)",
+        "ylabel": "off-floor rho",
+        "xticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      },
+      {
+        "title": "Answer similarity (pre)",
+        "xlabel": "parent run rho (full subset)",
+        "ylabel": "off-floor rho",
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ]
+      }
+    ]
+  }
+}

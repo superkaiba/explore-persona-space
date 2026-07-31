@@ -1,0 +1,16 @@
+{
+ "ts": "2026-07-31T18:54:15Z",
+ "git_commit": "979b79f2b59f21ef8fa0b0d63f6871cad144af72",
+ "numpy": "2.2.6",
+ "issue": 1900,
+ "corpus_pin": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+ "parquet_pin": "3bb20deb",
+ "script": "scripts/issue1900_offfloor.py",
+ "families": [
+  "cas",
+  "imp",
+  "syc"
+ ],
+ "n_new_units": 2,
+ "dry_run": false
+}

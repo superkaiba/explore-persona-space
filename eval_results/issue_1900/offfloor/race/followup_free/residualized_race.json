@@ -1,0 +1,155 @@
+{
+ "meta": {
+  "ts": "2026-07-31T21:22:08Z",
+  "git_commit": "cd3112d001222e90fc7c6539a9663b55c88f2552",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "issue": 1900,
+  "seed": 1900,
+  "corpus_pin": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+  "script": "scripts/issue1900_followup_free.py",
+  "b_draws": 2000
+ },
+ "content": {
+  "dv": "content P7-residualized change (follow-up 1 deciding read)",
+  "panel_candidates": [
+   "p1",
+   "p2",
+   "p3a",
+   "p3b",
+   "p4",
+   "p5",
+   "p6",
+   "p7",
+   "p8a",
+   "p8b",
+   "p9"
+  ],
+  "n_arms": 12,
+  "arm_ids": [
+   "cas-pers-con-lr1e5-s42",
+   "cas-pers-po-lr1e5-s42",
+   "cas-bare-con-lr1e5-s42",
+   "cas-pers-ft-con-s42",
+   "imp-pers-con-lr3e5-s42",
+   "imp-pers-con-lr3e5-s137",
+   "imp-pers-po-lr1e5-s42",
+   "imp-pers-ft-con-s42",
+   "syc-bare-con-lr1e5-s42",
+   "syc-conv-con-lr1e5-s42",
+   "syc-pers-po-lr1e5-s42",
+   "syc-pers-ft-con-s42"
+  ],
+  "across_arm_median_observed": {
+   "p1": 0.0006997040472924709,
+   "p2": 0.15550275146961212,
+   "p3a": -0.007264962303452194,
+   "p3b": 0.14160139113664627,
+   "p4": 0.04003269039094448,
+   "p5": 0.12199046090245247,
+   "p6": 0.11253883689641953,
+   "p7": 0.04323367215692997,
+   "p8a": 0.11729903519153595,
+   "p8b": 0.02471984177827835,
+   "p9": 0.0006554508581757545
+  },
+  "winner_observed": "p2",
+  "p_win": {
+   "p1": 0.004,
+   "p2": 0.6485,
+   "p3a": 0.0,
+   "p3b": 0.1965,
+   "p4": 0.0005,
+   "p5": 0.0595,
+   "p6": 0.05,
+   "p7": 0.0,
+   "p8a": 0.0355,
+   "p8b": 0.004,
+   "p9": 0.0015
+  },
+  "selection_inherited_ci_max_median": [
+   0.11333001405000687,
+   0.24905060231685638
+  ],
+  "frozen_ci_winner_median (labeled: frozen-at-winner)": [
+   0.09888327121734619,
+   0.24724017083644867
+  ],
+  "verdict": "geometry-dethrones (p2; beats P7 in 10/12)",
+  "dethrone_min_arms": 9,
+  "champion_vs_p7_conditional_ceiling_interval": [
+   0.9235579818487167,
+   1.2186840623617172
+  ],
+  "note_correlated_arms": "arms share one judge subset — never narrated as independent confirmations (registered line (7))",
+  "ols_residualization_per_arm": {
+   "cas-pers-con-lr1e5-s42": {
+    "alpha": 7.3049294081393334,
+    "beta": 0.8244210034749966,
+    "r2_1d_fit": 0.49468141676249977
+   },
+   "cas-pers-po-lr1e5-s42": {
+    "alpha": 10.05386456663287,
+    "beta": 0.9010047177817773,
+    "r2_1d_fit": 0.4583110694863717
+   },
+   "cas-bare-con-lr1e5-s42": {
+    "alpha": 11.02762913360812,
+    "beta": 0.7647012007124114,
+    "r2_1d_fit": 0.382255563606121
+   },
+   "cas-pers-ft-con-s42": {
+    "alpha": 9.428450381422614,
+    "beta": 0.7627673094599309,
+    "r2_1d_fit": 0.4105784010560102
+   },
+   "imp-pers-con-lr3e5-s42": {
+    "alpha": 3.285783239842233,
+    "beta": 0.6816555892172529,
+    "r2_1d_fit": 0.3228621072025689
+   },
+   "imp-pers-con-lr3e5-s137": {
+    "alpha": 3.3239199971790443,
+    "beta": 0.6748386449070242,
+    "r2_1d_fit": 0.32706869389835325
+   },
+   "imp-pers-po-lr1e5-s42": {
+    "alpha": 4.766617529568359,
+    "beta": 0.7023474003415509,
+    "r2_1d_fit": 0.3129778877051018
+   },
+   "imp-pers-ft-con-s42": {
+    "alpha": 4.875655967142441,
+    "beta": 0.6344462538613811,
+    "r2_1d_fit": 0.25708061925183
+   },
+   "syc-bare-con-lr1e5-s42": {
+    "alpha": 10.48824794251965,
+    "beta": 0.6546316498579142,
+    "r2_1d_fit": 0.3876709352276049
+   },
+   "syc-conv-con-lr1e5-s42": {
+    "alpha": 6.787324901032663,
+    "beta": 0.7240139729685413,
+    "r2_1d_fit": 0.5218930221960729
+   },
+   "syc-pers-po-lr1e5-s42": {
+    "alpha": 8.12294647078161,
+    "beta": 0.7223852444433614,
+    "r2_1d_fit": 0.4926764037711371
+   },
+   "syc-pers-ft-con-s42": {
+    "alpha": 9.514906190844203,
+    "beta": 0.6762763214326717,
+    "r2_1d_fit": 0.41692109464899463
+   }
+  },
+  "boot_draw_alignment": {
+   "stored_shared_sha_hash": "9ede0aca82499d6d",
+   "recomputed_shared_sha_hash": "9ede0aca82499d6d",
+   "draw_streams_identical_to_race": true,
+   "n_shared": 210
+  }
+ },
+ "recipe": "per arm: resid = trained - OLS(trained ~ 1 + base_term) on the FULL realized frame (fixed instrument, mirroring dv_change's fixed-column treatment); Spearman(candidate, resid) observed; bootstrap = race bootstrap_battery (B, seed 1900, family shared-sha pool) -> champion_read winner-per-draw"
+}

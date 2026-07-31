@@ -1,0 +1,29 @@
+{
+ "ts": "2026-07-31T19:53:10Z",
+ "git_commit": "cd3112d001222e90fc7c6539a9663b55c88f2552",
+ "numpy": "2.2.6",
+ "issue": 1900,
+ "corpus_pin": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+ "parquet_pin": "3bb20deb",
+ "script": "scripts/issue1900_offfloor.py",
+ "families": [
+  "cas",
+  "imp",
+  "syc"
+ ],
+ "arms": [
+  "cas-pers-con-lr1e5-s42",
+  "cas-pers-po-lr1e5-s42",
+  "cas-bare-con-lr1e5-s42",
+  "cas-pers-ft-con-s42",
+  "imp-pers-con-lr3e5-s42",
+  "imp-pers-con-lr3e5-s137",
+  "imp-pers-po-lr1e5-s42",
+  "imp-pers-ft-con-s42",
+  "syc-bare-con-lr1e5-s42",
+  "syc-conv-con-lr1e5-s42",
+  "syc-pers-po-lr1e5-s42",
+  "syc-pers-ft-con-s42"
+ ],
+ "estimation": "fresh 3-draw base pass on frozen subsets (disjoint from selection)"
+}
