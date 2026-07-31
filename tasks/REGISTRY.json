@@ -7315,6 +7315,7 @@
       "title": "workflow-fix: Step 10d lint gate own-diff attribution matches message-cited paths (false block)"
     },
     "1945": {
+      "goal": "Determine whether the context\u2192answer map's dominant (context \u00d7 direction) interaction residual admits recoverable low-rank bilinear structure (H1) or is per-pair idiosyncratic (H2), by pointing #1775's rank-r bilinear machinery at the #1482 residual pair space against a permuted-pairing null with the answer-sampling floor netted out.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/1945",

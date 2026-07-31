@@ -11,10 +11,15 @@ origin_prompt: 'run all these: ... 1. The interaction-structure question. The de
   low-rank structure — #1775''s rank-32 bilinear pointed at the residual instead of
   the input — is the natural successor'
 workflow: v1
+goal: 'Determine whether the context→answer map''s dominant (context × direction)
+  interaction residual admits recoverable low-rank bilinear structure (H1) or is per-pair
+  idiosyncratic (H2), by pointing #1775''s rank-r bilinear machinery at the #1482
+  residual pair space against a permuted-pairing null with the answer-sampling floor
+  netted out.'
 ---
 ## Goal
 
-The two-way residual decomposition (#1482 `twoway_residual/`, 2026-07-30) found the context→answer map's error is dominated by the INTERACTION — EMS variance components 0.804–0.935 across 144 (cell × k × normalization) combinations, against context 0.004–0.178 and direction 0.002–0.171. The map does not fail at particular contexts or particular answer directions; it fails at particular (context, direction) PAIRS.
+Determine whether the context→answer map's dominant (context × direction) interaction residual admits recoverable low-rank bilinear structure (H1) or is per-pair idiosyncratic (H2), by pointing #1775's rank-r bilinear machinery at the #1482 residual pair space against a permuted-pairing null with the answer-sampling floor netted out.
 
 That reframes the open question. The useful object is no longer "which directions" or "which contexts" but **whether the interaction has recoverable structure**. Two hypotheses:
 
