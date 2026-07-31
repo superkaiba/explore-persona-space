@@ -1,0 +1,385 @@
+{
+  "commit": "d7271a4a35",
+  "created": "2026-07-31T18:24:17Z",
+  "figsize": [
+    13.6,
+    5.8
+  ],
+  "points": [
+    {
+      "prefix content tokens (log scale)": 10.0,
+      "raw trained-vs-base map difference m\n(median per-context norm, layer 19)": 11.024704933166504,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "prefix content tokens (log scale)": 85.0,
+      "raw trained-vs-base map difference m\n(median per-context norm, layer 19)": 11.086301803588867,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "prefix content tokens (log scale)": 730.0,
+      "raw trained-vs-base map difference m\n(median per-context norm, layer 19)": 18.402971267700195,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "prefix content tokens (log scale)": 10.0,
+      "raw trained-vs-base map difference m\n(median per-context norm, layer 19)": 21.94330883026123,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "prefix content tokens (log scale)": 85.0,
+      "raw trained-vs-base map difference m\n(median per-context norm, layer 19)": 22.61069965362549,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "prefix content tokens (log scale)": 730.0,
+      "raw trained-vs-base map difference m\n(median per-context norm, layer 19)": 22.348557472229004,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "prefix content tokens (log scale)": 10.0,
+      "raw trained-vs-base map difference m\n(median per-context norm, layer 19)": 14.887826919555664,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "prefix content tokens (log scale)": 85.0,
+      "raw trained-vs-base map difference m\n(median per-context norm, layer 19)": 13.755577564239502,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "prefix content tokens (log scale)": 730.0,
+      "raw trained-vs-base map difference m\n(median per-context norm, layer 19)": 16.746984481811523,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "prefix content tokens (log scale)": 10.0,
+      "raw trained-vs-base map difference m\n(median per-context norm, layer 19)": 3.2796716690063477,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "prefix content tokens (log scale)": 85.0,
+      "raw trained-vs-base map difference m\n(median per-context norm, layer 19)": 2.7073895931243896,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "prefix content tokens (log scale)": 730.0,
+      "raw trained-vs-base map difference m\n(median per-context norm, layer 19)": 4.292048931121826,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 0.33900355390651793,
+      "y": -0.22,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 0.18277171446599239,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 4.055838558981748,
+      "y": 0.22,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 3.9005488372197554,
+      "y": 0.78,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 5.784688291683786,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 15.452517070009947,
+      "y": 1.22,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 8.797729959684666,
+      "y": 1.78,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 15.868019779629016,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 31.840219689639554,
+      "y": 2.22,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 5.665061535015468,
+      "y": 3.38,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 4.652203864371398,
+      "y": 3.6,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 6.727151661397205,
+      "y": 3.8200000000000003,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 14.81915265837517,
+      "y": 4.38,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 17.309086920221226,
+      "y": 4.6,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 19.39810234128405,
+      "y": 4.819999999999999,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 30.663018737692937,
+      "y": 5.38,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 38.975857307212614,
+      "y": 5.6,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 51.64837329151712,
+      "y": 5.819999999999999,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 2.049763619216373,
+      "y": 6.9799999999999995,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 1.4721322706334181,
+      "y": 7.199999999999999,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 3.6129909054607214,
+      "y": 7.419999999999999,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 7.763670440156325,
+      "y": 7.9799999999999995,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 8.453964635914808,
+      "y": 8.2,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 13.796530290434319,
+      "y": 8.42,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 14.30607753916155,
+      "y": 8.979999999999999,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 17.85119585571796,
+      "y": 9.2,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 29.010210619538654,
+      "y": 9.42,
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": -2.4997448256040107,
+      "y": 10.579999999999998,
+      "_kind": "errorbar",
+      "_group": 31
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": -1.9738871671072993,
+      "y": 10.799999999999999,
+      "_kind": "errorbar",
+      "_group": 32
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": -0.21932440772344997,
+      "y": 11.02,
+      "_kind": "errorbar",
+      "_group": 33
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": -3.8444847740980843,
+      "y": 11.579999999999998,
+      "_kind": "errorbar",
+      "_group": 34
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": -2.5942237668798085,
+      "y": 11.799999999999999,
+      "_kind": "errorbar",
+      "_group": 35
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 1.3415945642167006,
+      "y": 12.02,
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": -12.068192909692229,
+      "y": 12.579999999999998,
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": -7.500608529525788,
+      "y": 12.799999999999999,
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "map-change statistic D (above 0 = above the refit-noise floor)": 4.211013083916718,
+      "y": 13.02,
+      "_kind": "errorbar",
+      "_group": 39
+    }
+  ],
+  "n_series": 40,
+  "total_points": 48,
+  "text": {
+    "suptitle": "Never-trained prefixes amplify map change with length, but stay below the trained conversation prefix",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "A \u2014 never-trained rungs (circles) vs trained-prefix anchors",
+        "xlabel": "prefix content tokens (log scale)",
+        "ylabel": "raw trained-vs-base map difference m\n(median per-context norm, layer 19)",
+        "annotations": [
+          "11.0",
+          "11.1",
+          "18.4",
+          "11.2",
+          "12.1",
+          "24.7",
+          "21.9",
+          "22.6",
+          "22.3",
+          "19.7",
+          "20.0",
+          "43.3",
+          "14.9",
+          "13.8",
+          "16.7",
+          "14.0",
+          "14.7",
+          "25.7",
+          "3.3",
+          "2.7",
+          "4.3",
+          "3.5",
+          "4.8",
+          "3.4"
+        ],
+        "xticklabels": [
+          "bare",
+          "10",
+          "85",
+          "730"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      },
+      {
+        "title_left": "B \u2014 all 36 cells: D per rung, 95% CIs; | = bare",
+        "xlabel": "map-change statistic D (above 0 = above the refit-noise floor)",
+        "legend_labels": [
+          "short rung (10 tok)",
+          "mid rung (85 tok)",
+          "long rung (730 tok)",
+          "bare (round 3, n-matched)"
+        ],
+        "xticklabels": [
+          "\u221220",
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ],
+        "yticklabels": [
+          "sycophancy pers L14",
+          "sycophancy pers L19",
+          "sycophancy pers L25",
+          "impoliteness pers L14",
+          "impoliteness pers L19",
+          "impoliteness pers L25",
+          "casual writing pers L14",
+          "casual writing pers L19",
+          "casual writing pers L25",
+          "sycophancy conv L14",
+          "sycophancy conv L19",
+          "sycophancy conv L25"
+        ]
+      }
+    ]
+  }
+}
