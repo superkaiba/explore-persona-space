@@ -15,7 +15,15 @@
     "variance-weighting hides dims the map never moves",
     "a regularization-limited fit can score pooled R2 >> 0 from between-group/mean structure while per-context retrieval sits at chance (this run: prefix ridge-LOFO pooled R2 +0.541 at acc@1 0.040, chance 0.02, with all 7 prefix families at family-level R2 <= 0; context ridge n_train=50 fixed-lambda R2 +0.384 at acc@1 0.065)"
    ],
-   "banked_dissociation": "identity+bias R2 -0.865 at medrank 1 (#779 identity_bias_knn); acc@1 0.84 at pooled-OOF R2 -6.5 (#722)"
+   "banked_dissociation": "identity+bias R2 -0.865 at medrank 1 (#779 identity_bias_knn); acc@1 0.84 at pooled-OOF R2 -6.5 (#722)",
+   "wildchat_transfer": {
+    "kendall_tau_vs_lmsys": 0.9340659340659341,
+    "p": 1.25031127015254e-08,
+    "n_common_arms": 14,
+    "n_inversions": 3,
+    "wc_targets_in_train": false,
+    "source": "transfer_comparison.json (w2; targets-only pool, L19)"
+   }
   },
   "perdim_r2": {
    "construct": "where the pooled number comes from (per-dimension fit)",
@@ -26,7 +34,10 @@
    "failure_modes": [
     "median can be positive while the pooled number is dominated by a few high-variance dims (or vice versa)"
    ],
-   "banked_dissociation": "diagonal_only: best non-fitted pooled R2 (+0.096) with near-floor retrieval (#779)"
+   "banked_dissociation": "diagonal_only: best non-fitted pooled R2 (+0.096) with near-floor retrieval (#779)",
+   "wildchat_transfer": {
+    "note": "no rank-transfer read (diagnostic/decomposition metric)"
+   }
   },
   "mean_cosine": {
    "construct": "directional agreement per row",
@@ -41,7 +52,15 @@
     "the anisotropy floor makes raw cosine look impressive for ANY predictor near the mean direction (banked predict_the_mean cosine 0.807)",
     "shuffled-pair null does NOT collapse to 0 \u2014 deliberately excluded from the H3 kill (its high floor is the finding, plan \u00a77)"
    ],
-   "banked_dissociation": "predict_the_mean cosine 0.807 at exactly-chance retrieval (#779)"
+   "banked_dissociation": "predict_the_mean cosine 0.807 at exactly-chance retrieval (#779)",
+   "wildchat_transfer": {
+    "kendall_tau_vs_lmsys": 0.9780219780219781,
+    "p": 3.2118087673643227e-10,
+    "n_common_arms": 14,
+    "n_inversions": 1,
+    "wc_targets_in_train": false,
+    "source": "transfer_comparison.json (w2; targets-only pool, L19)"
+   }
   },
   "knn_acc_euclid": {
    "construct": "discriminability: can the prediction single out its own target in a candidate pool",
@@ -58,7 +77,15 @@
     "pool-size dependent (chance = k/n_pool) \u2014 never compare across pools",
     "duplicate pool content inflates tie mid-ranks"
    ],
-   "banked_dissociation": "identity+bias acc@1 0.503 at R2 -0.865 (#779)"
+   "banked_dissociation": "identity+bias acc@1 0.503 at R2 -0.865 (#779)",
+   "wildchat_transfer": {
+    "kendall_tau_vs_lmsys": 1.0,
+    "p": 7.740804583966695e-07,
+    "n_common_arms": 14,
+    "n_inversions": 0,
+    "wc_targets_in_train": false,
+    "source": "transfer_comparison.json (w2; targets-only pool, L19)"
+   }
   },
   "knn_acc_cosine": {
    "construct": "same, angle-only (norm-blind)",
@@ -74,7 +101,15 @@
    "failure_modes": [
     "hubness in high-d corrupts plain cosine kNN (Radovanovic 2010; Dinu 2015)"
    ],
-   "banked_dissociation": "identity+bias 0.553 cosine vs 0.503 euclid (#779)"
+   "banked_dissociation": "identity+bias 0.553 cosine vs 0.503 euclid (#779)",
+   "wildchat_transfer": {
+    "kendall_tau_vs_lmsys": 0.9775280898876406,
+    "p": 1.6570944422658129e-06,
+    "n_common_arms": 14,
+    "n_inversions": 1,
+    "wc_targets_in_train": false,
+    "source": "transfer_comparison.json (w2; targets-only pool, L19)"
+   }
   },
   "csls_acc": {
    "construct": "discriminability, hubness-corrected",
@@ -90,7 +125,15 @@
    "failure_modes": [
     "k-neighborhood choice; needs k <= n_query for the column neighborhood"
    ],
-   "banked_dissociation": "H4: CSLS-vs-plain gap at large pools measures whether hubness is live at these pool sizes"
+   "banked_dissociation": "H4: CSLS-vs-plain gap at large pools measures whether hubness is live at these pool sizes",
+   "wildchat_transfer": {
+    "kendall_tau_vs_lmsys": 0.9775280898876406,
+    "p": 1.6570944422658129e-06,
+    "n_common_arms": 14,
+    "n_inversions": 1,
+    "wc_targets_in_train": false,
+    "source": "transfer_comparison.json (w2; targets-only pool, L19)"
+   }
   },
   "median_rank": {
    "construct": "robust full-rank-distribution summary",
@@ -101,7 +144,15 @@
    "failure_modes": [
     "saturates at 1 for all decent maps at small pools"
    ],
-   "banked_dissociation": "identity+bias medrank 1 at R2 -0.865 (#779)"
+   "banked_dissociation": "identity+bias medrank 1 at R2 -0.865 (#779)",
+   "wildchat_transfer": {
+    "kendall_tau_vs_lmsys": 0.9173411178551378,
+    "p": 8.35080166639932e-05,
+    "n_common_arms": 14,
+    "n_inversions": 1,
+    "wc_targets_in_train": false,
+    "source": "transfer_comparison.json (w2; targets-only pool, L19)"
+   }
   },
   "mrr": {
    "construct": "head-weighted rank summary",
@@ -112,7 +163,15 @@
    "failure_modes": [
     "hides the tail of hard rows"
    ],
-   "banked_dissociation": "ridge MRR 0.790 at medrank 1 (#779)"
+   "banked_dissociation": "ridge MRR 0.790 at medrank 1 (#779)",
+   "wildchat_transfer": {
+    "kendall_tau_vs_lmsys": 0.9560439560439562,
+    "p": 2.385915084327783e-09,
+    "n_common_arms": 14,
+    "n_inversions": 2,
+    "wc_targets_in_train": false,
+    "source": "transfer_comparison.json (w2; targets-only pool, L19)"
+   }
   },
   "hubness_n10": {
    "construct": "pool pathology diagnostic (NOT a quality metric)",
@@ -123,7 +182,10 @@
    "failure_modes": [
     "hubs clustering by corpus mimic generic high-d hubness (checked via top-hub corpus composition, plan critic-fold e)"
    ],
-   "banked_dissociation": "n/a (diagnostic)"
+   "banked_dissociation": "n/a (diagnostic)",
+   "wildchat_transfer": {
+    "note": "no rank-transfer read (diagnostic/decomposition metric)"
+   }
   }
  },
  "stated_exclusions": {
@@ -147,5 +209,6 @@
    "lmsys": 55686,
    "wildchat": 44314
   }
- }
+ },
+ "wildchat_transfer_note": "per-metric wildchat_transfer added by w3_wc_figures (wildchat-target-battery round)"
 }

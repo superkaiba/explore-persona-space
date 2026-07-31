@@ -324,6 +324,8 @@ def _stream_corpus(
     *,
     resume: bool,
     smoke_stream=None,
+    revision: str | None = None,
+    skip_first: int = 0,
 ) -> list[dict]:
     """Stream one corpus keeping first-turn prompts that pass ``keep_pred``, with a
     per-corpus on-disk checkpoint + fingerprint resume.
@@ -335,6 +337,12 @@ def _stream_corpus(
     fingerprint match reloads the pool and either returns (complete) or
     ``.skip(consumed)``-resumes the stream. ``smoke_stream`` (an in-memory list of
     row dicts) injects a synthetic corpus for the CPU smoke (no real data).
+
+    #1901 wc-heldout extensions (both default to the pre-#1901 behavior):
+    ``revision`` pins the dataset revision threaded to ``load_dataset`` (None =
+    unpinned, the parent n1m behavior); ``skip_first`` starts a FRESH stream at
+    that consumed position (efficiency only — downstream contamination safety is
+    fingerprint-based; a resumed cache's own ``consumed`` cursor takes precedence).
 
     Refusal-safe: only the kept first-turn prompt text is persisted (the manifest
     IS its required text-persistence), never logged.
@@ -366,14 +374,18 @@ def _stream_corpus(
             logger.info("[stream %s] fingerprint MISMATCH; re-streaming from scratch", corpus_tag)
             kept, consumed = [], 0
 
+    start_at = consumed if consumed else int(skip_first)
     if smoke_stream is not None:
         it = iter(smoke_stream)
+        for _ in range(start_at):  # mirror ds.skip on the injected stream (testable)
+            next(it, None)
         ds = None
     else:
         from datasets import load_dataset
 
-        ds = load_dataset(repo, split="train", streaming=True)
-        it = iter(ds.skip(consumed) if consumed else ds)
+        ds = load_dataset(repo, split="train", streaming=True, revision=revision)
+        it = iter(ds.skip(start_at) if start_at else ds)
+    consumed = start_at
 
     def _flush(complete: bool) -> None:
         _atomic_write_jsonl(pool_path, kept)

@@ -86,14 +86,15 @@
 # repo-path/WT= token) — has its intra-payload separators masked BEFORE the
 # split, so the merged clause reaches the same waiver whole (closes the
 # founding #779 false block). A clause-initial `gcloud compute ssh
-# <instance> --command=...` head gets BOTH mechanisms too (#1463, optional
-# literal `timeout <N>` wrapper, gcloud-arm only): gcloud is a thin wrapper
+# <instance> --command=...` head gets BOTH mechanisms too (#1463; the
+# optional literal `timeout <N>` wrapper is accepted on BOTH remote-exec
+# heads as of #1859): gcloud is a thin wrapper
 # around the local ssh(1) binary whose --command payload executes ON the
 # GCE instance, so the waiver + mask treat it exactly like the ssh head
 # under the identical refusal arms (founding incident #825; details gap
 # (xix)). Every OTHER multi-statement shape —
 # double-quoted payloads, redirect-carrying payloads, trailing tokens after
-# the closing quote, wrapped/variable/abs-path ssh, quoted or
+# the closing quote, non-timeout-wrapped/variable/abs-path ssh, quoted or
 # latch-vocabulary prefixes — still mis-splits on the quoted-separator
 # trade-off and its tail clauses still classify — remediation unchanged:
 # `git -C /workspace/... <verb>` inside the remote string, a pod-side
@@ -146,9 +147,9 @@
 # so document text that merely MENTIONS a gated form no longer false-blocks;
 # the quoted `--note` literal above is NOT a heredoc and stays blocked (that
 # limitation is unchanged). A SECOND NARROWING (#1098): a clause whose
-# command word is `ssh` (remote execution), `gcloud compute ssh` (remote
-# execution on a GCE instance; optionally `timeout <num>`-wrapped — #1463)
-# or `grep`/`egrep`/`fgrep`/`rg`
+# command word is `ssh` (remote execution) or `gcloud compute ssh` (remote
+# execution on a GCE instance) — either optionally `timeout <num>`-wrapped
+# (#1463 gcloud, #1859 ssh) — or `grep`/`egrep`/`fgrep`/`rg`
 # (read-only pattern) is waived per-clause by the driver-loop waiver under
 # fail-closed refusals; quoted git-verb literals under OTHER command words
 # (`--note`/`-m` strings) still block with the same `--file`/`-F`
@@ -340,9 +341,11 @@
 #       nesting make the parse inexact); redirect-carrying payloads (`>`,
 #       `<`, `2>&1` — R2's blanket refusal, and the fd-dup `&` still
 #       mis-splits as BG); trailing tokens after the closing quote
-#       (`2>/dev/null`, `-v`, a second quoted arg — R1); wrapped /
-#       absolute-path / variable ssh (`timeout N ssh ...`, `/usr/bin/ssh`,
-#       `$SSHCMD ...` — not clause-initial `ssh`); IPv6-bracket hosts
+#       (`2>/dev/null`, `-v`, a second quoted arg — R1); non-timeout-wrapped /
+#       absolute-path / variable ssh (`nohup ssh ...`, `/usr/bin/ssh`,
+#       `$SSHCMD ...` — not clause-initial `ssh`; the literal
+#       `timeout <num>` wrapper is accepted as of #1859, gap (xix));
+#       IPv6-bracket hosts
 #       (`ssh [::1] '...'` — `[` stops the head scan); a comment-`#` inside
 #       the payload (the per-clause comment-tail strip truncates the merged
 #       clause — truncation cannot un-waive or create a latch match, but the
@@ -519,16 +522,18 @@
 #       also mutate the shared tree and remain ungated — zero incident
 #       demand; a separate candidate if demanded (the old (xvii)(a)
 #       pattern, rolled forward).
-# (xix) (#1463) gcloud-compute-ssh arm residuals: the waiver cond (1) head
-#       + the mask candidate head gain `gcloud compute ssh` with an optional
-#       literal `timeout <num>[.frac][smhd]?` wrapper — gcloud-arm ONLY (the
-#       pinned N12 wrapped-ssh block is the deliberate ASYMMETRY, a known
-#       future-demand candidate if a timeout-wrapped-ssh false-block filer
-#       shows up: scoping rationale is zero ssh-side incident demand +
-#       smallest diff, while every real #825 gcloud invocation was
-#       timeout-wrapped). Fail-closed FPs that KEEP BLOCKING, both
+# (xix) (#1463/#1859) remote-exec timeout-wrapper residuals: the waiver
+#       cond (1) head + the mask candidate head accept an optional literal
+#       `timeout <num>[.frac][smhd]?` wrapper on the `gcloud compute ssh`
+#       head (#1463) AND the bare `ssh` head (#1859 — the demand #1463
+#       pre-registered arrived: two timeout-wrapped-ssh false blocks on the
+#       #1769 failover critical path; the former N12/NM5 asymmetry pins
+#       flipped to positive fixtures). The literal-word + literal-numeric
+#       wrapper is the ONLY tolerated one on EITHER head. Fail-closed FPs
+#       that KEEP BLOCKING, both
 #       mechanisms: env-prefix / nohup / abs-path / variable wrappers and
-#       `timeout` FLAG forms (`--signal=`, `-k` — GN8/GN14), release tracks
+#       `timeout` FLAG forms (`--signal=`, `-k` — GN8/GN14 gcloud-side,
+#       N36-N43 ssh-side), release tracks
 #       (`gcloud beta|alpha compute ssh` — GN9), other gcloud remote-exec
 #       subcommands (`compute tpus tpu-vm ssh`), trailing tokens/flags after
 #       the quoted payload (mask R1 — put --command last; GN11), in-payload
@@ -886,10 +891,11 @@ cmd=$(strip_heredoc_bodies "$cmd")
 # longer mis-split by the quoted-separator trade-off into a tail clause that
 # lost its ssh command word (the residual-(xiv) false-positive class;
 # founding incident #779). As of #1463 a SECOND candidate head — clause-
-# initial `gcloud compute ssh`, optionally wrapped in a literal
-# `timeout <num>[.frac][smhd]?` prefix (gcloud-arm only) — runs the SAME
-# scan, the SAME R1-R8 predicate, and the SAME separator-only rewrite
-# (founding incident #825; residuals in gap (xix)). The two head regexes
+# initial `gcloud compute ssh` — runs the SAME scan, the SAME R1-R8
+# predicate, and the SAME separator-only rewrite (founding incident #825;
+# residuals in gap (xix)); as of #1859 BOTH heads accept an optional
+# literal `timeout <num>[.frac][smhd]?` prefix (the only tolerated
+# wrapper — #1769 false blocks were the ssh-side demand). The two head regexes
 # here and in the driver-loop waiver cond (1) below are PARITY-pinned: if
 # they ever drifted, a mask-accepted-but-ladder-refused merged clause still
 # carries its git-verb text and CLASSIFIES — false block, never a leak.
@@ -957,15 +963,19 @@ mask_ssh_payload_separators() {
       while (i <= n) {
         headlen = 0
         if (atstart) {
-          # Candidate heads: clause-initial `ssh ` (#1413), or clause-initial
-          # `gcloud compute ssh ` with an optional literal
-          # `timeout <num>[.frac][smhd]?` wrapper (#1463 — the ONLY tolerated
-          # wrapper, gcloud-arm only). Head-regex PARITY with the driver-loop
-          # waiver cond (1) below is an invariant; drift is fail-closed (a
-          # masked-but-unwaived merged clause keeps its git-verb text and
-          # still classifies -> false block, never a leak).
-          if (substr(s, i, 4) ~ /^ssh[ \t]/) headlen = 4
-          else if (match(substr(s, i), /^(timeout[ \t]+[0-9]+(\.[0-9]+)?[smhd]?[ \t]+)?gcloud[ \t]+compute[ \t]+ssh[ \t]/)) headlen = RLENGTH
+          # Candidate heads: clause-initial `ssh ` (#1413) or clause-initial
+          # `gcloud compute ssh ` (#1463), EITHER with an optional literal
+          # `timeout <num>[.frac][smhd]?` wrapper (#1463 gcloud-arm, #1859
+          # ssh-arm — the ONLY tolerated wrapper). Head-regex PARITY with
+          # the driver-loop waiver cond (1) below is an invariant;
+          # MASK-vs-WAIVER drift is fail-closed (a masked-but-unwaived
+          # merged clause keeps its git-verb text and still classifies ->
+          # false block, never a leak). NOTE the different drift direction
+          # INSIDE the driver loop: the cond (1) outer head and its inner
+          # ssh/gcloud-vs-grep discriminator must move in LOCKSTEP — drift
+          # THERE routes a remote-exec clause to the grep-family arm and is
+          # fail-OPEN (see the cond (1) comment below).
+          if (match(substr(s, i), /^(timeout[ \t]+[0-9]+(\.[0-9]+)?[smhd]?[ \t]+)?(gcloud[ \t]+compute[ \t]+)?ssh[ \t]/)) headlen = RLENGTH
         }
         if (headlen > 0) {
           # Candidate. Scan the head (options/host): letters, digits, and
@@ -2063,14 +2073,17 @@ for _idx in "${!_clauses[@]}"; do
   #       the awk splitter already stripped leading whitespace). A MID-clause
   #       ssh/grep word never waives — `git -c core.sshCommand=ssh reset
   #       --hard` is a LOCAL destructive op and still classifies. Wrapped
-  #       forms (`timeout 240 ssh ...`, `nohup ssh ...`, `/usr/bin/ssh`,
-  #       `$SSHCMD ...`) are NOT clause-initial `ssh` and keep blocking
-  #       (fail-closed residual FP, gap (xiv)). As of #1463 a clause-initial
-  #       `gcloud compute ssh` word sequence ALSO satisfies cond (1) —
-  #       optionally wrapped in a literal `timeout <num>[.frac][smhd]?`
-  #       prefix, the ONLY tolerated wrapper, gcloud-arm only (every real
-  #       #825 fleet invocation was timeout-wrapped; wrapped `ssh` stays
-  #       blocked, pinned N12 — the deliberate asymmetry, gap (xix)) — and
+  #       forms OTHER than the literal timeout prefix (`nohup ssh ...`,
+  #       `/usr/bin/ssh`, `$SSHCMD ...`, env-prefix heads) are NOT
+  #       clause-initial `ssh` and keep blocking (fail-closed residual FP,
+  #       gap (xiv)). As of #1463 a clause-initial
+  #       `gcloud compute ssh` word sequence ALSO satisfies cond (1), and
+  #       as of #1859 BOTH remote-exec heads accept an optional literal
+  #       `timeout <num>[.frac][smhd]?` prefix — the ONLY tolerated
+  #       wrapper; `timeout` FLAG forms (`--signal=`, `-k`) never match
+  #       (every real #825 fleet invocation was timeout-wrapped, and the
+  #       #1769 failover path hit the same false block on the bare `ssh`
+  #       head — gap (xix)). The gcloud head
   #       routes through the ssh branch of arm (4): gcloud is a thin
   #       wrapper that shells out to the LOCAL ssh(1) binary and forwards
   #       --ssh-flag / `-- SSH_ARGS` to it, so the same local-exec
@@ -2176,25 +2189,34 @@ for _idx in "${!_clauses[@]}"; do
   # own command word, so no arming/propagation separator proof is needed
   # (unlike the cd/WT latches, no state crosses clauses). A single-quoted
   # multi-statement remote string in the CANONICAL shape (clause-initial
-  # `ssh` or the #1463 `gcloud compute ssh` head, optional literal timeout
-  # wrapper; payload is the clause's final token; quote-, latch- and
+  # `ssh` or the #1463 `gcloud compute ssh` head, EITHER with an optional
+  # literal timeout wrapper — #1463 gcloud, #1859 ssh; payload is the
+  # clause's final token; quote-, latch- and
   # ladder-clean per the R1-R8 predicate) is merged into ONE clause by the
   # mask_ssh_payload_separators() pre-pass (#1413) BEFORE the split, so it
   # reaches this waiver whole — the pre-pass grants nothing itself; the
   # merged clause still walks every refusal above. Any OTHER
   # multi-statement remote string (double quotes, trailing tokens,
-  # redirects, wrapped ssh, quoted or latch-vocabulary prefixes) is still
+  # redirects, non-timeout-wrapped ssh, quoted or latch-vocabulary
+  # prefixes) is still
   # mis-split by the quoted-separator trade-off and its TAIL clause
   # (which lost the ssh command word) still classifies — fail-closed,
   # residual gap (xiv); remediation unchanged: single-statement
   # `git -C /workspace/... <verb>` inside the remote string (the -C waiver
   # above already allows it), a pod-side script, or the SSH MCP.
-  if echo "$clause" | grep -qE '^((timeout[[:space:]]+[0-9]+([.][0-9]+)?[smhd]?[[:space:]]+)?gcloud[[:space:]]+compute[[:space:]]+ssh[[:space:]]|(ssh|grep|egrep|fgrep|rg)[[:space:]])'; then
+  # (#1859) The cond (1) outer head below and the inner ssh/gcloud-vs-grep
+  # discriminator (the first grep inside the waiver body) share the
+  # timeout-qualified remote-exec alternation and MUST move in LOCKSTEP: a
+  # clause matching the OUTER head but missing the INNER discriminator
+  # falls to the grep-family arm — a WIDER waiver with no ProxyCommand /
+  # shared-repo-path checks — so drift BETWEEN these two regexes is
+  # fail-OPEN (unlike mask-vs-waiver head drift, which is fail-closed).
+  if echo "$clause" | grep -qE '^((timeout[[:space:]]+[0-9]+([.][0-9]+)?[smhd]?[[:space:]]+)?(gcloud[[:space:]]+compute[[:space:]]+)?ssh[[:space:]]|(grep|egrep|fgrep|rg)[[:space:]])'; then
     if ! echo "$clause" | grep -qE '\$\(|\$\{|`|<\(|>\(|<<<' \
        && ! echo "$clause" \
             | sed -E 's@[0-9]*>>?[[:space:]]*/dev/null([[:space:]]|$)@ @g' \
             | grep -q '>'; then
-      if echo "$clause" | grep -qE '^((timeout[[:space:]]+[0-9]+([.][0-9]+)?[smhd]?[[:space:]]+)?gcloud[[:space:]]+compute[[:space:]]+ssh|ssh)[[:space:]]'; then
+      if echo "$clause" | grep -qE '^((timeout[[:space:]]+[0-9]+([.][0-9]+)?[smhd]?[[:space:]]+)?(gcloud[[:space:]]+compute[[:space:]]+)?ssh)[[:space:]]'; then
         # ssh/gcloud arm: consumer-independent PIPE/BG refusal UNCHANGED —
         # a remote command's stdout is arbitrary remote-generated text; the
         # #1538 widening is grep-family only.
@@ -2239,7 +2261,7 @@ To recover an in-progress root merge/rebase/cherry-pick/revert/am: git merge --a
 For marker-note text mentioning git commands, use --file <path.md> instead of --note; for commit messages, use git commit -F <file>. As of #1566 the canonical SINGLE-QUOTED task.py argument shape is masked (allowed): a clause-initial uv run python .../task.py invocation whose quoted note/title/prompt text sits in an otherwise plain clause no longer false-blocks — so a residual block on task.py argument text means a non-canonical shape (double quotes, dollar or backslash or backquote forms, redirects, a quoted or latch-vocabulary prefix); use the --file route for those.
 For composing a doc/report via heredoc whose body carries backticks, command substitution, or non-plain parameter forms (\${VAR:-default}, \${VAR@P}, \${1}) alongside git-verb text: quote the heredoc tag (<<'EOF' — bash never expands a quoted-tag body, and it strips cleanly); exactly-plain \${VAR} references (letters/digits/underscore only, nothing else inside the braces) are fine even under an unquoted tag (#1501). For a body naming shell-out spellings (subprocess / os.system / ...) or fed to a python/interpreter stdin consumer, use the Write tool instead — it covers EVERY composition class (quoting the tag does NOT lift those refusals). As of #1621 argv-LIST-form call opens with a non-shell first element (subprocess.run([\"git\", ...) no longer refuse the strip; bare word mentions, string-form calls, shell=True residuals, and shell-name argv heads still do — the Write tool remains the remediation for those.
 NOTE: this deny blocked your ENTIRE compound command — earlier clauses did NOT run either; regenerate any files/state those clauses were meant to produce before retrying the safe form (incident class #813/#1056).
-For a POD-side remote git op, a single-statement ssh <host> 'git <verb> ...' remote command is allowed (#1098), and a SINGLE-QUOTED multi-statement remote string is allowed when the quoted payload is the clause's final token and nothing quote- or latch-ambiguous precedes it (#1413); other shapes (double quotes, redirects, trailing tokens, wrapped ssh, quoted/latch-vocabulary prefixes) still need git -C /workspace/<repo> <verb> inside the remote string, a pod-side script, or the SSH MCP.
+For a POD-side remote git op, a single-statement ssh <host> 'git <verb> ...' remote command is allowed (#1098), and a SINGLE-QUOTED multi-statement remote string is allowed when the quoted payload is the clause's final token and nothing quote- or latch-ambiguous precedes it (#1413); a literal 'timeout <N>' wrapper on the ssh head is tolerated too (#1859); other shapes (double quotes, redirects, trailing tokens, non-timeout-wrapped ssh — nohup/env/abs-path/variable heads and timeout FLAG forms — quoted/latch-vocabulary prefixes) still need git -C /workspace/<repo> <verb> inside the remote string, a pod-side script, or the SSH MCP.
 For a grep/rg PATTERN clause naming git verbs: the unpiped clause is waived, and piping into plain read-only text filters (head/tail/wc/cat/cut/tr/nl/sort/uniq/grep) is waived too (#1538) — so a residual block on a piped grep means the consumer chain was NOT verifiable (an off-allowlist / path-spelled / quoted consumer word, a redirect or write/exec flag, or any $ / # in a consumer clause); drop the pipe, remove the $/#/flag, or bound output with grep -m N instead.
 For a GCE-side remote git op, the same two shapes are allowed with a gcloud compute ssh <instance> --command='...' head (#1463; an optional literal 'timeout <N>' wrapper is tolerated): keep --command the clause's FINAL token, no in-payload < or > redirects (bound output with | tail INSIDE the single-quoted payload — pipes mask fine), and no trailing local pipe / fd-dup ('2>&1 | tail -N' stays blocked); or put git -C /workspace/<clone> <verb> inside the payload, which is allowed regardless (path-blind -C waiver)." >&2
 log_deny "$blocked" "$cmd" "${clause:-}"

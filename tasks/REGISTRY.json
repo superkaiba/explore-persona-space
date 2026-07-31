@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1936,
+  "highest_id": 1939,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6648,8 +6648,8 @@
     "1859": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1859",
-      "status": "reviewing",
+      "path": "tasks/completed/1859",
+      "status": "completed",
       "title": "daily-fix: repo-root guard allows timeout-prefixed ssh paylo"
     },
     "186": {
@@ -6662,15 +6662,15 @@
     "1860": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1860",
-      "status": "running",
+      "path": "tasks/reviewing/1860",
+      "status": "reviewing",
       "title": "daily-fix: humanize loop verifies candidate body before set-"
     },
     "1861": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1861",
-      "status": "planning",
+      "path": "tasks/running/1861",
+      "status": "running",
       "title": "daily-fix: repo-root guard recognizes cd-to-worktree via var"
     },
     "1862": {
@@ -6971,16 +6971,16 @@
       "goal": "On the model-organism fleet at per-prompt grain (the #1768 16,400-real-user-prompt corpus), determine which per-context predictor computable BEFORE fine-tuning best predicts per-context leakage of the trained behavior (graded judge DV for content arms; three-space log P(marker) for marker arms), whether base behavioral propensity survives as the champion, and whether context-vector similarity's predictive power is mediated by answer-side similarity; post-FT and delta candidates form a separate mechanistic panel, and every similarity candidate is computed against both the training-context-centroid and panel-source-context anchors.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/1900",
-      "status": "running",
+      "path": "tasks/interpreting/1900",
+      "status": "interpreting",
       "title": "Leakage-predictor horse race at per-prompt grain: pre-FT geometry vs base propensity, with answer-side mediation test"
     },
     "1901": {
       "goal": "Characterize every mapping-quality metric in use (held-out R\u00b2, kNN retrieval acc@k euclidean+cosine, and companions) \u2014 what construct each measures, what it rules out, where they dissociate \u2014 and report the ~1M-context (n\u2248963k LMSYS) linear and nonlinear context\u2192answer mappings against the full baseline ladder (constant train-mean; W = identity; identity + learned bias) on ALL metrics, in both the context-based and prefix-based arms.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1901",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1901",
+      "status": "awaiting_promotion",
       "title": "Held-out variance explained and retrieval accuracy dissociate in both directions across the context-to-answer estimator ladder (HIGH confidence)"
     },
     "1902": {
@@ -7250,6 +7250,27 @@
       "path": "tasks/proposed/1936",
       "status": "proposed",
       "title": "workflow-fix: widen check-30 count-noun vocabulary (chunks/sidecars + modifier-separated)"
+    },
+    "1937": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/1937",
+      "status": "reviewing",
+      "title": "workflow-fix: gotchas entry \u2014 fellows shared-node GPU width + vLLM util sizing"
+    },
+    "1938": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1938",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md entry \u2014 VAST /workspace EBADF from posix_fallocate"
+    },
+    "1939": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1939",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md entry \u2014 SLURM git-less scratch crashes metadata git shellouts"
     },
     "194": {
       "has_clean_result": false,

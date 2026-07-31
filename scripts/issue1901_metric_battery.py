@@ -23,6 +23,20 @@ per-phase JSON outputs):
   p4_figures     figures + metric_characterization.json (no resume sentinel)
   all            p0 -> p4
 
+Follow-up round `wildchat-target-battery` (plan v7; sentinels keyed on
+wc_regime() so parent sentinels stay valid):
+  w0_wc_candidates  VM: fresh WildChat region (streamed PAST the parent n1m
+                    consumption point, revision-pinned) -> exclusion-set +
+                    transposed near-dupe screen -> mini-manifest on HF
+  w1_wc_capture     pod GPU: the reused N1G capture rig on the mini-manifest
+                    (--smoke runs the CPU-reachable surface only — carve-out)
+  w2_wc_battery     VM: estimator-identity control, then the IDENTICAL ladder x
+                    metric battery on wc targets + transfer_comparison.json
+                    (--with-intrain-companion adds the in-train ladder read)
+  w3_wc_figures     VM: transfer figures + metric_characterization
+                    wildchat_transfer fields (no resume sentinel)
+  wc_all            w0 -> w3
+
 `--smoke`: SAME code paths, reduced knobs (20-chunk stream, L19 only, pools
 {1000, 5000, 3000-with-distractors}, n_boot=50, K=20), outputs diverted to
 <staging-root>/smoke/ (never the committed eval_results/figures trees), HF
@@ -46,6 +60,7 @@ import datetime
 import hashlib
 import json
 import logging
+import multiprocessing
 import os
 import resource
 import subprocess
@@ -118,6 +133,24 @@ RIDGE_REPRO_TOL = 1e-6  # kill criterion 1 (plan §7; #1776 precedent 8e-11)
 APPLIED_BANKED_FLAG = 1e-3  # reported-delta loud-flag threshold (plan §4 critic-fold a)
 RECIPE_VERSION = "i1901-v1"
 
+# ── wildchat-target-battery round constants (plan v7; follow-up wildchat-target-battery) ──
+WC_RECIPE_VERSION = "issue1901-wc-heldout-v1"  # plan v7 §4 w0 recipe tag
+WC_HF_ROOT = "issue1901_wildchat"  # ROUND ROOT on the HF data repo (module appends subdirs)
+WC_STREAM_TAG = "wildchat_heldout_1901"  # _stream_corpus cache tag for the fresh region
+WILDCHAT_DATASET = N1G.WILDCHAT_REPO  # allenai/WildChat-1M (consumer's own constant)
+WC_N_TARGETS = 1_000  # chance parity with the parent test-1000 headline pool (plan §11)
+WC_TARGET_FLOOR = 500  # kill criterion 2: below this, HALT (plan §7)
+WC_CANDIDATE_TARGET = 2_500  # fresh-region candidate overprovision (plan §11)
+WC_MANIFEST_KEEP = 1_300  # mini-manifest keep (slack for over-length/empty losses)
+WC_SMOKE_CANDIDATE_TARGET = 30  # real-corpus structural probe target (plan §4 smoke)
+WC_SMOKE_MANIFEST_KEEP = 20
+WC_SMOKE_N_TARGETS = 12  # >= K_CSLS + 2 = 12 (csls asserts k < n_pool AND k <= n_query)
+WC_SCREEN_PILOT_ROWS = 20_000  # transposed-screen pilot rows (plan §9 w0 basis)
+WC_SCREEN_BUDGET_S = 3_600.0  # abort threshold: projected screen wall > 2x this => halt
+WC_SCREEN_WORKERS = 8  # screen fan-out width (env override EPM_WC_SCREEN_WORKERS)
+WC_ARMS_SMOKE = ("const_mean", "identity_copy", "identity_bias", "ridge")  # plan smoke clause
+WC_DRAWS_SEED_OFFSET = 1919  # wc battery Draws seed = cfg.seed + this (recorded)
+
 ARMS_963K = ("const_mean", "identity_copy", "identity_bias") + FITTERS
 ARMS_3600 = (
     "const_mean_3600",
@@ -160,6 +193,7 @@ class Cfg:
     revision: str
     seed: int
     force: bool
+    intrain: bool = False  # wc round: optional in-train memorization companion (plan v7 branch c)
 
     @property
     def layers(self) -> tuple[int, ...]:
@@ -229,6 +263,77 @@ class Cfg:
             "n_distractors": self.n_distractors,
             "distractor_pools": list(self.distractor_pools),
             "fitters": list(FITTERS),
+        }
+
+    # ── wildchat-target-battery round (plan v7 phases w0-w3) ────────────────────
+    # wc knobs live in a SEPARATE wc_regime() so the parent phases' sentinels
+    # (written under regime()) stay valid — adding wc keys to regime() would
+    # regime-mismatch every completed parent sentinel on the shared root.
+
+    @property
+    def wc_hf_root(self) -> str:
+        # ROUND ROOT (N1G semantics — the reused capture module appends
+        # final_token_capture/ + raw_completions/ itself; gotchas #1776).
+        return f"{WC_HF_ROOT}/smoke_probe" if self.smoke else WC_HF_ROOT
+
+    @property
+    def wc_dir(self) -> Path:
+        return self.out_root / "wildchat"  # generated wc outputs (rebinds under smoke)
+
+    @property
+    def wc_manifest_dir(self) -> Path:
+        return self.wc_dir / "manifest"
+
+    @property
+    def wc_candidate_target(self) -> int:
+        return WC_SMOKE_CANDIDATE_TARGET if self.smoke else WC_CANDIDATE_TARGET
+
+    @property
+    def wc_manifest_keep(self) -> int:
+        return WC_SMOKE_MANIFEST_KEEP if self.smoke else WC_MANIFEST_KEEP
+
+    @property
+    def wc_n_targets(self) -> int:
+        # smoke 12 (plan said 8; RESIZED UP against the csls_scores floor
+        # K_CSLS=10 < n_pool and <= n_query => n >= 11 — smoke-slice-arithmetic duty)
+        return WC_SMOKE_N_TARGETS if self.smoke else WC_N_TARGETS
+
+    @property
+    def wc_target_floor(self) -> int:
+        # production kill criterion 2 floor; smoke: any nonzero proceeds (#1345
+        # gate-calibration rule — production-n floors are demoted at smoke n)
+        return 1 if self.smoke else WC_TARGET_FLOOR
+
+    @property
+    def wc_pool_totals(self) -> tuple[int, ...]:
+        # extra wc pools beyond targets-only: {5k, 20k, 100k} with seeded parent
+        # distractors (plan v7 §4); smoke = targets-only pool per the plan.
+        return () if self.smoke else (5_000, 20_000, 100_000)
+
+    @property
+    def wc_w0_sentinel(self) -> Path:
+        return self.out_root / "wc_w0_done.json"
+
+    @property
+    def wc_exclusion_npz(self) -> Path:
+        # deterministic derived content (960k manifest + 5k round1 sha1 digests);
+        # shared across smoke/prod legs (identical bytes), so NON-rebinding.
+        return self.staging_root / "wc_exclusion_fps.npz"
+
+    def wc_regime(self) -> dict:
+        return {
+            "recipe_version": WC_RECIPE_VERSION,
+            "smoke": self.smoke,
+            "seed": self.seed,
+            "revision": self.revision,
+            "layer": 19,
+            "n_boot": self.n_boot,
+            "k_perm": self.k_perm,
+            "wc_candidate_target": self.wc_candidate_target,
+            "wc_manifest_keep": self.wc_manifest_keep,
+            "wc_n_targets": self.wc_n_targets,
+            "wc_pool_totals": list(self.wc_pool_totals),
+            "near_dupe": {"ngram": N1G.NEAR_DUPE_NGRAM, "thresh": N1G.NEAR_DUPE_JACCARD},
         }
 
 
@@ -353,20 +458,10 @@ def _realized_keys_check(path: Path, kind: str) -> list[str]:
     return sorted(realized)
 
 
-def phase_p0(cfg: Cfg) -> dict:
-    t0 = time.time()
-    out_path = cfg.out_root / "p0_done.json"
-    prior = _resume_skip(cfg, out_path, "p0")
-    if prior is not None:
-        return prior
-
-    # Preamble asserts (plan Phase 0): data-disk headroom + pass_b presence/size.
-    st = os.statvfs(cfg.staging_root.parent if not cfg.staging_root.exists() else cfg.staging_root)
-    avail_gb = st.f_bavail * st.f_frsize / 1e9
-    need_gb = 5.0 if cfg.smoke else 30.0
-    assert avail_gb >= need_gb, f"staging disk headroom {avail_gb:.1f} GB < {need_gb} GB"
-    cfg.out_root.mkdir(parents=True, exist_ok=True)
-
+def _ensure_pass_b() -> Path:
+    """Ensure the local pass_b bundle exists (worktree symlink to the MAIN
+    checkout's verified copy, else HF fetch) and matches the provenance size.
+    Extracted verbatim from phase_p0 so w0/w2 share the identical path."""
     pass_b = N1G.PASS_B_LOCAL
     if not pass_b.exists():
         # From a WORKTREE, PROJECT_ROOT-relative data/ is empty — prefer a symlink
@@ -382,14 +477,33 @@ def phase_p0(cfg: Cfg) -> dict:
         if main_copy.exists() and main_copy.stat().st_size == PASS_B_SIZE_BYTES:
             pass_b.parent.mkdir(parents=True, exist_ok=True)
             pass_b.symlink_to(main_copy)
-            logger.info("[p0] pass_b symlinked to main-checkout copy %s", main_copy)
+            logger.info("[pass_b] symlinked to main-checkout copy %s", main_copy)
         else:
-            logger.info("[p0] pass_b absent at %s; fetching via N1G._load_pass_b_bundle", pass_b)
+            logger.info("[pass_b] absent at %s; fetching via N1G._load_pass_b_bundle", pass_b)
             N1G._load_pass_b_bundle(pass_b)  # fetches from HF (PASS_B_HF_PATH) on miss
     size = pass_b.stat().st_size
     assert size == PASS_B_SIZE_BYTES, (
         f"pass_b size {size} != provenance-recorded {PASS_B_SIZE_BYTES} (fair_comparison.json)"
     )
+    return pass_b
+
+
+def phase_p0(cfg: Cfg) -> dict:
+    t0 = time.time()
+    out_path = cfg.out_root / "p0_done.json"
+    prior = _resume_skip(cfg, out_path, "p0")
+    if prior is not None:
+        return prior
+
+    # Preamble asserts (plan Phase 0): data-disk headroom + pass_b presence/size.
+    st = os.statvfs(cfg.staging_root.parent if not cfg.staging_root.exists() else cfg.staging_root)
+    avail_gb = st.f_bavail * st.f_frsize / 1e9
+    need_gb = 5.0 if cfg.smoke else 30.0
+    assert avail_gb >= need_gb, f"staging disk headroom {avail_gb:.1f} GB < {need_gb} GB"
+    cfg.out_root.mkdir(parents=True, exist_ok=True)
+
+    pass_b = _ensure_pass_b()
+    size = pass_b.stat().st_size
 
     _assert_mirror_root_arithmetic(cfg)
 
@@ -1108,6 +1222,38 @@ def _fixed_lambda_ridge(
     return F._apply(fact, float(lam), VtY, ymu, F._cross_kernel(fact, xte))
 
 
+def _small_n_preds(
+    X: np.ndarray,
+    Y: np.ndarray,
+    train: np.ndarray,
+    val: np.ndarray,
+    Xte64: np.ndarray,
+    seed: int,
+) -> tuple[dict[str, np.ndarray], float]:
+    """3600-arm + n50 companion rungs (parent P2 block extracted verbatim so the
+    wc round refits on the IDENTICAL pass_b train/val inputs — plan v7 §4 w2:
+    'fit inputs unchanged, only the evaluation targets swap'). Returns
+    (preds, lam_3600). RNG usage identical to the original inline block."""
+    xtr, xva = X[train].astype(np.float64), X[val].astype(np.float64)
+    ytr, yva = Y[train].astype(np.float64), Y[val].astype(np.float64)
+    preds: dict[str, np.ndarray] = {}
+    preds["const_mean_3600"] = np.tile(ytr.mean(0), (Xte64.shape[0], 1))
+    preds["identity_bias_3600"] = identity_bias_predict(xtr, ytr, Xte64)
+    preds["scaled_identity_3600"] = B._fit_scale(xtr, ytr) * Xte64
+    preds["diagonal_only_3600"] = Xte64 * B._fit_diag(xtr, ytr)
+    (ridge_3600,), lam_3600 = F.gram_fit_apply(
+        xtr, ytr, [Xte64], torch.device("cpu"), val=(xva, yva)
+    )
+    preds["ridge_3600"] = np.asarray(ridge_3600)
+    # H5 attribution rung: n_train=50 context subsample (plan §4 Phase 3)
+    rng50 = np.random.default_rng(seed)
+    sub50 = np.sort(rng50.choice(train, size=50, replace=False))
+    x50, y50 = X[sub50].astype(np.float64), Y[sub50].astype(np.float64)
+    preds["ridge_n50_fixedlam"] = _fixed_lambda_ridge(x50, y50, Xte64, lam_3600)
+    preds["identity_bias_n50"] = identity_bias_predict(x50, y50, Xte64)
+    return preds, float(lam_3600)
+
+
 def _pilot_battery_timing(cfg: Cfg, d_dim: int) -> dict:
     """Production-shape pilot (plan §9 P2 basis 'pilot-gated'): time ONE
     estimator x full retrieval battery at the 100k-pool production shape on a
@@ -1252,16 +1398,8 @@ def phase_p2(cfg: Cfg) -> dict:
 
         small_n_meta: dict = {}
         if li == 19:
-            xtr, xva = X[train].astype(np.float64), X[val].astype(np.float64)
-            ytr, yva = Y[train].astype(np.float64), Y[val].astype(np.float64)
-            preds["const_mean_3600"] = np.tile(ytr.mean(0), (len(test), 1))
-            preds["identity_bias_3600"] = identity_bias_predict(xtr, ytr, Xte)
-            preds["scaled_identity_3600"] = B._fit_scale(xtr, ytr) * Xte
-            preds["diagonal_only_3600"] = Xte * B._fit_diag(xtr, ytr)
-            (ridge_3600,), lam_3600 = F.gram_fit_apply(
-                xtr, ytr, [Xte], torch.device("cpu"), val=(xva, yva)
-            )
-            preds["ridge_3600"] = np.asarray(ridge_3600)
+            sn_preds, lam_3600 = _small_n_preds(X, Y, train, val, Xte, cfg.seed)
+            preds.update(sn_preds)
             banked_lam = None
             banked_last = banked_idbias["inputs"].get("last", {})
             if int(banked_last.get("layer", -1)) == li:
@@ -1271,12 +1409,6 @@ def phase_p2(cfg: Cfg) -> dict:
                 "banked_idbias_lambda": banked_lam,
                 "lambda_matches_banked": (banked_lam is not None and banked_lam == float(lam_3600)),
             }
-            # H5 attribution rung: n_train=50 context subsample (plan §4 Phase 3)
-            rng50 = np.random.default_rng(cfg.seed)
-            sub50 = np.sort(rng50.choice(train, size=50, replace=False))
-            x50, y50 = X[sub50].astype(np.float64), Y[sub50].astype(np.float64)
-            preds["ridge_n50_fixedlam"] = _fixed_lambda_ridge(x50, y50, Xte, lam_3600)
-            preds["identity_bias_n50"] = identity_bias_predict(x50, y50, Xte)
             small_n_meta["n50_lambda_source"] = (
                 "3600-arm val-selected lambda (banked identity_bias_knn convention)"
             )
@@ -1700,6 +1832,52 @@ def _err_offsets(point: float, lo: float, hi: float) -> tuple[float, float]:
     return (max(0.0, point - lo), max(0.0, hi - point))
 
 
+def _ladder_heatmap(ax, arms_dict: dict, pool: str, title: str, exclusions: dict | None = None):
+    """Arms x HERO_METRICS annotated heatmap (column-normalized colors; median
+    rank inverted). Hoisted from phase_p4 so the wc round's w3 hero side-by-side
+    reuses the identical renderer (one live copy — code-style supersede rule)."""
+    rows = list(arms_dict)
+    M = np.array(
+        [[_arm_metric_value(arms_dict[a], k, pool) for k, _lbl in HERO_METRICS] for a in rows]
+    )
+    ylabels = [arms_dict[a]["label"] for a in rows]
+    # stated-exclusion rows (plan §4: residual_skip appears in the summary table
+    # as a banked-R2/cosine-only row — retrieval cells render "n/a").
+    for ex in (exclusions or {}).values():
+        M = np.vstack(
+            [
+                M,
+                [
+                    ex["banked_r2"]
+                    if k == "r2"
+                    else (ex["banked_mean_cosine"] if k == "mean_cosine" else np.nan)
+                    for k, _lbl in HERO_METRICS
+                ],
+            ]
+        )
+        ylabels.append(f"{ex['label']}\nno weights — retrieval n/a")
+    norm = (M - np.nanmin(M, 0)) / (np.nanmax(M, 0) - np.nanmin(M, 0) + 1e-12)
+    norm[:, -1] = 1 - norm[:, -1]  # median rank: lower is better
+    ax.imshow(norm, cmap="viridis", aspect="auto", vmin=0, vmax=1)
+    ax.set_xticks(range(len(HERO_METRICS)))
+    ax.set_xticklabels([lbl for _k, lbl in HERO_METRICS], rotation=30, ha="right")
+    ax.set_yticks(range(M.shape[0]))
+    ax.set_yticklabels(ylabels)
+    for i in range(M.shape[0]):
+        for j in range(len(HERO_METRICS)):
+            v = M[i, j]
+            ax.text(
+                j,
+                i,
+                "n/a" if np.isnan(v) else f"{v:.3g}",
+                ha="center",
+                va="center",
+                fontsize=6,
+                color="white" if norm[i, j] < 0.5 else "black",
+            )
+    ax.set_title(title)
+
+
 def phase_p4(cfg: Cfg) -> dict:
     t0 = time.time()
     import matplotlib
@@ -1718,57 +1896,17 @@ def phase_p4(cfg: Cfg) -> dict:
     pfx_headline = str(pfx["design"]["headline_layer"])
     P = pfx["per_layer"][pfx_headline]
 
-    def _heat(ax, arms_dict: dict, pool: str, title: str, exclusions: dict | None = None):
-        rows = list(arms_dict)
-        M = np.array(
-            [[_arm_metric_value(arms_dict[a], k, pool) for k, _lbl in HERO_METRICS] for a in rows]
-        )
-        ylabels = [arms_dict[a]["label"] for a in rows]
-        # stated-exclusion rows (plan §4: residual_skip appears in the summary table
-        # as a banked-R2/cosine-only row — retrieval cells render "n/a").
-        for ex in (exclusions or {}).values():
-            M = np.vstack(
-                [
-                    M,
-                    [
-                        ex["banked_r2"]
-                        if k == "r2"
-                        else (ex["banked_mean_cosine"] if k == "mean_cosine" else np.nan)
-                        for k, _lbl in HERO_METRICS
-                    ],
-                ]
-            )
-            ylabels.append(f"{ex['label']}\nno weights — retrieval n/a")
-        norm = (M - np.nanmin(M, 0)) / (np.nanmax(M, 0) - np.nanmin(M, 0) + 1e-12)
-        norm[:, -1] = 1 - norm[:, -1]  # median rank: lower is better
-        ax.imshow(norm, cmap="viridis", aspect="auto", vmin=0, vmax=1)
-        ax.set_xticks(range(len(HERO_METRICS)))
-        ax.set_xticklabels([lbl for _k, lbl in HERO_METRICS], rotation=30, ha="right")
-        ax.set_yticks(range(M.shape[0]))
-        ax.set_yticklabels(ylabels)
-        for i in range(M.shape[0]):
-            for j in range(len(HERO_METRICS)):
-                v = M[i, j]
-                ax.text(
-                    j,
-                    i,
-                    "n/a" if np.isnan(v) else f"{v:.3g}",
-                    ha="center",
-                    va="center",
-                    fontsize=6,
-                    color="white" if norm[i, j] < 0.5 else "black",
-                )
-        ax.set_title(title)
-
     fig, axes = plt.subplots(1, 2, figsize=(14, 6), layout="constrained")
-    _heat(
+    _ladder_heatmap(
         axes[0],
         L19["arms"],
         "test",
         "Context arm (mixed_1m, L19; pool=1000 test)",
         exclusions=L19.get("stated_exclusions"),
     )
-    _heat(axes[1], P["arms"], "battery50", f"Prefix arm (50-context battery, L{pfx_headline})")
+    _ladder_heatmap(
+        axes[1], P["arms"], "battery50", f"Prefix arm (50-context battery, L{pfx_headline})"
+    )
     fig.savefig(cfg.fig_dir / "hero_ladder_by_metric.png", dpi=200)
     plt.close(fig)
 
@@ -2130,14 +2268,1383 @@ def _metric_characterization(ctx: dict, pfx: dict, man: dict) -> dict:
     }
 
 
+# ═══════════ wildchat-target-battery follow-up round (plan v7, w0-w3) ═══════════
+#
+# Held-out-corpus transfer battery: does the LMSYS-measured arm RANKING survive a
+# genuinely held-out real-user corpus region (fresh WildChat, streamed PAST the
+# parent n1m consumption point)? All wc phases key their sentinels on
+# cfg.wc_regime() (never regime() — parent sentinels stay valid) and reuse the
+# parent battery machinery verbatim (Draws/ReconContext/eval_*_cell/PoolSpec).
+
+# Banked parent-round outputs (committed, PROJECT_ROOT paths — deliberately
+# NON-rebinding under --smoke: read-only parent inputs, #542 smoke-root rule).
+BANKED_CONTEXT_ARM = PROJECT_ROOT / "eval_results/issue_1901/metric_battery/context_arm.json"
+BANKED_CONTEXT_DRAWS = (
+    PROJECT_ROOT / "eval_results/issue_1901/metric_battery/boot_draws_context.json"
+)
+BANKED_CHARACTERIZATION = (
+    PROJECT_ROOT / "eval_results/issue_1901/metric_battery/metric_characterization.json"
+)
+
+_TOKENIZER_CACHE: dict[str, object] = {}
+
+
+def _get_tokenizer(model_id: str):
+    """Module-level tokenizer cache (never from_pretrained in a loop — the #664
+    per-load model_info() Hub-429 gotcha)."""
+    if model_id not in _TOKENIZER_CACHE:
+        from transformers import AutoTokenizer
+
+        _TOKENIZER_CACHE[model_id] = AutoTokenizer.from_pretrained(model_id)
+    return _TOKENIZER_CACHE[model_id]
+
+
+def _wc_meta(cfg: Cfg, phase: str, t0: float) -> dict:
+    """_meta with the wc regime substituted (wc sentinels compare wc_regime())."""
+    m = _meta(cfg, phase, t0)
+    m["regime"] = cfg.wc_regime()
+    return m
+
+
+def _wc_resume_skip(cfg: Cfg, out_path: Path, phase: str) -> dict | None:
+    """wc-regime twin of _resume_skip (same fail-loud mismatch contract)."""
+    if cfg.force or not out_path.exists():
+        return None
+    prior = json.loads(out_path.read_text())
+    prior_regime = (prior.get("metadata") or {}).get("regime") or prior.get("regime")
+    if prior_regime == cfg.wc_regime():
+        logger.info("[%s] output %s exists with matching wc regime; skipping", phase, out_path)
+        return prior
+    raise RuntimeError(
+        f"[{phase}] {out_path} exists under a DIFFERENT wc regime "
+        f"(stored != current). Re-run with --force to redo, or use a different root.\n"
+        f"stored:  {prior_regime}\ncurrent: {cfg.wc_regime()}"
+    )
+
+
+def _sha1_norm(prompt: str) -> str:
+    """sha1 hex digest of the near-dupe-normalized prompt (the exclusion-set /
+    contamination fingerprint — same normalization as the parent NearDupeGate)."""
+    return hashlib.sha1(N1G._norm(prompt).encode("utf-8")).hexdigest()
+
+
+class _CandidateGate(N1G.NearDupeGate):
+    """Transposed NearDupeGate (the plan v7 ~10-line extension): the CANDIDATES
+    are the indexed targets; train-pool rows stream through matching_targets(),
+    which returns WHICH candidate indices the row collides with (exact-normalized
+    match or char-ngram Jaccard >= thresh). Refusal-safe: indices/counts only.
+
+    matching_targets() is the VECTORIZED counting path (one ragged posting
+    gather + np.bincount => exact |g INTERSECT tg| per candidate — the same
+    integers the serial per-candidate ``len(g & tg)`` computes, and the same
+    float64 ``inter / union >= thresh`` compare, so survivor sets are IDENTICAL
+    by construction; the equivalence gate in tests/test_issue1901_wildchat.py
+    pins it). The pre-vectorization serial body is retained as
+    matching_targets_serial_reference() ONLY for that gate (vectorize rule
+    Supersede contract: contained serial twin). Rationale: the w0 pilot
+    measured 12,338.9 us/row -> projected 11,907 s over 965k rows; a 200-row
+    profile put 92% of that (11,353 us/row) in the per-candidate Jaccard loop
+    (~918 candidates x ~173k C-level set-intersection ops per row) and 859
+    us/row in the posting-union loop the bincount replaces."""
+
+    def __init__(
+        self,
+        candidates: list[str],
+        ngram: int = N1G.NEAR_DUPE_NGRAM,
+        thresh: float = N1G.NEAR_DUPE_JACCARD,
+    ):
+        super().__init__(candidates, ngram=ngram, thresh=thresh)
+        self._exact_idx: dict[str, list[int]] = {}
+        for i, c in enumerate(candidates):
+            self._exact_idx.setdefault(N1G._norm(c), []).append(i)
+        # CSR posting index over the candidate ngram vocabulary (built once;
+        # read-only afterwards => fork-shared across screen workers via COW).
+        self._n_cand = len(candidates)
+        self._vocab: dict[str, int] = {}
+        posting_arrays: list[np.ndarray] = []
+        for ng, tis in self.inv.items():
+            self._vocab[ng] = len(posting_arrays)
+            posting_arrays.append(np.fromiter(tis, dtype=np.int32, count=len(tis)))
+        lens = np.array([a.size for a in posting_arrays], dtype=np.int64)
+        self._post_offsets = np.zeros(len(posting_arrays) + 1, dtype=np.int64)
+        np.cumsum(lens, out=self._post_offsets[1:])
+        self._post_flat = (
+            np.concatenate(posting_arrays) if posting_arrays else np.zeros(0, dtype=np.int32)
+        )
+        self._tg_sizes = np.array([len(tg) for tg in self.target_ngrams], dtype=np.int64)
+
+    def matching_targets(self, prompt: str) -> set[int]:
+        """Exact vectorized read: inv[ng] holds ti iff ng in tg, so counting
+        posting hits over ng in g IS |g INTERSECT tg| per candidate."""
+        n = N1G._norm(prompt)
+        hits: set[int] = set(self._exact_idx.get(n, ()))
+        g = N1G._char_ngrams(n, self.ngram)
+        if not g:
+            return hits
+        vocab = self._vocab
+        ids_list = [vocab[ng] for ng in g if ng in vocab]
+        if not ids_list:
+            return hits
+        ids = np.asarray(ids_list, dtype=np.int64)
+        starts = self._post_offsets[ids]
+        lens = self._post_offsets[ids + 1] - starts
+        total = int(lens.sum())
+        csum = np.cumsum(lens)
+        gather = np.repeat(starts - (csum - lens), lens) + np.arange(total, dtype=np.int64)
+        inter = np.bincount(self._post_flat[gather], minlength=self._n_cand)
+        # union >= len(g) >= 1 here, so the division is always defined; the
+        # float64 divide matches the serial reference's int/int division exactly
+        union = len(g) + self._tg_sizes - inter
+        matched = np.flatnonzero((inter > 0) & (inter / union >= self.thresh))
+        hits.update(int(ti) for ti in matched)
+        return hits
+
+    def matching_targets_serial_reference(self, prompt: str) -> set[int]:
+        """Pre-vectorization serial body — retained ONLY as the oracle for the
+        equivalence gate (unit test + the real-slice check); production code
+        paths call matching_targets()."""
+        n = N1G._norm(prompt)
+        hits: set[int] = set(self._exact_idx.get(n, ()))
+        g = N1G._char_ngrams(n, self.ngram)
+        if not g:
+            return hits
+        cand: set[int] = set()
+        for ng in g:
+            cand |= self.inv.get(ng, set())
+        for ti in cand:
+            if ti in hits:
+                continue
+            tg = self.target_ngrams[ti]
+            inter = len(g & tg)
+            if inter == 0:
+                continue
+            union = len(g) + len(tg) - inter
+            if union and inter / union >= self.thresh:
+                hits.add(ti)
+        return hits
+
+
+def _ensure_payload_staged(cfg: Cfg, li: int, name: str) -> Path:
+    """Stage one weight payload (revision-pinned, idempotent) + realized-keys
+    check (#1073) — w2 must be runnable without a prior p0 on the same root."""
+    rel = f"{WEIGHTS_PREFIX}/L{li}/{name}.pt"
+    p = staged_path(cfg, rel)
+    if not p.exists():
+        got = hub.stage_hub_prefix(
+            C.HF_DATA_REPO, rel, cfg.staging_root, repo_type="dataset", revision=cfg.revision
+        )
+        assert got == [p], (got, p)
+    _realized_keys_check(p, FITTER_KIND[name])
+    return p
+
+
+def _ensure_distractors(cfg: Cfg) -> Path:
+    """Local p1 distractor npz, staged back from its own HF upload on a miss
+    (revision=None: the p1 upload postdates the parent-input pin by design)."""
+    if not cfg.distractor_npz.exists():
+        dest = f"{cfg.hf_out_prefix}/distractors_L19.npz"
+        logger.info("[w2] distractor npz absent locally; staging from HF %s", dest)
+        hub.stage_hub_file(C.HF_DATA_REPO, dest, cfg.distractor_npz, repo_type="dataset")
+    return cfg.distractor_npz
+
+
+# ─────────────────────────────── w0: candidates ─────────────────────────────────
+
+
+def _stage_parent_manifest(cfg: Cfg) -> tuple[list[dict], dict]:
+    """Stage + read the parent 960k n1m sampling manifest (revision-pinned;
+    read_manifest_pool enforces the i==index + n_new invariants). Content
+    hygiene: rows carry raw real-user text — never logged, only hashed."""
+    staged_dir = staged_path(cfg, MANIFEST_PREFIX)
+    if not N1G._manifest_complete_locally(staged_dir):
+        files = hub.stage_hub_prefix(
+            C.HF_DATA_REPO,
+            MANIFEST_PREFIX,
+            cfg.staging_root,
+            repo_type="dataset",
+            revision=cfg.revision,
+        )
+        logger.info("[w0] staged parent sampling manifest: %d files", len(files))
+    pool, meta = N1G.read_manifest_pool(staged_dir)
+    logger.info(
+        "[w0] parent manifest: n_new=%d (lmsys=%d, wildchat=%d)",
+        meta["n_new"],
+        meta["n_lmsys"],
+        meta["n_wildchat"],
+    )
+    return pool, meta
+
+
+def _round1_prompts(cfg: Cfg, expected_sha: str) -> list[str]:
+    """The 5,000 round-1 (pass_b) prompts, re-derived via the parent's own
+    deterministic LMSYS-stream recovery and SHA-VERIFIED against the parent
+    manifest's used_shas.round1 (plan §7: HALT on drift — a partial exclusion
+    set is worse than no run). Cached on the shared staging root."""
+    cache = cfg.staging_root / "wc_round1_prompts.jsonl"
+    if cache.exists():
+        round1 = [r["prompt"] for r in N1G._read_jsonl(cache)]
+        if N1G.N10._sha_prompts(round1) == expected_sha:
+            logger.info(
+                "[w0] round-1 prompts loaded from cache (%d rows, sha-verified)", len(round1)
+            )
+            return round1
+        logger.info("[w0] round-1 cache sha mismatch; re-deriving from the LMSYS stream")
+    used = N50G.sample_disjoint_n50k(N1G.N_ROUND1, 0, 0)
+    round1 = used["round1"]
+    if used["round1_prompt_sha256"] != expected_sha:
+        raise RuntimeError(
+            f"KILL (round-1 recovery): re-derived round-1 prompt sha "
+            f"{used['round1_prompt_sha256']} != parent manifest used_shas.round1 "
+            f"{expected_sha} — LMSYS stream ordering drifted; the train-side exclusion "
+            "set cannot be trusted (plan §7)."
+        )
+    N1G._atomic_write_jsonl(cache, [{"prompt": p} for p in round1])
+    logger.info("[w0] round-1 prompts re-derived + cached (%d rows, sha-verified)", len(round1))
+    return round1
+
+
+def _wc_exclusion_set(
+    cfg: Cfg, pool: list[dict], meta: dict, round1: list[str]
+) -> tuple[set[str], dict]:
+    """sha1(normalized prompt) exclusion fingerprints over the 960k manifest +
+    5k round-1 prompts. Deterministic derived content — cached on the SHARED
+    staging root (non-rebinding under --smoke: identical bytes both legs)."""
+    fp_meta = {
+        "recipe": WC_RECIPE_VERSION,
+        "round1_sha": meta["used_shas"]["round1"],
+        "manifest_sha": meta["new_prompt_sha256"],
+        "hash": "sha1(near-dupe-normalized prompt)",
+    }
+    meta_path = cfg.staging_root / "wc_exclusion_fps.meta.json"
+    if cfg.wc_exclusion_npz.exists() and meta_path.exists():
+        stored = json.loads(meta_path.read_text())
+        if {k: stored.get(k) for k in fp_meta} == fp_meta:
+            fps = np.load(cfg.wc_exclusion_npz)["fps"]
+            excl = {b.decode() for b in fps.tolist()}
+            logger.info("[w0] exclusion set loaded (%d fingerprints, meta-matched)", len(excl))
+            return excl, {**fp_meta, "n_fps": len(excl), "rebuilt": False}
+    hexes = {_sha1_norm(r["prompt"]) for r in pool}
+    hexes.update(_sha1_norm(p) for p in round1)
+    fps = np.array(sorted(hexes), dtype="S40")
+    _atomic_npz(cfg.wc_exclusion_npz, fps=fps)
+    _atomic_json(meta_path, {**fp_meta, "n_fps": int(fps.shape[0])})
+    logger.info(
+        "[w0] exclusion set built: %d fingerprints (%d manifest + %d round1 rows, deduped)",
+        len(hexes),
+        len(pool),
+        len(round1),
+    )
+    return hexes, {**fp_meta, "n_fps": len(hexes), "rebuilt": True}
+
+
+# Fork-shared read-only state for the screen worker pool. Set by
+# _wc_screen_candidates immediately before the fork (children inherit the gate
+# + texts via copy-on-write; nothing is pickled per task beyond index bounds).
+_SCREEN_GATE: _CandidateGate | None = None
+_SCREEN_TEXTS: list[str] | None = None
+
+
+def _screen_chunk_worker(bounds: tuple[int, int]) -> list[int]:
+    """Screen train rows [start, end) against the fork-inherited candidate gate;
+    returns the matched candidate indices (sorted, small)."""
+    start, end = bounds
+    assert _SCREEN_GATE is not None and _SCREEN_TEXTS is not None, "fork state unset"
+    matched: set[int] = set()
+    for j in range(start, end):
+        matched |= _SCREEN_GATE.matching_targets(_SCREEN_TEXTS[j])
+    return sorted(matched)
+
+
+def _wc_screen_candidates(
+    cfg: Cfg,
+    cand_prompts: list[str],
+    pool: list[dict],
+    round1: list[str],
+    workers: int | None = None,
+) -> tuple[list[int], dict]:
+    """Transposed train-pool near-dupe screen: candidates indexed, 960k+5k train
+    rows streamed through the vectorized counting path (per-candidate Jaccard
+    via one bincount — _CandidateGate.matching_targets), fanned out across fork
+    workers. Pilot-timed SERIALLY on the first WC_SCREEN_PILOT_ROWS rows;
+    projected wall (pilot elapsed + per-row x remaining / workers) > 2x
+    WC_SCREEN_BUDGET_S HALTs (plan §9 w0 abort threshold, recalibrated to the
+    vectorized + parallel execution shape)."""
+    if workers is None:
+        workers = max(1, int(os.environ.get("EPM_WC_SCREEN_WORKERS", str(WC_SCREEN_WORKERS))))
+    gate = _CandidateGate(cand_prompts)
+    train_texts = [r["prompt"] for r in pool] + list(round1)
+    n_rows = len(train_texts)
+    matched: set[int] = set()
+    t0 = time.time()
+    pilot: dict = {}
+
+    # serial pilot leg (same per-row path the workers run)
+    n_pilot = min(WC_SCREEN_PILOT_ROWS, n_rows)
+    for j in range(n_pilot):
+        matched |= gate.matching_targets(train_texts[j])
+    if n_rows > WC_SCREEN_PILOT_ROWS:
+        elapsed = time.time() - t0
+        per = elapsed / n_pilot
+        proj = elapsed + per * (n_rows - n_pilot) / workers
+        pilot = {
+            "pilot_rows": n_pilot,
+            "per_row_us": round(per * 1e6, 2),
+            "workers": workers,
+            "projected_wall_s": round(proj, 1),
+            "budget_s": WC_SCREEN_BUDGET_S,
+        }
+        logger.info(
+            "[w0] screen pilot: %.1fus/row -> projected %.0fs over %d rows (%d workers)",
+            per * 1e6,
+            proj,
+            n_rows,
+            workers,
+        )
+        if proj > 2 * WC_SCREEN_BUDGET_S:
+            raise RuntimeError(
+                f"[w0] transposed screen projected {proj:.0f}s > 2x budget "
+                f"{WC_SCREEN_BUDGET_S:.0f}s — halting before the burn (plan §9 w0 "
+                "abort threshold; vectorize or re-scope before rerunning)"
+            )
+
+    # remainder: fan out across fork workers (read-only gate/texts via COW)
+    remaining = n_rows - n_pilot
+    if remaining > 0 and workers > 1:
+        global _SCREEN_GATE, _SCREEN_TEXTS
+        chunk = max(5_000, -(-remaining // (workers * 4)))
+        bounds = [(s, min(s + chunk, n_rows)) for s in range(n_pilot, n_rows, chunk)]
+        _SCREEN_GATE, _SCREEN_TEXTS = gate, train_texts
+        try:
+            ctx = multiprocessing.get_context("fork")
+            with ctx.Pool(processes=workers) as mp_pool:
+                for k, part in enumerate(mp_pool.imap_unordered(_screen_chunk_worker, bounds), 1):
+                    matched.update(part)
+                    logger.info(
+                        "[w0] screen chunk %d/%d done (%d candidates matched) elapsed=%.0fs",
+                        k,
+                        len(bounds),
+                        len(matched),
+                        time.time() - t0,
+                    )
+        finally:
+            _SCREEN_GATE = None
+            _SCREEN_TEXTS = None
+    elif remaining > 0:
+        for j in range(n_pilot, n_rows):
+            matched |= gate.matching_targets(train_texts[j])
+            if (j + 1) % 200_000 == 0:
+                logger.info(
+                    "[w0] screen %d/%d rows (%d candidates matched) elapsed=%.0fs",
+                    j + 1,
+                    n_rows,
+                    len(matched),
+                    time.time() - t0,
+                )
+
+    survivors = [i for i in range(len(cand_prompts)) if i not in matched]
+    stats = {
+        "n_train_rows_screened": n_rows,
+        "n_candidates": len(cand_prompts),
+        "n_matched_dropped": len(matched),
+        "n_survivors": len(survivors),
+        "wall_s": round(time.time() - t0, 1),
+        "workers": workers,
+        "pilot": pilot,
+        "near_dupe": {"ngram": gate.ngram, "jaccard_thresh": gate.thresh},
+    }
+    logger.info(
+        "[w0] transposed screen: %d/%d candidates dropped (%.0fs, %d workers)",
+        len(matched),
+        len(cand_prompts),
+        stats["wall_s"],
+        workers,
+    )
+    return survivors, stats
+
+
+def _upload_wc_manifest(cfg: Cfg, n_parts: int) -> dict:
+    """Fail-loud mini-manifest upload (one commit) + exact-set verify (inside
+    _upload_folder_filtered) to the ROUND ROOT's manifest/ prefix."""
+    prefix = f"{cfg.wc_hf_root}/manifest"
+    names = [f"part_{i:05d}.jsonl" for i in range(n_parts)] + ["meta.json"]
+    url = hub._upload_folder_filtered(
+        cfg.wc_manifest_dir,
+        repo_id=C.HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=prefix,
+        allow_patterns=["part_*.jsonl", "meta.json"],
+        expected_repo_paths=[f"{prefix}/{n}" for n in names],
+    )
+    if not url:
+        raise RuntimeError(f"[w0] mini-manifest upload to {prefix} returned no URL")
+    logger.info("[w0] mini-manifest uploaded: %d files -> %s", len(names), prefix)
+    return {"hf_prefix": prefix, "url": url, "n_files": len(names)}
+
+
+def phase_w0(cfg: Cfg) -> dict:
+    t0 = time.time()
+    prior = _wc_resume_skip(cfg, cfg.wc_w0_sentinel, "w0")
+    if prior is not None:
+        return prior
+    cfg.wc_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1. parent 960k sampling manifest (revision-pinned)
+    pool, meta = _stage_parent_manifest(cfg)
+    wc_rows = [r for r in pool if r.get("corpus") == "wildchat"]
+    assert wc_rows, "parent manifest has no wildchat rows — fresh-region start underivable"
+    skip_first = max(int(r["stream_pos"]) for r in wc_rows) + 1
+
+    # 2. round-1 (pass_b) prompt recovery — sha-verified (HALT on drift)
+    round1 = _round1_prompts(cfg, meta["used_shas"]["round1"])
+
+    # 3. exclusion fingerprints over manifest + round1
+    excl, excl_info = _wc_exclusion_set(cfg, pool, meta, round1)
+
+    # 4. WildChat revision pin — resolved ONCE, recorded, threaded to load_dataset
+    from huggingface_hub import HfApi
+
+    wc_revision = hub.retry_transient(
+        lambda: HfApi().dataset_info(WILDCHAT_DATASET).sha, what="WildChat revision resolve"
+    )
+    logger.info("[w0] WildChat revision pinned: %s", wc_revision)
+
+    # 5. fresh-region candidate stream (checkpointed, fingerprint-keyed resume;
+    #    per-filter reject counters cover LIVE-streamed rows only)
+    rejects = {"checked": 0, "exclusion_hit": 0}
+
+    def keep_fresh(p: str) -> bool:
+        rejects["checked"] += 1
+        if _sha1_norm(p) in excl:
+            rejects["exclusion_hit"] += 1
+            return False
+        return True
+
+    fingerprint = {
+        "recipe": WC_RECIPE_VERSION,
+        "revision": wc_revision,
+        "skip_first": skip_first,
+        "target": cfg.wc_candidate_target,
+        "round1_sha": meta["used_shas"]["round1"],
+        "manifest_sha": meta["new_prompt_sha256"],
+    }
+    cands = N1G._stream_corpus(
+        WILDCHAT_DATASET,
+        WC_STREAM_TAG,
+        keep_fresh,
+        cfg.wc_candidate_target,
+        cfg.wc_dir / "stream_cache",
+        fingerprint,
+        resume=not cfg.force,
+        revision=wc_revision,
+        skip_first=skip_first,
+    )
+    assert cands, "fresh WildChat stream kept 0 candidates (see per-filter reject counters)"
+
+    # 6. transposed train-pool near-dupe screen (+ pilot-timed abort)
+    survivors_idx, screen = _wc_screen_candidates(cfg, [r["prompt"] for r in cands], pool, round1)
+    kept = [cands[i] for i in survivors_idx][: cfg.wc_manifest_keep]
+    if len(kept) < cfg.wc_manifest_keep:
+        logger.warning(
+            "[w0] only %d screen survivors (< keep target %d); proceeding — the binding "
+            "floor is w2's %d captured targets (plan §7 criterion 2)",
+            len(kept),
+            cfg.wc_manifest_keep,
+            WC_TARGET_FLOOR,
+        )
+
+    # 7. mini-manifest (parent row schema; FRESH id namespace i=0..N-1)
+    rows = [
+        {"prompt": r["prompt"], "corpus": "wildchat", "stream_pos": int(r["stream_pos"]), "i": i}
+        for i, r in enumerate(kept)
+    ]
+    mini_meta = {
+        "n_new": len(rows),
+        "n_lmsys": 0,
+        "n_wildchat": len(rows),
+        "recipe_version": WC_RECIPE_VERSION,
+        "wildchat_revision": wc_revision,
+        "skip_first": skip_first,
+        "candidate_target": cfg.wc_candidate_target,
+        "stream_rejects": {
+            **rejects,
+            "note": "counters cover LIVE-streamed rows only (a fingerprint-matched "
+            "resume skips the already-consumed region)",
+        },
+        "screen": screen,
+        "exclusion": excl_info,
+        "used_shas": {
+            "round1": meta["used_shas"]["round1"],
+            "parent_manifest_new": meta["new_prompt_sha256"],
+        },
+        "new_prompt_sha256": N1G.N10._sha_prompts([r["prompt"] for r in rows]),
+        "capture_layers": list(N1G.CAPTURE_LAYERS),
+        "model": N1G.DEFAULT_MODEL,
+    }
+    n_parts = N1G._write_manifest_parts(cfg.wc_manifest_dir, rows, mini_meta)
+
+    # 8. fail-loud upload + exact-set verify
+    upload = _upload_wc_manifest(cfg, n_parts)
+
+    out = {
+        "n_candidates": len(cands),
+        "n_survivors": len(survivors_idx),
+        "n_kept": len(rows),
+        "skip_first": skip_first,
+        "wildchat_revision": wc_revision,
+        "stream_rejects": rejects,
+        "screen": screen,
+        "exclusion": excl_info,
+        "manifest": {"dir": str(cfg.wc_manifest_dir), "n_parts": n_parts, **upload},
+        "metadata": _wc_meta(cfg, "w0_wc_candidates", t0),
+    }
+    _atomic_json(cfg.wc_w0_sentinel, out)
+    logger.info(
+        "[w0] done in %.1fs: %d candidates -> %d kept (digest-only; no prompt text logged)",
+        time.time() - t0,
+        len(cands),
+        len(rows),
+    )
+    return out
+
+
+# ─────────────────────────────── w1: capture ────────────────────────────────────
+
+
+def _stage_wc_manifest(cfg: Cfg, dest: Path) -> Path:
+    """Bridge the wc round's Hub manifest home ({wc_hf_root}/manifest) into the
+    capture rig's expected local layout (out_dir/sampling_manifest — the rig's
+    _resolve_manifest_dir hardcodes the PARENT prefix on its HF path, so we
+    stage manually + set manifest_from_hf=False; #1776 flag-semantics rule)."""
+    if N1G._manifest_complete_locally(dest):
+        logger.info("[stage] manifest staged: already complete at %s", dest)
+        return dest
+    import shutil
+
+    dest.mkdir(parents=True, exist_ok=True)
+    if N1G._manifest_complete_locally(cfg.wc_manifest_dir):
+        srcs = sorted(cfg.wc_manifest_dir.glob("part_*.jsonl"))
+        srcs.append(cfg.wc_manifest_dir / "meta.json")
+        for f in srcs:
+            shutil.copy2(f, dest / f.name)
+        logger.info("[stage] manifest staged: %d files (local w0 output)", len(srcs))
+    else:
+        mirror = cfg.wc_dir / "manifest_hf_mirror"
+        prefix = f"{cfg.wc_hf_root}/manifest"
+        # revision=None: the wc mini-manifest postdates the parent-input pin
+        staged = hub.stage_hub_prefix(C.HF_DATA_REPO, prefix, mirror, repo_type="dataset")
+        for p in staged:
+            shutil.copy2(p, dest / Path(p).name)
+        logger.info("[stage] manifest staged: %d files (HF %s)", len(staged), prefix)
+    assert N1G._manifest_complete_locally(dest), f"staged wc manifest incomplete at {dest}"
+    return dest
+
+
+def _w1_args_attr_reads() -> set[str]:
+    """AST-audit: every `args.<attr>` the reused capture rig actually reads on
+    the w1 call path (run_capture + the args-consuming helpers it calls) — the
+    hand-built-Namespace field audit (#1776 rule (iv))."""
+    import ast
+    import inspect
+    import textwrap
+
+    attrs: set[str] = set()
+    for fn in (N1G.run_capture, N1G._resolve_manifest_dir, N1G._write_skipped_sidecar):
+        tree = ast.parse(textwrap.dedent(inspect.getsource(fn)))
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, ast.Attribute)
+                and isinstance(node.value, ast.Name)
+                and node.value.id == "args"
+            ):
+                attrs.add(node.attr)
+    return attrs
+
+
+def _w1_namespace(cfg: Cfg, *, device: str, no_upload: bool, out_dir: Path) -> argparse.Namespace:
+    """The run_capture Namespace, field-audited against the rig's realized
+    `args.` reads. hf_prefix carries N1G's ROUND-ROOT semantics (the module
+    appends final_token_capture/ + raw_completions/ itself — #1776 gotcha)."""
+    ns = argparse.Namespace(
+        model=N1G.DEFAULT_MODEL,
+        device=device,
+        out_dir=out_dir,
+        hf_prefix=cfg.wc_hf_root,
+        manifest_from_hf=False,
+        num_shards=1,
+        shard_index=0,
+        shard_size=500,
+        no_upload=no_upload,
+    )
+    missing = _w1_args_attr_reads() - set(vars(ns))
+    assert not missing, f"w1 Namespace missing args the capture rig reads: {sorted(missing)}"
+    return ns
+
+
+def _wc_captured_rowcount(cfg: Cfg) -> tuple[int, int]:
+    """(n_rows, n_chunks) actually captured on the Hub, counted from the raw
+    completion jsons (content read for len() only — never logged/printed)."""
+    prefix = f"{cfg.wc_hf_root}/raw_completions"
+    remote = N50G._remote_index(prefix)
+    names = sorted(n for n in remote if n.endswith(".json") and "_skipped" not in n)
+    scratch = cfg.wc_dir / "raw_probe"
+    total = 0
+    for name in names:
+        local = hub.stage_hub_file(
+            C.HF_DATA_REPO, f"{prefix}/{name}", scratch / name, repo_type="dataset"
+        )
+        total += len(json.loads(local.read_text())["rows"])
+        local.unlink()
+    return total, len(names)
+
+
+def _w1_cpu_surface(cfg: Cfg) -> dict:
+    """CPU-reachable w1 surface (the smoke leg of the GPU-bound capture phase —
+    the documented carve-out): Namespace field audit, manifest staging + the
+    rig's OWN consumer-open (_resolve_manifest_dir + read_manifest_pool),
+    tokenize-only over-length filtering at the production budget, and the
+    upload-dry-run sidecar branch. The GPU body (engine + generate + capture)
+    is pilot-gated at chunk 1 in production by run_capture's own chunk loop."""
+    w1_dir = cfg.wc_dir / "w1_surface"
+    ns = _w1_namespace(cfg, device="cpu", no_upload=True, out_dir=w1_dir)
+    manifest_dir = _stage_wc_manifest(cfg, w1_dir / N1G.MANIFEST_SUBDIR)
+    resolved = N1G._resolve_manifest_dir(ns)
+    assert resolved == manifest_dir, (resolved, manifest_dir)
+    pool, _meta = N1G.read_manifest_pool(resolved)  # the rig's own consumer-open
+    tok = _get_tokenizer(ns.model)
+    kept_p, _kept_ci, skipped = N1G._filter_overlength_prompts(
+        [r["prompt"] for r in pool],
+        [int(r["i"]) for r in pool],
+        lambda p: N1G._rendered_prompt_token_len(tok, p),
+        N1G.PROMPT_TOKEN_BUDGET,
+    )
+    scratch = w1_dir / "shards"
+    scratch.mkdir(parents=True, exist_ok=True)
+    N1G._write_skipped_sidecar(scratch, ns, skipped)  # no_upload=True -> local write only
+    out = {
+        "mode": "cpu_surface (GPU capture body: documented carve-out)",
+        "n_manifest_rows": len(pool),
+        "n_kept_after_length_filter": len(kept_p),
+        "n_overlength_skipped": len(skipped),
+        "prompt_token_budget": N1G.PROMPT_TOKEN_BUDGET,
+        "namespace_attrs_audited": sorted(_w1_args_attr_reads()),
+        "sidecar": str(scratch / f"shard{ns.shard_index:02d}_skipped.json"),
+    }
+    logger.info(
+        "[w1-surface] namespace audit + consumer-open + length filter + sidecar dry-run "
+        "PASS (%d rows, %d kept)",
+        len(pool),
+        len(kept_p),
+    )
+    return out
+
+
+def phase_w1(cfg: Cfg) -> dict:
+    t0 = time.time()
+    sentinel = cfg.out_root / "wc_w1_done.json"
+    prior = _wc_resume_skip(cfg, sentinel, "w1")
+    if prior is not None:
+        return prior
+    cfg.wc_dir.mkdir(parents=True, exist_ok=True)
+    if cfg.smoke:
+        out = _w1_cpu_surface(cfg)
+    else:
+        w1_dir = cfg.wc_dir / "w1_capture"
+        ns = _w1_namespace(cfg, device="cuda", no_upload=False, out_dir=w1_dir)
+        _stage_wc_manifest(cfg, w1_dir / N1G.MANIFEST_SUBDIR)
+        rc = N1G.run_capture(ns)  # resumes by Hub chunk presence; uploads batched
+        assert rc == 0, rc
+        n_rows, n_chunks = _wc_captured_rowcount(cfg)
+        if n_rows < WC_TARGET_FLOOR:
+            raise RuntimeError(
+                f"KILL (yield floor): {n_rows} captured wc rows < floor {WC_TARGET_FLOOR} "
+                "(plan §7 kill criterion 2)"
+            )
+        out = {
+            "n_captured_rows": n_rows,
+            "n_chunks": n_chunks,
+            "floor": WC_TARGET_FLOOR,
+            "n_targets_planned": cfg.wc_n_targets,
+        }
+        logger.info(
+            "[w1] captured %d rows across %d chunks (floor %d met)",
+            n_rows,
+            n_chunks,
+            WC_TARGET_FLOOR,
+        )
+    out["metadata"] = _wc_meta(cfg, "w1_wc_capture", t0)
+    _atomic_json(sentinel, out)
+    return out
+
+
+# ─────────────────────────────── w2: battery ────────────────────────────────────
+
+
+def _wc_capture_targets(cfg: Cfg) -> dict:
+    """Held-out wc targets from the w1 capture chunks (Hub, revision=None — the
+    wc uploads postdate the parent pin). Rows returned in global-ci order."""
+    prefix = f"{cfg.wc_hf_root}/final_token_capture"
+    remote = N50G._remote_index(prefix)
+    names = sorted(remote)
+    if not names:
+        raise RuntimeError(f"[w2] no capture chunks under {prefix} — run w1 first")
+    scratch = cfg.wc_dir / "chunk_scratch"
+    xs, ys, shas, cis = [], [], [], []
+    for name in names:
+        local = hub.stage_hub_file(
+            C.HF_DATA_REPO, f"{prefix}/{name}", scratch / name, repo_type="dataset"
+        )
+        b = F._mmap_load(local)
+        for fld in ("cx_last", "v_x", "ci", "layers", "prompts"):
+            assert fld in b, (name, fld)
+        assert list(b["layers"]) == list(N1G.CAPTURE_LAYERS), (name, b["layers"])
+        xs.append(N50F._slice_layer(b, "cx_last", 19))
+        ys.append(N50F._slice_layer(b, "v_x", 19))
+        shas.extend(_sha1_norm(p) for p in b["prompts"])
+        cis.extend(int(c) for c in b["ci"])
+        del b
+        local.unlink()
+    X = np.concatenate(xs)
+    Y = np.concatenate(ys)
+    order = np.argsort(np.asarray(cis, dtype=np.int64), kind="stable")
+    return {
+        "X": X[order],
+        "Y": Y[order],
+        "shas": [shas[int(i)] for i in order],
+        "n_chunks": len(names),
+        "in_train": False,
+        "source": f"HF {prefix} (wc held-out capture, w1)",
+    }
+
+
+def _parent_chunk_targets(cfg: Cfg, n_want: int) -> dict:
+    """IN-TRAIN targets from parent n1m capture chunks (revision-pinned): the w2
+    smoke stand-in AND the production --with-intrain-companion targets (plan v7
+    branch c). Deterministic: chunk names sorted, rows in ci order."""
+    remote = N50G._remote_index(CAPTURE_PREFIX)
+    names = sorted(remote)
+    assert names, f"no parent capture chunks under {CAPTURE_PREFIX}"
+    scratch = cfg.wc_dir / "parent_chunk_scratch"
+    xs, ys, shas, cis = [], [], [], []
+    got = 0
+    for name in names:
+        local = hub.stage_hub_file(
+            C.HF_DATA_REPO,
+            f"{CAPTURE_PREFIX}/{name}",
+            scratch / name,
+            repo_type="dataset",
+            revision=cfg.revision,
+        )
+        b = F._mmap_load(local)
+        for fld in ("cx_last", "v_x", "ci", "layers", "prompts"):
+            assert fld in b, (name, fld)
+        assert list(b["layers"]) == list(N1G.CAPTURE_LAYERS), (name, b["layers"])
+        xs.append(N50F._slice_layer(b, "cx_last", 19))
+        ys.append(N50F._slice_layer(b, "v_x", 19))
+        shas.extend(_sha1_norm(p) for p in b["prompts"])
+        cis.extend(int(c) for c in b["ci"])
+        got += xs[-1].shape[0]
+        del b
+        local.unlink()
+        if got >= n_want:
+            break
+    X = np.concatenate(xs)
+    Y = np.concatenate(ys)
+    order = np.argsort(np.asarray(cis, dtype=np.int64), kind="stable")
+    return {
+        "X": X[order],
+        "Y": Y[order],
+        "shas": [shas[int(i)] for i in order],
+        "n_chunks": len(xs),
+        "in_train": True,
+        "source": f"parent n1m capture chunks (IN-TRAIN; {CAPTURE_PREFIX} @ {cfg.revision[:12]})",
+    }
+
+
+def _wc_contamination_check(cfg: Cfg, shas: list[str], *, expect_hits: bool) -> dict:
+    """Re-check every target row's fingerprint against the w0 exclusion set.
+    Held-out targets with ANY hit HALT (plan §7 criterion 1); in-train targets
+    (companion / smoke stand-in) EXPECT hits — informational only."""
+    assert cfg.wc_exclusion_npz.exists(), (
+        f"exclusion npz missing at {cfg.wc_exclusion_npz} — run w0 on this staging root first"
+    )
+    excl = {b.decode() for b in np.load(cfg.wc_exclusion_npz)["fps"].tolist()}
+    hits = sum(1 for s in shas if s in excl)
+    info = {"n_rows": len(shas), "n_exclusion_hits": hits, "expect_hits": expect_hits}
+    if expect_hits:
+        logger.info("[w2] contamination re-check (in-train targets, informational): %s", info)
+    elif hits:
+        raise RuntimeError(
+            f"KILL (contamination): {hits}/{len(shas)} wc target rows fingerprint-match the "
+            "train/round-1 exclusion set (plan §7 kill criterion 1)"
+        )
+    else:
+        logger.info("[w2] contamination re-check PASS: 0/%d hits", len(shas))
+    return info
+
+
+def _w2_repro_control(cfg: Cfg, bundle) -> dict:
+    """ESTIMATOR-IDENTITY control (plan v7 §4 w2, runs BEFORE any WildChat
+    number): re-apply the staged banked L19 ridge to the PINNED lmsys test-1000
+    and assert the pooled R2 reproduces the banked value within RIDGE_REPRO_TOL."""
+    banked = json.loads(BANKED_CONTEXT_ARM.read_text())
+    b_ridge = banked["per_layer"]["19"]["applied_vs_banked"]["ridge"]
+    n_ctx = int(bundle["cx_last"].shape[0])
+    _train, _val, test = F.fixed_split(n_ctx, n_ctx - 400 - 1000, 400, 1000, F.SPLIT_SEED)
+    X = F.input_layer(bundle, "last", 19)
+    Y = F.target_vx(bundle, 19)
+    payload = torch.load(
+        _ensure_payload_staged(cfg, 19, "ridge"), map_location="cpu", weights_only=False
+    )
+    pred = N1M.apply_map(payload, X[test], torch.device("cpu"))
+    del payload
+    applied = float(PR._pooled_r2(pred, np.asarray(Y[test], dtype=np.float64)))
+    _assert_reproduction(applied, float(b_ridge["banked_r2"]))
+    logger.info(
+        "[w2] estimator-identity control PASS: applied=%.16g banked=%.16g (tol %.0e)",
+        applied,
+        b_ridge["banked_r2"],
+        RIDGE_REPRO_TOL,
+    )
+    return {
+        "applied_r2": applied,
+        "banked_r2": float(b_ridge["banked_r2"]),
+        "parent_applied_r2": float(b_ridge["applied_r2"]),
+        "tol": RIDGE_REPRO_TOL,
+        "note": "banked L19 ridge re-applied to the PINNED lmsys test-1000 BEFORE any "
+        "wc number (plan v7 §4 w2)",
+    }
+
+
+def _wc_kill_check(cfg: Cfg, fn, *args) -> None:
+    """Run a plan-§7 kill verdict; at smoke n the verdict is DEMOTED to a log
+    line (the #1345 gate-calibration rule — production-n-calibrated verdicts
+    fire spuriously at n=12) while the computation stays exercised. Production
+    keeps the raise byte-identical."""
+    if not cfg.smoke:
+        fn(*args)
+        return
+    try:
+        fn(*args)
+    except RuntimeError as e:
+        logger.warning("[w2] smoke-demoted kill verdict (computed, not raised): %s", e)
+
+
+def _run_wc_battery(
+    cfg: Cfg,
+    tgt: dict,
+    out_path: Path,
+    draws_path: Path,
+    *,
+    repro_control: dict,
+    bundle,
+    seed_offset: int,
+    label: str,
+) -> tuple[dict, dict]:
+    """The identical ladder x metric battery on wc targets: same estimators
+    (banked 963k payloads applied verbatim; 3600/n50 rungs REFIT on the
+    UNCHANGED pass_b train/val — only the evaluation targets swap), same
+    metrics, same shared-draw CI/null machinery as parent P2."""
+    t0 = time.time()
+    X_all = np.asarray(tgt["X"])
+    Y_all = np.asarray(tgt["Y"])
+    n_avail = int(X_all.shape[0])
+    if n_avail < cfg.wc_target_floor:
+        raise RuntimeError(
+            f"KILL (yield floor): {n_avail} target rows < floor {cfg.wc_target_floor} "
+            "(plan §7 kill criterion 2)"
+        )
+    n = min(cfg.wc_n_targets, n_avail)
+    if n < cfg.wc_n_targets:
+        logger.warning(
+            "[w2] only %d targets available (< planned %d); proceeding (floor %d met)",
+            n,
+            cfg.wc_n_targets,
+            cfg.wc_target_floor,
+        )
+    Yte32 = np.asarray(Y_all[:n], dtype=np.float32)
+    Xte32 = np.asarray(X_all[:n], dtype=np.float32)
+    Xte64 = Xte32.astype(np.float64)
+    contamination = _wc_contamination_check(cfg, tgt["shas"][:n], expect_hits=tgt["in_train"])
+
+    # ── arm ladder (identical to P2 L19; smoke = ridge + the 3 baselines) ────
+    arm_names = list(WC_ARMS_SMOKE) if cfg.smoke else [*ARMS_963K, *ARMS_3600, *ARMS_N50]
+    preds: dict[str, np.ndarray] = {}
+    pay_r = torch.load(
+        _ensure_payload_staged(cfg, 19, "ridge"), map_location="cpu", weights_only=False
+    )
+    xmu = pay_r["xmu"].to(torch.float64).numpy()
+    ymu = pay_r["ymu"].to(torch.float64).numpy()
+    del pay_r
+    if "const_mean" in arm_names:
+        preds["const_mean"] = np.broadcast_to(ymu, Xte64.shape)
+    if "identity_copy" in arm_names:
+        preds["identity_copy"] = Xte64
+    if "identity_bias" in arm_names:
+        preds["identity_bias"] = Xte64 + (ymu - xmu)
+    for name in FITTERS:
+        if name not in arm_names:
+            continue
+        payload = torch.load(
+            _ensure_payload_staged(cfg, 19, name), map_location="cpu", weights_only=False
+        )
+        preds[name] = N1M.apply_map(payload, Xte32, torch.device("cpu"))
+        del payload
+    small_n_meta: dict = {}
+    if any(a in arm_names for a in (*ARMS_3600, *ARMS_N50)):
+        n_ctx = int(bundle["cx_last"].shape[0])
+        train, val, _test = F.fixed_split(n_ctx, n_ctx - 400 - 1000, 400, 1000, F.SPLIT_SEED)
+        Xp = F.input_layer(bundle, "last", 19)
+        Yp = F.target_vx(bundle, 19)
+        sn_preds, lam_3600 = _small_n_preds(Xp, Yp, train, val, Xte64, cfg.seed)
+        preds.update({k: v for k, v in sn_preds.items() if k in arm_names})
+        small_n_meta = {
+            "ridge_3600_lambda": float(lam_3600),
+            "fit_inputs": "pass_b train/val UNCHANGED (identical refit inputs); only the "
+            "evaluation targets swap to the wc pool (plan v7 §4 w2)",
+        }
+
+    # ── pools: targets-only headline (chance-matched vs parent test-1000) +
+    #    parent-distractor pools at production (BIG_POOL_ARMS scoping as P2) ──
+    label_t = "parent_intrain" if tgt["in_train"] else "wildchat_heldout"
+    labels_t = np.array([label_t] * n, dtype=object)
+    pools = [PoolSpec.make("test", Yte32, np.arange(n), labels_t)]
+    if cfg.wc_pool_totals:
+        blob = np.load(_ensure_distractors(cfg))
+        dvx, dcorpus = blob["vx"], blob["corpus"]
+        for total in cfg.wc_pool_totals:
+            n_d = total - n
+            assert dvx.shape[0] >= n_d, (dvx.shape[0], n_d, total)
+            pools.append(
+                PoolSpec.make(
+                    f"distr_{total}",
+                    np.concatenate([Yte32, dvx[:n_d]]),
+                    np.arange(n),
+                    np.concatenate([labels_t, dcorpus[:n_d].astype(object)]),
+                )
+            )
+    gauss_ref = {}
+    for spec in (pools[0], pools[-1]) if len(pools) > 1 else (pools[0],):
+        gauss_ref[spec.name] = gaussian_hubness_reference(
+            n, spec.pool64.shape[0], C.EXPECTED_HIDDEN, cfg.seed
+        )
+
+    draws = Draws.make(n, cfg.n_boot, cfg.k_perm, cfg.seed + seed_offset)
+    rc = ReconContext.make(Yte32, draws)
+    dup_note = f"{label}: {n} targets + parent distractors (dup_stats in distractor_manifest)"
+    arms_out: dict = {}
+    layer_draws: dict = {}
+    arm_list = list(preds)
+    for a_i, arm in enumerate(arm_list):
+        t_arm = time.time()
+        recon, recon_draws = eval_recon_cell(preds[arm], rc, draws)
+        if arm in FITTERS:
+            _wc_kill_check(cfg, _check_null_collapse, arm, recon, dup_note)
+        retrieval: dict = {}
+        arm_retr_draws: dict = {}
+        for spec in pools:
+            if spec.name.startswith("distr_") and arm not in BIG_POOL_ARMS:
+                continue
+            r_out, r_draws = eval_retrieval_cell(
+                preds[arm],
+                spec,
+                KS_CONTEXT,
+                draws,
+                helper_parity=(spec.pool64.shape[0] <= 5000),
+                hub_diag=True,
+            )
+            if arm in FITTERS:
+                for metric in ("euclidean", "csls"):
+                    _wc_kill_check(
+                        cfg,
+                        _check_retrieval_null_collapse,
+                        arm,
+                        metric,
+                        spec.name,
+                        r_out[metric],
+                        dup_note,
+                    )
+            retrieval[spec.name] = r_out
+            arm_retr_draws[spec.name] = r_draws
+        arms_out[arm] = {"label": ARM_LABELS[arm], **recon, "retrieval": retrieval}
+        layer_draws[arm] = {
+            "r2_boot": _round_list(recon_draws["r2_boot"]),
+            "cos_boot": _round_list(recon_draws["cos_boot"]),
+            "r2_null": _round_list(recon_draws["r2_null"]),
+            "cos_null": _round_list(recon_draws["cos_null"]),
+            "retrieval": {
+                pn: {m: {kk: _round_list(vv) for kk, vv in dd.items()} for m, dd in pd.items()}
+                for pn, pd in arm_retr_draws.items()
+            },
+        }
+        logger.info(
+            "[w2] %s arm %d/%d %s r2=%.4f acc1(test,eucl)=%.3f elapsed=%.1fs",
+            label,
+            a_i + 1,
+            len(arm_list),
+            arm,
+            arms_out[arm]["r2"]["point"],
+            arms_out[arm]["retrieval"]["test"]["euclidean"]["acc_at_k"][1],
+            time.time() - t_arm,
+        )
+
+    result = {
+        "targets": {
+            "n": n,
+            "n_available": n_avail,
+            "in_train": bool(tgt["in_train"]),
+            "source": tgt["source"],
+            "n_chunks": tgt.get("n_chunks"),
+            "corpus_label": label_t,
+            "contamination": contamination,
+        },
+        "repro_control": repro_control,
+        "small_n_meta": small_n_meta,
+        "pools": {s.name: s.composition for s in pools},
+        "pool_scope_note": (
+            "distractor pools evaluated for BIG_POOL_ARMS only (parent P2 GEMM-budget "
+            "scoping); small-n arms at the targets-only pool"
+        ),
+        "gaussian_hubness_reference": gauss_ref,
+        "arms": arms_out,
+        "paired_contrasts": _paired_contrasts(layer_draws, arms_out),
+        "wall_s": round(time.time() - t0, 1),
+        "metadata": _wc_meta(cfg, label, t0),
+    }
+    _atomic_json(out_path, result)
+    _atomic_json(draws_path, {"19": layer_draws})
+    return result, layer_draws
+
+
+def _transfer_comparison(cfg: Cfg, wc_arms: dict, wc_layer_draws: dict, targets_meta: dict) -> dict:
+    """Arm-RANK transfer read vs the banked LMSYS context arm: Kendall tau per
+    metric over the common arms + the pairwise-inversion table, with per-corpus
+    paired-difference CIs (shared-draw re-reductions WITHIN each corpus) for the
+    draw-bearing metrics."""
+    from scipy.stats import kendalltau
+
+    banked = json.loads(BANKED_CONTEXT_ARM.read_text())
+    lm_arms = banked["per_layer"]["19"]["arms"]
+    common = [a for a in lm_arms if a in wc_arms]
+    assert len(common) >= 3, f"too few common arms for a rank-transfer read: {common}"
+
+    def _val(arm: dict, key: str) -> float:
+        if key == "acc1_cosine":
+            r = arm["retrieval"]["test"]["cosine"]["acc_at_k"]
+            return r[1] if 1 in r else r["1"]
+        return _arm_metric_value(arm, key, "test")
+
+    metrics = (
+        "r2",
+        "mean_cosine",
+        "acc1_euclid",
+        "acc1_cosine",
+        "acc1_csls",
+        "mrr",
+        "median_rank",
+    )
+    tau_out: dict = {}
+    inversions: dict = {}
+    for key in metrics:
+        lm = [_val(lm_arms[a], key) for a in common]
+        wc = [_val(wc_arms[a], key) for a in common]
+        tau, p = kendalltau(lm, wc)
+        tau_out[key] = {
+            "tau": float(tau),
+            "p": float(p),
+            "lmsys": {a: float(v) for a, v in zip(common, lm)},
+            "wildchat": {a: float(v) for a, v in zip(common, wc)},
+        }
+        inv = []
+        for i in range(len(common)):
+            for j in range(i + 1, len(common)):
+                if (lm[i] - lm[j]) * (wc[i] - wc[j]) < 0:
+                    inv.append(
+                        {
+                            "pair": [common[i], common[j]],
+                            "lmsys": [float(lm[i]), float(lm[j])],
+                            "wildchat": [float(wc[i]), float(wc[j])],
+                        }
+                    )
+        inversions[key] = inv
+
+    lm_draws: dict = {}
+    if BANKED_CONTEXT_DRAWS.exists():
+        lm_draws = json.loads(BANKED_CONTEXT_DRAWS.read_text()).get("19", {})
+
+    def _diff_ci(a_draws, b_draws) -> list[float]:
+        d = np.asarray(a_draws, dtype=np.float64) - np.asarray(b_draws, dtype=np.float64)
+        return [float(np.quantile(d, 0.025)), float(np.quantile(d, 0.975))]
+
+    getters = {
+        "r2": lambda ad: ad["r2_boot"],
+        "acc1_euclid": lambda ad: ad["retrieval"]["test"]["euclidean"]["acc1_boot"],
+    }
+    resolved: dict = {}
+    for key, get in getters.items():
+        rows = []
+        for entry in inversions[key]:
+            a, b = entry["pair"]
+            if not all(x in lm_draws and x in wc_layer_draws for x in (a, b)):
+                continue
+            lm_ci = _diff_ci(get(lm_draws[a]), get(lm_draws[b]))
+            wc_ci = _diff_ci(get(wc_layer_draws[a]), get(wc_layer_draws[b]))
+            rows.append(
+                {
+                    "pair": [a, b],
+                    "lmsys_diff_ci95": lm_ci,
+                    "wildchat_diff_ci95": wc_ci,
+                    "both_cis_exclude_zero": bool(
+                        lm_ci[0] * lm_ci[1] > 0 and wc_ci[0] * wc_ci[1] > 0
+                    ),
+                }
+            )
+        resolved[key] = rows
+
+    return {
+        "setup": {
+            "comparison": (
+                "arm RANK transfer: banked LMSYS context arm (L19, pool=test-1000) vs the "
+                "wc arm (targets-only pool) — each arm is scored against ITS OWN corpus "
+                "targets BY DESIGN (the transfer question); per-corpus paired-difference "
+                "CIs are within-corpus shared-draw re-reductions, never cross-corpus"
+            ),
+            "common_arms": common,
+            "wc_targets": targets_meta,
+        },
+        "kendall_tau": tau_out,
+        "pairwise_inversions": inversions,
+        "inversions_ci_resolved": resolved,
+        "regime": cfg.wc_regime(),
+    }
+
+
+def phase_w2(cfg: Cfg) -> dict:
+    t0 = time.time()
+    out_path = cfg.eval_dir / "wildchat_arm.json"
+    draws_path = cfg.eval_dir / "boot_draws_wildchat.json"
+    transfer_path = cfg.eval_dir / "transfer_comparison.json"
+    companion_path = cfg.eval_dir / "wildchat_intrain_companion.json"
+    prior = _wc_resume_skip(cfg, out_path, "w2")
+    companion_due = cfg.intrain and not cfg.smoke
+    if (
+        prior is not None
+        and transfer_path.exists()
+        and (not companion_due or companion_path.exists())
+    ):
+        return prior
+
+    assert BANKED_CONTEXT_ARM.exists(), f"banked context arm missing: {BANKED_CONTEXT_ARM}"
+    cfg.wc_dir.mkdir(parents=True, exist_ok=True)
+    cfg.eval_dir.mkdir(parents=True, exist_ok=True)
+    _ensure_pass_b()
+    bundle = F.load_pass_b()
+    n_ctx = int(bundle["cx_last"].shape[0])
+    assert n_ctx == F.N_PASS_B == 5000, n_ctx
+
+    # estimator-identity control FIRST — before any WildChat number (plan v7 §4)
+    repro = _w2_repro_control(cfg, bundle)
+
+    # targets: held-out wc captures (production) / parent-chunk IN-TRAIN
+    # stand-in (smoke — w1's GPU body cannot run on the VM; the stand-in keeps
+    # the identical downstream chain executing on REAL capture-shaped rows)
+    if cfg.smoke:
+        tgt = _parent_chunk_targets(cfg, cfg.wc_n_targets)
+    else:
+        tgt = _wc_capture_targets(cfg)
+    result, layer_draws = _run_wc_battery(
+        cfg,
+        tgt,
+        out_path,
+        draws_path,
+        repro_control=repro,
+        bundle=bundle,
+        seed_offset=WC_DRAWS_SEED_OFFSET,
+        label="w2_wc_battery",
+    )
+    transfer = _transfer_comparison(cfg, result["arms"], layer_draws, result["targets"])
+    _atomic_json(transfer_path, transfer)
+
+    if companion_due:
+        tgt_in = _parent_chunk_targets(cfg, cfg.wc_n_targets)
+        _run_wc_battery(
+            cfg,
+            tgt_in,
+            companion_path,
+            cfg.eval_dir / "boot_draws_wildchat_intrain.json",
+            repro_control=repro,
+            bundle=bundle,
+            seed_offset=WC_DRAWS_SEED_OFFSET + 1,
+            label="w2_wc_intrain_companion",
+        )
+    logger.info("[w2] done in %.1fs (ru_maxrss %.1f GB)", time.time() - t0, _ru_maxrss_gb())
+    return result
+
+
+# ─────────────────────────────── w3: figures ────────────────────────────────────
+
+
+def phase_w3(cfg: Cfg) -> dict:
+    """Transfer figures + the metric_characterization per-metric
+    wildchat_transfer field. Like p4: cheap, always re-runs, no sentinel."""
+    t0 = time.time()
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style
+
+    set_paper_style("generic")
+    ctx = json.loads(BANKED_CONTEXT_ARM.read_text())
+    wc = json.loads((cfg.eval_dir / "wildchat_arm.json").read_text())
+    trans = json.loads((cfg.eval_dir / "transfer_comparison.json").read_text())
+    L19 = ctx["per_layer"]["19"]["arms"]
+    W = wc["arms"]
+    n_wc = wc["targets"]["n"]
+    wc_label = "WildChat held-out" if not wc["targets"]["in_train"] else "in-train stand-in"
+    common = trans["setup"]["common_arms"]
+    cfg.fig_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1. hero side-by-side transfer heatmap (identical renderer as the p4 hero)
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6), layout="constrained")
+    _ladder_heatmap(axes[0], L19, "test", "LMSYS test-1000 (banked context arm, L19)")
+    _ladder_heatmap(axes[1], W, "test", f"{wc_label} targets (n={n_wc}, L19)")
+    savefig_paper(fig, "wc_hero_transfer_heatmap", dir=cfg.fig_dir)
+    plt.close(fig)
+
+    # 2. per-arm dumbbells: lmsys -> wc (acc@1 euclid + pooled R2, R2 clipped)
+    fig, axes = plt.subplots(1, 2, figsize=(12, 0.45 * len(common) + 2), layout="constrained")
+    for ax, key, xlab in (
+        (axes[0], "acc1_euclid", "acc@1 (euclid, targets-only pool)"),
+        (axes[1], "r2", "pooled R2 (clipped at -2)"),
+    ):
+        for i, a in enumerate(common):
+            v_lm = trans["kendall_tau"][key]["lmsys"][a]
+            v_wc = trans["kendall_tau"][key]["wildchat"][a]
+            if key == "r2":
+                v_lm, v_wc = max(v_lm, -2.0), max(v_wc, -2.0)
+            ax.plot([v_lm, v_wc], [i, i], "-", color="grey", lw=1)
+            ax.scatter([v_lm], [i], color="tab:blue", label="LMSYS" if i == 0 else None)
+            ax.scatter([v_wc], [i], color="tab:orange", label="WildChat" if i == 0 else None)
+        ax.set_yticks(range(len(common)))
+        ax.set_yticklabels([L19[a]["label"] for a in common], fontsize=6)
+        ax.set_xlabel(xlab)
+    axes[0].legend(fontsize=6)
+    fig.suptitle(
+        "Arm transfer LMSYS -> WildChat "
+        f"(tau acc@1={trans['kendall_tau']['acc1_euclid']['tau']:.2f}, "
+        f"tau R2={trans['kendall_tau']['r2']['tau']:.2f})"
+    )
+    savefig_paper(fig, "wc_dumbbell_lmsys_vs_wc", dir=cfg.fig_dir)
+    plt.close(fig)
+
+    # 3. pool-size decay overlay (solid=lmsys, dashed=wc; headline arms)
+    fig, ax = plt.subplots(figsize=(7, 4.5), layout="constrained")
+    pool_sizes: set[int] = set()
+    for src, arms_d, ls in (("lmsys", L19, "-"), ("wildchat", W, "--")):
+        for a in ("ridge", "identity_bias"):
+            if a not in arms_d:
+                continue
+            sizes, accs = [], []
+            for _pn, r in arms_d[a]["retrieval"].items():
+                acc = r["euclidean"]["acc_at_k"]
+                sizes.append(int(r["euclidean"]["n_pool"]))
+                accs.append(acc[1] if 1 in acc else acc["1"])
+                pool_sizes.add(int(r["euclidean"]["n_pool"]))
+            order = np.argsort(sizes)
+            ax.plot(
+                np.array(sizes)[order],
+                np.array(accs)[order],
+                marker="o",
+                ls=ls,
+                lw=1,
+                label=f"{a} ({src})",
+            )
+    xs_chance = sorted(pool_sizes)
+    ax.plot(xs_chance, [1.0 / s for s in xs_chance], "k:", lw=0.8, label="chance")
+    ax.set_xscale("log")
+    ax.set_xlabel("pool size")
+    ax.set_ylabel("acc@1 (euclid)")
+    ax.legend(fontsize=6)
+    ax.set_title("Pool-size decay: LMSYS (solid) vs WildChat (dashed)")
+    savefig_paper(fig, "wc_pool_size_decay", dir=cfg.fig_dir)
+    plt.close(fig)
+
+    # 4. wc null violins (persisted shared draws)
+    wcd_path = cfg.eval_dir / "boot_draws_wildchat.json"
+    if wcd_path.exists():
+        dd = json.loads(wcd_path.read_text()).get("19", {})
+        fig, ax = plt.subplots(figsize=(8, 4), layout="constrained")
+        data, labels = [], []
+        for a in ("ridge", "identity_bias", "const_mean"):
+            if a in dd:
+                data.append(dd[a]["r2_null"])
+                labels.append(f"{a}\nR2 null")
+                data.append(dd[a]["cos_null"])
+                labels.append(f"{a}\ncos null")
+        if data:
+            ax.violinplot(data, showmedians=True)
+            ax.set_xticks(range(1, len(labels) + 1))
+            ax.set_xticklabels(labels, fontsize=6)
+            ax.set_title(
+                f"wc shuffled-pair null distributions (K={wc['metadata']['regime']['k_perm']})"
+            )
+            savefig_paper(fig, "wc_null_violin", dir=cfg.fig_dir)
+        plt.close(fig)
+
+    # 5. metric_characterization: per-metric wildchat_transfer field
+    src = cfg.eval_dir / "metric_characterization.json"
+    if not src.exists():
+        src = BANKED_CHARACTERIZATION  # smoke: read the committed parent copy
+    ch = json.loads(src.read_text())
+    key_map = {
+        "pooled_r2": "r2",
+        "mean_cosine": "mean_cosine",
+        "knn_acc_euclid": "acc1_euclid",
+        "knn_acc_cosine": "acc1_cosine",
+        "csls_acc": "acc1_csls",
+        "median_rank": "median_rank",
+        "mrr": "mrr",
+    }
+    taus = trans["kendall_tau"]
+    for mname, entry in ch.get("metrics", {}).items():
+        tk = key_map.get(mname)
+        if tk and tk in taus:
+            entry["wildchat_transfer"] = {
+                "kendall_tau_vs_lmsys": taus[tk]["tau"],
+                "p": taus[tk]["p"],
+                "n_common_arms": len(common),
+                "n_inversions": len(trans["pairwise_inversions"][tk]),
+                "wc_targets_in_train": bool(wc["targets"]["in_train"]),
+                "source": "transfer_comparison.json (w2; targets-only pool, L19)",
+            }
+        else:
+            entry["wildchat_transfer"] = {
+                "note": "no rank-transfer read (diagnostic/decomposition metric)"
+            }
+    ch["wildchat_transfer_note"] = (
+        "per-metric wildchat_transfer added by w3_wc_figures (wildchat-target-battery round)"
+    )
+    _atomic_json(cfg.eval_dir / "metric_characterization.json", ch)
+
+    out = {
+        "figures": sorted(p.name for p in cfg.fig_dir.glob("wc_*.png")),
+        "characterization": str(cfg.eval_dir / "metric_characterization.json"),
+        "metadata": _wc_meta(cfg, "w3_wc_figures", t0),
+    }
+    logger.info("[w3] done in %.1fs — %d wc figures", time.time() - t0, len(out["figures"]))
+    return out
+
+
 # ═══════════════════════════════════ main ══════════════════════════════════════
 
 PHASES = ("p0_stage", "p1_distractors", "p2_context", "p3_prefix", "p4_figures")
+WC_PHASES = ("w0_wc_candidates", "w1_wc_capture", "w2_wc_battery", "w3_wc_figures")
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--phase", required=True, choices=(*PHASES, "all"))
+    ap.add_argument("--phase", required=True, choices=(*PHASES, "all", *WC_PHASES, "wc_all"))
     ap.add_argument(
         "--staging-root",
         type=Path,
@@ -2157,6 +3664,12 @@ def main() -> int:
     )
     ap.add_argument("--seed", type=int, default=1901)
     ap.add_argument("--force", action="store_true", help="redo phases despite sentinels")
+    ap.add_argument(
+        "--with-intrain-companion",
+        action="store_true",
+        help="w2: ALSO run the ladder on parent IN-TRAIN capture rows -> "
+        "wildchat_intrain_companion.json (plan v7 branch c; production only)",
+    )
     args = ap.parse_args()
 
     cfg = Cfg(
@@ -2166,6 +3679,7 @@ def main() -> int:
         revision=args.revision,
         seed=int(args.seed),
         force=bool(args.force),
+        intrain=bool(args.with_intrain_companion),
     )
     cfg.eval_dir.mkdir(parents=True, exist_ok=True)
     torch.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", "8")))
@@ -2183,8 +3697,17 @@ def main() -> int:
         "p2_context": phase_p2,
         "p3_prefix": phase_p3,
         "p4_figures": phase_p4,
+        "w0_wc_candidates": phase_w0,
+        "w1_wc_capture": phase_w1,
+        "w2_wc_battery": phase_w2,
+        "w3_wc_figures": phase_w3,
     }
-    todo = PHASES if cfg.phase == "all" else (cfg.phase,)
+    if cfg.phase == "all":
+        todo: tuple[str, ...] = PHASES
+    elif cfg.phase == "wc_all":
+        todo = WC_PHASES
+    else:
+        todo = (cfg.phase,)
     for ph in todo:
         logger.info("[phase=%s] starting", ph)
         runners[ph](cfg)
