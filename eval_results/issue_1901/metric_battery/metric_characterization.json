@@ -12,7 +12,8 @@
    },
    "failure_modes": [
     "a context-independent shift scores catastrophically negative while retrieval stays high (identity+bias)",
-    "variance-weighting hides dims the map never moves"
+    "variance-weighting hides dims the map never moves",
+    "a regularization-limited fit can score pooled R2 >> 0 from between-group/mean structure while per-context retrieval sits at chance (this run: prefix ridge-LOFO pooled R2 +0.541 at acc@1 0.040, chance 0.02, with all 7 prefix families at family-level R2 <= 0; context ridge n_train=50 fixed-lambda R2 +0.384 at acc@1 0.065)"
    ],
    "banked_dissociation": "identity+bias R2 -0.865 at medrank 1 (#779 identity_bias_knn); acc@1 0.84 at pooled-OOF R2 -6.5 (#722)"
   },
