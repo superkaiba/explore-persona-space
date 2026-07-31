@@ -121,6 +121,11 @@ def render_prompt_parts(tokenizer, messages: list[dict]) -> tuple[str, str]:
     return prompt[:idx], prompt
 
 
+def _default_render_parts(tokenizer, row: dict) -> tuple[str, str]:
+    """The historical render used by every single-user-turn rung."""
+    return render_prompt_parts(tokenizer, context_messages(row))
+
+
 def filter_prompt_budget(
     tokenizer, rendered_prompts: list[str], *, budget: int = PROMPT_TOKEN_BUDGET
 ) -> tuple[list[int], dict]:
@@ -248,6 +253,7 @@ def generate_labeling(
     seed: int = 0,
     generate_fn: Callable[..., list[list[dict]]] | None = None,
     tokenizer=None,
+    render_fn: Callable[[object, dict], tuple[str, str]] | None = None,
 ) -> dict:
     """Generate K rollouts per staged context; write per-(context, k) JSONs.
 
@@ -256,6 +262,17 @@ def generate_labeling(
     generation lands; contexts whose K files already exist under the SAME
     fingerprint are skipped at entry. Returns the phase manifest (counts +
     drop digest — never text).
+
+    ``render_fn(tokenizer, row) -> (prefix_text, prompt_text)`` overrides the
+    default single-user-turn render for rungs whose contexts are MULTI-TURN.
+    The default (``render_prompt_parts(tok, context_messages(row))``) slices
+    the prefix at the FIRST user-turn header, which is exactly right when the
+    row has one user turn (a system-prompt persona + the query — every rung
+    up to and including pvsynth) and WRONG for a conversation prefix, where
+    "everything before the user query" must include the earlier turns. Such a
+    rung passes its own last-anchored renderer rather than mutating this
+    default, so every existing caller's ``prefix_text`` — and therefore every
+    committed ``prefix_end`` capture position — is byte-identical.
     """
     out_root = Path(out_root)
     tok = tokenizer if tokenizer is not None else get_tokenizer()
@@ -270,9 +287,17 @@ def generate_labeling(
         behavior=behavior,
     )
 
+    render = render_fn if render_fn is not None else _default_render_parts
     rendered: list[tuple[dict, str, str]] = []  # (row, prefix_text, prompt_text)
     for row in contexts:
-        prefix_text, prompt_text = render_prompt_parts(tok, context_messages(row))
+        prefix_text, prompt_text = render(tok, row)
+        if not prompt_text.startswith(prefix_text):
+            raise ValueError(
+                f"render_fn returned a prefix that is not a prefix of the prompt for "
+                f"context {row.get('context_id')!r} — capture derives prefix_end from "
+                "len(prefix_text) against the prompt's offset mapping, so a non-prefix "
+                "silently mis-positions every prefix-arm read"
+            )
         rendered.append((row, prefix_text, prompt_text))
 
     kept_idx, drop_digest = filter_prompt_budget(
