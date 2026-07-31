@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1908,
+  "highest_id": 1909,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7032,6 +7032,13 @@
       "path": "tasks/proposed/1908",
       "status": "proposed",
       "title": "fix order-dependent test-state leak: test_issue1335_ladder poisons test_issue825_mlp_batched_parity in same-session runs"
+    },
+    "1909": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1909",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas entry for function-scoped import-check name shadow (UnboundLocalError class)"
     },
     "191": {
       "has_clean_result": false,
