@@ -727,23 +727,26 @@ def cells_1345(repo_root: Path, stage_root: Path, pilot: int) -> list[CellSpec]:
     import issue1345_common as c1345  # parent staging + constants
 
     eval_dir = repo_root / "eval_results/issue_1345"
-    search_dirs = [
-        (eval_dir, "base"),
-        (eval_dir / "assistant_named_story" / "matched_row", "assistant_named_story"),
-        (eval_dir / "conversation_paired_stories" / "matched_row", "conversation_paired_stories"),
-        (
-            eval_dir / "conversation_paired_stories_assistant" / "matched_row",
-            "conversation_paired_stories_assistant",
-        ),
-        (
-            eval_dir / "conversation_paired_stories_assistant_base" / "matched_row",
-            "conversation_paired_stories_assistant_base",
-        ),
-        (eval_dir / "followup_cjk_excluded", "followup_cjk_excluded"),
-        (eval_dir / "ladder_rungs", "ladder_rungs"),
-        (eval_dir / "slot_verdict", "slot_verdict"),
-    ]
+    # Realized 2026-07-30 layout: some variants carry cells at the dir top,
+    # some under matched_row/ — enumerate BOTH per variant (plan §13 allows
+    # adding cells discovered during enumeration; the slot cells live at
+    # story_slot_ablation/, not the plan's provisional "slot_verdict").
+    variants = (
+        "assistant_named_story",
+        "conversation_paired_stories",
+        "conversation_paired_stories_assistant",
+        "conversation_paired_stories_assistant_base",
+        "onpolicy_assistant_story",
+        "followup_cjk_excluded",
+        "ladder_rungs",
+        "story_slot_ablation",
+    )
+    search_dirs = [(eval_dir, "base")]
+    for v in variants:
+        search_dirs.append((eval_dir / v, v))
+        search_dirs.append((eval_dir / v / "matched_row", v))
     specs: list[CellSpec] = []
+    seen: set[str] = set()
     for d, variant in search_dirs:
         if not d.is_dir():
             continue
@@ -753,13 +756,18 @@ def cells_1345(repo_root: Path, stage_root: Path, pilot: int) -> list[CellSpec]:
             if cell_dict is None:
                 print(f"[audit][1345] SKIP {p.name}: no embedded cell dict (non-fit825 producer)")
                 continue
+            unit_id = f"{variant}__{p.stem.removeprefix('cells_')}"
+            if unit_id in seen:
+                print(f"[audit][1345] SKIP duplicate cell id {unit_id} at {p}")
+                continue
+            seen.add(unit_id)
             li, _ = _headline_pos(payload)
             committed = float(payload["r2_per_layer_obs"][li])
             n_allow = payload.get("n_allowlist")
             specs.append(
                 CellSpec(
                     issue=1345,
-                    cell_id=f"{variant}__{p.stem.removeprefix('cells_')}",
+                    cell_id=unit_id,
                     variant=variant,
                     committed_r2=committed,
                     published_claim_ref=str(p.relative_to(repo_root)) + f" @ L{li}",
@@ -794,8 +802,20 @@ def _loader_1345(repo_root, stage_root, variant, cell_dict, payload, li):
         )
         allowlist = None
         if payload.get("row_allowlist_applied"):
-            matched = f1345.load_matched(repo_root / "eval_results/issue_1345/matched")
+            # The matched-n allowlist lives at c1345.MATCHED_DIR locally, with
+            # the pinned HF copy at c1345.REUSE_MATCHED_PATH (staged on miss).
+            matched_dir = c1345.MATCHED_DIR
+            if not (matched_dir / "matched_subsets.json").is_file():
+                matched_dir = stage_root / "issue1345" / "matched_n"
+                matched_dir.mkdir(parents=True, exist_ok=True)
+                if not (matched_dir / "matched_subsets.json").is_file():
+                    c1345.stage_pinned_file(c1345.REUSE_MATCHED_PATH, matched_dir)
+            matched = f1345.load_matched(matched_dir)
             allowlist = matched["shared_r1r2_convs"]
+            assert len(allowlist) == (payload.get("n_allowlist") or len(allowlist)), (
+                f"{cell_dict['cell_id']}: staged allowlist n={len(allowlist)} != committed "
+                f"n_allowlist={payload.get('n_allowlist')} — allowlist provenance drift"
+            )
         xy = fit825._apply_row_allowlist(
             fit825._cell_xy(bundle, cell_dict), allowlist, cell_dict["cell_id"]
         )
@@ -920,12 +940,12 @@ def _loader_1639(stage_root, key):
             hub.stage_hub_prefix(
                 HF_DATA_REPO, prefix, stage_root / "issue1310", repo_type="dataset"
             )
-        # Key convention (PILOT-GATED): "<model>__<src>__to__<tgt>" or the
-        # tier15 results' own direction key format — parsed defensively.
-        parts = key.replace("->", "__to__").split("__")
-        parts = [p for p in parts if p and p != "to"]
-        assert len(parts) == 3, f"unparseable tier15 direction key {key!r}"
-        model, src, tgt = parts
+        # Realized tier15 direction-key format (read from the committed
+        # results.json, 2026-07-30): "<model>.<src>-><tgt>" e.g.
+        # "base.Dana->HELIOS".
+        model_src, _, tgt = key.partition("->")
+        model, _, src = model_src.partition(".")
+        assert model and src and tgt, f"unparseable tier15 direction key {key!r}"
         arrays = v1.load_persona_arrays(store_root, model)
         li = t15.L19
         Xs = arrays[src]["X"][:, li, :].astype(np.float64)
@@ -959,7 +979,7 @@ def cells_825_control(repo_root: Path, stage_root: Path, pilot: int) -> list[Cel
     """n > d negative-control leg: #825 full-corpus S-track cells (n=4,724 >
     d=3,584 — structurally immune per the task body); expected |delta| <= 0.05
     vs committed on every corrected arm. PILOT-GATED."""
-    import issue825_trackm_settle_battery as bat
+    import issue825_selector_audit as sa  # ALL_CELLS: (model, fmt, track, si, ti)
 
     # Banked committed reference (battery module docstring / settle outputs):
     banked = {"S_instruct_chat": 0.6730940896676356}
@@ -972,11 +992,11 @@ def cells_825_control(repo_root: Path, stage_root: Path, pilot: int) -> list[Cel
                 continue
             for cid, rec in (payload.get("cells") or {}).items():
                 un = (rec.get("unguarded_ridge") or {}).get("19")
-                if un is not None and cid in bat.ALL_CELLS:
+                if un is not None and cid in sa.ALL_CELLS:
                     banked[cid] = float(un)
     specs: list[CellSpec] = []
     for cid in ("S_instruct_chat", "S_pretrained_chat"):
-        if cid not in bat.ALL_CELLS:
+        if cid not in sa.ALL_CELLS:
             continue
         specs.append(
             CellSpec(
@@ -1003,9 +1023,10 @@ def cells_825_control(repo_root: Path, stage_root: Path, pilot: int) -> list[Cel
 
 def _loader_825(cid):
     def _load() -> list[FoldData]:
+        import issue825_selector_audit as sa
         import issue825_trackm_settle_battery as bat
 
-        model, fmt, track, si, ti = bat.ALL_CELLS[cid]
+        model, fmt, track, si, ti = sa.ALL_CELLS[cid]
         xy = bat.load_cell_xy(model, fmt, track, si, ti)
         pos = bat.WANT_LAYERS.index(HEADLINE_LAYER)
         X = xy["X"][:, pos, :]
