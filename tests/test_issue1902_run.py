@@ -538,3 +538,17 @@ def test_git_sha_degrades_on_gitless_lane(monkeypatch, tmp_path):
     assert R._git_sha() == "unavailable-no-git-checkout"
     monkeypatch.setenv("EPS_GIT_SHA", "deadbeef123")
     assert R._git_sha() == "deadbeef123"
+
+
+def test_capture_cost_basis_is_realized_projected_not_resample_capacity():
+    """Job 16145 false-fire: the gate fed projected_after_resample (scan-cap
+    rescue capacity, ~11x realized) into the capture projection. The basis is
+    the realized-corpus intersection ("projected")."""
+    src = Path(R.__file__).read_text(encoding="utf-8")
+    i = src.index("report[\"capture_cost\"]")
+    window = src[max(0, i - 900) : i]
+    assert 'int(g["projected"])' in window
+    assert 'int(g["projected_after_resample"])' not in window
+    # Realized job-16145 numbers PASS the gate under the corrected basis.
+    rows = R.capture_rows_per_leg(4, {"single": 15154, "multi": 15307})
+    assert rows * 0.0389 / 3600.0 < 2.0 * 4.0

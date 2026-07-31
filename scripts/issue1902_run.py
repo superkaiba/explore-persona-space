@@ -1999,7 +1999,14 @@ def phase_pilot_finalize(args: argparse.Namespace, out_root: Path, ckpts: list[s
         and "per_row_wall_s" in legs[m][key]
     ]
     per_row = max(walls) if walls else float("nan")
-    isect_by_corpus = {c: int(g["projected_after_resample"]) for c, g in gate_a.items()}
+    # Capture-cost basis = the REALIZED intersection of the FIXED corpus
+    # ("projected" = corpus rows x pilot survival product — what P2's manifest
+    # will actually contain and P3 captures). "projected_after_resample" is
+    # gate A's scan-cap RESCUE CAPACITY (how far a corpus re-scan could
+    # extend the pool if the floor were missed) — ~11x the realized set on
+    # job 16145, where it false-fired this gate at 14.82h/leg vs a true
+    # ~1.4h/leg (fellows job 16145, 2026-07-31).
+    isect_by_corpus = {c: int(g["projected"]) for c, g in gate_a.items()}
     rows_per_m = capture_rows_per_leg(len(ckpts), isect_by_corpus)
     projected_wall_h = rows_per_m * per_row / 3600.0
     report["capture_cost"] = {
