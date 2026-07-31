@@ -29,6 +29,10 @@ goal: 'Characterize how each open post-training stage (SFT → DPO → RLVR; the
   on context and answer sides; (4) the per-stage operator change (delta-W rank/spectrum/subspace,
   direction-aware vs spectrum-only reads against matched nulls), with SAE/crosscoder
   feature readout as a stretch goal.'
+relates_to:
+- identity-contextual-vs-base
+- leak-predictor
+- regime-rl-vs-sft
 ---
 # How each post-training stage (SFT → DPO → RLVR) reshapes the context→answer activation map (OLMo-2 checkpoint chain)
 
