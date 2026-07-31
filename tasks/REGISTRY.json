@@ -6971,8 +6971,8 @@
       "goal": "On the model-organism fleet at per-prompt grain (the #1768 16,400-real-user-prompt corpus), determine which per-context predictor computable BEFORE fine-tuning best predicts per-context leakage of the trained behavior (graded judge DV for content arms; three-space log P(marker) for marker arms), whether base behavioral propensity survives as the champion, and whether context-vector similarity's predictive power is mediated by answer-side similarity; post-FT and delta candidates form a separate mechanistic panel, and every similarity candidate is computed against both the training-context-centroid and panel-source-context anchors.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/1900",
-      "status": "interpreting",
+      "path": "tasks/reviewing/1900",
+      "status": "reviewing",
       "title": "Base behavioral propensity predicts where a trained behavior is expressed, but pre-fine-tuning answer similarity is the only predictor of the fine-tuning-induced change (MODERATE confidence)"
     },
     "1901": {
