@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1944,
+  "highest_id": 1945,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7313,6 +7313,13 @@
       "path": "tasks/proposed/1944",
       "status": "proposed",
       "title": "workflow-fix: Step 10d lint gate own-diff attribution matches message-cited paths (false block)"
+    },
+    "1945": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1945",
+      "status": "proposed",
+      "title": "Does the map's residual interaction have low-rank structure, or is it per-pair idiosyncratic?"
     },
     "195": {
       "has_clean_result": false,
