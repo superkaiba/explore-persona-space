@@ -6718,8 +6718,8 @@
     "1868": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1868",
-      "status": "running",
+      "path": "tasks/reviewing/1868",
+      "status": "reviewing",
       "title": "daily-fix: Step 10d teardown re-runs sync on in-flight advis"
     },
     "1869": {
