@@ -8,6 +8,12 @@ Edit-success gate (``.claude/skills/adversarial-planner/SKILL.md``
 never calls ``task.py new-plan-version`` and never touches ``tasks/**`` — the
 gate's separate verify + persist steps stay ``&&``-chained after it.
 
+The target file is given EITHER positionally (``plan_patch.py <file> ...``,
+canonical) OR via ``--file <file>`` (alias for parity with the ``--file``
+spelling every note-bearing workflow CLI takes — ``task.py post-marker`` /
+``set-body`` / ``new-plan-version``). Exactly one of the two spellings:
+both or neither is a usage error (exit 2, file untouched).
+
 Matching semantics
 ------------------
 The anchor resolves through THREE stages, walked in order; the FIRST stage
@@ -90,6 +96,13 @@ order is exact -> ws-normalized -> ws+case-normalized with per-stage candidate
 sets (never unioned): an exact match wins even when a drifted near-duplicate
 exists elsewhere. A replace-mode crash re-run reads exit 2 (anchor consumed),
 asymmetric with insert-mode exit 3 — deliberate.
+
+The target file is given positionally OR via --file (exactly one spelling).
+
+Never pipe plan_patch.py or `task.py new-plan-version` through tail/grep/head:
+a pipe masks the exit code ($? reads the filter's status, not this tool's).
+The Edit-success gate's `&&` chain relies on this rc — run the command bare,
+or redirect to a file (`> /tmp/patch.out 2>&1`) and check rc.
 """
 
 
@@ -390,6 +403,11 @@ def _atomic_write(path: str, text: str) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """CLI surface. The target file is the positional ``file`` OR ``--file``
+    (dest ``file_opt`` — deliberately distinct: argparse cannot place a
+    positional in a mutually exclusive group, and a shared dest is
+    parse-order-fragile); ``_run()`` enforces exactly-one at runtime.
+    """
     parser = argparse.ArgumentParser(
         prog="plan_patch.py",
         description=(
@@ -402,7 +420,21 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=_EXIT_EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("file", help="the draft file to patch (UTF-8 text, <=10 MB)")
+    parser.add_argument(
+        "file",
+        nargs="?",
+        default=None,
+        help="the draft file to patch (UTF-8 text, <=10 MB); alternatively via --file",
+    )
+    parser.add_argument(
+        "--file",
+        dest="file_opt",
+        metavar="FILE",
+        help=(
+            "alias for the positional target (task.py post-marker --file parity); "
+            "give the target exactly once — positionally or via --file"
+        ),
+    )
     anchor = parser.add_mutually_exclusive_group(required=True)
     anchor.add_argument("--anchor", help="anchor text, inline (short single-line anchors)")
     anchor.add_argument(
@@ -456,7 +488,12 @@ def _resolve_payload(args: argparse.Namespace) -> tuple[str, str]:
 
 
 def _run(args: argparse.Namespace) -> int:
-    path = args.file
+    if (args.file is None) == (args.file_opt is None):
+        raise PatchError(
+            "give the target file exactly once: the positional FILE argument "
+            "or --file FILE (not both, not neither); file untouched"
+        )
+    path = args.file if args.file is not None else args.file_opt
     try:
         size = os.path.getsize(path)
     except OSError as exc:
