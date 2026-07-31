@@ -1,0 +1,61 @@
+{
+ "meta": {
+  "ts": "2026-07-31T14:50:29Z",
+  "git_commit": "0e5e6c3e7dc4bda1873178a2a7d808542423248f",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "issue": 1900,
+  "seed": 1900,
+  "corpus_pin": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+  "script": "scripts/issue1900_followup_free.py"
+ },
+ "arm_id": "imp-pers-ft-con-s42",
+ "kind": "content",
+ "beh_key": "imp",
+ "regime": {
+  "b_draws": 2000,
+  "layer": 19,
+  "raced": [
+   "p1",
+   "p2",
+   "p3a",
+   "p3b",
+   "p4",
+   "p5",
+   "p6",
+   "p7",
+   "p8a",
+   "p8b",
+   "p9"
+  ],
+  "dv_names": [
+   "dv_resid"
+  ],
+  "n": 3994,
+  "n_shared": 3905,
+  "shared_sha_hash": "fd4025bc967c8815"
+ },
+ "observed_rho": {
+  "dv_resid": {
+   "p1": 0.015790414065122604,
+   "p2": 0.1344054639339447,
+   "p3a": 0.014782433398067951,
+   "p3b": 0.13543801009655,
+   "p4": 0.03215649351477623,
+   "p5": 0.03714313358068466,
+   "p6": 0.060988862067461014,
+   "p7": -0.19248338043689728,
+   "p8a": 0.05816008895635605,
+   "p8b": 0.10405152291059494,
+   "p9": 0.015932608395814896
+  }
+ },
+ "ols_residualization": {
+  "alpha": 1.479841927664859,
+  "beta": 0.7096179469365146,
+  "r2_1d_fit": 0.13485227600405114
+ },
+ "n_degenerate_series_draws": 0,
+ "n_realized": 3994,
+ "elapsed_s": 5.8
+}

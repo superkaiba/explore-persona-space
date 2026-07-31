@@ -1,0 +1,57 @@
+{
+ "meta": {
+  "ts": "2026-07-31T14:51:22Z",
+  "git_commit": "0e5e6c3e7dc4bda1873178a2a7d808542423248f",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "issue": 1900,
+  "seed": 1900,
+  "corpus_pin": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+  "script": "scripts/issue1900_followup_free.py"
+ },
+ "arm_id": "mk-pers-po-lr5e6-s42",
+ "kind": "marker",
+ "beh_key": "mk",
+ "regime": {
+  "b_draws": 2000,
+  "layer": 25,
+  "raced": [
+   "p1",
+   "p2",
+   "p3a",
+   "p3b",
+   "p4",
+   "p5",
+   "p6",
+   "p7",
+   "p9"
+  ],
+  "dv_names": [
+   "dv_resid"
+  ],
+  "n": 4000,
+  "n_shared": 4000,
+  "shared_sha_hash": "b65801058b675901"
+ },
+ "observed_rho": {
+  "dv_resid": {
+   "p1": 0.17190733551979065,
+   "p2": 0.3076847493648529,
+   "p3a": 0.10890908539295197,
+   "p3b": 0.3108413815498352,
+   "p4": 0.0631345808506012,
+   "p5": 0.17605136334896088,
+   "p6": 0.15450714528560638,
+   "p7": -0.16169747710227966,
+   "p9": 0.17772701382637024
+  }
+ },
+ "ols_residualization": {
+  "alpha": 0.9575926249544413,
+  "beta": 0.8338390330358536,
+  "r2_1d_fit": 0.8337684581605983
+ },
+ "n_degenerate_series_draws": 0,
+ "n_realized": 4000,
+ "elapsed_s": 6.0
+}
