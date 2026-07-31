@@ -6922,8 +6922,8 @@
       "goal": "Does the context\u2192answer map predict the same structure the SAE represents? Two ways of decomposing the same answer activation have been measured separately and never compared: the map's **predictable subspace** (which directions of `v_A` the fitted map recovers) and the SAE's **representable subspace** (which directions its dictionary reconstructs). This task asks whether they coincide, and whether targeting the SAE's reconstruction instead of the raw activation changes what the map can do.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/1895",
-      "status": "planning",
+      "path": "tasks/approved/1895",
+      "status": "approved",
       "title": "Does the context\u2192answer map's predictable subspace coincide with the SAE's representable subspace?"
     },
     "1896": {
