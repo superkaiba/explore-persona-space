@@ -10,6 +10,7 @@ arithmetic (real `p0_stage` body; the network boundary faked via
 
 import json
 import sys
+import typing
 from pathlib import Path
 from unittest.mock import create_autospec
 
@@ -25,7 +26,7 @@ from explore_persona_space.orchestrate import hub  # noqa: E402
 
 class TestComputeMissingSet:
     def test_controls_included(self):
-        """packets(include_controls=True) − described − no-evidence; negative
+        """packets(include_controls=True) - described - no-evidence; negative
         control ids stay in the missing set (describe covers controls)."""
         all_ids = {1, 2, 3, 4, -1, -2}
         described = {1, -1}
@@ -36,11 +37,15 @@ class TestComputeMissingSet:
         assert R.compute_missing_set({1, 2}, set(), set()) == [1, 2]
 
 
+def _f(raw, stop="end_turn"):
+    return {"raw_text": raw, "stop_reason": stop}
+
+
 class TestP3Gate:
     def test_boundary_exactly_020_halts(self):
         """1 non-empty parse-fail over 5 non-empty responses == 0.20 → HALT
         (the boundary halts, plan §7)."""
-        stats = R.p3_gate_stats(n_success_parsed=4, failed_raws=["", "prose no json"])
+        stats = R.p3_gate_stats(n_success_parsed=4, failed=[_f(""), _f("prose no json")])
         assert stats["n_empty"] == 1
         assert stats["n_parse_fail_nonempty"] == 1
         assert stats["n_nonempty"] == 5
@@ -48,22 +53,49 @@ class TestP3Gate:
         assert stats["verdict"] == "HALT"
 
     def test_below_floor_passes(self):
-        stats = R.p3_gate_stats(n_success_parsed=5, failed_raws=["", "prose no json"])
+        stats = R.p3_gate_stats(n_success_parsed=5, failed=[_f(""), _f("prose no json")])
         assert stats["n_nonempty"] == 6
         assert stats["verdict"] == "PASS"
 
     def test_empties_excluded_from_both_counts(self):
         """ALL-empty failures never enter numerator or denominator — a run
         whose only failures are empty responses PASSes."""
-        stats = R.p3_gate_stats(n_success_parsed=2, failed_raws=["", "   ", None])
+        stats = R.p3_gate_stats(n_success_parsed=2, failed=[_f(""), _f("   "), {"raw_text": None}])
         assert stats["n_empty"] == 3
         assert stats["n_parse_fail_nonempty"] == 0
         assert stats["n_nonempty"] == 2
         assert stats["verdict"] == "PASS"
 
+    def test_refusal_cut_excluded_from_both_counts(self):
+        """A safety-layer-STOPPED stream (stop_reason == 'refusal', truncated
+        text) is a content drop no parser change can fix — excluded from BOTH
+        gate counts, same rationale as EMPTY (2026-07-31 live-smoke finding:
+        the all-controls slice drew 3 refusal-cuts + 1 empty of 5)."""
+        stats = R.p3_gate_stats(
+            n_success_parsed=3,
+            failed=[_f('```json\n{"reasoning": "truncat', stop="refusal"), _f("")],
+        )
+        assert stats["n_refusal_cut"] == 1
+        assert stats["n_empty"] == 1
+        assert stats["n_parse_fail_nonempty"] == 0
+        assert stats["n_nonempty"] == 3
+        assert stats["verdict"] == "PASS"
+
+    def test_max_tokens_cut_stays_in_numerator(self):
+        """A max_tokens truncation IS gate-countable — rampant budget
+        truncation is an instrument defect the gate should halt on
+        (llm-judging rule 23); the count is reported for diagnosability."""
+        stats = R.p3_gate_stats(
+            n_success_parsed=1, failed=[_f('{"reasoning": "cut', stop="max_tokens")]
+        )
+        assert stats["n_max_tokens_cut"] == 1
+        assert stats["n_parse_fail_nonempty"] == 1
+        assert stats["n_nonempty"] == 2
+        assert stats["verdict"] == "HALT"  # 1/2 = 0.5 >= 0.20
+
     def test_degenerate_denominator_halts(self):
         assert R.gate_verdict(0, 0) == "HALT"
-        stats = R.p3_gate_stats(n_success_parsed=0, failed_raws=["", ""])
+        stats = R.p3_gate_stats(n_success_parsed=0, failed=[_f(""), _f("")])
         assert stats["verdict"] == "HALT"
 
 
@@ -90,7 +122,7 @@ class TestShapeCensus:
 
 
 class TestLineageGateDecision:
-    HASHES_OK = {
+    HASHES_OK: typing.ClassVar[dict] = {
         "scripts/issue1773_describe_axes.py": ("aaa", "aaa"),
         "scripts/issue1773_common.py": ("bbb", "bbb"),
     }
@@ -341,7 +373,8 @@ class TestP4AxesFixture:
         with_desc = R.DA.build_axes_items(packets, {3: "my recovered description"})
         without = R.DA.build_axes_items(packets, {})
         assert len(with_desc) == len(R.CM.AXES) * R.CM.N_DRAWS
-        for (_c, _q, _cc, user_w), (_c2, _q2, _cc2, user_wo) in zip(with_desc, without):
+        pairs = zip(with_desc, without, strict=True)
+        for (_c, _q, _cc, user_w), (_c2, _q2, _cc2, user_wo) in pairs:
             axis = R.CM.parse_axis_custom_id(_c)[1]
             if "DESC" in R.CM.AXIS_SEES[axis]:
                 assert "my recovered description" in user_w

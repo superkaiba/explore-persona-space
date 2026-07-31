@@ -248,17 +248,40 @@ def gate_verdict(n_parse_fail_nonempty: int, n_nonempty: int, floor: float = P3_
     return "HALT" if (n_parse_fail_nonempty / n_nonempty) >= floor else "PASS"
 
 
-def p3_gate_stats(
-    n_success_parsed: int, failed_raws: list[str | None], floor: float = P3_GATE_FLOOR
-) -> dict:
+def p3_gate_stats(n_success_parsed: int, failed: list[dict], floor: float = P3_GATE_FLOOR) -> dict:
     """Gate arithmetic (plan §4.4, critic MF2): EMPTY responses are content
     drops excluded from BOTH the numerator and the denominator; both counts
-    are persisted in the p3 report."""
-    n_empty = sum(1 for r in failed_raws if not (r or "").strip())
-    n_fail_nonempty = len(failed_raws) - n_empty
+    are persisted in the p3 report.
+
+    ``failed``: one ``{"raw_text": str|None, "stop_reason": str|None}`` per
+    parse-failed cid (from the read-only Batch re-stream).
+
+    REFUSAL-CUT extension (measured on the 2026-07-31 live smoke, all-controls
+    slice): a response the API's safety layer STOPPED mid-stream
+    (``stop_reason == "refusal"``) is truncated text no parser change can fix
+    — the SAME content-class rationale the plan pre-registered for EMPTY
+    responses (which are themselves refusal-stops at 0 emitted tokens) — so
+    refusal-cut rows are tallied separately (``n_refusal_cut``) and excluded
+    from BOTH gate counts. ``max_tokens``-stopped truncations stay IN the
+    numerator: rampant budget truncation is an instrument defect the gate
+    SHOULD halt on (llm-judging rule 23); their count is reported separately
+    so a halt is diagnosable.
+    """
+    n_empty = sum(1 for f in failed if not (f.get("raw_text") or "").strip())
+    n_refusal_cut = sum(
+        1 for f in failed if (f.get("raw_text") or "").strip() and f.get("stop_reason") == "refusal"
+    )
+    n_max_tokens_cut = sum(
+        1
+        for f in failed
+        if (f.get("raw_text") or "").strip() and f.get("stop_reason") == "max_tokens"
+    )
+    n_fail_nonempty = len(failed) - n_empty - n_refusal_cut
     n_nonempty = n_success_parsed + n_fail_nonempty
     return {
         "n_empty": n_empty,
+        "n_refusal_cut": n_refusal_cut,
+        "n_max_tokens_cut": n_max_tokens_cut,
         "n_parse_fail_nonempty": n_fail_nonempty,
         "n_nonempty": n_nonempty,
         "ratio": (n_fail_nonempty / n_nonempty) if n_nonempty else None,
@@ -436,30 +459,33 @@ def _batch_ids_from_checkpoint(ckpt_dir: Path) -> list[str]:
     return ids
 
 
-def fetch_raw_texts_for_cids(ckpt_dir: Path, cids: set[str]) -> dict[str, str]:
-    """Recover raw response text for parse-failed cids by RE-STREAMING the
-    already-paid Batch results (read-only, zero new spend).
+def fetch_failed_response_meta(ckpt_dir: Path, cids: set[str]) -> dict[str, dict]:
+    """Recover raw text + stop_reason for parse-failed cids by RE-STREAMING
+    the already-paid Batch results (read-only, zero new spend).
 
     Error dicts never carry ``_raw_text`` (only successfully-parsed results
-    do), so the p3 gate's empty-vs-nonempty split and the shape census need
-    this re-stream. Only ``succeeded`` result rows carry text; a cid whose
-    row was transport-class stays absent from the returned map.
+    do), so the p3 gate's empty/refusal-cut/nonempty split and the shape
+    census need this re-stream. Only ``succeeded`` result rows carry text;
+    a cid whose row was transport-class stays absent from the returned map.
+    Returns ``{cid: {"raw_text": str, "stop_reason": str|None}}``.
     """
     if not cids:
         return {}
     import anthropic
 
     client = anthropic.Anthropic()
-    out: dict[str, str] = {}
+    out: dict[str, dict] = {}
     batch_ids = _batch_ids_from_checkpoint(ckpt_dir)
     _log(f"[raw-restream] {len(cids)} cids over {len(batch_ids)} batches")
     for bid in batch_ids:
         for result in client.messages.batches.results(bid):
             cid = result.custom_id
             if cid in cids and cid not in out and result.result.type == "succeeded":
-                out[cid] = next(
-                    (b.text for b in result.result.message.content if b.type == "text"), ""
-                )
+                msg = result.result.message
+                out[cid] = {
+                    "raw_text": next((b.text for b in msg.content if b.type == "text"), ""),
+                    "stop_reason": msg.stop_reason,
+                }
         if len(out) == len(cids):
             break
     return out
@@ -639,8 +665,12 @@ def p3_describe(cfg: RecoveryCfg) -> None:
         return
     missing = json.loads((cfg.reports / "missing_set.json").read_text())["missing_feat_ids"]
     if cfg.smoke:
-        missing = missing[: cfg.limit]
-        _log(f"[p3_describe] SMOKE slice: {len(missing)} features")
+        # Reals-first slice: the production population is dominated by real
+        # features (2,597 real vs 5 controls); a bare missing[:N] would take
+        # ONLY controls (negative ids sort first) — the adversarial
+        # refusal-cut-prone subpopulation (2026-07-31 smoke finding).
+        missing = sorted(missing, key=lambda f: (f < 0, f))[: cfg.limit]
+        _log(f"[p3_describe] SMOKE slice: {len(missing)} features (reals-first)")
     packets = load_packets_subset(cfg.evidence_dir, set(int(f) for f in missing))
     dispatch_packets = {f: p for f, p in packets.items() if p.get("ex_pos")}
     n_extra_noev = len(packets) - len(dispatch_packets)
@@ -685,15 +715,18 @@ def p3_describe(cfg: RecoveryCfg) -> None:
             continue
         feat_id = int(cid[1:].rsplit("-", 1)[0])
         rows.append({"feat_id": feat_id, **parsed, "prompt_sha16": CM.sha16(user)})
-    failed_raw = fetch_raw_texts_for_cids(ckpt, set(parse_error_cids))
-    gate = p3_gate_stats(n_success_parsed, [failed_raw.get(c) for c in parse_error_cids])
+    failed_meta = fetch_failed_response_meta(ckpt, set(parse_error_cids))
+    gate = p3_gate_stats(n_success_parsed, [failed_meta.get(c, {}) for c in parse_error_cids])
     census = Counter(classify_response_shape(r) for r in raw_texts.values())
-    census.update(classify_response_shape(failed_raw.get(c)) for c in parse_error_cids)
+    census.update(
+        classify_response_shape((failed_meta.get(c) or {}).get("raw_text"))
+        for c in parse_error_cids
+    )
     _write_jsonl(rows, out_desc)
     DA._write_raw(results, cfg.work / "judge_raw" / "recovery_describe_raw")
-    if failed_raw:
+    if failed_meta:
         CM.write_jsonl_sharded(
-            [{"custom_id": c, "raw_text": t} for c, t in sorted(failed_raw.items())],
+            [{"custom_id": c, **m} for c, m in sorted(failed_meta.items())],
             cfg.work / "judge_raw",
             "recovery_describe_failed_raw",
         )
@@ -706,6 +739,7 @@ def p3_describe(cfg: RecoveryCfg) -> None:
             "transport": n_transport,
             "content_parse_error": len(parse_error_cids),
             "content_empty": gate["n_empty"],
+            "content_refusal_cut": gate["n_refusal_cut"],
             "content_other": n_other_content,
         },
         "gate": gate,
@@ -719,7 +753,8 @@ def p3_describe(cfg: RecoveryCfg) -> None:
     _log(
         f"[p3_describe] done: {len(rows)}/{len(items)} recovered; gate="
         f"{gate['verdict']} (fail_nonempty={gate['n_parse_fail_nonempty']}/"
-        f"nonempty={gate['n_nonempty']}, empty={gate['n_empty']}); census={dict(census)}"
+        f"nonempty={gate['n_nonempty']}, empty={gate['n_empty']}, "
+        f"refusal_cut={gate['n_refusal_cut']}); census={dict(census)}"
     )
     if gate["verdict"] != "PASS":
         _log(f"[p3_describe] HALT — parse-fail gate >= {P3_GATE_FLOOR} (report: {report_path})")
