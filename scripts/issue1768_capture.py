@@ -3950,10 +3950,28 @@ def lad_exclusion_reject(
     return None
 
 
+LAD_BELT_MIN_QUERY_CHARS = 16  # belt needle floor — see lad_belt_needles
+
+
+def lad_belt_needles(query_texts: list[str]) -> list[str]:
+    """The substring-belt needle set: 4,400-set query texts of >=16 chars.
+
+    The floor is load-bearing, MEASURED (2026-07-31 production lad_build):
+    the pinned pfx query set carries 140 texts <8 chars / 330 <16 chars
+    (real-user 'hi'/'ok'-class rows — the #1776 short-query collision class),
+    and those trivial needles substring-matched EVERY long-band candidate
+    (top-8 belt hits were ALL 2-6 chars; 19,358 long-band candidates, zero
+    passing), spuriously firing kill criterion (b). Sub-floor queries carry
+    no contamination signal as substrings; they stay fully covered by the
+    PRIMARY exact-sha screen (`lad_exclusion_reject`), which is untouched."""
+    return [q for q in query_texts if len(q) >= LAD_BELT_MIN_QUERY_CHARS]
+
+
 def lad_substring_belt_hit(c0: str, c1: str, query_texts: list[str]) -> bool:
-    """Exclusion-2 belt: any 4,400-set query text as a substring of either
-    candidate turn (run on selection candidates + the lad0 full-grain re-check)."""
-    return any((q in c0) or (q in c1) for q in query_texts)
+    """Exclusion-2 belt: any >=16-char 4,400-set query text as a substring of
+    either candidate turn (selection candidates + the lad0 full-grain
+    re-check share this ONE predicate, floor included)."""
+    return any((q in c0) or (q in c1) for q in lad_belt_needles(query_texts))
 
 
 def _lad_scan_dir(cfg: Cfg) -> Path:
@@ -4000,7 +4018,10 @@ def _lad_scan(
     start = 0
     if cursor_path.exists():
         prev = json.loads(cursor_path.read_text())
-        if prev.get("fingerprint") == fp and prev.get("rows_scanned", 0) <= scan_cap:
+        # A cursor past the CURRENT cap but within the pre-registered widened
+        # cap is a legitimately-WIDENED prior scan (kill-criterion (b) path):
+        # its pools are a superset — resume/return, never rescan from zero.
+        if prev.get("fingerprint") == fp and prev.get("rows_scanned", 0) <= LAD_SCAN_ROWS_WIDENED:
             pools = {c: list(prev["pools"].get(c, [])) for c in X.R4_CONDS}
             counters = dict(prev["counters"])
             start = int(prev["rows_scanned"])
@@ -4198,9 +4219,11 @@ def _lad_write_ladder(
         "counters": counters,
         "exclusions": {
             "trained_prefix_recipe_shas": excl["trained_shas"],
+            "belt_min_query_chars": LAD_BELT_MIN_QUERY_CHARS,
             "screens": [
                 "trained-prefix disjointness (turns + recipe sha)",
-                "query-corpus sha disjointness (full round-1 sample) + substring belt",
+                "query-corpus sha disjointness (full round-1 sample) + substring belt "
+                f"(needles >= {LAD_BELT_MIN_QUERY_CHARS} chars — see lad_belt_needles)",
                 "trained-context non-containment (persona system + icl demos)",
                 "cross-rung conversation_hash distinctness",
                 "corpus screens (English / toxic False / redacted False)",
@@ -4321,6 +4344,10 @@ def phase_lad_build(cfg: Cfg) -> None:
         assert kept > 0, "[lad_build] tiny-real probe kept ZERO in-band candidates (#1092 class)"
         logger.info("[lad_build] SMOKE probe: scanned=%d kept_in_band=%d", n_scanned, kept)
         return
+    counters["belt_needles_total"] = len(query_texts)
+    counters["belt_needles_below_floor_excluded"] = len(query_texts) - len(
+        lad_belt_needles(query_texts)
+    )
     selected, shortage = _lad_select_rungs(pools, query_texts, counters)
     if shortage and scan_cap < LAD_SCAN_ROWS_WIDENED:
         logger.info(
@@ -4829,4 +4856,12 @@ if __name__ == "__main__":
     rc = main()
     sys.stdout.flush()
     sys.stderr.flush()
-    sys.exit(rc)  # explicit exit: PyGILState_Release finalize-race guard (#1689)
+    # #1689/#952 finalize-race guard, HARD form: with a consumed WildChat
+    # streaming IterableDataset in-process (lad_build), plain sys.exit(rc)
+    # MEASURABLY still aborts at interpreter finalize (PyGILState_Release,
+    # rc=134 — 2026-07-31 probe; `del row, ds` + gc.collect() applied and
+    # insufficient), which would kill the `capture && fit` workload chain
+    # after a COMPLETED phase. Every output is already durably written
+    # (atomic tmp+os.replace) and both streams are flushed above, so the
+    # skipped finalization has nothing left to do.
+    os._exit(rc)

@@ -1784,8 +1784,14 @@ def test_lad_band_specs_screens_and_selection():
         "query_sha_overlap"
     )
     assert cap.lad_exclusion_reject("fresh", "novel", "fresh", excl, sha_set) is None
-    assert cap.lad_substring_belt_hit("xx known query yy", "a", ["known query"]) is True
-    assert cap.lad_substring_belt_hit("fresh", "novel", ["known query"]) is False
+    needle = "known query about the tides"  # >= LAD_BELT_MIN_QUERY_CHARS
+    assert len(needle) >= cap.LAD_BELT_MIN_QUERY_CHARS
+    assert cap.lad_substring_belt_hit(f"xx {needle} yy", "a", [needle]) is True
+    assert cap.lad_substring_belt_hit("fresh", "novel", [needle]) is False
+    # the MEASURED #1776 short-query collision class: sub-floor needles ('hi',
+    # 'ok') never belt-reject — they stay covered by the exact-sha screen
+    assert cap.lad_substring_belt_hit("hi there, long text", "a", ["hi"]) is False
+    assert cap.lad_belt_needles(["hi", needle]) == [needle]
 
     # deterministic selection: (dist, index) order; hash distinctness; belt
     def cand(idx, t, h, text="fresh"):
@@ -1803,10 +1809,10 @@ def test_lad_band_specs_screens_and_selection():
     pools = {
         "r_short": [cand(5, 11, "A"), cand(2, 11, "B")],  # tie on dist -> lowest index
         "r_mid": [cand(9, 11, "B"), cand(30, 11, "C")],  # B collides with r_short pick
-        "r_long": [cand(4, 11, "D", text="belt known query"), cand(6, 11, "E")],
+        "r_long": [cand(4, 11, "D", text=f"belt {needle} x"), cand(6, 11, "E")],
     }
     counters: dict[str, int] = {}
-    selected, shortage = cap._lad_select_rungs(pools, ["known query"], counters)
+    selected, shortage = cap._lad_select_rungs(pools, [needle], counters)
     assert shortage == []
     assert selected["r_short"]["conversation_hash"] == "B"  # tie-break: index 2 < 5
     assert selected["r_mid"]["conversation_hash"] == "C"  # B already used (exclusion 4)
@@ -1961,7 +1967,7 @@ def test_paired_m_contrast_join_and_lattices():
     # smoke demotes the exact-pair assert to a log line (#1345 rule)
     ok = fit._paired_m_contrast(a_rows[:-1], b_rows, seed=3, expect_pairs=n, smoke=True)
     assert ok["n_pairs"] == n - 1
-    dup = a_rows + [a_rows[0]]
+    dup = [*a_rows, a_rows[0]]
     with pytest.raises(AssertionError, match="duplicate"):
         fit._paired_m_contrast(dup, b_rows, seed=3)
     # plan §3 lattices (DISJOINT + exhaustive)
