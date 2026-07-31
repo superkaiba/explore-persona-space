@@ -1,0 +1,125 @@
+{
+ "rungs": {
+  "r_short": {
+   "context_id": "ladder_prefix_short",
+   "prefix_turns": [
+    {
+     "role": "user",
+     "content": "lets brainstorm?"
+    },
+    {
+     "role": "assistant",
+     "content": "Sure! What is the topic?"
+    }
+   ],
+   "conversation_hash": "ffe98a5fca1986aebd69905a6774d333",
+   "dataset_index": 73,
+   "turns_sha256": "787336ca03dd6385a25a5fb61078ad351436cedcdde3d8384379107a8f0beb93",
+   "recipe_sha256": "8d8754318d8f8e605c7678315cb1deb48d81379c8711631c2b91b6c334006e0a",
+   "realized_tokens": 10,
+   "target_tokens": 10.0,
+   "band": [
+    5.0,
+    20.0
+   ],
+   "log_dist_to_target": 0.0,
+   "n_band_candidates": 1168
+  },
+  "r_mid": {
+   "context_id": "ladder_prefix_mid",
+   "prefix_turns": [
+    {
+     "role": "user",
+     "content": "explain blood thicker than water"
+    },
+    {
+     "role": "assistant",
+     "content": "The phrase \"blood is thicker than water\" means that family bonds are stronger than any other kind of bond or relationship. It emphasizes that people are more likely to prioritize their family members over others, especially during difficult times. The phrase is often used to remind people that they should value and remain loyal to their family members above all else, as they share a special and unbreakable connection with them."
+    }
+   ],
+   "conversation_hash": "e5f69daabf5c079670f3ce6347f67583",
+   "dataset_index": 1680,
+   "turns_sha256": "4b6a90b7bed6826041f2465db8d2a94fef43801fbdc728c31bd15300180f41bd",
+   "recipe_sha256": "a80bcb8f06f92e89f94f62b9e21faec7a112cef2b5b1d22bb867cc9395e35f63",
+   "realized_tokens": 85,
+   "target_tokens": 85.44003745317531,
+   "band": [
+    42.720018726587654,
+    170.88007490635061
+   ],
+   "log_dist_to_target": 0.0051635570779247075,
+   "n_band_candidates": 18122
+  },
+  "r_long": {
+   "context_id": "ladder_prefix_long",
+   "prefix_turns": [
+    {
+     "role": "user",
+     "content": "Привет, в чем ошибка\nconverted_vae_checkpoint = convert_ldm_vae_checkpoint(state_dict, vae_config)\n  File \"D:\\Kohya_ss-GUI-LoRA-Portable-main\\library\\model_util.py\", line 381, in convert_ldm_vae_checkpoint\n    new_checkpoint[\"encoder.conv_in.weight\"] = vae_state_dict[\"encoder.conv_in.weight\"]\nKeyError: 'encoder.conv_in.weight'\nTraceback (most recent call last):\n  File \"D:\\Kohya_ss-GUI-LoRA-Portable-main\\python\\lib\\runpy.py\", line 196, in _run_module_as_main\n    return _run_code(code, main_globals, None,\n  File \"D:\\Kohya_ss-GUI-LoRA-Portable-main\\python\\lib\\runpy.py\", line 86, in _run_code\n    exec(code, run_globals)\n  File \"D:\\Kohya_ss-GUI-LoRA-Portable-main\\venv\\Scripts\\accelerate.exe\\__main__.py\", line 7, in <module>\n  File \"D:\\Kohya_ss-GUI-LoRA-Portable-main\\venv\\lib\\site-packages\\accelerate\\commands\\accelerate_cli.py\", line 45, in main\n    args.func(args)\n  File \"D:\\Kohya_ss-GUI-LoRA-Portable-main\\venv\\lib\\site-packages\\accelerate\\commands\\launch.py\", line 1104, in launch_command\n    simple_launcher(args)\n  File \"D:\\Kohya_ss-GUI-LoRA-Portable-main\\venv\\lib\\site-packages\\accelerate\\commands\\launch.py\", line 567, in simple_launcher\n    raise subprocess.CalledProcessError(returncode=process.returncode, cmd=cmd)\nsubprocess.CalledProcessError: Command '['D:\\\\Kohya_ss-GUI-LoRA-Portable-main\\\\venv\\\\Scripts\\\\python.exe', 'train_network.py', '--pretrained_model_name_or_path=D:/LORA-train/revAnimated_v121.safetensors', '--train_data_dir=D:\\\\LORA-train', '--resolution=512,512', '--output_dir=D:\\\\LORA-train', '--logging_dir=', '--network_alpha=128', '--save_model_as=safetensors', '--network_module=networks.lora', '--text_encoder_lr=5e-5', '--unet_lr=0.0001', '--network_dim=128', '--output_name=luna-helluva-boss', '--lr_scheduler_num_cycles=1', '--learning_rate=0.0001', '--lr_scheduler=constant', '--train_batch_size=2', '--max_train_steps=3800', '--save_every_n_epochs=1', '--mixed_precision=bf16', '--save_precision=bf16', '--seed=1', '--cache_latents', '--optimizer_type=Adam"
+    },
+    {
+     "role": "assistant",
+     "content": "Ошибка заключается в том, что при выполнении функции convert_ldm_vae_checkpoint не удается найти ключ 'encoder.conv_in.weight' в словаре vae_state_dict. Возможно, этот ключ был ошибочно удален или не был создан в исходном коде. Необходимо проверить исходный код и убедиться, что все необходимые ключи находятся в словаре state_dict."
+    }
+   ],
+   "conversation_hash": "991b1ca19b248fb27385cdf871985a31",
+   "dataset_index": 9098,
+   "turns_sha256": "e6e16e81986be3d5b0a19d667758402c57ce04a57ed3195f10781386df6f1187",
+   "recipe_sha256": "ae2f2b622018086239387e051ba986fbf6dcd1bc78afa6d2fc5c9ec9b7ec585f",
+   "realized_tokens": 730,
+   "target_tokens": 730.0,
+   "band": [
+    547.5,
+    912.5
+   ],
+   "log_dist_to_target": 0.0,
+   "n_band_candidates": 19358
+  }
+ },
+ "anchors": {
+  "t_pers": 10,
+  "t_conv": 730,
+  "t_gm": 85.44003745317531
+ },
+ "scan": {
+  "dataset": "allenai/WildChat-1M",
+  "revision": "7d6490e462285cf85d91eabea0f9a954fbddcd1f",
+  "n_rows_scanned": 200000,
+  "widened": true,
+  "turn_content_cap": 2000,
+  "selection_rule": "min (|log T - log target|, dataset index); all screens"
+ },
+ "counters": {
+  "trained_prefix": 1,
+  "language": 103733,
+  "band_r_mid": 18122,
+  "band_r_long": 19358,
+  "out_of_band": 54237,
+  "query_sha_overlap": 2158,
+  "band_r_short": 1168,
+  "empty_content": 309,
+  "redacted": 914,
+  "belt_needles_total": 4400,
+  "belt_needles_below_floor_excluded": 330
+ },
+ "exclusions": {
+  "trained_prefix_recipe_shas": {
+   "pers": "1849702a827baf00576af55a8d88dd18c69fcd6478efa4399da0ce84f781c0a2",
+   "conv": "020883bf26a2b8c9a0a7536772b2317199e3cbaaafc12ac8169be736f8226a23",
+   "icl": "120f489dd749a75b1ddd2c8f11ad35f07d2a27455a8731c51f39284d99f6f9d1"
+  },
+  "belt_min_query_chars": 16,
+  "screens": [
+   "trained-prefix disjointness (turns + recipe sha)",
+   "query-corpus sha disjointness (full round-1 sample) + substring belt (needles >= 16 chars — see lad_belt_needles)",
+   "trained-context non-containment (persona system + icl demos)",
+   "cross-rung conversation_hash distinctness",
+   "corpus screens (English / toxic False / redacted False)"
+  ]
+ },
+ "ts": "2026-07-31T10:25:22Z",
+ "git_commit": "e8df825093b17978a5a3b4e8b072ff220d7b68d9",
+ "torch": "2.8.0+cu128",
+ "transformers": "4.57.6",
+ "issue": 1768
+}
