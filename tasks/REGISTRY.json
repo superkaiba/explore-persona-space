@@ -6844,8 +6844,8 @@
     "1884": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1884",
-      "status": "proposed",
+      "path": "tasks/archived/1884",
+      "status": "archived",
       "title": "daily-fix: fix red main: test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints \u2014 add the standard `from explore_persona_s"
     },
     "1885": {
