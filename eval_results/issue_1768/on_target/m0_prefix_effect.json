@@ -1,0 +1,145 @@
+{
+ "cells": {
+  "base_content@conv_L14": {
+   "base_unit": "base_content@conv",
+   "layer": 14,
+   "m0_own_r2": 0.21156240879408328,
+   "m0_bare_r2": 0.40980449665633156,
+   "delta_med_on_own_grid": 14.803651976987567,
+   "delta_med_on_bare_grid": 134.6901419708853,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_content@conv_L19": {
+   "base_unit": "base_content@conv",
+   "layer": 19,
+   "m0_own_r2": 0.22134932660826245,
+   "m0_bare_r2": 0.4358473028350256,
+   "delta_med_on_own_grid": 26.85485063234089,
+   "delta_med_on_bare_grid": 214.03071047590285,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_content@conv_L25": {
+   "base_unit": "base_content@conv",
+   "layer": 25,
+   "m0_own_r2": 0.15390420576323605,
+   "m0_bare_r2": 0.39307974481211116,
+   "delta_med_on_own_grid": 71.90274420244803,
+   "delta_med_on_bare_grid": 296.8475900797173,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_content@icl_syc_L14": {
+   "base_unit": "base_content@icl_syc",
+   "layer": 14,
+   "m0_own_r2": 0.28687825430776615,
+   "m0_bare_r2": 0.40980449665633156,
+   "delta_med_on_own_grid": 14.62707597710051,
+   "delta_med_on_bare_grid": 46.86388594099931,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_content@icl_syc_L19": {
+   "base_unit": "base_content@icl_syc",
+   "layer": 19,
+   "m0_own_r2": 0.31504106220591344,
+   "m0_bare_r2": 0.4358473028350256,
+   "delta_med_on_own_grid": 26.71242278598478,
+   "delta_med_on_bare_grid": 73.05439160564691,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_content@icl_syc_L25": {
+   "base_unit": "base_content@icl_syc",
+   "layer": 25,
+   "m0_own_r2": 0.2242877323218948,
+   "m0_bare_r2": 0.39307974481211116,
+   "delta_med_on_own_grid": 68.32386158435284,
+   "delta_med_on_bare_grid": 106.74603279222143,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_content@pers_L14": {
+   "base_unit": "base_content@pers",
+   "layer": 14,
+   "m0_own_r2": 0.4328962982566651,
+   "m0_bare_r2": 0.40980449665633156,
+   "delta_med_on_own_grid": 11.342288655336205,
+   "delta_med_on_bare_grid": 12.345656128149251,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_content@pers_L19": {
+   "base_unit": "base_content@pers",
+   "layer": 19,
+   "m0_own_r2": 0.46116385192733733,
+   "m0_bare_r2": 0.4358473028350256,
+   "delta_med_on_own_grid": 16.185273049811777,
+   "delta_med_on_bare_grid": 17.22789861258105,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_content@pers_L25": {
+   "base_unit": "base_content@pers",
+   "layer": 25,
+   "m0_own_r2": 0.4127096827873864,
+   "m0_bare_r2": 0.39307974481211116,
+   "delta_med_on_own_grid": 47.67399544848796,
+   "delta_med_on_bare_grid": 49.293332994651756,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_mk@conv_L14": {
+   "base_unit": "base_mk@conv",
+   "layer": 14,
+   "m0_own_r2": 0.20806910586321659,
+   "m0_bare_r2": 0.4087364890911587,
+   "delta_med_on_own_grid": 14.742004023657444,
+   "delta_med_on_bare_grid": 134.60360975332105,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_mk@conv_L19": {
+   "base_unit": "base_mk@conv",
+   "layer": 19,
+   "m0_own_r2": 0.21806313236753883,
+   "m0_bare_r2": 0.4335566994391338,
+   "delta_med_on_own_grid": 26.811288089874793,
+   "delta_med_on_bare_grid": 215.14259253198696,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_mk@conv_L25": {
+   "base_unit": "base_mk@conv",
+   "layer": 25,
+   "m0_own_r2": 0.1523207283423177,
+   "m0_bare_r2": 0.39101416238897346,
+   "delta_med_on_own_grid": 72.12489227566036,
+   "delta_med_on_bare_grid": 297.84886136816095,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_mk@pers_L14": {
+   "base_unit": "base_mk@pers",
+   "layer": 14,
+   "m0_own_r2": 0.43126335929096105,
+   "m0_bare_r2": 0.4087364890911587,
+   "delta_med_on_own_grid": 11.368087796504078,
+   "delta_med_on_bare_grid": 12.324011484202256,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_mk@pers_L19": {
+   "base_unit": "base_mk@pers",
+   "layer": 19,
+   "m0_own_r2": 0.45890199720391167,
+   "m0_bare_r2": 0.4335566994391338,
+   "delta_med_on_own_grid": 16.28740726789995,
+   "delta_med_on_bare_grid": 17.061410251363213,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_mk@pers_L25": {
+   "base_unit": "base_mk@pers",
+   "layer": 25,
+   "m0_own_r2": 0.4115940784122495,
+   "m0_bare_r2": 0.39101416238897346,
+   "delta_med_on_own_grid": 47.065239991380366,
+   "delta_med_on_bare_grid": 48.97489228567817,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  }
+ },
+ "smoke": false,
+ "ts": "2026-07-31T02:29:16Z",
+ "git_commit": "unknown",
+ "torch": "2.8.0+cu128",
+ "numpy": "2.2.6",
+ "issue": 1768
+}
