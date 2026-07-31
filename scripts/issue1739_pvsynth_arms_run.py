@@ -85,6 +85,7 @@ def stage_shared(args, token: str) -> None:
         # mirror root must satisfy root/<prefix> == dest (#1774).
         mirror_root = args.store_root / "_pvmirror"
         hub.stage_hub_prefix(
+            hub.DEFAULT_DATASET_REPO,
             f"{HF_PREFIX}/pvsynth/capture_store/{behavior}",
             mirror_root,
             repo_type="dataset",

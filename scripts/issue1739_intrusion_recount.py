@@ -44,10 +44,17 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-import numpy as np
-from scipy.stats import spearmanr
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.experiments.issue_1739.arms import bootstrap_rhos, make_bootstrap_idx
+load_dotenv()
+
+import numpy as np  # noqa: E402
+from scipy.stats import spearmanr  # noqa: E402
+
+from explore_persona_space.experiments.issue_1739.arms import (  # noqa: E402
+    bootstrap_rhos,
+    make_bootstrap_idx,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 EVAL = ROOT / "eval_results" / "issue_1739"
