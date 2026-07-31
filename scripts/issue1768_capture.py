@@ -3841,10 +3841,24 @@ def lad_turns_sha(turns: list[dict]) -> str:
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
 
+def _lad_content_sha(ctx) -> str:
+    """cid-STRIPPED prefix content sha (r4-r2 review Minor): `_pfx_prefix_sha`
+    hashes the recipe INCLUDING `context_id`, so a rung-vs-trained recipe-sha
+    compare was structurally vacuous (rung cids always differ, even on
+    identical content). Hashing only (system, prefix_turns, user_wrap) makes
+    identical CONTENT collide — the sha-space twin of the `trained_prefix`
+    content-equality screen in `lad_exclusion_reject`."""
+    recipe = _pfx_prefix_recipe(ctx)
+    recipe.pop("context_id")
+    blob = json.dumps(recipe, sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
 def _lad_trained_exclusion_material() -> dict:
     """Trained-context identity material for exclusion screens 1/3 (plan §4.2):
-    the 3 trained prefix recipe shas, the conv prefix's capped turn tuple, the
-    persona system string, and the ICL demonstration texts."""
+    the 3 trained prefix recipe shas (+ cid-stripped content shas), the conv
+    prefix's capped turn tuple, the persona system string, and the ICL
+    demonstration texts."""
     ctxs = {
         key: X.pfx_resolve_context(cid)
         for key, cid in (
@@ -3856,6 +3870,7 @@ def _lad_trained_exclusion_material() -> dict:
     assert ctxs["pers"].system, "persona context lost its system string"
     return {
         "trained_shas": {k: _pfx_prefix_sha(c) for k, c in ctxs.items()},
+        "trained_content_shas": {k: _lad_content_sha(c) for k, c in ctxs.items()},
         "conv_turns": tuple((t["role"], t["content"]) for t in ctxs["conv"].prefix_turns),
         "persona_system": ctxs["pers"].system,
         "icl_demo_texts": [t["content"] for t in ctxs["icl"].prefix_turns],
@@ -3908,11 +3923,43 @@ def _lad_full_grain_samples(cfg: Cfg) -> tuple[set[str], list[str]]:
     return sha_set, [r["prompt"] for r in pfx["rows"]]
 
 
+# Exclusion screen 6 (r2 revision; concern `r-long-rung-content-language`):
+# the WildChat `language == "English"` METADATA screen passed a rung whose
+# CONTENT is majority-Cyrillic (r1 r_long, dataset idx 9098) — screen the
+# rendered 2-turn prefix TEXT itself. Rule (deterministic, dependency-free):
+# among alphabetic chars of BOTH capped turns, >= LAD_CONTENT_LATIN_MIN_RATIO
+# must be Latin-script (codepoint <= U+024F: Basic Latin + Latin-1 Supplement
+# + Latin Extended-A/B, so accented European letters pass). Zero alphabetic
+# chars rejects fail-safe. Threshold grounded on 2026-07-31 measurements:
+# trained conv prefix (`wildchat_prefix_real545`) ratio 1.0000 (passes with
+# maximal margin — no construction asymmetry), r1 r_short/r_mid 1.0000,
+# rejected r1 r_long 0.8648 (fails by 0.085). An additional code-block-
+# fraction screen was considered and NOT added: no cheap deterministic
+# definition, and it would risk asymmetry vs the trained prefix.
+LAD_CONTENT_LATIN_MIN_RATIO = 0.95
+LAD_LATIN_MAX_CODEPOINT = 0x024F
+
+
+def lad_content_language_ok(c0: str, c1: str) -> bool:
+    """Content-level language screen (exclusion 6): Latin-script ratio over
+    alphabetic chars of the rendered 2-turn prefix text >= the threshold;
+    alpha == 0 rejects fail-safe. See the constants block above for the rule
+    grounding + measured margins (concern `r-long-rung-content-language`)."""
+    alpha = latin = 0
+    for ch in itertools.chain(c0, c1):
+        if ch.isalpha():
+            alpha += 1
+            if ord(ch) <= LAD_LATIN_MAX_CODEPOINT:
+                latin += 1
+    return alpha > 0 and latin / alpha >= LAD_CONTENT_LATIN_MIN_RATIO
+
+
 def lad_screen_reject(row: dict) -> str | None:
-    """Cheap corpus screens (plan §4.2 exclusion 5 + shape): first-violation
-    name, or None. `toxic`/`redacted` must be present AND falsy-boolean False
-    (the #1092/#1739 field-semantics lessons: full language names; missing or
-    truthy moderation fields reject fail-safe)."""
+    """Cheap corpus screens (plan §4.2 exclusion 5 + shape + the r2 content-
+    language screen 6): first-violation name, or None. `toxic`/`redacted`
+    must be present AND falsy-boolean False (the #1092/#1739 field-semantics
+    lessons: full language names; missing or truthy moderation fields reject
+    fail-safe); metadata language alone is insufficient (screen 6)."""
     if row.get("language") != "English":
         return "language"
     tox = row.get("toxic")
@@ -3930,6 +3977,8 @@ def lad_screen_reject(row: dict) -> str | None:
     c1 = (conv[1].get("content") or "")[:LAD_TURN_CONTENT_CAP]
     if not (c0.strip() and c1.strip()):
         return "empty_content"
+    if not lad_content_language_ok(c0, c1):
+        return "content_language"
     return None
 
 
@@ -4005,7 +4054,12 @@ def _lad_scan(
                 "revision": revision,
                 "bands": specs,
                 "cap": LAD_TURN_CONTENT_CAP,
-                "screens": "english+toxicF+redactedF+2turn+ua+nonempty+excl123",
+                # +latin<ratio> (r2 content-language screen): a threshold or
+                # rule change busts the cursor -> fresh scan (regime keying)
+                "screens": (
+                    "english+toxicF+redactedF+2turn+ua+nonempty"
+                    f"+latin{LAD_CONTENT_LATIN_MIN_RATIO}+excl123"
+                ),
                 "trained_shas": excl["trained_shas"],
                 "smoke": cfg.smoke,
             },
@@ -4173,7 +4227,10 @@ def _lad_write_ladder(
     import types
 
     rungs = {}
-    trained_shas = set(excl["trained_shas"].values())
+    # cid-STRIPPED content shas (r4-r2 review Minor): the former recipe-sha
+    # compare was vacuous (context_id inside the hash); this one BINDS —
+    # identical content under a different cid collides.
+    trained_content = set(excl["trained_content_shas"].values())
     for cond in X.R4_CONDS:
         cand = selected[cond]
         cid = X.R4_CONTEXT_ID_BY_COND[cond]
@@ -4181,7 +4238,10 @@ def _lad_write_ladder(
             context_id=cid, system=None, prefix_turns=tuple(cand["turns"]), user_wrap=None
         )
         recipe_sha = _pfx_prefix_sha(shim)
-        assert recipe_sha not in trained_shas, (cond, "recipe sha collides with a trained prefix")
+        assert _lad_content_sha(shim) not in trained_content, (
+            cond,
+            "rung content sha collides with a trained prefix (cid-stripped)",
+        )
         rungs[cond] = {
             "context_id": cid,
             "prefix_turns": cand["turns"],
@@ -4217,16 +4277,37 @@ def _lad_write_ladder(
             "selection_rule": "min (|log T - log target|, dataset index); all screens",
         },
         "counters": counters,
+        "builder_revision": (
+            "r2 (2026-07-31): content-language screen added (concern "
+            "r-long-rung-content-language) — supersedes the r1 belt-floor ladder "
+            "(r_long idx 9098 majority-Cyrillic content under English metadata); "
+            "no dependent captures existed at regeneration (pre-dispatch)"
+        ),
         "exclusions": {
             "trained_prefix_recipe_shas": excl["trained_shas"],
+            "trained_prefix_content_shas": excl["trained_content_shas"],
             "belt_min_query_chars": LAD_BELT_MIN_QUERY_CHARS,
+            "content_language_screen": {
+                "rule": (
+                    "latin_alpha / alpha over BOTH capped turns; latin = "
+                    "isalpha() and codepoint <= latin_max_codepoint; "
+                    "alpha == 0 rejects fail-safe"
+                ),
+                "min_latin_ratio": LAD_CONTENT_LATIN_MIN_RATIO,
+                "latin_max_codepoint": LAD_LATIN_MAX_CODEPOINT,
+                "trained_conv_prefix_ratio": 1.0,  # measured 2026-07-31 (parity)
+            },
             "screens": [
-                "trained-prefix disjointness (turns + recipe sha)",
+                "trained-prefix disjointness (turns + cid-stripped content sha)",
                 "query-corpus sha disjointness (full round-1 sample) + substring belt "
                 f"(needles >= {LAD_BELT_MIN_QUERY_CHARS} chars — see lad_belt_needles)",
                 "trained-context non-containment (persona system + icl demos)",
                 "cross-rung conversation_hash distinctness",
                 "corpus screens (English / toxic False / redacted False)",
+                "content-language (Latin-script ratio >= "
+                f"{LAD_CONTENT_LATIN_MIN_RATIO} over alphabetic chars of both capped "
+                "turns — metadata language alone is insufficient; see "
+                "lad_content_language_ok)",
             ],
         },
         **_meta(),
@@ -4296,6 +4377,29 @@ def _lad_build_publish(cfg: Cfg, ladder: dict) -> None:
     _lad_mirror_r3_results(cfg)
 
 
+def _lad_ladder_screens_current(ladder: dict) -> bool:
+    """Resume-guard regime key (the #722-r3 rule: resume keys on every
+    output-affecting regime key): a pinned ladder built under an OLDER screen
+    set (pre-belt-floor, or pre-content-language-screen) REBUILDS instead of
+    republishing."""
+    exc = ladder.get("exclusions", {})
+    return (
+        exc.get("belt_min_query_chars") == LAD_BELT_MIN_QUERY_CHARS
+        and exc.get("content_language_screen", {}).get("min_latin_ratio")
+        == LAD_CONTENT_LATIN_MIN_RATIO
+    )
+
+
+def _lad_set_belt_census(counters: dict[str, int], query_texts: list[str]) -> None:
+    """Manifest belt-census keys — re-set after EVERY `_lad_scan` return: a
+    widened rescan rebinds `counters` from the cursor, which dropped keys set
+    before the widening (r4-r2 review Minor)."""
+    counters["belt_needles_total"] = len(query_texts)
+    counters["belt_needles_below_floor_excluded"] = len(query_texts) - len(
+        lad_belt_needles(query_texts)
+    )
+
+
 def phase_lad_build(cfg: Cfg) -> None:
     """lad_build (VM-side CPU, pre-dispatch): WildChat-1M streaming scan ->
     3-rung never-trained ladder (production) / bounded tiny-real ingestion
@@ -4306,10 +4410,26 @@ def phase_lad_build(cfg: Cfg) -> None:
 
     dest = _lad_inputs(cfg) / "prefix_ladder.json"
     if dest.exists() and not cfg.smoke:
-        logger.info("[lad_build] prefix_ladder.json present — resume skip; re-publishing")
-        _lad_build_publish(cfg, json.loads(dest.read_text()))
-        return
+        prior = json.loads(dest.read_text())
+        if _lad_ladder_screens_current(prior):
+            logger.info("[lad_build] prefix_ladder.json present — resume skip; re-publishing")
+            _lad_build_publish(cfg, prior)
+            return
+        logger.info(
+            "[lad_build] existing ladder predates the CURRENT screen set — rebuilding "
+            "(r2 regime-keyed resume; concern r-long-rung-content-language)"
+        )
     excl = _lad_trained_exclusion_material()
+    # Construction-asymmetry parity (concern r-long-rung-content-language):
+    # the trained conv prefix MUST pass the same content-language screen the
+    # rung candidates face — otherwise flag loudly and STOP (never screen
+    # rungs harder than the trained prefix they are compared against).
+    tc0, tc1 = (content for _role, content in excl["conv_turns"])
+    assert lad_content_language_ok(tc0, tc1), (
+        "[lad_build] trained conv prefix FAILS the content-language screen — "
+        "construction asymmetry vs the rung candidates; STOP and re-plan the "
+        "screen threshold (measured 2026-07-31: trained ratio 1.0000)"
+    )
     sha_set, query_texts = _lad_full_grain_samples(cfg)
     # Band anchors ALWAYS use the PRODUCTION tokenizer (plan §11) — never a
     # model_override tokenizer (the smoke fixture ships the real one anyway).
@@ -4344,10 +4464,7 @@ def phase_lad_build(cfg: Cfg) -> None:
         assert kept > 0, "[lad_build] tiny-real probe kept ZERO in-band candidates (#1092 class)"
         logger.info("[lad_build] SMOKE probe: scanned=%d kept_in_band=%d", n_scanned, kept)
         return
-    counters["belt_needles_total"] = len(query_texts)
-    counters["belt_needles_below_floor_excluded"] = len(query_texts) - len(
-        lad_belt_needles(query_texts)
-    )
+    _lad_set_belt_census(counters, query_texts)
     selected, shortage = _lad_select_rungs(pools, query_texts, counters)
     if shortage and scan_cap < LAD_SCAN_ROWS_WIDENED:
         logger.info(
@@ -4359,6 +4476,7 @@ def phase_lad_build(cfg: Cfg) -> None:
         pools, counters, n_scanned, revision = _lad_scan(
             cfg, tok, specs, excl, sha_set, LAD_SCAN_ROWS_WIDENED
         )
+        _lad_set_belt_census(counters, query_texts)  # rescan rebinds counters
         selected, shortage = _lad_select_rungs(pools, query_texts, counters)
     if shortage:
         raise RuntimeError(
@@ -4410,9 +4528,11 @@ def _lad_recheck_exclusions(cfg: Cfg, tok, ladder: dict) -> dict:
     """Kill criterion (d): re-assert the §4.2 exclusion set + band membership
     against the FULL pinned ladder + FULL-grain samples (never the smoke
     slice — the #1817 rule). Any violation = builder bug, fail loud."""
+    import types
+
     excl = _lad_trained_exclusion_material()
     sha_set, query_texts = _lad_full_grain_samples(cfg)
-    trained_shas = set(excl["trained_shas"].values())
+    trained_content = set(excl["trained_content_shas"].values())
     out = {}
     hashes = []
     for cond in X.R4_CONDS:
@@ -4423,6 +4543,7 @@ def _lad_recheck_exclusions(cfg: Cfg, tok, ladder: dict) -> dict:
         c0, c1 = (t["content"] for t in turns)
         assert c0.strip() and c1.strip(), (cond, "empty turn content")
         assert len(c0) <= LAD_TURN_CONTENT_CAP and len(c1) <= LAD_TURN_CONTENT_CAP, cond
+        assert lad_content_language_ok(c0, c1), (cond, "content-language screen (kill d)")
         t_tokens = len(tok(c0, add_special_tokens=False)["input_ids"]) + len(
             tok(c1, add_special_tokens=False)["input_ids"]
         )
@@ -4437,7 +4558,11 @@ def _lad_recheck_exclusions(cfg: Cfg, tok, ladder: dict) -> dict:
         reason = lad_exclusion_reject(c0, c1, c0, excl, sha_set)
         assert reason is None, (cond, reason, "builder exclusion violated (kill d)")
         assert not lad_substring_belt_hit(c0, c1, query_texts), (cond, "belt hit (kill d)")
-        assert rec["recipe_sha256"] not in trained_shas, (cond, "trained recipe sha")
+
+        shim = types.SimpleNamespace(
+            context_id=rec["context_id"], system=None, prefix_turns=tuple(turns), user_wrap=None
+        )
+        assert _lad_content_sha(shim) not in trained_content, (cond, "trained content sha")
         assert lad_turns_sha(turns) == rec["turns_sha256"], (cond, "turns sha drift")
         hashes.append(rec["conversation_hash"])
         out[cond] = {
@@ -4591,13 +4716,23 @@ def _lad_unit_set(cfg: Cfg) -> list[str]:
 
 
 def _lad_expected_uploads(cfg: Cfg) -> list[str]:
+    """Exact-set verify list: EVERY per-unit artifact file the corpus_capture
+    tree carries — pooled.pt + manifest/spans/done sentinels + the raw-row
+    rollout shards (r4-r2 review Minor: pooled.pt-only left the rollout text
+    riding the same folder commit UNVERIFIED)."""
     expected = []
     tree = "on_target_r4/corpus_capture"
     local_tree = cfg.out_root / tree
     if local_tree.exists():
         for unit_dir in sorted(local_tree.iterdir()):
-            if (unit_dir / "pooled.pt").exists():
-                expected.append(f"{cfg.hf_prefix}/{tree}/{unit_dir.name}/pooled.pt")
+            if not (unit_dir / "pooled.pt").exists():
+                continue
+            names = ["pooled.pt"]
+            names += [p.name for p in sorted(unit_dir.glob("raw_rows_*.jsonl"))]
+            for extra in ("raw_rows.done.json", "rows_spans.json", "manifest.json"):
+                if (unit_dir / extra).exists():
+                    names.append(extra)
+            expected += [f"{cfg.hf_prefix}/{tree}/{unit_dir.name}/{n}" for n in names]
     return expected
 
 
