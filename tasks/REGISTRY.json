@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1939,
+  "highest_id": 1941,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6669,29 +6669,29 @@
     "1861": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1861",
-      "status": "reviewing",
+      "path": "tasks/completed/1861",
+      "status": "completed",
       "title": "daily-fix: repo-root guard recognizes cd-to-worktree via var"
     },
     "1862": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1862",
-      "status": "running",
+      "path": "tasks/reviewing/1862",
+      "status": "reviewing",
       "title": "daily-fix: detached-VM probe template brackets; choom=failed"
     },
     "1863": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1863",
-      "status": "planning",
+      "path": "tasks/reviewing/1863",
+      "status": "reviewing",
       "title": "daily-fix: poll ticks compute rate/ETA on long same-phase ta"
     },
     "1864": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1864",
-      "status": "proposed",
+      "path": "tasks/reviewing/1864",
+      "status": "reviewing",
       "title": "daily-fix: analyzer.md numbers the payload-lint gate pre-com"
     },
     "1865": {
@@ -6969,11 +6969,11 @@
     },
     "1900": {
       "goal": "On the model-organism fleet at per-prompt grain (the #1768 16,400-real-user-prompt corpus), determine which per-context predictor computable BEFORE fine-tuning best predicts per-context leakage of the trained behavior (graded judge DV for content arms; three-space log P(marker) for marker arms), whether base behavioral propensity survives as the champion, and whether context-vector similarity's predictive power is mediated by answer-side similarity; post-FT and delta candidates form a separate mechanistic panel, and every similarity candidate is computed against both the training-context-centroid and panel-source-context anchors.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/1900",
-      "status": "interpreting",
-      "title": "Leakage-predictor horse race at per-prompt grain: pre-FT geometry vs base propensity, with answer-side mediation test"
+      "path": "tasks/followups_running/1900",
+      "status": "followups_running",
+      "title": "Base behavioral propensity predicts where a trained behavior is expressed, but pre-fine-tuning answer similarity is the only predictor of the fine-tuning-induced change (MODERATE confidence)"
     },
     "1901": {
       "goal": "Characterize every mapping-quality metric in use (held-out R\u00b2, kNN retrieval acc@k euclidean+cosine, and companions) \u2014 what construct each measures, what it rules out, where they dissociate \u2014 and report the ~1M-context (n\u2248963k LMSYS) linear and nonlinear context\u2192answer mappings against the full baseline ladder (constant train-mean; W = identity; identity + learned bias) on ALL metrics, in both the context-based and prefix-based arms.",
@@ -7278,6 +7278,20 @@
       "path": "tasks/on_hold/194",
       "status": "on_hold",
       "title": "Look more at drift along assistant axis in CoT"
+    },
+    "1940": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1940",
+      "status": "proposed",
+      "title": "workflow-fix: figure-sidecar opaque-code check misses bare P/M candidate codes"
+    },
+    "1941": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1941",
+      "status": "proposed",
+      "title": "functional_role axis: kappa 0.318 reproduces at both scales \u2014 the only axis with no contrastive evidence"
     },
     "195": {
       "has_clean_result": false,
