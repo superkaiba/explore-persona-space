@@ -122,3 +122,4 @@
 - [Must-Fix DONE claims verified on disk](feedback_must_fix_done_claims_verified_on_disk.md) — read the hunk back + confirm every cited (#1768)
 - [Batched solve dies on ONE singular slice](feedback_batched_solve_singular_slice_pinv_fallback.md) — np.linalg.solve raises ONCE for a whole (#1739)
 - [torch>=2.6 weights_only vs self-produced bundles](feedback_torch26_weights_only_self_produced_bundles.md) — pass --no-weights-only/weights_only=False for sha-pinned self-produced .pt on torch>=2.6 lanes; audit every torch.load site; VM torch can mask the trap (#1900)
+- [Plan floors vs realized artifact grain](feedback_plan_floor_vs_realized_artifact_grain.md) — count rows of row-grain-consuming reuse inputs before encoding floors; hard-kill only at the mathematical minimum, WARN+flag above (#1900)
