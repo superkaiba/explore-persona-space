@@ -1,0 +1,225 @@
+{
+  "commit": "5f2b220a42",
+  "created": "2026-07-31T13:39:19Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "rank agreement with context sim (P1)": 0.1769518577532641,
+      "rank agreement with answer sim (P2)": 0.4262530920613404,
+      "series": "Through-map context sim",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank agreement with context sim (P1)": 0.17450439810359153,
+      "rank agreement with answer sim (P2)": 0.42675775304215047,
+      "series": "Through-map context sim",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank agreement with context sim (P1)": 0.4630237047988273,
+      "rank agreement with answer sim (P2)": 0.558268772956167,
+      "series": "Through-map context sim",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank agreement with context sim (P1)": 0.1768056284510944,
+      "rank agreement with answer sim (P2)": 0.4288691294037242,
+      "series": "Through-map context sim",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank agreement with context sim (P1)": 0.2168439965261298,
+      "rank agreement with answer sim (P2)": -0.07553290321505404,
+      "series": "Through-map context sim",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank agreement with context sim (P1)": 0.21658689711531204,
+      "rank agreement with answer sim (P2)": -0.07481762525810848,
+      "series": "Through-map context sim",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank agreement with context sim (P1)": 0.21640368331700968,
+      "rank agreement with answer sim (P2)": -0.07489365816960072,
+      "series": "Through-map context sim",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank agreement with context sim (P1)": 0.2166470289202583,
+      "rank agreement with answer sim (P2)": -0.07536062944933965,
+      "series": "Through-map context sim",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank agreement with context sim (P1)": 0.38557700389584093,
+      "rank agreement with answer sim (P2)": 0.6801540625118278,
+      "series": "Through-map context sim",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank agreement with context sim (P1)": 0.547092476310281,
+      "rank agreement with answer sim (P2)": 0.30434306880024053,
+      "series": "Through-map context sim",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank agreement with context sim (P1)": 0.19748894196649286,
+      "rank agreement with answer sim (P2)": 0.5544021358153074,
+      "series": "Through-map context sim",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank agreement with context sim (P1)": 0.19677393971043475,
+      "rank agreement with answer sim (P2)": 0.5529746446304191,
+      "series": "Through-map context sim",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank agreement with context sim (P1)": 0.35040633463277965,
+      "rank agreement with answer sim (P2)": 0.836814366625666,
+      "series": "Through-map pred-answer sim",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rank agreement with context sim (P1)": 0.35115973552902435,
+      "rank agreement with answer sim (P2)": 0.8374745106286101,
+      "series": "Through-map pred-answer sim",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rank agreement with context sim (P1)": 0.23665046877362167,
+      "rank agreement with answer sim (P2)": 0.8136230531395136,
+      "series": "Through-map pred-answer sim",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rank agreement with context sim (P1)": 0.35107771187031517,
+      "rank agreement with answer sim (P2)": 0.837923491388563,
+      "series": "Through-map pred-answer sim",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rank agreement with context sim (P1)": 0.20016252440846224,
+      "rank agreement with answer sim (P2)": 0.8333369429327817,
+      "series": "Through-map pred-answer sim",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rank agreement with context sim (P1)": 0.20090645436705287,
+      "rank agreement with answer sim (P2)": 0.8332724023450581,
+      "series": "Through-map pred-answer sim",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rank agreement with context sim (P1)": 0.20084373999228158,
+      "rank agreement with answer sim (P2)": 0.8333010957464904,
+      "series": "Through-map pred-answer sim",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rank agreement with context sim (P1)": 0.20193884000790482,
+      "rank agreement with answer sim (P2)": 0.8331216427186787,
+      "series": "Through-map pred-answer sim",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rank agreement with context sim (P1)": 0.2435045762566433,
+      "rank agreement with answer sim (P2)": 0.8919997742899858,
+      "series": "Through-map pred-answer sim",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rank agreement with context sim (P1)": 0.06134221832315509,
+      "rank agreement with answer sim (P2)": 0.8948456913827045,
+      "series": "Through-map pred-answer sim",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rank agreement with context sim (P1)": 0.27075427052449685,
+      "rank agreement with answer sim (P2)": 0.8841343751463405,
+      "series": "Through-map pred-answer sim",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rank agreement with context sim (P1)": 0.2685435550602675,
+      "rank agreement with answer sim (P2)": 0.8843190189352965,
+      "series": "Through-map pred-answer sim",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Does the through-map read recover answer-side ranking?",
+        "xlabel": "rank agreement with context sim (P1)",
+        "ylabel": "rank agreement with answer sim (P2)",
+        "legend_labels": [
+          "Through-map context sim",
+          "Through-map pred-answer sim"
+        ],
+        "xticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ],
+    "series": [
+      "Through-map context sim",
+      "Through-map pred-answer sim"
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+{
+ "m_panel": "M4 (matched-text delta-answer similarity) retains a residual text-borne channel: the weight delta interacts with behavior-laden completion text even in matched-text form (registered line (5)); the mechanistic panel explains and never carries the headline.",
+ "hero_content_race": "per-arm Spearman of each pre-FT candidate vs the graded on-policy leakage DV (mean of 3 judge draws); arms never raw-pooled.",
+ "winner_probability_content": "winner re-selected inside every bootstrap draw (selection-symmetric); CI at the winner is selection-inherited (champion_content.json; frozen CI persisted alongside, labeled).",
+ "band_vs_ceiling": "permutation band = per-draw max over the raced candidates (1,000 within-arm DV permutations); ceiling |rho| <= 1 shown; the champion-vs-P7 contrast's conditional ceiling interval is persisted in champion_content.json.",
+ "generated_ts": "2026-07-31T13:39:41Z"
+}
