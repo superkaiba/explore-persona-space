@@ -3179,6 +3179,43 @@ auto-advance ON TOP of the existing flow. The same subroutine fires at
 Step 9a (interp ensemble) and Step 9a-bis (clean-result ensemble) with
 the same logic.
 
+**5c-quater. Round-boundary durable-decision duty (#1855).**
+
+Fires at EVERY review-round boundary — here at Step 5, and identically
+at the Step 9a / 9a-bis analyzer↔critic rounds (this subsection is the
+canonical text; those loops reference it). The moment a round's
+ensemble decision is RESOLVED (final_verdict computed, a 5c-bis /
+9a-bis strip applied, a 5c-ter concern picked for direct address), land
+it durably — BEFORE dispatching the next round's subagents and BEFORE
+beginning any orchestrator-applied inline fix:
+
+1. **Post the decision as one `epm:progress` note** naming the resolved
+   action + its source by reference — verdict marker kind+version,
+   concern_id, and (for a prescribed fix) the target `file:line` + a
+   one-line description of the prescribed change. One line; verdict
+   bodies stay by reference (trigger-dense discipline unchanged; reuse
+   `epm:progress`, never a new marker kind).
+2. **Commit any uncommitted worktree edits from the just-completed
+   round** by explicit path (`git commit -m <msg> -- <paths>` — the
+   pathspec-limited form, never `git add -A`) before starting new
+   context-expensive work.
+
+Why unconditional (no headroom predicate): a session cannot introspect
+its own context headroom (the #1338 lesson, asserted at the
+residual-conflict dispatch and the resume section), and after even ONE
+`Prompt is too long` API error no in-session recovery is possible —
+every subsequent turn fails identically, so nothing can be landed
+post-hoc; the watcher's context-ceiling wedge lane (#1453)
+force-respawns a successor whose ONLY view of the round is the durable
+trail. Incident #1776 (session 97867df6, 2026-07-29): round 4's
+reviewer returned CONCERNS with a prescribed 2-line fix; the
+orchestrator announced the direct apply in chat text only and died at
+the ceiling two turns later — the successor re-derived and re-did the
+fix ~40 min later. Cost of the duty: one marker + one commit per round.
+This is the WRITE-side sibling of the Step 5b durable-verdict-first
+rule (which recovers a dead reviewer's posted verdict); together they
+make a round boundary death-cost-zero in both directions.
+
 **5d. Loop on FAIL using `final_verdict`.**
 
 - **`final_verdict == PASS`**:
@@ -7005,7 +7042,9 @@ the critique bodies).
 Analyzer posts `epm:interpretation v2`. Re-spawn the ensemble (fresh
 contexts, sees v2 + prior critique events). Posts both
 `epm:interp-critique v2` and `epm:interp-critique-codex v2`. Apply rule
-again.
+again. Round boundaries here carry the Step 5c-quater round-boundary
+durable-decision duty (decision note + explicit-path commit BEFORE the
+re-spawn).
 
 **Max 5 rounds per reviewer.** At round 5 (the cap) with a non-PASS
 ensemble verdict, apply the Step 9a-bis-style procedural-only strip once
@@ -7924,7 +7963,9 @@ ensemble — `clean-result-critic` AND `codex-clean-result-critic`
 revised surfaces, with prior critique summaries in both briefs. Both
 post the next critique version (`epm:clean-result-critique v<n>` +
 `epm:clean-result-critique-codex v<n>`); apply the same ensemble
-decision rule (including the procedural-only strip) as round 1.
+decision rule (including the procedural-only strip) as round 1. Round
+boundaries here carry the Step 5c-quater round-boundary durable-decision
+duty (decision note + explicit-path commit BEFORE the re-spawn).
 
 **Max 5 rounds.** At round 5 (the cap) with a non-PASS ensemble verdict,
 apply the procedural-only strip once more (procedural / presentation
