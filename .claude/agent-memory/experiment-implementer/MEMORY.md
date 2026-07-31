@@ -1,4 +1,5 @@
 - [Rank-space null EQUALS observed when v̂ is anchor-dominated](feedback_rank_null_equals_observed_anchor_dominated.md) — MRR/retrieval at its shuffled-pairing null (#1776)
+- [Stale __pycache__ masks a signature change](feedback_stale_pycache_masks_signature_change.md) — Edit+format-hook inside 1s leaves a pyc Python's mtime+size check misses; smoke runs OLD code, phantom shape error (#1345)
 - [Lane input staging: git-clone/rsync lanes ship no data/](feedback_hf_fallback_pod_side_data_inputs.md) — local-first → HF-fetch → fail-loud per input; VM-produced inputs need producer upload + launcher staging (#779 #1773 #1689)
 - [BPE/span-alignment trap family](feedback_bpe_zero_width_span_plain_text_delimiters.md) — zero-width spans, seam merges, offset-map anchors; GEN-time span-validate; 6 siblings in entry (#825 #1315 #1776)
 - [#1586 disk-headroom family](feedback_resume_aware_phase_headroom_gates.md) — scale need by PENDING cells; reap ckpts on verified upload; reap derived smoke roots at phase entry (#1586 fu)
