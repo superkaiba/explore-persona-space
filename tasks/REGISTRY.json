@@ -7064,8 +7064,8 @@
     "1912": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1912",
-      "status": "reviewing",
+      "path": "tasks/completed/1912",
+      "status": "completed",
       "title": "daily-fix: fix red main: test_backend_poll.py::test_every_lazy_scripts_local_import_is_bootstrap_guarded \u2014 add the scripts-dir bootstrap (call `_en"
     },
     "1913": {
