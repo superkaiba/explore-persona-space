@@ -169,6 +169,13 @@ class DeltaHook:
     ``delta`` is ``(H,)`` (broadcast over the batch) or ``(B, H)`` (per-row —
     lets one batched generate carry a different Δ per pair). The hook handles
     both tuple and bare-tensor block outputs and edits OUT-OF-PLACE (clone).
+
+    ``replace=True`` (keyword-only, default ``False`` = byte-identical add
+    path; the #1776 ``slot_patch_sufficiency`` mode) REPLACES the
+    last-context-token activation wholesale with ``alpha * delta`` instead of
+    adding it — the full-state activation patch. Only the last-context-token
+    prefill mode supports it (mutually exclusive with ``all_positions`` and
+    ``edit_position``).
     """
 
     def __init__(
@@ -181,6 +188,7 @@ class DeltaHook:
         all_positions: bool = False,
         *,
         edit_position: int | None = None,
+        replace: bool = False,
     ):
         blocks, _, _ = _resolve_decoder_blocks(model)
         assert blocks is not None, "DeltaHook requires a standard decoder (model.model.layers)"
@@ -188,6 +196,9 @@ class DeltaHook:
         assert delta.dim() in (1, 2), delta.shape
         assert not (all_positions and edit_position is not None), (
             "edit_position mode is mutually exclusive with all_positions"
+        )
+        assert not (replace and (all_positions or edit_position is not None)), (
+            "replace mode supports ONLY the last-context-token prefill edit"
         )
         self.model = model
         self.layer = layer
@@ -197,6 +208,7 @@ class DeltaHook:
         self.expected_prompt_len = expected_prompt_len
         self.all_positions = bool(all_positions)
         self.edit_position = int(edit_position) if edit_position is not None else None
+        self.replace = bool(replace)
         self._handle = None
         self._prefill_seen = False
         self.n_edits = 0  # forward passes edited (telemetry / test hook)
@@ -287,7 +299,12 @@ class DeltaHook:
         # position T-1 is exactly len(tokenized_context) - 1.
         assert self.expected_prompt_len == T, (T, self.expected_prompt_len)
         out = hidden.clone()
-        out[:, T - 1, :] = out[:, T - 1, :] + scaled
+        if self.replace:
+            # Full-state patch (#1776 slot_patch_sufficiency): the slot value
+            # BECOMES alpha * delta (per-row), nothing is added.
+            out[:, T - 1, :] = scaled
+        else:
+            out[:, T - 1, :] = out[:, T - 1, :] + scaled
         self._prefill_seen = True
         self.n_edits += 1
         return out

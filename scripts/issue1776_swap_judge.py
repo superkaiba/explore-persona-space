@@ -41,6 +41,7 @@ STEER_ARMS = (*OP_ARMS, "swap_random")
 BASELINE_ARM = "swap_a0"
 ALL_ARMS = (BASELINE_ARM, *STEER_ARMS)
 RUBRICS = ("b_content", "a_retention")
+JUDGE_STEM = "judge_swap"  # rebound to "judge_patch" under --round patch
 JUDGE_MAX_TOKENS = 300  # llm-judging rule 23 floor (reason-then-score rubric)
 
 _RUBRIC_WHAT = {
@@ -360,10 +361,10 @@ def run(args) -> int:
             f"({len(meta)} cells)",
             flush=True,
         )
-        save_raw = args.out_dir / f"judge_swap_raw_{rubric}.json"
+        save_raw = args.out_dir / f"{JUDGE_STEM}_raw_{rubric}.json"
         alias_of, persona_of = build_alias_maps(meta.keys())
         C76.atomic_write_json(
-            args.out_dir / f"judge_swap_id_map_{rubric}.json", {"alias_to_persona": persona_of}
+            args.out_dir / f"{JUDGE_STEM}_id_map_{rubric}.json", {"alias_to_persona": persona_of}
         )
         rollouts_aliased = {alias_of[p]: qmap for p, qmap in rollouts.items()}
         scores = judge_family(
@@ -397,10 +398,10 @@ def run(args) -> int:
         "worst_arm_transport_loss_frac": worst_transport,
         "repro": C76.repro_meta(),
     }
-    C76.atomic_write_json(args.out_dir / "judge_swap.json", report)
+    C76.atomic_write_json(args.out_dir / f"{JUDGE_STEM}.json", report)
     print(
         f"[swap-judge] [phase=judge_done] rubrics={list(per_arm)} cells={len(per_cell)} "
-        f"worst_transport_frac={worst_transport:.4f} -> {args.out_dir / 'judge_swap.json'}",
+        f"worst_transport_frac={worst_transport:.4f} -> {args.out_dir / (JUDGE_STEM + '.json')}",
         flush=True,
     )
     if worst_transport > args.transport_fail_threshold:
@@ -595,7 +596,25 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--n-draws", type=int, default=C.JUDGE_N_DRAWS)
     ap.add_argument("--transport-fail-threshold", type=float, default=0.02)
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument(
+        "--round",
+        choices=["swap", "patch"],
+        default="swap",
+        help="patch = slot_patch_sufficiency (plan v8): rebinds the arm set + output stems; "
+        "swap (default) is byte-identical",
+    )
     args = ap.parse_args(argv)
+    if args.round == "patch":
+        # CONDITIONAL patch-round judge (plan v8 §7 trigger): same driver, the
+        # arm set + label + output stems rebind; rubrics/accounting unchanged.
+        global FU, LABEL, OP_ARMS, STEER_ARMS, BASELINE_ARM, ALL_ARMS, JUDGE_STEM
+        FU = "followup_slotpatch"
+        LABEL = "slot_patch_sufficiency"
+        OP_ARMS = ()
+        STEER_ARMS = ("swap_patch",)
+        BASELINE_ARM = "patch_a0"
+        ALL_ARMS = (BASELINE_ARM, *STEER_ARMS)
+        JUDGE_STEM = "judge_patch"
     args.rubrics = [r for r in str(args.rubrics).split(",") if r]
     assert set(args.rubrics) <= set(RUBRICS), args.rubrics
     if args.mode == "smoke":
