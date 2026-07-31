@@ -1,7 +1,8 @@
 ---
-title: 'Fine-tuning-induced map change is context-dependent: sycophancy arms trained
-  on conversation history cross the refit-noise floor only once their trained prefix
-  is present (HIGH confidence)'
+title: 'Fine-tuning-induced map change is context-dependent through two channels:
+  prefix richness alone reproduces most of the conversation-trained arm''s floor crossing,
+  while the trained conversation prefix amplifies persona-trained arms well beyond
+  richness-matched never-trained prefixes (HIGH confidence)'
 kind: experiment
 tags:
 - followup-auto
