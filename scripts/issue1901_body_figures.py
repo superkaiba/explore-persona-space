@@ -14,6 +14,10 @@ Run from the issue-1901 worktree root:
 
 from __future__ import annotations
 
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # thread caps BEFORE numpy/matplotlib (shared-VM rule, #847)
+
 import json
 from pathlib import Path
 
