@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1905,
+  "highest_id": 1906,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7011,6 +7011,13 @@
       "path": "tasks/proposed/1905",
       "status": "proposed",
       "title": "workflow-fix: verify_plan check-ignore on declared-committed paths"
+    },
+    "1906": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1906",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan base-predictor-vs-change-DV companion check"
     },
     "191": {
       "has_clean_result": false,
