@@ -566,6 +566,10 @@ def main(argv: list[str] | None = None) -> int:
         "gen_fingerprint": gen_manifest["fingerprint"],
         "n_multi_turn_contexts": sum(1 for c in contexts if not c.get("single_turn")),
         "capture_rows": (cap_manifest or {}).get("n_rows"),
+        # The binding parity is with the OTHER #1739 rungs (the arms are fit on
+        # the #1739 capture stores, all captured through this same
+        # load_capture_model default) — not with #1092's own capture call.
+        "capture_recipe": "compute bf16, storage fp16, matching all #1739 rung captures",
         "git_commit": _git_commit(),
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }

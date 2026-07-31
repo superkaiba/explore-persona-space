@@ -105,9 +105,18 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument(
         "--live-judge-probe",
         action="store_true",
-        help="pre-wave gate: force 5 real items through the BATCH path, then exit",
+        help="STANDALONE pre-launch gate: force N real items through the BATCH path, "
+        "then exit. Sources items from the sampled CONTEXTS (no rollout pool "
+        "needed) unless --local-rollout-root names one.",
     )
     ap.add_argument("--probe-items", type=int, default=5)
+    ap.add_argument(
+        "--probe-contexts-json",
+        type=Path,
+        default=None,
+        help="probe item source (default: <out-root>/contexts/wcrung.json; "
+        "absent -> stage the context shards from HF)",
+    )
     ap.add_argument("--import-check", action="store_true")
     return ap.parse_args(argv)
 
@@ -274,39 +283,46 @@ def judge_behavior(behavior: str, rollouts: list[dict], args: argparse.Namespace
     }
 
 
-def build_dv_rows(behavior: str, rollouts: list[dict], scores: dict) -> tuple[list[dict], dict]:
-    """Per-CONTEXT DV rows in the ladder's `_load_labeled` schema + a coverage digest."""
-    from explore_persona_space.experiments.issue_1739 import judging
+def build_dv_rows(
+    behavior: str,
+    rollouts: list[dict],
+    scores: dict,
+    *,
+    per_item_transport_losses: dict[str, int] | None = None,
+) -> tuple[list[dict], dict]:
+    """Per-CONTEXT DV rows in the ladder's `_load_labeled` schema + a coverage digest.
 
-    by_ctx: dict[str, dict] = {}
-    for r in rollouts:
-        cid = r["context_id"]
-        entry = by_ctx.setdefault(
-            cid,
-            {
-                "behavior": behavior,
-                "context_id": cid,
-                "split": SPLIT,
-                "rung": RUNG,
-                "group_key": r["group_key"],
-                "per_rollout_scores": {},
-            },
-        )
-        item_id = judging.rollout_item_id(cid, int(r["rollout_k"]))
-        entry["per_rollout_scores"][f"k{int(r['rollout_k'])}"] = scores.get(item_id)
+    The DV REDUCTION itself is the shared library's
+    ``dv_build.build_labeling_dv`` — mean over rollouts with a kept score,
+    drop-never-coerce, transport losses summed per context and kept SEPARATE
+    from content drops. This leg only supplies the per-context metadata the
+    ladder needs (behavior / split / rung / group_key) and the coverage digest;
+    it does not re-implement the reduction.
+    """
+    from explore_persona_space.experiments.issue_1739 import dv_build
+    from explore_persona_space.experiments.issue_1739.constants import (
+        K_ROLLOUTS,
+        N_JUDGE_DRAWS,
+    )
 
-    rows: list[dict] = []
-    n_no_dv = 0
-    for cid in sorted(by_ctx):
-        entry = by_ctx[cid]
-        kept = [v for v in entry["per_rollout_scores"].values() if v is not None]
-        entry["n_rollouts"] = len(entry["per_rollout_scores"])
-        entry["n_rollouts_kept"] = len(kept)
-        # Drop-never-coerce: zero kept rollouts -> dv None, dropped downstream.
-        entry["dv"] = (sum(kept) / len(kept)) if kept else None
-        if entry["dv"] is None:
-            n_no_dv += 1
-        rows.append(entry)
+    contexts_meta = {
+        r["context_id"]: {
+            "behavior": behavior,
+            "split": SPLIT,
+            "rung": RUNG,
+            "group_key": r["group_key"],
+        }
+        for r in rollouts
+    }
+    k_seen = max((int(r["rollout_k"]) for r in rollouts), default=0) + 1
+    rows = dv_build.build_labeling_dv(
+        scores,
+        k_rollouts=max(K_ROLLOUTS, k_seen),
+        n_draws=N_JUDGE_DRAWS,
+        per_item_transport_losses=per_item_transport_losses,
+        contexts_meta=contexts_meta,
+    )
+    n_no_dv = sum(1 for r in rows if r.get("dv") is None)
     digest = {
         "n_contexts": len(rows),
         "n_contexts_with_dv": len(rows) - n_no_dv,
@@ -341,20 +357,66 @@ def _run_meta(args: argparse.Namespace) -> dict:
     }
 
 
-def live_judge_probe(rollouts: list[dict], args: argparse.Namespace) -> dict:
+def probe_items_from_contexts(args: argparse.Namespace) -> list[tuple[str, str, str]]:
+    """Probe items built from the CONTEXT rows — no rollout pool required.
+
+    This is what makes the probe runnable PRE-LAUNCH, standalone: before the
+    GPU leg exists there are no rollouts, but the sampled contexts already
+    carry the real queries. The completion side is a short placeholder — the
+    probe tests the Batch REQUEST SHAPE, not score quality — so it can gate a
+    launch without burning any of the real pool.
+    """
+    from scripts import issue1739_wcrung_rows_io as rows_io
+
+    local = args.probe_contexts_json or (args.out_root / "contexts" / "wcrung.json")
+    if local.exists():
+        rows = json.loads(local.read_text())["rows"]
+        src = str(local)
+    else:
+        rows = rows_io.stage_rows_from_hub(
+            hf_prefix=f"{args.hf_prefix}/contexts",
+            dest_dir=args.stage_root,
+        )
+        src = f"{args.hf_prefix}/contexts"
+    if not rows:
+        raise RuntimeError(f"no context rows for the probe (source: {src})")
+    print(f"[phase=wcrung_probe_items] source={src} contexts={len(rows)}", flush=True)
+
+    from explore_persona_space.experiments.issue_1739 import judging
+
+    return [
+        (
+            judging.rollout_item_id(r["context_id"], 0),
+            r["query"],
+            "Placeholder response for the request-shape probe.",
+        )
+        for r in rows[: args.probe_items]
+    ]
+
+
+def live_judge_probe(args: argparse.Namespace, rollouts: list[dict] | None = None) -> dict:
     """Force N real items through the BATCH path via this leg's own builder.
 
     ``threshold_base=1`` makes the dispatcher's effective threshold 1, so even
     a 5-item set routes to the Message Batches API instead of the sync path.
     A malformed Batch request quarantines the WHOLE submit on one 400, and no
     mock/offline smoke can see it — hence the live gate before the full wave.
+
+    Items come from the real rollout pool when one is available, else from the
+    sampled CONTEXT rows (``probe_items_from_contexts``) so the gate runs
+    standalone before the GPU leg has produced anything.
     """
     from explore_persona_space.experiments.issue_1739 import judging
     from explore_persona_space.experiments.issue_1739.constants import JUDGE_MAX_TOKENS
 
     behavior = args.behaviors[0]
     rubric = judging.load_trait_rubric(behavior, inputs_dir=args.out_root / "inputs")
-    items = _judge_items(rollouts)[: args.probe_items]
+    if rollouts:
+        items = _judge_items(rollouts)[: args.probe_items]
+        item_source = "rollout_pool"
+    else:
+        items = probe_items_from_contexts(args)
+        item_source = "contexts"
     probe_root = args.out_root / "judge" / "_live_probe"
     t0 = time.time()
     result = judging.judge_items_graded(
@@ -369,6 +431,7 @@ def live_judge_probe(rollouts: list[dict], args: argparse.Namespace) -> dict:
     scored = {i: s for i, s in tallies["scores"].items() if s is not None}
     payload = {
         "behavior": behavior,
+        "item_source": item_source,
         "n_items": len(items),
         "n_scored": len(scored),
         "n_content_dropped_draws": tallies["n_content_dropped_draws"],
@@ -399,7 +462,12 @@ def live_judge_probe(rollouts: list[dict], args: argparse.Namespace) -> dict:
 
 def run_behavior(behavior: str, rollouts: list[dict], args: argparse.Namespace) -> dict:
     judged = judge_behavior(behavior, rollouts, args)
-    rows, digest = build_dv_rows(behavior, rollouts, judged["scores"])
+    rows, digest = build_dv_rows(
+        behavior,
+        rollouts,
+        judged["scores"],
+        per_item_transport_losses=judged["tallies"].get("per_item_transport_losses"),
+    )
     spread = _spread_stats([r["dv"] for r in rows])
     payload = {
         "behavior": behavior,
@@ -489,19 +557,26 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     args.out_root.mkdir(parents=True, exist_ok=True)
+
+    if args.live_judge_probe:
+        # Standalone PRE-LAUNCH gate: never loads (or needs) the rollout pool
+        # unless a local one was explicitly named, so it can run before the GPU
+        # leg exists and without burning any of the real pool.
+        pool: list[dict] | None = None
+        if args.local_rollout_root is not None:
+            pool = load_rollouts(rollout_dir(args), max_items=args.probe_items)
+        live_judge_probe(args, pool)
+        print("[phase=done] wcrung live judge probe OK", flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        sys.exit(0)
+
     rollouts = load_rollouts(rollout_dir(args), max_items=args.max_items)
     n_ctx = len({r["context_id"] for r in rollouts})
     print(
         f"[phase=wcrung_rollouts] rollouts={len(rollouts)} contexts={n_ctx} pool={GEN_BEHAVIOR}",
         flush=True,
     )
-
-    if args.live_judge_probe:
-        live_judge_probe(rollouts, args)
-        print("[phase=done] wcrung live judge probe OK", flush=True)
-        sys.stdout.flush()
-        sys.stderr.flush()
-        sys.exit(0)
 
     per_behavior = [run_behavior(b, rollouts, args) for b in args.behaviors]
 

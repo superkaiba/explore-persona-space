@@ -102,9 +102,24 @@ def test_build_dv_rows_partial_drop_means_over_kept_only():
     scores = _scores(pool, lambda r: None if int(r["rollout_k"]) == 0 else 60.0)
     rows, digest = sc.build_dv_rows("sycophancy", pool, scores)
     assert digest["n_contexts_with_dv"] == 1
-    assert rows[0]["n_rollouts"] == 3
+    # Field names are the shared library's (dv_build.build_labeling_dv), not a
+    # local fork — the reduction is imported, so its schema is authoritative.
+    assert rows[0]["n_rollouts_judged"] == 3
     assert rows[0]["n_rollouts_kept"] == 2
+    assert rows[0]["n_rollouts_content_dropped"] == 1
     assert rows[0]["dv"] == pytest.approx(60.0), "dropped rollout must not pull the mean down"
+
+
+def test_build_dv_rows_threads_transport_losses_per_context():
+    """Transport losses ride the row SEPARATE from content drops (rule 24)."""
+    from explore_persona_space.experiments.issue_1739 import judging
+
+    pool = _pool(1, 2)
+    scores = _scores(pool, lambda r: 40.0)
+    item0 = judging.rollout_item_id(pool[0]["context_id"], 0)
+    rows, _ = sc.build_dv_rows("evil", pool, scores, per_item_transport_losses={item0: 2})
+    assert rows[0]["n_transport_lost_draws"] == 2
+    assert rows[0]["n_rollouts_content_dropped"] == 0, "a transport loss is not a content drop"
 
 
 def test_build_dv_rows_all_dropped_is_none_never_zero():
