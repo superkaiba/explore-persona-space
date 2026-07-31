@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import random
 import sys
 from pathlib import Path
 
@@ -376,3 +377,66 @@ def test_ladder_heatmap_renders_on_synthetic_arms():
     MB._ladder_heatmap(ax, {"a": _mk_arm(0.5, 0.6), "b": _mk_arm(0.1, 0.2)}, "test", "unit")
     assert len(ax.images) == 1 and ax.images[0].get_array().shape == (2, len(MB.HERO_METRICS))
     plt.close(fig)
+
+
+# ── w0 screen vectorization: equivalence gate (serial reference vs fast path) ────
+
+
+def test_screen_fast_path_equivalence_gate(tmp_path, monkeypatch):
+    """EQUIVALENCE GATE (vectorize-rule item 6; #1901 w0 vectorize-fix round):
+    the vectorized screen must produce the IDENTICAL survivor set to the
+    pre-vectorization serial implementation on a seeded slice shaped like the
+    production inputs (2 manifest parts + the round-1 block). Synthetic text
+    only (content hygiene) with engineered exact / near-dupe / short / empty /
+    duplicate-candidate edge rows in every block."""
+    rng = random.Random(1901)
+    words = [f"tok{i:03d}" for i in range(120)]
+
+    def sent(k: int = 18) -> str:
+        return " ".join(rng.choice(words) for _ in range(k))
+
+    candidates = [sent() for _ in range(40)]
+    candidates[7] = ""  # empty candidate text (no ngrams; unreachable via Jaccard)
+    candidates[11] = "tiny"  # shorter than the 5-gram window
+    candidates[13] = candidates[12]  # duplicate candidate content (both must drop)
+
+    part1 = [sent() for _ in range(60)]
+    part1[3] = candidates[5].upper()  # exact-normalized match
+    part1[9] = candidates[19] + " tail"  # near-dupe (Jaccard >= 0.8)
+    part1[12] = "tiny"  # exact match of the short candidate
+    part2 = [sent() for _ in range(60)]
+    part2[4] = candidates[12]  # exact match hitting BOTH duplicates 12 + 13
+    part2[8] = candidates[30][:-8]  # near-dupe by truncation
+    part2[9] = ""  # empty train row
+    round1_block = [sent() for _ in range(25)]
+    round1_block[5] = candidates[22] + "!"  # near-dupe raised from the round-1 block
+    pool = [{"prompt": p} for p in part1 + part2]
+    all_texts = part1 + part2 + round1_block
+
+    gate = MB._CandidateGate(candidates)
+    # per-row parity: the fast path returns the serial reference's exact hits
+    for t in all_texts:
+        assert gate.matching_targets(t) == gate.matching_targets_serial_reference(t)
+
+    # full screen (pilot leg + parallel fan-out, 2 workers) vs the serial oracle
+    ref_matched: set[int] = set()
+    for t in all_texts:
+        ref_matched |= gate.matching_targets_serial_reference(t)
+    monkeypatch.setattr(MB, "WC_SCREEN_PILOT_ROWS", 10)  # force pilot + fan-out legs
+    survivors, stats = MB._wc_screen_candidates(
+        _cfg(tmp_path), candidates, pool, round1_block, workers=2
+    )
+    assert set(survivors) == set(range(len(candidates))) - ref_matched
+    assert stats["n_matched_dropped"] == len(ref_matched)
+    assert stats["n_survivors"] == len(survivors)
+    assert stats["workers"] == 2
+    # the engineered drops from each block actually fired (gate not vacuous);
+    # 7 drops too: the empty train row exact-norm-matches the empty candidate
+    # (the Jaccard path can never reach it — no ngrams — but exact-idx does)
+    assert {5, 7, 11, 12, 13, 19, 22, 30} <= ref_matched
+
+    # serial in-process leg (workers=1) agrees too
+    survivors_serial, _ = MB._wc_screen_candidates(
+        _cfg(tmp_path), candidates, pool, round1_block, workers=1
+    )
+    assert survivors_serial == survivors
