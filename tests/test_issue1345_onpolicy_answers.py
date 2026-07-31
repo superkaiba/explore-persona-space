@@ -341,6 +341,14 @@ def _cap_module(monkeypatch):
     return cap
 
 
+def _gen_module(monkeypatch):
+    monkeypatch.setenv("EPM_I1345_VARIANT", "story_boundary_ablation")
+    monkeypatch.setenv("EPM_STORY_CHARACTER_NAME", "Assistant")
+    import issue1345_onpolicy_answers_gen as gen
+
+    return gen
+
+
 @pytest.mark.parametrize(("key", "legacy"), sorted(LEGACY_FORMAT_KEYS.items()))
 def test_injected_format_keys_are_byte_identical(monkeypatch, key, legacy):
     cap = _cap_module(monkeypatch)
@@ -1429,3 +1437,162 @@ def test_summary_default_dir_cannot_drift_from_the_driver(monkeypatch):
     monkeypatch.delenv("EPM_I1345_JUDGE_OUT")
     importlib.reload(summ)
     assert Path("eval_results/issue_1345/judge_legs") == summ.DEFAULT_LEGS_DIR
+
+
+# ---------------------------------------------------------------------------
+# 3i. V1 gate x provenance — drop-and-count on-policy, fail-loud injected
+# ---------------------------------------------------------------------------
+def _attrib_name() -> str:
+    """The character name ANSWER_ATTRIB_RE was actually COMPILED against.
+
+    The regex is built at MODULE IMPORT from EPM_STORY_CHARACTER_NAME, so the
+    first import in the pytest session wins for the whole session — a fixture
+    that hardcodes a name passes alone and fails in file order (this is the same
+    import-time character-name seam that killed capture job 16283). Read the
+    live value instead of assuming it.
+    """
+    import issue1345_common as common
+
+    return common.STORY_CHARACTER_NAME
+
+
+def _slot_story(answer: str, *, prefix: str | None = None):
+    """A story-slot story: prefix + answer + the appended closing quote."""
+    if prefix is None:
+        prefix = f'Dana asked, "What is X?" The {_attrib_name()} replied, "'
+    return prefix + answer + '"', prefix
+
+
+def _slot_row(conv_id: str, answer: str, *, gate=None):
+    """A story-slot row whose stored spans come from the GATE, not hand-written.
+
+    render_arm's second trust-boundary check compares stored spans against the
+    re-run gate's, so a hand-written span number fails as "gate drift" and would
+    mask the behaviour under test.
+    """
+    story, prefix = _slot_story(answer)
+    a_start = len(prefix)
+    turn = {"q_start": 12, "q_end": 25, "a_start": a_start, "a_end": a_start + len(answer)}
+    if gate is not None:
+        re_turn, reason = gate(story, answer)
+        if reason == "ok" and re_turn is not None:
+            turn = dict(re_turn)
+    return {"conv_id": conv_id, "story": story, "answer": answer, "parsed_turns": [turn]}
+
+
+def test_onpolicy_gate_reject_drops_and_counts_instead_of_asserting(monkeypatch):
+    """An on-policy answer ENDING in attribution-shaped words + the appended
+    closing quote makes the reassembled story carry a SECOND attribution match.
+    The answer alone carries zero, so it is a product of the reassembly — the row
+    is un-gateable, not evidence the gate drifted. Measured 3/2089 on the real
+    pool; the capture used to die on the first one mid-GPU-run."""
+    cap = _cap_module(monkeypatch)
+    import unittest.mock as m
+
+    import issue1345_common as common
+
+    gate = cap.gate_for_capture(cap.V1_ARM)
+    good = _slot_row(
+        "s1", "A perfectly ordinary answer with no attribution words in it.", gate=gate
+    )
+    bad = _slot_row("s2", f"It works because, as the {_attrib_name()} explained,", gate=gate)
+    # The trigger really is the reassembly, not the answer text.
+    assert len(list(common.ANSWER_ATTRIB_RE.finditer(bad["answer"]))) == 0
+    assert len(list(common.ANSWER_ATTRIB_RE.finditer(bad["story"]))) == 2
+    with m.patch.object(cap, "render_boundary_turn", lambda *a, **k: None):
+        _r, st = cap.render_arm(cap.V1_ARM, [good, bad], object(), provenance=common.PROV_ONPOLICY)
+    assert st["gate_rejects"] == 1
+    assert st["gate_reject_reasons"] == {"attribution_multi": 1}
+    assert st["gate_reject_conv_ids"] == ["s2"], "the dropped ids must be RECORDED"
+    assert st["stories"] == 2
+
+
+def test_injected_gate_reject_still_fails_loud(monkeypatch):
+    """For INJECTED provenance the story is template-built around a gate-checked
+    answer, so a second attribution really IS drift and must not be skipped."""
+    cap = _cap_module(monkeypatch)
+    import issue1345_common as common
+
+    bad = _slot_row(
+        "s2",
+        f"It works because, as the {_attrib_name()} explained,",
+        gate=cap.gate_for_capture(cap.V1_ARM),
+    )
+    with pytest.raises(AssertionError, match="attribution_multi"):
+        cap.render_arm(cap.V1_ARM, [bad], object(), provenance=common.PROV_INJECTED)
+    # The message names the provenance so the verdict is attributable.
+    try:
+        cap.render_arm(cap.V1_ARM, [bad], object(), provenance=common.PROV_INJECTED)
+    except AssertionError as e:
+        assert "provenance=injected" in str(e)
+
+
+def test_onpolicy_skip_is_scoped_to_the_named_reject_classes(monkeypatch):
+    """Only the enumerated classes are skippable — any OTHER gate verdict still
+    asserts under on-policy, so the relaxation cannot swallow real drift."""
+    cap = _cap_module(monkeypatch)
+    import unittest.mock as m
+
+    import issue1345_common as common
+
+    assert cap.ONPOLICY_EXPECTED_GATE_REJECTS == ("attribution_multi",)
+    row = _slot_row(
+        "s1",
+        "An answer long enough to be gated normally here.",
+        gate=cap.gate_for_capture(cap.V1_ARM),
+    )
+    with (
+        m.patch.object(
+            cap, "gate_for_capture", lambda arm: lambda s, a: (None, "answer_quote_not_closed")
+        ),
+        pytest.raises(AssertionError, match="answer_quote_not_closed"),
+    ):
+        cap.render_arm(cap.V1_ARM, [row], object(), provenance=common.PROV_ONPOLICY)
+
+
+def test_render_arm_rejects_an_unknown_provenance(monkeypatch):
+    cap = _cap_module(monkeypatch)
+    with pytest.raises(AssertionError, match="unknown provenance"):
+        cap.render_arm(cap.V1_ARM, [], object(), provenance="bogus")
+
+
+def test_gen_side_runs_the_consumers_own_gate_at_assembly(monkeypatch):
+    """The durable fix: gen runs the CAPTURE's gate on the assembled story, so no
+    gate class can reach the capture's assert at all. A re-derived local check
+    would be free to drift from the gate that actually asserts."""
+    gen = _gen_module(monkeypatch)
+    import inspect
+
+    src = inspect.getsource(gen.assemble_row)
+    assert "_v1_gate_cached()" in src, "gen must run the consumer's gate, not a re-derived check"
+    assert "v1_gate_" in src, "the drop reason must be namespaced to the gate"
+    cached = inspect.getsource(gen._v1_gate_cached)
+    assert "gate_for_capture" in cached, "must import the capture's own gate"
+
+    prefix = f'Dana asked, "What is X?" The {_attrib_name()} replied, "'
+    pool = {
+        "conv_id": "s2",
+        "prefix": prefix,
+        "source_story": prefix + "x" * 80 + '"',
+        "turn": {"q_start": 12, "q_end": 25, "a_start": len(prefix), "a_end": len(prefix)},
+    }
+    row, reason = gen.assemble_row(
+        pool,
+        f"It works because, as the {_attrib_name()} explained,",
+        shape=gen.SHAPE_STORY_SLOT,
+        model_key="pretrained",
+    )
+    assert row is None and reason == "v1_gate_attribution_multi", reason
+
+
+def test_gen_tally_counts_namespaced_gate_reasons_without_crashing(monkeypatch):
+    """`keep_rows` asserts every drop reason is pre-declared; a gate reason we
+    have not seen before must be COUNTED, not crash the run or vanish."""
+    gen = _gen_module(monkeypatch)
+    import inspect
+
+    src = inspect.getsource(gen.keep_rows)
+    assert 'reason.startswith("v1_gate_")' in src
+    assert "counts.setdefault(reason, 0)" in src
+    # The strict assert must survive for non-namespaced reasons.
+    assert 'assert reason in counts, f"unaccounted drop reason {reason!r}"' in src

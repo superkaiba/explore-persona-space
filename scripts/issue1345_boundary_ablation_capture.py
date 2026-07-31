@@ -455,18 +455,52 @@ def render_boundary_turn(
     )
 
 
-def render_arm(arm: str, stories: list[dict], tokenizer) -> tuple[list[Rendered], dict]:
-    """Re-gate + re-verify + render every kept story of one arm (fail-loud).
+# Gate verdicts an ON-POLICY row can legitimately earn, where the INJECTED arm
+# would only earn them through gate/regex drift. `attribution_multi` is the
+# measured case (3/2089 on the story-slot pool, 0.14%): the model's own answer
+# ENDS with attribution-shaped words ("...as the Assistant explained,") and the
+# closing quote the story-slot shape appends supplies the quote character the
+# attribution regex needs, so the reassembled story carries a SECOND attribution
+# match. The answer text alone carries zero (measured) — the second match is a
+# product of the reassembly, so the row is genuinely un-gateable in this arm
+# rather than evidence that the gate drifted.
+ONPOLICY_EXPECTED_GATE_REJECTS = ("attribution_multi",)
 
-    Two trust-boundary re-checks per row, both fail-loud AssertionErrors rather
-    than skips: (1) the arm's OWN mechanical gate must still return 'ok' with
-    the SAME spans the gen phase stored (a mismatch is gate/regex/name-seam
-    drift); (2) the stored span must be the verbatim answer under the shared
-    normalized matcher (`c.norm_text`).
+
+def render_arm(
+    arm: str,
+    stories: list[dict],
+    tokenizer,
+    *,
+    provenance: str = PROV_INJECTED,
+) -> tuple[list[Rendered], dict]:
+    """Re-gate + re-verify + render every kept story of one arm.
+
+    Two trust-boundary re-checks per row: (1) the arm's OWN mechanical gate must
+    still return 'ok' with the SAME spans the gen phase stored; (2) the stored
+    span must be the verbatim answer under the shared normalized matcher
+    (`c.norm_text`).
+
+    Check (1) stays a fail-loud AssertionError for INJECTED provenance — the
+    story there is template-built around a gate-checked answer, so a second
+    attribution really is gate / regex / character-name drift and must not be
+    skipped past. For ON-POLICY provenance the answer is model-written, and a
+    verdict in ``ONPOLICY_EXPECTED_GATE_REJECTS`` is a property of that text
+    meeting the reassembly, not drift: those rows are DROPPED and COUNTED with
+    their conv_ids recorded, so the tail is auditable and the run does not die on
+    its first offense. Every OTHER verdict still asserts under both provenances.
     """
+    assert provenance in PROVENANCES, f"unknown provenance {provenance!r}"
     gate = gate_for_capture(arm)
     rendered: list[Rendered] = []
-    stats = {"stories": 0, "turns_rendered": 0, "turns_dropped": 0}
+    stats: dict = {
+        "stories": 0,
+        "turns_rendered": 0,
+        "turns_dropped": 0,
+        "gate_rejects": 0,
+        "gate_reject_reasons": {},
+        "gate_reject_conv_ids": [],
+    }
     for s in stories:
         stats["stories"] += 1
         assert len(s["parsed_turns"]) == 1, (
@@ -475,9 +509,19 @@ def render_arm(arm: str, stories: list[dict], tokenizer) -> tuple[list[Rendered]
         )
         turn = s["parsed_turns"][0]
         re_turn, reason = gate(s["story"], s["answer"])
+        if (
+            reason != "ok"
+            and provenance == PROV_ONPOLICY
+            and reason in ONPOLICY_EXPECTED_GATE_REJECTS
+        ):
+            stats["gate_rejects"] += 1
+            stats["gate_reject_reasons"][reason] = stats["gate_reject_reasons"].get(reason, 0) + 1
+            stats["gate_reject_conv_ids"].append(str(s["conv_id"]))
+            continue
         assert reason == "ok" and re_turn is not None, (
             f"{arm} story {s['conv_id']}: the arm gate now returns {reason!r} at the "
-            "extraction trust boundary — gate / regex / character-name drift"
+            f"extraction trust boundary (provenance={provenance}) — gate / regex / "
+            "character-name drift"
         )
         for key in ("q_start", "q_end", "boundary_end", "a_start", "a_end"):
             assert re_turn[key] == turn[key], (
@@ -1019,7 +1063,7 @@ def main() -> None:
         if args.smoke:
             stories = stories[:8]
             print(f"[smoke] limiting to {len(stories)} {key} stories", flush=True)
-        rendered, render_stats = render_arm(key, stories, tokenizer)
+        rendered, render_stats = render_arm(key, stories, tokenizer, provenance=args.provenance)
     else:
         keep_ids = arm_kept_conv_ids(args.stories_dir, bg.GEN_ARMS, v1_dl_dir=args.dl_dir)
         convs = load_comparator_convs(args.dl_dir, keep_ids, convs_jsonl=args.convs_jsonl)
@@ -1153,6 +1197,13 @@ def main() -> None:
         "n_rendered_pre_filter": n_pre_filter,
         "n_dropped_zero_width": len(drops),
         "dropped_conv_ids": [d["conv_id"] for d in drops],
+        # Surfaced at manifest top level (not only nested in render_stats) so a
+        # downstream conv_id-space reconciliation can find the on-policy
+        # gate-reject tail without knowing where the render buried it. Absent
+        # keys default empty: the comparator render path has no arm gate.
+        "n_dropped_gate_reject": render_stats.get("gate_rejects", 0),
+        "gate_reject_reasons": render_stats.get("gate_reject_reasons", {}),
+        "gate_reject_conv_ids": render_stats.get("gate_reject_conv_ids", []),
         **y_meta,
     }
     shard_size = int(args.shard_size)

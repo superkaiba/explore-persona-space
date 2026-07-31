@@ -424,6 +424,23 @@ def _strip_one_trailing_quote(text: str) -> tuple[str, bool]:
     return out, False
 
 
+_V1_GATE = None
+
+
+def _v1_gate_cached():
+    """The capture's own V1 gate, imported once (not per row).
+
+    Deliberately the CONSUMER's function rather than a re-derived check: a
+    re-derived copy is free to drift from the gate that will actually assert.
+    """
+    global _V1_GATE
+    if _V1_GATE is None:
+        import issue1345_boundary_ablation_capture as cap
+
+        _V1_GATE = cap.gate_for_capture(cap.V1_ARM)
+    return _V1_GATE
+
+
 def assemble_row(
     pool_row: dict, answer_text: str, *, shape: str, model_key: str
 ) -> tuple[dict | None, str]:
@@ -466,6 +483,19 @@ def assemble_row(
         # prefix; drop it at CPU cost with a named reason instead.
         if story.count(answer) != 1:
             return None, "answer_not_unique_in_story"
+        # ...and the answer-multiplicity axis is only ONE of the gate's verdicts.
+        # Run the CONSUMER'S OWN GATE on the assembled story and drop on any
+        # rejection, so no gate class can reach the capture's assert. Measured
+        # residual this closes: 3/2089 rows whose answer ENDS with
+        # attribution-shaped words ("...as the Assistant explained,") — the
+        # closing quote appended two lines up then supplies the quote character
+        # the attribution regex needs, so the reassembled story carries a SECOND
+        # attribution match and the gate returns `attribution_multi`. The answer
+        # text alone carries zero, so this is a product of the reassembly, and it
+        # is invisible to any check that does not run the real gate.
+        v1_turn, v1_reason = _v1_gate_cached()(story, answer)
+        if v1_reason != "ok" or v1_turn is None:
+            return None, f"v1_gate_{v1_reason}"
         return {
             "conv_id": pool_row["conv_id"],
             "story": story,
@@ -600,6 +630,13 @@ def keep_rows(
             counts["finish_length_capped"] += 1
         row, reason = assemble_row(pool_row, raw["answer_text"], shape=shape, model_key=model_key)
         if row is None:
+            # The consumer's gate owns its own reason vocabulary, so a
+            # `v1_gate_*` verdict is registered as it appears — a gate reason we
+            # have not seen before still gets COUNTED rather than crashing the
+            # run or vanishing. Every other reason must be pre-declared, so the
+            # assert still catches a typo'd or unaccounted local drop class.
+            if reason.startswith("v1_gate_"):
+                counts.setdefault(reason, 0)
             assert reason in counts, f"unaccounted drop reason {reason!r}"
             counts[reason] += 1
             continue
