@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1945,
+  "highest_id": 1946,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7320,6 +7320,13 @@
       "path": "tasks/proposed/1945",
       "status": "proposed",
       "title": "Does the map's residual interaction have low-rank structure, or is it per-pair idiosyncratic?"
+    },
+    "1946": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1946",
+      "status": "proposed",
+      "title": "Per-context error in SAE feature space: does the prefix/bare mirror image survive the sparse re-basis?"
     },
     "195": {
       "has_clean_result": false,
