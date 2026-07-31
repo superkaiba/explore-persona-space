@@ -24,6 +24,29 @@ Layer 19, 5-fold group-held-out, seed 0, ambient d = 3584. Lambda grid 0.01-1000
 | `agg_instruct_HELIOS` | scene_aggregated | 300 | 240 | +0.4011 | +0.4011 | +0.0830 | +0.4011 | +0.3295 | artifact-deflated | robust |
 | `agg_instruct_Dana` | scene_aggregated | 300 | 240 | +0.3286 | +0.3286 | -0.0368 | +0.3261 | +0.2562 | artifact-deflated | robust |
 | `agg_instruct_Vex` | scene_aggregated | 300 | 240 | +0.2329 | +0.2329 | -0.2548 | +0.2329 | +0.1539 | artifact-deflated | robust |
+| `script_base_Wren` | script_format_recaptured | 2329 | 1863 | +0.1369 | +0.1371 | +0.1371 | +0.1371 | -0.2206 | robust | robust |
+| `script_base_HELIOS` | script_format_recaptured | 2466 | 1973 | +0.1483 | +0.1485 | +0.1485 | +0.1485 | -0.2790 | robust | robust |
+| `script_base_Dana` | script_format_recaptured | 1325 | 1060 | +0.1468 | +0.1469 | +0.1469 | +0.1591 | -0.2285 | robust | robust |
+| `script_base_Vex` | script_format_recaptured | 2060 | 1648 | +0.1059 | +0.1059 | +0.1059 | +0.1059 | -0.1602 | robust | robust |
+| `script_instruct_Wren` | script_format_recaptured | 3098 | 2478 | +0.2345 | +0.2321 | +0.2321 | +0.2489 | -0.3993 | robust | robust |
+| `script_instruct_HELIOS` | script_format_recaptured | 3195 | 2556 | +0.2527 | +0.2455 | +0.2455 | +0.2641 | -0.4630 | robust | robust |
+| `script_instruct_Dana` | script_format_recaptured | 2744 | 2195 | +0.1882 | +0.1891 | +0.1891 | +0.1891 | -0.1035 | robust | robust |
+| `script_instruct_Vex` | script_format_recaptured | 3471 | 2777 | +0.1662 | +0.1680 | +0.1680 | +0.1680 | -0.1366 | robust | robust |
+
+## Script-format cells (RECAPTURED store)
+
+The original run-2 script-format activation store was lost with its instance; these rows are fit on the store rebuilt by `scripts/issue1310_recapture_script_store.py` (job 16086) at `issue1310_char_map/analysis_tensors/store_recap/`. Seven of the eight published under AMBIENT pure-GCV (no `gcv_dof_cap` field in their committed JSONs); instruct Vex came from the completion round and published CAPPED. `reproduced` is the cell's OWN published selector re-run on the recaptured store.
+
+| cell | n (published n) | published sel. | published | reproduced | repro delta | inner-group-CV | verdict | recapture |
+|---|---|---|---|---|---|---|---|---|
+| `script_base_Wren` | 2329 (2329) | ambient | +0.1369 | +0.1371 | 0.0001 | +0.1371 | robust | span-exact |
+| `script_base_HELIOS` | 2466 (2466) | ambient | +0.1483 | +0.1485 | 0.0002 | +0.1485 | robust | span-exact |
+| `script_base_Dana` | 1325 (1325) | ambient | +0.1468 | +0.1469 | 0.0002 | +0.1591 | robust | span-exact |
+| `script_base_Vex` | 2060 (2060) | ambient | +0.1059 | +0.1059 | 0.0000 | +0.1059 | robust | span-exact |
+| `script_instruct_Wren` | 3098 (3094) | ambient | +0.2345 | +0.2321 | 0.0024 | +0.2489 | robust | near-replica |
+| `script_instruct_HELIOS` | 3195 (3123) | ambient | +0.2527 | +0.2455 | 0.0072 | +0.2641 | robust | near-replica |
+| `script_instruct_Dana` | 2744 (2700) | ambient | +0.1882 | +0.1891 | 0.0008 | +0.1891 | robust | near-replica |
+| `script_instruct_Vex` | 3471 (3586) | capped | +0.1662 | +0.1680 | 0.0018 | +0.1680 | robust | near-replica |
 
 ## Selected lambda per arm (grid-edge proximity)
 
@@ -45,6 +68,14 @@ Layer 19, 5-fold group-held-out, seed 0, ambient d = 3584. Lambda grid 0.01-1000
 | `agg_instruct_HELIOS` | 0.01 | 5/5 | 3162.28 | 3162.28 |
 | `agg_instruct_Dana` | 0.01 | 5/5 | 3162.28 | 3162.28 |
 | `agg_instruct_Vex` | 0.01 | 5/5 | 10000 | 10000 |
+| `script_base_Wren` | 10000 | 0/5 | 10000 | 10000 |
+| `script_base_HELIOS` | 10000 | 0/5 | 10000 | 10000 |
+| `script_base_Dana` | 3162.28 | 0/5 | 3162.28 | 10000 |
+| `script_base_Vex` | 10000 | 0/5 | 10000 | 10000 |
+| `script_instruct_Wren` | 3162.28 | 0/5 | 3162.28 | 10000 |
+| `script_instruct_HELIOS` | 3162.28 | 0/5 | 3162.28 | 10000 |
+| `script_instruct_Dana` | 10000 | 0/5 | 10000 | 10000 |
+| `script_instruct_Vex` | 10000 | 0/5 | 10000 | 10000 |
 
 ## Forced-lambda diagnostic reads
 
@@ -66,6 +97,14 @@ Layer 19, 5-fold group-held-out, seed 0, ambient d = 3584. Lambda grid 0.01-1000
 | `agg_instruct_HELIOS` | +0.2846 | +0.3848 | +0.3907 |
 | `agg_instruct_Dana` | +0.1970 | +0.3091 | +0.3241 |
 | `agg_instruct_Vex` | +0.0488 | +0.1927 | +0.2329 |
+| `script_base_Wren` | -0.7411 | +0.0220 | +0.1371 |
+| `script_base_HELIOS` | -0.8543 | +0.0220 | +0.1485 |
+| `script_base_Dana` | -0.5283 | +0.0823 | +0.1591 |
+| `script_base_Vex` | -0.8575 | -0.0214 | +0.1059 |
+| `script_instruct_Wren` | -0.5078 | +0.1603 | +0.2489 |
+| `script_instruct_HELIOS` | -0.5417 | +0.1709 | +0.2641 |
+| `script_instruct_Dana` | -0.5539 | +0.0997 | +0.1891 |
+| `script_instruct_Vex` | -0.7776 | +0.0421 | +0.1680 |
 
 ## Mapping baselines (ambient space; standing dual-read rule)
 
@@ -87,3 +126,11 @@ Layer 19, 5-fold group-held-out, seed 0, ambient d = 3584. Lambda grid 0.01-1000
 | `agg_instruct_HELIOS` | +0.0967 | 0.200 | 0.087 | 0.0033 |
 | `agg_instruct_Dana` | +0.0717 | 0.110 | 0.070 | 0.0033 |
 | `agg_instruct_Vex` | +0.0336 | 0.107 | 0.033 | 0.0033 |
+| `script_base_Wren` | +0.0982 | 0.018 | 0.018 | 0.0004 |
+| `script_base_HELIOS` | +0.1185 | 0.019 | 0.019 | 0.0004 |
+| `script_base_Dana` | +0.0971 | 0.078 | 0.078 | 0.0008 |
+| `script_base_Vex` | +0.0717 | 0.017 | 0.017 | 0.0005 |
+| `script_instruct_Wren` | +0.1506 | 0.079 | 0.079 | 0.0003 |
+| `script_instruct_HELIOS` | +0.1695 | 0.065 | 0.065 | 0.0003 |
+| `script_instruct_Dana` | +0.1227 | 0.036 | 0.036 | 0.0004 |
+| `script_instruct_Vex` | +0.0775 | 0.032 | 0.032 | 0.0003 |
