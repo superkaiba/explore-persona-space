@@ -37,15 +37,35 @@ both-arms rule. Nothing is fitted here (no ridge / probe / MLP), so there is no
 n_train-vs-d regime: every read is a fixed linear projection + a rank
 correlation.
 
-SCOPE CAVEAT (recorded in every output payload): the evil main-grid arms project
-in WHITENED space (arms.py: z_ctx whitened, rb "whitened space") with the U-pool
-shrinkage whitening fit fresh in-CLI and never persisted. Reproducing that needs
-the whitened labeled table resident (~14 GB per kind + ~69 GB per-rollout t1)
-against 17 GB available VM RAM, so it is not runnable here. These reads are
-RAW-space and the regime-ordering verdict is PROVISIONAL / not numerically
-comparable to the committed whitened main-grid values. The E1 anchor is run
-through this identical raw-space path so the E1-vs-E2-vs-E2p comparison is
-internally matched.
+SPACE (``--space raw`` default | ``whitened``). The evil main-grid arms project in
+WHITENED space (arms.py: z_ctx whitened, rb "whitened space") with the U-pool
+shrinkage whitening fit fresh in-CLI and never persisted. The original round read
+RAW-space only, on the premise that reproducing the whitened space needs the
+whitened labeled table RESIDENT (~14 GB per kind + ~69 GB per-rollout t1) against
+17 GB VM RAM. That premise is FALSE: whitening is a LINEAR map, so it folds into
+the direction instead of the data and no whitened grid is ever materialized.
+
+With ``z = (x - mu) W`` (``W = Sigma_g^{-1/2}``, SYMMETRIC by construction --
+``evecs diag(lam^-1/2) evecs^T``) and the main grid's whitened direction
+``rb_w = rb_raw W`` (fits.py `einsum("ld,lde->le", rb, wh.w)`), every read is an
+AFFINE function of the RAW row:
+
+    projection read   score = z . rb_w        = x . (W rb_w)  - mu . (W rb_w)
+    map read          score = pred_w . rb_w   = x . (W h)     + const
+                      where g = w rb_w, h = g / x_sd,
+                      const = -mu.(W h) - x_mu.h + y_mu.rb_w
+
+So each (read x regime x layer) collapses to ONE (d,) vector + ONE scalar,
+precomputed before streaming. Peak RAM is the whitening matrices during that
+precompute (~1.4 GB fp32 per variant), NOT the activation grid -- the same
+bounded streaming shape as the raw path. Whitened reads ARE numerically
+comparable to the committed main-grid columns; raw reads remain PROVISIONAL.
+
+The whitening itself is BEHAVIOR-INDEPENDENT (fit on the shared #1092 U-pool
+slice, keyed only by variant x u_size), so ``--phase whitening`` fits it ONCE per
+variant and PERSISTS it -- closing the "fit fresh in-CLI and never persisted" gap
+for every behavior. The E1 anchor runs through whichever space is selected, so
+the E1-vs-E2-vs-E2p comparison stays internally matched either way.
 """
 
 from __future__ import annotations
@@ -95,6 +115,17 @@ RB_E1_PREFIX = "issue779_monitoring/r_b/"
 MAPS_PREFIX = "issue1739_ctxmap/analysis_tensors/maps/"
 JUDGE_PREFIX = "issue1739_ctxmap/judge/"
 PREFIX_HASH_LAYER = 14  # single layer used for the distinct-prefix-state count
+SPACES = ("raw", "whitened")
+# The whitened-only extra read: the main grid whitens the answer acts with the
+# SAME per-VARIANT whitening as the context arm, so under whitening the oracle
+# read is variant-dependent (it is not in raw space). ``oracle`` keeps the
+# context_end whitening (the main grid's primary arm); ``oracle_pre`` carries the
+# prefix_end one. ADDITIVE — the five canonical READS keep their meaning.
+ORACLE_PRE_READ = "oracle_pre"
+# Behavior-INDEPENDENT persisted whitening (keyed variant x u_size only).
+WHITEN_DIR = "whitening"
+WHITEN_FILE_FMT = "{variant}__u{u_label}.npz"
+U_STORE_DEFAULT = Path("data/issue_1739/hf_dl/u_store")
 
 
 # ---------------------------------------------------------------------------
@@ -489,21 +520,250 @@ def _map_projectors(variant: str, directions: dict, stage: Path):
     return {"wv": wv, "ymuv": ymuv, "x_mu": x_mu, "x_sd": x_sd, "meta": meta, "path": str(path)}
 
 
+def cube_dir_name(args) -> str:
+    """Per-space cube dir — the raw path keeps its legacy ``cube`` name."""
+    return "cube" if args.space == "raw" else f"cube_{args.space}"
+
+
+def reduce_out_name(args) -> str:
+    """Per-space reduce output — the raw path keeps its legacy filename."""
+    return (
+        "regime_comparison.json" if args.space == "raw" else f"regime_comparison_{args.space}.json"
+    )
+
+
+def whitening_path(args, variant: str) -> Path:
+    return (
+        Path(args.whitening_root)
+        / WHITEN_DIR
+        / WHITEN_FILE_FMT.format(variant=variant, u_label=args.u_size)
+    )
+
+
+def phase_whitening(args, behavior: str, stage: Path) -> None:
+    """Fit + PERSIST the U-pool shrinkage whitening, once per variant.
+
+    BEHAVIOR-INDEPENDENT: the U pool is the shared #1092 slice (fit-pool rows
+    only, the ``is_eval_only`` exclusion), so the transform is keyed by
+    (variant, u_size) alone — the per-behavior phase loop calls this, and every
+    call after the first short-circuits on the persisted file. Reuses
+    ``fits.fit_whitening`` VERBATIM (same shrinkage grid, holdout frac and seed
+    the main grid passes), so the persisted transform IS the main grid's.
+
+    Peak RAM is the fp64 U-pool promotion inside ``fit_whitening``
+    (Ly x n_u x d x 8 B; ~15 GB at 28 x 18,793 x 3,584) plus the fp32 stack it
+    is promoted from — the ONE resident-grid step in the whitened path, and the
+    reason this phase is sized for the GPU box rather than the shared VM.
+    """
+    import numpy as np
+
+    from explore_persona_space.experiments.issue_1739 import fits, store_io
+
+    todo = [v for v in VARIANTS if not whitening_path(args, v).is_file()]
+    if not todo:
+        logger.info("[%s] whitening already persisted for %s — skipping fit", behavior, VARIANTS)
+        return
+    store_io.stage_u_store(Path(args.u_store), tuple(todo), tuple(range(28)))
+    u_arrays, u_meta = store_io.load_summaries(
+        Path(args.u_store), tuple(todo), tuple(range(28)), hidden_dim=3584
+    )
+    rows = np.flatnonzero(store_io.fit_pool_mask(u_meta))
+    if args.u_size != "full":
+        rng = np.random.default_rng([1739, 9, int(args.whiten_seed)])
+        want = int(args.u_size)
+        if want < len(rows):
+            rows = np.sort(rng.choice(rows, size=want, replace=False))
+    logger.info("[whitening] U pool: %d fit rows (u_size=%s)", len(rows), args.u_size)
+    for variant in todo:
+        t0 = time.time()
+        u_x = np.stack([u_arrays[(variant, ly)][rows] for ly in range(28)])
+        logger.info(
+            "[whitening] %s: fitting on %s (%.1f GB fp64 promotion)",
+            variant,
+            u_x.shape,
+            u_x.size * 8 / 1e9,
+        )
+        wh = fits.fit_whitening(u_x, device=args.whiten_device, seed=int(args.whiten_seed))
+        del u_x
+        out = whitening_path(args, variant)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        tmp = out.with_name(out.name.replace(".npz", ".tmp.npz"))
+        with tmp.open("wb") as fh:
+            np.savez(
+                fh,
+                # fp32 matches the persisted-map precedent (_save_map); the
+                # projection vectors are recomputed in fp64 from these, and a
+                # ~1e-7 relative error is immaterial to a rank correlation.
+                mu=np.asarray(wh.mu, dtype=np.float32),
+                w=np.asarray(wh.w, dtype=np.float32),
+                gamma=np.asarray(wh.gamma, dtype=np.float64),
+                meta=json.dumps(
+                    {
+                        "variant": variant,
+                        "u_size": args.u_size,
+                        "n_u_rows": int(len(rows)),
+                        "seed": int(args.whiten_seed),
+                        "behavior_independent": True,
+                        "recipe_source": (
+                            "explore_persona_space.experiments.issue_1739.fits.fit_whitening, "
+                            "reused verbatim (same shrinkage grid / holdout frac / seed as the "
+                            "main-grid fits CLI)"
+                        ),
+                        "git_commit": _git_commit(),
+                        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                    }
+                ),
+            )
+        os.replace(tmp, out)
+        logger.info(
+            "[whitening] %s: wrote %s (gammas=%s) in %.1f min",
+            variant,
+            out,
+            np.asarray(wh.gamma).tolist(),
+            (time.time() - t0) / 60,
+        )
+        del wh
+
+
+def _load_whitening(args, variant: str):
+    """``(mu (28,d) fp64, w (28,d,d) fp32, meta)`` for one variant."""
+    import numpy as np
+
+    path = whitening_path(args, variant)
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"whitening missing at {path} — run --phase whitening first (--space whitened)"
+        )
+    with np.load(path, allow_pickle=False) as z:
+        return (
+            np.asarray(z["mu"], dtype=np.float64),
+            np.asarray(z["w"]),
+            json.loads(str(z["meta"])),
+        )
+
+
+def _whitened_projectors(args, directions: dict, stage: Path) -> tuple[dict, dict]:
+    """Per (read, regime, layer): ONE (d,) vector + ONE scalar — no whitened grid.
+
+    Realizes the affine collapse in the module docstring. Returns
+    ``({read: {regime: (vec (28,d), const (28,))}}, provenance)``. The whitening
+    matrix for a variant is loaded, consumed layer-by-layer in fp64, and freed
+    before the next variant, so peak RAM is one variant's fp32 matrices
+    (~1.4 GB) plus one layer's fp64 promotion (~103 MB).
+    """
+    import numpy as np
+
+    reads = {  # read -> (whitening variant, map variant or None)
+        "ctx": ("context_end", None),
+        "pre": ("prefix_end", None),
+        "map_ctx": ("context_end", "context_end"),
+        "map_pre": ("prefix_end", "prefix_end"),
+        "oracle": ("context_end", None),
+        ORACLE_PRE_READ: ("prefix_end", None),
+    }
+    maps = {v: _map_projectors_raw(v, stage) for v in VARIANTS}
+    out: dict[str, dict] = {r: {} for r in reads}
+    prov: dict[str, dict] = {"map_meta": {v: maps[v]["meta"] for v in VARIANTS}}
+    for variant in VARIANTS:
+        mu, w_mat, wmeta = _load_whitening(args, variant)
+        prov[variant] = {k: wmeta.get(k) for k in ("u_size", "n_u_rows", "seed", "recipe_source")}
+        wants = [r for r, (wv, _) in reads.items() if wv == variant]
+        for read in wants:
+            map_variant = reads[read][1]
+            mp = maps[map_variant] if map_variant else None
+            for regime, rb_raw in directions.items():
+                vec = np.zeros((28, rb_raw.shape[1]), dtype=np.float64)
+                const = np.zeros(28, dtype=np.float64)
+                for ly in range(28):
+                    wl = np.asarray(w_mat[ly], dtype=np.float64)  # symmetric
+                    rb_w = rb_raw[ly] @ wl  # the main grid's whitened direction
+                    if mp is None:
+                        v = wl @ rb_w
+                        c = -float(mu[ly] @ v)
+                    else:
+                        g = np.asarray(mp["w"][ly], dtype=np.float64) @ rb_w
+                        h = g / mp["x_sd"][ly]
+                        v = wl @ h
+                        c = (
+                            -float(mu[ly] @ v)
+                            - float(mp["x_mu"][ly] @ h)
+                            + float(mp["y_mu"][ly, 0] @ rb_w)
+                        )
+                    vec[ly], const[ly] = v, c
+                out[read][regime] = (vec, const)
+        del w_mat
+    # Drop our own references to the map payloads (the big fp16 `w` blocks);
+    # clearing the payload dicts themselves would mutate objects the caller may
+    # still hold.
+    maps.clear()
+    return out, prov
+
+
+def _map_projectors_raw(variant: str, stage: Path) -> dict:
+    """Load a persisted map's raw arrays (``w``/``x_mu``/``x_sd``/``y_mu``).
+
+    Unlike :func:`_map_projectors` (which folds a RAW direction in immediately),
+    this keeps the arrays so the whitened path can fold ``W`` in as well. The
+    map's ``apply`` contract is ``pred = ((x - x_mu)/x_sd) @ w + y_mu`` in
+    WHITENED space — which is exactly why the whitened path is the faithful one.
+    """
+    import numpy as np
+
+    local = (
+        _REPO_ROOT / "data/issue_1739/hf_dl/i1739_tensors" / MAPS_PREFIX / f"{variant}__ufull.npz"
+    )
+    path = (
+        local
+        if local.is_file()
+        else _stage_hf(f"{MAPS_PREFIX}{variant}__ufull.npz", stage / "inputs")
+    )
+    with np.load(path, allow_pickle=False) as z:
+        meta = json.loads(str(z["meta"]))
+        if list(z["layers"]) != list(range(28)):
+            raise RuntimeError(f"map {variant} layers != 0..27")
+        out = {
+            "w": np.asarray(z["w"]),
+            "x_mu": np.asarray(z["x_mu"], dtype=np.float64),
+            "x_sd": np.asarray(z["x_sd"], dtype=np.float64),
+            "y_mu": np.asarray(z["y_mu"], dtype=np.float64),
+            "meta": meta,
+            "path": str(path),
+        }
+    logger.info("[map %s] apply=%r (whitened-space fold)", variant, meta.get("apply"))
+    return out
+
+
 def phase_project(args, behavior: str, stage: Path) -> None:
     """Per-row scalar projection cube for all reads x regimes x layers (one pass)."""
     import numpy as np
 
     ridx = load_row_index(stage, behavior)
     directions = _load_directions(behavior, stage)
-    maps = {v: _map_projectors(v, directions, stage) for v in VARIANTS}
+    whitened = args.space == "whitened"
+    reads = (*READS, ORACLE_PRE_READ) if whitened else READS
+    maps: dict = {}
+    proj: dict = {}
+    whiten_prov: dict = {}
+    if whitened:
+        proj, whiten_prov = _whitened_projectors(args, directions, stage)
+    else:
+        maps = {v: _map_projectors(v, directions, stage) for v in VARIANTS}
     n = ridx["n_rows"]
     cube = {
-        read: {r: np.full((28, n), np.nan, dtype=np.float32) for r in REGIMES} for read in READS
+        read: {r: np.full((28, n), np.nan, dtype=np.float32) for r in REGIMES} for read in reads
     }
     prefix_hashes: dict[int, str] = {}
     off = ridx["shard_offset"]
     kind_read = {"context_end": "ctx", "prefix_end": "pre", "t1": "oracle"}
     kind_map_read = {"context_end": "map_ctx", "prefix_end": "map_pre"}
+    # Under whitening the oracle read is variant-dependent (the main grid
+    # whitens the answer acts with the context arm's own transform), so the t1
+    # member feeds BOTH oracle reads.
+    kind_reads_w = {
+        "context_end": ("ctx", "map_ctx"),
+        "prefix_end": ("pre", "map_pre"),
+        "t1": ("oracle", ORACLE_PRE_READ),
+    }
     n_members = 0
     for name, arr in stream_members(
         behavior,
@@ -517,15 +777,22 @@ def phase_project(args, behavior: str, stage: Path) -> None:
         if arr.shape[0] != hi - lo:
             raise RuntimeError(f"{name}: {arr.shape[0]} rows, row_index says {hi - lo}")
         a = np.asarray(arr, dtype=np.float64)
-        for regime, v in directions.items():
-            cube[kind_read[kind]][regime][layer, lo:hi] = a @ v[layer]
-        if kind in kind_map_read:
-            mp = maps[kind]
-            xs = (a - mp["x_mu"][layer]) / mp["x_sd"][layer]
-            for regime in REGIMES:
-                cube[kind_map_read[kind]][regime][layer, lo:hi] = (
-                    xs @ mp["wv"][regime][layer] + mp["ymuv"][regime][layer]
-                )
+        if whitened:
+            # Every whitened read is affine in the RAW row: x . vec + const.
+            for read in kind_reads_w[kind]:
+                for regime in REGIMES:
+                    vec, const = proj[read][regime]
+                    cube[read][regime][layer, lo:hi] = a @ vec[layer] + const[layer]
+        else:
+            for regime, v in directions.items():
+                cube[kind_read[kind]][regime][layer, lo:hi] = a @ v[layer]
+            if kind in kind_map_read:
+                mp = maps[kind]
+                xs = (a - mp["x_mu"][layer]) / mp["x_sd"][layer]
+                for regime in REGIMES:
+                    cube[kind_map_read[kind]][regime][layer, lo:hi] = (
+                        xs @ mp["wv"][regime][layer] + mp["ymuv"][regime][layer]
+                    )
         if kind == "prefix_end" and layer == PREFIX_HASH_LAYER:
             for i in range(a.shape[0]):
                 prefix_hashes[lo + i] = hashlib.blake2b(
@@ -535,9 +802,9 @@ def phase_project(args, behavior: str, stage: Path) -> None:
     expect = 28 * 3 * ridx["n_shards"]
     if n_members != expect:
         raise RuntimeError(f"[{behavior}] saw {n_members} summary members, expected {expect}")
-    out = stage / behavior / "cube"
+    out = stage / behavior / cube_dir_name(args)
     out.mkdir(parents=True, exist_ok=True)
-    payload = {f"{read}__{regime}": cube[read][regime] for read in READS for regime in REGIMES}
+    payload = {f"{read}__{regime}": cube[read][regime] for read in reads for regime in REGIMES}
     n_distinct_prefix = len(set(prefix_hashes.values()))
     tmp = out / "cube.tmp.npz"
     with tmp.open("wb") as fh:
@@ -550,11 +817,21 @@ def phase_project(args, behavior: str, stage: Path) -> None:
                 {
                     "behavior": behavior,
                     "n_rows": n,
-                    "reads": list(READS),
+                    "reads": list(reads),
                     "regimes": list(REGIMES),
                     "n_distinct_prefix_states_L14": n_distinct_prefix,
-                    "map_meta": {v: maps[v]["meta"] for v in VARIANTS},
-                    "space": "RAW activation space (NOT the whitened main-grid space)",
+                    "map_meta": (
+                        whiten_prov.get("map_meta")
+                        if whitened
+                        else {v: maps[v]["meta"] for v in VARIANTS}
+                    ),
+                    "space": (
+                        "WHITENED main-grid space (U-pool shrinkage whitening folded into the "
+                        "direction; numerically comparable to the committed main-grid columns)"
+                        if whitened
+                        else "RAW activation space (NOT the whitened main-grid space)"
+                    ),
+                    "whitening": whiten_prov or None,
                 }
             ),
         )
@@ -585,7 +862,7 @@ def phase_reduce(args, behavior: str, stage: Path) -> None:
     import numpy as np
 
     labels = load_labels(behavior, stage / "inputs")
-    with np.load(stage / behavior / "cube" / "cube.npz", allow_pickle=False) as z:
+    with np.load(stage / behavior / cube_dir_name(args) / "cube.npz", allow_pickle=False) as z:
         cube_meta = json.loads(str(z["meta"]))
         row_ctx = [str(c) for c in z["context_id"]]
         cube = {k: z[k] for k in z.files if "__" in k}
@@ -609,7 +886,9 @@ def phase_reduce(args, behavior: str, stage: Path) -> None:
     per_ctx: dict[str, np.ndarray] = {}
     for key, arr in cube.items():
         read = key.split("__")[0]
-        if read == "oracle":
+        # Both oracle reads (raw `oracle`; whitened `oracle` + `oracle_pre`) are
+        # per-ROLLOUT t1 projections and reduce by mean over a context's rows.
+        if read.startswith("oracle"):
             sums = np.zeros((28, n_ctx))
             cnt = np.zeros(n_ctx)
             sel = row_idx >= 0
@@ -627,7 +906,8 @@ def phase_reduce(args, behavior: str, stage: Path) -> None:
     rung_arr = np.array(labels["rung"])
     rungs = sorted(set(labels["rung"]))
     table: dict = {}
-    for read in READS:
+    reads = tuple(cube_meta.get("reads") or READS)
+    for read in reads:
         table[read] = {}
         for regime in REGIMES:
             vals = per_ctx[f"{read}__{regime}"]
@@ -655,32 +935,61 @@ def phase_reduce(args, behavior: str, stage: Path) -> None:
             stage / behavior / f"r_b_{regime}" / f"{behavior}.npz", allow_pickle=False
         ) as z:
             e2_meta[regime] = json.loads(str(z["meta"]))
+    whitened = args.space == "whitened"
+    read_docs = {
+        "ctx": "direction . context_end state",
+        "pre": "direction . prefix_end state",
+        "map_ctx": "direction . ufull-map(context_end) predicted answer state",
+        "map_pre": "direction . ufull-map(prefix_end) predicted answer state",
+        "oracle": "direction . TRUE per-context mean answer state (t1)",
+    }
+    if whitened:
+        read_docs["oracle"] += " [context_end whitening — the main grid's primary arm]"
+        read_docs[ORACLE_PRE_READ] = (
+            "direction . TRUE per-context mean answer state (t1) [prefix_end whitening]"
+        )
+    space_caveats = (
+        [
+            "WHITENED-SPACE: reads project in the main grid's U-pool shrinkage-whitened space, "
+            "reproduced EXACTLY by folding the (linear, symmetric) whitening into the direction "
+            "instead of the data -- score = x . (W rb_w) + const -- so no whitened activation "
+            "grid is materialized and these rho values ARE numerically comparable to the "
+            "committed main-grid columns. The E1 anchor runs through this identical whitened "
+            "path, so the E1/E2/E2p comparison is internally matched.",
+            "ORACLE IS VARIANT-DEPENDENT under whitening (the main grid whitens the answer acts "
+            "with the context arm's own transform): 'oracle' uses the context_end whitening and "
+            "'oracle_pre' the prefix_end one. In raw space the two coincide, hence the single "
+            "'oracle' read there.",
+        ]
+        if whitened
+        else [
+            "RAW-SPACE: the evil main-grid arms project in WHITENED space (U-pool shrinkage "
+            "whitening, fit fresh in-CLI and never persisted). These rho values are therefore "
+            "NOT numerically comparable to the committed whitened main-grid values; the E1 "
+            "anchor is run through this identical raw-space path so the E1/E2/E2p comparison "
+            "is internally matched. Run --space whitened for the comparable columns.",
+            "RAW-SPACE MAP ARMS: the persisted map's own contract is "
+            "'pred = ((x - x_mu)/x_sd) @ w + y_mu (whitened space)', so applying it to RAW "
+            "activations mismatches its fitted input space -- the map_ctx / map_pre raw reads "
+            "are indicative only.",
+        ]
+    )
     out_payload = {
         "behavior": behavior,
         "n_contexts_by_rung": {r: int((rung_arr == r).sum()) for r in rungs},
         "regime_table": table,
         "meta": {
-            "space": "RAW activation space",
-            "reads": {
-                "ctx": "direction . context_end state",
-                "pre": "direction . prefix_end state",
-                "map_ctx": "direction . ufull-map(context_end) predicted answer state",
-                "map_pre": "direction . ufull-map(prefix_end) predicted answer state",
-                "oracle": "direction . TRUE per-context mean answer state (t1)",
-            },
+            "space": "WHITENED main-grid space" if whitened else "RAW activation space",
+            "reads": read_docs,
             "extraction": e2_meta,
             "per_rollout_source": labels["per_rollout_source"],
             "n_distinct_prefix_states_L14": cube_meta.get("n_distinct_prefix_states_L14"),
             "map_meta": cube_meta.get("map_meta"),
+            "whitening": cube_meta.get("whitening"),
             "caveats": [
                 "IN-SAMPLE: E2/E2p directions were extracted from the TRAIN-rung labels, so their "
                 "train-rung rho is in-sample by construction; the OOD rungs are held out.",
-                "RAW-SPACE: the evil main-grid arms project in WHITENED space (U-pool shrinkage "
-                "whitening, fit fresh in-CLI and never persisted). That pipeline needs ~14 GB per "
-                "kind plus ~69 GB per-rollout t1 resident vs 17 GB available VM RAM, so it is not "
-                "runnable here. These rho values are therefore NOT numerically comparable to the "
-                "committed whitened main-grid values; the E1 anchor is run through this identical "
-                "raw-space path so the E1/E2/E2p comparison is internally matched.",
+                *space_caveats,
                 "u-full MAP OOD: the 963k round measured this map extrapolating with strongly "
                 "negative reconstruction R2 on behavior eval distributions -- a distribution-"
                 "coverage caveat on the map_ctx / map_pre reads, not a serialization bug.",
@@ -693,7 +1002,7 @@ def phase_reduce(args, behavior: str, stage: Path) -> None:
     }
     out_dir = _REPO_ROOT / "eval_results/issue_1739/nat_pv_regimes" / behavior
     out_dir.mkdir(parents=True, exist_ok=True)
-    out = out_dir / "regime_comparison.json"
+    out = out_dir / reduce_out_name(args)
     tmp = out.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(out_payload, indent=1))
     os.replace(tmp, out)
@@ -712,6 +1021,7 @@ def _git_commit() -> str:
 PHASES = {
     "rowindex": phase_rowindex,
     "directions": phase_directions,
+    "whitening": phase_whitening,
     "project": phase_project,
     "reduce": phase_reduce,
 }
@@ -725,7 +1035,25 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--revision", default="main")
     ap.add_argument("--workers", type=int, default=12)
     ap.add_argument("--window-mib", type=int, default=32)
+    ap.add_argument(
+        "--space",
+        default="raw",
+        choices=SPACES,
+        help="projection space: raw (legacy, provisional) | whitened (main-grid-comparable)",
+    )
+    ap.add_argument("--u-store", type=Path, default=U_STORE_DEFAULT, help="staged #1092 U-pool")
+    ap.add_argument(
+        "--whitening-root",
+        type=Path,
+        default=Path("data/issue_1739"),
+        help="where the behavior-INDEPENDENT persisted whitening lives",
+    )
+    ap.add_argument("--u-size", default="full", help="U-pool rung for the whitening fit")
+    ap.add_argument("--whiten-device", default="cuda", help="fit_whitening device (cpu|cuda)")
+    ap.add_argument("--whiten-seed", type=int, default=0, help="matches the fits CLI --seeds[0]")
     args = ap.parse_args(argv)
+    if "whitening" in args.phase and args.space != "whitened":
+        ap.error("--phase whitening is only meaningful with --space whitened")
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", stream=sys.stdout
     )
