@@ -22,14 +22,18 @@ Run from the issue-1739 worktree root:
 from __future__ import annotations
 
 import csv
-import json
-import math
-import statistics as st
-from collections import defaultdict
-from pathlib import Path
+from explore_persona_space.orchestrate.env import load_dotenv
 
-import matplotlib.pyplot as plt
-import numpy as np
+load_dotenv()
+
+import json  # noqa: E402
+import math  # noqa: E402
+import statistics as st  # noqa: E402
+from collections import defaultdict  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
 
 from explore_persona_space.analysis.paper_plots import (
     paper_palette,
