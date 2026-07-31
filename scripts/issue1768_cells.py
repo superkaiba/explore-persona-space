@@ -459,3 +459,143 @@ def load_corpus_sample(out_root: Path) -> dict:
     n = len(sample["rows"])
     assert n == sample["n_train"] + sample["n_val"] + sample["n_test"], n
     return sample
+
+
+# ── round 3: on-target prefix conditions (plan v8 `on-target-prefix-corpus`) ──
+
+PFX_N_TRAIN = 3_000  # plan §4.3: seed-42 subsample of the r4-deduped train rows
+PFX_MAX_MODEL_LEN_RAISED = 6144  # plan §11: mk-decode raise (deviation-allowed)
+PFX_CONDS = ("own", "ctrl")
+
+# The 12 arms (plan §4.1; ids verified against the committed round-1
+# `map_change_summary.json` verdict keys): 8 syc ladder + 1 full-FT method arm
+# + 3 one-per-behavior representatives.
+PFX_ARMS: tuple[str, ...] = (
+    "syc-pers-con-lr1e5-s42",
+    "syc-pers-po-lr1e5-s42",
+    "syc-conv-con-lr1e5-s42",
+    "syc-conv-po-lr1e5-s42",
+    "syc-icl-con-lr1e5-s42",
+    "syc-icl-po-lr3e5-s42",
+    "syc-pers-con-lr1e5-s137",
+    "syc-conv-con-lr1e5-s137",
+    "syc-pers-ft-con-s42",
+    "imp-pers-con-lr3e5-s42",
+    "cas-pers-con-lr1e5-s42",
+    "mk-pers-con-lr5e6-s42",
+)
+# Swapped-prefix control subset (plan §4.2: pers arms -> the conv prefix;
+# conv/icl arms -> the pers prefix; one per behavior x context class).
+PFX_CONTROL_ARMS: tuple[str, ...] = (
+    "syc-pers-con-lr1e5-s42",
+    "syc-conv-con-lr1e5-s42",
+    "syc-icl-con-lr1e5-s42",
+    "imp-pers-con-lr3e5-s42",
+    "cas-pers-con-lr1e5-s42",
+    "mk-pers-con-lr5e6-s42",
+)
+
+# Trained-context ids per ctx key — pinned VERBATIM from
+# `issue1481_cells.context_id_for` (plan §4.2 grep, L88-96); cross-checked
+# against the live registry by tests/test_issue1768.py (static map so this
+# module stays light-import). Only syc arms carry the icl context in scope.
+PFX_CONTEXT_ID_BY_KEY = {
+    "pers": "persona_software_engineer",
+    "conv": "wildchat_prefix_real545",
+    "icl": "icl_prefix_sycophancy",
+}
+PFX_TAG_BY_CONTEXT_ID = {
+    "persona_software_engineer": "pers",
+    "wildchat_prefix_real545": "conv",
+    "icl_prefix_sycophancy": "icl_syc",
+}
+
+
+def pfx_ctx_key(arm_id: str) -> str:
+    """The arm's trained-context key, parsed from the arm id (`<beh>-<ctx>-…`)."""
+    key = arm_id.split("-")[1]
+    assert key in CTX_KEYS, (arm_id, key)
+    return key
+
+
+def pfx_context_id(arm_id: str, cond: str) -> str:
+    """Prefix-context id for one (arm, condition) — plan §4.2.
+
+    `own` = the arm's trained-in context; `ctrl` = the swapped prefix (pers
+    arms -> conv; conv/icl arms -> pers), defined ONLY on the control subset.
+    """
+    assert cond in PFX_CONDS, cond
+    assert arm_id in PFX_ARMS, arm_id
+    key = pfx_ctx_key(arm_id)
+    assert key != "bare", (arm_id, "bare arms need no new capture (plan §4.1)")
+    if cond == "ctrl":
+        assert arm_id in PFX_CONTROL_ARMS, (arm_id, "not a control-subset arm")
+        key = "conv" if key == "pers" else "pers"
+    if key == "icl":
+        assert arm_id.startswith("syc-"), (arm_id, "only syc icl arms in scope")
+    return PFX_CONTEXT_ID_BY_KEY[key]
+
+
+def pfx_prefix_tag(context_id: str) -> str:
+    """Short condition tag for a prefix-context id (KeyError = fail loud)."""
+    return PFX_TAG_BY_CONTEXT_ID[context_id]
+
+
+def pfx_conditions_for(arm_id: str) -> tuple[str, ...]:
+    return ("own", "ctrl") if arm_id in PFX_CONTROL_ARMS else ("own",)
+
+
+def pfx_trained_unit(arm_id: str, cond: str) -> str:
+    assert cond in PFX_CONDS, cond
+    return f"{arm_id}@{cond}"
+
+
+def pfx_base_unit(arm_id: str, cond: str) -> str:
+    """The shared base capture unit for (arm, cond): `base_<decode>@<prefix tag>`."""
+    return f"{base_unit_for(arm_id)}@{pfx_prefix_tag(pfx_context_id(arm_id, cond))}"
+
+
+def pfx_base_units(arms: tuple[str, ...] | list[str] = PFX_ARMS) -> list[str]:
+    """Distinct base units over arms x their conditions (production: the plan's
+    5 — base_content@{pers,conv,icl_syc} + base_mk@{pers,conv})."""
+    return sorted(
+        {pfx_base_unit(a, c) for a in arms for c in pfx_conditions_for(a) if a in PFX_ARMS}
+    )
+
+
+def pfx_unit_context_id(unit_id: str) -> str:
+    """Any pfx unit id (`<arm>@<cond>` or `base_*@<tag>`) -> prefix-context id."""
+    name, _, tag = unit_id.partition("@")
+    assert tag, (unit_id, "not a pfx unit id")
+    if name.startswith("base_"):
+        inv = {v: k for k, v in PFX_TAG_BY_CONTEXT_ID.items()}
+        return inv[tag]
+    return pfx_context_id(name, tag)
+
+
+def pfx_resolve_context(context_id: str):
+    """Registry `Context` for a pfx prefix id (HEAVY import, lazy).
+
+    Registration is idempotent at point of use (the #1090-fu6/#1315 registry
+    lessons: every consuming subprocess re-registers); the render path is the
+    same `ensure_context` the #1481 training factory used, so the id resolves
+    to the TRAINED context object, never an approximation.
+    """
+    import issue1090_fu3_worker as fu3w
+
+    behavior = (
+        context_id.removeprefix("icl_prefix_")
+        if context_id.startswith("icl_prefix_")
+        else "sycophancy"  # behavior arg is icl-only; any value works otherwise
+    )
+    return fu3w.ensure_context(context_id, behavior)
+
+
+def load_pfx_sample(out_root: Path) -> dict:
+    """The pfx0-built derived sample (3,000-train subsample + pinned val/test;
+    rows carry `src_qidx` — the row's index in the ROUND-1 sample)."""
+    path = Path(out_root) / "on_target" / "inputs" / "corpus_sample_pfx.json"
+    sample = json.loads(path.read_text())
+    n = len(sample["rows"])
+    assert n == sample["n_train"] + sample["n_val"] + sample["n_test"], n
+    return sample

@@ -1121,3 +1121,537 @@ def test_pnf_failloud_gates(tmp_path):
     _pnf_write_store(unit_dir / "pooled_nf_r2.pt", ["b"], [0], {19: np.zeros((1, 4))}, {})
     with pytest.raises(AssertionError, match="sha sets differ"):
         cap._pnf_replicate_distances(unit_dir, [19])
+
+
+# ── pfx: on-target prefix round (plan v8) ────────────────────────────────────
+
+
+def test_pfx_registry_counts_and_context_map_matches_live_registry():
+    """Plan §4.1/§4.2 arithmetic: 23 pfx2 units (12 own + 6 ctrl + 5 bases),
+    18 tf units; the static context-id map equals the LIVE #1481 registry."""
+    assert len(X.PFX_ARMS) == 12 and len(set(X.PFX_ARMS)) == 12
+    assert set(X.PFX_CONTROL_ARMS) <= set(X.PFX_ARMS) and len(X.PFX_CONTROL_ARMS) == 6
+    trained = [X.pfx_trained_unit(a, c) for a in X.PFX_ARMS for c in X.pfx_conditions_for(a)]
+    assert len(trained) == 18
+    assert X.pfx_base_units() == [
+        "base_content@conv",
+        "base_content@icl_syc",
+        "base_content@pers",
+        "base_mk@conv",
+        "base_mk@pers",
+    ]
+    # control swap: pers -> conv; conv/icl -> pers (plan §4.2)
+    assert X.pfx_context_id("syc-pers-con-lr1e5-s42", "ctrl") == "wildchat_prefix_real545"
+    assert X.pfx_context_id("syc-conv-con-lr1e5-s42", "ctrl") == "persona_software_engineer"
+    assert X.pfx_context_id("syc-icl-con-lr1e5-s42", "ctrl") == "persona_software_engineer"
+    # mk decode routing through the base-unit name survives the @tag
+    assert X.pfx_base_unit("mk-pers-con-lr5e6-s42", "own") == "base_mk@pers"
+    assert X.pfx_unit_context_id("base_mk@conv") == "wildchat_prefix_real545"
+    with pytest.raises(AssertionError):
+        X.pfx_context_id("syc-pers-po-lr1e5-s42", "ctrl")  # not a control arm
+    with pytest.raises(AssertionError):
+        X.pfx_context_id("not-an-arm", "own")
+    # static map == live registry (plan §4.2 grep pin, cross-checked)
+    import issue1481_cells as c1481
+
+    for key, cid in X.PFX_CONTEXT_ID_BY_KEY.items():
+        assert c1481.context_id_for("sycophancy", key) == cid, (key, cid)
+
+
+def test_pfx_resolve_context_shapes():
+    """The registry render resolves every in-scope prefix id locally with the
+    trained shape (pers: system; conv: 2 prefix turns; icl: user_wrap)."""
+    pers = X.pfx_resolve_context("persona_software_engineer")
+    assert pers.system and not pers.prefix_turns and pers.user_wrap is None
+    conv = X.pfx_resolve_context("wildchat_prefix_real545")
+    assert conv.system is None and len(conv.prefix_turns) == 2
+    icl = X.pfx_resolve_context("icl_prefix_sycophancy")
+    assert icl.user_wrap is not None and "{q}" in icl.user_wrap
+
+
+def test_pfx_sample_derivation_deterministic_and_src_qidx(tmp_path):
+    import random
+
+    import issue1768_capture as cap
+
+    n_train, n_val, n_test = 10, 3, 4
+    shas = [f"s{i}" for i in range(n_train + n_val + n_test)]
+    _write_sample(tmp_path, n_train, n_val, n_test, shas)
+    cfg = cap.Cfg(out_root=tmp_path, phases=())
+    sample = cap._build_pfx_sample(cfg)
+    assert sample["n_train"] == min(X.PFX_N_TRAIN, n_train) == 10
+    assert len(sample["rows"]) == 10 + n_val + n_test
+    want_idxs = random.Random(X.SAMPLE_SEED).sample(range(n_train), 10)
+    assert [r["src_qidx"] for r in sample["rows"][:10]] == want_idxs
+    assert [r["src_qidx"] for r in sample["rows"][10:]] == list(range(10, 17))
+    assert all(r["sha"] == shas[r["src_qidx"]] for r in sample["rows"])
+    # resume: a second call reads the persisted file back unchanged
+    again = cap._build_pfx_sample(cfg)
+    assert again["train_subsample_sha256"] == sample["train_subsample_sha256"]
+    # duplicate train shas violate the r4 postcondition -> fail loud
+    dup = tmp_path / "dup"
+    _write_sample(dup, n_train, n_val, n_test, ["dup"] * 2 + shas[2:])
+    with pytest.raises(AssertionError, match="not unique"):
+        cap._build_pfx_sample(cap.Cfg(out_root=dup, phases=()))
+
+
+class _BudgetTok:
+    """Whitespace tokenizer: apply_chat_template joins message contents."""
+
+    def apply_chat_template(self, messages, tokenize=False, add_generation_prompt=True):
+        return " ".join(m["content"] for m in messages)
+
+    def __call__(self, texts, add_special_tokens=False, **kw):
+        if isinstance(texts, str):
+            texts = [texts]
+        return {"input_ids": [t.split() for t in texts]}
+
+
+def test_pfx_budget_mk_raise_and_content_overflow():
+    import issue1768_capture as cap
+
+    from explore_persona_space.artifacts.context import Context
+
+    rows = [{"prompt": "q " * 8}]  # 8 rendered tokens
+    # prefix long enough that mk (2048 new) overflows 4096 but content (1024) fits
+    n_pref = X.MAX_MODEL_LEN - X.MAX_NEW_MARKER + 100  # 2148 prefix words
+    ctx = Context(
+        context_id="t_conv",
+        kind="prefix",
+        family="test",
+        prefix_turns=(
+            {"role": "user", "content": "w " * n_pref},
+            {"role": "assistant", "content": "a"},
+        ),
+    )
+    budgets = cap._pfx_budget(_BudgetTok(), ctx, rows)
+    assert budgets["content"]["max_model_len"] == X.MAX_MODEL_LEN
+    assert not budgets["content"]["raised"]
+    assert budgets["mk"]["max_model_len"] == X.PFX_MAX_MODEL_LEN_RAISED
+    assert budgets["mk"]["raised"]
+    # content overflow is a HARD failure (plan §7 — never a silent raise)
+    big = Context(
+        context_id="t_big",
+        kind="prefix",
+        family="test",
+        prefix_turns=(
+            {"role": "user", "content": "w " * (X.MAX_MODEL_LEN + 10)},
+            {"role": "assistant", "content": "a"},
+        ),
+    )
+    with pytest.raises(AssertionError, match="content-decode budget overflow"):
+        cap._pfx_budget(_BudgetTok(), big, rows)
+
+
+def test_assert_mix_row_matches_context():
+    import issue1768_capture as cap
+
+    from explore_persona_space.artifacts.context import Context
+
+    pers = Context(context_id="p", kind="persona", family="t", system="You are an engineer.")
+    ok = [
+        {"role": "system", "content": "You are an engineer."},
+        {"role": "user", "content": "q1"},
+    ]
+    cap._assert_mix_row_matches_context(pers, ok, "pers/test")
+    with pytest.raises(AssertionError, match="system-prompt drift"):
+        cap._assert_mix_row_matches_context(
+            pers, [{"role": "system", "content": "OTHER"}, {"role": "user", "content": "q"}], "t"
+        )
+    conv = Context(
+        context_id="c",
+        kind="prefix",
+        family="t",
+        prefix_turns=({"role": "user", "content": "hi"}, {"role": "assistant", "content": "yo"}),
+    )
+    cap._assert_mix_row_matches_context(
+        conv,
+        [
+            {"role": "user", "content": "hi"},
+            {"role": "assistant", "content": "yo"},
+            {"role": "user", "content": "q"},
+        ],
+        "conv/test",
+    )
+    with pytest.raises(AssertionError, match="prefix-turn drift"):
+        cap._assert_mix_row_matches_context(
+            conv,
+            [
+                {"role": "user", "content": "DRIFTED"},
+                {"role": "assistant", "content": "yo"},
+                {"role": "user", "content": "q"},
+            ],
+            "t",
+        )
+    icl = Context(context_id="i", kind="prefix", family="t", user_wrap="EX1... Now: {q}")
+    cap._assert_mix_row_matches_context(
+        icl, [{"role": "user", "content": "EX1... Now: real q"}], "icl/test"
+    )
+    with pytest.raises(AssertionError, match="user_wrap drift"):
+        cap._assert_mix_row_matches_context(icl, [{"role": "user", "content": "bare q"}], "t")
+
+
+def test_pfx_pending_units_smoke_coverage_and_resume(tmp_path):
+    import issue1768_capture as cap
+
+    cfg = cap.Cfg(out_root=tmp_path, phases=())
+    assert len(cap._pending_units(cfg, "pfx2")) == 23  # 5 bases + 12 own + 6 ctrl
+    assert len(cap._pending_units(cfg, "pfx3")) == 18
+    # resume: a completed unit drops out of the queue
+    done = tmp_path / "on_target" / "corpus_capture" / "base_content@pers"
+    done.mkdir(parents=True)
+    (done / "pooled.pt").write_bytes(b"x")
+    assert len(cap._pending_units(cfg, "pfx2")) == 22
+    # smoke coverage set: pilot own + plain-text-boundary (icl) + mk decode
+    smoke = cap.Cfg(out_root=tmp_path / "s", phases=(), smoke=True)
+    units = cap._pending_units(smoke, "pfx2")
+    assert f"{X.PILOT_ARM}@own" in units
+    assert "base_content@icl_syc" in units and "base_mk@pers" in units
+    assert cap._pending_units(smoke, "pfx3") == [f"{X.PILOT_ARM}@own"]
+    # merge predicate strips the @cond tag (pfx unit args)
+    assert cap._needs_merge(cfg, "pfx2:syc-pers-con-lr1e5-s42@own")
+    assert not cap._needs_merge(cfg, "pfx2:base_mk@conv")
+
+
+def test_pfx_regime_mismatch_refuses(tmp_path):
+    import issue1768_capture as cap
+
+    unit_dir = tmp_path / "u"
+    regime = {"unit_id": "a@own", "prefix_sha256": "abc", "layers": [14]}
+    cap._pfx_check_regime(unit_dir, regime)
+    cap._pfx_check_regime(unit_dir, regime)  # exact match re-passes
+    with pytest.raises(RuntimeError, match="DIFFERENT regime"):
+        cap._pfx_check_regime(unit_dir, {**regime, "prefix_sha256": "OTHER"})
+
+
+def test_pfx_pilot_gate_ratios():
+    import issue1768_capture as cap
+
+    cap._pfx_pilot_gate(1.9, smoke=False)  # under 2x: pass
+    cap._pfx_pilot_gate(9.0, smoke=True)  # smoke: informational only (#1345)
+    with pytest.raises(RuntimeError, match="re-size"):
+        cap._pfx_pilot_gate(2.5, smoke=False)
+    with pytest.raises(RuntimeError, match="re-plan"):
+        cap._pfx_pilot_gate(4.5, smoke=False)
+
+
+def _write_pfx_sample(out_root, n_train, n_val, n_test, shas, src_qidx=None):
+    rows = [
+        {
+            "prompt": f"p{i}",
+            "corpus": "lmsys" if i % 2 == 0 else "wildchat",
+            "sha": s,
+            "src_qidx": (src_qidx[i] if src_qidx else i),
+        }
+        for i, s in enumerate(shas)
+    ]
+    p = out_root / "on_target" / "inputs"
+    p.mkdir(parents=True, exist_ok=True)
+    (p / "corpus_sample_pfx.json").write_text(
+        json.dumps(
+            {
+                "rows": rows,
+                "n_train": n_train,
+                "n_val": n_val,
+                "n_test": n_test,
+                "train_subsample_sha256": "t",
+            }
+        )
+    )
+    return rows
+
+
+def test_load_pfx_cell_and_bare_n_join(tmp_path):
+    import issue1768_fit as fit
+
+    d, layer = 4, 0
+    n = 30
+    arm = "syc-pers-con-lr1e5-s42"
+    shas = [f"s{i}" for i in range(n)]
+    # pfx sample: src_qidx maps pfx row i -> round-1 row i + 100
+    src = [i + 100 for i in range(n)]
+    _write_pfx_sample(tmp_path, 20, 4, 6, shas, src_qidx=src)
+    root = tmp_path / "on_target"
+
+    def mat(keep, off):
+        m = np.zeros((len(keep), d))
+        m[:, 0] = np.asarray(keep) + off
+        return m
+
+    b_keep = [i for i in range(n) if i != 3]
+    _mk_store(
+        root / "corpus_capture" / "base_content@pers" / "pooled.pt",
+        {"context": {layer: mat(b_keep, 0)}, "response": {layer: mat(b_keep, 100)}},
+        [shas[i] for i in b_keep],
+        b_keep,
+    )
+    p_keep = [i for i in reversed(range(n)) if i != 7]  # reversed: join must re-align
+    _mk_store(
+        root / "corpus_capture" / f"{arm}@own" / "pooled.pt",
+        {"context": {layer: mat(p_keep, 0)}, "response": {layer: mat(p_keep, 200)}},
+        [shas[i] for i in p_keep],
+        p_keep,
+    )
+    _mk_store(
+        root / "corpus_capture_tf" / f"{arm}@own" / "pooled_tf.pt",
+        {"response": {layer: mat(list(range(n)), 300)}},
+        shas,
+        list(range(n)),
+    )
+    cell = fit.load_pfx_cell(arm, "own", layer, tmp_path)
+    kept = [i for i in range(n) if i not in (3, 7)]
+    assert list(cell["qidx"]) == kept
+    assert list(cell["src_qidx"]) == [i + 100 for i in kept]
+    np.testing.assert_allclose(cell["Cplus"][:, 0], kept)
+    np.testing.assert_allclose(cell["Vplus_tf"][:, 0], np.asarray(kept) + 300)
+    assert (cell["split"] == "train").sum() == 18
+    # bare_n: round-1 stores keyed by ROUND-1 qidx (i+100), remapped to pfx qidx
+    r1_q = [i + 100 for i in range(n)]
+    for tree, unit, fname, off, spans in (
+        ("corpus_capture", "base_content", "pooled.pt", 0, ("context", "response")),
+        ("corpus_capture", arm, "pooled.pt", 10, ("context", "response")),
+        ("corpus_capture_tf", arm, "pooled_tf.pt", 20, ("response",)),
+    ):
+        m = np.zeros((n, d))
+        m[:, 0] = np.arange(n)
+        _mk_store(
+            tmp_path / tree / unit / fname,
+            {s: {layer: m + off} for s in spans},
+            shas,
+            r1_q,
+        )
+    bare = fit.load_bare_n_cell(arm, layer, tmp_path)
+    assert list(bare["qidx"]) == list(range(n))  # remapped to pfx indices
+    assert list(bare["src_qidx"]) == r1_q
+    np.testing.assert_allclose(bare["C0"][:, 0], np.arange(n))
+
+
+def test_fit_map_allow_underdetermined_flag():
+    import issue1768_fit as fit
+
+    rng = np.random.default_rng(1)
+    n, d = 16, 24  # n_train < d: refused by default, allowed with the pfx flag
+    Xd = rng.standard_normal((n, d))
+    Yd = Xd @ rng.standard_normal((d, d)) * 0.1
+    tr, val, te = np.arange(8), np.arange(8, 12), np.arange(12, 16)
+    with pytest.raises(AssertionError, match="under-determined"):
+        fit._fit_map(Xd, Yd, tr, val, te, fit._device())
+    pred, meta, _pay = fit._fit_map(Xd, Yd, tr, val, te, fit._device(), allow_underdetermined=True)
+    assert pred.shape == (4, d) and "selected_lambda" in meta
+
+
+def test_paired_d_contrast_math_and_lattice():
+    import issue1768_fit as fit
+
+    rng = np.random.default_rng(0)
+    n, b2 = 40, 8
+    # bare side: noise-scale deltas ~ floor; own side: +5 shift => amplified
+    floor = np.abs(rng.standard_normal((b2, n))).astype(np.float32) * 0.1
+    bare = {
+        "delta_rows": np.abs(rng.standard_normal(n)).astype(np.float32) * 0.1,
+        "floor_rows": floor,
+        "test_src_qidx": np.arange(100, 100 + n),
+    }
+    own = {
+        "delta_rows": bare["delta_rows"] + 5.0,
+        "floor_rows": floor.copy(),
+        # SHUFFLED src order + a partial overlap: pairing is by src_qidx
+        "test_src_qidx": np.asarray(list(reversed(range(105, 105 + n)))),
+    }
+    out = fit._paired_d_contrast(own, bare, seed=7)
+    assert out["n_shared_rows"] == 35
+    assert out["delta_d"] == pytest.approx(5.0, abs=0.5)
+    assert out["verdict"] == "On-target-amplified" and out["delta_d_ci95"][0] > 0
+    null = fit._paired_d_contrast(bare, bare, seed=7)
+    assert null["delta_d"] == pytest.approx(0.0, abs=1e-9)
+    assert null["verdict"] == "Indistinguishable"
+    assert fit.contrast_verdict([-2.0, -0.5]) == "On-target-attenuated"
+    # control reads thread control-specific vocabulary (never on/off-target)
+    assert (
+        fit.contrast_verdict(
+            [-2.0, -0.5], positive="Control-above-own", negative="Control-below-own"
+        )
+        == "Control-below-own"
+    )
+    ctrl = fit._paired_d_contrast(
+        own, bare, seed=7, positive="Control-above-own", negative="Control-below-own"
+    )
+    assert ctrl["verdict"] == "Control-above-own"
+
+
+def test_pfx_fit_core_persists_percell_and_state(tmp_path):
+    """The real `_pfx_fit_core` body on a tiny synthetic cell: fits JSON +
+    percell rows + fit_state npz land atomically; resume returns the JSON."""
+    import issue1768_fit as fit
+
+    rng = np.random.default_rng(0)
+    n, d = 60, 5
+    C0 = rng.standard_normal((n, d))
+    W = rng.standard_normal((d, d))
+    V0 = C0 @ W + 0.01 * rng.standard_normal((n, d))
+    Cp = C0 + 0.01 * rng.standard_normal((n, d))
+    Vp = Cp @ (W + 3.0) + 0.01 * rng.standard_normal((n, d))
+    cell = {
+        "C0": C0,
+        "V0": V0,
+        "Cplus": Cp,
+        "Vplus": Vp,
+        "Vplus_tf": Vp,
+        "split": np.array(["train"] * 40 + ["val"] * 8 + ["test"] * 12),
+        "corpus": np.array(["lmsys", "wildchat"] * 30),
+        "sha": [f"s{i}" for i in range(n)],
+        "qidx": np.arange(n),
+        "src_qidx": np.arange(n) + 100,
+    }
+    arm = "syc-pers-con-lr1e5-s42"
+    res = fit._pfx_fit_core(
+        tmp_path, tmp_path / "res", arm, 0, "own", cell, smoke=True, run_transfer_fold=True
+    )
+    assert res["map_change"]["verdict"] == "Changed"
+    assert res["underdetermined_n_lt_d"] is False
+    assert "transfer_fold" in res
+    fits_json = tmp_path / "res" / "on_target" / "fits" / f"{arm}_L0_own.json"
+    percell = tmp_path / "res" / "on_target" / "percell" / f"{arm}_L0_own.json"
+    state = tmp_path / "on_target" / "fit_state" / f"{arm}_L0_own.npz"
+    assert fits_json.exists() and percell.exists() and state.exists()
+    rows = json.loads(percell.read_text())["rows"]
+    assert len(rows) == 12 and all(r["src_qidx"] == r["qidx"] + 100 for r in rows)
+    with np.load(state) as z:
+        assert z["delta_rows"].shape == (12,)
+        assert z["floor_rows"].shape[1] == 12
+        assert list(z["test_src_qidx"]) == [r["src_qidx"] for r in rows]
+    # resume path returns the persisted JSON without refitting
+    again = fit._pfx_fit_core(
+        tmp_path, tmp_path / "res", arm, 0, "own", cell, smoke=True, run_transfer_fold=True
+    )
+    assert again["map_change"]["D"] == res["map_change"]["D"]
+
+
+def test_resolve_fit_hf_prefix_smoke_suffix():
+    import issue1768_fit as fit
+
+    assert fit.resolve_fit_hf_prefix(False, None) == X.HF_PREFIX
+    assert fit.resolve_fit_hf_prefix(True, None) == f"{X.HF_PREFIX}_smoke"
+    assert fit.resolve_fit_hf_prefix(True, "custom") == "custom_smoke"
+    assert fit.resolve_fit_hf_prefix(True, "already_smoke") == "already_smoke"
+
+
+def test_pfx_join_coverage_floor_and_contrast_no_overlap(tmp_path):
+    """Degenerate-gate probes: the pfx join's 0.9 coverage floor and the
+    contrast's empty shared-row assert fire loud (designed handling)."""
+    import issue1768_fit as fit
+
+    d, layer, n = 3, 0, 20
+    shas = [f"s{i}" for i in range(n)]
+    _write_pfx_sample(tmp_path, 12, 4, 4, shas)
+    root = tmp_path / "on_target"
+    m = np.zeros((n, d))
+    arm = "syc-pers-con-lr1e5-s42"
+    _mk_store(
+        root / "corpus_capture" / "base_content@pers" / "pooled.pt",
+        {"context": {layer: m}, "response": {layer: m}},
+        shas,
+        list(range(n)),
+    )
+    few = list(range(10))  # plus keeps only 10/20 rows -> floor trips
+    _mk_store(
+        root / "corpus_capture" / f"{arm}@own" / "pooled.pt",
+        {"context": {layer: m[:10]}, "response": {layer: m[:10]}},
+        [shas[i] for i in few],
+        few,
+    )
+    _mk_store(
+        root / "corpus_capture_tf" / f"{arm}@own" / "pooled_tf.pt",
+        {"response": {layer: m}},
+        shas,
+        list(range(n)),
+    )
+    with pytest.raises(AssertionError):
+        fit.load_pfx_cell(arm, "own", layer, tmp_path)
+    a = {
+        "delta_rows": np.ones(4, np.float32),
+        "floor_rows": np.ones((2, 4), np.float32),
+        "test_src_qidx": np.arange(4),
+    }
+    b = {**a, "test_src_qidx": np.arange(100, 104)}
+    with pytest.raises(AssertionError, match="no shared test rows"):
+        fit._paired_d_contrast(a, b, seed=0)
+
+
+def test_pfx7_reads_what_pfx5_writes_including_ctrl(tmp_path):
+    """r3-v2 Critical-1 pin: producer/consumer path equality for EVERY pfx
+    condition — `_pfx_fit_core` writes and the REAL `phase_pfx7` (smoke=False,
+    so the ctrl branch executes) reads through the ONE `pfx_cell_paths`
+    helper; the ctrl fits JSON `_ctrl`-vs-`_control` drift class cannot recur."""
+    import issue1768_fit as fit
+
+    rng = np.random.default_rng(0)
+    n, d, layer = 60, 5, 0
+    C0 = rng.standard_normal((n, d))
+    W = rng.standard_normal((d, d))
+    V0 = C0 @ W + 0.01 * rng.standard_normal((n, d))
+    Cp = C0 + 0.01 * rng.standard_normal((n, d))
+    Vp = Cp @ (W + 3.0) + 0.01 * rng.standard_normal((n, d))
+    cell = {
+        "C0": C0,
+        "V0": V0,
+        "Cplus": Cp,
+        "Vplus": Vp,
+        "Vplus_tf": Vp,
+        "split": np.array(["train"] * 40 + ["val"] * 8 + ["test"] * 12),
+        "corpus": np.array(["lmsys", "wildchat"] * 30),
+        "sha": [f"s{i}" for i in range(n)],
+        "qidx": np.arange(n),
+        "src_qidx": np.arange(n) + 100,
+    }
+    arm = "syc-pers-con-lr1e5-s42"  # a PFX_CONTROL_ARMS member — ctrl branch fires
+    res_dir = tmp_path / "res"
+    for cond in ("own", "ctrl", "bare_n"):
+        fit._pfx_fit_core(
+            tmp_path, res_dir, arm, layer, cond, cell, smoke=True, run_transfer_fold=False
+        )
+        fits_p, npz_p, percell_p = fit.pfx_cell_paths(tmp_path, res_dir, arm, layer, cond)
+        assert fits_p.exists() and npz_p.exists() and percell_p.exists(), cond
+    # percell files carry the plan §4.5 suffixes {own, control, bare_n}
+    percell = res_dir / "on_target" / "percell"
+    assert (percell / f"{arm}_L0_own.json").exists()
+    assert (percell / f"{arm}_L0_control.json").exists()
+    assert (percell / f"{arm}_L0_bare_n.json").exists()
+    # the REAL consumer, ctrl branch included (smoke=False)
+    fit.phase_pfx7(tmp_path, res_dir, (layer,), smoke=False, arms_filter=(arm,))
+    summary = json.loads((res_dir / "on_target" / "map_change_on_target.json").read_text())
+    row = summary["contrast"][f"{arm}_L0"]
+    assert "D_control" in row and "control_contrast" in row
+    assert row["control_contrast"]["verdict"] in {
+        "Control-above-own",
+        "Control-below-own",
+        "Indistinguishable",
+    }
+    assert summary["success_criteria"]["n_control_arms"] >= 0
+    # missing-cell path fails loud NAMING the re-run phase, not FileNotFoundError
+    with pytest.raises(RuntimeError, match="re-run pfx5"):
+        fit._pfx_cell_inputs(tmp_path, res_dir, arm, 99, "own")
+
+
+def test_pfx4_resume_skip_and_recount(tmp_path, monkeypatch):
+    """r3-v2 Minor: pfx4 consults upload_done.json at entry — matching
+    expected-store count skips the re-upload; a changed count re-uploads."""
+    import issue1768_capture as cap
+
+    from explore_persona_space.orchestrate import hub as hub_mod
+
+    calls: list[str] = []
+    monkeypatch.setattr(
+        cap, "_upload_tree", lambda cfg, name: (calls.append(name), f"{cfg.hf_prefix}/{name}")[1]
+    )
+    monkeypatch.setattr(hub_mod, "verify_repo_paths_uploaded", lambda *a, **k: [])
+    cfg = cap.Cfg(out_root=tmp_path, phases=(), upload=True)
+    cap._atomic_json(tmp_path / "on_target" / "upload_done.json", {"n_verified": 0})
+    cap.phase_pfx4(cfg)
+    assert calls == []  # matching count (0 stores) -> resume skip
+    store = tmp_path / "on_target" / "corpus_capture" / "base_content@pers"
+    store.mkdir(parents=True)
+    (store / "pooled.pt").write_bytes(b"x")
+    cap.phase_pfx4(cfg)  # count changed 0 -> 1: re-upload fires
+    assert calls == list(cap.PFX_UPLOAD_TREES)
+    assert json.loads((tmp_path / "on_target" / "upload_done.json").read_text())["n_verified"] == 1
