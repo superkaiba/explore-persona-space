@@ -410,3 +410,73 @@ class TestP4AxesFixture:
             },
         }
         assert R.DA.build_axes_items(packets, {-4: "d"}) == []
+
+
+class TestResidualCensus:
+    """Plan v3 §6 four-class residual census pins (round-2 punch list item 3)."""
+
+    def test_four_classes_partition_plus_companions(self):
+        failed = [
+            _f("", stop="refusal"),  # empty (refusal-stopped at 0 tokens)
+            _f('```json\n{"reasoning": "cut', stop="refusal"),  # refusal_stopped
+            _f("prose no json", stop="end_turn"),  # residual_parse_fail
+        ]
+        c = R.residual_census(
+            n_transport=2, n_other_content=1, n_schema_fail=1, failed=failed, n_fresh_draws=10
+        )
+        assert c["empty"] == 1
+        assert c["refusal_stopped"] == 1
+        assert c["residual_parse_fail"] == 1
+        assert c["transport"] == 2
+        assert c["schema_fail"] == 1
+        assert c["other_content"] == 1
+        # the four named classes partition the parse-fail set + transport
+        assert c["empty"] + c["refusal_stopped"] + c["residual_parse_fail"] == len(failed)
+
+    def test_unresolved_restream_meta_is_residual_not_empty(self):
+        """A parse-error cid the re-stream could NOT resolve ({} meta) is its
+        own `residual parse-fail` class — never silently EMPTY (the round-1
+        Minor: unrecovered cids defaulted into the empty census class)."""
+        c = R.residual_census(
+            n_transport=0, n_other_content=0, n_schema_fail=0, failed=[{}], n_fresh_draws=5
+        )
+        assert c["residual_parse_fail"] == 1
+        assert c["empty"] == 0
+
+    def test_refusal_stopped_any_counts_empties_and_fraction(self):
+        """refusal_stopped_any quantifies the TOTAL refusal-stopped population
+        (0-token empties INCLUDED) as count + fraction of fresh draws — the
+        coverage-ceiling read (concern recovery-yield-below-plan-target)."""
+        failed = [_f("", stop="refusal"), _f("cut text", stop="refusal"), _f("prose")]
+        c = R.residual_census(
+            n_transport=0, n_other_content=0, n_schema_fail=0, failed=failed, n_fresh_draws=4
+        )
+        assert c["refusal_stopped_any"]["count"] == 2
+        assert c["refusal_stopped_any"]["fraction_of_fresh_draws"] == pytest.approx(0.5)
+        assert c["refusal_stopped_any"]["n_fresh_draws"] == 4
+
+    def test_zero_fresh_draws_fraction_is_none(self):
+        c = R.residual_census(
+            n_transport=0, n_other_content=0, n_schema_fail=0, failed=[], n_fresh_draws=0
+        )
+        assert c["refusal_stopped_any"]["fraction_of_fresh_draws"] is None
+
+
+class TestP5SkipDecision:
+    """p5 --no-upload resume-footgun pins (round-2 punch list item 2)."""
+
+    def test_no_report_runs(self):
+        assert R.p5_skip_decision(None, no_upload=False) is False
+        assert R.p5_skip_decision(None, no_upload=True) is False
+
+    def test_uploaded_report_skips(self):
+        assert R.p5_skip_decision({"uploaded": True}, no_upload=False) is True
+        assert R.p5_skip_decision({"uploaded": True}, no_upload=True) is True
+
+    def test_unuploaded_report_reruns_when_upload_wanted(self):
+        """THE footgun: a prior p5 completed with --no-upload must NOT satisfy
+        a later upload-wanting resume — the upload leg re-runs."""
+        assert R.p5_skip_decision({"uploaded": False}, no_upload=False) is False
+
+    def test_unuploaded_report_skips_when_upload_not_wanted(self):
+        assert R.p5_skip_decision({"uploaded": False}, no_upload=True) is True

@@ -290,6 +290,70 @@ def p3_gate_stats(n_success_parsed: int, failed: list[dict], floor: float = P3_G
     }
 
 
+def residual_census(
+    n_transport: int,
+    n_other_content: int,
+    n_schema_fail: int,
+    failed: list[dict],
+    n_fresh_draws: int,
+) -> dict:
+    """Classify EVERY non-recovered p3 item (plan v3 §6: no unexplained residual).
+
+    The four v3-named classes partition the non-recovered population —
+    ``empty`` / ``refusal_stopped`` / ``residual_parse_fail`` / ``transport``
+    — with explicit ``schema_fail`` / ``other_content`` companion keys so
+    every non-recovered item is accounted. ``failed``: one
+    ``{"raw_text", "stop_reason"}`` meta per parse-failed cid from the Batch
+    re-stream; a cid the re-stream could NOT resolve (empty/missing meta)
+    counts ``residual_parse_fail`` — NEVER silently 'empty' (round-1 review
+    Minor 3). ``refusal_stopped_any`` additionally quantifies the TOTAL
+    refusal-stopped population (count + fraction of fresh draws, empties
+    included) so the realized coverage ceiling is readable from
+    recovery_meta.json alone (concern `recovery-yield-below-plan-target`,
+    driver-side half).
+    """
+    empty = refusal = residual = 0
+    n_refusal_any = 0
+    for f in failed:
+        f = f or {}
+        resolved = bool(f)
+        raw = (f.get("raw_text") or "").strip()
+        if f.get("stop_reason") == "refusal":
+            n_refusal_any += 1
+        if not resolved:
+            residual += 1
+        elif not raw:
+            empty += 1
+        elif f.get("stop_reason") == "refusal":
+            refusal += 1
+        else:
+            residual += 1
+    return {
+        "empty": empty,
+        "refusal_stopped": refusal,
+        "residual_parse_fail": residual,
+        "transport": n_transport,
+        "schema_fail": n_schema_fail,
+        "other_content": n_other_content,
+        "refusal_stopped_any": {
+            "count": n_refusal_any,
+            "fraction_of_fresh_draws": (n_refusal_any / n_fresh_draws if n_fresh_draws else None),
+            "n_fresh_draws": n_fresh_draws,
+        },
+    }
+
+
+def p5_skip_decision(report: dict | None, no_upload: bool) -> bool:
+    """p5 resume predicate (round-1 review Minor 2): a p5 completed WITHOUT
+    the HF upload is INCOMPLETE for an upload-wanting resume — a later
+    `--full` run must re-run p5 (pure assembly + upload, no judge spend)
+    rather than silently skip the upload leg. Skip only when the prior
+    report exists AND (it uploaded, OR this run does not want an upload)."""
+    if not report:
+        return False
+    return bool(report.get("uploaded")) or no_upload
+
+
 def p3_halt_decision(verdict: str, smoke: bool) -> bool:
     """Production HALTs on a non-PASS p3 gate; --smoke demotes the verdict to
     an INFORMATIONAL log line (the gate-calibration smoke rule, #1345 class:
@@ -482,6 +546,10 @@ def fetch_failed_response_meta(ckpt_dir: Path, cids: set[str]) -> dict[str, dict
         return {}
     import anthropic
 
+    # API_DISPATCH_ROUTING_EXEMPT: read-only re-stream of already-paid Batch
+    # results (plan A2) via client.messages.batches.results(); no new requests
+    # are created — api_dispatch routes message creation/judging, not
+    # batch-results reads.
     client = anthropic.Anthropic()
     out: dict[str, dict] = {}
     batch_ids = _batch_ids_from_checkpoint(ckpt_dir)
@@ -726,6 +794,13 @@ def p3_describe(cfg: RecoveryCfg) -> None:
         rows.append({"feat_id": feat_id, **parsed, "prompt_sha16": CM.sha16(user)})
     failed_meta = fetch_failed_response_meta(ckpt, set(parse_error_cids))
     gate = p3_gate_stats(n_success_parsed, [failed_meta.get(c, {}) for c in parse_error_cids])
+    residual = residual_census(
+        n_transport=n_transport,
+        n_other_content=n_other_content,
+        n_schema_fail=n_schema_fail,
+        failed=[failed_meta.get(c, {}) for c in parse_error_cids],
+        n_fresh_draws=len(items),
+    )
     census = Counter(classify_response_shape(r) for r in raw_texts.values())
     census.update(
         classify_response_shape((failed_meta.get(c) or {}).get("raw_text"))
@@ -753,6 +828,7 @@ def p3_describe(cfg: RecoveryCfg) -> None:
         },
         "gate": gate,
         "census": dict(census),
+        "residual_census": residual,
         "n_extra_zero_evidence": n_extra_noev,
         "max_tokens": CM.DESCRIBE_MAX_TOKENS,
         "rubric_sha16": CM.sha16(CM.DESCRIBER_SYSTEM),
@@ -838,9 +914,15 @@ def p5_outputs(cfg: RecoveryCfg) -> None:
     upload to HF `issue1773_featurepipeline/recovery_1934/` (bulk
     upload_folder). NEVER mutates the committed originals or `fulldict/`."""
     report_path = cfg.reports / "p5_report.json"
-    if report_path.is_file():
-        _log("[p5_outputs] SKIP (report exists)")
+    prior = json.loads(report_path.read_text()) if report_path.is_file() else None
+    if p5_skip_decision(prior, cfg.no_upload):
+        _log(f"[p5_outputs] SKIP (report exists; uploaded={bool(prior.get('uploaded'))})")
         return
+    if prior is not None:
+        _log(
+            "[p5_outputs] RESUME: prior p5 completed WITHOUT upload; re-running "
+            "assembly + upload (no judge spend)"
+        )
     cfg.out_root.mkdir(parents=True, exist_ok=True)
     recovered_desc = list(CM.iter_jsonl(cfg.work / "descriptions_recovered.jsonl"))
     recovered_axis = list(CM.iter_jsonl(cfg.work / "axis_labels_recovered.jsonl"))
@@ -880,7 +962,8 @@ def p5_outputs(cfg: RecoveryCfg) -> None:
         },
         "drops": p3["drops"],
         "gate": p3["gate"],
-        "census": p3["census"],
+        "census": {"shape": p3["census"], "residual": p3.get("residual_census")},
+        "refusal_stopped": (p3.get("residual_census") or {}).get("refusal_stopped_any"),
         "smoke": cfg.smoke,
         **CM.repro_meta(),
     }
