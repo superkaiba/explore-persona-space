@@ -261,6 +261,53 @@ def test_cpu_intents_deliberately_absent_from_slurm_intent_tables(intent: str) -
         stages_for_spec(spec)
 
 
+def test_capture_7b_in_slurm_intent_tables() -> None:
+    """#1896 (AC1/AC2): capture-7b resolves in BOTH SLURM intent-default
+    tables — 1 GPU (matches GCP ``a2-ultragpu-1g``, #752) and eval-class
+    4.0h wall-time (the #940 RunPod translation maps capture-7b to
+    ``eval``) — so an auto-lane capture-7b dispatch no longer ValueErrors
+    off the free fellows/SLURM lanes onto paid GCP."""
+    spec = RunSpec(issue=1896, intent="capture-7b", backend="cluster", cluster="nibi")
+    assert default_gpus_for_intent(spec) == 1
+    assert time_budget_hours(spec) == 4.0
+
+
+def test_capture_7b_workload_cmd_renders_end_to_end() -> None:
+    """#1896 (AC3): a capture-7b spec carrying ``workload_cmd`` renders
+    end-to-end through ``stages_for_spec`` (single custom stage) +
+    ``render_sbatch`` — the production dispatch shape — with the
+    intent-table-driven ``--time`` and 1-GPU gres lines."""
+    spec = RunSpec(
+        issue=1896,
+        intent="capture-7b",
+        backend="cluster",
+        cluster="nibi",
+        workload_cmd="bash scripts/issue1896_capture.sh",
+    )
+    plan = stages_for_spec(spec)
+    assert [s.name for s in plan.stages] == ["workload"]
+    assert plan.stages[0].backend == "custom"
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=plan,
+        scratch_dir="/scratch/tjiral/eps/issue-1896",
+    )
+    assert "#SBATCH --time=04:00:00" in script  # 4.0h from _DEFAULT_TIME_BUDGETS_HOURS
+    assert "#SBATCH --gpus-per-node=h100:1" in script  # 1 GPU, nibi typed gres
+
+
+def test_capture_7b_hydra_path_still_raises_at_stages_for_spec() -> None:
+    """#1896 (AC4): hydra-path capture-7b (no ``workload_cmd``) STILL
+    raises at ``stages_for_spec`` — deliberate partial support: there is
+    no canonical capture Hydra script, only the two intent-default tables
+    gained rows. Pins the design so a future reader doesn't misread the
+    remaining ValueError as an oversight."""
+    spec = RunSpec(issue=1896, intent="capture-7b", backend="cluster", cluster="nibi")
+    with pytest.raises(ValueError, match="unsupported intent"):
+        stages_for_spec(spec)
+
+
 # ---------------------------------------------------------------------------
 # job_name + plan-hash
 # ---------------------------------------------------------------------------
@@ -3153,3 +3200,85 @@ def test_slurm_prepare_invalid_extra_sync_path_raises_before_extra_rsync(tmp_pat
     with pytest.raises(ValueError, match="traverse"):
         backend.prepare(spec)
     assert extra_calls == []
+
+
+# ---------------------------------------------------------------------------
+# issue #1899 — fellows QoS fallback ladder: render override seam + row pins
+# ---------------------------------------------------------------------------
+
+
+def test_fellows_qos_ladder_row_pins_granted_tiers() -> None:
+    """#1899: the fellows row pins the granted-QoS ladder (normal-eur, then
+    low-eur paired with `general,overflow` per the cluster handbook); the
+    primary qos stays high-eur; every non-fellows row has NO ladder."""
+    from explore_persona_space.backends.slurm import CLUSTER_CONFIGS, QosRung
+
+    fellows = CLUSTER_CONFIGS["fellows"]
+    assert fellows.qos == "high-eur"
+    assert fellows.qos_ladder == (
+        QosRung("normal-eur"),
+        QosRung("low-eur", partition="general,overflow"),
+    )
+    for name in ("nibi", "fir", "mila"):
+        assert CLUSTER_CONFIGS[name].qos_ladder == ()
+
+
+def test_render_qos_override_from_spec_extra() -> None:
+    """#1899 acceptance 3 (render half): ``spec.extra["slurm_qos_override"]``
+    supersedes the fellows row's primary qos; the partition keeps the
+    cluster default when no partition override rides along."""
+    fellows = _fellows()
+    spec = _fellows_spec()
+    spec.extra["slurm_qos_override"] = "normal-eur"
+    script = render_sbatch(
+        spec=spec,
+        cluster=fellows,
+        plan=stages_for_spec(spec),
+        scratch_dir="/workspace/superkaiba/eps/issue-1609",
+    )
+    assert "#SBATCH --qos=normal-eur\n" in script
+    assert "--qos=high-eur" not in script
+    assert "#SBATCH --partition=general\n" in script
+
+
+def test_render_partition_override_from_spec_extra() -> None:
+    """#1899 acceptance 3: the low-eur rung's extras render BOTH the QoS
+    and the `general,overflow` partition override (exact-line asserts —
+    `general` is a substring of `general,overflow`)."""
+    fellows = _fellows()
+    spec = _fellows_spec()
+    spec.extra["slurm_qos_override"] = "low-eur"
+    spec.extra["slurm_partition_override"] = "general,overflow"
+    script = render_sbatch(
+        spec=spec,
+        cluster=fellows,
+        plan=stages_for_spec(spec),
+        scratch_dir="/workspace/superkaiba/eps/issue-1609",
+    )
+    assert "#SBATCH --qos=low-eur\n" in script
+    assert "#SBATCH --partition=general,overflow\n" in script
+    assert "#SBATCH --partition=general\n" not in script
+    assert "--qos=high-eur" not in script
+
+
+def test_render_no_override_fellows_unchanged() -> None:
+    """#1899 acceptance 4 guard: absent the override extras the fellows
+    render keeps the primary ``--qos=high-eur`` / ``--partition=general``
+    lines, never leaks a ladder tier, and is deterministic — the #1609
+    snapshot contract holds with zero fixture edits."""
+    fellows = _fellows()
+    spec = _fellows_spec()
+    kwargs = dict(
+        spec=spec,
+        cluster=fellows,
+        plan=stages_for_spec(spec),
+        scratch_dir="/workspace/superkaiba/eps/issue-1609",
+    )
+    script_a = render_sbatch(**kwargs)
+    script_b = render_sbatch(**kwargs)
+    assert script_a == script_b
+    assert "#SBATCH --qos=high-eur\n" in script_a
+    assert "#SBATCH --partition=general\n" in script_a
+    # The ladder is ROUTER-consumed only — never rendered.
+    assert "normal-eur" not in script_a
+    assert "low-eur" not in script_a

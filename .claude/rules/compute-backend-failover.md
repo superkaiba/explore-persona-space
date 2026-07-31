@@ -466,8 +466,12 @@ code` → `status:blocked`.
 NOTE (#1609): under the standing auto default the free `fellows` (charmander
 H200) SLURM lane sits BEFORE this GCP ladder — `DEFAULT_AUTO_LANE_ORDER =
 ("fellows", "gcp", "nibi", "fir", "mila")` — so a fellows capacity miss /
-dead endpoint / PENDING-at-cap park advances INTO the ladder below; RunPod
-stays the terminal rung. Rollback: flip the fellows `CLUSTER_CONFIGS` row to
+dead endpoint / PENDING-at-cap park (after the granted-QoS ladder
+high-eur → normal-eur → low-eur park-fails on the AUTO path, #1899:
+scancel + re-submit per `ClusterConfig.qos_ladder` rung, fallback rungs
+parked `EPS_FELLOWS_LADDER_RUNG_WAIT_SECONDS` — default 300 s — each;
+explicit `backend: fellows` pins never walk the ladder) advances INTO the
+ladder below; RunPod stays the terminal rung. Rollback: flip the fellows `CLUSTER_CONFIGS` row to
 `available=False` or set `EPM_AUTO_LANE_ORDER=gcp,nibi,fir,mila` (both
 instant, no code revert). Sentinel drain: fellows is a DRAINED lane as of
 #1898 — the VM-side poller drains `/workspace/logs/issue-<N>-*.json` over

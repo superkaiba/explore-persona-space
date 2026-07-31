@@ -5,6 +5,7 @@ kind: experiment
 tags:
 - followup-auto
 - followup-manual
+- keep-running
 created_at: '2026-07-25T18:54:59Z'
 has_clean_result: true
 parent_id: 825

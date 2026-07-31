@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1898,
+  "highest_id": 1902,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2695,7 +2695,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/1345",
       "status": "awaiting_promotion",
-      "title": "Narrative-story framing collapses the assistant context\u2192answer map on identical conversations at every probed read position, while chat and plain-text framings share one operator up to linear coordinates (MODERATE confidence)"
+      "title": "Narrative-story framing weakens the assistant context\u2192answer map on identical conversations rather than eliminating it, while chat and plain-text framings share one operator up to linear coordinates (MODERATE confidence)"
     },
     "1346": {
       "has_clean_result": false,
@@ -5746,8 +5746,8 @@
       "goal": "Determine whether applying the learned context->answer map before projecting the persona vector predicts on-policy behavior expression (evil, trait sycophancy, hallucination) better than context-side projection and direct regression at matched (unlabeled, labeled) data budgets, and whether that advantage grows across a real-data distribution-shift ladder.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/1739",
-      "status": "running",
+      "path": "tasks/verifying/1739",
+      "status": "verifying",
       "title": "Behavior prediction through the context->answer map: does applying the map before persona-vector projection beat context-side projection and direct regression, and how does the advantage scale with labels and distribution shift?"
     },
     "174": {
@@ -6025,8 +6025,8 @@
       "goal": "Compute the averaged causal Jacobian J_{C\u2192A} on the #779 corpus; measure what fraction of the fitted ridge map M's predictive power is causal; test which map predicts steered-generation interventions and off-distribution transfer; and test whether the context\u2192answer channel reads from / writes into the J-space verbalizable workspace (Anthropic 2026), all phases unconditional.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1776",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1776",
+      "status": "awaiting_promotion",
       "title": "Causal Jacobians, averaged or per-context, recover essentially none of the fitted context-to-answer map's predictive power (HIGH confidence)"
     },
     "1777": {
@@ -6543,15 +6543,15 @@
     "1845": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1845",
-      "status": "planning",
+      "path": "tasks/completed/1845",
+      "status": "completed",
       "title": "workflow-fix: gotchas \u2014 batched np.linalg.solve dies on ONE singular slice"
     },
     "1846": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1846",
-      "status": "proposed",
+      "path": "tasks/running/1846",
+      "status": "running",
       "title": "workflow-fix: verify_task_body WARN check \u2014 orphaned result JSONs (sibling of check 31)"
     },
     "1847": {
@@ -6865,8 +6865,8 @@
     "1887": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1887",
-      "status": "proposed",
+      "path": "tasks/running/1887",
+      "status": "running",
       "title": "harden ridge lambda-selection: inner-group-CV default + GCV dof-cap + n<d degeneracy tripwire + re-read audit of affected published cells"
     },
     "1888": {
@@ -6893,8 +6893,8 @@
     "1891": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1891",
-      "status": "proposed",
+      "path": "tasks/running/1891",
+      "status": "running",
       "title": "workflow-fix: experiment-implementer MEMORY.md exceeds the always-loaded read limit (41KB vs ~24.4KB) \u2014 curate + add size guard"
     },
     "1892": {
@@ -6914,8 +6914,8 @@
     "1894": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1894",
-      "status": "proposed",
+      "path": "tasks/reviewing/1894",
+      "status": "reviewing",
       "title": "workflow-fix: concurrent-committers rule mandates pathspec-limited COMMITS (bare git commit sweeps foreign staged files)"
     },
     "1895": {
@@ -6928,8 +6928,8 @@
     "1896": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1896",
-      "status": "reviewing",
+      "path": "tasks/completed/1896",
+      "status": "completed",
       "title": "workflow-fix: add capture-7b to the fellows/SLURM lane intent tables"
     },
     "1897": {
@@ -6942,9 +6942,16 @@
     "1898": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1898",
-      "status": "running",
+      "path": "tasks/reviewing/1898",
+      "status": "reviewing",
       "title": "workflow-fix: fellows sentinel-drain arm \u2014 un-pin sentinel workloads from paid lanes"
+    },
+    "1899": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1899",
+      "status": "completed",
+      "title": "workflow-fix: fellows QoS fallback ladder (high-eur first, then normal-eur/low-eur)"
     },
     "19": {
       "has_clean_result": false,
@@ -6959,6 +6966,30 @@
       "path": "tasks/completed/190",
       "status": "completed",
       "title": "Map Romance-language spill pattern in language-inversion LoRA"
+    },
+    "1900": {
+      "goal": "On the model-organism fleet at per-prompt grain (the #1768 16,400-real-user-prompt corpus), determine which per-context predictor computable BEFORE fine-tuning best predicts per-context leakage of the trained behavior (graded judge DV for content arms; three-space log P(marker) for marker arms), whether base behavioral propensity survives as the champion, and whether context-vector similarity's predictive power is mediated by answer-side similarity; post-FT and delta candidates form a separate mechanistic panel, and every similarity candidate is computed against both the training-context-centroid and panel-source-context anchors.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/planning/1900",
+      "status": "planning",
+      "title": "Leakage-predictor horse race at per-prompt grain: pre-FT geometry vs base propensity, with answer-side mediation test"
+    },
+    "1901": {
+      "goal": "Characterize every mapping-quality metric in use (held-out R\u00b2, kNN retrieval acc@k euclidean+cosine, and companions) \u2014 what construct each measures, what it rules out, where they dissociate \u2014 and report the ~1M-context (n\u2248963k LMSYS) linear and nonlinear context\u2192answer mappings against the full baseline ladder (constant train-mean; W = identity; identity + learned bias) on ALL metrics, in both the context-based and prefix-based arms.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/planning/1901",
+      "status": "planning",
+      "title": "Characterize mapping-quality metrics: 1M-context linear + nonlinear maps vs baselines on every metric"
+    },
+    "1902": {
+      "goal": "Characterize how each open post-training stage (SFT \u2192 DPO \u2192 RLVR; the OLMo-2-1124-7B base/SFT/DPO/Instruct chain) changes the context\u2192answer activation mapping: (1) within-stage fit quality (ridge + MLP, prefix AND context arms, identity+learned-bias baseline + kNN retrieval) on ~10k diverse real-world contexts under a 4x4 activation-checkpoint \u00d7 answer-text-source grid separating representation change from answer-distribution change; (2) which context classes each stage makes more or less predictable; (3) cross-stage transferability of the map (direct and Procrustes-aligned), characterized on context and answer sides; (4) the per-stage operator change (delta-W rank/spectrum/subspace, direction-aware vs spectrum-only reads against matched nulls), with SAE/crosscoder feature readout as a stretch goal.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1902",
+      "status": "proposed",
+      "title": "How each post-training stage (SFT \u2192 DPO \u2192 RLVR) reshapes the context\u2192answer activation map (OLMo-2 checkpoint chain)"
     },
     "191": {
       "has_clean_result": false,
