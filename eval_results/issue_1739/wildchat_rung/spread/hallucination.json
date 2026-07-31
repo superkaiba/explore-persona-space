@@ -1,0 +1,41 @@
+{
+  "behavior": "hallucination",
+  "coverage": {
+    "n_contexts": 2000,
+    "n_contexts_dropped_no_dv": 33,
+    "n_contexts_with_dv": 1967,
+    "n_groups": 2000
+  },
+  "dv_construct": "trait_rubric_graded_0_100",
+  "meta": {
+    "gen_behavior": "wildchat",
+    "gen_behavior_note": "one rollout pool judged under all three trait rubrics \u2014 the wildchat contexts carry no behavior conditioning, so per-behavior generation would produce byte-identical rollouts",
+    "git_commit": "5b78ff42d6bb95761cb453cf873948296dc50a16",
+    "judge_max_tokens": 400,
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "judge_temperature": 1.0,
+    "n_judge_draws": 3,
+    "rejudge_max_tokens": 800,
+    "ts": "2026-07-31T04:37:30Z"
+  },
+  "rung": "wildchat_rung",
+  "spread": {
+    "histogram": {
+      "0-10": 516,
+      "10-20": 244,
+      "20-30": 173,
+      "30-40": 134,
+      "40-50": 142,
+      "50-60": 132,
+      "60-70": 144,
+      "70-80": 156,
+      "80-90": 152,
+      "90-100": 174
+    },
+    "max": 100.0,
+    "mean": 39.630599333446334,
+    "min": 0.0,
+    "n": 1967,
+    "sd": 32.2471044477493
+  }
+}
