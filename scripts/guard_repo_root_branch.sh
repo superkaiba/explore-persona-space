@@ -58,6 +58,42 @@
 # QUOTING the override string disarms the fence for that command. Residuals:
 # gap (xx) below.
 #
+# #1861: exit-guarded worktree cd => STICKY scope; name-generalized $VAR
+# latch; arming-separator restriction + cd-clause scope invalidation.
+# (i) `cd <worktree> || exit N` and `cd <worktree> || { ...; exit N; }`
+# grant a STICKY scope to every clause PAST the provably-exiting guard tail:
+# either the cd succeeded (cwd IS the worktree) or the shell exited before
+# any later clause ran. Activation is DEFERRED past the terminator clause's
+# index, so the OR-tail's own clauses run UNSCOPED — they execute exactly on
+# the cd-failure path, at the repo root (a gated git op inside the guard
+# group still classifies and blocks). A `return` tail is rejected (at top
+# level — the only context these hook-scanned command strings execute in —
+# bash prints an error and CONTINUES at the root); a terminator whose own
+# following separator is PIPE/BG is rejected (`|| exit 1 | op` runs the exit
+# in a pipeline subshell; `|| exit 1 & op` backgrounds the whole and-or
+# list — both leave the parent running at the root on cd failure). The #1554
+# Arm B bare-local-main merge fence applies under sticky scope unchanged.
+# (ii) The #1058 `WT=` + `cd "$WT"` latch is generalized to ANY variable
+# name (assoc array `_wt_names`, same three arming proof obligations);
+# DISARM is deliberately broader than arming — declare/local/typeset/
+# readonly-prefixed and `NAME+=` assignment shapes count as reassignment
+# and unbind the name. (iii) Fail-closed hardening shipped in the same diff:
+# an OR- or PIPE-preceded cd never arms ANY latch (`a || cd X && op` runs op
+# with the cd skipped when a succeeded; `a | cd X` cds in a pipeline
+# subshell), and ANY later cwd-changing clause — cd/pushd/popd, tolerating
+# leading `(`/`{`/whitespace and builtin/command prefixes — voids BOTH the
+# plain latch and the sticky scope (invalidation is broader than arming: a
+# paren-prefixed cd invalidates but never arms). Residuals, accepted
+# (non-adversarial threat model, #1861): (a) quote-blind Case-B acceptance —
+# the splitter does not parse quotes, so an exit-shaped FRAGMENT inside
+# quoted brace-group text can satisfy the group recognizer and grant sticky
+# (same class as residual (viii)); (b) interpreter-payload cds — after a
+# sticky grant, `bash -c 'cd <root>; <gated op>'` splits quote-blind and the
+# payload's op fragment classifies as a sticky-scoped clause while the
+# subprocess executes it at the payload cd's target (narrow: requires a
+# prior exit-guarded worktree cd in the SAME command; documented, not
+# refused).
+#
 # THREAT MODEL / scope (#897): this hook gates ONLY Claude Bash tool calls.
 # Git run inside Python subprocesses (sync_repo_root.py carries its own
 # internal deny checker), cron wrappers, pod-side scripts, and SSH-MCP remote
@@ -86,14 +122,15 @@
 # repo-path/WT= token) — has its intra-payload separators masked BEFORE the
 # split, so the merged clause reaches the same waiver whole (closes the
 # founding #779 false block). A clause-initial `gcloud compute ssh
-# <instance> --command=...` head gets BOTH mechanisms too (#1463, optional
-# literal `timeout <N>` wrapper, gcloud-arm only): gcloud is a thin wrapper
+# <instance> --command=...` head gets BOTH mechanisms too (#1463; the
+# optional literal `timeout <N>` wrapper is accepted on BOTH remote-exec
+# heads as of #1859): gcloud is a thin wrapper
 # around the local ssh(1) binary whose --command payload executes ON the
 # GCE instance, so the waiver + mask treat it exactly like the ssh head
 # under the identical refusal arms (founding incident #825; details gap
 # (xix)). Every OTHER multi-statement shape —
 # double-quoted payloads, redirect-carrying payloads, trailing tokens after
-# the closing quote, wrapped/variable/abs-path ssh, quoted or
+# the closing quote, non-timeout-wrapped/variable/abs-path ssh, quoted or
 # latch-vocabulary prefixes — still mis-splits on the quoted-separator
 # trade-off and its tail clauses still classify — remediation unchanged:
 # `git -C /workspace/... <verb>` inside the remote string, a pod-side
@@ -146,9 +183,9 @@
 # so document text that merely MENTIONS a gated form no longer false-blocks;
 # the quoted `--note` literal above is NOT a heredoc and stays blocked (that
 # limitation is unchanged). A SECOND NARROWING (#1098): a clause whose
-# command word is `ssh` (remote execution), `gcloud compute ssh` (remote
-# execution on a GCE instance; optionally `timeout <num>`-wrapped — #1463)
-# or `grep`/`egrep`/`fgrep`/`rg`
+# command word is `ssh` (remote execution) or `gcloud compute ssh` (remote
+# execution on a GCE instance) — either optionally `timeout <num>`-wrapped
+# (#1463 gcloud, #1859 ssh) — or `grep`/`egrep`/`fgrep`/`rg`
 # (read-only pattern) is waived per-clause by the driver-loop waiver under
 # fail-closed refusals; quoted git-verb literals under OTHER command words
 # (`--note`/`-m` strings) still block with the same `--file`/`-F`
@@ -340,9 +377,11 @@
 #       nesting make the parse inexact); redirect-carrying payloads (`>`,
 #       `<`, `2>&1` — R2's blanket refusal, and the fd-dup `&` still
 #       mis-splits as BG); trailing tokens after the closing quote
-#       (`2>/dev/null`, `-v`, a second quoted arg — R1); wrapped /
-#       absolute-path / variable ssh (`timeout N ssh ...`, `/usr/bin/ssh`,
-#       `$SSHCMD ...` — not clause-initial `ssh`); IPv6-bracket hosts
+#       (`2>/dev/null`, `-v`, a second quoted arg — R1); non-timeout-wrapped /
+#       absolute-path / variable ssh (`nohup ssh ...`, `/usr/bin/ssh`,
+#       `$SSHCMD ...` — not clause-initial `ssh`; the literal
+#       `timeout <num>` wrapper is accepted as of #1859, gap (xix));
+#       IPv6-bracket hosts
 #       (`ssh [::1] '...'` — `[` stops the head scan); a comment-`#` inside
 #       the payload (the per-clause comment-tail strip truncates the merged
 #       clause — truncation cannot un-waive or create a latch match, but the
@@ -519,16 +558,18 @@
 #       also mutate the shared tree and remain ungated — zero incident
 #       demand; a separate candidate if demanded (the old (xvii)(a)
 #       pattern, rolled forward).
-# (xix) (#1463) gcloud-compute-ssh arm residuals: the waiver cond (1) head
-#       + the mask candidate head gain `gcloud compute ssh` with an optional
-#       literal `timeout <num>[.frac][smhd]?` wrapper — gcloud-arm ONLY (the
-#       pinned N12 wrapped-ssh block is the deliberate ASYMMETRY, a known
-#       future-demand candidate if a timeout-wrapped-ssh false-block filer
-#       shows up: scoping rationale is zero ssh-side incident demand +
-#       smallest diff, while every real #825 gcloud invocation was
-#       timeout-wrapped). Fail-closed FPs that KEEP BLOCKING, both
+# (xix) (#1463/#1859) remote-exec timeout-wrapper residuals: the waiver
+#       cond (1) head + the mask candidate head accept an optional literal
+#       `timeout <num>[.frac][smhd]?` wrapper on the `gcloud compute ssh`
+#       head (#1463) AND the bare `ssh` head (#1859 — the demand #1463
+#       pre-registered arrived: two timeout-wrapped-ssh false blocks on the
+#       #1769 failover critical path; the former N12/NM5 asymmetry pins
+#       flipped to positive fixtures). The literal-word + literal-numeric
+#       wrapper is the ONLY tolerated one on EITHER head. Fail-closed FPs
+#       that KEEP BLOCKING, both
 #       mechanisms: env-prefix / nohup / abs-path / variable wrappers and
-#       `timeout` FLAG forms (`--signal=`, `-k` — GN8/GN14), release tracks
+#       `timeout` FLAG forms (`--signal=`, `-k` — GN8/GN14 gcloud-side,
+#       N36-N43 ssh-side), release tracks
 #       (`gcloud beta|alpha compute ssh` — GN9), other gcloud remote-exec
 #       subcommands (`compute tpus tpu-vm ssh`), trailing tokens/flags after
 #       the quoted payload (mask R1 — put --command last; GN11), in-payload
@@ -623,8 +664,10 @@
 #
 # A SECOND cd-latch (#1058) covers the SKILL.md-conventional `cd "$WT"` form
 # beside the literal-path latch: a BARE, unconditionally-executed
-# clause-initial `WT=<...>.claude/worktrees/<...>` assignment arms a
-# `wt_bound` flag in stream order, after which `cd "$WT"` (exact-arg, no
+# clause-initial `<NAME>=<...>.claude/worktrees/<...>` assignment binds the
+# name in `_wt_names` in stream order (#1861 generalized the original
+# WT-only `wt_bound` flag to any variable name), after which `cd "$NAME"`
+# (exact-arg, no
 # `..`) latches the SAME `scoped` machinery as the literal latch (so it
 # inherits the `&&`-only propagation + reset semantics above verbatim). The
 # assignment proof is load-bearing, not cosmetic: bash `cd ""` SUCCEEDS as a
@@ -886,10 +929,11 @@ cmd=$(strip_heredoc_bodies "$cmd")
 # longer mis-split by the quoted-separator trade-off into a tail clause that
 # lost its ssh command word (the residual-(xiv) false-positive class;
 # founding incident #779). As of #1463 a SECOND candidate head — clause-
-# initial `gcloud compute ssh`, optionally wrapped in a literal
-# `timeout <num>[.frac][smhd]?` prefix (gcloud-arm only) — runs the SAME
-# scan, the SAME R1-R8 predicate, and the SAME separator-only rewrite
-# (founding incident #825; residuals in gap (xix)). The two head regexes
+# initial `gcloud compute ssh` — runs the SAME scan, the SAME R1-R8
+# predicate, and the SAME separator-only rewrite (founding incident #825;
+# residuals in gap (xix)); as of #1859 BOTH heads accept an optional
+# literal `timeout <num>[.frac][smhd]?` prefix (the only tolerated
+# wrapper — #1769 false blocks were the ssh-side demand). The two head regexes
 # here and in the driver-loop waiver cond (1) below are PARITY-pinned: if
 # they ever drifted, a mask-accepted-but-ladder-refused merged clause still
 # carries its git-verb text and CLASSIFIES — false block, never a leak.
@@ -935,7 +979,8 @@ cmd=$(strip_heredoc_bodies "$cmd")
 #       (which today RESET `scoped` at each mis-split boundary) can never
 #       suppress a load-bearing latch reset and skip a local gated tail.
 #   R8  no `WT=` text in the candidate — a mis-split payload fragment's
-#       clause-initial `WT=` arms/disarms `wt_bound` TODAY; masking would
+#       clause-initial `WT=` arms/disarms the `_wt_names` binding TODAY
+#       (#1861: formerly the WT-only `wt_bound` flag); masking would
 #       suppress those transitions (WT-latch state isolation).
 # The replacement token ` __EPM_SSH_SEP__ ` is space-padded word characters:
 # it cannot form a separator, a refusal pattern, a repo-path spelling, a
@@ -957,15 +1002,19 @@ mask_ssh_payload_separators() {
       while (i <= n) {
         headlen = 0
         if (atstart) {
-          # Candidate heads: clause-initial `ssh ` (#1413), or clause-initial
-          # `gcloud compute ssh ` with an optional literal
-          # `timeout <num>[.frac][smhd]?` wrapper (#1463 — the ONLY tolerated
-          # wrapper, gcloud-arm only). Head-regex PARITY with the driver-loop
-          # waiver cond (1) below is an invariant; drift is fail-closed (a
-          # masked-but-unwaived merged clause keeps its git-verb text and
-          # still classifies -> false block, never a leak).
-          if (substr(s, i, 4) ~ /^ssh[ \t]/) headlen = 4
-          else if (match(substr(s, i), /^(timeout[ \t]+[0-9]+(\.[0-9]+)?[smhd]?[ \t]+)?gcloud[ \t]+compute[ \t]+ssh[ \t]/)) headlen = RLENGTH
+          # Candidate heads: clause-initial `ssh ` (#1413) or clause-initial
+          # `gcloud compute ssh ` (#1463), EITHER with an optional literal
+          # `timeout <num>[.frac][smhd]?` wrapper (#1463 gcloud-arm, #1859
+          # ssh-arm — the ONLY tolerated wrapper). Head-regex PARITY with
+          # the driver-loop waiver cond (1) below is an invariant;
+          # MASK-vs-WAIVER drift is fail-closed (a masked-but-unwaived
+          # merged clause keeps its git-verb text and still classifies ->
+          # false block, never a leak). NOTE the different drift direction
+          # INSIDE the driver loop: the cond (1) outer head and its inner
+          # ssh/gcloud-vs-grep discriminator must move in LOCKSTEP — drift
+          # THERE routes a remote-exec clause to the grep-family arm and is
+          # fail-OPEN (see the cond (1) comment below).
+          if (match(substr(s, i), /^(timeout[ \t]+[0-9]+(\.[0-9]+)?[smhd]?[ \t]+)?(gcloud[ \t]+compute[ \t]+)?ssh[ \t]/)) headlen = RLENGTH
         }
         if (headlen > 0) {
           # Candidate. Scan the head (options/host): letters, digits, and
@@ -1871,7 +1920,21 @@ classify_clause() {
 # so it declines to scope across it. The first blocking clause wins.
 scoped=0
 scoped_wt=0   # (#1554) whether the live scoped-latch was armed by a WORKTREE cd
-wt_bound=0
+# (#1861) STICKY scope — granted only by a provably exit-guarded WORKTREE cd
+# (`cd <wt> || exit N` / `cd <wt> || { ...; exit N; }`, recognized by
+# _cd_guard_tail_exits below): once ACTIVE, the reset branch RESTORES scope
+# across every separator instead of clearing it (either the cd succeeded, or
+# the shell exited before any later clause ran). Activation is DEFERRED via
+# sticky_arm_at (the terminator clause's index): the OR-tail's own clauses
+# execute exactly when the cd FAILED (cwd = repo root) and stay unscoped.
+sticky=0
+sticky_wt=0
+sticky_arm_at=-1
+sticky_pending_wt=0
+# (#1861) Name-generalized $VAR cd-latch state: _wt_names[<name>]=1 records a
+# same-command bare/export worktree-literal assignment to <name> (replaces
+# the #1058 single-name `wt_bound` flag).
+declare -A _wt_names=()
 blocked=""
 # (#1554) Worktree-local bare-main merge fence — shared definitions. Escape
 # hatch (sibling convention: EPM_ALLOW_ROOT_PULL, guard_repo_root_pull.sh
@@ -1903,15 +1966,97 @@ while IFS=$'\t' read -r _s _n _c; do
 done < <(split_and_label "$cmd")
 _nrec=${#_clauses[@]}
 
+# (#1861) Exit-guard tail recognizer — called when a WORKTREE cd clause's
+# next separator is OR. Verifies the OR-tail PROVABLY terminates the shell:
+#   Case A: a bare `exit [N]` clause;
+#   Case B: a brace group whose final clause before the closing bare `}` is
+#           an unconditionally-reached (SEQ/NL-preceded) `exit [N]`;
+# and that the terminator is not defused by a following PIPE/BG separator
+# (`|| exit 1 | op` runs the exit in a pipeline subshell; `|| exit 1 & op`
+# backgrounds the whole and-or list). `return` is deliberately NOT accepted:
+# at top level — the only context these hook-scanned command strings execute
+# in — a bare `return` errors and the shell CONTINUES at the root. On
+# success prints the TERMINATOR clause's index (the `exit` clause for Case
+# A; the `}` clause for Case B) and returns 0; any other shape returns 1
+# (fail-closed). Operates on the driver's buffered record arrays
+# (_seps/_nextseps/_clauses/_nrec). The splitter is quote-blind, so a
+# group-internal redirect like `>&2` splits into fragment clauses — the
+# recognizer keys on the last-before-`}` clause precisely so those fragments
+# don't matter (quote-blindness residual (a) in the #1861 header note).
+_cd_guard_tail_exits() {
+  local i=$(( $1 + 1 )) j last c
+  local exit_re='^exit( +[0-9]+)?[[:space:]]*$'
+  local cwd_word_re='^[[:space:]({]*((builtin|command)([[:space:]]+-[A-Za-z]+)*[[:space:]]+)*(cd|pushd|popd)([[:space:]]|$)'
+  [ "$i" -lt "$_nrec" ] || return 1
+  [ "${_seps[$i]}" = OR ] || return 1      # defensive: seam must be OR
+  c=${_clauses[$i]}
+  # Case A: bare `|| exit [N]` — the terminator is the exit clause itself.
+  if echo "$c" | grep -qE "$exit_re"; then
+    case "${_nextseps[$i]}" in
+      SEQ|NL|AND|OR|END) printf '%s' "$i"; return 0 ;;
+    esac
+    return 1
+  fi
+  # Case B: `|| { ...; exit [N]; }` — the terminator is the closing bare `}`.
+  case "$c" in
+    '{'|'{ '*) : ;;
+    *) return 1 ;;
+  esac
+  case "${c#\{}" in *'{'*) return 1 ;; esac   # nested `{` in the opener
+  echo "$c" | grep -qE "$cwd_word_re" && return 1   # `{ cd ...` opener
+  last=$i
+  j=$(( i + 1 ))
+  while [ "$j" -lt "$_nrec" ] && [ "$j" -le $(( i + 10 )) ]; do
+    c=${_clauses[$j]}
+    if [ "$c" = '}' ]; then
+      case "${_nextseps[$j]}" in
+        SEQ|NL|AND|OR|END) : ;;
+        *) return 1 ;;      # `}` feeding PIPE/BG defuses the terminator
+      esac
+      if [ "$last" -eq "$i" ]; then
+        # Single-clause group (`{ exit 1` + `}`): the exit rides the opener.
+        echo "${_clauses[$last]}" \
+          | grep -qE '^\{[[:space:]]+exit( +[0-9]+)?[[:space:]]*$' || return 1
+      else
+        # The clause immediately before `}` must be an exit reached
+        # UNCONDITIONALLY (SEQ/NL-preceded — `{ foo && exit 1; }` refuses).
+        echo "${_clauses[$last]}" | grep -qE "$exit_re" || return 1
+        case "${_seps[$last]}" in SEQ|NL) : ;; *) return 1 ;; esac
+      fi
+      printf '%s' "$j"
+      return 0
+    fi
+    # Group-internal refusals (fail-closed): nested `{`, and any
+    # cwd-changing command word (mirrors the driver invalidation regex).
+    case "$c" in *'{'*) return 1 ;; esac
+    echo "$c" | grep -qE "$cwd_word_re" && return 1
+    last=$j
+    j=$(( j + 1 ))
+  done
+  return 1                  # no closing `}` within the 10-clause scan bound
+}
+
 for _idx in "${!_clauses[@]}"; do
   sep=${_seps[$_idx]}; nextsep=${_nextseps[$_idx]}; clause=${_clauses[$_idx]}
+  # (#1861) Deferred sticky activation: the exit-guard recognizer recorded
+  # the terminator clause's index in sticky_arm_at; every clause PAST it is
+  # provably scoped (the cd succeeded, or the shell already exited). The
+  # tail/group-internal clauses themselves (_idx <= sticky_arm_at) keep the
+  # UNSCOPED classification — they run on the cd-failure path, at the root.
+  if [ "$sticky_arm_at" -ge 0 ] && [ "$_idx" -gt "$sticky_arm_at" ]; then
+    sticky=1
+    sticky_wt=$sticky_pending_wt
+    sticky_arm_at=-1
+  fi
   # Reset the latch unless the separator BEFORE this clause is && — a `cd`
   # only reliably scopes a following git clause when bash guarantees it ran
   # first (the && short-circuit). ; / || / | / & / a raw newline (NL) do NOT
   # carry the latch (NL is not AND, so this consolidated check resets it).
+  # (#1861) Under an ACTIVE sticky grant the reset RESTORES scope instead of
+  # clearing it (sticky=0 preserves the pre-#1861 behavior byte-identically).
   if [ "$sep" != AND ]; then
-    scoped=0
-    scoped_wt=0
+    scoped=$sticky
+    scoped_wt=$sticky_wt
   fi
 
   # (#897) A clause whose first non-space char is `#` is a bash comment — bash
@@ -1944,6 +2089,22 @@ for _idx in "${!_clauses[@]}"; do
   clause=$(printf '%s' "$clause" | sed -E 's/[[:space:]]#.*$//')
   [ -n "$clause" ] || continue
 
+  # (#1861) Scope invalidation — fail-closed, deliberately BROADER than
+  # arming: ANY clause whose command word (tolerating a leading run of
+  # `(` / `{` / whitespace and optional builtin/command prefixes) is
+  # cd/pushd/popd voids BOTH the plain latch and the sticky scope — the cwd
+  # proof is stale once a later clause may change directories. The
+  # worktree//tmp/$VAR arms below then RE-ARM as appropriate; those arms
+  # stay ^cd-anchored, so a paren-prefixed `(cd ...` invalidates but never
+  # arms (subshell), and a brace-group `{ cd ...` invalidates but never arms
+  # (it runs in the PARENT shell — the cd persists — but the group's
+  # reachability is unprovable here).
+  if echo "$clause" \
+     | grep -qE '^[[:space:]({]*((builtin|command)([[:space:]]+-[A-Za-z]+)*[[:space:]]+)*(cd|pushd|popd)([[:space:]]|$)'; then
+    sticky=0; sticky_wt=0; sticky_arm_at=-1; sticky_pending_wt=0
+    scoped=0; scoped_wt=0
+  fi
+
   # A CLAUSE-INITIAL `cd` into a worktree / /tmp latches scope forward ONLY
   # across a following `&&` clause. Latch and continue — this clause runs the
   # `cd`, not a git command, and it must NOT scope EARLIER clauses (those were
@@ -1953,18 +2114,37 @@ for _idx in "${!_clauses[@]}"; do
   # latch-vocab text mid-clause — an ssh payload fragment, echo'd prose, or a
   # superstring like `cdx .claude/worktrees/` — never arms. (`cd<TAB>` never
   # armed pre- or post-anchor: `cd +` matches spaces only — pre-existing.)
+  # (#1861) Arming-separator restriction (fail-closed): an OR-preceded cd is
+  # not provably executed in the parent shell (`a || cd X && op` runs op
+  # with the cd SKIPPED when a succeeded) and a PIPE-preceded cd runs in a
+  # pipeline subshell — neither arms any latch. (START/SEQ/NL/AND/BG all run
+  # the cd in the parent shell before the following clause is reached.)
   if echo "$clause" | grep -qE '^cd +[^;&|]*\.claude/worktrees/'; then
-    scoped=1
-    scoped_wt=1   # (#1554) latch armed by a WORKTREE cd
+    if [ "$sep" != OR ] && [ "$sep" != PIPE ]; then
+      scoped=1
+      scoped_wt=1   # (#1554) latch armed by a WORKTREE cd
+      # (#1861) Exit-guarded cd => sticky grant (WORKTREE arms only): when
+      # the NEXT separator is ||, a provably-exiting guard tail proves every
+      # clause past the terminator runs with cwd inside the worktree.
+      if [ "$nextsep" = OR ] && _t=$(_cd_guard_tail_exits "$_idx"); then
+        sticky_pending_wt=1
+        sticky_arm_at=$_t
+      fi
+    fi
     continue
   elif echo "$clause" | grep -qE '^cd +/tmp/'; then
-    scoped=1
-    scoped_wt=0   # (#1554) /tmp latch — disposition byte-identical to before
+    if [ "$sep" != OR ] && [ "$sep" != PIPE ]; then
+      scoped=1
+      scoped_wt=0   # (#1554) /tmp latch — disposition byte-identical to before
+      # (#1861) NO sticky for /tmp latches: every observed firing is
+      # worktree-side; smaller blast radius to leave it (plan §6).
+    fi
     continue
   fi
 
-  # (#1058) A `WT=<...>.claude/worktrees/<...>` BARE-ASSIGNMENT clause
-  # (optionally `export`-prefixed; NOTHING after the RHS) arms the $WT latch
+  # (#1058; #1861 name-generalized) A `<NAME>=<...>.claude/worktrees/<...>`
+  # BARE-ASSIGNMENT clause (optionally `export`-prefixed; NOTHING after the
+  # RHS) arms the $NAME latch
   # for LATER clauses — and ONLY when its preceding separator proves the
   # assignment executes unconditionally in the parent shell: START, `;`
   # (SEQ), or a raw newline (NL). Three arming refusals, each verified live
@@ -1979,42 +2159,67 @@ for _idx in "${!_clauses[@]}"; do
   #     subshell, does not persist. (A BG-preceded clause DOES run in the
   #     parent shell, but stays non-arming as fail-closed conservatism —
   #     zero incident demand.)
-  # Any OTHER clause-initial WT= assignment (non-worktree RHS, trailing
-  # command word, conditional/subshell separator) DISARMS the latch — a
-  # reassignment makes the earlier arming proof stale. Clause-initial only:
-  # a `WT=` fragment buried in quoted prose (an echo / --note argument)
-  # never matches the ^ anchor and neither arms nor disarms.
-  if echo "$clause" | grep -qE '^(export +)?WT='; then
-    wt_bound=0
-    case "$sep" in
-      START|SEQ|NL)
-        if echo "$clause" | grep -qE '^(export +)?WT=[^;&|[:space:]]*\.claude/worktrees/[^;&|[:space:]]*[[:space:]]*$'; then
-          wt_bound=1
-        fi
-        ;;
-    esac
+  # Any OTHER clause-initial assignment to the same name (non-worktree RHS,
+  # trailing command word, conditional/subshell separator) DISARMS the
+  # latch — a reassignment makes the earlier arming proof stale.
+  # Clause-initial only: a `WT=` fragment buried in quoted prose (an echo /
+  # --note argument) never matches the ^ anchor and neither arms nor
+  # disarms. (#1861) The latch is keyed by VARIABLE NAME (`_wt_names`
+  # assoc array — formerly the WT-only `wt_bound` flag), and DISARM is
+  # deliberately BROADER than arming: declare/local/typeset/readonly-
+  # prefixed (with option flags) and `NAME+=` assignment shapes count as
+  # reassignment and unbind the name; only the strict bare/`export `
+  # worktree-literal end-anchored shape under an unconditional separator
+  # (re-)binds it.
+  if echo "$clause" \
+     | grep -qE '^((export|declare|local|typeset|readonly)([[:space:]]+-[A-Za-z]+)*[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*\+?='; then
+    _an=$(echo "$clause" \
+      | sed -nE 's/^((export|declare|local|typeset|readonly)([[:space:]]+-[A-Za-z]+)*[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)\+?=.*/\4/p')
+    if [ -n "$_an" ]; then
+      unset "_wt_names[$_an]"
+      case "$sep" in
+        START|SEQ|NL)
+          if echo "$clause" | grep -qE '^(export +)?[A-Za-z_][A-Za-z0-9_]*=[^;&|[:space:]]*\.claude/worktrees/[^;&|[:space:]]*[[:space:]]*$'; then
+            _wt_names[$_an]=1
+          fi
+          ;;
+      esac
+    fi
   fi
 
-  # (#1058) `cd "$WT"` — the SKILL.md-conventional worktree variable — latches
-  # ONLY when an EARLIER clause in this SAME command bound WT to a
-  # `.claude/worktrees/` path (shell state never persists across Bash tool
-  # calls, so a non-empty $WT implies a same-call assignment). The
+  # (#1058; #1861 name-generalized) `cd "$NAME"` — the SKILL.md-conventional
+  # worktree-variable form — latches ONLY when an EARLIER clause in this
+  # SAME command bound NAME to a `.claude/worktrees/` path (shell state
+  # never persists across Bash tool calls, so a non-empty $NAME implies a
+  # same-call assignment). The
   # assignment check is LOAD-BEARING, not cosmetic: bash `cd ""` SUCCEEDS as
-  # a no-op (verified 2026-07-05, bash 5.1.16), so with an UNSET WT
-  # `cd "$WT" && git ...` runs the git clause in the UNCHANGED cwd (the repo
-  # root) — a bare `cd "$WT"` latch would be fail-open. With the assignment
-  # present, every quoting variant is safe under the && latch: expanded
-  # forms cd into the worktree; a single-quoted literal `cd '$WT'` fails
-  # (no such dir) and && short-circuits the git clause. A `..` anywhere in
-  # the cd arg never latches (fail-closed).
-  if [ "$wt_bound" -eq 1 ]; then
+  # a no-op (verified 2026-07-05, bash 5.1.16), so with an UNSET NAME
+  # `cd "$NAME" && git ...` runs the git clause in the UNCHANGED cwd (the
+  # repo root) — a bare `cd "$NAME"` latch would be fail-open. With the
+  # assignment present, every quoting variant is safe under the && latch:
+  # expanded forms cd into the worktree; a single-quoted literal `cd '$WT'`
+  # fails (no such dir) and && short-circuits the git clause. A `..`
+  # anywhere in the cd arg never latches; whole-arg forms $NAME, ${NAME},
+  # $NAME/..., ${NAME}/... only; the #1861 OR/PIPE arming-separator
+  # restriction applies as on the literal arms (fail-closed).
+  if [ "${#_wt_names[@]}" -gt 0 ]; then
     cdarg=$(echo "$clause" | sed -nE 's/^cd +([^;&|]+)[[:space:]]*$/\1/p' | tr -d '\042\047')
     case "$cdarg" in
       *..*) : ;;
-      \$WT|\${WT}|\$WT/*|\${WT}/*)
-        scoped=1
-        scoped_wt=1   # (#1554) $WT latch is a worktree latch by construction
-        continue
+      \$*)
+        _vn=$(printf '%s\n' "$cdarg" \
+          | sed -nE 's@^\$(\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))(/.*)?$@\2\3@p')
+        if [ -n "$_vn" ] && [ -n "${_wt_names[$_vn]:-}" ] \
+           && [ "$sep" != OR ] && [ "$sep" != PIPE ]; then
+          scoped=1
+          scoped_wt=1   # (#1554) $NAME latch is a worktree latch by construction
+          # (#1861) Exit-guarded cd => sticky grant (same as the literal arm).
+          if [ "$nextsep" = OR ] && _t=$(_cd_guard_tail_exits "$_idx"); then
+            sticky_pending_wt=1
+            sticky_arm_at=$_t
+          fi
+          continue
+        fi
         ;;
     esac
   fi
@@ -2063,14 +2268,17 @@ for _idx in "${!_clauses[@]}"; do
   #       the awk splitter already stripped leading whitespace). A MID-clause
   #       ssh/grep word never waives — `git -c core.sshCommand=ssh reset
   #       --hard` is a LOCAL destructive op and still classifies. Wrapped
-  #       forms (`timeout 240 ssh ...`, `nohup ssh ...`, `/usr/bin/ssh`,
-  #       `$SSHCMD ...`) are NOT clause-initial `ssh` and keep blocking
-  #       (fail-closed residual FP, gap (xiv)). As of #1463 a clause-initial
-  #       `gcloud compute ssh` word sequence ALSO satisfies cond (1) —
-  #       optionally wrapped in a literal `timeout <num>[.frac][smhd]?`
-  #       prefix, the ONLY tolerated wrapper, gcloud-arm only (every real
-  #       #825 fleet invocation was timeout-wrapped; wrapped `ssh` stays
-  #       blocked, pinned N12 — the deliberate asymmetry, gap (xix)) — and
+  #       forms OTHER than the literal timeout prefix (`nohup ssh ...`,
+  #       `/usr/bin/ssh`, `$SSHCMD ...`, env-prefix heads) are NOT
+  #       clause-initial `ssh` and keep blocking (fail-closed residual FP,
+  #       gap (xiv)). As of #1463 a clause-initial
+  #       `gcloud compute ssh` word sequence ALSO satisfies cond (1), and
+  #       as of #1859 BOTH remote-exec heads accept an optional literal
+  #       `timeout <num>[.frac][smhd]?` prefix — the ONLY tolerated
+  #       wrapper; `timeout` FLAG forms (`--signal=`, `-k`) never match
+  #       (every real #825 fleet invocation was timeout-wrapped, and the
+  #       #1769 failover path hit the same false block on the bare `ssh`
+  #       head — gap (xix)). The gcloud head
   #       routes through the ssh branch of arm (4): gcloud is a thin
   #       wrapper that shells out to the LOCAL ssh(1) binary and forwards
   #       --ssh-flag / `-- SSH_ARGS` to it, so the same local-exec
@@ -2176,25 +2384,34 @@ for _idx in "${!_clauses[@]}"; do
   # own command word, so no arming/propagation separator proof is needed
   # (unlike the cd/WT latches, no state crosses clauses). A single-quoted
   # multi-statement remote string in the CANONICAL shape (clause-initial
-  # `ssh` or the #1463 `gcloud compute ssh` head, optional literal timeout
-  # wrapper; payload is the clause's final token; quote-, latch- and
+  # `ssh` or the #1463 `gcloud compute ssh` head, EITHER with an optional
+  # literal timeout wrapper — #1463 gcloud, #1859 ssh; payload is the
+  # clause's final token; quote-, latch- and
   # ladder-clean per the R1-R8 predicate) is merged into ONE clause by the
   # mask_ssh_payload_separators() pre-pass (#1413) BEFORE the split, so it
   # reaches this waiver whole — the pre-pass grants nothing itself; the
   # merged clause still walks every refusal above. Any OTHER
   # multi-statement remote string (double quotes, trailing tokens,
-  # redirects, wrapped ssh, quoted or latch-vocabulary prefixes) is still
+  # redirects, non-timeout-wrapped ssh, quoted or latch-vocabulary
+  # prefixes) is still
   # mis-split by the quoted-separator trade-off and its TAIL clause
   # (which lost the ssh command word) still classifies — fail-closed,
   # residual gap (xiv); remediation unchanged: single-statement
   # `git -C /workspace/... <verb>` inside the remote string (the -C waiver
   # above already allows it), a pod-side script, or the SSH MCP.
-  if echo "$clause" | grep -qE '^((timeout[[:space:]]+[0-9]+([.][0-9]+)?[smhd]?[[:space:]]+)?gcloud[[:space:]]+compute[[:space:]]+ssh[[:space:]]|(ssh|grep|egrep|fgrep|rg)[[:space:]])'; then
+  # (#1859) The cond (1) outer head below and the inner ssh/gcloud-vs-grep
+  # discriminator (the first grep inside the waiver body) share the
+  # timeout-qualified remote-exec alternation and MUST move in LOCKSTEP: a
+  # clause matching the OUTER head but missing the INNER discriminator
+  # falls to the grep-family arm — a WIDER waiver with no ProxyCommand /
+  # shared-repo-path checks — so drift BETWEEN these two regexes is
+  # fail-OPEN (unlike mask-vs-waiver head drift, which is fail-closed).
+  if echo "$clause" | grep -qE '^((timeout[[:space:]]+[0-9]+([.][0-9]+)?[smhd]?[[:space:]]+)?(gcloud[[:space:]]+compute[[:space:]]+)?ssh[[:space:]]|(grep|egrep|fgrep|rg)[[:space:]])'; then
     if ! echo "$clause" | grep -qE '\$\(|\$\{|`|<\(|>\(|<<<' \
        && ! echo "$clause" \
             | sed -E 's@[0-9]*>>?[[:space:]]*/dev/null([[:space:]]|$)@ @g' \
             | grep -q '>'; then
-      if echo "$clause" | grep -qE '^((timeout[[:space:]]+[0-9]+([.][0-9]+)?[smhd]?[[:space:]]+)?gcloud[[:space:]]+compute[[:space:]]+ssh|ssh)[[:space:]]'; then
+      if echo "$clause" | grep -qE '^((timeout[[:space:]]+[0-9]+([.][0-9]+)?[smhd]?[[:space:]]+)?(gcloud[[:space:]]+compute[[:space:]]+)?ssh)[[:space:]]'; then
         # ssh/gcloud arm: consumer-independent PIPE/BG refusal UNCHANGED —
         # a remote command's stdout is arbitrary remote-generated text; the
         # #1538 widening is grep-family only.
@@ -2234,12 +2451,13 @@ echo "BLOCKED: '$blocked' would move the SHARED repo-root tree off main / detach
   bash scripts/new_worktree.sh .claude/worktrees/<name> <branch> && git -C .claude/worktrees/<name> ...
 NEVER point -C at the repo root itself for a destructive op — for repo-root recovery use: uv run python scripts/sync_repo_root.py
 This guard matches COMMAND TEXT, not cwd — a worktree-internal op after 'cd <worktree>' in a compound is still blocked; use the git -C <worktree> form instead of cd'ing (incident #1143, 2026-07-08).
+Three compliant worktree compose shapes ARE recognized (#1058/#1861): (1) per-clause git -C <worktree path> <op>; (2) the &&-chain: WT=<path under .claude/worktrees/>; cd \"\$WT\" && <op> (any variable name, e.g. WORKTREE); (3) the exit-guard: cd \"\$WT\" || exit 1 (or || { echo FATAL >&2; exit 1; }) with <op> on later ;/newline-separated clauses. An OR/PIPE-preceded cd, a non-exiting guard tail ('|| echo oops', '|| return 1'), or ANY later cd/pushd/popd clause voids the scope — recompose with git -C instead.
 To LAND a branch onto main: gh pr merge <PR> --rebase (server-side, the /issue Step 10d path), or a scratch worktree: git worktree add --detach /tmp/<name> origin/main && git -C /tmp/<name> merge <branch> && git -C /tmp/<name> push origin HEAD:main.
 To recover an in-progress root merge/rebase/cherry-pick/revert/am: git merge --abort / git rebase --abort / git cherry-pick --abort / git revert --abort / git am --abort (all allowed; --quit likewise). For a worktree fast-forward: git -C <worktree> fetch origin +refs/heads/main:refs/remotes/origin/main, then git -C <worktree> merge --ff-only origin/main (NEVER local main — its unpushed root commits contaminate the branch, #1530).
 For marker-note text mentioning git commands, use --file <path.md> instead of --note; for commit messages, use git commit -F <file>. As of #1566 the canonical SINGLE-QUOTED task.py argument shape is masked (allowed): a clause-initial uv run python .../task.py invocation whose quoted note/title/prompt text sits in an otherwise plain clause no longer false-blocks — so a residual block on task.py argument text means a non-canonical shape (double quotes, dollar or backslash or backquote forms, redirects, a quoted or latch-vocabulary prefix); use the --file route for those.
 For composing a doc/report via heredoc whose body carries backticks, command substitution, or non-plain parameter forms (\${VAR:-default}, \${VAR@P}, \${1}) alongside git-verb text: quote the heredoc tag (<<'EOF' — bash never expands a quoted-tag body, and it strips cleanly); exactly-plain \${VAR} references (letters/digits/underscore only, nothing else inside the braces) are fine even under an unquoted tag (#1501). For a body naming shell-out spellings (subprocess / os.system / ...) or fed to a python/interpreter stdin consumer, use the Write tool instead — it covers EVERY composition class (quoting the tag does NOT lift those refusals). As of #1621 argv-LIST-form call opens with a non-shell first element (subprocess.run([\"git\", ...) no longer refuse the strip; bare word mentions, string-form calls, shell=True residuals, and shell-name argv heads still do — the Write tool remains the remediation for those.
 NOTE: this deny blocked your ENTIRE compound command — earlier clauses did NOT run either; regenerate any files/state those clauses were meant to produce before retrying the safe form (incident class #813/#1056).
-For a POD-side remote git op, a single-statement ssh <host> 'git <verb> ...' remote command is allowed (#1098), and a SINGLE-QUOTED multi-statement remote string is allowed when the quoted payload is the clause's final token and nothing quote- or latch-ambiguous precedes it (#1413); other shapes (double quotes, redirects, trailing tokens, wrapped ssh, quoted/latch-vocabulary prefixes) still need git -C /workspace/<repo> <verb> inside the remote string, a pod-side script, or the SSH MCP.
+For a POD-side remote git op, a single-statement ssh <host> 'git <verb> ...' remote command is allowed (#1098), and a SINGLE-QUOTED multi-statement remote string is allowed when the quoted payload is the clause's final token and nothing quote- or latch-ambiguous precedes it (#1413); a literal 'timeout <N>' wrapper on the ssh head is tolerated too (#1859); other shapes (double quotes, redirects, trailing tokens, non-timeout-wrapped ssh — nohup/env/abs-path/variable heads and timeout FLAG forms — quoted/latch-vocabulary prefixes) still need git -C /workspace/<repo> <verb> inside the remote string, a pod-side script, or the SSH MCP.
 For a grep/rg PATTERN clause naming git verbs: the unpiped clause is waived, and piping into plain read-only text filters (head/tail/wc/cat/cut/tr/nl/sort/uniq/grep) is waived too (#1538) — so a residual block on a piped grep means the consumer chain was NOT verifiable (an off-allowlist / path-spelled / quoted consumer word, a redirect or write/exec flag, or any $ / # in a consumer clause); drop the pipe, remove the $/#/flag, or bound output with grep -m N instead.
 For a GCE-side remote git op, the same two shapes are allowed with a gcloud compute ssh <instance> --command='...' head (#1463; an optional literal 'timeout <N>' wrapper is tolerated): keep --command the clause's FINAL token, no in-payload < or > redirects (bound output with | tail INSIDE the single-quoted payload — pipes mask fine), and no trailing local pipe / fd-dup ('2>&1 | tail -N' stays blocked); or put git -C /workspace/<clone> <verb> inside the payload, which is allowed regardless (path-blind -C waiver)." >&2
 log_deny "$blocked" "$cmd" "${clause:-}"
