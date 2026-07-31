@@ -1,7 +1,8 @@
 {
  "task": 1739,
- "generated_utc": "2026-07-31T00:43:03Z",
- "git_commit": "72edbd5df4a348622747e8ea8d54cde58d18446d",
+ "generated_utc": "2026-07-31T01:10:12Z",
+ "git_commit": "c1ab8c46589d09600223c00105ff909205fe3e99",
+ "script_blob_sha": "d695890bea59372cfdb4addf0294995603875821",
  "scan_source": "eval_results/issue_1739/intrusion_audit/intrusion_scan.json",
  "exclusion_rule": "context flagged iff >=1 of its K rollout completions matches the CJK class",
  "behaviors": {
