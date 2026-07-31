@@ -36,7 +36,7 @@ relates_to:
 - **Both dissociation directions realized: identity plus bias scores acc@1 0.53 at pooled R² −0.92 (n=1000); a shrinkage-limited prefix ridge scores R² +0.54 at chance-level retrieval 0.04.**
 - Fitted maps beat every baseline on all non-saturated metrics; the nonlinear-over-ridge acc@1 gap grows with pool size, 0.036 at 1,000 candidates to 0.101 at 100,000.
 - Shuffled-pair nulls collapse to metric-specific floors; raw cosine's floor is 0.68 and the constant train-mean scores 0.798, so absolute cosine says little without the null.
-- Retrieval hubs are corpus-structured: test rows are 1% of the 100,000 pool yet 61-70 of fitted maps' top-100 cosine hubs; the correction still buys 0.03-0.10 acc@1.
+- Retrieval hubs are corpus-structured: test rows are 1% of the 100,000 pool yet 61-70 of fitted maps' top-100 cosine hubs; the correction still buys the fitted maps 0.03-0.10 acc@1 (weak baselines gain more, up to +0.195).
 - The identity-vs-fitted retrieval flip tracks training-set size: ridge falls 0.81 to 0.065 acc@1 as training rows drop 963k to 50; identity plus bias stays near 0.50.
 - Scope: all test targets are LMSYS rows under one pinned split; headline layer 19 is inherited; layers 14/26 reproduce every ordering.
 
@@ -137,7 +137,7 @@ Left half: acc@1 (euclidean, n=1000) against candidate-pool size per 963k-train 
 
 > **Figure.** *Per-row rank distributions at the 100,000 pool, one step curve per estimator.* Fitted maps place most true answers at rank 1; identity plus bias needs ranks in the hundreds for its tail; the constant mean concentrates near rank 50,000, the random-guess region.
 
-The nonlinear R² gain (+0.056 for width 8192) buys discriminability that compounds with pool size: the gap growth (+0.065) excludes zero on shared draws and holds within each pool-composition class, so pool size, not composition, drives it. The pool-1,000 gap is 3-4 times larger at layers 14 and 26 (+0.135 and +0.123 against +0.036), where ridge is weaker.
+The nonlinear R² gain (+0.056 for width 8192) buys discriminability that compounds with pool size: the gap growth (+0.065) excludes zero on shared draws and holds within each pool-composition class, so pool size rather than composition drives it. The pool-1,000 gap is 3-4 times larger at layers 14 and 26 (+0.135 and +0.123 against +0.036), where ridge is weaker.
 
 ### Every shuffled-pair null collapses to its floor, and raw cosine's floor is high
 
@@ -151,13 +151,13 @@ No metric shows a non-collapsing null on the fitted maps' pipeline — the instr
 
 ### Retrieval hubs are corpus-structured, and the hubness correction helps everywhere
 
-Left half: corpus composition of each estimator's top-100 cosine hubs at the 100,000 pool, with the pool-composition reference. Right half: paired CSLS-minus-cosine acc@1 gains per estimator and pool, 95% bootstrap whiskers (n=1000).
+The left panel shows the corpus composition of each estimator's top-100 cosine hubs at the 100,000 pool, with the pool-composition reference. Right half: paired CSLS-minus-cosine acc@1 gains per estimator and pool, 95% bootstrap whiskers (n=1000).
 
 ![Hub corpus composition and CSLS gain versus pool size](https://raw.githubusercontent.com/superkaiba/explore-persona-space/76a1a9826dbb9d55945a0ee23667f2bf61020584/figures/issue_1901/hub_composition_csls.png)
 
 > **Figure.** *Hubs sit where each estimator's predictions land.* Fitted maps' hubs are test-row-dominated (61-70 of 100 against 1% of pool); identity-family hubs are train-region LMSYS distractors (87 of 100). CSLS gains span +0.027 (width-32768 map, pool 20,000) to +0.097 (ridge, pool 100,000).
 
-Cosine 10-occurrence skewness reaches 13.6-25.8 against a Gaussian reference of 3.2; the euclidean excess is modest (23.8 vs 20.8) — mostly a cosine phenomenon. Hubs follow each estimator's prediction region: the correction partly compensates corpus and density structure, not only generic hubness; it helps weak estimators most (identity copy +0.195 at pool 1,000), understating weak baselines under plain kNN.
+Cosine 10-occurrence skewness reaches 13.6-25.8 against a Gaussian reference of 3.2; the euclidean excess is modest (23.8 vs 20.8) — mostly a cosine phenomenon. Hubs follow each estimator's prediction region: the correction partly compensates corpus and density structure, not only generic hubness; it helps weak estimators most (identity copy +0.195 at pool 1,000) — so plain kNN understates weak baselines.
 
 ### The retrieval flip is a small-training-set property, and pooled R² fails in the opposite direction there
 
