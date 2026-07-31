@@ -182,13 +182,25 @@ chance, so the round's CIs should be treated as provisional until it is explaine
 > diagnostic which would have investigated it never ran: the caller skips the prefix arm sweep
 > whenever constancy is *verified*, and the "run the sweep as the anomaly diagnostic" branch fires
 > only on a constancy *failure* — so this ANOMALY is recorded but undiagnosed.
+>
+> **The anomaly is directionally asymmetric, which matters for what survives it.** It cuts against
+> any *positive* leg-2 claim, but it does not weaken this round's *negative* conclusion for evil:
+> the real arms read negative (−0.067 and −0.081) while even the nonsense control reads positive
+> (+0.068), so if the anomaly biases arms upward, evil's true bare-fit reads are if anything more
+> negative than reported. In that direction the evil conclusion is conservative. Sycophancy's
+> *positive* bare-over-full result is the one that most needs the anomaly resolved before it is
+> quoted as an effect size.
 
 Three further limitations of this round:
 
 - **The multi-turn-only subset could not be computed, so the reported contrasts are lower bounds
   on the multi-turn effect.** 987 of the 2,000 eval contexts are single-turn, and for those the
-  bare render *is* the original render — they contribute zero contrast by construction and dilute
-  the pooled ρ. The clean read would be the multi-turn subset alone, but this round persisted no
+  bare render *is* the original render — their predictor input is byte-identical in both
+  conditions, so they contribute zero contrast by construction and dilute the pooled ρ. It follows
+  that sycophancy's pooled **+0.078** bare-over-full advantage must originate *entirely* in the
+  multi-turn rows, the only rows whose input changed at all. (Rank correlation over a pooled set is
+  not additive across subsets, so the multi-turn-only effect is larger than +0.078 — but not simply
+  double it.) The clean read would be the multi-turn subset alone, but this round persisted no
   per-context predictions: each `percell/bareq_leg1_transfer.jsonl` holds two aggregate records
   (coverage, null probe, the same six arm rows as the summary) and there is no `preds/` directory,
   unlike the main lane. Recovering the split needs a re-score, not a re-analysis.
