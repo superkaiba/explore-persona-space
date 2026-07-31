@@ -6585,8 +6585,8 @@
     "1850": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1850",
-      "status": "reviewing",
+      "path": "tasks/completed/1850",
+      "status": "completed",
       "title": "daily-fix: remote-landing watches need fence deadline + hear"
     },
     "1851": {
