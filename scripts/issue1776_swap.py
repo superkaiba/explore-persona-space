@@ -50,6 +50,7 @@ from explore_persona_space.experiments.issue1415.steering import (  # noqa: E402
     capture_vectors,
     coherence_check,
     condition_passes,
+    context_token_ids,
     generate_batch,
     render_context,
 )
@@ -62,6 +63,37 @@ BASELINE_ARM = "swap_a0"
 ALL_ARMS = (BASELINE_ARM, *STEER_ARMS)
 LEGS = ("lmsys", "wildchat")
 LMSYS_SOURCE = "lmsys_test_pool"
+
+# ── patch round (follow-up ``slot_patch_sufficiency``, plan v8) ───────────────
+# ONE-variable diff vs the swap round: the injected edit REPLACES the layer-14
+# last-context-token activation wholesale with v14_last(B) (DeltaHook
+# ``replace=True``); pairs/targets/pools/nulls/metric reused verbatim.
+FU_PATCH = "followup_slotpatch"
+LABEL_PATCH = "slot_patch_sufficiency"
+PATCH_BASELINE_ARM = "patch_a0"
+PATCH_STEER_ARMS = ("swap_patch",)
+PATCH_ALL_ARMS = (PATCH_BASELINE_ARM, *PATCH_STEER_ARMS)
+
+# Round registry — every arm-/path-shaped difference between the two rounds
+# threads through here; ``--round swap`` (the default) is byte-identical.
+ROUNDS: dict[str, dict] = {
+    "swap": {
+        "label": LABEL,
+        "fu": FU,
+        "baseline_arm": BASELINE_ARM,
+        "steer_arms": STEER_ARMS,
+        "all_arms": ALL_ARMS,
+        "merged_subdir": "steered_swap",
+    },
+    "patch": {
+        "label": LABEL_PATCH,
+        "fu": FU_PATCH,
+        "baseline_arm": PATCH_BASELINE_ARM,
+        "steer_arms": PATCH_STEER_ARMS,
+        "all_arms": PATCH_ALL_ARMS,
+        "merged_subdir": "steered_slotpatch",
+    },
+}
 
 # §11 norm cap: the dose round's top operating norm (p4_alpha_ladder.json
 # n_ref); asserted against the committed ladder copy at build time.
@@ -104,6 +136,16 @@ STAGE_FILES = (
     "analysis_tensors/jac_full/J_last.pt",
     "analysis_tensors/jpairs/jpair_capture.pt",
     "analysis_tensors/contexts/contexts.jsonl",
+    "raw_completions/steered_dose/baseline_a0.json",
+)
+
+# Patch-round staged inputs (plan v8 §10): the swap round's OWN persisted build
+# artifacts + the B-prompt sources. NO operators / jpair capture needed.
+PATCH_STAGE_FILES = (
+    f"analysis_tensors/{FU}/pairs.jsonl",
+    f"analysis_tensors/{FU}/targets.json",
+    f"analysis_tensors/{FU}/pool.pt",
+    f"analysis_tensors/{FU}/deltas.pt",
     "raw_completions/steered_dose/baseline_a0.json",
 )
 
@@ -215,15 +257,69 @@ def _probe_staged_schemas(dest: Path, wc_names: list[str]) -> dict:
     }
 
 
+def _probe_staged_schemas_patch(dest: Path, wc_names: list[str], source_layer: int) -> dict:
+    """Patch-round fitness check (c): key/schema probes on EVERY consumed
+    payload (staged swap build artifacts + B-prompt sources), BEFORE any
+    consumer. Records — never hard-asserts — the assumption-1 layer-14
+    membership of the stored WildChat capture (reference-unavailable path)."""
+    root = dest / C76.HF_PREFIX
+    art = root / f"analysis_tensors/{FU}"
+    rows = [json.loads(ln) for ln in (art / "pairs.jsonl").read_text().split("\n") if ln.strip()]
+    assert rows, "staged pairs.jsonl empty"
+    need = {"pair_id", "leg", "a_id", "b_id", "included", "a_user", "a_idx", "b_idx"}
+    assert need <= set(rows[0].keys()), sorted(rows[0].keys())
+    n_included = sum(1 for r in rows if r["included"])
+    targets = json.loads((art / "targets.json").read_text())
+    assert targets["eligibility"] == ELIGIBILITY, "staged targets eligibility drift"
+    assert targets["per_pair"], "staged targets per_pair empty"
+    targets_sha = _sha256_file(art / "targets.json")
+    pool = torch.load(art / "pool.pt", map_location="cpu", mmap=True, weights_only=False)
+    for leg in LEGS:
+        assert {"ids", "counts", "n_tokens", "prompt_words", "doc_freq", "v", "jaccard", "cos"} <= (
+            set(pool[leg].keys())
+        ), (leg, sorted(pool[leg].keys()))
+    dl = torch.load(art / "deltas.pt", map_location="cpu", mmap=True, weights_only=True)
+    assert {"pair_ids", "dv_target", "included"} <= set(dl.keys()), sorted(dl.keys())
+    base = json.loads((root / "raw_completions/steered_dose/baseline_a0.json").read_text())
+    assert base.get("contexts"), sorted(base.keys())
+    c0 = base["contexts"][0]
+    assert {"context_id", "user", "samples"} <= set(c0.keys()), sorted(c0.keys())
+    wc0 = torch.load(
+        root / "wildchat_fresh/final_token_capture" / wc_names[0],
+        map_location="cpu",
+        mmap=True,
+        weights_only=True,
+    )
+    assert {"cx_last", "v_x", "layers", "ci"} <= set(wc0.keys()), sorted(wc0.keys())
+    wc_layers = [int(x) for x in wc0["layers"]]
+    return {
+        "n_pairs_rows": len(rows),
+        "n_pairs_included": n_included,
+        "pairs_sha": _sha256_file(art / "pairs.jsonl"),
+        "targets_sha": targets_sha,
+        "pool_sha": _sha256_file(art / "pool.pt"),
+        "deltas_sha": _sha256_file(art / "deltas.pt"),
+        "baseline_n_contexts": len(base["contexts"]),
+        "wc_chunk_keys": sorted(wc0.keys()),
+        "wc_layers": wc_layers,
+        # assumption 1 (plan §12): recorded, not asserted — absence routes
+        # G-CAPTURE-CONSISTENCY to its reference-unavailable branch.
+        "source_layer_in_wc_layers": bool(source_layer in wc_layers),
+    }
+
+
 def cmd_stage(args) -> int:
     """Stage every swap-round input from the Hub at ONE fresh revision pin;
-    idempotent per-file (existing targets skip); mmap key probes at the end."""
+    idempotent per-file (existing targets skip); mmap key probes at the end.
+    ``--round patch`` stages the PATCH round's file set instead (the swap
+    round's persisted build artifacts + B-prompt sources)."""
     from explore_persona_space.orchestrate import hub
 
     rev = C76.resolve_data_repo_pin(args.pin_file, refresh=args.refresh_pin)
     staged: list[str] = []
     skipped = 0
-    for rel in STAGE_FILES:
+    stage_files = PATCH_STAGE_FILES if args.round == "patch" else STAGE_FILES
+    for rel in stage_files:
         repo_path = f"{C76.HF_PREFIX}/{rel}"
         target = args.dest / repo_path
         if target.is_file():
@@ -256,8 +352,19 @@ def cmd_stage(args) -> int:
             )
             n_wc += 1
 
-    probes = _probe_staged_schemas(args.dest, names)
+    if args.round == "patch":
+        probes = _probe_staged_schemas_patch(args.dest, names, args.stage_source_layer)
+        # byte-identity vs the committed copy (plan §10: staged == committed);
+        # stage runs ONLY against real Hub artifacts, so this never sees fixtures.
+        committed_targets = C76.PROJECT_ROOT / f"eval_results/issue_{C76.ISSUE}/{FU}/targets.json"
+        if committed_targets.is_file():
+            assert probes["targets_sha"] == _sha256_file(committed_targets), (
+                "staged targets.json != committed copy — artifact drift (fitness check (j))"
+            )
+    else:
+        probes = _probe_staged_schemas(args.dest, names)
     report = {
+        "round": args.round,
         "revision": rev,
         "staged": staged,
         "skipped_existing": skipped,
@@ -331,6 +438,26 @@ def _load_wildchat_candidates(dest: Path, readout_layer: int) -> dict:
         "texts": texts,
         "v": torch.stack(vs),
     }
+
+
+def _load_wildchat_cx14(dest: Path, source_layer: int) -> dict[str, torch.Tensor] | None:
+    """Stored WildChat cx_last at the SOURCE layer, keyed by the wc context id —
+    the G-CAPTURE-CONSISTENCY reference (plan v8 §7). Returns None when the
+    stored capture does not carry the source layer (assumption-1 failure ->
+    the gate's reference-unavailable branch)."""
+    wc = dest / C76.HF_PREFIX / "wildchat_fresh/final_token_capture"
+    chunk_files = sorted(wc.glob("shard*_chunk*.pt"))
+    assert chunk_files, f"no wildchat chunks staged under {wc}"
+    out: dict[str, torch.Tensor] = {}
+    for cf in chunk_files:
+        d = torch.load(cf, map_location="cpu", weights_only=True)
+        layers = [int(x) for x in d["layers"]]
+        if source_layer not in layers:
+            return None
+        li = layers.index(source_layer)
+        for k, ci in enumerate(int(x) for x in d["ci"]):
+            out[f"wc{ci:06d}"] = d["cx_last"][k, li, :].to(torch.float32)
+    return out
 
 
 # ── target-set construction (shared by build + analysis null draws) ──────────
@@ -653,7 +780,13 @@ def cmd_build(args) -> int:
 
     Writes (out-dir): pairs.jsonl, targets.json, pool.pt, deltas.pt,
     build_report.json. Gates: G-METRIC-SANITY (rc=9), G-DOSE-DEGENERATE (rc=7)
-    — demoted to log lines under --gates-informational (smoke calibration)."""
+    — demoted to log lines under --gates-informational (smoke calibration).
+    ``--round patch`` routes to the patch-round build instead."""
+    if args.round == "patch":
+        assert args.swap_artifacts and args.swap_build_report, (
+            "--round patch requires --swap-artifacts + --swap-build-report"
+        )
+        return cmd_build_patch(args)
     stage_report = json.loads(args.stage_report.read_text())
     fp = _build_fingerprint(args, stage_report["schema_probes"])
     report_path = args.out_dir / "build_report.json"
@@ -1103,15 +1236,286 @@ def null_draw_scores(
     return vals, redraws, len(seen)
 
 
+# ── patch-round build (plan v8 §4: v14_last capture + G-CAPTURE-CONSISTENCY) ─
+
+
+def _capture_v14_last(model, tok, ctx_dicts: list[dict], source_layer: int, batch: int):
+    """v14_last per context via the parity probe's EXACT read path —
+    ``render_context`` + LEFT padding + ``extract_layer_activations``[:, T-1]
+    — in LENGTH-UNIFORM batches: ``extract_layer_activations`` forwards no
+    ``position_ids``, so a MIXED-length left-padded batch would give shorter
+    rows pad-shifted RoPE positions (#502 class); grouping rows by exact
+    rendered token length makes left-pad a no-op and the T-1 read exactly the
+    generation-time prefill slot value. Returns ``(n, H)`` fp32 CPU."""
+    if tok.pad_token_id is None:
+        tok.pad_token = tok.eos_token
+    n = len(ctx_dicts)
+    ids_list = [context_token_ids(tok, c) for c in ctx_dicts]
+    by_len: dict[int, list[int]] = {}
+    for i, ids in enumerate(ids_list):
+        by_len.setdefault(len(ids), []).append(i)
+    device = next(model.parameters()).device
+    rows: dict[int, torch.Tensor] = {}
+    done = 0
+    for length in sorted(by_len):
+        group = by_len[length]
+        for start in range(0, len(group), batch):
+            sel = group[start : start + batch]
+            texts = [render_context(tok, ctx_dicts[i]) for i in sel]
+            prev = tok.padding_side
+            tok.padding_side = "left"
+            try:
+                enc = tok(texts, add_special_tokens=False, padding=True, return_tensors="pt")
+            finally:
+                tok.padding_side = prev
+            ids = enc["input_ids"].to(device)
+            mask = enc["attention_mask"].to(device)
+            B, T = ids.shape
+            # uniform-length invariant: no pad tokens in this batch
+            assert T == length and int(mask.sum()) == B * T, (T, length, int(mask.sum()))
+            with torch.no_grad():
+                acts = extract_layer_activations(model, ids, [source_layer], attention_mask=mask)
+            v = acts[source_layer][:, T - 1, :].float().cpu()
+            for j, i in enumerate(sel):
+                rows[i] = v[j]
+            done += len(sel)
+            print(f"[patch-build] v14 capture {done}/{n}", flush=True)
+    return torch.stack([rows[i] for i in range(n)])
+
+
+def _patch_build_fingerprint(args, probes: dict) -> dict:
+    """EVERY output-affecting patch-build regime key (resume contract, #722 r3)."""
+    return {
+        "script": "issue1776_swap",
+        "round": "patch",
+        "seed": GLOBAL_SEED,
+        "model": args.model,
+        "tiny": bool(args.tiny),
+        "source_layer": args.source_layer,
+        "readout_layer": args.readout_layer,
+        "limit_pairs": int(args.limit_pairs),
+        "capture_batch": args.capture_batch,
+        "eligibility": ELIGIBILITY,
+        "pairs_sha": probes["pairs_sha"],
+        "targets_sha": probes["targets_sha"],
+        "pool_sha": probes["pool_sha"],
+        "deltas_sha": probes["deltas_sha"],
+    }
+
+
+def cmd_build_patch(args) -> int:
+    """Patch-round build: fingerprint-check the reused swap build, copy/subset
+    the pair manifest, run the v14_last capture pass (the patch VALUES + the
+    delta-norm dose covariate, recorded BEFORE any generation), gate
+    G-CAPTURE-CONSISTENCY (rc=9), write pairs.jsonl + patch_vectors.pt +
+    patch_build_report.json."""
+    stage_report = json.loads(args.stage_report.read_text())
+    probes = stage_report["schema_probes"]
+    fp = _patch_build_fingerprint(args, probes)
+    report_path = args.out_dir / "patch_build_report.json"
+    if report_path.exists() and not args.force:
+        try:
+            prior = json.loads(report_path.read_text()).get("inputs")
+        except (json.JSONDecodeError, OSError):
+            prior = None
+        if prior == fp and (args.out_dir / "patch_vectors.pt").exists():
+            print(f"[patch-build] MATCHING fingerprint — skip (resume): {report_path}", flush=True)
+            return 0
+        print("[patch-build] fingerprint MISMATCH/unreadable -> rebuild", flush=True)
+
+    # reused-swap-build fingerprint HALT (plan §10: mismatch = HALT, never a
+    # silent rebuild) — the committed swap build_report is the source of record.
+    swap_report = json.loads(args.swap_build_report.read_text())
+    swap_inputs = swap_report["inputs"]
+    for key, want in (
+        ("seed", GLOBAL_SEED),
+        ("eligibility", ELIGIBILITY),
+        ("model", args.model),
+        ("source_layer", args.source_layer),
+        ("readout_layer", args.readout_layer),
+    ):
+        if swap_inputs.get(key) != want:
+            raise RuntimeError(
+                f"reused swap build fingerprint MISMATCH on '{key}': "
+                f"committed={swap_inputs.get(key)!r} expected={want!r} — HALT (plan v8 §10)"
+            )
+    art = Path(args.swap_artifacts)
+    all_rows = [
+        json.loads(ln) for ln in (art / "pairs.jsonl").read_text().split("\n") if ln.strip()
+    ]
+    if len(all_rows) != int(swap_report["n_pairs_sampled"]) or sum(
+        1 for r in all_rows if r["included"]
+    ) != int(swap_report["n_pairs_included"]):
+        raise RuntimeError(
+            f"staged pairs.jsonl rows ({len(all_rows)}) / included "
+            f"({sum(1 for r in all_rows if r['included'])}) != committed swap build_report "
+            f"({swap_report['n_pairs_sampled']}/{swap_report['n_pairs_included']}) — HALT"
+        )
+    targets = json.loads((art / "targets.json").read_text())
+    assert targets["eligibility"] == ELIGIBILITY, "staged targets eligibility drift"
+
+    # pair subset (smoke: --limit-pairs N included per leg; full: verbatim copy)
+    if args.limit_pairs:
+        rows = []
+        for leg in LEGS:
+            leg_inc = [r for r in all_rows if r["leg"] == leg and r["included"]]
+            rows.extend(leg_inc[: args.limit_pairs])
+    else:
+        rows = all_rows
+    inc = [r for r in rows if r["included"]]
+    assert len(inc) >= 2, "fewer than 2 included pairs — pilot parity needs 2 distinct pairs"
+    for leg in LEGS:
+        assert any(r["leg"] == leg for r in inc), f"leg {leg}: zero included pairs selected"
+
+    # resolve A/B prompts (pairs.jsonl carries A's prompt but not B's — B
+    # re-derives through the swap round's own candidate loaders, plan §4)
+    model, tok = P3.load_model(args)
+    lm = _load_lmsys_candidates(args.dest, tok)
+    wc = _load_wildchat_candidates(args.dest, args.readout_layer)
+    id2ctx: dict[str, dict[str, dict]] = {"lmsys": {}, "wildchat": {}}
+    for leg, cand in (("lmsys", lm), ("wildchat", wc)):
+        for cid, user, system in zip(cand["ids"], cand["users"], cand["systems"], strict=True):
+            id2ctx[leg][cid] = {"system": system, "user": user}
+
+    # unique capture set: (leg, ctx_id) for every A and B of the included pairs
+    uniq: dict[tuple[str, str], dict] = {}
+    for r in inc:
+        uniq.setdefault((r["leg"], r["a_id"]), {"system": r["a_system"], "user": r["a_user"]})
+        b_ctx = id2ctx[r["leg"]].get(r["b_id"])
+        assert b_ctx is not None, f"pair {r['pair_id']}: b_id {r['b_id']} unresolved in {r['leg']}"
+        uniq.setdefault((r["leg"], r["b_id"]), b_ctx)
+    keys = sorted(uniq)
+    v14 = _capture_v14_last(
+        model, tok, [uniq[k] for k in keys], args.source_layer, args.capture_batch
+    )
+    v14_of = {k: v14[i] for i, k in enumerate(keys)}
+    del model
+
+    # G-CAPTURE-CONSISTENCY (plan §7 gate 2): recomputed v14 vs the stored
+    # WildChat cx_last at the source layer, row-matched by context id.
+    cx14 = (
+        _load_wildchat_cx14(args.dest, args.source_layer)
+        if probes.get("source_layer_in_wc_layers", True)
+        else None
+    )
+    if cx14 is None:
+        consistency = {
+            "status": "reference-unavailable",
+            "note": "stored WildChat capture lacks the source layer (plan §12 assumption 1); "
+            "G-PATCH-PARITY remains the binding slot check",
+        }
+        gate_consistency = True
+    else:
+        coss = []
+        for leg, cid in keys:
+            if leg != "wildchat" or cid not in cx14:
+                continue
+            a = v14_of[(leg, cid)].to(torch.float64)
+            b = cx14[cid].to(torch.float64)
+            coss.append(float((a @ b) / (a.norm() * b.norm()).clamp(min=1e-30)))
+        assert coss, "no WildChat contexts overlap the stored cx_last reference"
+        med = float(np.median(coss))
+        consistency = {
+            "status": "computed",
+            "n_contexts": len(coss),
+            "cos_median": med,
+            "cos_q10_q90": [float(np.quantile(coss, q)) for q in (0.1, 0.9)],
+            "cos_min": float(np.min(coss)),
+            "threshold": 0.99,
+            "pass": bool(med >= 0.99),
+        }
+        gate_consistency = consistency["pass"]
+
+    # patch values + the §3 dose covariate (recorded BEFORE generation)
+    pair_ids = [r["pair_id"] for r in inc]
+    v14_b = torch.stack([v14_of[(r["leg"], r["b_id"])] for r in inc])
+    v14_a = torch.stack([v14_of[(r["leg"], r["a_id"])] for r in inc])
+    delta_norm = (v14_b.to(torch.float64) - v14_a.to(torch.float64)).norm(dim=1).to(torch.float32)
+
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    pairs_path = args.out_dir / "pairs.jsonl"
+    tmp = pairs_path.with_suffix(".jsonl.tmp")
+    tmp.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    tmp.replace(pairs_path)
+    if not args.limit_pairs:
+        assert _sha256_file(pairs_path) == probes["pairs_sha"], (
+            "full-mode pairs.jsonl copy is not byte-identical to the staged manifest"
+        )
+    torch.save(
+        {
+            "round": "patch",
+            "pair_ids": pair_ids,
+            "v14_b": v14_b,
+            "v14_a": v14_a,
+            "delta_norm": delta_norm,
+            "source_layer": args.source_layer,
+            "model": args.model,
+            "capture": "render_context + left-pad (length-uniform batches) + "
+            "extract_layer_activations[:, T-1]",
+        },
+        args.out_dir / "patch_vectors.pt",
+    )
+    dn = delta_norm.numpy()
+    report = {
+        "inputs": fp,
+        "round": "patch",
+        "swap_build_inputs": swap_inputs,
+        "swap_build_report_sha": _sha256_file(args.swap_build_report),
+        "n_pairs_rows": len(rows),
+        "n_pairs_included": len(inc),
+        "per_leg_included": {leg: sum(1 for r in inc if r["leg"] == leg) for leg in LEGS},
+        "n_unique_contexts_captured": len(keys),
+        "consistency_gate": consistency,
+        "patch_delta_norm": {
+            "median": float(np.median(dn)),
+            "q10_q90": [float(np.quantile(dn, q)) for q in (0.1, 0.9)],
+            "max": float(dn.max()),
+            "norm_cap_ref": NORM_CAP_PLAN,
+            "fraction_above_swap_cap": float((dn > NORM_CAP_PLAN).mean()),
+        },
+        "label_directory_mapping": {LABEL_PATCH: FU_PATCH},
+        "operator_shas_echo": swap_report.get("operator_shas"),
+        "repro": C76.repro_meta(),
+    }
+    C76.atomic_write_json(report_path, report)
+    print(
+        f"[patch-build] [phase=build_done] pairs={len(rows)} included={len(inc)} "
+        f"captured={len(keys)} delta_norm_median={float(np.median(dn)):.2f} "
+        f"consistency={consistency.get('status')} -> {report_path}",
+        flush=True,
+    )
+    if not gate_consistency:
+        if args.gates_informational:
+            print("[patch-build] G-CAPTURE-CONSISTENCY FAIL (informational at smoke n)", flush=True)
+        else:
+            print(
+                f"[patch-build] G-CAPTURE-CONSISTENCY HALT rc=9 "
+                f"(cos_median={consistency.get('cos_median')} < 0.99)",
+                flush=True,
+            )
+            return 9
+    return 0
+
+
 # ── pilot (G-SWAP-PARITY rc=8 + G-PILOT rc=7) ────────────────────────────────
 
 
-def parity_probe(model, tok, contexts: list[dict], deltas: torch.Tensor, source_layer: int) -> dict:
-    """G-SWAP-PARITY (plan §7): the per-row (B,H) prefill edit lands EXACTLY at
-    each row's T-1 slot of the layer-``source_layer`` block output, other
-    positions untouched, exactly ONE edit per forward. Hooked-vs-unhooked
-    captures of the SAME forward inputs; expected value recomputed in the
-    hidden dtype (bitwise-identical elementwise add), tolerance 1e-4 fp32."""
+def parity_probe(
+    model,
+    tok,
+    contexts: list[dict],
+    deltas: torch.Tensor,
+    source_layer: int,
+    *,
+    replace: bool = False,
+) -> dict:
+    """G-SWAP-PARITY / G-PATCH-PARITY (plan §7): the per-row (B,H) prefill edit
+    lands EXACTLY at each row's T-1 slot of the layer-``source_layer`` block
+    output, other positions untouched, exactly ONE edit per forward.
+    Hooked-vs-unhooked captures of the SAME forward inputs; expected value
+    recomputed in the hidden dtype, tolerance 1e-4 fp32. ``replace=True``
+    (the patch round) expects position T-1 to EQUAL each row's delta value
+    elementwise (wholesale replacement, no add)."""
     assert deltas.dim() == 2 and deltas.shape[0] == len(contexts) == 2, deltas.shape
     texts = [render_context(tok, c) for c in contexts]
     prev = tok.padding_side
@@ -1126,7 +1530,7 @@ def parity_probe(model, tok, contexts: list[dict], deltas: torch.Tensor, source_
     mask = enc["attention_mask"].to(device)
     B, T = ids.shape
     ref = extract_layer_activations(model, ids, [source_layer], attention_mask=mask)[source_layer]
-    with DeltaHook(model, source_layer, deltas, 1.0) as hook:
+    with DeltaHook(model, source_layer, deltas, 1.0, replace=replace) as hook:
         hook.arm(expected_prompt_len=T)
         ed = extract_layer_activations(model, ids, [source_layer], attention_mask=mask)[
             source_layer
@@ -1134,7 +1538,10 @@ def parity_probe(model, tok, contexts: list[dict], deltas: torch.Tensor, source_
         n_edits = int(hook.n_edits)
     ref = ref.float().cpu()
     ed = ed.float().cpu()
-    exp_last = (ref[:, T - 1].to(hdtype) + deltas.to(hdtype)).float()
+    if replace:
+        exp_last = deltas.to(hdtype).float()
+    else:
+        exp_last = (ref[:, T - 1].to(hdtype) + deltas.to(hdtype)).float()
     dev_last = float((ed[:, T - 1] - exp_last).abs().max())
     dev_other = float((ed[:, : T - 1] - ref[:, : T - 1]).abs().max())
     ok = n_edits == 1 and dev_last <= 1e-4 and dev_other == 0.0
@@ -1144,14 +1551,125 @@ def parity_probe(model, tok, contexts: list[dict], deltas: torch.Tensor, source_
         "max_abs_dev_other_positions": dev_other,
         "tolerance": 1e-4,
         "per_row_deltas": True,
+        "replace": bool(replace),
         "pass": bool(ok),
     }
+
+
+def _pilot_null_block(args, pool, p0, targets_path: Path) -> dict:
+    """One production-shape batched null-draw block (p5 sizing basis, §9);
+    shared verbatim by the swap and patch pilots."""
+    tg = json.loads(targets_path.read_text())["per_pair"][p0["pair_id"]]
+    rk = rank_map([tg["b_excerpt"]])
+    t0 = time.time()
+    vals, redraws, _ = null_draw_scores(
+        pool,
+        p0["a_idx"],
+        p0["b_idx"],
+        rk,
+        args.null_draws,
+        np.random.default_rng(derive_seed("pilotnull")),
+        screen=pair_eligible,
+    )
+    return {
+        "n_draws": args.null_draws,
+        "wall_s": time.time() - t0,
+        "n_redraws": redraws,
+        "mean_mrr": float(np.mean(vals)) if vals else None,
+    }
+
+
+def cmd_pilot_patch(args) -> int:
+    """Patch-round pilot: G-PATCH-PARITY (rc=8, replace-mode elementwise check,
+    binds at smoke) + measured 1-pair wall at the sweep's execution shape
+    (rc=7 when projected wall > 2x the §9 budget) + one null-draw block."""
+    assert args.patch_vectors, "--round patch requires --patch-vectors"
+    rows = [json.loads(ln) for ln in args.pairs.read_text().split("\n") if ln.strip()]
+    inc = [r for r in rows if r["included"]]
+    assert len(inc) >= 2, "patch pilot needs >=2 included pairs (per-row DISTINCT probe values)"
+    pv = torch.load(args.patch_vectors, map_location="cpu", weights_only=True)
+    pid_of = {p: i for i, p in enumerate(pv["pair_ids"])}
+    model, tok = P3.load_model(args)
+
+    # G-PATCH-PARITY: 2 rows, DISTINCT per-row v14_last(B) patch values
+    p0, p1 = inc[0], inc[1]
+    probe_deltas = torch.stack(
+        [pv["v14_b"][pid_of[p0["pair_id"]]], pv["v14_b"][pid_of[p1["pair_id"]]]]
+    )
+    assert float((probe_deltas[0] - probe_deltas[1]).abs().max()) > 0, (
+        "probe patch values must be per-row DISTINCT"
+    )
+    ctx2 = [
+        {"system": p0["a_system"], "user": p0["a_user"]},
+        {"system": p1["a_system"], "user": p1["a_user"]},
+    ]
+    par = parity_probe(model, tok, ctx2, probe_deltas, args.source_layer, replace=True)
+    if not par["pass"]:
+        C76.atomic_write_json(
+            args.out, {"gate": "G-PATCH-PARITY", "parity": par, "repro": C76.repro_meta()}
+        )
+        print(f"[patch-pilot] G-PATCH-PARITY HALT rc=8: {par}", flush=True)
+        return 8
+
+    # measured wall at the sweep's execution shape (#1415 pilot-shape rule)
+    d_stack = pv["v14_b"][pid_of[p0["pair_id"]]][None, :].repeat(args.gen_batch, 1)
+    ctx_rep = [{"system": p0["a_system"], "user": p0["a_user"]}] * args.gen_batch
+    t0 = time.time()
+    with DeltaHook(model, args.source_layer, d_stack, 1.0, replace=True) as hook:
+        texts = generate_batch(
+            model,
+            tok,
+            ctx_rep,
+            n=args.k_samples,
+            hook=hook,
+            max_new_tokens=args.max_new_tokens,
+            temperature=args.temperature,
+            seed_base=derive_seed("pilot", "swap_patch"),
+        )
+        assert hook.n_edits == args.k_samples, (hook.n_edits, args.k_samples)
+    wall = time.time() - t0
+    assert len(texts) == args.gen_batch and len(texts[0]) == args.k_samples
+    per_sample = wall / (args.gen_batch * args.k_samples)
+    n_samples_total = len(inc) * (len(PATCH_STEER_ARMS) * args.k_samples + args.k_baseline)
+    projected_gpu_h = n_samples_total * per_sample / 3600.0
+    ratio = projected_gpu_h / max(args.budget_gpu_h, 1e-9)
+    verdict = "OK" if ratio <= 2.0 else "OVER_2X"
+
+    pool = torch.load(args.pool, map_location="cpu", weights_only=False)[p0["leg"]]
+    null_block = _pilot_null_block(args, pool, p0, args.targets)
+    report = {
+        "round": "patch",
+        "parity": par,
+        "gen_batch": args.gen_batch,
+        "k_samples": args.k_samples,
+        "max_new_tokens": args.max_new_tokens,
+        "wall_s_one_batch": wall,
+        "per_sample_s": per_sample,
+        "n_samples_total": n_samples_total,
+        "projected_gpu_h_serial": projected_gpu_h,
+        "projected_wall_h_at_ngpu": projected_gpu_h / max(args.ngpu, 1),
+        "budget_gpu_h": args.budget_gpu_h,
+        "ratio": ratio,
+        "verdict": verdict,
+        "null_block": null_block,
+        "repro": C76.repro_meta(),
+    }
+    C76.atomic_write_json(args.out, report)
+    print(
+        f"[patch-pilot] [phase=pilot_done] per_sample={per_sample:.3f}s projected="
+        f"{projected_gpu_h:.2f} GPU-h budget={args.budget_gpu_h} ratio={ratio:.2f} {verdict}",
+        flush=True,
+    )
+    return 0 if verdict == "OK" else 7
 
 
 def cmd_pilot(args) -> int:
     """Parity probe (rc=8) + measured 1-pair wall at the SWEEP's execution
     shape (B=gen_batch replication, #1415) + one batched null-draw block;
     rc=7 when projected wall > 2x the §9 budget."""
+    if args.round == "patch":
+        return cmd_pilot_patch(args)
+    assert args.deltas, "--round swap requires --deltas"
     rows = [json.loads(ln) for ln in args.pairs.read_text().split("\n") if ln.strip()]
     inc = [r for r in rows if r["included"]]
     assert inc, "no included pairs for the pilot"
@@ -1210,20 +1728,7 @@ def cmd_pilot(args) -> int:
 
     # one production-shape batched null-draw block (p5 sizing basis, §9)
     pool = torch.load(args.pool, map_location="cpu", weights_only=False)[p0["leg"]]
-    rk = rank_map(["placeholder"])  # replaced below by B's own text stand-in
-    tg = json.loads(args.targets.read_text())["per_pair"][p0["pair_id"]]
-    rk = rank_map([tg["b_excerpt"]])
-    t0 = time.time()
-    vals, redraws, _ = null_draw_scores(
-        pool,
-        p0["a_idx"],
-        p0["b_idx"],
-        rk,
-        args.null_draws,
-        np.random.default_rng(derive_seed("pilotnull")),
-        screen=pair_eligible,
-    )
-    null_block_s = time.time() - t0
+    null_block = _pilot_null_block(args, pool, p0, args.targets)
     report = {
         "parity": par,
         "gen_batch": args.gen_batch,
@@ -1238,12 +1743,7 @@ def cmd_pilot(args) -> int:
         "budget_gpu_h": args.budget_gpu_h,
         "ratio": ratio,
         "verdict": verdict,
-        "null_block": {
-            "n_draws": args.null_draws,
-            "wall_s": null_block_s,
-            "n_redraws": redraws,
-            "mean_mrr": float(np.mean(vals)) if vals else None,
-        },
+        "null_block": null_block,
         "repro": C76.repro_meta(),
     }
     C76.atomic_write_json(args.out, report)
@@ -1258,6 +1758,7 @@ def cmd_pilot(args) -> int:
 # ── run (gen + capture phases, sharded units) ────────────────────────────────
 
 RUN_MATCH_KEYS = (
+    "round",
     "model",
     "tiny",
     "dtype",
@@ -1276,6 +1777,7 @@ RUN_MATCH_KEYS = (
 def _run_manifest(args, pairs_sha: str, deltas_sha: str) -> dict:
     return {
         "script": "issue1776_swap",
+        "round": args.round,
         "model": args.model,
         "tiny": bool(args.tiny),
         "dtype": args.dtype,
@@ -1306,13 +1808,13 @@ def _check_run_manifest(out_root: Path, manifest: dict) -> None:
     C76.atomic_write_json(path, manifest)
 
 
-def _units(pairs: list[dict], gen_batch: int) -> list[dict]:
+def _units(pairs: list[dict], gen_batch: int, all_arms: tuple[str, ...] = ALL_ARMS) -> list[dict]:
     """Deterministic unit list: chunks of included pairs per arm (baseline
     first). One unit = one batched generate call (per-row deltas)."""
     inc = [r for r in pairs if r["included"]]
     chunks = [inc[i : i + gen_batch] for i in range(0, len(inc), gen_batch)]
     units = []
-    for arm in ALL_ARMS:
+    for arm in all_arms:
         for k, chunk in enumerate(chunks):
             units.append({"unit_key": f"{arm}_c{k:03d}", "arm": arm, "rows": chunk})
     return units
@@ -1320,11 +1822,18 @@ def _units(pairs: list[dict], gen_batch: int) -> list[dict]:
 
 def cmd_run(args) -> int:
     """One shard of gen or capture units; per-unit persist + resume + progress
-    line (checkpoint-per-unit; 600 cells >> the T2 floor)."""
+    line (checkpoint-per-unit; 600 cells >> the T2 floor). ``--round patch``:
+    the steered arm REPLACES the slot with v14_last(B) (``--deltas`` then
+    points at patch_vectors.pt, whose per-pair rows are the patch VALUES)."""
+    rcfg = ROUNDS[args.round]
     pairs = [json.loads(ln) for ln in args.pairs.read_text().split("\n") if ln.strip()]
     pairs_sha = _sha256_file(args.pairs)
     dl = torch.load(args.deltas, map_location="cpu", weights_only=True)
     deltas_sha = _sha256_file(args.deltas)
+    if args.round == "patch":
+        assert dl.get("round") == "patch" and "v14_b" in dl, (
+            "--round patch requires --deltas to point at patch_vectors.pt"
+        )
     pid_of = {p: i for i, p in enumerate(dl["pair_ids"])}
     args.out_root.mkdir(parents=True, exist_ok=True)
     raw_dir = args.out_root / "raw_chunks"
@@ -1333,7 +1842,7 @@ def cmd_run(args) -> int:
     cell_dir.mkdir(parents=True, exist_ok=True)
     _check_run_manifest(args.out_root, _run_manifest(args, pairs_sha, deltas_sha))
 
-    units = _units(pairs, args.gen_batch)
+    units = _units(pairs, args.gen_batch, all_arms=rcfg["all_arms"])
     shard = units[args.shard_index :: args.num_shards]
     if args.limit:
         shard = shard[: args.limit]
@@ -1348,7 +1857,7 @@ def cmd_run(args) -> int:
                 continue
             ctx_dicts = [{"system": r["a_system"], "user": r["a_user"]} for r in rows]
             seed_base = derive_seed("unit", key)
-            if arm == BASELINE_ARM:
+            if arm == rcfg["baseline_arm"]:
                 texts = generate_batch(
                     model,
                     tok,
@@ -1362,8 +1871,14 @@ def cmd_run(args) -> int:
                 n_edits = 0
                 k = args.k_baseline
             else:
-                d_stack = torch.stack([dl["deltas"][arm][pid_of[r["pair_id"]]] for r in rows])
-                with DeltaHook(model, args.source_layer, d_stack, 1.0) as hook:
+                if args.round == "patch":
+                    # wholesale replacement with v14_last(B) — the patch arm
+                    d_stack = torch.stack([dl["v14_b"][pid_of[r["pair_id"]]] for r in rows])
+                    hook_kwargs = {"replace": True}
+                else:
+                    d_stack = torch.stack([dl["deltas"][arm][pid_of[r["pair_id"]]] for r in rows])
+                    hook_kwargs = {}
+                with DeltaHook(model, args.source_layer, d_stack, 1.0, **hook_kwargs) as hook:
                     texts = generate_batch(
                         model,
                         tok,
@@ -1381,7 +1896,8 @@ def cmd_run(args) -> int:
             payload = {
                 "unit": key,
                 "arm": arm,
-                "mode": "prefill",
+                "round": args.round,
+                "mode": "prefill-replace" if (args.round == "patch" and n_edits) else "prefill",
                 "model": args.model,
                 "k": k,
                 "seed_base": seed_base,
@@ -1456,28 +1972,55 @@ def cmd_run(args) -> int:
 # ── merge-text (canonical per-arm rollout JSONs + judge manifest) ────────────
 
 
+def _judge_handoff(round_name: str, hf_prefix: str) -> str:
+    """Off-pod judge handoff string (merge manifest + final sentinel share it).
+    The patch round's judge is CONDITIONAL on the §7 trigger recorded in
+    patch_success.json (``judge_triggered``)."""
+    rcfg = ROUNDS[round_name]
+    if round_name == "patch":
+        return (
+            "OFF-POD (VM, Batch API) — CONDITIONAL: run ONLY if "
+            f"eval_results/issue_1776/{FU_PATCH}/patch_success.json judge_triggered=true: "
+            "uv run python scripts/issue1776_swap_judge.py --round patch "
+            f"--raw-dir <staged {hf_prefix}/raw_completions/{rcfg['merged_subdir']}> "
+            f"--targets eval_results/issue_1776/{FU}/targets.json "
+            f"--swap-success eval_results/issue_1776/{FU_PATCH}/patch_success.json "
+            f"--out-dir eval_results/issue_1776/{FU_PATCH}"
+        )
+    return (
+        "OFF-POD (VM, Batch API): uv run python scripts/issue1776_swap_judge.py "
+        f"--raw-dir <staged {hf_prefix}/raw_completions/steered_swap> "
+        f"--targets eval_results/issue_1776/{FU}/targets.json "
+        f"--swap-success eval_results/issue_1776/{FU}/swap_success.json "
+        f"--out-dir eval_results/issue_1776/{FU}"
+    )
+
+
 def cmd_merge_text(args) -> int:
-    """Merge per-unit gen chunks into the 4 canonical per-arm rollout JSONs
+    """Merge per-unit gen chunks into the canonical per-arm rollout JSONs
     (plan §10 upload paths) + raw_completions_manifest.json. Text files that
     would exceed 9 MB split into numbered parts (non-LFS rule)."""
+    rcfg = ROUNDS[args.round]
     raw_dir = args.out_root / "raw_chunks"
-    merged_dir = args.out_root / "raw_completions" / "steered_swap"
+    merged_dir = args.out_root / "raw_completions" / rcfg["merged_subdir"]
     merged_dir.mkdir(parents=True, exist_ok=True)
-    manifest: dict = {"label": LABEL, "arms": {}, "hf_prefix": args.hf_prefix}
-    for arm in ALL_ARMS:
+    manifest: dict = {"label": rcfg["label"], "arms": {}, "hf_prefix": args.hf_prefix}
+    for arm in rcfg["all_arms"]:
         chunk_files = sorted(raw_dir.glob(f"{arm}_c*.json"))
         assert chunk_files, f"no gen chunks for arm {arm}"
         rows: list[dict] = []
         seeds = {}
         k = None
+        mode = "prefill"
         for cf in chunk_files:
             d = json.loads(cf.read_text())
             rows.extend(d["rows"])
             seeds[d["unit"]] = d["seed_base"]
             k = d["k"]
+            mode = d.get("mode", "prefill")
         payload = {
             "arm": arm,
-            "mode": "prefill",
+            "mode": mode,
             "k": k,
             "unit_seed_bases": seeds,
             "rows": rows,
@@ -1507,13 +2050,7 @@ def cmd_merge_text(args) -> int:
             "n_samples": sum(len(r["samples"]) for r in rows),
             "sha256": {f.name: _sha256_file(f) for f in files},
         }
-    manifest["judge_handoff"] = (
-        "OFF-POD (VM, Batch API): uv run python scripts/issue1776_swap_judge.py "
-        f"--raw-dir <staged {args.hf_prefix}/raw_completions/steered_swap> "
-        f"--targets eval_results/issue_1776/{FU}/targets.json "
-        f"--swap-success eval_results/issue_1776/{FU}/swap_success.json "
-        f"--out-dir eval_results/issue_1776/{FU}"
-    )
+    manifest["judge_handoff"] = _judge_handoff(args.round, args.hf_prefix)
     manifest["repro"] = C76.repro_meta()
     C76.atomic_write_json(args.eval_out / "raw_completions_manifest.json", manifest)
     print(
@@ -1536,11 +2073,16 @@ def _boot_mean_ci(vals: np.ndarray, n_boot: int, seed: int) -> tuple[float, floa
     return (float(np.percentile(draws, 2.5)), float(np.percentile(draws, 97.5)))
 
 
-def _load_merged(run_root: Path) -> dict[str, dict[str, dict]]:
+def _load_merged(
+    run_root: Path,
+    *,
+    merged_subdir: str = "steered_swap",
+    all_arms: tuple[str, ...] = ALL_ARMS,
+) -> dict[str, dict[str, dict]]:
     """{arm: {pair_id: row}} from the canonical merged rollout JSONs."""
-    merged_dir = run_root / "raw_completions" / "steered_swap"
+    merged_dir = run_root / "raw_completions" / merged_subdir
     out: dict[str, dict[str, dict]] = {}
-    for arm in ALL_ARMS:
+    for arm in all_arms:
         files = sorted(merged_dir.glob(f"{arm}*.json"))
         assert files, f"no merged rollout file for arm {arm}"
         rows: dict[str, dict] = {}
@@ -1552,9 +2094,11 @@ def _load_merged(run_root: Path) -> dict[str, dict[str, dict]]:
     return out
 
 
-def _load_cells(run_root: Path) -> dict[str, dict[str, torch.Tensor]]:
+def _load_cells(
+    run_root: Path, *, all_arms: tuple[str, ...] = ALL_ARMS
+) -> dict[str, dict[str, torch.Tensor]]:
     """{arm: {pair_id: v19 (n_kept, H)}} from the capture chunk files."""
-    out: dict[str, dict[str, torch.Tensor]] = {a: {} for a in ALL_ARMS}
+    out: dict[str, dict[str, torch.Tensor]] = {a: {} for a in all_arms}
     for f in sorted((run_root / "cells").glob("*.pt")):
         d = torch.load(f, map_location="cpu", weights_only=True)
         out[d["arm"]].update({p: v for p, v in d["v19"].items()})
@@ -1591,6 +2135,8 @@ def cmd_analyze(args) -> int:
     """§4.2/§6 reduction: judge-free content acquisition vs the eligibility-
     matched shuffled-target null + random control; verdict lattice; retention;
     representation companion; split-half; intrusion audit; figures."""
+    if args.round == "patch":
+        return cmd_analyze_patch(args)
     # out-arg kind contract (#1776 cycle-5 class): --out-dir is a DIRECTORY
     assert args.out_dir.suffix != ".json", f"--out-dir must be a directory, got {args.out_dir}"
     pairs = [json.loads(ln) for ln in args.pairs.read_text().split("\n") if ln.strip()]
@@ -1834,14 +2380,26 @@ def cmd_analyze(args) -> int:
     return 0
 
 
-def _representation_reads(inc, cells, dl, pid_of, targets) -> tuple[list[dict], dict]:
+def _representation_reads(
+    inc,
+    cells,
+    dl,
+    pid_of,
+    targets,
+    *,
+    baseline_arm: str = BASELINE_ARM,
+    steer_arms: tuple[str, ...] = STEER_ARMS,
+    claimed_norm_of=None,
+) -> tuple[list[dict], dict]:
     """Mechanistic companion: cos(dv_bar, dv_target), achieved fraction, and
     per-cell split-half of dv_bar (draws split 2/3); baseline pseudo-shift
-    norms as the noise floor (dose-round convention)."""
+    norms as the noise floor (dose-round convention). ``claimed_norm_of``
+    (arm, i) -> float|None overrides the operator claimed-norm lookup (the
+    patch round claims the FULL dv_target)."""
     rows: list[dict] = []
     pseudo: list[float] = []
     base_mean: dict[str, torch.Tensor] = {}
-    for pid, v in cells[BASELINE_ARM].items():
+    for pid, v in cells[baseline_arm].items():
         base_mean[pid] = v.to(torch.float64).mean(dim=0)
         k = v.shape[0]
         if k >= 2:
@@ -1852,12 +2410,15 @@ def _representation_reads(inc, cells, dl, pid_of, targets) -> tuple[list[dict], 
         pid = r["pair_id"]
         i = pid_of[pid]
         dv_t = dl["dv_target"][i].to(torch.float64)
-        for arm in STEER_ARMS:
+        for arm in steer_arms:
             v = cells[arm].get(pid)
             if v is None or pid not in base_mean:
                 continue
             dv_bar = v.to(torch.float64).mean(dim=0) - base_mean[pid]
-            claimed = float(dl["per_op"][arm]["claimed_norm"][i]) if arm in OP_ARMS else None
+            if claimed_norm_of is not None:
+                claimed = claimed_norm_of(arm, i)
+            else:
+                claimed = float(dl["per_op"][arm]["claimed_norm"][i]) if arm in OP_ARMS else None
             row = {
                 "pair_id": pid,
                 "leg": r["leg"],
@@ -1885,12 +2446,12 @@ def _representation_reads(inc, cells, dl, pid_of, targets) -> tuple[list[dict], 
     }
 
 
-def _metric_split_half(inc, merged, targets) -> dict:
+def _metric_split_half(inc, merged, targets, *, steer_arms: tuple[str, ...] = STEER_ARMS) -> dict:
     """Across-cell split-half of the metric per arm (draws split 2/3)."""
     from scipy import stats as sps
 
     out = {}
-    for arm in STEER_ARMS:
+    for arm in steer_arms:
         h1v, h2v = [], []
         for r in inc:
             row = merged[arm][r["pair_id"]]
@@ -1908,6 +2469,342 @@ def _metric_split_half(inc, merged, targets) -> dict:
         else:
             out[arm] = {"spearman": None, "n": len(h1v)}
     return out
+
+
+# ── patch-round analyze (plan v8 §3/§6: one-arm E(patch) + historical wedge) ──
+
+
+def _hist_rows(swap_committed: dict) -> dict[str, dict[str, dict]]:
+    """{arm: {pair_id: row}} from the COMMITTED swap_success per_cell rows —
+    the historical contrast (criterion (b) + paired reads, recomputed CPU-side
+    from committed per-cell values; plan §4)."""
+    hist: dict[str, dict[str, dict]] = {}
+    for c in swap_committed["per_cell"]:
+        hist.setdefault(c["arm"], {})[c["pair_id"]] = c
+    return hist
+
+
+def cmd_analyze_patch(args) -> int:
+    """Patch-round §4.2/§6 reduction: judge-free B-content acquisition of the
+    patch arm vs its own recomputed shuffled-target nulls, E(patch) with the
+    committed random-arm bound (criterion (b)), the registered conditional-
+    judge trigger, the cross-round baseline-drift diagnostic, paired contrasts
+    vs the committed operator arms, retention, representation companion,
+    split-half, intrusion audit, dose covariate, figures."""
+    assert args.out_dir.suffix != ".json", f"--out-dir must be a directory, got {args.out_dir}"
+    assert args.patch_vectors and args.patch_build_report and args.swap_success, (
+        "--round patch requires --patch-vectors + --patch-build-report + --swap-success"
+    )
+    pairs = [json.loads(ln) for ln in args.pairs.read_text().split("\n") if ln.strip()]
+    inc = [r for r in pairs if r["included"]]
+    targets = json.loads(args.targets.read_text())
+    assert targets["eligibility"] == ELIGIBILITY, "eligibility drift vs build (screen identity)"
+    pools = torch.load(args.pool, map_location="cpu", weights_only=False)
+    dl = torch.load(args.deltas, map_location="cpu", weights_only=True)
+    pv = torch.load(args.patch_vectors, map_location="cpu", weights_only=True)
+    build_report = json.loads(args.build_report.read_text())  # committed SWAP build
+    patch_report = json.loads(args.patch_build_report.read_text())
+    swap_committed = json.loads(args.swap_success.read_text())
+    pid_of_dl = {p: i for i, p in enumerate(dl["pair_ids"])}
+    pid_of_pv = {p: i for i, p in enumerate(pv["pair_ids"])}
+    merged = _load_merged(args.run_root, merged_subdir="steered_slotpatch", all_arms=PATCH_ALL_ARMS)
+    cells = _load_cells(args.run_root, all_arms=PATCH_ALL_ARMS)
+
+    # §3 row-coverage set-checks BEFORE any paired read: this round's arms AND
+    # the committed historical arms must cover the registered pair set.
+    reg = {r["pair_id"] for r in inc}
+    for arm in PATCH_ALL_ARMS:
+        got = set(merged[arm])
+        assert got == reg, (
+            f"row-coverage mismatch arm={arm}: missing={sorted(reg - got)[:5]} "
+            f"extra={sorted(got - reg)[:5]}"
+        )
+    hist = _hist_rows(swap_committed)
+    for arm in ALL_ARMS:
+        missing = reg - set(hist.get(arm, {}))
+        assert not missing, f"committed swap per_cell missing {arm} rows: {sorted(missing)[:5]}"
+
+    per_cell: list[dict] = []
+    memo_targets: dict[str, dict] = {leg: {} for leg in LEGS}
+    base_rank: dict[str, dict[str, int]] = {}
+    base_ra: dict[str, float] = {}
+    for r in inc:
+        base_rank[r["pair_id"]] = rank_map(merged[PATCH_BASELINE_ARM][r["pair_id"]]["samples"])
+        m_a, _ = mrr_recall(base_rank[r["pair_id"]], targets["per_pair"][r["pair_id"]]["t_a"])
+        base_ra[r["pair_id"]] = m_a
+
+    for r in inc:
+        pid, leg = r["pair_id"], r["leg"]
+        tg = targets["per_pair"][pid]
+        pool = pools[leg]
+        for arm in PATCH_STEER_ARMS:
+            row = merged[arm][pid]
+            rk = rank_map(row["samples"])
+            mrr_b, rec_b = mrr_recall(rk, tg["t_b"])
+            rng = np.random.default_rng(derive_seed("null", arm, pid))
+            nvals, redraws, n_bp = null_draw_scores(
+                pool,
+                r["a_idx"],
+                r["b_idx"],
+                rk,
+                args.null_draws,
+                rng,
+                screen=pair_eligible,
+                memo=memo_targets[leg],
+            )
+            null_mean = float(np.mean(nvals))
+            mrr_a, _ = mrr_recall(rk, tg["t_a"])
+            flags = coherence_check(row["samples"])
+            per_cell.append(
+                {
+                    "pair_id": pid,
+                    "leg": leg,
+                    "arm": arm,
+                    "mrr_b": mrr_b,
+                    "recall50_b": rec_b,
+                    "null_mean": null_mean,
+                    "null_p975": float(np.percentile(nvals, 97.5)),
+                    "null_n_redraws": redraws,
+                    "null_n_distinct_bprime": n_bp,
+                    "delta_mrr": mrr_b - null_mean,
+                    "mrr_a_steered": mrr_a,
+                    "mrr_a_baseline": base_ra[pid],
+                    "retention_ratio": (mrr_a / base_ra[pid]) if base_ra[pid] > 0 else None,
+                    "n_coherent": int(sum(flags)),
+                    "n_samples": len(flags),
+                    "coherence_pass": bool(condition_passes(flags)),
+                    "cjk_intruded": bool(any(CJK_RE.search(s) for s in row["samples"])),
+                    "patch_delta_norm": float(pv["delta_norm"][pid_of_pv[pid]]),
+                }
+            )
+        rk0 = base_rank[pid]
+        m0, rec0 = mrr_recall(rk0, tg["t_b"])
+        per_cell.append(
+            {
+                "pair_id": pid,
+                "leg": leg,
+                "arm": PATCH_BASELINE_ARM,
+                "mrr_b": m0,
+                "recall50_b": rec0,
+                "cjk_intruded": bool(
+                    any(CJK_RE.search(s) for s in merged[PATCH_BASELINE_ARM][pid]["samples"])
+                ),
+            }
+        )
+        if len(per_cell) % 50 < 2:
+            print(f"[patch-analyze] cells {len(per_cell)} done", flush=True)
+
+    def cells_by(arm: str, leg: str | None = None) -> list[dict]:
+        return [c for c in per_cell if c["arm"] == arm and (leg is None or c["leg"] == leg)]
+
+    def hist_by(arm: str, leg: str | None = None) -> list[dict]:
+        rows = [hist[arm][pid] for pid in sorted(reg)]
+        return [c for c in rows if leg is None or c["leg"] == leg]
+
+    # per-group aggregates: the patch arm (this round) + historical display
+    # blocks recomputed from committed per-cell values (bootstrap reseeded).
+    def _agg_patch(leg: str | None, seed_tag: str) -> dict:
+        cs = cells_by("swap_patch", leg)
+        dv = np.array([c["delta_mrr"] for c in cs])
+        mv = np.array([c["mrr_b"] for c in cs])
+        return {
+            "n_pairs": len(cs),
+            "mrr_mean": float(mv.mean()) if mv.size else None,
+            "mrr_ci95": list(_boot_mean_ci(mv, args.n_boot, derive_seed(seed_tag, "m"))),
+            "recall50_mean": float(np.mean([c["recall50_b"] for c in cs])) if cs else None,
+            "delta_mrr_mean": float(dv.mean()) if dv.size else None,
+            "delta_mrr_ci95": list(_boot_mean_ci(dv, args.n_boot, derive_seed(seed_tag, "d"))),
+            "null_mean_mean": float(np.mean([c["null_mean"] for c in cs])) if cs else None,
+            "null_p975_mean": float(np.mean([c["null_p975"] for c in cs])) if cs else None,
+        }
+
+    def _agg_hist(arm: str, leg: str | None, seed_tag: str) -> dict:
+        cs = hist_by(arm, leg)
+        mv = np.array([c["mrr_b"] for c in cs])
+        out = {
+            "n_pairs": len(cs),
+            "mrr_mean": float(mv.mean()) if mv.size else None,
+            "mrr_ci95": list(_boot_mean_ci(mv, args.n_boot, derive_seed(seed_tag, "m"))),
+            "recall50_mean": float(np.mean([c["recall50_b"] for c in cs])) if cs else None,
+            "source": "committed swap_success per_cell (recomputed CPU-side)",
+        }
+        if arm in STEER_ARMS:
+            dv = np.array([c["delta_mrr"] for c in cs])
+            out["delta_mrr_mean"] = float(dv.mean()) if dv.size else None
+            out["delta_mrr_ci95"] = list(_boot_mean_ci(dv, args.n_boot, derive_seed(seed_tag, "d")))
+            out["null_p975_mean"] = float(np.mean([c["null_p975"] for c in cs])) if cs else None
+        return out
+
+    per_arm = {
+        "swap_patch": {
+            "pooled": _agg_patch(None, "patch:pooled"),
+            **{leg: _agg_patch(leg, f"patch:{leg}") for leg in LEGS},
+        },
+        **{
+            arm: {
+                "pooled": _agg_hist(arm, None, f"patch:hist:{arm}:pooled"),
+                **{leg: _agg_hist(arm, leg, f"patch:hist:{arm}:{leg}") for leg in LEGS},
+            }
+            for arm in STEER_ARMS
+        },
+    }
+
+    # §3 E(patch): (a) pooled dMRR CI strictly above 0 AND (b) mean MRR above
+    # the committed random arm's recomputed 97.5% upper bound (same pairs).
+    dv_pool = np.array([c["delta_mrr"] for c in cells_by("swap_patch")])
+    mv_pool = np.array([c["mrr_b"] for c in cells_by("swap_patch")])
+    rv_pool = np.array([c["mrr_b"] for c in hist_by("swap_random")])
+    e_patch = _e_op(dv_pool, mv_pool, rv_pool, args.n_boot, derive_seed("patch:e"))
+    verdict = "patch-executes" if e_patch["execute"] else "patch-null"
+
+    # §7 registered conditional-judge trigger: pooled OR either-leg dMRR CI
+    # lower bound > 0 (pooled read == E criterion (a)'s own CI).
+    trigger_reads = {
+        "pooled_delta_ci95": e_patch["delta_ci95"],
+        **{f"{leg}_delta_ci95": per_arm["swap_patch"][leg]["delta_mrr_ci95"] for leg in LEGS},
+    }
+    judge_triggered = bool(
+        e_patch["delta_ci95"][0] > 0
+        or any(per_arm["swap_patch"][leg]["delta_mrr_ci95"][0] > 0 for leg in LEGS)
+    )
+
+    # §6 cross-round comparability diagnostic: patch_a0 vs committed swap_a0.
+    def _drift(leg: str | None, tag: str) -> dict:
+        pa = np.array([c["mrr_b"] for c in cells_by(PATCH_BASELINE_ARM, leg)])
+        sa = np.array([c["mrr_b"] for c in hist_by(BASELINE_ARM, leg)])
+        pa_ci = _boot_mean_ci(pa, args.n_boot, derive_seed(tag, "p"))
+        sa_ci = _boot_mean_ci(sa, args.n_boot, derive_seed(tag, "s"))
+        sep = bool(pa_ci[0] > sa_ci[1] or sa_ci[0] > pa_ci[1])
+        return {
+            "patch_a0_mrr_mean": float(pa.mean()) if pa.size else None,
+            "patch_a0_ci95": list(pa_ci),
+            "swap_a0_mrr_mean": float(sa.mean()) if sa.size else None,
+            "swap_a0_ci95": list(sa_ci),
+            "ci_separated": sep,
+        }
+
+    drift = {
+        "pooled": _drift(None, "patch:drift:pooled"),
+        **{leg: _drift(leg, f"patch:drift:{leg}") for leg in LEGS},
+    }
+    hist_demoted = bool(drift["pooled"]["ci_separated"])
+
+    # §3 registered paired cross-round contrasts (pair-level, committed rows).
+    dpatch = {c["pair_id"]: c["delta_mrr"] for c in cells_by("swap_patch")}
+    paired_contrasts = {}
+    for arm in OP_ARMS:
+        dop = {c["pair_id"]: c["delta_mrr"] for c in hist_by(arm)}
+        vals = np.array([dpatch[p] - dop[p] for p in sorted(dpatch) if p in dop])
+        paired_contrasts[f"patch_minus_{arm}"] = {
+            "mean": float(vals.mean()) if vals.size else None,
+            "ci95": list(_boot_mean_ci(vals, args.n_boot, derive_seed("patch:paired", arm))),
+            "n_pairs": int(vals.size),
+            "note": "cross-round paired read; demoted to descriptive if the baseline-drift "
+            "diagnostic separates (see baseline_drift_diagnostic)",
+        }
+
+    # representation companion: the patch "claims" the FULL dv_target.
+    def _full_dv_claim(_arm: str, i: int) -> float:
+        return float(dl["dv_target"][i].to(torch.float64).norm())
+
+    rep_rows, pseudo_floors = _representation_reads(
+        inc,
+        cells,
+        dl,
+        pid_of_dl,
+        targets,
+        baseline_arm=PATCH_BASELINE_ARM,
+        steer_arms=PATCH_STEER_ARMS,
+        claimed_norm_of=_full_dv_claim,
+    )
+    metric_split = _metric_split_half(inc, merged, targets, steer_arms=PATCH_STEER_ARMS)
+
+    # intrusion-excluded recounts (dose-round convention)
+    intruded_pairs = {c["pair_id"] for c in per_cell if c.get("cjk_intruded")}
+    keep = [c["delta_mrr"] for c in cells_by("swap_patch") if c["pair_id"] not in intruded_pairs]
+    recounts = {
+        "swap_patch": {
+            "delta_mrr_mean_excluded": float(np.mean(keep)) if keep else None,
+            "n_kept": len(keep),
+            "n_excluded": len(cells_by("swap_patch")) - len(keep),
+        }
+    }
+
+    # acquisition vs the dose covariate ||v14(B) - v14(A)|| (§3 caveat)
+    cs = cells_by("swap_patch")
+    x = np.array([c["patch_delta_norm"] for c in cs])
+    y = np.array([c["delta_mrr"] for c in cs])
+    if x.size >= 3 and np.std(x) > 1e-12 and np.std(y) > 1e-12:
+        from scipy import stats as sps
+
+        rho = sps.spearmanr(x, y)
+        acq_vs_norm = {"spearman": float(rho.statistic), "pvalue": float(rho.pvalue), "n": x.size}
+    else:
+        acq_vs_norm = {"spearman": None, "n": int(x.size)}
+
+    result = {
+        "label": LABEL_PATCH,
+        "verdict": verdict,
+        "E_patch": e_patch,
+        "judge_triggered": judge_triggered,
+        "judge_trigger_reads": trigger_reads,
+        "judge_trigger_rule": "p7 judge RUNS iff pooled OR either-leg pair-clustered 95% CI "
+        "lower bound of dMRR(patch) > 0 (plan v8 §7)",
+        "per_arm": per_arm,
+        "paired_contrasts": paired_contrasts,
+        "baseline_drift_diagnostic": {
+            **drift,
+            "historical_contrast_demoted": hist_demoted,
+        },
+        "baseline_b_token_base_rate": {
+            "mrr_mean": float(np.mean([c["mrr_b"] for c in cells_by(PATCH_BASELINE_ARM)])),
+            "recall50_mean": float(
+                np.mean([c["recall50_b"] for c in cells_by(PATCH_BASELINE_ARM)])
+            ),
+        },
+        "metric_ceiling": build_report["gates"]["G-METRIC-SANITY"],
+        "attainable_mrr_anchor_lmsys": build_report["attainable_mrr_anchor_lmsys"],
+        "patch_delta_norm": patch_report["patch_delta_norm"],
+        "acquisition_vs_patch_delta_norm": acq_vs_norm,
+        "consistency_gate": patch_report["consistency_gate"],
+        "intrusion_audit": {
+            "regex": "CJK/Kana/Hangul ranges (runtime-built)",
+            "n_intruded_pairs": len(intruded_pairs),
+            "excluded_recounts": recounts,
+        },
+        "metric_split_half": metric_split,
+        "eligibility": ELIGIBILITY,
+        "null_draws_per_cell": args.null_draws,
+        "n_boot": args.n_boot,
+        "per_cell": per_cell,
+        "operator_shas": swap_committed.get("operator_shas"),
+        "historical_source": {
+            "path": str(args.swap_success),
+            "sha": _sha256_file(args.swap_success),
+        },
+        "repro": C76.repro_meta(),
+    }
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    C76.atomic_write_json(args.out_dir / "patch_success.json", result)
+    shift = {
+        "label": LABEL_PATCH,
+        "per_cell": rep_rows,
+        "alpha0_pseudo_shift_norm_median": pseudo_floors,
+        "note": (
+            "cos(dv_bar, dv_target) + achieved fraction (claim = FULL ||dv_target||) per patch "
+            "cell; split-half of dv_bar gates narration (dose-round convention)"
+        ),
+        "repro": C76.repro_meta(),
+    }
+    C76.atomic_write_json(args.out_dir / "patch_shift_summaries.json", shift)
+    _figures_patch(result, rep_rows, hist, args.fig_dir)
+    print(
+        f"[patch-analyze] [phase=analyze_done] verdict={verdict} "
+        f"E_patch={e_patch['execute']} judge_triggered={judge_triggered} "
+        f"-> {args.out_dir / 'patch_success.json'}",
+        flush=True,
+    )
+    return 0
 
 
 # ── figures ───────────────────────────────────────────────────────────────────
@@ -2051,6 +2948,178 @@ def _figures(result: dict, rep_rows: list[dict], fig_dir: Path) -> None:
     fig.savefig(fig_dir / "swap_success_exploratory.png", dpi=200)
     plt.close(fig)
     print(f"[swap-analyze] figures -> {fig_dir}", flush=True)
+
+
+def _figures_patch(
+    result: dict, rep_rows: list[dict], hist: dict[str, dict[str, dict]], fig_dir: Path
+) -> None:
+    """Patch-round HERO (patch beside the committed operator/random arms vs
+    null band + anchor + ceiling, per leg + pooled) + exploratory dump.
+    ``hist`` = the committed swap per_cell rows keyed {arm: {pair_id: row}}."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import paper_palette, set_paper_style
+
+    set_paper_style()
+    colors = paper_palette(5)
+    arms = ("swap_patch", *STEER_ARMS)  # this round + the historical contrast
+    arm_color = dict(zip(arms, colors[:4], strict=False))
+    per_cell = result["per_cell"]
+    groups = ["pooled", *LEGS]
+    xs = np.arange(len(groups))
+    width = 0.8 / len(arms)
+
+    # HERO: per-arm MRR w/ CI vs null band (dashes) + anchor + ceiling.
+    fig, ax = plt.subplots(figsize=(7, 4), layout="constrained")
+    for k, arm in enumerate(arms):
+        vals, err_lo, err_hi, nulls = [], [], [], []
+        for g in groups:
+            blk = result["per_arm"][arm][g]
+            v = blk["mrr_mean"] or 0.0
+            lo, hi = blk["mrr_ci95"]
+            vals.append(v)
+            # non-negative offsets, element-wise clamped (xerr/yerr gotcha)
+            err_lo.append(max(0.0, v - lo) if np.isfinite(lo) else 0.0)
+            err_hi.append(max(0.0, hi - v) if np.isfinite(hi) else 0.0)
+            nulls.append(blk.get("null_p975_mean") or 0.0)
+        ax.bar(
+            xs + k * width,
+            vals,
+            width,
+            yerr=[err_lo, err_hi],
+            label=arm if arm == "swap_patch" else f"{arm} (committed)",
+            color=arm_color[arm],
+        )
+        ax.scatter(xs + k * width, nulls, marker="_", s=110, color="0.2", zorder=3)
+    ceil = result["metric_ceiling"].get("ceiling_mrr_median")
+    if ceil is not None:
+        ax.axhline(ceil, color="0.4", ls="--", lw=1, label="ceiling (B's own text)")
+    anchor = (result.get("attainable_mrr_anchor_lmsys") or {}).get("mrr_median")
+    if anchor is not None:
+        ax.axhline(anchor, color="0.6", ls=":", lw=1, label="attainable anchor (lmsys)")
+    ax.set_xticks(xs + 0.4 - width / 2)
+    ax.set_xticklabels(groups)
+    ax.set_ylabel("B-content MRR")
+    ax.set_title("full-state patch vs committed swap arms (null band = dashes)")
+    ax.legend(fontsize=6)
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    fig.savefig(fig_dir / "patch_success_hero.png", dpi=200)
+    plt.close(fig)
+
+    # EXPLORATORY dump: recall bars / paired scatters / retention / dose hist
+    # / acquisition-vs-dose / rep-cos + split-half / baseline-drift dumbbell.
+    fig, axes = plt.subplots(2, 4, figsize=(16, 7.5), layout="constrained")
+    ax = axes[0, 0]
+    for k, arm in enumerate(arms):
+        vals = [result["per_arm"][arm][g]["recall50_mean"] or 0.0 for g in groups]
+        ax.bar(xs + k * width, vals, width, label=arm, color=arm_color[arm])
+    ax.set_xticks(xs + 0.4 - width / 2)
+    ax.set_xticklabels(groups)
+    ax.set_ylabel("recall@50")
+    ax.set_title("recall@50 companion")
+    ax.legend(fontsize=5)
+    p_mrr = {c["pair_id"]: c["mrr_b"] for c in per_cell if c["arm"] == "swap_patch"}
+    leg_of = {c["pair_id"]: c["leg"] for c in per_cell if c["arm"] == "swap_patch"}
+    leg_color = dict(zip(LEGS, colors[:2], strict=True))
+    for col, hist_arm in enumerate(OP_ARMS):
+        ax = axes[0, 1 + col]
+        h_mrr = {pid: hist[hist_arm][pid]["mrr_b"] for pid in p_mrr if pid in hist[hist_arm]}
+        for leg in LEGS:
+            pts = [(h_mrr[p], p_mrr[p]) for p in h_mrr if leg_of[p] == leg]
+            if pts:
+                ax.scatter(*zip(*pts, strict=False), s=12, color=leg_color[leg], label=leg)
+        lim = max(0.05, *(list(p_mrr.values()) + list(h_mrr.values()) + [0.01]))
+        ax.plot([0, lim], [0, lim], color="0.6", lw=0.8)
+        ax.set_xlabel(f"MRR ({hist_arm}, committed)")
+        ax.set_ylabel("MRR (patch)")
+        blk = result["paired_contrasts"][f"patch_minus_{hist_arm}"]
+        ax.set_title(f"paired: dMRR(patch)-dMRR({hist_arm}) mean={blk['mean']:.4f}")
+        ax.legend(fontsize=6)
+    ax = axes[0, 3]
+    cs = [c for c in per_cell if c["arm"] == "swap_patch" and c.get("retention_ratio") is not None]
+    ax.scatter(
+        [c["delta_mrr"] for c in cs],
+        [c["retention_ratio"] for c in cs],
+        s=10,
+        color=arm_color["swap_patch"],
+    )
+    ax.axhline(1.0, color="0.4", lw=0.8)
+    ax.axhline(0.5, color="0.6", ls=":", lw=0.8)
+    ax.set_xlabel("delta MRR (B acquisition)")
+    ax.set_ylabel("A-retention ratio")
+    ax.set_title("erasure cost vs acquisition")
+    ax = axes[1, 0]
+    dn = [c["patch_delta_norm"] for c in per_cell if c["arm"] == "swap_patch"]
+    if dn:
+        ax.hist(dn, bins=20, color=arm_color["swap_patch"])
+    ax.axvline(NORM_CAP_PLAN, color="0.3", ls="--", lw=1, label="swap cap 47.36")
+    ax.set_xlabel("||v14(B) - v14(A)||")
+    ax.set_title("patch dose covariate")
+    ax.legend(fontsize=6)
+    ax = axes[1, 1]
+    cs = [c for c in per_cell if c["arm"] == "swap_patch"]
+    ax.scatter(
+        [c["patch_delta_norm"] for c in cs],
+        [c["delta_mrr"] for c in cs],
+        s=10,
+        color=arm_color["swap_patch"],
+    )
+    ax.axhline(0, color="0.4", lw=0.8)
+    ax.set_xlabel("||v14(B) - v14(A)||")
+    ax.set_ylabel("delta MRR vs null")
+    sp = result["acquisition_vs_patch_delta_norm"].get("spearman")
+    ax.set_title(f"acquisition vs dose (rho={sp if sp is None else round(sp, 3)})")
+    ax = axes[1, 2]
+    vals = [r["cos_dvbar_dvtarget"] for r in rep_rows if r["arm"] == "swap_patch"]
+    if vals:
+        ax.hist(vals, bins=20, alpha=0.8, color=arm_color["swap_patch"])
+    sh = [r.get("split_half_cos_dvbar") for r in rep_rows]
+    sh = [v for v in sh if v is not None]
+    if sh:
+        ax.hist(sh, bins=20, alpha=0.5, color=colors[4], label="split-half")
+    ax.axvline(0, color="0.4", lw=0.8)
+    ax.set_xlabel("cos(dv_bar, dv_target) / split-half")
+    ax.set_title("representation acquisition + reliability")
+    ax.legend(fontsize=6)
+    ax = axes[1, 3]
+    dd = result["baseline_drift_diagnostic"]
+    ys = np.arange(len(groups))
+    for j, g in enumerate(groups):
+        blk = dd[g]
+        for off, (key, ckey, lbl) in enumerate(
+            (
+                ("patch_a0_mrr_mean", "patch_a0_ci95", "patch_a0 (this round)"),
+                ("swap_a0_mrr_mean", "swap_a0_ci95", "swap_a0 (committed)"),
+            )
+        ):
+            v = blk[key]
+            lo, hi = blk[ckey]
+            if v is None:
+                continue
+            xerr = [
+                [max(0.0, v - lo) if np.isfinite(lo) else 0.0],
+                [max(0.0, hi - v) if np.isfinite(hi) else 0.0],
+            ]
+            ax.errorbar(
+                [v],
+                [ys[j] + 0.15 * off],
+                xerr=xerr,
+                fmt="o",
+                ms=4,
+                color=colors[off],
+                label=lbl if j == 0 else None,
+            )
+    ax.set_yticks(ys + 0.075)
+    ax.set_yticklabels(groups)
+    ax.set_xlabel("baseline B-token MRR")
+    ax.set_title(f"cross-round drift (separated={dd['pooled']['ci_separated']})")
+    ax.legend(fontsize=6)
+    fig.savefig(fig_dir / "patch_success_exploratory.png", dpi=200)
+    plt.close(fig)
+    print(f"[patch-analyze] figures -> {fig_dir}", flush=True)
 
 
 # ── smoke fixtures (tiny-dim mirrors of the REAL artifacts' key sets) ────────
@@ -2230,6 +3299,7 @@ def cmd_final_sentinel(args) -> int:
 
     smoke_like = args.dry or args.mode == "smoke"
     kind = "epm:smoke-result" if smoke_like else "epm:results"
+    rcfg = ROUNDS[args.round]
     try:
         sha = subprocess.run(
             ["git", "rev-parse", "HEAD"],
@@ -2246,27 +3316,31 @@ def cmd_final_sentinel(args) -> int:
         for p in eval_dir.rglob("*.json")
     )
     note = {
-        "followup_label": LABEL,
+        "followup_label": rcfg["label"],
         "mode": args.mode,
         "dry_run": args.dry,
         "ngpu": args.ngpu,
         "git_commit": sha,
         "eval_json_paths": eval_paths,
         "hf_prefixes": {
-            "rollout_text": f"{args.hf_prefix}/raw_completions/steered_swap",
-            "analysis_tensors": f"{args.hf_prefix}/analysis_tensors/{FU}",
+            "rollout_text": f"{args.hf_prefix}/raw_completions/{rcfg['merged_subdir']}",
+            "analysis_tensors": f"{args.hf_prefix}/analysis_tensors/{rcfg['fu']}",
         },
         "offpod_handoffs": {
-            "p7_judge_offpod": (
-                "OFF-POD (VM, Batch API): uv run python scripts/issue1776_swap_judge.py "
-                f"--raw-dir <staged {args.hf_prefix}/raw_completions/steered_swap> "
-                f"--targets eval_results/issue_1776/{FU}/targets.json "
-                f"--swap-success eval_results/issue_1776/{FU}/swap_success.json "
-                f"--out-dir eval_results/issue_1776/{FU}"
-            ),
+            "p7_judge_offpod": _judge_handoff(args.round, args.hf_prefix),
         },
         "wandb": "n/a (no training this round)",
     }
+    if args.round == "patch":
+        # the §7 trigger verdict rides the terminal sentinel (plan §6.5 note)
+        success_path = eval_dir / "patch_success.json"
+        if success_path.is_file():
+            try:
+                res = json.loads(success_path.read_text())
+                note["judge_triggered"] = res.get("judge_triggered")
+                note["judge_trigger_reads"] = res.get("judge_trigger_reads")
+            except (json.JSONDecodeError, OSError) as exc:
+                note["judge_triggered"] = f"unreadable ({exc})"
     payload = {
         "sentinel_schema_version": 1,
         "kind": kind,
@@ -2311,15 +3385,31 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--gen-batch", type=int, default=16)
         p.add_argument("--capture-batch", type=int, default=8)
 
+    def _round(p):
+        p.add_argument(
+            "--round",
+            choices=sorted(ROUNDS),
+            default="swap",
+            help="swap (default, byte-identical) | patch (slot_patch_sufficiency, plan v8)",
+        )
+
     s = sub.add_parser("stage", help="stage all swap inputs at one fresh pin + schema probes")
+    _round(s)
     s.add_argument("--dest", type=Path, default=C76.DATA_DIR / "hf_dl")
     s.add_argument("--pin-file", type=Path, default=C76.DATA_DIR / "data_repo_pin_swap.json")
     s.add_argument("--refresh-pin", action="store_true")
     s.add_argument("--max-wc-chunks", type=int, default=0, help="smoke cap (0 = all)")
     s.add_argument("--report", type=Path, required=True)
+    s.add_argument(
+        "--stage-source-layer",
+        type=int,
+        default=C76.SOURCE_LAYER,
+        help="patch round: record whether the stored WildChat capture carries this layer",
+    )
     s.set_defaults(fn=cmd_stage)
 
     b = sub.add_parser("build", help="pairs + targets + deltas + build gates")
+    _round(b)
     _model(b)
     b.add_argument("--dest", type=Path, default=C76.DATA_DIR / "hf_dl")
     b.add_argument("--stage-report", type=Path, required=True)
@@ -2333,13 +3423,25 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--capture-batch", type=int, default=8)
     b.add_argument("--gates-informational", action="store_true")
     b.add_argument("--force", action="store_true")
+    b.add_argument("--swap-artifacts", type=Path, help="patch round: staged swap build artifacts")
+    b.add_argument(
+        "--swap-build-report", type=Path, help="patch round: COMMITTED swap build_report.json"
+    )
+    b.add_argument(
+        "--limit-pairs",
+        type=int,
+        default=0,
+        help="patch round smoke: first N included pairs per leg (0 = all, verbatim copy)",
+    )
     b.set_defaults(fn=cmd_build)
 
     pi = sub.add_parser("pilot", help="parity probe (rc=8) + measured wall gate (rc=7)")
+    _round(pi)
     _model(pi)
     _gen(pi)
     pi.add_argument("--pairs", type=Path, required=True)
-    pi.add_argument("--deltas", type=Path, required=True)
+    pi.add_argument("--deltas", type=Path, help="swap round: deltas.pt (required for --round swap)")
+    pi.add_argument("--patch-vectors", type=Path, help="patch round: patch_vectors.pt")
     pi.add_argument("--pool", type=Path, required=True)
     pi.add_argument("--targets", type=Path, required=True)
     pi.add_argument("--null-draws", type=int, default=200)
@@ -2349,11 +3451,17 @@ def main(argv: list[str] | None = None) -> int:
     pi.set_defaults(fn=cmd_pilot)
 
     r = sub.add_parser("run", help="one shard of gen or capture units")
+    _round(r)
     _model(r)
     _gen(r)
     r.add_argument("--phase", choices=["gen", "capture"], required=True)
     r.add_argument("--pairs", type=Path, required=True)
-    r.add_argument("--deltas", type=Path, required=True)
+    r.add_argument(
+        "--deltas",
+        type=Path,
+        required=True,
+        help="per-pair edit store: deltas.pt (swap) | patch_vectors.pt (patch)",
+    )
     r.add_argument("--out-root", type=Path, required=True)
     r.add_argument("--shard-index", type=int, default=0)
     r.add_argument("--num-shards", type=int, default=1)
@@ -2361,12 +3469,14 @@ def main(argv: list[str] | None = None) -> int:
     r.set_defaults(fn=cmd_run)
 
     mt = sub.add_parser("merge-text", help="canonical per-arm rollout JSONs + judge manifest")
+    _round(mt)
     mt.add_argument("--out-root", type=Path, required=True)
     mt.add_argument("--eval-out", type=Path, required=True)
     mt.add_argument("--hf-prefix", required=True)
     mt.set_defaults(fn=cmd_merge_text)
 
     an = sub.add_parser("analyze", help="metric + nulls + verdict + figures")
+    _round(an)
     an.add_argument("--pairs", type=Path, required=True)
     an.add_argument("--targets", type=Path, required=True)
     an.add_argument("--pool", type=Path, required=True)
@@ -2377,6 +3487,9 @@ def main(argv: list[str] | None = None) -> int:
     an.add_argument("--n-boot", type=int, default=1000)
     an.add_argument("--out-dir", type=Path, required=True, help="eval-results DIRECTORY")
     an.add_argument("--fig-dir", type=Path, required=True)
+    an.add_argument("--patch-vectors", type=Path, help="patch round: patch_vectors.pt")
+    an.add_argument("--patch-build-report", type=Path, help="patch round: patch_build_report.json")
+    an.add_argument("--swap-success", type=Path, help="patch round: COMMITTED swap_success.json")
     an.set_defaults(fn=cmd_analyze)
 
     sf = sub.add_parser("smoke-fixtures", help="tiny-H fixture artifacts (local CPU smoke)")
@@ -2396,6 +3509,7 @@ def main(argv: list[str] | None = None) -> int:
     pr.set_defaults(fn=cmd_progress)
 
     fs = sub.add_parser("final-sentinel", help="terminal results sentinel writer")
+    _round(fs)
     fs.add_argument("--log-dir", required=True)
     fs.add_argument("--mode", required=True)
     fs.add_argument("--dry", action="store_true")
