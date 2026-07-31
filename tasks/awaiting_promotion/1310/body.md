@@ -5,6 +5,7 @@ title: A fixed-label fiction character supports a character-specific context→d
 kind: experiment
 tags:
 - followup-auto
+- keep-running
 created_at: '2026-07-14T22:56:43Z'
 has_clean_result: true
 parent_id: 931
