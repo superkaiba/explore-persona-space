@@ -38,7 +38,7 @@ relates_to:
 - Shuffled-pair nulls collapse to metric-specific floors; raw cosine's floor is 0.68 and the constant train-mean scores 0.798, absolute cosine is uninterpretable without its null.
 - Retrieval hubs are corpus-structured: test rows are 1% of the 100,000 pool yet 61-70 of fitted maps' top-100 cosine hubs; the correction still buys the fitted maps 0.03-0.10 acc@1 (weak baselines gain more, up to +0.195).
 - The identity-vs-fitted retrieval flip tracks training-set size: ridge falls 0.81 to 0.065 acc@1 as training rows drop 963k to 50; identity plus bias stays near 0.50.
-- Scope: all test targets are LMSYS rows under one pinned split; headline layer 19 is inherited; layers 14/26 reproduce every ordering.
+- Scope: all test targets are LMSYS rows under one pinned split; headline layers are inherited (context 19, prefix 18); layers 14/26 reproduce every ordering.
 
 ## Goal
 
@@ -66,6 +66,7 @@ relates_to:
   | Null | K = 200 shuffled-pair permutations per metric × arm | plan §11 (banked 200-draw null convention) |
   | Distractor pool | seeded 210 of 1,920 capture chunks streamed; 100,000 layer-19 rows kept | plan §11 + `distractor_manifest.json` |
   | Prefix-arm neural rung | batched leave-one-family-out MLP, width 512, 300 epochs | banked battery recipe (`vectorized_mlp_skill`) |
+  | Prefix-arm headline layer | 18 (validation-selected in the banked battery; inherited) | `eval_results/issue_722/identity_bias_knn/results.json` `best_ridge_layer` |
   | Compute env | VM CPU only; 8 BLAS threads; `MALLOC_ARENA_MAX=2`; numpy 2.2.6, torch 2.8.0 | `context_arm.json` metadata |
 
 - **Evaluation:** All dependent variables are the mapping metrics themselves, computed deterministically over banked activations — no LLM judge and no new generation anywhere. Per metric: pooled R² = 1 − SS_res/SS_tot on the held-out set (variance-weighted across dimensions; unbounded below); per-dimension R² (exposes the variance weighting); mean cosine between prediction and target (per-row scale-invariant; high anisotropy floor); kNN acc@k = the probability the true answer vector is within the k nearest pool neighbors of the prediction (rank-based, mid-rank tie handling; analytic chance k/n_pool); the CSLS hubness-corrected variant of acc@k; median rank and mean reciprocal rank; and a hubness diagnostic (skewness of 10-occurrence counts, with top-hub corpus composition). Correctness asserts: banked-ridge reproduction within 1e-6, realized payload keys for all 12 weight files, helper-parity checks per retrieval cell, and 0 duplicate groups in the distractor pool. Known metric ceilings that bound interpretation: 58 of the 1,000 test targets have an exact in-pool duplicate vector, capping acc@1 near 0.94 equally for every estimator (ordering unaffected, resolved by k=5), and the 5,000-row pool carries 354 excess duplicate rows with the same equal-across-arms effect; median rank saturates at 1 for every decent map at pool 1,000.
@@ -107,7 +108,7 @@ relates_to:
    "dup_stats": {"n_rows": 100000, "n_unique_vectors": 100000, "n_duplicate_groups": 0, "n_excess_duplicate_rows": 0}}
   ```
 
-  Conciseness: the total Takeaways+Goal+Results prose runs modestly over the 800-word budget (total/budget WARN acknowledged) — five results each carry the summary-plus-per-unit figure pair the aggregate-result rule requires.
+  Conciseness: the total Takeaways+Goal+Results prose runs modestly over the 800-word budget, two Takeaways bullets exceed 30 words, and the small-training-set result's per-result prose sits at the 121-word band edge (total, bullet, and per-result WARNs all acknowledged) — five results each carry the summary-plus-per-unit figure pair the aggregate-result rule requires, and the dense bullets hold the numbers the claims need.
 
 ## Results
 
@@ -155,7 +156,7 @@ The left panel shows the corpus composition of each estimator's top-100 cosine h
 
 ![Hub corpus composition and CSLS gain versus pool size](https://raw.githubusercontent.com/superkaiba/explore-persona-space/76a1a9826dbb9d55945a0ee23667f2bf61020584/figures/issue_1901/hub_composition_csls.png)
 
-> **Figure.** *Hubs sit where each estimator's predictions land.* Fitted maps' hubs are test-row-dominated (61-70 of 100 against 1% of pool); identity-family hubs are train-region LMSYS distractors (87 of 100). CSLS gains span +0.027 (width-32768 map, pool 20,000) to +0.097 (ridge, pool 100,000).
+> **Figure.** *Hubs sit where each estimator's predictions land.* Fitted maps' hubs are test-row-dominated (61-70 of 100 against 1% of pool); identity-family hubs are train-region LMSYS distractors (87 of 100). Fitted-map CSLS gains span +0.027 (width-32768 map, pool 20,000) to +0.097 (ridge, pool 100,000); identity copy gains up to +0.195.
 
 Cosine 10-occurrence skewness reaches 13.6-25.8 against a Gaussian reference of 3.2; the euclidean excess is modest (23.8 vs its own Gaussian reference of 20.8) — mostly a cosine phenomenon. Hubs follow each estimator's prediction region, so part of the CSLS gain compensates corpus and density structure beyond generic hubness; it helps weak estimators most (identity copy +0.195 at pool 1,000) — so plain kNN understates weak baselines.
 
