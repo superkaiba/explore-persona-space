@@ -413,6 +413,106 @@ def render_chat_prompt(tokenizer, query: str, prefix_turns: list[dict] | None = 
     )
 
 
+# ── shared-node GPU sizing (fellows H200 hosts share nodes WITHOUT GPU
+#    isolation — every device can carry other tenants' memory; #1902 crash 1) ─
+
+# Allowance for other-tenant growth between the mem_get_info read and the
+# allocation actually landing (and for allocator slack).
+GPU_FREE_MARGIN_GIB = 6.0
+# Exclusive-node ceiling for vLLM's gpu_memory_utilization (fraction of TOTAL
+# device memory — vLLM semantics). On an exclusive H100/A100/H200 the computed
+# util resolves to this cap, matching the historical ~0.6 behavior closely.
+VLLM_UTIL_CAP = 0.55
+# Below this fraction of TOTAL, 7B bf16 weights (~15 GiB) + a minimum KV cache
+# cannot fit — fail loud with a shared-node message instead of letting vLLM
+# die cryptically inside EngineCore init.
+VLLM_UTIL_FLOOR = 0.20
+
+
+def vllm_util_for_free(free_bytes: int, total_bytes: int) -> float:
+    """vLLM ``gpu_memory_utilization`` computed from LIVE free device memory.
+
+    ``gpu_memory_utilization`` is a fraction of TOTAL device memory, so a
+    fixed 0.6 on a shared node demands ``0.6 x total`` bytes regardless of
+    what other tenants hold (#1902 crash 1: 0.6 x 139.8 GiB = 83.9 GiB
+    demanded vs 81.2 GiB free on a fellows H200 → EngineCore ValueError at
+    init). Returns ``min(VLLM_UTIL_CAP, (free − margin) / total)``; raises
+    ``RuntimeError`` below ``VLLM_UTIL_FLOOR`` (weights + minimum KV cannot
+    fit — the device is too full for any engine).
+    """
+    if total_bytes <= 0:
+        raise RuntimeError(f"nonsensical total device memory: {total_bytes} bytes")
+    free_gib = free_bytes / 2**30
+    total_gib = total_bytes / 2**30
+    util = min(VLLM_UTIL_CAP, (free_gib - GPU_FREE_MARGIN_GIB) / total_gib)
+    if util < VLLM_UTIL_FLOOR:
+        raise RuntimeError(
+            f"GPU too full for a vLLM engine: free={free_gib:.1f} GiB of "
+            f"{total_gib:.1f} GiB total → computed gpu_memory_utilization "
+            f"{util:.3f} < floor {VLLM_UTIL_FLOOR} after the "
+            f"{GPU_FREE_MARGIN_GIB:.0f} GiB margin. On a shared node (fellows "
+            "H200) this means another tenant holds the device — re-dispatch "
+            "when it frees, or pin a different allocated GPU."
+        )
+    return util
+
+
+def realized_gpu_ids(env, detected: int) -> tuple[str, list[str]]:
+    """Realized GPU width + PHYSICAL device-id list — SLURM allocation FIRST.
+
+    On a SLURM job (``SLURM_JOB_ID`` set) the fellows cluster shares nodes
+    without GPU isolation: ``nvidia-smi -L`` / torch enumerate the PHYSICAL
+    node (8× H200) — and nvidia-smi ignores ``CUDA_VISIBLE_DEVICES`` entirely
+    — so a bare detected count over-shards onto other tenants' devices
+    (#1902 crash 1: ``[dispatch] ... ngpu=8`` on a 4-GPU allocation).
+    Preference order inside a SLURM job:
+
+    1. ``CUDA_VISIBLE_DEVICES`` (slurm-set) — authoritative id list.
+    2. ``SLURM_JOB_GPUS`` / ``SLURM_STEP_GPUS`` — the allocation's physical ids.
+    3. ``SLURM_GPUS_ON_NODE`` — count only; ids ASSUMED ``0..N-1`` (no id
+       source exists in this configuration; the dispatcher logs the source
+       token so the assumption is visible in the launch log).
+
+    The id list is CLAMPED to ``SLURM_GPUS_ON_NODE`` (the sbatch template
+    asserts it equals the requested width) when present. A SLURM job with
+    NONE of the three vars fails loud — never the physical count. Non-SLURM
+    lanes (RunPod/GCE exclusive hosts) keep the detected count, ids
+    ``0..detected-1``.
+
+    Returns ``(source_token, ids)``; ids are strings (CVD values verbatim).
+    """
+
+    def _split(v: str) -> list[str]:
+        return [t for t in v.replace(",", " ").split() if t]
+
+    if env.get("SLURM_JOB_ID"):
+        ids: list[str] | None = None
+        src = ""
+        cvd = env.get("CUDA_VISIBLE_DEVICES")
+        job_gpus = env.get("SLURM_JOB_GPUS") or env.get("SLURM_STEP_GPUS")
+        if cvd:
+            ids, src = _split(cvd), "slurm-cvd"
+        elif job_gpus:
+            ids, src = _split(job_gpus), "slurm-job-gpus"
+        elif env.get("SLURM_GPUS_ON_NODE"):
+            n = int(env["SLURM_GPUS_ON_NODE"])
+            ids, src = [str(i) for i in range(n)], "slurm-count-ids-assumed-0..N-1"
+        if not ids:
+            raise RuntimeError(
+                "SLURM job env carries none of CUDA_VISIBLE_DEVICES / "
+                "SLURM_JOB_GPUS / SLURM_STEP_GPUS / SLURM_GPUS_ON_NODE — "
+                "refusing to fall back to the physical nvidia-smi count on a "
+                "shared node (#1902 crash 1)"
+            )
+        n_req = env.get("SLURM_GPUS_ON_NODE")
+        if n_req and len(ids) > int(n_req):
+            ids = ids[: int(n_req)]
+            src += "-clamped"
+        return src, ids
+    n = max(1, int(detected))
+    return "detected", [str(i) for i in range(n)]
+
+
 # ── generation constants (plan §4 P2 — verbatim #779 protocol) ───────────────
 
 GEN_MAX_TOKENS = 1_024

@@ -112,6 +112,13 @@ VLLM_CHUNK = int(os.environ.get("EPM_VLLM_CHUNK_SIZE", "500"))
 # Capture (P3).
 CAPTURE_TOKEN_BUDGET = int(os.environ.get("EPM_CAPTURE_TOKEN_BUDGET", "65536"))
 CAPTURE_BATCH_MAX = int(os.environ.get("EPM_CAPTURE_BATCH_MAX", "32"))
+# Free-HBM floor at capture model load (shared-node guard; #1902 crash 1):
+# 7B bf16 weights ~15 GiB + the 17-layer captured-hidden-state stack under
+# CAPTURE_TOKEN_BUDGET (65,536 padded tokens x 4096 d x 2 B ~= 0.5 GiB/layer
+# -> ~8.5 GiB) + fp32 pooling transients + the shared-node margin. Reads FREE
+# memory (mem_get_info), never total — another tenant's allocation fails loud
+# HERE, not as a cryptic CUDA OOM mid-forward.
+CAPTURE_FREE_FLOOR_GIB = float(os.environ.get("EPM_CAPTURE_FREE_FLOOR_GIB", "30"))
 ROBUST_NATIVE_N = 2_000  # native-render robustness subset (single, diagonal)
 # Delete local store after verified upload only when free space is below this
 # (RunPod ~130 GB quota lane; GCE 250 GB keeps the store local for P4).
@@ -638,9 +645,50 @@ class _HfFallbackEngine:
         return results
 
 
+def _gen_gpu_mem_util() -> float:
+    """LIVE per-device vLLM memory fraction (shared-node safe; #1902 crash 1).
+
+    ``gpu_memory_utilization`` is a fraction of TOTAL device memory, so the
+    fixed 0.60 default demands ``0.6 x total`` bytes regardless of what other
+    tenants hold — on a fellows shared H200 (all 8 devices carrying
+    ~57-59 GiB of other tenants' memory) EngineCore refused at init
+    (``Free memory on device (81.2/139.8 GiB) ... less than desired GPU
+    memory utilization (0.6, 83.88 GiB)``). Compute from
+    ``torch.cuda.mem_get_info()`` on the leg's CVD-pinned device instead
+    (``C.vllm_util_for_free``: min(cap, (free − margin)/total), fail-loud
+    below the floor). An explicit ``VLLM_GPU_MEM_UTIL`` env stays the
+    operator override. Safe pre-``LLM()``: module top pins
+    ``VLLM_WORKER_MULTIPROC_METHOD=spawn``, so parent-side cuInit cannot
+    fork-poison the EngineCore (#628).
+    """
+    env_util = os.environ.get("VLLM_GPU_MEM_UTIL")
+    if env_util:
+        logger.info(
+            "[gen] gpu_memory_utilization=%s (VLLM_GPU_MEM_UTIL operator override)", env_util
+        )
+        return float(env_util)
+    import torch
+
+    free_b, total_b = torch.cuda.mem_get_info(0)
+    util = C.vllm_util_for_free(free_b, total_b)
+    logger.info(
+        "[gen] gpu_memory_utilization=%.3f free=%.1fGiB total=%.1fGiB "
+        "(cap=%.2f margin=%.1fGiB floor=%.2f)",
+        util,
+        free_b / 2**30,
+        total_b / 2**30,
+        C.VLLM_UTIL_CAP,
+        C.GPU_FREE_MARGIN_GIB,
+        C.VLLM_UTIL_FLOOR,
+    )
+    return util
+
+
 def _vllm_engine(model_id: str, revision: str | None, max_model_len: int):
     """One engine config for ALL cells (plan §4 P2): #1324 knobs ON
-    (enforce_eager + prefix caching off) via ``hang_mitigations=True``.
+    (enforce_eager + prefix caching off) via ``hang_mitigations=True``;
+    ``gpu_memory_utilization`` computed per device from LIVE free memory
+    (:func:`_gen_gpu_mem_util` — shared fellows nodes, #1902 crash 1).
     ``EPM_ISSUE1902_GEN_ENGINE=hf`` substitutes the smoke-only HF engine
     (recorded engine deviation; see :class:`_HfFallbackEngine`)."""
     if os.environ.get("EPM_ISSUE1902_GEN_ENGINE") == "hf":
@@ -651,6 +699,7 @@ def _vllm_engine(model_id: str, revision: str | None, max_model_len: int):
     return create_vllm_engine(
         model_id,
         max_model_len=max_model_len,
+        gpu_memory_utilization=_gen_gpu_mem_util(),
         seed=C.GEN_SEED,
         hang_mitigations=True,
         revision=revision,
@@ -967,9 +1016,35 @@ def phase_gen_finalize(args: argparse.Namespace, out_root: Path, ckpts: list[str
 
 
 def _load_hf_model(model_id: str, revision: str | None, device: str):
+    """bf16 capture-model load with a LIVE free-HBM floor on cuda devices.
+
+    Shared-node guard (#1902 crash 1 sweep): reads FREE memory via
+    ``torch.cuda.mem_get_info`` on the target device — never total — and
+    fails loud below ``CAPTURE_FREE_FLOOR_GIB`` (arithmetic at the constant)
+    so a co-tenant's allocation surfaces at load, not as a CUDA OOM
+    mid-forward. CPU devices (the tiny-real smoke) skip the probe.
+    """
     import torch
     from transformers import AutoModelForCausalLM
 
+    if str(device).startswith("cuda"):
+        free_b, total_b = torch.cuda.mem_get_info(torch.device(device))
+        logger.info(
+            "[capture] device=%s free=%.1fGiB total=%.1fGiB (floor=%.0fGiB)",
+            device,
+            free_b / 2**30,
+            total_b / 2**30,
+            CAPTURE_FREE_FLOOR_GIB,
+        )
+        if free_b / 2**30 < CAPTURE_FREE_FLOOR_GIB:
+            raise RuntimeError(
+                f"GPU {device} too full for the capture model + batch buffers: "
+                f"free={free_b / 2**30:.1f} GiB < floor {CAPTURE_FREE_FLOOR_GIB:.0f} GiB "
+                "(~15 GiB bf16 7B weights + ~8.5 GiB captured-layer stack at "
+                "CAPTURE_TOKEN_BUDGET + pooling transients + margin). Shared-node "
+                "co-tenancy (fellows H200) is the expected cause — re-dispatch when "
+                "the device frees or pin a different allocated GPU."
+            )
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
         revision=revision,

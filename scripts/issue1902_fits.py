@@ -86,6 +86,14 @@ PARITY_MIN_SLICES = 3
 
 # Layer chunking for the batched Gram eigh (plan §4 P4 step 1 / A14).
 LAYER_CHUNK = int(os.environ.get("EPM_ISSUE1902_LAYER_CHUNK", "8"))
+# Per-layer HBM allowance multiplier over the (n_tr, n_tr) fp64 Gram — Gram +
+# eigenvectors + cuSOLVER workspace + X/Y/pred transfer slack. Arithmetic
+# allowance over plan A14's own basis (8 layers x 8.3k^2 fp64 ~= 4.4 GB "+
+# workspace"), used ONLY to SHRINK below the plan-fixed LAYER_CHUNK with a
+# fail-loud 1-layer floor — never to size new spend (the #811 measured-peak
+# rule governs upward sizing; a downscale-only clamp with a loud floor is the
+# conservative direction).
+EIGH_WORKSPACE_FACTOR = 4
 
 # Headline flank band: layer* +/- {2, 4} within the captured layer set.
 BAND_HALF_WIDTH = 4
@@ -166,6 +174,60 @@ def _batched_ridge(Xtr, Ytr, Xev, *, device: str, **kw):
             raise
         logger.warning("[fits] cuda eigh non-convergence (n=%s) — CPU fallback", Xtr.shape)
         return ridge_fit_predict_fast_layer_batched(Xtr, Ytr, Xev, device="cpu", **kw)
+
+
+def layer_chunk_cap_for_free(free_bytes: int, n_tr: int, chunk: int = LAYER_CHUNK) -> int:
+    """A14 layer chunk clamped by LIVE free HBM (free, never total).
+
+    The fellows H200 hosts share nodes without GPU isolation, so plan A14's
+    ">= 40 GB free" assumption is a co-tenancy hypothesis, not a device
+    property (#1902 crash 1 sweep). Per-layer cost ~= n_tr^2 x 8 B (fp64
+    Gram) x ``EIGH_WORKSPACE_FACTOR``. Downscale-only: an exclusive host
+    resolves to ``chunk`` unchanged; raises ``RuntimeError`` when even one
+    layer does not fit under ``C.GPU_FREE_MARGIN_GIB`` margin.
+    """
+    per_layer = n_tr * n_tr * 8 * EIGH_WORKSPACE_FACTOR
+    if per_layer <= 0:
+        return chunk
+    usable = free_bytes - int(C.GPU_FREE_MARGIN_GIB * 2**30)
+    cap = usable // per_layer
+    if cap < 1:
+        raise RuntimeError(
+            f"GPU too full for even a 1-layer Gram eigh: free={free_bytes / 2**30:.1f} GiB, "
+            f"need ~{per_layer / 2**30:.1f} GiB/layer (n_tr={n_tr}, factor "
+            f"{EIGH_WORKSPACE_FACTOR}) + {C.GPU_FREE_MARGIN_GIB:.0f} GiB margin — shared-node "
+            "co-tenancy (fellows H200) is the expected cause; re-dispatch when the device frees."
+        )
+    return min(chunk, int(cap))
+
+
+def _layer_chunk_cap(device: str, n_tr: int) -> int:
+    """Device wrapper: mem_get_info on the worker's cuda device (A14's own
+    verification hook — "P4 entry ... logs mem_get_info"); CPU = unclamped."""
+    if not str(device).startswith("cuda"):
+        return LAYER_CHUNK
+    import torch
+
+    free_b, total_b = torch.cuda.mem_get_info(torch.device(device))
+    cap = layer_chunk_cap_for_free(free_b, n_tr)
+    if cap < LAYER_CHUNK:
+        logger.warning(
+            "[fits] layer chunk %d -> %d (free=%.1fGiB total=%.1fGiB n_tr=%d — A14 free-HBM clamp)",
+            LAYER_CHUNK,
+            cap,
+            free_b / 2**30,
+            total_b / 2**30,
+            n_tr,
+        )
+    else:
+        logger.info(
+            "[fits] layer chunk %d (free=%.1fGiB total=%.1fGiB n_tr=%d)",
+            cap,
+            free_b / 2**30,
+            total_b / 2**30,
+            n_tr,
+        )
+    return cap
 
 
 def _knn_ks(n_pool: int) -> tuple[int, ...]:
@@ -691,13 +753,16 @@ def run_sweep_unit(ctx: FitsContext, device: str, *, m: str, corpus: str, fold: 
     _, percell = ctx.unit_paths()
     out: dict[str, Any] = {"n_tr": int(tr.sum()), "n_ev": int(ev.sum()), "arms": {}}
     t0 = time.time()
+    # A14 free-HBM clamp (#1902 crash 1 sweep): chunk width from LIVE free
+    # memory on THIS worker's device, never the plan-fixed constant alone.
+    chunk_cap = _layer_chunk_cap(device, int(tr.sum()))
     for arm in arms:
         per_layer: dict[str, Any] = {}
         res_all = np.zeros((len(ctx.layers), int(ev.sum())))
         tot_all = np.zeros_like(res_all)
         cos_all = np.zeros_like(res_all)
-        for c0 in range(0, len(ctx.layers), LAYER_CHUNK):
-            chunk = ctx.layers[c0 : c0 + LAYER_CHUNK]
+        for c0 in range(0, len(ctx.layers), chunk_cap):
+            chunk = ctx.layers[c0 : c0 + chunk_cap]
             Xtr = np.stack([ctx.xy(m, m, corpus, layer, arm)[0][tr] for layer in chunk])
             Ytr = np.stack([ctx.xy(m, m, corpus, layer, arm)[1][tr] for layer in chunk])
             Xev = np.stack([ctx.xy(m, m, corpus, layer, arm)[0][ev] for layer in chunk])

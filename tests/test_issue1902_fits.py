@@ -539,3 +539,33 @@ def test_capture_store_roots_cover_writers_and_p4_leaves():
         for leaves in (*hard.values(), *soft.values()):
             for leaf in leaves:
                 assert covered(leaf, roots), f"P4-consumed leaf not upload-eligible: {leaf}"
+
+
+# ── A14 free-HBM layer-chunk clamp (#1902 crash 1 sweep) ─────────────────────
+
+GIB = 2**30
+
+
+def test_layer_chunk_cap_exclusive_host_unclamped():
+    # A14's own basis: n_tr ~= 8.3k -> ~0.55 GiB fp64 Gram x factor 4 ~= 2.2
+    # GiB/layer; >= 40 GiB free (exclusive host, post-model-unload) keeps the
+    # plan-fixed chunk of 8.
+    assert F.layer_chunk_cap_for_free(40 * GIB, n_tr=8_300) == F.LAYER_CHUNK
+
+
+def test_layer_chunk_cap_shared_node_downscales():
+    # A co-tenant squeezing free HBM to 12 GiB: (12-6) GiB usable / ~2.05
+    # GiB/layer -> 2 layers per chunk.
+    cap = F.layer_chunk_cap_for_free(12 * GIB, n_tr=8_300)
+    assert 1 <= cap < F.LAYER_CHUNK
+    per_layer = 8_300 * 8_300 * 8 * F.EIGH_WORKSPACE_FACTOR
+    assert cap * per_layer <= 12 * GIB - int(C.GPU_FREE_MARGIN_GIB * GIB)
+
+
+def test_layer_chunk_cap_fail_loud_when_one_layer_cannot_fit():
+    with pytest.raises(RuntimeError, match="1-layer Gram eigh"):
+        F.layer_chunk_cap_for_free(7 * GIB, n_tr=8_300)
+
+
+def test_layer_chunk_cap_cpu_device_unclamped():
+    assert F._layer_chunk_cap("cpu", n_tr=8_300) == F.LAYER_CHUNK

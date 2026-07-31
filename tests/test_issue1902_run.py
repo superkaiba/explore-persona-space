@@ -443,3 +443,89 @@ def test_capture_rows_per_leg_uses_uncapped_per_corpus_sums():
     assert R.capture_rows_per_leg(4, at_target) == 4 * 2 * C.INTERSECTION_TARGET + (
         R.ROBUST_NATIVE_N + 2 * C.RELIABILITY_SUBSET_N
     )
+
+
+# ── shared-node GPU sizing (#1902 crash 1) ───────────────────────────────────
+
+GIB = 2**30
+
+
+def test_realized_gpu_ids_slurm_count_only_crash1_env():
+    # The fellows job 16127 env: SLURM_GPUS_ON_NODE=4, no JOB_GPUS/CVD,
+    # nvidia-smi detects the PHYSICAL 8x H200 node. Width must be 4, never 8.
+    env = {"SLURM_JOB_ID": "16127", "SLURM_GPUS_ON_NODE": "4"}
+    src, ids = C.realized_gpu_ids(env, detected=8)
+    assert ids == ["0", "1", "2", "3"]
+    assert src.startswith("slurm-count")
+
+
+def test_realized_gpu_ids_prefers_slurm_cvd_then_job_gpus():
+    env = {
+        "SLURM_JOB_ID": "1",
+        "SLURM_GPUS_ON_NODE": "4",
+        "SLURM_JOB_GPUS": "0,1,2,3",
+        "CUDA_VISIBLE_DEVICES": "4,5,6,7",
+    }
+    src, ids = C.realized_gpu_ids(env, detected=8)
+    assert (src, ids) == ("slurm-cvd", ["4", "5", "6", "7"])
+    del env["CUDA_VISIBLE_DEVICES"]
+    src, ids = C.realized_gpu_ids(env, detected=8)
+    assert (src, ids) == ("slurm-job-gpus", ["0", "1", "2", "3"])
+
+
+def test_realized_gpu_ids_clamped_by_requested_width():
+    env = {"SLURM_JOB_ID": "1", "SLURM_GPUS_ON_NODE": "2", "SLURM_JOB_GPUS": "4,5,6,7"}
+    src, ids = C.realized_gpu_ids(env, detected=8)
+    assert ids == ["4", "5"]
+    assert src.endswith("-clamped")
+
+
+def test_realized_gpu_ids_slurm_without_any_allocation_env_fails_loud():
+    with pytest.raises(RuntimeError, match="refusing to fall back"):
+        C.realized_gpu_ids({"SLURM_JOB_ID": "1"}, detected=8)
+
+
+def test_realized_gpu_ids_non_slurm_keeps_detected():
+    assert C.realized_gpu_ids({}, detected=8) == (
+        "detected",
+        [str(i) for i in range(8)],
+    )
+    assert C.realized_gpu_ids({}, detected=0) == ("detected", ["0"])
+
+
+def test_vllm_util_for_free_shared_h200_crash_shape():
+    # Crash 1 numbers: free 81.2 GiB of 139.8 GiB total. The fixed 0.6 default
+    # demanded 83.9 GiB > free; the computed util's demand must fit free.
+    free_b, total_b = int(81.2 * GIB), int(139.8 * GIB)
+    util = C.vllm_util_for_free(free_b, total_b)
+    assert util < C.VLLM_UTIL_CAP
+    assert util * total_b < free_b
+    assert util >= C.VLLM_UTIL_FLOOR
+
+
+def test_vllm_util_for_free_exclusive_host_resolves_to_cap():
+    # Exclusive H100: ~79 GiB free of ~79.6 GiB total -> cap binds.
+    assert C.vllm_util_for_free(int(79 * GIB), int(79.6 * GIB)) == C.VLLM_UTIL_CAP
+
+
+def test_vllm_util_for_free_fail_loud_floor():
+    # A co-tenant holding most of the device: weights + min KV cannot fit.
+    with pytest.raises(RuntimeError, match="GPU too full"):
+        C.vllm_util_for_free(int(30 * GIB), int(139.8 * GIB))
+
+
+def test_gen_gpu_mem_util_env_override_and_live_path(monkeypatch):
+    monkeypatch.setenv("VLLM_GPU_MEM_UTIL", "0.42")
+    assert R._gen_gpu_mem_util() == 0.42
+    monkeypatch.delenv("VLLM_GPU_MEM_UTIL")
+    torch = pytest.importorskip("torch")
+    monkeypatch.setattr(torch.cuda, "mem_get_info", lambda *_a: (int(81.2 * GIB), int(139.8 * GIB)))
+    util = R._gen_gpu_mem_util()
+    assert abs(util - C.vllm_util_for_free(int(81.2 * GIB), int(139.8 * GIB))) < 1e-12
+
+
+def test_load_hf_model_capture_floor_fail_loud(monkeypatch):
+    torch = pytest.importorskip("torch")
+    monkeypatch.setattr(torch.cuda, "mem_get_info", lambda *_a: (int(20 * GIB), int(139.8 * GIB)))
+    with pytest.raises(RuntimeError, match="too full for the capture model"):
+        R._load_hf_model("dummy/model", None, "cuda:0")
