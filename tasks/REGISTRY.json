@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1914,
+  "highest_id": 1915,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7081,6 +7081,13 @@
       "path": "tasks/proposed/1914",
       "status": "proposed",
       "title": "daily-fix: widen body-audit condition-label regex H1c forms"
+    },
+    "1915": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1915",
+      "status": "proposed",
+      "title": "daily-fix: rsync_covered checks RSYNC_EXCLUDE_PATTERNS"
     },
     "192": {
       "goal": "Test whether one fictional medical fact, taught under a teaching-persona system prompt, transfers to ordinary-assistant and other non-teach evaluation frames.",
