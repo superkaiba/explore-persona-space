@@ -9597,6 +9597,13 @@ URGENT_WF_PARK_PYTEST_TIMEOUT_S = 180.0
 URGENT_WF_PARK_GATE_LOOKBACK_H = 48.0
 URGENT_WF_PARK_MAX_VERIFY_ATTEMPTS = 2
 URGENT_WF_PARK_LEDGER_MAX_AGE_H = 24.0
+# On-task tag the router files its tasks with (BOTH wf_fix routes,
+# :func:`_urgent_wf_park_compose_body`) AND the mechanical urgency signal the
+# proposed-infra sweep's urgent lane reads (#1853): a `proposed` infra/batch
+# task carrying it is ordered ahead of every non-urgent candidate
+# (:func:`_proposed_infra_candidates`) and may consume the bounded
+# urgent-bonus slot past the shared cap (:func:`decide_proposed_infra_sweep`).
+URGENT_MAIN_RED_TAG = "urgent-main-red"
 
 # Episode verdicts that permanently close a candidate FOR THIS ROUTER (the
 # park itself stays enumerated for the nightly sweep unless routed/deduped —
@@ -9972,6 +9979,91 @@ def _urgent_wf_park_dedup(
     return None
 
 
+def _urgent_wf_park_escalate_dedup_target(tid: int, key: str, dry_run: bool) -> None:
+    """Dedup-target escalation (#1853 leg a): a dedup hit means the router
+    files nothing, but when the TARGET task is itself a ripe ``proposed``
+    infra/batch task filed by another channel (/daily, a session filing) it
+    may lack the ``urgent-main-red`` tag and sit behind the sweep's shared
+    cap for hours (the #1823 shape). Probe the target with ONE bounded
+    ``task.py view <tid> --json`` subprocess (status + kind + tags in one
+    read — ``_task_status_kind`` alone lacks tags); on
+    ``status == "proposed"`` and ``kind in INFRA_DRAIN_KINDS``:
+
+      - ``needs-human`` tagged -> sidecar ``deduped-target-held-needs-human``,
+        NO tag write (the sweep never dispatches a held judgment call, #706 —
+        an "escalated" row would misleadingly imply a pending dispatch);
+      - else ``task.py add-tag <tid> urgent-main-red`` (idempotent — an
+        already-tagged task no-ops with no commit; fail-soft stderr print on
+        error) + sidecar ``deduped-target-escalated``, so the SAME-tick
+        sweep's urgent lane dispatches it (``urgent_wf_park_pass`` runs
+        BEFORE ``proposed_infra_sweep_pass`` in main()).
+
+    Any other status/kind: untouched (today's behavior). Under ``dry_run``
+    NO subprocess runs at all (including the view probe)."""
+    if dry_run:
+        print(f"  [dry-run] would probe dedup target #{tid} for urgent-lane escalation")
+        return
+    try:
+        res = subprocess.run(
+            ["uv", "run", "python", "scripts/task.py", "view", str(tid), "--json"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        print(
+            f"  urgent-wf-park: dedup-target #{tid} view probe failed: {exc}",
+            file=sys.stderr,
+        )
+        return
+    if res.returncode != 0:
+        print(
+            f"  urgent-wf-park: dedup-target #{tid} view probe rc={res.returncode}",
+            file=sys.stderr,
+        )
+        return
+    try:
+        payload = json.loads(res.stdout)
+    except json.JSONDecodeError:
+        print(f"  urgent-wf-park: dedup-target #{tid} view JSON unparseable", file=sys.stderr)
+        return
+    if not isinstance(payload, dict):
+        return
+    raw_fm = payload.get("frontmatter")
+    fm: dict = raw_fm if isinstance(raw_fm, dict) else {}
+    if payload.get("status") != "proposed" or fm.get("kind") not in INFRA_DRAIN_KINDS:
+        return  # not a sweep candidate — untouched (today's behavior)
+    if _NEEDS_HUMAN_TAG in (fm.get("tags") or []):
+        # #706 beats #1853: the sweep would never dispatch it — record the
+        # held state honestly instead of an escalated row implying dispatch.
+        _append_urgent_wf_park_sidecar(
+            {"key": key, "action": "deduped-target-held-needs-human", "task": tid}, dry_run
+        )
+        return
+    try:
+        add = subprocess.run(
+            ["uv", "run", "python", "scripts/task.py", "add-tag", str(tid), URGENT_MAIN_RED_TAG],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        print(f"  urgent-wf-park: dedup-target #{tid} add-tag failed: {exc}", file=sys.stderr)
+        return
+    if add.returncode != 0:
+        print(
+            f"  urgent-wf-park: dedup-target #{tid} add-tag rc={add.returncode}: "
+            f"{add.stderr.strip()[:200]}",
+            file=sys.stderr,
+        )
+        return
+    _append_urgent_wf_park_sidecar(
+        {"key": key, "action": "deduped-target-escalated", "task": tid}, dry_run
+    )
+
+
 def _urgent_wf_park_compose_body(
     fields: UrgentFields, cand_fp: str, verified_line: str
 ) -> tuple[str, str, list[str]]:
@@ -9986,7 +10078,7 @@ def _urgent_wf_park_compose_body(
     node = fields.failing_test
     if fields.wf_fix:
         title = f"workflow-fix: {fields.proposed_change[:60]}"
-        tags = ["wf-fix", f"wf-fix-fp:{cand_fp}", "urgent-main-red"]
+        tags = ["wf-fix", f"wf-fix-fp:{cand_fp}", URGENT_MAIN_RED_TAG]
         provenance = f"- workflow_fix_target: {fields.target_file}\n- fingerprint: {cand_fp}\n"
         constraints = (
             "- Workflow-surface only — never experiment code, `configs/`, or `tasks/`.\n"
@@ -9997,7 +10089,7 @@ def _urgent_wf_park_compose_body(
     else:
         node_short = f"{node.split('::')[0].rsplit('/', 1)[-1]}::{node.split('::')[-1]}"
         title = f"daily-fix: fix red main: {node_short} — {fields.proposed_change[:40]}"
-        tags = ["urgent-main-red"]
+        tags = [URGENT_MAIN_RED_TAG]
         provenance = f"- fingerprint: {cand_fp}\n"
         constraints = (
             "- NON-workflow-surface fix (`wf_fix: false` declared by the parking\n"
@@ -10212,6 +10304,13 @@ def _urgent_wf_park_route(
     dedup_hit = _urgent_wf_park_dedup(fields, cand_fp, root)
     if dedup_hit is not None:
         tid, belt = dedup_hit
+        # #1853 leg (a): escalate a ripe `proposed` infra/batch dedup TARGET
+        # into the sweep's urgent lane. Runs BEFORE the `episodes[key]` latch
+        # write so a crash mid-escalation inherits the existing crash-retry
+        # semantics (the branch re-runs next tick) instead of the escalation
+        # being lost for this park key; an add-tag failure itself is
+        # fail-soft (stderr) by design.
+        _urgent_wf_park_escalate_dedup_target(tid, key, dry_run)
         note = _urgent_wf_park_routed_note(
             fields, cand_fp, f"n/a (deduped against #{tid})", False, ts_raw, note_text
         )
@@ -19768,6 +19867,13 @@ PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT = INFRA_DRAIN_BACKOFF_S_DEFAULT
 # task leaves `proposed`, so a PM rewrite / repromotion / status change clears
 # it naturally). env EPM_PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS.
 PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT = INFRA_DRAIN_MAX_ATTEMPTS_DEFAULT
+# Bounded urgent-lane overflow (#1853): extra slots past the shared cap
+# reserved for `urgent-main-red` candidates ONLY, so an urgent-park-router
+# filing is dispatchable even when a session wave holds the cap exactly full
+# (the #1823 shape: 8-27h cap-full skips). 0 disables the overflow while
+# keeping the urgent-first ordering. NEVER widen beyond +1 without a plan
+# (the #1853 must-ask fence). env EPM_INFRA_SWEEP_URGENT_BONUS.
+PROPOSED_INFRA_SWEEP_URGENT_BONUS_DEFAULT = 1
 
 # #843 M3: the sweep skips a decided candidate whose events.jsonl carries a
 # dispatch-sentinel marker younger than this — one watcher cadence (cron
@@ -21038,6 +21144,22 @@ def _proposed_infra_sweep_backoff_s() -> float:
         return PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT
 
 
+def _infra_sweep_urgent_bonus() -> int:
+    """Urgent-lane overflow slots past the shared cap (#1853; env
+    ``EPM_INFRA_SWEEP_URGENT_BONUS``; default
+    :data:`PROPOSED_INFRA_SWEEP_URGENT_BONUS_DEFAULT`, clamped to >= 0 — 0
+    disables the overflow while keeping the urgent-first ordering). A
+    malformed env value falls back to the default (a typo must not distort
+    the cap arithmetic — the :func:`_proposed_infra_sweep_backoff_s` shape)."""
+    raw = os.environ.get("EPM_INFRA_SWEEP_URGENT_BONUS")
+    if not raw:
+        return PROPOSED_INFRA_SWEEP_URGENT_BONUS_DEFAULT
+    try:
+        return max(0, int(raw))
+    except ValueError:
+        return PROPOSED_INFRA_SWEEP_URGENT_BONUS_DEFAULT
+
+
 def _proposed_infra_sweep_max_attempts() -> int:
     """Attempt cap before the sweep parks a repeatedly-failing task (env
     ``EPM_PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS``; default
@@ -21083,10 +21205,13 @@ def _save_proposed_infra_sweep_state(state: dict) -> None:
     tmp.replace(dest)
 
 
-def _proposed_infra_candidates() -> list[int] | None:
-    """Ripe-`proposed` infra/batch candidate ids, OLDEST-FIRST (ascending id is
-    a safe proxy — the PM's urgency-first nuance is the PM's job; this sweep is
-    the mechanical backstop). Built from EXACTLY one
+def _proposed_infra_candidates() -> tuple[list[int], frozenset[int]] | None:
+    """Ripe-`proposed` infra/batch candidates as ``(ordered_ids, urgent_ids)``
+    (#1853): URGENT-FIRST — rows tagged :data:`URGENT_MAIN_RED_TAG` (the
+    #1681 router's mechanical urgency signal) ahead of EVERY non-urgent row —
+    then OLDEST-FIRST within each class (ascending id is a safe proxy — the
+    PM's urgency-first nuance is the PM's job; this sweep is the mechanical
+    backstop). Built from EXACTLY one
     ``task.py list-by-status --status proposed --json`` subprocess, filtered to
     ``kind in INFRA_DRAIN_KINDS``.
 
@@ -21096,7 +21221,9 @@ def _proposed_infra_candidates() -> list[int] | None:
     pinned by the exact-argv Test 10. A row tagged
     :data:`_NEEDS_HUMAN_TAG` is ALSO excluded (#706): a /daily route-3 held
     judgment call is a tracked `proposed` infra task surfaced in the PM
-    `Needs you` block for Thomas's call, NEVER auto-dispatched by this sweep.
+    `Needs you` block for Thomas's call, NEVER auto-dispatched by this sweep —
+    the exclusion BEATS :data:`URGENT_MAIN_RED_TAG` (a row tagged both never
+    enters the ids NOR the urgent set).
     Returns ``None`` on any read/parse
     failure (the pass then skips this tick — fail toward NOT dispatching,
     mirroring :func:`_infra_drain_occupancy`'s fail-closed posture)."""
@@ -21128,20 +21255,27 @@ def _proposed_infra_candidates() -> list[int] | None:
     if not isinstance(rows, list):
         return None
     ids: list[int] = []
+    urgent: set[int] = set()
     for row in rows:
         if not isinstance(row, dict) or row.get("kind") not in INFRA_DRAIN_KINDS:
             continue
+        tags = row.get("tags") or []
         # #706: a /daily route-3 held judgment call carries `needs-human` —
         # surfaced in the PM `Needs you` block, never auto-dispatched. The
         # `or []` guards legacy rows that predate the `tags` field (a
-        # `row["tags"]` lookup would KeyError + crash the whole sweep).
-        if _NEEDS_HUMAN_TAG in (row.get("tags") or []):
+        # `row["tags"]` lookup would KeyError + crash the whole sweep). This
+        # exclusion stays ORDERED BEFORE the urgency collection below — a row
+        # tagged both `needs-human` + `urgent-main-red` is neither a
+        # candidate nor urgent (#1853 acceptance vi).
+        if _NEEDS_HUMAN_TAG in tags:
             continue
         tid = row.get("id")
         if isinstance(tid, int) and tid not in ids:
             ids.append(tid)
-    ids.sort()  # oldest-first proxy
-    return ids
+            if URGENT_MAIN_RED_TAG in tags:
+                urgent.add(tid)
+    ids.sort(key=lambda t: (0 if t in urgent else 1, t))  # urgent-first, then oldest-first
+    return ids, frozenset(urgent)
 
 
 def _proposed_infra_hold_reason(
@@ -21194,20 +21328,25 @@ def decide_proposed_infra_sweep(
     *,
     backoff_s: float = PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT,
     max_attempts: int = PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT,
+    urgent: frozenset[int] = frozenset(),
+    urgent_bonus: int = 0,
 ) -> tuple[list[int], list[tuple[int, str]]]:
     """Pure decision: ``(dispatch_ids_in_order, skipped [(id, reason)])`` —
     mirroring :func:`decide_infra_drain` so the cap/hold/registration matrix is
     falsifiable in isolation (#690 R4).
 
-    ``candidates`` is the ripe-`proposed` infra/batch id list (oldest-first);
+    ``candidates`` is the ripe-`proposed` infra/batch id list (urgent-first,
+    then oldest-first — :func:`_proposed_infra_candidates`);
     ``holds`` the PM queue file's PARSED int-keyed map; ``predicate_statuses``
     the resolved status of each predicate's BLOCKING issue (``None`` =
     unreadable); ``registered`` the NON-STALE registrations among the
     candidates; ``occupied_active`` the count of kind-infra/batch tasks at
     :data:`INFRA_DRAIN_OCCUPIED_STATUSES`; ``pending`` the count of ALL
     non-stale registrations of still-`proposed` drain-kind tasks (the SHARED
-    cap budget — see :func:`_infra_drain_pending`). ``free = max(0, cap -
-    occupied_active - pending)``.
+    cap budget — see :func:`_infra_drain_pending`). ``urgent`` is the
+    `urgent-main-red` id set riding the candidate tuple; ``urgent_bonus``
+    (#1853, default 0 — the pass threads :func:`_infra_sweep_urgent_bonus`)
+    grants urgent candidates a bounded overflow past the shared cap.
 
     Per-candidate guard order (every skip carries a reason string):
 
@@ -21222,10 +21361,17 @@ def decide_proposed_infra_sweep(
          change status between the candidate query and this read)
       6. kind not in :data:`INFRA_DRAIN_KINDS` → ``"kind-<kind|unreadable>"``
          (defense in depth; the candidate query already filtered)
-      7. no free slot → ``"cap-full"``
+      7. per-candidate limit ``cap + (urgent_bonus if candidate in urgent
+         else 0)``; dispatch iff ``occupied_active + pending + len(dispatch)
+         < limit``, else → ``"cap-full"`` (``len(dispatch)`` inside the
+         comparison bounds the overflow to ``urgent_bonus`` slots TOTAL —
+         two urgent candidates at a full cap with bonus 1 dispatch exactly
+         one; urgent-first ordering means an urgent candidate can never lose
+         its bonus slot to a non-urgent one. ``urgent_bonus=0`` reproduces
+         the old ``free = max(0, cap - occupied_active - pending)`` walk
+         byte-for-byte)
       8. else dispatch; one attempt per id per cycle
     """
-    free = max(0, cap - occupied_active - pending)
     dispatch: list[int] = []
     skipped: list[tuple[int, str]] = []
     for i in candidates:
@@ -21261,11 +21407,14 @@ def decide_proposed_infra_sweep(
         if kind not in INFRA_DRAIN_KINDS:
             skipped.append((i, f"kind-{kind or 'unreadable'}"))
             continue
-        if free <= 0:
+        # #1853 guard 7: per-candidate limit — urgent candidates get the
+        # bounded bonus past the shared cap; `len(dispatch)` inside the
+        # comparison keeps the overflow to `urgent_bonus` slots TOTAL.
+        limit = cap + (urgent_bonus if i in urgent else 0)
+        if occupied_active + pending + len(dispatch) >= limit:
             skipped.append((i, "cap-full"))
             continue
         dispatch.append(i)
-        free -= 1
     return dispatch, skipped
 
 
@@ -21310,7 +21459,10 @@ def proposed_infra_sweep_pass(
     BUILDS its own candidate set from ``list-by-status --status proposed``;
     consults the PM queue's ``holds`` map ONLY to honor holds. Daemon-gated like
     every spawning pass; shares the cap with the drain (it runs AFTER the drain
-    in main(), so the drain's fresh registrations count as ``pending`` here)."""
+    in main(), so the drain's fresh registrations count as ``pending`` here).
+    `urgent-main-red` candidates ride an URGENT LANE (#1853): ordered ahead of
+    every non-urgent candidate and granted the bounded
+    :func:`_infra_sweep_urgent_bonus` overflow past the shared cap."""
     if not _proposed_infra_sweep_enabled():
         print("proposed-infra-sweep: disabled via EPM_DISABLE_PROPOSED_INFRA_SWEEP; skipping")
         return
@@ -21323,13 +21475,17 @@ def proposed_infra_sweep_pass(
         return
     now = now if now is not None else time.time()
 
-    candidates = _proposed_infra_candidates()
-    if candidates is None:
+    # Unpack the (ids, urgent) tuple AT THE TOP (#1853): every downstream use
+    # — _proposed_infra_sweep_prune_save's `set(candidates)`, the emptiness
+    # check below, _infra_drain_signals — consumes the ids LIST.
+    cand_result = _proposed_infra_candidates()
+    if cand_result is None:
         print(
             "proposed-infra-sweep: `list-by-status --status proposed` read FAILED; "
             "skipping this tick (fail toward NOT dispatching)"
         )
         return
+    candidates, urgent = cand_result
     if not candidates:
         print("proposed-infra-sweep: no ripe proposed infra/batch candidates; nothing to do")
         return
@@ -21406,6 +21562,8 @@ def proposed_infra_sweep_pass(
         cap,
         backoff_s=backoff_s,
         max_attempts=max_attempts,
+        urgent=urgent,
+        urgent_bonus=_infra_sweep_urgent_bonus(),
     )
 
     marker_fresh_s = _proposed_infra_sweep_marker_fresh_s()
@@ -21451,7 +21609,7 @@ def proposed_infra_sweep_pass(
     for issue, reason in skipped:
         print(f"  PROPOSED-INFRA-SWEEP SKIP issue #{issue} ({reason})")
     summary = (
-        f"proposed-infra-sweep: candidates={len(candidates)} "
+        f"proposed-infra-sweep: candidates={len(candidates)} urgent={len(urgent)} "
         f"occupied={occupied_active}(+{pending} pending) cap={cap} "
         f"dispatched={dispatched} skipped={len(skipped)}"
     )

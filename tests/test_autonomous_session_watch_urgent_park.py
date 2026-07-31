@@ -402,6 +402,8 @@ def test_dedup_open_wf_fix_task_posts_deduped_record(tmp_paths, monkeypatch):
     assert hit == (42, "open-wf-fix-task")
     # Pass level, cache-borne park: the REAL routed-record poster appends the
     # deduped record to the cache stream (no subprocess on the cache leg).
+    # The #1853 dedup-target escalation's view probe is the ONLY subprocess
+    # here — fake it hermetically (a non-proposed target -> untouched).
     cache = tasks_root.parent / "workflow-fix-events.jsonl"
     note = _urgent_note()
     cache.write_text(
@@ -416,6 +418,19 @@ def test_dedup_open_wf_fix_task_posts_deduped_record(tmp_paths, monkeypatch):
     )
     monkeypatch.setattr(
         asw, "verify_main_red", lambda *a, **kw: ("confirmed", "test detail", False)
+    )
+
+    def _fake_view(argv, **kw):
+        assert "view" in argv, f"unexpected subprocess on the cache dedup leg: {argv}"
+        return subprocess.CompletedProcess(
+            argv,
+            0,
+            stdout=json.dumps({"status": "completed", "frontmatter": {"kind": "infra"}}),
+            stderr="",
+        )
+
+    monkeypatch.setattr(
+        asw.subprocess, "run", create_autospec(subprocess.run, side_effect=_fake_view)
     )
     asw.urgent_wf_park_pass(False, tasks_root=tasks_root, cache_file=cache)
     recorded = [json.loads(line) for line in cache.read_text().split("\n") if line.strip()]
@@ -445,6 +460,154 @@ def test_dedup_failing_node_containment(tmp_paths, monkeypatch):
 
     shutil.move(str(open_dir.parent), str(tasks_root / "completed"))
     assert asw._urgent_wf_park_dedup(_fields(), "deadbeef1234", tasks_root) is None
+
+
+# ── 8b: dedup-target escalation into the sweep's urgent lane (#1853 leg a) ───
+
+
+def _escalation_view_payload(status="proposed", kind="infra", tags=None) -> str:
+    """A minimal `task.py view --json` payload (status top-level; kind + tags
+    in frontmatter — the cmd_view shape)."""
+    return json.dumps({"status": status, "frontmatter": {"kind": kind, "tags": tags or []}})
+
+
+def test_urgent_wf_park_dedup_escalates_proposed_infra_target(tmp_paths, monkeypatch):
+    # A dedup hit whose target is a ripe `proposed` infra task gets
+    # `urgent-main-red` added (ONE bounded view probe + ONE idempotent
+    # add-tag) + the escalated sidecar row, so the SAME-tick sweep's urgent
+    # lane dispatches it.
+    _tasks_root, _state, sidecar = tmp_paths
+    seen: list[list[str]] = []
+
+    def _fake_run(argv, **kw):
+        seen.append(list(argv))
+        if "view" in argv:
+            assert argv[-3:] == ["view", "42", "--json"]
+            return subprocess.CompletedProcess(
+                argv, 0, stdout=_escalation_view_payload(), stderr=""
+            )
+        assert argv[-3:] == ["add-tag", "42", "urgent-main-red"]
+        return subprocess.CompletedProcess(argv, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(
+        asw.subprocess, "run", create_autospec(subprocess.run, side_effect=_fake_run)
+    )
+    asw._urgent_wf_park_escalate_dedup_target(42, "task:9999", False)
+    assert len(seen) == 2  # exactly one view probe + one add-tag
+    rows = _sidecar_rows(sidecar)
+    assert len(rows) == 1
+    assert rows[0]["action"] == "deduped-target-escalated"
+    assert rows[0]["key"] == "task:9999" and rows[0]["task"] == 42
+
+
+@pytest.mark.parametrize(
+    ("status", "kind"),
+    [("completed", "infra"), ("running", "infra"), ("proposed", "experiment")],
+)
+def test_urgent_wf_park_dedup_leaves_nonproposed_target(tmp_paths, monkeypatch, status, kind):
+    # Any other status/kind: untouched (today's behavior) — no add-tag
+    # subprocess, no sidecar row.
+    _tasks_root, _state, sidecar = tmp_paths
+    seen: list[list[str]] = []
+
+    def _fake_run(argv, **kw):
+        seen.append(list(argv))
+        assert "view" in argv, f"non-view subprocess on an untouched target: {argv}"
+        return subprocess.CompletedProcess(
+            argv, 0, stdout=_escalation_view_payload(status=status, kind=kind), stderr=""
+        )
+
+    monkeypatch.setattr(
+        asw.subprocess, "run", create_autospec(subprocess.run, side_effect=_fake_run)
+    )
+    asw._urgent_wf_park_escalate_dedup_target(42, "task:9999", False)
+    assert len(seen) == 1  # the view probe only
+    assert _sidecar_rows(sidecar) == []
+
+
+def test_urgent_wf_park_dedup_holds_needs_human_target(tmp_paths, monkeypatch):
+    # #706 beats #1853: a `needs-human`-tagged proposed infra target is NOT
+    # tagged (the sweep would never dispatch it; an "escalated" row would
+    # misleadingly imply a pending dispatch) — the sidecar records the held
+    # state instead.
+    _tasks_root, _state, sidecar = tmp_paths
+    seen: list[list[str]] = []
+
+    def _fake_run(argv, **kw):
+        seen.append(list(argv))
+        assert "view" in argv, f"add-tag must not run on a needs-human target: {argv}"
+        return subprocess.CompletedProcess(
+            argv,
+            0,
+            stdout=_escalation_view_payload(tags=["needs-human", "daily-held"]),
+            stderr="",
+        )
+
+    monkeypatch.setattr(
+        asw.subprocess, "run", create_autospec(subprocess.run, side_effect=_fake_run)
+    )
+    asw._urgent_wf_park_escalate_dedup_target(42, "task:9999", False)
+    assert len(seen) == 1  # the view probe only — no tag write
+    rows = _sidecar_rows(sidecar)
+    assert len(rows) == 1
+    assert rows[0]["action"] == "deduped-target-held-needs-human"
+    assert rows[0]["key"] == "task:9999" and rows[0]["task"] == 42
+
+
+def test_urgent_wf_park_dedup_escalation_dry_run_no_subprocess(tmp_paths, monkeypatch, capsys):
+    # dry_run runs NO subprocess at all — including the view probe — and
+    # writes nothing.
+    _tasks_root, _state, sidecar = tmp_paths
+
+    def _boom(*a, **kw):
+        raise AssertionError("subprocess.run must not run under dry_run")
+
+    run_spy = create_autospec(subprocess.run, side_effect=_boom)
+    monkeypatch.setattr(asw.subprocess, "run", run_spy)
+    asw._urgent_wf_park_escalate_dedup_target(42, "task:9999", True)
+    run_spy.assert_not_called()
+    assert not sidecar.exists()
+    assert "would probe dedup target #42" in capsys.readouterr().out
+
+
+def test_urgent_wf_park_dedup_route_escalates_before_latch(tmp_paths, monkeypatch):
+    # Wiring pin (production-body: the REAL route + REAL escalation helper,
+    # fakes only at the subprocess boundary): the dedup branch escalates the
+    # target BEFORE the episode latch — the escalated sidecar row precedes
+    # the deduped one, and the episode still latches `deduped`.
+    import explore_persona_space.task_workflow as tw
+
+    tasks_root, state, sidecar = tmp_paths
+    monkeypatch.setattr(tw, "is_open_workflow_fix_task", lambda tf, fp=None: 42)
+    cache = tasks_root.parent / "workflow-fix-events.jsonl"
+    cache.write_text(
+        json.dumps(
+            {"ts": _recent_ts(), "marker": "epm:workflow-fix-candidate", "note": _urgent_note()}
+        )
+        + "\n"
+    )
+    monkeypatch.setattr(
+        asw, "verify_main_red", lambda *a, **kw: ("confirmed", "test detail", False)
+    )
+
+    def _fake_run(argv, **kw):
+        if "view" in argv:
+            return subprocess.CompletedProcess(
+                argv, 0, stdout=_escalation_view_payload(), stderr=""
+            )
+        assert argv[-3:] == ["add-tag", "42", "urgent-main-red"]
+        return subprocess.CompletedProcess(argv, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(
+        asw.subprocess, "run", create_autospec(subprocess.run, side_effect=_fake_run)
+    )
+    asw.urgent_wf_park_pass(False, tasks_root=tasks_root, cache_file=cache)
+    actions = [r.get("action") for r in _sidecar_rows(sidecar)]
+    assert "deduped-target-escalated" in actions and "deduped" in actions
+    assert actions.index("deduped-target-escalated") < actions.index("deduped")
+    persisted = json.loads(state.read_text())
+    (episode,) = persisted["episodes"].values()
+    assert episode["verdict"] == "deduped" and episode["filed_task"] == 42
 
 
 # ── 9: the AC4 round-trip (routed-record suppresses in the sweep) ───────────
