@@ -28,6 +28,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1900.md @ f5fd6f9c4a](https://github.com/superkaiba/explore-persona-space/blob/f5fd6f9c4a5d64946b93bf9fe43709d52e80162f/docs/methodology/issue_1900.md) · [gist mirror](https://gist.github.com/superkaiba/8663fe55d3504a2df447a987ded4aa32)
+
 ## Takeaways
 
 - Base behavioral propensity dominates per-prompt prediction of trained-behavior expression: median rank correlation **0.632** across 12 content arms (best geometry read 0.242), winner in 2,000 of 2,000 bootstrap draws.
