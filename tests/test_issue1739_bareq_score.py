@@ -7,6 +7,13 @@ real ``arms.run_transfer_cell`` / ``evaluate_transfer``, real
 ``fits.map_diagnostics`` -> ``analysis.mapping_baselines``) — nothing is stubbed;
 only the SCALE is tiny (2 layers, dim 7, ~24 contexts).
 
+Round-3 additions also pinned here: the three labeled eval subsets emitted in one
+pass, the persisted per-(arm, context) predictions (including a test that
+RECOMPUTES each published subset rho from the preds file, which is the whole
+point of persisting them), the forced constant-prefix null sweep, and the
+null-anomaly diagnostic's discriminating power — a real association must fall
+OUTSIDE the shuffle band and unexplained structure must stay ``unexplained``.
+
 The centerpieces are this round's three load-bearing invariants:
 
 * **BY-QUERY fold non-leakage** — on evil's pool the bare rep is the IDENTICAL
@@ -37,7 +44,13 @@ from scripts import issue1739_bareq_score as bqs  # noqa: E402
 
 DIM = 7  # > len(LAYERS) and != every row count, so an (n, d) <-> (d, n) slip cannot pass
 LAYERS = (0, 1)
-ROSTER = ["arm1_ctx_e1", "arm3_identity_bias", "arm4_ridge_ctx", "arm6_map_proj_e1"]
+ROSTER = [
+    "arm1_ctx_e1",
+    "arm3_identity_bias",
+    "arm4_ridge_ctx",
+    "arm6_map_proj_e1",
+    "arm13_shuffled_map",  # the control whose shuffle-seed band this round adds
+]
 BEHAVIORS = ("evil", "sycophancy", "hallucination")
 N_TRAIN = 24  # 8 queries x 3 contexts
 N_QUERIES = 8
@@ -625,28 +638,142 @@ def test_non_constant_bare_prefix_is_flagged_as_an_anomaly(rig):
     assert null["verdict"] == "ANOMALY"
 
 
-def test_degenerate_null_variant_skips_the_arm_sweep(rig, capsys):
-    """A verified-constant prefix variant records the null and skips the sweep.
+def _with_variants(rig, behaviors, *variants, extra=()):
+    argv = rig["argv"](list(behaviors), *extra)
+    argv[argv.index("--variants") + 1 : argv.index("--arms")] = list(variants)
+    return argv
 
-    The sweep on a zero-variance design can only yield NaN rho, so paying a
-    U-pool whitening + map refit + transfer solve for it is waste; the skip is
-    recorded (never silent) and ``null_probe`` carries the verdict.
-    """
-    argv = rig["argv"](["evil"], "--legs", "1")
-    argv[argv.index("--variants") + 1 : argv.index("--arms")] = [bqs.BARE_KIND, bqs.BARE_NULL_KIND]
+
+def test_null_arm_sweep_runs_by_default_even_when_constancy_passes(rig):
+    """--force-null-sweep is ON by default: the null variant is scored, not skipped."""
+    assert (
+        _run(
+            _with_variants(rig, ["evil"], bqs.BARE_KIND, bqs.BARE_NULL_KIND, extra=("--legs", "1"))
+        )
+        == 0
+    )
+
+    payload = _summary(rig, "evil")
+    assert {r["variant"] for r in payload["transfer_rows"]} == {bqs.BARE_KIND, bqs.BARE_NULL_KIND}
+    src = payload["meta"]["frozen_layer_source"][bqs.BARE_NULL_KIND]
+    assert not src.startswith("n/a"), src
+
+
+def test_no_force_null_sweep_restores_the_skip(rig, capsys):
+    """The opt-out records the null verdict as the variant's result instead."""
+    argv = _with_variants(
+        rig,
+        ["evil"],
+        bqs.BARE_KIND,
+        bqs.BARE_NULL_KIND,
+        extra=("--legs", "1", "--no-force-null-sweep"),
+    )
     assert _run(argv) == 0
 
     payload = _summary(rig, "evil")
-    meta = payload["meta"]
-    assert meta["frozen_layer_source"][bqs.BARE_NULL_KIND].startswith("n/a — degenerate")
-    assert meta["leg1_null_probe"][bqs.BARE_NULL_KIND]["verdict"] == "degenerate-as-predicted"
-
-    # no arm rows for the null variant; the informative variant still has them
-    variants = {r["variant"] for r in payload["transfer_rows"]}
-    assert variants == {bqs.BARE_KIND}, variants
+    assert payload["meta"]["frozen_layer_source"][bqs.BARE_NULL_KIND].startswith("n/a — degenerate")
+    assert {r["variant"] for r in payload["transfer_rows"]} == {bqs.BARE_KIND}
     skips = [s for s in payload["transfer_skips"] if s.get("variant") == bqs.BARE_NULL_KIND]
     assert skips and "constant-prefix NULL variant" in skips[0]["reason"]
     assert "SKIP (verified-degenerate null" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# null-anomaly diagnostic
+# ---------------------------------------------------------------------------
+
+
+def test_null_anomaly_diagnostic_reports_shuffle_band_and_a_bounded_verdict(rig):
+    assert _run(rig["argv"](["evil"], "--legs", "1")) == 0
+    diag = _summary(rig, "evil")["meta"]["leg1_null_probe"][bqs.BARE_KIND]["anomaly_diagnostic"]
+
+    band = diag["shuffle_band"]
+    assert band["n_seeds"] == 8
+    if band["ran"]:
+        assert band["abs_rho_p97_5"] >= band["abs_rho_p50"] >= 0.0
+    else:
+        # exactly-constant reps: no rho is defined, so no band exists
+        assert diag["observed_max_abs_rho"] is None
+        assert diag["verdict"] == "degenerate-no-variance"
+    assert diag["verdict"] in diag["verdict_vocabulary"]
+    assert set(diag["verdict_vocabulary"]) == {
+        "degenerate-no-variance",
+        "shuffle-band-consistent",
+        "capture-source-split-structure",
+        "batch-order-structure",
+        "unexplained",
+    }
+    # both mechanism tests present, whatever the verdict
+    assert diag["capture_source_split"]["ran"] is True
+    assert "max_abs_null_rho_within_group" in diag["capture_source_split"]
+    assert "rho_deviation_vs_batch_slot" in diag["batch_order"]
+    assert "dv_lag1_autocorr_along_capture_order" in diag["batch_order"]
+
+
+def test_exactly_constant_prefix_lands_inside_the_shuffle_band(rig):
+    """An exactly-constant null has no association to find — band-consistent."""
+    assert _run(rig["argv"](["evil"], "--legs", "1")) == 0
+    diag = _summary(rig, "evil")["meta"]["leg1_null_probe"][bqs.BARE_KIND]["anomaly_diagnostic"]
+    if diag["observed_max_abs_rho"] is None:
+        assert diag["verdict"] == "degenerate-no-variance"
+    else:
+        assert diag["inside_shuffle_band"] is True
+
+
+def test_shuffle_band_of_a_real_association_excludes_it():
+    """Guard the band's discriminating power: a real rho must fall OUTSIDE it."""
+    rng = np.random.default_rng(5)
+    dv = rng.uniform(0, 100, size=200)
+    scores = (dv / 50.0 + rng.normal(scale=0.05, size=200))[None, :]  # strongly associated
+    band = bqs.shuffle_band(scores, dv, n_seeds=8, base_seed=0)
+    from explore_persona_space.experiments.issue_1739 import arms
+
+    observed = abs(float(arms.spearman_rows(scores, dv)[0]))
+    assert band["ran"] is True
+    assert observed > band["abs_rho_p97_5"], (observed, band["abs_rho_p97_5"])
+
+
+def test_null_verdict_never_forces_a_benign_label_on_unexplained_structure():
+    """Structure outside the band with no mechanism support stays 'unexplained'."""
+    rng = np.random.default_rng(9)
+    n, ly, d = 240, 2, DIM
+    dv = rng.uniform(0, 100, size=n)
+    # reps carry a genuine DV-aligned signal (a real indexing-defect signature)
+    block = rng.normal(size=(ly, n, d)) * 1e-3
+    block[:, :, 0] += dv[None, :]
+    rb = np.zeros((ly, d))
+    rb[:, 0] = 1.0
+    diag = bqs.null_anomaly_diagnostic(
+        block,
+        dv,
+        rb,
+        np.zeros(n, dtype=bool),
+        np.zeros(n, dtype=bool),
+        np.arange(n),
+        np.arange(n),
+        n_seeds=6,
+        base_seed=0,
+        batch_size=8,
+    )
+    assert diag["inside_shuffle_band"] is False
+    assert diag["verdict"] == "unexplained", diag["verdict"]
+
+
+def test_source_split_diagnostic_detects_a_between_group_offset():
+    """A pure two-source offset aligned with the split collapses within group."""
+    rng = np.random.default_rng(13)
+    n, ly, d = 200, 2, DIM
+    sub = np.zeros(n, dtype=bool)
+    sub[: n // 2] = True
+    dv = np.where(sub, rng.uniform(60, 100, size=n), rng.uniform(0, 40, size=n))
+    block = rng.normal(size=(ly, n, d)) * 1e-6
+    block[:, sub, 0] += 1.0  # the between-source offset, nothing else
+    rb = np.zeros((ly, d))
+    rb[:, 0] = 1.0
+    scores = np.einsum("lnd,ld->ln", block, rb, optimize=True)
+    split = bqs.source_split_diagnostic(scores, dv, sub, sub)
+    assert abs(split["rho_dv_vs_substituted_indicator"]) > 0.8
+    assert split["collapses_within_group"] is True
 
 
 def test_anomalous_null_variant_still_runs_the_arm_sweep(rig):
@@ -666,6 +793,194 @@ def test_anomalous_null_variant_still_runs_the_arm_sweep(rig):
     assert payload["meta"]["leg1_null_probe"][bqs.BARE_NULL_KIND]["verdict"] == "ANOMALY"
     rows = [r for r in payload["transfer_rows"] if r["variant"] == bqs.BARE_NULL_KIND]
     assert rows, "the anomaly branch must run the sweep as the diagnostic"
+
+
+# ---------------------------------------------------------------------------
+# multi-turn subset split + persisted predictions
+# ---------------------------------------------------------------------------
+
+
+def test_three_labeled_subsets_are_emitted_in_one_pass(rig):
+    """pooled + multi_turn_only + single_turn_only, each with its own n_eval."""
+    assert _run(rig["argv"](["evil"], "--legs", "1")) == 0
+    rows = [r for r in _summary(rig, "evil")["transfer_rows"] if r["leg"] == "1"]
+    assert rows
+
+    by_subset: dict[str, set] = {}
+    for r in rows:
+        by_subset.setdefault(r["subset"], set()).add(r["n_eval"])
+    assert set(by_subset) == set(bqs.SUBSETS), sorted(by_subset)
+    assert by_subset["pooled"] == {N_EVAL}
+    assert by_subset["multi_turn_only"] == {N_MULTI}
+    assert by_subset["single_turn_only"] == {N_EVAL - N_MULTI}
+    # every arm appears in every subset (same roster, same frozen layers)
+    for subset in bqs.SUBSETS:
+        arms_in = {r["arm"] for r in rows if r["subset"] == subset}
+        assert arms_in == set(ROSTER), (subset, sorted(arms_in))
+
+
+def test_subset_split_matches_the_known_fixture_membership(rig):
+    """The fixture's first N_MULTI wildchat contexts are the multi-turn ones."""
+    assert _run(rig["argv"](["evil"], "--legs", "1")) == 0
+    mt = _summary(rig, "evil")["meta"]["leg1_coverage"][bqs.BARE_KIND]["multi_turn_classification"]
+    assert mt["n_multi_turn"] == N_MULTI
+    assert mt["n_single_turn"] == N_EVAL - N_MULTI
+    # under the capture --multi-turn-only default, re-captured == multi-turn
+    assert mt["frac_agree_with_substitution"] == 1.0
+    assert "capture.capture_rollout_files drops 'kind'" in mt["why_not_the_capture_kind_field"]
+
+
+def test_multi_turn_derived_from_prefix_not_from_substitution(rig):
+    """Classification is a rep measurement, so it survives a re-captured single-turn row.
+
+    Directly exercises the divergence the capture leg's --include-single-turn
+    would create: a single-turn context that IS re-captured must still classify
+    single-turn (its prefix matches the bare head), so agreement with
+    substitution membership drops below 1.0 while the split stays correct.
+    """
+    prefix_const = rig["prefix_const"]
+    single_ids = rig["wc_ids"][N_MULTI:]
+    extra = single_ids[0]
+    bare = rig["store_root"] / "bareq_capture_store" / "bareq"
+    rows = [json.loads(x) for x in (bare / "row_index.jsonl").read_text().splitlines() if x.strip()]
+    rows.append(
+        {"context_id": extra, "rollout_k": 0, "rung": "bareq", "source_file": f"wc-{extra}.json"}
+    )
+    (bare / "row_index.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    for kind in ("context_end", "prefix_end", "t1"):
+        for li, ly in enumerate(LAYERS):
+            p = bare / f"{kind}_L{ly:02d}.npy"
+            arr = np.load(p)
+            # the re-captured single-turn row: prefix IS the constant bare head
+            new = prefix_const[li] if kind == "prefix_end" else arr[0]
+            np.save(p, np.concatenate([arr, np.asarray(new, dtype=np.float16)[None, :]], axis=0))
+
+    assert _run(rig["argv"](["evil"], "--legs", "1")) == 0
+    mt = _summary(rig, "evil")["meta"]["leg1_coverage"][bqs.BARE_KIND]["multi_turn_classification"]
+    assert mt["n_multi_turn"] == N_MULTI, "a re-captured single-turn row must stay single-turn"
+    assert mt["n_substituted"] == N_MULTI + 1
+    assert mt["frac_agree_with_substitution"] < 1.0
+
+
+def test_single_turn_anchor_is_by_construction_under_multi_turn_only_capture(rig):
+    """No single-turn row re-captured ⇒ the anchor is wiring, not a measurement."""
+    assert _run(rig["argv"](["evil"], "--legs", "1")) == 0
+    anchor = _summary(rig, "evil")["meta"]["leg1_coverage"][bqs.BARE_KIND]["single_turn_anchor"]
+    assert anchor["mode"] == "by-construction"
+    assert anchor["passed"] is None
+    assert "identically zero by construction" in anchor["note"]
+
+
+def test_preds_jsonl_persists_one_row_per_arm_and_context(rig):
+    """The durable subset-re-analysis input: per-(arm, context) frozen-layer scores."""
+    assert _run(rig["argv"](["evil"], "--legs", "1")) == 0
+    path = rig["out_root"] / "evil" / "preds" / f"bareq_leg1_preds.{bqs.BARE_KIND}.jsonl"
+    rows = [json.loads(x) for x in path.read_text().splitlines() if x.strip()]
+
+    assert len(rows) == len(ROSTER) * N_EVAL
+    assert {r["arm"] for r in rows} == set(ROSTER)
+    for r in rows:
+        assert set(
+            ["arm", "context_id", "dv", "score", "multi_turn", "frozen_layer_idx", "leg", "variant"]
+        ) <= set(r)
+        assert isinstance(r["multi_turn"], bool)
+        assert np.isfinite(r["dv"]) and np.isfinite(r["score"])
+    per_arm = [r for r in rows if r["arm"] == ROSTER[0]]
+    assert len({r["context_id"] for r in per_arm}) == N_EVAL
+    assert sum(1 for r in per_arm if r["multi_turn"]) == N_MULTI
+
+    meta = _summary(rig, "evil")["meta"]
+    assert meta["preds_persisted"]["dir"] == str(path.parent)
+    assert path.name in meta["preds_persisted"]["files"]
+    assert meta["subsets_emitted"] == list(bqs.SUBSETS)
+
+
+def test_preds_are_idempotent_across_reruns(rig):
+    """Re-running must not duplicate preds rows (per-unit truncate, not append)."""
+    path = rig["out_root"] / "evil" / "preds" / f"bareq_leg1_preds.{bqs.BARE_KIND}.jsonl"
+    assert _run(rig["argv"](["evil"], "--legs", "1")) == 0
+    first = path.read_text()
+    n_first = len([x for x in first.splitlines() if x.strip()])
+    assert n_first == len(ROSTER) * N_EVAL
+
+    # a second run resumes the unit; a third with a fresh checkpoint recomputes it
+    assert _run(rig["argv"](["evil"], "--legs", "1")) == 0
+    assert len([x for x in path.read_text().splitlines() if x.strip()]) == n_first
+    (rig["out_root"] / "evil" / "percell" / "bareq_leg1_transfer.jsonl").unlink()
+    assert _run(rig["argv"](["evil"], "--legs", "1")) == 0
+    assert len([x for x in path.read_text().splitlines() if x.strip()]) == n_first
+    assert not list(path.parent.glob("*.tmp"))
+
+
+def test_preds_reproduce_the_pooled_subset_rho_without_a_rescore(rig):
+    """The point of persisting preds: any subset rho is a re-analysis of this file."""
+    from explore_persona_space.experiments.issue_1739 import arms
+
+    assert _run(rig["argv"](["evil"], "--legs", "1")) == 0
+    rows = [
+        json.loads(x)
+        for x in (rig["out_root"] / "evil" / "preds" / f"bareq_leg1_preds.{bqs.BARE_KIND}.jsonl")
+        .read_text()
+        .splitlines()
+        if x.strip()
+    ]
+    arm = ROSTER[0]
+    sel = [r for r in rows if r["arm"] == arm and r["variant"] == bqs.BARE_KIND]
+    for subset, keep in (
+        ("pooled", lambda r: True),
+        ("multi_turn_only", lambda r: r["multi_turn"]),
+        ("single_turn_only", lambda r: not r["multi_turn"]),
+    ):
+        sub = [r for r in sel if keep(r)]
+        rho_recomputed = float(
+            arms.spearman_rows(
+                np.asarray([r["score"] for r in sub])[None],
+                np.asarray([r["dv"] for r in sub], dtype=float),
+            )[0]
+        )
+        published = [
+            r
+            for r in _summary(rig, "evil")["transfer_rows"]
+            if r["leg"] == "1" and r["arm"] == arm and r["subset"] == subset
+        ]
+        assert len(published) == 1, (subset, len(published))
+        assert rho_recomputed == pytest.approx(published[0]["rho_frozen"], abs=1e-9)
+
+
+def test_leg2_persists_preds_and_a_shuffled_map_seed_band(rig):
+    assert _run(rig["argv"](["evil"], "--legs", "2")) == 0
+    path = rig["out_root"] / "evil" / "preds" / f"bareq_leg2_preds.{bqs.WCRUNG}.jsonl"
+    rows = [json.loads(x) for x in path.read_text().splitlines() if x.strip()]
+    assert rows and {r["leg"] for r in rows} == {"2"}
+
+    bands = _summary(rig, "evil")["meta"]["leg2_shuffled_map_seed_bands"]
+    band = next(b for b in bands if b.get("arm") == "arm13_shuffled_map")
+    assert band["ran"] is True
+    assert band["n_seeds"] >= 2
+    assert band["rho_min"] <= band["rho_mean"] <= band["rho_max"]
+    assert len({s["shuffle_seed"] for s in band["per_seed"]}) == band["n_seeds"]
+    assert "ONE shuffle draw" in band["semantics"]
+
+
+def test_leg2_own_eval_block_carries_pooled_only(rig):
+    """multi/single-turn is a wildchat property — it must not be faked elsewhere."""
+    bank = json.loads((rig["out_root"] / bqs.QUERY_MANIFEST).read_text())
+    for i, cid in enumerate(rig["eval_ids"]):
+        bank["queries"][i % N_QUERIES]["context_ids"].append(cid)
+    (rig["out_root"] / bqs.QUERY_MANIFEST).write_text(json.dumps(bank))
+
+    assert _run(rig["argv"](["evil"], "--legs", "2")) == 0
+    blocks = {b["name"]: b for b in _summary(rig, "evil")["meta"]["leg2_eval_blocks"]}
+    own = blocks["evil_own_eval_rungs"]
+    assert own["subsets"] == ["pooled"]
+    assert "wildchat-rung property" in own["subset_note"]
+    rows = [
+        r
+        for r in _summary(rig, "evil")["transfer_rows"]
+        if r.get("eval_block") == "evil_own_eval_rungs"
+    ]
+    assert rows and {r["subset"] for r in rows} == {"pooled"}
+    assert {r["eval_rung"] for r in rows} == {"evil_ood"}  # rung label, not block name
 
 
 def test_coverage_counts_unused_bare_rows(rig):

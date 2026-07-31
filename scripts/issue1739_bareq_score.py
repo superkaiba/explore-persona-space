@@ -34,7 +34,19 @@ stores were captured in different padded batches.
 The constant-prefix arm is a built-in FAIL-LOUD null: a bare render's prefix
 position is a content-independent vector, so every score built on it is
 constant and its rho is degenerate. A non-degenerate read there is a
-capture/indexing bug, not a finding.
+capture/indexing bug, not a finding. Its arm sweep RUNS by default
+(``--force-null-sweep``), and a small-but-CI-significant null rho is routed
+through :func:`null_anomaly_diagnostic` — a permuted-DV shuffle band plus two
+mechanism tests (between-capture-source offset, capture batch order) whose
+verdict vocabulary keeps ``unexplained`` for genuine indexing defects; no
+benign label is ever forced.
+
+Every eval column is emitted in THREE labeled subsets in ONE pass — ``pooled``
+/ ``multi_turn_only`` / ``single_turn_only`` — and per-(arm, context)
+frozen-layer predictions are persisted to ``preds/*.jsonl``, so any later
+subset read is a re-analysis rather than another re-score. The turn split is
+DERIVED from the reps (does a context's prefix match the bare template head?)
+because the capture leg's own ``kind`` field does not survive into the store.
 
 Every piece of scoring math and every convention is IMPORTED from the reviewed
 production modules — this file contains no fit, no metric, and no fold logic of
@@ -75,6 +87,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -124,6 +137,15 @@ LEG2_BEHAVIORS = ("evil",)
 
 SENTINEL_NAME = "bareq_score_done.json"
 FAILURES_NAME = "bareq_score_failures.json"
+
+# The three labeled eval subsets emitted in ONE scoring pass. 'pooled' is the
+# headline; 'multi_turn_only' is the subset where bare actually differs from the
+# original render; 'single_turn_only' is the anchor where the two coincide.
+SUBSETS = ("pooled", "multi_turn_only", "single_turn_only")
+# Mirror of capture.DEFAULT_CAPTURE_BATCH_SIZE (env-overridable there), used to
+# DERIVE a capture batch slot from a store row index in the batch-order
+# diagnostic. Overridable per run; the row index itself is exact.
+DEFAULT_CAPTURE_BATCH_SIZE = 8
 
 DEFAULT_OUT_ROOT = Path("eval_results/issue_1739/bareq_map")
 DEFAULT_MAIN_ROOT = Path("eval_results/issue_1739")
@@ -331,6 +353,22 @@ def _cos_to_reference(block, reference) -> object:
         return np.where(den > 0, num / np.where(den > 0, den, 1.0), np.nan)
 
 
+def _cos_rowwise(a, b) -> object:
+    """Per-(layer, row) cosine between two (Ly, n, d) blocks — a row-paired read.
+
+    Distinct from :func:`_cos_to_reference`, which compares every row against ONE
+    (Ly, d) reference vector; here row i of ``a`` is compared to row i of ``b``.
+    """
+    import numpy as np
+
+    a = np.asarray(a, dtype=np.float64)
+    b = np.asarray(b, dtype=np.float64)
+    num = np.einsum("lnd,lnd->ln", a, b, optimize=True)
+    den = np.linalg.norm(a, axis=2) * np.linalg.norm(b, axis=2)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return np.where(den > 0, num / np.where(den > 0, den, 1.0), np.nan)
+
+
 def _two_bar_verdict(cos, *, label: str) -> dict:
     """The bf16 two-bar equivalence verdict over a (Ly, n) cosine block.
 
@@ -494,8 +532,13 @@ def _null_probe(bare_prefix_block, dv_ev, rb, *, seed: int, draw: int, n_boot: i
         idx = arms.make_bootstrap_idx(len(dv), n_boot=n_boot, seed=seed + 100 * draw)
         draws = arms.bootstrap_rhos(scores, dv, idx)
         for li in range(scores.shape[0]):
-            lo, hi = (float(np.nanquantile(draws[li], q)) for q in (0.025, 0.975))
-            if np.isfinite(lo) and np.isfinite(hi) and (lo > 0 or hi < 0):
+            # A zero-variance layer yields all-NaN draws; quantiling that is a
+            # no-op warning, so skip those layers rather than emitting it.
+            layer_draws = draws[li][np.isfinite(draws[li])]
+            if layer_draws.size == 0:
+                continue
+            lo, hi = (float(np.quantile(layer_draws, q)) for q in (0.025, 0.975))
+            if lo > 0 or hi < 0:
                 ci_excludes_zero = True
                 break
     degenerate = bool(constancy.get("constant")) and not ci_excludes_zero
@@ -509,6 +552,510 @@ def _null_probe(bare_prefix_block, dv_ev, rb, *, seed: int, draw: int, n_boot: i
             "the bare-render prefix position is a CONSTANT vector across rows, so this arm is a "
             "built-in null: it must read ~chance (NaN / CI bracketing 0). A non-chance read is a "
             "capture/indexing bug, not a finding."
+        ),
+    }
+
+
+# ---------------------------------------------------------------------------
+# multi-turn / single-turn subset split + per-context predictions
+# ---------------------------------------------------------------------------
+
+
+def _per_row_bare_prefix_match(z_prefix_ev, bare_prefix_const):
+    """Per-row bool: does this context's prefix rep match the bare template head?
+
+    A row that MATCHES rendered with no conversational prefix, i.e. it is
+    SINGLE-TURN and its committed rep already is its bare rep. A row that does
+    NOT match carried a real conversation prefix (MULTI-TURN). Judged with the
+    same bf16 two-bar recipe as the reuse gate, per row.
+
+    This is the primary ``multi_turn`` source because the capture leg's own
+    ``kind`` field (``leg1_wcrung_multi_turn`` / ``..._single_turn``) does NOT
+    survive into the store: ``capture.capture_rollout_files`` builds row_index
+    meta from a fixed key set that drops it (verified against capture.py). It
+    also measures the property that actually matters — "did this context have a
+    prefix" — rather than which rows a given capture invocation happened to
+    re-capture, so it holds under ``--include-single-turn`` too.
+    """
+    import numpy as np
+
+    cos = np.asarray(_cos_to_reference(z_prefix_ev, bare_prefix_const), dtype=np.float64)
+    n_early = min(N_EARLY_LAYERS, cos.shape[0])
+    early_ok = np.nanmin(cos[:n_early], axis=0) >= EARLY_LAYER_COS_MIN
+    flat_ok = np.nanmin(cos, axis=0) >= FLAT_COS_MIN
+    return np.asarray(early_ok & flat_ok, dtype=bool)
+
+
+def classify_multi_turn(z_prefix_ev, bare_prefix_const, substituted_rows, n_eval: int) -> tuple:
+    """``(multi_turn bool array, digest)`` for the eval row set.
+
+    Primary signal: the per-row prefix-match test above. Cross-checked against
+    SUBSTITUTION MEMBERSHIP (a re-captured row is multi-turn under the capture
+    leg's ``--multi-turn-only`` default) — agreement is REPORTED, never assumed,
+    because the two disagree by design once the capture runs
+    ``--include-single-turn``.
+    """
+    import numpy as np
+
+    matched = _per_row_bare_prefix_match(z_prefix_ev, bare_prefix_const)
+    multi_turn = ~matched
+    substituted = np.zeros(n_eval, dtype=bool)
+    substituted[np.asarray(substituted_rows, dtype=np.int64)] = True
+    agree = int((multi_turn == substituted).sum())
+    return multi_turn, {
+        "source": "per-row prefix-vs-bare-constant-head match (two-bar bf16 recipe)",
+        "why_not_the_capture_kind_field": (
+            "capture.capture_rollout_files drops 'kind' (and row_id / query_id / multi_turn) from "
+            "row_index meta, so the store carries no turn label; and the wcrung rows file that "
+            "does carry prefix_turns is HF-shard-only. The prefix-match test measures the "
+            "underlying property directly."
+        ),
+        "n_multi_turn": int(multi_turn.sum()),
+        "n_single_turn": int((~multi_turn).sum()),
+        "n_substituted": int(substituted.sum()),
+        "n_agree_with_substitution": agree,
+        "frac_agree_with_substitution": float(agree / max(n_eval, 1)),
+        "note": (
+            "agreement is expected to be ~1.0 under the capture leg's --multi-turn-only default "
+            "(re-captured == multi-turn) and to DIVERGE under --include-single-turn; the "
+            "prefix-match test is authoritative either way"
+        ),
+    }
+
+
+def subset_masks(multi_turn) -> dict:
+    """The three labeled eval subsets: pooled / multi_turn_only / single_turn_only."""
+    import numpy as np
+
+    mt = np.asarray(multi_turn, dtype=bool)
+    return {
+        "pooled": np.ones(mt.shape[0], dtype=bool),
+        "multi_turn_only": mt,
+        "single_turn_only": ~mt,
+    }
+
+
+def single_turn_anchor(z_bare_raw, z_full, single_mask, substituted_mask) -> dict:
+    """Sanity anchor: on SINGLE-TURN contexts, bare == the original render.
+
+    Two regimes, distinguished honestly rather than collapsed:
+
+    * ``measured`` — a single-turn context that ALSO has a bare capture row
+      (the capture ran ``--include-single-turn``) gives a real bare-vs-original
+      comparison; the reps must match under the two-bar recipe.
+    * ``by-construction`` — under the capture leg's ``--multi-turn-only``
+      default no single-turn row is re-captured, so this scorer leaves those
+      columns at their committed values. The bare-vs-full contrast on that
+      subset is then identically zero BY CONSTRUCTION, which is a statement
+      about the wiring, not evidence about the renders. The evidence for those
+      rows is the reuse gate (their prefix matches the bare template head).
+    """
+    import numpy as np
+
+    both = np.asarray(single_mask, dtype=bool) & np.asarray(substituted_mask, dtype=bool)
+    n_both = int(both.sum())
+    if n_both == 0:
+        return {
+            "mode": "by-construction",
+            "n_measured": 0,
+            "passed": None,
+            "note": (
+                "no single-turn context was re-captured (capture --multi-turn-only default), so "
+                "single-turn columns keep their committed reps and the bare-vs-full contrast is "
+                "identically zero by construction — not an independent measurement. The "
+                "independent evidence for these rows is coverage.reuse_licence_check."
+            ),
+        }
+    bare = np.asarray(z_bare_raw, dtype=np.float64)[:, both, :]
+    full = np.asarray(z_full, dtype=np.float64)[:, both, :]
+    verdict = _two_bar_verdict(
+        _cos_rowwise(bare, full), label="single-turn bare vs original render"
+    )
+    max_abs = float(np.max(np.abs(bare - full)))
+    return {
+        "mode": "measured",
+        "n_measured": n_both,
+        "max_abs_diff": max_abs,
+        "exact_match": bool(max_abs == 0.0),
+        "two_bar": verdict,
+        "passed": bool(max_abs == 0.0 or verdict["passed"]),
+        "note": (
+            "single-turn contexts that WERE re-captured: their bare rep must reproduce the "
+            "original render (bare == original there by definition)"
+        ),
+    }
+
+
+def preds_rows(
+    scores_ev, dv_ev, ctx_ids, frozen, multi_turn, *, provenance: dict, layers: tuple
+) -> list[dict]:
+    """Per-(arm, context) frozen-layer predictions — the subset re-analysis input.
+
+    Persisting these is what makes any later subset read (multi-turn-only,
+    per-rung, per-quantile) a pure re-analysis instead of another re-score;
+    arm-level rho rows alone cannot support it.
+    """
+    import numpy as np
+
+    dv = np.asarray(dv_ev, dtype=np.float64)
+    mt = np.asarray(multi_turn, dtype=bool)
+    out: list[dict] = []
+    for slug, sc in sorted(scores_ev.items()):
+        if slug not in frozen:
+            continue
+        sc = np.asarray(sc, dtype=np.float64)
+        fl = min(int(frozen[slug]), sc.shape[0] - 1)
+        row_scores = sc[fl]
+        out += [
+            {
+                **provenance,
+                "arm": slug,
+                "context_id": str(ctx_ids[i]),
+                "dv": float(dv[i]),
+                "score": float(row_scores[i]),
+                "multi_turn": bool(mt[i]),
+                "frozen_layer_idx": int(fl),
+                "layer": int(layers[fl]) if layers and sc.shape[0] > 1 else None,
+            }
+            for i in range(len(ctx_ids))
+        ]
+    return out
+
+
+def write_preds_jsonl(path: Path, rows: list[dict]) -> Path:
+    """Write per-context prediction rows as JSONL, atomically, ONE FILE PER UNIT.
+
+    Truncate-and-replace rather than append: the file is keyed per unit
+    (variant / eval block), so re-running a unit overwrites exactly its own rows
+    instead of appending duplicates, and a resumed run leaves an
+    already-written unit's file untouched.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    with tmp.open("w", encoding="utf-8") as fh:
+        for row in rows:
+            fh.write(json.dumps(row, sort_keys=True) + "\n")
+        fh.flush()
+    os.replace(tmp, path)
+    return path
+
+
+# ---------------------------------------------------------------------------
+# null-anomaly diagnostic: shuffle band + mechanism tests
+# ---------------------------------------------------------------------------
+
+
+def shuffle_band(scores, dv_ev, *, n_seeds: int, base_seed: int) -> dict:
+    """Permuted-DV |rho| band — the sampling distribution under no association.
+
+    The observed null rho can be tiny AND still have a bootstrap CI excluding
+    zero at large n (a CI-width vs effect-size mismatch). Permuting the DV
+    against rows destroys any real association while preserving both marginal
+    distributions, so the resulting |rho| spread is the honest reference band:
+    an observed |rho| inside it is not evidence of association, whatever the CI
+    says.
+    """
+    import numpy as np
+
+    from explore_persona_space.experiments.issue_1739 import arms
+
+    scores = np.asarray(scores, dtype=np.float64)
+    dv = np.asarray(dv_ev, dtype=np.float64)
+    per_seed: list[float] = []
+    all_abs: list[float] = []
+    for s in range(int(n_seeds)):
+        rng = np.random.default_rng([1739, 91, int(base_seed), s])
+        rho = arms.spearman_rows(scores, dv[rng.permutation(dv.shape[0])])
+        finite = np.asarray([r for r in rho if np.isfinite(r)], dtype=np.float64)
+        if finite.size:
+            per_seed.append(float(np.max(np.abs(finite))))
+            all_abs.extend(float(x) for x in np.abs(finite))
+    if not all_abs:
+        return {"n_seeds": int(n_seeds), "ran": False, "reason": "no finite permuted rho"}
+    arr = np.asarray(all_abs, dtype=np.float64)
+    return {
+        "ran": True,
+        "n_seeds": int(n_seeds),
+        "n_draws": int(arr.size),
+        "abs_rho_p50": float(np.quantile(arr, 0.50)),
+        "abs_rho_p95": float(np.quantile(arr, 0.95)),
+        "abs_rho_p97_5": float(np.quantile(arr, 0.975)),
+        "abs_rho_max": float(arr.max()),
+        "max_abs_rho_per_seed": per_seed,
+        "semantics": (
+            "|rho| over (seed x layer) with the DV row-permuted; the band is the no-association "
+            "reference for the observed null rho"
+        ),
+    }
+
+
+def batch_order_diagnostic(bare_prefix_block, store_rows, dv_ev, eval_rows, *, batch_size: int):
+    """Does capture BATCH ORDER structure the near-constant prefix reps?
+
+    Two reads, both on the substituted rows (the only ones with a bare store
+    index, i.e. a known capture position): (a) each row's deviation from row 0
+    vs its store row index and vs its derived batch slot
+    (``store_row // batch_size`` — capture batches are consecutive slices of the
+    sorted row order); (b) the DV's autocorrelation along that same order. If
+    the reps drift with batch position AND the DV is ordered, the pooled null
+    rho can be a batch-order artifact rather than an indexing defect.
+    """
+    import numpy as np
+
+    from explore_persona_space.experiments.issue_1739 import arms
+
+    block = np.asarray(bare_prefix_block, dtype=np.float64)
+    store_rows = np.asarray(store_rows, dtype=np.int64)
+    eval_rows = np.asarray(eval_rows, dtype=np.int64)
+    if store_rows.size < 3:
+        return {"ran": False, "reason": f"too few positioned rows ({store_rows.size})"}
+    dev = np.linalg.norm(block - block[:, :1, :], axis=2).mean(axis=0)  # (n_positioned,)
+    slot = store_rows // max(int(batch_size), 1)
+    dv = np.asarray(dv_ev, dtype=np.float64)[eval_rows]
+    order = np.argsort(store_rows, kind="stable")
+    dv_ordered = dv[order]
+    return {
+        "ran": True,
+        "n_positioned_rows": int(store_rows.size),
+        "batch_size_assumed": int(batch_size),
+        "rho_deviation_vs_store_row_index": float(
+            arms.spearman_rows(dev[None], store_rows.astype(float))[0]
+        ),
+        "rho_deviation_vs_batch_slot": float(arms.spearman_rows(dev[None], slot.astype(float))[0]),
+        "rho_dv_vs_store_row_index": float(
+            arms.spearman_rows(dv[None], store_rows.astype(float))[0]
+        ),
+        "dv_lag1_autocorr_along_capture_order": float(
+            arms.spearman_rows(dv_ordered[None, :-1], dv_ordered[1:])[0]
+        )
+        if dv_ordered.size > 2
+        else None,
+        "deviation_from_row0_mean": float(dev.mean()),
+        "deviation_from_row0_max": float(dev.max()),
+        "semantics": (
+            "batch_size is DERIVED (capture.DEFAULT_CAPTURE_BATCH_SIZE mirror, overridable) — the "
+            "row index is exact, the slot is an inference from it"
+        ),
+    }
+
+
+def source_split_diagnostic(scores, dv_ev, multi_turn, substituted_mask) -> dict:
+    """Is the pooled null rho a BETWEEN-CAPTURE-SOURCE offset, not an association?
+
+    The null block is assembled from TWO captures: substituted rows carry the
+    bareq store's template-head rep, reused rows carry the wcrung store's. Both
+    are "the constant head", but from different padded batches, so they differ
+    at the bf16 jitter scale — which makes the block BIMODAL along exactly the
+    substituted/reused (= multi/single-turn) split. If that split also
+    correlates with the DV, a tiny pooled rho follows with no indexing defect
+    anywhere. The decisive read is the WITHIN-GROUP null rho: if it collapses
+    toward zero while the pooled rho does not, the pooled value was the
+    between-group offset.
+    """
+    import numpy as np
+
+    from explore_persona_space.experiments.issue_1739 import arms
+
+    scores = np.asarray(scores, dtype=np.float64)
+    dv = np.asarray(dv_ev, dtype=np.float64)
+    sub = np.asarray(substituted_mask, dtype=bool)
+    mt = np.asarray(multi_turn, dtype=bool)
+
+    def _max_abs(mask):
+        if int(mask.sum()) < 3:
+            return None
+        rho = arms.spearman_rows(scores[:, mask], dv[mask])
+        finite = [float(r) for r in rho if np.isfinite(r)]
+        return float(max(abs(x) for x in finite)) if finite else None
+
+    pooled = _max_abs(np.ones(dv.shape[0], dtype=bool))
+    within = {"substituted": _max_abs(sub), "reused": _max_abs(~sub)}
+    within_vals = [v for v in within.values() if v is not None]
+    return {
+        "ran": True,
+        "rho_dv_vs_multi_turn_indicator": float(arms.spearman_rows(mt.astype(float)[None], dv)[0]),
+        "rho_dv_vs_substituted_indicator": float(
+            arms.spearman_rows(sub.astype(float)[None], dv)[0]
+        ),
+        "max_abs_null_rho_pooled": pooled,
+        "max_abs_null_rho_within_group": within,
+        "collapses_within_group": bool(
+            pooled is not None and within_vals and max(within_vals) < 0.5 * pooled
+        ),
+        "semantics": (
+            "substituted rows' prefix reps come from the bareq capture, reused rows' from the "
+            "wcrung capture — a two-source offset at bf16 jitter scale, aligned with the "
+            "multi/single-turn split"
+        ),
+    }
+
+
+def null_anomaly_diagnostic(
+    bare_prefix_block,
+    dv_ev,
+    rb,
+    multi_turn,
+    substituted_mask,
+    store_rows,
+    eval_rows,
+    *,
+    n_seeds: int,
+    base_seed: int,
+    batch_size: int,
+) -> dict:
+    """Shuffle band + mechanism tests + a verdict that never forces a benign label.
+
+    Verdict ladder (the caller's three labels, plus one this data motivated):
+    ``shuffle-band-consistent`` (observed |rho| inside the permuted-DV band, so
+    the CI's exclusion of zero is a calibration artifact) ->
+    ``capture-source-split-structure`` (the pooled rho is a between-capture
+    offset; it collapses within group) -> ``batch-order-structure`` ->
+    ``unexplained``. A real indexing defect lands in ``unexplained`` by design.
+    """
+    import numpy as np
+
+    from explore_persona_space.experiments.issue_1739 import arms
+
+    block = np.asarray(bare_prefix_block, dtype=np.float64)
+    scores = np.einsum("lnd,ld->ln", block, np.asarray(rb, dtype=np.float64), optimize=True)
+    dv = np.asarray(dv_ev, dtype=np.float64)
+    rho = arms.spearman_rows(scores, dv)
+    finite = [float(r) for r in rho if np.isfinite(r)]
+    observed = float(max(abs(x) for x in finite)) if finite else None
+
+    band = shuffle_band(scores, dv, n_seeds=n_seeds, base_seed=base_seed)
+    split = source_split_diagnostic(scores, dv, multi_turn, substituted_mask)
+    order = batch_order_diagnostic(
+        block[:, np.asarray(eval_rows, dtype=np.int64), :] if len(eval_rows) else block[:, :0, :],
+        store_rows,
+        dv,
+        eval_rows,
+        batch_size=batch_size,
+    )
+
+    # An EXACTLY constant rep yields zero-variance scores: every rho (observed and
+    # permuted) is undefined, so no band exists. That is the cleanest possible
+    # null, not a mystery — label it as such rather than letting it fall through
+    # to 'unexplained', which is reserved for real unexplained structure.
+    no_variance = observed is None
+    inside = bool(observed is not None and band.get("ran") and observed <= band["abs_rho_p97_5"])
+    order_structured = bool(
+        order.get("ran")
+        and max(
+            abs(order.get("rho_deviation_vs_store_row_index") or 0.0),
+            abs(order.get("rho_deviation_vs_batch_slot") or 0.0),
+        )
+        >= 0.2
+        and abs(order.get("rho_dv_vs_store_row_index") or 0.0) >= 0.1
+    )
+    if no_variance:
+        verdict = "degenerate-no-variance"
+    elif inside:
+        verdict = "shuffle-band-consistent"
+    elif split.get("collapses_within_group"):
+        verdict = "capture-source-split-structure"
+    elif order_structured:
+        verdict = "batch-order-structure"
+    else:
+        verdict = "unexplained"
+    return {
+        "observed_max_abs_rho": observed,
+        "observed_rho_per_layer": [float(r) for r in rho],
+        "shuffle_band": band,
+        "inside_shuffle_band": inside,
+        "capture_source_split": split,
+        "batch_order": order,
+        "batch_order_structured": order_structured,
+        "verdict": verdict,
+        "verdict_vocabulary": [
+            "degenerate-no-variance",
+            "shuffle-band-consistent",
+            "capture-source-split-structure",
+            "batch-order-structure",
+            "unexplained",
+        ],
+        "note": (
+            "a genuine indexing defect stays 'unexplained' — no benign label is ever forced. "
+            "'shuffle-band-consistent' means the observed |rho| is within what DV permutation "
+            "produces, so a bootstrap CI excluding zero is a calibration read, not an effect."
+        ),
+    }
+
+
+def shuffled_map_seed_band(
+    args, data, cell, block, frozen, *, n_seeds: int, roster_slug: str = "arm13_shuffled_map"
+) -> dict:
+    """Shuffle-SEED band for the shuffled-map control (its committed row is ONE draw).
+
+    ``arms.run_cell_multi`` derives arm-13's control weights from
+    ``CellData.w_shuffled`` when set (else one draw at ``cell.seed``), so
+    re-running the arm across seeds gives the within-draw spread that says
+    whether a single nonzero control rho is signal or draw variance.
+    """
+    import dataclasses
+
+    import numpy as np
+
+    from explore_persona_space.experiments.issue_1739 import arms, fits
+
+    if data.mapfit is None or getattr(data.mapfit, "w", None) is None:
+        return {
+            "ran": False,
+            "arm": roster_slug,
+            "eval_rung": block["name"],
+            "reason": f"map kind {getattr(data.mapfit, 'kind', None)!r} has no weight tensor to shuffle",
+        }
+    rhos: list[float] = []
+    per_seed: list[dict] = []
+    for s in range(int(n_seeds)):
+        d_s = dataclasses.replace(
+            data, w_shuffled=fits.shuffled_map_weights(data.mapfit.w, seed=int(args.seed) + s)
+        )
+        scores, _skips = arms.run_transfer_cell(
+            d_s,
+            cell,
+            block["z"],
+            block["dv"],
+            za_ev=block["za"],
+            arms=[roster_slug],
+            device=args.device,
+            ridge_folds=(0,),
+        )
+        sc = scores.get(roster_slug)
+        if sc is None or roster_slug not in frozen:
+            continue
+        sc = np.asarray(sc, dtype=np.float64)
+        fl = min(int(frozen[roster_slug]), sc.shape[0] - 1)
+        rho = float(arms.spearman_rows(sc[fl][None], np.asarray(block["dv"], dtype=np.float64))[0])
+        rhos.append(rho)
+        per_seed.append({"shuffle_seed": int(args.seed) + s, "rho_frozen": rho})
+    if not rhos:
+        return {
+            "ran": False,
+            "arm": roster_slug,
+            "eval_rung": block["name"],
+            "reason": (
+                f"{roster_slug} is not in this run's roster (or has no frozen layer), so its "
+                "across-draw band is not computable here"
+            ),
+        }
+    arr = np.asarray(rhos, dtype=np.float64)
+    return {
+        "ran": True,
+        "arm": roster_slug,
+        "eval_rung": block["name"],
+        "n_seeds": len(rhos),
+        "per_seed": per_seed,
+        "rho_mean": float(arr.mean()),
+        "rho_min": float(arr.min()),
+        "rho_max": float(arr.max()),
+        "abs_rho_max": float(np.abs(arr).max()),
+        "band_p2_5": float(np.quantile(arr, 0.025)),
+        "band_p97_5": float(np.quantile(arr, 0.975)),
+        "semantics": (
+            "the committed control row is ONE shuffle draw; this band is the across-draw spread, "
+            "so a committed rho inside it is within-draw variance rather than a control failure"
         ),
     }
 
@@ -1022,12 +1569,44 @@ def score_leg1(args, behavior: str) -> dict:  # noqa: C901 — one linear per-be
             bare_prefix_const,
             mode=args.reuse_check,
         )
+        n_ev = len(tbl_ev.ctx_order)
+        multi_turn, mt_digest = classify_multi_turn(
+            tbl_ev.z_by_variant[BARE_NULL_KIND], bare_prefix_const, sub_rows, n_ev
+        )
+        masks = subset_masks(multi_turn)
+        sub_mask = np.zeros(n_ev, dtype=bool)
+        sub_mask[np.asarray(sub_rows, dtype=np.int64)] = True
+        anchor = single_turn_anchor(
+            z_bare_raw, tbl_ev.z_by_variant[variant], masks["single_turn_only"], sub_mask
+        )
+        # Mechanism diagnosis for the null's small-but-CI-significant rho.
+        store_rows_for_eval = np.asarray(
+            [prefix_key_pos[c] for c in tbl_ev.ctx_order if c in prefix_key_pos], dtype=np.int64
+        )
+        eval_rows_positioned = np.asarray(
+            [i for i, c in enumerate(tbl_ev.ctx_order) if c in prefix_key_pos], dtype=np.int64
+        )
+        nulls[variant]["anomaly_diagnostic"] = null_anomaly_diagnostic(
+            z_null_raw,
+            np.asarray(tbl_ev.dv, dtype=np.float64),
+            rb,
+            multi_turn,
+            sub_mask,
+            store_rows_for_eval,
+            eval_rows_positioned,
+            n_seeds=int(args.null_shuffle_seeds),
+            base_seed=int(args.seed),
+            batch_size=int(args.capture_batch_size),
+        )
         coverage[variant] = {
-            "n_eval_contexts": len(tbl_ev.ctx_order),
+            "n_eval_contexts": n_ev,
             "n_bare_substituted": int(len(sub_rows)),
             "n_reused_from_wcrung_store": int(len(reused_rows)),
             "n_bare_rows_unused": int(n_leg1_rows - len(sub_rows)),
             "reuse_licence_check": reuse,
+            "multi_turn_classification": mt_digest,
+            "subset_sizes": {k: int(m.sum()) for k, m in masks.items()},
+            "single_turn_anchor": anchor,
             "note": (
                 "substituted rows took their BARE capture rep; reused rows kept their committed "
                 "wildchat-rung rep, which for a single-turn context IS its bare rep (the capture "
@@ -1043,12 +1622,17 @@ def score_leg1(args, behavior: str) -> dict:  # noqa: C901 — one linear per-be
         # whitening + map refit + a full transfer solve for guaranteed-NaN rows).
         # When constancy FAILS the sweep DOES run — the arms are then the
         # diagnostic for what varies (the ANOMALY branch).
-        if variant == BARE_NULL_KIND and nulls[variant]["constancy"].get("constant"):
+        if (
+            variant == BARE_NULL_KIND
+            and not args.force_null_sweep
+            and nulls[variant]["constancy"].get("constant")
+        ):
             reason = (
                 "constant-prefix NULL variant: the bare render's prefix rep is verified CONSTANT "
                 "across rows, so every arm score is zero-variance and rho is undefined by "
                 "construction. The arm sweep is skipped; null_probe carries the verdict. A "
-                "constancy FAILURE would have run the sweep as the anomaly diagnostic."
+                "constancy FAILURE would have run the sweep as the anomaly diagnostic. "
+                "(--force-null-sweep, ON by default, runs the sweep regardless.)"
             )
             skips_all.append({"variant": variant, "arm": "*", "reason": reason})
             frozen_source[variant] = "n/a — degenerate null variant (arm sweep skipped)"
@@ -1129,23 +1713,55 @@ def score_leg1(args, behavior: str) -> dict:  # noqa: C901 — one linear per-be
             device=args.device,
             ridge_folds=(0,),  # the reverse (train-block) fold is discarded
         )
-        rows_u, ev_skips = arms.evaluate_transfer(
-            scores_ev,
-            tbl_ev.dv,
-            np.asarray(tbl_ev.row_rungs),
-            frozen,
-            provenance=prov,
-            cell=cell,
-            layers=tuple(layers),
-            n_boot=n_boot,
-            min_n=int(args.min_n),
-        )
-        skips_u += ev_skips
+        # Three LABELED subsets in the SAME pass — pooled plus the multi-turn and
+        # single-turn splits — so no subset read ever needs another re-score.
+        # Each is the reviewed evaluate_transfer over a masked slice (a slice, not
+        # a row loop), so rho/CI/min_n semantics are identical across subsets.
+        dv_ev = np.asarray(tbl_ev.dv, dtype=np.float64)
+        rungs_ev = np.asarray(tbl_ev.row_rungs)
+        rows_u: list[dict] = []
+        for subset, mask in masks.items():
+            if int(mask.sum()) < int(args.min_n):
+                skips_u.append(
+                    {
+                        "variant": variant,
+                        "subset": subset,
+                        "arm": "*",
+                        "reason": f"subset below min_n ({int(mask.sum())} < {args.min_n})",
+                    }
+                )
+                continue
+            sub_rows_out, sub_skips = arms.evaluate_transfer(
+                {slug: np.asarray(sc, dtype=np.float64)[:, mask] for slug, sc in scores_ev.items()},
+                dv_ev[mask],
+                rungs_ev[mask],
+                frozen,
+                provenance={**prov, "subset": subset},
+                cell=cell,
+                layers=tuple(layers),
+                n_boot=n_boot,
+                min_n=int(args.min_n),
+            )
+            rows_u += sub_rows_out
+            skips_u += [{**s, "subset": subset} for s in sub_skips]
         skips_u += [
             {"arm": slug, "reason": reason, "variant": variant}
             for slug, reason in sorted(arm_skips.items())
         ]
-        dv_ev = np.asarray(tbl_ev.dv, dtype=np.float64)
+
+        # Per-context frozen-layer predictions: the durable subset-re-analysis input.
+        write_preds_jsonl(
+            args.out_root / behavior / "preds" / f"bareq_leg1_preds.{variant}.jsonl",
+            preds_rows(
+                scores_ev,
+                dv_ev,
+                tbl_ev.ctx_order,
+                frozen,
+                multi_turn,
+                provenance={**prov, "n_eval_pooled": int(dv_ev.size)},
+                layers=tuple(layers),
+            ),
+        )
         per_layer_u = [
             {
                 **prov,
@@ -1290,6 +1906,13 @@ def _leg2_eval_blocks(args, behavior, paths, layers, dim, bare_arrays, by_leg, c
         z_bare, sub, reused = substitute_bare_eval_reps(
             tbl_wc.z_by_variant[BARE_KIND], tbl_wc.ctx_order, block, key_pos
         )
+        prefix_block, _prefix_pos = _bare_block(bare_arrays, BARE_NULL_KIND, layers, by_leg["1"])
+        mt_wc, mt_wc_digest = classify_multi_turn(
+            tbl_wc.z_by_variant[BARE_NULL_KIND],
+            prefix_block[:, 0, :],
+            sub,
+            len(tbl_wc.ctx_order),
+        )
         blocks.append(
             {
                 "name": WCRUNG,
@@ -1298,6 +1921,10 @@ def _leg2_eval_blocks(args, behavior, paths, layers, dim, bare_arrays, by_leg, c
                 "dv": np.asarray(tbl_wc.dv, dtype=np.float64),
                 "rungs": [WCRUNG] * len(tbl_wc.ctx_order),
                 "n": len(tbl_wc.ctx_order),
+                "ctx_ids": list(tbl_wc.ctx_order),
+                "multi_turn": mt_wc,
+                "subsets": list(SUBSETS),
+                "multi_turn_classification": mt_wc_digest,
                 "n_bare_substituted": int(len(sub)),
                 "n_reused_from_wcrung_store": int(len(reused)),
             }
@@ -1360,6 +1987,16 @@ def _leg2_eval_blocks(args, behavior, paths, layers, dim, bare_arrays, by_leg, c
             "dv": np.asarray(tbl_own.dv[keep], dtype=np.float64),
             "rungs": [tbl_own.row_rungs[i] for i in keep],
             "n": len(keep),
+            "ctx_ids": [tbl_own.ctx_order[i] for i in keep],
+            # This behavior's OWN contexts, not wildchat conversations — the
+            # multi/single-turn split is a wildchat-rung property and does not
+            # apply here, so only the pooled subset is meaningful.
+            "multi_turn": np.zeros(len(keep), dtype=bool),
+            "subsets": ["pooled"],
+            "subset_note": (
+                "multi/single-turn is a wildchat-rung property; this block is the behavior's own "
+                "eval rungs, so only 'pooled' applies"
+            ),
             "n_eval_split_contexts": len(tbl_own.ctx_order),
         }
     )
@@ -1478,6 +2115,7 @@ def score_leg2(args, behavior: str) -> dict:  # noqa: C901 — one linear per-be
     )
     rows_all: list[dict] = []
     per_layer_all: list[dict] = []
+    shuffle_bands: list[dict] = []
     prov_base = {
         "leg": "2",
         "behavior": behavior,
@@ -1503,24 +2141,59 @@ def score_leg2(args, behavior: str) -> dict:  # noqa: C901 — one linear per-be
             device=args.device,
             ridge_folds=(0,),
         )
-        prov = {**prov_base, "eval_rung": block["name"]}
-        rows_u, ev_skips = arms.evaluate_transfer(
-            scores_ev,
-            block["dv"],
-            np.asarray(block["rungs"]),
-            frozen,
-            provenance=prov,
-            cell=cell,
-            layers=tuple(layers),
-            n_boot=n_boot,
-            min_n=int(args.min_n),
-        )
+        # evaluate_transfer sets eval_rung from the per-row RUNG label, so the
+        # block identity is carried separately as eval_block.
+        prov = {**prov_base, "eval_rung": block["name"], "eval_block": block["name"]}
+        block_masks = subset_masks(block["multi_turn"])
+        rows_u: list[dict] = []
+        for subset in block["subsets"]:
+            mask = block_masks[subset]
+            if int(mask.sum()) < int(args.min_n):
+                skips.append(
+                    {
+                        "eval_block": block["name"],
+                        "subset": subset,
+                        "arm": "*",
+                        "reason": f"subset below min_n ({int(mask.sum())} < {args.min_n})",
+                    }
+                )
+                continue
+            sub_out, ev_skips = arms.evaluate_transfer(
+                {slug: np.asarray(sc, dtype=np.float64)[:, mask] for slug, sc in scores_ev.items()},
+                np.asarray(block["dv"], dtype=np.float64)[mask],
+                np.asarray(block["rungs"])[mask],
+                frozen,
+                provenance={**prov, "subset": subset},
+                cell=cell,
+                layers=tuple(layers),
+                n_boot=n_boot,
+                min_n=int(args.min_n),
+            )
+            rows_u += sub_out
+            skips += [{**s, "subset": subset, "eval_block": block["name"]} for s in ev_skips]
         rows_all += rows_u
-        skips += ev_skips
         skips += [
             {"arm": slug, "reason": reason, "eval_block": block["name"]}
             for slug, reason in sorted(arm_skips.items())
         ]
+        write_preds_jsonl(
+            args.out_root / behavior / "preds" / f"bareq_leg2_preds.{block['name']}.jsonl",
+            preds_rows(
+                scores_ev,
+                np.asarray(block["dv"], dtype=np.float64),
+                block["ctx_ids"],
+                frozen,
+                block["multi_turn"],
+                provenance={**prov, "n_eval_pooled": int(np.asarray(block["dv"]).size)},
+                layers=tuple(layers),
+            ),
+        )
+        if args.shuffled_map_seeds > 0:
+            shuffle_bands.append(
+                shuffled_map_seed_band(
+                    args, data, cell, block, frozen, n_seeds=int(args.shuffled_map_seeds)
+                )
+            )
         per_layer_all += [
             {
                 **prov,
@@ -1563,6 +2236,7 @@ def score_leg2(args, behavior: str) -> dict:  # noqa: C901 — one linear per-be
         "query_bank": bank_digest,
         "folds": fold_digest,
         "mapping_baselines": map_reads,
+        "shuffled_map_seed_bands": shuffle_bands,
         "arm_map_fit_scope": (
             "arm reads use a map fit on the FULL bare train pool, so the IN-SPLIT arm reads are "
             "transductive in (x, y) but NEVER in the DV; the transfer columns are fully "
@@ -1571,7 +2245,12 @@ def score_leg2(args, behavior: str) -> dict:  # noqa: C901 — one linear per-be
         )
         if args.arms_on_bare_map
         else "arms ran with mapfit=None (--no-arms-on-bare-map): map-consuming arms are SKIPPED",
-        "eval_blocks": [{k: v for k, v in b.items() if k not in ("z", "za", "dv")} for b in blocks],
+        # Arrays (z / za / dv / multi_turn) and the full ctx_id list are the
+        # per-row payload — they live in the preds JSONL, never in the summary meta.
+        "eval_blocks": [
+            {k: v for k, v in b.items() if k not in ("z", "za", "dv", "multi_turn", "ctx_ids")}
+            for b in blocks
+        ],
         "eval_block_notes": block_notes,
         "frozen_source": {BARE_KIND: "own-bare-train-pool-selection (by-query folds)"},
         "input_sha256": shas,
@@ -1652,6 +2331,23 @@ def write_behavior_summary(args, behavior: str, legs: dict, *, commit: str, env:
             "leg1_coverage": (leg1 or {}).get("coverage"),
             "leg1_null_probe": (leg1 or {}).get("null_probe"),
             "leg1_committed_contrast": (leg1 or {}).get("committed_contrast"),
+            "subsets_emitted": list(SUBSETS),
+            "preds_persisted": {
+                "dir": str(args.out_root / behavior / "preds"),
+                "leg1_pattern": "bareq_leg1_preds.<variant>.jsonl" if leg1 else None,
+                "leg2_pattern": "bareq_leg2_preds.<eval_block>.jsonl" if leg2 else None,
+                "files": sorted(
+                    p.name for p in (args.out_root / behavior / "preds").glob("*.jsonl")
+                )
+                if (args.out_root / behavior / "preds").is_dir()
+                else [],
+                "schema": (
+                    "one row per (arm, context) at the frozen layer: arm, context_id, dv, score, "
+                    "multi_turn, frozen_layer_idx, layer, subset-independent — any subset read is "
+                    "a re-analysis of this file, never another re-score"
+                ),
+            },
+            "leg2_shuffled_map_seed_bands": (leg2 or {}).get("shuffled_map_seed_bands"),
             "leg2_folds": (leg2 or {}).get("folds"),
             "leg2_query_bank": (leg2 or {}).get("query_bank"),
             "leg2_eval_blocks": (leg2 or {}).get("eval_blocks"),
@@ -1744,6 +2440,36 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="hard",
         choices=("hard", "report", "off"),
         help="verify reused (non-recaptured) wildchat rows really are bare renders",
+    )
+    ap.add_argument(
+        "--no-force-null-sweep",
+        dest="force_null_sweep",
+        action="store_false",
+        default=True,
+        help="ON by default: run the constant-prefix NULL variant's arm sweep even when "
+        "constancy is verified (closes the skip-on-verified-constancy gap). Passing this flag "
+        "restores the skip, which records null_probe as the variant's result instead.",
+    )
+    ap.add_argument(
+        "--null-shuffle-seeds",
+        type=int,
+        default=8,
+        help="permuted-DV seeds for the null-anomaly shuffle band (0 disables the band; the "
+        "verdict then cannot read 'shuffle-band-consistent')",
+    )
+    ap.add_argument(
+        "--shuffled-map-seeds",
+        type=int,
+        default=8,
+        help="leg 2: shuffle seeds for the shuffled-map control's across-draw band (0 disables). "
+        "The committed control row is ONE draw; the band says whether it is draw variance.",
+    )
+    ap.add_argument(
+        "--capture-batch-size",
+        type=int,
+        default=DEFAULT_CAPTURE_BATCH_SIZE,
+        help="capture.DEFAULT_CAPTURE_BATCH_SIZE mirror — used only to DERIVE a batch slot from "
+        "a store row index in the batch-order diagnostic",
     )
     ap.add_argument(
         "--no-arms-on-bare-map",
