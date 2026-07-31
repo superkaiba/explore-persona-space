@@ -365,6 +365,29 @@ def test_single_behavior_run_writes_no_coherence_artifact(rig):
     assert not (rig["out_root"] / "wcrung_arms_pool_coherence.json").exists()
 
 
+def test_below_min_n_rung_is_skipped_not_crashed(rig):
+    """DATA-GATE PROBE: the in-path ``n < min_n`` branch of evaluate_transfer.
+
+    The main smoke leg is deliberately sized ABOVE every floor so it passes, so
+    this separate degenerate probe is what actually EXECUTES the gate: a rung
+    with 2 finite eval rows (< min_n=3) must produce a recorded skip and a
+    clean rc=0, never a crash and never a scored row over 2 points.
+    """
+    dv_path = rig["out_root"] / "dv_dataset" / "evil" / "labeling.json"
+    payload = json.loads(dv_path.read_text())
+    payload["rows"] = payload["rows"][:2]  # below the floor
+    dv_path.write_text(json.dumps(payload))
+
+    assert _run(rig["argv"](["evil"])) == 0
+    out = json.loads((rig["out_root"] / "evil" / "all_arms_spearman.json").read_text())
+    assert out["transfer_rows"] == [], "a 2-row rung must not be scored"
+    reasons = {s.get("reason") for s in out["transfer_skips"]}
+    assert "min_n" in reasons, out["transfer_skips"]
+    assert all(s["n_eval"] == 2 for s in out["transfer_skips"] if s.get("reason") == "min_n")
+    # the per-layer profile companion is still emitted (it has no floor)
+    assert out["per_layer_rows"]
+
+
 def test_resume_skips_completed_units(rig, capsys):
     """The per-unit checkpoint resumes instead of re-fitting (byte-identical rows)."""
     assert _run(rig["argv"](["evil"])) == 0
