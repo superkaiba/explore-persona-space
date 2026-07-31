@@ -268,7 +268,20 @@ def _bundle_keys_ok(path: Path, keys: tuple[str, ...]) -> None:
 
 
 def _verify_keys_subprocess(path: Path, keys: tuple[str, ...]) -> None:
-    """One mechanized `verify_reused_artifact_keys.py` run per bundle FAMILY exemplar."""
+    """One mechanized `verify_reused_artifact_keys.py` run per bundle FAMILY exemplar.
+
+    ``--no-weights-only``: the #1768 bundles verified here are sha-pinned
+    SELF-PRODUCED stores (staged @ CORPUS_PIN c0726728) whose torch.save
+    metadata carries a non-primitive ``torch.torch_version.TorchVersion``
+    global; torch>=2.6 (the fellows lane) defaults
+    ``torch.load(weights_only=True)`` and rejects it (gotchas.md realized-keys
+    entry: "pass weights_only=False only for a sha-pinned SELF-PRODUCED
+    bundle whose metadata carries non-primitives"). The mmap no-storage-read
+    path is KEPT — ``--allow-full-load`` is deliberately NOT passed: the
+    bundles are zipfile-serialized (mmap opens them fine); the crash was the
+    weights-only unpickler, not the file format (#1900 crash-fix r3,
+    fellows job 16045).
+    """
     proc = subprocess.run(
         [
             sys.executable,
@@ -277,6 +290,7 @@ def _verify_keys_subprocess(path: Path, keys: tuple[str, ...]) -> None:
             str(path),
             "--keys",
             ",".join(keys),
+            "--no-weights-only",
         ],
         capture_output=True,
         text=True,
