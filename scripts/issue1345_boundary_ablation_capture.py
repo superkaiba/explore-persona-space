@@ -208,18 +208,36 @@ def transition_for(key: str) -> dict:
     return TRANSITION[key]
 
 
-def format_key(key: str) -> str:
-    """Store format key — a DISTINCT stem per arm/comparator (no collisions)."""
+# Answer PROVENANCE — who wrote the answer the store reads. It is a STORE-KEY
+# dimension, not a render dimension: the render/transition for an on-policy chat
+# row is identical to its teacher-forced twin's (same segments, same suffix), but
+# the two must never share a store stem / HF path / sidecar regime, or the
+# on-policy capture silently overwrites the injected one. The `_op` suffix is
+# what makes both provenances co-resident and independently uploadable.
+PROV_TEACHER_FORCED = "teacher_forced"
+PROV_ON_POLICY = "on_policy"
+PROVENANCES = (PROV_TEACHER_FORCED, PROV_ON_POLICY)
+PROV_SUFFIX = {PROV_TEACHER_FORCED: "", PROV_ON_POLICY: "_op"}
+
+
+def format_key(key: str, provenance: str = PROV_TEACHER_FORCED) -> str:
+    """Store format key — a DISTINCT stem per (arm/comparator x provenance).
+
+    The default `teacher_forced` returns the historical value byte-for-byte, so
+    every existing store stem / HF path / fits registry entry is unchanged.
+    """
+    assert provenance in PROVENANCES, f"unknown provenance {provenance!r}"
+    suffix = PROV_SUFFIX[provenance]
     if key == V1_ARM:
-        return f"bnd_{V1_SLUG}"
+        return f"bnd_{V1_SLUG}{suffix}"
     if key in bg.ARM_SLUG:
-        return f"bnd_{bg.ARM_SLUG[key]}"
+        return f"bnd_{bg.ARM_SLUG[key]}{suffix}"
     assert key in COMPARATORS, key
-    return {"chat": "bnd_chat", "no_template": "bnd_ntpl"}[key]
+    return {"chat": "bnd_chat", "no_template": "bnd_ntpl"}[key] + suffix
 
 
-def stem_for(key: str, model_key: str = bg.MODEL_KEY) -> str:
-    return f"{model_key}_{format_key(key)}_{TRACK}"
+def stem_for(key: str, model_key: str = bg.MODEL_KEY, provenance: str = PROV_TEACHER_FORCED) -> str:
+    return f"{model_key}_{format_key(key, provenance)}_{TRACK}"
 
 
 def hf_tensor_prefix(smoke: bool) -> str:
@@ -675,14 +693,20 @@ def slot_diagnostics(rendered: list[Rendered]) -> dict:
 # ---------------------------------------------------------------------------
 # HF persist
 # ---------------------------------------------------------------------------
-def persist_store(out_dir: Path, key: str, smoke: bool, extra: dict) -> None:
+def persist_store(
+    out_dir: Path,
+    key: str,
+    smoke: bool,
+    extra: dict,
+    provenance: str = PROV_TEACHER_FORCED,
+) -> None:
     """Upload this arm's/comparator's shards + sidecars + manifest to HF.
 
     Runs on the dispatcher's normal exit path, before the phase's done line —
     the store is a plan-referenced downstream input for the fits phase (#521).
     """
     assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing — cannot persist store"
-    stem = stem_for(key)
+    stem = stem_for(key, bg.MODEL_KEY, provenance)
     files = sorted(p.name for p in out_dir.glob(f"{stem}*") if p.is_file())
     assert files, f"no {stem}* files to upload in {out_dir}"
     tr = transition_for(key)
@@ -692,6 +716,7 @@ def persist_store(out_dir: Path, key: str, smoke: bool, extra: dict) -> None:
         "arm_or_comparator": key,
         "arm_isolates": bg.ARM_README.get(key, f"{key} comparator store"),
         "model": bg.MODEL_KEY,
+        "provenance": provenance,
         "stem": stem,
         "slot_order": list(BND_SLOT_ORDER),
         "x_clean_slot": X_CLEAN_SLOT,
@@ -776,14 +801,21 @@ def main() -> None:
         "and asserted consistent with the visible device count",
     )
     ap.add_argument(
+        "--provenance",
+        choices=PROVENANCES,
+        default=PROV_TEACHER_FORCED,
+        help="who wrote the answers this store reads. `on_policy` suffixes the store "
+        "stem / HF path / sidecar regime with `_op` so an on-policy store is "
+        "co-resident with its teacher-forced twin instead of overwriting it; it "
+        "REQUIRES an on-policy row source (--convs-jsonl / --stories-jsonl)",
+    )
+    ap.add_argument(
         "--convs-jsonl",
         type=Path,
         default=None,
         help="--comparator ONLY: read the conversations from a local {conv_id, prompt, "
         "response} JSONL (the on-policy answer rows) instead of the pinned parent "
-        "track-S corpus. Requires --skip-upload AND a non-default --out-dir: the store "
-        "stem is provenance-blind until the on-policy store keys land, so an on-policy "
-        "capture must not write the teacher-forced comparator's paths",
+        "track-S corpus. Requires --provenance on_policy",
     )
     ap.add_argument(
         "--stories-jsonl",
@@ -791,7 +823,7 @@ def main() -> None:
         default=None,
         help="--arm ONLY: read the kept stories from a local {conv_id, story, answer, "
         "parsed_turns} JSONL (the on-policy story-slot rows) instead of this round's "
-        "gen output / the pinned V1 bundle. Same clobber guard as --convs-jsonl",
+        "gen output / the pinned V1 bundle. Requires --provenance on_policy",
     )
     ap.add_argument("--skip-upload", action="store_true", help="local-only (smoke plumbing)")
     ap.add_argument("--smoke", action="store_true", help="first 8 rows; causal check ON")
@@ -816,25 +848,27 @@ def main() -> None:
     assert bool(args.arm) != bool(args.comparator), (
         "pass exactly one of --arm (an ablation arm) or --comparator (chat / no_template)"
     )
-    # Clobber guard for BOTH on-policy source overrides: `stem_for` /
-    # `persist_store` / the sidecar `regime` derive the store paths from the
-    # arm-or-comparator key ALONE, so an on-policy capture would overwrite its
-    # teacher-forced twin's store on both surfaces. Refuse until the
-    # provenance-distinct store keys are registered.
+    # Provenance <-> row-source coupling, BOTH directions. The store stem / HF
+    # path / sidecar regime are keyed by provenance, so the two must agree or a
+    # capture writes the WRONG store: on-policy rows under a teacher-forced stem
+    # would overwrite the injected twin, and a teacher-forced source under an
+    # `_op` stem would mislabel the provenance dimension the fits read.
     if args.convs_jsonl is not None:
         assert args.comparator, "--convs-jsonl applies to --comparator captures only"
     if args.stories_jsonl is not None:
         assert args.arm, "--stories-jsonl applies to --arm captures only"
-    for flag, val in (("--convs-jsonl", args.convs_jsonl), ("--stories-jsonl", args.stories_jsonl)):
-        if val is None:
-            continue
-        assert args.skip_upload, (
-            f"{flag} requires --skip-upload: the store stem is provenance-blind, so the "
-            "upload would overwrite the teacher-forced store on HF"
+    on_policy_source = args.convs_jsonl is not None or args.stories_jsonl is not None
+    if on_policy_source:
+        assert args.provenance == PROV_ON_POLICY, (
+            "an on-policy row source (--convs-jsonl / --stories-jsonl) requires "
+            f"--provenance {PROV_ON_POLICY}: under the default the store would overwrite "
+            "its teacher-forced twin's stem + HF path"
         )
-        assert args.out_dir != c.TURNSTORE_DIR, (
-            f"{flag} requires a non-default --out-dir (got the canonical "
-            f"{c.TURNSTORE_DIR}): the local shards would overwrite the teacher-forced store"
+    if args.provenance == PROV_ON_POLICY:
+        assert on_policy_source, (
+            f"--provenance {PROV_ON_POLICY} requires an on-policy row source "
+            "(--convs-jsonl for a comparator, --stories-jsonl for an arm) — otherwise the "
+            "store carries teacher-forced rows under an on-policy stem"
         )
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -905,7 +939,7 @@ def main() -> None:
     # never corpus text) persists next to the shards.
     n_pre_filter = len(rendered)
     rendered, drops = ex.partition_rendered(rendered)
-    stem = stem_for(key, args.model)
+    stem = stem_for(key, args.model, args.provenance)
     c.write_json(
         args.out_dir / f"{stem}_skip_manifest.json",
         {
@@ -995,11 +1029,12 @@ def main() -> None:
         "round": bg.ROUND_VARIANT,
         "arm_or_comparator": key,
         "arm_isolates": bg.ARM_README.get(key, f"{key} comparator store"),
-        "regime": format_key(key),
+        "regime": format_key(key, args.provenance),
         "model": args.model,
         "model_id": model_id,
-        "format": format_key(key),
+        "format": format_key(key, args.provenance),
         "track": TRACK,
+        "provenance": args.provenance,
         "story_character_name": c.STORY_CHARACTER_NAME,
         "slot_names": list(BND_SLOT_ORDER),
         "x_clean_slot": X_CLEAN_SLOT,
@@ -1056,6 +1091,7 @@ def main() -> None:
                 "render_stats": render_stats,
                 "slot_diagnostics": diag,
             },
+            provenance=args.provenance,
         )
     print(f"[done] {key}: {n_done} rows -> {len(paths)} shard(s) in {args.out_dir}", flush=True)
     sys.stdout.flush()
