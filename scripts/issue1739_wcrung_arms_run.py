@@ -1,25 +1,35 @@
 #!/usr/bin/env python3
-"""Instance-side driver for the #1739 pvsynth arm-scoring leg.
+"""Instance-side driver for the #1739 wildchat-rung arm-scoring leg.
 
-Two phases that INTERLEAVE, because they bottleneck on different resources:
+Structural sibling of ``issue1739_pvsynth_arms_run.py``: two phases that
+INTERLEAVE, because they bottleneck on different resources.
 
-* STAGE (network/CPU): the three train capture stores live on the HF data repo
+* STAGE (network/CPU): the three TRAIN capture stores live on the HF data repo
   as monolithic tars (evil 29.9 / sycophancy 48.6 / hallucination 65.1 GiB).
   They are streamed member-selectively through
   ``issue1739_map963k_slice.stream_slice`` — bytes transferred are the whole
-  tar, bytes WRITTEN are only the requested (kind x layer) members, and no
-  tar copy ever lands on disk (peak disk = the extracted slice, not 2x). Each
+  tar, bytes WRITTEN are only the requested (kind x layer) members, and no tar
+  copy ever lands on disk (peak disk = the extracted slice, not 2x). Each
   behavior's ``slice_manifest.json`` is its completion sentinel; the slicer is
   resumable, so a relaunch re-streams but re-writes nothing.
-* SCORE (GPU): ``issue1739_pvsynth_arms.py`` per behavior.
+* SCORE (GPU): ``issue1739_wcrung_arms.py`` per behavior.
 
 Run serially that would be ~95 min of staging with the GPU at ~0% followed by
-~75 min of scoring — the #664/#778 idle-GPU shape. Instead staging runs in a
-background THREAD (I/O-bound, releases the GIL) while scoring walks the
-behaviors in staging order, waiting on each sentinel. Wall collapses to
-roughly ``first_stage + max(rest_of_staging, scoring)``.
+scoring — the #664/#778 idle-GPU shape. Instead staging runs in a background
+THREAD (I/O-bound, releases the GIL) while scoring walks the behaviors in
+staging order, waiting on each sentinel.
 
-Behaviors are staged smallest-tar-first so scoring starts as early as possible.
+The wildchat rung's OWN inputs are small and shared, so they are staged once up
+front (:func:`stage_shared`) rather than per behavior:
+
+* ONE capture store at ``<HF_PREFIX>/wildchat_rung/capture_store/wildchat`` —
+  the rung's contexts are behavior-independent (generate-once/judge-3x), so
+  all three behaviors score against the same activations. See
+  ``issue1739_wcrung_arms`` module docstring.
+* THREE per-behavior DV datasets at
+  ``<HF_PREFIX>/wildchat_rung/dv_dataset/<behavior>/labeling.json`` (one per
+  trait rubric over that one pool).
+
 Each behavior's outputs are uploaded to the HF data repo the moment that
 behavior finishes (per-cell upload discipline: an instance death strands at
 most the in-flight behavior, and on the ephemeral GCE lane the EXIT trap
@@ -43,7 +53,7 @@ from pathlib import Path
 
 def _ensure_repo_root_on_syspath() -> Path:
     root = Path(__file__).resolve().parents[1]
-    sentinel = root / "scripts" / "issue1739_pvsynth_arms.py"
+    sentinel = root / "scripts" / "issue1739_wcrung_arms.py"
     if not sentinel.exists():
         raise RuntimeError(f"repo-root resolution failed: {sentinel} missing")
     if str(root) not in sys.path:
@@ -58,12 +68,18 @@ STAGE_ORDER = ("evil", "sycophancy", "hallucination")
 TAR_GIB = {"evil": 29.9, "sycophancy": 48.6, "hallucination": 65.1}
 KINDS = ("prefix_end", "context_end", "t1")
 HF_PREFIX = "issue1739_ctxmap"
-SENTINEL_NAME = "pvsynth_arms_done.json"
+RUNG_PREFIX = f"{HF_PREFIX}/wildchat_rung"
+# The GPU leg's pseudo-behavior dir: ONE shared capture store for every judged
+# behavior (issue1739_wcrung_pod.GEN_BEHAVIOR / wcrung_arms.EVAL_STORE_DIR_NAME).
+EVAL_STORE_DIR_NAME = "wildchat"
+SENTINEL_NAME = "wcrung_arms_done.json"
 STAGE_MANIFEST = "slice_manifest.json"
+# store_io shard written by every capture store — the staging completion probe.
+STORE_PROBE = "row_index_shard00.jsonl"
 
 
 def _log(msg: str) -> None:
-    print(f"[pvsynth-arms-run] {msg}", flush=True)
+    print(f"[wcrung-arms-run] {msg}", flush=True)
 
 
 # ---------------------------------------------------------------------------
@@ -71,46 +87,72 @@ def _log(msg: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-def stage_shared(args, token: str) -> None:
-    """Stage inputs shared across behaviors: pvsynth stores + train DV tree."""
+def stage_wcrung_store(args) -> Path:
+    """Stage the ONE shared wildchat-rung capture store."""
     from explore_persona_space.orchestrate import hub
 
-    _log("[phase=stage_shared] pvsynth capture stores + train DV tree")
-    for behavior in args.behaviors:
-        dest = args.store_root / "pvsynth_capture_store" / behavior
-        if (dest / "row_index_shard00.jsonl").exists():
-            _log(f"[phase=stage_shared] pvsynth store {behavior}: present, skip")
-            continue
-        # stage_hub_prefix mirrors the repo-relative tree under dest, so the
-        # mirror root must satisfy root/<prefix> == dest (#1774).
-        mirror_root = args.store_root / "_pvmirror"
-        hub.stage_hub_prefix(
-            hub.DEFAULT_DATASET_REPO,
-            f"{HF_PREFIX}/pvsynth/capture_store/{behavior}",
-            mirror_root,
-            repo_type="dataset",
-        )
-        staged = mirror_root / HF_PREFIX / "pvsynth" / "capture_store" / behavior
-        if not (staged / "row_index_shard00.jsonl").exists():
-            raise RuntimeError(f"pvsynth store staging incomplete for {behavior}: {staged}")
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        staged.rename(dest)
-        _log(f"[phase=stage_shared] pvsynth store {behavior} -> {dest}")
+    dest = args.store_root / "wcrung_capture_store" / EVAL_STORE_DIR_NAME
+    if (dest / STORE_PROBE).exists():
+        _log(f"[phase=stage_shared] wcrung store: present, skip ({dest})")
+        return dest
+    # stage_hub_prefix mirrors the repo-relative tree under the mirror root, so
+    # the root must satisfy root/<prefix> == staged (#1774). Signature is
+    # (repo_id, prefix, dest_dir, *, repo_type=...) — the repo_id is NOT
+    # optional; a 2-positional call is a deterministic TypeError (#1332 class,
+    # pinned by test_stage_wcrung_store_binds_the_real_hub_signature).
+    mirror_root = args.store_root / "_wcmirror"
+    hub.stage_hub_prefix(
+        hub.DEFAULT_DATASET_REPO,
+        f"{RUNG_PREFIX}/capture_store/{EVAL_STORE_DIR_NAME}",
+        mirror_root,
+        repo_type="dataset",
+    )
+    staged = mirror_root / RUNG_PREFIX / "capture_store" / EVAL_STORE_DIR_NAME
+    if not (staged / STORE_PROBE).exists():
+        raise RuntimeError(f"wcrung store staging incomplete: {staged} lacks {STORE_PROBE}")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    staged.rename(dest)
+    _log(f"[phase=stage_shared] wcrung store -> {dest}")
+    return dest
+
+
+def stage_shared(args, token: str) -> None:
+    """Stage inputs shared across behaviors: the wcrung store + both DV trees."""
+    from explore_persona_space.orchestrate import hub
+
+    _log("[phase=stage_shared] wcrung capture store + wcrung DVs + train DV tree")
+    stage_wcrung_store(args)
 
     for behavior in args.behaviors:
-        out = args.train_dv_root / behavior / "labeling.json"
+        # The rung's own DV (one per rubric over the shared pool). The arms
+        # driver reads it at <out-root>/dv_dataset/<behavior>/labeling.json.
+        out = args.out_root / "dv_dataset" / behavior / "labeling.json"
         if out.exists():
+            _log(f"[phase=stage_shared] wcrung DV {behavior}: present, skip")
+        else:
+            out.parent.mkdir(parents=True, exist_ok=True)
+            # stage_hub_file: retried (429/5xx), atomic, exact target.
+            hub.stage_hub_file(
+                hub.DEFAULT_DATASET_REPO,
+                f"{RUNG_PREFIX}/dv_dataset/{behavior}/labeling.json",
+                out,
+                repo_type="dataset",
+                token=token,
+            )
+            _log(f"[phase=stage_shared] wcrung DV {behavior} -> {out}")
+
+        train_out = args.train_dv_root / behavior / "labeling.json"
+        if train_out.exists():
             continue
-        out.parent.mkdir(parents=True, exist_ok=True)
-        # stage_hub_file: retried (429/5xx), atomic, exact target — no mirror root.
+        train_out.parent.mkdir(parents=True, exist_ok=True)
         hub.stage_hub_file(
             hub.DEFAULT_DATASET_REPO,
             f"{HF_PREFIX}/judge/dv_dataset/{behavior}/labeling.json",
-            out,
+            train_out,
             repo_type="dataset",
             token=token,
         )
-        _log(f"[phase=stage_shared] train DV {behavior} -> {out}")
+        _log(f"[phase=stage_shared] train DV {behavior} -> {train_out}")
 
 
 def stage_extraction(behavior: str, args, token: str) -> None:
@@ -211,11 +253,12 @@ def wait_for_stage(behavior: str, args, errors: list[BaseException]) -> None:
 # ---------------------------------------------------------------------------
 
 
-def score_behavior(behavior: str, args) -> int:
-    """Run the scorer for one behavior as a subprocess; return its rc."""
-    cmd = [
+def score_cmd(behavior: str, args) -> list[str]:
+    """The scorer argv for one behavior (no --wcrung-store: the staged path IS
+    the driver's ``--store-root`` default)."""
+    return [
         sys.executable,
-        str(_REPO_ROOT / "scripts" / "issue1739_pvsynth_arms.py"),
+        str(_REPO_ROOT / "scripts" / "issue1739_wcrung_arms.py"),
         "--behaviors",
         behavior,
         "--variants",
@@ -235,6 +278,11 @@ def score_behavior(behavior: str, args) -> int:
         "--n-layers",
         str(len(args.layers)),
     ]
+
+
+def score_behavior(behavior: str, args) -> int:
+    """Run the scorer for one behavior as a subprocess; return its rc."""
+    cmd = score_cmd(behavior, args)
     _log(f"[phase=score behavior={behavior}] {' '.join(cmd[1:])}")
     t0 = time.time()
     proc = subprocess.run(cmd, cwd=str(_REPO_ROOT), check=False, env=args.child_env)
@@ -253,10 +301,10 @@ def upload_behavior(behavior: str, args) -> None:
         local,
         hub.DEFAULT_DATASET_REPO,
         "dataset",
-        f"{HF_PREFIX}/pvsynth/arm_results/{behavior}",
+        f"{RUNG_PREFIX}/arm_results/{behavior}",
         raise_on_error=True,
     )
-    _log(f"[phase=upload behavior={behavior}] -> {HF_PREFIX}/pvsynth/arm_results/{behavior}")
+    _log(f"[phase=upload behavior={behavior}] -> {RUNG_PREFIX}/arm_results/{behavior}")
 
 
 # ---------------------------------------------------------------------------
@@ -272,7 +320,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--store-root", type=Path, default=Path("data/issue_1739/hf_dl"))
     ap.add_argument("--train-dv-root", type=Path, default=None)
     ap.add_argument("--main-root", type=Path, default=Path("eval_results/issue_1739"))
-    ap.add_argument("--out-root", type=Path, default=Path("eval_results/issue_1739/pvsynth"))
+    ap.add_argument("--out-root", type=Path, default=Path("eval_results/issue_1739/wildchat_rung"))
     ap.add_argument("--tensors-root", type=Path, default=Path("analysis_tensors/issue_1739"))
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--revision", default="main")
@@ -296,7 +344,10 @@ def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
 
     if args.import_check:
+        # Names every deferred (function-body) import the real path reaches —
+        # a bare module import would not fire these.
         from explore_persona_space.orchestrate import hub  # noqa: F401
+        from explore_persona_space.orchestrate.env import load_dotenv  # noqa: F401
         from huggingface_hub import hf_hub_download  # noqa: F401
         from scripts.issue1739_map963k_slice import stream_slice  # noqa: F401
 
@@ -348,10 +399,12 @@ def main(argv: list[str] | None = None) -> None:
 
     stager.join(timeout=args.stage_timeout_s)
     sentinel = {
-        "leg": "pvsynth_arms",
+        "leg": "wcrung_arms",
+        "rung": "wildchat_rung",
         "behaviors": results,
         "variants": list(args.variants),
         "n_layers": len(args.layers),
+        "eval_store_shared_across_behaviors": True,
         "wall_s": round(time.time() - t_all, 1),
         "stage_errors": [f"{type(e).__name__}: {e}" for e in errors],
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -365,7 +418,7 @@ def main(argv: list[str] | None = None) -> None:
             args.out_root / SENTINEL_NAME,
             hub.DEFAULT_DATASET_REPO,
             "dataset",
-            f"{HF_PREFIX}/pvsynth/arm_results/{SENTINEL_NAME}",
+            f"{RUNG_PREFIX}/arm_results/{SENTINEL_NAME}",
             upload_as_file=True,
             raise_on_error=True,
         )

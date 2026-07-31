@@ -27,7 +27,11 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-from scipy.stats import spearmanr
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+from scipy.stats import spearmanr  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "raw_completions" / "issue_1739" / "labeling"
