@@ -6564,8 +6564,8 @@
     "1848": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1848",
-      "status": "proposed",
+      "path": "tasks/planning/1848",
+      "status": "planning",
       "title": "daily-fix: plan_patch.py --file alias + rc-check note"
     },
     "1849": {
