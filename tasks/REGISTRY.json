@@ -6613,8 +6613,8 @@
     "1854": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1854",
-      "status": "planning",
+      "path": "tasks/approved/1854",
+      "status": "approved",
       "title": "daily-fix: /daily route-1 code applies run full-ruleset lint"
     },
     "1855": {
