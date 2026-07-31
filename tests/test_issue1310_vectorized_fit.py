@@ -198,9 +198,14 @@ def test_gcv_dof_cap_excludes_interpolating_lambdas():
 
     cache = fit825._prep_fold(x_tr, x_te)
     old_cap = fit825.GCV_DOF_CAP
+    old_legacy = fit825.LEGACY_UNGUARDED_GCV
     try:
         fit825.GCV_DOF_CAP = None
+        # #1887: uncapped pure GCV at n_train < d now needs the explicit
+        # legacy opt-in (refusal guard); the pinned behavior is unchanged.
+        fit825.LEGACY_UNGUARDED_GCV = True
         pred_none, lam_none = fit825._ridge_predict_cached(cache, y_tr, return_lam=True)
+        fit825.LEGACY_UNGUARDED_GCV = old_legacy
 
         fit825.GCV_DOF_CAP = 0.9
         pred_cap, lam_cap = fit825._ridge_predict_cached(cache, y_tr, return_lam=True)
@@ -218,8 +223,10 @@ def test_gcv_dof_cap_excludes_interpolating_lambdas():
         pred_b = pred_b[0].cpu().numpy()
         np.testing.assert_allclose(pred_b, pred_cap, rtol=0, atol=1e-8)
 
-        # (c) default-None batched twin matches the serial uncapped path
+        # (c) cap-None batched twin matches the serial uncapped path (#1887:
+        # under the explicit legacy opt-in — the guard covers both scan paths)
         fit825.GCV_DOF_CAP = None
+        fit825.LEGACY_UNGUARDED_GCV = True
         pred_b_none = (
             fit825._ridge_predict_cached_batched(cache, torch.as_tensor(y_tr).unsqueeze(0))[0]
             .cpu()
@@ -228,3 +235,4 @@ def test_gcv_dof_cap_excludes_interpolating_lambdas():
         np.testing.assert_allclose(pred_b_none, pred_none, rtol=0, atol=1e-8)
     finally:
         fit825.GCV_DOF_CAP = old_cap
+        fit825.LEGACY_UNGUARDED_GCV = old_legacy
