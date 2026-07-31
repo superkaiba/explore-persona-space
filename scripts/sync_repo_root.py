@@ -1289,7 +1289,7 @@ def _kept_sidecar_known_shas(path: Path) -> set[str]:
                     continue
                 if isinstance(row, dict) and isinstance(row.get("sha"), str):
                     shas.add(row["sha"])
-    except OSError:
+    except (OSError, UnicodeDecodeError):
         return set()
     return shas
 
