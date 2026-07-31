@@ -6606,8 +6606,8 @@
     "1853": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1853",
-      "status": "reviewing",
+      "path": "tasks/completed/1853",
+      "status": "completed",
       "title": "daily-fix: watcher leaves filed infra tasks undispatched for"
     },
     "1854": {
