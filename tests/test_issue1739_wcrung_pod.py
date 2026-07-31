@@ -126,6 +126,38 @@ def test_build_contexts_max_contexts_caps(tmp_path):
     assert len(pod.build_contexts(args)) == 2
 
 
+def test_shards_partition_contexts_exactly_once(tmp_path):
+    """Fan-out: every context lands in exactly one shard, none duplicated."""
+    rows = [_row(i, turns=i % 2) for i in range(11)]
+    _write_rows(tmp_path, rows)
+    seen: list[str] = []
+    for idx in range(4):
+        args = pod._parse_args(
+            ["--out-root", str(tmp_path), "--n-shards", "4", "--shard-idx", str(idx)]
+        )
+        seen.extend(c["context_id"] for c in pod.build_contexts(args))
+    assert sorted(seen) == sorted(r["context_id"] for r in rows)
+    assert len(seen) == len(set(seen)), "a context landed in two shards"
+
+
+def test_width_one_is_the_unsharded_context_list(tmp_path):
+    rows = [_row(i, turns=0) for i in range(5)]
+    _write_rows(tmp_path, rows)
+    unsharded = pod.build_contexts(pod._parse_args(["--out-root", str(tmp_path)]))
+    width_one = pod.build_contexts(
+        pod._parse_args(["--out-root", str(tmp_path), "--n-shards", "1", "--shard-idx", "0"])
+    )
+    assert unsharded == width_one
+
+
+def test_bad_shard_index_fails_loud(tmp_path):
+    _write_rows(tmp_path, [_row(0, turns=0)])
+    for argv in (["--n-shards", "2", "--shard-idx", "2"], ["--n-shards", "0"]):
+        args = pod._parse_args(["--out-root", str(tmp_path), *argv])
+        with pytest.raises(RuntimeError, match="bad fan-out"):
+            pod.build_contexts(args)
+
+
 def test_build_contexts_fails_loud_on_missing_field(tmp_path):
     bad = _row(1, turns=0)
     bad["query"] = ""

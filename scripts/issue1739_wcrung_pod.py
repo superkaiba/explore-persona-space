@@ -40,6 +40,15 @@ Phase sequence (GPU-width discipline: no GPU idles through API-bound work):
        capture (``context_end`` + ``prefix_end`` + ``t1``, all 28 layers)
     5. upload the capture store, then write the completion sentinel LAST
 
+FAN-OUT: the context axis is embarrassingly parallel, so a multi-GPU pod runs
+one process per GPU — ``--n-shards <G> --shard-idx <i>`` (round-robin over
+contexts, so the 31..7009-token length spread does not hand one shard the long
+tail). Each shard MUST get its OWN ``--out-root`` / ``--store-root`` /
+``--hf-prefix``: rollout filenames are per-context and would not collide, but
+the pack root, the capture store's internal shard numbering, and the sentinel
+would. The scoring leg unions the per-shard trees. Width 1 is byte-identical to
+the unsharded path.
+
 Capture-recipe parity with the #1092 store is BINDING and inherited by
 construction: the same ``generation`` / ``capture`` modules, model, revision,
 chat template, layer set, and answer-span (``t1``) semantics — the identical
@@ -134,6 +143,18 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=int,
         default=None,
         help="SMOKE ONLY: cap the context count (the rung is otherwise all sampled rows)",
+    )
+    ap.add_argument(
+        "--n-shards",
+        type=int,
+        default=1,
+        help="fan-out width: partition the contexts across N shards (one process per GPU)",
+    )
+    ap.add_argument(
+        "--shard-idx",
+        type=int,
+        default=0,
+        help="this process's shard index in [0, n-shards)",
     )
     ap.add_argument("--skip-upload", action="store_true", help="SMOKE ONLY: no Hub writes")
     ap.add_argument("--skip-capture", action="store_true", help="generation only (staging probe)")
@@ -253,6 +274,20 @@ def build_contexts(args: argparse.Namespace) -> list[dict]:
     rows = load_rows(args)
     if args.max_contexts is not None:
         rows = rows[: args.max_contexts]
+    if args.n_shards < 1 or not (0 <= args.shard_idx < args.n_shards):
+        raise RuntimeError(f"bad fan-out: --shard-idx {args.shard_idx} not in [0, {args.n_shards})")
+    if args.n_shards > 1:
+        # ROUND-ROBIN, not contiguous blocks: WildChat prompt lengths span
+        # 31..7009 tokens, so a contiguous split would hand one shard the long
+        # tail and idle the rest (a work-conserving dispatcher never idles a GPU
+        # while an independent cell is pending).
+        n_all = len(rows)
+        rows = rows[args.shard_idx :: args.n_shards]
+        print(
+            f"[phase=wcrung_shard] shard {args.shard_idx + 1}/{args.n_shards}: "
+            f"{len(rows)}/{n_all} contexts",
+            flush=True,
+        )
     if not rows:
         raise RuntimeError("no wcrung context rows — sampler output empty or staging failed")
 
@@ -522,6 +557,8 @@ def main(argv: list[str] | None = None) -> int:
         "gen_behavior": GEN_BEHAVIOR,
         "judge_behaviors": ["evil", "sycophancy", "hallucination"],
         "hf_prefix": args.hf_prefix,
+        "n_shards": args.n_shards,
+        "shard_idx": args.shard_idx,
         "n_contexts": gen_manifest["n_contexts"],
         "n_kept": gen_manifest["n_kept"],
         "k_rollouts": gen_manifest["k_rollouts"],
