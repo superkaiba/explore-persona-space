@@ -599,3 +599,99 @@ def load_pfx_sample(out_root: Path) -> dict:
     n = len(sample["rows"])
     assert n == sample["n_train"] + sample["n_val"] + sample["n_test"], n
     return sample
+
+
+# ── round 4: prefix-richness dose ladder (plan v10 `prefix-richness-dose-ladder`)
+
+R4_CONDS = ("r_short", "r_mid", "r_long")
+# 3 content persona-trained arms (the 1.8-2.2x swapped-prefix divergence cells,
+# one per behavior) + the conversation-trained comparator (H-own-suppression).
+# Identities as realized in round 3's map_change_on_target.json (plan §4.1).
+R4_ARMS: tuple[str, ...] = (
+    "syc-pers-con-lr1e5-s42",
+    "imp-pers-con-lr3e5-s42",
+    "cas-pers-con-lr1e5-s42",
+    "syc-conv-con-lr1e5-s42",
+)
+R4_COMPARATOR_ARM = "syc-conv-con-lr1e5-s42"  # H-own-suppression comparator (§4.1)
+R4_PERSONA_ARMS = tuple(a for a in R4_ARMS if a != R4_COMPARATOR_ARM)
+R4_LADDER_FAMILY = "wildchat_ladder"
+R4_CONTEXT_ID_BY_COND = {
+    "r_short": "ladder_prefix_short",
+    "r_mid": "ladder_prefix_mid",
+    "r_long": "ladder_prefix_long",
+}
+R4_COND_BY_CONTEXT_ID = {v: k for k, v in R4_CONTEXT_ID_BY_COND.items()}
+
+
+def r4_trained_unit(arm_id: str, cond: str) -> str:
+    assert cond in R4_CONDS, cond
+    assert arm_id in R4_ARMS, arm_id
+    return f"{arm_id}@{cond}"
+
+
+def r4_base_unit(cond: str) -> str:
+    """Shared base unit per rung — arm-independent, all content decode (§4.4)."""
+    assert cond in R4_CONDS, cond
+    return f"base_content@{cond}"
+
+
+def r4_unit_context_id(unit_id: str) -> str:
+    """Any r4 unit id (`<arm>@r_*` or `base_content@r_*`) -> ladder context id."""
+    _name, _, tag = unit_id.partition("@")
+    assert tag in R4_CONDS, (unit_id, "not an r4 rung unit id")
+    return R4_CONTEXT_ID_BY_COND[tag]
+
+
+def load_r4_ladder(out_root: Path) -> dict:
+    """The lad_build-pinned rung ladder (recipes + manifest); fail-loud shape
+    check: exactly the 3 registered rungs, each a 2-turn (user, assistant)
+    prefix with non-empty capped contents (plan §4.2 prefix shape)."""
+    path = Path(out_root) / "on_target_r4" / "inputs" / "prefix_ladder.json"
+    ladder = json.loads(path.read_text())
+    rungs = ladder["rungs"]
+    assert sorted(rungs) == sorted(R4_CONDS), (path, sorted(rungs))
+    for cond, rec in rungs.items():
+        assert rec["context_id"] == R4_CONTEXT_ID_BY_COND[cond], (cond, rec["context_id"])
+        turns = rec["prefix_turns"]
+        roles = tuple(t["role"] for t in turns)
+        assert roles == ("user", "assistant"), (cond, roles)
+        assert all(t["content"].strip() for t in turns), (cond, "empty turn content")
+        assert all(len(t["content"]) <= 2000 for t in turns), (cond, "turn over the 2000 cap")
+    return ladder
+
+
+def register_r4_ladder_contexts(out_root: Path) -> None:
+    """Register the 3 rung prefixes into CONTEXTS from the pinned ladder JSON
+    (idempotent; EXPLICIT — never at import time; the `register_fu3_contexts`
+    pattern, issue1090_fu3_cells.py L57-91). Fail-loud on a missing ladder, a
+    non-(user, assistant) shape, or a FOREIGN pre-existing binding (anything
+    not a wildchat_ladder-family prefix)."""
+    from explore_persona_space.artifacts.context import CONTEXTS, Context
+
+    ladder = load_r4_ladder(out_root)
+    for cond in R4_CONDS:
+        rec = ladder["rungs"][cond]
+        cid = rec["context_id"]
+        existing = CONTEXTS.get(cid)
+        if existing is not None:
+            if existing.family != R4_LADDER_FAMILY:
+                raise ValueError(
+                    f"CONTEXTS[{cid!r}] is already bound to a non-{R4_LADDER_FAMILY} "
+                    f"context (family={existing.family!r}); refusing to shadow the "
+                    "plan-§4.2 rung binding"
+                )
+            continue
+        turns = tuple({"role": t["role"], "content": t["content"]} for t in rec["prefix_turns"])
+        CONTEXTS[cid] = Context(
+            context_id=cid,
+            kind="prefix",
+            family=R4_LADDER_FAMILY,
+            prefix_turns=turns,
+            source=(
+                f"on_target_r4/inputs/prefix_ladder.json rung {cond} — never-trained "
+                f"WildChat-1M 2-turn prefix (conversation_hash "
+                f"{rec['conversation_hash']}, dataset index {rec['dataset_index']}; "
+                "plan v10 §4.2 lad_build)"
+            ),
+        )

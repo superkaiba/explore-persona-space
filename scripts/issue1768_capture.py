@@ -2168,6 +2168,12 @@ def _pending_units(cfg: Cfg, phase: str) -> list[str]:
             for u in trained
             if not (root / "on_target" / "corpus_capture_tf" / u / "pooled_tf.pt").exists()
         ]
+    if phase == "lad2":
+        return [
+            u
+            for u in _lad_unit_set(cfg)
+            if not (root / "on_target_r4" / "corpus_capture" / u / "pooled.pt").exists()
+        ]
     raise ValueError(phase)
 
 
@@ -2192,6 +2198,8 @@ def run_unit(cfg: Cfg, unit_arg: str) -> None:
         run_pfx_corpus_unit(cfg, rest)
     elif phase == "pfx3":
         run_pfx_tf_unit(cfg, rest)
+    elif phase == "lad2":
+        run_lad_corpus_unit(cfg, rest)
     else:
         raise ValueError(unit_arg)
 
@@ -3450,20 +3458,35 @@ def _pfx_decode_class(unit_id: str) -> str:
 
 def run_pfx_corpus_unit(cfg: Cfg, unit_id: str) -> None:
     """pfx2 unit: prefixed greedy gen -> TF span-means (prefix+ctx+resp)."""
+    cid = X.pfx_unit_context_id(unit_id)
+    _prefixed_capture_core(
+        cfg,
+        unit_id,
+        root=_pfx_root(cfg),
+        cid=cid,
+        cond_rec=_pfx_cond_record(cfg, cid),
+        ctx=X.pfx_resolve_context(cid),
+    )
+
+
+def _prefixed_capture_core(
+    cfg: Cfg, unit_id: str, *, root: Path, cid: str, cond_rec: dict, ctx
+) -> None:
+    """Shared pfx2/lad2 unit body: prefixed greedy gen -> spans -> TF span-means
+    -> pooled.pt + manifest under ``root`` (extracted VERBATIM from the round-3
+    ``run_pfx_corpus_unit``; round 4 threads the on_target_r4 root + ladder
+    contexts through the SAME statements — no clone drift, #399 class)."""
     from transformers import AutoTokenizer
 
     from explore_persona_space.analysis.representation_shift import _teacher_forced_span_means
 
-    out_dir = _pfx_root(cfg) / "corpus_capture" / unit_id
-    cid = X.pfx_unit_context_id(unit_id)
-    cond_rec = _pfx_cond_record(cfg, cid)
+    out_dir = root / "corpus_capture" / unit_id
     sample = X.load_pfx_sample(cfg.out_root)
     regime = _pfx_regime(cfg, unit_id, cond_rec, sample, PFX_SPANS)
     if (out_dir / "pooled.pt").exists():
         _pfx_check_regime(out_dir, regime)  # refuse a stale-regime store loud
         return
     _pfx_check_regime(out_dir, regime)
-    ctx = X.pfx_resolve_context(cid)
     max_model_len = cond_rec["budgets"][_pfx_decode_class(unit_id)]["max_model_len"]
     prompts = [r["prompt"] for r in sample["rows"]]
     model_path, cleanup = _resolve_unit_model(cfg, unit_id.split("@")[0])
@@ -3631,23 +3654,26 @@ def run_pfx_tf_unit(cfg: Cfg, unit_arg: str) -> None:
         _cleanup_merged(cleanup)
 
 
-def _pfx_pilot_gate(ratio: float, smoke: bool) -> None:
+def _pfx_pilot_gate(
+    ratio: float, smoke: bool, *, tag: str = "pfx1", booked: float = PFX_BOOKED_UNIT_GPU_H
+) -> None:
     """Kill criterion (a), plan §7: pilot wall > 2x the booked per-unit row =>
     re-size before fleet launch; > 4x => halt + re-plan. Demoted to a log line
     under smoke (the #1345 gate-calibration rule — smoke n cannot satisfy a
-    production-scale wall book)."""
+    production-scale wall book). ``tag``/``booked`` default to the round-3
+    pfx1 values; lad1 threads its own (round-4 reuse, defaults preserved)."""
     if smoke:
-        logger.info("[pfx1] smoke: pilot wall ratio %.2f (gate informational)", ratio)
+        logger.info("[%s] smoke: pilot wall ratio %.2f (gate informational)", tag, ratio)
         return
     if ratio > 4.0:
         raise RuntimeError(
-            f"[pfx1] kill criterion (a): pilot wall {ratio:.2f}x the booked "
-            f"{PFX_BOOKED_UNIT_GPU_H} GPU-h/unit — HALT + re-plan (plan §7)"
+            f"[{tag}] kill criterion (a): pilot wall {ratio:.2f}x the booked "
+            f"{booked} GPU-h/unit — HALT + re-plan (plan §7)"
         )
     if ratio > 2.0:
         raise RuntimeError(
-            f"[pfx1] kill criterion (a): pilot wall {ratio:.2f}x the booked "
-            f"{PFX_BOOKED_UNIT_GPU_H} GPU-h/unit — re-size §9 before fleet launch"
+            f"[{tag}] kill criterion (a): pilot wall {ratio:.2f}x the booked "
+            f"{booked} GPU-h/unit — re-size §9 before fleet launch"
         )
 
 
@@ -3740,6 +3766,860 @@ def phase_pfx4(cfg: Cfg) -> None:
     )
 
 
+# ── lad: round-4 prefix-richness dose ladder (plan v10) ─────────────────────
+#
+# lad_build  VM-side (CPU, pre-dispatch): deterministic WildChat-1M streaming
+#            scan -> 3-rung never-trained selection (bands anchored to the
+#            trained-prefix token counts, production tokenizer) + five
+#            exclusion screens -> prefix_ladder.json; uploads the ladder + the
+#            r3-results mirror to the Hub (fellows-lane staging) and copies
+#            the ladder into the repo results tree for the pre-dispatch commit.
+# lad0  rung-corpus render + budgets + FULL-GRAIN exclusion re-assert (CPU).
+# lad1  pilot: syc-pers-con-lr1e5-s42 @ r_long, production shape (kill (a)).
+# lad2  rung capture (15 units: 12 trained + 3 base@rung; all content decode).
+# lad4  on_target_r4 tree upload + exact-set verify (BEFORE fits; #825).
+
+WILDCHAT_DATASET = "allenai/WildChat-1M"
+LAD_SCAN_ROWS = 50_000
+LAD_SCAN_ROWS_WIDENED = 200_000  # pre-registered ONE-step widening (kill (b))
+LAD_SMOKE_SCAN_ROWS = 1_500  # bounded tiny-real probe cap (#1092 class)
+LAD_TURN_CONTENT_CAP = 2000  # corpora.py L1499-1503 parity (BOTH turns)
+LAD_SCAN_CHECKPOINT_EVERY = 2_000  # rows between cursor checkpoints
+LAD_BAND_TOPK = 8  # per-band runner-up depth (cross-rung distinctness margin)
+LAD_BOOKED_UNIT_GPU_H = 1.0  # plan §9 lad1 row (r3 REALIZED long-prefix unit)
+LAD_PILOT_UNIT = "syc-pers-con-lr1e5-s42@r_long"  # worst-case prefix length
+LAD_UPLOAD_TREES = (
+    "on_target_r4/inputs",
+    "on_target_r4/pilot",
+    "on_target_r4/corpus_capture",
+)
+# plan §11 band bounds: (lo_mult, hi_mult) multipliers on the band target
+LAD_BAND_BOUNDS = {"r_short": (0.5, 2.0), "r_mid": (0.5, 2.0), "r_long": (0.75, 1.25)}
+LAD_R3_RESULTS = "on_target_r4/inputs/r3_results"  # plan §4.5 mirror prefix
+
+
+def _lad_root(cfg: Cfg) -> Path:
+    return cfg.out_root / "on_target_r4"
+
+
+def _lad_inputs(cfg: Cfg) -> Path:
+    return _lad_root(cfg) / "inputs"
+
+
+def _lad_repo_ladder_path() -> Path:
+    """The committed (git) copy of the pinned ladder (plan §10 git dest)."""
+    return (
+        REPO_ROOT / "eval_results" / "issue_1768" / "on_target_r4" / "inputs" / "prefix_ladder.json"
+    )
+
+
+def _lad_registry_context(cid: str):
+    from explore_persona_space.artifacts.context import CONTEXTS
+
+    return CONTEXTS[cid]
+
+
+def lad_band_specs(t_pers: int, t_conv: int) -> dict[str, dict]:
+    """Band {target, lo, hi} per rung from the MEASURED anchors (plan §11):
+    short [0.5,2]xT_pers, mid [0.5,2]x√(T_pers·T_conv), long [0.75,1.25]xT_conv."""
+    assert t_pers > 0 and t_conv > t_pers, (t_pers, t_conv)
+    t_gm = (t_pers * t_conv) ** 0.5
+    targets = {"r_short": float(t_pers), "r_mid": float(t_gm), "r_long": float(t_conv)}
+    out = {}
+    for cond, target in targets.items():
+        lo_m, hi_m = LAD_BAND_BOUNDS[cond]
+        out[cond] = {"target": target, "lo": lo_m * target, "hi": hi_m * target}
+    return out
+
+
+def lad_bands_for(t_tokens: int, specs: dict[str, dict]) -> list[str]:
+    return [c for c in X.R4_CONDS if specs[c]["lo"] <= t_tokens <= specs[c]["hi"]]
+
+
+def lad_turns_sha(turns: list[dict]) -> str:
+    blob = json.dumps([[t["role"], t["content"]] for t in turns], ensure_ascii=False)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def _lad_trained_exclusion_material() -> dict:
+    """Trained-context identity material for exclusion screens 1/3 (plan §4.2):
+    the 3 trained prefix recipe shas, the conv prefix's capped turn tuple, the
+    persona system string, and the ICL demonstration texts."""
+    ctxs = {
+        key: X.pfx_resolve_context(cid)
+        for key, cid in (
+            ("pers", "persona_software_engineer"),
+            ("conv", "wildchat_prefix_real545"),
+            ("icl", "icl_prefix_sycophancy"),
+        )
+    }
+    assert ctxs["pers"].system, "persona context lost its system string"
+    return {
+        "trained_shas": {k: _pfx_prefix_sha(c) for k, c in ctxs.items()},
+        "conv_turns": tuple((t["role"], t["content"]) for t in ctxs["conv"].prefix_turns),
+        "persona_system": ctxs["pers"].system,
+        "icl_demo_texts": [t["content"] for t in ctxs["icl"].prefix_turns],
+    }
+
+
+def _lad_full_grain_samples(cfg: Cfg) -> tuple[set[str], list[str]]:
+    """(FULL round-1 sha set, FULL 4,400 pfx query texts) for the exclusion
+    screens — staged to DEDICATED full-grain paths so a smoke out-root's
+    sliced samples are never consulted (plan §4 smoke parity / #1817 rule)."""
+    from explore_persona_space.orchestrate import hub
+
+    inputs = _lad_inputs(cfg)
+    full_r1 = inputs / "corpus_sample_full.json"
+    if not full_r1.exists():
+        local = cfg.out_root / "inputs" / "corpus_sample.json"
+        if local.exists() and json.loads(local.read_text())["n_train"] == X.N_TRAIN:
+            full_r1.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(local, full_r1)
+        else:
+            hub.stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/inputs/corpus_sample.json",
+                full_r1,
+                repo_type="dataset",
+            )
+    r1 = json.loads(full_r1.read_text())
+    assert r1["n_train"] == X.N_TRAIN, (str(full_r1), r1["n_train"], "full-grain r1 required")
+    sha_set = {r["sha"] for r in r1["rows"]}
+    full_pfx = inputs / "corpus_sample_pfx_full.json"
+    if not full_pfx.exists():
+        local = _pfx_inputs(cfg) / "corpus_sample_pfx.json"
+        if local.exists() and json.loads(local.read_text())["n_train"] == X.PFX_N_TRAIN:
+            full_pfx.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(local, full_pfx)
+        else:
+            hub.stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/on_target/inputs/corpus_sample_pfx.json",
+                full_pfx,
+                repo_type="dataset",
+            )
+    pfx = json.loads(full_pfx.read_text())
+    n_full = X.PFX_N_TRAIN + X.N_VAL + X.N_TEST
+    assert pfx["n_train"] == X.PFX_N_TRAIN and len(pfx["rows"]) == n_full, (
+        str(full_pfx),
+        pfx["n_train"],
+        len(pfx["rows"]),
+    )
+    return sha_set, [r["prompt"] for r in pfx["rows"]]
+
+
+def lad_screen_reject(row: dict) -> str | None:
+    """Cheap corpus screens (plan §4.2 exclusion 5 + shape): first-violation
+    name, or None. `toxic`/`redacted` must be present AND falsy-boolean False
+    (the #1092/#1739 field-semantics lessons: full language names; missing or
+    truthy moderation fields reject fail-safe)."""
+    if row.get("language") != "English":
+        return "language"
+    tox = row.get("toxic")
+    if tox is None or bool(tox):
+        return "toxic"
+    red = row.get("redacted")
+    if red is None or bool(red):
+        return "redacted"
+    conv = row.get("conversation") or []
+    if len(conv) < 2:
+        return "too_few_turns"
+    if (conv[0].get("role"), conv[1].get("role")) != ("user", "assistant"):
+        return "bad_roles"
+    c0 = (conv[0].get("content") or "")[:LAD_TURN_CONTENT_CAP]
+    c1 = (conv[1].get("content") or "")[:LAD_TURN_CONTENT_CAP]
+    if not (c0.strip() and c1.strip()):
+        return "empty_content"
+    return None
+
+
+def lad_exclusion_reject(
+    c0: str, c1: str, raw_user: str, excl: dict, sha_set: set[str]
+) -> str | None:
+    """Never-trained / content-novel screens 1-3 (plan §4.2), belt excluded
+    (the 4,400-text substring belt runs at selection + lad0 re-check)."""
+    if (("user", c0), ("assistant", c1)) == excl["conv_turns"]:
+        return "trained_prefix"
+    if excl["persona_system"] in c0 or excl["persona_system"] in c1:
+        return "trained_context_containment"
+    for demo in excl["icl_demo_texts"]:
+        if demo in c0 or demo in c1:
+            return "trained_context_containment"
+    if X.prompt_sha(c0) in sha_set or X.prompt_sha(raw_user) in sha_set:
+        return "query_sha_overlap"
+    return None
+
+
+def lad_substring_belt_hit(c0: str, c1: str, query_texts: list[str]) -> bool:
+    """Exclusion-2 belt: any 4,400-set query text as a substring of either
+    candidate turn (run on selection candidates + the lad0 full-grain re-check)."""
+    return any((q in c0) or (q in c1) for q in query_texts)
+
+
+def _lad_scan_dir(cfg: Cfg) -> Path:
+    return _lad_root(cfg) / "scan"  # cursor state — NOT in the upload trees
+
+
+def _lad_scan(
+    cfg: Cfg,
+    tok,
+    specs: dict,
+    excl: dict,
+    sha_set: set[str],
+    scan_cap: int,
+) -> tuple[dict[str, list[dict]], dict[str, int], int, str]:
+    """Deterministic WildChat-1M stream scan (dataset order) with chunked
+    cursor checkpoints + fingerprint-gated resume (#1092 external-stream rule).
+    Returns (per-band top-K pools, per-screen reject counters, rows_scanned,
+    dataset revision). Candidate texts NEVER hit logs (digest-only discipline)."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    revision = hub.retry_transient(
+        lambda: HfApi().dataset_info(WILDCHAT_DATASET).sha,
+        what="WildChat-1M revision resolve",
+    )
+    fp = hashlib.sha256(
+        json.dumps(
+            {
+                "dataset": WILDCHAT_DATASET,
+                "revision": revision,
+                "bands": specs,
+                "cap": LAD_TURN_CONTENT_CAP,
+                "screens": "english+toxicF+redactedF+2turn+ua+nonempty+excl123",
+                "trained_shas": excl["trained_shas"],
+                "smoke": cfg.smoke,
+            },
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()[:16]
+    cursor_path = _lad_scan_dir(cfg) / "cursor.json"
+    pools: dict[str, list[dict]] = {c: [] for c in X.R4_CONDS}
+    counters: dict[str, int] = {}
+    start = 0
+    if cursor_path.exists():
+        prev = json.loads(cursor_path.read_text())
+        if prev.get("fingerprint") == fp and prev.get("rows_scanned", 0) <= scan_cap:
+            pools = {c: list(prev["pools"].get(c, [])) for c in X.R4_CONDS}
+            counters = dict(prev["counters"])
+            start = int(prev["rows_scanned"])
+            logger.info("[lad_build] cursor resume at row %d (fp %s)", start, fp)
+        else:
+            logger.info("[lad_build] cursor fingerprint/cap mismatch — fresh scan")
+    if start >= scan_cap:
+        return pools, counters, start, revision
+
+    from datasets import load_dataset
+
+    ds = load_dataset(WILDCHAT_DATASET, split="train", streaming=True, revision=revision)
+    if start:
+        ds = ds.skip(start)
+    n = start
+    t0 = time.time()
+
+    def _checkpoint() -> None:
+        _atomic_json(
+            cursor_path,
+            {
+                "fingerprint": fp,
+                "revision": revision,
+                "rows_scanned": n,
+                "pools": pools,
+                "counters": counters,
+                **_meta(),
+            },
+        )
+
+    row = None
+    for row in ds:
+        if n == 0:
+            missing = [
+                k
+                for k in ("conversation", "language", "toxic", "redacted", "conversation_hash")
+                if k not in row
+            ]
+            assert not missing, f"[lad_build] WildChat row schema drift — missing {missing}"
+        n += 1
+        reason = lad_screen_reject(row)
+        if reason is None:
+            conv = row["conversation"]
+            c0 = (conv[0].get("content") or "")[:LAD_TURN_CONTENT_CAP]
+            c1 = (conv[1].get("content") or "")[:LAD_TURN_CONTENT_CAP]
+            t_tokens = len(tok(c0, add_special_tokens=False)["input_ids"]) + len(
+                tok(c1, add_special_tokens=False)["input_ids"]
+            )
+            bands = lad_bands_for(t_tokens, specs)
+            if not bands:
+                reason = "out_of_band"
+            else:
+                reason = lad_exclusion_reject(c0, c1, conv[0].get("content") or "", excl, sha_set)
+            if reason is None:
+                cand = {
+                    "index": n - 1,  # 0-based dataset order index
+                    "conversation_hash": str(row["conversation_hash"]),
+                    "T": t_tokens,
+                    "turns": [
+                        {"role": "user", "content": c0},
+                        {"role": "assistant", "content": c1},
+                    ],
+                }
+                for band in bands:
+                    counters[f"band_{band}"] = counters.get(f"band_{band}", 0) + 1
+                    pool = pools[band]
+                    pool.append({**cand, "dist": abs(_log(t_tokens) - _log(specs[band]["target"]))})
+                    pool.sort(key=lambda c: (c["dist"], c["index"]))
+                    del pool[LAD_BAND_TOPK:]
+        if reason is not None:
+            counters[reason] = counters.get(reason, 0) + 1
+        if n % LAD_SCAN_CHECKPOINT_EVERY == 0:
+            _checkpoint()
+        if n % 10_000 == 0:
+            kept = sum(counters.get(f"band_{c}", 0) for c in X.R4_CONDS)
+            print(
+                f"[lad_build] scanned {n}/{scan_cap} kept={kept} elapsed={time.time() - t0:.0f}s",
+                flush=True,
+            )
+        if n >= scan_cap:
+            break
+    # #952: release the streaming dataset deterministically pre-shutdown
+    del row, ds
+    gc.collect()
+    _checkpoint()
+    kept = sum(counters.get(f"band_{c}", 0) for c in X.R4_CONDS)
+    print(
+        f"[lad_build] done: scanned={n} kept_in_band={kept} rejects="
+        f"{json.dumps({k: v for k, v in sorted(counters.items()) if not k.startswith('band_')})}",
+        flush=True,
+    )
+    return pools, counters, n, revision
+
+
+def _log(x: float) -> float:
+    import math
+
+    return math.log(max(x, 1e-9))
+
+
+def _lad_select_rungs(
+    pools: dict[str, list[dict]],
+    query_texts: list[str],
+    counters: dict[str, int],
+) -> tuple[dict[str, dict], list[str]]:
+    """Deterministic selection: per band, candidates in (|log T − log target|,
+    dataset index) order; first passing the substring belt + cross-rung
+    distinctness (exclusion 4) wins. Returns (selected, shortage bands)."""
+    selected: dict[str, dict] = {}
+    used_hashes: set[str] = set()
+    shortage: list[str] = []
+    for cond in X.R4_CONDS:
+        picked = None
+        for cand in sorted(pools[cond], key=lambda c: (c["dist"], c["index"])):
+            if cand["conversation_hash"] in used_hashes:
+                counters["cross_rung_hash_collision"] = (
+                    counters.get("cross_rung_hash_collision", 0) + 1
+                )
+                continue
+            c0, c1 = (t["content"] for t in cand["turns"])
+            if lad_substring_belt_hit(c0, c1, query_texts):
+                counters["belt_query_text_substring"] = (
+                    counters.get("belt_query_text_substring", 0) + 1
+                )
+                continue
+            picked = cand
+            break
+        if picked is None:
+            shortage.append(cond)
+            continue
+        used_hashes.add(picked["conversation_hash"])
+        selected[cond] = picked
+    return selected, shortage
+
+
+def _lad_write_ladder(
+    cfg: Cfg,
+    selected: dict[str, dict],
+    specs: dict,
+    counters: dict[str, int],
+    n_scanned: int,
+    revision: str,
+    excl: dict,
+    anchors: dict,
+) -> dict:
+    """Compose + atomically write prefix_ladder.json (recipes + manifest;
+    prefixes referenced by conversation_hash + dataset index + sha in every
+    LOG — raw text lives only in this pinned recipe file, plan §4.2)."""
+    import types
+
+    rungs = {}
+    trained_shas = set(excl["trained_shas"].values())
+    for cond in X.R4_CONDS:
+        cand = selected[cond]
+        cid = X.R4_CONTEXT_ID_BY_COND[cond]
+        shim = types.SimpleNamespace(
+            context_id=cid, system=None, prefix_turns=tuple(cand["turns"]), user_wrap=None
+        )
+        recipe_sha = _pfx_prefix_sha(shim)
+        assert recipe_sha not in trained_shas, (cond, "recipe sha collides with a trained prefix")
+        rungs[cond] = {
+            "context_id": cid,
+            "prefix_turns": cand["turns"],
+            "conversation_hash": cand["conversation_hash"],
+            "dataset_index": cand["index"],
+            "turns_sha256": lad_turns_sha(cand["turns"]),
+            "recipe_sha256": recipe_sha,
+            "realized_tokens": cand["T"],
+            "target_tokens": specs[cond]["target"],
+            "band": [specs[cond]["lo"], specs[cond]["hi"]],
+            "log_dist_to_target": cand["dist"],
+            "n_band_candidates": counters.get(f"band_{cond}", 0),
+        }
+        logger.info(
+            "[lad_build] %s: hash=%s index=%d T=%d band=[%.1f, %.1f] candidates=%d",
+            cond,
+            cand["conversation_hash"],
+            cand["index"],
+            cand["T"],
+            specs[cond]["lo"],
+            specs[cond]["hi"],
+            counters.get(f"band_{cond}", 0),
+        )
+    ladder = {
+        "rungs": rungs,
+        "anchors": anchors,
+        "scan": {
+            "dataset": WILDCHAT_DATASET,
+            "revision": revision,
+            "n_rows_scanned": n_scanned,
+            "widened": n_scanned > LAD_SCAN_ROWS,
+            "turn_content_cap": LAD_TURN_CONTENT_CAP,
+            "selection_rule": "min (|log T - log target|, dataset index); all screens",
+        },
+        "counters": counters,
+        "exclusions": {
+            "trained_prefix_recipe_shas": excl["trained_shas"],
+            "screens": [
+                "trained-prefix disjointness (turns + recipe sha)",
+                "query-corpus sha disjointness (full round-1 sample) + substring belt",
+                "trained-context non-containment (persona system + icl demos)",
+                "cross-rung conversation_hash distinctness",
+                "corpus screens (English / toxic False / redacted False)",
+            ],
+        },
+        **_meta(),
+    }
+    _atomic_json(_lad_inputs(cfg) / "prefix_ladder.json", ladder)
+    return ladder
+
+
+def _lad_mirror_r3_results(cfg: Cfg) -> None:
+    """Unconditional idempotent pre-dispatch mirror of the round-3 COMMITTED
+    result inputs to HF `{prefix}/on_target_r4/inputs/r3_results/` (plan §4.5
+    lad7 + §9 off_pod_phases: the fellows lane rsync-excludes eval_results/).
+    ONE upload_folder commit (never a per-file loop — the #664 504-storm rule)."""
+    from explore_persona_space.orchestrate import hub
+
+    src_root = REPO_ROOT / "eval_results" / "issue_1768" / "on_target"
+    mirror = _lad_inputs(cfg) / "r3_results"
+    rels = ["map_change_on_target.json", "m0_prefix_effect.json"]
+    rels += [
+        f"percell/{a}_L{layer}_{s}.json"
+        for a in X.R4_ARMS
+        for layer in X.LAYERS
+        for s in ("bare_n", "control", "own")
+    ]
+    rels += [f"fits_bare_n/{a}_L{layer}.json" for a in X.R4_ARMS for layer in X.LAYERS]
+    for rel in rels:
+        src = src_root / rel
+        assert src.exists(), f"[lad_build] r3 mirror source missing from the repo tree: {src}"
+        dst = mirror / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if not dst.exists():
+            shutil.copy2(src, dst)
+    url = hub._upload(
+        mirror,
+        repo_id=X.HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{cfg.hf_prefix}/{LAD_R3_RESULTS}",
+    )
+    if not url:
+        raise RuntimeError("[lad_build] r3_results mirror upload returned no path")
+    logger.info("[lad_build] r3_results mirror uploaded (%d files)", len(rels))
+
+
+def _lad_build_publish(cfg: Cfg, ladder: dict) -> None:
+    """Repo-copy the pinned ladder for the pre-dispatch git commit + upload it
+    and the r3-results mirror to the Hub (idempotent; production only)."""
+    from explore_persona_space.orchestrate import hub
+
+    src = _lad_inputs(cfg) / "prefix_ladder.json"
+    repo_copy = _lad_repo_ladder_path()
+    if not repo_copy.exists() or repo_copy.read_text() != src.read_text():
+        repo_copy.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, repo_copy)
+        logger.info("[lad_build] ladder copied to %s (commit pre-dispatch)", repo_copy)
+    if not cfg.upload:
+        logger.info("[lad_build] upload disabled (--no-upload)")
+        return
+    url = hub._upload(
+        src,
+        repo_id=X.HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{cfg.hf_prefix}/on_target_r4/inputs/prefix_ladder.json",
+        upload_as_file=True,
+    )
+    if not url:
+        raise RuntimeError("[lad_build] prefix_ladder.json upload returned no path")
+    _lad_mirror_r3_results(cfg)
+
+
+def phase_lad_build(cfg: Cfg) -> None:
+    """lad_build (VM-side CPU, pre-dispatch): WildChat-1M streaming scan ->
+    3-rung never-trained ladder (production) / bounded tiny-real ingestion
+    probe with per-screen reject counters (--smoke; #1092 class)."""
+    _phase("lad_build")
+    _status(cfg, "lad_build")
+    from transformers import AutoTokenizer
+
+    dest = _lad_inputs(cfg) / "prefix_ladder.json"
+    if dest.exists() and not cfg.smoke:
+        logger.info("[lad_build] prefix_ladder.json present — resume skip; re-publishing")
+        _lad_build_publish(cfg, json.loads(dest.read_text()))
+        return
+    excl = _lad_trained_exclusion_material()
+    sha_set, query_texts = _lad_full_grain_samples(cfg)
+    # Band anchors ALWAYS use the PRODUCTION tokenizer (plan §11) — never a
+    # model_override tokenizer (the smoke fixture ships the real one anyway).
+    tok = AutoTokenizer.from_pretrained(X.BASE_MODEL)
+    t_pers = len(tok(excl["persona_system"], add_special_tokens=False)["input_ids"])
+    t_conv = sum(
+        len(tok(content, add_special_tokens=False)["input_ids"])
+        for _role, content in excl["conv_turns"]
+    )
+    specs = lad_band_specs(t_pers, t_conv)
+    anchors = {"t_pers": t_pers, "t_conv": t_conv, "t_gm": specs["r_mid"]["target"]}
+    logger.info(
+        "[lad_build] anchors: T_pers=%d T_conv=%d T_gm=%.1f", t_pers, t_conv, anchors["t_gm"]
+    )
+    scan_cap = LAD_SMOKE_SCAN_ROWS if cfg.smoke else LAD_SCAN_ROWS
+    pools, counters, n_scanned, revision = _lad_scan(cfg, tok, specs, excl, sha_set, scan_cap)
+    if cfg.smoke:
+        kept = sum(counters.get(f"band_{c}", 0) for c in X.R4_CONDS)
+        _atomic_json(
+            _lad_inputs(cfg) / "lad_probe_report.json",
+            {
+                "probe": True,
+                "rows_scanned": n_scanned,
+                "kept_in_band": kept,
+                "counters": counters,
+                "anchors": anchors,
+                "bands": specs,
+                "revision": revision,
+                **_meta(),
+            },
+        )
+        assert kept > 0, "[lad_build] tiny-real probe kept ZERO in-band candidates (#1092 class)"
+        logger.info("[lad_build] SMOKE probe: scanned=%d kept_in_band=%d", n_scanned, kept)
+        return
+    selected, shortage = _lad_select_rungs(pools, query_texts, counters)
+    if shortage and scan_cap < LAD_SCAN_ROWS_WIDENED:
+        logger.info(
+            "[lad_build] band shortage %s at %d rows — pre-registered widening to %d",
+            shortage,
+            n_scanned,
+            LAD_SCAN_ROWS_WIDENED,
+        )
+        pools, counters, n_scanned, revision = _lad_scan(
+            cfg, tok, specs, excl, sha_set, LAD_SCAN_ROWS_WIDENED
+        )
+        selected, shortage = _lad_select_rungs(pools, query_texts, counters)
+    if shortage:
+        raise RuntimeError(
+            f"[lad_build] kill criterion (b): band(s) {shortage} have no qualifying "
+            f"candidate after the {LAD_SCAN_ROWS_WIDENED}-row widening — "
+            "failure_class: data (plan §7; re-plan the band bounds)"
+        )
+    ladder = _lad_write_ladder(cfg, selected, specs, counters, n_scanned, revision, excl, anchors)
+    _lad_build_publish(cfg, ladder)
+
+
+def _lad_stage_inputs(cfg: Cfg) -> None:
+    """lad0 staging: pinned ladder (local -> repo checkout -> Hub, fail-loud
+    both-miss) + the pfx sample. Production stages the round-3
+    corpus_sample_pfx.json VERBATIM from the Hub (plan §4.3 — never
+    re-derived); --smoke derives the tiny sample via the round-3
+    `_build_pfx_sample` path from the fixture corpus (refusal-hygiene:
+    synthetic rows), while the FULL-grain samples for the exclusion re-assert
+    stage separately in `_lad_full_grain_samples`."""
+    from explore_persona_space.orchestrate import hub
+
+    ladder_path = _lad_inputs(cfg) / "prefix_ladder.json"
+    if not ladder_path.exists():
+        repo_copy = _lad_repo_ladder_path()
+        if repo_copy.exists():
+            ladder_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(repo_copy, ladder_path)
+        else:
+            hub.stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/on_target_r4/inputs/prefix_ladder.json",
+                ladder_path,
+                repo_type="dataset",
+            )
+    canonical = _pfx_inputs(cfg) / "corpus_sample_pfx.json"
+    if not canonical.exists():
+        if cfg.smoke:
+            _build_pfx_sample(cfg)  # fixture-derived tiny sample (p0 --smoke ran)
+        else:
+            hub.stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/on_target/inputs/corpus_sample_pfx.json",
+                canonical,
+                repo_type="dataset",
+            )
+
+
+def _lad_recheck_exclusions(cfg: Cfg, tok, ladder: dict) -> dict:
+    """Kill criterion (d): re-assert the §4.2 exclusion set + band membership
+    against the FULL pinned ladder + FULL-grain samples (never the smoke
+    slice — the #1817 rule). Any violation = builder bug, fail loud."""
+    excl = _lad_trained_exclusion_material()
+    sha_set, query_texts = _lad_full_grain_samples(cfg)
+    trained_shas = set(excl["trained_shas"].values())
+    out = {}
+    hashes = []
+    for cond in X.R4_CONDS:
+        rec = ladder["rungs"][cond]
+        turns = rec["prefix_turns"]
+        roles = tuple(t["role"] for t in turns)
+        assert roles == ("user", "assistant"), (cond, roles)
+        c0, c1 = (t["content"] for t in turns)
+        assert c0.strip() and c1.strip(), (cond, "empty turn content")
+        assert len(c0) <= LAD_TURN_CONTENT_CAP and len(c1) <= LAD_TURN_CONTENT_CAP, cond
+        t_tokens = len(tok(c0, add_special_tokens=False)["input_ids"]) + len(
+            tok(c1, add_special_tokens=False)["input_ids"]
+        )
+        assert t_tokens == rec["realized_tokens"], (
+            cond,
+            t_tokens,
+            rec["realized_tokens"],
+            "tokenizer drift vs the build-time count",
+        )
+        lo, hi = rec["band"]
+        assert lo <= t_tokens <= hi, (cond, t_tokens, rec["band"])
+        reason = lad_exclusion_reject(c0, c1, c0, excl, sha_set)
+        assert reason is None, (cond, reason, "builder exclusion violated (kill d)")
+        assert not lad_substring_belt_hit(c0, c1, query_texts), (cond, "belt hit (kill d)")
+        assert rec["recipe_sha256"] not in trained_shas, (cond, "trained recipe sha")
+        assert lad_turns_sha(turns) == rec["turns_sha256"], (cond, "turns sha drift")
+        hashes.append(rec["conversation_hash"])
+        out[cond] = {
+            "conversation_hash": rec["conversation_hash"],
+            "dataset_index": rec["dataset_index"],
+            "realized_tokens": t_tokens,
+            "band": rec["band"],
+            "screens": "ALL PASS (full grain)",
+        }
+    assert len(set(hashes)) == len(hashes), ("cross-rung hash collision", hashes)
+    return out
+
+
+def _lad_cond_record(cfg: Cfg, context_id: str) -> dict:
+    conds = json.loads((_lad_inputs(cfg) / "conditions.json").read_text())["conditions"]
+    assert context_id in conds, (context_id, "rung condition not built at lad0", sorted(conds))
+    return conds[context_id]
+
+
+def phase_lad0(cfg: Cfg) -> None:
+    """lad0: rung-corpus render + budgets + FULL-grain exclusion re-assert."""
+    _phase("lad0_rung_corpus")
+    _status(cfg, "lad0_rung_corpus")
+    from transformers import AutoTokenizer
+
+    _lad_stage_inputs(cfg)
+    sample = X.load_pfx_sample(cfg.out_root)
+    done = _lad_inputs(cfg) / "build_done.json"
+    if done.exists():
+        logger.info("[lad0] build_done.json present — resume skip")
+        return
+    X.register_r4_ladder_contexts(cfg.out_root)
+    ladder = X.load_r4_ladder(cfg.out_root)
+    tok = AutoTokenizer.from_pretrained(cfg.model_override or X.BASE_MODEL)
+    conds: dict[str, dict] = {}
+    for cond in X.R4_CONDS:
+        cid = X.R4_CONTEXT_ID_BY_COND[cond]
+        ctx = _lad_registry_context(cid)
+        budgets = _pfx_budget(tok, ctx, sample["rows"])
+        prefix_tokens = len(tok(ctx.render(tok, ""), add_special_tokens=False)["input_ids"])
+        rung = ladder["rungs"][cond]
+        rec = {
+            "tag": cond,
+            "context_id": cid,
+            "prefix_sha256": _pfx_prefix_sha(ctx),
+            "recipe": _pfx_prefix_recipe(ctx),
+            "prefix_tokens": prefix_tokens,
+            "realized_content_tokens": rung["realized_tokens"],
+            "target_tokens": rung["target_tokens"],
+            "band": rung["band"],
+            "conversation_hash": rung["conversation_hash"],
+            "dataset_index": rung["dataset_index"],
+            "message_shape": {
+                "has_system": ctx.system is not None,
+                "n_prefix_turns": len(ctx.prefix_turns),
+                "has_user_wrap": ctx.user_wrap is not None,
+            },
+            "budgets": budgets,
+            "n_rows": len(sample["rows"]),
+        }
+        conds[cid] = rec
+        _atomic_json(
+            _lad_inputs(cfg) / f"corpus_{cond}.json",
+            {
+                **rec,
+                "rows_sha256": hashlib.sha256(
+                    "\n".join(r["sha"] for r in sample["rows"]).encode("utf-8")
+                ).hexdigest(),
+                **_meta(),
+            },
+        )
+    _atomic_json(_lad_inputs(cfg) / "conditions.json", {"conditions": conds, **_meta()})
+    recheck = _lad_recheck_exclusions(cfg, tok, ladder)  # kill criterion (d)
+    _atomic_json(_lad_inputs(cfg) / "exclusion_recheck.json", {"rungs": recheck, **_meta()})
+    _atomic_json(
+        done,
+        {"n_rows": len(sample["rows"]), "conditions": sorted(conds), **_meta()},
+    )
+    logger.info("[lad0] rung corpora + budgets + exclusion re-assert done (%d rungs)", len(conds))
+
+
+def run_lad_corpus_unit(cfg: Cfg, unit_id: str) -> None:
+    """lad2 unit: rung-prefixed greedy gen -> TF span-means (prefix+ctx+resp),
+    via the SAME `_prefixed_capture_core` the round-3 pfx2 units run. The
+    ladder registrar runs idempotently at point of use (fresh fan-out
+    subprocesses inherit no registry state — the #1090-fu6/#1315 lessons)."""
+    X.register_r4_ladder_contexts(cfg.out_root)
+    cid = X.r4_unit_context_id(unit_id)
+    _prefixed_capture_core(
+        cfg,
+        unit_id,
+        root=_lad_root(cfg),
+        cid=cid,
+        cond_rec=_lad_cond_record(cfg, cid),
+        ctx=_lad_registry_context(cid),
+    )
+
+
+def phase_lad1(cfg: Cfg) -> None:
+    """lad1: ONE unit at production shape (worst-case long rung); gen + TF
+    walls measured separately (kill criterion a)."""
+    _phase("lad1_pilot")
+    _status(cfg, "lad1_pilot")
+    unit = LAD_PILOT_UNIT
+    run_lad_corpus_unit(cfg, unit)
+    man = json.loads((_lad_root(cfg) / "corpus_capture" / unit / "manifest.json").read_text())
+    unit_wall_h = (man.get("gen_wall_s", 0.0) + man.get("tf_wall_s", 0.0)) / 3600.0
+    ratio = unit_wall_h / LAD_BOOKED_UNIT_GPU_H
+    _atomic_json(
+        _lad_root(cfg) / "pilot" / "pilot_report.json",
+        {
+            "unit": unit,
+            "gen_wall_s": man.get("gen_wall_s"),
+            "tf_wall_s": man.get("tf_wall_s"),
+            "unit_wall_h": unit_wall_h,
+            "booked_unit_gpu_h": LAD_BOOKED_UNIT_GPU_H,
+            "ratio": ratio,
+            "smoke": cfg.smoke,
+            **_meta(),
+        },
+    )
+    print(f"[lad1] pilot {unit} wall={unit_wall_h:.2f}h ratio={ratio:.2f}", flush=True)
+    _pfx_pilot_gate(ratio, cfg.smoke, tag="lad1", booked=LAD_BOOKED_UNIT_GPU_H)
+
+
+def _lad_arms(cfg: Cfg) -> list[str]:
+    """The round-4 arm scope (plan §4.1); --arms filters INSIDE it; smoke =
+    the plan-§4 smoke-parity arm."""
+    if cfg.arms:
+        want = set(cfg.arms)
+        unknown = want - set(X.R4_ARMS)
+        assert not unknown, f"--arms outside the r4 arm set: {sorted(unknown)}"
+        return [a for a in X.R4_ARMS if a in want]
+    if cfg.smoke:
+        return ["syc-pers-con-lr1e5-s42"]
+    return list(X.R4_ARMS)
+
+
+def _lad_conds_capture(cfg: Cfg) -> tuple[str, ...]:
+    return ("r_long",) if cfg.smoke else X.R4_CONDS
+
+
+def _lad_unit_set(cfg: Cfg) -> list[str]:
+    """lad2 units: shared base@rung units first, then arm@rung units
+    (production: 3 + 12 = 15; smoke: base_content@r_long + pilot@r_long)."""
+    arms = _lad_arms(cfg)
+    conds = _lad_conds_capture(cfg)
+    bases = [X.r4_base_unit(c) for c in conds]
+    trained = [X.r4_trained_unit(a, c) for a in arms for c in conds]
+    return bases + trained
+
+
+def _lad_expected_uploads(cfg: Cfg) -> list[str]:
+    expected = []
+    tree = "on_target_r4/corpus_capture"
+    local_tree = cfg.out_root / tree
+    if local_tree.exists():
+        for unit_dir in sorted(local_tree.iterdir()):
+            if (unit_dir / "pooled.pt").exists():
+                expected.append(f"{cfg.hf_prefix}/{tree}/{unit_dir.name}/pooled.pt")
+    return expected
+
+
+def phase_lad4(cfg: Cfg) -> None:
+    """lad4: on_target_r4 tree upload + exact-set verify — BEFORE fits (#825)."""
+    _phase("lad4_store_upload")
+    _status(cfg, "lad4_store_upload")
+    if not cfg.upload:
+        logger.info("[lad4] upload disabled (--no-upload)")
+        return
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    expected = _lad_expected_uploads(cfg)
+    done_path = _lad_root(cfg) / "upload_done.json"
+    if done_path.exists():
+        prior = json.loads(done_path.read_text())
+        if prior.get("n_verified") == len(expected):
+            logger.info(
+                "[lad4] upload_done.json matches the expected store count (%d) — resume skip",
+                len(expected),
+            )
+            return
+        logger.info(
+            "[lad4] expected store count changed (%s -> %d) — re-uploading",
+            prior.get("n_verified"),
+            len(expected),
+        )
+    uploaded = {}
+    for name in LAD_UPLOAD_TREES:
+        dest = _upload_tree(cfg, name)
+        if dest:
+            uploaded[name] = dest
+    if expected:
+        missing = hub.verify_repo_paths_uploaded(
+            HfApi(),
+            X.HF_DATA_REPO,
+            expected,
+            path_in_repo=f"{cfg.hf_prefix}/on_target_r4",
+            repo_type="dataset",
+        )
+        assert not missing, f"lad4 verify: {len(missing)} store files missing on Hub: {missing[:5]}"
+    _atomic_json(
+        done_path,
+        {"uploaded": uploaded, "n_verified": len(expected), **_meta()},
+    )
+
+
 # ── entry ────────────────────────────────────────────────────────────────────
 
 
@@ -3796,6 +4676,12 @@ def _import_check() -> int:
     from explore_persona_space.orchestrate.preflight import (  # noqa: F401
         assert_out_root_headroom,
     )
+
+    # lad (round-4) deferred imports: the WildChat streaming builder + the
+    # ladder registrar's lazy Context import (executed, not just named)
+    from datasets import load_dataset  # noqa: F401
+
+    from explore_persona_space.artifacts.context import CONTEXTS, Context  # noqa: F401
 
     try:  # vLLM is GPU-lane-only; absence is reported, not fatal, off-pod
         import vllm  # noqa: F401
@@ -3865,6 +4751,10 @@ PHASE_HEADROOM_GB = {
     # models <=30 GB => driver asserts >=90 GB free at pfx2 entry.
     "pfx2": 90.0,
     "pfx3": 40.0,
+    # lad2 (plan v10 §9 storage block): new stores ~5.3 GB + rollout text
+    # ~1.5 GB + staged inputs + one transient merged model <=15 GB => the
+    # driver asserts >=60 GB free at lad2 entry.
+    "lad2": 60.0,
 }
 # pnf: ~2 GB staged base text + one transient merged/ft model <=16 GB + ~0.5 GB
 # stores (plan v7 §9 storage block); resume-aware gate below skips it when all
@@ -3918,6 +4808,16 @@ def main(argv: list[str] | None = None) -> int:
             _fanout_phase(cfg, "pfx3", "pfx3_prefixed_tf")
         elif phase == "pfx4":
             phase_pfx4(cfg)
+        elif phase == "lad_build":
+            phase_lad_build(cfg)
+        elif phase == "lad0":
+            phase_lad0(cfg)
+        elif phase == "lad1":
+            phase_lad1(cfg)
+        elif phase == "lad2":
+            _fanout_phase(cfg, "lad2", "lad2_rung_capture")
+        elif phase == "lad4":
+            phase_lad4(cfg)
         else:
             raise ValueError(f"unknown phase {phase}")
     _status(cfg, "done")
