@@ -327,3 +327,33 @@ def test_capture_units_excludes_ft_and_is_deterministic():
     assert [u["step"] for u in units] == [10, 20, 30]
     assert units[0]["subfolder"] == "p/z/checkpoint-10"
     assert dyn.capture_units(ladders, arms_filter=("a-ft",)) == []
+
+
+def test_max_per_arm_keeps_selected_rung_for_every_named_arm():
+    """Regression: the max_per_arm block once reused the arms-filter variable
+    name, so EVERY arm after the first was silently skipped — a two-arm smoke
+    then covered one arm class instead of two."""
+    ladders = {}
+    for name, steps, sel in (("m-one", [10, 20, 30, 40], 30), ("m-two", [5, 15, 25], 25)):
+        ladders[name] = {
+            "arm_id": name,
+            "method": "lora",
+            "kind": "marker" if name == "m-two" else "content",
+            "beh_key": "mk",
+            "ctx_key": "pers",
+            "regime": "con",
+            "seed": 42,
+            "lr": 5e-6,
+            "selected_step": sel,
+            "repo": "r",
+            "prefix": f"p/{name}",
+            "steps": steps,
+        }
+    units = dyn.capture_units(ladders, arms_filter=("m-one", "m-two"), max_per_arm=2)
+    by_arm: dict[str, list[int]] = {}
+    for u in units:
+        by_arm.setdefault(u["arm_id"], []).append(u["step"])
+    assert set(by_arm) == {"m-one", "m-two"}, by_arm  # fails pre-fix (only m-one)
+    assert by_arm["m-one"] == [10, 30] and by_arm["m-two"] == [5, 25]
+    for arm, steps in by_arm.items():
+        assert ladders[arm]["selected_step"] in steps, (arm, steps)

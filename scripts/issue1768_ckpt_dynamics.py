@@ -68,7 +68,16 @@ TF_BATCH = X.TF_BATCH_SIZE  # 8 (round-1 parity)
 # 20 source-context rows alone; round 1 forwarded all 120 panel rows), so the
 # expected gap is bf16 padded-batch jitter on span means — orders of magnitude
 # below a real wiring bug (gotchas.md § bf16 GPU parity gate tolerance).
-PARITY_COS_ABS_TOL = 5e-3
+#
+# CALIBRATED on the 2026-07-31 pod smoke (6 selected-rung comparisons, H100
+# bf16), which reproduced the documented DEPTH amplification — mean |Δcos| by
+# layer: L14 0.00121, L19 0.00413, L25 0.00359, worst single cell 0.00554 (L25
+# δ, where both cosines are ~0.01 so a fixed vector-space jitter is a large
+# RELATIVE move). 0.025 is ~4.5x that measured worst deviation and still ~20x
+# below a real wiring bug's signature (a mis-shifted span or wrong baseline half
+# displaces the cosine by 0.1-1.0, not 0.005). Never widen this without
+# re-attributing the miss per that gotchas entry.
+PARITY_COS_ABS_TOL = 0.025
 PARITY_MIN_UNITS = 8  # below this the gate cannot certify; reported, never silent
 
 RB_HUB_PATHS = {  # mirrors issue1768_directions.RB_HUB_PATHS
@@ -215,21 +224,23 @@ def capture_units(
     round 1 at zero GPU cost — see `analyze`'s `ft_verdict_only` rows and the
     coverage report's `ft_skipped_by_design`.
     """
-    keep = set(arms_filter or ())
+    wanted_arms = set(arms_filter or ())
     units: list[dict] = []
     for arm_id, lad in sorted(ladders.items()):
-        if keep and arm_id not in keep:
+        if wanted_arms and arm_id not in wanted_arms:
             continue
         if lad["method"] != "lora":
             continue
         steps = list(lad["steps"])
         if max_per_arm and len(steps) > max_per_arm:
             # smoke sizing: keep the SELECTED rung (so the round-1 parity gate
-            # and the cos-vs-verdict path both fire) plus the lowest rungs
+            # and the cos-vs-verdict path both fire) plus the lowest rungs.
+            # NB: a distinct name — reusing `wanted_arms` here silently skipped
+            # every arm after the first (caught by the two-arm smoke).
             sel = lad["selected_step"]
-            keep = [sel] if sel in steps else []
-            keep += [s for s in steps if s not in keep][: max_per_arm - len(keep)]
-            steps = sorted(keep)
+            kept_steps = [sel] if sel in steps else []
+            kept_steps += [s for s in steps if s not in kept_steps][: max_per_arm - len(kept_steps)]
+            steps = sorted(kept_steps)
         for step in steps:
             units.append(
                 {

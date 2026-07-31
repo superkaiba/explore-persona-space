@@ -12,6 +12,11 @@
 # they run, or a chained caller would fan out concurrently (gotchas.md #1738).
 set -euo pipefail
 
+# A detached (setsid/nohup) launch inherits NO login PATH, so `uv` — installed at
+# /root/.local/bin by bootstrap_pod.sh — is not found and the leg dies rc=127
+# seconds in (gotchas.md § setsid launcher PATH). Must be the FIRST thing done.
+export PATH="/root/.local/bin:$PATH"
+
 LEG="${1:?usage: issue1768_dyn_launch.sh <smoke|full>}"
 REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"
 OUT_ROOT="${OUT_ROOT:-/workspace/issue-1768-dyn}"
@@ -48,24 +53,36 @@ if [ "$LEG" = "smoke" ]; then
 fi
 
 # ── full: shard the LoRA ladder across every provisioned GPU ──────────────────
+# WORKERS_PER_GPU > 1 because the measured per-unit cost is dominated by the
+# PEFT adapter load (6.8s of ~10s; the GPU forward is 0.5s) — that cost is
+# CPU/PCIe-bound, so co-resident workers overlap it instead of queueing. Two 7B
+# bf16 models (~15 GiB each) plus activations fit an 80 GiB card with headroom.
+WORKERS_PER_GPU="${WORKERS_PER_GPU:-2}"
+NSHARD=$((NGPU * WORKERS_PER_GPU))
 pids=()
+shard_gpu=()
 for g in $(seq 0 $((NGPU - 1))); do
-  echo "[dispatch] launching capture shard $g/$NGPU on GPU $g"
-  CUDA_VISIBLE_DEVICES="$g" uv run python "$DRIVER" \
-    --phase capture --out-root "$OUT_ROOT" --shard "$g/$NGPU" --gpu-id "$g" \
-    > "$LOG_DIR/issue-1768-dyn-shard$g.log" 2>&1 &
-  pids+=("$!")
+  for w in $(seq 0 $((WORKERS_PER_GPU - 1))); do
+    s=$((g * WORKERS_PER_GPU + w))
+    echo "[dispatch] launching capture shard $s/$NSHARD on GPU $g"
+    CUDA_VISIBLE_DEVICES="$g" uv run python "$DRIVER" \
+      --phase capture --out-root "$OUT_ROOT" --shard "$s/$NSHARD" --gpu-id "$g" \
+      > "$LOG_DIR/issue-1768-dyn-shard$s.log" 2>&1 &
+    pids+=("$!")
+    shard_gpu+=("$s:$g")
+    sleep 5   # stagger the 7B loads so co-resident workers don't spike together
+  done
 done
-echo "[dispatch] shard pids: ${pids[*]}"
+echo "[dispatch] shard pids: ${pids[*]} (shard:gpu ${shard_gpu[*]})"
 rc=0
 for p in "${pids[@]}"; do
   if ! wait "$p"; then rc=1; echo "[dispatch] shard pid $p FAILED"; fi
 done
 if [ "$rc" -ne 0 ]; then
   echo "[dispatch] a capture shard failed — tails follow"
-  for g in $(seq 0 $((NGPU - 1))); do
-    echo "----- shard $g tail -----"
-    tail -n 120 "$LOG_DIR/issue-1768-dyn-shard$g.log" || true
+  for s in $(seq 0 $((NSHARD - 1))); do
+    echo "----- shard $s tail -----"
+    tail -n 80 "$LOG_DIR/issue-1768-dyn-shard$s.log" || true
   done
   echo "[phase=failed]"
   exit 1
