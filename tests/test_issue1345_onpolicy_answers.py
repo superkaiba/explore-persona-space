@@ -1596,3 +1596,29 @@ def test_gen_tally_counts_namespaced_gate_reasons_without_crashing(monkeypatch):
     assert "counts.setdefault(reason, 0)" in src
     # The strict assert must survive for non-namespaced reasons.
     assert 'assert reason in counts, f"unaccounted drop reason {reason!r}"' in src
+
+
+def test_max_tokens_is_overridable_upward_only(monkeypatch):
+    """A rule-23 truncation re-judge needs a bigger budget, but the #1916 floor
+    must still hold — a caller may only go UP."""
+    jl = _judge_module(monkeypatch)
+    import inspect
+
+    sig = inspect.signature(jl.run_leg)
+    assert sig.parameters["max_tokens"].default == jl.JUDGE_MAX_TOKENS
+    src = inspect.getsource(jl.run_leg)
+    assert "max_tokens >= JUDGE_MAX_TOKENS" in src, "the floor must be enforced at run_leg"
+    assert "max_tokens=max_tokens" in src, "the override must reach judge_graded"
+    assert '"max_tokens": max_tokens' in src, "the report must record the budget ACTUALLY used"
+    main_src = inspect.getsource(jl.main)
+    assert "max_tokens=args.max_tokens" in main_src
+    # A below-floor value fails loud rather than silently re-truncating.
+    with pytest.raises(AssertionError, match="below the #1916"):
+        jl.run_leg(
+            jl.LEG_AI_LIKENESS,
+            [("ail_x_s1", "q", "a")],
+            Path("/tmp/nope-i1345"),
+            "x",
+            execute=False,
+            max_tokens=64,
+        )
