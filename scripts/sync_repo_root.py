@@ -148,6 +148,13 @@ RESCUE_ROOT = Path(
         "EPM_ROOT_SYNC_RESCUE_ROOT", str(Path.home() / ".task-workflow" / "root-sync-rescue")
     )
 )
+# Durable per-KEPT-outcome record (#1870): one JSONL row per KEPT autostash
+# outcome, appended by ``recover_stranded_autostash`` so a stranded stash never
+# depends on a session noticing the stderr report line (the #1751 surfacing
+# duty; stash triage itself is tracked in #1736).
+KEPT_SIDECAR_RELPATH = Path(".claude/cache/root-sync-kept-stash-events.jsonl")
+# Mirror of ``vm_disk_guard._TELEGRAM_PUSH_SCRIPT_DEFAULT`` (fail-soft channel).
+_TELEGRAM_PUSH_SCRIPT_DEFAULT = Path.home() / "my-goat" / "scripts" / "telegram_push.sh"
 INDEX_LOCK_WAIT_S = 60.0
 INDEX_LOCK_POLL_S = 2.0
 
@@ -1255,6 +1262,161 @@ def _clear_unmerged_paths(repo: Path, paths: list[str]) -> None:
     git(repo, "checkout", "HEAD", "--", *paths)
 
 
+# ─── KEPT-stash durable surfacing (#1870) ────────────────────────────────────
+
+
+def _kept_sidecar_path(repo: Path) -> Path:
+    """Absolute path of the durable KEPT-stash sidecar for ``repo``."""
+    return repo / KEPT_SIDECAR_RELPATH
+
+
+def _kept_sidecar_known_shas(path: Path) -> set[str]:
+    """Full stash-commit shas already recorded in the KEPT sidecar (push dedup).
+
+    FAIL-SOFT on ALL read errors — the one sanctioned deviation from fail-fast:
+    an OSError on open (path is a directory, permission denied, transient FS
+    fault) returns ``set()``, and a malformed / non-dict / sha-less JSON line
+    is skipped, so the cost of a degraded scan is one duplicate push, never a
+    crashed recovery tool. O(file) linear scan — fine at current scale (tens
+    of rows)."""
+    shas: set[str] = set()
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for line in fh:
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(row, dict) and isinstance(row.get("sha"), str):
+                    shas.add(row["sha"])
+    except (OSError, UnicodeDecodeError):
+        return set()
+    return shas
+
+
+def _record_kept_stash(
+    repo: Path,
+    report: dict,
+    *,
+    ref: str,
+    sha: str,
+    reason: str,
+    detail: str,
+    rescue_patch: Path,
+) -> tuple[str, str]:
+    """Durably append one KEPT-outcome row to the sidecar (O_APPEND + fsync).
+
+    Returns ``(sidecar path str, "")`` on success, or ``("", <err>)`` on
+    failure after appending a WARNING to ``report["messages"]`` — FAIL-SOFT by
+    design: observability must never break the recovery tool (the gist-publish
+    fail-soft precedent); the failure stays loudly visible in the report line
+    (the ``sidecar-write FAILED`` suffix the caller emits)."""
+    path = _kept_sidecar_path(repo)
+    try:
+        stash_list_len = len(
+            [ln for ln in git(repo, "stash", "list", check=False).stdout.splitlines() if ln]
+        )
+        row = {
+            "ts": datetime.now(UTC).isoformat(),
+            "repo": str(repo),
+            "ref": ref,
+            "sha": sha,
+            "sha12": sha[:12],
+            "reason": reason,
+            "detail": detail,
+            "rescue_patch": str(rescue_patch),
+            "stash_list_len": stash_list_len,
+        }
+        data = (json.dumps(row) + "\n").encode()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+        try:
+            written = 0
+            while written < len(data):
+                n = os.write(fd, data[written:])
+                if n <= 0:  # defensive: only ever expected as a driver/filesystem anomaly
+                    raise OSError(
+                        f"short write appending to {path}: {written}/{len(data)} bytes written"
+                    )
+                written += n
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+    except OSError as e:
+        err = str(e) or type(e).__name__
+        _msg(report, f"WARNING: KEPT-stash sidecar append failed at {path}: {err}")
+        return "", err
+    return str(path), ""
+
+
+def _telegram_push_kept(msg: str) -> bool:
+    """Fail-soft phone push for a NEW KEPT-stash row.
+
+    Mirrors ``vm_disk_guard._telegram_push``: a missing script or a failed
+    call prints a stderr WARNING but NEVER raises (the push is observability,
+    not recovery). Returns True only when the push script exited 0."""
+    override = os.environ.get("EPM_TELEGRAM_PUSH_SCRIPT", "").strip()
+    script = Path(override) if override else _TELEGRAM_PUSH_SCRIPT_DEFAULT
+    if not script.is_file():
+        print(f"  WARNING: telegram push script missing at {script}; push dropped", file=sys.stderr)
+        return False
+    try:
+        r = subprocess.run(
+            ["bash", str(script), msg],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            env={**os.environ, "NOTIF_CAT": "research"},
+        )
+    except (subprocess.SubprocessError, OSError) as e:
+        print(f"  WARNING: telegram push failed: {e}", file=sys.stderr)
+        return False
+    if r.returncode != 0:
+        print(
+            f"  WARNING: telegram push failed: {(r.stderr or r.stdout).strip()[:200]}",
+            file=sys.stderr,
+        )
+        return False
+    return True
+
+
+def _surface_kept_stash(
+    repo: Path,
+    report: dict,
+    *,
+    ref: str,
+    sha: str,
+    reason: str,
+    detail: str,
+    patch_path: Path,
+    head: str,
+) -> None:
+    """Durable surfacing for one KEPT autostash outcome (#1870).
+
+    Appends the sidecar row, extends the verbatim ``KEPT <ref> (<sha12>) — …``
+    report head (which MUST stay grep-stable — the #1751 SKILL.md duty and the
+    /daily sweep key on ``stash: KEPT``) with the sidecar advisory, and fires
+    the deduped fail-soft Telegram push. Push preconditions (ALL required):
+    the sha is NEW to the sidecar (dedup keys on the full commit sha, read
+    BEFORE the append — ``stash@{n}`` refs shift as entries push/pop; the sha
+    is stable) AND the append SUCCEEDED (under a persistently failing write
+    the sha never enters the file, so an unsuppressed push would re-fire on
+    every sync run fleet-wide; the ``sidecar-write FAILED`` report line is the
+    loud signal on that path) AND the ``EPM_DISABLE_KEPT_STASH_PUSH`` kill
+    switch is unset."""
+    is_new = sha not in _kept_sidecar_known_shas(_kept_sidecar_path(repo))
+    sidecar_path, err = _record_kept_stash(
+        repo, report, ref=ref, sha=sha, reason=reason, detail=detail, rescue_patch=patch_path
+    )
+    suffix = f"; sidecar={sidecar_path}" if sidecar_path else f"; sidecar-write FAILED ({err})"
+    report["stash"].append(head + suffix)
+    if is_new and sidecar_path and os.environ.get("EPM_DISABLE_KEPT_STASH_PUSH") != "1":
+        _telegram_push_kept(
+            f"root-sync KEPT stash {ref} ({sha[:12]}) on {repo} — "
+            f"rescue patch {patch_path}; triage tracked in #1736"
+        )
+
+
 def recover_stranded_autostash(
     repo: Path, report: dict, *, dry_run: bool, preflight_case: bool
 ) -> None:
@@ -1319,14 +1481,33 @@ def recover_stranded_autostash(
             if pop.returncode == 0:
                 report["stash"].append(f"popped {ref} ({sha[:12]}); rescue patch {patch_path}")
             else:
-                report["stash"].append(
-                    f"KEPT {ref} ({sha[:12]}) — pop failed unexpectedly "
-                    f"(rc={pop.returncode}: {pop.stderr.strip()}); rescue patch {patch_path}"
+                detail = f"rc={pop.returncode}: {pop.stderr.strip()}"
+                _surface_kept_stash(
+                    repo,
+                    report,
+                    ref=ref,
+                    sha=sha,
+                    reason="pop-failed",
+                    detail=detail,
+                    patch_path=patch_path,
+                    head=(
+                        f"KEPT {ref} ({sha[:12]}) — pop failed unexpectedly "
+                        f"({detail}); rescue patch {patch_path}"
+                    ),
                 )
         else:
-            report["stash"].append(
-                f"KEPT {ref} ({sha[:12]}) — apply --check dirty; manual triage; "
-                f"rescue patch {patch_path}"
+            _surface_kept_stash(
+                repo,
+                report,
+                ref=ref,
+                sha=sha,
+                reason="apply-check-dirty",
+                detail="",
+                patch_path=patch_path,
+                head=(
+                    f"KEPT {ref} ({sha[:12]}) — apply --check dirty; manual triage; "
+                    f"rescue patch {patch_path}"
+                ),
             )
 
 
