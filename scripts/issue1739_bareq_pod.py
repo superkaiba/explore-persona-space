@@ -234,6 +234,68 @@ def bare_render(tokenizer, query: str) -> tuple[str, str]:
     return render_row_prompt(tokenizer, [], query)
 
 
+def _load_wcrung_rows(args) -> list[dict]:
+    """Load the wcrung context rows, staging the HF shards when local is absent.
+
+    The full rows are HF-only (free-text routing): line-split JSONL shards +
+    manifest under WCRUNG_CONTEXTS_PREFIX (schema wcrung-rows-shards-v1) —
+    there is no monolithic wcrung.json anywhere (att-20260731-141952 crashed
+    on exactly that assumption). A local --wcrung-rows-json that EXISTS is
+    honored unchanged; otherwise stage manifest + shards next to that path,
+    verify each shard's sha256 + n_rows against the manifest, and concatenate.
+    """
+    p = Path(args.wcrung_rows_json)
+    if p.is_file():
+        wc = json.loads(p.read_text())
+        return wc["rows"] if isinstance(wc, dict) and "rows" in wc else wc
+    from explore_persona_space.orchestrate import hub
+
+    token = os.environ.get("HF_TOKEN") or ""
+    dest = p.parent
+    dest.mkdir(parents=True, exist_ok=True)
+    man_local = dest / "wcrung_rows.manifest.json"
+    if not man_local.is_file():
+        hub.stage_hub_file(
+            hub.DEFAULT_DATASET_REPO,
+            f"{WCRUNG_CONTEXTS_PREFIX}/wcrung_rows.manifest.json",
+            man_local,
+            repo_type="dataset",
+            token=token,
+        )
+    man = json.loads(man_local.read_text())
+    if man.get("schema") != "wcrung-rows-shards-v1":
+        raise RuntimeError(f"unexpected wcrung rows manifest schema: {man.get('schema')!r}")
+    rows: list[dict] = []
+    for shard in man["shards"]:
+        local = dest / shard["name"]
+        if not local.is_file():
+            hub.stage_hub_file(
+                hub.DEFAULT_DATASET_REPO,
+                f"{WCRUNG_CONTEXTS_PREFIX}/{shard['name']}",
+                local,
+                repo_type="dataset",
+                token=token,
+            )
+        digest = hashlib.sha256(local.read_bytes()).hexdigest()
+        if digest != shard["sha256"]:
+            raise RuntimeError(f"{shard['name']}: sha256 mismatch vs manifest ({digest})")
+        n = 0
+        with local.open(encoding="utf-8") as fh:
+            for line in fh:
+                if line.strip():
+                    rows.append(json.loads(line))
+                    n += 1
+        if n != shard["n_rows"]:
+            raise RuntimeError(f"{shard['name']}: {n} rows != manifest n_rows {shard['n_rows']}")
+    if len(rows) != man["n_rows"]:
+        raise RuntimeError(f"staged {len(rows)} rows != manifest n_rows {man['n_rows']}")
+    print(
+        f"[bareq] staged wcrung rows from HF: {len(man['shards'])} shards, {len(rows)} rows",
+        flush=True,
+    )
+    return rows
+
+
 def build_capture_rows(args, tokenizer) -> list[dict]:
     """Rows to capture: the leg-2 query bank and/or leg-1 wcrung multi-turn."""
     rows: list[dict] = []
@@ -252,8 +314,7 @@ def build_capture_rows(args, tokenizer) -> list[dict]:
                 }
             )
     if args.leg in ("1", "both"):
-        wc = json.loads(Path(args.wcrung_rows_json).read_text())
-        src = wc["rows"] if isinstance(wc, dict) and "rows" in wc else wc
+        src = _load_wcrung_rows(args)
         for r in src:
             multi = bool(r.get("prefix_turns"))
             if args.multi_turn_only and not multi:
