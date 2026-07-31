@@ -18,6 +18,9 @@ goal: 'Retrain the content-behavior organism fleet under a single-visit data reg
   base+trained on the gradient-producing rows, delta over the same ~300-row set) alongside
   the standard panel/corpus surfaces, to decide whether the #1768 assumption failures
   survive without data repetition and on-distribution.'
+relates_to:
+- identity-contextual-vs-base
+- leak-predictor
 ---
 # Single-visit (no-repeat) organism fleet: retrain with enough unique data that no training row is ever repeated, then test the theory assumptions on exactly the trained rows
 
