@@ -608,6 +608,14 @@ def keep_rows(
             continue
         if row.get("trailing_quote_stripped"):
             counts["trailing_quote_stripped"] += 1
+        # Y_BOUNDARY sensitivity split (#1345 fits): a cap-truncated answer ends
+        # MID-SENTENCE, so the boundary target read just after it is an artifact
+        # of the cap rather than a natural end-of-answer transition. Y_MEAN over
+        # the answer span is unaffected. Carried per row (not just aggregated in
+        # the yield report) so the fits can split the boundary target instead of
+        # pooling two different objects.
+        row["finish_reason"] = raw.get("finish_reason")
+        row["capped"] = raw.get("finish_reason") == "length"
         kept.append(row)
         counts["kept"] += 1
     print(f"[keep] {shape} ({model_key}): {counts}", flush=True)

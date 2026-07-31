@@ -609,7 +609,13 @@ def render_comparator_turn(conv: dict, tokenizer, *, comparator: str) -> Rendere
         y_anchor_char=y_anchor,
         conv_id=str(conv.get("conv_id", "")),
         fmt="chat" if chat else "naturalistic",
-        meta_extra={"transition_suffix": tr["closer"] + tr["suffix"]},
+        meta_extra={
+            "transition_suffix": tr["closer"] + tr["suffix"],
+            # Absent for the injected/teacher-forced rows (no generation, so no
+            # finish_reason) — present only on on-policy rows, which is exactly
+            # where the boundary-target split applies.
+            **{k: conv[k] for k in ("finish_reason", "capped") if k in conv},
+        },
     )
 
 
@@ -647,7 +653,17 @@ def load_comparator_convs(
         path = c.stage_pinned_file(c.PARENT_TRACK_S_JSONL, dl_dir)
     rows = c.read_jsonl(path)
     assert rows, f"no rows in {path}"
-    convs = [ex.to_single_turn(r) for r in rows]
+    # `to_single_turn` keeps ONLY {conv_id, u1, a1} on the prompt/response branch,
+    # so re-attach the provenance fields the fits need downstream — a cap-truncated
+    # answer makes the Y_BOUNDARY read an artifact of the cap, and that split has to
+    # survive into the store or the fits pool two different objects.
+    convs = []
+    for r in rows:
+        cv = ex.to_single_turn(r)
+        for f in ("finish_reason", "capped", "provenance"):
+            if f in r:
+                cv[f] = r[f]
+        convs.append(cv)
     if keep_ids is None:
         return convs
     kept = [cv for cv in convs if str(cv.get("conv_id")) in keep_ids]
@@ -764,6 +780,7 @@ def persist_store(
     smoke: bool,
     extra: dict,
     provenance: str = PROV_INJECTED,
+    model_key: str = bg.MODEL_KEY,
 ) -> None:
     """Upload this arm's/comparator's shards + sidecars + manifest to HF.
 
@@ -771,7 +788,10 @@ def persist_store(
     the store is a plan-referenced downstream input for the fits phase (#521).
     """
     assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing — cannot persist store"
-    stem = stem_for(key, bg.MODEL_KEY, provenance)
+    # The CAPTURED model, never the round default: a pretrained capture whose
+    # upload globbed the instruct stem would find no files (fail-loud) or, worse,
+    # upload the instruct shards under a pretrained label.
+    stem = stem_for(key, model_key, provenance)
     files = sorted(p.name for p in out_dir.glob(f"{stem}*") if p.is_file())
     assert files, f"no {stem}* files to upload in {out_dir}"
     tr = transition_for(key)
@@ -780,7 +800,7 @@ def persist_store(
         "round": bg.ROUND_VARIANT,
         "arm_or_comparator": key,
         "arm_isolates": bg.ARM_README.get(key, f"{key} comparator store"),
-        "model": bg.MODEL_KEY,
+        "model": model_key,
         "provenance": provenance,
         "stem": stem,
         "slot_order": list(BND_SLOT_ORDER),
@@ -851,7 +871,18 @@ def main() -> None:
         help="capture a chat / no-template comparator store over the arms' kept "
         "conversations, with the SAME X x Y grid (addendum requirement)",
     )
-    ap.add_argument("--model", choices=("instruct",), default=bg.MODEL_KEY)
+    ap.add_argument(
+        "--model",
+        choices=c.MODELS,
+        default=bg.MODEL_KEY,
+        help="the MEASURED model whose activations this store carries. The "
+        "round's own ablation arms are instruct-only, but 3 of the 4 on-policy "
+        "answer bundles are PRETRAINED-written (ntpl_base / chat_base / "
+        "slot_base), so their stores are captured under the base model. Both "
+        "tokenizers agree byte-for-byte on the chat AND naturalistic renders "
+        "(im_start/im_end are the same single special tokens, identical vocab "
+        "size), so no render assumption is instruct-specific.",
+    )
     ap.add_argument("--out-dir", type=Path, default=c.TURNSTORE_DIR)
     ap.add_argument("--stories-dir", type=Path, default=c.STORIES_DIR)
     ap.add_argument("--dl-dir", type=Path, default=c.PARENT_DL_DIR)
@@ -1157,6 +1188,7 @@ def main() -> None:
                 "slot_diagnostics": diag,
             },
             provenance=args.provenance,
+            model_key=args.model,
         )
     print(f"[done] {key}: {n_done} rows -> {len(paths)} shard(s) in {args.out_dir}", flush=True)
     sys.stdout.flush()

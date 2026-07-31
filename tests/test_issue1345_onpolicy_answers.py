@@ -587,20 +587,34 @@ def test_fits_onpolicy_grid_is_a_matched_pair(monkeypatch):
 def test_fits_paired_enumeration_is_presence_gated(monkeypatch, tmp_path):
     """No on-policy store on disk -> zero cells, and the run is unaffected."""
     fits = _fits_module(monkeypatch)
+    import issue1345_common as common
+
     keys = ["chat", "no_template", fits.bc.V1_ARM]
     cells, present = fits.onpolicy_paired_cells(tmp_path, keys)
     assert cells == []
-    assert present == dict.fromkeys(keys, False)
+    # Presence is per (store x MEASURED model): 3 keys x 2 models.
+    assert present == {f"{k}/{m}": False for k in keys for m in common.MODELS}
 
-    # Land ONE on-policy store (npz contract) -> only that twin joins.
-    stem = f"{fits.bg.MODEL_KEY}_{fits.bc.format_key('chat', 'onpolicy')}_{fits.bc.TRACK}"
+    # Land ONE on-policy store for ONE model -> only that twin joins.
+    stem = f"instruct_{fits.bc.format_key('chat', 'onpolicy')}_{fits.bc.TRACK}"
     (tmp_path / f"{stem}.npz").write_bytes(b"")
     cells, present = fits.onpolicy_paired_cells(tmp_path, keys)
-    assert present["chat"] is True
-    assert present["no_template"] is False
+    assert present["chat/instruct"] is True
+    assert present["chat/pretrained"] is False, "an uncaptured model must NOT join"
+    assert present["no_template/instruct"] is False
     assert cells and all(cl["provenance"] == "onpolicy" for cl in cells)
     assert {cl["bnd_arm"] for cl in cells} == {"chat"}
-    assert len(cells) == len(fits.grid_cells("chat", "onpolicy"))
+    assert {cl["model_key"] for cl in cells} == {"instruct"}
+    assert len(cells) == len(fits.grid_cells("chat", "onpolicy", "instruct"))
+
+    # Land the PRETRAINED twin too -> both models join, no collision.
+    stem_b = f"pretrained_{fits.bc.format_key('chat', 'onpolicy')}_{fits.bc.TRACK}"
+    (tmp_path / f"{stem_b}.npz").write_bytes(b"")
+    cells, present = fits.onpolicy_paired_cells(tmp_path, keys)
+    assert present["chat/pretrained"] is True
+    assert {cl["model_key"] for cl in cells} == {"instruct", "pretrained"}
+    ids = [cl["cell_id"] for cl in cells]
+    assert len(ids) == len(set(ids)), "cross-model cell ids collide"
 
 
 def test_fits_paired_enumeration_skips_the_ablation_arms(monkeypatch, tmp_path):
@@ -800,3 +814,162 @@ def test_max_tokens_meets_the_json_rubric_floor(monkeypatch):
     reasoning field ahead of the score, so the raised floor binds."""
     jl = _judge_module(monkeypatch)
     assert jl.JUDGE_MAX_TOKENS >= 600
+
+
+# ---------------------------------------------------------------------------
+# THE PING round: pretrained capture + Y_boundary cap split
+# ---------------------------------------------------------------------------
+def test_capture_accepts_both_measured_models(monkeypatch):
+    """3 of the 4 on-policy bundles are PRETRAINED-written; an instruct-only
+    --model would block their capture entirely."""
+    cap = _cap_module(monkeypatch)
+    import inspect
+
+    import issue1345_common as common
+
+    src = inspect.getsource(cap.main)
+    assert "choices=c.MODELS" in src, "--model must accept both measured models"
+    assert 'choices=("instruct",)' not in src
+    assert set(common.MODELS) == {"instruct", "pretrained"}
+
+
+def test_persist_store_uses_the_CAPTURED_model_not_the_round_default(monkeypatch):
+    """A hardcoded round default globs the instruct stem: a pretrained capture
+    would fail to find its own shards (or mislabel the manifest)."""
+    cap = _cap_module(monkeypatch)
+    import inspect
+
+    src = inspect.getsource(cap.persist_store)
+    assert "stem_for(key, model_key, provenance)" in src
+    assert "stem_for(key, bg.MODEL_KEY, provenance)" not in src
+    assert '"model": model_key' in src
+    # And the caller threads the parsed arg.
+    assert "model_key=args.model" in inspect.getsource(cap.main)
+    sig = inspect.signature(cap.persist_store)
+    assert "model_key" in sig.parameters
+
+
+def test_pretrained_stems_and_cell_ids_never_collide_with_instruct(monkeypatch):
+    cap = _cap_module(monkeypatch)
+    fits = _fits_module(monkeypatch)
+    import issue1345_common as common
+
+    stems = [
+        cap.stem_for(k, m, pv)
+        for k in cap.ONPOLICY_STORES
+        for m in common.MODELS
+        for pv in common.PROVENANCES
+    ]
+    assert len(stems) == len(set(stems)), stems
+    ids = [
+        cl["cell_id"]
+        for k in cap.ONPOLICY_STORES
+        for m in common.MODELS
+        for pv in common.PROVENANCES
+        for cl in fits.grid_cells(k, pv, m)
+    ]
+    assert len(ids) == len(set(ids)), "cross-(model x prov) grid cell ids collide"
+
+
+def test_injected_grid_cell_ids_unmoved_by_the_model_dimension(monkeypatch):
+    """The round-default call must stay byte-identical (live fit outputs key on it)."""
+    fits = _fits_module(monkeypatch)
+    ids = [cl["cell_id"] for cl in fits.grid_cells("chat")]
+    assert ids[0] == "R_instruct_bnd_chat_prefix__ymean", ids[0]
+    assert ids == [cl["cell_id"] for cl in fits.grid_cells("chat", "injected", "instruct")]
+
+
+def test_kept_rows_carry_finish_reason_for_the_Y_boundary_split(monkeypatch):
+    """A cap-truncated answer ends MID-SENTENCE, so the boundary target read just
+    after it is an artifact of the cap — the fits must be able to split on it."""
+    op = _op_module(monkeypatch)
+    from transformers import AutoTokenizer
+
+    from explore_persona_space.experiments.issue_825.common import MODEL_INSTRUCT
+
+    tok = AutoTokenizer.from_pretrained(MODEL_INSTRUCT)
+    long_a = "Paris has been the administrative centre since the Capetian consolidation."
+    raws = [
+        {"conv_id": "s0", "answer_text": long_a, "finish_reason": "stop"},
+        {"conv_id": "s1", "answer_text": long_a, "finish_reason": "length"},
+    ]
+    pool = [{"conv_id": "s0", "question": "Q?"}, {"conv_id": "s1", "question": "Q?"}]
+    kept, counts = op.keep_rows(raws, pool, tok, shape=op.SHAPE_BARE, model_key="instruct")
+    assert len(kept) == 2
+    by_id = {r["conv_id"]: r for r in kept}
+    assert by_id["s0"]["finish_reason"] == "stop" and by_id["s0"]["capped"] is False
+    assert by_id["s1"]["finish_reason"] == "length" and by_id["s1"]["capped"] is True
+    # Capped rows are KEPT (Y_mean is unaffected) and still counted.
+    assert counts["finish_length_capped"] == 1
+
+
+def test_capture_preserves_the_cap_split_into_the_store_meta(monkeypatch, tmp_path):
+    """to_single_turn keeps only {conv_id,u1,a1}; the split must survive it."""
+    cap = _cap_module(monkeypatch)
+    import issue1345_common as common
+    from transformers import AutoTokenizer
+
+    from explore_persona_space.experiments.issue_825.common import MODEL_INSTRUCT
+
+    rows_f = tmp_path / "op_rows.jsonl"
+    common.append_jsonl(
+        rows_f,
+        [
+            {
+                "conv_id": "s0",
+                "prompt": "What is the capital of France and why does it matter?",
+                "response": "Paris has been the administrative centre for centuries.",
+                "finish_reason": "length",
+                "capped": True,
+                "provenance": "onpolicy",
+            }
+        ],
+    )
+    convs = cap.load_comparator_convs(tmp_path, None, convs_jsonl=rows_f)
+    assert convs[0]["capped"] is True, "the cap flag was stripped by to_single_turn"
+    assert convs[0]["finish_reason"] == "length"
+    tok = AutoTokenizer.from_pretrained(MODEL_INSTRUCT)
+    r = cap.render_comparator_turn(convs[0], tok, comparator="no_template")
+    assert r is not None
+    assert r.meta.get("capped") is True, "the split did not reach the store meta"
+    assert r.meta.get("finish_reason") == "length"
+    # Injected rows have no generation, so the keys are simply absent there.
+    inj = {"conv_id": "s1", "u1": "Q?", "a1": "A long enough injected answer here."}
+    ri = cap.render_comparator_turn(inj, tok, comparator="no_template")
+    assert ri is not None and "capped" not in ri.meta
+
+
+def test_store_token_tiers_and_prefix_safety(monkeypatch):
+    """Two tiers + a prefix-safe family match.
+
+    `bnd_v1` is a PREFIX of `bnd_v1_op`, so the previous substring probe
+    (`token in filename`) would have been satisfied by an on-policy file alone —
+    once the `_op` stores land, a MISSING injected v1 store would have passed the
+    required-family check. The `{token}_s` terminator closes that.
+    """
+    monkeypatch.setenv("EPM_I1345_VARIANT", "story_boundary_ablation")
+    monkeypatch.setenv("EPM_STORY_CHARACTER_NAME", "Assistant")
+    import issue1345_boundary_ablation_stage_and_mirror as sm
+
+    # v5 joined the injected tier; the paired tier is the on-policy arm.
+    assert "bnd_v5" in sm.REQUIRED_STORE_TOKENS
+    assert set(sm.PAIRED_STORE_TOKENS) == {"bnd_v1_op", "bnd_chat_op", "bnd_ntpl_op"}
+    assert not set(sm.REQUIRED_STORE_TOKENS) & set(sm.PAIRED_STORE_TOKENS)
+    # Paired absence must be non-fatal by DEFAULT (presence-gated fits) but
+    # promotable to fatal once the captures land.
+    assert sm.REQUIRE_PAIRED_ENV == "EPM_I1345_REQUIRE_PAIRED"
+    src = __import__("inspect").getsource(sm.cmd_stage)
+    assert 'f"{token}_s" in n' in src, "family match must use the stem terminator"
+    # cmd_stage references the CONSTANT by name, not its literal value.
+    assert "REQUIRE_PAIRED_ENV" in src
+
+    # The prefix hazard itself, exercised on the shipped predicate's shape.
+    present = ["instruct_bnd_v1_op_s_shard000.pt"]
+
+    def family(token: str) -> bool:
+        return any(f"{token}_s" in n for n in present)
+
+    assert family("bnd_v1_op") is True
+    assert family("bnd_v1") is False, "an on-policy file must not satisfy the injected family"
+    # ... whereas the retired substring probe WOULD have been satisfied:
+    assert any("bnd_v1" in n for n in present) is True

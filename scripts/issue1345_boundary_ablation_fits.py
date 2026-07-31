@@ -190,17 +190,29 @@ Y_TAG = {bc.Y_MEAN: "ymean", bc.Y_BOUNDARY: "ybnd"}
 GRID_TAG = {**bg.ARM_SLUG, bc.V1_ARM: bc.V1_SLUG}
 
 
-def grid_cell_id(store_key: str, slot: str, y: str, provenance: str = c.PROV_INJECTED) -> str:
-    """Cell id for one (store, X slot, Y target, provenance) grid point.
+def grid_cell_id(
+    store_key: str,
+    slot: str,
+    y: str,
+    provenance: str = c.PROV_INJECTED,
+    model_key: str = bg.MODEL_KEY,
+) -> str:
+    """Cell id for one (store, X slot, Y target, provenance, model) grid point.
 
-    The `injected` default appends nothing, so every pre-existing grid cell id
-    is byte-unchanged; the on-policy twin reads ..._bnd_chat_op_context__ymean.
+    The `injected` + round-default-model call appends nothing, so every
+    pre-existing grid cell id is byte-unchanged; the on-policy twin reads
+    ..._bnd_chat_op_context__ymean, and a PRETRAINED-measured store carries the
+    model slug (3 of the 4 on-policy bundles are base-written).
     """
     tag = GRID_TAG.get(store_key, store_key) + c.prov_suffix(provenance)
-    return f"R_{bg.MODEL_KEY}_bnd_{tag}_{slot}__{Y_TAG[y]}"
+    return f"R_{c.MODEL_SLUG[model_key]}_bnd_{tag}_{slot}__{Y_TAG[y]}"
 
 
-def grid_cells(store_key: str, provenance: str = c.PROV_INJECTED) -> list[dict]:
+def grid_cells(
+    store_key: str,
+    provenance: str = c.PROV_INJECTED,
+    model_key: str = bg.MODEL_KEY,
+) -> list[dict]:
     """The store's full X x Y grid: every BND slot crossed with both Y targets.
 
     ``store_key`` is an ablation arm (V2/V3/V4/V5), the re-captured V1 anchor, or
@@ -217,8 +229,8 @@ def grid_cells(store_key: str, provenance: str = c.PROV_INJECTED) -> list[dict]:
     fmt = bc.format_key(store_key, provenance)
     return [
         {
-            "cell_id": grid_cell_id(store_key, slot, y, provenance),
-            "model_key": bg.MODEL_KEY,
+            "cell_id": grid_cell_id(store_key, slot, y, provenance, model_key),
+            "model_key": model_key,
             "format_key": fmt,
             "track": bc.TRACK,
             "slot_index": idx,
@@ -226,6 +238,7 @@ def grid_cells(store_key: str, provenance: str = c.PROV_INJECTED) -> list[dict]:
             "regime": fmt,
             "bnd_arm": store_key,
             "provenance": provenance,
+            "measured_model": model_key,
             "slot": slot,
             "y_target": y,
             "arm": SLOT_MAP_ARM[slot],
@@ -241,7 +254,9 @@ def arm_cells(arm: str) -> list[dict]:
 
 
 def onpolicy_paired_cells(
-    turnstore_dir: Path, store_keys: list[str]
+    turnstore_dir: Path,
+    store_keys: list[str],
+    models: tuple[str, ...] = c.MODELS,
 ) -> tuple[list[dict], dict[str, bool]]:
     """The on-policy PAIRED grid rows for every store whose twin is on disk.
 
@@ -254,14 +269,19 @@ def onpolicy_paired_cells(
     """
     cells: list[dict] = []
     present: dict[str, bool] = {}
+    fmt_cache: dict[str, str] = {}
     for key in store_keys:
         if not bc.has_onpolicy_twin(key):
             continue
-        fmt = bc.format_key(key, c.PROV_ONPOLICY)
-        ok = store_present(turnstore_dir, bg.MODEL_KEY, fmt)
-        present[key] = ok
-        if ok:
-            cells += grid_cells(key, c.PROV_ONPOLICY)
+        fmt = fmt_cache.setdefault(key, bc.format_key(key, c.PROV_ONPOLICY))
+        # Per MEASURED model: the bare-text arm exists for BOTH, chat and
+        # story-slot are base-written this round, and a store that was never
+        # captured simply does not join (the presence gate, unchanged).
+        for mk in models:
+            ok = store_present(turnstore_dir, mk, fmt)
+            present[f"{key}/{mk}"] = ok
+            if ok:
+                cells += grid_cells(key, c.PROV_ONPOLICY, mk)
     return cells, present
 
 
