@@ -284,6 +284,33 @@ def test_tiny_real_e2e_scores_wildchat_rung(rig, capsys):
     assert "unit 1/2" in capsys.readouterr().out
 
 
+def test_full_six_arm_default_roster_all_resolve_real(rig):
+    """Every arm the plan names produces a REAL scored row (no silent skips).
+
+    The other e2e tests use a 4-arm subset for speed; this one drops --arms so
+    the DEFAULT roster (arms.TRANSFER_ARMS, all 6) runs, and asserts each arm
+    resolved its production computation path rather than being skipped.
+    """
+    from explore_persona_space.experiments.issue_1739 import arms
+
+    argv = [a for a in rig["argv"](["evil"]) if a != "--arms" and a not in ROSTER]
+    assert "--arms" not in argv
+    assert _run(argv) == 0
+    payload = json.loads((rig["out_root"] / "evil" / "all_arms_spearman.json").read_text())
+    scored = {r["arm"] for r in payload["transfer_rows"]}
+    assert scored == set(arms.TRANSFER_ARMS), (
+        f"arms missing a REAL scored row: {sorted(set(arms.TRANSFER_ARMS) - scored)}; "
+        f"skips={payload['transfer_skips']}"
+    )
+    # per-layer profiles too, and no arm silently skipped
+    assert {p["arm"] for p in payload["per_layer_rows"]} == set(arms.TRANSFER_ARMS)
+    assert not payload["transfer_skips"], payload["transfer_skips"]
+    # the control + oracle arms are real families, not stubs
+    fam = {p["arm"]: p["family"] for p in payload["per_layer_rows"]}
+    assert fam["arm13_shuffled_map"] == "control"
+    assert "unknown" not in fam.values()
+
+
 def test_one_shared_store_scores_three_behaviors_independently(rig):
     """THE rung invariant: one capture store, three rubric DVs, three reads.
 
