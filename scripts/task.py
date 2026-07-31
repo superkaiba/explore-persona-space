@@ -26,8 +26,8 @@ Subcommands (see `task.py --help`):
     promote <N> useful|not-useful
     new-plan-version <N> --file path
     raise-concern <N> --concern-id <id> --severity BLOCKER|CONCERN|NIT
-                     --summary "..." --by <reviewer> --round <int> [--evidence ...]
-    address-concern <N> --concern-id <id> --by <implementer> --round <int> [--summary ...]
+                     --summary|--note "..." --by <reviewer> --round <int> [--evidence ...]
+    address-concern <N> --concern-id <id> --by <implementer> --round <int> [--summary|--note ...]
     defer-concern <N> --concern-id <id> --by user|reconciler --rationale "..."
     list-concerns <N> [--open-only] [--json]
     find <N>
@@ -1785,10 +1785,12 @@ def main() -> None:
     )
     p.add_argument(
         "--summary",
+        "--note",
+        dest="summary",
         required=True,
         help="one-line description (<=200 chars; longer text is truncated at a word "
         "boundary with a warning, the full original shifted into --evidence when "
-        "--evidence is empty)",
+        "--evidence is empty); --note is an accepted alias, --summary is canonical",
     )
     p.add_argument("--by", required=True, help="reviewer name (e.g. code-reviewer, critic)")
     p.add_argument(
@@ -1831,11 +1833,12 @@ def main() -> None:
     p.add_argument(
         "--summary",
         "--rationale",
+        "--note",
         dest="summary",
         default=None,
         help="optional updated summary, <=200 chars (longer text is truncated at a "
         "word boundary with a warning); defaults to the original raised summary "
-        "(--rationale is an accepted alias, matching defer-concern's flag name)",
+        "(--rationale and --note are accepted aliases; --summary is canonical)",
     )
     p.set_defaults(func=cmd_address_concern)
 
