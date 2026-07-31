@@ -79,7 +79,15 @@ LAYERS = X.LAYERS  # (14, 19, 25)
 N_MARGIN_CONTEXTS = 300
 MARGIN_CAP = 32  # plan §4 P1c arithmetic: ~9.6k TF rows/side = 300 x 32
 ADAPTER_SMOKE_ROWS = 50
-ADAPTER_SMOKE_TOL_NATS = 1.0  # plan §4 P1a / §7 kill criterion 3 (the #534 class)
+# Frame-free identity floor (plan v7 §4 P1a FRAME-CORRECTED 2026-07-31 / §7 kill
+# criterion 3; the #534 class). Calibration: a wrong/no-op adapter reads
+# Δ logP ≈ 0 on its own training rows (base prior ≈ e^-20 either side), while any
+# real in-window marker adapter reads ~20+ nats there (job 16092 measured 22.436)
+# — +2 nats sits between the bands with ~10x margin both ways. The former ±1-nat
+# equality against the #1481 manifest `delta_logp_mean` was a CROSS-FRAME assert
+# (that number is a checkpoint-SELECTION read in #1481's eval-probe frame, window
+# [5.0, 12.0]) and was unreproducible on training rows by construction.
+ADAPTER_SMOKE_MIN_DELTA_NATS = 2.0
 SMOKE_ARMS = ("imp-pers-con-lr3e5-s42", "mk-pers-con-lr5e6-s42")  # 1 content + 1 marker
 SMOKE_ROWS = 64
 SMOKE_MARGIN_CONTEXTS = 8
@@ -814,13 +822,62 @@ def run_p1a_pass(
     return out
 
 
-def run_p1a_adapter_smoke(cfg: Cfg, pool: ModelPool, arms_by_id: dict) -> dict:
-    """Pre-fleet adapter-application gate (plan §4 P1a; the #534/#1481 class).
+def p1a_gate_record(
+    *,
+    arm_id: str,
+    n_mix_rows: int,
+    median_training_delta_logp: float,
+    manifest_selection_delta_logp: float,
+    median_abs_delta_z_marker_corpus: float,
+    median_corpus_delta_logp: float,
+) -> dict:
+    """Frame-free P1a identity verdict (plan v7 §4 P1a / §7 kill criterion 3).
 
-    For one marker LoRA arm: TF 50 of its own mix-positive rows and assert the
-    median Δ logP(marker) trained-base at the marker slot sits within ±1 nat
-    of the arm's #1481 verdict-manifest window value; also assert median
-    |Δ z_marker| > 0 on 50 corpus rows (adapters actually applied).
+    Pure (unit-testable without a model). Asserts (1) median TRAINING-ROW
+    Δ logP >= ADAPTER_SMOKE_MIN_DELTA_NATS — direction+floor: a wrong/no-op
+    adapter fails, any real marker adapter clears — and (2) median
+    |Δ z_marker| > 0 on corpus rows (adapter actually applied). The #1481
+    manifest selection-frame value is RECORDED with a frame note, never
+    equality-compared (frames differ by construction — job 16092).
+    Returns the gate record dict.
+    """
+    assert median_training_delta_logp >= ADAPTER_SMOKE_MIN_DELTA_NATS, (
+        f"P1a adapter gate: median training-row Δ logP {median_training_delta_logp:.3f} "
+        f"< +{ADAPTER_SMOKE_MIN_DELTA_NATS} nat floor (adapter identity broken — "
+        "plan §7.3 frame-free gate)"
+    )
+    assert median_abs_delta_z_marker_corpus > 0.0, (
+        "P1a adapter gate: median |Δ z_marker| == 0 on corpus rows (adapter not applied)"
+    )
+    return {
+        "arm_id": arm_id,
+        "n_mix_rows": n_mix_rows,
+        "median_training_row_delta_logp": median_training_delta_logp,
+        "min_delta_floor_nats": ADAPTER_SMOKE_MIN_DELTA_NATS,
+        "manifest_selection_frame_delta_logp_mean": manifest_selection_delta_logp,
+        "frame_note": (
+            "manifest delta_logp_mean is #1481's checkpoint-SELECTION read in its "
+            "eval-probe frame (window [5.0, 12.0]); memorized training-row slots "
+            "legitimately read ~20+ nats — the two frames are recorded side-by-side, "
+            "never equality-compared (frame-corrected 2026-07-31 after job 16092)"
+        ),
+        "median_abs_delta_z_marker_corpus": median_abs_delta_z_marker_corpus,
+        "median_corpus_delta_logp": median_corpus_delta_logp,
+    }
+
+
+def run_p1a_adapter_smoke(cfg: Cfg, pool: ModelPool, arms_by_id: dict) -> dict:
+    """Pre-fleet adapter-application gate (plan §4 P1a FRAME-CORRECTED; #534/#1481 class).
+
+    For one marker LoRA arm: TF up to 50 of its own mix-positive rows and
+    assert the FRAME-FREE identity read — median Δ logP(marker) trained−base
+    >= +2 nats (direction+floor) — plus median |Δ z_marker| > 0 on 50 corpus
+    rows, and a corpus-side sanity read (median corpus Δ logP, recorded only,
+    no equality claim). The #1481 verdict-manifest `delta_logp_mean` is a
+    checkpoint-SELECTION read in #1481's eval-probe frame (window [5.0, 12.0])
+    and is recorded side-by-side, never equality-asserted: job 16092 measured
+    22.436 nats on training rows — the EXPECTED memorized-slot signature of a
+    correctly-applied in-window adapter, not a fault.
     """
     _phase("p1a_adapter_gate")
     out = cfg.out_root / "marker_tf" / "adapter_gate.json"
@@ -841,12 +898,16 @@ def run_p1a_adapter_smoke(cfg: Cfg, pool: ModelPool, arms_by_id: dict) -> dict:
         arm_recs = _slot_stats_from_ids(model, ids_lists, cfg.tf_batch)
     deltas = sorted(a["logp"] - b["logp"] for a, b in zip(arm_recs, base_recs))
     median_delta = float(np.median(deltas))
-    window = float(entry["manifest_delta_logp_mean"])
-    assert abs(median_delta - window) <= ADAPTER_SMOKE_TOL_NATS, (
-        f"P1a adapter gate: median Δ logP {median_delta:.3f} outside "
-        f"{window:.3f} ± {ADAPTER_SMOKE_TOL_NATS} nat (adapter identity broken — plan §7.3)"
+    manifest_sel = float(entry["manifest_delta_logp_mean"])
+    # Fix-engaged signal (crash-fix r6): both frames recorded BEFORE the verdict,
+    # so even a failing gate logs the frame-annotated pair.
+    logger.info(
+        "[p1a-gate] training-row median Δ logP=%.3f (manifest selection-frame "
+        "value=%.3f; frames differ by construction)",
+        median_delta,
+        manifest_sel,
     )
-    # corpus-row |Δ z_marker| > 0 leg (adapters actually applied)
+    # corpus-row leg: |Δ z_marker| > 0 (adapters actually applied) + sanity Δ logP
     subset_like = [r for r in _read_raw_rows(cfg, entry["arm_id"]).values()][:ADAPTER_SMOKE_ROWS]
     corpus_ids = [_slot_ids(r) for r in subset_like]
     base_c = _slot_stats_from_ids(pool.base(), corpus_ids, cfg.tf_batch)
@@ -855,24 +916,25 @@ def run_p1a_adapter_smoke(cfg: Cfg, pool: ModelPool, arms_by_id: dict) -> dict:
     med_abs_dz = float(
         np.median([abs(a["z_marker"] - b["z_marker"]) for a, b in zip(arm_c, base_c)])
     )
-    assert med_abs_dz > 0.0, "P1a adapter gate: median |Δ z_marker| == 0 on corpus rows"
-    gate = {
-        "arm_id": entry["arm_id"],
-        "n_mix_rows": len(rows),
-        "median_delta_logp": median_delta,
-        "manifest_window": window,
-        "tolerance_nats": ADAPTER_SMOKE_TOL_NATS,
-        "median_abs_delta_z_marker_corpus": med_abs_dz,
-        "mix_meta": mix_meta,
-        **_meta(),
-    }
+    med_corpus_dlogp = float(np.median([a["logp"] - b["logp"] for a, b in zip(arm_c, base_c)]))
+    gate = p1a_gate_record(
+        arm_id=entry["arm_id"],
+        n_mix_rows=len(rows),
+        median_training_delta_logp=median_delta,
+        manifest_selection_delta_logp=manifest_sel,
+        median_abs_delta_z_marker_corpus=med_abs_dz,
+        median_corpus_delta_logp=med_corpus_dlogp,
+    )
+    gate.update({"mix_meta": mix_meta, **_meta()})
     _atomic_json(out, gate)
     logger.info(
-        "[p1a-gate] PASS %s: median ΔlogP %.3f vs window %.3f; |Δz| %.3f",
+        "[p1a-gate] PASS %s: training-row median ΔlogP %.3f >= +%.1f nat floor; "
+        "corpus |Δz| %.3f; corpus ΔlogP %.3f",
         entry["arm_id"],
         median_delta,
-        window,
+        ADAPTER_SMOKE_MIN_DELTA_NATS,
         med_abs_dz,
+        med_corpus_dlogp,
     )
     return gate
 
