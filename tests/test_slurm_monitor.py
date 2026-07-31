@@ -1650,3 +1650,324 @@ def test_fellows_config_sentinel_drain_true_drac_mila_false() -> None:
     assert get_cluster_config("fellows").sentinel_drain is True
     for name in ("nibi", "fir", "mila"):
         assert CLUSTER_CONFIGS[name].sentinel_drain is False, name
+
+
+# ---------------------------------------------------------------------------
+# Done-evidence disambiguation (#1866): dead-class SLURM state + attempt-fresh
+# status.json {"phase":"done","exit_code":"0"} reads as done, not dead. Every
+# fail-safe arm (stale evidence, no submitted_at, non-done phase, non-"0"
+# exit) stays byte-identical to the pre-#1866 dead verdict.
+# ---------------------------------------------------------------------------
+
+
+def _run_dead_class_poll(
+    tmp_path: Path,
+    *,
+    job_id: str,
+    slurm_state: str,
+    status_json_text: str | None,
+    job_out_lines: list[str],
+    submitted_at: float | None,
+    now: datetime,
+    posted: list[dict] | None = None,
+    slurm_exit_code: str | None = "1:0",
+):
+    """Run ``build_poll_result`` against a stubbed dead-class SLURM state.
+
+    Seeds the tmp_path-isolated ``slurm-<id>/`` dir with a RAW status.json
+    string (so tests can pin the sbatch template's exact printf shape, not
+    just a json.dumps re-encoding) + job.out, and returns the PollResult.
+    """
+    local_dir = tmp_path / f"slurm-{job_id}"
+    local_dir.mkdir(parents=True, exist_ok=True)
+    status_path = local_dir / "status.json"
+    if status_json_text is None:
+        if status_path.exists():
+            status_path.unlink()
+    else:
+        status_path.write_text(status_json_text)
+    (local_dir / "job.out").write_text("\n".join(job_out_lines))
+    return build_poll_result(
+        issue=137,
+        job_id=job_id,
+        cluster=_nibi(),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+        log_path="/scratch/tjiral/eps/issue-137/job.out",
+        state_querier=lambda *, robot_alias, job_id, _s=slurm_state, _e=slurm_exit_code: {
+            "status": _s,
+            "exit_code": _e,
+        },
+        rsyncer=lambda **_: None,
+        now_fn=lambda: now.timestamp(),
+        marker_poster=_capture_markers(posted) if posted is not None else (lambda **_kw: None),
+        event_reader=lambda _issue: [],
+        submitted_at=submitted_at,
+    )
+
+
+def test_build_poll_result_failed_with_fresh_done_status_reads_done(tmp_path: Path) -> None:
+    """FAILED + attempt-fresh ``{"phase":"done","exit_code":"0"}`` ⇒ the
+    workload finished and the dead-class label is a teardown artifact
+    (#1866): status flips to done, the terminal marker keeps slurm_state
+    FAILED verbatim, routes next_action=interpret, and carries the flag."""
+    job_id = "9301"
+    now = datetime.now(tz=UTC)
+    fresh_ts = now.isoformat().replace("+00:00", "Z")
+    posted: list[dict] = []
+    poll = _run_dead_class_poll(
+        tmp_path,
+        job_id=job_id,
+        slurm_state="FAILED",
+        status_json_text=json.dumps(
+            {"phase": "done", "heartbeat_ts": fresh_ts, "gpu_busy": False, "exit_code": "0"}
+        ),
+        job_out_lines=["[phase=done]"],
+        submitted_at=now.timestamp() - 3600,
+        now=now,
+        posted=posted,
+    )
+    assert poll.status == "done"
+    assert poll.current_phase == "done"
+    terminals = [m for m in posted if m["marker"] == "epm:cluster-terminal"]
+    assert len(terminals) == 1
+    body = json.loads(terminals[0]["note"])
+    assert body["slurm_state"] == "FAILED"  # audit trail keeps the true SLURM verdict
+    assert body["next_action"] == "interpret"
+    assert body["workload_done_despite_slurm"] is True
+    assert body["status"] == "done"
+
+
+def test_build_poll_result_failed_with_stale_done_status_stays_dead(tmp_path: Path) -> None:
+    """done-0 evidence PREdating ``submitted_at - FRESHNESS_SKEW_MARGIN_SEC``
+    is blanked by the C2 attempt-freshness gate — a PRIOR attempt's terminal
+    record must never flip THIS attempt's crash to done (fail-safe)."""
+    job_id = "9302"
+    now = datetime.now(tz=UTC)
+    stale_ts = (
+        (now - timedelta(seconds=FRESHNESS_SKEW_MARGIN_SEC + 7200))
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
+    posted: list[dict] = []
+    poll = _run_dead_class_poll(
+        tmp_path,
+        job_id=job_id,
+        slurm_state="FAILED",
+        status_json_text=json.dumps(
+            {"phase": "done", "heartbeat_ts": stale_ts, "gpu_busy": False, "exit_code": "0"}
+        ),
+        job_out_lines=["[phase=workload]"],
+        submitted_at=now.timestamp() - 60,
+        now=now,
+        posted=posted,
+    )
+    assert poll.status == "dead"
+    terminals = [m for m in posted if m["marker"] == "epm:cluster-terminal"]
+    assert len(terminals) == 1
+    body = json.loads(terminals[0]["note"])
+    assert body["next_action"] == "investigate"
+    assert "workload_done_despite_slurm" not in body
+
+
+def test_build_poll_result_failed_without_submitted_at_stays_dead(tmp_path: Path) -> None:
+    """Legacy handle without ``submitted_at``: attempt-freshness is
+    unprovable, so even fresh-looking done-0 evidence fails toward the
+    pre-#1866 dead verdict (fail-safe)."""
+    job_id = "9303"
+    now = datetime.now(tz=UTC)
+    fresh_ts = now.isoformat().replace("+00:00", "Z")
+    poll = _run_dead_class_poll(
+        tmp_path,
+        job_id=job_id,
+        slurm_state="FAILED",
+        status_json_text=json.dumps(
+            {"phase": "done", "heartbeat_ts": fresh_ts, "gpu_busy": False, "exit_code": "0"}
+        ),
+        job_out_lines=["[phase=done]"],
+        submitted_at=None,
+        now=now,
+    )
+    assert poll.status == "dead"
+
+
+def test_build_poll_result_failed_mid_workload_stays_dead(tmp_path: Path) -> None:
+    """The REAL crash shape (fellows job 15194 died in-workload): FAILED with
+    phase 'workload' / exit_code '' stays dead → investigate, no flag."""
+    job_id = "9304"
+    now = datetime.now(tz=UTC)
+    fresh_ts = now.isoformat().replace("+00:00", "Z")
+    posted: list[dict] = []
+    poll = _run_dead_class_poll(
+        tmp_path,
+        job_id=job_id,
+        slurm_state="FAILED",
+        status_json_text=json.dumps(
+            {"phase": "workload", "heartbeat_ts": fresh_ts, "gpu_busy": True, "exit_code": ""}
+        ),
+        job_out_lines=["[phase=workload]"],
+        submitted_at=now.timestamp() - 3600,
+        now=now,
+        posted=posted,
+    )
+    assert poll.status == "dead"
+    terminals = [m for m in posted if m["marker"] == "epm:cluster-terminal"]
+    assert len(terminals) == 1
+    body = json.loads(terminals[0]["note"])
+    assert body["next_action"] == "investigate"
+    assert "workload_done_despite_slurm" not in body
+
+
+def test_build_poll_result_failed_done_nonzero_exit_stays_dead(tmp_path: Path) -> None:
+    """Defensive predicate pin: phase 'done' with exit_code '' or '1' is NOT
+    done-evidence. Unreachable from the current template (its terminal block
+    only ever writes done WITH 0) — pins the predicate so a future template
+    shape change cannot silently widen the flip."""
+    now = datetime.now(tz=UTC)
+    fresh_ts = now.isoformat().replace("+00:00", "Z")
+    for job_id, bad_exit in (("9305", ""), ("9306", "1")):
+        poll = _run_dead_class_poll(
+            tmp_path,
+            job_id=job_id,
+            slurm_state="FAILED",
+            status_json_text=json.dumps(
+                {
+                    "phase": "done",
+                    "heartbeat_ts": fresh_ts,
+                    "gpu_busy": False,
+                    "exit_code": bad_exit,
+                }
+            ),
+            job_out_lines=["[phase=done]"],
+            submitted_at=now.timestamp() - 3600,
+            now=now,
+        )
+        assert poll.status == "dead", f"exit_code={bad_exit!r} -> {poll.status}"
+
+
+def test_build_poll_result_timeout_with_fresh_done_status_reads_done(tmp_path: Path) -> None:
+    """Dead-class uniformity: the evidence predicate is state-agnostic —
+    TIMEOUT (a fallback_runpod state pre-#1866) flips exactly like FAILED
+    when the workload's own terminal record proves a clean finish."""
+    job_id = "9307"
+    now = datetime.now(tz=UTC)
+    fresh_ts = now.isoformat().replace("+00:00", "Z")
+    posted: list[dict] = []
+    poll = _run_dead_class_poll(
+        tmp_path,
+        job_id=job_id,
+        slurm_state="TIMEOUT",
+        status_json_text=json.dumps(
+            {"phase": "done", "heartbeat_ts": fresh_ts, "gpu_busy": False, "exit_code": "0"}
+        ),
+        job_out_lines=["[phase=done]"],
+        submitted_at=now.timestamp() - 3600,
+        now=now,
+        posted=posted,
+        slurm_exit_code=None,
+    )
+    assert poll.status == "done"
+    terminals = [m for m in posted if m["marker"] == "epm:cluster-terminal"]
+    assert len(terminals) == 1
+    body = json.loads(terminals[0]["note"])
+    assert body["slurm_state"] == "TIMEOUT"
+    assert body["next_action"] == "interpret"
+    assert body["workload_done_despite_slurm"] is True
+
+
+def test_persisted_terminal_with_workload_done_flag_reads_done_phase(tmp_path: Path) -> None:
+    """UNKNOWN-reconnect synthesis of a persisted #1866 flip: status already
+    round-trips as done via the persisted body; the phase must ALSO read
+    'done' (not the dead-class slurm_state lowercased)."""
+    job_id = "9308"
+    now = datetime.now(tz=UTC)
+    _seed_local_state(tmp_path, job_id, status_json_body=None, job_out_lines=None)
+    prior_terminal = {
+        "kind": "epm:cluster-terminal",
+        "note": json.dumps(
+            {
+                "job_id": "9308",
+                "cluster": "nibi",
+                "slurm_state": "FAILED",
+                "exit_code": "1:0",
+                "observed_at": "2026-07-30T01:02:03Z",
+                "next_action": "interpret",
+                "status": "done",
+                "workload_done_despite_slurm": True,
+            }
+        ),
+    }
+    posted: list[dict] = []
+    poll = build_poll_result(
+        issue=137,
+        job_id=job_id,
+        cluster=_nibi(),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+        log_path="/scratch/tjiral/eps/issue-137/job.out",
+        state_querier=lambda *, robot_alias, job_id: {"status": "UNKNOWN", "exit_code": None},
+        rsyncer=lambda **_: None,
+        now_fn=lambda: now.timestamp(),
+        marker_poster=_capture_markers(posted),
+        event_reader=lambda _issue: [prior_terminal],
+    )
+    assert poll.status == "done"
+    assert poll.current_phase == "done"
+    assert posted == []  # reconnect path never re-posts
+
+
+def test_done_evidence_predicate_matches_template_producer(tmp_path: Path) -> None:
+    """Producer-parity pin (#1866): (a) the rendered sbatch terminal block
+    still emits ``_write_status "done" 0``; (b) the template's exact printf
+    JSON shape satisfies the predicate through the REAL build_poll_result,
+    while the heartbeat/stage shape (``exit_code:""``) does not. A future
+    ``_write_status`` shape change (int exit_code, renamed phase) fails THIS
+    test instead of silently disarming the flip with tests green."""
+    from explore_persona_space.backends import RunSpec, render_sbatch, stages_for_spec
+
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        hydra_args=("condition=c1_evil_wrong_em", "seed=42"),
+    )
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+    )
+    assert '_write_status "done" 0' in script
+
+    now = datetime.now(tz=UTC)
+    fresh_ts = now.isoformat().replace("+00:00", "Z")
+    # The template's _write_status printf shape, rendered verbatim:
+    #   {"phase":"%s","heartbeat_ts":"%s","gpu_busy":%s,"exit_code":"%s"}
+    template_done = (
+        f'{{"phase":"done","heartbeat_ts":"{fresh_ts}","gpu_busy":false,"exit_code":"0"}}\n'
+    )
+    poll = _run_dead_class_poll(
+        tmp_path,
+        job_id="9309",
+        slurm_state="FAILED",
+        status_json_text=template_done,
+        job_out_lines=["[phase=done]"],
+        submitted_at=now.timestamp() - 3600,
+        now=now,
+    )
+    assert poll.status == "done"
+
+    # Heartbeat/stage writes call _write_status with NO second arg → the
+    # printf renders exit_code:"" — must NOT satisfy the predicate.
+    template_heartbeat = (
+        f'{{"phase":"done","heartbeat_ts":"{fresh_ts}","gpu_busy":false,"exit_code":""}}\n'
+    )
+    poll = _run_dead_class_poll(
+        tmp_path,
+        job_id="9310",
+        slurm_state="FAILED",
+        status_json_text=template_heartbeat,
+        job_out_lines=["[phase=done]"],
+        submitted_at=now.timestamp() - 3600,
+        now=now,
+    )
+    assert poll.status == "dead"
