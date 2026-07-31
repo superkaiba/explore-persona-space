@@ -6922,8 +6922,8 @@
       "goal": "Does the context\u2192answer map predict the same structure the SAE represents? Two ways of decomposing the same answer activation have been measured separately and never compared: the map's **predictable subspace** (which directions of `v_A` the fitted map recovers) and the SAE's **representable subspace** (which directions its dictionary reconstructs). This task asks whether they coincide, and whether targeting the SAE's reconstruction instead of the raw activation changes what the map can do.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/1895",
-      "status": "proposed",
+      "path": "tasks/planning/1895",
+      "status": "planning",
       "title": "Does the context\u2192answer map's predictable subspace coincide with the SAE's representable subspace?"
     },
     "1896": {
@@ -7058,8 +7058,8 @@
     "1911": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1911",
-      "status": "planning",
+      "path": "tasks/approved/1911",
+      "status": "approved",
       "title": "workflow-fix: document the 'CMD -c ... || echo 0' double-print trap in gotchas.md"
     },
     "1912": {
@@ -7319,8 +7319,8 @@
       "goal": "Determine whether the context\u2192answer map's dominant (context \u00d7 direction) interaction residual admits recoverable low-rank bilinear structure (H1) or is per-pair idiosyncratic (H2), by pointing #1775's rank-r bilinear machinery at the #1482 residual pair space against a permuted-pairing null with the answer-sampling floor netted out.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/1945",
-      "status": "proposed",
+      "path": "tasks/planning/1945",
+      "status": "planning",
       "title": "Does the map's residual interaction have low-rank structure, or is it per-pair idiosyncratic?"
     },
     "1946": {
