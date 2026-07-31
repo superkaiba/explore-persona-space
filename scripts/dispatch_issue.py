@@ -2668,7 +2668,9 @@ def _build_argparser() -> argparse.ArgumentParser:
             "runs landed in the wrong project). KEY is restricted to "
             "backends.base.ENV_PIN_ALLOWED_KEYS (WANDB_PROJECT / "
             "WANDB_RUN_GROUP / WANDB_TAGS / EPM_PERSIST_ADAPTER_* / "
-            "EPM_UPLOAD_MERGED) — secret keys are unrepresentable by "
+            "EPM_UPLOAD_MERGED + the runtime-tuning set: "
+            "PYTORCH_CUDA_ALLOC_CONF / MALLOC_ARENA_MAX / *_NUM_THREADS — "
+            "#1803/#1852) — secret keys are unrepresentable by "
             "construction. Splits on the FIRST '=' (WANDB_TAGS=a=b is "
             "legal). Threads to spec.extra['env_pins'] -> the handle "
             "sidecar; every lane's workload-cmd launcher exports the pins "
@@ -2679,7 +2681,10 @@ def _build_argparser() -> argparse.ArgumentParser:
             "--boot-disk-gb pattern): launch composers SHOULD pass "
             "--env-pin WANDB_PROJECT=<declared project> whenever the plan's "
             "Reproducibility Card declares a non-default WandB project; a "
-            "flag-less launch keeps today's behavior."
+            "flag-less launch keeps today's behavior. Runtime-tuning "
+            "example: --env-pin PYTORCH_CUDA_ALLOC_CONF="
+            "expandable_segments:True (the gotchas.md CUDA-OOM hot-fix "
+            "knob)."
         ),
     )
     launch.add_argument(
