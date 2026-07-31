@@ -7377,8 +7377,8 @@
     "1952": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1952",
-      "status": "proposed",
+      "path": "tasks/archived/1952",
+      "status": "archived",
       "title": "workflow-fix: root-commit guard cwd attribution for cross-call-assigned cd-variable targets"
     },
     "196": {
