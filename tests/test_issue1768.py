@@ -2239,3 +2239,95 @@ def test_lad4_resume_skip_and_recount(tmp_path, monkeypatch):
     assert calls == list(cap.LAD_UPLOAD_TREES)
     done = json.loads((tmp_path / "on_target_r4" / "upload_done.json").read_text())
     assert done["n_verified"] == 4
+
+
+# ── lad2/pfx2/pfx3 shared-merged-dir lifecycle (job 16120 crash class) ────────
+
+
+class _FakeUnitProc:
+    """Popen-shaped fake for _fanout_phase (external process boundary only):
+    mirrors the dispatcher's call signature; poll() completes on first poll."""
+
+    def __init__(self, unit_arg: str, live: set, cmd, cwd, env, stdout, stderr):
+        self.unit_arg = unit_arg
+        self._live = live
+        self.pid = 4242
+        live.add(unit_arg)
+
+    def poll(self):
+        self._live.discard(self.unit_arg)
+        return 0
+
+    def terminate(self):  # pragma: no cover - failure path unused (rc always 0)
+        pass
+
+    def wait(self, timeout=None):  # pragma: no cover - failure path unused
+        return 0
+
+    def kill(self):  # pragma: no cover - failure path unused
+        pass
+
+
+def test_fanout_never_coschedules_same_model_key(tmp_path, monkeypatch):
+    """Job 16120 regression (fails pre-fix): lad2 co-scheduled the three rung
+    units of one arm; the first finisher's exit-cleanup rmtree'd the shared
+    merged/<arm> dir from under the live siblings (HFValidationError on the
+    relative path). The _fanout_phase _model_key guard must never let two
+    units sharing one merged/ft-staged dir be live concurrently."""
+    import types
+
+    import issue1768_capture as cap
+
+    cfg = cap.Cfg(out_root=tmp_path, phases=())
+    monkeypatch.setattr(cap, "_physical_gpus", lambda: list(range(8)))
+    monkeypatch.setattr(cap.time, "sleep", lambda s: None)
+    # deterministic merge_slots (real fn, faked FS boundary): free=500 GB -> 8
+    monkeypatch.setattr(cap.shutil, "disk_usage", lambda p: types.SimpleNamespace(free=500e9))
+    live: set[str] = set()
+    dispatches: list[tuple[str, frozenset]] = []
+
+    def fake_popen(cmd, cwd=None, env=None, stdout=None, stderr=None):
+        unit_arg = cmd[cmd.index("--unit") + 1].split(":", 1)[1]
+        dispatches.append((unit_arg, frozenset(live)))
+        return _FakeUnitProc(unit_arg, live, cmd, cwd, env, stdout, stderr)
+
+    monkeypatch.setattr(cap.subprocess, "Popen", fake_popen)
+    cap._fanout_phase(cfg, "lad2", "lad2_test")
+
+    expected = set(cap._lad_unit_set(cfg))
+    assert {u for u, _ in dispatches} == expected  # work-conserving: all 15 ran
+    assert len(dispatches) == len(expected)  # each exactly once
+    for unit_arg, live_at_dispatch in dispatches:
+        key = cap._model_key(cfg, unit_arg)
+        if key is None:
+            continue
+        live_keys = {cap._model_key(cfg, u) for u in live_at_dispatch}
+        assert key not in live_keys, (
+            f"{unit_arg} co-scheduled with a live same-merged-dir sibling: "
+            f"{sorted(live_at_dispatch)} (job 16120 crash class)"
+        )
+
+
+def test_model_key_shapes(tmp_path):
+    import issue1768_capture as cap
+
+    cfg = cap.Cfg(out_root=tmp_path, phases=())
+    assert cap._model_key(cfg, "imp-pers-con-lr3e5-s42@r_mid") == "imp-pers-con-lr3e5-s42"
+    assert cap._model_key(cfg, "p6g:syc-pers-con-lr1e5-s42") == "syc-pers-con-lr1e5-s42"
+    assert cap._model_key(cfg, "arm:mk-pers-con-lr5e6-s42") == "mk-pers-con-lr5e6-s42"
+    assert cap._model_key(cfg, "base_content@r_long") is None
+    assert cap._model_key(cfg, "base:base_content") is None
+    ovr = cap.Cfg(out_root=tmp_path, phases=(), model_override="/snap/model")
+    assert cap._model_key(ovr, "imp-pers-con-lr3e5-s42@r_mid") is None
+
+
+def test_assert_model_dir_alive_named_failure(tmp_path):
+    import issue1768_capture as cap
+
+    alive = tmp_path / "merged" / "arm-x"
+    alive.mkdir(parents=True)
+    cap._assert_model_dir_alive(str(alive), alive)  # present -> no raise
+    cap._assert_model_dir_alive("Qwen/Qwen2.5-7B", None)  # repo id -> no-op
+    gone = tmp_path / "merged" / "arm-y"
+    with pytest.raises(RuntimeError, match=r"shared-model-dir-vanished"):
+        cap._assert_model_dir_alive(str(gone), gone)
