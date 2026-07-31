@@ -150,18 +150,37 @@ def _hub():
 
 
 def _picks(cfg: Cfg) -> list[str]:
-    """The leg-A arm subset: the committed write-predictability picks."""
+    """The leg-A arm subset: the committed write-predictability picks.
+
+    The picks file is a GIT artifact (round 1's `write_predictability` tree is
+    committed, not in the Hub `UPLOAD_TREES` list), so the repo copy is the
+    source of record and the Hub stage is only a fallback for a checkout that
+    lacks it.
+    """
     if cfg.rtf_arms:
         return list(cfg.rtf_arms)
     path = cfg.out_root / RESULTS_DIR / "arm_picks.json"
     if not path.exists():
-        _hub().stage_hub_file(
-            X.HF_DATA_REPO,
-            f"{X.HF_PREFIX}/write_predictability/arm_picks.json",
-            path,
-            repo_type="dataset",
+        committed = (
+            REPO_ROOT
+            / "eval_results"
+            / f"issue_{X.ISSUE}"
+            / "write_predictability"
+            / "arm_picks.json"
         )
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if committed.exists():
+            shutil.copyfile(committed, path)
+            logger.info("[picks] copied the committed picks from %s", committed)
+        else:
+            _hub().stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/write_predictability/arm_picks.json",
+                path,
+                repo_type="dataset",
+            )
     picks = json.loads(path.read_text())["picks"]
+    assert picks, (path, "no arm picks")
     return [p["arm_id"] for p in picks]
 
 
@@ -277,6 +296,23 @@ def _stage_delta_cell(cfg: Cfg, arm_id: str) -> Path:
     return tbar
 
 
+def _stage_base_panels(cfg: Cfg) -> list[str]:
+    """The 4 base panel stores the delta baseline half reads (72 MB each)."""
+    hub = _hub()
+    behs = sorted({C._full_arm_index()[a].beh_key for a in {*_btf_arms(cfg), *_picks(cfg)}})
+    for beh in behs:
+        dest = cfg.out_root / "panel_capture" / f"base_{beh}" / "pooled.pt"
+        if not dest.exists():
+            hub.stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/panel_capture/base_{beh}/pooled.pt",
+                dest,
+                repo_type="dataset",
+            )
+    logger.info("[p0] staged %d base panel stores: %s", len(behs), behs)
+    return behs
+
+
 def phase_p0(cfg: Cfg) -> None:
     _phase("p0_stage")
     cfg.out_root.mkdir(parents=True, exist_ok=True)
@@ -288,6 +324,7 @@ def phase_p0(cfg: Cfg) -> None:
         _stage_row_text(cfg, u)
     for arm_id in _btf_arms(cfg):
         _stage_delta_cell(cfg, arm_id)
+    _stage_base_panels(cfg)
     C._atomic_json(
         cfg.out_root / RESULTS_DIR / "stage_manifest.json",
         {
@@ -675,34 +712,50 @@ def _span(store: dict, span: str, layer: int) -> np.ndarray:
 
 
 def _delta_direction(cfg: Cfg, arm_id: str, layer: int) -> dict:
-    """Round 1's delta leg for one (arm, layer), via `issue1768_directions`."""
+    """Round 1's delta leg for one (arm, layer), rebuilt from BASE-side inputs.
+
+    ``delta_primary = tbar - v0_half_B`` (`issue1768_directions.delta_leg`)
+    needs only the BASE panel store plus the arm's delta cell, so the 72 MB
+    per-arm panel stores are NOT staged; the identical round-1 helpers
+    (`source_context_id`, `_panel_rows`, `_half_means`) compute the baseline
+    half. The panel WRITE leg (`w_primary`) additionally needs the arm's own
+    panel store and is therefore returned only when that store happens to be
+    present locally — every read the round requires is delta-based.
+    """
     import issue1768_directions as D
+    import torch
 
     arm = C._full_arm_index()[arm_id]
-    legs = D.panel_write_legs(cfg.out_root, arm, layer)
-    dl = D.delta_leg(cfg.out_root, arm, layer, legs)
-    return {
-        "delta": np.asarray(dl["delta_primary"], dtype=np.float64),
-        "w_panel": np.asarray(legs["w_primary"], dtype=np.float64),
-        "delta_arm": dl["delta_arm"],
-        "n_mix_rows": dl["n_mix_rows"],
+    beh = arm.beh_key
+    base_store = D._load_store(cfg.out_root / "panel_capture" / f"base_{beh}" / "pooled.pt")
+    src_ctx = D.source_context_id(arm, base_store)
+    v0 = D._panel_rows(base_store, src_ctx, layer)
+    _v0_all, _v0_A, v0_B = D._half_means(v0)
+    delta_arm = X.delta_arm_for(arm)
+    tb = torch.load(
+        cfg.out_root / "delta_tf" / delta_arm / "tbar.pt", map_location="cpu", weights_only=False
+    )
+    tbar = np.asarray(tb["tbar"][layer].float().numpy(), dtype=np.float64)
+    out = {
+        "delta": tbar - np.asarray(v0_B, dtype=np.float64),
+        "delta_arm": delta_arm,
+        "n_mix_rows": int(tb["n_rows"]),
+        "src_ctx": src_ctx,
+        "n_panel_questions": len(v0),
     }
+    arm_panel = cfg.out_root / "panel_capture" / arm_id / "pooled.pt"
+    if arm_panel.exists():
+        legs = D.panel_write_legs(cfg.out_root, arm, layer)
+        out["w_panel"] = np.asarray(legs["w_primary"], dtype=np.float64)
+    return out
 
 
 def _stage_analysis_inputs(cfg: Cfg, arms: list[str]) -> None:
-    """Stage the pooled stores + panel bases the analysis reads (stream-reduced
-    one unit at a time by the caller; each is deleted after its reduce)."""
+    """Stage the pooled stores the leg-A decomposition reads (the base panels
+    land at p0; the per-arm leg-B matched-text stores are streamed one at a
+    time by `_corpus_matched_write` and deleted after each reduce)."""
     hub = _hub()
-    for beh in sorted({C._full_arm_index()[a].beh_key for a in _btf_arms(cfg)}):
-        for name in ("pooled.pt",):
-            dest = cfg.out_root / "panel_capture" / f"base_{beh}" / name
-            if not dest.exists():
-                hub.stage_hub_file(
-                    X.HF_DATA_REPO,
-                    f"{X.HF_PREFIX}/panel_capture/base_{beh}/{name}",
-                    dest,
-                    repo_type="dataset",
-                )
+    _stage_base_panels(cfg)
     for arm_id in arms:
         for tree, name in (("corpus_capture", "pooled.pt"), ("corpus_capture_tf", "pooled_tf.pt")):
             dest = cfg.out_root / tree / arm_id / name
@@ -836,7 +889,8 @@ def _decompose_arm(cfg: Cfg, arm_id: str) -> dict:
             "cos_function_delta": _cos(func, d["delta"]),
             "cos_interaction_delta": _cos(inter, d["delta"]),
             "cos_shift_delta": _cos(shift, d["delta"]),
-            "cos_text_panel_write": _cos(text, d["w_panel"]),
+            "src_ctx": d["src_ctx"],
+            "cos_text_panel_write": _cos(text, d["w_panel"]) if "w_panel" in d else None,
         }
     return {"arm_id": arm_id, "base_unit": base_unit, "layers": out}
 
@@ -934,7 +988,8 @@ def _leg_b_read(cfg: Cfg, arm_id: str, corpus_write: dict[str, np.ndarray] | Non
         try:
             d = _delta_direction(cfg, arm_id, layer)
             rec["cos_delta_v_train_delta"] = _cos(dv, d["delta"])
-            rec["cos_delta_v_train_panel_write"] = _cos(dv, d["w_panel"])
+            if "w_panel" in d:
+                rec["cos_delta_v_train_panel_write"] = _cos(dv, d["w_panel"])
             rec["delta_arm"] = d["delta_arm"]
         except (FileNotFoundError, AssertionError, KeyError) as exc:
             rec["delta_error"] = f"{type(exc).__name__}: {exc}"
