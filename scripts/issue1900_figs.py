@@ -187,13 +187,13 @@ def fig_mediation_forest(mediation: dict, stem: str, fig_dir: Path) -> Path:
     per_arm = mediation["per_arm"]
     arms = sorted(per_arm)
     measures = [
-        ("r_p1_given_p7", "P1 | P7 (raw partial)"),
-        ("r_p1_given_p2_p7", "P1 | P2,P7"),
-        ("r_p2_given_p7", "P2 | P7 (raw partial)"),
-        ("r_p2_given_p1_p7", "P2 | P1,P7"),
+        ("r_p1_given_p7", "context sim, given propensity"),
+        ("r_p1_given_p2_p7", "context sim, given answer sim + propensity"),
+        ("r_p2_given_p7", "answer sim, given propensity"),
+        ("r_p2_given_p1_p7", "answer sim, given context sim + propensity"),
     ]
     colors = _cand_colors(["p1", "p2"])
-    fig, ax = plt.subplots(figsize=(7.0, 0.42 * len(arms) + 1.8), layout="constrained")
+    fig, ax = plt.subplots(figsize=(9.5, 0.42 * len(arms) + 1.8), layout="constrained")
     offs = np.linspace(-0.3, 0.3, len(measures))
     markers = ["o", "s", "o", "s"]
     for k, (key, label) in enumerate(measures):
@@ -211,12 +211,16 @@ def fig_mediation_forest(mediation: dict, stem: str, fig_dir: Path) -> Path:
             facecolors="none" if "p2_p7" in key or "p1_p7" in key else None,
             color=colors["p1"] if key.startswith("r_p1") else colors["p2"],
             label=label,
+            # blog style zeroes scatter edge widths; open markers need an
+            # explicit width or they render invisible (#536 pitfall)
+            linewidths=1.2,
         )
     ax.axvline(0, color="#555555", linewidth=0.8)
     ax.set_yticks(range(len(arms)), [arm_plain(a) for a in arms])
     ax.set_xlabel("partial Spearman rho (rank residuals)")
     ax.set_title("Mediation: context vs answer similarity, base propensity partialled")
-    ax.legend(fontsize=7)
+    # legend outside the axes so no per-arm marker is ever occluded
+    ax.legend(fontsize=7, loc="upper left", bbox_to_anchor=(1.01, 1.0))
     return _save(fig, stem, fig_dir)
 
 

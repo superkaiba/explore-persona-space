@@ -427,13 +427,12 @@ def render_figures(out_dir: Path, fig_dir: Path) -> list[Path]:
         (
             "content",
             "residualized_race_content",
-            "P7-residualized change race — content arms (rho vs OLS residual of trained on base)",
+            "Propensity-residualized change race — content arms",
         ),
         (
             "marker",
             "residualized_race_marker",
-            "P7-residualized change race — marker arms (rho vs OLS residual of "
-            "trained logP on base logP)",
+            "Propensity-residualized change race — marker arms",
         ),
     ):
         sub = [p for p in payloads if p["kind"] == kind]

@@ -1,6 +1,6 @@
 {
-  "commit": "0e5e6c3e7d",
-  "created": "2026-07-31T14:51:29Z",
+  "commit": "8ef8bb77bd",
+  "created": "2026-07-31T16:01:12Z",
   "figsize": [
     7.54,
     5.38
@@ -10,7 +10,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title": "P7-residualized change race \u2014 marker arms (rho vs OLS residual of trained logP on base logP)",
+        "title_left": "Propensity-residualized change race \u2014 marker arms",
         "xticklabels": [
           "marker / bare / contrastive (s42)",
           "marker / conversation / contrastive (s42)",
