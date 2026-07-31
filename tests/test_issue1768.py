@@ -1655,3 +1655,417 @@ def test_pfx4_resume_skip_and_recount(tmp_path, monkeypatch):
     cap.phase_pfx4(cfg)  # count changed 0 -> 1: re-upload fires
     assert calls == list(cap.PFX_UPLOAD_TREES)
     assert json.loads((tmp_path / "on_target" / "upload_done.json").read_text())["n_verified"] == 1
+
+
+# ── round 4: prefix-richness dose ladder (plan v10) ──────────────────────────
+
+
+def _write_r4_ladder(out_root, realized=None, turns_by_cond=None):
+    """Minimal valid prefix_ladder.json fixture (2-turn user/assistant rungs)."""
+    realized = realized or {"r_short": 11, "r_mid": 94, "r_long": 800}
+    rungs = {}
+    for i, cond in enumerate(X.R4_CONDS):
+        turns = (turns_by_cond or {}).get(cond) or [
+            {"role": "user", "content": f"rung {cond} question {i}?"},
+            {"role": "assistant", "content": f"rung {cond} answer {i}."},
+        ]
+        rungs[cond] = {
+            "context_id": X.R4_CONTEXT_ID_BY_COND[cond],
+            "prefix_turns": turns,
+            "conversation_hash": f"hash_{cond}",
+            "dataset_index": 10 + i,
+            "turns_sha256": f"tsha_{cond}",
+            "recipe_sha256": f"rsha_{cond}",
+            "realized_tokens": realized[cond],
+            "target_tokens": float(realized[cond]),
+            "band": [realized[cond] * 0.5, realized[cond] * 2.0],
+            "log_dist_to_target": 0.0,
+            "n_band_candidates": 3,
+        }
+    p = Path(out_root) / "on_target_r4" / "inputs"
+    p.mkdir(parents=True, exist_ok=True)
+    (p / "prefix_ladder.json").write_text(json.dumps({"rungs": rungs}))
+    return rungs
+
+
+def test_r4_registry_units_and_ladder_registrar(tmp_path):
+    from explore_persona_space.artifacts.context import CONTEXTS
+
+    assert len(X.R4_ARMS) == 4 and X.R4_COMPARATOR_ARM in X.R4_ARMS
+    assert len(X.R4_PERSONA_ARMS) == 3 and X.R4_COMPARATOR_ARM not in X.R4_PERSONA_ARMS
+    assert X.r4_trained_unit("syc-pers-con-lr1e5-s42", "r_long") == "syc-pers-con-lr1e5-s42@r_long"
+    assert X.r4_base_unit("r_mid") == "base_content@r_mid"
+    assert X.r4_unit_context_id("base_content@r_short") == "ladder_prefix_short"
+    assert X.r4_unit_context_id("cas-pers-con-lr1e5-s42@r_long") == "ladder_prefix_long"
+    with pytest.raises(AssertionError):
+        X.r4_trained_unit("syc-pers-con-lr1e5-s42", "own")  # rung labels only
+    with pytest.raises(AssertionError):
+        X.r4_unit_context_id("base_content@pers")  # r3 tags are NOT rung units
+    _write_r4_ladder(tmp_path)
+    try:
+        X.register_r4_ladder_contexts(tmp_path)
+        X.register_r4_ladder_contexts(tmp_path)  # idempotent
+        ctx = CONTEXTS["ladder_prefix_long"]
+        assert ctx.kind == "prefix" and ctx.family == X.R4_LADDER_FAMILY
+        assert tuple(t["role"] for t in ctx.prefix_turns) == ("user", "assistant")
+        # foreign-binding refusal (the register_fu3_contexts pattern)
+        from explore_persona_space.artifacts.context import Context
+
+        CONTEXTS["ladder_prefix_short"] = Context(
+            context_id="ladder_prefix_short", kind="prefix", family="foreign", prefix_turns=()
+        )
+        with pytest.raises(ValueError, match="refusing to shadow"):
+            X.register_r4_ladder_contexts(tmp_path)
+    finally:
+        for cid in X.R4_CONTEXT_ID_BY_COND.values():
+            CONTEXTS.pop(cid, None)
+    # load_r4_ladder shape gate: non-(user, assistant) roles fail loud
+    bad = {"r_short": [{"role": "assistant", "content": "a"}, {"role": "user", "content": "b"}]}
+    _write_r4_ladder(tmp_path, turns_by_cond=bad)
+    with pytest.raises(AssertionError):
+        X.load_r4_ladder(tmp_path)
+
+
+def test_lad_band_specs_screens_and_selection():
+    import issue1768_capture as cap
+
+    specs = cap.lad_band_specs(11, 800)
+    assert specs["r_short"]["lo"] == pytest.approx(5.5)
+    assert specs["r_short"]["hi"] == pytest.approx(22.0)
+    assert specs["r_mid"]["target"] == pytest.approx((11 * 800) ** 0.5)
+    assert specs["r_long"]["lo"] == pytest.approx(600.0)
+    assert specs["r_long"]["hi"] == pytest.approx(1000.0)
+    # bands pairwise disjoint at the measured anchors (plan §11)
+    assert cap.lad_bands_for(11, specs) == ["r_short"]
+    assert cap.lad_bands_for(94, specs) == ["r_mid"]
+    assert cap.lad_bands_for(800, specs) == ["r_long"]
+    assert cap.lad_bands_for(300, specs) == []
+    # corpus screens: full language NAME (the #1092 lesson), fail-safe bools
+    base = {
+        "language": "English",
+        "toxic": False,
+        "redacted": False,
+        "conversation": [
+            {"role": "user", "content": "hi there"},
+            {"role": "assistant", "content": "hello!"},
+        ],
+        "conversation_hash": "h",
+    }
+    assert cap.lad_screen_reject(base) is None
+    assert cap.lad_screen_reject({**base, "language": "en"}) == "language"
+    assert cap.lad_screen_reject({**base, "toxic": True}) == "toxic"
+    assert cap.lad_screen_reject({**base, "toxic": None}) == "toxic"
+    assert cap.lad_screen_reject({**base, "redacted": True}) == "redacted"
+    assert cap.lad_screen_reject({**base, "conversation": base["conversation"][:1]}) == (
+        "too_few_turns"
+    )
+    swapped = [base["conversation"][1], base["conversation"][0]]
+    assert cap.lad_screen_reject({**base, "conversation": swapped}) == "bad_roles"
+    empty = [{"role": "user", "content": "  "}, {"role": "assistant", "content": "x"}]
+    assert cap.lad_screen_reject({**base, "conversation": empty}) == "empty_content"
+    # exclusion screens 1-3 (degenerate probes)
+    excl = {
+        "conv_turns": (("user", "trained q"), ("assistant", "trained a")),
+        "persona_system": "PERSONA-SYS",
+        "icl_demo_texts": ["ICL-DEMO"],
+        "trained_shas": {},
+    }
+    sha_set = {X.prompt_sha("known query")}
+    assert cap.lad_exclusion_reject("trained q", "trained a", "trained q", excl, sha_set) == (
+        "trained_prefix"
+    )
+    assert cap.lad_exclusion_reject("x PERSONA-SYS y", "a", "x", excl, sha_set) == (
+        "trained_context_containment"
+    )
+    assert cap.lad_exclusion_reject("a", "z ICL-DEMO", "a", excl, sha_set) == (
+        "trained_context_containment"
+    )
+    assert cap.lad_exclusion_reject("known query", "a", "known query", excl, sha_set) == (
+        "query_sha_overlap"
+    )
+    assert cap.lad_exclusion_reject("fresh", "novel", "fresh", excl, sha_set) is None
+    assert cap.lad_substring_belt_hit("xx known query yy", "a", ["known query"]) is True
+    assert cap.lad_substring_belt_hit("fresh", "novel", ["known query"]) is False
+
+    # deterministic selection: (dist, index) order; hash distinctness; belt
+    def cand(idx, t, h, text="fresh"):
+        return {
+            "index": idx,
+            "T": t,
+            "dist": abs(cap._log(t) - cap._log(11)),
+            "conversation_hash": h,
+            "turns": [
+                {"role": "user", "content": text},
+                {"role": "assistant", "content": "novel"},
+            ],
+        }
+
+    pools = {
+        "r_short": [cand(5, 11, "A"), cand(2, 11, "B")],  # tie on dist -> lowest index
+        "r_mid": [cand(9, 11, "B"), cand(30, 11, "C")],  # B collides with r_short pick
+        "r_long": [cand(4, 11, "D", text="belt known query"), cand(6, 11, "E")],
+    }
+    counters: dict[str, int] = {}
+    selected, shortage = cap._lad_select_rungs(pools, ["known query"], counters)
+    assert shortage == []
+    assert selected["r_short"]["conversation_hash"] == "B"  # tie-break: index 2 < 5
+    assert selected["r_mid"]["conversation_hash"] == "C"  # B already used (exclusion 4)
+    assert selected["r_long"]["conversation_hash"] == "E"  # D rejected by the belt
+    assert counters["belt_query_text_substring"] == 1
+    assert counters["cross_rung_hash_collision"] == 1
+    _sel, short2 = cap._lad_select_rungs({**pools, "r_mid": [cand(9, 11, "B")]}, [], {})
+    assert short2 == ["r_mid"]  # kill criterion (b) surface: shortage reported
+
+
+def test_lad_recheck_exclusions_tampered_ladder(tmp_path, monkeypatch):
+    """Kill criterion (d) probe: the REAL `_lad_recheck_exclusions` body with
+    only the network-boundary input fetchers faked (signature-conformant);
+    a persona-system-contaminated rung fails loud, a clean ladder passes."""
+    import issue1768_capture as cap
+
+    class _Tok:
+        def __call__(self, text, add_special_tokens=False):
+            return {"input_ids": [0] * len(text.split())}
+
+    excl = {
+        "trained_shas": {"pers": "TS1", "conv": "TS2", "icl": "TS3"},
+        "conv_turns": (("user", "trained q"), ("assistant", "trained a")),
+        "persona_system": "PERSONA-SYS",
+        "icl_demo_texts": ["ICL-DEMO"],
+    }
+    monkeypatch.setattr(cap, "_lad_trained_exclusion_material", lambda: excl)
+    monkeypatch.setattr(cap, "_lad_full_grain_samples", lambda cfg: (set(), ["ZZZ-query"]))
+    cfg = cap.Cfg(out_root=tmp_path, phases=())
+    turns = {
+        c: [
+            {"role": "user", "content": f"three word {c}"},
+            {"role": "assistant", "content": f"reply for {c}"},
+        ]
+        for c in X.R4_CONDS
+    }
+    realized = {c: 6 for c in X.R4_CONDS}  # 3 + 3 whitespace tokens per rung
+    _write_r4_ladder(tmp_path, realized=realized, turns_by_cond=turns)
+    ladder = json.loads((tmp_path / "on_target_r4" / "inputs" / "prefix_ladder.json").read_text())
+    for c in X.R4_CONDS:  # align the fixture's derived shas with the recheck
+        ladder["rungs"][c]["turns_sha256"] = cap.lad_turns_sha(ladder["rungs"][c]["prefix_turns"])
+    out = cap._lad_recheck_exclusions(cfg, _Tok(), ladder)
+    assert set(out) == set(X.R4_CONDS)
+    tampered = json.loads(json.dumps(ladder))
+    tampered["rungs"]["r_mid"]["prefix_turns"][0]["content"] = "has PERSONA-SYS inside x"
+    tampered["rungs"]["r_mid"]["realized_tokens"] = 7
+    tampered["rungs"]["r_mid"]["band"] = [1, 20]
+    tampered["rungs"]["r_mid"]["turns_sha256"] = cap.lad_turns_sha(
+        tampered["rungs"]["r_mid"]["prefix_turns"]
+    )
+    with pytest.raises(AssertionError, match="builder exclusion violated"):
+        cap._lad_recheck_exclusions(cfg, _Tok(), tampered)
+
+
+def test_lad_unit_sets_pending_and_smoke_coverage(tmp_path):
+    import issue1768_capture as cap
+
+    smoke_cfg = cap.Cfg(out_root=tmp_path, phases=(), smoke=True)
+    assert cap._lad_unit_set(smoke_cfg) == [
+        "base_content@r_long",
+        "syc-pers-con-lr1e5-s42@r_long",
+    ]
+    prod_cfg = cap.Cfg(out_root=tmp_path, phases=())
+    units = cap._lad_unit_set(prod_cfg)
+    assert len(units) == 15  # 3 base@rung + 4 arms x 3 rungs (plan §4.4)
+    assert units[:3] == ["base_content@r_short", "base_content@r_mid", "base_content@r_long"]
+    assert cap._pending_units(prod_cfg, "lad2") == units
+    done = tmp_path / "on_target_r4" / "corpus_capture" / "base_content@r_mid"
+    done.mkdir(parents=True)
+    (done / "pooled.pt").write_bytes(b"x")
+    assert "base_content@r_mid" not in cap._pending_units(prod_cfg, "lad2")
+    with pytest.raises(AssertionError, match="outside the r4 arm set"):
+        cap._lad_arms(cap.Cfg(out_root=tmp_path, phases=(), arms=("mk-pers-con-lr5e6-s42",)))
+
+
+def test_lad_cell_paths_rung_routing(tmp_path):
+    import issue1768_fit as fit
+
+    arm = "imp-pers-con-lr3e5-s42"
+    fits, npz, percell = fit.pfx_cell_paths(tmp_path, tmp_path / "res", arm, 19, "r_short")
+    assert fits == tmp_path / "res" / "on_target_r4" / "fits" / f"{arm}_L19_r_short.json"
+    assert npz == tmp_path / "on_target_r4" / "fit_state" / f"{arm}_L19_r_short.npz"
+    assert percell == tmp_path / "res" / "on_target_r4" / "percell" / f"{arm}_L19_r_short.json"
+    # r3 conditions stay byte-identical (regression pin on the shared helper)
+    fits3, npz3, percell3 = fit.pfx_cell_paths(tmp_path, tmp_path / "res", arm, 19, "ctrl")
+    assert fits3 == tmp_path / "res" / "on_target" / "fits" / f"{arm}_L19_control.json"
+    assert npz3 == tmp_path / "on_target" / "fit_state" / f"{arm}_L19_control.npz"
+    assert percell3 == tmp_path / "res" / "on_target" / "percell" / f"{arm}_L19_control.json"
+    with pytest.raises(KeyError):
+        fit.pfx_cell_paths(tmp_path, tmp_path / "res", arm, 19, "r_bogus")
+
+
+def test_load_lad_cell_no_tf_and_fit_core_skips_tf_maps(tmp_path):
+    import issue1768_fit as fit
+
+    d, layer, n = 5, 0, 60
+    arm = "cas-pers-con-lr1e5-s42"
+    shas = [f"s{i}" for i in range(n)]
+    _write_pfx_sample(tmp_path, 40, 8, 12, shas, src_qidx=[i + 100 for i in range(n)])
+    rng = np.random.default_rng(0)
+    root = tmp_path / "on_target_r4"
+    C0 = rng.standard_normal((n, d))
+    W = rng.standard_normal((d, d))
+    _mk_store(
+        root / "corpus_capture" / "base_content@r_long" / "pooled.pt",
+        {
+            "context": {layer: C0},
+            "response": {layer: C0 @ W + 0.01 * rng.standard_normal((n, d))},
+            "prefix": {layer: np.ones((n, d))},
+        },
+        shas,
+        list(range(n)),
+    )
+    _mk_store(
+        root / "corpus_capture" / f"{arm}@r_long" / "pooled.pt",
+        {
+            "context": {layer: C0},
+            "response": {layer: C0 @ (W + 3.0) + 0.01 * rng.standard_normal((n, d))},
+            "prefix": {layer: np.ones((n, d)) * 2},
+        },
+        shas,
+        list(range(n)),
+    )
+    cell = fit.load_lad_cell(arm, "r_long", layer, tmp_path)
+    assert "Vplus_tf" not in cell  # Method delta (b): no TF tree on rungs
+    res = fit._pfx_fit_core(
+        tmp_path, tmp_path / "res", arm, layer, "r_long", cell, smoke=True, run_transfer_fold=True
+    )
+    assert "Mplus_tf" not in res["fits"] and "decomposition_tf" not in res
+    assert "transfer_fold" in res  # plan §6: LMSYS<->WildChat fold on rung fits
+    fits_p, npz_p, percell_p = fit.pfx_cell_paths(tmp_path, tmp_path / "res", arm, layer, "r_long")
+    assert fits_p.exists() and npz_p.exists() and percell_p.exists()
+
+
+def test_paired_m_contrast_join_and_lattices():
+    import issue1768_fit as fit
+
+    # duplicate SHAS with unique qidx: the (sha, qidx) join stays exact where
+    # a sha-only dict join would silently collapse rows (the r4 advisory)
+    n = 20
+    a_rows = [
+        {"sha": f"s{i % 12}", "qidx": i, "src_qidx": i + 100, "delta": 10.0 + (i % 3)}
+        for i in range(n)
+    ]
+    b_rows = [{"sha": f"s{i % 12}", "qidx": i, "src_qidx": i + 100, "delta": 2.0} for i in range(n)]
+    assert len({r["sha"] for r in a_rows}) < n  # the fixture really has dup shas
+    out = fit._paired_m_contrast(a_rows, b_rows, seed=3, expect_pairs=n)
+    assert out["n_pairs"] == n and out["join"] == "(sha, qidx) exact"
+    assert out["diff"] == pytest.approx(9.0, abs=1.0) and out["diff_ci95"][0] > 0
+    with pytest.raises(AssertionError, match="join drift"):
+        fit._paired_m_contrast(a_rows[:-1], b_rows, seed=3, expect_pairs=n)
+    # smoke demotes the exact-pair assert to a log line (#1345 rule)
+    ok = fit._paired_m_contrast(a_rows[:-1], b_rows, seed=3, expect_pairs=n, smoke=True)
+    assert ok["n_pairs"] == n - 1
+    dup = a_rows + [a_rows[0]]
+    with pytest.raises(AssertionError, match="duplicate"):
+        fit._paired_m_contrast(dup, b_rows, seed=3)
+    # plan §3 lattices (DISJOINT + exhaustive)
+    assert fit.lad_richness_verdict([-1.0, 0.5], [0.2, 1.0]) == "Richness-consistent"
+    assert fit.lad_richness_verdict([-2.0, -0.5], [0.2, 1.0]) == "Identity-consistent"
+    assert fit.lad_richness_verdict([-1.0, 0.5], [-0.2, 1.0]) == "Mixed"
+    assert fit.lad_own_suppression_verdict([0.5, 2.0]) == "Own-suppressed"
+    assert fit.lad_own_suppression_verdict([-2.0, -0.5]) == "Not-suppressed"
+    assert fit.lad_own_suppression_verdict([-0.5, 0.5]) == "Indeterminate"
+
+
+def test_lad7_production_mode_reads_what_lad5_writes(tmp_path, monkeypatch):
+    """Production-mode probe for the smoke-fenced lad7 legs (the fenced-branch
+    rule): the REAL `phase_lad7(smoke=False)` over cells the REAL
+    `_pfx_fit_core` wrote for every rung + the r3-side {own, ctrl, bare_n}
+    layout — ΔD Rung-* vocabulary, the 5 registered m-contrasts, richness +
+    own-suppression verdicts, and the loud missing-cell error naming lad5."""
+    import issue1768_fit as fit
+
+    monkeypatch.setattr(X, "N_TEST", 12)  # production exact-join assert at test scale
+    rng = np.random.default_rng(0)
+    n, d, layer = 60, 5, 0
+    C0 = rng.standard_normal((n, d))
+    W = rng.standard_normal((d, d))
+    arms = ("syc-pers-con-lr1e5-s42", X.R4_COMPARATOR_ARM)
+    res_dir = tmp_path / "res"
+    shas = [f"s{i % 50}" for i in range(n)]  # dup shas; qidx disambiguates
+    for arm in arms:
+        for cond, shift in (
+            ("r_short", 0.5),
+            ("r_mid", 1.5),
+            ("r_long", 3.0),
+            ("own", 1.0),
+            ("ctrl", 2.5),
+            ("bare_n", 0.0),
+        ):
+            Cp = C0 + 0.01 * rng.standard_normal((n, d))
+            cell = {
+                "C0": C0,
+                "V0": C0 @ W + 0.01 * rng.standard_normal((n, d)),
+                "Cplus": Cp,
+                "Vplus": Cp @ (W + shift) + 0.01 * rng.standard_normal((n, d)),
+                "split": np.array(["train"] * 40 + ["val"] * 8 + ["test"] * 12),
+                "corpus": np.array(["lmsys", "wildchat"] * 30),
+                "sha": shas,
+                "qidx": np.arange(n),
+                "src_qidx": np.arange(n) + 100,
+            }
+            if cond in ("own", "ctrl", "bare_n"):
+                cell["Vplus_tf"] = cell["Vplus"]
+            fit._pfx_fit_core(
+                tmp_path, res_dir, arm, layer, cond, cell, smoke=True, run_transfer_fold=False
+            )
+    _write_r4_ladder(tmp_path)
+    fit.phase_lad7(tmp_path, res_dir, (layer,), smoke=False, arms_filter=arms)
+    summary = json.loads((res_dir / "on_target_r4" / "map_change_ladder.json").read_text())
+    assert len(summary["cells"]) == 6  # 2 arms x 1 layer x 3 rungs
+    row = summary["cells"][f"{arms[0]}_L0_r_long"]
+    assert row["realized_tokens"] == 800
+    assert row["contrast"]["verdict"] in {"Rung-amplified", "Rung-attenuated", "Indistinguishable"}
+    mrow = summary["m_table"][f"{arms[0]}_L0"]
+    assert set(mrow["contrasts"]) == {
+        "long_minus_ctrl",
+        "long_minus_short",
+        "long_minus_own",
+        "mid_minus_short",
+        "long_minus_mid",
+    }
+    assert all(c["n_pairs"] == 12 for c in mrow["contrasts"].values())
+    assert summary["richness_verdicts"][arms[0]] in {
+        "Richness-consistent",
+        "Identity-consistent",
+        "Mixed",
+    }
+    assert summary["own_suppression"]["arm_id"] == X.R4_COMPARATOR_ARM
+    assert summary["own_suppression"]["verdict"] in {
+        "Own-suppressed",
+        "Not-suppressed",
+        "Indeterminate",
+    }
+    assert "942" in summary["join_convention"]
+    with pytest.raises(RuntimeError, match="re-run lad5"):
+        fit._pfx_cell_inputs(tmp_path, res_dir, arms[0], 99, "r_mid")
+
+
+def test_lad4_resume_skip_and_recount(tmp_path, monkeypatch):
+    """lad4 mirrors the pfx4 resume/recount semantics on the r4 trees."""
+    import issue1768_capture as cap
+
+    from explore_persona_space.orchestrate import hub as hub_mod
+
+    calls: list[str] = []
+    monkeypatch.setattr(
+        cap, "_upload_tree", lambda cfg, name: (calls.append(name), f"{cfg.hf_prefix}/{name}")[1]
+    )
+    monkeypatch.setattr(hub_mod, "verify_repo_paths_uploaded", lambda *a, **k: [])
+    cfg = cap.Cfg(out_root=tmp_path, phases=(), upload=True)
+    cap._atomic_json(tmp_path / "on_target_r4" / "upload_done.json", {"n_verified": 0})
+    cap.phase_lad4(cfg)
+    assert calls == []  # matching count -> resume skip
+    store = tmp_path / "on_target_r4" / "corpus_capture" / "base_content@r_long"
+    store.mkdir(parents=True)
+    (store / "pooled.pt").write_bytes(b"x")
+    cap.phase_lad4(cfg)
+    assert calls == list(cap.LAD_UPLOAD_TREES)
+    done = json.loads((tmp_path / "on_target_r4" / "upload_done.json").read_text())
+    assert done["n_verified"] == 1
