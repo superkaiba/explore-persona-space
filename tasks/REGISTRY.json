@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1911,
+  "highest_id": 1912,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7060,6 +7060,13 @@
       "path": "tasks/proposed/1911",
       "status": "proposed",
       "title": "workflow-fix: document the 'CMD -c ... || echo 0' double-print trap in gotchas.md"
+    },
+    "1912": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1912",
+      "status": "proposed",
+      "title": "daily-fix: fix red main: test_backend_poll.py::test_every_lazy_scripts_local_import_is_bootstrap_guarded \u2014 add the scripts-dir bootstrap (call `_en"
     },
     "192": {
       "goal": "Test whether one fictional medical fact, taught under a teaching-persona system prompt, transfers to ordinary-assistant and other non-teach evaluation frames.",
