@@ -421,7 +421,10 @@ def write_cert(
     """Append `v1 <epoch> <sha> <path>` lines for passing paths whose worktree
     content still matches the read_payload snapshot; a mismatch means the file
     was edited DURING the gate run -> INCONCLUSIVE for that path, no cert
-    (TOCTOU guard). Append runs under flock with an inode re-check (#1620): a
+    (TOCTOU guard). A first-pass mismatch gets ONE bounded settle-and-re-hash
+    retry (#1857, EPM_CERT_REHASH_DELAY_S) so a transient worktree flip does
+    not withhold the cert; only a STABLE mismatch stays TOCTOU.
+    Append runs under flock with an inode re-check (#1620): a
     concurrent trim's os.replace can swap the path to a NEW inode while this
     writer waits on the OLD inode's lock, so after acquiring the lock the fd
     is re-opened until it still names cert_path (bounded; exhaustion degrades
@@ -432,13 +435,39 @@ def write_cert(
     toctou: list[str] = []
     epoch = int(time.time())
     lines: list[str] = []
+    mismatched: list[str] = []
     for p in passing:
         current = _hash_object(repo, p)
         if current is None or current != snapshots[p]:
-            toctou.append(p)
+            mismatched.append(p)
             continue
         lines.append(f"v1 {epoch} {snapshots[p]} {p}\n")
         certified.append(p)
+    if mismatched:
+        # Bounded settle-and-re-hash retry (#1857): a TRANSIENT worktree-hash
+        # flip (concurrent writer / filesystem settle — the 07-30 false
+        # INCONCLUSIVE on a file not being edited) re-hashes back to the
+        # read_payload snapshot after one settle delay and certifies as
+        # normal; a STABLE mismatch stays TOCTOU with the message unchanged.
+        # ONE sleep total (not per path), OUTSIDE the flock below (lines are
+        # assembled before locking). The retry re-READS the worktree hash —
+        # it never re-binds the cert to different content (the cert line
+        # still carries the snapshot sha, which the re-hash must EQUAL).
+        # Knob: EPM_CERT_REHASH_DELAY_S (seconds, default 2; tests set 0 /
+        # monkeypatch time.sleep). A malformed value falls back to the
+        # default — the re-check always runs (fail toward TOCTOU/block).
+        try:
+            delay = float(os.environ.get("EPM_CERT_REHASH_DELAY_S", "2"))
+        except ValueError:
+            delay = 2.0
+        time.sleep(max(delay, 0.0))
+        for p in mismatched:
+            current = _hash_object(repo, p)
+            if current is not None and current == snapshots[p]:
+                lines.append(f"v1 {epoch} {snapshots[p]} {p}\n")
+                certified.append(p)
+            else:
+                toctou.append(p)
     if lines:
         cert_path.parent.mkdir(parents=True, exist_ok=True)
         fh = open(cert_path, "a+", encoding="utf-8")

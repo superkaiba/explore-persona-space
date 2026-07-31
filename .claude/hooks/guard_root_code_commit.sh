@@ -105,7 +105,9 @@
 # Contract: reads the PreToolUse JSON on stdin, exit 0 allow, exit 2 (blocking,
 # stderr fed back to Claude) refuse; any OTHER non-zero is non-blocking.
 # Test overrides (hermetic tmp repos): EPM_ROOT_CODE_COMMIT_REPO,
-# EPM_INLINE_CERT_PATH, EPM_INLINE_CERT_MAX_AGE_S.
+# EPM_INLINE_CERT_PATH, EPM_INLINE_CERT_MAX_AGE_S, EPM_CERT_REHASH_DELAY_S
+# (settle delay in seconds before the cert-retry re-hash pass, default 2;
+# tests set 0 and/or PATH-shim `sleep` — #1857).
 #
 # Self-test: bash .claude/hooks/guard_root_code_commit.sh --self-test
 set -u
@@ -788,6 +790,39 @@ check_certified() {
   return 1
 }
 
+# landing_sha <path>: echo the sha of the LANDING content for a gated pending
+# path, per the BINDING RULE at the per-path cert loop below (worktree hash
+# for -a / pathspec / add-clause shapes; staged blob sha only for a plain
+# commit of the staged set). Returns 1 for a deletion-exempt path (no content
+# lands — caller skips). A failed git read echoes EMPTY (check_certified then
+# never matches: block direction preserved). Reads globals scope / has_dash_a
+# / text_paths / GUARD_REPO at call time; factored out of the loop (#1857) so
+# the first cert pass and the cert-retry re-hash pass cannot diverge.
+landing_sha() {
+  local p="$1" worktree_shape=0 sha=""
+  # Scoped read engaged => a pathspec commit lands WORKTREE content for every
+  # pending path (BINDING RULE at the loop below; issue #1620).
+  [ "${scope:-0}" = 1 ] && worktree_shape=1
+  if [ "$has_dash_a" = 1 ] \
+    && git -C "$GUARD_REPO" diff --name-only -- "$p" 2>/dev/null | grep -qxF -- "$p"; then
+    worktree_shape=1 # -a re-stages worktree content
+  fi
+  if printf '%s\n' "$text_paths" | grep -qxF -- "$p"; then
+    worktree_shape=1 # commit pathspec / chained add-clause
+  fi
+  if [ "$worktree_shape" = 1 ]; then
+    [ -f "$GUARD_REPO/$p" ] || return 1 # deletion via -a/pathspec: exempt
+    sha=$(git -C "$GUARD_REPO" hash-object -- "$GUARD_REPO/$p" 2>/dev/null || true)
+  elif git -C "$GUARD_REPO" diff --cached --name-only -- "$p" 2>/dev/null | grep -qxF -- "$p"; then
+    sha=$(git -C "$GUARD_REPO" ls-files -s -- "$p" 2>/dev/null | awk '{print $2}')
+    [ -n "$sha" ] || return 1 # staged DELETION: exempt
+  else
+    [ -f "$GUARD_REPO/$p" ] || return 1
+    sha=$(git -C "$GUARD_REPO" hash-object -- "$GUARD_REPO/$p" 2>/dev/null || true)
+  fi
+  printf '%s' "$sha"
+}
+
 # cert_diag <path>: one stable grep-able diagnostic line per uncertified path
 # (issue #1620 fix (c)); called ONLY in the block path (zero hot-path cost).
 # Format:
@@ -860,6 +895,9 @@ run_self_test() {
   SCRIPT="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
   TMP=$(mktemp -d)
   trap 'rm -rf "$TMP"' RETURN
+  # Blocked self-test cases hit the #1857 cert-retry pass; zero its settle
+  # delay so the self-test stays fast + wall-clock-independent.
+  export EPM_CERT_REHASH_DELAY_S=0
 
   # Repo with artifact-only staged payload.
   RART="$TMP/art" && git init -q "$RART"
@@ -1139,34 +1177,62 @@ pending=$(printf '%s\n%s\n%s\n' "$staged" "$mod" "$text_paths" \
 # the staged blob sha is authoritative ONLY for a plain commit of the staged
 # set. Space-safe iteration (while read, never for-in word-split): a gated
 # path containing a space must fail toward BLOCK, never silently allow.
-uncertified=""
+uncertified_nl="" # newline-joined (space-safe); the block path's space-joined form is derived below
 while IFS= read -r p; do
   [ -n "$p" ] || continue
-  worktree_shape=0 # 1 => landing content is the worktree file
-  # Scoped read engaged => a pathspec commit lands WORKTREE content for every
-  # pending path (BINDING RULE above; issue #1620).
-  [ "$scope" = 1 ] && worktree_shape=1
-  if [ "$has_dash_a" = 1 ] \
-    && git -C "$GUARD_REPO" diff --name-only -- "$p" 2>/dev/null | grep -qxF -- "$p"; then
-    worktree_shape=1 # -a re-stages worktree content
-  fi
-  if printf '%s\n' "$text_paths" | grep -qxF -- "$p"; then
-    worktree_shape=1 # commit pathspec / chained add-clause
-  fi
-  if [ "$worktree_shape" = 1 ]; then
-    [ -f "$GUARD_REPO/$p" ] || continue # deletion via -a/pathspec: exempt
-    sha=$(git -C "$GUARD_REPO" hash-object -- "$GUARD_REPO/$p" 2>/dev/null || true)
-  elif git -C "$GUARD_REPO" diff --cached --name-only -- "$p" 2>/dev/null | grep -qxF -- "$p"; then
-    sha=$(git -C "$GUARD_REPO" ls-files -s -- "$p" 2>/dev/null | awk '{print $2}')
-    [ -n "$sha" ] || continue # staged DELETION: exempt
-  else
-    [ -f "$GUARD_REPO/$p" ] || continue
-    sha=$(git -C "$GUARD_REPO" hash-object -- "$GUARD_REPO/$p" 2>/dev/null || true)
-  fi
-  check_certified "$p" "$sha" || uncertified="$uncertified $p"
+  if sha=$(landing_sha "$p"); then
+    check_certified "$p" "$sha" || uncertified_nl="${uncertified_nl}${p}
+"
+  fi # landing_sha rc=1: deletion-exempt path — skip (no content lands)
 done <<EOF_PENDING
 $pending
 EOF_PENDING
+
+[ -z "$uncertified_nl" ] && exit 0
+
+# Cert-retry pass (#1857): ONE bounded settle-and-re-hash retry before the
+# negative verdict, firing ONLY on a would-block path (the happy path never
+# sleeps). A transient worktree-hash flip (concurrent writer / filesystem
+# settle: the guard-time read != the cert sha, then the file settles back
+# within the window — the 07-28 incident) must not block a certified commit;
+# a STABLE mismatch keeps today's block verdict byte-for-byte. The retry
+# re-READS the landing sha via the same landing_sha function — it never
+# re-BINDS to a different content source (the #1620 binding rule is
+# unchanged). Delay knob: EPM_CERT_REHASH_DELAY_S (seconds, default 2; tests
+# set 0 and/or PATH-shim `sleep`). `|| true`: a malformed delay makes sleep
+# fail — the re-check still runs immediately, so a genuine mismatch still
+# blocks (fail toward BLOCK; a failed sleep must never crash the guard into
+# a non-blocking exit under a hook harness that only blocks on exit 2).
+sleep "${EPM_CERT_REHASH_DELAY_S:-2}" || true
+retry_uncertified_nl=""
+while IFS= read -r p; do
+  [ -n "$p" ] || continue
+  if sha=$(landing_sha "$p"); then
+    if check_certified "$p" "$sha"; then
+      echo "cert-retry: $p recovered after re-hash (transient worktree flip)" >&2
+    else
+      retry_uncertified_nl="${retry_uncertified_nl}${p}
+"
+    fi
+  else
+    # Deleted between passes: mirror the first pass's deletion-exempt skip
+    # (no content lands for this path anymore).
+    echo "cert-retry: $p exempt after re-hash (deleted between passes)" >&2
+  fi
+done <<EOF_RETRY
+$uncertified_nl
+EOF_RETRY
+
+[ -z "$retry_uncertified_nl" ] && exit 0
+
+# Space-joined form the existing block path renders (rendering unchanged).
+uncertified=""
+while IFS= read -r p; do
+  [ -n "$p" ] || continue
+  uncertified="$uncertified $p"
+done <<EOF_JOIN
+$retry_uncertified_nl
+EOF_JOIN
 
 [ -z "${uncertified:-}" ] && exit 0
 
