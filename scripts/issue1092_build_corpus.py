@@ -2026,6 +2026,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
     # ── step 1: derive trait names at runtime ────────────────────────────────
     logger.info("[P0] step 1: derive trait names from HF r_b/")
     if args.smoke:
+        # #1296/#1304: lazy scripts-local import guard (module-mode safe)
+        scripts_dir = str(Path(__file__).resolve().parent)
+        if scripts_dir not in sys.path:
+            sys.path.insert(0, scripts_dir)
         from issue779_common import TRAITS
 
         trait_names = list(TRAITS)
