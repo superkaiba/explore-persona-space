@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1931,
+  "highest_id": 1932,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7215,6 +7215,13 @@
       "path": "tasks/proposed/1931",
       "status": "proposed",
       "title": "daily-fix: pod bootstrap retry + fail-loud provision verdict"
+    },
+    "1932": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1932",
+      "status": "proposed",
+      "title": "correct #1310 Takeaway bullet 3 + title qualifier per nd-estimator/lambda audits (per-turn deflation was a lambda-selection artifact)"
     },
     "194": {
       "has_clean_result": false,
