@@ -152,12 +152,45 @@ PAIRED_STORIES_VARIANTS = (
     # — the embedded answer text is identical to it AND to the base r1/r2
     # comparator stores, so the framing contrast stays clean.
     "conversation_paired_stories_assistant_base",  # base-measured scope
+    # --- INJECTED character arms (4-persona panel) ----------------------------
+    # The r4 (TF verbatim-embed) half of the on-policy-vs-injected program. The
+    # registry pins ONE (regime x measured model) per variant, so the program's
+    # 16 gen cells are 16 variants: r4 here, r4op in ONPOLICY_STORY_VARIANTS
+    # below (a variant cannot be both — HAS_ONPOLICY_STORY drops r4 from
+    # REGIMES), each x instruct / `_base` pretrained via R4_MODELS.
+    # Labels + persona descriptions come from
+    # issue1310_common.PERSONAS and ride the generation prompt via
+    # EPM_I1345_PERSONA_DESC (issue1345_gen_stories_paired); the wrapper WRITER
+    # stays instruct on every variant, so the `_base` siblings differ only in the
+    # MEASURED/CAPTURE model, exactly like the assistant_base scope.
+    # Every path + HF prefix is _VSUB-scoped, so these cannot touch any existing
+    # variant's dirs, prefixes, or bundle fingerprints (membership tests only).
+    "char_helios",
+    "char_helios_base",
+    "char_wren",
+    "char_wren_base",
+    "char_dana",
+    "char_dana_base",
+    "char_vex",
+    "char_vex_base",
 )
 HAS_R4 = VARIANT in PAIRED_STORIES_VARIANTS
 # The base-measured scope is the ONLY variant whose story arm measures the
 # pretrained model (R4_MODELS below keys off this); the two instruct scopes
 # keep the instruct-only story arm byte-identical.
-BASE_PAIRED_STORIES_VARIANTS = ("conversation_paired_stories_assistant_base",)
+BASE_PAIRED_STORIES_VARIANTS = (
+    "conversation_paired_stories_assistant_base",
+    # The character panel's base-MEASURED siblings (wrappers still
+    # instruct-written) — both the injected (r4) and on-policy (r4op) halves.
+    "char_helios_base",
+    "char_wren_base",
+    "char_dana_base",
+    "char_vex_base",
+    "char_helios_op_base",
+    "char_wren_op_base",
+    "char_dana_op_base",
+    "char_vex_op_base",
+)
 HAS_BASE_PAIRED = VARIANT in BASE_PAIRED_STORIES_VARIANTS
 # story-slot-position-ablation round (plan v10 §4): re-reads the landed v9
 # paired-story corpus at 4 extra context-slot positions in ONE TF forward per
@@ -177,7 +210,25 @@ HAS_SLOT_ABLATION = VARIANT in SLOT_ABLATION_VARIANTS
 # (TF verbatim-embed) leg exists this round; r3 (free-form stories) is out of
 # scope (the parent's free-form bundle is available for a later context-only
 # arm). EXPLICIT membership (never a prefix match).
-ONPOLICY_STORY_VARIANTS = ("onpolicy_assistant_story",)
+ONPOLICY_STORY_VARIANTS = (
+    "onpolicy_assistant_story",
+    # ON-POLICY character arms (the r4op half of the injected-vs-on-policy
+    # program): the SAME persona wrappers as the `char_*` r4 variants above, but
+    # the character answers FREELY (confident_op_turn extracts the answer span
+    # instead of verifying a pinned one), so these are NOT text-matched across
+    # cells — the pre-registered caveat. Separate variants because
+    # HAS_ONPOLICY_STORY drops r4 from REGIMES: one variant cannot carry both
+    # the injected and the on-policy arm. `_op_base` measures the pretrained
+    # model (also listed in BASE_PAIRED_STORIES_VARIANTS, which drives R4_MODELS).
+    "char_helios_op",
+    "char_helios_op_base",
+    "char_wren_op",
+    "char_wren_op_base",
+    "char_dana_op",
+    "char_dana_op_base",
+    "char_vex_op",
+    "char_vex_op_base",
+)
 HAS_ONPOLICY_STORY = VARIANT in ONPOLICY_STORY_VARIANTS
 # The story-regime machinery (r4-family fit cells, cross-regime transfer /
 # operator-comparison / reparam pairs, matched-row comparator, the per-model
