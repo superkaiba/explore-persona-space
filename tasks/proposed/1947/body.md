@@ -10,6 +10,14 @@ origin_prompt: how long would it take to retrain so we never have to repeat data
   (and then compare the assumptions ONLY on the data that was trained on) -> run it
   and tell it to paralelize/use batch api as much as possible
 workflow: v1
+goal: 'Retrain the content-behavior organism fleet under a single-visit data regime
+  (every training row consumed exactly once — ~1,200 unique rows per cell covering
+  the full 75-step schedule; pilot cell gates the fleet on reaching the 0.60-0.85
+  install band), then run the theory-assumption battery (write vs delta/r_B, write
+  rank, base-geometry gate, map change) evaluated on exactly the trained rows (TF
+  base+trained on the gradient-producing rows, delta over the same ~300-row set) alongside
+  the standard panel/corpus surfaces, to decide whether the #1768 assumption failures
+  survive without data repetition and on-distribution.'
 ---
 # Single-visit (no-repeat) organism fleet: retrain with enough unique data that no training row is ever repeated, then test the theory assumptions on exactly the trained rows
 
@@ -20,7 +28,7 @@ workflow: v1
 
 ## Goal
 
-Retrain the content-behavior organism fleet under a SINGLE-VISIT data regime — every training row consumed exactly once (fresh unique rows covering the full optimizer schedule; repetition removed as a variable) — and then run the theory-assumption battery (write direction vs δ / r_B, write rank, base-geometry gate, map change) evaluated ON EXACTLY THE TRAINED ROWS (teacher-forced base + trained on the rows that produced the gradients, δ computed over the same rows), alongside the standard panel/corpus surfaces for cross-surface comparison. Decide whether the #1768 assumption failures (rank-one write, δ-alignment at fixed text, gate) survive when (a) the write is not shaped by repeating ~20 exemplars and (b) the assumptions are read on-distribution.
+Retrain the content-behavior organism fleet under a single-visit data regime (every training row consumed exactly once — ~1,200 unique rows per cell covering the full 75-step schedule; pilot cell gates the fleet on reaching the 0.60-0.85 install band), then run the theory-assumption battery (write vs delta/r_B, write rank, base-geometry gate, map change) evaluated on exactly the trained rows (TF base+trained on the gradient-producing rows, delta over the same ~300-row set) alongside the standard panel/corpus surfaces, to decide whether the #1768 assumption failures survive without data repetition and on-distribution.
 
 ## Design sketch (planner refines)
 
