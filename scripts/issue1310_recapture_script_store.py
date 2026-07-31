@@ -96,11 +96,20 @@ def phase_stage() -> None:
         DATA_DIR
         / "stories"
         / "instruct_stories_seed42.jsonl": f"{HF_ROOT}/raw_completions/generation/instruct_stories_seed42.jsonl",
-        # The completion round's re-attributed script-format instruct pairs —
-        # the EXACT spans the published instruct cells were fit on.
-        DATA_DIR
-        / "pairs"
-        / "instruct_pairs.jsonl": f"{HF_ROOT}/raw_completions/pairs_script_completion/instruct_pairs.jsonl",
+        # NOTE: the completion round's persisted instruct pairs
+        # (raw_completions/pairs_script_completion/instruct_pairs.jsonl) are
+        # DELIBERATELY NOT staged. They are mutually INCOHERENT with the
+        # persisted instruct story text: 1,241/12,503 (9.93%) of their token
+        # spans overflow the token length of the story row they name, across
+        # 457/1,180 scenes, with the worst reaching hi=1,024 (the generation
+        # cap) against a 557-token story — i.e. they were attributed against a
+        # LONGER instruct story set than the one persisted under
+        # `generation/`, which is not recoverable. Feeding them to the capture
+        # rig raises `PairSpec.validate` (observed: job 16081,
+        # `AssertionError: ('sc_0005:Wren:t013', 't_span', 603, 630, 616)`).
+        # Both arms are therefore re-attributed from the persisted stories, so
+        # pairs and text are coherent by construction (artifact-reuse check
+        # (j), pairwise provenance coherence).
     }
     for target, path_in_repo in spec.items():
         hub.stage_hub_file(DATA_REPO, path_in_repo, target, repo_type="dataset")
@@ -148,37 +157,89 @@ def _gate_counts(model_kind: str) -> dict:
     return {"per_persona": rows, "worst_rel_divergence": worst, "verdict": verdict}
 
 
+def _gate_span_coherence(model_kind: str) -> dict:
+    """Every pair's token spans must fit inside the story row it names.
+
+    The check that would have caught job 16081's crash BEFORE the GPU spend:
+    the completion round's persisted instruct pairs overflowed the persisted
+    instruct story lengths on 9.93% of rows, and the capture rig only discovers
+    that at `PairSpec.validate`, mid-forward-loop. Cheap (tokenize-only, CPU).
+    """
+    import issue1310_common as c1310
+
+    tok = c1310.get_tokenizer(c1310.MODEL_IDS[model_kind])
+    stories, pairs_by_scene = {}, {}
+    story_path = DATA_DIR / "stories" / f"{model_kind}_stories_seed42.jsonl"
+    for line in story_path.open(encoding="utf-8"):
+        if line.strip():
+            row = json.loads(line)
+            stories[row["row_id"]] = row["story"]
+    for line in (DATA_DIR / "pairs" / f"{model_kind}_pairs.jsonl").open(encoding="utf-8"):
+        if line.strip():
+            p = json.loads(line)
+            pairs_by_scene.setdefault(p["meta"]["scene_row_id"], []).append(p)
+    n_over = n_tot = 0
+    worst = None
+    for scene, ps in pairs_by_scene.items():
+        assert scene in stories, f"{model_kind}: pair scene {scene!r} absent from stories"
+        n_story = len(tok(stories[scene], add_special_tokens=False)["input_ids"])
+        for p in ps:
+            n_tot += 1
+            hi = max(max(h for _, h in p["t_spans"]), p["c_span"][1], p["ctx_span"][1])
+            if hi > n_story:
+                n_over += 1
+                if worst is None or hi - n_story > worst[1]:
+                    worst = (scene, hi - n_story, n_story, hi)
+    frac = n_over / n_tot if n_tot else 0.0
+    print(
+        f"[gate] {model_kind} span-coherence: {n_over}/{n_tot} pairs overflow "
+        f"({frac:.4%}); worst={worst}",
+        flush=True,
+    )
+    if n_over:
+        raise RuntimeError(
+            f"{model_kind}: {n_over}/{n_tot} pair spans overflow their story's token "
+            f"length (worst {worst}) — pairs and story text are INCOHERENT; refusing "
+            "to capture"
+        )
+    return {"n_pairs": n_tot, "n_overflow": 0, "verdict": "coherent"}
+
+
 def phase_pairs() -> dict:
-    """Re-attribute base pairs (never persisted); gate both arms' counts."""
-    print("[phase=p1_pairs] base re-attribution + count gate", flush=True)
+    """Re-attribute BOTH arms from the persisted stories; gate counts + spans."""
+    print("[phase=p1_pairs] re-attribution + count/span gates", flush=True)
     # Deterministic regex line attribution; the Sonnet leg is a PRECISION
     # spot-check only and plays no part in pair construction, so it is skipped
-    # (the count gate below is the binding check).
+    # (the gates below are the binding checks). BOTH arms are re-attributed:
+    # base pairs were never persisted, and the persisted instruct pairs are
+    # span-incoherent with the persisted instruct stories (see phase_stage).
+    for model_kind in ("base", "instruct"):
+        _sh(
+            [
+                "uv",
+                "run",
+                "python",
+                "scripts/issue1310_attribute.py",
+                "--model",
+                model_kind,
+                "--data-dir",
+                str(DATA_DIR),
+                "--out-dir",
+                str(REPO / "eval_results" / "issue_1310" / "recap"),
+                "--skip-audit",
+            ],
+            phase=f"p1_pairs_{model_kind}_attribute",
+        )
+    return {
+        k: {**_gate_counts(k), "span_coherence": _gate_span_coherence(k)}
+        for k in ("base", "instruct")
+    }
+
+
+def _capture_one(model_kind: str) -> None:
+    """Capture 28-layer span summaries for one model into the _recap store."""
     _sh(
         [
-            "uv",
-            "run",
-            "python",
-            "scripts/issue1310_attribute.py",
-            "--model",
-            "base",
-            "--data-dir",
-            str(DATA_DIR),
-            "--out-dir",
-            str(REPO / "eval_results" / "issue_1310" / "recap"),
-            "--skip-audit",
-        ],
-        phase="p1_pairs_base_attribute",
-    )
-    return {k: _gate_counts(k) for k in ("base", "instruct")}
-
-
-def phase_capture(device: str | None) -> None:
-    """Capture 28-layer span summaries per model into the _recap store."""
-    env_note = f"(device={device})" if device else "(whole-node allocation)"
-    print(f"[phase=p2_capture] span-summary capture {env_note}", flush=True)
-    for model_kind in ("base", "instruct"):
-        cmd = [
             "uv",
             "run",
             "python",
@@ -193,49 +254,56 @@ def phase_capture(device: str | None) -> None:
             "perturn",
             "--resume",
             "--equivalence-check",
-        ]
-        _sh(cmd, phase=f"p2_capture_{model_kind}")
+        ],
+        phase=f"p2_capture_{model_kind}",
+    )
 
 
-def phase_upload() -> dict:
-    """One upload_folder commit per model dir + EXACT-SET verify (pre-teardown)."""
-    print("[phase=p3_upload] store upload + exact-set verify", flush=True)
+def _upload_one(model_kind: str) -> dict:
+    """One upload_folder commit for this model's store dir + EXACT-SET verify."""
     from huggingface_hub import HfApi
 
     from explore_persona_space.orchestrate import hub
 
-    api = HfApi()
+    local = DATA_DIR / STORE_SUBDIR / model_kind
+    files = sorted(p for p in local.rglob("*") if p.is_file())
+    assert files, f"no store files under {local}"
+    path_in_repo = f"{STORE_PREFIX}/{model_kind}"
+    hub._upload(local, DATA_REPO, "dataset", path_in_repo, raise_on_error=True)
+    expected = [f"{path_in_repo}/{p.relative_to(local).as_posix()}" for p in files]
+    missing = hub.verify_repo_paths_uploaded(
+        HfApi(), DATA_REPO, expected, path_in_repo=path_in_repo
+    )
+    total_gb = sum(p.stat().st_size for p in files) / 1e9
+    print(
+        f"[upload] {model_kind}: {len(files)} files ({total_gb:.2f} GB) -> "
+        f"{path_in_repo}; missing={len(missing)}",
+        flush=True,
+    )
+    if missing:
+        raise RuntimeError(f"{model_kind} upload verify FAILED, missing: {missing[:8]}")
+    return {
+        "path_in_repo": path_in_repo,
+        "n_files": len(files),
+        "total_gb": round(total_gb, 3),
+        "verify": "exact-set PASS",
+    }
+
+
+def phase_capture_and_upload(device: str | None) -> dict:
+    """Capture then IMMEDIATELY upload+verify, per model.
+
+    Per-model (not terminal-batch) upload is the #664 rule and the whole point
+    of this round: a mid-run death after the base arm must not strand the base
+    store the way the original run's whole store was stranded.
+    """
+    env_note = f"(device={device})" if device else "(whole-node allocation)"
+    print(f"[phase=p2_capture_upload] capture + per-model durable upload {env_note}", flush=True)
     out: dict[str, dict] = {}
     for model_kind in ("base", "instruct"):
-        local = DATA_DIR / STORE_SUBDIR / model_kind
-        files = sorted(p for p in local.rglob("*") if p.is_file())
-        assert files, f"no store files under {local}"
-        path_in_repo = f"{STORE_PREFIX}/{model_kind}"
-        hub._upload(
-            local,
-            DATA_REPO,
-            "dataset",
-            path_in_repo,
-            raise_on_error=True,
-        )
-        expected = [f"{path_in_repo}/{p.relative_to(local).as_posix()}" for p in files]
-        missing = hub.verify_repo_paths_uploaded(
-            api, DATA_REPO, expected, path_in_repo=path_in_repo
-        )
-        total_gb = sum(p.stat().st_size for p in files) / 1e9
-        print(
-            f"[upload] {model_kind}: {len(files)} files ({total_gb:.2f} GB) -> "
-            f"{path_in_repo}; missing={len(missing)}",
-            flush=True,
-        )
-        if missing:
-            raise RuntimeError(f"{model_kind} upload verify FAILED, missing: {missing[:8]}")
-        out[model_kind] = {
-            "path_in_repo": path_in_repo,
-            "n_files": len(files),
-            "total_gb": round(total_gb, 3),
-            "verify": "exact-set PASS",
-        }
+        _capture_one(model_kind)
+        print(f"[phase=p3_upload_{model_kind}] store upload + exact-set verify", flush=True)
+        out[model_kind] = _upload_one(model_kind)
     return out
 
 
@@ -248,8 +316,7 @@ def main() -> int:
         print(f"[recap] narrowed CUDA_VISIBLE_DEVICES to allocated device {device}", flush=True)
     phase_stage()
     gates = phase_pairs()
-    phase_capture(device)
-    uploads = phase_upload()
+    uploads = phase_capture_and_upload(device)
     payload = {
         "issue": 1310,
         "round": "nd-estimator-audit-recapture",
