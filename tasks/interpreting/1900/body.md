@@ -1,6 +1,7 @@
 ---
-title: 'Leakage-predictor horse race at per-prompt grain: pre-FT geometry vs base
-  propensity, with answer-side mediation test'
+title: Base behavioral propensity predicts where a trained behavior is expressed,
+  but pre-fine-tuning answer similarity is the only predictor of the fine-tuning-induced
+  change (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-30T23:28:44Z'
