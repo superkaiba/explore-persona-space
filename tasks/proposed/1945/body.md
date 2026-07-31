@@ -16,6 +16,8 @@ goal: 'Determine whether the context→answer map''s dominant (context × direct
   idiosyncratic (H2), by pointing #1775''s rank-r bilinear machinery at the #1482
   residual pair space against a permuted-pairing null with the answer-sampling floor
   netted out.'
+relates_to:
+- spec-context-as-vector
 ---
 ## Goal
 
