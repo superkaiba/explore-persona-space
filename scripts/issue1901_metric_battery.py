@@ -11,7 +11,8 @@ rank/MRR, hubness diagnostics, pool-size sensitivity — in the context arm
 (pinned 3600/400/1000 split, seed 42) and the prefix arm (#722 50-context
 battery, LOFO). Plan: tasks #1901 plans/plan.md (v4).
 
-Phases (resume-by-sentinel; per-phase JSON outputs):
+Phases (p0-p3 resume-by-sentinel; p4 always re-runs — cheap figures-only pass;
+per-phase JSON outputs):
   p0_stage       stage the 12 weight payloads (revision-pinned; mirror-root
                  arithmetic asserted; 1-file probe + consumer-open first;
                  realized-keys check per payload)
@@ -19,7 +20,7 @@ Phases (resume-by-sentinel; per-phase JSON outputs):
                  distractor pool npz (+ manifest, dedup stats, HF upload)
   p2_context     context-arm battery (ladder x metrics x pools x nulls x CIs)
   p3_prefix      prefix-arm battery (LOFO ladder incl. batched MLP)
-  p4_figures     figures + metric_characterization.json
+  p4_figures     figures + metric_characterization.json (no resume sentinel)
   all            p0 -> p4
 
 `--smoke`: SAME code paths, reduced knobs (20-chunk stream, L19 only, pools
@@ -92,6 +93,9 @@ BANKED_MULTILAYER = (
 )
 BANKED_IDBIAS = PROJECT_ROOT / "eval_results/issue_779/identity_bias_knn/results.json"
 BANKED_722 = PROJECT_ROOT / "eval_results/issue_722/identity_bias_knn/results.json"
+# residual_skip banked summary (L19 mixed_1m only; NO persisted weights on HF — plan §4
+# stated exclusion; concern residual-skip-exclusion-row-missing).
+BANKED_N1M = PROJECT_ROOT / "eval_results/issue_779/fitter-fair-comparison-n1m/n1m_fits.json"
 
 FITTERS = ("ridge", "mlp_w8192", "mlp_w32768", "krr_nystrom")
 FITTER_KIND = {
@@ -616,7 +620,9 @@ def phase_p1(cfg: Cfg) -> dict:
         vx, ci = vx[keep], ci[keep]
     elif not cfg.smoke:
         raise RuntimeError(
-            f"[p1] streamed {n_streamed} rows < target {cfg.n_distractors}; raise --n-chunks"
+            f"[p1] streamed {n_streamed} rows < target {cfg.n_distractors}; raise the "
+            f"Cfg.n_chunks property (fixed at {cfg.n_chunks} of {len(names)} available "
+            "chunks; there is no CLI flag for it — it is a pinned regime key)"
         )
     corpus = np.where(ci < n_lmsys, "lmsys", "wildchat")
 
@@ -644,6 +650,7 @@ def phase_p1(cfg: Cfg) -> dict:
     dest = f"{cfg.hf_out_prefix}/distractors_L19.npz"
     url = ""
     for attempt in range(2):
+        # UPLOAD_LOOP_EXEMPT: bounded 2-attempt outer retry around ONE npz file (#1315 recipe)
         url = hub._upload(
             cfg.distractor_npz,
             C.HF_DATA_REPO,
@@ -981,7 +988,15 @@ def eval_retrieval_cell(
         if hub_diag and metric in ("euclidean", "cosine"):
             summary["hubness"] = _hubness(d, spec)
         out[metric] = summary
-        draw_arrays[metric] = {"acc1_boot": acc1_d, "mrr_boot": mrr_d, "acc1_null": null_acc1}
+        draw_arrays[metric] = {
+            "acc1_boot": acc1_d,
+            "mrr_boot": mrr_d,
+            "acc1_null": null_acc1,
+            # per-row observed mid-ranks (<= n_pool; half-integers on ties — 6-sig-digit
+            # rounding in _round_list is lossless below ~1e6 for CDF purposes): persisted
+            # so the plan §6 rank-CDF figure is re-renderable from the JSONs alone.
+            "obs_ranks": obs_ranks,
+        }
         del d, R
     return out, draw_arrays
 
@@ -1271,6 +1286,26 @@ def phase_p2(cfg: Cfg) -> dict:
                 "estimator-degenerate, never compared against large-n R2"
             )
 
+        # residual_skip stated-exclusion row (plan §4; concern
+        # residual-skip-exclusion-row-missing): the fitter has NO persisted weights
+        # on HF, so it cannot be applied to test rows — banked-R2/cosine-only row.
+        stated_exclusions: dict = {}
+        if li == 19:
+            rs = json.loads(BANKED_N1M.read_text())["per_point"]["mixed_1m"]["predictors"][
+                "residual_skip"
+            ]
+            stated_exclusions["residual_skip"] = {
+                "label": "Residual-skip (963k, banked-only)",
+                "banked_r2": float(rs["whole_map_r2"]),
+                "banked_mean_cosine": float(rs["mean_cosine"]),
+                "exclusion": "no persisted weights — retrieval not evaluable "
+                "(stated exclusion, plan §4)",
+                "source": (
+                    "eval_results/issue_779/fitter-fair-comparison-n1m/n1m_fits.json "
+                    "per_point.mixed_1m.predictors.residual_skip"
+                ),
+            }
+
         pools = _build_pools_for_layer(cfg, li, Yte32, Y, test)
         gauss_ref = {}
         for spec in (pools[0], pools[-1]) if len(pools) > 1 else (pools[0],):
@@ -1336,6 +1371,7 @@ def phase_p2(cfg: Cfg) -> dict:
         result["per_layer"][str(li)] = {
             "applied_vs_banked": applied_vs_banked,
             "small_n_meta": small_n_meta,
+            "stated_exclusions": stated_exclusions,
             "pools": {s.name: s.composition for s in pools},
             "pool_scope_note": (
                 "distractor pools evaluated for the 963k ladder + identity_bias_3600 "
@@ -1682,25 +1718,41 @@ def phase_p4(cfg: Cfg) -> dict:
     pfx_headline = str(pfx["design"]["headline_layer"])
     P = pfx["per_layer"][pfx_headline]
 
-    def _heat(ax, arms_dict: dict, pool: str, title: str):
+    def _heat(ax, arms_dict: dict, pool: str, title: str, exclusions: dict | None = None):
         rows = list(arms_dict)
         M = np.array(
             [[_arm_metric_value(arms_dict[a], k, pool) for k, _lbl in HERO_METRICS] for a in rows]
         )
+        ylabels = [arms_dict[a]["label"] for a in rows]
+        # stated-exclusion rows (plan §4: residual_skip appears in the summary table
+        # as a banked-R2/cosine-only row — retrieval cells render "n/a").
+        for ex in (exclusions or {}).values():
+            M = np.vstack(
+                [
+                    M,
+                    [
+                        ex["banked_r2"]
+                        if k == "r2"
+                        else (ex["banked_mean_cosine"] if k == "mean_cosine" else np.nan)
+                        for k, _lbl in HERO_METRICS
+                    ],
+                ]
+            )
+            ylabels.append(f"{ex['label']}\nno weights — retrieval n/a")
         norm = (M - np.nanmin(M, 0)) / (np.nanmax(M, 0) - np.nanmin(M, 0) + 1e-12)
         norm[:, -1] = 1 - norm[:, -1]  # median rank: lower is better
         ax.imshow(norm, cmap="viridis", aspect="auto", vmin=0, vmax=1)
         ax.set_xticks(range(len(HERO_METRICS)))
         ax.set_xticklabels([lbl for _k, lbl in HERO_METRICS], rotation=30, ha="right")
-        ax.set_yticks(range(len(rows)))
-        ax.set_yticklabels([arms_dict[a]["label"] for a in rows])
-        for i, a in enumerate(rows):
-            for j, (k, _lbl) in enumerate(HERO_METRICS):
-                v = _arm_metric_value(arms_dict[a], k, pool)
+        ax.set_yticks(range(M.shape[0]))
+        ax.set_yticklabels(ylabels)
+        for i in range(M.shape[0]):
+            for j in range(len(HERO_METRICS)):
+                v = M[i, j]
                 ax.text(
                     j,
                     i,
-                    f"{v:.3g}",
+                    "n/a" if np.isnan(v) else f"{v:.3g}",
                     ha="center",
                     va="center",
                     fontsize=6,
@@ -1709,7 +1761,13 @@ def phase_p4(cfg: Cfg) -> dict:
         ax.set_title(title)
 
     fig, axes = plt.subplots(1, 2, figsize=(14, 6), layout="constrained")
-    _heat(axes[0], L19["arms"], "test", "Context arm (mixed_1m, L19; pool=1000 test)")
+    _heat(
+        axes[0],
+        L19["arms"],
+        "test",
+        "Context arm (mixed_1m, L19; pool=1000 test)",
+        exclusions=L19.get("stated_exclusions"),
+    )
     _heat(axes[1], P["arms"], "battery50", f"Prefix arm (50-context battery, L{pfx_headline})")
     fig.savefig(cfg.fig_dir / "hero_ladder_by_metric.png", dpi=200)
     plt.close(fig)
@@ -1871,6 +1929,29 @@ def phase_p4(cfg: Cfg) -> dict:
             fig.savefig(cfg.fig_dir / "null_violin.png", dpi=200)
         plt.close(fig)
 
+        # rank CDFs (log-x) per estimator (plan §6 exploratory dump; round-2 fix):
+        # per-row observed mid-ranks persisted by p2 in boot_draws_context.json.
+        fig, axes = plt.subplots(1, 3, figsize=(14, 4.5), layout="constrained")
+        for ax, metric in zip(axes, ("euclidean", "cosine", "csls")):
+            for a, ad in dd.items():
+                ranks = ad.get("retrieval", {}).get("test", {}).get(metric, {}).get("obs_ranks")
+                if ranks is None:
+                    raise RuntimeError(
+                        "[p4] obs_ranks missing from boot_draws_context.json (pre-round-2 "
+                        "p2 output) — re-run p2 with --force to persist per-row ranks"
+                    )
+                r = np.sort(np.asarray(ranks, dtype=np.float64))
+                cdf = np.arange(1, len(r) + 1) / len(r)
+                lbl = L19["arms"][a]["label"] if a in L19["arms"] else a
+                ax.step(r, cdf, where="post", lw=1, label=lbl)
+            ax.set_xscale("log")
+            ax.set_xlabel("rank of true target (log)")
+            ax.set_title(f"{metric} (pool=1000 test, context L19)", fontsize=8)
+        axes[0].set_ylabel("CDF over test rows")
+        axes[0].legend(fontsize=5)
+        fig.savefig(cfg.fig_dir / "rank_cdf.png", dpi=200)
+        plt.close(fig)
+
     # prefix per-family breakdown
     if "per_family" in P:
         fig, ax = plt.subplots(figsize=(8, 4), layout="constrained")
@@ -1894,7 +1975,10 @@ def phase_p4(cfg: Cfg) -> dict:
         "characterization": str(cfg.eval_dir / "metric_characterization.json"),
         "metadata": _meta(cfg, "p4_figures", t0),
     }
-    _atomic_json(cfg.eval_dir / "p4_done.json", out)
+    # NO p4 sentinel by design: p4 is a cheap (~22 s) figures-only pass and ALWAYS
+    # re-runs, so figures can never go stale against re-forced p2/p3 JSONs (the
+    # round-1 written-never-read p4_done.json is removed rather than wired into
+    # resume — code-review round 1 Minor 4).
     logger.info("[p4] done in %.1fs — %d figures", time.time() - t0, len(out["figures"]))
     return out
 
@@ -2038,6 +2122,9 @@ def _metric_characterization(ctx: dict, pfx: dict, man: dict) -> dict:
                 "banked_dissociation": "n/a (diagnostic)",
             },
         },
+        # plan §4 stated exclusion (residual_skip: banked-R2/cosine only, no weights);
+        # direct index = fail-loud on a pre-round-2 p2 output.
+        "stated_exclusions": ctx["per_layer"]["19"]["stated_exclusions"],
         "prefix_arm_caveat": pfx["n_train_ll_d_caveat"],
         "distractor_pool": {"dup_stats": man["dup_stats"], "corpus_counts": man["corpus_counts"]},
     }
