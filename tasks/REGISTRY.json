@@ -5964,8 +5964,8 @@
       "goal": "Characterise what fine-tuning a behavior into a specific context does to the context->answer mapping in activation space, on the model-organism fleet: whether the context vector moves, whether the map itself changes, whether the answer vector moves, what shape the write has and whether it is predictable ahead of time (delta vs r_B vs the marker unembedding row), and which of theory assumptions A7-A11 hold.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1768",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1768",
+      "status": "awaiting_promotion",
       "title": "Fine-tuning-induced map change is context-dependent: sycophancy arms trained on conversation history cross the refit-noise floor only once their trained prefix is present (HIGH confidence)"
     },
     "1769": {
