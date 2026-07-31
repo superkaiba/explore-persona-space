@@ -1,1 +1,2 @@
 {"ts": "2026-07-30T23:52:28Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-07-31T05:13:32Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #1902 to open question(s) identity-contextual-vs-base, leak-predictor, regime-rl-vs-sft; created_new=none; mode=auto-match (autonomous)."}
