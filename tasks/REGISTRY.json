@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1953,
+  "highest_id": 1954,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7387,6 +7387,13 @@
       "path": "tasks/proposed/1953",
       "status": "proposed",
       "title": "daily-fix: fix red main: test_workflow_lint_jsonl_splitlines.py::test_live_tree_passes \u2014 Fix the `.splitlines()` JSONL read at `s"
+    },
+    "1954": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1954",
+      "status": "proposed",
+      "title": "daily-fix: fix red main: test_issue1689_os_exit_shutdown_bypass.py::test_entrypoint_calls_os_exit[issue1689_fits_mirror.py] \u2014 Convert the __main__ guard of scripts/is"
     },
     "196": {
       "has_clean_result": false,
