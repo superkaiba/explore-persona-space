@@ -1,0 +1,26 @@
+{
+  "n_conversations": 1988,
+  "n_dropped_conversations": 0,
+  "k_draws": 4,
+  "n_features": 16384,
+  "capture_wall_s": 469.1,
+  "batch_final": 8,
+  "vx_cos_diagnostic": {
+    "min": 0.9995453953742981,
+    "p01": 0.999929666519165,
+    "median": 0.9999958276748657,
+    "n_below_0.99": 0
+  },
+  "data_revision": "05cb982b0d3f9a21b5735d196a0afdc8175590e5",
+  "git_commit": "unknown",
+  "timestamp_utc": "2026-08-01T08:27:59.319953Z",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-90-generic-x86_64-with-glibc2.39",
+  "cuda_visible_devices": "1",
+  "banked_revision": "12ab41dc1c4a7163d183697e9c4fa53528904c9b",
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "smoke": false,
+  "fixture": false
+}

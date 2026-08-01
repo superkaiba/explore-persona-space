@@ -1,0 +1,27 @@
+{
+  "ok": true,
+  "n_probe": 32,
+  "max_rel_dev": {
+    "floor": 7.67532345711135e-07,
+    "den": 0.0,
+    "share": 7.675323458218079e-07
+  },
+  "rtol": {
+    "floor": 1e-05,
+    "den": 1e-06,
+    "share": 1e-05
+  },
+  "sae_device": "cpu",
+  "git_commit": "unknown",
+  "timestamp_utc": "2026-08-01T08:17:59.071113Z",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-90-generic-x86_64-with-glibc2.39",
+  "cuda_visible_devices": "1",
+  "data_revision": "05cb982b0d3f9a21b5735d196a0afdc8175590e5",
+  "banked_revision": "12ab41dc1c4a7163d183697e9c4fa53528904c9b",
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "smoke": false,
+  "fixture": false
+}
