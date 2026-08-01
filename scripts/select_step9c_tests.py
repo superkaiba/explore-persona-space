@@ -361,6 +361,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_sparse_worktree.py",
     # NEW (#1623) — CLAUDE.md ad-hoc-summaries disclosure-clause pins (#1458/#1539/#1623)
     "tests/test_adhoc_summary_disclosure_pins.py",
+    # NEW (#1910) — adversarial-planner SKILL.md Phase 1.5 fact-checker realized-grain
+    # duty + planner.md §10 counted-grain clause pin
+    "tests/test_adversarial_planner_factchecker_grain_pin.py",
     # NEW (#1734) — adversarial-planner SKILL.md Phase 1.5.0 per-WARN disposition pin
     "tests/test_adversarial_planner_warn_disposition.py",
     "tests/test_autonomous_plan_gate.py",
