@@ -6774,8 +6774,8 @@
     "1875": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1875",
-      "status": "proposed",
+      "path": "tasks/planning/1875",
+      "status": "planning",
       "title": "daily-fix: /issue Step 0 preloads TaskOutput/Monitor schemas"
     },
     "1876": {
