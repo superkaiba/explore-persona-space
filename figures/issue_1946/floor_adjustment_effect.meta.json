@@ -1,0 +1,378 @@
+{
+  "commit": "2e6ce5a06e",
+  "created": "2026-08-01T03:09:38Z",
+  "figsize": [
+    10.0,
+    4.6
+  ],
+  "points": [
+    {
+      "unadjusted SAE-space category \u0394": 0.09754837809225281,
+      "floor-adjusted \u0394 (approximate floors)": 0.1141686031488614,
+      "label": "English",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.04215657810824813,
+      "floor-adjusted \u0394 (approximate floors)": -0.03712494308930481,
+      "label": "factual Q&A",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.021897475451197357,
+      "floor-adjusted \u0394 (approximate floors)": -0.031395092737278696,
+      "label": "creative writing",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.04239457816691561,
+      "floor-adjusted \u0394 (approximate floors)": 0.02704694781504735,
+      "label": "coding",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.04067167033867103,
+      "floor-adjusted \u0394 (approximate floors)": -0.031497223900365245,
+      "label": "advice / how-to",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.039532453984407745,
+      "floor-adjusted \u0394 (approximate floors)": 0.09014347867661032,
+      "label": "chitchat",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.1364963673144609,
+      "floor-adjusted \u0394 (approximate floors)": 0.1516696509210892,
+      "label": "translation",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.07220203516795809,
+      "floor-adjusted \u0394 (approximate floors)": 0.08204731252331088,
+      "label": "math",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.005056959466225419,
+      "floor-adjusted \u0394 (approximate floors)": 0.01993959981244553,
+      "label": "summarization",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.013756155021259042,
+      "floor-adjusted \u0394 (approximate floors)": 0.004835553964209094,
+      "label": "roleplay",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.0013674572963744414,
+      "floor-adjusted \u0394 (approximate floors)": -0.04817391269985949,
+      "label": "refusal-adjacent",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.016311175702155012,
+      "floor-adjusted \u0394 (approximate floors)": -0.07430353720629274,
+      "label": "answer is refusal",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.06987075185759828,
+      "floor-adjusted \u0394 (approximate floors)": 0.058733425212439294,
+      "label": "code answers",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.001510154631737537,
+      "floor-adjusted \u0394 (approximate floors)": 0.03908131241041968,
+      "label": "list answers",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.04599740950799225,
+      "floor-adjusted \u0394 (approximate floors)": -0.04668389055877864,
+      "label": "prose answers",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.026294886660810812,
+      "floor-adjusted \u0394 (approximate floors)": 0.044249649685781045,
+      "label": "depth 2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.0056284260793241225,
+      "floor-adjusted \u0394 (approximate floors)": -0.00898146801481059,
+      "label": "depth 3\u20134",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.027431324366522625,
+      "floor-adjusted \u0394 (approximate floors)": -0.04670767797818198,
+      "label": "depth \u22655",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.10427278945245078,
+      "floor-adjusted \u0394 (approximate floors)": -0.12297045566254833,
+      "label": "WildChat",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.15082170185092908,
+      "floor-adjusted \u0394 (approximate floors)": 0.1605623914066902,
+      "label": "English",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.05886448953465684,
+      "floor-adjusted \u0394 (approximate floors)": -0.029054486009436276,
+      "label": "factual Q&A",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.017233214236610395,
+      "floor-adjusted \u0394 (approximate floors)": -0.01826718817587092,
+      "label": "creative writing",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.12616875969665786,
+      "floor-adjusted \u0394 (approximate floors)": 0.06611955737945013,
+      "label": "coding",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.07721910688879463,
+      "floor-adjusted \u0394 (approximate floors)": -0.07167173684674621,
+      "label": "advice / how-to",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.1524847208553819,
+      "floor-adjusted \u0394 (approximate floors)": -0.136240739962097,
+      "label": "chitchat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.11376255233348675,
+      "floor-adjusted \u0394 (approximate floors)": 0.16450300653103228,
+      "label": "translation",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.059546753237447514,
+      "floor-adjusted \u0394 (approximate floors)": 0.02183460546851901,
+      "label": "math",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.003837017926751063,
+      "floor-adjusted \u0394 (approximate floors)": 0.0017623990117416888,
+      "label": "summarization",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.12536945151346268,
+      "floor-adjusted \u0394 (approximate floors)": 0.193435252249837,
+      "label": "roleplay",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.10129290896257237,
+      "floor-adjusted \u0394 (approximate floors)": 0.020655645173149162,
+      "label": "refusal-adjacent",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.050825113553262136,
+      "floor-adjusted \u0394 (approximate floors)": -0.15213879527585922,
+      "label": "answer is refusal",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.13604228777528637,
+      "floor-adjusted \u0394 (approximate floors)": 0.09306990483926564,
+      "label": "code answers",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.018267907670206918,
+      "floor-adjusted \u0394 (approximate floors)": 0.007726845296572082,
+      "label": "list answers",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.081478892772051,
+      "floor-adjusted \u0394 (approximate floors)": -0.06846338838355193,
+      "label": "prose answers",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.024783136290052465,
+      "floor-adjusted \u0394 (approximate floors)": -0.01415816804041603,
+      "label": "depth 2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.011632829785544696,
+      "floor-adjusted \u0394 (approximate floors)": -0.015912490937436352,
+      "label": "depth 3\u20134",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.045860718877325235,
+      "floor-adjusted \u0394 (approximate floors)": 0.03713506601871869,
+      "label": "depth \u22655",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.040645326736887255,
+      "floor-adjusted \u0394 (approximate floors)": -0.05160955908989456,
+      "label": "WildChat",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 38,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "history-only (prefix) arm (19 floor-covered contrasts)",
+        "xlabel": "unadjusted SAE-space category \u0394",
+        "ylabel": "floor-adjusted \u0394 (approximate floors)",
+        "annotations": [
+          "English",
+          "factual Q&A",
+          "creative writing",
+          "coding",
+          "advice / how-to",
+          "chitchat",
+          "translation",
+          "math",
+          "summarization",
+          "roleplay",
+          "refusal-adjacent",
+          "answer is refusal",
+          "code answers",
+          "list answers",
+          "prose answers",
+          "depth 2",
+          "depth 3\u20134",
+          "depth \u22655",
+          "WildChat"
+        ],
+        "xticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15"
+        ],
+        "yticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      },
+      {
+        "title_left": "bare-query arm (19 floor-covered contrasts)",
+        "xlabel": "unadjusted SAE-space category \u0394",
+        "ylabel": "floor-adjusted \u0394 (approximate floors)",
+        "annotations": [
+          "English",
+          "factual Q&A",
+          "creative writing",
+          "coding",
+          "advice / how-to",
+          "chitchat",
+          "translation",
+          "math",
+          "summarization",
+          "roleplay",
+          "refusal-adjacent",
+          "answer is refusal",
+          "code answers",
+          "list answers",
+          "prose answers",
+          "depth 2",
+          "depth 3\u20134",
+          "depth \u22655",
+          "WildChat"
+        ],
+        "xticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ],
+        "yticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ]
+      }
+    ]
+  }
+}
