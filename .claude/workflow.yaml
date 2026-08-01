@@ -2901,6 +2901,12 @@ steps:
     entry_condition: "epm:experiment-implementation posted"
     posts_marker: "epm:code-review"
     next_expected_step: "6a"
+  - id: "5a"
+    name: code_review_dispatch
+    entry_status_label:
+      - code_reviewing
+    entry_condition: "implementation marker posted; reviewer ensemble spawned, verdicts pending"
+    next_expected_step: "5"
   - id: "5b"
     name: code_review_revise
     entry_status_label:
