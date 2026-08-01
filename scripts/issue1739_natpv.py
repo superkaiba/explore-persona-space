@@ -393,11 +393,19 @@ def _row_weights(labels: dict, ridx: dict, *, pooled: bool, spread_min: float):
 
 
 def phase_directions(args, behavior: str, stage: Path) -> None:
-    """Accumulate per-layer E2/E2p directions from per-rollout t1 (one pass)."""
+    """Accumulate per-layer E2/E2p directions from per-rollout rows (one pass).
+
+    ``--summary-kind`` selects the extraction POINT: ``t1`` (committed —
+    answer rows) or ``context_end`` (new-arm-round fc — the SAME
+    ``matched_pair_split_weights`` row weights applied to the final-context
+    summaries; outputs land under ``r_b_<regime>_fc/``).
+    """
     import numpy as np
 
     from explore_persona_space.experiments.issue_1739.constants import E2_SPREAD_MIN, HIDDEN_DIM
 
+    kind = getattr(args, "summary_kind", "t1")
+    suffix = "_fc" if is_fc(args) else ""
     labels = load_labels(behavior, stage / "inputs")
     ridx = load_row_index(stage, behavior)
     weights, quals = {}, {}
@@ -406,9 +414,10 @@ def phase_directions(args, behavior: str, stage: Path) -> None:
             labels, ridx, pooled=pooled, spread_min=E2_SPREAD_MIN
         )
         logger.info(
-            "[%s] %s: %d qualifying contexts, %d nonzero rows",
+            "[%s] %s%s: %d qualifying contexts, %d nonzero rows",
             behavior,
             regime,
+            suffix,
             quals[regime],
             int((weights[regime] != 0).sum()),
         )
@@ -420,7 +429,7 @@ def phase_directions(args, behavior: str, stage: Path) -> None:
         args.revision,
         workers=args.workers,
         window_mib=args.window_mib,
-        want=_summary_re(("t1",)),
+        want=_summary_re((kind,)),
     ):
         kind, layer, shard = _parse_summary_name(name)
         lo, hi = int(off[shard]), int(off[shard + 1])
@@ -434,10 +443,20 @@ def phase_directions(args, behavior: str, stage: Path) -> None:
         n_members += 1
     expect = 28 * ridx["n_shards"]
     if n_members != expect:
-        raise RuntimeError(f"[{behavior}] saw {n_members} t1 members, expected {expect}")
+        raise RuntimeError(f"[{behavior}] saw {n_members} {kind} members, expected {expect}")
     layers = list(range(28))
     for regime, rb in acc.items():
-        out_dir = stage / behavior / f"r_b_{regime}"
+        label = regime + suffix
+        if suffix:
+            # K2 (plan v8 §7): never fabricate a degenerate fc direction.
+            norms = np.linalg.norm(np.asarray(rb, dtype=np.float64), axis=1)
+            bad = [i for i, v in enumerate(norms) if not np.isfinite(v) or v == 0.0]
+            if bad:
+                raise SystemExit(
+                    f"[natpv] K2 HALT: fc direction {label} for {behavior} degenerate "
+                    f"(zero/NaN norm) at layer(s) {bad}"
+                )
+        out_dir = stage / behavior / f"r_b_{label}"
         out_dir.mkdir(parents=True, exist_ok=True)
         tmp = out_dir / f"{behavior}.tmp.npz"  # np.savez appends .npz to non-.npz names
         with tmp.open("wb") as fh:
@@ -448,7 +467,8 @@ def phase_directions(args, behavior: str, stage: Path) -> None:
                 meta=json.dumps(
                     {
                         "behavior": behavior,
-                        "regime": regime,
+                        "regime": label,
+                        "summary_kind": kind,
                         "n_qualifying_contexts": quals[regime],
                         "spread_min": E2_SPREAD_MIN,
                         "pooled": regime == "e2p",
@@ -465,22 +485,45 @@ def phase_directions(args, behavior: str, stage: Path) -> None:
         logger.info("[%s] wrote %s", behavior, out_dir / f"{behavior}.npz")
 
 
-def _load_directions(behavior: str, stage: Path):
-    """E1 (#779 bank) + E2/E2p (this round) raw directions -> {regime: (28,d)}."""
-    import numpy as np
-    import torch
+def _load_directions(behavior: str, stage: Path, args=None):
+    """E1 + E2/E2p raw directions -> {regime: (28,d)}.
 
+    t1 (default): E1 from the #779 bank + this round's ``r_b_e2/e2p``.
+    fc (``--summary-kind context_end``): e1_fc from the SMALL npz bank the
+    new-arm-round CORE fits leg writes (``--e1-fc-bank``; the fits CLI's
+    ``_save_rb`` under ``--rb-point context_end``) + this driver's own
+    ``r_b_e2_fc/e2p_fc`` (run ``--phase directions`` first).
+    """
+    import numpy as np
+
+    fc = args is not None and is_fc(args)
     out = {}
-    p = _stage_hf(f"{RB_E1_PREFIX}{behavior}.pt", stage / "inputs", revision=RB_E1_REVISION)
-    obj = torch.load(p, map_location="cpu", weights_only=False)
-    rb = np.asarray(obj["r_b"], dtype=np.float64)
-    if list(obj["layers"]) != list(range(28)):
-        raise RuntimeError(f"E1 bank layers {obj['layers']!r} != 0..27")
-    out["e1"] = rb
+    if fc:
+        bank = Path(args.e1_fc_bank) / f"{behavior}.npz"
+        if not bank.is_file():
+            raise FileNotFoundError(
+                f"e1_fc direction bank missing at {bank} — the new-arm-round CORE fits leg "
+                "writes it (scripts/issue1739_fits.py --rb-point context_end -> "
+                "_save_rb r_b_e1_fc/); run that leg first or pass --e1-fc-bank"
+            )
+        with np.load(bank, allow_pickle=False) as z:
+            if list(z["layers"]) != list(range(28)):
+                raise RuntimeError(f"e1_fc bank layers {z['layers']!r} != 0..27")
+            out["e1_fc"] = np.asarray(z["rb"], dtype=np.float64)
+    else:
+        import torch
+
+        p = _stage_hf(f"{RB_E1_PREFIX}{behavior}.pt", stage / "inputs", revision=RB_E1_REVISION)
+        obj = torch.load(p, map_location="cpu", weights_only=False)
+        rb = np.asarray(obj["r_b"], dtype=np.float64)
+        if list(obj["layers"]) != list(range(28)):
+            raise RuntimeError(f"E1 bank layers {obj['layers']!r} != 0..27")
+        out["e1"] = rb
+    suffix = "_fc" if fc else ""
     for regime in ("e2", "e2p"):
-        f = stage / behavior / f"r_b_{regime}" / f"{behavior}.npz"
+        f = stage / behavior / f"r_b_{regime}{suffix}" / f"{behavior}.npz"
         with np.load(f, allow_pickle=False) as z:
-            out[regime] = np.asarray(z["rb"], dtype=np.float64)
+            out[regime + suffix] = np.asarray(z["rb"], dtype=np.float64)
     for regime, v in out.items():
         if v.shape != (28, 3584):
             raise RuntimeError(f"{regime} direction shape {v.shape} != (28, 3584)")
@@ -520,16 +563,36 @@ def _map_projectors(variant: str, directions: dict, stage: Path):
     return {"wv": wv, "ymuv": ymuv, "x_mu": x_mu, "x_sd": x_sd, "meta": meta, "path": str(path)}
 
 
+def is_fc(args) -> bool:
+    """True when the run extracts directions at the FINAL-CONTEXT token
+    (new-arm-round item 1: ``--summary-kind context_end``)."""
+    return getattr(args, "summary_kind", "t1") == "context_end"
+
+
+def regimes_for(args) -> tuple[str, ...]:
+    """Effective regime labels: fc runs suffix every label with ``_fc`` so the
+    fc cube/reduce/direction artifacts can never collide with committed t1
+    ones (the fits-CLI ``--rb-point`` convention, mirrored)."""
+    return tuple(r + "_fc" for r in REGIMES) if is_fc(args) else REGIMES
+
+
+def base_regime(regime: str) -> str:
+    """``e2_fc`` -> ``e2`` (the semantic regime under an fc label)."""
+    return regime.removesuffix("_fc")
+
+
 def cube_dir_name(args) -> str:
-    """Per-space cube dir — the raw path keeps its legacy ``cube`` name."""
-    return "cube" if args.space == "raw" else f"cube_{args.space}"
+    """Per-space cube dir — the raw path keeps its legacy ``cube`` name; fc
+    runs get a ``_fc``-suffixed sibling (never the committed t1 dir)."""
+    stem = "cube" if args.space == "raw" else f"cube_{args.space}"
+    return stem + ("_fc" if is_fc(args) else "")
 
 
 def reduce_out_name(args) -> str:
-    """Per-space reduce output — the raw path keeps its legacy filename."""
-    return (
-        "regime_comparison.json" if args.space == "raw" else f"regime_comparison_{args.space}.json"
-    )
+    """Per-space reduce output — the raw path keeps its legacy filename; fc
+    runs write a ``_fc``-suffixed sibling."""
+    stem = "regime_comparison" if args.space == "raw" else f"regime_comparison_{args.space}"
+    return stem + ("_fc" if is_fc(args) else "") + ".json"
 
 
 def whitening_path(args, variant: str) -> Path:
@@ -769,7 +832,8 @@ def phase_project(args, behavior: str, stage: Path) -> None:
     import numpy as np
 
     ridx = load_row_index(stage, behavior)
-    directions = _load_directions(behavior, stage)
+    directions = _load_directions(behavior, stage, args)
+    regimes = regimes_for(args)
     whitened = args.space == "whitened"
     reads = (*READS, ORACLE_PRE_READ) if whitened else READS
     maps: dict = {}
@@ -781,7 +845,7 @@ def phase_project(args, behavior: str, stage: Path) -> None:
         maps = {v: _map_projectors(v, directions, stage) for v in VARIANTS}
     n = ridx["n_rows"]
     cube = {
-        read: {r: np.full((28, n), np.nan, dtype=np.float32) for r in REGIMES} for read in reads
+        read: {r: np.full((28, n), np.nan, dtype=np.float32) for r in regimes} for read in reads
     }
     prefix_hashes: dict[int, str] = {}
     off = ridx["shard_offset"]
@@ -811,7 +875,7 @@ def phase_project(args, behavior: str, stage: Path) -> None:
         if whitened:
             # Every whitened read is affine in the RAW row: x . vec + const.
             for read in kind_reads_w[kind]:
-                for regime in REGIMES:
+                for regime in regimes:
                     vec, const = proj[read][regime]
                     cube[read][regime][layer, lo:hi] = a @ vec[layer] + const[layer]
         else:
@@ -820,7 +884,7 @@ def phase_project(args, behavior: str, stage: Path) -> None:
             if kind in kind_map_read:
                 mp = maps[kind]
                 xs = (a - mp["x_mu"][layer]) / mp["x_sd"][layer]
-                for regime in REGIMES:
+                for regime in regimes:
                     cube[kind_map_read[kind]][regime][layer, lo:hi] = (
                         xs @ mp["wv"][regime][layer] + mp["ymuv"][regime][layer]
                     )
@@ -835,7 +899,7 @@ def phase_project(args, behavior: str, stage: Path) -> None:
         raise RuntimeError(f"[{behavior}] saw {n_members} summary members, expected {expect}")
     out = stage / behavior / cube_dir_name(args)
     out.mkdir(parents=True, exist_ok=True)
-    payload = {f"{read}__{regime}": cube[read][regime] for read in reads for regime in REGIMES}
+    payload = {f"{read}__{regime}": cube[read][regime] for read in reads for regime in regimes}
     n_distinct_prefix = len(set(prefix_hashes.values()))
     tmp = out / "cube.tmp.npz"
     with tmp.open("wb") as fh:
@@ -849,7 +913,8 @@ def phase_project(args, behavior: str, stage: Path) -> None:
                     "behavior": behavior,
                     "n_rows": n,
                     "reads": list(reads),
-                    "regimes": list(REGIMES),
+                    "regimes": list(regimes),
+                    "summary_kind": getattr(args, "summary_kind", "t1"),
                     "n_distinct_prefix_states_L14": n_distinct_prefix,
                     "map_meta": (
                         whiten_prov.get("map_meta")
@@ -938,9 +1003,10 @@ def phase_reduce(args, behavior: str, stage: Path) -> None:
     rungs = sorted(set(labels["rung"]))
     table: dict = {}
     reads = tuple(cube_meta.get("reads") or READS)
+    regimes = tuple(cube_meta.get("regimes") or regimes_for(args))
     for read in reads:
         table[read] = {}
-        for regime in REGIMES:
+        for regime in regimes:
             vals = per_ctx[f"{read}__{regime}"]
             per_layer = {
                 rung: [
@@ -958,10 +1024,11 @@ def phase_reduce(args, behavior: str, stage: Path) -> None:
                     rung: (per_layer[rung][frozen] if frozen >= 0 else float("nan"))
                     for rung in rungs
                 },
-                "in_sample_train_rung": regime in ("e2", "e2p"),
+                "in_sample_train_rung": base_regime(regime) in ("e2", "e2p"),
             }
     e2_meta = {}
-    for regime in ("e2", "e2p"):
+    suffix = "_fc" if is_fc(args) else ""
+    for regime in ("e2" + suffix, "e2p" + suffix):
         with np.load(
             stage / behavior / f"r_b_{regime}" / f"{behavior}.npz", allow_pickle=False
         ) as z:
@@ -1082,6 +1149,21 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--u-size", default="full", help="U-pool rung for the whitening fit")
     ap.add_argument("--whiten-device", default="cuda", help="fit_whitening device (cpu|cuda)")
     ap.add_argument("--whiten-seed", type=int, default=0, help="matches the fits CLI --seeds[0]")
+    ap.add_argument(
+        "--summary-kind",
+        choices=("t1", "context_end"),
+        default="t1",
+        help="direction extraction POINT (new-arm-round item 1): 't1' (committed answer-avg; "
+        "byte-identical behavior) or 'context_end' (final-context fc directions; every regime "
+        "label + cube/reduce artifact gains an '_fc' suffix)",
+    )
+    ap.add_argument(
+        "--e1-fc-bank",
+        type=Path,
+        default=Path("analysis_tensors/issue_1739/r_b_e1_fc"),
+        help="dir holding <behavior>.npz e1_fc directions (written by the new-arm-round CORE "
+        "fits leg via --rb-point context_end); read only under --summary-kind context_end",
+    )
     args = ap.parse_args(argv)
     if "whitening" in args.phase and args.space != "whitened":
         ap.error("--phase whitening is only meaningful with --space whitened")

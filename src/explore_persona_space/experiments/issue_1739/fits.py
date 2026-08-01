@@ -681,6 +681,144 @@ def ridge_gcv_predict_per_target(
     return preds
 
 
+def krr_scalar_fold_predict(
+    x_tr: np.ndarray,
+    y_tr: np.ndarray,
+    x_ev: np.ndarray,
+    *,
+    seed: int = 0,
+    device: str = "cpu",
+    m_centers: int = KRR_MAP_M_CENTERS,
+    gamma_mult: tuple[float, ...] = KRR_MAP_GAMMA_MULT,
+    lambdas: tuple[float, ...] = KRR_MAP_LAMBDAS,
+    layer_chunk: int | None = None,
+    diag_out: dict | None = None,
+) -> np.ndarray:
+    """Layer-BATCHED Nystrom RBF KRR for a SCALAR target (the arm-18 oracle).
+
+    Mirrors the nonlinear-map round's kernel recipe (:func:`fit_nonlinear_map`
+    ``kind="kernel"`` -> ``n1m.fit_krr_nystrom``) with input = the whitened
+    TRUE answer acts and target = the graded DV, batched over the LAYER axis
+    (plan §4 item 2 — never a per-(fold, lambda) re-factorization):
+
+    - raw X + per-layer MEDIAN-HEURISTIC gamma (1/median off-diagonal sq
+      distance over a <=2000-row subsample — the ``median_heuristic_gamma``
+      convention), scaled by ``gamma_mult``;
+    - inner-val (gamma, lambda) selection carved from the fold-TRAIN rows with
+      the SAME rng key family as the nlmap kernel arm (``[1739, 5, seed]``,
+      ``n_val = max(2, round(0.1 * n_tr))``) — selection never touches the
+      eval fold;
+    - Nystrom landmarks ``m = min(m_centers, n_inner)`` drawn once (shared
+      across layers, like the per-layer fitter's identical-seed draws), K_mm
+      whitener via batched :func:`_eigh_robust` (eig floor 1e-10), feature
+      ridge ``G = Phi^T Phi`` with ONE batched eigh per (layer, gamma) shared
+      across the whole lambda grid (raw lambda, Y train-centered — the #779
+      conventions);
+    - eval predictions come from the model fit on the INNER rows at the
+      selected pair (exactly the n1m diagnostics path — no inner+val refit).
+
+    ``x_tr`` (Ly, n_tr, d), ``y_tr`` (n_tr,), ``x_ev`` (Ly, n_ev, d) ->
+    (Ly, n_ev) fp64 predictions. ``diag_out`` (optional dict) receives the
+    per-layer selected {gamma, lambda, val_mse} + shapes.
+    """
+    import torch
+
+    x = np.asarray(x_tr, dtype=np.float64)
+    y = np.asarray(y_tr, dtype=np.float64)
+    xe = np.asarray(x_ev, dtype=np.float64)
+    assert x.ndim == 3 and xe.ndim == 3 and x.shape[0] == xe.shape[0], (x.shape, xe.shape)
+    n_layers, ntr, _d = x.shape
+    assert y.shape == (ntr,), (y.shape, ntr)
+    rng = np.random.default_rng([1739, 5, int(seed)])
+    p = rng.permutation(ntr)
+    n_val = max(2, round(0.1 * ntr))
+    val_i, inner_i = p[:n_val], p[n_val:]
+    if len(inner_i) < 2:
+        raise ValueError(f"krr_scalar_fold_predict: too few inner rows ({len(inner_i)})")
+    m = int(min(m_centers, len(inner_i)))
+    lm_rows = inner_i[np.random.default_rng(int(seed)).choice(len(inner_i), size=m, replace=False)]
+    g_sub = min(2000, len(inner_i))
+    g_rows = inner_i[
+        np.random.default_rng(int(seed) + 1).choice(len(inner_i), size=g_sub, replace=False)
+    ]
+    dev = torch.device(device)
+    if layer_chunk is None:
+        layer_chunk = 4 if ntr <= 3000 else (2 if ntr <= 8000 else 1)
+    lam_grid = [float(lam) for lam in lambdas]
+    preds = np.empty((n_layers, xe.shape[1]))
+    ymu = float(y[inner_i].mean())
+    per_layer_sel: list[dict] = [{} for _ in range(n_layers)]
+    for lo in range(0, n_layers, layer_chunk):
+        sl = slice(lo, min(lo + layer_chunk, n_layers))
+        xt = torch.as_tensor(x[sl], device=dev)  # (c, ntr, d)
+        xev_t = torch.as_tensor(xe[sl], device=dev)
+        z_lm = xt[:, lm_rows].contiguous()  # (c, m, d) landmarks
+        d_g = torch.cdist(xt[:, g_rows], xt[:, g_rows]) ** 2  # (c, g, g)
+        c, g = d_g.shape[0], d_g.shape[1]
+        iu = torch.triu_indices(g, g, offset=1, device=dev)
+        med = d_g[:, iu[0], iu[1]].median(dim=1).values  # (c,)
+        assert bool((med > 0).all()), "median-heuristic gamma: zero median sq distance"
+        base_gamma = 1.0 / med
+        yc = torch.as_tensor(y[inner_i] - ymu, dtype=torch.float64, device=dev)  # (ni,)
+        y_val = torch.as_tensor(y[val_i], dtype=torch.float64, device=dev)
+        best_mse = torch.full((c,), float("inf"), dtype=torch.float64, device=dev)
+        best_pred = torch.full((c, xev_t.shape[1]), float("nan"), dtype=torch.float64, device=dev)
+        best_gl = torch.zeros((c, 2), dtype=torch.float64, device=dev)  # (gamma, lambda)
+        for gm in gamma_mult:
+            gamma = base_gamma * float(gm)  # (c,)
+            gview = gamma[:, None, None]
+            k_mm = torch.exp(-gview * torch.cdist(z_lm, z_lm) ** 2)  # (c, m, m)
+            w_mm, v_mm = _eigh_robust(k_mm)
+            inv_sqrt = v_mm @ (
+                torch.clamp(w_mm, min=1e-10).rsqrt()[:, :, None] * v_mm.transpose(1, 2)
+            )
+            phi_in = torch.exp(-gview * torch.cdist(xt[:, inner_i], z_lm) ** 2) @ inv_sqrt
+            gram = phi_in.transpose(1, 2) @ phi_in  # (c, m, m) — ONE eigh, shared over lambdas
+            phi_y = torch.einsum("cnm,n->cm", phi_in, yc)
+            a_eig, q_eig = _eigh_robust(gram)
+            a_eig = torch.clamp(a_eig, min=0.0)
+            qtb = torch.einsum("cmk,cm->ck", q_eig, phi_y)  # (c, m)
+            phi_val = torch.exp(-gview * torch.cdist(xt[:, val_i], z_lm) ** 2) @ inv_sqrt
+            phi_ev = torch.exp(-gview * torch.cdist(xev_t, z_lm) ** 2) @ inv_sqrt
+            for lam in lam_grid:
+                w_feat = torch.einsum("cmk,ck->cm", q_eig, qtb / (a_eig + lam))  # (c, m)
+                pred_val = torch.einsum("cvm,cm->cv", phi_val, w_feat) + ymu
+                mse = ((pred_val - y_val[None, :]) ** 2).mean(dim=1)  # (c,)
+                improved = torch.isfinite(mse) & (mse < best_mse)
+                if bool(improved.any()):
+                    pred_ev = torch.einsum("cvm,cm->cv", phi_ev, w_feat) + ymu
+                    best_pred = torch.where(improved[:, None], pred_ev, best_pred)
+                    best_mse = torch.where(improved, mse, best_mse)
+                    sel = torch.stack([gamma, torch.full_like(gamma, lam)], dim=1)  # (c, 2)
+                    best_gl = torch.where(improved[:, None], sel, best_gl)
+            del k_mm, inv_sqrt, phi_in, gram, phi_y, a_eig, q_eig, qtb, phi_val, phi_ev
+        preds[sl] = best_pred.cpu().numpy()
+        gl = best_gl.cpu().numpy()
+        vm = best_mse.cpu().numpy()
+        for li in range(c):
+            per_layer_sel[lo + li] = {
+                "gamma": float(gl[li, 0]),
+                "lambda": float(gl[li, 1]),
+                "val_mse": float(vm[li]),
+            }
+        del xt, xev_t, z_lm, d_g, best_pred, best_mse, best_gl
+        if dev.type == "cuda":
+            torch.cuda.empty_cache()
+    if diag_out is not None:
+        diag_out.update(
+            {
+                "kernel": "RBF Nystrom (layer-batched; one eigh per (layer, gamma))",
+                "m_centers": m,
+                "n_inner": len(inner_i),
+                "n_val": int(n_val),
+                "gamma_mult": [float(g) for g in gamma_mult],
+                "lambdas": lam_grid,
+                "per_layer": per_layer_sel,
+            }
+        )
+    return preds
+
+
 def fit_linear_map(
     x_u: np.ndarray,
     y_u: np.ndarray,

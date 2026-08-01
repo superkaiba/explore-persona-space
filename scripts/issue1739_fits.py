@@ -68,6 +68,23 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="extraction regimes to run (e2/e2p REQUIRE per-rollout scores in the DV dataset)",
     )
     ap.add_argument(
+        "--rb-point",
+        choices=("t1", "context_end"),
+        default="t1",
+        help="r_B extraction POINT (new-arm-round item 1): 't1' (default — the committed "
+        "answer-avg direction, byte-identical behavior) or 'context_end' (final-context-token "
+        "direction; every regime label in unit/row keys gains an '_fc' suffix — e1_fc/e2_fc/"
+        "e2p_fc — so fc rows can never collide with committed rows at resume/merge time)",
+    )
+    ap.add_argument(
+        "--fixed-coordinate",
+        default=None,
+        help="registered fixed-coordinate declaration recorded in every unit's provenance "
+        "(e.g. 'u=full' for the oracle/arm5 legs — plan v8 Must-Fix 2: a u=full-only grid is "
+        "a registered READ coordinate, never 'degenerate'). Omitted -> field absent "
+        "(committed unit keys unchanged).",
+    )
+    ap.add_argument(
         "--config",
         choices=tuple(CONFIG_SPLIT),
         default="config_a",
@@ -424,6 +441,7 @@ def _load_labeled(
     *,
     config: str,
     need_rollout_rows: bool,
+    rollout_rows_kind: str = "t1",
 ) -> LabeledTable:
     """Round-B labeled store + DV dataset -> per-CONTEXT layer-leading arrays.
 
@@ -512,7 +530,14 @@ def _load_labeled(
                 sel_ctx.append(ctx_pos[cid])
                 sel_k.append(int(r[k_field]))
         sel = np.asarray(sel)
-        ans_rows = {ly: np.asarray(arrays[("t1", ly)][sel], dtype=np.float64) for ly in layers}
+        # rollout_rows_kind: 't1' = the committed per-rollout answer rows; the
+        # fc extraction point ('context_end') swaps ONLY the array the e2/e2p
+        # direction builder consumes (per-context acts identical across a
+        # context's rollouts, so the weighted sum reduces to per-context
+        # weights x the context act — the plan-v8 item-1 fc definition).
+        ans_rows = {
+            ly: np.asarray(arrays[(rollout_rows_kind, ly)][sel], dtype=np.float64) for ly in layers
+        }
         ans_row_ctx = np.asarray(sel_ctx, dtype=np.int64)
         ans_row_k = np.asarray(sel_k, dtype=np.int64)
 
@@ -543,20 +568,25 @@ def arrays_dim(store_dir: Path, layers: list[int]):
     return int(np.load(paths[0]).shape[1])
 
 
-def _load_rb_e1(e1_store: Path, layers: list[int], dim: int):
-    """E1 extraction store -> raw diff-of-means direction (Ly, d)."""
+def _load_rb_e1(e1_store: Path, layers: list[int], dim: int, *, summary_kind: str = "t1"):
+    """E1 extraction store -> raw diff-of-means direction (Ly, d).
+
+    ``summary_kind`` selects the extraction POINT over the SAME judge-filtered
+    pos/neg row set: 't1' (committed answer-avg) or 'context_end' (the
+    new-arm-round fc direction — position is the only change; plan v8 §11).
+    """
     import numpy as np
 
     from explore_persona_space.experiments.issue_1739 import fits, store_io
 
-    arrays, meta = store_io.load_summaries(e1_store, ("t1",), tuple(layers), hidden_dim=dim)
+    arrays, meta = store_io.load_summaries(e1_store, (summary_kind,), tuple(layers), hidden_dim=dim)
     side_key = _meta_field(meta, ("side", "polarity", "pv_side", "pair_side"), "pos/neg side")
     sides = np.array([str(r[side_key]).lower() for r in meta])
     pos_rows = np.flatnonzero(np.isin(sides, ("pos", "positive")))
     neg_rows = np.flatnonzero(np.isin(sides, ("neg", "negative")))
     if len(pos_rows) == 0 or len(neg_rows) == 0:
         raise RuntimeError(f"E1 store has {len(pos_rows)} pos / {len(neg_rows)} neg rows")
-    acts = np.stack([arrays[("t1", ly)] for ly in layers], axis=1)  # (n, Ly, d)
+    acts = np.stack([arrays[(summary_kind, ly)] for ly in layers], axis=1)  # (n, Ly, d)
     return fits.extract_rb_e1(acts[pos_rows], acts[neg_rows])
 
 
@@ -577,17 +607,39 @@ def _extract_rb(regime: str, args: argparse.Namespace, tbl: LabeledTable, layers
     from explore_persona_space.experiments.issue_1739 import fits
     from explore_persona_space.experiments.issue_1739.constants import E2_SPREAD_MIN
 
-    if regime == "e1":
-        return _load_rb_e1(args.e1_store, layers, dim)
+    fc = regime.endswith("_fc")
+    base = regime.removesuffix("_fc")
+
+    def _k2_gate(rb):
+        # K2 (plan v8 §7): a degenerate fc direction (zero/NaN norm at any
+        # layer) halts the (behavior, regime) leg with a named report — never
+        # a fabricated direction. Scoped to fc regimes so committed t1
+        # behavior is byte-identical.
+        if not fc:
+            return rb
+        norms = np.linalg.norm(np.asarray(rb, dtype=np.float64), axis=1)
+        bad = [int(layers[i]) for i, v in enumerate(norms) if not np.isfinite(v) or v == 0.0]
+        if bad:
+            raise SystemExit(
+                f"[fits] K2 HALT: fc direction {regime} for behavior {args.behavior!r} is "
+                f"degenerate (zero/NaN norm) at layer(s) {bad} — refusing to fabricate a "
+                "direction (plan v8 §7 K2)"
+            )
+        return rb
+
+    if base == "e1":
+        return _k2_gate(
+            _load_rb_e1(args.e1_store, layers, dim, summary_kind="context_end" if fc else "t1")
+        )
     if tbl.per_rollout is None or tbl.ans_rows is None:
         raise SystemExit(
-            f"--regimes {regime} requires per-rollout judge scores + per-rollout t1 rows "
+            f"--regimes {base} requires per-rollout judge scores + per-rollout answer rows "
             f"(behavior {args.behavior!r} has none — run it with --regimes e1)"
         )
     w_hi, w_lo, n_qual = fits.matched_pair_split_weights(
         np.asarray(tbl.per_rollout, dtype=float),
         spread_min=E2_SPREAD_MIN,
-        pooled=(regime == "e2p"),
+        pooled=(base == "e2p"),
     )
     w_row = (w_hi - w_lo)[tbl.ans_row_ctx, tbl.ans_row_k]  # (n_rows,)
     rb = np.stack([w_row @ tbl.ans_rows[ly] for ly in layers])
@@ -597,7 +649,7 @@ def _extract_rb(regime: str, args: argparse.Namespace, tbl: LabeledTable, layers
         n_qual,
         len(w_row),
     )
-    return rb
+    return _k2_gate(rb)
 
 
 def _load_injected_features(path: Path | None, array_key: str, ctx_order: list[str], what: str):
@@ -1173,6 +1225,11 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
         if getattr(args, req) is None:
             raise SystemExit(f"real mode requires --{req.replace('_', '-')} (or use --synthetic N)")
     layers = args.layers or list(range(N_LAYERS))
+    # new-arm-round item 1: --rb-point context_end swaps the r_B extraction
+    # POINT and suffixes every regime label with '_fc' (unit/row keys included),
+    # so fc rows can never collide with committed t1 rows at resume/merge time.
+    fc = getattr(args, "rb_point", "t1") == "context_end"
+    regimes_eff = [r + "_fc" for r in args.regimes] if fc else list(args.regimes)
     need_rollout_rows = any(r in ("e2", "e2p") for r in args.regimes)
     tbl = _load_labeled(
         args.labeled_store,
@@ -1180,6 +1237,7 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
         layers,
         config=args.config,
         need_rollout_rows=need_rollout_rows,
+        rollout_rows_kind="context_end" if fc else "t1",
     )
     # M-A ladder leg: the eval-split labeled table (same store + DV dataset,
     # split 'eval') scored by TRAIN-frozen predictors per rung.
@@ -1215,7 +1273,7 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
         u_sizes.append(None if str(tok).lower() == "full" else int(tok))
     specs = compose_run_specs(
         variants=tuple(VARIANTS) if args.variant == "both" else (args.variant,),
-        regimes=tuple(args.regimes),
+        regimes=tuple(regimes_eff),
         u_sizes=tuple(u_sizes),
         budgets=tuple(args.budgets),
         draws=tuple(args.draws),
@@ -1231,7 +1289,7 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
     # round-8 memory scoping: after extraction they are dead weight (~tens of
     # GiB at production scale) squeezing the arm batteries' headroom.
     rb_cache: dict[str, np.ndarray] = {}
-    for regime in args.regimes:
+    for regime in regimes_eff:
         rb_cache[regime] = _extract_rb(regime, args, tbl, layers, dim)
         _save_rb(args.tensors_root, args.behavior, regime, rb_cache[regime], layers)
     if tbl.ans_rows is not None:
@@ -1363,6 +1421,13 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
                     per_rollout=tbl.per_rollout,
                 )
             )
+            # rb_point / fixed_coordinate ride provenance (hence unit/row keys)
+            # ONLY when set — committed t1 unit keys stay byte-identical.
+            prov_extra: dict = {}
+            if fc:
+                prov_extra["rb_point"] = "context_end"
+            if getattr(args, "fixed_coordinate", None):
+                prov_extra["fixed_coordinate"] = str(args.fixed_coordinate)
             provs.append(
                 {
                     "behavior": args.behavior,
@@ -1374,6 +1439,7 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
                     "config": args.config,
                     "f_u": spec.f_u,
                     "f_l": spec.f_l,
+                    **prov_extra,
                 }
             )
         kwargs = {}
@@ -1445,7 +1511,9 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
             "mode": "real",
             "behavior": args.behavior,
             "config": args.config,
-            "regimes": list(args.regimes),
+            "regimes": list(regimes_eff),
+            "rb_point": str(getattr(args, "rb_point", "t1")),
+            "fixed_coordinate": getattr(args, "fixed_coordinate", None),
             "n_contexts": len(tbl.ctx_order),
             "layers": layers,
             "u_fit_rows": int(len(u_fit_rows)),

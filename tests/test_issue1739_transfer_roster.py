@@ -436,3 +436,92 @@ def test_stager_fails_loud_when_no_cell_records_predictions(tmp_path):
     p.write_text(json.dumps({"unit_key": "a"}) + "\n", encoding="utf-8")
     with pytest.raises(RuntimeError, match="a re-score IS required"):
         mod.recorded_preds_names(p)
+
+
+# ---------------------------------------------------------------------------
+# 4. new-arm-round item 2: nonlinear oracle arms 17/18
+# ---------------------------------------------------------------------------
+
+ORACLE_ROSTER = ("arm12_oracle_reg", "arm17_oracle_mlp", "arm18_oracle_krr")
+
+
+def test_oracle_arms_registered_rb_independent_and_off_committed_rosters():
+    for slug in ("arm17_oracle_mlp", "arm18_oracle_krr"):
+        spec = arms.ARM_REGISTRY[slug]
+        assert spec["family"] == "oracle" and spec["layered"] is True
+        assert spec["rb_dep"] is False
+        # The committed named rosters are UNTOUCHED — arm17/18 run only via an
+        # explicit slug list (the oracle-leg dispatch).
+        assert slug not in arms.TRANSFER_ARMS
+        assert slug not in arms.TRANSFER_ARMS_WIDE
+        assert slug not in arms.TRANSFER_ARMS_WIDE_NOMLP
+    rb_indep, rb_dep = arms.partition_transfer_roster(ORACLE_ROSTER)
+    assert rb_indep == list(ORACLE_ROSTER) and rb_dep == []
+    assert arms.resolve_transfer_roster(list(ORACLE_ROSTER)) == list(ORACLE_ROSTER)
+
+
+def test_oracle_arms_share_scores_across_regimes_and_score_transfer():
+    """REAL dispatch body: arm17 (batched MLP on za) + arm18 (Nystrom KRR on
+    za) produce finite scores shared BY IDENTITY across regime slices
+    (rb_dep=False ground truth, same read as test_rb_dep_matches_dispatch)
+    and score the eval block on a transfer cell under ridge_folds=(0,)."""
+    datas, cell = _toy_datas()
+    outs = arms.run_cell_multi(
+        datas,
+        cell,
+        arms=list(ORACLE_ROSTER),
+        device="cpu",
+        mlp_kwargs={"max_epochs": 3, "hidden": 8},
+    )
+    (s0, sk0), (s1, _sk1) = outs
+    assert not sk0, sk0
+    for slug in ORACLE_ROSTER:
+        assert s0[slug] is s1[slug], f"{slug} not shared across regimes"
+        assert s0[slug].shape == (2, 24), (slug, s0[slug].shape)
+        assert np.isfinite(s0[slug]).all(), slug
+    rng = np.random.default_rng(7)
+    z_ev = rng.normal(size=(2, 9, 5))
+    za_ev = rng.normal(size=(2, 9, 5))
+    dv_ev = rng.normal(size=9)
+    scores, skipped = arms.run_transfer_cell(
+        datas[0],
+        cell,
+        z_ev,
+        dv_ev,
+        za_ev=za_ev,
+        arms=list(ORACLE_ROSTER),
+        device="cpu",
+        ridge_folds=(0,),
+    )
+    assert not skipped, skipped
+    for slug in ORACLE_ROSTER:
+        assert scores[slug].shape[1] == 9, (slug, scores[slug].shape)
+        assert np.isfinite(scores[slug]).any(), f"{slug} produced all-NaN eval scores"
+    assert not arms.roster_accounting_skips(ORACLE_ROSTER, scores, skipped)
+
+
+def test_oracle_arms_skip_with_reason_without_answer_acts():
+    datas, cell = _toy_datas()
+    bare = arms.CellData(
+        z_ctx=datas[0].z_ctx,
+        z_ans=None,
+        dv=datas[0].dv,
+        rb=datas[0].rb,
+        mapfit=datas[0].mapfit,
+        layers=datas[0].layers,
+    )
+    scores, skipped = arms.run_cell(
+        bare, cell, arms=["arm17_oracle_mlp", "arm18_oracle_krr"], device="cpu"
+    )
+    for slug in ("arm17_oracle_mlp", "arm18_oracle_krr"):
+        assert slug not in scores
+        assert skipped[slug] == "no answer activations"
+
+
+def test_rowset_seed_is_order_invariant_and_value_sensitive():
+    """arm18's inner split is a pure function of the fold's TRAIN ROW SET, so
+    the transfer leg's rb-independent row-set cache stays exact."""
+    a = arms._rowset_seed(np.array([3, 1, 2]))
+    assert a == arms._rowset_seed(np.array([1, 2, 3]))
+    assert a != arms._rowset_seed(np.array([1, 2, 4]))
+    assert 0 <= a < 2**31

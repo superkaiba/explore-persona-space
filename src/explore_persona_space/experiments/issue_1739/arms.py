@@ -175,6 +175,23 @@ ARM_REGISTRY: dict[str, dict] = {
         "layered": False,
         "rb_dep": False,
     },
+    # new-arm-round item 2 (plan v8 §4): nonlinear ORACLE ceilings — the arm-5
+    # fit machinery (MLP) and the nonlinear-map round's kernel recipe (Nystrom
+    # KRR) with input = the whitened TRUE answer acts (za). rb-INDEPENDENT
+    # (regression on za -> dv; no regime direction anywhere), so they ride the
+    # shared cache exactly like arm 12.
+    "arm17_oracle_mlp": {
+        "label": "Oracle-MLP-true-answer",
+        "family": "oracle",
+        "layered": True,
+        "rb_dep": False,
+    },
+    "arm18_oracle_krr": {
+        "label": "Oracle-kernel-true-answer",
+        "family": "oracle",
+        "layered": True,
+        "rb_dep": False,
+    },
 }
 
 HEADLINE_PAIR = ("arm6_map_proj_e1", "arm2_ctx_native")  # plan §6 pre-selected pair
@@ -529,7 +546,7 @@ def verify_arm9_l0_degeneracy(data: CellData, *, device: str = "cpu", n_rows: in
     logger.info("[arms] arm9 L->0 degeneracy gate PASS (n=%d probe rows)", n)
 
 
-def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 16 plan-§5 arms
+def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 18 registry arms
     datas: list[CellData],
     cell: BudgetCell,
     *,
@@ -651,6 +668,8 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
             "arm8_map_ridge_true",
             "arm11_oracle_proj",
             "arm12_oracle_reg",
+            "arm17_oracle_mlp",
+            "arm18_oracle_krr",
         ):
             _skip(slug, "no answer activations")
 
@@ -895,7 +914,88 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
             np.stack([res.preds_by_key[("arm5", li)][:, 0] for li in range(n_layers)]),
         )
 
+    # ---- arm 17: oracle MLP on TRUE answer acts (rb-independent — shared) ----
+    # Mirrors the arm-5 dispatch block with X = za (new-arm-round item 2): same
+    # batched helper, same ddof-1 fold floor, differing from arm 5 in INPUT only.
+    if "arm17_oracle_mlp" in want and za is not None:
+        if (n_l - int(ev_masks.sum(axis=1).max())) < 2:
+            _skip(
+                "arm17_oracle_mlp",
+                f"mlp fold floor: largest fold holds {int(ev_masks.sum(axis=1).max())} "
+                f"of {n_l} rows (< 2 train rows)",
+            )
+        else:
+            from explore_persona_space.analysis.vectorized_mlp_skill import (
+                MLPGroup,
+                fit_batched_loco_mlp_multihead,
+            )
+
+            if str(device).startswith("cuda"):
+                import torch
+
+                torch.cuda.empty_cache()  # same honest-free-bytes read as arm 5
+            kw = {"hidden": MLP_HIDDEN, "max_epochs": MLP_MAX_EPOCHS, "device": device}
+            kw.update(mlp_kwargs or {})
+            groups17 = [
+                MLPGroup(
+                    key=("arm17", li),
+                    X=za[li].astype(np.float32),
+                    Y=dv[:, None].astype(np.float32),
+                )
+                for li in range(n_layers)
+            ]
+            res17 = fit_batched_loco_mlp_multihead(groups17, row_groups=folds, **kw)
+            _put_shared(
+                "arm17_oracle_mlp",
+                np.stack([res17.preds_by_key[("arm17", li)][:, 0] for li in range(n_layers)]),
+            )
+
+    # ---- arm 18: oracle Nystrom KRR on TRUE answer acts (rb-independent) ----
+    # The nonlinear-map round's kernel recipe (median-heuristic gamma,
+    # inner-val (gamma, lambda) grid, one _eigh_robust per (layer, gamma)
+    # shared across the lambda grid) with input = za, target = dv — see
+    # fits.krr_scalar_fold_predict. The split seed is derived from the fold's
+    # TRAIN ROW SET (not cell.seed) so the transfer leg's rb-independent
+    # row-set cache stays exact: two units sharing a row set share the fit.
+    if "arm18_oracle_krr" in want and za is not None:
+        from explore_persona_space.experiments.issue_1739.fits import krr_scalar_fold_predict
+
+        min_tr = min((len(tr_rows[f]) for f in solve_folds), default=0)
+        if min_tr < 5:
+            _skip(
+                "arm18_oracle_krr",
+                f"krr floor: smallest solved fold-train has {min_tr} rows (< 5: no "
+                "inner/val split)",
+            )
+        else:
+            out18 = np.full((n_layers, n_l), np.nan)
+            for f in solve_folds:
+                out18[:, ev_rows[f]] = krr_scalar_fold_predict(
+                    za[:, tr_rows[f]],
+                    dv[tr_rows[f]],
+                    za[:, ev_rows[f]],
+                    seed=_rowset_seed(tr_rows[f]),
+                    device=device,
+                )
+            _put_shared("arm18_oracle_krr", out18)
+
     return list(zip(scores, skipped, strict=True))
+
+
+def _rowset_seed(rows: np.ndarray) -> int:
+    """Deterministic seed derived from a fold's TRAIN row set (arm-18 splits).
+
+    The transfer leg caches rb-independent arm fits per ROW SET
+    (:func:`partition_transfer_roster` + the ``rs_key`` cache in the fits CLI),
+    so an rb-independent fit must be a pure function of the row set — a
+    ``cell.seed``-keyed inner split would silently serve one seed's fit to
+    every unit sharing the rows. sha1 of the sorted int64 row bytes, folded to
+    31 bits (np.random.default_rng seed range).
+    """
+    import hashlib
+
+    b = np.ascontiguousarray(np.sort(np.asarray(rows, dtype=np.int64))).tobytes()
+    return int.from_bytes(hashlib.sha1(b).digest()[:4], "big") % (2**31)
 
 
 def run_cell(

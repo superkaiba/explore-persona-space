@@ -1232,3 +1232,134 @@ def test_run_grid_multi_flags_degenerate_ols_cell(tmp_path, monkeypatch):
         data, groups, provenance={"regime": "e2"}, **{**kw, "out_dir": tmp_path / "clean"}
     )
     assert recs2[0]["degenerate_ols"] is False and "degenerate_ols_detail" not in recs2[0]
+
+
+# ---------------------------------------------------------------------------
+# new-arm-round: arm-18 KRR helper parity + fc (--rb-point) direction builder
+# ---------------------------------------------------------------------------
+
+
+def test_krr_scalar_fold_predict_matches_exact_dual_krr():
+    """At m_centers >= n_inner, Nystrom features over ALL inner rows span the
+    kernel space, so the feature ridge IS exact dual KRR:
+    pred = K_ev,inner (K_inner + lam I)^-1 (y - ymu) + ymu. The batched helper
+    must reproduce that closed form (single (gamma, lambda) pair, so the
+    inner-val selection is trivially that pair)."""
+    rng = np.random.default_rng(0)
+    ly, ntr, nev, d = 2, 40, 7, 6
+    x = rng.normal(size=(ly, ntr, d))
+    xe = rng.normal(size=(ly, nev, d))
+    y = np.sin(x[0, :, 0]) + 0.1 * rng.normal(size=ntr)
+    lam = 0.1
+    diag: dict = {}
+    pred = fits.krr_scalar_fold_predict(
+        x,
+        y,
+        xe,
+        seed=3,
+        device="cpu",
+        m_centers=10_000,  # >= n_inner -> exact-KRR regime
+        gamma_mult=(1.0,),
+        lambdas=(lam,),
+        diag_out=diag,
+    )
+    assert pred.shape == (ly, nev)
+    # Replicate the helper's own inner/val split ([1739, 5, seed] key family).
+    p = np.random.default_rng([1739, 5, 3]).permutation(ntr)
+    inner = p[max(2, round(0.1 * ntr)) :]
+    ymu = y[inner].mean()
+    yc = y[inner] - ymu
+    for li in range(ly):
+        sel = diag["per_layer"][li]
+        assert sel["lambda"] == lam and sel["gamma"] > 0
+        d_ii = ((x[li, inner][:, None] - x[li, inner][None]) ** 2).sum(-1)
+        d_ei = ((xe[li][:, None] - x[li, inner][None]) ** 2).sum(-1)
+        k_ii = np.exp(-sel["gamma"] * d_ii)
+        alpha = np.linalg.solve(k_ii + lam * np.eye(len(inner)), yc)
+        ref = np.exp(-sel["gamma"] * d_ei) @ alpha + ymu
+        np.testing.assert_allclose(pred[li], ref, rtol=1e-5, atol=1e-6)
+
+
+def test_krr_scalar_fold_predict_selects_on_inner_val():
+    """The (gamma, lambda) grid is selected on the INNER-val MSE (never the
+    eval rows): with an absurd ridge in the grid the helper must pick the
+    sane one, and the recorded selection must come from the grid."""
+    rng = np.random.default_rng(1)
+    ly, ntr, nev, d = 1, 60, 5, 4
+    x = rng.normal(size=(ly, ntr, d))
+    xe = rng.normal(size=(ly, nev, d))
+    y = x[0, :, 0] ** 2 + 0.05 * rng.normal(size=ntr)
+    diag: dict = {}
+    fits.krr_scalar_fold_predict(x, y, xe, seed=0, device="cpu", lambdas=(1e-1, 1e8), diag_out=diag)
+    assert diag["per_layer"][0]["lambda"] == pytest.approx(1e-1)
+    assert np.isfinite(diag["per_layer"][0]["val_mse"])
+
+
+def _fc_labeled_table(cli, n_ctx=3, k=2, ly=2, d=4, seed=0):
+    """Tiny LabeledTable whose ans_rows carry the CONTEXT_END per-rollout rows
+    (what _load_labeled loads under rollout_rows_kind='context_end')."""
+    rng = np.random.default_rng(seed)
+    per_rollout = np.array([[90.0, 10.0], [80.0, 20.0], [70.0, 30.0]])[:n_ctx, :k]
+    n_rows = n_ctx * k
+    ans_rows = {li: rng.normal(size=(n_rows, d)) for li in range(ly)}
+    return cli.LabeledTable(
+        z_by_variant={},
+        z_ans=rng.normal(size=(ly, n_ctx, d)),
+        dv=per_rollout.mean(axis=1),
+        groups=[f"g{i}" for i in range(n_ctx)],
+        per_rollout=per_rollout,
+        ctx_order=[f"c{i}" for i in range(n_ctx)],
+        rungs=["train"],
+        ans_rows=ans_rows,
+        ans_row_ctx=np.repeat(np.arange(n_ctx), k),
+        ans_row_k=np.tile(np.arange(k), n_ctx),
+    )
+
+
+def test_extract_rb_fc_applies_split_weights_to_the_loaded_rows():
+    """e2_fc = the SAME matched_pair_split_weights row weights applied to the
+    rows _load_labeled loaded (context_end under --rb-point context_end) —
+    position is the ONLY change (plan v8 item 1)."""
+    import argparse
+
+    from explore_persona_space.experiments.issue_1739.constants import E2_SPREAD_MIN
+
+    cli = _load_fits_cli()
+    tbl = _fc_labeled_table(cli)
+    args = argparse.Namespace(behavior="toy", e1_store=None, rb_point="context_end")
+    rb = cli._extract_rb("e2_fc", args, tbl, [0, 1], 4)
+    w_hi, w_lo, _n = fits.matched_pair_split_weights(
+        tbl.per_rollout, spread_min=E2_SPREAD_MIN, pooled=False
+    )
+    w_row = (w_hi - w_lo)[tbl.ans_row_ctx, tbl.ans_row_k]
+    for li in (0, 1):
+        np.testing.assert_allclose(rb[li], w_row @ tbl.ans_rows[li])
+    # pooled variant routes through the SAME builder under the fc label
+    rb_p = cli._extract_rb("e2p_fc", args, tbl, [0, 1], 4)
+    assert rb_p.shape == rb.shape
+
+
+def test_extract_rb_fc_k2_halts_on_a_degenerate_direction():
+    """K2 (plan v8 par.7): a zero-norm fc direction HALTS with a named report,
+    never a fabricated direction. The committed t1 path is untouched."""
+    import argparse
+
+    cli = _load_fits_cli()
+    tbl = _fc_labeled_table(cli)
+    for li in tbl.ans_rows:
+        tbl.ans_rows[li] = np.zeros_like(tbl.ans_rows[li])
+    args = argparse.Namespace(behavior="toy", e1_store=None, rb_point="context_end")
+    with pytest.raises(SystemExit, match="K2 HALT"):
+        cli._extract_rb("e2_fc", args, tbl, [0, 1], 4)
+
+
+def test_rb_point_and_fixed_coordinate_cli_defaults():
+    """Defaults keep committed behavior byte-identical: rb_point=t1,
+    fixed_coordinate absent."""
+    cli = _load_fits_cli()
+    args = cli._parse_args(["--behavior", "toy"])
+    assert args.rb_point == "t1"
+    assert args.fixed_coordinate is None
+    args_fc = cli._parse_args(["--rb-point", "context_end", "--fixed-coordinate", "u=full"])
+    assert args_fc.rb_point == "context_end"
+    assert args_fc.fixed_coordinate == "u=full"
