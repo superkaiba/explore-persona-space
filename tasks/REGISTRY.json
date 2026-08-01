@@ -7539,8 +7539,8 @@
     "1973": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1973",
-      "status": "planning",
+      "path": "tasks/approved/1973",
+      "status": "approved",
       "title": "daily-fix: slurm fetch_results atomic rsync pull"
     },
     "1974": {
