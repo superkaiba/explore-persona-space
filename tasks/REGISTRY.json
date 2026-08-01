@@ -6907,8 +6907,8 @@
     "1893": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1893",
-      "status": "approved",
+      "path": "tasks/running/1893",
+      "status": "running",
       "title": "workflow-fix: fleet-wide pod code-sync pulls origin main over live issue-branch workloads (mid-run ENOENT race)"
     },
     "1894": {
