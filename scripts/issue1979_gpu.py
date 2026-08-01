@@ -89,7 +89,16 @@ GATE_N_CORPUS_ROWS = 50
 M0_PARITY_R2_TOL = 0.01
 M0_PARITY_COS_MIN = 0.99
 M0_PARITY_PROBE_ROWS = 512
-CONFIG_FILES = ("prefix_panel.json", "queries.json", "arms.json", "wmap_selection.json")
+CONFIG_FILES = (
+    "prefix_panel.json",
+    "queries.json",
+    "arms.json",
+    "wmap_selection.json",
+    # f1d-m0-reference-file concern: the lt-round recorded M0 R2 parity file,
+    # published to issue1979_prefixrace/config/ by unit 2 (pre-dispatch) so
+    # _m0_reference() resolves pod-side via the same staging path.
+    "m0_reference.json",
+)
 
 # The binding per-render prompt budget (mirrors issue1979_prep — content decode
 # needs prompt+1024 <= 4096 and mk decode needs prompt+2048 <= 6144).
@@ -381,6 +390,11 @@ def build_work_items(cfg: Cfg, manifests: dict) -> list[Item]:
                 heavy_model=True,
             )
         )
+    # marker P7 (plan §5: "base log P at base slot"): ONE base-model slot pass
+    # on base_mk's OWN generated rows, shared by all 6 marker arms (mirrors
+    # #1900's base__on__base_mk read; run_unit routes f1b:slotbase:<unit>).
+    if marker:
+        items.append(Item(key="f1b:slotbase:base_mk", phase="f1b", deps=("f1a:base_mk",)))
     for arm in marker:  # 6 base-on-marker-arm-text + 6 marker-own-text slot passes
         items.append(Item(key=f"f1b:slotbase:{arm}", phase="f1b", deps=(f"f1a:{arm}",)))
         items.append(
@@ -524,10 +538,16 @@ def _capture_positions(model, rows: list[dict], layers: list[int], device: str, 
 
     Prompt-only forwards, RIGHT pad (positions index naturally from 0), hooks on
     ``model.model.layers[li]``; returns {pos: {layer: Tensor(n, hidden) fp32 cpu}}.
+
+    Positions: ``last_prompt`` (end of the full rendered prompt incl. the
+    assistant header), ``last_ctx`` (last context token = end of the user
+    query), and ``last_prefix`` (last PREFIX token — plan §4 grain definition:
+    "prefix vector = span-mean over prefix tokens + last-prefix-token"; the
+    F3 prefix-based v_P->v_A mapping arm consumes it).
     """
     import torch
 
-    positions = ("last_prompt", "last_ctx")
+    positions = ("last_prompt", "last_ctx", "last_prefix")
     captured: dict[int, torch.Tensor] = {}
 
     def make_hook(li: int):
@@ -559,6 +579,7 @@ def _capture_positions(model, rows: list[dict], layers: list[int], device: str, 
                     idx = {
                         "last_prompt": len(r["prompt_token_ids"]) - 1,
                         "last_ctx": r["context_len"] - 1,
+                        "last_prefix": r["prefix_len"] - 1,
                     }
                     for pos in positions:
                         j = idx[pos]
@@ -1099,20 +1120,32 @@ def _m0_reference(cfg: Cfg) -> dict | None:
 
 
 def _apply_saved_map(payload: dict, Xmat, dev):
-    """Apply a persisted #1900/#1768 map payload to X (n1m payload or W/b keys)."""
+    """Apply a persisted #1900/#1768 map payload to X.
+
+    Schema PROBED on the real pinned artifacts 2026-08-01 (concern
+    f1e-saved-map-payload-schema): `wmap_<arm>_L19.pt` and `m0_L19.pt` at
+    3bb20deb are WRAPPER dicts ``{"name": ..., "payload": {kind: "ridge", W,
+    xmu, xsd, ymu, selected_lambda}}`` — unwrap first, then dispatch on the
+    n1m ``kind`` (which applies the standardize-X / W / +ymu predict path).
+    Order matters: the raw n1m ridge payload ALSO carries a top-level "W",
+    so a "W"-first branch would silently skip standardization (wrong
+    predictions, not a crash) — the ``kind`` check must come before the
+    plain-affine {W, b} fallback.
+    """
     import numpy as np
 
     import issue1768_fit as FIT
 
-    if isinstance(payload, dict) and "W" in payload:
+    if isinstance(payload, dict) and isinstance(payload.get("payload"), dict):
+        payload = payload["payload"]  # the persisted {name, payload} wrapper
+    if isinstance(payload, dict) and "kind" in payload:
+        return FIT._apply_payload(payload, Xmat, dev)
+    if isinstance(payload, dict) and "W" in payload and "xmu" not in payload:
         W = np.asarray(payload["W"], dtype=np.float64)
         b = np.asarray(payload.get("b", np.zeros(W.shape[1])), dtype=np.float64)
         return Xmat @ W + b
-    try:
-        return FIT._apply_payload(payload, Xmat, dev)
-    except Exception as exc:  # fail loud with the realized keys, never silently
-        keys = sorted(payload) if isinstance(payload, dict) else type(payload).__name__
-        raise RuntimeError(f"unrecognized persisted-map payload schema: {keys}") from exc
+    keys = sorted(payload) if isinstance(payload, dict) else type(payload).__name__
+    raise RuntimeError(f"unrecognized persisted-map payload schema: {keys}")
 
 
 def _base_lasttoken_cell(cfg: Cfg, layer: int, position: str) -> dict:
@@ -1255,21 +1288,52 @@ def run_f1d_fit(cfg: Cfg, kind: str, position: str, layer: int) -> list[str]:
 # ── f1e: predictor/battery ingredient tables ─────────────────────────────────
 
 
-def _prefix_means(store: dict, layer: int, span_or_pos: str, prefix_ids: list[str]):
-    """Per-prefix mean vectors from a 1979 store — one batched index_add pass."""
+def _prefix_means(store: dict, layer: int, span_or_pos: str, prefix_ids: list[str], row_mask=None):
+    """Per-prefix mean vectors from a 1979 store — one batched index_add pass.
+
+    ``row_mask`` (optional bool sequence over store rows) restricts the mean to
+    a row subset — used for the even/odd QUERY-half means (plan §6 A5 disjoint
+    legs). Fails loud when any prefix has zero rows in the (masked) selection.
+    """
     import torch
 
-    if span_or_pos in ("last_prompt", "last_ctx"):
+    if span_or_pos in ("last_prompt", "last_ctx", "last_prefix"):
         T = store["positions"][span_or_pos][layer].float()
     else:
         T = store["spans"][span_or_pos][layer].float()
     pid_ix = {p: i for i, p in enumerate(prefix_ids)}
     idx = torch.tensor([pid_ix[p] for p in store["row_prefix_id"]], dtype=torch.long)
+    if row_mask is not None:
+        keep = torch.tensor(list(row_mask), dtype=torch.bool)
+        assert keep.shape[0] == T.shape[0], (keep.shape, T.shape)
+        T, idx = T[keep], idx[keep]
     sums = torch.zeros(len(prefix_ids), T.shape[1])
     sums.index_add_(0, idx, T)
     counts = torch.zeros(len(prefix_ids)).index_add_(0, idx, torch.ones(len(idx)))
     assert (counts > 0).all(), f"empty prefix cell(s) in {store['unit']}: {counts.tolist()}"
     return sums / counts.unsqueeze(1)
+
+
+def _query_parity_mask(store: dict, queries: list[dict], parity: int) -> list[bool]:
+    """Row mask selecting rows whose query index (in the pinned draw order) has
+    the given parity — the ONE deterministic even/odd partition (rule 21)."""
+    q_ix = {q["sha"]: i for i, q in enumerate(queries)}
+    return [q_ix[s] % 2 == parity for s in store["row_query_sha"]]
+
+
+def _whiten_solve(chol, vecs):
+    """Sigma^{-1} @ vecs via the persisted lower-Cholesky factor (cheap per rhs)."""
+    from scipy.linalg import solve_triangular
+
+    y = solve_triangular(chol, vecs, lower=True)
+    return solve_triangular(chol.T, y, lower=False)
+
+
+_ANCHOR_KEY_BY_POS = {
+    "span_mean_context": "A_ctx_span",
+    "last_prompt": "A_ctx_last_prompt",
+    "last_ctx": "A_ctx_last_ctx",
+}
 
 
 def run_f1e(cfg: Cfg, manifests: dict) -> list[str]:
@@ -1289,7 +1353,9 @@ def run_f1e(cfg: Cfg, manifests: dict) -> list[str]:
     assert abs(DIR.SHRINKAGE - SIGMA_SHRINKAGE) < 1e-12, (
         f"issue1768_directions.SHRINKAGE={DIR.SHRINKAGE} != plan-pinned {SIGMA_SHRINKAGE}"
     )
-    sigma = DIR.corpus_sigma(cfg.out_root, UNION_LAYER)  # shrinkage-0.1 Σ on 15k bare rows
+    # Σ per layer (plan §3 A7 lattice is per (arm × LAYER) — gate reads at all
+    # three pre-registered layers; Σ recipe stays span-context / 15k bare rows).
+    sigma_by_layer = {li: DIR.corpus_sigma(cfg.out_root, li) for li in LAYERS_1979}
     rng = np.random.default_rng(SEED)
     out_dir = cfg.out_root / "predictor_tables"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1309,6 +1375,89 @@ def run_f1e(cfg: Cfg, manifests: dict) -> list[str]:
     }
     tables: dict = {"prefix_ids": prefix_ids, "layers": list(LAYERS_1979), **_meta()}
     tensors: dict = {}
+    queries = manifests["queries"]
+    dev = FIT_dev()
+
+    # kind-level base ingredients (arm-independent, computed ONCE per kind):
+    # prefix vectors (F3 v_P->v_A mapping arm, plan §4 grain definition) +
+    # even/odd query-half base response means (A5 disjoint legs, plan §6).
+    for kind, store in base_by_kind.items():
+        even = _query_parity_mask(store, queries, 0)
+        odd = _query_parity_mask(store, queries, 1)
+        for layer in LAYERS_1979:
+            base_slot = f"base/{kind}/L{layer}"
+            tensors[f"{base_slot}/Pbar_prefix_span"] = _prefix_means(
+                store, layer, "prefix", prefix_ids
+            ).to(torch.float16)
+            tensors[f"{base_slot}/Pbar_last_prefix"] = _prefix_means(
+                store, layer, "last_prefix", prefix_ids
+            ).to(torch.float16)
+            tensors[f"{base_slot}/Vbar0_even"] = _prefix_means(
+                store, layer, "response", prefix_ids, even
+            ).to(torch.float16)
+            tensors[f"{base_slot}/Vbar0_odd"] = _prefix_means(
+                store, layer, "response", prefix_ids, odd
+            ).to(torch.float16)
+
+    # persisted F1d map payloads (deps guarantee they exist): m0 at 3 layers x
+    # 2 positions, union at L19 x 2 positions.
+    map_payloads: dict[tuple[str, str, int], dict] = {}
+    for mkind in ("m0", "union"):
+        for mpos in ("span_mean", "last_prompt"):
+            for layer in LAYERS_1979 if mkind == "m0" else (UNION_LAYER,):
+                p = cfg.out_root / "maps" / f"{mkind}_{mpos}_L{layer}.pt"
+                assert p.exists(), f"F1d map payload missing: {p} (f1e deps include f1d)"
+                map_payloads[(mkind, mpos, layer)] = torch.load(
+                    p, map_location="cpu", weights_only=False
+                )
+
+    # kind-level through-map transforms of base c̄(P) (P3a/P3b/P6 inputs; the
+    # union variants feed the union-vs-bare dump comparison).
+    for kind, store in base_by_kind.items():
+        for (mkind, mpos, layer), payload in map_payloads.items():
+            key = "context" if mpos == "span_mean" else mpos
+            Cb = _prefix_means(store, layer, key, prefix_ids)
+            pred = _apply_saved_map(payload, Cb.double().numpy(), dev)
+            tensors[f"{mkind}pred/{kind}/L{layer}/{mpos}"] = torch.tensor(
+                np.asarray(pred), dtype=torch.float16
+            )
+
+    # anchors per mix (loaded once) + M0-transformed A_ctx (P3a's M0 A_ctx leg)
+    anchors_by_mix: dict[str, dict] = {}
+    for mix in sorted(_mixes(manifests)):
+        anc = torch.load(
+            cfg.out_root / "anchors" / mix / "anchors.pt", map_location="cpu", weights_only=False
+        )
+        anchors_by_mix[mix] = anc
+        for (mkind, mpos, layer), payload in map_payloads.items():
+            if mkind != "m0":
+                continue
+            akey = "A_ctx_span" if mpos == "span_mean" else "A_ctx_last_prompt"
+            vec = anc[f"L{layer}"][akey].double().numpy()[None, :]
+            pred = _apply_saved_map(payload, vec, dev)
+            tensors[f"m0anchor/{mix}/L{layer}/{mpos}"] = torch.tensor(
+                np.asarray(pred)[0], dtype=torch.float16
+            )
+
+    # persist Σ ingredients so F3 can draw its own A5 norm-matched nulls +
+    # recompute P4 variants on the VM without the 15k corpus store.
+    sigma_path = battery_dir / "sigma_chol.pt"
+    torch.save(
+        {
+            "shrinkage": SIGMA_SHRINKAGE,
+            **{
+                f"L{li}": {
+                    "chol": torch.tensor(np.asarray(s["chol"]), dtype=torch.float16),
+                    "top_eig": torch.tensor(np.asarray(s["top_eig"]), dtype=torch.float32),
+                    "n_rows": int(s["n_rows"]),
+                }
+                for li, s in sigma_by_layer.items()
+            },
+            **_meta(),
+        },
+        sigma_path,
+    )
+
     marker_ids = {r["arm_id"] for r in manifests["marker_arms"]}
     for arm_row in arm_rows:
         arm_id = arm_row["arm_id"]
@@ -1316,12 +1465,16 @@ def run_f1e(cfg: Cfg, manifests: dict) -> list[str]:
         base_store = base_by_kind[kind]
         matched = _load("matched_tf", arm_id)
         onpol = _load("onpolicy", arm_id)
+        anchors = anchors_by_mix[arm_row["mix_arm_id"]]
         arm_tab: dict = {}
         for layer in LAYERS_1979:
+            chol = np.asarray(sigma_by_layer[layer]["chol"])
             for pos in ("span_mean_context", "last_prompt", "last_ctx"):
                 key = "context" if pos == "span_mean_context" else pos
                 Cbar = _prefix_means(base_store, layer, key, prefix_ids)
                 Vbar0 = _prefix_means(base_store, layer, "response", prefix_ids)
+                # post-FT context means (M1/M3/M5 inputs — arm onpolicy store)
+                Cbar_post = _prefix_means(onpol, layer, key, prefix_ids)
                 # matched-text write (PRIMARY): arm TF on base rows − base own rows
                 W_m = _prefix_means(matched, layer, "response", prefix_ids) - Vbar0
                 # on-policy write (SECONDARY): arm own-gen − base own-gen response means
@@ -1332,39 +1485,56 @@ def run_f1e(cfg: Cfg, manifests: dict) -> list[str]:
                 tensors[f"{slot}/W_onpolicy"] = W_o.to(torch.float16)
                 tensors[f"{slot}/Cbar"] = Cbar.to(torch.float16)
                 tensors[f"{slot}/Vbar0"] = Vbar0.to(torch.float16)
+                tensors[f"{slot}/Cbar_post"] = Cbar_post.to(torch.float16)
+                # P4: whitened gate similarity g(P) at the position-matched
+                # anchor (Σ span-derived per plan §5 — stated convention).
+                c_src = anchors[f"L{layer}"][_ANCHOR_KEY_BY_POS[pos]].double().numpy()
+                a_vec = _whiten_solve(chol, c_src)
+                g_pred = (Cbar.double().numpy() @ a_vec) / (float(c_src @ a_vec) + 1e-12)
                 arm_tab[f"L{layer}/{pos}"] = {
                     "svd_spectrum": S.tolist(),
                     "w_norms": W_m.norm(dim=1).tolist(),
                     "w_onpolicy_norms": W_o.norm(dim=1).tolist(),
+                    "p4_gpred": [float(v) for v in g_pred],
                 }
-                if layer == UNION_LAYER and pos == "span_mean_context":
-                    # A7 whitened gate read (issue1768_directions conventions): ONE
-                    # call per (arm, layer) over the 50-prefix panel — c_src = the
-                    # arm's training-centroid anchor A_ctx, w = pooled write dir;
-                    # per-prefix delta_v = W_m rows. Variants recomputable in F3
-                    # from the persisted Cbar/W tensors.
-                    anchors = torch.load(
-                        cfg.out_root / "anchors" / arm_row["mix_arm_id"] / "anchors.pt",
-                        map_location="cpu",
-                        weights_only=False,
-                    )
-                    c_src = anchors[f"L{layer}"]["A_ctx_span"].double().numpy()
+                if pos == "span_mean_context":
+                    # A7 whitened gate read per (arm, LAYER) — the registered
+                    # H4 lattice cells (plan §3): c_src = the arm's training-
+                    # centroid anchor A_ctx_span, w = pooled matched write dir;
+                    # per-prefix delta_v = W_m rows. Convention per concern
+                    # f1e-union-split-and-gate-convention.
                     C0 = Cbar.double().numpy()
                     Wnp = W_m.double().numpy()
+                    w_pool = Wnp.mean(axis=0)
+                    g_hat = Wnp @ w_pool / (float(w_pool @ w_pool) + 1e-12)
                     arm_tab[f"L{layer}/{pos}"]["gate_read"] = {
                         "convention": "c_src=A_ctx_span(mix anchor); w=W_matched.mean(0)",
-                        **DIR.gate_read(C0, Wnp, c_src, Wnp.mean(axis=0), sigma),
+                        **DIR.gate_read(C0, Wnp, c_src, w_pool, sigma_by_layer[layer]),
                     }
-                    # norm-matched nulls: ONE GEMM per family over all 2,000 draws
-                    d = W_m.shape[1]
-                    iso = rng.standard_normal((N_NULL_DRAWS, d))
-                    cov = iso @ np.asarray(sigma["chol"]).T  # corpus-covariance family
-                    for fam, draws in (("isotropic", iso), ("corpus_cov", cov)):
-                        proj = draws @ C0.T  # (2000, 50): the two-GEMM null battery
-                        arm_tab[f"L{layer}/{pos}"][f"null_{fam}_q"] = {
-                            "q05": np.quantile(proj, 0.05, axis=0).tolist(),
-                            "q95": np.quantile(proj, 0.95, axis=0).tolist(),
-                        }
+                    arm_tab[f"L{layer}/{pos}"]["g_hat"] = [float(v) for v in g_hat]
+                    if layer == UNION_LAYER:
+                        # M5 inputs: M0-transformed post-FT context means (both
+                        # fitted positions) at the primary layer.
+                        for mpos in ("span_mean", "last_prompt"):
+                            pk = "context" if mpos == "span_mean" else mpos
+                            Cp = _prefix_means(onpol, layer, pk, prefix_ids)
+                            predp = _apply_saved_map(
+                                map_payloads[("m0", mpos, layer)], Cp.double().numpy(), dev
+                            )
+                            tensors[f"{arm_id}/m0pred_Cbar_post/L{layer}/{mpos}"] = torch.tensor(
+                                np.asarray(predp), dtype=torch.float16
+                            )
+                        # norm-matched nulls: ONE GEMM per family over all 2,000
+                        # draws (L19-span diagnostic projections, as registered)
+                        d = W_m.shape[1]
+                        iso = rng.standard_normal((N_NULL_DRAWS, d))
+                        cov = iso @ np.asarray(sigma_by_layer[layer]["chol"]).T
+                        for fam, draws in (("isotropic", iso), ("corpus_cov", cov)):
+                            proj = draws @ C0.T  # (2000, 50): the two-GEMM null battery
+                            arm_tab[f"L{layer}/{pos}"][f"null_{fam}_q"] = {
+                                "q05": np.quantile(proj, 0.05, axis=0).tolist(),
+                                "q95": np.quantile(proj, 0.95, axis=0).tolist(),
+                            }
         tables[arm_id] = arm_tab
     # P8: apply #1900 persisted wmaps (span-mean, L19) via the linearity identity
     wmap_sel = manifests["wmap"]
@@ -1392,13 +1562,36 @@ def run_f1e(cfg: Cfg, manifests: dict) -> list[str]:
     tables["p8"] = p8
     tab_path = out_dir / "predictor_ingredients.json"
     CAP._atomic_json(tab_path, tables)
+    # battery/*.json deliverable (plan §6.5): the assumption-battery reads —
+    # per-(arm, layer) gate reads + SVD spectra + null quantiles — as JSON.
+    battery_reads = {
+        "meta": _meta(),
+        "prefix_ids": prefix_ids,
+        "gate_convention": "c_src=A_ctx_span(mix anchor); w=W_matched.mean(0) (plan §4 F1e)",
+        "arms": {
+            arm_id: {
+                lk: {
+                    k: v
+                    for k, v in slot.items()
+                    if k in ("gate_read", "g_hat", "svd_spectrum", "w_norms")
+                    or k.startswith("null_")
+                }
+                for lk, slot in arm_tab.items()
+                if lk.endswith("span_mean_context")
+            }
+            for arm_id, arm_tab in tables.items()
+            if arm_id in {r["arm_id"] for r in arm_rows}
+        },
+    }
+    battery_json = battery_dir / "battery_reads.json"
+    CAP._atomic_json(battery_json, battery_reads)
     tensor_path = battery_dir / "ingredient_tensors.pt"
     tmp = tensor_path.with_suffix(".pt.tmp")
     torch.save(tensors, tmp)
     os.replace(tmp, tensor_path)
     _upload_paths(cfg, [tab_path], f"{HF_PREFIX_1979}/predictor_tables")
-    _upload_paths(cfg, [tensor_path], f"{HF_PREFIX_1979}/battery")
-    return [str(tab_path), str(tensor_path)]
+    _upload_paths(cfg, [tensor_path, sigma_path, battery_json], f"{HF_PREFIX_1979}/battery")
+    return [str(tab_path), str(tensor_path), str(battery_json)]
 
 
 def FIT_dev():
@@ -1421,6 +1614,7 @@ def run_f1f(cfg: Cfg, manifests: dict) -> list[str]:
             {
                 "sha": r["row_sha"],
                 "prefix_id": r["prefix_id"],
+                "query_sha": r["query_sha"],  # direct (prefix, query) join for F2/F3
                 "state": state,
                 "response_text": r["response_text"],
             }
@@ -1613,6 +1807,7 @@ def import_check() -> None:
     import issue1768_fit as FIT
     import issue1768_lasttoken_fit as LTF
     import issue779_ffc_n1m_fits  # noqa: F401  (FIT._fit_map's deferred dep)
+    from scipy.linalg import solve_triangular  # noqa: F401  (_whiten_solve's deferred dep)
 
     from explore_persona_space.analysis.mapping_baselines import (  # noqa: F401
         identity_bias_predict,
