@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1976,
+  "highest_id": 1977,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7563,6 +7563,13 @@
       "path": "tasks/proposed/1976",
       "status": "proposed",
       "title": "daily-fix: pre-split trigger for fits+figures+smoke units"
+    },
+    "1977": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1977",
+      "status": "proposed",
+      "title": "daily-fix: exempt path-limited git add --all in guard"
     },
     "199": {
       "has_clean_result": true,
