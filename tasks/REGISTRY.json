@@ -7016,8 +7016,8 @@
     "1906": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1906",
-      "status": "approved",
+      "path": "tasks/running/1906",
+      "status": "running",
       "title": "workflow-fix: verify_plan base-predictor-vs-change-DV companion check"
     },
     "1907": {
