@@ -5,6 +5,7 @@ tags:
 - wf-fix
 - wf-fix-fp:e0bbcbffb0d9
 - daily-auto-filed
+- trigger-dense
 created_at: '2026-07-30T07:13:16Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-29 problem sweep (route 2): Piped git commit/push compositions
