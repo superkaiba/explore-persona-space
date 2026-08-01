@@ -1,0 +1,39 @@
+{
+ "families": [
+  "cas",
+  "imp",
+  "syc"
+ ],
+ "summary": {
+  "cas": {
+   "n_pos": 32,
+   "n_neg": 32,
+   "n_donors": 64,
+   "content_sha256": "bfa26c3411faccf582ea0c784ed5014b795ee22f7400096525a8dba93cf6108d",
+   "n_parent_pool": 3884,
+   "n_offfloor_pool": 3893
+  },
+  "imp": {
+   "n_pos": 32,
+   "n_neg": 32,
+   "n_donors": 64,
+   "content_sha256": "2af7ad6dac2816f7845201dc51e3ef189b2a0f04b7add9cb355c934968fe6e84",
+   "n_parent_pool": 3926,
+   "n_offfloor_pool": 1472
+  },
+  "syc": {
+   "n_pos": 32,
+   "n_neg": 32,
+   "n_donors": 0,
+   "content_sha256": "b5957970ebd1d88d0b3497a669facd4b1a430f34d95c6dd6f1792ef99bf38b29",
+   "n_parent_pool": 3963,
+   "n_offfloor_pool": 4000
+  }
+ },
+ "ts": "2026-07-31T23:01:51Z",
+ "git_commit": "de99c0cba43fa26e4b0fb99030a831b379d7b4cc",
+ "torch": "2.8.0+cu128",
+ "issue": 1900,
+ "corpus_pin": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+ "seed": 1900
+}
