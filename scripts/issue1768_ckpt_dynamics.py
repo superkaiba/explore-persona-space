@@ -42,6 +42,7 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 load_dotenv()
 
 import argparse  # noqa: E402
+import itertools  # noqa: E402
 import json  # noqa: E402
 import logging  # noqa: E402
 import os  # noqa: E402
@@ -909,6 +910,18 @@ def phase_analyze(out_root: Path, results_dir: Path, smoke: bool = False) -> Non
                 cands["r_B"] = rb[beh][layer]
             if lad["kind"] == "marker":
                 cands["W_U_marker_row"] = wu
+            # Candidate degeneracy check — the marker "three-way" race is a
+            # TWO-way race by construction: rb_marker.pt is the unembedding row
+            # tiled per layer (its own note: "W_U[83399] tiled per layer (#653
+            # convention)"), so cos(ŵ, r_B) and cos(ŵ, W_U) are the SAME read
+            # for marker arms. Round 1 published both columns too (all 60 of its
+            # marker (arm,layer) reads agree exactly). Recorded per curve so the
+            # duplication can never be mistaken for two agreeing candidates.
+            degenerate = sorted(
+                {a, b}
+                for a, b in itertools.combinations(sorted(cands), 2)
+                if cands[a].shape == cands[b].shape and np.allclose(cands[a], cands[b])
+            )
 
             # ŵ_tf at the arm's VERDICT rung — the stability reference
             w_ref: np.ndarray | None = None
@@ -1006,6 +1019,7 @@ def phase_analyze(out_root: Path, results_dir: Path, smoke: bool = False) -> Non
                     },
                     "w_norm_on_policy": r1_read.get("w_norm"),
                 },
+                "candidate_degeneracy": [list(d) for d in degenerate],
                 "install_coverage": (
                     "per-rung (#1481 reads_by_step)"
                     if lad["kind"] == "marker"
