@@ -19,6 +19,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1946.md](https://github.com/superkaiba/explore-persona-space/blob/93b0a6f5d6eabb245e092c51b47ac75a72e78d56/docs/methodology/issue_1946.md) · [gist](https://gist.github.com/superkaiba/626cdfd393c68c9b223e46fd2b6dc37f)
+
 ## Takeaways
 
 - The prefix−bare category difference pattern correlates 0.855 across SAE and dense space (Spearman; p < 1e-4, 10,000 shuffles; 18 of 20 signs agree); this meets the plan's Reproduced rule.
