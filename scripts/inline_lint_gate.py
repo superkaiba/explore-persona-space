@@ -38,6 +38,18 @@ Verdict semantics (mechanizes SKILL.md Step 9a-ter § Inline payload lint gate):
   REPORTED for the round's ``epm:progress`` note). Per-path certs mean a
   mixed verdict still certifies the clean subset.
 
+Untracked-payload visibility (#1889): the mapped-pytest leg runs with
+``EPM_SCAN_EXTRA_FILES=<os.pathsep-joined payload paths>`` in its CHILD env
+(never the gate's own process env) so tracked-file-enumerating scan tests
+(``tests/test_shared_vm_thread_caps.py``'s ``_scan_targets``) union brand-new,
+still-UNTRACKED payload files into their scan set. Without the seam a new
+file's invariant violation is invisible to the gate (the scan enumerates
+``git ls-files`` only), passes 9a-ter, and lands red on trunk for every
+intervening session — the #1388 fleet-red class (realized 2026-07-30 at
+``606278aa38`` on #1739, and again at ``04e111a7ad``). Untracked payload
+paths additionally get a stderr audit NOTE (report-only, never a verdict
+input).
+
 Run as ONE background Bash (the lint leg is ~2.5-6 min; never a <=600 s
 foreground bound — #991/#996)::
 
@@ -66,6 +78,11 @@ from pathlib import Path
 
 DEFAULT_CERT_PATH = "/tmp/eps-inline-lint-cert-v1.txt"
 CERT_TRIM_LINES = 500
+# Env var threaded onto the mapped-pytest leg's CHILD env carrying the payload
+# path list (os.pathsep-separated, repo-relative) so tracked-file-enumerating
+# scan tests (tests/test_shared_vm_thread_caps.py::_scan_targets) union
+# brand-new UNTRACKED payload files into their target set (#1889).
+SCAN_EXTRA_FILES_ENV = "EPM_SCAN_EXTRA_FILES"
 LINT_TIMEOUT_S = 900
 FETCH_TIMEOUT_S = 60
 # Mapped-pytest timeout parity with select_step9c_tests.recommended_timeout_s
@@ -199,11 +216,18 @@ def _run_leg(
     override_env: str,
     repo: Path,
     timeout: int,
+    extra_env: dict[str, str] | None = None,
 ) -> tuple[str, int]:
     """Run one leg (env-override shell string, or the default argv), returning
     (combined stdout+stderr, returncode). A timeout returns the partial output
-    with rc -1 — the missing terminal/summary line then reads INCONCLUSIVE."""
+    with rc -1 — the missing terminal/summary line then reads INCONCLUSIVE.
+
+    ``extra_env`` (e.g. the #1889 ``SCAN_EXTRA_FILES_ENV`` payload threading)
+    is merged over ``os.environ`` into the CHILD env on BOTH branches — the
+    override branch included, so hermetic tests can observe it — and never
+    mutates the gate's own process env."""
     override = os.environ.get(override_env)
+    env = {**os.environ, **extra_env} if extra_env else None
     try:
         if override:
             r = subprocess.run(
@@ -213,6 +237,7 @@ def _run_leg(
                 capture_output=True,
                 text=True,
                 timeout=timeout,
+                env=env,
             )
         else:
             r = subprocess.run(
@@ -221,6 +246,7 @@ def _run_leg(
                 capture_output=True,
                 text=True,
                 timeout=timeout,
+                env=env,
             )
     except subprocess.TimeoutExpired as exc:
         out = (
@@ -259,11 +285,35 @@ def mapped_pytest_timeout(tests: list[str]) -> int:
     return max(timeout, PYTEST_TIMEOUT_FLOOR_S)
 
 
-def run_legs(payload_file: Path, issue: int, repo: Path, out_dir: Path) -> LegResults:
+def run_legs(
+    payload_file: Path,
+    issue: int,
+    repo: Path,
+    out_dir: Path,
+    payload: list[str] | None = None,
+) -> LegResults:
     """Run lint + mapped-pytest legs; persist audit outputs (parity with the
-    pre-#1500 fenced recipe's /tmp/issue-<N>-inline-{lint,map}.txt files)."""
+    pre-#1500 fenced recipe's /tmp/issue-<N>-inline-{lint,map}.txt files).
+
+    ``payload`` is the repo-relative payload path list (defaults to re-reading
+    ``payload_file``): threaded onto the mapped-pytest leg's child env as
+    ``SCAN_EXTRA_FILES_ENV`` so tracked-file-enumerating scan tests see
+    untracked payload files (#1889); untracked paths get a stderr audit NOTE
+    (report-only). Lint + map legs are unchanged."""
+    if payload is None:
+        payload = [
+            p.strip() for p in payload_file.read_text(encoding="utf-8").splitlines() if p.strip()
+        ]
     _best_effort_choom()
     _bounded_fetch(repo)
+
+    for p in payload:
+        if _git(repo, "ls-files", "--error-unmatch", "--", p).returncode != 0:
+            print(
+                f"inline_lint_gate: note: payload {p} is untracked — threaded via "
+                f"{SCAN_EXTRA_FILES_ENV} for tracked-file-enumerating scan tests",
+                file=sys.stderr,
+            )
 
     lint_output, _ = _run_leg(
         ["uv", "run", "python", "scripts/workflow_lint.py"],
@@ -292,6 +342,7 @@ def run_legs(payload_file: Path, issue: int, repo: Path, out_dir: Path) -> LegRe
             "EPM_INLINE_GATE_PYTEST_CMD",
             repo,
             mapped_pytest_timeout(tests),
+            extra_env={SCAN_EXTRA_FILES_ENV: os.pathsep.join(payload)},
         )
 
     (out_dir / f"issue-{issue}-inline-lint.txt").write_text(
@@ -540,7 +591,7 @@ def main(argv: list[str] | None = None) -> int:
             with os.fdopen(fd, "w", encoding="utf-8") as fh:
                 fh.write("\n".join(payload) + "\n")
             payload_file = Path(tmp_payload)
-        legs = run_legs(payload_file, args.issue, repo, Path(args.out_dir))
+        legs = run_legs(payload_file, args.issue, repo, Path(args.out_dir), payload=payload)
         verdict = evaluate(payload, legs, repo)
     except Inconclusive as exc:
         print(f"inline_lint_gate: INCONCLUSIVE ({exc})")
