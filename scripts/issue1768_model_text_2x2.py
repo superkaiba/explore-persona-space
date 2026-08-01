@@ -101,7 +101,10 @@ class Cfg:
     out_root: Path
     phases: tuple[str, ...]
     rtf_arms: tuple[str, ...] = ()  # empty -> the 8 write-predictability picks
+    rtf_all: bool = False  # leg A over ALL 72 arms (the fleet-wide extension)
     btf_arms: tuple[str, ...] = ()  # empty -> all 72
+    rtf_wave_size: int = 0  # >0 -> upload + verify after every N leg-A units
+    restage: bool = True  # pull this round's own uploaded stores into a fresh out-root
     layers: tuple[int, ...] = X.LAYERS
     tf_batch: int = X.TF_BATCH_SIZE
     smoke: bool = False
@@ -159,6 +162,8 @@ def _picks(cfg: Cfg) -> list[str]:
     """
     if cfg.rtf_arms:
         return list(cfg.rtf_arms)
+    if cfg.rtf_all:  # fleet-wide extension: leg A over the whole 72-arm grid
+        return sorted(C._full_arm_index())
     path = cfg.out_root / RESULTS_DIR / "arm_picks.json"
     if not path.exists():
         committed = (
@@ -182,6 +187,28 @@ def _picks(cfg: Cfg) -> list[str]:
     picks = json.loads(path.read_text())["picks"]
     assert picks, (path, "no arm picks")
     return [p["arm_id"] for p in picks]
+
+
+def _subset_picks(cfg: Cfg) -> list[str]:
+    """The ORIGINAL 8 write-predictability picks, regardless of --rtf-all.
+
+    Recorded in the outputs so fleet-wide figures can mark the arms the first
+    round measured without re-deriving the subset.
+    """
+    path = cfg.out_root / RESULTS_DIR / "arm_picks.json"
+    if not path.exists():
+        committed = (
+            REPO_ROOT
+            / "eval_results"
+            / f"issue_{X.ISSUE}"
+            / "write_predictability"
+            / "arm_picks.json"
+        )
+        if not committed.exists():
+            return []
+        path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(committed, path)
+    return [p["arm_id"] for p in json.loads(path.read_text())["picks"]]
 
 
 def _btf_arms(cfg: Cfg) -> list[str]:
@@ -296,6 +323,41 @@ def _stage_delta_cell(cfg: Cfg, arm_id: str) -> Path:
     return tbar
 
 
+def _restage_own_outputs(cfg: Cfg) -> dict[str, int]:
+    """Pull THIS round's already-uploaded stores back into a fresh out-root.
+
+    The Hub trees are the round's durable spine, so a fresh pod re-stages them
+    instead of recapturing: `_pending_units` keys on local presence, so a
+    restaged unit is SKIPPED. Idempotent (per-file `stage_hub_file` skips an
+    existing target) and fail-soft on an absent prefix — a tree that was never
+    uploaded simply yields nothing to restage.
+    """
+    from huggingface_hub import HfApi
+
+    hub = _hub()
+    api = HfApi()
+    counts: dict[str, int] = {}
+    for tree in (RTF_TREE, BTF_TREE):
+        prefix = f"{cfg.hf_prefix}/{tree}"
+        try:
+            remote = hub.list_hf_files_under_path(api, X.HF_DATA_REPO, prefix, repo_type="dataset")
+        except Exception as exc:  # noqa: BLE001 — an absent tree is not an error
+            logger.info("[p0] no %s tree to restage (%s)", tree, type(exc).__name__)
+            counts[tree] = 0
+            continue
+        staged = 0
+        for path in remote:
+            rel = path[len(prefix) + 1 :]
+            target = cfg.out_root / tree / rel
+            if target.exists():
+                continue
+            hub.stage_hub_file(X.HF_DATA_REPO, path, target, repo_type="dataset")
+            staged += 1
+        counts[tree] = staged
+        logger.info("[p0] restaged %d/%d files into %s", staged, len(remote), tree)
+    return counts
+
+
 def _stage_base_panels(cfg: Cfg) -> list[str]:
     """The 4 base panel stores the delta baseline half reads (72 MB each)."""
     hub = _hub()
@@ -318,9 +380,13 @@ def phase_p0(cfg: Cfg) -> None:
     cfg.out_root.mkdir(parents=True, exist_ok=True)
     _stage_registry(cfg)
     _stage_corpus_sample(cfg)
+    restaged = _restage_own_outputs(cfg) if cfg.restage else {}
     picks = _picks(cfg)
     units = sorted({*picks, *(X.base_unit_for(a) for a in picks)})
-    for u in units:
+    pending_rtf = set(_pending_units(cfg, "rtf"))
+    # row text is only needed for units still to capture (each arm's shards are
+    # ~78 MB; restaging all 72 when 8 are pending would move ~5 GB for nothing)
+    for u in sorted({*pending_rtf, *(X.base_unit_for(a) for a in pending_rtf)}):
         _stage_row_text(cfg, u)
     for arm_id in _btf_arms(cfg):
         _stage_delta_cell(cfg, arm_id)
@@ -329,13 +395,16 @@ def phase_p0(cfg: Cfg) -> None:
         cfg.out_root / RESULTS_DIR / "stage_manifest.json",
         {
             "rtf_arms": picks,
+            "rtf_subset_arms": _subset_picks(cfg),
             "rtf_row_text_units": units,
+            "rtf_pending_at_p0": sorted(pending_rtf),
             "btf_arms": _btf_arms(cfg),
+            "restaged_from_hub": restaged,
             "layers": list(cfg.layers),
             **_meta(),
         },
     )
-    _status(cfg, "p0_stage", rtf=len(picks), btf=len(_btf_arms(cfg)))
+    _status(cfg, "p0_stage", rtf=len(picks), pending=len(pending_rtf), btf=len(_btf_arms(cfg)))
 
 
 # ── leg A: base model on the trained arms' own text ──────────────────────────
@@ -654,20 +723,38 @@ def _fanout(cfg: Cfg, phase: str, phase_tag: str) -> None:
                 flush=True,
             )
             _status(cfg, phase_tag, done=done, total=len(units))
+            # wave upload: persist partial progress to the Hub as it lands, so a
+            # mid-run pod loss strands at most one wave (#664 per-cell contract)
+            if (
+                phase == "rtf"
+                and cfg.upload
+                and cfg.rtf_wave_size > 0
+                and done % cfg.rtf_wave_size == 0
+                and (queue or running)
+            ):
+                logger.info("[%s] wave upload after %d/%d units", phase, done, len(units))
+                phase_upload(cfg, trees=(RTF_TREE,), tag=f"wave{done}")
 
 
 # ── upload ───────────────────────────────────────────────────────────────────
 
 
-def phase_upload(cfg: Cfg) -> None:
-    """One bulk `upload_folder` commit per new tree + exact-set verify."""
-    _phase("up_upload")
+def phase_upload(
+    cfg: Cfg, trees: tuple[str, ...] = (RTF_TREE, BTF_TREE), tag: str = ""
+) -> dict[str, dict]:
+    """One bulk `upload_folder` commit per named tree + exact-set verify.
+
+    `upload_folder` is idempotent for already-landed files, so a wave upload of
+    a growing tree re-commits only the new units; the exact-set verify always
+    covers the WHOLE local tree, which is what makes a wave a durable snapshot.
+    """
+    _phase(f"up_upload{('_' + tag) if tag else ''}")
     from huggingface_hub import HfApi
 
     hub = _hub()
     api = HfApi()
     out: dict[str, dict] = {}
-    for tree in (RTF_TREE, BTF_TREE):
+    for tree in trees:
         local = cfg.out_root / tree
         if not local.exists():
             continue
@@ -687,8 +774,12 @@ def phase_upload(cfg: Cfg) -> None:
             )
         out[tree] = {"dest": dest, "n_files": len(expect)}
         logger.info("[up] %s -> %s (%d files verified)", tree, dest, len(expect))
-    C._atomic_json(cfg.out_root / RESULTS_DIR / "upload_done.json", {"trees": out, **_meta()})
-    _status(cfg, "up_upload", trees=sorted(out))
+    name = f"upload_done{('_' + tag) if tag else ''}.json"
+    C._atomic_json(
+        cfg.out_root / RESULTS_DIR / name, {"trees": out, "tag": tag or "final", **_meta()}
+    )
+    _status(cfg, "up_upload", trees=sorted(out), tag=tag or "final")
+    return out
 
 
 # ── analysis ─────────────────────────────────────────────────────────────────
@@ -750,22 +841,34 @@ def _delta_direction(cfg: Cfg, arm_id: str, layer: int) -> dict:
     return out
 
 
-def _stage_analysis_inputs(cfg: Cfg, arms: list[str]) -> None:
-    """Stage the pooled stores the leg-A decomposition reads (the base panels
-    land at p0; the per-arm leg-B matched-text stores are streamed one at a
-    time by `_corpus_matched_write` and deleted after each reduce)."""
+ARM_ANALYSIS_STORES = (
+    ("corpus_capture", "pooled.pt"),  # v+(trained text), ~705 MB
+    ("corpus_capture_tf", "pooled_tf.pt"),  # v+(base text), ~353 MB
+)
+
+
+def _stage_arm_analysis_stores(cfg: Cfg, arm_id: str) -> list[Path]:
+    """Stage ONE arm's analysis stores; return the paths this call downloaded.
+
+    Fleet-wide the grid is 72 x ~1.06 GB, so the decomposition streams it one
+    arm at a time (stage -> reduce -> delete) rather than materializing ~76 GB.
+    Only the paths this call fetched are returned, so an arm whose stores were
+    already local (the pod that captured them) is never deleted.
+    """
     hub = _hub()
-    _stage_base_panels(cfg)
-    for arm_id in arms:
-        for tree, name in (("corpus_capture", "pooled.pt"), ("corpus_capture_tf", "pooled_tf.pt")):
-            dest = cfg.out_root / tree / arm_id / name
-            if not dest.exists():
-                hub.stage_hub_file(
-                    X.HF_DATA_REPO,
-                    f"{X.HF_PREFIX}/{tree}/{arm_id}/{name}",
-                    dest,
-                    repo_type="dataset",
-                )
+    fetched: list[Path] = []
+    for tree, name in ARM_ANALYSIS_STORES:
+        dest = cfg.out_root / tree / arm_id / name
+        if dest.exists():
+            continue
+        hub.stage_hub_file(
+            X.HF_DATA_REPO,
+            f"{X.HF_PREFIX}/{tree}/{arm_id}/{name}",
+            dest,
+            repo_type="dataset",
+        )
+        fetched.append(dest)
+    return fetched
 
 
 def _base_pooled(cfg: Cfg, base_unit: str) -> Path:
@@ -1043,7 +1146,7 @@ def phase_analysis(cfg: Cfg) -> None:
     res = cfg.out_root / RESULTS_DIR
     (res / "per_arm").mkdir(parents=True, exist_ok=True)
     (res / "leg_b").mkdir(parents=True, exist_ok=True)
-    _stage_analysis_inputs(cfg, picks)
+    _stage_base_panels(cfg)
 
     base_means: dict[str, dict] = {}
     for bu in sorted({X.base_unit_for(a) for a in _btf_arms(cfg)}):
@@ -1055,21 +1158,34 @@ def phase_analysis(cfg: Cfg) -> None:
         del st
         logger.info("[an] base means reduced for %s", bu)
 
+    # leg-A arms whose reverse-tree store exists (fleet-wide runs resume across
+    # waves, so the analysable set is whatever has landed, not the full request)
+    have_rtf = [a for a in picks if (cfg.out_root / RTF_TREE / a / "pooled_tf.pt").exists()]
+    if len(have_rtf) < len(picks):
+        logger.info("[an] %d/%d leg-A stores present; analysing those", len(have_rtf), len(picks))
     decomp, attrib = {}, {}
-    for k, arm_id in enumerate(picks):
+    for k, arm_id in enumerate(have_rtf):
         t0 = time.time()
-        decomp[arm_id] = _decompose_arm(cfg, arm_id)
-        C._atomic_json(res / "per_arm" / f"{arm_id}_2x2.json", decomp[arm_id])
+        fetched = _stage_arm_analysis_stores(cfg, arm_id)  # stream: stage -> reduce -> delete
         try:
-            attrib[arm_id] = _m0_attribution(cfg, arm_id, cfg.attrib_layer)
-        except Exception as exc:  # noqa: BLE001 — validation read, never kills the round
-            attrib[arm_id] = {"error": f"{type(exc).__name__}: {exc}", "layer": cfg.attrib_layer}
-            logger.warning("[an] M0 attribution failed for %s: %s", arm_id, exc)
+            decomp[arm_id] = _decompose_arm(cfg, arm_id)
+            C._atomic_json(res / "per_arm" / f"{arm_id}_2x2.json", decomp[arm_id])
+            try:
+                attrib[arm_id] = _m0_attribution(cfg, arm_id, cfg.attrib_layer)
+            except Exception as exc:  # noqa: BLE001 — validation read, never kills the round
+                attrib[arm_id] = {
+                    "error": f"{type(exc).__name__}: {exc}",
+                    "layer": cfg.attrib_layer,
+                }
+                logger.warning("[an] M0 attribution failed for %s: %s", arm_id, exc)
+        finally:
+            for p in fetched:
+                p.unlink(missing_ok=True)
         print(
-            f"[an] decomposition {k + 1}/{len(picks)} {arm_id} elapsed={time.time() - t0:.0f}s",
+            f"[an] decomposition {k + 1}/{len(have_rtf)} {arm_id} elapsed={time.time() - t0:.0f}s",
             flush=True,
         )
-        _status(cfg, "an_analysis", decomposed=k + 1, total=len(picks))
+        _status(cfg, "an_analysis", decomposed=k + 1, total=len(have_rtf))
 
     leg_b = {}
     arms_b = [a for a in _btf_arms(cfg) if (cfg.out_root / BTF_TREE / a / "tbar_plus.pt").exists()]
@@ -1102,7 +1218,9 @@ def phase_analysis(cfg: Cfg) -> None:
             },
             "layers": list(cfg.layers),
             "attrib_layer": cfg.attrib_layer,
-            "rtf_arms": picks,
+            "rtf_arms": have_rtf,
+            "rtf_arms_requested": picks,
+            "rtf_subset_arms": _subset_picks(cfg),
             "btf_arms": arms_b,
             "decomposition": decomp,
             "m0_attribution_vs_measured": attrib,
@@ -1165,7 +1283,21 @@ def parse_args(argv: list[str] | None) -> tuple[Cfg, argparse.Namespace]:
     p.add_argument("--phases", default="p0,rtf,btf,up,an")
     p.add_argument("--unit", default=None, help="run ONE unit: <rtf|btf>:<arm_id>")
     p.add_argument("--rtf-arms", default="")
+    p.add_argument(
+        "--rtf-all", action="store_true", help="leg A over ALL 72 arms (fleet-wide extension)"
+    )
     p.add_argument("--btf-arms", default="")
+    p.add_argument(
+        "--rtf-wave-size",
+        type=int,
+        default=0,
+        help="upload + verify after every N completed leg-A units (0 = one terminal upload)",
+    )
+    p.add_argument(
+        "--no-restage",
+        action="store_true",
+        help="skip pulling this round's already-uploaded stores back into the out-root",
+    )
     p.add_argument("--layers", default=",".join(str(x) for x in X.LAYERS))
     p.add_argument("--tf-batch", type=int, default=X.TF_BATCH_SIZE)
     p.add_argument("--attrib-layer", type=int, default=19)
@@ -1179,7 +1311,10 @@ def parse_args(argv: list[str] | None) -> tuple[Cfg, argparse.Namespace]:
         out_root=a.out_root,
         phases=tuple(x for x in a.phases.split(",") if x),
         rtf_arms=tuple(x for x in a.rtf_arms.split(",") if x),
+        rtf_all=a.rtf_all,
         btf_arms=tuple(x for x in a.btf_arms.split(",") if x),
+        rtf_wave_size=a.rtf_wave_size,
+        restage=not a.no_restage,
         layers=tuple(int(x) for x in a.layers.split(",") if x),
         tf_batch=a.tf_batch,
         smoke=a.smoke,

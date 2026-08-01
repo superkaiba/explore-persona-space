@@ -56,6 +56,109 @@ def _short(arm: str) -> str:
     return arm.replace("-lr", "\n lr").replace("-s42", " s42").replace("-s137", " s137")
 
 
+BEH_ORDER = ("cas", "imp", "mk", "syc")
+
+
+def _grouped(arms: list[str]) -> list[str]:
+    """Arms ordered by behavior then id (the fleet-wide figure grouping)."""
+    return sorted(arms, key=lambda a: (BEH_ORDER.index(a.split("-")[0]), a))
+
+
+def _beh_separators(ax, arms: list[str], label_y: float = 0.965) -> None:
+    """Vertical separators + a behavior label per contiguous group."""
+    beh = [a.split("-")[0] for a in arms]
+    prev, start = beh[0], 0
+    for i in range(1, len(beh) + 1):
+        if i == len(beh) or beh[i] != prev:
+            ax.annotate(
+                BEH_LABEL.get(prev, prev),
+                ((start + i - 1) / 2, label_y),
+                xycoords=("data", "axes fraction"),
+                ha="center",
+                va="top",
+                fontsize=8,
+                color="0.35",
+            )
+            if i < len(beh):
+                ax.axvline(i - 0.5, color="0.85", lw=0.7)
+                prev, start = beh[i], i
+
+
+def fig_decomposition_fleet(summary: dict, layer: str, out_dir: Path) -> Path:
+    """Fleet-wide (72-arm) decomposition: per-arm points grouped by behavior.
+
+    The 8-arm grouped-bar form is unreadable past ~16 arms, so the shares
+    become one marker per arm per term; the write-predictability subset the
+    first round measured is ringed so it stays locatable.
+    """
+    arms = _grouped(summary["rtf_arms"])
+    subset = set(summary.get("rtf_subset_arms") or [])
+    recs = {a: summary["decomposition"][a]["layers"][layer] for a in arms}
+    x = np.arange(len(arms))
+    fig, (ax_top, ax_bot) = plt.subplots(
+        2, 1, figsize=(15.0, 8.0), sharex=True, gridspec_kw={"height_ratios": [1.2, 1.0]}
+    )
+    for term, mark in zip(TERMS, ("o", "s", "^"), strict=True):
+        ax_top.plot(
+            x,
+            [recs[a]["proj_share"][term] for a in arms],
+            mark,
+            ms=4.5,
+            color=pp.paper_palette_role(TERM_ROLE[term]),
+            label=TERM_LABEL[term].replace("\n", " "),
+        )
+    if subset:
+        xs = [i for i, a in enumerate(arms) if a in subset]
+        ax_top.plot(
+            xs,
+            [recs[arms[i]]["proj_share"]["function"] for i in xs],
+            "o",
+            ms=11,
+            mfc="none",
+            mec="0.25",
+            mew=1.1,
+            label="round-1 subset arm",
+        )
+    ax_top.axhline(0.0, color="0.35", lw=0.8)
+    ax_top.axhline(1.0, color="0.75", lw=0.8, ls=":")
+    ax_top.set_ylim(-0.25, 1.45)
+    ax_top.set_ylabel(
+        "share of the on-policy shift\n" + r"$\langle$term$,\Delta\rangle/\|\Delta\|^2$"
+    )
+    ax_top.legend(frameon=False, fontsize=8, loc="lower left", ncol=4)
+    _beh_separators(ax_top, arms)
+    ax_bot.bar(
+        x,
+        [recs[a]["norm_shift"] for a in arms],
+        0.72,
+        color=pp.paper_palette_role("neutral"),
+        edgecolor="white",
+        linewidth=0.4,
+        label=r"$\|\Delta\|$ (on-policy shift)",
+    )
+    ax_bot.plot(
+        x,
+        [recs[a]["norms"]["text"] for a in arms],
+        "o",
+        ms=4,
+        color=pp.paper_palette_role("primary"),
+        label="text-effect norm",
+    )
+    ax_bot.set_ylabel("mean-shift norm at L" + layer)
+    ax_bot.legend(frameon=False, fontsize=8, loc="upper left", ncol=2)
+    ax_bot.set_xticks(x)
+    ax_bot.set_xticklabels(arms, rotation=90, fontsize=5.5)
+    n = recs[arms[0]]["n_rows"]
+    pp.set_title_subtitle(
+        ax_top,
+        "Where the on-policy shift comes from: the function effect dominates fleet-wide",
+        f"all {len(arms)} arms, layer {layer}, response-span mean over the sha-joined corpus "
+        f"rows (n~{n:,}/arm). Terms sum EXACTLY to the shift.",
+    )
+    fig.tight_layout()
+    return pp.savefig_paper(fig, "decomposition_shares_fleet", dir=out_dir)["png"]
+
+
 def fig_decomposition(summary: dict, layer: str, out_dir: Path) -> Path:
     arms = summary["rtf_arms"]
     recs = {a: summary["decomposition"][a]["layers"][layer] for a in arms}
@@ -131,7 +234,9 @@ def fig_measured_vs_attributed(summary: dict, out_dir: Path) -> Path | None:
     ]
     if not rows:
         return None
+    rows.sort(key=lambda kv: (BEH_ORDER.index(kv[0].split("-")[0]), kv[0]))
     arms = [a for a, _ in rows]
+    dense = len(arms) > 16  # fleet-wide: markers + rotated ids, not annotated bars
     x = np.arange(len(arms))
     cos = [r["mean_shift_cos"] for _, r in rows]
     per_row = [r["per_row_cos_median"] for _, r in rows]
@@ -153,23 +258,45 @@ def fig_measured_vs_attributed(summary: dict, out_dir: Path) -> Path | None:
         label="per-row cosine (median)",
         edgecolor="white",
     )
-    for xi, v in list(zip(x - 0.19, cos, strict=True)) + list(zip(x + 0.19, per_row, strict=True)):
-        ax1.annotate(
-            f"{v:.2f}", (xi, v), ha="center", fontsize=7, xytext=(0, 2), textcoords="offset points"
-        )
+    if not dense:
+        for xi, v in list(zip(x - 0.19, cos, strict=True)) + list(
+            zip(x + 0.19, per_row, strict=True)
+        ):
+            ax1.annotate(
+                f"{v:.2f}",
+                (xi, v),
+                ha="center",
+                fontsize=7,
+                xytext=(0, 2),
+                textcoords="offset points",
+            )
     ax1.axhline(1.0, color="0.75", ls=":", lw=0.8)
     ax1.set_ylabel("cos(attributed, measured)")
     ax1.set_ylim(min(-0.12, min(cos + per_row) - 0.05), 1.05)
     ax1.legend(frameon=False, fontsize=8, loc="upper center", ncol=2)
-    ax2.bar(x, rel, 0.5, color=pp.paper_palette_role("accent"), edgecolor="white")
-    for xi, v in zip(x, rel, strict=True):
-        ax2.annotate(
-            f"{v:.2f}", (xi, v), ha="center", fontsize=7, xytext=(0, 2), textcoords="offset points"
-        )
+    ax2.bar(
+        x, rel, 0.5 if not dense else 0.72, color=pp.paper_palette_role("accent"), edgecolor="white"
+    )
+    if not dense:
+        for xi, v in zip(x, rel, strict=True):
+            ax2.annotate(
+                f"{v:.2f}",
+                (xi, v),
+                ha="center",
+                fontsize=7,
+                xytext=(0, 2),
+                textcoords="offset points",
+            )
+    ax2.axhline(1.0, color="0.75", ls=":", lw=0.8)
     ax2.axhline(0.0, color="0.35", lw=0.8)
     ax2.set_ylabel(r"relative error $\|a-m\|/\|m\|$")
     ax2.set_xticks(x)
-    ax2.set_xticklabels([_short(a) for a in arms], fontsize=7)
+    if dense:
+        ax2.set_xticklabels(arms, rotation=90, fontsize=5.5)
+        _beh_separators(ax1, arms, label_y=0.99)
+        fig.set_size_inches(15.0, 7.2)
+    else:
+        ax2.set_xticklabels([_short(a) for a in arms], fontsize=7)
     layer = rows[0][1]["layer"]
     pp.set_title_subtitle(
         ax1,
@@ -263,7 +390,11 @@ def main(argv: list[str] | None = None) -> int:
     summary = json.loads(a.summary.read_text())
     a.out_dir.mkdir(parents=True, exist_ok=True)
     pp.set_paper_style("blog")
-    made = [fig_decomposition(summary, a.layer, a.out_dir)]
+    arms = summary["rtf_arms"]
+    if len(arms) > 16:
+        made = [fig_decomposition_fleet(summary, a.layer, a.out_dir)]
+    else:
+        made = [fig_decomposition(summary, a.layer, a.out_dir)]
     m = fig_measured_vs_attributed(summary, a.out_dir)
     if m is not None:
         made.append(m)
