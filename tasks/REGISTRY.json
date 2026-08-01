@@ -7384,8 +7384,8 @@
     "1953": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1953",
-      "status": "reviewing",
+      "path": "tasks/completed/1953",
+      "status": "completed",
       "title": "daily-fix: fix red main: test_workflow_lint_jsonl_splitlines.py::test_live_tree_passes \u2014 Fix the `.splitlines()` JSONL read at `s"
     },
     "1954": {
