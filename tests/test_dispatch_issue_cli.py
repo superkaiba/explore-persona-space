@@ -3780,6 +3780,152 @@ def test_finalize_fetch_results_crash_still_reaches_confirm_gate(monkeypatch, tm
 
 
 # ---------------------------------------------------------------------------
+# issue #1973 — typed FetchResultsError surfaces as a NON-ok finalize verdict
+# ---------------------------------------------------------------------------
+
+
+def test_finalize_typed_fetch_failure_exits_3_teardown_skipped_sidecar_kept(
+    monkeypatch, tmp_path
+) -> None:
+    """The #1768 fix: a TYPED ``FetchResultsError`` from ``fetch_results``
+    surfaces as exit 3 / ``reason: fetch_results_failed`` even though the
+    confirm gate PASSES (artifacts already durable from an earlier pull) —
+    teardown NOT called, sidecar NOT retired (finalize re-runnable)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 407, kind="nibi")
+    nibi = _MockBackend(kind="nibi", confirm_passes=True)
+
+    from explore_persona_space.backends.base import FetchResultsError
+
+    def typed_fetch(_handle):
+        nibi.call_sequence.append("fetch_results")
+        raise FetchResultsError("rsync pull exited 30 — staging kept for resume")
+
+    nibi.fetch_results = typed_fetch  # type: ignore[method-assign]
+    factory = _build_mock_factory(nibi=nibi)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_upload_verification_currency_blocker", lambda _issue: None)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "finalize",
+                "--issue",
+                "407",
+                "--handle-file",
+                str(tmp_path / "issue-407-handle.json"),
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 3
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is False
+    assert body["phase"] == "fetch_results"
+    assert body["reason"] == "fetch_results_failed"
+    assert "rsync pull exited 30" in body["detail"]
+    assert body["chosen_kind"] == "nibi"
+    assert body["pod_name"] == "pod-407"
+    # The confirm gate STILL ran (evidence surfacing); teardown did NOT.
+    assert len(nibi.confirms) == 1
+    assert len(nibi.teardowns) == 0
+    # Sidecar NOT retired — finalize stays re-runnable against this handle.
+    assert (tmp_path / "issue-407-handle.json").exists()
+    assert not (tmp_path / "issue-407-handle.json.finalized").exists()
+
+
+def test_finalize_typed_fetch_failure_exits_3_even_with_skip_confirm_flag(
+    monkeypatch, tmp_path
+) -> None:
+    """``--skip-confirm-artifacts`` skips the confirm gate, NOT the typed
+    fetch-failure verdict — a partial pull never hides behind the skip
+    flag's forced teardown."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 408, kind="nibi")
+    nibi = _MockBackend(kind="nibi", confirm_passes=True)
+
+    from explore_persona_space.backends.base import FetchResultsError
+
+    def typed_fetch(_handle):
+        raise FetchResultsError("local merge exited 11 (disk-full class?)")
+
+    nibi.fetch_results = typed_fetch  # type: ignore[method-assign]
+    factory = _build_mock_factory(nibi=nibi)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_upload_verification_currency_blocker", lambda _issue: None)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "finalize",
+                "--issue",
+                "408",
+                "--skip-confirm-artifacts",
+                "--handle-file",
+                str(tmp_path / "issue-408-handle.json"),
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 3
+    body = json.loads(buf.getvalue().strip())
+    assert body["reason"] == "fetch_results_failed"
+    assert len(nibi.confirms) == 0  # gate skipped by the flag
+    assert len(nibi.teardowns) == 0  # teardown still refused
+
+
+def test_finalize_generic_fetch_crash_with_confirm_pass_still_tears_down(
+    monkeypatch, tmp_path
+) -> None:
+    """Contrast pin: the pre-existing GENERIC-Exception fetch branch is
+    unchanged — an untyped fetch crash logs + continues, and a confirm
+    PASS proceeds to teardown (only the TYPED ``FetchResultsError``
+    blocks the ok verdict)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 409, kind="nibi")
+    nibi = _MockBackend(kind="nibi", confirm_passes=True)
+
+    def exploding_fetch(_handle):
+        raise OSError("scp transport refused")
+
+    nibi.fetch_results = exploding_fetch  # type: ignore[method-assign]
+    factory = _build_mock_factory(nibi=nibi)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_upload_verification_currency_blocker", lambda _issue: None)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "finalize",
+                "--issue",
+                "409",
+                "--handle-file",
+                str(tmp_path / "issue-409-handle.json"),
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["phase"] == "teardown"
+    assert len(nibi.confirms) == 1
+    assert len(nibi.teardowns) == 1
+
+
+# ---------------------------------------------------------------------------
 # issue #909 — --execute-workload flag surface + CLI failure/success contracts
 # ---------------------------------------------------------------------------
 

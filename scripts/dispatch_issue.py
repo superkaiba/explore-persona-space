@@ -77,7 +77,12 @@ Exit codes
   ``reason: confirm_artifacts_no_declaration``. Exit 3 ALSO covers
   ``reason: keep_running_tag_unreadable`` (#1485): the keep-running
   tag state could not be read, so teardown is SKIPPED fail-closed
-  (sidecar kept; fix the task read and re-run finalize).
+  (sidecar kept; fix the task read and re-run finalize). Exit 3 ALSO
+  covers ``reason: fetch_results_failed`` (#1973): the backend's
+  ``fetch_results`` raised the typed ``FetchResultsError`` (an
+  interrupted / timed-out results pull, or a failed staging merge) —
+  teardown SKIPPED, sidecar kept, finalize re-runnable, even when the
+  confirm gate passed on already-durable artifacts.
 * ``4`` — unexpected exception. ``stderr`` carries the traceback.
 * ``75`` — still-waiting (EX_TEMPFAIL; mirrors
   ``pod_lifecycle.EXIT_STILL_WAITING``). TWO producers, same contract:
@@ -2175,6 +2180,15 @@ def _cmd_finalize(
     Either way the currency gate above already ran: the degrade can only
     execute when the blocker is None on the non-skip path.
 
+    Typed fetch-failure gate (#1973): a ``FetchResultsError`` raised by
+    ``backend.fetch_results`` (an interrupted / timed-out results pull,
+    or a failed staging merge) is recorded and — after the confirm gate
+    ran for evidence (or was skipped) — surfaces as exit 3 with
+    ``reason: fetch_results_failed``: teardown SKIPPED, sidecar NOT
+    retired, finalize re-runnable. A NON-typed fetch crash keeps the
+    legacy fail-soft behavior (log loudly + continue to the confirm
+    gate, whose own FAIL carries the surfacing).
+
     After a SUCCESSFUL teardown the sidecar is renamed to
     ``<name>.finalized`` (audit record, never deleted) so a later
     finalize for the same issue cannot tear down a fresh run through
@@ -2319,8 +2333,28 @@ def _cmd_finalize(
     # own two-tier contract — but wrap defensively: a fetch CRASH must
     # surface as the confirm FAIL (right surfacing, evidence preserved),
     # not as a finalize traceback.
+    from explore_persona_space.backends.base import FetchResultsError
+
+    fetch_failed: str | None = None
     try:
         backend.fetch_results(handle)
+    except FetchResultsError as exc:
+        # #1973 (incident #1768 r3): a TYPED fetch failure — an
+        # interrupted / timed-out results pull, or a failed staging
+        # merge — must surface in the finalize VERDICT, never behind an
+        # ``ok: true``. Record it, still run the confirm gate (a confirm
+        # FAIL exits 3 with its own reason — right surfacing, evidence
+        # preserved), and convert a confirm PASS (or skip) into the
+        # exit-3 ``fetch_results_failed`` body after the gate: teardown
+        # SKIPPED, sidecar NOT retired, finalize re-runnable.
+        fetch_failed = str(exc)
+        logging.getLogger("dispatch_issue").error(
+            "finalize: fetch_results FAILED (typed) for issue=%d: %s — running the "
+            "confirm gate for evidence, then surfacing a NON-ok finalize verdict "
+            "(teardown skipped, sidecar kept).",
+            int(args.issue),
+            exc,
+        )
     except Exception as exc:
         logging.getLogger("dispatch_issue").error(
             "finalize: fetch_results FAILED for issue=%d (%s: %s); continuing to the "
@@ -2396,6 +2430,29 @@ def _cmd_finalize(
                 }
                 print(json.dumps(body, sort_keys=True))
                 return 3
+
+    # #1973: a typed fetch_results failure surfaces as a NON-ok verdict
+    # even when the confirm gate passed or was skipped — the declared
+    # artifacts may already be durable from an earlier pull while THIS
+    # pull left the live trees incomplete (the #1768 shape: confirm
+    # passed on already-durable artifacts, finalize reported ok, and the
+    # partial residue sat silent). Teardown SKIPPED + sidecar NOT
+    # retired — mirrors the confirm-fail semantics: evidence preserved,
+    # finalize re-runnable (SLURM teardown is a scancel no-op on a
+    # terminal job; the remote scratch + local staging both survive for
+    # the retry).
+    if fetch_failed is not None:
+        body = {
+            "ok": False,
+            "issue": int(args.issue),
+            "phase": "fetch_results",
+            "reason": "fetch_results_failed",
+            "detail": fetch_failed,
+            "chosen_kind": handle.backend,
+            "pod_name": handle.pod_name,
+        }
+        print(json.dumps(body, sort_keys=True))
+        return 3
 
     backend.teardown(handle)
 
