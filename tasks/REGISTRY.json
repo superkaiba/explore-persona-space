@@ -6823,8 +6823,8 @@
     "1881": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1881",
-      "status": "proposed",
+      "path": "tasks/planning/1881",
+      "status": "planning",
       "title": "workflow-fix: verify_task_body judge-health drop-line population reconciliation"
     },
     "1882": {
