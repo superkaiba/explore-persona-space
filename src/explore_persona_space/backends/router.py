@@ -3949,7 +3949,16 @@ def _override_free_or_gcp(
                 # Explicit-override reconnect — `kind` may be ANY backend
                 # here, so merge the gcp marker extras only when the
                 # reconnected lane is gcp (#631 round-3 marker-coverage fix).
-                extra=_gcp_marker_extras(spec) if kind == "gcp" else {},
+                # The handle's live-derived provisioning_model overrides the
+                # spec default (#1892; handle side #1815).
+                extra=(
+                    {
+                        **_gcp_marker_extras(spec),
+                        **_live_provisioning_extras_from_handle(handle),
+                    }
+                    if kind == "gcp"
+                    else {}
+                ),
             )
             _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
             return result
@@ -4366,7 +4375,9 @@ def _override_gcp_with_ladder(
             cluster=None,
             attempts=attempts,
             elapsed_seconds=now_fn() - started_at,
-            extra=_gcp_marker_extras(spec),
+            # The handle's live-derived provisioning_model overrides the spec
+            # default — the #1776 incident seam (#1892; handle side #1815).
+            extra={**_gcp_marker_extras(spec), **_live_provisioning_extras_from_handle(handle)},
         )
         _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
         return result
@@ -4728,8 +4739,14 @@ def _record_reconnect(
         elapsed_seconds=now_fn() - started_at,
         # Auto-chain reconnect scan — `kind` is the reconnected lane (gcp
         # OR a free SLURM lane), so merge the gcp marker extras only for a
-        # gcp reconnect (#631 round-3 marker-coverage fix).
-        extra=_gcp_marker_extras(spec) if kind == "gcp" else {},
+        # gcp reconnect (#631 round-3 marker-coverage fix). The handle's
+        # live-derived provisioning_model overrides the spec default (#1892;
+        # handle side #1815).
+        extra=(
+            {**_gcp_marker_extras(spec), **_live_provisioning_extras_from_handle(handle)}
+            if kind == "gcp"
+            else {}
+        ),
     )
     _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
     return result
@@ -6118,6 +6135,20 @@ def _boot_disk_extras_from_handle(handle: RunHandle | None) -> dict[str, Any]:
     return {k: handle.extra[k] for k in BOOT_DISK_MARKER_EXTRA_KEYS if k in handle.extra}
 
 
+def _live_provisioning_extras_from_handle(handle: RunHandle | None) -> dict[str, Any]:
+    """Reconnect-marker override (#1892): prefer the HANDLE's live-derived
+    provisioning_model (gcp.reconnect_or_none reads scheduling.provisioningModel
+    off the live instance, #1815) over _gcp_marker_extras' spec default —
+    the #1776 reconnect marker said STANDARD while the instance was FLEX_START,
+    driving a wrong disarmed-gate diagnosis. Returns {} when the handle carries
+    no value (fail-open to the spec-derived fallback). Pure function, no IO.
+    """
+    v = (getattr(handle, "extra", None) or {}).get("provisioning_model")
+    if not v:
+        return {}
+    return {"provisioning_model": str(v), "provisioning_model_source": "live-instance"}
+
+
 def _gcp_marker_extras(spec: RunSpec) -> dict[str, Any]:
     """Build the GCP ``epm:backend-selected`` ``extra`` dict for ``spec``.
 
@@ -6131,7 +6162,17 @@ def _gcp_marker_extras(spec: RunSpec) -> dict[str, Any]:
 
     Safe to call unguarded on any gcp-chosen result. ``provisioning_model``
     reads only ``spec.extra`` (no intent lookup), so it is always
-    populated. ``quota_pool`` resolves the intent's machine: it is ``None``
+    populated — which means it is the SPEC-derived value (the fresh-launch
+    plan), correct on fresh launches but potentially stale on reconnects.
+    The THREE gcp reconnect seams — the explicit-override generic composer
+    (``_override_free_or_gcp``), the ``_override_gcp_with_ladder``
+    reconnect, and the auto-chain ``_record_reconnect`` composer — therefore
+    merge :func:`_live_provisioning_extras_from_handle` OVER this dict
+    (``{**_gcp_marker_extras(spec), **_live_provisioning_extras_from_handle(handle)}``)
+    so the marker reports the live instance's provisioning model when the
+    reconnect handle carries one (#1892; handle side #1815 — the #1776
+    reconnect marker said STANDARD while the instance was FLEX_START).
+    ``quota_pool`` resolves the intent's machine: it is ``None``
     when the (gpu_kind, pool) pair has no quota mapping AND — per the round-4
     fix below — when the intent itself is unmapped. The reconnect paths
     (``router.py`` explicit-override + auto-chain) call this AFTER an
