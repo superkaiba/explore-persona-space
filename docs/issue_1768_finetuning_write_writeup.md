@@ -15,10 +15,10 @@
 
 ## TLDR
 
-- **The context vector barely moves**: median relative movement 0.025 at layer 19 across all 72 arms — the change lives in the map and the emitted text, not the context representation.
+- **The context vector barely rotates, but how much it moves is pooling-dependent**: median relative movement 0.025 at layer 19 under span-mean pooling, 0.24–0.27 at the last prompt token, with direction preserved either way (cos(c⁰, c⁺) 0.96–0.97). The change still lives mainly in the map and the emitted text. *(revised 2026-08-01 — see Addendum)*
 - **The map changes, and the split is behavior-shaped**: 107 of 216 (arm, layer) cells change above a refit-noise floor, 102 sit below, 7 unresolved (216 cells = 72 arms × 3 layers). Casual writing style 36/45, impoliteness 45/51, sycophancy 26/60 (depends on training context), **marker 0/60** — the exact reverse of what we predicted for the marker.
 - **But it's really a dose story**: map change rank-tracks the weights-carried answer shift (Spearman 0.98 at layer 19), so the marker null is consistent with its smaller dose, not a special marker property.
-- **The answer vector moves mostly through the text**: on-policy, ~78% of the answer-state shift is off-map (carried by the different text the trained model writes); hold the text fixed and map change becomes the largest attributable component.
+- **Where the on-policy answer shift comes from is aggregation-dependent** (measured 2×2 decomposition, all 72 arms): the MEAN shift is mostly weights-carried (function share 0.70 at layer 19), while PER-ROW variance is mostly text-carried (0.78) — the weight effect is a shared direction that survives averaging; the text effect is row-specific and cancels in the mean. *(replaces this doc's original "~78% off-map" claim, which came from round 1's map-attributed stand-in — later measured wrong; see Addendum)*
 - **The write is high-rank and only weakly predictable ahead of time**:
     - rank-one-write assumption fails at corpus scale (top-1 SVD share median 0.09 on-policy vs our 0.6 criterion)
     - alignment with the training displacement $\delta$ is strong on-policy (+0.33 to +0.63) but disappears at fixed text — it's text-carried
@@ -173,11 +173,29 @@ Standard baselines for the fits themselves (identity+bias, retrieval, cross-corp
 * The fitted maps are far above baselines: base R² 0.477 / 0.501 / 0.451 at layers 14/19/25 vs identity+bias at −39 / −14.6 / −1.5; retrieval finds the exact held-out target for over half the contexts (acc@1 0.56 / 0.54 vs chance 0.001); LMSYS↔WildChat transfer folds hold (0.489 / 0.426 vs 0.501 in-distribution)
 * At 120 rows, **0 of 72 arms** clear their refit-noise floor — the parent experiment's inconclusive sycophancy/EM cells weren't about the arms at all, the instrument couldn't resolve any arm in principle. Resolution came purely from scale
 
+## Addendum (2026-08-01): five follow-up rounds — corrections and extensions
+
+Five rounds ran after this writeup was drafted. Where they contradict the body above, the addendum wins.
+
+**1. Checkpoint-dynamics horse race** (987 rungs, 56 LoRA arms; teacher-forced panel write per rung). The write ROTATES INTO δ as training proceeds — it does not start aligned and decay: ρ(step, cos(ŵ_tf, δ)) is positive on ~98–100% of curves (content arms often start negative, to −0.57, and cross zero mid-ladder). ‖ŵ_tf‖ rises monotonically on every curve; marker install plateaus (~step 100–150) while the write keeps growing. Caveats: only 11/987 curve-points clear the δ null band (the trend is universal, the absolute alignment stays inside noise), and content curves carry a median of 3 rungs vs marker's 12. Full-FT arms have NO Hub ladders — dynamics is LoRA/marker-only.
+https://raw.githubusercontent.com/superkaiba/explore-persona-space/0c840a697bd8b04ebac3f1ffdf2bd29763934e2f/figures/issue_1768/ckpt_dynamics/alignment_vs_step_delta.png
+
+**2. Write-predictability probe** (ridge from the base context vector c⁰(x) to the per-context write w(x), 8 arms × 2 trees). The write is a mostly-linear, learnable function of base context geometry: matched-text held-out R² 0.37–0.45 (span-mean inputs) rising to **median 0.656 with last-token inputs**; on-policy 0.10–0.20; retrieval acc@1 up to 0.48 vs chance 0.001; KRR gains +0.03–0.06 (small real nonlinearity); MLP below ridge. Cross-arm transfer of these write maps is still weak (median R² ≈ −0.12) — "internally lawful per arm" is established, "dataset-forecastable across arms" is not.
+
+**3. Measured (model × text) 2×2 decomposition** (all 72 arms; the base-on-trained-text cell captured — round 1 only had a map-based stand-in, now measured wrong: cosine ~0.125 to the real cell, 2.75× norm error). Findings: the decomposition is aggregation-dependent (TLDR bullet above); **δ tracks the TEXT change, not the weight change** — cos(text effect, δ) = 0.430 [0.146, 0.732] vs cos(function effect, δ) = 0.154 [−0.057, 0.470]; training changed the greedy text on ~88% of rows. Leg B (training rows themselves): the write on the trained rows aligns with the corpus matched-text write at 0.741 and with δ at only 0.213 — the weights-carried write is one consistent object everywhere, and it is not δ-shaped even where training pushed.
+https://raw.githubusercontent.com/superkaiba/explore-persona-space/d4caec08867b44a42a74a7f464e8be7e1e6313a6/figures/issue_1768/model_text_2x2/decomposition_shares_fleet.png
+
+**4. Last-token context-vector re-pool** (context side recaptured at the assistant-header newline — the #779 convention — all 72 arms; answer side unchanged). Map-change verdicts are pooling-ROBUST and the instrument sharpens: 193/216 agreement, ZERO Changed→Unchanged reversions, Changed 107→124 (flips are borderline cells); base-map R² at L19 0.501→0.700. Context movement is 10× larger at the last token (0.24–0.27 relative) with direction preserved.
+
+**5. Gate (A7) re-test under last-token — the assumption is dead, not attenuated.** Content median rank correlation moves 0.138 → **0.040** (worse), in-band cells 31 → 0/216, every behavior and layer degrades — under exactly the pooling that most improves the map and the ΔM probe (0.656). The information is present in the context vector; the whitened-similarity functional form does not extract it.
+
+**Assumption scoreboard (final, query grain):** rank-one write ✗ · write ∥ δ in the weights channel ✗ (text-carried, measured directly) · base-geometry gate ✗ (both poolings) · read-out stability ✓ · map-change dose-lawfulness ✓ (pooling-robust). Open at other grains: the per-prefix (theory-native) versions — running as #1979.
+
 ## Next steps:
 
-- (running) matched-text capture-noise floor: 2 replicate teacher-forced capture passes to put a noise floor under the matched-text shifts — the one success criterion the main run never evaluated
-- Dose-matched LoRA vs full-finetune comparison (the current contrast is confounded by weight dose)
-- Figure out what the high-rank write actually is — ~51 effective directions on-policy; is there structure (per-context gating? a low-rank core + text-driven remainder)?
-- Why didn't the panel-scale gate correlations (0.46–0.59) transfer to corpus scale? This matters for the "predict leakage from pre-FT geometry" program
-- A causal test that the map is the channel (Result 2 is rank agreement under shared dose, not causation)
-- Dedicated contrastive vs positive-only read — right now it only shows up as the sycophancy persona/demonstration verdict split
+- ~~matched-text capture-noise floor~~ (ran), ~~checkpoint dynamics~~, ~~2×2 measured decomposition~~, ~~last-token re-pool + gate re-test~~ — all folded above
+- **#1979 (running):** per-prefix leakage-predictor race + the assumption battery at the theory's native grain (gate/rank/direction over 50 prefixes, query-averaged)
+- **#1947 (running):** single-visit (no-repeat) organism fleet; assumption battery on exactly the trained rows with a 15×-bigger δ sample
+- Dose-matched LoRA vs full-finetune comparison (still confounded by weight dose)
+- Cross-arm / dataset-forecastable write prediction (the −0.12 transfer result is the open problem; #1947's fleet is the retest bed)
+- A causal test that the map is the channel (the ρ=0.98 dose relation is rank agreement, not causation)
