@@ -6886,8 +6886,8 @@
     "1890": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1890",
-      "status": "proposed",
+      "path": "tasks/planning/1890",
+      "status": "planning",
       "title": "workflow-fix: GCE crash-persist omits analysis_tensors staging dirs"
     },
     "1891": {
