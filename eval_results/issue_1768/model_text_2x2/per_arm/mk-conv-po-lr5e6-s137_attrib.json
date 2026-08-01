@@ -1,0 +1,17 @@
+{
+ "arm_id": "mk-conv-po-lr5e6-s137",
+ "layer": 19,
+ "n_test_rows": 1000,
+ "n_rows_text_changed": 809,
+ "frac_rows_text_changed": 0.809,
+ "m0_refit_heldout_r2": 0.49898567890329903,
+ "m0_refit_selected_lambda": 3162.2776601683795,
+ "round1_committed_m0_heldout_r2": 0.4989856789032986,
+ "mean_shift_cos": 0.23500525496688193,
+ "mean_shift_rel_err": 3.1665002887753713,
+ "mean_shift_norm_measured": 0.7551431308296082,
+ "mean_shift_norm_attributed": 2.4531828147332964,
+ "per_row_cos_median": 0.013841780547804992,
+ "per_row_cos_mean": 0.020988607113218975,
+ "per_row_rel_err_median": 1.026054026973865
+}

@@ -1,0 +1,168 @@
+{
+ "arm_id": "syc-icl-con-lr1e5-s137",
+ "base_unit": "base_content",
+ "layers": {
+  "14": {
+   "n_rows": 16400,
+   "norm_shift": 2.0123263158082896,
+   "identity_residual": 7.191195163312892e-17,
+   "norms": {
+    "text": 0.8705420209492942,
+    "function": 1.4627505664807166,
+    "interaction": 0.09485269671556337
+   },
+   "norm_ratio": {
+    "text": 0.43260479878961594,
+    "function": 0.7268953126487215,
+    "interaction": 0.047135842716176955
+   },
+   "proj_share": {
+    "text": 0.3151886374116991,
+    "function": 0.667573827486962,
+    "interaction": 0.017237535101338703
+   },
+   "cos_with_shift": {
+    "text": 0.7285833127454083,
+    "function": 0.9183906071073716,
+    "interaction": 0.3656990966541648
+   },
+   "cos_text_function": 0.40104352372652186,
+   "per_row_mean_norm": {
+    "shift": 9.439339405252603,
+    "text": 9.025709465009998,
+    "function": 1.7998349024235407,
+    "interaction": 0.5295841555855637
+   },
+   "per_row_sq_share": {
+    "text": 0.9566445821494456,
+    "function": 0.03332444254537979,
+    "interaction": 0.003838134157599604
+   },
+   "context_identity_cos": {
+    "min": 0.9999999999999989,
+    "median": 0.9999999999999999,
+    "mean_vector_cos": 0.9999999999999998,
+    "gate_min": 0.999,
+    "pass": true
+   },
+   "delta_reads": {
+    "delta_arm": "syc-icl-con-lr1e5-s137",
+    "n_mix_rows": 20,
+    "cos_text_delta": 0.19499675686647222,
+    "cos_function_delta": 0.08564444880011877,
+    "cos_interaction_delta": -0.03813980953517356,
+    "cos_shift_delta": 0.14481332909256273,
+    "src_ctx": "icl_prefix_sycophancy",
+    "cos_text_panel_write": null
+   }
+  },
+  "19": {
+   "n_rows": 16400,
+   "norm_shift": 5.259732812243099,
+   "identity_residual": 2.1094662763291522e-16,
+   "norms": {
+    "text": 1.4086950403860015,
+    "function": 4.499007699682435,
+    "interaction": 0.6340412938549714
+   },
+   "norm_ratio": {
+    "text": 0.2678263498683768,
+    "function": 0.8553681071422637,
+    "interaction": 0.12054629322217875
+   },
+   "proj_share": {
+    "text": 0.13903386518675692,
+    "function": 0.8089835227397664,
+    "interaction": 0.05198261207347688
+   },
+   "cos_with_shift": {
+    "text": 0.5191194415899896,
+    "function": 0.9457723709649806,
+    "interaction": 0.43122530510057067
+   },
+   "cos_text_function": 0.2339267909748304,
+   "per_row_mean_norm": {
+    "shift": 16.030320911806548,
+    "text": 13.842962945882162,
+    "function": 5.640155251703603,
+    "interaction": 2.2146249816245684
+   },
+   "per_row_sq_share": {
+    "text": 0.8259254847071641,
+    "function": 0.11583569233082812,
+    "interaction": 0.024854529210538056
+   },
+   "context_identity_cos": {
+    "min": 0.9999999999999987,
+    "median": 0.9999999999999999,
+    "mean_vector_cos": 1.0,
+    "gate_min": 0.999,
+    "pass": true
+   },
+   "delta_reads": {
+    "delta_arm": "syc-icl-con-lr1e5-s137",
+    "n_mix_rows": 20,
+    "cos_text_delta": 0.16792624076311613,
+    "cos_function_delta": -0.04201807131257804,
+    "cos_interaction_delta": 0.04845631146693413,
+    "cos_shift_delta": 0.014875382716853364,
+    "src_ctx": "icl_prefix_sycophancy",
+    "cos_text_panel_write": null
+   }
+  },
+  "25": {
+   "n_rows": 16400,
+   "norm_shift": 14.679661469235644,
+   "identity_residual": 5.359172624783462e-16,
+   "norms": {
+    "text": 2.7930414160722714,
+    "function": 13.577678353698206,
+    "interaction": 1.2571619304399841
+   },
+   "norm_ratio": {
+    "text": 0.1902660645087548,
+    "function": 0.924931299141545,
+    "interaction": 0.08563970859100768
+   },
+   "proj_share": {
+    "text": 0.08480390011518006,
+    "function": 0.8987028506380565,
+    "interaction": 0.016493249246763275
+   },
+   "cos_with_shift": {
+    "text": 0.4457121680323499,
+    "function": 0.9716428144146146,
+    "interaction": 0.19258880626895425
+   },
+   "cos_text_function": 0.23481972635151313,
+   "per_row_mean_norm": {
+    "shift": 45.58926273714345,
+    "text": 38.859854628992345,
+    "function": 17.234713872969536,
+    "interaction": 6.109135381799204
+   },
+   "per_row_sq_share": {
+    "text": 0.8060453251822232,
+    "function": 0.1418540670054326,
+    "interaction": 0.02312728894958593
+   },
+   "context_identity_cos": {
+    "min": 0.9999999999999993,
+    "median": 1.0,
+    "mean_vector_cos": 1.0,
+    "gate_min": 0.999,
+    "pass": true
+   },
+   "delta_reads": {
+    "delta_arm": "syc-icl-con-lr1e5-s137",
+    "n_mix_rows": 20,
+    "cos_text_delta": 0.09230408643965124,
+    "cos_function_delta": 0.029544045759753678,
+    "cos_interaction_delta": -0.03052957430801253,
+    "cos_shift_delta": 0.04227400404426886,
+    "src_ctx": "icl_prefix_sycophancy",
+    "cos_text_panel_write": null
+   }
+  }
+ }
+}

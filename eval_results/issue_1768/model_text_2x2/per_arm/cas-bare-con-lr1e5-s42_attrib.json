@@ -1,0 +1,17 @@
+{
+ "arm_id": "cas-bare-con-lr1e5-s42",
+ "layer": 19,
+ "n_test_rows": 1000,
+ "n_rows_text_changed": 884,
+ "frac_rows_text_changed": 0.884,
+ "m0_refit_heldout_r2": 0.501281158602011,
+ "m0_refit_selected_lambda": 3162.2776601683795,
+ "round1_committed_m0_heldout_r2": 0.5012811586020105,
+ "mean_shift_cos": 0.07693203695496835,
+ "mean_shift_rel_err": 3.489739272274931,
+ "mean_shift_norm_measured": 2.9014364426204935,
+ "mean_shift_norm_attributed": 9.926424947673063,
+ "per_row_cos_median": 0.016895770955461686,
+ "per_row_cos_mean": 0.02380770323720611,
+ "per_row_rel_err_median": 1.1823301552326857
+}

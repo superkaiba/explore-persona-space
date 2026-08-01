@@ -1,0 +1,17 @@
+{
+ "arm_id": "mk-pers-po-lr5e6-s137",
+ "layer": 19,
+ "n_test_rows": 1000,
+ "n_rows_text_changed": 800,
+ "frac_rows_text_changed": 0.8,
+ "m0_refit_heldout_r2": 0.49898567890329903,
+ "m0_refit_selected_lambda": 3162.2776601683795,
+ "round1_committed_m0_heldout_r2": 0.4989856789032986,
+ "mean_shift_cos": 0.07652057281250552,
+ "mean_shift_rel_err": 2.5557265780092098,
+ "mean_shift_norm_measured": 0.8979165741305067,
+ "mean_shift_norm_attributed": 2.181694671946211,
+ "per_row_cos_median": 0.008605743394234085,
+ "per_row_cos_mean": 0.01177284849647504,
+ "per_row_rel_err_median": 1.022613880344811
+}

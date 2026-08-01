@@ -1,0 +1,17 @@
+{
+ "arm_id": "syc-bare-con-lr1e5-s42",
+ "layer": 19,
+ "n_test_rows": 1000,
+ "n_rows_text_changed": 909,
+ "frac_rows_text_changed": 0.909,
+ "m0_refit_heldout_r2": 0.501281158602011,
+ "m0_refit_selected_lambda": 3162.2776601683795,
+ "round1_committed_m0_heldout_r2": 0.5012811586020105,
+ "mean_shift_cos": 0.25578644685638346,
+ "mean_shift_rel_err": 3.0863383935698763,
+ "mean_shift_norm_measured": 2.767816066522512,
+ "mean_shift_norm_attributed": 8.820509734500142,
+ "per_row_cos_median": 0.03430504922319783,
+ "per_row_cos_mean": 0.03813182115915954,
+ "per_row_rel_err_median": 1.1436123957231987
+}

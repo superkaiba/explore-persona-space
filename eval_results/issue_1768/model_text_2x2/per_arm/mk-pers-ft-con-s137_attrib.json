@@ -1,0 +1,17 @@
+{
+ "arm_id": "mk-pers-ft-con-s137",
+ "layer": 19,
+ "n_test_rows": 1000,
+ "n_rows_text_changed": 787,
+ "frac_rows_text_changed": 0.787,
+ "m0_refit_heldout_r2": 0.49898567890329903,
+ "m0_refit_selected_lambda": 3162.2776601683795,
+ "round1_committed_m0_heldout_r2": 0.4989856789032986,
+ "mean_shift_cos": 0.10182879336205657,
+ "mean_shift_rel_err": 2.0576230539525664,
+ "mean_shift_norm_measured": 0.8717523757649569,
+ "mean_shift_norm_attributed": 1.6589360639670037,
+ "per_row_cos_median": 0.006100741716576923,
+ "per_row_cos_mean": 0.008873520032269318,
+ "per_row_rel_err_median": 1.0172432125032715
+}

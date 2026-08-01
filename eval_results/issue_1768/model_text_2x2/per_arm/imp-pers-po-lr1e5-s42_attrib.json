@@ -1,0 +1,17 @@
+{
+ "arm_id": "imp-pers-po-lr1e5-s42",
+ "layer": 19,
+ "n_test_rows": 1000,
+ "n_rows_text_changed": 893,
+ "frac_rows_text_changed": 0.893,
+ "m0_refit_heldout_r2": 0.501281158602011,
+ "m0_refit_selected_lambda": 3162.2776601683795,
+ "round1_committed_m0_heldout_r2": 0.5012811586020105,
+ "mean_shift_cos": 0.39570472094830433,
+ "mean_shift_rel_err": 2.329980089649707,
+ "mean_shift_norm_measured": 2.5535093603025256,
+ "mean_shift_norm_attributed": 6.478398714449691,
+ "per_row_cos_median": 0.053450257615705175,
+ "per_row_cos_mean": 0.058342264945565735,
+ "per_row_rel_err_median": 1.0797660946358318
+}

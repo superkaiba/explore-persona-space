@@ -273,7 +273,8 @@ def fig_measured_vs_attributed(summary: dict, out_dir: Path) -> Path | None:
     ax1.axhline(1.0, color="0.75", ls=":", lw=0.8)
     ax1.set_ylabel("cos(attributed, measured)")
     ax1.set_ylim(min(-0.12, min(cos + per_row) - 0.05), 1.05)
-    ax1.legend(frameon=False, fontsize=8, loc="upper center", ncol=2)
+    # lower-right keeps the legend clear of the top-of-axes behavior group labels
+    ax1.legend(frameon=False, fontsize=8, loc="lower right", ncol=2)
     ax2.bar(
         x, rel, 0.5 if not dense else 0.72, color=pp.paper_palette_role("accent"), edgecolor="white"
     )
