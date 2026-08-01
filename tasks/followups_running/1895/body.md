@@ -1,6 +1,6 @@
 ---
 title: The context→answer map's predictable subspace and the SAE's representable subspace
-  coincide almost entirely at the variance grain (MODERATE confidence)
+  coincide almost entirely at the variance grain (HIGH confidence)
 kind: experiment
 tags:
 - followup-auto
