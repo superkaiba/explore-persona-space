@@ -7051,8 +7051,8 @@
     "1910": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1910",
-      "status": "proposed",
+      "path": "tasks/planning/1910",
+      "status": "planning",
       "title": "workflow-fix: fact-checker verifies realized grain of row-grain reuse rows"
     },
     "1911": {
