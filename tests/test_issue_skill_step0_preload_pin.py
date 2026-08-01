@@ -68,3 +68,16 @@ def test_step0_preloads_monitor_taskoutput() -> None:
         " branch (after the branch line), not above it:"
         f" branch index {branch_idx} >= preload index {monitor_idx}"
     )
+    # Round-1 review Minor: branch_idx < monitor_idx alone false-passes a
+    # dedented placement BELOW the whole `if` block (unconditional — violates
+    # the autonomous-only constraint). Pin the preload before the branch
+    # body's first statement (`jobs = CronList()` is unique in the region;
+    # `post = CronList()` does not collide).
+    jobs_idx = block.find("jobs = CronList()")
+    assert jobs_idx != -1, "Step 0 cron-arm block lacks the ARM-GUARD's `jobs = CronList()` line"
+    assert monitor_idx < jobs_idx, (
+        "the Monitor/TaskOutput preload must precede the branch body's first"
+        " statement (`jobs = CronList()`) — a placement below the `if` block is"
+        f" unconditional, violating the autonomous-only constraint:"
+        f" preload index {monitor_idx} >= jobs index {jobs_idx}"
+    )
