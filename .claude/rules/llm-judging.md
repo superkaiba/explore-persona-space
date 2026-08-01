@@ -226,7 +226,13 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     reported rate IS the per-rubric verification that the floor suffices
     (the floor is rubric-dependent; where the raw response is available,
     confirm truncation directly via `stop_reason == "max_tokens"` /
-    truncated-text inspection). Mechanics: `judge_completions_batch`
+    truncated-text inspection). Drop-class diagnosis MUST inspect
+    `stop_reason` / the raw stored response — NEVER the failure-LOG text,
+    which loggers routinely truncate (`Text: %.200s`) before writing: a
+    "0 of N failures carried a closing brace" read off 200-char log
+    prefixes is uninformative by construction (#1773, 2026-07-31 — a
+    direct re-issue showed 39/40 `end_turn`, refuting the log-derived
+    diagnosis). Mechanics: `judge_completions_batch`
     (`eval/batch_judge.py`) accepts `max_tokens` (default 256);
     `graded_judge.judge_graded` threads an optional `max_tokens` kwarg
     (introduced by #1090) — reasoning-rubric callers pass ~300 (the 64
