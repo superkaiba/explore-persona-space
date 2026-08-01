@@ -133,13 +133,14 @@ def _draw_alignment(curves: dict, layer: int, cand_for, out_dir: Path, stem: str
         ax.set_xlabel("Training step (optimizer steps)")
         if len(arms) <= 6:
             ax.legend(fontsize=6, loc="best")
-    axes[0].set_ylabel(ylabel)
+    axes[0].set_ylabel(ylabel, labelpad=2)
     fig.suptitle(
         f"{ylabel} across each arm's checkpoint ladder (layer {layer})\n"
         "star = the verdict checkpoint round 1 read; grey band = round-1 null (95%)",
         fontsize=9,
     )
     fig.tight_layout()
+    fig.subplots_adjust(left=0.06 if len(behs) > 2 else 0.12)
     paths = savefig_paper(fig, stem, dir=out_dir)
     plt.close(fig)
     return paths
@@ -232,7 +233,7 @@ def main() -> None:
         lambda _c: "delta",
         out_dir,
         "alignment_vs_step_delta",
-        "Alignment with the fine-tuning shift δ  (cosine)",
+        "cos(ŵ_tf, δ)",
     )
     if p:
         made["alignment_vs_step_delta"] = {k: str(v) for k, v in p.items()}
@@ -242,7 +243,7 @@ def main() -> None:
         lambda c: "W_U_marker_row" if c["kind"] == "marker" else "r_B",
         out_dir,
         "alignment_vs_step_target",
-        "Alignment with the behavior target  (cosine)",
+        "cos(ŵ_tf, behavior target)",
     )
     if p:
         made["alignment_vs_step_target"] = {k: str(v) for k, v in p.items()}
