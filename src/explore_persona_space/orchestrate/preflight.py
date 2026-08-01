@@ -547,9 +547,10 @@ def _probe_writable_bytes(check_path: str, probe_bytes: int) -> tuple[bool, str 
     Returns:
         (ok, fallback_reason). ``ok`` is True when the allocation succeeded.
         ``fallback_reason`` is set to a non-None string ONLY when the probe could
-        not run (filesystem does not support fallocate); in that case the caller
-        must fall back to ``shutil.disk_usage`` and ``ok`` is True. ``ok`` is
-        False when the allocation was actively refused (EDQUOT/ENOSPC), with
+        not run (filesystem does not support — or does not reliably support —
+        fallocate); in that case the caller must fall back to
+        ``shutil.disk_usage`` and ``ok`` is True. ``ok`` is False when the
+        allocation was actively refused (EDQUOT/ENOSPC), with
         ``fallback_reason`` left None.
 
     Asserts probe_bytes > 0 — a zero-byte probe never exercises the quota.
@@ -565,11 +566,17 @@ def _probe_writable_bytes(check_path: str, probe_bytes: int) -> tuple[bool, str 
             os.posix_fallocate(fd, 0, probe_bytes)
         except OSError as e:
             if e.errno in (errno.ENOSPC, errno.EDQUOT):
+                # Real headroom/quota signals (MooseFS per-pod EDQUOT) — never
+                # swallowed into the fallback path.
                 return False, None
-            if e.errno in (errno.EOPNOTSUPP, errno.ENOSYS, errno.EINVAL):
-                # Filesystem doesn't support fallocate (tmpfs, some overlay FS,
-                # macOS). Caller falls back to shutil.disk_usage.
-                return True, f"posix_fallocate unsupported (errno={e.errno})"
+            if e.errno in (errno.EBADF, errno.EOPNOTSUPP, errno.ENOSYS, errno.EINVAL):
+                # Filesystem doesn't support fallocate (EOPNOTSUPP/ENOSYS/
+                # EINVAL: tmpfs, some overlay FS, macOS) or doesn't RELIABLY
+                # support it (EBADF: VAST-backed /workspace intermittently
+                # drops the fd mid-fallocate — #1947 pod-1947-a, the open
+                # #1938 gotcha class). Caller falls back to shutil.disk_usage.
+                code = errno.errorcode.get(e.errno, str(e.errno))
+                return True, f"fallocate-unsupported-{code} (errno={e.errno})"
             raise
         return True, None
     finally:

@@ -101,6 +101,14 @@ CONTENT_SAVE_STEPS = 5
 PHASE_HEADROOM_GB = {"train": 25.0, "ladder": 10.0, "marker_train": 25.0, "marker_ladder": 10.0}
 SENTINEL_DIR_DEFAULT = Path("/workspace/logs")
 BASE_VLLM_PORT = 8000  # worker i binds VLLM_PORT = 8000 + slot (the fu3w convention)
+# Slot-quarantine (#1947 crash-fix r10; epm:failure v6): pod-1947-a's sick
+# physical GPU 6 made its slot an instantly-freeing blackhole — every requeued
+# cell relanded on it and burned its single retry. Two CONSECUTIVE fast
+# (< SLOT_FAST_FAIL_SECONDS) rc!=0 exits bench the slot; cells whose failures
+# fed the streak get their retry budget REFUNDED (the slot's fault, not the
+# cell's). All slots quarantined => fail-loud terminal report.
+SLOT_FAST_FAIL_SECONDS = float(os.environ.get("EPM_SLOT_FAST_FAIL_SECONDS", "120"))
+SLOT_QUARANTINE_STREAK = 2
 
 # Smoke cell set: >=1 tiny cell per realized (behavior-class x regime x visit
 # x context-class) combination the grid crosses (gotchas.md REGIME/CLASS
@@ -1076,7 +1084,9 @@ def _finalize(cfg: Cfg, label: str, done: list, failed: list, skipped: list) -> 
 def cmd_dispatch(args: argparse.Namespace, cfg: Cfg) -> int:
     """Work-conserving queue: one cell per GPU slot, CVD pinned per slot in the
     LAUNCHER env (gotchas.md), freed slots pull the next pending cell, retry
-    limit 1, resume via per-cell status; re-shards off the REALIZED width."""
+    limit 1, resume via per-cell status; re-shards off the REALIZED width.
+    Slot-health: SLOT_QUARANTINE_STREAK consecutive fast rc!=0 exits bench the
+    slot and refund the affected cells' retries (#1947 sick-GPU blackhole)."""
     label = args.dispatch or "cells"
     slugs = _resolve_slugs(args)
     cfg.sentinels.mkdir(parents=True, exist_ok=True)
@@ -1104,8 +1114,10 @@ def cmd_dispatch(args: argparse.Namespace, cfg: Cfg) -> int:
     attempts: dict[str, int] = {}
     done: list[str] = []
     failed: list[str] = []
-    live: dict[int, tuple[subprocess.Popen, str, object]] = {}
+    live: dict[int, tuple[subprocess.Popen, str, object, float]] = {}
     slots = list(range(n_slots))
+    quarantined: dict[int, str] = {}  # slot -> reason (terminal report on all-benched)
+    slot_streak: dict[int, list[str]] = {}  # slot -> slugs of consecutive fast rc!=0 exits
     total = len(pending) + len(skipped)
     last_beat = 0.0
     _phase("queue_drain", label=label)
@@ -1125,7 +1137,7 @@ def cmd_dispatch(args: argparse.Namespace, cfg: Cfg) -> int:
             proc = subprocess.Popen(
                 _worker_cmd(args, cfg, slug, slot), stdout=fh, stderr=subprocess.STDOUT, env=env
             )
-            live[slot] = (proc, slug, fh)
+            live[slot] = (proc, slug, fh, time.time())
             print(
                 f"[dispatch] launched {slug} on slot {slot} "
                 f"(attempt {attempts[slug]}, pid {proc.pid}, log {log_path})",
@@ -1134,12 +1146,65 @@ def cmd_dispatch(args: argparse.Namespace, cfg: Cfg) -> int:
         if not live and not pending:
             break
         time.sleep(args.poll_seconds)
-        for slot, (proc, slug, fh) in list(live.items()):
+        for slot, (proc, slug, fh, t0) in list(live.items()):
             rc = proc.poll()
             if rc is None:
                 continue
             fh.close()
             del live[slot]
+            elapsed = time.time() - t0
+            # Slot-health tracking: a fast rc!=0 exit extends the slot's
+            # streak; any success or slow failure resets it.
+            if rc != 0 and elapsed < SLOT_FAST_FAIL_SECONDS:
+                slot_streak.setdefault(slot, []).append(slug)
+            else:
+                slot_streak[slot] = []
+            if len(slot_streak.get(slot, ())) >= SLOT_QUARANTINE_STREAK:
+                streak = slot_streak.pop(slot)
+                slots.remove(slot)
+                quarantined[slot] = (
+                    f"{len(streak)} consecutive fast failures "
+                    f"(<{SLOT_FAST_FAIL_SECONDS:.0f}s, rc!=0): {streak}"
+                )
+                print(
+                    f"[dispatch] slot {slot} quarantined after {len(streak)} consecutive "
+                    f"fast failures (last: {slug} rc={rc} in {elapsed:.1f}s)",
+                    flush=True,
+                )
+                # Retry refund: the streak failures were the SLOT's fault, not
+                # the cells' — hand each affected cell its attempt back.
+                live_slugs = {t[1] for t in live.values()}
+                for s in streak:
+                    attempts[s] = max(0, attempts.get(s, 1) - 1)
+                    if s in failed:
+                        failed.remove(s)
+                        pending.append(s)
+                        print(
+                            f"[dispatch] {s} retry refunded — permanent-fail reversed "
+                            f"(failed on quarantined slot {slot})",
+                            flush=True,
+                        )
+                # The just-exited cell re-enqueues without consuming its retry
+                # (unless it already completed / requeued / relaunched elsewhere).
+                if slug not in pending and slug not in live_slugs and slug not in done:
+                    pending.append(slug)
+                    print(
+                        f"[dispatch] {slug} re-enqueued with retry refunded "
+                        f"(slot {slot} fault, attempts now {attempts.get(slug, 0)})",
+                        flush=True,
+                    )
+                if not slots:
+                    report = {f"slot {k}": v for k, v in sorted(quarantined.items())}
+                    print(
+                        f"[dispatch] FATAL: all {n_slots} slots quarantined; "
+                        f"slot states: {json.dumps(report)}; pending={list(pending)}",
+                        flush=True,
+                    )
+                    raise RuntimeError(
+                        f"all {n_slots} dispatch slots quarantined — no healthy GPU slot "
+                        f"remains; slot states: {report}; pending cells: {list(pending)}"
+                    )
+                continue  # never route a quarantine-refunded exit as a cell failure
             sp = status_path(cfg, slug)
             status = _read_json(sp).get("status") if sp.exists() else None
             if (rc == 0 and status == "done") or (rc == 0 and status is None):
@@ -1161,8 +1226,9 @@ def cmd_dispatch(args: argparse.Namespace, cfg: Cfg) -> int:
         if time.time() - last_beat > 300:
             last_beat = time.time()
             print(
-                f"[dispatch] heartbeat: live={ {s: r for s, (_, r, _f) in live.items()} } "
-                f"pending={len(pending)} done={len(done)} failed={len(failed)}",
+                f"[dispatch] heartbeat: live={ {s: t[1] for s, t in live.items()} } "
+                f"pending={len(pending)} done={len(done)} failed={len(failed)} "
+                f"quarantined={sorted(quarantined)}",
                 flush=True,
             )
     _phase("finalize", label=label)
