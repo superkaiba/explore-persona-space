@@ -7391,8 +7391,8 @@
     "1954": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1954",
-      "status": "reviewing",
+      "path": "tasks/completed/1954",
+      "status": "completed",
       "title": "daily-fix: fix red main: test_issue1689_os_exit_shutdown_bypass.py::test_entrypoint_calls_os_exit[issue1689_fits_mirror.py] \u2014 Convert the __main__ guard of scripts/is"
     },
     "1955": {
