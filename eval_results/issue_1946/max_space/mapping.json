@@ -1,0 +1,18 @@
+{
+  "space": "max_space",
+  "pooling": "max",
+  "arm_to_cell": {
+    "prefix": "sae_prefix_max",
+    "context": "sae_context_max",
+    "bare": "sae_bare_max"
+  },
+  "parent_env": "floors_env_labels_only",
+  "y_holdout_dir": "/workspace/eps-issue-1946/eval_results/issue_1946/max_space/y_holdout",
+  "note": "characterize arm files named prefix/context/bare hold the mapped cells above (plan section 4 mapping table)",
+  "git_commit": "86977e774b07d8f25d64817eb3b4d77e59a88898",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "ts": "2026-08-01T01:47:08Z",
+  "data_revision": "05cb982b0d3f9a21b5735d196a0afdc8175590e5",
+  "smoke": false
+}
