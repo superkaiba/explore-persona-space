@@ -15,6 +15,17 @@ through the factory's own keep rule) — the pre-r8 read of
 floor check passes (silent 0-row salvage), and its ``*topup*judge_rows*``
 globs matched neither actual sidecar name.
 
+P0 crash 5 (crash-fix r9): a crashed relaunch re-judged ``judge_raw_pos.json``
+AFTER ``topup_record.json`` recorded its counts (stochastic judge — both
+counts are valid draws of the same instrument), so the r8 exact-count assert
+failed deterministically. r9 makes the salvage MUTATION-AWARE — on a count
+mismatch WITH input-mutation evidence (sha differing from the record's
+``input_pins``, preferred; input mtime newer than the record for legacy
+pin-less records) it accepts the CURRENT artifacts as live truth,
+audit-updates the record in place, and proceeds; without evidence the r8
+fail-loud stands — and pins salvage-input identity (sha256/size) into the
+record at write time for all future records.
+
 Resume matrix (one row per phase carrying a terminal-verdict sidecar and/or
 one-shot guard; the full 7-phase sweep table lives in the r8 implementation
 marker on task #1947):
@@ -39,8 +50,10 @@ in the REAL ``save_raw`` shape (``all_scores`` custom-id keys) so the REAL
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -56,6 +69,7 @@ import issue1947_datagen as dg  # noqa: E402
 from explore_persona_space.artifacts.behavior import BEHAVIORS  # noqa: E402
 from explore_persona_space.artifacts.datagen import (  # noqa: E402
     POSITIVE,
+    DatagenYieldError,
     GenCandidate,
     GenRequest,
     TopupSpec,
@@ -259,6 +273,149 @@ def test_salvage_emit_missing_sidecars_fails_loud(tmp_path):
     out_dir.mkdir(parents=True)
     with pytest.raises(RuntimeError, match="sidecars missing"):
         dg._salvage_emit(BEHAVIORS["sycophancy"], out_dir, 300, 7)
+
+
+# ── positives: mutation-aware salvage + record-time input pins (crash-fix r9;
+#    P0 crash 5: crashed relaunch #4 re-judged judge_raw_pos.json ~78 min
+#    AFTER topup_record.json recorded its counts — stochastic judge, both
+#    counts valid; artifacts are ground truth, the record is bookkeeping) ────
+
+
+def _rejudge_first_sample(out_dir: Path, *, mtime_delta: float) -> None:
+    """Overwrite ``judge_raw_pos.json`` with a different stochastic draw
+    (p3 drops below threshold: kept_first 3 -> 2, union 4 -> 3) and set its
+    mtime to record mtime + ``mtime_delta``."""
+    judge_path = out_dir / "judge_raw_pos.json"
+    _save_raw(judge_path, {"p0": 85, "p1": 85, "p2": 10, "p3": 10})
+    rec_mtime = (out_dir / "topup_record.json").stat().st_mtime
+    os.utime(judge_path, (rec_mtime + mtime_delta, rec_mtime + mtime_delta))
+
+
+def test_phase_positives_salvage_accepts_rejudged_input_newer_mtime(tmp_path, caplog):
+    """The pod-1947 syc-icl shape: LEGACY pin-less record + a first-sample
+    judge file re-judged (newer mtime) by a crashed relaunch -> the salvage
+    accepts the CURRENT artifacts, audit-updates the record, and proceeds."""
+    cfg = _cfg(tmp_path)
+    dg._write_json(
+        cfg.banks_dir / "sycophancy_extended.json",
+        {"new_questions": [f"Extended bank question {i}?" for i in range(12)]},
+    )
+    out_dir = cfg.positives_dir / "syc-icl"
+    _seed_terminal_topup_state(out_dir)
+    _rejudge_first_sample(out_dir, mtime_delta=120.0)
+    with caplog.at_level(logging.WARNING, logger="issue1947.datagen"):
+        dg.phase_positives(cfg)  # pre-r9: RuntimeError "reconstruction mismatch"
+    pos = dg._read_jsonl(out_dir / "pos.jsonl")
+    assert len(pos) == 3  # min(emit_n=4, re-derived union=3) — current artifacts
+    updated = json.loads((out_dir / "topup_record.json").read_text(encoding="utf-8"))
+    assert updated["reconstructed_from_rejudged"] is True
+    assert updated["prior_union"] == 4 and updated["new_union"] == 3
+    assert updated["kept_pos_first_sample"] == 2 and updated["kept_pos_union"] == 3
+    assert updated["rejudged_inputs"] == ["judge_raw_pos.json"]
+    assert updated["union_floor_missed"] is True  # science gate carried VERBATIM
+    assert "reconstructed_at" in updated
+    # the reconciled record is re-pinned to the CURRENT inputs
+    cur_sha = hashlib.sha256((out_dir / "judge_raw_pos.json").read_bytes()).hexdigest()
+    assert updated["input_pins"]["judge_raw_pos.json"]["sha256"] == cur_sha
+    meta = json.loads((out_dir / "salvage_meta.json").read_text(encoding="utf-8"))
+    assert meta["record_reconciled"] is True
+    assert meta["rejudged_inputs"] == ["judge_raw_pos.json"]
+    results = json.loads((cfg.positives_dir / "phase_positives.json").read_text(encoding="utf-8"))
+    assert results["pools"]["syc-icl"]["kept_pos_union"] == 3  # record mutated in place
+    # fix-engaged signal: the mutation-acceptance log line (verbatim shape)
+    joined = "\n".join(r.getMessage() for r in caplog.records)
+    assert (
+        "salvage input judge_raw_pos.json newer than record (re-judged by a crashed relaunch)"
+        in joined
+    )
+    assert "accepting current artifacts as live truth (union 4 -> 3)" in joined
+    assert "updating the record (audit trail)" in joined
+
+
+def test_salvage_mismatch_without_mutation_evidence_still_raises(tmp_path):
+    """Counts drifted but every salvage input predates the record (no
+    re-generation evidence) -> genuine corruption, the r8 fail-loud stands."""
+    out_dir = tmp_path / "syc-icl"
+    record = _seed_terminal_topup_state(out_dir)
+    rec_mtime = (out_dir / "topup_record.json").stat().st_mtime
+    for name in dg._SALVAGE_INPUT_NAMES:
+        p = out_dir / name
+        if p.exists():
+            os.utime(p, (rec_mtime - 60, rec_mtime - 60))
+    record["kept_pos_union"] = 99
+    with pytest.raises(RuntimeError, match="reconstruction mismatch"):
+        dg._salvage_emit(BEHAVIORS["sycophancy"], out_dir, 300, 7, record=record)
+
+
+def test_pin_topup_record_inputs_writes_sha_pins(tmp_path):
+    """Record-time pinning (wired post-stage in phase_positives) stamps
+    sha256/size pins for every present salvage input into the record."""
+    out_dir = tmp_path / "syc-icl"
+    _seed_terminal_topup_state(out_dir)
+    dg._pin_topup_record_inputs(out_dir)
+    rec = json.loads((out_dir / "topup_record.json").read_text(encoding="utf-8"))
+    assert set(rec["input_pins"]) == set(dg._SALVAGE_INPUT_NAMES)
+    for name, pin in rec["input_pins"].items():
+        blob = (out_dir / name).read_bytes()
+        assert pin["sha256"] == hashlib.sha256(blob).hexdigest()
+        assert pin["size"] == len(blob)
+
+
+def test_salvage_accepts_sha_differing_pinned_input_even_with_older_mtime(tmp_path, caplog):
+    """sha identity is the PREFERRED evidence: a pinned input whose sha
+    differs is accepted even when its mtime is OLDER than the record."""
+    out_dir = tmp_path / "syc-icl"
+    _seed_terminal_topup_state(out_dir)
+    dg._pin_topup_record_inputs(out_dir)
+    _rejudge_first_sample(out_dir, mtime_delta=-60.0)  # sha differs, mtime OLDER
+    record = json.loads((out_dir / "topup_record.json").read_text(encoding="utf-8"))
+    with caplog.at_level(logging.WARNING, logger="issue1947.datagen"):
+        n = dg._salvage_emit(BEHAVIORS["sycophancy"], out_dir, 300, 7, record=record)
+    assert n == 3  # re-derived union from the current artifacts
+    joined = "\n".join(r.getMessage() for r in caplog.records)
+    assert "sha differs from record pin (re-generated after the record)" in joined
+    updated = json.loads((out_dir / "topup_record.json").read_text(encoding="utf-8"))
+    assert updated["rejudged_inputs"] == ["judge_raw_pos.json"]
+    cur_sha = hashlib.sha256((out_dir / "judge_raw_pos.json").read_bytes()).hexdigest()
+    assert updated["input_pins"]["judge_raw_pos.json"]["sha256"] == cur_sha
+
+
+def test_salvage_pinned_inputs_matching_but_counts_drifted_still_raises(tmp_path):
+    """sha authority over mtime: pins all MATCH the current inputs, so a
+    count drift is corruption — fail-loud even with a newer input mtime."""
+    out_dir = tmp_path / "syc-icl"
+    _seed_terminal_topup_state(out_dir)
+    dg._pin_topup_record_inputs(out_dir)
+    record = json.loads((out_dir / "topup_record.json").read_text(encoding="utf-8"))
+    rec_mtime = (out_dir / "topup_record.json").stat().st_mtime
+    judge_path = out_dir / "judge_raw_pos.json"
+    os.utime(judge_path, (rec_mtime + 120, rec_mtime + 120))  # newer mtime, SAME bytes
+    record["kept_pos_union"] = 99
+    with pytest.raises(RuntimeError, match="reconstruction mismatch"):
+        dg._salvage_emit(BEHAVIORS["sycophancy"], out_dir, 300, 7, record=record)
+
+
+def test_phase_positives_pins_record_inputs_after_yield_error(tmp_path, monkeypatch):
+    """The except-DatagenYieldError path pins the just-written record BEFORE
+    reading it, so the salvage runs against a pinned record."""
+    cfg = _cfg(tmp_path)
+    dg._write_json(
+        cfg.banks_dir / "sycophancy_extended.json",
+        {"new_questions": [f"Extended bank question {i}?" for i in range(12)]},
+    )
+    out_dir = cfg.positives_dir / "syc-icl"
+
+    def _fake_generate(*a, **kw):
+        _seed_terminal_topup_state(out_dir)  # the factory's G1-miss record write
+        raise DatagenYieldError("positive floor missed after the single tranche")
+
+    monkeypatch.setattr(dg, "generate_training_data", _fake_generate)
+    dg.phase_positives(cfg)
+    rec = json.loads((out_dir / "topup_record.json").read_text(encoding="utf-8"))
+    assert set(rec["input_pins"]) == set(dg._SALVAGE_INPUT_NAMES)
+    meta = json.loads((out_dir / "salvage_meta.json").read_text(encoding="utf-8"))
+    assert meta["record_checked"] is True
+    assert meta["record_reconciled"] is False
 
 
 # ── negatives: the --negatives-extra retry remedy is consumable on resume ────

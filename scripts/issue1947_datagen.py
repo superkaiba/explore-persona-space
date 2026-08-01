@@ -771,6 +771,140 @@ def _salvage_reconstruct_union(
     return union, info
 
 
+# The files a salvage reconstruction consumes (crash-fix r9): the record pins
+# their identity at write time; a later mismatch is classified against them.
+_SALVAGE_INPUT_NAMES = (
+    "raw_pos.jsonl",
+    "judge_raw_pos.json",
+    "raw_pos_topup.jsonl",
+    "judge_raw_pos_topup.json",
+)
+_RECORD_COUNT_KEYS = ("kept_pos_first_sample", "tranche_merged", "kept_pos_union")
+
+
+def _input_pin(path: Path) -> dict:
+    """sha256 + size identity pin of one salvage input file."""
+    return {"sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "size": path.stat().st_size}
+
+
+def _current_input_pins(out_dir: Path) -> dict:
+    """Identity pins (sha256/size/mtime) for every PRESENT salvage input."""
+    pins: dict[str, dict] = {}
+    for name in _SALVAGE_INPUT_NAMES:
+        p = out_dir / name
+        if p.exists():
+            pins[name] = {**_input_pin(p), "mtime": p.stat().st_mtime}
+    return pins
+
+
+def _pin_topup_record_inputs(out_dir: Path) -> None:
+    """Record-time input pinning (crash-fix r9): stamp ``input_pins`` into a
+    just-written ``topup_record.json`` so a later salvage verifies input
+    IDENTITY (sha256/size) instead of falling back to mtime evidence. Called
+    in phase_positives immediately after the factory stage returns/raises —
+    the same process wrote the inputs, so the pins are exact. No-op when no
+    record exists. P0 crash 5: crashed relaunch #4 re-judged
+    ``judge_raw_pos.json`` ~78 min AFTER the record recorded 200 kept (the
+    judge is stochastic at 3 draws / temp 1.0), and the r8 exact-count assert
+    then failed deterministically on a legitimately different draw."""
+    record_path = out_dir / "topup_record.json"
+    if not record_path.exists():
+        return
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+    record["input_pins"] = _current_input_pins(out_dir)
+    _write_json(record_path, record)
+
+
+def _salvage_mutation_evidence(out_dir: Path, record: dict) -> list[str]:
+    """Salvage input files with evidence of a LEGITIMATE post-record mutation.
+
+    Preferred: sha256/size differing from the record's ``input_pins``
+    (crash-fix r9 records). Fallback for legacy pin-less records (the
+    pod-1947 syc-icl state): file mtime strictly newer than the on-disk
+    record's mtime. A PINNED input that is missing fails loud naming the
+    path; an empty return means no evidence (the caller stays fail-loud)."""
+    pins = record.get("input_pins")
+    if pins:
+        changed: list[str] = []
+        for name, pin in sorted(pins.items()):
+            p = out_dir / name
+            if not p.exists():
+                raise RuntimeError(
+                    f"[positives] salvage: record-pinned input missing: {p} — the recorded "
+                    "state is not reconstructible"
+                )
+            cur = _input_pin(p)
+            if cur["sha256"] != pin.get("sha256") or cur["size"] != pin.get("size"):
+                changed.append(name)
+        return changed
+    record_path = out_dir / "topup_record.json"
+    if not record_path.exists():
+        return []
+    record_mtime = record_path.stat().st_mtime
+    return [
+        name
+        for name in _SALVAGE_INPUT_NAMES
+        if (out_dir / name).exists() and (out_dir / name).stat().st_mtime > record_mtime
+    ]
+
+
+def _reconcile_salvage_record(
+    out_dir: Path, record: dict, info: dict, mismatched: list[str]
+) -> list[str]:
+    """Classify a reconstructed-vs-recorded count mismatch (crash-fix r9).
+
+    With evidence that a salvage input was re-generated AFTER the record was
+    written (a crashed relaunch re-judged it before its one-tranche guard
+    refused — both counts are valid draws of the same stochastic judge), the
+    ARTIFACTS are ground truth and the record is bookkeeping: accept the
+    current artifact set, update ``topup_record.json`` in place with the
+    re-derived counts + an audit trail (``record`` is mutated in place too),
+    and return the mutated-input names. With NO such evidence the r8
+    fail-loud stands verbatim — a mismatch against identical inputs is
+    genuine corruption, never a silently different pool.
+    ``union_floor_missed`` is carried VERBATIM: the floor adjudication still
+    runs on the realized pool at mixes time (no science-gate change)."""
+    evidence = _salvage_mutation_evidence(out_dir, record)
+    if not evidence:
+        detail = ", ".join(
+            f"{k} reconstructed {info[k]} != recorded {record.get(k)}" for k in mismatched
+        )
+        raise RuntimeError(
+            f"[positives] salvage reconstruction mismatch vs topup_record.json: {detail} "
+            f"(out_dir={out_dir}) — no input-mutation evidence; refusing a silently "
+            "different pool"
+        )
+    prior_union = record.get("kept_pos_union")
+    reason = (
+        "sha differs from record pin (re-generated after the record)"
+        if record.get("input_pins")
+        else "newer than record (re-judged by a crashed relaunch)"
+    )
+    logger.warning(
+        "[positives] %s: salvage input %s %s — accepting current artifacts as live truth "
+        "(union %s -> %s) and updating the record (audit trail)",
+        out_dir.name,
+        ",".join(evidence),
+        reason,
+        prior_union,
+        info["kept_pos_union"],
+    )
+    record.update(info)
+    record.update(
+        {
+            "tranche_dedup_dropped_qid": info["tranche_kept"] - info["tranche_merged"],
+            "reconstructed_from_rejudged": True,
+            "prior_union": prior_union,
+            "new_union": info["kept_pos_union"],
+            "rejudged_inputs": evidence,
+            "reconstructed_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "input_pins": _current_input_pins(out_dir),
+        }
+    )
+    _write_json(out_dir / "topup_record.json", record)
+    return evidence
+
+
 def _salvage_emit(
     behavior: Behavior, out_dir: Path, emit_n: int, seed: int, record: dict | None = None
 ) -> int:
@@ -779,18 +913,18 @@ def _salvage_emit(
     union from the persisted sidecars and emit min(kept, emit_n) rows. The 240
     hard-floor adjudication itself is UNCHANGED (it stays with the mixes-phase
     yield gate). When a recorded ``topup_record.json`` is passed, the
-    reconstruction is ASSERTED against its counts — a mismatch means the
-    sidecars drifted from the recorded verdict (fail loud, never a silently
-    different pool; crash-fix r8)."""
+    reconstruction is VERIFIED against its counts: an exact match proceeds
+    (crash-fix r8); a mismatch is classified mutation-aware (crash-fix r9,
+    ``_reconcile_salvage_record``) — accepted + audit-recorded when a salvage
+    input was legitimately re-generated after the record, fail-loud otherwise."""
     union, info = _salvage_reconstruct_union(behavior, out_dir)
+    rejudged: list[str] = []
     if record is not None:
-        for k in ("kept_pos_first_sample", "tranche_merged", "kept_pos_union"):
-            want = record.get(k)
-            if want is not None and int(want) != info[k]:
-                raise RuntimeError(
-                    "[positives] salvage reconstruction mismatch vs topup_record.json: "
-                    f"{k} reconstructed {info[k]} != recorded {want} (out_dir={out_dir})"
-                )
+        mismatched = [
+            k for k in _RECORD_COUNT_KEYS if record.get(k) is not None and int(record[k]) != info[k]
+        ]
+        if mismatched:
+            rejudged = _reconcile_salvage_record(out_dir, record, info, mismatched)
     take = random.Random(seed).sample(union, min(emit_n, len(union))) if union else []
     rows = [_train_row(c.request.emit_messages, c.completion) for c in take]
     sha = _write_jsonl(out_dir / "pos.jsonl", rows)
@@ -805,6 +939,8 @@ def _salvage_emit(
             "seed": seed,
             "pos_sha256": sha,
             "record_checked": record is not None,
+            "record_reconciled": bool(rejudged),
+            "rejudged_inputs": rejudged,
         },
     )
     return len(rows)
@@ -886,8 +1022,10 @@ def phase_positives(cfg: Cfg) -> None:
                     judge_fn=_mock_judge_fn if cfg.mock_gen else None,
                     topup=TopupSpec(tranche_n=tranche, trigger_below_n=emit_n),
                 )
+                _pin_topup_record_inputs(out_dir)  # crash-fix r9: record-time input pins
                 results[pool] = {"emitted": len(_read_jsonl(pos_path)), "resumed": False}
             except DatagenYieldError as e:
+                _pin_topup_record_inputs(out_dir)  # crash-fix r9: pin BEFORE the record read
                 record = (
                     json.loads(record_path.read_text(encoding="utf-8"))
                     if record_path.exists()
