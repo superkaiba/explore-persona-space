@@ -181,10 +181,11 @@ def test_good_plan_passes_all():
         "c41_regression_anchor_executed": "SKIP",
         "c42_commit_sha_resolves": "SKIP",
         "c43_sentinel_lane": "SKIP",
+        "c44_committed_paths_gitignored": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 42
+    assert len(results) == 43
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -5888,19 +5889,21 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    # 36 = the 32 pre-c40 skips + c40 (SKIP: `plan.md` carries no v{K} version)
+    # 37 = the 32 pre-c40 skips + c40 (SKIP: `plan.md` carries no v{K} version)
     # + c41 (kind-exempt SKIP: regression-anchor check is infra|batch-only and
     # --plan-file mode defaults to kind=experiment)
     # + c42 (SKIP: GOOD_PLAN cites no commit SHAs; the check is trigger-
     #   conditional, #1683/#1700)
     # + c43 (SKIP: GOOD_PLAN declares no /workspace sentinel paths; trigger-
-    #   conditional, #1775).
-    assert payload["n_skip"] == 36
+    #   conditional, #1775)
+    # + c44 (SKIP: GOOD_PLAN declares no committed-output paths; trigger-
+    #   conditional, #1900).
+    assert payload["n_skip"] == 37
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 44
-    assert len({c["id"] for c in payload["checks"]}) == 44
+    assert len(payload["checks"]) == 45
+    assert len({c["id"] for c in payload["checks"]}) == 45
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -9181,3 +9184,207 @@ def test_c43_midline_label_prefixed_escape_warns():
         "(results ride HF uploads).\n"
     )
     assert _status(plan, C43) == "WARN"
+
+
+# ─── Check 44 — declared-committed paths not gitignored (#1900) ─────────────
+
+C44 = "c44_committed_paths_gitignored"
+
+# The founding #1900 shape: an output/config path declared committed to the
+# issue branch while a live `data/*` gitignore rule matches it — a plain
+# `git add` silently skips it (rc=0, the #958 signature) and the git-clone
+# lanes (GCP/fellows) crash at their first read (#734).
+C44_DECL = (
+    "The subset/arm configs land at `data/issue_9999/foo.json`, committed to "
+    "the issue branch so the clone-based lanes can read them."
+)
+
+
+def _c44_plan(decl: str, extra: str = "") -> str:
+    """GOOD_PLAN + a `## 10. Outputs` section carrying a committed-path
+    declaration (and optional same-section extra prose)."""
+    return GOOD_PLAN + "\n## 10. Outputs\n\n" + decl + "\n" + extra
+
+
+@pytest.fixture()
+def c44_repo(tmp_path, monkeypatch):
+    """Tmp git repo with a `data/*` ignore rule; `_C44_REPO_ROOT`
+    monkeypatched so `git check-ignore` runs against it (the c34/c41/c42
+    monkeypatch-seam pattern), never the live repo."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", str(repo)], check=True, capture_output=True)
+    (repo / ".gitignore").write_text("data/*\n")
+    monkeypatch.setattr(verify_plan, "_C44_REPO_ROOT", repo)
+    return repo
+
+
+def test_c44_registered_in_checks():
+    # Advisory-1 membership pin: a forgotten registry append cannot ship
+    # green (the check function existing is not the check running).
+    assert verify_plan.check_committed_paths_not_gitignored in verify_plan.CHECKS
+
+
+def test_c44_no_trigger_skips():
+    # GOOD_PLAN carries no commit-to-git vocabulary — SKIP before any git
+    # access (trigger-conditional).
+    assert _status(GOOD_PLAN, C44) == "SKIP"
+
+
+def test_c44_runs_for_all_kinds(c44_repo):
+    # ALL kinds: a gitignore-eaten declared output strands infra/batch
+    # workflow-fix lanes exactly as experiment lanes (#1900 was kind:infra's
+    # sibling class; the founding plan was an experiment).
+    for kind in ("experiment", "analysis", "infra", "batch", "survey"):
+        assert _status(_c44_plan(C44_DECL), C44, kind=kind) == "WARN", kind
+
+
+def test_c44_ignored_declared_path_warns(c44_repo):
+    _, by_id = _run(_c44_plan(C44_DECL))
+    r = by_id[C44]
+    assert r.status == "WARN"
+    assert "data/issue_9999/foo.json" in r.detail  # the offending path
+    assert "data/*" in r.detail  # its matching .gitignore rule
+    assert "#958" in r.detail  # the silent-skip signature
+    assert "#1900" in r.detail  # the founding instance
+    assert "Staged-index verification" in r.detail  # the remedy recipe
+    assert "N/A — no committed outputs" in r.detail  # the escape remedy
+    assert "unwrapped" in r.detail  # the #1263 own-line clarifier contract
+
+
+def test_c44_tracked_ignored_path_passes(c44_repo):
+    # The #1900 post-fix state: the path is force-added (tracked in the
+    # index), so index-aware DEFAULT `git check-ignore` reads it
+    # not-ignored — a tracked file rides the clone regardless of ignore
+    # rules. This is why the check must never pass `--no-index`.
+    target = c44_repo / "data" / "issue_9999" / "foo.json"
+    target.parent.mkdir(parents=True)
+    target.write_text("{}\n")
+    subprocess.run(
+        ["git", "-C", str(c44_repo), "add", "-f", "data/issue_9999/foo.json"],
+        check=True,
+        capture_output=True,
+    )
+    _, by_id = _run(_c44_plan(C44_DECL))
+    r = by_id[C44]
+    assert r.status == "PASS", r.detail
+    assert "not-ignored" in r.detail or "none of the" in r.detail
+
+
+def test_c44_force_add_note_same_section_passes(c44_repo):
+    plan = _c44_plan(
+        C44_DECL,
+        "\nStaging: `git add -f data/issue_9999/foo.json`, then verify the "
+        "staged index per /issue Step 9a-ter § Staged-index verification.\n",
+    )
+    _, by_id = _run(plan)
+    r = by_id[C44]
+    assert r.status == "PASS", r.detail
+    assert "same-section" in r.detail
+
+
+def test_c44_force_add_note_other_section_still_warns(c44_repo):
+    # Plan-wide satisfiers are deliberately NOT accepted: a force-add note in
+    # a DIFFERENT section must not silence a specific declared path.
+    plan = _c44_plan(C44_DECL) + (
+        "\n## 12. Staging mechanics\n\n"
+        "Elsewhere the pipeline runs `git add -f` with staged-index "
+        "verification for unrelated artifacts.\n"
+    )
+    assert _status(plan, C44) == "WARN"
+
+
+def test_c44_na_escape_skips():
+    # The standalone escape short-circuits BEFORE any git access (the c34 NA
+    # idiom) — no repo fixture needed.
+    plan = _c44_plan(C44_DECL) + "\nN/A — no committed outputs\n"
+    _, by_id = _run(plan)
+    r = by_id[C44]
+    assert r.status == "SKIP"
+    assert "escape declared" in r.detail
+
+
+def test_c44_wrapped_or_fenced_escape_does_not_satisfy(c44_repo):
+    # Anti-paste `_standalone_na_declared` semantics (#1238): a
+    # backtick-wrapped or fenced paste of the escape is NOT a declaration.
+    for pasted in (
+        "\n`N/A — no committed outputs`\n",
+        "\n```\nN/A — no committed outputs\n```\n",
+    ):
+        assert _status(_c44_plan(C44_DECL) + pasted, C44) == "WARN", pasted
+
+
+def test_c44_brace_expansion_extracts_both(c44_repo):
+    # The founding #1900 token shape: `{subset.json,arms.json}` expands to
+    # BOTH members. Track one member; only the untracked sibling WARNs.
+    tracked = c44_repo / "data" / "issue_9999" / "a.json"
+    tracked.parent.mkdir(parents=True)
+    tracked.write_text("{}\n")
+    subprocess.run(
+        ["git", "-C", str(c44_repo), "add", "-f", "data/issue_9999/a.json"],
+        check=True,
+        capture_output=True,
+    )
+    plan = _c44_plan(
+        "The configs `data/issue_9999/{a.json,b.json}` are committed to the "
+        "issue branch for the clone-based lanes."
+    )
+    _, by_id = _run(plan)
+    r = by_id[C44]
+    assert r.status == "WARN"
+    assert "data/issue_9999/b.json" in r.detail
+    assert "data/issue_9999/a.json" not in r.detail  # tracked → not ignored
+
+
+def test_c44_glob_reduces_to_literal_dir_prefix(c44_repo):
+    # A glob token reduces to its deepest literal directory prefix and the
+    # DIRECTORY is checked (`data/issue_9999/out/*.json` → `data/issue_9999/out`,
+    # which `data/*` matches).
+    plan = _c44_plan(
+        "Per-cell JSONs at `data/issue_9999/out/*.json` are committed to the "
+        "issue branch after the sweep."
+    )
+    _, by_id = _run(plan)
+    r = by_id[C44]
+    assert r.status == "WARN"
+    assert "data/issue_9999/out" in r.detail
+
+
+def test_c44_absolute_and_url_tokens_do_not_trigger(c44_repo):
+    # Absolute pod-side paths and URL tails are NOT repo paths — with no
+    # extractable repo-relative token the check SKIPs (never calls git on
+    # `/workspace/...`).
+    plan = _c44_plan(
+        "Sentinels at /workspace/logs/issue-9999/out.json are committed to "
+        "the repo mirror at https://huggingface.co/datasets/foo/bar only."
+    )
+    _, by_id = _run(plan)
+    r = by_id[C44]
+    assert r.status == "SKIP"
+    assert "without extractable" in r.detail
+
+
+def test_c44_git_unavailable_skips(monkeypatch):
+    # Fail-open on git unavailability (the c42 contract): OSError from
+    # subprocess.run on BOTH attempts (one 0.1 s retry) -> SKIP, never FAIL.
+    def raise_oserror(*a, **kw):
+        raise OSError("git not found")
+
+    monkeypatch.setattr(verify_plan.subprocess, "run", raise_oserror)
+    _, by_id = _run(_c44_plan(C44_DECL))
+    r = by_id[C44]
+    assert r.status == "SKIP"
+    assert "unavailable" in r.detail.lower()
+    assert "inconclusive" in r.detail.lower()
+
+
+def test_c44_skill_roster_carries_escape():
+    # Durability pin (c31-compliant) for the SKILL.md prose edit: the
+    # canonical N/A escape-phrases block must carry the check-44 escape,
+    # backtick-wrapped (the generative sync test propagates the docstring
+    # registration; this pins the consumer surface directly).
+    text = (REPO_ROOT / ".claude/skills/adversarial-planner/SKILL.md").read_text()
+    anchor = text.index("Canonical N/A escape phrases")
+    block = text[anchor : text.index("bounce to the planner", anchor)]
+    assert "`N/A — no committed outputs`" in block
+    assert "(check 44" in block
