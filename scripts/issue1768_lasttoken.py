@@ -416,7 +416,11 @@ def main(argv: list[str] | None = None) -> int:
         capture_unit(cfg, unit_id, rows)
         if not args.no_upload:
             upload_unit(cfg, unit_id)
-    logger.info("[phase=done] shard %d captured %d units", args.shard, len(mine))
+    # NOT `[phase=done]`: that token is RESERVED for a dispatcher's single
+    # terminal line (poll_pipeline reads it as whole-run status=done), and 4
+    # concurrent shards each emitting it would signal completion while three
+    # shards are still capturing (#545/#930 class).
+    logger.info("[shard-complete] shard %d captured %d units", args.shard, len(mine))
     sys.stdout.flush()
     sys.stderr.flush()
     sys.exit(0)

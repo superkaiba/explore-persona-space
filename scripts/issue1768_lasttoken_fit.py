@@ -26,8 +26,6 @@ import logging
 import sys
 from pathlib import Path
 
-import numpy as np
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / "scripts"))
@@ -36,7 +34,11 @@ if str(REPO_ROOT) not in sys.path:
 
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
+# load_dotenv() BEFORE numpy/torch: the shared-VM thread caps (#847) are
+# setdefault-ed here and BLAS/torch freeze their pools at import.
 load_dotenv()
+
+import numpy as np  # noqa: E402
 
 import issue1768_cells as X  # noqa: E402
 import issue1768_fit as F  # noqa: E402
@@ -299,7 +301,9 @@ def run_fits(
             rec["positions"][position] = per_layer
         _atomic_json(dest, rec)
         logger.info("[phase=lt_fits arm=%s %d/%d done]", arm_id, k + 1, len(mine))
-    logger.info("[phase=done] shard %d fitted %d arms", shard, len(mine))
+    # NOT `[phase=done]` — reserved for a dispatcher's single terminal line
+    # (see the capture driver's note; #545/#930).
+    logger.info("[shard-complete] shard %d fitted %d arms", shard, len(mine))
 
 
 def main(argv: list[str] | None = None) -> int:
