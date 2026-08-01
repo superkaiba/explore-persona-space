@@ -13,6 +13,7 @@ commit and verifying the uploaded set server-side. Same shape as
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -89,4 +90,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    rc = main()
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(rc if isinstance(rc, int) else 0)
