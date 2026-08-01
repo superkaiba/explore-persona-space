@@ -22,6 +22,8 @@ relates_to:
 # The context→answer map's error interaction is per-pair noise to within a trace rank-one residue, putting the map near its information ceiling (MODERATE confidence)
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1945.md](https://github.com/superkaiba/explore-persona-space/blob/1a6898af98890d967530582d0efdb51b33ada9ef/docs/methodology/issue_1945.md) · [gist](https://gist.github.com/superkaiba/ccc4cbfd10f1d2aed3b390da6fd06bc0)
+
 ## Takeaways
 
 - The verdict lattice reads weak structure: the held-out interaction R² curve clears all 400 null draws in both families (add-one p ≤ 0.005) but peaks at 0.0013 — 0.13% of interaction variance against the 0.10 materiality floor. At rank ≤ 64 and this power, the map is close to its information ceiling on this input.
