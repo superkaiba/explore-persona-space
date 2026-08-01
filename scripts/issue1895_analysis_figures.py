@@ -20,15 +20,18 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+load_dotenv()  # thread caps + credentials BEFORE matplotlib/numpy (shared-VM harvest; #847)
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_blog,
     savefig_paper,
     set_paper_style,
 )
-from explore_persona_space.orchestrate.env import load_dotenv
 
 EVAL = Path("eval_results/issue_1895")
 FIGDIR = Path("figures/issue_1895")
@@ -39,12 +42,12 @@ SEED = 1895  # run seed; matched-rows bootstrap uses SEED + 7 (driver convention
 
 
 def _stage(rel: str) -> Path:
-    """Download one run tensor from the HF data repo if not already staged."""
+    """Download one run tensor from the HF data repo if not already staged (retried, atomic)."""
     out = STAGE / HF_PREFIX / rel
     if not out.exists():
-        from huggingface_hub import hf_hub_download
+        from explore_persona_space.orchestrate.hub import stage_hub_file
 
-        hf_hub_download(HF_REPO, f"{HF_PREFIX}/{rel}", repo_type="dataset", local_dir=str(STAGE))
+        stage_hub_file(HF_REPO, f"{HF_PREFIX}/{rel}", out, repo_type="dataset")
     assert out.exists(), f"staging failed for {rel}"
     return out
 
