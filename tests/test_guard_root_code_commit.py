@@ -111,11 +111,28 @@ def cert(tmp_path: Path) -> Path:
 
 
 def _env(
-    repo: Path, cert_path: Path, *, allow: bool = False, max_age: str | None = None
+    repo: Path,
+    cert_path: Path,
+    *,
+    allow: bool = False,
+    max_age: str | None = None,
+    rehash_delay: str | None = "0",
+    path_prepend: Path | None = None,
 ) -> dict[str, str]:
-    env = {k: v for k, v in os.environ.items() if k != "EPM_ALLOW_ROOT_CODE_COMMIT"}
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in ("EPM_ALLOW_ROOT_CODE_COMMIT", "EPM_CERT_REHASH_DELAY_S")
+    }
     env["EPM_ROOT_CODE_COMMIT_REPO"] = str(repo)
     env["EPM_INLINE_CERT_PATH"] = str(cert_path)
+    # Zero the #1857 settle-and-re-hash delay by default so blocked cases stay
+    # deterministic-fast (the retry still RUNS — it just doesn't wait); the
+    # retry tests shim `sleep` via path_prepend for the settle action itself.
+    if rehash_delay is not None:
+        env["EPM_CERT_REHASH_DELAY_S"] = rehash_delay
+    if path_prepend is not None:
+        env["PATH"] = f"{path_prepend}:{env.get('PATH', '/usr/bin:/bin')}"
     if max_age is not None:
         env["EPM_INLINE_CERT_MAX_AGE_S"] = max_age
     if allow:
@@ -308,6 +325,80 @@ def test_b8_classification_failure_fails_closed(tmp_path: Path, cert: Path) -> N
     notarepo = tmp_path / "notarepo"
     notarepo.mkdir()
     _assert_blocked(_run("git commit -m x", notarepo, cert))
+
+
+# ---------------------------------------------------------------------------
+# R — #1857 cert-retry pass (settle-and-re-hash before the negative verdict)
+# ---------------------------------------------------------------------------
+def _sleep_shim(tmp_path: Path, body: str) -> Path:
+    """PATH-shimmed `sleep` running `body` — the deterministic stand-in for
+    the settle window (the "concurrent writer" acts during the delay)."""
+    shim_dir = tmp_path / "shim-bin"
+    shim_dir.mkdir(exist_ok=True)
+    shim = shim_dir / "sleep"
+    shim.write_text(f"#!/bin/sh\n{body}\n", encoding="utf-8")
+    shim.chmod(0o755)
+    return shim_dir
+
+
+def _retry_repo(tmp_path: Path) -> Path:
+    """Tracked, committed gated file (content A) — the worktree-binding
+    pathspec-commit shape the retry tests flip mid-guard."""
+    repo = _init_repo(tmp_path, "retry")
+    _stage(repo, GATED, "print(1)\n")
+    _git(repo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "init")
+    return repo
+
+
+def test_r1_transient_worktree_flip_recovers_on_rehash(tmp_path: Path, cert: Path) -> None:
+    """Cert binds content A; the worktree reads content B at the first pass;
+    the shimmed `sleep` restores content A during the settle window -> the
+    re-hash matches (same landing_sha derivation, no re-binding), the commit
+    is ALLOWED, and the grep-able `cert-retry:` recovery line is emitted."""
+    repo = _retry_repo(tmp_path)
+    _cert_line(cert, GATED, _worktree_sha(repo, GATED))  # content A
+    _write(repo, GATED, "print(2)\n")  # transient flip to content B
+    shim = _sleep_shim(tmp_path, f"printf 'print(1)\\n' > \"{repo / GATED}\"")
+    r = _run(f"git commit -m x {GATED}", repo, cert, path_prepend=shim)
+    _assert_allowed(r)
+    assert f"cert-retry: {GATED} recovered after re-hash" in r.stderr, r.stderr
+
+
+def test_r2_stable_drift_still_blocks_after_retry(tmp_path: Path, cert: Path) -> None:
+    """Same setup but the drift is STABLE (the shim settles nothing) -> the
+    retry re-hash still mismatches and today's block verdict is kept
+    (exit 2 + cert-diag), with no recovery line."""
+    repo = _retry_repo(tmp_path)
+    _cert_line(cert, GATED, _worktree_sha(repo, GATED))
+    _write(repo, GATED, "print(2)\n")  # STABLE drift
+    shim = _sleep_shim(tmp_path, ":")  # no-op sleep: nothing settles
+    r = _run(f"git commit -m x {GATED}", repo, cert, path_prepend=shim)
+    _assert_blocked(r)
+    assert "cert-retry:" not in r.stderr, r.stderr
+    assert "cert-diag:" in r.stderr, r.stderr
+
+
+def test_r3_deleted_between_passes_is_exempt(tmp_path: Path, cert: Path) -> None:
+    """A path deleted between the first pass and the retry mirrors the first
+    pass's deletion-exempt semantics (no content lands -> skip + allow)."""
+    repo = _retry_repo(tmp_path)
+    _cert_line(cert, GATED, _worktree_sha(repo, GATED))
+    _write(repo, GATED, "print(2)\n")
+    shim = _sleep_shim(tmp_path, f'rm -f "{repo / GATED}"')
+    r = _run(f"git commit -m x {GATED}", repo, cert, path_prepend=shim)
+    _assert_allowed(r)
+    assert f"cert-retry: {GATED} exempt after re-hash" in r.stderr, r.stderr
+
+
+def test_r4_malformed_rehash_delay_fails_toward_block(tmp_path: Path, cert: Path) -> None:
+    """A malformed EPM_CERT_REHASH_DELAY_S makes `sleep` fail; the re-check
+    still runs and a stable drift still BLOCKS (a failed sleep never skips
+    the re-check nor crashes the guard into a non-blocking exit)."""
+    repo = _retry_repo(tmp_path)
+    _cert_line(cert, GATED, _worktree_sha(repo, GATED))
+    _write(repo, GATED, "print(2)\n")
+    r = _run(f"git commit -m x {GATED}", repo, cert, rehash_delay="not-a-number")
+    _assert_blocked(r)
 
 
 def test_b9_mixed_staged_set_blocks_and_names_only_gated(tmp_path: Path, cert: Path) -> None:
