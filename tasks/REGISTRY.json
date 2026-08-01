@@ -7023,8 +7023,8 @@
     "1907": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1907",
-      "status": "reviewing",
+      "path": "tasks/completed/1907",
+      "status": "completed",
       "title": "workflow-fix: flag malformed footer Reused bullets escaping the form-keyed check 37"
     },
     "1908": {
