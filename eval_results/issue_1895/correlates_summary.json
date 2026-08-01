@@ -1,0 +1,283 @@
+{
+  "per_direction": {
+    "n": 3584,
+    "rho_matched_vs_fveu": 0.969833687008501,
+    "partial_given_var_rank": 0.07572134014528405,
+    "partial_bootstrap_ci": [
+      0.037670774207744714,
+      0.09024904796551758
+    ],
+    "P_var0": false,
+    "decile_stratified": [
+      {
+        "decile": 0,
+        "n": 359,
+        "rho": 0.936142709678758
+      },
+      {
+        "decile": 1,
+        "n": 359,
+        "rho": 0.6919404200577852
+      },
+      {
+        "decile": 2,
+        "n": 359,
+        "rho": 0.5900198668969774
+      },
+      {
+        "decile": 3,
+        "n": 359,
+        "rho": 0.399410217705918
+      },
+      {
+        "decile": 4,
+        "n": 358,
+        "rho": 0.42577375171291343
+      },
+      {
+        "decile": 5,
+        "n": 358,
+        "rho": 0.3253764617220816
+      },
+      {
+        "decile": 6,
+        "n": 358,
+        "rho": 0.24588158663350182
+      },
+      {
+        "decile": 7,
+        "n": 358,
+        "rho": 0.17081429605813164
+      },
+      {
+        "decile": 8,
+        "n": 358,
+        "rho": 0.19064021867753342
+      },
+      {
+        "decile": 9,
+        "n": 358,
+        "rho": 0.09794157466288675
+      }
+    ],
+    "banked_cross_check": {
+      "ridge": {
+        "rho": 0.9463735980773631,
+        "partial_given_var_rank": 0.11713896164519358,
+        "n": 256
+      },
+      "mlp_w8192": {
+        "rho": 0.9493548294804302,
+        "partial_given_var_rank": 0.20621538086553148,
+        "n": 256
+      }
+    }
+  },
+  "per_feature": {
+    "n": 16384,
+    "spearman_matrix": {
+      "r2__fve_j": 0.2519951540530636,
+      "r2__consistency": 0.5763909689593651,
+      "r2__activity": 0.29568724526664963,
+      "r2__var_vA_rank": -0.42014275814652163,
+      "fve_j__consistency": 0.17173026236398634,
+      "fve_j__activity": -0.14841154735336812,
+      "fve_j__var_vA_rank": -0.822109823506014,
+      "consistency__activity": 0.18306356939853777,
+      "consistency__var_vA_rank": -0.36053114826025884,
+      "activity__var_vA_rank": 0.08444657868928304
+    },
+    "partial_r2_fvej_given_varrank_consistency_activity": -0.050488322100879425,
+    "activity_decile_stratified": [
+      {
+        "decile": 0,
+        "n": 1639,
+        "rho": 0.3217515474104114
+      },
+      {
+        "decile": 1,
+        "n": 1639,
+        "rho": 0.32659983384324526
+      },
+      {
+        "decile": 2,
+        "n": 1639,
+        "rho": 0.3485839341383557
+      },
+      {
+        "decile": 3,
+        "n": 1639,
+        "rho": 0.3101640297826253
+      },
+      {
+        "decile": 4,
+        "n": 1638,
+        "rho": 0.3647362860729922
+      },
+      {
+        "decile": 5,
+        "n": 1638,
+        "rho": 0.33540170970256444
+      },
+      {
+        "decile": 6,
+        "n": 1638,
+        "rho": 0.3230126482383706
+      },
+      {
+        "decile": 7,
+        "n": 1638,
+        "rho": 0.37241722387248644
+      },
+      {
+        "decile": 8,
+        "n": 1638,
+        "rho": 0.3290132972806713
+      },
+      {
+        "decile": 9,
+        "n": 1638,
+        "rho": 0.2619731368285916
+      }
+    ]
+  },
+  "exploratory_bh_fdr": [
+    {
+      "name": "perdir_decile_0",
+      "rho": 0.936142709678758,
+      "p": 2.693796361920579e-227,
+      "bh_fdr_q05_pass": true
+    },
+    {
+      "name": "perdir_decile_1",
+      "rho": 0.6919404200577852,
+      "p": 4.1906107038716216e-58,
+      "bh_fdr_q05_pass": true
+    },
+    {
+      "name": "perdir_decile_2",
+      "rho": 0.5900198668969774,
+      "p": 1.9442927541886974e-37,
+      "bh_fdr_q05_pass": true
+    },
+    {
+      "name": "perdir_decile_3",
+      "rho": 0.399410217705918,
+      "p": 1.46157770377398e-15,
+      "bh_fdr_q05_pass": true
+    },
+    {
+      "name": "perdir_decile_4",
+      "rho": 0.42577375171291343,
+      "p": 1.056255440239952e-17,
+      "bh_fdr_q05_pass": true
+    },
+    {
+      "name": "perdir_decile_5",
+      "rho": 0.3253764617220816,
+      "p": 1.9942213222662803e-10,
+      "bh_fdr_q05_pass": true
+    },
+    {
+      "name": "perdir_decile_6",
+      "rho": 0.24588158663350182,
+      "p": 2.2488906041475726e-06,
+      "bh_fdr_q05_pass": true
+    },
+    {
+      "name": "perdir_decile_7",
+      "rho": 0.17081429605813164,
+      "p": 0.0011530394759983109,
+      "bh_fdr_q05_pass": true
+    },
+    {
+      "name": "perdir_decile_8",
+      "rho": 0.19064021867753342,
+      "p": 0.0002764470783787746,
+      "bh_fdr_q05_pass": true
+    },
+    {
+      "name": "perdir_decile_9",
+      "rho": 0.09794157466288675,
+      "p": 0.06412706302274868,
+      "bh_fdr_q05_pass": false
+    },
+    {
+      "name": "perfeat_activity_decile_0",
+      "rho": 0.3217515474104114,
+      "p": 1.713234024342199e-41,
+      "bh_fdr_q05_pass": true
+    },
+    {
+      "name": "perfeat_activity_decile_1",
+      "rho": 0.32659983384324526,
+      "p": 8.55762678547021e-43,
+      "bh_fdr_q05_pass": true
+    },
+    {
+      "name": "perfeat_activity_decile_2",
+      "rho": 0.3485839341383557,
+      "p": 5.085097852495731e-49,
+      "bh_fdr_q05_pass": true
+    },
+    {
+      "name": "perfeat_activity_decile_3",
+      "rho": 0.3101640297826253,
+      "p": 1.749926018837216e-38,
+      "bh_fdr_q05_pass": true
+    },
+    {
+      "name": "perfeat_activity_decile_4",
+      "rho": 0.3647362860729922,
+      "p": 6.470525469149262e-54,
+      "bh_fdr_q05_pass": true
+    },
+    {
+      "name": "perfeat_activity_decile_5",
+      "rho": 0.33540170970256444,
+      "p": 3.394815341308317e-45,
+      "bh_fdr_q05_pass": true
+    },
+    {
+      "name": "perfeat_activity_decile_6",
+      "rho": 0.3230126482383706,
+      "p": 8.360358853637069e-42,
+      "bh_fdr_q05_pass": true
+    },
+    {
+      "name": "perfeat_activity_decile_7",
+      "rho": 0.37241722387248644,
+      "p": 2.2901966364687222e-56,
+      "bh_fdr_q05_pass": true
+    },
+    {
+      "name": "perfeat_activity_decile_8",
+      "rho": 0.3290132972806713,
+      "p": 1.9975555460606954e-43,
+      "bh_fdr_q05_pass": true
+    },
+    {
+      "name": "perfeat_activity_decile_9",
+      "rho": 0.2619731368285916,
+      "p": 2.0892761757490596e-27,
+      "bh_fdr_q05_pass": true
+    }
+  ],
+  "lattice": {
+    "q_align": 100.0,
+    "delta_dark_lo": 0.027551833540201187,
+    "rho_ci": [
+      0.037670774207744714,
+      0.09024904796551758
+    ],
+    "P_align": true,
+    "P_dark": true,
+    "P_var0": false,
+    "verdict": "mixed"
+  },
+  "git_commit": "7c50b3c66560afe22324e45e596ae133891d5acf",
+  "timestamp_utc": "2026-08-01T03:09:08.643740Z",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-1064-gcp-x86_64-with-glibc2.35",
+  "cuda_visible_devices": "all"
+}
