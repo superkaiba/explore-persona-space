@@ -185,3 +185,4 @@
 {"ts": "2026-08-01T12:59:19Z", "kind": "epm:progress", "version": 67, "by": "unknown", "note": "[long-phase-heartbeat] job 16587: fits: [fits] unit 314/549 mlp_ctx_SS_f1 elapsed=835.1s total=8360s | units=374"}
 {"ts": "2026-08-01T13:18:05Z", "kind": "epm:progress", "version": 68, "by": "unknown", "note": "[long-phase-heartbeat] job 16587: fits: [fits] unit 318/549 mlp_ctx_SS_f3 elapsed=974.8s total=9257s | units=378"}
 {"ts": "2026-08-01T13:36:53Z", "kind": "epm:progress", "version": 69, "by": "unknown", "note": "[long-phase-heartbeat] job 16587: fits: [fits] unit 322/549 mlp_ctx_SD_f3 elapsed=954.9s total=10212s | units=382"}
+{"ts": "2026-08-01T13:55:55Z", "kind": "epm:progress", "version": 70, "by": "unknown", "note": "[long-phase-heartbeat] job 16587: fits: [fits] unit 330/549 mlp_ctx_SR_f4 elapsed=1015.9s total=12187s | units=390 (MLP band ~13 units/h; 12h wall at ~22:05Z — TIMEOUT+per-unit-resume expected mid-MLP, established pattern)"}
