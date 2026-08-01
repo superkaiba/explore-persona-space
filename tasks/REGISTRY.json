@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1979,
+  "highest_id": 1980,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7585,6 +7585,13 @@
       "path": "tasks/planning/1979",
       "status": "planning",
       "title": "Per-prefix leakage-predictor race + theory-assumption battery at prefix grain (50 prefixes x 60 shared queries)"
+    },
+    "1980": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1980",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas #952 streaming SIGABRT recipe misses break-suspended iterator (it.close())"
     },
     "199": {
       "has_clean_result": true,
