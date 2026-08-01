@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1952,
+  "highest_id": 1953,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7380,6 +7380,13 @@
       "path": "tasks/archived/1952",
       "status": "archived",
       "title": "workflow-fix: root-commit guard cwd attribution for cross-call-assigned cd-variable targets"
+    },
+    "1953": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1953",
+      "status": "proposed",
+      "title": "daily-fix: fix red main: test_workflow_lint_jsonl_splitlines.py::test_live_tree_passes \u2014 Fix the `.splitlines()` JSONL read at `s"
     },
     "196": {
       "has_clean_result": false,
