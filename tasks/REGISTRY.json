@@ -6900,8 +6900,8 @@
     "1892": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1892",
-      "status": "proposed",
+      "path": "tasks/planning/1892",
+      "status": "planning",
       "title": "workflow-fix: reconnect handle writes spec-default provisioning_model, disarming FLEX_START queue-timeout failover"
     },
     "1893": {
