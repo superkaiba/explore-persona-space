@@ -6858,8 +6858,8 @@
     "1886": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1886",
-      "status": "planning",
+      "path": "tasks/approved/1886",
+      "status": "approved",
       "title": "workflow-fix: gotchas cross-machine-seam entry \u2014 SLURM rsync lane drops committed eval_results"
     },
     "1887": {
