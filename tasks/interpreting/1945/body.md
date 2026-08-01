@@ -4,7 +4,7 @@ title: The context→answer map's error interaction is per-pair noise to within 
 kind: experiment
 tags: []
 created_at: '2026-07-31T19:59:29Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1482
 origin_prompt: 'run all these: ... 1. The interaction-structure question. The decomposition
   says the map fails at (context, direction) pairs. Whether that interaction has recoverable
