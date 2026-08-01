@@ -168,6 +168,8 @@ def test_good_body_passes_all():
     # check-20 word caps (needs `issue` for the events-based round budget,
     # #921; PASS-skip: not a v4 body), the
     # #732 judge-API-error denominator check (PASS-skip: legacy body), the
+    # judge drop-line population check (#1776 incident / task #1881;
+    # PASS-skip: legacy body), the
     # check-35 cross-issue reuse-provenance check (PASS-skip: not a v4
     # body, #1256), AND
     # the check-31 orphaned-per-unit-figures probe (needs `issue` for
@@ -175,7 +177,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 64 results total (2 prepended + CHECKS[1:]=49 + 13 appended, counting
+    # 65 results total (2 prepended + CHECKS[1:]=49 + 14 appended, counting
     # the #1827 plan-conditions check narrated below; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
@@ -207,10 +209,11 @@ def test_good_body_passes_all():
     # verify_text (needs the issue number) and PASS-skips here (legacy body).
     # The plan-conditions coverage check (#1827) is dispatched in verify_text
     # (needs plans/plan.md) and NO-OP PASSes here (no plan sibling).
-    assert len(results) == 64
+    assert len(results) == 65
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert "plan conditions coverage" in {r.name for r in results}
+    assert "judge drop-line population reconciles" in {r.name for r in results}
     assert _HF_32_NAME in {r.name for r in results}
     assert _HF_40_NAME in {r.name for r in results}
     assert "Context follow-up provenance vs followup-scope markers" in {r.name for r in results}
@@ -5842,11 +5845,13 @@ def test_checks_list_size():
     check-21 body-Parameters-⊆-doc (needs the methodology doc path),
     the v4 check-20 word caps (needs `issue` for the events-based
     folded-round budget scaling, #921), the #732 judge-API-error
-    denominator check (needs eval JSONs), and the check-31
+    denominator check (needs eval JSONs), the judge drop-line
+    population check (#1776 incident / task #1881; same eval-JSON
+    needs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 64 results (2 prepended + CHECKS[1:]=49 +
-    13 appended — see `test_good_body_passes_all`), but `CHECKS` stays
+    So `verify_text` returns 65 results (2 prepended + CHECKS[1:]=49 +
+    14 appended — see `test_good_body_passes_all`), but `CHECKS` stays
     at 50 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
@@ -13704,6 +13709,259 @@ def test_judge_error_denominator_sibling_issue_graceful_pass(tmp_path):
         _CHECK732_UNDISCLOSED_BODY, issue=608, eval_root=tmp_path
     )
     assert res.passed and not res.is_warn, res.render()
+
+
+# ─── Judge drop-line population reconciliation (#1776 incident, task #1881) ─
+#
+# Signal: a judge-health drop-line sentence "<X> content drops [and <T>
+# transport losses] of|across <Y> draws" in the fence-stripped
+# Methodology+Results region, reconciled against schema-keyed judge-artifact
+# populations (dict leaves carrying numeric `content_drops` + `valid_draws`)
+# under eval_results/issue_<N>/. FAIL only on the provably CROSSED pair
+# (numerator from one population, denominator from another, no single
+# population matching both — the #1776 incident shape); WARN when nothing
+# reconciles; graceful PASS everywhere else. Ground truth (#1776
+# followup_p3p4/judge/judge_scores.json): all-arms (192, 67,500),
+# baseline-excluded (156, 56,250), per-trait 22,500 draws each.
+
+_CHECK1881_NAME = "judge drop-line population reconciles"
+
+# The VERBATIM incident sentence, recovered from #1776's body.md git history
+# (commit fcc5a5d47bc3c9fb8842c70708340d80ca1b9842, tasks/*/1776/body.md L71)
+# — the all-arms drop numerator (192) quoted over the steered-only draw
+# denominator (56,250).
+_CHECK1881_INCIDENT_SENTENCE = (
+    "Dose-round judge health: 192 content drops of 56,250 draws "
+    "(0.34%, worst arm 0.9%), zero transport losses, zero empty rollouts."
+)
+
+
+def _drop_line_body(sentence: str) -> str:
+    """A valid v4 body whose Methodology `**Evaluation:**` line carries
+    `sentence` (a judge-health drop-line). Asserts the splice landed so a
+    future `_V4_GOOD_BODY` rewording fails loud instead of silently testing
+    a drop-line-less body."""
+    out = _V4_GOOD_BODY.replace(
+        "- **Evaluation:** Betley alignment score, Claude Sonnet judge, 200 probes; "
+        "chosen to match the prior eval surface; no preprocessing.",
+        "- **Evaluation:** Betley alignment score, Claude Sonnet judge, 200 probes; "
+        f"chosen to match the prior eval surface; no preprocessing. Judge health: {sentence}",
+    )
+    assert sentence in out, "fixture splice failed — _V4_GOOD_BODY Evaluation line changed"
+    return out
+
+
+def _make_drop_population_tree(root: Path, issue: int) -> Path:
+    """Write a synthetic #1776-followup_p3p4-shaped judge summary under
+    `root/eval_results/issue_<N>/judge/judge_scores.json`: per_arm[trait][arm]
+    leaves carrying `content_drops`/`valid_draws`/`transport_losses`,
+    reproducing the incident ground-truth totals — whole-file (192, 67,500),
+    baseline-excluded (156, 56,250), per-trait 22,500 draws each
+    (evil 20, sycophancy 40, hallucination 132 drops)."""
+    eval_dir = root / "eval_results" / f"issue_{issue}" / "judge"
+    eval_dir.mkdir(parents=True, exist_ok=True)
+
+    def leaf(drops: int, total: int) -> dict:
+        return {
+            "mean_score": 1.0,
+            "content_drops": drops,
+            "valid_draws": total - drops,
+            "transport_losses": 0,
+        }
+
+    per_arm = {}
+    for trait, steered_drops in (("evil", 8), ("sycophancy", 28), ("hallucination", 120)):
+        per_arm[trait] = {
+            "baseline_a0": leaf(12, 3750),
+            f"{trait}_a1": leaf(steered_drops, 6250),
+            f"{trait}_a2": leaf(0, 6250),
+            f"{trait}_a3": leaf(0, 6250),
+        }
+    (eval_dir / "judge_scores.json").write_text(json.dumps({"per_arm": per_arm, "n_draws": 25}))
+    return eval_dir
+
+
+def test_judge_drop_line_crossed_pairing_fails(tmp_path):
+    """The VERBATIM #1776 incident sentence — an all-arms drop numerator
+    (192, whole-file) quoted over the steered-only draw denominator
+    (56,250, baseline-excluded) — FAILs as a provably crossed population
+    pair, naming BOTH consistent pairings (192/67,500 and 156/56,250)."""
+    _make_drop_population_tree(tmp_path, 999)
+    body = _drop_line_body(_CHECK1881_INCIDENT_SENTENCE)
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert not res.passed, res.render()
+    assert "CROSSED" in res.detail, res.render()
+    assert "192/67,500" in res.detail, res.render()
+    assert "156/56,250" in res.detail, res.render()
+
+
+def test_judge_drop_line_all_arms_exact_passes(tmp_path):
+    """The corrected all-arms form (192, 67,500) matches the whole-file
+    population on both coordinates → PASS."""
+    _make_drop_population_tree(tmp_path, 999)
+    body = _drop_line_body("192 content drops of 67,500 draws (0.28%).")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+    assert "reconcile" in res.detail, res.render()
+
+
+def test_judge_drop_line_baseline_excluded_passes(tmp_path):
+    """The steered-only form (156, 56,250) matches the baseline-excluded
+    population → PASS (the honest way to quote the steered denominator)."""
+    _make_drop_population_tree(tmp_path, 999)
+    body = _drop_line_body("156 content drops of 56,250 draws (0.28%).")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_judge_drop_line_per_subtree_passes(tmp_path):
+    """A per-trait claim (132, 22,500) matches the per_arm.hallucination
+    subtree population → PASS (per-subtree candidates resolve naturally)."""
+    _make_drop_population_tree(tmp_path, 999)
+    body = _drop_line_body("hallucination: 132 content drops of 22,500 draws.")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_judge_drop_line_transport_and_across_variants(tmp_path):
+    """The `and <T> transport losses` + `across` phrasing parses, Y is
+    accepted as drops+valid+transport, and discovery is SCHEMA-keyed — the
+    leaves live in a file NOT named judge_scores*.json (the #1776
+    judge_swap.json class)."""
+    eval_dir = tmp_path / "eval_results" / "issue_999"
+    eval_dir.mkdir(parents=True)
+    payload = {
+        "per_arm": {
+            "a_retention": {
+                "swap": {"content_drops": 0, "valid_draws": 13300, "transport_losses": 0}
+            },
+            "b_content": {
+                "swap": {"content_drops": 0, "valid_draws": 13295, "transport_losses": 5}
+            },
+        }
+    }
+    (eval_dir / "judge_swap.json").write_text(json.dumps(payload))
+    body = _drop_line_body("0 content drops and 5 transport losses across 26,600 draws.")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_judge_drop_line_regex_singular_and_denominatorless():
+    """Regex shape pins: singular `content drop` / `transport loss` parse;
+    a denominator-less mention carries no population pair and never
+    matches (critic non-blocking item 5)."""
+    m = verify_task_body._JUDGE_DROP_LINE_RE.search(
+        "1 content drop and 1 transport loss of 100 draws"
+    )
+    assert m is not None
+    assert m.group("drops") == "1" and m.group("transport") == "1" and m.group("draws") == "100"
+    assert verify_task_body._JUDGE_DROP_LINE_RE.search("1,938 content drops (1.6%)") is None
+
+
+def test_judge_drop_line_denominatorless_sentence_no_claim(tmp_path):
+    """A drop mention with no `of|across <Y> draws` denominator asserts no
+    population pair → PASS 'no judge drop-line asserted' (even with a
+    reconcilable artifact tree present)."""
+    _make_drop_population_tree(tmp_path, 999)
+    body = _drop_line_body("1,938 content drops (1.6%), zero transport losses.")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no judge drop-line asserted" in res.detail, res.render()
+
+
+def test_judge_drop_line_unreconcilable_warns(tmp_path):
+    """A claim matching NO candidate on either coordinate → WARN (an
+    unenumerated honest subset is plausible — only the crossed signature
+    FAILs), listing the nearest candidates."""
+    _make_drop_population_tree(tmp_path, 999)
+    body = _drop_line_body("7 content drops of 12,345 draws.")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and res.is_warn, res.render()
+    assert "could not reconcile" in res.detail, res.render()
+    assert "nearest candidates" in res.detail, res.render()
+
+
+def test_judge_drop_line_no_artifacts_graceful_pass(tmp_path):
+    """No leaf-bearing artifact (JSONs without the content_drops/valid_draws
+    schema) → graceful PASS, never a false FAIL on missing data."""
+    eval_dir = tmp_path / "eval_results" / "issue_999"
+    eval_dir.mkdir(parents=True)
+    (eval_dir / "summary.json").write_text(json.dumps({"n_total": 400, "rate": 0.1}))
+    body = _drop_line_body(_CHECK1881_INCIDENT_SENTENCE)
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+    assert "graceful skip" in res.detail, res.render()
+
+
+def test_judge_drop_line_fence_env_skips(tmp_path, monkeypatch):
+    """EPM_VERIFY_BODY_NO_EVAL_SCAN=1 fences the disk read → skip-PASS even
+    on a body+tree pair that would otherwise FAIL crossed."""
+    _make_drop_population_tree(tmp_path, 999)
+    monkeypatch.setenv("EPM_VERIFY_BODY_NO_EVAL_SCAN", "1")
+    body = _drop_line_body(_CHECK1881_INCIDENT_SENTENCE)
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+    assert "EPM_VERIFY_BODY_NO_EVAL_SCAN" in res.detail, res.render()
+
+
+def test_judge_drop_line_legacy_body_skips():
+    """Legacy / v2 bodies PASS vacuously (forward-grandfathering, the #732
+    convention)."""
+    res = verify_task_body.check_judge_drop_line_population(GOOD_BODY, issue=999)
+    assert res.passed and not res.is_warn, res.render()
+    assert "legacy" in res.detail, res.render()
+
+
+def test_judge_drop_line_stdin_issue_unknown_skips(tmp_path):
+    """issue=None (stdin invocation) → skip-PASS before any disk read."""
+    body = _drop_line_body(_CHECK1881_INCIDENT_SENTENCE)
+    res = verify_task_body.check_judge_drop_line_population(body, issue=None)
+    assert res.passed, res.render()
+    assert "issue number unknown" in res.detail, res.render()
+
+
+def test_judge_drop_line_registered_in_verify_text():
+    """Registration-membership pin (the #1016 by-name convention, critic
+    non-blocking item 1): a forgotten verify_text append cannot ship
+    green — the check's result row must appear in every verify_text run."""
+    _ok, results = verify_task_body.verify_text(GOOD_BODY)
+    assert _CHECK1881_NAME in {r.name for r in results}
+
+
+def test_judge_drop_line_multi_claim_worst_verdict_wins(tmp_path):
+    """Multiple drop-line claims are evaluated independently and the WORST
+    verdict wins (ladder step 7): PASS + crossed → FAIL; PASS +
+    unreconcilable → WARN."""
+    _make_drop_population_tree(tmp_path, 999)
+    body_fail = _drop_line_body(
+        "192 content drops of 67,500 draws overall; dose round: 192 content drops of 56,250 draws."
+    )
+    res = verify_task_body.check_judge_drop_line_population(
+        body_fail, issue=999, eval_root=tmp_path
+    )
+    assert not res.passed, res.render()
+    body_warn = _drop_line_body(
+        "192 content drops of 67,500 draws overall; dose round: 7 content drops of 12,345 draws."
+    )
+    res2 = verify_task_body.check_judge_drop_line_population(
+        body_warn, issue=999, eval_root=tmp_path
+    )
+    assert res2.passed and res2.is_warn, res2.render()
+
+
+def test_judge_drop_line_zero_numerator_degraded_fingerprint(tmp_path):
+    """A crossed FAIL whose numerator (0) matches MULTIPLE candidate
+    populations additionally notes the degraded population fingerprint
+    (critic non-blocking item 2)."""
+    eval_dir = tmp_path / "eval_results" / "issue_999"
+    eval_dir.mkdir(parents=True)
+    (eval_dir / "a.json").write_text(json.dumps({"x": {"content_drops": 0, "valid_draws": 26600}}))
+    (eval_dir / "b.json").write_text(json.dumps({"x": {"content_drops": 0, "valid_draws": 12000}}))
+    (eval_dir / "c.json").write_text(json.dumps({"x": {"content_drops": 5, "valid_draws": 9995}}))
+    body = _drop_line_body("0 content drops of 10,000 draws.")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert not res.passed, res.render()
+    assert "population fingerprint degraded" in res.detail, res.render()
 
 
 # ─── Check 35 (#1256): cross-issue reuse pins declared in the body ─────────
