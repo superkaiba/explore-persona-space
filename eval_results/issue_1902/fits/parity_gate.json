@@ -1,0 +1,28 @@
+{
+  "tol": 0.0001,
+  "slices": [
+    {
+      "ckpt": "B",
+      "corpus": "single",
+      "layer": 16,
+      "n_tr": 13680,
+      "max_rel": 1.2493794668878677e-14
+    },
+    {
+      "ckpt": "R",
+      "corpus": "single",
+      "layer": 0,
+      "n_tr": 13680,
+      "max_rel": 1.7394647945940676e-14
+    },
+    {
+      "ckpt": "R",
+      "corpus": "multi",
+      "layer": 16,
+      "n_tr": 12717,
+      "max_rel": 1.4015615545045717e-14
+    }
+  ],
+  "max_rel_diff": 1.7394647945940676e-14,
+  "pass": true
+}

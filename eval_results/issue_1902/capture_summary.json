@@ -1,0 +1,26 @@
+{
+  "metadata": {
+    "issue": 1902,
+    "recipe_version": "issue1902-run-v1",
+    "git_sha": "unavailable-no-git-checkout",
+    "timestamp_utc": "2026-08-01T09:53:56Z",
+    "env_versions": {
+      "python": "3.11.15",
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "vllm": "0.11.0"
+    }
+  },
+  "ckpts": [
+    "B",
+    "S",
+    "D",
+    "R"
+  ],
+  "legs": {
+    "B": "2026-08-01T09:39:11Z",
+    "S": "2026-08-01T09:53:33Z",
+    "D": "2026-08-01T09:48:10Z",
+    "R": "2026-08-01T09:53:32Z"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "gate": "capture_cost",
+  "verdict": "HALT",
+  "ts": "2026-07-31T14:19:25Z",
+  "per_row_wall_s": 0.0389,
+  "projected_intersection_by_corpus": {
+    "single": 170076,
+    "multi": 171789
+  },
+  "rows_per_ckpt_leg": 1371460,
+  "projected_wall_h_per_leg": 14.82,
+  "planned_wall_h": 4.0,
+  "abort_ratio": 2.0
+}
