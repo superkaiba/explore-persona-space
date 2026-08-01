@@ -17,6 +17,7 @@ Pins:
 
 from __future__ import annotations
 
+import shutil
 import sys
 from pathlib import Path
 
@@ -286,6 +287,36 @@ def test_summarize_parity_fails_over_tolerance():
     parity = [{"abs_diff": 0.5}] * (dyn.PARITY_MIN_UNITS + 1)
     h = dyn._summarize(curves, {}, parity, smoke=False)["headline"]
     assert h["parity_vs_round1"]["verdict"] == "FAIL"
+
+
+def test_download_adapter_scratch_dirs_are_per_invocation(tmp_path, monkeypatch):
+    """Two concurrent legs share shard indices, so the adapter scratch must be
+    per-INVOCATION: a shard-index-keyed dir is shared across legs and one leg's
+    exit-time rmtree deletes a live sibling's adapter (the #1768 content-leg
+    crash: PEFT then treats the vanished path as a Hub repo id)."""
+    from huggingface_hub import hf_hub_download as real_dl
+
+    assert real_dl is not None  # the real symbol exists (signature-conformant fake below)
+
+    def fake_dl(repo_id, filename, token=None, local_dir=None, **kw):
+        assert local_dir, "must download into local_dir so delete-to-free frees"
+        p = Path(local_dir) / filename
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("x")
+        return str(p)
+
+    monkeypatch.setattr("huggingface_hub.hf_hub_download", fake_dl)
+    unit = {"repo": "r/x", "subfolder": "pre/checkpoint-5", "arm_id": "a", "step": 5}
+    root = tmp_path / "adapter_scratch"
+    d1 = dyn._download_adapter(unit, root)
+    d2 = dyn._download_adapter(unit, root)
+    assert d1 != d2, "two invocations must not share a scratch dir"
+    for d in (d1, d2):
+        assert (d / "adapter_config.json").is_file()
+        assert (d / "adapter_model.safetensors").is_file()  # flattened out of local_dir
+    # deleting one must leave the other's adapter intact (the crash's mechanism)
+    shutil.rmtree(d1)
+    assert (d2 / "adapter_model.safetensors").is_file()
 
 
 # ── unit enumeration ─────────────────────────────────────────────────────────

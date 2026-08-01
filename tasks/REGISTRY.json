@@ -7234,8 +7234,8 @@
     "1934": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1934",
-      "status": "running",
+      "path": "tasks/reviewing/1934",
+      "status": "reviewing",
       "title": "Fence-tolerant judge JSON parse: 2.02% of judged calls drop on markdown fences, not truncation"
     },
     "1935": {
