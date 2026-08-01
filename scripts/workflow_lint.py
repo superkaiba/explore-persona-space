@@ -11444,7 +11444,9 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # Cap = measured + <=40.
     # #1640 added the chained smoke-then-full leg out-root residue trigger
     # (row 994 B -> 1040 B). Cap = measured + <=40.
-    "gotchas": 1075,
+    # #1911 added the count-keyed liveness-gate double-print trigger
+    # (row 1048 B -> 1135 B). Cap = measured + <=40.
+    "gotchas": 1175,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
