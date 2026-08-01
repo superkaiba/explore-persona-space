@@ -75,6 +75,8 @@ CAPTURE_SPANS = ("prefix", "context", "response", "prefix_last", "context_last")
 _JUDGE_ID_BUDGET = 53  # Batch custom_id budget (#1415)
 # Per-phase disk floors on the pod out-root (plan §9 mount binding).
 PHASE_HEADROOM_GB = {"capture": 40.0, "corpus": 40.0, "fit": 10.0}
+PLAN_P4P5_GPU_H = 27.0  # plan §9 P4 (22) + P5 (5) booking — the pilot-gate bound
+PILOT_GATE_RC = 7  # artifact-routed halt (the #1415 convention; never a bare rc=1)
 SENTINEL_DIR_DEFAULT = Path("/workspace/logs")
 # The 12 bare-corpus arms (plan §4.4: single-visit con-s42 content arms).
 CORPUS_ARM_SLUGS = tuple(
@@ -1363,6 +1365,44 @@ def cmd_capture_fit(cfg: Cfg, argv_base: list[str]) -> int:
     fits = [u for u in units if u.startswith("fit:")]
     gpus = _physical_gpus()
     print(f"[dispatch] {len(captures)} capture units + {len(fits)} fits on {len(gpus)} GPUs")
+
+    # Plan §9 P4 in-run pilot gate: run the FIRST capture unit alone at
+    # production shape, re-project the phase wall, and HALT >2× the booked
+    # GPU-h with a report JSON + a DISTINCT rc (never an anonymous crash).
+    if captures and not cfg.smoke:
+        pilot = captures[0]
+        t0 = time.time()
+        env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(gpus[0])}
+        cmd = argv_base + ["--phase", "unit", "--unit", pilot, "--gpu-id", str(gpus[0])]
+        log = cfg.out_root / "logs" / "pilot_unit.log"
+        log.parent.mkdir(parents=True, exist_ok=True)
+        with log.open("ab") as fh:
+            rc = subprocess.run(cmd, env=env, stdout=fh, stderr=subprocess.STDOUT).returncode
+        per_unit_h = (time.time() - t0) / 3600.0
+        projected_gpu_h = per_unit_h * len(captures + fits)
+        report = {
+            "pilot_unit": pilot,
+            "pilot_rc": rc,
+            "per_unit_h": per_unit_h,
+            "n_units": len(captures + fits),
+            "projected_gpu_h": projected_gpu_h,
+            "plan_gpu_h": PLAN_P4P5_GPU_H,
+            "ratio": projected_gpu_h / PLAN_P4P5_GPU_H,
+            **_meta(),
+        }
+        _atomic_json(cfg.out_dir / "pilot_gate_report.json", report)
+        print(f"[dispatch] pilot gate: {json.dumps(report)}", flush=True)
+        if rc != 0:
+            print(f"[dispatch] pilot unit {pilot} FAILED rc={rc} — halting", flush=True)
+            return 1
+        if projected_gpu_h > 2 * PLAN_P4P5_GPU_H:
+            print(
+                f"[dispatch] PILOT GATE HALT: projected {projected_gpu_h:.1f} GPU-h > "
+                f"2x plan {PLAN_P4P5_GPU_H} — rc={PILOT_GATE_RC} (report JSON written)",
+                flush=True,
+            )
+            return PILOT_GATE_RC
+        captures = captures[1:]  # pilot unit already done (resume-idempotent anyway)
 
     def _fan(queue: list[str]) -> list[str]:
         pending = list(queue)

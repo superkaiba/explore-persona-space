@@ -170,6 +170,49 @@ def test_boot_cos_ci_batched_contains_point():
     assert ci_neg[1] < ci[0]
 
 
+def test_pilot_gate_halts_rc7_on_over_2x_projection(tmp_path, monkeypatch):
+    """The P4 in-run pilot gate (plan §9): >2x the booked GPU-h HALTs with the
+    DISTINCT rc + a report JSON (the #1415 artifact-routed convention), never
+    an anonymous crash. Boundary fake: subprocess.run only (signature-shaped)."""
+    import subprocess as sp
+
+    cfg = _cfg(tmp_path)
+    man = {
+        "issue": 1947,
+        "band": [0.6, 0.85],
+        "content": {
+            SLUG: {
+                "slug": SLUG,
+                "behavior": "sycophancy",
+                "selection": {"step": 10, "rate": 0.7, "in_band": True, "fallback": None},
+            }
+        },
+        "marker": {},
+    }
+    (cfg.out_dir / "verdict_manifest.json").write_text(json.dumps(man))
+    cfg = _cfg(tmp_path, smoke=False, sentinel_dir=tmp_path / "logs")
+
+    def fake_run(  # boundary fake mirroring BOTH battery call shapes:
+        cmd,  # pilot/unit launch (env+stdout+stderr) and _git_short_sha (capture_output+text+cwd)
+        env=None,
+        stdout=None,
+        stderr=None,
+        capture_output=False,
+        text=False,
+        cwd=None,
+        check=False,
+    ):
+        return sp.CompletedProcess(cmd, 0, stdout="deadbee\n" if capture_output else None)
+
+    monkeypatch.setattr(bat.subprocess, "run", fake_run)
+    monkeypatch.setattr(bat, "PLAN_P4P5_GPU_H", 1e-12)  # any real pilot wall trips 2x
+    monkeypatch.setattr(bat, "_physical_gpus", lambda: [0])
+    rc = bat.cmd_capture_fit(cfg, ["echo"])
+    assert rc == bat.PILOT_GATE_RC == 7
+    rep = json.loads((cfg.out_dir / "pilot_gate_report.json").read_text())
+    assert rep["ratio"] > 2 and rep["pilot_rc"] == 0
+
+
 @pytest.mark.slow
 def test_last_token_span_capture_tiny_real_model(tmp_path):
     """REAL `_teacher_forced_span_means` body on a from-config 2-layer Qwen2
