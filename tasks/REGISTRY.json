@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1966,
+  "highest_id": 1967,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7486,6 +7486,13 @@
       "path": "tasks/proposed/1966",
       "status": "proposed",
       "title": "daily-fix: never push to a branch live boxes sync mid-run"
+    },
+    "1967": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1967",
+      "status": "proposed",
+      "title": "daily-fix: per-tier pilot walls + c12 screen vocabulary"
     },
     "197": {
       "has_clean_result": false,
