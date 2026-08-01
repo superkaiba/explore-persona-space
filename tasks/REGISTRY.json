@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1961,
+  "highest_id": 1962,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7451,6 +7451,13 @@
       "path": "tasks/running/1961",
       "status": "running",
       "title": "workflow-fix: per-pod pod-safety predicate for multi-round issues"
+    },
+    "1962": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1962",
+      "status": "proposed",
+      "title": "daily-fix: cross-issue lint-gate concurrency arbitration"
     },
     "197": {
       "has_clean_result": false,
