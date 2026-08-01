@@ -1435,82 +1435,104 @@ def _sequential_consumption_classes() -> tuple:
             if self.finalized:
                 return
             self.finalized = True
-            n = int(self.manifest["n_rows"])
-            eff = self.effective_batch
-            row_ids = list(self.manifest["row_ids"])
-            predicted = [int(s) for s in self.manifest["predicted_step_of_idx"]]
-            yielded = list(self.sampler.yielded)
-            realized_step_of_idx: list[int | None] = [None] * n
-            for pos, idx in enumerate(yielded):
-                if 0 <= idx < n:
-                    realized_step_of_idx[idx] = pos // eff
-            first_mismatch = next(
-                (
-                    i
-                    for i in range(n)
-                    if realized_step_of_idx[i] is None or realized_step_of_idx[i] != predicted[i]
-                ),
-                None,
-            )
-            record = {
-                "n_rows": n,
-                "effective_batch": eff,
-                "epochs": int(self.manifest.get("epochs", 1)),
-                "global_step": global_step,
-                "n_yielded": len(yielded),
-                "realized_order": yielded,
-                "realized_step_of_idx": realized_step_of_idx,
-                "row_ids": row_ids,
-                "step_snapshots": self.step_snapshots,
-                "matches_predicted": first_mismatch is None and len(yielded) == n,
-                "first_mismatch_idx": first_mismatch,
-                "source": "SequentialConsumptionCallback (train/sft.py; #1947 plan §4.2)",
-                "git_commit": _git_short_sha_failsoft(),
-                "ts": _utc_now_iso(),
-            }
-            self.out_path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self.out_path.with_name(self.out_path.name + ".tmp")
-            tmp.write_text(json.dumps(record, ensure_ascii=False, indent=1))
-            os.replace(tmp, self.out_path)
-            # Fail-loud asserts (AFTER the forensic write).
-            if len(yielded) != n:
-                raise RuntimeError(
-                    f"[seq-consumption] consumed {len(yielded)} rows != n_rows {n} — "
-                    "not a single full pass over the mix (early stop / extra epoch); "
-                    f"realized manifest at {self.out_path}"
-                )
-            counts_bad = sorted(set(range(n)) - set(yielded)) or [
-                i for i in set(yielded) if yielded.count(i) != 1
-            ]
-            if sorted(yielded) != list(range(n)):
-                raise RuntimeError(
-                    f"[seq-consumption] rows NOT consumed exactly once (first problem "
-                    f"indices: {counts_bad[:5]}) — realized manifest at {self.out_path}"
-                )
-            if global_step != n // eff:
-                raise RuntimeError(
-                    f"[seq-consumption] global_step {global_step} != n_rows/effective_batch "
-                    f"{n // eff} — the optimizer schedule diverged from the single-visit plan"
-                )
-            if first_mismatch is not None:
-                i = first_mismatch
-                raise RuntimeError(
-                    f"[seq-consumption] realized order DIVERGES from the builder-predicted "
-                    f"sequential order at dataset idx {i} (row_id {row_ids[i]!r}): realized "
-                    f"step {realized_step_of_idx[i]} != predicted {predicted[i]} — a silent "
-                    "reshuffle or accumulation-order divergence corrupts every "
-                    f"consumed-rows battery read; realized manifest at {self.out_path}"
-                )
-            logger.info(
-                "[seq-consumption] single-visit verified: %d rows consumed exactly once "
-                "over %d optimizer steps; realized manifest at %s",
-                n,
-                global_step,
-                self.out_path,
+            _finalize_consumption_record(
+                yielded=list(self.sampler.yielded),
+                manifest=self.manifest,
+                effective_batch=self.effective_batch,
+                global_step=global_step,
+                step_snapshots=self.step_snapshots,
+                out_path=self.out_path,
             )
 
     _SEQ_CONSUMPTION_CLASSES = (LoggingSequentialSampler, SequentialConsumptionCallback)
     return _SEQ_CONSUMPTION_CLASSES
+
+
+def _finalize_consumption_record(
+    *,
+    yielded: list[int],
+    manifest: dict,
+    effective_batch: int,
+    global_step: int,
+    step_snapshots: list[dict],
+    out_path: Path,
+) -> dict:
+    """Write the REALIZED consumption manifest, then run the fail-loud
+    single-visit asserts (write-first so a divergence leaves forensic
+    evidence on disk). Module-level so tests can exercise it directly."""
+    n = int(manifest["n_rows"])
+    eff = int(effective_batch)
+    row_ids = list(manifest["row_ids"])
+    predicted = [int(s) for s in manifest["predicted_step_of_idx"]]
+    realized_step_of_idx: list[int | None] = [None] * n
+    for pos, idx in enumerate(yielded):
+        if 0 <= idx < n:
+            realized_step_of_idx[idx] = pos // eff
+    first_mismatch = next(
+        (
+            i
+            for i in range(n)
+            if realized_step_of_idx[i] is None or realized_step_of_idx[i] != predicted[i]
+        ),
+        None,
+    )
+    record = {
+        "n_rows": n,
+        "effective_batch": eff,
+        "epochs": int(manifest.get("epochs", 1)),
+        "global_step": global_step,
+        "n_yielded": len(yielded),
+        "realized_order": yielded,
+        "realized_step_of_idx": realized_step_of_idx,
+        "row_ids": row_ids,
+        "step_snapshots": step_snapshots,
+        "matches_predicted": first_mismatch is None and len(yielded) == n,
+        "first_mismatch_idx": first_mismatch,
+        "source": "SequentialConsumptionCallback (train/sft.py; #1947 plan §4.2)",
+        "git_commit": _git_short_sha_failsoft(),
+        "ts": _utc_now_iso(),
+    }
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out_path.with_name(out_path.name + ".tmp")
+    tmp.write_text(json.dumps(record, ensure_ascii=False, indent=1))
+    os.replace(tmp, out_path)
+    # Fail-loud asserts (AFTER the forensic write).
+    if len(yielded) != n:
+        raise RuntimeError(
+            f"[seq-consumption] consumed {len(yielded)} rows != n_rows {n} — "
+            "not a single full pass over the mix (early stop / extra epoch); "
+            f"realized manifest at {out_path}"
+        )
+    if sorted(yielded) != list(range(n)):
+        counts_bad = sorted(set(range(n)) - set(yielded)) or [
+            i for i in set(yielded) if yielded.count(i) != 1
+        ]
+        raise RuntimeError(
+            f"[seq-consumption] rows NOT consumed exactly once (first problem "
+            f"indices: {counts_bad[:5]}) — realized manifest at {out_path}"
+        )
+    if global_step != n // eff:
+        raise RuntimeError(
+            f"[seq-consumption] global_step {global_step} != n_rows/effective_batch "
+            f"{n // eff} — the optimizer schedule diverged from the single-visit plan"
+        )
+    if first_mismatch is not None:
+        i = first_mismatch
+        raise RuntimeError(
+            f"[seq-consumption] realized order DIVERGES from the builder-predicted "
+            f"sequential order at dataset idx {i} (row_id {row_ids[i]!r}): realized "
+            f"step {realized_step_of_idx[i]} != predicted {predicted[i]} — a silent "
+            "reshuffle or accumulation-order divergence corrupts every "
+            f"consumed-rows battery read; realized manifest at {out_path}"
+        )
+    logger.info(
+        "[seq-consumption] single-visit verified: %d rows consumed exactly once "
+        "over %d optimizer steps; realized manifest at %s",
+        n,
+        global_step,
+        out_path,
+    )
+    return record
 
 
 def _git_short_sha_failsoft() -> str:
@@ -1536,22 +1558,10 @@ def _utc_now_iso() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
-def _maybe_attach_sequential_consumption(trainer, cfg: TrainLoraConfig, output_dir: str) -> None:
-    """#1947 single-visit seam wiring (no-op unless cfg.sequential_sampler).
-
-    Validates the builder-predicted consumption manifest against the trainer's
-    prepared dataset + the config's optimizer geometry, installs the logging
-    SEQUENTIAL sampler via an instance-level ``_get_train_sampler`` override
-    (transformers 4.57 signature ``(self, train_dataset=None)``), and attaches
-    SequentialConsumptionCallback. Fail-loud on every contract violation.
-    """
-    if not cfg.sequential_sampler:
-        return
-    if cfg.packing:
-        raise ValueError(
-            "sequential_sampler=True is incompatible with packing=True — packing "
-            "re-groups rows and destroys the row->step consumption mapping"
-        )
+def _load_consumption_manifest(cfg: TrainLoraConfig) -> tuple[dict, int, int]:
+    """Load + fail-loud-validate the builder-predicted consumption manifest
+    against the config's optimizer geometry. Returns (manifest, n_rows,
+    effective_batch)."""
     if cfg.sequential_consumption_manifest is None:
         raise ValueError(
             "sequential_sampler=True requires sequential_consumption_manifest "
@@ -1589,6 +1599,26 @@ def _maybe_attach_sequential_consumption(trainer, cfg: TrainLoraConfig, output_d
             f"manifest predicted_step_of_idx has {len(manifest['predicted_step_of_idx'])} "
             f"entries != n_rows {n}"
         )
+    return manifest, n, eff
+
+
+def _maybe_attach_sequential_consumption(trainer, cfg: TrainLoraConfig, output_dir: str) -> None:
+    """#1947 single-visit seam wiring (no-op unless cfg.sequential_sampler).
+
+    Validates the builder-predicted consumption manifest against the trainer's
+    prepared dataset + the config's optimizer geometry, installs the logging
+    SEQUENTIAL sampler via an instance-level ``_get_train_sampler`` override
+    (transformers 4.57 signature ``(self, train_dataset=None)``), and attaches
+    SequentialConsumptionCallback. Fail-loud on every contract violation.
+    """
+    if not cfg.sequential_sampler:
+        return
+    if cfg.packing:
+        raise ValueError(
+            "sequential_sampler=True is incompatible with packing=True — packing "
+            "re-groups rows and destroys the row->step consumption mapping"
+        )
+    manifest, n, eff = _load_consumption_manifest(cfg)
     ds_len = len(trainer.train_dataset)
     if ds_len != n:
         raise ValueError(
