@@ -2,7 +2,8 @@
 title: The prefix/bare mirror image in per-context map error survives the SAE feature-space
   re-basis (HIGH confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-07-31T19:59:47Z'
 has_clean_result: true
 parent_id: 1738
