@@ -1179,7 +1179,11 @@ def run_xfer_unit(ctx: FitsContext, device: str, *, i: str, j: str, fold: int) -
     r = max(
         1,
         min(
-            int(torch.searchsorted(csum, torch.tensor(SPECMATCH_ENERGY, dtype=csum.dtype)).item())
+            int(
+                torch.searchsorted(
+                    csum, torch.tensor(SPECMATCH_ENERGY, dtype=csum.dtype, device=csum.device)
+                ).item()
+            )
             + 1,
             S.shape[0],
         ),
