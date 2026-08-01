@@ -7448,8 +7448,8 @@
     "1961": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1961",
-      "status": "reviewing",
+      "path": "tasks/completed/1961",
+      "status": "completed",
       "title": "workflow-fix: per-pod pod-safety predicate for multi-round issues"
     },
     "1962": {
