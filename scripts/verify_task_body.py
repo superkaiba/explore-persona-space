@@ -1013,6 +1013,25 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   GFM table with zero inline image; the mechanical verifier read PASS and
   a round-1 LM REVISE was burned.
 
+- **check 49** (`check_v4_result_figure_cardinality`, WARN, v4-only,
+  #1879): a single `### <result>` section embedding MORE THAN ONE inline
+  figure (markdown `![...]` plus HTML `<img>` embeds; fenced code +
+  `<details>` bodies excluded) with NO pair evidence — no embedded
+  basename matching the `_PER_UNIT_FIG_RE` companion-naming convention,
+  and no declared-pair idiom (per-unit vocabulary, raw-alongside,
+  unbinned/low-level, companion/counterpart) in the figures' alt text or
+  the section's blockquote caption lines — draws a WARN naming the H3,
+  the figure count, and the figure basenames. The idiom scan deliberately
+  EXCLUDES general section prose (the origin section's what-is-plotted
+  beat says "per-question" as routine SPEC-mandated disclosure prose, so
+  whole-section matching silences the exact incident shape); the
+  clean-result-critic Lens 9 one-result-one-figure rule stays the
+  substantive owner. WARN never FAILs — the sanctioned raw+processed /
+  aggregate+per-unit pair is the COMMON conforming 2-figure case.
+  Incident: task #1769's fu1 re-gate shipped `fig_dose_ladder.png` +
+  `fig_alpha3_lattice.png` — two distinct analyses — under one
+  `### <result>`; the verifier read PASS and only the LM critic caught it.
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -2552,6 +2571,27 @@ _PER_UNIT_EXEMPT_PHRASE_RE = re.compile(r"not\s+embedded|superseded\s+by", re.IG
 # PAREN|LINKTEXT in-detail-tag precedent).
 _PER_UNIT_NAMED_CLASS = "companion-named-not-embedded"
 
+# Check 49: declared-pair idiom for the sanctioned >1-figure-per-result
+# exception (the raw+processed / aggregate+per-unit pair — SPEC.md
+# § "Low-level data plot behind every aggregate"). Scanned ONLY over
+# figure-adjacent text — each inline figure's ALT text plus the section's
+# blockquote (`> `) caption lines — NEVER general section prose: the
+# origin #1769 section's what-is-plotted beat says "per-question" as
+# routine SPEC-mandated disclosure prose, so a whole-section scan would
+# silence the exact incident shape (#1879). Four alternates: a per-<unit>
+# vocabulary hit (separator REQUIRED, unlike `_PER_UNIT_FIG_RE`'s
+# optional one — this scans prose reads, not filename stems), a bounded
+# raw-alongside idiom, unbinned / low-level, and a bare
+# companion / counterpart. Lookbehind stops mid-word matches (the
+# `_PER_UNIT_FIG_RE` convention).
+_DECLARED_PAIR_RE = re.compile(
+    r"(?<![a-z0-9])per[-_ ](unit|question|context|cell|pair|seed|source|point)s?\b"
+    r"|\braw\b[^.\n]{0,60}\b(alongside|counterpart|version|view|scatter)\b"
+    r"|\b(unbinned|low[- ]level)\b"
+    r"|\b(companion|counterpart)\b",
+    re.IGNORECASE,
+)
+
 # Check 38: any markdown link (image embeds are masked out before this
 # scans, so no `!`-lookbehind is needed); link text tolerates `]` not
 # followed by `(` — the same tolerance `_IMAGE_RE` uses — and may be
@@ -3253,6 +3293,121 @@ def check_figure_caption(body: str) -> CheckResult:
         else "no blockquote captions under `## Results` to check"
     )
     return CheckResult(name, True, detail)
+
+
+def _v4_block_inline_figures(block_lines: list[str]) -> list[tuple[str, str]]:
+    """Return [(url, alt_text)] for every inline figure embed in a
+    `### <result>` block — markdown `![alt](url)` images (`_IMAGE_RE`)
+    plus HTML `<img src=…>` embeds (the check-38/#1510 symmetric-embed
+    doctrine: a body that embeds via raw HTML gets the same treatment).
+    Callers pass block lines already run through `_prose_layer` (fenced
+    code + `<details>` bodies stripped), so no fence state is threaded
+    here.
+    """
+    figures: list[tuple[str, str]] = []
+    for ln in block_lines:
+        for m in _IMAGE_RE.finditer(ln):
+            url = m.group(1)
+            full = m.group(0)
+            # full == "![" + alt + "](" + url + ")" — slice the alt out of
+            # the match instead of duplicating `_IMAGE_RE` with an
+            # alt-capturing twin (one source for the image grammar).
+            alt = full[2 : len(full) - len(url) - 3]
+            figures.append((url, alt))
+        for tag_m in re.finditer(r"<img\b[^>]*", ln, re.IGNORECASE):
+            tag = tag_m.group(0)
+            src_m = re.search(r"src\s*=\s*[\"']([^\"']+)[\"']", tag, re.IGNORECASE)
+            if src_m is None:
+                continue
+            alt_m = re.search(r"alt\s*=\s*[\"']([^\"']*)[\"']", tag, re.IGNORECASE)
+            figures.append((src_m.group(1), alt_m.group(1) if alt_m else ""))
+    return figures
+
+
+def _fig_basename(url: str) -> str:
+    """Basename of a figure URL with any query string / fragment stripped
+    (`…png?raw=1` → `…png`), for per-unit stem matching + WARN naming."""
+    return url.split("?", 1)[0].split("#", 1)[0].rstrip("/").rsplit("/", 1)[-1]
+
+
+def check_v4_result_figure_cardinality(body: str) -> CheckResult:
+    """Check 49 (v4 only, WARN): a single `### <result>` section under
+    `## Results` embedding MORE THAN ONE inline figure with NO pair
+    evidence draws a WARN naming the H3 heading, the figure count, and
+    the figure basenames.
+
+    Pair evidence (either silences): (a) any embedded figure basename
+    matches the `_PER_UNIT_FIG_RE` per-unit companion naming convention;
+    (b) `_DECLARED_PAIR_RE` matches the FIGURE-ADJACENT text ONLY — the
+    union of each inline figure's ALT text and the section's blockquote
+    (`> `) caption lines — NEVER the section's general prose. The
+    caption/alt scoping is load-bearing: the origin #1769 fu1 dose-ladder
+    section's what-is-plotted beat contains "per-question" as routine
+    SPEC-mandated disclosure prose, so whole-section matching silences
+    the exact incident shape; SPEC's own pair rule places the pair's
+    declaration in the figure unit (alt self-description + shared
+    caption) (#1879).
+
+    WARN, NEVER FAIL: the sanctioned raw+processed / aggregate+per-unit
+    pair (SPEC.md § "Low-level data plot behind every aggregate") is the
+    COMMON conforming 2-figure case — for aggregate results the pair is
+    REQUIRED — and pair detection from text is necessarily heuristic, so
+    a FAIL here would block `set-body` on conforming bodies. The
+    clean-result-critic Lens 9 one-result-one-figure rule stays the
+    substantive owner (a silenced true violation falls to it). Incident:
+    #1769's fu1 re-gate shipped `fig_dose_ladder.png` +
+    `fig_alpha3_lattice.png` — two distinct analyses — under one
+    `### <result>`; the verifier read PASS and only the LM critic caught
+    it. Scans the `_prose_layer` (fenced code + `<details>` stripped, so
+    a quoted example embed never counts); the preamble before the first
+    `### ` heading is not a result section and is never flagged. PASSes
+    vacuously on v3 / v2 / legacy bodies (forward-only).
+    """
+    label = "One inline figure per result, or a declared pair (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(label, True, "## Results missing — check 2 will report")
+    prose = _prose_layer(results)
+    result_h3s = _collect_tldr_h3_names(prose)
+    if not result_h3s:
+        return CheckResult(label, True, "no `### <result>` headings — check 3 will report")
+    plines = prose.splitlines()
+    flagged: list[str] = []
+    for idx, (name, line_no) in enumerate(result_h3s):
+        end_line = result_h3s[idx + 1][1] if idx + 1 < len(result_h3s) else len(plines)
+        block = plines[line_no + 1 : end_line]
+        figures = _v4_block_inline_figures(block)
+        if len(figures) < 2:
+            continue
+        basenames = [_fig_basename(url) for url, _alt in figures]
+        if any(_PER_UNIT_FIG_RE.search(b) for b in basenames):
+            continue  # pair evidence (a): a per-unit companion stem
+        caption_lines = [ln for ln in block if ln.lstrip().startswith(">")]
+        adjacent = "\n".join([alt for _url, alt in figures] + caption_lines)
+        if _DECLARED_PAIR_RE.search(adjacent):
+            continue  # pair evidence (b): declared pair in alt / caption text
+        flagged.append(f"'{name[:48]}' embeds {len(figures)} figures ({', '.join(basenames)})")
+    if flagged:
+        preview = "; ".join(flagged[:2]) + (" …" if len(flagged) > 2 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(flagged)} `### <result>` section(s) embed >1 inline figure with no pair "
+            "evidence — no per-unit companion basename, and no declared-pair idiom in the "
+            "figures' alt text / blockquote captions. The lens-9 one-result-one-figure rule "
+            "allows a second figure only as the sanctioned raw+processed / aggregate+per-unit "
+            "pair (SPEC.md § Low-level data plot behind every aggregate): declare the pair in "
+            "the caption/alt, or split the extra analysis into its own `### <result>` "
+            f"(substantive owner: clean-result-critic Lens 9): {preview}",
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"all {len(result_h3s)} `### <result>`(s) scanned — no unpaired multi-figure section",
+    )
 
 
 def is_v2_nested_design(body: str) -> bool:
@@ -14700,6 +14855,11 @@ CHECKS = [
     # check 48 (v4, WARN) — figure-less quantitative result section
     # (#1832; incident #1769 Result 5):
     check_v4_quant_result_figure,
+    # check 49 (v4, WARN) — >1 inline figure in one `### <result>` with no
+    # raw+processed / aggregate+per-unit pair evidence in the figures'
+    # basenames / alt text / blockquote captions (#1879; incident #1769
+    # fu1 dose-ladder):
+    check_v4_result_figure_cardinality,
     # check 37 (WARN, v4, #1370) — footer `- Reused ... from [#M](...)` bullets carry a
     # revision/path pin (body-text-only sibling of check 35's metadata-side trigger):
     check_footer_reuse_bullets_pinned,
