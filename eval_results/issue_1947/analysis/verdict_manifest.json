@@ -1,0 +1,38 @@
+{
+ "issue": 1947,
+ "band": [
+  0.6,
+  0.85
+ ],
+ "n_draws": 3,
+ "content": {
+  "imp-pers-con-sv-s42": {
+   "slug": "imp-pers-con-sv-s42",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "pers",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 3e-05,
+   "selection": {
+    "step": 20,
+    "rate": 0.62,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 6.0
+  }
+ },
+ "marker": {},
+ "coverage": {
+  "n_content": 1,
+  "n_in_band": 1
+ },
+ "git_commit": "740bd0a8eb",
+ "ts": "2026-08-01T18:23:36Z"
+}
