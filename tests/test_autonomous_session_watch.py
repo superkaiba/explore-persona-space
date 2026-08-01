@@ -526,6 +526,212 @@ def test_followup_active_pause_shaped_timeline():
     )
 
 
+def test_followup_active_named_shield_suffixed_pod():
+    # #1961 / #1768 replay: a SUFFIXED pod (pod-1768-lt) with a structured
+    # named launch (the attested v11 leading-token shape) stays shielded even
+    # when a SIBLING round's `epm:status-changed` postdates the launch — the
+    # exact multi-round shape that auto-stopped pod-1768-lt at 142/216 fit
+    # cells. Without pod_name the issue-grain compare reads False (the
+    # sibling transition is newest), which was the pre-#1961 behavior.
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "kind": "epm:run-launched",
+            "ts": "2026-07-31T22:34:14Z",
+            "note": "pod-1768-lt (4 GPU) provisioned for the lasttoken fits round",
+        },
+        # A sibling round's routine transition, NEWER than the launch.
+        {"kind": "epm:status-changed", "ts": "2026-08-01T04:11:11Z", "note": ""},
+    ]
+    now = asw._parse_event_ts("2026-08-01T04:34:14Z")  # launch + 6h, well under 48h
+    followup = asw._task_followup_active(1768, events=events, pod_name="pod-1768-lt", now=now)
+    assert followup is True
+    # Issue-grain (no pod_name): sibling transition newest -> False.
+    assert asw._task_followup_active(1768, events=events, now=now) is False
+    # The `pod=<name>` token shape (attested v1/v2) shields identically.
+    events_tok = [
+        {
+            "kind": "epm:run-launched",
+            "ts": "2026-07-31T22:34:14Z",
+            "note": "inline fits round launched; pod=pod-1768-lt intent=lora-7b",
+        },
+        {"kind": "epm:status-changed", "ts": "2026-08-01T04:11:11Z", "note": ""},
+    ]
+    assert (
+        asw._task_followup_active(1768, events=events_tok, pod_name="pod-1768-lt", now=now) is True
+    )
+    # End-to-end: the shield flows through decide_pod_safety as followup-skip.
+    assert decide_pod_safety(
+        status_class="auto-stop-done",
+        missed=1,
+        stale=False,
+        alerted=False,
+        threshold=2,
+        followup_active=followup,
+    ) == ("followup-skip", 0)
+
+
+def test_followup_active_named_shield_primary_pod_not_shielded():
+    # #1961 Must-Fix 1 regression: the per-pod arm is SUFFIXED-pods-only.
+    # EVERY standard launch marker names its primary pod as `pod=pod-<N>`,
+    # so shielding primaries would disable the classic escaped-primary-pod
+    # auto-stop fleet-wide for <ceiling hours after every launch. A primary
+    # pod with a FRESH structured `pod=pod-1768` launch marker older than a
+    # sibling transition keeps the byte-identical issue-grain path -> stop.
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "kind": "epm:run-launched",
+            "ts": "2026-07-31T22:00:00Z",
+            "note": "run launched pod=pod-1768 intent=lora-7b",
+        },
+        {"kind": "epm:status-changed", "ts": "2026-08-01T00:00:00Z", "note": ""},
+    ]
+    now = asw._parse_event_ts("2026-08-01T01:00:00Z")  # launch + 3h, inside any ceiling
+    followup = asw._task_followup_active(1768, events=events, pod_name="pod-1768", now=now)
+    assert followup is False
+    # Legacy epm-issue-<N> form is likewise NOT suffixed -> issue-grain.
+    assert (
+        asw._task_followup_active(1768, events=events, pod_name="epm-issue-1768", now=now) is False
+    )
+    assert asw._is_suffixed_pod_name("pod-1768-lt", 1768) is True
+    assert asw._is_suffixed_pod_name("pod-1768", 1768) is False
+    assert asw._is_suffixed_pod_name("epm-issue-1768", 1768) is False
+    # End-to-end: the stop path proceeds after the 2-miss guard.
+    assert decide_pod_safety(
+        status_class="auto-stop-done",
+        missed=1,
+        stale=False,
+        alerted=False,
+        threshold=2,
+        followup_active=followup,
+    ) == ("stop", 0)
+
+
+def test_followup_active_named_shield_prose_mention_no_shield():
+    # #1961 Must-Fix 2: a prose mention of a pod mid-note (the attested #1768
+    # v14 shape: "pod-1768-tx ... was already TERMINATED") is NOT a
+    # structured naming — it must neither shield the mentioned pod nor
+    # restart its ceiling clock.
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "kind": "epm:run-launched",
+            "ts": "2026-08-01T00:00:00Z",
+            "note": (
+                "Continuation lasttoken round: relaunching fits; pod-1768-tx from "
+                "the earlier round was already TERMINATED"
+            ),
+        },
+        {"kind": "epm:status-changed", "ts": "2026-08-01T01:00:00Z", "note": ""},
+    ]
+    # The prose mention is not a structured named launch (no clock restart).
+    assert asw._latest_named_run_launched_ts(events, "pod-1768-tx") is None
+    # And it does not shield: no named launch -> issue-grain fallback, where
+    # the sibling transition is newest -> False.
+    now = asw._parse_event_ts("2026-08-01T02:00:00Z")
+    assert asw._task_followup_active(1768, events=events, pod_name="pod-1768-tx", now=now) is False
+
+
+def test_followup_active_named_shield_boundary_match():
+    # #1961: boundary-safe matching — `pod-1768` never matches inside
+    # `pod-1768-lt` and vice versa, under BOTH structured shapes.
+    import autonomous_session_watch as asw
+
+    ts = "2026-08-01T00:00:00Z"
+    tok_lt = [{"kind": "epm:run-launched", "ts": ts, "note": "pod=pod-1768-lt provisioned"}]
+    tok_bare = [{"kind": "epm:run-launched", "ts": ts, "note": "pod=pod-1768 relaunched"}]
+    lead_lt = [{"kind": "epm:run-launched", "ts": ts, "note": "pod-1768-lt (4 GPU) provisioned"}]
+    lead_bare = [{"kind": "epm:run-launched", "ts": ts, "note": "pod-1768 relaunched"}]
+    # Positive controls: exact-name matches resolve to the launch ts.
+    expected = asw._parse_event_ts(ts)
+    assert asw._latest_named_run_launched_ts(tok_lt, "pod-1768-lt") == expected
+    assert asw._latest_named_run_launched_ts(lead_lt, "pod-1768-lt") == expected
+    assert asw._latest_named_run_launched_ts(tok_bare, "pod-1768") == expected
+    assert asw._latest_named_run_launched_ts(lead_bare, "pod-1768") == expected
+    # Boundary negatives, both directions.
+    assert asw._latest_named_run_launched_ts(tok_lt, "pod-1768") is None
+    assert asw._latest_named_run_launched_ts(lead_lt, "pod-1768") is None
+    assert asw._latest_named_run_launched_ts(tok_bare, "pod-1768-lt") is None
+    assert asw._latest_named_run_launched_ts(lead_bare, "pod-1768-lt") is None
+    # Missing / non-string notes are skipped, never a crash.
+    assert (
+        asw._latest_named_run_launched_ts(
+            [
+                {"kind": "epm:run-launched", "ts": ts},
+                {"kind": "epm:run-launched", "ts": ts, "note": None},
+                {"kind": "epm:run-launched", "ts": ts, "note": 42},
+            ],
+            "pod-1768-lt",
+        )
+        is None
+    )
+
+
+def test_followup_active_named_shield_ceiling_expiry(monkeypatch):
+    # #1961 criterion 4: past the ceiling (default 48h) the named shield
+    # expires and the pod falls back to the issue-grain predicate; the
+    # EPM_POD_NAMED_SHIELD_MAX_AGE_H env override is respected at call time.
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "kind": "epm:run-launched",
+            "ts": "2026-07-30T00:00:00Z",
+            "note": "pod-1768-lt (4 GPU) provisioned",
+        },
+        {"kind": "epm:status-changed", "ts": "2026-07-30T05:00:00Z", "note": ""},
+    ]
+    now = asw._parse_event_ts("2026-08-01T02:00:00Z")  # launch + 50h > 48h default
+    monkeypatch.delenv("EPM_POD_NAMED_SHIELD_MAX_AGE_H", raising=False)
+    assert asw._task_followup_active(1768, events=events, pod_name="pod-1768-lt", now=now) is False
+    # Raising the ceiling past 50h re-shields the same timeline.
+    monkeypatch.setenv("EPM_POD_NAMED_SHIELD_MAX_AGE_H", "100")
+    assert asw._task_followup_active(1768, events=events, pod_name="pod-1768-lt", now=now) is True
+    # Garbled / non-positive overrides fall back to the 48h default.
+    for bad in ("abc", "-1", "0", "inf"):
+        monkeypatch.setenv("EPM_POD_NAMED_SHIELD_MAX_AGE_H", bad)
+        assert asw._pod_named_shield_max_age_s() == asw.POD_NAMED_SHIELD_MAX_AGE_S
+
+
+def test_followup_active_pod_name_none_is_issue_grain():
+    # #1961 criterion 3: pod_name=None (the three non-pod call sites) is
+    # byte-identical to the pre-change issue-grain predicate — including on
+    # events that DO carry a structured named launch.
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-08-01T02:00:00Z")
+    event_lists = [
+        # Structured named launch older than a sibling transition (the shape
+        # the per-pod arm WOULD shield for a suffixed pod_name).
+        [
+            {
+                "kind": "epm:run-launched",
+                "ts": "2026-08-01T00:00:00Z",
+                "note": "pod=pod-1768-lt provisioned",
+            },
+            {"kind": "epm:status-changed", "ts": "2026-08-01T01:00:00Z", "note": ""},
+        ],
+        # Launch newer than the done-transition (issue-grain True).
+        [
+            {"kind": "epm:promoted", "ts": "2026-08-01T00:00:00Z", "note": ""},
+            {"kind": "epm:run-launched", "ts": "2026-08-01T01:00:00Z", "note": ""},
+        ],
+        # No follow-up signal at all.
+        [{"kind": "epm:status-changed", "ts": "2026-08-01T00:00:00Z", "note": ""}],
+        # No done-transition (defensive False).
+        [{"kind": "epm:run-launched", "ts": "2026-08-01T00:00:00Z", "note": ""}],
+    ]
+    for events in event_lists:
+        plain = asw._task_followup_active(1768, events=events)
+        assert asw._task_followup_active(1768, events=events, pod_name=None, now=now) is plain
+        # A NON-suffixed pod_name is likewise pure issue-grain.
+        assert asw._task_followup_active(1768, events=events, pod_name="pod-1768", now=now) is plain
+
+
 def test_pod_safety_followup_active_only_on_auto_stop_arm():
     # The followup_active predicate is consulted ONLY when status_class is
     # auto-stop-done. A pod-active-stale task still alerts (alerts never stop
@@ -15195,7 +15401,9 @@ def _patch_short_window_guards(monkeypatch, *, running_pods, followup_active):
     import autonomous_session_watch as asw
 
     monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda caller="": running_pods)
-    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None: followup_active)
+    monkeypatch.setattr(
+        asw, "_task_followup_active", lambda issue, events=None, **_kw: followup_active
+    )
 
 
 def _run_short_window_case(
