@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1965,
+  "highest_id": 1966,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7479,6 +7479,13 @@
       "path": "tasks/proposed/1965",
       "status": "proposed",
       "title": "daily-fix: route long judge drivers off VM on 1st kill"
+    },
+    "1966": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1966",
+      "status": "proposed",
+      "title": "daily-fix: never push to a branch live boxes sync mid-run"
     },
     "197": {
       "has_clean_result": false,
