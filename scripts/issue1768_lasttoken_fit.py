@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -98,11 +99,18 @@ def fetch_response(
     """
     from explore_persona_space.orchestrate import hub
 
+    # Extract + cache the FULL layer set, never just the requested `layers`:
+    # build_cell asks one layer at a time, so a request-scoped cache would store
+    # L14 only and then KeyError on the L19 lookup. The cache key is
+    # (kind, unit) — its CONTENT must therefore be layer-complete.
+    all_layers = sorted(set(X.LAYERS) | set(layers))
     slim = _slim_path(cache, kind, unit)
     if slim.exists():
         z = np.load(slim, allow_pickle=False)
-        shas = json.loads(slim.with_suffix(".sha.json").read_text())["row_sha"]
-        return {li: z[f"L{li}"].astype(np.float64) for li in layers}, shas
+        if all(f"L{li}" in z.files for li in layers):  # hit must cover the request
+            shas = json.loads(slim.with_suffix(".sha.json").read_text())["row_sha"]
+            return {li: z[f"L{li}"].astype(np.float64) for li in layers}, shas
+        logger.info("[stage] %s/%s cache lacks %s — re-extracting", kind, unit, layers)
 
     fname = "pooled_tf.pt" if kind == "corpus_capture_tf" else "pooled.pt"
     tmp_dir = cache / "_stage"
@@ -116,16 +124,23 @@ def fetch_response(
         overwrite=True,
     )
     try:
-        arrs, shas = _response_arrays(target, layers, "response")
+        arrs, shas = _response_arrays(target, all_layers, "response")
     finally:
         target.unlink(missing_ok=True)
     if persist:
-        np.savez(slim, **{f"L{li}": arrs[li].astype(np.float16) for li in layers})
+        tmp_npz = slim.with_suffix(".tmp.npz")  # np.savez appends .npz otherwise
+        np.savez(tmp_npz, **{f"L{li}": arrs[li].astype(np.float16) for li in all_layers})
+        os.replace(tmp_npz, slim)
         _atomic_json(slim.with_suffix(".sha.json"), {"row_sha": shas, "unit": unit, "kind": kind})
     logger.info(
-        "[stage] %s/%s response extracted (%d rows, cached=%s)", kind, unit, len(shas), persist
+        "[stage] %s/%s response extracted (%d rows, layers=%s, cached=%s)",
+        kind,
+        unit,
+        len(shas),
+        all_layers,
+        persist,
     )
-    return arrs, shas
+    return {li: arrs[li] for li in layers}, shas
 
 
 def load_lasttoken(
