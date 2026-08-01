@@ -4,7 +4,7 @@ title: The prefix/bare mirror image in per-context map error survives the SAE fe
 kind: experiment
 tags: []
 created_at: '2026-07-31T19:59:47Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1738
 origin_prompt: 'run all these: ... 2. Per-context SAE-space error read. The one measurement
   that would settle the bare-vs-prefix mirror-image question. Per-feature agreement
