@@ -6753,8 +6753,8 @@
     "1872": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1872",
-      "status": "approved",
+      "path": "tasks/running/1872",
+      "status": "running",
       "title": "daily-fix: register step 5a in workflow.yaml steps enum"
     },
     "1873": {
