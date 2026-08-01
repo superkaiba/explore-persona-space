@@ -474,24 +474,61 @@ def _parse_generation_tolerant(raw: str, behavior: str) -> dict | None:
         return None
 
 
+def _forbidden_questions() -> set[str]:
+    """The assumption-10 exclusion set: every held-out eval-bank question + the
+    marker training bank + the 20-question persona-panel eval set, stripped —
+    EXACTLY the normalization the phase_banks structural assert applies over
+    new_qs (which are stripped at collection). Shared by the collection-time
+    overlap filter in _extend_bank AND the post-hoc _bank_structural_asserts
+    invariant, so the two can never drift (crash-fix r6: the P0 crash was a
+    post-hoc assert with no collection-time filter — expected collisions under
+    ~15x verbatim template volume crashed the phase instead of being dropped
+    and backfilled from the oversample surplus)."""
+    from explore_persona_space.experiments.factor_screen_365.persona_panel import (
+        EVAL_QUESTIONS_20,
+    )
+
+    marker_train = json.loads(
+        (qg.BANKS_DIR / "issue1481_marker_train10_v1.json").read_text(encoding="utf-8")
+    )
+    forbidden = {q.strip() for q in EVAL_QUESTIONS_20} | {q.strip() for q in marker_train}
+    for behavior in BEHAVIOR_BY_KEY.values():
+        forbidden |= {q.strip() for q in banks_mod.bank_slice(behavior, "eval")}
+    return forbidden
+
+
 def _extend_bank(cfg: Cfg, beh_key: str) -> dict:
     """Extend one behavior's bank to >= 40 + n_new unique screened questions via
     repeated verbatim pv-template calls (dedup across calls; screens per call;
-    per-call parse tolerance via _parse_generation_tolerant)."""
+    per-call parse tolerance via _parse_generation_tolerant; eval/marker-bank
+    collisions dropped at collection time and backfilled — crash-fix r6)."""
     spec = _trait_spec(beh_key)
     behavior = BEHAVIOR_BY_KEY[beh_key]
     out_path = cfg.banks_dir / f"{behavior}_extended.json"
     n_new_target = cfg.n_new_questions()
+    forbidden = _forbidden_questions()
     if out_path.exists():
         rec = json.loads(out_path.read_text(encoding="utf-8"))
-        if len(rec["new_questions"]) >= n_new_target:
+        stale_overlap = sorted({q.strip() for q in rec["new_questions"]} & forbidden)
+        if len(rec["new_questions"]) >= n_new_target and not stale_overlap:
             logger.info("[banks] %s: extension exists (%d new) — skip", behavior, n_new_target)
             return rec
+        if stale_overlap:
+            # Resume revalidation (crash-fix r6): banks are written BEFORE the
+            # phase-level structural asserts run, so a crashed run leaves bank
+            # files that a bare count-only resume would consume and re-crash on.
+            logger.warning(
+                "[banks] %s: resume-loaded extension has %d eval/marker collisions "
+                "— regenerating with the overlap filter",
+                behavior,
+                len(stale_overlap),
+            )
     existing = _existing_bank(spec)
     seen = {q.strip() for q in existing}
     new_qs: list[str] = []
     attempts_used = 0
     parse_rejects = 0
+    overlap_dropped: set[str] = set()
     screen_log: list[dict] = []
     cache_root = cfg.banks_dir / "cache" / behavior
     for attempt in range(1, BANK_MAX_TEMPLATE_CALLS + 1):
@@ -513,18 +550,42 @@ def _extend_bank(cfg: Cfg, beh_key: str) -> dict:
                 spec, gen["questions"], attempt=1000 + attempt, cache_root=cache_root
             )
         bad_idx = {v["index"] for v in violations}
-        screen_log.append({"attempt": attempt, "n_violations": len(violations)})
+        attempt_overlap = 0
         for i, q in enumerate(gen["questions"]):
             q = q.strip()
             if i in bad_idx or not q or q in seen:
                 continue
+            if q in forbidden:
+                # Collision with a held-out eval/marker bank (expected under
+                # ~15x verbatim template volume): drop + count; the tranche /
+                # oversample loop backfills. The :587-class structural assert
+                # stays the unchanged post-hoc invariant.
+                overlap_dropped.add(q)
+                attempt_overlap += 1
+                continue
             seen.add(q)
             new_qs.append(q)
+        screen_log.append(
+            {
+                "attempt": attempt,
+                "n_violations": len(violations),
+                "overlap_rejects": attempt_overlap,
+            }
+        )
+        if attempt_overlap:
+            logger.info(
+                "[banks] %s: overlap-rejected %d candidate question(s) colliding with "
+                "eval/marker banks (attempt %d)",
+                behavior,
+                attempt_overlap,
+                attempt,
+            )
     if len(new_qs) < n_new_target:
         raise RuntimeError(
             f"[banks] {behavior}: only {len(new_qs)} unique screened new questions after "
             f"{attempts_used} template calls (target {n_new_target}, "
-            f"{parse_rejects} parse-rejected calls) — raise "
+            f"{parse_rejects} parse-rejected calls, "
+            f"{len(overlap_dropped)} overlap-rejected questions) — raise "
             f"BANK_MAX_TEMPLATE_CALLS or investigate screen rejections: {screen_log}"
         )
     new_qs = new_qs[:n_new_target]
@@ -539,17 +600,19 @@ def _extend_bank(cfg: Cfg, beh_key: str) -> dict:
         "template_sha256": hashlib.sha256(qg.template_text().encode("utf-8")).hexdigest(),
         "attempts_used": attempts_used,
         "parse_rejects": parse_rejects,
+        "overlap_rejects": len(overlap_dropped),
         "screen_log": screen_log,
         "mock": cfg.mock_gen,
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     _write_json(out_path, rec)
     logger.info(
-        "[banks] %s: %d new questions in %d calls (%d parse-rejected)",
+        "[banks] %s: %d new questions in %d calls (%d parse-rejected, %d overlap-rejected)",
         behavior,
         len(new_qs),
         attempts_used,
         parse_rejects,
+        len(overlap_dropped),
     )
     return rec
 
@@ -563,18 +626,12 @@ def new_questions(cfg: Cfg, beh_key: str) -> list[str]:
 def _bank_structural_asserts(cfg: Cfg) -> dict:
     """Plan assumption 10 — FULL-grain structural asserts on the realized banks:
     uniqueness, disjointness vs every eval bank + the marker banks, and the
-    rendered-question token budget (>=90% keep)."""
-    from explore_persona_space.experiments.factor_screen_365.persona_panel import (
-        EVAL_QUESTIONS_20,
-    )
-
+    rendered-question token budget (>=90% keep). The forbidden set is the SAME
+    _forbidden_questions() the collection-time filter applies (crash-fix r6),
+    so the disjointness assert should now never fire — if it does, that is a
+    real bug (filter/assert drift) and the phase must still crash."""
     tok = _tokenizer()
-    marker_train = json.loads(
-        (qg.BANKS_DIR / "issue1481_marker_train10_v1.json").read_text(encoding="utf-8")
-    )
-    forbidden = {q.strip() for q in EVAL_QUESTIONS_20} | {q.strip() for q in marker_train}
-    for behavior in BEHAVIOR_BY_KEY.values():
-        forbidden |= {q.strip() for q in banks_mod.bank_slice(behavior, "eval")}
+    forbidden = _forbidden_questions()
     stats: dict[str, dict] = {}
     for beh_key in cfg.behaviors:
         behavior = BEHAVIOR_BY_KEY[beh_key]

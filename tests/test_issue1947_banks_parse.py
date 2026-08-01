@@ -138,3 +138,97 @@ def test_extend_bank_floor_unreachable_still_raises(tmp_path, monkeypatch):
     monkeypatch.setattr(dg, "_mock_template_response", lambda spec, attempt: "{not json")
     with pytest.raises(RuntimeError, match=r"parse-rejected"):
         dg._extend_bank(_cfg(tmp_path), "syc")
+
+
+# ── crash-fix r6: collection-time overlap filter + resume revalidation ────────
+
+
+def test_forbidden_questions_real_body():
+    """Executes the REAL _forbidden_questions body (other tests stub it —
+    production-body rule): non-empty, strip-normalized, and a superset of the
+    stripped eval/marker sources the :587-class assert quantifies over.
+    Bank items are compared programmatically, never printed."""
+    from explore_persona_space.artifacts import banks as banks_mod
+    from explore_persona_space.experiments.factor_screen_365.persona_panel import (
+        EVAL_QUESTIONS_20,
+    )
+
+    fq = dg._forbidden_questions()
+    assert fq and all(isinstance(q, str) and q == q.strip() for q in fq)
+    assert {q.strip() for q in EVAL_QUESTIONS_20} <= fq
+    marker_train = json.loads(
+        (qg.BANKS_DIR / "issue1481_marker_train10_v1.json").read_text(encoding="utf-8")
+    )
+    assert {q.strip() for q in marker_train} <= fq
+    for behavior in dg.BEHAVIOR_BY_KEY.values():
+        assert {q.strip() for q in banks_mod.bank_slice(behavior, "eval")} <= fq
+
+
+def test_extend_bank_drops_collisions_counts_and_backfills(tmp_path, monkeypatch, caplog):
+    """The P0-crash shape: candidate questions colliding with the eval/marker
+    exclusion set are DROPPED at collection (counted as overlap_rejects) and
+    backfilled from the same call's surplus — the final bank satisfies the
+    unchanged :587-class disjointness invariant instead of crashing on it."""
+    forbidden = {f"Mock parse question a1 n{i:02d}?" for i in range(3)}
+    monkeypatch.setattr(dg, "_forbidden_questions", lambda: forbidden)
+    monkeypatch.setattr(
+        dg, "_mock_template_response", lambda spec, attempt: _payload(qg.N_QUESTIONS, f"a{attempt}")
+    )
+    cfg = _cfg(tmp_path)
+    with caplog.at_level(logging.INFO, logger=dg.logger.name):
+        rec = dg._extend_bank(cfg, "syc")
+    assert rec["overlap_rejects"] == 3
+    assert len(rec["new_questions"]) == cfg.n_new_questions()
+    # the unchanged post-hoc invariant (issue1947_datagen phase_banks assert):
+    assert not sorted(set(q for q in rec["new_questions"]) & forbidden)
+    # backfill: the first kept question is the first NON-colliding candidate
+    assert rec["new_questions"][0] == "Mock parse question a1 n03?"
+    assert "overlap-rejected 3 candidate question(s)" in caplog.text
+    out = json.loads((cfg.banks_dir / "sycophancy_extended.json").read_text(encoding="utf-8"))
+    assert out["overlap_rejects"] == 3
+
+
+def test_extend_bank_resume_revalidates_stale_colliding_bank(tmp_path, monkeypatch, caplog):
+    """Write-ordering gap (crash-fix r6): bank files land BEFORE the phase
+    structural asserts run, so a crashed run leaves colliding banks on disk.
+    The resume path must re-validate a loaded bank and REGENERATE on collision
+    — never skip on row count alone."""
+    forbidden = {"Mock parse question a1 n00?"}
+    monkeypatch.setattr(dg, "_forbidden_questions", lambda: forbidden)
+    monkeypatch.setattr(
+        dg, "_mock_template_response", lambda spec, attempt: _payload(qg.N_QUESTIONS, f"a{attempt}")
+    )
+    cfg = _cfg(tmp_path)
+    stale_path = cfg.banks_dir / "sycophancy_extended.json"
+    stale_path.parent.mkdir(parents=True, exist_ok=True)
+    stale_qs = ["Mock parse question a1 n00?"] + [
+        f"stale unique question n{i:02d}?" for i in range(1, cfg.n_new_questions())
+    ]
+    stale_path.write_text(json.dumps({"new_questions": stale_qs}), encoding="utf-8")
+    with caplog.at_level(logging.WARNING, logger=dg.logger.name):
+        rec = dg._extend_bank(cfg, "syc")
+    assert "resume-loaded extension has 1 eval/marker collisions" in caplog.text
+    assert not set(rec["new_questions"]) & forbidden
+    assert len(rec["new_questions"]) == cfg.n_new_questions()
+    rewritten = json.loads(stale_path.read_text(encoding="utf-8"))
+    assert rewritten["new_questions"] == rec["new_questions"]
+    assert rewritten["overlap_rejects"] == 1
+
+
+def test_extend_bank_resume_clean_bank_still_skips(tmp_path, monkeypatch):
+    """A clean resume-loaded bank (count >= target, zero collisions) is
+    returned as-is — the revalidation never forces a spurious regeneration
+    (mock seam raises if any generation call is attempted)."""
+    monkeypatch.setattr(dg, "_forbidden_questions", lambda: {"never generated?"})
+
+    def _boom(spec, attempt):  # pragma: no cover - failure branch
+        raise AssertionError("clean resume bank must not trigger regeneration")
+
+    monkeypatch.setattr(dg, "_mock_template_response", _boom)
+    cfg = _cfg(tmp_path)
+    path = cfg.banks_dir / "sycophancy_extended.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    clean_qs = [f"clean unique question n{i:02d}?" for i in range(cfg.n_new_questions())]
+    path.write_text(json.dumps({"new_questions": clean_qs}), encoding="utf-8")
+    rec = dg._extend_bank(cfg, "syc")
+    assert rec["new_questions"] == clean_qs
