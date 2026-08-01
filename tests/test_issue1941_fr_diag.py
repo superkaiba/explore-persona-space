@@ -9,8 +9,12 @@ helpers against CM.fleiss_kappa_varying_n on synthetic fixtures with known
 kappa, the drop-taxonomy classifier on fixture raw texts, sampling determinism
 (SeedSequence([17_732_026, 1941])), the registered verdict lattice + wave-2
 trigger pure functions, the wave-2 rubric composition (decision procedure
-inserted before the byte-pinned question tail), and the additive
-AXIS_USABILITY / feature-table marking contract.
+inserted before the byte-pinned question tail), the additive
+AXIS_USABILITY / feature-table marking contract, and the decide-mark/wave2
+analyze-format guard (code-review r1 Major: an arms-format `_partial`
+kappa_by_arm.json fed to decide-mark reads kappa_uniform -> None and
+silently RETIREs a qualifying arm — the guard refuses fail-loud, naming
+the `--phase analyze` re-analyze step).
 
 No production function added by #1941 is stubbed/monkeypatched here — every
 test executes the real bodies; the only external boundary (the Batch API) is
@@ -19,6 +23,8 @@ exercised by the driver's 5-item live smoke, not faked in tests.
 
 from __future__ import annotations
 
+import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -354,3 +360,116 @@ def test_mark_rows_additive_and_preserving():
 def test_wave2_rubric_sha16_stable_and_recorded():
     s = FR.wave2_rubric_sha16()
     assert len(s) == 16 and s == FR.wave2_rubric_sha16()
+
+
+# ── decide-mark / wave2 analyze-format guard (code-review r1 Major) ──────────
+
+
+def _args(out_root: Path, **kw) -> argparse.Namespace:
+    """A CLI-shaped namespace for the $0 phase entrypoints (no dispatch)."""
+    base = dict(
+        out_root=out_root,
+        figs_root=out_root / "figs",
+        wave=1,
+        limit=0,
+        render_only=False,
+        smoke=False,
+        full=False,
+        dry_run=False,
+        no_upload=True,
+        no_figures=True,
+        rerun_arm=False,
+        force=False,
+        apply_marking=False,
+        skip_taxonomy=True,
+        evidence_shard_limit=0,
+        raw_shard_limit=0,
+    )
+    base.update(kw)
+    return argparse.Namespace(**base)
+
+
+def _write_arms_format_partial(out_root: Path) -> dict:
+    """The post-`wave2 --full` hazard state: run_arms' checkpoint write —
+    arms-format entries ("kappa" key, no kappa_uniform) + "_partial": true —
+    for a d600 that GENUINELY clears every lattice bar."""
+    arms_dir = out_root / "arms"
+    arms_dir.mkdir(parents=True)
+    kba = {"d600": {"kappa": 0.72, "content_drop_rate": 0.005}, "_partial": True}
+    (arms_dir / "kappa_by_arm.json").write_text(json.dumps(kba))
+    (arms_dir / "axis_labels_d600.jsonl").write_text('{"feat_id": 1}\n')
+    (out_root / "contrasts.json").write_text("{}")
+    return kba
+
+
+def test_decide_mark_refuses_arms_format_partial_summary(tmp_path):
+    kba = _write_arms_format_partial(tmp_path)
+    # the silent-RETIRE path the guard closes: on the arms-format dict the
+    # lattice reads kappa_uniform -> None, so the qualifying d600 RETIREs
+    v = FR.lattice_verdict(kba, {}, ["d600"])
+    assert v["verdict"] == "RETIRE" and not v["per_arm"]["d600"]["kappa_ge_bar"]
+    with pytest.raises(SystemExit, match="--phase analyze"):
+        FR.phase_decide_mark(_args(tmp_path))
+    assert not (tmp_path / "decision.json").exists()  # nothing written on refusal
+
+
+def test_decide_mark_refuses_labeled_arm_missing_from_summary(tmp_path):
+    # analyze-format summary (no _partial), but d600 labels landed AFTER the
+    # last analyze — its entry is absent, so the guard demands a re-analyze
+    arms_dir = tmp_path / "arms"
+    arms_dir.mkdir(parents=True)
+    summary = {
+        "c0": {"kappa_uniform": 0.32},
+        "c600": {"kappa_uniform": 0.35, "content_drop_rate": 0.01},
+    }
+    (arms_dir / "kappa_by_arm.json").write_text(json.dumps(summary))
+    (arms_dir / "axis_labels_c0.jsonl").write_text("{}\n")
+    (arms_dir / "axis_labels_c600.jsonl").write_text("{}\n")
+    (arms_dir / "axis_labels_d600.jsonl").write_text("{}\n")
+    (tmp_path / "contrasts.json").write_text(json.dumps({"c600_vs_c0": {"ci_lb95": 0.0}}))
+    with pytest.raises(SystemExit, match="d600"):
+        FR.phase_decide_mark(_args(tmp_path))
+
+
+def test_decide_mark_refuses_stale_contrasts(tmp_path):
+    # summary covers d600 in analyze format, but contrasts.json lacks
+    # d600_vs_c0 (analyze crashed between its two writes / stale file)
+    arms_dir = tmp_path / "arms"
+    arms_dir.mkdir(parents=True)
+    summary = {
+        "c0": {"kappa_uniform": 0.32},
+        "d600": {"kappa_uniform": 0.72, "content_drop_rate": 0.005},
+    }
+    (arms_dir / "kappa_by_arm.json").write_text(json.dumps(summary))
+    (arms_dir / "axis_labels_d600.jsonl").write_text("{}\n")
+    (tmp_path / "contrasts.json").write_text("{}")
+    with pytest.raises(SystemExit, match="d600_vs_c0"):
+        FR.phase_decide_mark(_args(tmp_path))
+
+
+def test_decide_mark_passes_analyze_format_qualifying_wave2(tmp_path):
+    # end-to-end complement: the SAME qualifying d600, post-re-analyze shape
+    # -> decide-mark resolves REPAIR (no --apply-marking: no table writes)
+    arms_dir = tmp_path / "arms"
+    arms_dir.mkdir(parents=True)
+    summary = {
+        "c0": {"kappa_uniform": 0.32},
+        "d600": {"kappa_uniform": 0.72, "content_drop_rate": 0.005},
+    }
+    (arms_dir / "kappa_by_arm.json").write_text(json.dumps(summary))
+    (arms_dir / "axis_labels_c0.jsonl").write_text("{}\n")
+    (arms_dir / "axis_labels_d600.jsonl").write_text("{}\n")
+    (tmp_path / "contrasts.json").write_text(json.dumps({"d600_vs_c0": {"ci_lb95": 0.30}}))
+    assert FR.phase_decide_mark(_args(tmp_path)) == 0
+    decision = json.loads((tmp_path / "decision.json").read_text())
+    assert decision["verdict"] == "REPAIR" and decision["adopted_arm"] == "d600"
+    assert decision["wave2_ran"] is True
+    assert "superseded" in decision["usability_string"]
+
+
+def test_wave2_trigger_read_refuses_partial_summary(tmp_path):
+    # phase_wave2's own trigger read consumes the same file — same guard
+    _write_arms_format_partial(tmp_path)
+    (tmp_path / "phase0_diagnostics.json").write_text("{}")
+    with pytest.raises(SystemExit, match="--phase analyze"):
+        FR.phase_wave2(_args(tmp_path, full=True))

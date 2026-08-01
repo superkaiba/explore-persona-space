@@ -37,19 +37,37 @@ Batch-API path with raw-text retention)):
   --phase wave2         P3 (conditional): revised-rubric arms d600/bd600 on
                         the same 800 features; rubric frozen + sha16-hashed at
                         dispatch. Refuses unless the registered §3 trigger
-                        holds (override with --force).
+                        holds (override with --force), and refuses a
+                        pre-analyze (arms-format `_partial`) kappa_by_arm.json
+                        (run --phase analyze first). After a --full dispatch
+                        completes, the phase AUTO-RUNS --phase analyze (the
+                        RE-ANALYZE step), folding d600/bd600 into the
+                        analyze-format summary + contrasts — so the registered
+                        §10 sequence (analyze -> wave2 --full -> decide-mark)
+                        can never hand decide-mark an arms-format summary.
   --phase decide-mark   P4: apply the registered verdict lattice mechanically
                         -> decision.json; with --apply-marking additionally
                         patch eval_results/issue_1773/feature_table_v1.jsonl
                         ADDITIVELY (per-row `axis_usability` field), write the
                         usability sidecar + AXIS_USABILITY.json, and check
                         `CM.AXIS_USABILITY` matches the verdict string.
+                        REFUSES (fail-loud) unless arms/kappa_by_arm.json is
+                        the ANALYZE-format output covering every labeled arm
+                        and contrasts.json carries each arm's `_vs_c0`
+                        contrast — an arms-format/partial summary reads
+                        kappa_uniform -> None and would silently RETIRE a
+                        qualifying arm. On refusal: run `--phase analyze`.
 
 Spend guards: only --smoke (5 live calls ~ $0.02) and --full dispatch API
-calls; every other mode is $0. Full dispatches refuse a sample manifest built
-from bounded inputs. Smoke/bounded runs MUST use a non-default --out-root
-(enforced) so production artifacts are never written from a bounded slice
-(per-leg out-roots, .claude/rules/crash-fix-rounds.md).
+calls; every other mode is $0. Out-root guards, per leg: a BOUNDED
+sample-diag (--evidence-shard-limit / --raw-shard-limit) REFUSES the default
+--out-root (a partial census must never write the production sample manifest;
+per-leg out-roots, .claude/rules/crash-fix-rounds.md), and --full REFUSES a
+sample manifest built from bounded inputs. The arms --render-only / --smoke /
+--limit legs ARE allowed at the default out-root (the plan §10 registered
+smoke chain runs them there): they write only uniquely-named artifacts
+(golden_prompts/*.txt, smoke_report.json) that no full-run artifact path
+collides with.
 """
 
 from __future__ import annotations
@@ -1089,6 +1107,9 @@ def aggregate_arm(
         launched.add(fid)
         tally["launched"] += 1
         res = results.get(cid)
+        # fail-loud: the dispatch machinery returns a result-or-error dict per
+        # launched item; a MISSING entry is a machinery bug, never a content drop
+        assert res is not None, f"[arms:{arm}] launched item {cid} has no returned result"
         if isinstance(res, dict) and res.get("error"):
             kind = _classify_error(res)
             tally["content_drops" if kind == "content" else "transport_losses"] += 1
@@ -1337,6 +1358,9 @@ def run_arms(args, arms: dict[str, tuple[str, ...]], wave: int) -> int:
             "scope": "uniform stratum only (oversample never enters headline bars)",
             "drop_report": tally,
             "content_drop_rate": tally["content_drops"] / max(tally["launched"], 1),
+            # registered denominator scope (plan §6 DV table: "content-drops /
+            # launched, per arm"): ALL launched draws, uniform + oversample strata
+            "content_drop_rate_scope": "content drops / all launched draws (uniform + oversample)",
             "transport_residual_rate": tally["transport_losses"] / max(tally["launched"], 1),
             "max_tokens": ARMS_MAX_TOKENS,
             **_rubric_meta(arm),
@@ -1382,9 +1406,20 @@ def phase_analyze(args) -> int:
     if not api_arms:
         raise SystemExit("[analyze] no API-arm label files under arms/; run --phase arms --full")
 
-    # transport-hygiene gate (plan §7 criterion 3) from the per-arm tallies
+    # transport-hygiene gate (plan §7 criterion 3) from the per-arm tallies.
+    # Fail-loud on a missing tally entry: run_arms writes one per dispatched
+    # arm (arms- AND analyze-format entries both carry the rates), so an
+    # absent file/entry beside label files means the gate would silently
+    # default rate=0.0 (code-review r1 bug-class sweep, secondary consumer).
     kba_path = out_root / "arms" / "kappa_by_arm.json"
     kba = json.loads(kba_path.read_text()) if kba_path.exists() else {}
+    missing_kba = [a for a in api_arms if a not in kba]
+    if missing_kba:
+        raise SystemExit(
+            f"[analyze] arms {missing_kba} have label files but no kappa_by_arm.json tally "
+            f"entry at {kba_path} — the transport-hygiene gate cannot read their rates; "
+            "re-run --phase arms --full (or restore the file)"
+        )
     for arm in api_arms:
         rate = kba.get(arm, {}).get("transport_residual_rate", 0.0)
         if rate and rate > TRANSPORT_RESIDUAL_MAX:
@@ -1429,6 +1464,7 @@ def phase_analyze(args) -> int:
                 for k in (
                     "drop_report",
                     "content_drop_rate",
+                    "content_drop_rate_scope",
                     "transport_residual_rate",
                     "max_tokens",
                     "rubric",
@@ -1442,6 +1478,10 @@ def phase_analyze(args) -> int:
             launched = len([r for r in arm_rows[a] if r["stratum"] == "uniform"]) * N_DRAWS
             surv = sum(r["n_surviving"] for r in arm_rows[a] if r["stratum"] == "uniform")
             summary[a]["content_drop_rate"] = (launched - surv) / max(launched, 1)
+            summary[a]["content_drop_rate_scope"] = (
+                "content drops / uniform-stratum launched draws (c0 as-run labels; "
+                "kappa_report records 0 transport losses fleet-wide)"
+            )
             summary[a]["max_tokens"] = 400
             summary[a]["rubric"] = "v1-production (as-run labels)"
 
@@ -1822,6 +1862,10 @@ def lattice_verdict(summary: dict, contrasts: dict, arms_present: list[str]) -> 
             "kappa_min": KAPPA_REPAIR_MIN,
             "delta_ci_lb95_min": DELTA_CI_LB95_MIN,
             "content_drop_max": DROP_RATE_MAX,
+            # registered denominator scope of the drop bar's input (plan §6 DV
+            # table: "content-drops / launched, per arm" — API arms only; c0
+            # never enters the lattice)
+            "content_drop_denominator": "all launched draws per API arm (uniform + oversample)",
         },
     }
 
@@ -1852,10 +1896,66 @@ def mark_rows(rows: list[dict], usability: dict[str, str]) -> list[dict]:
     return out
 
 
+def load_analyze_summary(out_root: Path, phase: str) -> dict:
+    """Load arms/kappa_by_arm.json asserting it is the ANALYZE-format output.
+
+    Two writers share that path: `run_arms` checkpoints per-arm tallies in
+    ARMS format (`{"kappa": ...}` entries + a top-level `"_partial": true`),
+    and `phase_analyze` rewrites it in ANALYZE format (`{"kappa_uniform":
+    ...}` entries, no `_partial`, paired contrasts in contrasts.json). A
+    downstream consumer fed the arms-format file reads `kappa_uniform` ->
+    None -> `qualifies=False`, so a genuinely qualifying arm silently
+    resolves RETIRE (code-review r1 Major). Refuses fail-loud: (a) a
+    `_partial`/arms-format file, and (b) any labeled arm
+    (arms/axis_labels_<arm>.jsonl present) missing an analyze-format entry
+    — both name the re-analyze step. Returns the verified summary dict.
+    """
+    path = out_root / "arms" / "kappa_by_arm.json"
+    if not path.exists():
+        raise SystemExit(f"[{phase}] no {path}; run --phase arms --full then --phase analyze")
+    summary = json.loads(path.read_text())
+    if summary.get("_partial"):
+        raise SystemExit(
+            f"[{phase}] REFUSED: {path} is the arms-phase checkpoint write "
+            "(arms-format, _partial=true) — its entries carry no kappa_uniform, so every "
+            "lattice bar reads None and a qualifying arm would silently RETIRE. "
+            "Run `--phase analyze` first (the re-analyze after any wave-2 / --rerun-arm "
+            "dispatch)."
+        )
+    labeled = sorted(
+        p.stem.removeprefix("axis_labels_") for p in (out_root / "arms").glob("axis_labels_*.jsonl")
+    )
+    stale = [a for a in labeled if a != "c0" and "kappa_uniform" not in (summary.get(a) or {})]
+    if stale:
+        raise SystemExit(
+            f"[{phase}] REFUSED: arms {stale} have label files but no analyze-format "
+            f"kappa_uniform entry in {path} — run `--phase analyze` first so the "
+            "summary + contrasts cover every labeled arm."
+        )
+    return summary
+
+
+def load_contrasts_covering(out_root: Path, summary: dict, phase: str) -> dict:
+    """Load contrasts.json asserting every summary API arm has its `_vs_c0`
+    contrast (an analyze crash between the two writes, or a stale file,
+    would otherwise feed None -> ci_lb95_ge_bar=False silently)."""
+    path = out_root / "contrasts.json"
+    if not path.exists():
+        raise SystemExit(f"[{phase}] no {path}; run `--phase analyze` first")
+    contrasts = json.loads(path.read_text())
+    missing = [a for a in ARM_PREFERENCE if a in summary and f"{a}_vs_c0" not in contrasts]
+    if missing:
+        raise SystemExit(
+            f"[{phase}] REFUSED: contrasts.json lacks {[f'{a}_vs_c0' for a in missing]} — "
+            "stale vs the summary; run `--phase analyze` first."
+        )
+    return contrasts
+
+
 def phase_wave2(args) -> int:
     out_root: Path = args.out_root
-    summary = json.loads((out_root / "arms" / "kappa_by_arm.json").read_text())
-    contrasts = json.loads((out_root / "contrasts.json").read_text())
+    summary = load_analyze_summary(out_root, "wave2")
+    contrasts = load_contrasts_covering(out_root, summary, "wave2")
     phase0 = json.loads((out_root / "phase0_diagnostics.json").read_text())
     trig = wave2_trigger(summary, contrasts, phase0)
     _log(f"[wave2] trigger: {json.dumps(trig)}")
@@ -1864,13 +1964,22 @@ def phase_wave2(args) -> int:
             "[wave2] REFUSED: registered trigger not met (RETIRE is terminal after wave 1); "
             "pass --force only with a recorded justification"
         )
-    return run_arms(args, WAVE2_SEES, wave=2)
+    rc = run_arms(args, WAVE2_SEES, wave=2)
+    if rc == 0 and args.full and not args.dry_run:
+        # RE-ANALYZE (code-review r1 Major fix): run_arms left kappa_by_arm.json
+        # in arms format (_partial), which decide-mark refuses — fold d600/bd600
+        # into the analyze-format summary + contrasts here so the registered §10
+        # sequence (analyze -> wave2 --full -> decide-mark) is closed under this
+        # phase. --render-only / --dry-run legs write no kba and skip this.
+        _log("[wave2] arms complete — auto-running --phase analyze (re-analyze)")
+        rc = phase_analyze(args)
+    return rc
 
 
 def phase_decide_mark(args) -> int:
     out_root: Path = args.out_root
-    summary = json.loads((out_root / "arms" / "kappa_by_arm.json").read_text())
-    contrasts = json.loads((out_root / "contrasts.json").read_text())
+    summary = load_analyze_summary(out_root, "decide-mark")
+    contrasts = load_contrasts_covering(out_root, summary, "decide-mark")
     arms_present = [a for a in ARM_PREFERENCE if a in summary]
     verdict = lattice_verdict(summary, contrasts, arms_present)
     s = usability_string(verdict)
