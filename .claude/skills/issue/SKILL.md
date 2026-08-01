@@ -10515,9 +10515,13 @@ The worktree is **NOT removed** — it persists for inspection and is
 reaped later by the daily stale-worktree audit (`worktree_audit.py`,
 09:47) once the task reaches a terminal status and the worktree is idle.
 
-**Idempotent.** Skip the whole step if `epm:merged` already exists on the
-task (an experiment that merged at Step 9b is a no-op here). Also skip if
-no PR exists or the branch is already merged into `main`.
+**Idempotent.** Skip the whole step iff `epm:merged` already exists on the
+task AND the branch has no commits ahead of fetched `origin/main`
+(payload-scoped, #1897: a same-issue follow-up round produces NEW payload
+on the same branch, and a prior round's `epm:merged` marker alone must not
+strand it — #1768 round-2; an experiment that merged at Step 9b with
+nothing new since is a no-op here). Also skip if no PR exists or the
+branch is already merged into `main` (zero commits ahead).
 
 #### Bare push / merge snippets (canonical — copy verbatim, never compose a piped variant)
 
@@ -10548,7 +10552,10 @@ git push origin main || uv run python scripts/sync_repo_root.py
 
 # (3) PR merge (for sites OUTSIDE Step 10d/9b — those two run the full
 #     lint-verdict-gated blocks below, never this bare form) — branch the
-#     flow on the EXIT CODE, never on filtered output:
+#     flow on the EXIT CODE, never on filtered output (and exit 0 is NOT
+#     proof THIS attempt landed: an already-merged PR exits 0 — improvised
+#     sites verify the landing per the Step 10d landing-verification read,
+#     state/mergedAt freshness, #1897):
 if gh pr merge <PR> --rebase --delete-branch=false; then
   echo "merged"
 else
@@ -12130,10 +12137,42 @@ tests BEFORE anything lands:
 #### The auto-merge procedure (safe case: guard 3 clean — mainline-based, own commits in scope)
 
 ```bash
-PR=$(gh pr view <PR> --json number -q .number 2>/dev/null) || true
+# PR-object liveness probe (#1768 round-2 / #1897): a follow-up round's
+# branch outlives its round-1 PR — a MERGED/CLOSED PR is a TERMINAL
+# GitHub object (new branch commits never attach), and `gh pr merge` on
+# one exits 0 with "was already merged" (false success: verdict
+# consumed, payload stranded). Resolve state + pre-attempt mergedAt
+# alongside the number, and require OPEN before any merge attempt.
+# (`gh pr view issue-<N>` by branch name prefers the OPEN PR when one
+# exists, so the re-resolve after `gh pr create` binds the fresh PR.)
+PR_INFO=$(gh pr view issue-<N> --json number,state,mergedAt \
+  -q '[(.number | tostring), .state, (.mergedAt // "null")] | join(" ")' 2>/dev/null) || true
+PR=$(echo "$PR_INFO" | cut -d' ' -f1)
+PR_STATE=$(echo "$PR_INFO" | cut -d' ' -f2)
+PRE_MERGED_AT=$(echo "$PR_INFO" | cut -d' ' -f3)
 if [ -z "$PR" ]; then
   echo "No PR for issue-<N>; nothing to merge."   # skip; post nothing
 else
+  if [ "$PR_STATE" != "OPEN" ]; then
+    # Fresh draft PR via the Step 4a pre-checked shape (bounded fetch +
+    # aheadness): a terminal PR never merges new commits.
+    timeout --kill-after=30s 120s git -C "$REPO_ROOT" fetch origin main --quiet || true
+    if [ "$(git -C "$WT" rev-list --count origin/main..issue-<N>)" -gt 0 ]; then
+      gh pr create --draft --head issue-<N> \
+        --title "issue-<N>: <task title> (round follow-up)" \
+        --body "Closes task #<N>. Fresh PR: prior PR #$PR is $PR_STATE (#1897 probe)."
+      PR_INFO=$(gh pr view issue-<N> --json number,state,mergedAt \
+        -q '[(.number | tostring), .state, (.mergedAt // "null")] | join(" ")')
+      PR=$(echo "$PR_INFO" | cut -d' ' -f1)
+      PR_STATE=$(echo "$PR_INFO" | cut -d' ' -f2)
+      PRE_MERGED_AT=$(echo "$PR_INFO" | cut -d' ' -f3)
+    else
+      echo "issue-<N> has no commits ahead of origin/main — content already landed; nothing to merge (prior PR #$PR $PR_STATE stays the record)."
+      # Take the existing already-merged skip path (Idempotent bullet);
+      # post nothing new; do NOT run the guards/merge below on a
+      # terminal PR.
+    fi
+  fi
   # Run guards 1-3 above first. If guard 3 says "unsafe", skip this
   # block and run the artifact-confirmed merge below instead.
   #
@@ -12324,7 +12363,7 @@ else
       # bounded until-loop — never a leading foreground sleep
       # (harness-blocked; the shape-0 convention).
       TIP=$(git -C "$WT" rev-parse HEAD); HS_TRIES=0
-      until HS=$(gh pr view <PR> --json headRefOid,mergeable -q '.headRefOid + " " + .mergeable' 2>/dev/null) \
+      until HS=$(gh pr view "$PR" --json headRefOid,mergeable -q '.headRefOid + " " + .mergeable' 2>/dev/null) \
             && [ "${HS%% *}" = "$TIP" ] && [ "${HS##* }" != "UNKNOWN" ]; do
         HS_TRIES=$((HS_TRIES + 1))
         if [ "$HS_TRIES" -ge 6 ]; then
@@ -12336,18 +12375,39 @@ else
       if [ "${HS%% *}" = "$TIP" ]; then
         echo "head-sync pre-check: parity at $TIP (mergeable=${HS##* })"
       fi
-      gh pr ready <PR>
-      if gh pr merge <PR> $MERGE_FORM --delete-branch=false; then
-        rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on MERGE SUCCESS — the verdict certified exactly the tip that landed
-        # Root-sync before epm:merged (#1725, safe-case): the just-merged diff is on
-        # origin/main; a workflow-surface fix in it is NOT yet live at the
-        # shared repo root, and the very next call — the epm:merged post —
-        # runs argv-prose guards from the pre-fix root copy (session
-        # 7ce3a81f, 2026-07-26: git-verb note text blocked ~25s post-merge).
-        # sync_repo_root.py is single-flight flock-serialized; fail-soft
-        # (the post-merge-guard pre-sync at the guard block below remains the fallback).
-        uv run python "$REPO_ROOT/scripts/sync_repo_root.py" || \
-          echo "[step10d/safe-case] pre-marker sync failed; post-merge-guard pre-sync remains the fallback"
+      gh pr ready "$PR"
+      if gh pr merge "$PR" $MERGE_FORM --delete-branch=false; then
+        # Landing verification (#1897): exit 0 is NOT proof THIS attempt
+        # landed — `gh pr merge` on an already-merged PR exits 0 with
+        # "was already merged" (#1768 round-2). Verify via the PR object
+        # (never branch-sha ancestry: a rebase merge lands rebased
+        # COPIES — new shas). Check-first bounded poll for GitHub's
+        # async state settle; the empty-PRE_MERGED_AT conjunct fails
+        # CLOSED (a partial re-entry in a fresh shell leaves it unset).
+        LANDED_OK=no
+        for _ in 1 2 3; do
+          POST=$(gh pr view "$PR" --json state,mergedAt \
+            -q '[.state, (.mergedAt // "null")] | join(" ")' 2>/dev/null) || POST=""
+          if [ -n "$PRE_MERGED_AT" ] && [ "${POST%% *}" = "MERGED" ] \
+             && [ "${POST##* }" != "null" ] \
+             && [ "${POST##* }" != "$PRE_MERGED_AT" ]; then LANDED_OK=yes; break; fi
+          sleep 10
+        done
+        if [ "$LANDED_OK" = yes ]; then
+          rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on VERIFIED merge success only — the verdict certified exactly the tip that landed
+          # Root-sync before epm:merged (#1725, safe-case): the just-merged diff is on
+          # origin/main; a workflow-surface fix in it is NOT yet live at the
+          # shared repo root, and the very next call — the epm:merged post —
+          # runs argv-prose guards from the pre-fix root copy (session
+          # 7ce3a81f, 2026-07-26: git-verb note text blocked ~25s post-merge).
+          # sync_repo_root.py is single-flight flock-serialized; fail-soft
+          # (the post-merge-guard pre-sync at the guard block below remains the fallback).
+          uv run python "$REPO_ROOT/scripts/sync_repo_root.py" || \
+            echo "[step10d/safe-case] pre-marker sync failed; post-merge-guard pre-sync remains the fallback"
+        else
+          echo "MERGE NOT VERIFIED — gh pr merge exited 0 but the PR object shows no FRESH merge (state/mergedAt unchanged vs pre-attempt: the exit-0 'was already merged' false-success shape, #1768/#1897). Verdict NOT consumed; re-enter via the PR-state probe at the top of this block (fresh PR) AT MOST ONCE per Step 10d invocation — a SECOND unverified exit-0 success -> epm:merge-failed. Do NOT report success."
+          false
+        fi
       else
         echo "MERGE FAILED — classify the gh error text: (0) \"Base branch was modified\" -> transient base-advance (Known failure shape 0 below): wait ~20s via a bounded until-loop or a bg-Bash re-check — NEVER a leading foreground \`sleep\` (harness-blocked; 3 wasted turns on 2026-07-18 alone) — then re-enter this SAME conditional (the verdict still certifies the tip; max 2 re-entries per Step 10d invocation, counted regardless of re-bind — a re-entry may legitimately carry a moved tip via a second sync+re-bind, #1807); (1) \"can't be rebased\" (--rebase form only) -> the #1041 --squash retry (Known failure shape 1 below; SHA-bound verdict remains valid for the SAME tip); (2) \"Pull Request has merge conflicts\" -> the #1128 re-snapshot-and-retry-once (Known failure shape 2 below); (3) \"Head branch is out of date\" -> PR head-sync lag (Known failure shape 3 below): confirm pushed, bounded headRefOid re-poll, close/reopen nudge ONCE if still stale, then re-enter this SAME conditional (the verdict still certifies the tip; max 2 re-entries per Step 10d invocation, counted regardless of re-bind — #1807); (4) anything else -> the Failure bullet (merge-conflict recovery ONCE, then epm:merge-failed). Do NOT hand-write the verdict file."
         false
@@ -12590,6 +12650,23 @@ uv run python scripts/task.py post-marker <N> epm:progress \
   --note "[long-phase-heartbeat] step10d-merge attempt=<k> shape=3"
 ```
 
+**Exit-0 false success — `gh pr merge` on an already-merged/closed PR
+(#1768 round-2 / #1897).** Shapes 0–3 above all key on NON-zero merge
+exits; this shape is different in kind: `gh pr merge` against a PR a
+PRIOR round already merged/closed EXITS 0 with `! Pull request ... was
+already merged` — a terminal PR object never merges new branch commits,
+so the round's payload stays stranded off `main` while the flow reads
+success (#1768 round-2: `gh pr merge 1527 --rebase` ran against the
+round-1 PR, the success arm consumed the verdict, and the 22-commit
+round-2 payload was stranded; recovery cost a fresh PR + a full gate
+re-run). Prevention is the PR-object liveness probe at the safe-case
+entry (state must be OPEN, else a fresh pre-checked draft PR);
+detection is the `Landing verification (#1897)` read in BOTH merge
+success arms (state == MERGED AND mergedAt fresh vs the pre-attempt
+value) — the verdict is consumed only on a VERIFIED landing, and an
+unverified exit-0 routes to MERGE NOT VERIFIED (verdict survives; at
+most one probe re-entry, then `epm:merge-failed`).
+
 - **Success:** post `epm:merged v1` VIA THE `--file` CHANNEL — never `--note`
   — with a scratch file at `/tmp/issue-<N>-merged-note.md` (composed VIA
   THE WRITE TOOL immediately before the post-marker call — NEVER a Bash
@@ -12610,7 +12687,11 @@ uv run python scripts/task.py post-marker <N> epm:progress \
 
   **Authoritative merge-SHA derivation (#1722).** Read the merge SHA
   from the PR object itself, AFTER `gh pr merge` reports success:
-  `MERGE_SHA=$(gh pr view <PR> --json mergeCommit -q .mergeCommit.oid)`.
+  `MERGE_SHA=$(gh pr view "$PR" --json mergeCommit -q .mergeCommit.oid)`
+  (`$PR` = the probe-rebound PR number from the safe-case block, #1897 —
+  in a fresh shell, re-bind it via the PR-state probe's branch-name
+  resolve, never by pasting a prior round's PR number: compose-time
+  PR-number substitution is the #1768 round-2 mechanism).
   This is the shape SKILL.md already uses elsewhere for other PR fields
   (`state`, `mergeable`, `headRefOid`), and `mergeCommit` is a documented
   `gh pr view --json` field — it resolves the merge commit for BOTH
@@ -12649,7 +12730,7 @@ uv run python scripts/task.py post-marker <N> epm:progress \
   instead of a false MISMATCH. Then confirm `task #<N>` (or the
   issue-branch name `issue-<N>`) appears in `$SUBJECT`. Only a
   RESOLVED-but-foreign subject is a MISMATCH: ABORT the post and
-  re-derive from `gh pr view <PR> --json mergeCommit`. The null case
+  re-derive from `gh pr view "$PR" --json mergeCommit`. The null case
   from a not-yet-merged PR still fails loud (`git log -1 --format=%s
   null` errors locally AND the remote read 404s → empty `$SUBJECT`);
   an EMPTY `$SUBJECT` after both reads is an ABORT (cannot certify),
@@ -12873,10 +12954,34 @@ if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/nu
    && [ "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" = "$(git -C "$WT" rev-parse HEAD)" ]; then
   git -C "$WT" push
   # gh recomputes mergeability asynchronously after a push — it can be
-  # momentarily stale. Re-check before concluding failure:
-  gh pr view <PR> --json mergeable -q .mergeable   # brief wait/retry until MERGEABLE
+  # momentarily stale. Re-check before concluding failure; ALSO bind the
+  # pre-attempt mergedAt for the landing verification below (fenced
+  # blocks are separate shells — the safe-case probe's binding is not in
+  # scope here, #1897):
+  PRE_STATE=$(gh pr view <PR> --json mergeable,state,mergedAt \
+    -q '[.mergeable, .state, (.mergedAt // "null")] | join(" ")' 2>/dev/null) || PRE_STATE=""
+  PRE_MERGED_AT=${PRE_STATE##* }
+  echo "$PRE_STATE"   # brief wait/retry until mergeable=MERGEABLE
   if gh pr merge <PR> --squash --delete-branch=false; then
-    rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on MERGE SUCCESS — the verdict certified exactly the tip that landed
+    # Landing verification (#1897): same contract as the safe-case arm —
+    # exit 0 is NOT proof THIS attempt landed (`gh pr merge` on an
+    # already-merged PR exits 0, #1768 round-2); verify via the PR
+    # object, never branch-sha ancestry; empty PRE_MERGED_AT fails CLOSED.
+    LANDED_OK=no
+    for _ in 1 2 3; do
+      POST=$(gh pr view <PR> --json state,mergedAt \
+        -q '[.state, (.mergedAt // "null")] | join(" ")' 2>/dev/null) || POST=""
+      if [ -n "$PRE_MERGED_AT" ] && [ "${POST%% *}" = "MERGED" ] \
+         && [ "${POST##* }" != "null" ] \
+         && [ "${POST##* }" != "$PRE_MERGED_AT" ]; then LANDED_OK=yes; break; fi
+      sleep 10
+    done
+    if [ "$LANDED_OK" = yes ]; then
+      rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on VERIFIED merge success only — the verdict certified exactly the tip that landed
+    else
+      echo "MERGE NOT VERIFIED — gh pr merge exited 0 but the PR object shows no FRESH merge (the exit-0 'was already merged' false-success shape, #1768/#1897). Verdict NOT consumed; re-enter via the safe-case PR-state probe (fresh PR) AT MOST ONCE per Step 10d invocation — a SECOND unverified exit-0 success -> epm:merge-failed. Do NOT report success."
+      false
+    fi
   else
     echo "MERGE FAILED post-push — classify: (0) \"Base branch was modified\" -> shape-0 same-tip retry (verdict survives); anything else -> epm:merge-failed (do NOT hand-write the verdict file)."
     false
