@@ -1032,6 +1032,23 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   `fig_alpha3_lattice.png` — two distinct analyses — under one
   `### <result>`; the verifier read PASS and only the LM critic caught it.
 
+- **judge drop-line population reconciliation**
+  (`check_judge_drop_line_population`, FAIL/WARN, v3+v4, #1776 incident /
+  task #1881; unnumbered — dispatched outside CHECKS next to the #732
+  judge-error-denominator check, same precedent): a judge-health drop-line
+  sentence `"<X> content drops [and <T> transport losses] of|across <Y>
+  draws"` in the fence-stripped Methodology+Results region is reconciled
+  against schema-keyed judge-artifact populations (dict leaves carrying
+  numeric `content_drops` + `valid_draws`) under `eval_results/issue_<N>/`.
+  FAIL only on the PROVABLY CROSSED signature — X matches one population's
+  numerator while Y matches a DIFFERENT population's denominator with no
+  single population matching both (the #1776 incident: the all-arms drop
+  numerator 192/67,500 quoted over the steered-only denominator 56,250);
+  WARN when the pair reconciles against nothing; graceful PASS on
+  legacy/v2 bodies, no drop-line, unknown issue, the
+  `EPM_VERIFY_BODY_NO_EVAL_SCAN=1` fence, an unresolved eval root, or no
+  leaf-bearing artifact. Worst verdict wins across multiple claims.
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -6169,6 +6186,278 @@ def check_judge_error_denominator(
     return CheckResult(
         name, True, f"judge-error fraction below 1% (worst {worst:.1%}, pooled {pooled:.1%})"
     )
+
+
+# ─── Judge drop-line population reconciliation (#1776 incident, task #1881) ─
+
+# A judge-health drop-line sentence: "<X> content drops [and <T> transport
+# losses] of|across <Y> draws". Grounded against the observed corpus
+# phrasings (clarifier scan 2026-08-01): "192 content drops of 56,250 draws
+# (0.34% ...)", "0 content drops and 0 transport losses of 26,600 draws",
+# the `across` variant, and "342 content drops of 121,250 draws overall".
+# A denominator-less mention ("1,938 content drops (1.6%)") carries no
+# population pair and deliberately does NOT match. Singular "content drop" /
+# "transport loss" tolerated.
+_JUDGE_DROP_LINE_RE = re.compile(
+    r"(?P<drops>\d[\d,]*)\s+content\s+drops?"
+    r"(?:\s+and\s+(?P<transport>\d[\d,]*)\s+transport\s+loss(?:es)?)?"
+    r"\s+(?:of|across)\s+(?P<draws>\d[\d,]*)\s+draws",
+    re.IGNORECASE,
+)
+
+
+def _drop_line_int(token: str) -> int:
+    """Parse a comma-grouped integer claim token ('56,250' -> 56250)."""
+    return int(token.replace(",", ""))
+
+
+def _iter_drop_population_leaves(
+    node: object,
+    path: tuple[str, ...],
+    leaves: list[tuple[tuple[str, ...], int, int, int]],
+) -> None:
+    """Recursive descent collecting `(key_path, content_drops, valid_draws,
+    transport_losses)` LEAF tuples: a leaf is any dict carrying BOTH numeric
+    `content_drops` AND `valid_draws` (bools excluded; `transport_losses`
+    optional — 0 when absent/non-numeric). Descent STOPS at a leaf (no
+    double-counting) — the `_scan_issue_judge_errors` convention. List
+    elements inherit the parent key path (no index segment)."""
+
+    def _num(v: object) -> bool:
+        return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+    if isinstance(node, dict):
+        cd = node.get("content_drops")
+        vd = node.get("valid_draws")
+        if _num(cd) and _num(vd):
+            tl = node.get("transport_losses")
+            leaves.append((path, int(cd), int(vd), int(tl) if _num(tl) else 0))
+            return
+        for k, v in node.items():
+            _iter_drop_population_leaves(v, (*path, str(k)), leaves)
+    elif isinstance(node, list):
+        for v in node:
+            _iter_drop_population_leaves(v, path, leaves)
+
+
+def _drop_population_candidates(
+    leaves: list[tuple[tuple[str, ...], int, int, int]], label: str
+) -> list[dict]:
+    """Aggregate one file's leaf tuples into candidate populations: the
+    whole-file total, the baseline-excluded total (leaves whose key path has
+    NO segment starting with `baseline`, case-insensitive — the
+    "steered-only" split; added only when it differs from the whole), and
+    one total per key-path PREFIX holding >=1 leaf (per-trait / per-arm
+    subtree populations). Candidate dict:
+    ``{label, drops, draws, draws_vt}`` with ``draws`` =
+    sum(content_drops + valid_draws) and ``draws_vt`` additionally adding
+    transport_losses (identical when transport == 0)."""
+
+    def _agg(subset: list[tuple[tuple[str, ...], int, int, int]], sub_label: str) -> dict:
+        return {
+            "label": sub_label,
+            "drops": sum(cd for _p, cd, _vd, _tl in subset),
+            "draws": sum(cd + vd for _p, cd, vd, _tl in subset),
+            "draws_vt": sum(cd + vd + tl for _p, cd, vd, tl in subset),
+        }
+
+    out = [_agg(leaves, f"{label} (all leaves)")]
+    non_baseline = [
+        lf for lf in leaves if not any(seg.lower().startswith("baseline") for seg in lf[0])
+    ]
+    if non_baseline and len(non_baseline) != len(leaves):
+        out.append(_agg(non_baseline, f"{label} (baseline-excluded)"))
+    by_prefix: dict[tuple[str, ...], list[tuple[tuple[str, ...], int, int, int]]] = {}
+    for lf in leaves:
+        for i in range(1, len(lf[0]) + 1):
+            by_prefix.setdefault(lf[0][:i], []).append(lf)
+    for prefix, subset in sorted(by_prefix.items()):
+        if len(subset) == len(leaves):
+            continue  # identical to the whole-file total — skip the duplicate
+        out.append(_agg(subset, f"{label} [{'.'.join(prefix)}]"))
+    return out
+
+
+def _scan_judge_drop_populations(repo: Path, issue: int) -> list[dict] | None:
+    """Scan committed `repo/eval_results/issue_<N>/**/*.json` for judge
+    drop-population leaves — SCHEMA-keyed (dicts with numeric
+    `content_drops` + `valid_draws`), NOT name-keyed on `judge_scores*.json`
+    (the identical leaf schema ships under other filenames, e.g. #1776's
+    `judge_swap.json`). Returns the candidate population list (per-file
+    whole / baseline-excluded / per-subtree totals plus the cross-file
+    union when >1 file carries leaves, deduped on identical
+    `(drops, draws, draws_vt)` triples), or None when the eval dir is
+    absent / no leaf-bearing file exists / the
+    `EPM_VERIFY_BODY_NO_EVAL_SCAN=1` fence is set (graceful skip).
+
+    Corrupt / unreadable / oversize (`_REUSE_SCAN_MAX_BYTES` stat guard)
+    JSONs are skipped silently (the `_scan_issue_judge_errors` convention —
+    never crash the gate); a cheap substring pre-filter avoids `json.loads`
+    on files that cannot carry the leaf schema."""
+    if os.environ.get("EPM_VERIFY_BODY_NO_EVAL_SCAN") == "1":
+        return None
+    eval_dir = repo / "eval_results" / f"issue_{issue}"
+    if not eval_dir.is_dir():
+        return None
+
+    candidates: list[dict] = []
+    file_totals: list[tuple[int, int, int]] = []  # per-file whole (drops, draws, draws_vt)
+    nb_totals: list[tuple[int, int, int]] = []  # per-file baseline-excluded fallback=whole
+    for path in sorted(eval_dir.rglob("*.json")):
+        try:
+            if path.stat().st_size > _REUSE_SCAN_MAX_BYTES:
+                continue  # oversize guard — never page a 100+ MB blob at gate time
+            text = path.read_text()
+        except (OSError, UnicodeDecodeError):
+            continue
+        if '"content_drops"' not in text or '"valid_draws"' not in text:
+            continue
+        try:
+            payload = json.loads(text)
+        except json.JSONDecodeError:
+            continue  # a corrupt artifact must not crash the gate
+        leaves: list[tuple[tuple[str, ...], int, int, int]] = []
+        _iter_drop_population_leaves(payload, (), leaves)
+        if not leaves:
+            continue
+        file_cands = _drop_population_candidates(leaves, str(path.relative_to(repo)))
+        candidates.extend(file_cands)
+        whole = file_cands[0]
+        nb = next((c for c in file_cands if c["label"].endswith("(baseline-excluded)")), whole)
+        file_totals.append((whole["drops"], whole["draws"], whole["draws_vt"]))
+        nb_totals.append((nb["drops"], nb["draws"], nb["draws_vt"]))
+
+    if not candidates:
+        return None
+    if len(file_totals) > 1:
+        for tag, totals in (("all leaves", file_totals), ("baseline-excluded", nb_totals)):
+            candidates.append(
+                {
+                    "label": f"cross-file union ({tag})",
+                    "drops": sum(t[0] for t in totals),
+                    "draws": sum(t[1] for t in totals),
+                    "draws_vt": sum(t[2] for t in totals),
+                }
+            )
+    # Dedup identical (drops, draws, draws_vt) triples (first label wins) —
+    # keeps FAIL/WARN messages readable; matching is value-exact either way.
+    seen: set[tuple[int, int, int]] = set()
+    deduped: list[dict] = []
+    for c in candidates:
+        key = (c["drops"], c["draws"], c["draws_vt"])
+        if key not in seen:
+            seen.add(key)
+            deduped.append(c)
+    return deduped
+
+
+def check_judge_drop_line_population(
+    body: str,
+    *,
+    issue: int | None = None,
+    eval_root: Path | None = None,
+    body_source_path: Path | None = None,
+) -> CheckResult:
+    """FAIL when a judge-health drop-line sentence (`"<X> content drops
+    [and <T> transport losses] of|across <Y> draws"`) in a v3/v4 body's
+    fence-stripped Methodology+Results region asserts a PROVABLY CROSSED
+    population pair — X matches one committed judge-artifact population's
+    numerator while Y matches a DIFFERENT population's denominator, with NO
+    single population matching both (the #1776 incident: the all-arms drop
+    numerator, 192 of 67,500, quoted over the steered-only draw denominator
+    56,250). WARN when the claimed pair reconciles against no candidate at
+    all — an unenumerated honest subset is a plausible population, so only
+    the crossed signature earns a FAIL (never a new hard-FAIL on absence of
+    evidence).
+
+    Candidate populations come from `_scan_judge_drop_populations`
+    (schema-keyed leaves; per-file whole / baseline-excluded / per-subtree
+    totals + the cross-file union); Y is accepted as drops+valid OR
+    drops+valid+transport (integer-exact after comma-stripping). Verdict
+    ladder (worst across claims wins — any FAIL > any WARN > PASS):
+    PASS-skip on legacy/v2 bodies, no drop-line asserted, issue unknown
+    (stdin), the `EPM_VERIFY_BODY_NO_EVAL_SCAN=1` fence, eval root
+    unresolved (is_warn, the #732 convention), or no leaf-bearing artifact.
+    """
+    name = "judge drop-line population reconciles"
+    # Generation gate: only structured (v3 / v4) bodies. Legacy / v2 PASS
+    # vacuously (forward-grandfathering, the #732 convention).
+    if not (is_v3(body) or is_v4(body)):
+        return CheckResult(name, True, "skipped — legacy/v2 body")
+
+    method = section_text(body, "Methodology") or ""
+    results_s = section_text(body, "Results") or ""
+    scan_region = _strip_fenced_blocks(method + "\n" + results_s)
+    claims = list(_JUDGE_DROP_LINE_RE.finditer(scan_region))
+    if not claims:
+        return CheckResult(name, True, "no judge drop-line asserted")
+
+    if issue is None:
+        return CheckResult(
+            name, True, "skipped — issue number unknown (stdin); cannot read eval_results"
+        )
+    if os.environ.get("EPM_VERIFY_BODY_NO_EVAL_SCAN") == "1":
+        return CheckResult(
+            name, True, "skipped — EPM_VERIFY_BODY_NO_EVAL_SCAN=1 (eval scan fenced off)"
+        )
+    repo = _resolve_eval_root(issue, eval_root=eval_root, body_source_path=body_source_path)
+    if repo is None:
+        return CheckResult(name, True, "skipped — eval root unresolved", is_warn=True)
+    candidates = _scan_judge_drop_populations(repo, issue)
+    if not candidates:
+        return CheckResult(
+            name,
+            True,
+            "no drop-population judge artifact (content_drops/valid_draws leaves) in "
+            "committed eval JSONs — graceful skip",
+        )
+
+    fails: list[str] = []
+    warns: list[str] = []
+    oks: list[str] = []
+    for m in claims:
+        x = _drop_line_int(m.group("drops"))
+        y = _drop_line_int(m.group("draws"))
+        claim_txt = f"'{m.group(0)}'"
+        exact = [c for c in candidates if c["drops"] == x and y in (c["draws"], c["draws_vt"])]
+        if exact:
+            oks.append(f"{claim_txt} == {exact[0]['label']}")
+            continue
+        num_matches = [c for c in candidates if c["drops"] == x]
+        den_matches = [c for c in candidates if y in (c["draws"], c["draws_vt"])]
+        if num_matches and den_matches:
+            # `exact` is empty, so every numerator-matching candidate is
+            # necessarily a DIFFERENT population than every
+            # denominator-matching one — the provable crossing.
+            a, b = num_matches[0], den_matches[0]
+            msg = (
+                f"{claim_txt}: CROSSED population pair — numerator {x:,} matches "
+                f"{a['label']} ({a['drops']:,}/{a['draws']:,}) while denominator {y:,} "
+                f"matches {b['label']} ({b['drops']:,}/{b['draws']:,}); no single "
+                f"committed population carries both. Quote one population's "
+                f"(drops, draws) pair."
+            )
+            if len(num_matches) > 1:
+                msg += (
+                    f" [numerator {x:,} matches {len(num_matches)} candidate populations "
+                    "— population fingerprint degraded]"
+                )
+            fails.append(msg)
+        else:
+            nearest = sorted(candidates, key=lambda c: (abs(c["draws"] - y), abs(c["drops"] - x)))[
+                :3
+            ]
+            near_txt = "; ".join(f"{c['label']} = {c['drops']:,}/{c['draws']:,}" for c in nearest)
+            warns.append(
+                f"{claim_txt}: could not reconcile ({x:,}, {y:,}) against any committed "
+                f"judge-artifact population — nearest candidates: {near_txt}"
+            )
+
+    if fails:
+        return CheckResult(name, False, " | ".join(fails + warns))
+    if warns:
+        return CheckResult(name, True, " | ".join(warns), is_warn=True)
+    return CheckResult(name, True, f"{len(oks)} drop-line claim(s) reconcile: " + "; ".join(oks))
 
 
 # ─── Check 35 (#1256): cross-issue reuse pins declared in the body ─────────
@@ -15086,6 +15375,15 @@ def verify_text(
     # PASS when the issue is unknown or no eval data is reachable.
     results.append(
         check_judge_error_denominator(
+            body, issue=issue, eval_root=eval_root, body_source_path=body_source_path
+        )
+    )
+    # Judge drop-line population reconciliation (#1776 incident, task #1881)
+    # — same context needs as the #732 check (issue + the eval-root ladder),
+    # so it also lives outside the body-only CHECKS list. Graceful PASS when
+    # the issue is unknown or no drop-population artifact is reachable.
+    results.append(
+        check_judge_drop_line_population(
             body, issue=issue, eval_root=eval_root, body_source_path=body_source_path
         )
     )
