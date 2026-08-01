@@ -116,12 +116,14 @@ Check catalog (id — classification — kind scope)
       unpinned auto lane
   c44 declared-committed paths  WARN-only, conditional    all kinds
       not gitignored
+  c45 change DV vs base-side    WARN-only, conditional    experiment only
+      predictor companion
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41, 42, 43, 44) also SKIP when their content trigger does
+37, 38, 39, 40, 41, 42, 43, 44, 45) also SKIP when their content trigger does
 not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
@@ -203,6 +205,12 @@ labeled-line forms):
     gitignore-matched path instead notes the force-add + staged-index
     verification in the same section as the declaration, or relocates the
     output out of the ignored root)
+  - ``N/A — no base-side predictor vs change DV`` (check 45 — the
+    change-DV / base-side-predictor vocabulary is incidental or quotes a
+    sibling's design, not this plan's own predictor race; a plan genuinely
+    racing a base-side predictor against a trained-base change DV instead
+    registers a level/change companion column AND states the winner sign
+    convention — signed Spearman rho vs |rho|)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -7751,6 +7759,145 @@ def check_committed_paths_not_gitignored(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 45 — trained-base change DV vs base-side predictor companion ────
+
+# Trigger arm (a): a change-DV signature anywhere in the STRIPPED plan prose
+# (fenced command/code blocks must neither satisfy nor trip — the c39
+# convention): `trained - base` (hyphen / U+2212 minus / en dash, spaced or
+# not), `post - pre`, or a `Delta log P` / `delta log P` delta form. Word
+# boundaries on `base`/`pre` keep `trained-baseline` / `post-prefix` (this
+# project's prefix-mapping vocabulary) from false-firing.
+_C45_CHANGE_DV_RE = re.compile(
+    r"(?i)\btrained\s*[-−–]\s*base\b|\bpost\s*[-−–]\s*pre\b|(?:Δ|\bdelta\b)\s*log\s*P"  # noqa: RUF001 — real minus/en-dash plan text
+)
+
+# Trigger arm (b): a base-side predictor RACED — one stripped line carrying
+# BOTH a base-side-quantity token AND a predictor-context token (the same-line
+# conjunction keeps generic "base rate" prose from firing alone). Grounded on
+# the founding #1900 v4 Plan-Summary instance: "incumbent P7 (base behavioral
+# propensity) raced and partialled".
+_C45_BASE_SIDE_RE = re.compile(
+    r"(?i)\bbase (?:behavioral )?propensit(?:y|ies)\b"
+    r"|\bbase[- ]side (?:predictors?|propensit(?:y|ies))\b"
+    r"|\bbase log ?P\b|\bbase rates?\b|\bbase judge scores?\b"
+)
+_C45_PREDICTOR_CTX_RE = re.compile(
+    r"(?i)\b(?:predictors?|candidates?|champions?|race[sd]?|incumbents?|horses?)\b"
+)
+
+# Satisfier (i): companion-column registration (grounded on #1900 v5
+# § "Registered DV-identity companion columns" — "level companion" /
+# "change companion" labels).
+_C45_COMPANION_RE = re.compile(
+    r"(?i)\bcompanion columns?\b|\blevel companions?\b"
+    r"|\b(?:graded[- ])?change companions?\b|\blevel[- ]DV companions?\b"
+)
+
+# Satisfier (ii): a stated winner sign convention (grounded on #1900 v5
+# "Winner-selection convention (registered): the champion argmax is over
+# SIGNED Spearman rho").
+_C45_SIGN_CONVENTION_RE = re.compile(
+    r"(?i)\bwinner[- ]selection convention\b|\bsign conventions?\b"
+    r"|\bsigned (?:Spearman )?(?:ρ|rho)\b"  # noqa: RUF001 — real rho char in plan text
+)
+# Degenerate-|rho| guard (critic MF1): bare `|rho|` / `absolute` is NOT a
+# standalone satisfier — predictor-race plans near-universally carry
+# incidental max-|rho| prose in their selection-symmetric sections (#1900 v4,
+# the must-WARN fixture) — it counts ONLY on a line also carrying a
+# winner/convention/champion/argmax context token.
+_C45_ABS_RHO_RE = re.compile(r"(?i)\|(?:ρ|rho)\||\babsolute\b")  # noqa: RUF001 — real rho char in plan text
+_C45_WINNER_CTX_RE = re.compile(r"(?i)\b(?:winners?|conventions?|champions?|argmax)\b")
+
+
+def _c45_escape_declared(plan: str) -> bool:
+    """Standalone ``N/A — no base-side predictor vs change DV`` declaration
+    (see ``_standalone_na_declared`` for the anti-paste rationale)."""
+    return _standalone_na_declared(plan, r"no base[- ]side predictor vs change DV\b")
+
+
+def check_change_dv_base_predictor_companion(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, experiment-only: a plan that races a
+    BASE-SIDE predictor (base propensity / base log P / base rate / base
+    judge score in a predictor-candidate roster) against a
+    ``trained - base`` (or ``post - pre`` / ``Delta log P``) CHANGE dependent
+    variable must register BOTH (i) a level (or change) COMPANION column
+    and (ii) a stated WINNER SIGN CONVENTION (signed rho vs |rho|), or declare
+    the standalone escape ``N/A — no base-side predictor vs change DV``.
+    Mechanizes the #559/#605 pattern (critic-lens-reference.md Statistics
+    lens item 2, "Inherited-positive DV-swap"): the base term enters the
+    change DV with a mechanical ~ -1 coefficient, so per-panel DV identity
+    can manufacture — or destroy — the champion verdict (#605: base-to-level
+    rho +0.28/+0.19 vs base-to-delta rho -0.43/-0.54). Founding instance: #1900
+    round 1, where only the Stats-lens critic caught it (Must-Fix; v5
+    registered the "Registered DV-identity companion columns" block + the
+    "Winner-selection convention" line this check's satisfiers are
+    grounded on). NEVER FAILs — the trigger is a vocabulary heuristic and
+    a legitimate disposition is sometimes prose-satisfied in different
+    words (the c39/c31/c34/c43 family convention); the LLM Statistics
+    critic remains the FAIL authority. kind-exempt outside experiment:
+    infra workflow-fix plans (this check's own plan included) legitimately
+    QUOTE the trigger vocabulary without racing predictors (the c43
+    precedent). Trigger AND satisfiers scan STRIPPED prose (fenced blocks
+    masked — the c39 convention)."""
+    cid, name = (
+        "c45_change_dv_base_predictor_companion",
+        "trained-base change DV vs base-side predictor companion",
+    )
+    if kind != "experiment":
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: base-predictor-vs-change-DV racing is an experiment-plan shape",
+        )
+    text = strip_fences(plan)
+    if not _C45_CHANGE_DV_RE.search(text):
+        return _skip(cid, name, "no trained-base / post-pre / Delta log P change-DV signature")
+    race_lines = [
+        ln
+        for ln in text.splitlines()
+        if _C45_BASE_SIDE_RE.search(ln) and _C45_PREDICTOR_CTX_RE.search(ln)
+    ]
+    if not race_lines:
+        return _skip(
+            cid,
+            name,
+            "no base-side predictor raced (no line carries both a base-side quantity "
+            "and predictor-race vocabulary)",
+        )
+    if _c45_escape_declared(plan):
+        return _pass(cid, name, "explicit N/A declared (no base-side predictor vs change DV)")
+    has_companion = bool(_C45_COMPANION_RE.search(text))
+    has_convention = bool(_C45_SIGN_CONVENTION_RE.search(text)) or any(
+        _C45_ABS_RHO_RE.search(ln) and _C45_WINNER_CTX_RE.search(ln) for ln in text.splitlines()
+    )
+    if has_companion and has_convention:
+        return _pass(cid, name, "companion column registered and winner sign convention stated")
+    if has_companion:
+        missing = "a stated winner sign convention (signed rho vs |rho|)"
+    elif has_convention:
+        missing = "a registered level/change companion column"
+    else:
+        missing = (
+            "a registered level/change companion column AND a stated winner sign "
+            "convention (signed rho vs |rho|)"
+        )
+    shown = "; ".join(ln.strip()[:70] for ln in race_lines[:2])
+    return _warn(
+        cid,
+        name,
+        f"plan races a base-side predictor against a trained-base CHANGE DV ({shown!r}) "
+        f"without {missing} — the base term enters the change DV with a mechanical ~ -1 "
+        "coefficient, so per-panel DV identity can manufacture the champion verdict "
+        "(#559/#605: base-to-level rho +0.28/+0.19 vs base-to-delta rho -0.43/-0.54; the #1900 "
+        "round-1 Stats Must-Fix; critic-lens-reference.md Statistics lens item 2). "
+        "Register a level (or graded-change) companion column for the base-side "
+        "candidate AND state the winner-selection convention (signed Spearman rho vs "
+        "|rho|), or declare `N/A — no base-side predictor vs change DV` on its own "
+        "line, unwrapped (no backticks/quotes), if no base-side predictor is raced "
+        "against a change DV",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -7796,6 +7943,7 @@ CHECKS = [
     check_commit_sha_resolves,
     check_sentinel_lane,
     check_committed_paths_not_gitignored,
+    check_change_dv_base_predictor_companion,
 ]
 
 

@@ -719,6 +719,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    +0.28/+0.19/+0.00 vs base-rate↔delta ρ +0.09/−0.43/−0.54). Not a REVISE when the predictor and DV
    are not the level/change pair of the same quantity, or when the amendment already scores the
    level DV the parent's positive used.
+   Mechanical backstop: verify_plan.py c45 (WARN-only; the lens stays the FAIL authority).
 3. **Decision-gate coherence (only when the plan leans on pre-registered kill-gates).**
    Pre-registered kill-gates / thresholds are disfavored by The Bar (above): they crush joint power
    and the analyzer pipeline already assigns confidence from reported diagnostics. *First* ask
