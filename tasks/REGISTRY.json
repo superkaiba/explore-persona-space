@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1964,
+  "highest_id": 1965,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7472,6 +7472,13 @@
       "path": "tasks/proposed/1964",
       "status": "proposed",
       "title": "daily-fix: dispatch preflight staging+flag probes"
+    },
+    "1965": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1965",
+      "status": "proposed",
+      "title": "daily-fix: route long judge drivers off VM on 1st kill"
     },
     "197": {
       "has_clean_result": false,
