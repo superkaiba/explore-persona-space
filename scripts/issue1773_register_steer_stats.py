@@ -19,7 +19,9 @@ from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv
 
-load_dotenv()  # BEFORE heavy imports so the shared-VM thread caps bind in-process (#847)
+# Shared-VM thread caps (#847): load_dotenv() setdefaults OMP/MKL/OPENBLAS/
+# NUMEXPR_NUM_THREADS before matplotlib/numpy/scipy freeze their pools.
+load_dotenv()
 
 import matplotlib  # noqa: E402
 
