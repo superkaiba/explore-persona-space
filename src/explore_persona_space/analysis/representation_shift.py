@@ -580,6 +580,13 @@ def _teacher_forced_response_mean(
 
 
 SPAN_ARMS = ("prefix", "context", "response")
+# Last-token context summaries (#1947 binding directive; the #779 convention):
+# the activation at the FINAL token of the rendered prompt ("context_last") and
+# of the prefix ("prefix_last"), captured in the SAME forward pass as the
+# span-means. Implemented as 1-token spans (mean over [e-1, e) IS that token's
+# activation), so `_teacher_forced_span_means` needs no pooling-mode branch.
+# Opt-in: default callers (spans=SPAN_ARMS) are byte-identical.
+SPAN_ARMS_LAST = ("prefix_last", "context_last")
 
 
 def compute_prompt_spans(
@@ -789,7 +796,7 @@ def _teacher_forced_span_means(
         ``{span: {layer: Tensor(n_rows, hidden) float32 cpu}}`` in ROW order.
     """
     for span in spans:
-        assert span in SPAN_ARMS, (span, SPAN_ARMS)
+        assert span in SPAN_ARMS + SPAN_ARMS_LAST, (span, SPAN_ARMS + SPAN_ARMS_LAST)
     known = set(persona_names)
     for i, r in enumerate(rows):
         assert r["persona"] in known, (i, r["persona"])
@@ -868,6 +875,9 @@ def _teacher_forced_span_means(
                     "prefix": (0, r["prefix_len"]),
                     "context": (0, r["context_len"]),
                     "response": (p_len, p_len + len(r["response_token_ids"])),
+                    # 1-token spans == the last-token activations (#1947 directive)
+                    "prefix_last": (r["prefix_len"] - 1, r["prefix_len"]),
+                    "context_last": (r["context_len"] - 1, r["context_len"]),
                 }
                 for span in spans:
                     s, e = span_bounds[span]
