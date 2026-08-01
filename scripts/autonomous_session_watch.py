@@ -861,6 +861,10 @@ Coverage notes (deliberate gaps you should know about)
   follow-up signal. The #477 incident, 2026-06-10, motivates this: an
   inline follow-up on a promoted task ran 3 cycles of auto-stop → manual
   re-provision in <1h before the user added the ``keep-running`` tag.
+  SUFFIXED pods (``pod-<N>-<slug>``) additionally get a PER-POD arm (#1961):
+  an ``epm:run-launched`` whose note names the pod in structured position
+  shields THAT pod for a bounded ceiling (default 48h,
+  ``EPM_POD_NAMED_SHIELD_MAX_AGE_H``) regardless of sibling transitions.
 
 Why STOP is keyed on task status, not session liveness
 ------------------------------------------------------
@@ -11363,6 +11367,81 @@ _POD_FOLLOWUP_SIGNAL_KINDS = frozenset(
 # Back-compat alias (the run-launched marker is still the strongest signal).
 _RUN_LAUNCHED_KIND = "epm:run-launched"
 
+# Default ceiling (seconds) for the per-pod named-launch shield on SUFFIXED
+# pods (#1961). Within the ceiling, a suffixed pod whose `epm:run-launched`
+# note names it in a STRUCTURED position stays exempt from the pod-safety
+# auto-stop even when SIBLING rounds post newer done-transitions (the
+# multi-round issue-grain gap that stopped pod-1768-lt mid-fits). Past it the
+# pod falls back to the issue-grain predicate — the ceiling ITSELF is the
+# billing bound for a shielded escaped suffixed pod (the #1582 wedged-owner
+# escalation arm rides the keep-running-TAGGED branch and does NOT cover
+# followup-skip pods). Fail direction: a mis-shielded pod bills until the
+# ceiling; a mis-stopped pod loses work — fail toward KEEP within the bound.
+# Grounding for 48h: ~2x the stale-pod audit's 24h EXITED convention and >4x
+# the longest observed inline round (#1768 fits, ~7h). Override via
+# EPM_POD_NAMED_SHIELD_MAX_AGE_H (float hours), read at CALL time by
+# _pod_named_shield_max_age_s() so tests + fleet-level env changes take
+# effect without re-import.
+POD_NAMED_SHIELD_MAX_AGE_S = 48.0 * 3600.0
+
+
+def _pod_named_shield_max_age_s() -> float:
+    """Resolve the #1961 named-shield ceiling in seconds:
+    ``EPM_POD_NAMED_SHIELD_MAX_AGE_H`` (float hours) when set + sane, else
+    :data:`POD_NAMED_SHIELD_MAX_AGE_S` (48h). A garbled / non-positive /
+    non-finite value falls back to the default rather than crashing the
+    watcher (the same fail-soft contract as the other env knobs here)."""
+    try:
+        val = float(os.environ.get("EPM_POD_NAMED_SHIELD_MAX_AGE_H", ""))
+    except ValueError:
+        return POD_NAMED_SHIELD_MAX_AGE_S
+    # The upper sanity bound also rejects inf/nan (one year of hours).
+    if not (0 < val < 24 * 366):
+        return POD_NAMED_SHIELD_MAX_AGE_S
+    return val * 3600.0
+
+
+def _is_suffixed_pod_name(pod_name: str, issue: int) -> bool:
+    """True iff ``pod_name`` is the SUFFIXED multi-pod-per-issue form for
+    ``issue`` (``pod-<N>-<slug>``, #1334). The primary ``pod-<N>`` and the
+    legacy ``epm-issue-<N>`` forms return False — only suffixed pods get the
+    #1961 per-pod named-launch shield: suffixed pods exist ONLY as deliberate
+    concurrent inline rounds (exactly the population the issue-grain
+    predicate mis-covers on multi-round issues), while EVERY standard launch
+    marker names its primary pod as ``pod=pod-<N>``, so an unscoped named
+    shield would disable the classic escaped-primary-pod auto-stop
+    fleet-wide for <ceiling hours after every launch."""
+    return pod_name.startswith(f"pod-{issue}-")
+
+
+def _latest_named_run_launched_ts(events: list[dict], pod_name: str) -> float | None:
+    """Newest ``epm:run-launched`` whose note names ``pod_name`` in a
+    STRUCTURED position (#1961), or ``None`` if no such marker exists.
+
+    Structured = EITHER a boundary-safe ``pod=<name>`` token anywhere in the
+    note, OR the note's LEADING token being ``<name>`` (optionally preceded
+    by whitespace). Boundary-safe means left/right ``[\\w-]`` guards, so
+    ``pod-1768`` never matches inside ``pod-1768-lt`` and vice versa. Both
+    accepted shapes are attested on #1768 (v1/v2 ``pod=pod-1768``; v11
+    "pod-1768-lt (4 GPU) provisioned ..."). A prose mention elsewhere in a
+    note MUST NOT match — attested counterexample: #1768's v14 note mentions
+    "pod-1768-tx ... was already TERMINATED" mid-prose, which must neither
+    shield pod-1768-tx nor restart its ceiling clock. Missing / non-string
+    notes are skipped (fail toward no-shield → issue-grain fallback)."""
+    esc = re.escape(pod_name)
+    pattern = re.compile(rf"(?<![\w-])pod={esc}(?![\w-])|^\s*{esc}(?![\w-])")
+    best: float | None = None
+    for ev in events:
+        if ev.get("kind") != _RUN_LAUNCHED_KIND:
+            continue
+        note = ev.get("note")
+        if not isinstance(note, str) or pattern.search(note) is None:
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is not None and (best is None or ts > best):
+            best = ts
+    return best
+
 
 def _latest_event_ts(events: list[dict], kinds: frozenset[str] | set[str]) -> float | None:
     """Newest epoch ts among events whose ``kind`` is in ``kinds``, or
@@ -11382,12 +11461,53 @@ def _latest_event_ts(events: list[dict], kinds: frozenset[str] | set[str]) -> fl
     return best
 
 
-def _task_followup_active(issue: int, events: list[dict] | None = None) -> bool:
+def _task_followup_active(
+    issue: int,
+    events: list[dict] | None = None,
+    *,
+    pod_name: str | None = None,
+    now: float | None = None,
+) -> bool:
     """True iff task ``issue`` has a follow-up signal marker
     (:data:`_POD_FOLLOWUP_SIGNAL_KINDS`: ``epm:run-launched`` /
     ``epm:followup-scope`` / ``epm:free-analysis-followup-run``) NEWER than
     its latest done-transition marker (``epm:promoted`` /
-    ``epm:status-changed``).
+    ``epm:status-changed``) — OR, for a SUFFIXED pod (#1961), a structured
+    named launch younger than the shield ceiling (per-pod arm below).
+
+    Per-pod named-launch shield for SUFFIXED pods (#1961). The issue-grain
+    compare breaks on MULTI-ROUND issues: concurrent/serial follow-up rounds
+    post ``epm:status-changed`` continually, so any pod whose own launch
+    marker predates the latest SIBLING transition loses inferred protection
+    (incident #1768: pod-1768-lt was auto-STOPPED at ~05:05Z with 142/216
+    fit cells done — its launch marker was older than a sibling round's
+    transition; the only remaining shield was the ISSUE-wide ``keep-running``
+    tag, which the standing inline-round guidance says NOT to set because it
+    blocks sibling bare-form teardowns, #1485). So when ``pod_name`` is the
+    suffixed form for this issue (:func:`_is_suffixed_pod_name` — primary
+    ``pod-<N>`` and legacy ``epm-issue-<N>`` deliberately excluded, keeping
+    the classic escaped-primary auto-stop byte-identical) AND an
+    ``epm:run-launched`` note names THAT pod in a STRUCTURED position
+    (:func:`_latest_named_run_launched_ts`) AND that launch is younger than
+    the ceiling (:func:`_pod_named_shield_max_age_s`, default 48h), this
+    returns True REGARDLESS of later sibling done-transitions. Everything
+    else — pod_name None (the three non-pod call sites), a non-suffixed
+    name, no structured named launch, or a named launch past the ceiling —
+    falls through to the issue-grain compare byte-identically (fail toward
+    the pre-#1961 behavior: never a synthesized stop, never a fresh shield).
+
+    Two documented consequences of that fallback: (a) POST-CEILING the
+    issue-grain compare can still read True via a SIBLING round's newer
+    launch marker — that is the pre-#1961 status quo, kept deliberately
+    (the ceiling bounds the NAMED shield, it does not tighten the issue
+    grain); (b) a launch note that names its pod in a NONCONFORMING position
+    gets NO per-pod shield — #1768's v15 note begins "Continuation round
+    of... Pod pod-1768-lt2 (1xH100 ...", which fails BOTH structured shapes
+    (not the leading token, no ``pod=`` token) and so deliberately degrades
+    to issue-grain: a conservative miss, never a false shield. The
+    structured pod-naming in the ``epm:run-launched`` note is load-bearing
+    on multi-round issues (lead the note with the pod name, or carry a
+    ``pod=<name>`` token).
 
     Predicate for the pod-safety auto-stop exemption: a task at a
     pod-safety auto-stop status (DONE or ``on_hold``, #980) with a fresh
@@ -11420,6 +11540,15 @@ def _task_followup_active(issue: int, events: list[dict] | None = None) -> bool:
     """
     if events is None:
         events = _task_events(issue)
+    # ── #1961 per-pod arm (suffixed pods only; see the docstring) ────────────
+    if pod_name is not None and _is_suffixed_pod_name(pod_name, issue):
+        named_ts = _latest_named_run_launched_ts(events, pod_name)
+        if named_ts is not None:
+            ref_now = time.time() if now is None else now
+            if ref_now - named_ts < _pod_named_shield_max_age_s():
+                return True
+        # No structured named launch, or past the ceiling: fall through to
+        # the issue-grain compare unchanged (never a synthesized stop).
     followup_signal = _latest_event_ts(events, _POD_FOLLOWUP_SIGNAL_KINDS)
     if followup_signal is None:
         return False
@@ -14768,7 +14897,13 @@ def _maybe_escalate_keep_running_wedged_owner(
     return True
 
 
-def _escaped_pod_exemptions(issue: int, status_class: str, events: list) -> tuple[bool, bool]:
+def _escaped_pod_exemptions(
+    issue: int,
+    status_class: str,
+    events: list,
+    pod_name: str | None = None,
+    now: float | None = None,
+) -> tuple[bool, bool]:
     """Lazy escaped-pod auto-stop exemptions for :func:`_process_pod`.
 
     Returns ``(keep_running, followup_active)``. Both only matter when the
@@ -14777,13 +14912,16 @@ def _escaped_pod_exemptions(issue: int, status_class: str, events: list) -> tupl
     escaped-pod candidates. ``keep_running`` (the explicit user tag) is
     consulted first; ``followup_active`` (the inferred-from-events live inline
     follow-up) is the fallback, computed only when ``keep_running`` is False.
+    ``pod_name`` + ``now`` thread through to the #1961 per-pod named-launch
+    shield for SUFFIXED pods (see :func:`_task_followup_active`); ``None``
+    keeps the issue-grain behavior byte-identical.
     Extracted from :func:`_process_pod` to keep its cyclomatic complexity under
     the C901 cap after the #692 wedge arm landed (behavior unchanged)."""
     keep_running = status_class == "auto-stop-done" and _task_keep_running(issue)
     followup_active = (
         status_class == "auto-stop-done"
         and not keep_running
-        and _task_followup_active(issue, events=events)
+        and _task_followup_active(issue, events=events, pod_name=pod_name, now=now)
     )
     return keep_running, followup_active
 
@@ -14836,7 +14974,13 @@ def _process_pod(
     events = _task_events(issue)
     latest_progress = _latest_progress_ts(events)
     status_class = _status_class(status, latest_progress, now)
-    keep_running, followup_active = _escaped_pod_exemptions(issue, status_class, events)
+    keep_running, followup_active = _escaped_pod_exemptions(
+        issue,
+        status_class,
+        events,
+        pod_name=info.name if info is not None else f"pod-{issue}",
+        now=now,
+    )
 
     prev_state = _load_pod_safety_state(issue)
     prev_missed = prev_state.get("missed", 0)

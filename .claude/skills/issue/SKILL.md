@@ -7566,6 +7566,13 @@ was repeatedly auto-stopped mid-bootstrap and misdiagnosed as a flaky
 host). Remove the tag (`task.py remove-tag <N> keep-running`) when the run
 completes so the auto-stop re-arms (a crashed run leaves the tag and the
 pod bills until manual removal — check `pod.py audit-stale` output).
+**Per-pod shield on multi-round issues (#1961):** the watcher shields a
+SUFFIXED pod (`pod-<N>-<slug>`) PER-POD when its `epm:run-launched` note
+names it in STRUCTURED position — LEAD the note with the pod name, or carry
+a `pod=<name>` token (load-bearing, not stylistic: a sibling round's
+`epm:status-changed` otherwise strips the issue-grain inferred shield) —
+ceiling-bounded (default 48h, `EPM_POD_NAMED_SHIELD_MAX_AGE_H`);
+`keep-running` stays the explicit override.
 **Completion-side teardown (no ask-gate):** in that SAME completion
 step — run complete + uploads verified (THIS round's artifacts, not a
 prior round's PASS) — TERMINATE the pod the round provisioned (surgical
