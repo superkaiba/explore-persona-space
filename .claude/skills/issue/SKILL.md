@@ -10516,12 +10516,23 @@ reaped later by the daily stale-worktree audit (`worktree_audit.py`,
 09:47) once the task reaches a terminal status and the worktree is idle.
 
 **Idempotent.** Skip the whole step iff `epm:merged` already exists on the
-task AND the branch has no commits ahead of fetched `origin/main`
+task AND the branch carries no NOVEL payload vs fetched `origin/main`
 (payload-scoped, #1897: a same-issue follow-up round produces NEW payload
 on the same branch, and a prior round's `epm:merged` marker alone must not
 strand it — #1768 round-2; an experiment that merged at Step 9b with
-nothing new since is a no-op here). Also skip if no PR exists or the
-branch is already merged into `main` (zero commits ahead).
+nothing new since is a no-op here). "No novel payload" is NOT a bare
+commit count — the default merge forms land COPIES of the branch commits
+(`--rebase` replays them, `--squash` folds them into one), so a
+fully-merged branch reads `rev-list --count origin/main..issue-<N>` > 0
+forever (#1897 round-2). Use the layered novel-payload predicate from the
+safe-case probe below (§ "The auto-merge procedure"), fail-SAFE toward
+"payload exists": zero commits ahead → no payload; else
+`git cherry origin/main issue-<N>` emits no `+` line → landed
+(rebase-replayed copies keep their patch-ids); else the branch's own
+changed files are content-identical on `origin/main` → landed
+(squash-landed content); else → novel payload. Also skip if no PR
+exists or the branch is already merged into `main` (no novel payload by
+the same predicate).
 
 #### Bare push / merge snippets (canonical — copy verbatim, never compose a piped variant)
 
@@ -12154,10 +12165,37 @@ if [ -z "$PR" ]; then
   echo "No PR for issue-<N>; nothing to merge."   # skip; post nothing
 else
   if [ "$PR_STATE" != "OPEN" ]; then
-    # Fresh draft PR via the Step 4a pre-checked shape (bounded fetch +
-    # aheadness): a terminal PR never merges new commits.
+    # Fresh draft PR only if the branch carries NOVEL payload (bounded
+    # fetch + layered novel-payload predicate): a terminal PR never
+    # merges new commits — and a bare COMMIT count is patch-blind: the
+    # default merge forms land COPIES of the branch commits (--rebase
+    # replays them, --squash folds them into one), so a fully-merged
+    # branch reads `rev-list --count` > 0 forever (#1897 round-2).
+    # Layered predicate, fail-SAFE toward "novel" (a false 'novel'
+    # costs one bounded duplicate draft PR; a false 'landed' strands
+    # payload — so every git-error path keeps NOVEL_PAYLOAD=yes):
+    #   (1) zero commits ahead -> no payload (cheap short-circuit);
+    #   (2) `git cherry` emits NO '+' line -> every commit is
+    #       patch-equivalent upstream -> landed (rebase form: replayed
+    #       commits keep their patch-ids; squash does NOT);
+    #   (3) the branch's own changed files are content-identical to
+    #       origin/main -> landed (squash form; also covers rebase);
+    #   (4) else -> novel payload.
     timeout --kill-after=30s 120s git -C "$REPO_ROOT" fetch origin main --quiet || true
-    if [ "$(git -C "$WT" rev-list --count origin/main..issue-<N>)" -gt 0 ]; then
+    NOVEL_PAYLOAD=yes
+    if [ "$(git -C "$WT" rev-list --count origin/main..issue-<N>)" -eq 0 ]; then
+      NOVEL_PAYLOAD=no   # (1) no commits at all
+    elif CHERRY=$(git -C "$WT" cherry origin/main issue-<N>) \
+         && [ -z "$(printf '%s\n' "$CHERRY" | grep '^+')" ]; then
+      NOVEL_PAYLOAD=no   # (2) rebase-landed copies (a cherry FAILURE falls through — fail-safe)
+    else
+      OWN_FILES=$(git -C "$WT" diff --name-only origin/main...issue-<N>)
+      if [ -n "$OWN_FILES" ] \
+         && git -C "$WT" diff --quiet origin/main issue-<N> -- $OWN_FILES; then
+        NOVEL_PAYLOAD=no # (3) squash-landed content (a diff ERROR keeps 'yes' — fail-safe)
+      fi
+    fi
+    if [ "$NOVEL_PAYLOAD" = "yes" ]; then
       gh pr create --draft --head issue-<N> \
         --title "issue-<N>: <task title> (round follow-up)" \
         --body "Closes task #<N>. Fresh PR: prior PR #$PR is $PR_STATE (#1897 probe)."
@@ -12167,7 +12205,7 @@ else
       PR_STATE=$(echo "$PR_INFO" | cut -d' ' -f2)
       PRE_MERGED_AT=$(echo "$PR_INFO" | cut -d' ' -f3)
     else
-      echo "issue-<N> has no commits ahead of origin/main — content already landed; nothing to merge (prior PR #$PR $PR_STATE stays the record)."
+      echo "issue-<N> has no novel payload vs origin/main (zero commits ahead, or every commit patch-equivalent / content already landed via rebase or squash) — nothing to merge (prior PR #$PR $PR_STATE stays the record)."
       # Take the existing already-merged skip path (Idempotent bullet);
       # post nothing new; do NOT run the guards/merge below on a
       # terminal PR.

@@ -67,8 +67,16 @@ def test_pr_state_probe_anchors_present() -> None:
     assert "PR-object liveness probe" in block
     assert "--json number,state,mergedAt" in block
     assert 'if [ "$PR_STATE" != "OPEN" ]; then' in block
-    # The fresh draft PR is gated on the Step 4a aheadness pre-check.
+    # The fresh draft PR is gated on the layered NOVEL-payload predicate
+    # (#1897 round-2): a bare commit count is patch-blind — rebase/squash
+    # land COPIES, so a fully-merged branch reads count>0 forever. The
+    # rev-list read survives only as the cheap zero-commits short-circuit;
+    # `git cherry` (rebase form) + the own-files content check (squash
+    # form) carry the landed detection.
     assert "rev-list --count origin/main..issue-<N>" in block
+    assert 'git -C "$WT" cherry origin/main issue-<N>' in block
+    assert "NOVEL_PAYLOAD=yes" in block
+    assert 'if [ "$NOVEL_PAYLOAD" = "yes" ]; then' in block
     assert "gh pr create --draft --head issue-<N>" in block
 
 
@@ -116,9 +124,13 @@ def test_recovery_arm_binds_pre_merged_at() -> None:
 
 
 def test_idempotent_bullet_is_payload_scoped() -> None:
+    # #1897 round-2: the skip predicate is NOVEL-payload, not a bare
+    # commit count (rebase/squash land copies -> count>0 forever on a
+    # fully-merged branch).
     text = _text()
-    assert "AND the branch has no commits ahead of fetched" in text
+    assert "AND the branch carries no NOVEL payload vs fetched" in text
     assert "payload-scoped, #1897" in text
+    assert "layered novel-payload predicate" in text
 
 
 def test_exit0_false_success_prose_documented() -> None:
