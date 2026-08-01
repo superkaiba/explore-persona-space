@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1968,
+  "highest_id": 1969,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7500,6 +7500,13 @@
       "path": "tasks/proposed/1968",
       "status": "proposed",
       "title": "daily-fix: hold subagent respawn past active 429 storm"
+    },
+    "1969": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1969",
+      "status": "proposed",
+      "title": "daily-fix: fellows stall reads need grace window"
     },
     "197": {
       "has_clean_result": false,
