@@ -10,6 +10,16 @@ origin_prompt: i want to test all these [full predictor roster incl. mediation c
   as well as the theory assumptions, at the per-prefix level (leakage averaged across
   queries) - RESULTS THAT RAN WERE PER QUERY. Design an experiment to do this
 workflow: v1
+goal: 'At per-prefix grain (leakage per (arm, destination prefix), averaged over a
+  fixed shared 60-query set; 50-60 prefix panel including trained prefixes, trained
+  contrastive negatives, bystanders, near-twins, real conversation and ICL prefixes),
+  determine which pre-fine-tuning predictor best predicts per-prefix leakage level
+  and change (full roster: context/answer similarity pre+post, delta similarities,
+  through-map forms, whitened gate, r_B projections, write-map, propensity incumbent,
+  kNN answer-side variant; both anchors), whether context similarity is answer-mediated
+  at this grain, and whether the #1768 assumption refutations (gate A7, write rank
+  A6, write direction A5) survive at the theory''s native prefix grain or were per-query
+  grain artifacts.'
 ---
 # Per-prefix leakage-predictor race + theory-assumption battery at prefix grain: 50-prefix × 60-query panel, leakage averaged over queries
 
@@ -21,7 +31,7 @@ workflow: v1
 
 ## Goal
 
-At PER-PREFIX grain — leakage per (arm, destination prefix), averaged over a fixed shared query set — determine (1) which predictor computable pre-fine-tuning best predicts per-prefix leakage of the trained behavior (level AND fine-tuning-induced change), racing the full candidate roster (context/answer similarity pre+post, delta-context/delta-answer similarity, through-map forms pre+post, whitened gate, r_B projections, write-map predictions, base propensity incumbent, kNN answer-side variant) against both anchors (training-answer centroid primary, source-prefix secondary); (2) whether context-vector similarity's signal is answer-mediated at this grain (the mediation checkbox); and (3) whether the theory assumptions REFUTED at per-query grain survive at the theory's native prefix grain — the base-geometry gate (A7: predicted vs realized per-prefix transfer, n=50 prefixes/arm, vs the 0.3–0.7 band and the per-prefix 0.46–0.59 precedent), write rank (A6: SVD of the 50-row prefix-level write matrix, on-policy + matched-text), and write direction (A5: per-prefix writes vs δ / r_B) — resolving whether the #1768 refutations were grain artifacts or genuine.
+At per-prefix grain (leakage per (arm, destination prefix), averaged over a fixed shared 60-query set; 50-60 prefix panel including trained prefixes, trained contrastive negatives, bystanders, near-twins, real conversation and ICL prefixes), determine which pre-fine-tuning predictor best predicts per-prefix leakage level and change (full roster: context/answer similarity pre+post, delta similarities, through-map forms, whitened gate, r_B projections, write-map, propensity incumbent, kNN answer-side variant; both anchors), whether context similarity is answer-mediated at this grain, and whether the #1768 assumption refutations (gate A7, write rank A6, write direction A5) survive at the theory's native prefix grain or were per-query grain artifacts.
 
 ## Design sketch (planner refines)
 
