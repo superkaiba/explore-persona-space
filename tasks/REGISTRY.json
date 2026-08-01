@@ -6781,8 +6781,8 @@
     "1876": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1876",
-      "status": "reviewing",
+      "path": "tasks/completed/1876",
+      "status": "completed",
       "title": "daily-fix: compliant git-commit forms at snippet sites + blo"
     },
     "1877": {
