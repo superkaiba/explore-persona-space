@@ -1,0 +1,12 @@
+{
+  "q_align": 100.0,
+  "delta_dark_lo": 0.027551833540201187,
+  "rho_ci": [
+    0.037670774207744714,
+    0.09024904796551758
+  ],
+  "P_align": true,
+  "P_dark": true,
+  "P_var0": false,
+  "verdict": "mixed"
+}
