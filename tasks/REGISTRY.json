@@ -6837,8 +6837,8 @@
     "1883": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1883",
-      "status": "approved",
+      "path": "tasks/running/1883",
+      "status": "running",
       "title": "workflow-fix: add skill-pin family to Step 5a spec-freshness sync (test_issue_skill_* pin tests)"
     },
     "1884": {
