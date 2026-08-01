@@ -1,0 +1,28 @@
+{
+ "meta": {
+  "script": "scripts/issue1979_judge.py",
+  "issue": 1979,
+  "git_commit": "8c840dbe9d853cc63cd84886554213f20e0491ea",
+  "ts": "2026-08-01T20:38:29Z"
+ },
+ "n_units": 15,
+ "units": [
+  "cas-pers-con-lr1e5-s42",
+  "cas-pers-po-lr1e5-s42",
+  "cas-bare-con-lr1e5-s42",
+  "cas-pers-ft-con-s42",
+  "imp-pers-con-lr3e5-s42",
+  "imp-pers-con-lr3e5-s137",
+  "imp-pers-po-lr1e5-s42",
+  "imp-pers-ft-con-s42",
+  "syc-bare-con-lr1e5-s42",
+  "syc-conv-con-lr1e5-s42",
+  "syc-pers-po-lr1e5-s42",
+  "syc-pers-ft-con-s42",
+  "base_imp",
+  "base_cas",
+  "base_syc"
+ ],
+ "n_transport_lost_draws_total": 0,
+ "transport_note": "nonzero transport losses are re-judged before publication (rule 24(ii)); see drop_report.json"
+}

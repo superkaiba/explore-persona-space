@@ -1,0 +1,54 @@
+{
+ "meta": {
+  "script": "scripts/issue1979_judge.py",
+  "issue": 1979,
+  "git_commit": "8c840dbe9d853cc63cd84886554213f20e0491ea",
+  "ts": "2026-08-01T20:03:40Z"
+ },
+ "verdict": "proceed-change-dv",
+ "branch": "LEVEL flat; CHANGE DV carries range (>=2 pts SD) — proceed per §7 B branch",
+ "criterion_a": {
+  "base_imp": {
+   "content_drop_rate": 0.006888888888888889,
+   "n_transport_lost_draws": 0,
+   "pass": true
+  },
+  "imp-pers-po-lr1e5-s42": {
+   "content_drop_rate": 0.006,
+   "n_transport_lost_draws": 0,
+   "pass": true
+  },
+  "imp-pers-con-lr3e5-s42": {
+   "content_drop_rate": 0.0044444444444444444,
+   "n_transport_lost_draws": 0,
+   "pass": true
+  }
+ },
+ "criterion_b": {
+  "arms": {
+   "imp-pers-po-lr1e5-s42": {
+    "n_prefixes": 50,
+    "sd_level": 6.7729796342803255,
+    "n_prefixes_ge10": 9,
+    "sd_change": 5.581328205619299
+   },
+   "imp-pers-con-lr3e5-s42": {
+    "n_prefixes": 50,
+    "sd_level": 5.757279764831155,
+    "n_prefixes_ge10": 6,
+    "sd_change": 4.4632517213923
+   }
+  },
+  "level_pass": false,
+  "change_pass": true
+ },
+ "criterion_c": {
+  "base_ceiling_share": 0.0,
+  "ceiling_flag": false,
+  "note": "flag registers the ceiling-excluded re-read as the PRIMARY level read for flagged arms (reporting rule fixed before the data are seen)"
+ },
+ "pilot_arms": [
+  "imp-pers-po-lr1e5-s42",
+  "imp-pers-con-lr3e5-s42"
+ ]
+}

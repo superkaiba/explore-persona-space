@@ -1,0 +1,160 @@
+{
+ "meta": {
+  "script": "scripts/issue1979_judge.py",
+  "issue": 1979,
+  "git_commit": "8c840dbe9d853cc63cd84886554213f20e0491ea",
+  "ts": "2026-08-01T20:38:28Z"
+ },
+ "units": {
+  "cas-pers-con-lr1e5-s42": {
+   "n_items": 3000,
+   "n_total_draws": 9000,
+   "n_content_dropped_draws": 273,
+   "n_refusal_draws": 251,
+   "n_transport_lost_draws": 0,
+   "content_drop_rate": 0.030333333333333334,
+   "max_tokens": 400,
+   "rubric_sha256": "44212c49e75afd9a7cc5110045d1023895450edff825597182989569f0a60fd2"
+  },
+  "cas-pers-po-lr1e5-s42": {
+   "n_items": 3000,
+   "n_total_draws": 9000,
+   "n_content_dropped_draws": 260,
+   "n_refusal_draws": 248,
+   "n_transport_lost_draws": 0,
+   "content_drop_rate": 0.028888888888888888,
+   "max_tokens": 400,
+   "rubric_sha256": "44212c49e75afd9a7cc5110045d1023895450edff825597182989569f0a60fd2"
+  },
+  "cas-bare-con-lr1e5-s42": {
+   "n_items": 3000,
+   "n_total_draws": 9000,
+   "n_content_dropped_draws": 269,
+   "n_refusal_draws": 254,
+   "n_transport_lost_draws": 0,
+   "content_drop_rate": 0.02988888888888889,
+   "max_tokens": 400,
+   "rubric_sha256": "44212c49e75afd9a7cc5110045d1023895450edff825597182989569f0a60fd2"
+  },
+  "cas-pers-ft-con-s42": {
+   "n_items": 3000,
+   "n_total_draws": 9000,
+   "n_content_dropped_draws": 261,
+   "n_refusal_draws": 245,
+   "n_transport_lost_draws": 0,
+   "content_drop_rate": 0.029,
+   "max_tokens": 400,
+   "rubric_sha256": "44212c49e75afd9a7cc5110045d1023895450edff825597182989569f0a60fd2"
+  },
+  "imp-pers-con-lr3e5-s42": {
+   "n_items": 3000,
+   "n_total_draws": 9000,
+   "n_content_dropped_draws": 40,
+   "n_refusal_draws": 30,
+   "n_transport_lost_draws": 0,
+   "content_drop_rate": 0.0044444444444444444,
+   "max_tokens": 400,
+   "rubric_sha256": "a830349fe45cff3a6073f0b17e2a81e03606609ef5845265372576466b64fca2"
+  },
+  "imp-pers-con-lr3e5-s137": {
+   "n_items": 3000,
+   "n_total_draws": 9000,
+   "n_content_dropped_draws": 32,
+   "n_refusal_draws": 18,
+   "n_transport_lost_draws": 0,
+   "content_drop_rate": 0.0035555555555555557,
+   "max_tokens": 400,
+   "rubric_sha256": "a830349fe45cff3a6073f0b17e2a81e03606609ef5845265372576466b64fca2"
+  },
+  "imp-pers-po-lr1e5-s42": {
+   "n_items": 3000,
+   "n_total_draws": 9000,
+   "n_content_dropped_draws": 54,
+   "n_refusal_draws": 45,
+   "n_transport_lost_draws": 0,
+   "content_drop_rate": 0.006,
+   "max_tokens": 400,
+   "rubric_sha256": "a830349fe45cff3a6073f0b17e2a81e03606609ef5845265372576466b64fca2"
+  },
+  "imp-pers-ft-con-s42": {
+   "n_items": 3000,
+   "n_total_draws": 9000,
+   "n_content_dropped_draws": 36,
+   "n_refusal_draws": 28,
+   "n_transport_lost_draws": 0,
+   "content_drop_rate": 0.004,
+   "max_tokens": 400,
+   "rubric_sha256": "a830349fe45cff3a6073f0b17e2a81e03606609ef5845265372576466b64fca2"
+  },
+  "syc-bare-con-lr1e5-s42": {
+   "n_items": 3000,
+   "n_total_draws": 9000,
+   "n_content_dropped_draws": 183,
+   "n_refusal_draws": 68,
+   "n_transport_lost_draws": 0,
+   "content_drop_rate": 0.02033333333333333,
+   "max_tokens": 400,
+   "rubric_sha256": "afddc9f7016bc17382f8189c5ae17c1db0c04cee55ca3196a5db5052e7962ffc"
+  },
+  "syc-conv-con-lr1e5-s42": {
+   "n_items": 3000,
+   "n_total_draws": 9000,
+   "n_content_dropped_draws": 174,
+   "n_refusal_draws": 64,
+   "n_transport_lost_draws": 0,
+   "content_drop_rate": 0.019333333333333334,
+   "max_tokens": 400,
+   "rubric_sha256": "afddc9f7016bc17382f8189c5ae17c1db0c04cee55ca3196a5db5052e7962ffc"
+  },
+  "syc-pers-po-lr1e5-s42": {
+   "n_items": 3000,
+   "n_total_draws": 9000,
+   "n_content_dropped_draws": 188,
+   "n_refusal_draws": 61,
+   "n_transport_lost_draws": 0,
+   "content_drop_rate": 0.020888888888888887,
+   "max_tokens": 400,
+   "rubric_sha256": "afddc9f7016bc17382f8189c5ae17c1db0c04cee55ca3196a5db5052e7962ffc"
+  },
+  "syc-pers-ft-con-s42": {
+   "n_items": 3000,
+   "n_total_draws": 9000,
+   "n_content_dropped_draws": 185,
+   "n_refusal_draws": 61,
+   "n_transport_lost_draws": 0,
+   "content_drop_rate": 0.020555555555555556,
+   "max_tokens": 400,
+   "rubric_sha256": "afddc9f7016bc17382f8189c5ae17c1db0c04cee55ca3196a5db5052e7962ffc"
+  },
+  "base_imp": {
+   "n_items": 3000,
+   "n_total_draws": 9000,
+   "n_content_dropped_draws": 62,
+   "n_refusal_draws": 58,
+   "n_transport_lost_draws": 0,
+   "content_drop_rate": 0.006888888888888889,
+   "max_tokens": 400,
+   "rubric_sha256": "a830349fe45cff3a6073f0b17e2a81e03606609ef5845265372576466b64fca2"
+  },
+  "base_cas": {
+   "n_items": 3000,
+   "n_total_draws": 9000,
+   "n_content_dropped_draws": 212,
+   "n_refusal_draws": 207,
+   "n_transport_lost_draws": 0,
+   "content_drop_rate": 0.023555555555555555,
+   "max_tokens": 400,
+   "rubric_sha256": "44212c49e75afd9a7cc5110045d1023895450edff825597182989569f0a60fd2"
+  },
+  "base_syc": {
+   "n_items": 3000,
+   "n_total_draws": 9000,
+   "n_content_dropped_draws": 180,
+   "n_refusal_draws": 77,
+   "n_transport_lost_draws": 0,
+   "content_drop_rate": 0.02,
+   "max_tokens": 400,
+   "rubric_sha256": "afddc9f7016bc17382f8189c5ae17c1db0c04cee55ca3196a5db5052e7962ffc"
+  }
+ }
+}

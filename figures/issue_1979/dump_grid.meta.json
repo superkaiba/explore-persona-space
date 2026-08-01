@@ -1,0 +1,72 @@
+{
+  "commit": "8c840dbe9d",
+  "created": "2026-08-01T20:42:42Z",
+  "figsize": [
+    10.1,
+    9.72
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "exploratory dump: across-arm median rho per (layer x position)",
+        "xticklabels": [
+          "L14/last_ctx",
+          "L14/last_prompt",
+          "L14/span_mean_context",
+          "L19/last_ctx",
+          "L19/last_prompt",
+          "L19/span_mean_context",
+          "L25/last_ctx",
+          "L25/last_prompt",
+          "L25/span_mean_context"
+        ],
+        "yticklabels": [
+          "m1_tc",
+          "m2_tc",
+          "m3",
+          "m4",
+          "m4_onpolicy",
+          "m5_tc",
+          "m6",
+          "p10_k16",
+          "p10_k4",
+          "p10_k8",
+          "p1_ps",
+          "p1_tc",
+          "p1_tc_even",
+          "p1_tc_odd",
+          "p2_ps",
+          "p2_tc",
+          "p2_tc_even",
+          "p2_tc_odd",
+          "p3a_tc",
+          "p3b_tc",
+          "p4_tc",
+          "p5",
+          "p6",
+          "p7",
+          "p8a",
+          "p8b",
+          "p9_k16",
+          "p9_k4",
+          "p9_k8"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      }
+    ]
+  }
+}

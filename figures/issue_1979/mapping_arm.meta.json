@@ -1,0 +1,211 @@
+{
+  "commit": "8c840dbe9d",
+  "created": "2026-08-01T20:42:37Z",
+  "figsize": [
+    10.2,
+    3.4
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "pooled LOFO R2": 0.5589962877822106,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "pooled LOFO R2": 0.5386826472379755,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "pooled LOFO R2": 0.5402181242731556,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.8,
+      "pooled LOFO R2": 0.5106249611363249,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.8,
+      "pooled LOFO R2": 0.22137985519103154,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.8,
+      "pooled LOFO R2": 0.290272983401589,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.8,
+      "pooled LOFO R2": 0.5556546454341127,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.8,
+      "pooled LOFO R2": 0.5378222059751347,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.8,
+      "pooled LOFO R2": 0.5378685546123512,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.8,
+      "pooled LOFO R2": 0.5070620933085511,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 9.8,
+      "pooled LOFO R2": 0.21946775348856495,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 10.8,
+      "pooled LOFO R2": 0.2852306267386391,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "pooled LOFO R2": -47.09498999819187,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "pooled LOFO R2": -4616.229398968863,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "pooled LOFO R2": -35.7076993795925,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.2,
+      "pooled LOFO R2": -1397.5280792482504,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.2,
+      "pooled LOFO R2": -81.23893290352524,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.2,
+      "pooled LOFO R2": -315.4860602536559,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.2,
+      "pooled LOFO R2": -47.29140867016462,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.2,
+      "pooled LOFO R2": -4635.35045730935,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.2,
+      "pooled LOFO R2": -35.76055906091995,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 9.2,
+      "pooled LOFO R2": -1399.4765600824937,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 10.2,
+      "pooled LOFO R2": -81.36510918488281,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 11.2,
+      "pooled LOFO R2": -316.0045127907586,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "prefix-based v_P->v_A mapping arm (EXPLORATORY; n<d reg-limit regime)",
+        "ylabel": "pooled LOFO R2",
+        "legend_labels": [
+          "LOFO ridge R2",
+          "identity+bias R2"
+        ],
+        "annotations": [
+          "acc@1=0.06",
+          "acc@1=0.20",
+          "acc@1=0.12",
+          "acc@1=0.18",
+          "acc@1=0.08",
+          "acc@1=0.08",
+          "acc@1=0.08",
+          "acc@1=0.18",
+          "acc@1=0.12",
+          "acc@1=0.18",
+          "acc@1=0.08",
+          "acc@1=0.08"
+        ],
+        "xticklabels": [
+          "content/L14/last_prefix",
+          "content/L14/prefix_span",
+          "content/L19/last_prefix",
+          "content/L19/prefix_span",
+          "content/L25/last_prefix",
+          "content/L25/prefix_span",
+          "marker/L14/last_prefix",
+          "marker/L14/prefix_span",
+          "marker/L19/last_prefix",
+          "marker/L19/prefix_span",
+          "marker/L25/last_prefix",
+          "marker/L25/prefix_span"
+        ],
+        "yticklabels": [
+          "\u22125000",
+          "\u22124000",
+          "\u22123000",
+          "\u22122000",
+          "\u22121000",
+          "0",
+          "1000"
+        ]
+      }
+    ],
+    "series": [
+      "LOFO ridge R2",
+      "identity+bias R2"
+    ]
+  }
+}

@@ -1,0 +1,1317 @@
+{
+  "commit": "8c840dbe9d",
+  "created": "2026-08-01T20:42:23Z",
+  "figsize": [
+    11.0,
+    3.4
+  ],
+  "points": [
+    {
+      "p7": 9.13888888888889,
+      "dv_level": 10.002777777777776,
+      "label": "neg_sp_ph4",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "p7": 8.497222222222224,
+      "dv_level": 8.752777777777778,
+      "label": "neg_sp_ph4",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "p7": 8.233333333333333,
+      "dv_level": 5.8926553672316375,
+      "label": "neg_reph_curious",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "p7": 9.56388888888889,
+      "dv_level": 12.986111111111112,
+      "label": "neg_sp_ph4",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "p7": 7.505555555555556,
+      "dv_level": 10.877777777777776,
+      "label": "neg_sp_ph4",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "p7": 8.63888888888889,
+      "dv_level": 9.274999999999999,
+      "label": "neg_sp_ph4",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "p7": 6.483333333333334,
+      "dv_level": 4.816666666666666,
+      "label": "neg_default_assistant",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "p7": 5.983333333333333,
+      "dv_level": 4.96111111111111,
+      "label": "neg_default_assistant",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "p7": 6.819444444444445,
+      "dv_level": 8.852777777777778,
+      "label": "icl_prefix_sycophancy",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "p7": 14.238888888888887,
+      "dv_level": 13.158333333333333,
+      "label": "wildchat_prefix_real545",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "p7": 13.808333333333334,
+      "dv_level": 15.257062146892654,
+      "label": "wildchat_prefix_real545",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "p7": 6.427777777777777,
+      "dv_level": 5.080555555555555,
+      "label": "neg_default_assistant",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "p7": 6.466666666666667,
+      "dv_level": 6.244444444444444,
+      "label": "neg_default_assistant",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "p7": 6.227777777777778,
+      "dv_level": 6.377777777777778,
+      "label": "neg_default_assistant",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "p7": 8.436111111111112,
+      "dv_level": 6.110169491525424,
+      "label": "neg_reph_curious",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "p7": 9.616666666666667,
+      "dv_level": 9.39722222222222,
+      "label": "neg_sp_ph4",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "p7": 8.920903954802258,
+      "dv_level": 8.777777777777777,
+      "label": "neg_sp_ph4",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "p7": 15.230555555555556,
+      "dv_level": 20.93220338983051,
+      "label": "wildchat_prefix_real545",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "p7": 7.675000000000001,
+      "dv_level": 10.697222222222223,
+      "label": "neg_sp_ph4",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "p7": 14.605555555555554,
+      "dv_level": 10.647222222222222,
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "p7": 13.488888888888887,
+      "dv_level": 11.452777777777778,
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "p7": 11.107344632768358,
+      "dv_level": 12.64722222222222,
+      "label": "neg_sp_ph4",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "p7": 9.23611111111111,
+      "dv_level": 8.194444444444445,
+      "label": "neg_reph_curious",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "p7": 11.030555555555559,
+      "dv_level": 6.9111111111111105,
+      "label": "neg_reph_curious",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "p7": 6.083333333333333,
+      "dv_level": 5.177777777777778,
+      "label": "neg_default_assistant",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "p7": 8.555555555555555,
+      "dv_level": 9.66111111111111,
+      "label": "neg_sp_ph4",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "p7": 8.810734463276836,
+      "dv_level": 9.180555555555554,
+      "label": "neg_sp_ph4",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "p7": 11.429378531073446,
+      "dv_level": 11.644444444444442,
+      "label": "neg_sp_ph4",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "p7": 11.380555555555556,
+      "dv_level": 8.861111111111112,
+      "label": "neg_sp_ph4",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "p7": 12.413888888888888,
+      "dv_level": 13.166666666666666,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "p7": 10.53888888888889,
+      "dv_level": 10.31111111111111,
+      "label": "neg_sp_ph4",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "p7": 8.763888888888888,
+      "dv_level": 8.488888888888889,
+      "label": "neg_reph_curious",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "p7": 10.66101694915254,
+      "dv_level": 12.333333333333334,
+      "label": "neg_sp_ph4",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "p7": 15.912429378531074,
+      "dv_level": 13.027777777777779,
+      "label": "wildchat_prefix_real545",
+      "series": "icl-fresh",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "p7": 10.488888888888889,
+      "dv_level": 10.88888888888889,
+      "label": "neg_sp_ph4",
+      "series": "icl-fresh",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "p7": 6.847222222222222,
+      "dv_level": 5.633333333333335,
+      "label": "neg_default_assistant",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "p7": 6.3388888888888895,
+      "dv_level": 6.933333333333334,
+      "label": "icl_prefix_sycophancy",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "p7": 5.933333333333334,
+      "dv_level": 6.08611111111111,
+      "label": "neg_default_assistant",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "p7": 9.266666666666667,
+      "dv_level": 6.733333333333333,
+      "label": "neg_reph_curious",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "p7": 7.675,
+      "dv_level": 6.544444444444445,
+      "label": "persona_software_engineer",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "p7": 7.98888888888889,
+      "dv_level": 10.39722222222222,
+      "label": "neg_sp_ph4",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "p7": 5.65,
+      "dv_level": 7.78888888888889,
+      "label": "neg_sp_police",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "p7": 8.683333333333334,
+      "dv_level": 11.416666666666666,
+      "label": "neg_sp_ph4",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "p7": 8.577777777777778,
+      "dv_level": 5.616666666666665,
+      "label": "neg_reph_curious",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "p7": 5.9,
+      "dv_level": 9.98611111111111,
+      "label": "neg_wc_short",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "p7": 6.9944444444444445,
+      "dv_level": 5.9,
+      "label": "neg_default_assistant",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "p7": 7.699999999999999,
+      "dv_level": 5.705555555555557,
+      "label": "persona_software_engineer",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "p7": 14.975,
+      "dv_level": 17.555555555555557,
+      "label": "wildchat_prefix_real545",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "p7": 6.505649717514124,
+      "dv_level": 8.172222222222222,
+      "label": "icl_prefix_sycophancy",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "p7": 7.2444444444444445,
+      "dv_level": 4.044444444444444,
+      "label": "bare",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "p1_tc": -0.2591226862407592,
+      "y": 10.002777777777776,
+      "label": "neg_wc_short",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "p1_tc": -0.2643005569507954,
+      "y": 8.752777777777778,
+      "label": "neg_wc_short",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "p1_tc": -0.25611837934844045,
+      "y": 5.8926553672316375,
+      "label": "persona_software_engineer",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "p1_tc": 0.2024882037635214,
+      "y": 12.986111111111112,
+      "label": "neg_sp_ph4",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "p1_tc": 0.2015368010896573,
+      "y": 10.877777777777776,
+      "label": "icl_prefix_sycophancy",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "p1_tc": 0.07375872820883117,
+      "y": 9.274999999999999,
+      "label": "icl_prefix_sycophancy",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "p1_tc": -0.13799880661205036,
+      "y": 4.816666666666666,
+      "label": "bare",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "p1_tc": -0.3151127659568642,
+      "y": 4.96111111111111,
+      "label": "persona_software_engineer",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "p1_tc": 0.24632456914873926,
+      "y": 8.852777777777778,
+      "label": "icl_prefix_sycophancy",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "p1_tc": 0.07701032585584815,
+      "y": 13.158333333333333,
+      "label": "neg_sp_ph4",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "p1_tc": 0.020421037992173898,
+      "y": 15.257062146892654,
+      "label": "neg_sp_ph4",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "p1_tc": -0.16753285205587753,
+      "y": 5.080555555555555,
+      "label": "persona_software_engineer",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "p1_tc": -0.02777593301582659,
+      "y": 6.244444444444444,
+      "label": "neg_reph_curious",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "p1_tc": -0.1426377058192156,
+      "y": 6.377777777777778,
+      "label": "neg_default_assistant",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "p1_tc": 0.15258789539955997,
+      "y": 6.110169491525424,
+      "label": "icl_prefix_sycophancy",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "p1_tc": 0.08089684533616023,
+      "y": 9.39722222222222,
+      "label": "icl_prefix_sycophancy",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "p1_tc": -0.09539765015523113,
+      "y": 8.777777777777777,
+      "label": "neg_sp_police",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "p1_tc": -0.024168044762316376,
+      "y": 20.93220338983051,
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "p1_tc": 0.19152363250793447,
+      "y": 10.697222222222223,
+      "label": "icl_prefix_sycophancy",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "p1_tc": 0.3395271493995181,
+      "y": 10.647222222222222,
+      "label": "icl_prefix_sycophancy",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "p1_tc": 0.3564516468767062,
+      "y": 11.452777777777778,
+      "label": "icl_prefix_sycophancy",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "p1_tc": 0.38240970894874643,
+      "y": 12.64722222222222,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "p1_tc": 0.055953634185301096,
+      "y": 8.194444444444445,
+      "label": "icl_prefix_sycophancy",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "p1_tc": 0.03717348860957089,
+      "y": 6.9111111111111105,
+      "label": "neg_reph_curious",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "p1_tc": 0.11440026833558835,
+      "y": 5.177777777777778,
+      "label": "neg_reph_curious",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "p1_tc": 0.12040739199413744,
+      "y": 9.66111111111111,
+      "label": "icl_prefix_sycophancy",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "p1_tc": 0.05892313251403163,
+      "y": 9.180555555555554,
+      "label": "icl_prefix_sycophancy",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "p1_tc": 0.16972754190735387,
+      "y": 11.644444444444442,
+      "label": "neg_sp_ph4",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "p1_tc": 0.2646818367075189,
+      "y": 8.861111111111112,
+      "label": "icl_prefix_sycophancy",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "p1_tc": 0.20318932034247983,
+      "y": 13.166666666666666,
+      "label": "neg_sp_ph4",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "p1_tc": 0.10196079908439909,
+      "y": 10.31111111111111,
+      "label": "neg_sp_ph4",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "p1_tc": 0.01555494332496304,
+      "y": 8.488888888888889,
+      "label": "neg_sp_police",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "p1_tc": 0.08706880064605205,
+      "y": 12.333333333333334,
+      "label": "neg_sp_ph4",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "p1_tc": 0.17377398472000882,
+      "y": 13.027777777777779,
+      "label": "neg_sp_ph4",
+      "series": "icl-fresh",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "p1_tc": -0.08523810659537949,
+      "y": 10.88888888888889,
+      "label": "neg_sp_ph4",
+      "series": "icl-fresh",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "p1_tc": -0.20338442993964576,
+      "y": 5.633333333333335,
+      "label": "persona_software_engineer",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "p1_tc": -0.14813950523650743,
+      "y": 6.933333333333334,
+      "label": "neg_default_assistant",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "p1_tc": -0.11292922293477398,
+      "y": 6.08611111111111,
+      "label": "neg_default_assistant",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "p1_tc": -0.21879645285597435,
+      "y": 6.733333333333333,
+      "label": "persona_software_engineer",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "p1_tc": -0.04073605584753016,
+      "y": 6.544444444444445,
+      "label": "neg_reph_curious",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "p1_tc": -0.022621680095512926,
+      "y": 10.39722222222222,
+      "label": "neg_sp_ph4",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "p1_tc": -0.11432274700959139,
+      "y": 7.78888888888889,
+      "label": "neg_sp_police",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "p1_tc": 0.03701211448291951,
+      "y": 11.416666666666666,
+      "label": "neg_sp_ph4",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "p1_tc": -0.02704202385062982,
+      "y": 5.616666666666665,
+      "label": "neg_reph_curious",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "p1_tc": -0.3415602433434311,
+      "y": 9.98611111111111,
+      "label": "neg_wc_short",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "p1_tc": -0.16753285205587753,
+      "y": 5.9,
+      "label": "neg_default_assistant",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "p1_tc": -0.18161168344690684,
+      "y": 5.705555555555557,
+      "label": "persona_software_engineer",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "p1_tc": 0.45835219268447086,
+      "y": 17.555555555555557,
+      "label": "wildchat_prefix_real545",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "p1_tc": 0.1557486529082411,
+      "y": 8.172222222222222,
+      "label": "icl_prefix_sycophancy",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "p1_tc": -0.16759475699995,
+      "y": 4.044444444444444,
+      "label": "bare",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "p2_tc": -0.27673575433768033,
+      "y": 10.002777777777776,
+      "label": "neg_wc_short",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "p2_tc": -0.24761905485122415,
+      "y": 8.752777777777778,
+      "label": "neg_sp_police",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "p2_tc": -0.357448950040581,
+      "y": 5.8926553672316375,
+      "label": "neg_default_assistant",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "p2_tc": 0.2409945772155341,
+      "y": 12.986111111111112,
+      "label": "icl_prefix_sycophancy",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "p2_tc": 0.22633761878740666,
+      "y": 10.877777777777776,
+      "label": "icl_prefix_sycophancy",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "p2_tc": 0.08637124431382776,
+      "y": 9.274999999999999,
+      "label": "neg_sp_ph4",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "p2_tc": -0.14801065100082175,
+      "y": 4.816666666666666,
+      "label": "persona_software_engineer",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "p2_tc": -0.3122336549277013,
+      "y": 4.96111111111111,
+      "label": "neg_default_assistant",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "p2_tc": 0.15404984765531193,
+      "y": 8.852777777777778,
+      "label": "icl_prefix_sycophancy",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "p2_tc": 0.10733462125846653,
+      "y": 13.158333333333333,
+      "label": "neg_sp_ph4",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "p2_tc": 0.1651383888620322,
+      "y": 15.257062146892654,
+      "label": "wildchat_prefix_real545",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "p2_tc": -0.24816072837005504,
+      "y": 5.080555555555555,
+      "label": "neg_default_assistant",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "p2_tc": -0.09494775713505914,
+      "y": 6.244444444444444,
+      "label": "neg_reph_curious",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "p2_tc": -0.19999706553544547,
+      "y": 6.377777777777778,
+      "label": "persona_software_engineer",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "p2_tc": 0.19338257569321224,
+      "y": 6.110169491525424,
+      "label": "icl_prefix_sycophancy",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "p2_tc": 0.06695743788712655,
+      "y": 9.39722222222222,
+      "label": "neg_sp_ph4",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "p2_tc": 0.07453128182943759,
+      "y": 8.777777777777777,
+      "label": "neg_sp_ph4",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "p2_tc": 0.27082897102171255,
+      "y": 20.93220338983051,
+      "label": "wildchat_prefix_real545",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "p2_tc": 0.013661606070924048,
+      "y": 10.697222222222223,
+      "label": "neg_sp_ph4",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "p2_tc": 0.22891354194486507,
+      "y": 10.647222222222222,
+      "label": "icl_prefix_sycophancy",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "p2_tc": 0.29666233303758693,
+      "y": 11.452777777777778,
+      "label": "icl_prefix_sycophancy",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "p2_tc": 0.28135182159795774,
+      "y": 12.64722222222222,
+      "label": "icl_prefix_sycophancy",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "p2_tc": -0.16975535887195906,
+      "y": 8.194444444444445,
+      "label": "neg_sp_police",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "p2_tc": 0.08162839604736095,
+      "y": 6.9111111111111105,
+      "label": "icl_prefix_sycophancy",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "p2_tc": 0.07885776001529653,
+      "y": 5.177777777777778,
+      "label": "neg_reph_curious",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "p2_tc": 0.08149155523913769,
+      "y": 9.66111111111111,
+      "label": "neg_sp_ph4",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "p2_tc": 0.026299292852720937,
+      "y": 9.180555555555554,
+      "label": "neg_sp_ph4",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "p2_tc": 0.2758870030066954,
+      "y": 11.644444444444442,
+      "label": "icl_prefix_sycophancy",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "p2_tc": 0.1543902983913036,
+      "y": 8.861111111111112,
+      "label": "icl_prefix_sycophancy",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "p2_tc": 0.24205801615214662,
+      "y": 13.166666666666666,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "p2_tc": -0.06941577217285314,
+      "y": 10.31111111111111,
+      "label": "neg_sp_ph4",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "p2_tc": 0.13717408203111,
+      "y": 8.488888888888889,
+      "label": "icl_prefix_sycophancy",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "p2_tc": 0.025968411474460485,
+      "y": 12.333333333333334,
+      "label": "neg_sp_ph4",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "p2_tc": 0.10093454359622114,
+      "y": 13.027777777777779,
+      "label": "neg_sp_ph4",
+      "series": "icl-fresh",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "p2_tc": 0.007492239814074516,
+      "y": 10.88888888888889,
+      "label": "neg_sp_ph4",
+      "series": "icl-fresh",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "p2_tc": -0.30605810041485965,
+      "y": 5.633333333333335,
+      "label": "neg_default_assistant",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "p2_tc": -0.20858206723558295,
+      "y": 6.933333333333334,
+      "label": "neg_sp_police",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "p2_tc": -0.20085800250497252,
+      "y": 6.08611111111111,
+      "label": "persona_software_engineer",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "p2_tc": -0.265570905743788,
+      "y": 6.733333333333333,
+      "label": "neg_default_assistant",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "p2_tc": -0.12853819933677485,
+      "y": 6.544444444444445,
+      "label": "neg_reph_curious",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "p2_tc": 0.07141141933827765,
+      "y": 10.39722222222222,
+      "label": "neg_sp_ph4",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "p2_tc": -0.16681688506850237,
+      "y": 7.78888888888889,
+      "label": "neg_sp_police",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "p2_tc": -0.01210603226695457,
+      "y": 11.416666666666666,
+      "label": "neg_sp_ph4",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "p2_tc": -0.1038009680151038,
+      "y": 5.616666666666665,
+      "label": "neg_reph_curious",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "p2_tc": -0.3831033476881409,
+      "y": 9.98611111111111,
+      "label": "neg_wc_short",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "p2_tc": -0.24649983923608193,
+      "y": 5.9,
+      "label": "neg_default_assistant",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "p2_tc": -0.17860801287263164,
+      "y": 5.705555555555557,
+      "label": "persona_software_engineer",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "p2_tc": 0.32587014953787413,
+      "y": 17.555555555555557,
+      "label": "wildchat_prefix_real545",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "p2_tc": 0.2151182014654533,
+      "y": 8.172222222222222,
+      "label": "icl_prefix_sycophancy",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "p2_tc": -0.23200426296238508,
+      "y": 4.044444444444444,
+      "label": "bare",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 26
+    }
+  ],
+  "n_series": 27,
+  "total_points": 150,
+  "text": {
+    "suptitle": "syc-conv-con-lr1e5-s42: per-prefix DV vs {P7, P1, P2} (points = prefixes)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "p7",
+        "ylabel": "dv_level",
+        "legend_labels": [
+          "battery",
+          "bystander",
+          "conv-behavior",
+          "conv-fresh",
+          "conv-neutral",
+          "icl-fresh",
+          "near-twin",
+          "negatives",
+          "trained"
+        ],
+        "annotations": [
+          "persona_software_engineer",
+          "wildchat_prefix_real545",
+          "icl_prefix_sycophancy",
+          "bare",
+          "neg_sp_police",
+          "neg_sp_ph4",
+          "neg_reph_curious",
+          "neg_wc_short",
+          "neg_default_assistant"
+        ],
+        "xticklabels": [
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ],
+        "yticklabels": [
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0",
+          "22.5"
+        ]
+      },
+      {
+        "xlabel": "p1_tc",
+        "annotations": [
+          "persona_software_engineer",
+          "wildchat_prefix_real545",
+          "icl_prefix_sycophancy",
+          "bare",
+          "neg_sp_police",
+          "neg_sp_ph4",
+          "neg_reph_curious",
+          "neg_wc_short",
+          "neg_default_assistant"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      },
+      {
+        "xlabel": "p2_tc",
+        "annotations": [
+          "persona_software_engineer",
+          "wildchat_prefix_real545",
+          "icl_prefix_sycophancy",
+          "bare",
+          "neg_sp_police",
+          "neg_sp_ph4",
+          "neg_reph_curious",
+          "neg_wc_short",
+          "neg_default_assistant"
+        ],
+        "xticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4"
+        ]
+      }
+    ],
+    "series": [
+      "battery",
+      "bystander",
+      "conv-behavior",
+      "conv-fresh",
+      "conv-neutral",
+      "icl-fresh",
+      "near-twin",
+      "negatives",
+      "trained"
+    ]
+  }
+}
