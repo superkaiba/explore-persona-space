@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1977,
+  "highest_id": 1978,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7570,6 +7570,13 @@
       "path": "tasks/proposed/1977",
       "status": "proposed",
       "title": "daily-fix: exempt path-limited git add --all in guard"
+    },
+    "1978": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1978",
+      "status": "proposed",
+      "title": "daily-fix: extract Step 10d guards to checked-in script"
     },
     "199": {
       "has_clean_result": true,
