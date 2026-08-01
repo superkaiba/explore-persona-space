@@ -79,6 +79,7 @@ from explore_persona_space.artifacts.context import (  # noqa: E402
 )
 from explore_persona_space.artifacts.datagen import (  # noqa: E402
     NEGATIVE,
+    POSITIVE,
     DatagenYieldError,
     GenCandidate,
     GenRequest,
@@ -691,35 +692,119 @@ def _behavior_1947(cfg: Cfg, beh_key: str) -> Behavior:
     return dataclasses.replace(BEHAVIORS[BEHAVIOR_BY_KEY[beh_key]], train_question_bank=tuple(qs))
 
 
-def _salvage_emit(out_dir: Path, emit_n: int, seed: int) -> int:
-    """Plan §7 gate-2 fallback: the factory floor (300) failed post-topup but the
-    kept pool may still clear the 240 hard floor — reconstruct kept candidates
-    from the persisted sidecars and emit min(kept, emit_n) rows."""
-    jr_path = out_dir / "judge_rows.jsonl"
+def _replay_judge_fn(save_raw_path: Path):
+    """A judge_graded-signature stub that REBUILDS the JudgeResult for ``items``
+    from a persisted ``save_raw`` file (PURE READ — zero API calls;
+    ``graded_judge.judge_result_from_save_raw``). Lets ``_judge_and_filter``
+    re-derive a kept set through the factory's OWN keep rule offline."""
+    from explore_persona_space.eval.graded_judge import judge_result_from_save_raw
+
+    def _fn(items, eval_prompt, **kw):  # signature parity with judge_graded
+        return judge_result_from_save_raw(save_raw_path, items)
+
+    return _fn
+
+
+def _salvage_reconstruct_union(
+    behavior: Behavior, out_dir: Path
+) -> tuple[list[GenCandidate], dict]:
+    """Reconstruct the post-topup kept-positive UNION from the persisted
+    sidecars (``raw_pos[_topup].jsonl`` + ``judge_raw_pos[_topup].json``)
+    through the factory's own keep rule (``_judge_and_filter`` over a save_raw
+    replay) and the factory's own question_id-dedup merge (crash-fix r8).
+
+    The pre-r8 reconstruction read ``judge_rows.jsonl`` — a sidecar the factory
+    writes only AFTER the positive floor check passes, so it never exists in
+    exactly the floor-missed state the salvage serves (silent ``return 0`` =
+    no ``pos.jsonl``, the P0-crash-4 latent state) — and its topup globs
+    (``*topup*judge_rows*``) matched neither actual sidecar name. Raises
+    RuntimeError when the first-sample sidecars are missing: the recorded
+    state is then NOT reconstructible — fail loud, never an empty pool.
+    """
     raw_path = out_dir / "raw_pos.jsonl"
-    if not (jr_path.exists() and raw_path.exists()):
-        return 0
-    kept_rids = {r["request_id"] for r in _read_jsonl(jr_path) if r.get("kept")}
-    cands = {c.request.request_id: c for c in _read_raw(raw_path)}
-    # Defensive topup merge: the ONE tranche persists its own sidecars.
-    for extra_jr in sorted(out_dir.glob("*topup*judge_rows*.jsonl")):
-        kept_rids |= {r["request_id"] for r in _read_jsonl(extra_jr) if r.get("kept")}
-    for extra_raw in sorted(out_dir.glob("*topup*raw*.jsonl")):
-        for c in _read_raw(extra_raw):
-            cands.setdefault(c.request.request_id, c)
-    kept = [cands[rid] for rid in sorted(kept_rids) if rid in cands and cands[rid].completion]
-    take = random.Random(seed).sample(kept, min(emit_n, len(kept))) if kept else []
+    save_raw = out_dir / "judge_raw_pos.json"
+    missing = [str(p) for p in (raw_path, save_raw) if not p.exists()]
+    if missing:
+        raise RuntimeError(
+            f"[positives] salvage: required first-sample sidecars missing: {missing} "
+            f"(out_dir={out_dir}) — the recorded floor-miss state is not reconstructible"
+        )
+    scratch = out_dir / "salvage_replay_scratch"  # replay judge never writes it
+    kept_first, _d1, _jr1, _s1 = _judge_and_filter(
+        behavior,
+        _read_raw(raw_path),
+        POSITIVE,
+        judge_fn=_replay_judge_fn(save_raw),
+        n_judge_draws=N_JUDGE_DRAWS,
+        cache_dir=scratch,
+        save_raw=scratch / "unused.json",
+    )
+    kept_topup: list[GenCandidate] = []
+    raw_topup = out_dir / "raw_pos_topup.jsonl"
+    save_topup = out_dir / "judge_raw_pos_topup.json"
+    if raw_topup.exists() and save_topup.exists():
+        kept_topup, _d2, _jr2, _s2 = _judge_and_filter(
+            behavior,
+            _read_raw(raw_topup),
+            POSITIVE,
+            judge_fn=_replay_judge_fn(save_topup),
+            n_judge_draws=N_JUDGE_DRAWS,
+            cache_dir=scratch,
+            save_raw=scratch / "unused_topup.json",
+        )
+    # question_id-dedup merge — MIRRORS _positive_topup_stage's union semantics
+    # (every first-sample kept row counts; tranche rows dedupe on question_id).
+    seen_qids = {c.request.question_id for c in kept_first}
+    merged: list[GenCandidate] = []
+    for c in kept_topup:
+        if c.request.question_id in seen_qids:
+            continue
+        seen_qids.add(c.request.question_id)
+        merged.append(c)
+    union = list(kept_first) + merged
+    info = {
+        "kept_pos_first_sample": len(kept_first),
+        "tranche_kept": len(kept_topup),
+        "tranche_merged": len(merged),
+        "kept_pos_union": len(union),
+    }
+    return union, info
+
+
+def _salvage_emit(
+    behavior: Behavior, out_dir: Path, emit_n: int, seed: int, record: dict | None = None
+) -> int:
+    """Plan §7 gate-2 fallback: the factory floor (300) failed post-topup but the
+    kept pool may still clear the 240 hard floor — reconstruct the kept-positive
+    union from the persisted sidecars and emit min(kept, emit_n) rows. The 240
+    hard-floor adjudication itself is UNCHANGED (it stays with the mixes-phase
+    yield gate). When a recorded ``topup_record.json`` is passed, the
+    reconstruction is ASSERTED against its counts — a mismatch means the
+    sidecars drifted from the recorded verdict (fail loud, never a silently
+    different pool; crash-fix r8)."""
+    union, info = _salvage_reconstruct_union(behavior, out_dir)
+    if record is not None:
+        for k in ("kept_pos_first_sample", "tranche_merged", "kept_pos_union"):
+            want = record.get(k)
+            if want is not None and int(want) != info[k]:
+                raise RuntimeError(
+                    "[positives] salvage reconstruction mismatch vs topup_record.json: "
+                    f"{k} reconstructed {info[k]} != recorded {want} (out_dir={out_dir})"
+                )
+    take = random.Random(seed).sample(union, min(emit_n, len(union))) if union else []
     rows = [_train_row(c.request.emit_messages, c.completion) for c in take]
     sha = _write_jsonl(out_dir / "pos.jsonl", rows)
     _write_json(
         out_dir / "salvage_meta.json",
         {
             "salvaged": True,
-            "n_kept_reconstructed": len(kept),
+            **info,
+            "n_kept_reconstructed": len(union),
             "n_emitted": len(rows),
             "emit_target": emit_n,
             "seed": seed,
             "pos_sha256": sha,
+            "record_checked": record is not None,
         },
     )
     return len(rows)
@@ -745,6 +830,42 @@ def phase_positives(cfg: Cfg) -> None:
                 logger.info("[positives] %s: pos.jsonl exists (%d rows) — skip", pool, n)
                 results[pool] = {"emitted": n, "resumed": True}
                 continue
+            record_path = out_dir / "topup_record.json"
+            if record_path.exists():
+                record = json.loads(record_path.read_text(encoding="utf-8"))
+                if record.get("union_floor_missed"):
+                    # Recorded TERMINAL topup verdict (the ONE allowed tranche
+                    # consumed + union floor miss): re-apply the recorded salvage
+                    # disposition from the sidecars instead of re-entering the
+                    # factory stage — whose one-tranche guard raises on re-entry
+                    # (crash-fix r8, P0 crash 4: resume predicates honor
+                    # terminal-verdict sidecars). Floor adjudication (240 hard
+                    # floor) is unchanged — it stays with the mixes yield gate.
+                    # A union_floor_missed=false record falls through: factory
+                    # re-entry is the designed resume there (raw + cache replay;
+                    # the guard only refuses the MISSED-verdict state).
+                    n_salvaged = _salvage_emit(
+                        behavior, out_dir, emit_n, _pool_seed(beh_key, ctx_key), record=record
+                    )
+                    results[pool] = {
+                        "emitted": n_salvaged,
+                        "below_target": True,
+                        "resumed_terminal_topup": True,
+                        "kept_pos_union": record.get("kept_pos_union"),
+                    }
+                    logger.warning(
+                        "[positives] %s: topup_record.json terminal verdict "
+                        "(union_floor_missed=true, union %s) — re-applied salvage "
+                        "disposition (%d rows) without re-entering the factory stage",
+                        pool,
+                        record.get("kept_pos_union"),
+                        n_salvaged,
+                    )
+                    print(
+                        f"[positives] unit {pool} emitted={n_salvaged} resumed_terminal_topup=1",
+                        flush=True,
+                    )
+                    continue
             ctx = source_context(beh_key, ctx_key)
             tranche = TOPUP_TRANCHE_BARE if ctx_key == "bare" else TOPUP_TRANCHE_DEFAULT
             if cfg.smoke:
@@ -767,7 +888,14 @@ def phase_positives(cfg: Cfg) -> None:
                 )
                 results[pool] = {"emitted": len(_read_jsonl(pos_path)), "resumed": False}
             except DatagenYieldError as e:
-                n_salvaged = _salvage_emit(out_dir, emit_n, _pool_seed(beh_key, ctx_key))
+                record = (
+                    json.loads(record_path.read_text(encoding="utf-8"))
+                    if record_path.exists()
+                    else None
+                )
+                n_salvaged = _salvage_emit(
+                    behavior, out_dir, emit_n, _pool_seed(beh_key, ctx_key), record=record
+                )
                 results[pool] = {
                     "emitted": n_salvaged,
                     "yield_error": str(e)[:500],
@@ -799,6 +927,29 @@ def _neg_questions(cfg: Cfg, beh_key: str, variant: str) -> list[str]:
     return qs[:n]
 
 
+def _neg_raw_delta(
+    rows: list[dict], questions: list[str], pool: str, member_slug: str
+) -> list[str]:
+    """The question DELTA a widened question set (the ``--negatives-extra``
+    retry remedy the member-shortfall error names) adds beyond a resumed raw
+    sidecar. ``_neg_questions`` seeds its shuffle independently of ``n`` over
+    the FIXED extended bank, so the stored rows are a PREFIX of the widened
+    list — verified fail-loud (a non-prefix sidecar belongs to a different
+    bank/seed regime and must be quarantined by hand, never silently reused).
+    A superset sidecar (rows >= questions) yields an empty delta and is used
+    as-is (pre-r8 behavior preserved). Crash-fix r8: the recorded retry remedy
+    must be consumable on resume — pre-r8 the raw resume ignored the widened
+    set and the retry re-failed with the identical shortfall."""
+    n = min(len(rows), len(questions))
+    if [r["question"] for r in rows[:n]] != questions[:n]:
+        raise RuntimeError(
+            f"[negatives] {pool}/{member_slug}: resumed raw sidecar questions are not a "
+            f"prefix of the current question set ({len(rows)} stored vs {len(questions)} "
+            "current) — bank or seed drift; quarantine the raw file before retrying"
+        )
+    return questions[len(rows) :]
+
+
 def phase_negatives(cfg: Cfg) -> None:
     """Per (behavior x panel-variant): base-model on-policy greedy completions
     under each factory-panel member's own prompt, judge-filtered <50, exactly
@@ -827,6 +978,31 @@ def phase_negatives(cfg: Cfg) -> None:
                     raw_path = out_dir / f"raw_{member.slug}.jsonl"
                     if raw_path.exists():
                         rows = _read_jsonl(raw_path)
+                        delta = _neg_raw_delta(rows, questions, pool, member.slug)
+                        if delta:
+                            prompts = [
+                                tok.apply_chat_template(
+                                    member.messages(q), tokenize=False, add_generation_prompt=True
+                                )
+                                for q in delta
+                            ]
+                            texts = backend.generate(prompts, GEN_MAX_NEW_TOKENS)
+                            rows = rows + [
+                                {
+                                    "member": member.slug,
+                                    "question_idx": len(rows) + i,
+                                    "question": q,
+                                    "text": t,
+                                }
+                                for i, (q, t) in enumerate(zip(delta, texts, strict=True))
+                            ]
+                            _write_jsonl(raw_path, rows)  # extended sidecar (delta-only gen)
+                            logger.info(
+                                "[negatives] %s/%s: raw sidecar extended by %d delta questions",
+                                pool,
+                                member.slug,
+                                len(delta),
+                            )
                     else:
                         prompts = [
                             tok.apply_chat_template(
