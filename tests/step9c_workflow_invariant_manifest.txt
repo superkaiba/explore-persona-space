@@ -25,6 +25,7 @@ tests/test_guard_trigger_dense_read.py
 tests/test_implementer_spec_mechanical_pin_sweep.py
 tests/test_implementer_spec_names_invariant_local_union.py
 tests/test_implementer_spec_names_ruff_policy_pin.py
+tests/test_issue_skill_bare_push_snippets_pin.py
 tests/test_issue_skill_compute_pilot_fence_pin.py
 tests/test_issue_skill_detached_harvest_pin.py
 tests/test_issue_skill_disk_routing_pin.py

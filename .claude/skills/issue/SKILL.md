@@ -10504,7 +10504,8 @@ no PR exists or the branch is already merged into `main`.
 
 #### Bare push / merge snippets (canonical — copy verbatim, never compose a piped variant)
 
-Every `git push` / `git merge` / `gh pr merge|create` in this skill — and any
+Every `git push` / `git merge` / `git commit` / `gh pr merge|create` in this
+skill — and any
 IMPROVISED recovery around one — runs BARE with its exit code checked. Never
 pipe one through `tail` / `grep` / `head` / any filter: bash makes a
 pipeline's exit status the LAST stage's, so the pipe masks a rejected push
@@ -10542,6 +10543,15 @@ fi
 git push origin main > /tmp/issue-<N>-push.log 2>&1; PUSH_RC=$?
 tail -20 /tmp/issue-<N>-push.log
 [ "$PUSH_RC" -eq 0 ] || { echo "PUSH FAILED (rc=$PUSH_RC)"; false; }
+
+# (5) Commit whose OUTPUT you need (pre-commit hooks print there): redirect
+#     to a FILE — never pipe (a piped hook-running commit is SIGPIPE-killed
+#     mid-pre-commit-hook, #1584/#1591) — and read the file in a SEPARATE
+#     command; pathspec-limited per CLAUDE.md § Concurrent repo-root
+#     committers:
+git commit -m "<msg>" -- <paths> > /tmp/issue-<N>-commit.log 2>&1; COMMIT_RC=$?
+tail -20 /tmp/issue-<N>-commit.log
+[ "$COMMIT_RC" -eq 0 ] || { echo "COMMIT FAILED (rc=$COMMIT_RC)"; false; }
 ```
 
 Inside Step 10d itself, use the full executable blocks below (they wrap
