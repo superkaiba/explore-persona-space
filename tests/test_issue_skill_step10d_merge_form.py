@@ -36,7 +36,9 @@ def test_merge_form_routing_present():
 
 
 def test_safe_case_merge_uses_merge_form_variable():
-    assert "gh pr merge <PR> $MERGE_FORM --delete-branch=false" in _step10d_span()
+    # "$PR" is the #1897 probe-rebound PR number (was the compose-time <PR>
+    # placeholder — the #1768 round-2 stale-substitution mechanism).
+    assert 'gh pr merge "$PR" $MERGE_FORM --delete-branch=false' in _step10d_span()
 
 
 def test_known_failure_shape_0_present():

@@ -6936,8 +6936,8 @@
     "1897": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1897",
-      "status": "reviewing",
+      "path": "tasks/completed/1897",
+      "status": "completed",
       "title": "workflow-fix: Step 10d probes PR state; verify landing before verdict consume"
     },
     "1898": {
@@ -7009,29 +7009,29 @@
     "1905": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1905",
-      "status": "reviewing",
+      "path": "tasks/completed/1905",
+      "status": "completed",
       "title": "workflow-fix: verify_plan check-ignore on declared-committed paths"
     },
     "1906": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1906",
-      "status": "planning",
+      "path": "tasks/reviewing/1906",
+      "status": "reviewing",
       "title": "workflow-fix: verify_plan base-predictor-vs-change-DV companion check"
     },
     "1907": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1907",
-      "status": "proposed",
+      "path": "tasks/reviewing/1907",
+      "status": "reviewing",
       "title": "workflow-fix: flag malformed footer Reused bullets escaping the form-keyed check 37"
     },
     "1908": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1908",
-      "status": "proposed",
+      "path": "tasks/reviewing/1908",
+      "status": "reviewing",
       "title": "fix order-dependent test-state leak: test_issue1335_ladder poisons test_issue825_mlp_batched_parity in same-session runs"
     },
     "1909": {
@@ -7582,8 +7582,8 @@
       "goal": "At per-prefix grain (leakage per (arm, destination prefix), averaged over a fixed shared 60-query set; 50-60 prefix panel including trained prefixes, trained contrastive negatives, bystanders, near-twins, real conversation and ICL prefixes), determine which pre-fine-tuning predictor best predicts per-prefix leakage level and change (full roster: context/answer similarity pre+post, delta similarities, through-map forms, whitened gate, r_B projections, write-map, propensity incumbent, kNN answer-side variant; both anchors), whether context similarity is answer-mediated at this grain, and whether the #1768 assumption refutations (gate A7, write rank A6, write direction A5) survive at the theory's native prefix grain or were per-query grain artifacts.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/1979",
-      "status": "running",
+      "path": "tasks/verifying/1979",
+      "status": "verifying",
       "title": "Per-prefix leakage-predictor race + theory-assumption battery at prefix grain (50 prefixes x 60 shared queries)"
     },
     "1980": {

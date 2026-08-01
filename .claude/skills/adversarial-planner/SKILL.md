@@ -371,7 +371,13 @@ Run the structural verifier against the plan version just persisted:
   genuinely sentinel-signaling plan instead pins a drained lane —
   `backend: gcp` / `backend: runpod` / `backend: fellows` (the fellows
   drain landed at #1898)), and
-  `N/A — no base-side predictor vs change DV` (check 44 — the change-DV /
+  `N/A — no committed outputs` (check 44 — the commit-to-git vocabulary is
+  incidental or quotes a sibling/incident, not this plan's own declared
+  committed outputs; a plan genuinely committing outputs under a
+  gitignore-matched path instead notes the force-add + staged-index
+  verification in the same section as the declaration, or relocates the
+  output out of the ignored root), and
+  `N/A — no base-side predictor vs change DV` (check 45 — the change-DV /
   base-side-predictor vocabulary is incidental or quotes a sibling's
   design, not this plan's own predictor race; a plan genuinely racing a
   base-side predictor against a trained−base change DV instead registers a
