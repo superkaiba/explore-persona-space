@@ -7321,7 +7321,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1945",
       "status": "interpreting",
-      "title": "Does the map's residual interaction have low-rank structure, or is it per-pair idiosyncratic?"
+      "title": "The context\u2192answer map's error interaction is per-pair noise to within a trace rank-one residue, putting the map near its information ceiling (MODERATE confidence)"
     },
     "1946": {
       "goal": "Settle whether the bare-query and prefix arms are **mirror images** in SAE feature space, as they demonstrably are in the dense per-context taxonomy.",

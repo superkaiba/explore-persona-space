@@ -1,6 +1,6 @@
 ---
-title: Does the map's residual interaction have low-rank structure, or is it per-pair
-  idiosyncratic?
+title: The context→answer map's error interaction is per-pair noise to within a trace
+  rank-one residue, putting the map near its information ceiling (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-31T19:59:29Z'
