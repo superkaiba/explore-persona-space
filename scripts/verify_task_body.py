@@ -773,25 +773,41 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   critic round. (Numbered 36 because 28-35 are taken by the
   generation-agnostic checks.)
 
-- **check 37** (`check_footer_reuse_bullets_pinned`, WARN, v4-only, #1370):
-  every footer `- Reused ... from [#M](...)` bullet carries a
-  revision/path pin — the body->pin sibling of check 35's metadata->body
-  direction (#1315: two unpinned `- Reused ... from [#1090]` bullets were
-  invisible to check 35's metadata-side trigger and survived to the LM
-  critic). Bullet-scoped satisfiers: a revision-URL segment
+- **check 37** (`check_footer_reuse_bullets_pinned`, WARN, v4-only, #1370;
+  widened #1907): every footer `- Reused` bullet that REFERENCES another
+  issue carries a revision/path pin AND the canonical
+  `- Reused ... from [#M](...)` form — the body->pin sibling of check
+  35's metadata->body direction (#1315: two unpinned
+  `- Reused ... from [#1090]` bullets were invisible to check 35's
+  metadata-side trigger and survived to the LM critic). Match set
+  (widened after incidents #1739/#1900): a bullet enters when it matches
+  the canonical `from [#M](` clause OR references an issue anywhere —
+  a `[#M](...)` link, a bare `#M` token, a `/tasks/M` fragment, or an
+  `issue<M>_` path token (`_REUSED_ISSUE_TOKEN_RE`); a `- Reused` bullet
+  with NO issue reference (same-task round-reuse) stays out of scope.
+  Two WARN arms, one CheckResult: the PIN arm (bullet-scoped satisfiers
+  UNCHANGED: a revision-URL segment
   (`/tree|resolve|commit|blob/<7-40 hex>`), `@ <rev>` (optional backtick),
   a committed `eval_results/issue_<M>/` path, a SPEC-sanctioned WandB
   `/runs/<id>` URL, or a bare letter-bearing >=7-hex token; the
-  from-link's own `#M` / `/tasks/M` NEVER satisfies (vacuity guard —
-  every trigger bullet carries it by construction). WARN uniformly
+  from-link's own `#M` / `/tasks/M` NEVER satisfies — vacuity guard),
+  and the FORM arm (an issue-referencing bullet lacking the canonical
+  `from [#M](...)` clause — #1739: bare `#779 ... rev 037fcbb`, pin
+  present but not independently resolvable/linked; #1900: links present
+  with an intervening noun phrase after `from`). WARN uniformly
   (corpus 2026-07-15: 40 trigger bullets across committed v4 bodies,
-  4 unpinned — #810/#811/#833/#1112, all `awaiting_promotion`; a FAIL
-  would newly block their re-verifies). Body-text-only: lives in the
-  body-only CHECKS list, runs on stdin bodies, and is deliberately NOT
-  fenced by `EPM_VERIFY_BODY_NO_EVAL_SCAN` (no eval scan to fence).
-  Documented false-negative residual: a bullet quoting the CURRENT
-  task's own code SHA satisfies the bare-hex form — LM Lens 5 keeps
-  owning semantic pin-correctness.
+  4 unpinned — #810/#811/#833/#1112, all `awaiting_promotion`;
+  re-calibrated 2026-08-01: widened match set 60 bullets, form arm fires
+  on exactly 2 — the #1900 + #1639 incident bullets — pin arm adds 0).
+  Body-text-only: lives in the body-only CHECKS list, runs on stdin
+  bodies, and is deliberately NOT fenced by
+  `EPM_VERIFY_BODY_NO_EVAL_SCAN` (no eval scan to fence). Documented
+  residuals (LM Lens 5 keeps owning semantic pin-correctness): a bullet
+  quoting the CURRENT task's own code SHA satisfies the bare-hex pin
+  form; a same-task bullet citing its OWN `issue<N>_` path / `#<N>`
+  token fires a noise form WARN (body-only check, no issue-number
+  parameter — accepted residual); non-`- Reused`-anchored phrasings
+  (`Re-used`, `Inherited ... from [#M]`) stay out of scope.
 
 - **check 38** (`check_linked_not_embedded_figures`, WARN, v4-only, #1371): a
   non-image markdown LINK in the footer-truncated v4 `## Results` section
@@ -6778,6 +6794,26 @@ def check_cross_issue_reuse_provenance(
 # not (and must not) fence it.
 _FOOTER_REUSED_BULLET_RE = re.compile(r"^\s*[-*]\s+Reused\b", re.IGNORECASE)
 _REUSED_FROM_ISSUE_RE = re.compile(r"\bfrom\s+\[#(\d+)\]\(", re.IGNORECASE)
+# Widened match set (#1739/#1900): a `- Reused` bullet that references
+# another issue ANYWHERE — not only via the canonical `from [#M](` clause —
+# enters check 37. Alternatives, in incident order:
+#   `\[#\d+\]\(`       — a `[#M](...)` link anywhere in the bullet (the #1900
+#                        shape: `from the <line> ([#1112](...), ...)` — links
+#                        present, intervening noun phrase after `from`);
+#   `(?<![\w/])#\d+\b` — a bare `#M` issue token, no link at all (the #1739
+#                        shape: `direction bank #779 rev 037fcbb`);
+#   `/tasks/\d+\b`     — a dashboard task-URL fragment;
+#   `\bissue\d+_`      — an `issue<M>_...` artifact-path token (the #1639
+#                        shape: cross-issue reuse cited by path only).
+# Same-task exclusion rationale: the naive ANY-`- Reused` widening was
+# measured on the live 2026-08-01 corpus at 14 form + 8 pin firings,
+# dominated by same-task round-reuse bullets (#810/#833/#841 "this task's
+# own outputs") where a `from [#M](...)` self-link would be noise; the
+# issue-token scoping keeps both incident shapes while excluding those.
+_REUSED_ISSUE_TOKEN_RE = re.compile(
+    r"\[#\d+\]\(|(?<![\w/])#\d+\b|/tasks/\d+\b|\bissue\d+_",
+    re.IGNORECASE,
+)
 # Bullet-scoped pin forms (corpus 2026-07-15: 36/40 committed trigger
 # bullets satisfy one; the satisfier is deliberately BULLET-scoped and
 # excludes issue-mention forms — `#M` / `/tasks/M` appear in EVERY
@@ -6846,20 +6882,40 @@ def _reused_bullet_pinned(bullet: str) -> bool:
 
 
 def check_footer_reuse_bullets_pinned(body: str) -> CheckResult:
-    """Check 37 (WARN, v4-only, #1370): every footer
-    `- Reused ... from [#M](...)` bullet carries a revision/path pin.
+    """Check 37 (WARN, v4-only, #1370; widened #1907): every footer
+    `- Reused` bullet that REFERENCES another issue carries a
+    revision/path pin AND the canonical `- Reused ... from [#M](...)`
+    form.
 
     Body-text-only sibling of Check 35 (#1256) — the body->pin direction.
+    Match set (widened by #1907 after incidents #1739/#1900): a `- Reused`
+    bullet enters when it matches `_REUSED_FROM_ISSUE_RE` (the canonical
+    `from [#M](` clause) OR `_REUSED_ISSUE_TOKEN_RE` (a `[#M](...)` link
+    anywhere / a bare `#M` token / a `/tasks/M` fragment / an `issue<M>_`
+    path token). Two WARN arms over that set, ONE CheckResult:
+    - pin arm (`_reused_bullet_pinned` UNCHANGED): the bullet carries no
+      revision/path pin (#1900: an unpinned `from the <line> ([#M]...)`
+      bullet escaped the old form-keyed match set entirely);
+    - form arm (NEW): the bullet does NOT match the canonical
+      `- Reused ... from [#M](...)` shape (#1739: bare `#779 ... rev
+      037fcbb`, no link — the rev pin satisfied the pin arm but the
+      reference was not independently resolvable/linked; #1639:
+      `issue1310_...` path-token reuse, pinned but link-less).
     WARN, not FAIL (corpus 2026-07-15: 40 trigger bullets across 40
-    footered v4 bodies; 4 lack every pin form — 3 are code-harness reuse
-    (#811/#833/#1112, remedy: append `@ <code-sha>`), 1 is the incident
-    class (#810); a FAIL would newly block any future re-verify of all
-    4 parked bodies). The from-link's own `#M` / `/tasks/M` NEVER
-    satisfies — every trigger bullet carries it by construction.
-    Documented false-negative residual: a bullet quoting the CURRENT
-    task's own code SHA (a letter-bearing hex unrelated to the reused
-    artifact) satisfies the bare-hex form — LM Lens 5 keeps owning
-    semantic pin-correctness.
+    footered v4 bodies, 4 unpinned; re-calibrated 2026-08-01: widened
+    match set 60 bullets, form arm fires on exactly 2 — the #1900 and
+    #1639 incident bullets — and the pin arm adds 0 new firings; a FAIL
+    would newly block re-verifies of the parked offenders). The
+    from-link's own `#M` / `/tasks/M` NEVER satisfies the PIN arm —
+    every canonical trigger bullet carries it by construction.
+    Documented residuals (LM clean-result-critic Lens 5 keeps owning
+    semantic pin-correctness): (a) a bullet quoting the CURRENT task's
+    own code SHA satisfies the bare-hex pin form; (b) a SAME-task bullet
+    citing its OWN `issue<N>_` path or `#<N>` token fires a noise form
+    WARN — the check is body-only with no issue-number parameter, so it
+    cannot tell self-references apart (accepted residual); (c)
+    non-`- Reused`-anchored phrasings (`Re-used`, `Inherited ... from
+    [#M]`) stay out of scope.
     Deliberately NOT fenced by `EPM_VERIFY_BODY_NO_EVAL_SCAN` (no
     filesystem scan)."""
     name = "footer Reused bullets carry a revision/path pin"
@@ -6868,19 +6924,38 @@ def check_footer_reuse_bullets_pinned(body: str) -> CheckResult:
     footer = _v4_footer_text(body)
     if footer is None:
         return CheckResult(name, True, "skipped — no **Repro:** footer found")
-    unpinned = [
-        b
-        for b in _footer_reused_bullets(footer)
-        if _REUSED_FROM_ISSUE_RE.search(b) and not _reused_bullet_pinned(b)
-    ]
-    if not unpinned:
-        return CheckResult(name, True, "all footer Reused-from-[#M] bullets pinned")
-    shown = "; ".join(f"`{b[:120]}`" for b in unpinned)
+    unpinned: list[str] = []
+    noncanonical: list[str] = []
+    for b in _footer_reused_bullets(footer):
+        canonical = bool(_REUSED_FROM_ISSUE_RE.search(b))
+        if not canonical and not _REUSED_ISSUE_TOKEN_RE.search(b):
+            continue  # no issue reference (same-task round-reuse) — out of scope
+        if not _reused_bullet_pinned(b):
+            unpinned.append(b)
+        if not canonical:
+            noncanonical.append(b)
+    if not unpinned and not noncanonical:
+        return CheckResult(
+            name, True, "all footer Reused issue-referencing bullets pinned + canonical-form"
+        )
+    parts = []
+    if unpinned:
+        shown = "; ".join(f"`{b[:120]}`" for b in unpinned)
+        parts.append(
+            f"unpinned: {len(unpinned)} issue-referencing footer `- Reused` bullet(s) "
+            f"carry no pinned path/revision: {shown}"
+        )
+    if noncanonical:
+        shown = "; ".join(f"`{b[:120]}`" for b in noncanonical)
+        parts.append(
+            f"non-canonical form: {len(noncanonical)} issue-referencing footer `- Reused` "
+            f"bullet(s) lack the canonical `from [#M](...)` clause "
+            f"(#1739 bare-`#M` / #1900 intervening-noun-phrase classes): {shown}"
+        )
     detail = (
-        f"{len(unpinned)} footer `- Reused ... from [#M](...)` bullet(s) carry no "
-        f"pinned path/revision: {shown} — add the permanent pin per reused artifact, "
-        "expected shape: `- Reused <kind> from [#M](...): <path> @ <rev> — fit: "
-        "<one line>` (an HF/GitHub `/tree/<sha>`-style URL, `@ <sha>`, a "
+        "; ".join(parts)
+        + " — expected shape: `- Reused <kind> from [#M](...): <path> @ <rev> — fit: "
+        "<one line>` (pin: an HF/GitHub `/tree/<sha>`-style URL, `@ <sha>`, a "
         "committed `eval_results/issue_<M>/...` path, or a WandB run URL)"
     )
     return CheckResult(name, True, detail, is_warn=True)
@@ -15149,8 +15224,9 @@ CHECKS = [
     # basenames / alt text / blockquote captions (#1879; incident #1769
     # fu1 dose-ladder):
     check_v4_result_figure_cardinality,
-    # check 37 (WARN, v4, #1370) — footer `- Reused ... from [#M](...)` bullets carry a
-    # revision/path pin (body-text-only sibling of check 35's metadata-side trigger):
+    # check 37 (WARN, v4, #1370; widened #1907) — footer issue-referencing `- Reused`
+    # bullets carry a revision/path pin + the canonical `from [#M](...)` form
+    # (body-text-only sibling of check 35's metadata-side trigger; #1739/#1900):
     check_footer_reuse_bullets_pinned,
     # check 39 (v4) — `Disclosure: N of M` count claim in the Sample slot
     # reconciles with the example items actually shown (#1421; incident #1005):

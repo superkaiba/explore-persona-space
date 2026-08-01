@@ -14457,6 +14457,66 @@ def test_footer_reuse_bullet_fenced_skeleton_ignored():
     assert res.passed and not res.is_warn, res.render()
 
 
+def test_footer_reuse_bullet_bare_issue_token_form_warns():
+    """#1739 incident shape (widened match set, #1907): a bare `#M` issue
+    token + bare rev pin, NO `from [#M](...)` link -> WARN via the FORM
+    arm only (the letter-bearing `037fcbb` rev satisfies the pin arm;
+    the missing canonical link form is the defect)."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused direction bank #779 rev 037fcbb — fit: same extraction recipe.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "non-canonical form" in res.detail, res.render()
+    assert "unpinned" not in res.detail, res.render()
+    assert "from [#M](...)" in res.detail, res.render()
+
+
+def test_footer_reuse_bullet_linkful_noncanonical_unpinned_warns_both():
+    """#1900 incident shape (widened match set, #1907): `from the <line>
+    ([#M](...), [#K](...))` — links present but an intervening noun
+    phrase after `from`, and NO pin -> WARN naming BOTH classes (the pin
+    arm now runs over the widened set; the form arm also fires)."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused behavior read-out directions from the fleet extraction line "
+        "([#1112](https://eps.superkaiba.com/tasks/1112), "
+        "[#1439](https://eps.superkaiba.com/tasks/1439)) — fit: same behavior panel.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "unpinned" in res.detail, res.render()
+    assert "non-canonical form" in res.detail, res.render()
+
+
+def test_footer_reuse_bullet_issue_path_token_pinned_form_warns():
+    """#1639 shape (widened match set, #1907): cross-issue reuse cited by
+    an `issue<M>_` artifact-path token with an `@ <rev>` pin but no
+    `from [#M](...)` link -> WARN via the FORM arm only."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused artifacts: the parent store "
+        "`issue1310_char_map/analysis_tensors/store.pt` @ `deadbee12` — fit: same char map.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "non-canonical form" in res.detail, res.render()
+    assert "unpinned" not in res.detail, res.render()
+
+
+def test_footer_reuse_bullet_same_task_no_issue_token_stays_clean():
+    """Same-task exclusion pin (#1907 §Grounding): a round-reuse bullet
+    with paths/prose but NO issue token (no `#M`, no `[#M](`, no
+    `/tasks/M`, no `issue<M>_`) stays OUT of the widened match set ->
+    clean PASS (the rejected naive ANY-`- Reused` widening measured 14
+    form + 8 pin firings on the live corpus, dominated by this class)."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused round-1 aligned-position store (this task, HF mirror) as the "
+        "round-5 input — fit: same seeds.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "pinned" in res.detail, res.render()
+
+
 # ─── Check 44: footer HF artifact paths carry an adjacent pinned link ───────
 #
 # (#1509, incident #1335): a bare backtick HF-style artifact path in the
