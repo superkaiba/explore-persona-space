@@ -7051,8 +7051,8 @@
     "1910": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1910",
-      "status": "reviewing",
+      "path": "tasks/completed/1910",
+      "status": "completed",
       "title": "workflow-fix: fact-checker verifies realized grain of row-grain reuse rows"
     },
     "1911": {
