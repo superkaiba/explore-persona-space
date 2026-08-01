@@ -26,6 +26,17 @@ instead of retraining 16 sources). Reuse is conditional on a POSITIVE fitness
 check — silently reusing a wrong / stale / saturated artifact confounds the
 result and is WORSE than retraining.
 
+## Chat-authored plan docs
+
+The search-first / reuse-fitness duty extends to plan and theory docs
+authored in chat, outside the /issue plan pipeline: labeling a fit/eval
+stage "new compute" requires the same banked-artifact search the checklist
+below mandates — grep `eval_results/` + task bodies for same-protocol
+runs — and a citation of what is banked (2026-07-28: a four-arm theory
+plan called kernel/MLP fits "new compute" while #779 had same-protocol
+fits banked at n=50k AND n=963k). Chat-side carrier: CLAUDE.md § "Ad-hoc
+results summaries", the **Banked-compute check** clause.
+
 ## Plan-time search + verification mechanics (relocated from planner.md step 5, #829)
 
 Default to reuse: training new

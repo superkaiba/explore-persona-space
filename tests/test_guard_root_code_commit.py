@@ -111,11 +111,28 @@ def cert(tmp_path: Path) -> Path:
 
 
 def _env(
-    repo: Path, cert_path: Path, *, allow: bool = False, max_age: str | None = None
+    repo: Path,
+    cert_path: Path,
+    *,
+    allow: bool = False,
+    max_age: str | None = None,
+    rehash_delay: str | None = "0",
+    path_prepend: Path | None = None,
 ) -> dict[str, str]:
-    env = {k: v for k, v in os.environ.items() if k != "EPM_ALLOW_ROOT_CODE_COMMIT"}
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in ("EPM_ALLOW_ROOT_CODE_COMMIT", "EPM_CERT_REHASH_DELAY_S")
+    }
     env["EPM_ROOT_CODE_COMMIT_REPO"] = str(repo)
     env["EPM_INLINE_CERT_PATH"] = str(cert_path)
+    # Zero the #1857 settle-and-re-hash delay by default so blocked cases stay
+    # deterministic-fast (the retry still RUNS — it just doesn't wait); the
+    # retry tests shim `sleep` via path_prepend for the settle action itself.
+    if rehash_delay is not None:
+        env["EPM_CERT_REHASH_DELAY_S"] = rehash_delay
+    if path_prepend is not None:
+        env["PATH"] = f"{path_prepend}:{env.get('PATH', '/usr/bin:/bin')}"
     if max_age is not None:
         env["EPM_INLINE_CERT_MAX_AGE_S"] = max_age
     if allow:
@@ -310,6 +327,80 @@ def test_b8_classification_failure_fails_closed(tmp_path: Path, cert: Path) -> N
     _assert_blocked(_run("git commit -m x", notarepo, cert))
 
 
+# ---------------------------------------------------------------------------
+# R — #1857 cert-retry pass (settle-and-re-hash before the negative verdict)
+# ---------------------------------------------------------------------------
+def _sleep_shim(tmp_path: Path, body: str) -> Path:
+    """PATH-shimmed `sleep` running `body` — the deterministic stand-in for
+    the settle window (the "concurrent writer" acts during the delay)."""
+    shim_dir = tmp_path / "shim-bin"
+    shim_dir.mkdir(exist_ok=True)
+    shim = shim_dir / "sleep"
+    shim.write_text(f"#!/bin/sh\n{body}\n", encoding="utf-8")
+    shim.chmod(0o755)
+    return shim_dir
+
+
+def _retry_repo(tmp_path: Path) -> Path:
+    """Tracked, committed gated file (content A) — the worktree-binding
+    pathspec-commit shape the retry tests flip mid-guard."""
+    repo = _init_repo(tmp_path, "retry")
+    _stage(repo, GATED, "print(1)\n")
+    _git(repo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "init")
+    return repo
+
+
+def test_r1_transient_worktree_flip_recovers_on_rehash(tmp_path: Path, cert: Path) -> None:
+    """Cert binds content A; the worktree reads content B at the first pass;
+    the shimmed `sleep` restores content A during the settle window -> the
+    re-hash matches (same landing_sha derivation, no re-binding), the commit
+    is ALLOWED, and the grep-able `cert-retry:` recovery line is emitted."""
+    repo = _retry_repo(tmp_path)
+    _cert_line(cert, GATED, _worktree_sha(repo, GATED))  # content A
+    _write(repo, GATED, "print(2)\n")  # transient flip to content B
+    shim = _sleep_shim(tmp_path, f"printf 'print(1)\\n' > \"{repo / GATED}\"")
+    r = _run(f"git commit -m x {GATED}", repo, cert, path_prepend=shim)
+    _assert_allowed(r)
+    assert f"cert-retry: {GATED} recovered after re-hash" in r.stderr, r.stderr
+
+
+def test_r2_stable_drift_still_blocks_after_retry(tmp_path: Path, cert: Path) -> None:
+    """Same setup but the drift is STABLE (the shim settles nothing) -> the
+    retry re-hash still mismatches and today's block verdict is kept
+    (exit 2 + cert-diag), with no recovery line."""
+    repo = _retry_repo(tmp_path)
+    _cert_line(cert, GATED, _worktree_sha(repo, GATED))
+    _write(repo, GATED, "print(2)\n")  # STABLE drift
+    shim = _sleep_shim(tmp_path, ":")  # no-op sleep: nothing settles
+    r = _run(f"git commit -m x {GATED}", repo, cert, path_prepend=shim)
+    _assert_blocked(r)
+    assert "cert-retry:" not in r.stderr, r.stderr
+    assert "cert-diag:" in r.stderr, r.stderr
+
+
+def test_r3_deleted_between_passes_is_exempt(tmp_path: Path, cert: Path) -> None:
+    """A path deleted between the first pass and the retry mirrors the first
+    pass's deletion-exempt semantics (no content lands -> skip + allow)."""
+    repo = _retry_repo(tmp_path)
+    _cert_line(cert, GATED, _worktree_sha(repo, GATED))
+    _write(repo, GATED, "print(2)\n")
+    shim = _sleep_shim(tmp_path, f'rm -f "{repo / GATED}"')
+    r = _run(f"git commit -m x {GATED}", repo, cert, path_prepend=shim)
+    _assert_allowed(r)
+    assert f"cert-retry: {GATED} exempt after re-hash" in r.stderr, r.stderr
+
+
+def test_r4_malformed_rehash_delay_fails_toward_block(tmp_path: Path, cert: Path) -> None:
+    """A malformed EPM_CERT_REHASH_DELAY_S makes `sleep` fail; the re-check
+    still runs and a stable drift still BLOCKS (a failed sleep never skips
+    the re-check nor crashes the guard into a non-blocking exit)."""
+    repo = _retry_repo(tmp_path)
+    _cert_line(cert, GATED, _worktree_sha(repo, GATED))
+    _write(repo, GATED, "print(2)\n")
+    r = _run(f"git commit -m x {GATED}", repo, cert, rehash_delay="not-a-number")
+    _assert_blocked(r)
+
+
 def test_b9_mixed_staged_set_blocks_and_names_only_gated(tmp_path: Path, cert: Path) -> None:
     repo = _init_repo(tmp_path, "mixed")
     _stage(repo, "tasks/running/9/events.jsonl", "{}\n")
@@ -350,6 +441,136 @@ def test_b12_compound_add_commit_untracked_no_cert_blocks(code_repo: Path, cert:
 )
 def test_b13_blanket_add_chained_fails_closed(stage_form: str, art_repo: Path, cert: Path) -> None:
     _assert_blocked(_run(f"{stage_form} && git commit -m x", art_repo, cert))
+
+
+# ---------------------------------------------------------------------------
+# Path-limited `git add --all -- <pathspec>` exemption (issue #1977, plan §5).
+# The blanket-staging latch defers to a per-ADD-clause post-scan: the
+# sanctioned shape (root cwd, pre-`--` tokens ONLY from {-A,--all}, a literal
+# `--`, >=1 clean literal pathspec candidate, zero rejections) resolves its
+# landing set per file via a cwd-gated scoped `git status` and flows into
+# Layer-2 classification; EVERY other shape keeps the fail-closed block
+# (B13 above is unchanged).
+# ---------------------------------------------------------------------------
+def test_add_pathlimited_artifact_pathspec_allowed(art_repo: Path, cert: Path) -> None:
+    """Plan §5.1: an artifact-only landing set under the exempted shape ALLOWS."""
+    _write(art_repo, "tasks/t.md", "note\n")  # untracked artifact the add would stage
+    _assert_allowed(_run("git add --all -- tasks/t.md && git commit -m x", art_repo, cert))
+
+
+def test_add_pathlimited_gated_with_fresh_worktree_cert_allowed(
+    code_repo: Path, cert: Path
+) -> None:
+    """Plan §5.2: the gated add-path enters classification, and a fresh
+    worktree-content-bound cert satisfies it (classification ran + passed)."""
+    _cert_line(cert, GATED, _worktree_sha(code_repo, GATED))
+    _assert_allowed(_run(f"git add --all -- {GATED} && git commit -m x", code_repo, cert))
+
+
+def test_add_pathlimited_gated_no_cert_blocks(code_repo: Path, cert: Path) -> None:
+    """Plan §5.3: same shape WITHOUT the cert blocks — the add's path enters
+    pending (the exemption opens no unclassified staging channel)."""
+    _assert_blocked(_run(f"git add --all -- {GATED} && git commit -m x", code_repo, cert))
+
+
+def test_add_pathlimited_dir_pathspec_resolves_untracked_gated(code_repo: Path, cert: Path) -> None:
+    """Plan §5.4: a dir pathspec resolves PER FILE via the scoped git status
+    read — the untracked, uncertified gated file under scripts/ blocks even
+    though the staged gated file is certified."""
+    _cert_line(cert, GATED, _worktree_sha(code_repo, GATED))
+    r = _run("git add --all -- scripts && git commit -m x", code_repo, cert)
+    _assert_blocked(r)
+    assert "scripts/issue9_new.py" in r.stderr, r.stderr
+
+
+def test_add_pathlimited_opaque_candidate_blocks(art_repo: Path, cert: Path) -> None:
+    """Plan §5.5: an opaque ($VAR) candidate keeps the latch."""
+    _assert_blocked(_run('git add --all -- "$V" && git commit -m x', art_repo, cert))
+
+
+@pytest.mark.parametrize(
+    "cand", [".", "./", "'*'", "*"], ids=["dot", "dotslash", "quoted-star", "star"]
+)
+def test_add_pathlimited_blanket_equivalent_candidate_blocks(
+    cand: str, art_repo: Path, cert: Path
+) -> None:
+    """Plan §5.6: blanket-equivalent candidate spellings are rejected."""
+    _assert_blocked(_run(f"git add --all -- {cand} && git commit -m x", art_repo, cert))
+
+
+def test_add_pathlimited_no_ddash_blocks(art_repo: Path, cert: Path) -> None:
+    """Plan §5.7: without a literal `--` the exemption never arms."""
+    _write(art_repo, "tasks/t.md", "note\n")
+    _assert_blocked(_run("git add --all tasks/t.md && git commit -m x", art_repo, cert))
+
+
+def test_add_pathlimited_pre_ddash_positional_blocks(tmp_path: Path, cert: Path) -> None:
+    """Plan §5.8 (MF-2): a pre-`--` positional is a LIVE pathspec the scoped
+    status read would under-enumerate — the latch stays even with gated
+    content under the positional."""
+    repo = _init_repo(tmp_path, "preddash")
+    _stage(repo, "tasks/t.md", "note\n")
+    _write(repo, "src/issue9_mod.py", "print(1)\n")  # untracked gated, under `src`
+    _assert_blocked(_run("git add --all src -- tasks/t.md && git commit -m x", repo, cert))
+
+
+def test_add_pathlimited_force_flag_blocks(code_repo: Path, cert: Path) -> None:
+    """Plan §5.9 (MF-2): `-f` stages ignored files the status read cannot see
+    — any pre-`--` flag outside {-A,--all} keeps the latch, cert or no cert."""
+    _cert_line(cert, GATED, _worktree_sha(code_repo, GATED))
+    _assert_blocked(_run(f"git add --all -f -- {GATED} && git commit -m x", code_repo, cert))
+
+
+def test_add_pathlimited_subdir_cwd_blocks(art_repo: Path, cert: Path) -> None:
+    """Plan §5.10 (MF-1, c11-analogue): the exempted shape with hook cwd = a
+    repo SUBDIR — the pathspec-resolution base is not provably the root."""
+    _write(art_repo, "tasks/t.md", "note\n")
+    r = _run(
+        "git add --all -- tasks/t.md && git commit -m x",
+        art_repo,
+        cert,
+        cwd=art_repo / "tasks",
+    )
+    _assert_blocked(r)
+
+
+def test_add_pathlimited_missing_cwd_blocks(art_repo: Path, cert: Path) -> None:
+    """Plan §5.10 (MF-1, c14-analogue): a missing hook-input cwd fails the
+    cwd gate — block."""
+    _write(art_repo, "tasks/t.md", "note\n")
+    _assert_blocked(
+        _run("git add --all -- tasks/t.md && git commit -m x", art_repo, cert, cwd=_OMIT_CWD)
+    )
+
+
+def test_add_pathlimited_cd_prefix_blocks(art_repo: Path, cert: Path) -> None:
+    """Plan §5.11 (MF-1): an in-command cd to a repo subdir moves the
+    resolution base (the cd_nonroot path) — block."""
+    _write(art_repo, "tasks/t.md", "note\n")
+    _assert_blocked(
+        _run("cd tasks && git add --all -- tasks/t.md && git commit -m x", art_repo, cert)
+    )
+
+
+def test_add_pathlimited_env_chdir_wrapper_blocks(art_repo: Path, cert: Path) -> None:
+    """Plan §5.11 (MF-1): an `env --chdir=<dir>` wrapper on the add clause is
+    exemption-INELIGIBLE — the latch stays."""
+    _assert_blocked(
+        _run(
+            "env --chdir=/tmp git add --all -- tasks/t.md && git commit -m x",
+            art_repo,
+            cert,
+        )
+    )
+
+
+def test_add_pathlimited_sibling_blanket_clause_still_blocks(art_repo: Path, cert: Path) -> None:
+    """Plan §5.12: a clean exempted clause must not un-latch a sibling
+    bare-blanket clause in the same command."""
+    _write(art_repo, "tasks/t.md", "note\n")
+    _assert_blocked(
+        _run("git add --all -- tasks/t.md && git add -A && git commit -m x", art_repo, cert)
+    )
 
 
 def _tracked_modified_unstaged_repo(tmp_path: Path) -> Path:

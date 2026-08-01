@@ -455,8 +455,9 @@ Step 2.7 reconcile the OUTPUTS at the off-pod destination instead of
 FAILing r1 by construction (#1426). Pod-free / single-machine plans omit
 the block entirely; an off-pod phase named in prose without the block draws
 the verifier's `off-pod-phase-spec-absent` WARN + `verify_plan.py` c39
-WARN (c39's trigger vocabulary does not fire on inverse-direction prose —
-that direction is planner+critic-enforced). Template + worked examples:
+WARN (c39's trigger fires on the calibrated inverse-direction tokens
+`vm-produced` / `produced on the vm` (#1796); OTHER inverse-direction
+phrasings remain planner+critic-enforced). Template + worked examples:
 `.claude/rules/planner-section-reference.md` § 9 (off_pod_phases).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
@@ -544,6 +545,23 @@ zero-response arm, 825,591 B defeats the 262,144 B read cap). Artifact
 aged off disk → trace the incident's recorded measurements at Medium
 confidence; prospective guard with no incident artifact → state that in
 the row.
+
+**Real-corpus structural assumptions — route the probe to the smoke
+slice (#1817; incident #1768).** When a §12 row (a) asserts a STRUCTURAL
+property of a real corpus / dataset / reused artifact (distinct-value
+counts, field cardinality, per-row uniqueness, template homogeneity,
+schema/field presence), (b) gates an arm / fit / phase via a fail-loud
+check in the design, and (c) is only checkable against the data itself
+(first materialized at smoke time), the row's **How to verify** MUST
+name a smoke-slice probe at full-CONSUMED-corpus grain — the exact
+pinned data the production arm loads, never the sliced smoke sample
+alone, never the upstream/streaming source — a tiny sample can satisfy
+a premise the full corpus violates (#1768: smoke PASSed; production
+measured `n_distinct_prefix=2` vs the asserted `==1`, ~55 min lost).
+The implementer reports the measured value under `## Smoke run`; a
+violated premise is a plan defect — amend / re-scope BEFORE production,
+never leave it to the production assert. Full sub-rule + worked
+example: `planner-section-reference.md` § 12.
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md` § 12. Assumptions — read that section BEFORE writing.
 

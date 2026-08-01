@@ -54,6 +54,7 @@ from workflow_lint import (  # noqa: E402
     _tracked_on_main_ref,
     _values_equal,
     check_agent_model_pins,
+    check_agents_note_argv_verdict,
     check_asks,
     check_autonomous_asks,
     check_awk_elision_parity,
@@ -8463,6 +8464,93 @@ def test_check_skill_bang_backtick_bundled_in_no_flags():
     ), "check_skill_bang_backtick is not dispatched on the no-flags branch"
     assert "or args.check_skill_bang_backtick" in src, (
         "--check-skill-bang-backtick is missing from the no_flags detection tuple"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_agents_note_argv_verdict`` (#1743/#1785): no agent
+# spec under .claude/agents/ may prescribe posting a verdict/marker body
+# through an argv-prose ``--note`` command substitution (the #1722/#1756
+# incident family; the fix channel is ``post-marker --file``). The fixture
+# files below carry the REAL banned literals verbatim — tests/ sits outside
+# every scan root of the check, so the fixtures never trip it on the
+# committed tree.
+# ---------------------------------------------------------------------------
+
+
+def test_check_agents_note_argv_verdict_fail_p1(tmp_path):
+    """FAIL — P1, the #1743 acceptance-grep pattern: a --note body opened
+    as a command substitution around cat."""
+    (tmp_path / "some-agent.md").write_text(
+        "Post the verdict via:\n"
+        '`task.py post-marker <N> epm:code-review --note "$(cat /tmp/v.md)"`\n'
+    )
+    errors = check_agents_note_argv_verdict(agents_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "some-agent.md:2" in errors[0]
+    assert "#1743" in errors[0]
+    assert "--file" in errors[0]
+
+
+def test_check_agents_note_argv_verdict_fail_p2(tmp_path):
+    """FAIL — P2, the #1743 reviewer's broader variant: any --note opening
+    directly into a command substitution (not just cat)."""
+    (tmp_path / "agent.md").write_text(
+        'run `task.py post-marker 7 epm:results --note "$(uv run python gen.py)"`\n'
+    )
+    errors = check_agents_note_argv_verdict(agents_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "agent.md:1" in errors[0]
+
+
+def test_check_agents_note_argv_verdict_pass_clean_spec(tmp_path):
+    """PASS — a clean spec prescribing the sanctioned --file channel."""
+    (tmp_path / "agent.md").write_text(
+        "## Reporting\n\nCompose the report body with the Write tool, then post it via\n"
+        "`uv run python scripts/task.py post-marker <N> epm:results --file /tmp/r.md`.\n"
+    )
+    assert check_agents_note_argv_verdict(agents_dir=tmp_path) == []
+
+
+def test_check_agents_note_argv_verdict_pass_note_without_substitution(tmp_path):
+    """PASS — the sanctioned variable form: command substitutions resolved
+    into a shell variable FIRST, then the variable passed as the note (no
+    substitution opener adjacent to the note token). The check must never
+    be "fixed" into flagging this shape."""
+    (tmp_path / "agent.md").write_text(
+        'Resolve every substitution into a variable first, e.g. NOTE="round 3 done",\n'
+        'then run `task.py post-marker 5 epm:progress --note "$NOTE"`.\n'
+    )
+    assert check_agents_note_argv_verdict(agents_dir=tmp_path) == []
+
+
+def test_check_agents_note_argv_verdict_live_tree_clean():
+    """The committed .claude/agents/ tree must carry no argv-prose --note
+    verdict-post prescription — the #1743 acceptance grep as a standing
+    regression tripwire (production default, no kwarg; baseline verified
+    clean 2026-07-29)."""
+    errors = check_agents_note_argv_verdict()
+    assert errors == [], (
+        "agent specs prescribe the #1743-banned argv-prose --note "
+        "verdict post (use the post-marker --file channel):\n" + "\n".join(errors)
+    )
+
+
+def test_check_agents_note_argv_verdict_bundled_in_no_flags():
+    """NON-VACUOUS no-flags bundling pin (the
+    ``test_pipe_python_bundled_in_no_flags_source_pin`` shape):
+    ``check_agents_note_argv_verdict`` must be dispatched by the BARE
+    ``workflow_lint.py`` run — source-inspection assert on the dispatch
+    branch + the no_flags detection-tuple membership (the #1385/#1648
+    silent-unbundling class)."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_agents_note_argv_verdict or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_agents_note_argv_verdict\(\)\)",
+        src,
+    ), "check_agents_note_argv_verdict is not dispatched on the no-flags branch"
+    assert "or args.check_agents_note_argv_verdict" in src, (
+        "--check-agents-note-argv-verdict is missing from the no_flags detection tuple"
     )
 
 

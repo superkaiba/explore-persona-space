@@ -713,6 +713,55 @@ risk, not a current one), and direct-`HfApi` per-issue scripts,
 `upload_dir_sharded`, and `_upload_folder_filtered` are named residuals
 outside this fallback.
 
+**Per-DIRECTORY file-count cap (10k/dir) — PACK many-small-file trees before
+upload (#1190/#1739).** The Hub ALSO rejects any single COMMIT staging
+>10,000 files into one repo directory (a server-side 400 — DISTINCT from the
+repo-total 100k cap above). The #1190 guard pre-counts staged files per
+target dir in the hub helpers and raises `HubDirFileCountError` BEFORE any
+network I/O (`HUB_DIR_FILE_LIMIT` 10,000; kill switch
+`EPM_SKIP_HF_DIR_FILECOUNT_GUARD=1` degrades to WARN; advisory watermarks
+`HUB_DIR_FILECOUNT_WARN` 5,000/dir and `HUB_COMMIT_FILECOUNT_WARN` 2,000
+staged files/commit, #1571 — a commit of many SMALL files crawls in Hub-side
+pre-processing regardless of byte size: #1481 killed a 31,000-file / 135 MB
+single commit after >20 min). When the guard fires — and at PLAN time,
+whenever a workload will emit ≳2,000 per-unit small text/JSON files
+(per-rollout JSONs, per-sample transcripts, per-context captures) — do NOT
+point the per-file tree at `upload_folder`, and do NOT reach for the kill
+switch: PACK the tree into ≤9 MB `<group>.shardNN.jsonl` line-shards — one
+line per SOURCE FILE, `{"src": "<path relative to raw root>", "doc":
+<original JSON/text>}` — plus a census-keyed `pack_manifest.json` (per-group
+(relpath, size, mtime_ns) census ⇒ idempotent re-packs), then upload the
+small shard set in ONE bulk `upload_folder` commit with an exact-set verify.
+Consumers UNPACK back to the per-file layout (manifest/sha verify; never
+overwrite a differing file). This is the MANY-FILES sibling of the
+single-big-file >9.5 MB `<stem>.shardNN.jsonl` line-split in the quota-403
+recovery above (that recipe splits ONE oversized text file into line
+shards; this one packs thousands of small files into few shards) — a grep
+hit on `shardNN.jsonl` resolves to one or the other by that split. ≤9 MB
+keeps every shard on the always-open non-LFS path (the >10 MB LFS
+force-route above). Worked example: #1739 r4/r5 — a 115,941-file labeling
+tree packed to a small shard set (commits `a59b803712` pack / `4d9867611f`
+unpack + `--from-hf` scoped staging;
+`scripts/issue1739_pack.py`, on the issue-1739 branch until its merge). <!-- lint: historical-ref -->
+The `shard_NNNN/` ≤5,000-files-per-dir DIRECTORY-sharding recipe
+(`gotchas.md`, the #658 entry) stays the fallback ONLY when the consumer
+genuinely needs the per-file layout ON the Hub, and for binaries a jsonl
+line cannot carry (per-rollout `.pt` stores) — it clears the 10k/dir cap
+but keeps the file count, so commit throughput stays poor; packing is the
+default.
+
+**Large free-text DV / labeling JSONs route to the HF data repo, not git
+(#1739).** Git `eval_results/` keeps SMALL aggregated JSONs (summary stats,
+per-cell tables). A per-row free-text-bearing JSON at MB scale (#1739: a
+22 MB free-text DV file) is an HF-data-repo artifact (`issueN_<slug>/...`,
+non-LFS path): the gitleaks pre-commit scan does not scale on free text
+(5,938 false positives / 2m36s on that one file, blocking the commit), and
+fingerprinting per-row text into `.gitleaksignore` is unbounded churn.
+Heuristic: free-text-bearing AND ≳1 MB → HF data repo; commit only the
+derived aggregate to git. (This refines — not contradicts — the CLAUDE.md
+destination table's "Eval results (aggregated JSON) → git": the
+*aggregated* qualifier is load-bearing.)
+
 ## v2 tasks (`workflow: v2`) — upload-by-default, no ceiling
 
 For a task whose frontmatter carries `workflow: v2`, the upload policy has NO

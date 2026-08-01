@@ -192,7 +192,7 @@ else
     PLAN_BODY="$TASK_DIR/plans/plan.md"      # symlink to highest version
     test -s "$PLAN_BODY" || {
         uv run python "$REPO_ROOT/scripts/task.py" post-marker <N> epm:failure \
-            --version 1 --by codex-interpretation-critic \
+            --by codex-interpretation-critic \
             --note "failure_class: orchestration, reason: plan unresolvable in worktree AND no canonical plan on main"
         exit 1
     }
@@ -366,7 +366,7 @@ Expected output file: /tmp/codex-interp-critic-<N>-r<revision_round>-output.md
 Marker start tag: <!-- epm:interp-critique-codex v<revision_round> -->
 Marker end tag: <!-- /epm:interp-critique-codex -->
 Expected marker kind: epm:interp-critique-codex
-Expected marker version: <revision_round>
+Expected marker round (head sentinel): <revision_round> (posted top-level version: auto, max+1)
 Codex effort: high
 Codex write mode: false (read-only review)
 ```
@@ -375,7 +375,8 @@ The orchestrator dispatches `scripts/codex_task.py` with
 `run_in_background=true`, reads the output file when notified,
 extracts + validates the marker block, retries via a fresh dispatch
 on malformed output (cap retries at 2), posts via `task.py post-marker
-<N> epm:interp-critique-codex --version <revision_round>`. On
+<N> epm:interp-critique-codex` (OMIT `--version` — it auto-derives
+max+1; the round lives in the block's head sentinel). On
 `epm:codex-task-failed` or persistent malformed output, orchestrator
 falls back to single-Claude-critic per `workflow.yaml § ensemble_review`.
 On a trigger-dense round (recognition per trigger-dense-review.md

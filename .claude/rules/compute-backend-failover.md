@@ -154,7 +154,9 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    verify gate passes: the transcript existence probe read True, or ≥1
    `upload_folder` returned success), `failed_uploads` (rc 3 — the
    persist ran to completion but ZERO uploads verifiably succeeded,
-   #1343/#1315), `timeout` (rc 124), `failed_rc<N>` (any other rc). A
+   #1343/#1315), `timeout` (rc 124), `failed_stream_flush` (rc 120 —
+   dead stdout/fd-3 pipe at interpreter exit, #1799),
+   `failed_rc<N>` (any other rc). A
    MISSING rc file deliberately writes NOTHING: the standing `attempted`
    IS the killed-mid-persist signal. A boot-time DELETE clears the key so
    a salvage-relaunch second boot never inherits a prior crash's value.
@@ -179,14 +181,25 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    | `failed_uploads` | absent | the #1315 shape: TOTAL upload failure (dead HF channel / 429 storm / rejected token) previously masked as `ok`; nothing recoverable on HF — recover via serial console / boot-disk surgery |
    | `failed_uploads` | present | late-landing commit(s) — the #1339 gateway-timeout shape: the client logged FAILED, the commit landed server-side after the probe; trust a scoped prefix listing over the breadcrumb |
    | `timeout` | absent/partial | 300s budget exhausted (stalled uploads — the 504 shape). Since #1343, `timeout` can also follow a completed-uploads persist whose verify probe ate the budget tail — a PRESENT HF prefix alongside `timeout` is consistent with a healthy persist SIGTERMed mid-probe |
+   | `failed_stream_flush` | absent | pre-#1799 shape: the persist python died on a dead stdout/fd-3 pipe (runner killed — kernel-OOM unit teardown, #491 scanner overflow) before the first upload (rc 120, the CPython Py_FinalizeEx std-stream flush failure; incident #1739). Post-#1799 the `_say` guard + streamer PIPE re-arm + `os._exit` make this value unreachable — its reappearance means the #1799 guards regressed |
    | `failed_rc<N>` | absent | bootstrap/compound failure (127 = uv missing; 1 = cd short-circuit OR python top-level failure; else python rc) |
 
 **Sweep scope (explicit):** the partial sweep covers exactly the three
 named directories above (`eval_results/issue_<N>/`, `data/issue_<N>/`,
 `data/issue<N>/`) plus the `$WORKLOAD_ROOT/logs/` worker-log tree (#885)
-plus the `/workspace/logs` dispatcher convention dir (#1605) —
-still NOT universal artifact discovery (e.g. `figures/issue_*`,
-checkpoints, `ood_eval_results/` are not swept). Worker logs are swept
+plus the `/workspace/logs` dispatcher convention dir (#1605) plus — as of
+#1890 (incident #1739: a banked 412 MB MLP-map fit died with the
+auto-DELETEd boot disk) — the `analysis_tensors*` staging trees at BOTH
+live roots: `$WORKLOAD_ROOT/analysis_tensors*` (the issue-scoped relative
+convention) AND `/workspace/analysis_tensors*` (the GCE scratch-root flat
+convention; env-overridable `EPS_PERSIST_WS_TENSORS_ROOT`, the #1605
+isolation precedent), sibling dir names covered via the glob, swept LAST
+among the dirs (largest class; the traceback-first ordering is intact and
+a budget timeout mid-tensor-upload is BY DESIGN), with any nested
+`store/` pruned by the standing IGNORE excludes (mirrored-on-HF durable
+class — never re-uploaded) — still NOT universal artifact discovery
+(e.g. `figures/issue_*`, checkpoints, `ood_eval_results/` are not
+swept). Worker logs are swept
 when they land under `$WORKLOAD_ROOT/logs/` (relative `logs/…` or
 `$REPO_ROOT/logs/…` on the workload-cmd branch, where the startup script
 exports `REPO_ROOT="$WORKLOAD_ROOT"` — #641) AND, as of #1605, under
@@ -463,14 +476,21 @@ code` → `status:blocked`.
 NOTE (#1609): under the standing auto default the free `fellows` (charmander
 H200) SLURM lane sits BEFORE this GCP ladder — `DEFAULT_AUTO_LANE_ORDER =
 ("fellows", "gcp", "nibi", "fir", "mila")` — so a fellows capacity miss /
-dead endpoint / PENDING-at-cap park advances INTO the ladder below; RunPod
-stays the terminal rung. Rollback: flip the fellows `CLUSTER_CONFIGS` row to
+dead endpoint / PENDING-at-cap park (after the granted-QoS ladder
+high-eur → normal-eur → low-eur park-fails on the AUTO path, #1899:
+scancel + re-submit per `ClusterConfig.qos_ladder` rung, fallback rungs
+parked `EPS_FELLOWS_LADDER_RUNG_WAIT_SECONDS` — default 300 s — each;
+explicit `backend: fellows` pins never walk the ladder) advances INTO the
+ladder below; RunPod stays the terminal rung. Rollback: flip the fellows `CLUSTER_CONFIGS` row to
 `available=False` or set `EPM_AUTO_LANE_ORDER=gcp,nibi,fir,mila` (both
-instant, no code revert). Sentinel hazard: charmander HAS a `/workspace`, so
-a sentinel-writing dispatcher auto-routed onto fellows writes sentinels
-nobody drains (silent marker loss, vs #608's fail-loud on DRAC/Mila) —
-sentinel-dependent workloads still pin a /workspace-contract lane
-(gcp/runpod) at plan time.
+instant, no code revert). Sentinel drain: fellows is a DRAINED lane as of
+#1898 — the VM-side poller drains `/workspace/logs/issue-<N>-*.json` over
+`ssh charmander` each poll tick (`slurm_monitor.drain_cluster_sentinels`,
+same contract as RunPod/GCP); the residual hazard is DRAC/Mila only (no
+`/workspace` — the dispatcher dies fail-loud at `mkdir`, #608, burning the
+submission), so a sentinel-dependent workload pins a drained lane
+(gcp/runpod/fellows) at plan time or accepts the auto-lane fall-through
+risk (verify_plan c43 WARNs).
 
 The GCP ladder (`backends/router._gcp_ladder_specs`) is keyed on job LENGTH
 (`_is_short_job`: known GPU-hours ≤ `EPS_GCP_SPOT_MAX_GPU_HOURS`, default 2,
@@ -835,19 +855,41 @@ that pre-#1116 read as an ordinary crash (or, worse, fed the #1029
 heuristic boot-death streak, mislabelling a pure CAPACITY event as a boot
 problem).
 
-- **The clock discriminator.** The sidecar phase clock (the SAME
-  `_read_phase_clock` record the #669 wedge + #783 queue-timeout stamp)
-  records `"pending"` while the instance is queued; a dead not-found poll
-  whose `last_phase` reads `"pending"` means the instance was LAST OBSERVED
-  still queued — it never reached a running phase — so the vanish is
-  deterministic capacity evidence.
-  `backend_poll._maybe_escalate_gcp_queue_vanish` rewrites it to
-  `terminal_queue_vanish` (READ-ONLY clock use: no aging floor, no streak —
-  unlike #783 there is nothing to age, unlike #1029 nothing to count) and
-  `_failover_vanished_gcp_to_runpod` fails it over on the FIRST occurrence
-  via the shared `_failover_gcp_to_runpod` core (same lease+sentinel
-  exactly-once bound, same terminal-rung seam, same sidecar re-point +
-  terminal-JSON contract), `reason: gcp_queue_vanish_failover_runpod`.
+- **The two-arm discriminator (#1815).** The detector
+  (`backend_poll._vanish_arm_for`) classifies a dead not-found poll via TWO
+  arms, both INCARNATION-KEYED: phase-clock records now carry
+  `last_phase_incarnation` (job_id-first, the #763/#1029 key derivation;
+  legacy records without the key stay valid), and a record stamped by a
+  DIFFERENT launch incarnation reads as ABSENT for all three clock readers
+  (#669 wedge, #783 queue-timeout, this vanish detector) — a prior attempt's
+  phase can never satisfy, block, or age a discriminator for the current one.
+  **Arm P (`pending-clock`, #1116):** a SAME-incarnation (or legacy) clock
+  record whose `last_phase` reads `"pending"` — the instance was LAST
+  OBSERVED still queued, deterministic capacity evidence (READ-ONLY clock
+  use: no aging floor, no streak — unlike #783 there is nothing to age,
+  unlike #1029 nothing to count). **Arm N (`never-ran-young-flex`, #1815):**
+  NO clock record for THIS incarnation (fresh/reconnect-rewritten sidecar,
+  sparse polling, or a prior incarnation's stale record) AND the handle
+  carries `provisioning_model == "FLEX_START"` + create evidence (a
+  non-empty `job_id`) + a young `gcp_launched_ts`
+  (< `EPS_GCP_QUEUE_VANISH_MAX_AGE_SECONDS`, default 1500 s — mirroring the
+  #1029 young-death horizon and well under the #935 done-grace window, so a
+  never-polled COMPLETED run's post-grace DELETE can never satisfy it), each
+  conjunct fail-safe on absence — the #1738 no-fire shape. Reconnect handles
+  carry both arm-N inputs post-#1815 (`gcp.reconnect_or_none` reads
+  `scheduling.provisioningModel` + `creationTimestamp` off the list JSON
+  already in hand). A SAME-incarnation NON-pending clock means the instance
+  RAN — #659/#1029 own that shape. On either arm
+  `backend_poll._maybe_escalate_gcp_queue_vanish` rewrites the poll to
+  `terminal_queue_vanish` and `_failover_vanished_gcp_to_runpod` fails it
+  over on the FIRST occurrence via the shared `_failover_gcp_to_runpod` core
+  (same lease+sentinel exactly-once bound, same terminal-rung seam, same
+  sidecar re-point + terminal-JSON contract),
+  `reason: gcp_queue_vanish_failover_runpod` — no new reason string; the
+  marker evidence gains `vanish_arm`
+  (`"pending-clock" | "never-ran-young-flex"`, recorded as
+  `"expired-at-failover"` when the failover-time recompute no longer matches
+  an arm — evidence-only, the failover still proceeds).
 - **`teardown_first=False`.** The instance record is already GONE
   server-side (that absence IS the trigger), so there is nothing to tear
   down — the #659 stance, NOT #783's (only a still-LIVE queued instance
@@ -886,8 +928,10 @@ problem).
   paid RunPod pod alongside the retry. On success the sidecar is
   authoritatively re-pointed at the NEW gcp handle (job_id — the per-create
   instance id — is the readback discriminator; the fresh serialization
-  drops the stale `pending` clock, so a later death of the on-demand
-  instance cannot false-match the vanish predicate). Reason strings: the
+  drops the stale `pending` clock, AND — #1815 — the incarnation key means
+  even a surviving stale record would read as absent for the new create, so
+  a later death of the on-demand instance cannot false-match the vanish
+  predicate's arm P). Reason strings: the
   LAUNCH is labeled `queue_vanish_gcp_ondemand_retry` (the running-JSON
   `current_phase` + the FINAL `epm:backend-selected` marker; intermediate
   per-rung markers wear the generic `auto_fallback_gcp` — accepted trail
@@ -928,17 +972,30 @@ Named residuals (accepted, documented):
    a manual delete elsewhere takes the crash/terminated classifications. A
    manual delete during an active poll loop already implies a pivot, and
    the lease bounds it to one RunPod launch.
-3. **No-clock-record inertness.** A vanish observed with NO clock record
-   (fresh-dispatch handle, wiped sidecar — the #1112 manual-removal shape)
-   is invisible to this trigger and falls back to the #1029 boot-death
-   streak path (two poller-observed vanishes → the boot-loop failover) —
-   safe, just slower.
-4. **One-tick dequeue→boot→crash→DELETE mislabel.** A run that dequeues,
-   boots, crashes, and is DELETEd entirely between two polls presents the
-   same dead not-found + pending-clock shape and is labelled a queue vanish
-   — same destination (a RunPod failover) the #659 async path would give,
-   different reason label; Part A crash diagnostics upload from the EXIT
-   trap regardless of the poller's label (the mirror of #1029 note (b)).
+3. **No-clock-record inertness — NARROWED by #1815.** A vanish observed with
+   NO clock record for the current incarnation (fresh-dispatch handle, wiped
+   sidecar, a prior incarnation's stale record) now FIRES via the
+   never-ran-young-FLEX arm whenever the handle carries FLEX_START
+   provenance + a young `gcp_launched_ts` (fresh-launch handles always do;
+   reconnect handles do post-#1815). The remaining inert shapes:
+   non-FLEX/unknown provenance (young) and same-incarnation
+   observed-past-pending (young) — both falling to the #1029 streak path as
+   before — and a first dead tick older than
+   `EPS_GCP_QUEUE_VANISH_MAX_AGE_SECONDS`, which equals the #1029 age floor
+   (whose own gate is `age >= floor → no record`), so the AGED shape takes
+   the ORDINARY dead path with no failover and NO streak record — unchanged
+   from today; slower (a manual/watcher re-drive), never wrong-direction.
+4. **One-tick dequeue→boot→crash→DELETE mislabel — WIDENED window (#1815).**
+   A run that dequeues, boots, crashes, and is DELETEd entirely between two
+   polls presents the same dead not-found shape and is labelled a queue
+   vanish — pre-#1815 only when a pending-clock record survived; now ALSO
+   whenever it happens unobserved within the 1500 s arm-N window of a
+   FLEX_START create (previously: a #1029 boot-death record). Same
+   destination (a lease-bounded RunPod failover) the #659 async path would
+   give, different reason label; Part A crash diagnostics upload from the
+   EXIT trap regardless of the poller's label (the mirror of #1029 note
+   (b)). A never-polled COMPLETED run cannot be hit: the #935 done-grace
+   (90 min) keeps its not-found age ≥ ~95 min > 1500 s.
 
 Pre-agreed hardening path (the #1116 plan's kill criterion 2): if a
 sanctioned actor ever starts deleting LIVE PENDING instances, the trigger
@@ -1559,8 +1616,21 @@ short-circuits at the once-more case via `_terminal_code_json`.
   `test_gcp_queue_vanish_does_NOT_increment_gcp_attempts_today`,
   `test_gcp_queue_vanish_second_tick_short_circuits`,
   `test_gcp_queue_vanish_does_not_record_boot_death`, + the negative
-  controls: workload-clock / no-clock-record / terminated-phase /
-  cpu-bigmem-excluded)
+  controls: workload-clock / no-clock-record-non-FLEX (re-scoped by #1815) /
+  terminated-phase / cpu-bigmem-excluded)
+- `tests/test_backend_poll.py` (two-arm discriminator + incarnation-keyed
+  clock, #1815:
+  `test_gcp_queue_vanish_stale_prior_attempt_clock_fires`,
+  `test_gcp_queue_vanish_no_clock_flex_young_fires`,
+  `test_gcp_queue_vanish_no_clock_non_flex_not_vanish`,
+  `test_gcp_queue_vanish_no_clock_flex_aged_not_vanish`,
+  `test_gcp_queue_vanish_same_incarnation_workload_clock_not_vanish`,
+  `test_gcp_queue_vanish_stale_prior_incarnation_pending_clock_non_flex_not_vanish`,
+  `test_phase_clock_incarnation_roundtrip_and_mismatch_reads_absent`,
+  `test_gcp_queue_timeout_stale_incarnation_pending_clock_restamps_no_premature_fire`,
+  `test_gcp_wedge_stale_incarnation_clock_restamps`)
+- `tests/test_gcp_backend.py` (#1815 reconnect-handle arm-N provenance:
+  `test_reconnect_handle_carries_provisioning_model_and_launch_ts`)
 - `tests/test_router.py` (queue-loss on-demand retry, #1596/#1601:
   `test_attempt_one_gcp_rung_failover_identity_none_is_byte_identical`,
   `test_attempt_one_gcp_rung_matching_failover_identity_returns_already_launched`,

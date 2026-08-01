@@ -553,6 +553,16 @@ such corpora or banks:
    downstream backstop (phase-keyed mechanics unchanged) — this
    checklist item is the implementer-side prevention.
 
+   **Plan-§12 structural-assumption probes.** For every plan §12 row
+   whose How-to-verify routes to a smoke-slice probe (a real-corpus
+   structural premise gating an arm / fit / phase), run the named
+   probe at full-CONSUMED-corpus grain during smoke — never only the
+   sliced sample — and record the MEASURED value in the phase's
+   `### <phase-name>` sub-section under `## Smoke run`. A measured
+   violation is a plan defect: surface it (bounce to plan amendment /
+   re-scope) BEFORE production, never leave it to the production
+   assert (#1768: ~55 min lost mid-run).
+
    **Data-dependent gates, not just the happy path.** A phase's
    data-dependent gates — fold-skip thresholds (`if kept < K:
    skip/continue`), non-empty-intersection checks (`n_common > 0`),

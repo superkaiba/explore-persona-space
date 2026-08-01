@@ -188,7 +188,7 @@ test -s "$IMPL_MARKER_FILE" || {
     # genuine orchestration error (Step 5 should only fire after the
     # implementer posts). Fail loud.
     uv run python "$REPO_ROOT/scripts/task.py" post-marker <N> epm:failure \
-        --version 1 --by codex-code-reviewer \
+        --by codex-code-reviewer \
         --note "failure_class: orchestration, reason: no epm:experiment-implementation marker on main"
     exit 1
 }
@@ -280,7 +280,7 @@ else
     # envelope pattern as the implementation marker.
     test -s "$CANON_PLAN" || {
         uv run python "$REPO_ROOT/scripts/task.py" post-marker <N> epm:failure \
-            --version 1 --by codex-code-reviewer \
+            --by codex-code-reviewer \
             --note "failure_class: orchestration, reason: worktree plan absent-or-stale AND no canonical plan on main"
         exit 1
     }
@@ -586,7 +586,22 @@ both reviewers are graded against the same standard. Read
   pin's literal command + exit code alongside the bare-ruff result; a
   passing bare-ruff with a failing pin is the #1672 shape and blocks the
   round with a `substantive` blocker tag (NOT `marker-shape` — a real
-  lint violation is never strippable by Step 5c-bis).
+  lint violation is never strippable by Step 5c-bis). ALSO INCLUDING the
+  round-new-script no-flags lint duty (#1805): Codex cannot run the lint
+  (no `uv` env), so the composed prompt instructs the STATIC
+  diff-readable adaptation — flag any round-NEW `scripts/**/*.py` diff
+  hunk carrying `list_repo_files` / `list_repo_tree` / `file_exists` in
+  call OR bare-reference form — INCLUDING a `retry_transient(...)`-wrapped
+  call and a bare `inspect.signature(...)` reference (both #1092 incident
+  shapes; wrapping does NOT obviate the waiver) — with no
+  `# HUB_VERIFY_RETRY_EXEMPT: <reason>` waiver on the call's first
+  physical line or the immediately-preceding NON-BLANK line → a Critical
+  tagged `substantive`, with the waiver named as the remedy. The ONLY
+  no-waiver routes are the `orchestrate/hub.py` helper functions used IN
+  PLACE OF the bare target (`verify_repo_paths_uploaded`,
+  `list_hf_files_under_path`, `list_repo_files_complete`). The executable
+  no-flags coverage stays the Claude reviewer's duty (the Step 4.6
+  no-uv-adaptation pattern).
 - "Step 4.5: Regression-test presence for substantive BLOCKER fixes"
   VERBATIM. This is a test-PRESENCE check (grep the worktree for a committed
   pytest pinning the invariant), NOT a test-RUNNING check, so Codex CAN and
@@ -849,7 +864,7 @@ Expected output file: /tmp/codex-code-reviewer-<N>-r<revision_round>-output.md
 Marker start tag: <!-- epm:code-review-codex v<revision_round> -->
 Marker end tag: <!-- /epm:code-review-codex -->
 Expected marker kind: epm:code-review-codex
-Expected marker version: <revision_round>
+Expected marker round (head sentinel): <revision_round> (posted top-level version: auto, max+1)
 Codex effort: high
 Codex write mode: false (read-only review)
 ```
@@ -866,8 +881,9 @@ Bash(run_in_background=true,
 
 When the harness notifies on bg-Bash completion, the orchestrator reads
 the output file, extracts the marker between the start/end tags, and
-posts via `task.py post-marker <N> epm:code-review-codex --version
-<revision_round>`. If the marker tags are missing in Codex's output the
+posts via `task.py post-marker <N> epm:code-review-codex` (OMIT
+`--version` — it auto-derives max+1; the round lives in the extracted
+block's head sentinel). If the marker tags are missing in Codex's output the
 orchestrator re-dispatches with a stricter retry prompt (cap retries at
 2 — same policy as before, just moved out of this agent). If the
 `epm:codex-task-failed` marker fires, the orchestrator treats this as a
@@ -940,8 +956,11 @@ Common failure modes and how to handle:
 - **Codex hallucinates line numbers that don't exist in the diff.** Not your
   problem — let it through. The `reconciler` (or the implementer reading both
   reviews) catches it.
-- **Codex emits the marker but with wrong `v<n>`.** Replace the version
-  string with the correct `revision_round` before posting.
+- **Codex emits the marker but with wrong `v<n>`.** The wrong `v<n>` here is
+  the SENTINEL round digit inside the marker tags (`<!-- epm:code-review-codex
+  v<n> -->` / the closing tag) — replace it with the correct `revision_round`
+  before posting (behavior unchanged; the posted top-level version is
+  auto-derived and untouched).
 - **Codex emits multiple markers (overzealous).** Take the LAST complete
   marker; discard prior partials.
 - **Codex output is empty / null.** Retry once. Then `epm:failure`.

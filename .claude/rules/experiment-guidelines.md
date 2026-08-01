@@ -137,7 +137,7 @@ malformed / REFUSAL / out-of-range judge return. Transport errors
 never persisted as drops — and the per-arm drop report splits content-drops
 from transport-losses (`.claude/rules/llm-judging.md` rule 24). A proxy
 saturated at a floor/ceiling across conditions is presumed uninformative.
-Full recipe: `.claude/rules/llm-judging.md` (23 guidelines);
+Full recipe: `.claude/rules/llm-judging.md` (full guideline set);
 CLAUDE.md § Measurement validity; `.claude/rules/selection-symmetric-nulls.md`.
 **Owner:** `statistics-critic`.
 
