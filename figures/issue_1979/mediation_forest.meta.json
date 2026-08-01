@@ -1,0 +1,371 @@
+{
+  "commit": "8c840dbe9d",
+  "created": "2026-08-01T20:42:36Z",
+  "figsize": [
+    7.0,
+    9.28
+  ],
+  "points": [
+    {
+      "partial Spearman rho": 0.28972904930236504,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho": -0.13604291953814987,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho": 0.5186800347492321,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho": 0.46563364336984964,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho": 0.28724767945673707,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "partial Spearman rho": -0.30808698257209666,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "partial Spearman rho": 0.6342754785787128,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "partial Spearman rho": 0.6406149069914615,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "partial Spearman rho": 0.08374656175045625,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "partial Spearman rho": 0.07501689437683867,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "partial Spearman rho": 0.044622715049513366,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "partial Spearman rho": -0.024458632515727496,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "partial Spearman rho": 0.16418453383823214,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "partial Spearman rho": -0.08790028832053129,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "partial Spearman rho": 0.31114601282330817,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "partial Spearman rho": 0.28100227661025867,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "partial Spearman rho": 0.16959417359741116,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "partial Spearman rho": -0.1370311635780242,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "partial Spearman rho": 0.3778382135936279,
+      "y": 18.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "partial Spearman rho": 0.3659904703357953,
+      "y": 19.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "partial Spearman rho": 0.15976729331393413,
+      "y": 20.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "partial Spearman rho": -0.06988515371670465,
+      "y": 21.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "partial Spearman rho": 0.3007036826805113,
+      "y": 22.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "partial Spearman rho": 0.26675030384089193,
+      "y": 23.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "partial Spearman rho": 0.3891901149774893,
+      "y": 24.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "partial Spearman rho": -0.2561850564496721,
+      "y": 25.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "partial Spearman rho": 0.7422436612045236,
+      "y": 26.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "partial Spearman rho": 0.7109830440127652,
+      "y": 27.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "partial Spearman rho": 0.25239530267785637,
+      "y": 28.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "partial Spearman rho": -0.1735266083429689,
+      "y": 29.0,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "partial Spearman rho": 0.5199049684676932,
+      "y": 30.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "partial Spearman rho": 0.4940864969113802,
+      "y": 31.0,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "partial Spearman rho": -0.43807869491710516,
+      "y": 32.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "partial Spearman rho": -0.04560667576503476,
+      "y": 33.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "partial Spearman rho": -0.49824721147793655,
+      "y": 34.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "partial Spearman rho": -0.26767868792319444,
+      "y": 35.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "partial Spearman rho": 0.3542631483408212,
+      "y": 36.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "partial Spearman rho": 0.061048554384692234,
+      "y": 37.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "partial Spearman rho": 0.38623257284287027,
+      "y": 38.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "partial Spearman rho": 0.17520470630431648,
+      "y": 39.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "partial Spearman rho": 0.01698955170069546,
+      "y": 40.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "partial Spearman rho": 0.20333507707980306,
+      "y": 41.0,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "partial Spearman rho": -0.13299846855529207,
+      "y": 42.0,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "partial Spearman rho": -0.24089523443402314,
+      "y": 43.0,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "partial Spearman rho": 0.06475900077074818,
+      "y": 44.0,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "partial Spearman rho": 0.2639380820747264,
+      "y": 45.0,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "partial Spearman rho": -0.11919394702157483,
+      "y": 46.0,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "partial Spearman rho": -0.28110219044671747,
+      "y": 47.0,
+      "_kind": "scatter",
+      "_group": 47
+    }
+  ],
+  "n_series": 48,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "mediation lattice \u2014 answer-mediated (provisional)",
+        "xlabel": "partial Spearman rho",
+        "xticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "cas-pers-con-lr1e5-s42 p1|p7",
+          "cas-pers-con-lr1e5-s42 p1|p2,p7",
+          "cas-pers-con-lr1e5-s42 p2|p7",
+          "cas-pers-con-lr1e5-s42 p2|p1,p7",
+          "cas-pers-po-lr1e5-s42 p1|p7",
+          "cas-pers-po-lr1e5-s42 p1|p2,p7",
+          "cas-pers-po-lr1e5-s42 p2|p7",
+          "cas-pers-po-lr1e5-s42 p2|p1,p7",
+          "cas-bare-con-lr1e5-s42 p1|p7",
+          "cas-bare-con-lr1e5-s42 p1|p2,p7",
+          "cas-bare-con-lr1e5-s42 p2|p7",
+          "cas-bare-con-lr1e5-s42 p2|p1,p7",
+          "cas-pers-ft-con-s42 p1|p7",
+          "cas-pers-ft-con-s42 p1|p2,p7",
+          "cas-pers-ft-con-s42 p2|p7",
+          "cas-pers-ft-con-s42 p2|p1,p7",
+          "imp-pers-con-lr3e5-s42 p1|p7",
+          "imp-pers-con-lr3e5-s42 p1|p2,p7",
+          "imp-pers-con-lr3e5-s42 p2|p7",
+          "imp-pers-con-lr3e5-s42 p2|p1,p7",
+          "imp-pers-con-lr3e5-s137 p1|p7",
+          "imp-pers-con-lr3e5-s137 p1|p2,p7",
+          "imp-pers-con-lr3e5-s137 p2|p7",
+          "imp-pers-con-lr3e5-s137 p2|p1,p7",
+          "imp-pers-po-lr1e5-s42 p1|p7",
+          "imp-pers-po-lr1e5-s42 p1|p2,p7",
+          "imp-pers-po-lr1e5-s42 p2|p7",
+          "imp-pers-po-lr1e5-s42 p2|p1,p7",
+          "imp-pers-ft-con-s42 p1|p7",
+          "imp-pers-ft-con-s42 p1|p2,p7",
+          "imp-pers-ft-con-s42 p2|p7",
+          "imp-pers-ft-con-s42 p2|p1,p7",
+          "syc-bare-con-lr1e5-s42 p1|p7",
+          "syc-bare-con-lr1e5-s42 p1|p2,p7",
+          "syc-bare-con-lr1e5-s42 p2|p7",
+          "syc-bare-con-lr1e5-s42 p2|p1,p7",
+          "syc-conv-con-lr1e5-s42 p1|p7",
+          "syc-conv-con-lr1e5-s42 p1|p2,p7",
+          "syc-conv-con-lr1e5-s42 p2|p7",
+          "syc-conv-con-lr1e5-s42 p2|p1,p7",
+          "syc-pers-po-lr1e5-s42 p1|p7",
+          "syc-pers-po-lr1e5-s42 p1|p2,p7",
+          "syc-pers-po-lr1e5-s42 p2|p7",
+          "syc-pers-po-lr1e5-s42 p2|p1,p7",
+          "syc-pers-ft-con-s42 p1|p7",
+          "syc-pers-ft-con-s42 p1|p2,p7",
+          "syc-pers-ft-con-s42 p2|p7",
+          "syc-pers-ft-con-s42 p2|p1,p7"
+        ]
+      }
+    ]
+  }
+}

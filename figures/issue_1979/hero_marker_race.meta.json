@@ -1,0 +1,135 @@
+{
+  "commit": "8c840dbe9d",
+  "created": "2026-08-01T20:41:50Z",
+  "figsize": [
+    6.800000000000001,
+    6.0
+  ],
+  "points": [
+    {
+      "P(winner) per draw": 0.00025,
+      "y": 0.0005,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": 0.07525,
+      "y": 0.1505,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": 0.1395,
+      "y": 0.279,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": "0.0",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": 0.0005,
+      "y": 0.001,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": "0.0",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": "0.0",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": "0.0",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": 0.0055,
+      "y": 0.011,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": 0.279,
+      "y": 0.558,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 10,
+  "text": {
+    "suptitle": "marker race \u2014 gray left marks = per-query #1900 medians (span-mean cross-grain)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "dv_dlogp (within-arm Spearman rho)",
+        "annotations": [
+          "med +0.16",
+          "+0.09",
+          "med +0.28",
+          "med +0.37",
+          "+0.38",
+          "med -0.02",
+          "+0.21",
+          "med -0.01",
+          "+0.38",
+          "med -0.12",
+          "+0.04",
+          "med -0.28",
+          "+0.24",
+          "med -0.20",
+          "+0.23",
+          "med +0.09",
+          "-0.37",
+          "med +0.43",
+          "+0.09"
+        ],
+        "xticklabels": [
+          "mk-bare-con-lr5e6-s42",
+          "mk-conv-con-lr5e6-s42",
+          "mk-icl-con-lr5e6-s42",
+          "mk-pers-con-lr5e6-s42",
+          "mk-pers-ft-con-s42",
+          "mk-pers-po-lr5e6-s42"
+        ],
+        "yticklabels": [
+          "p1",
+          "p10",
+          "p2",
+          "p3a",
+          "p3b",
+          "p4",
+          "p5",
+          "p6",
+          "p7",
+          "p9"
+        ]
+      },
+      {
+        "title": "winner=p9\nsel-inherited CI [+0.30,+0.59]",
+        "xlabel": "P(winner) per draw",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      }
+    ]
+  }
+}
