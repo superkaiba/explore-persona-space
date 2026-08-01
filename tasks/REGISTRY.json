@@ -6816,8 +6816,8 @@
     "1880": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1880",
-      "status": "proposed",
+      "path": "tasks/planning/1880",
+      "status": "planning",
       "title": "workflow-fix: pod-side results-git push must fetch+rebase (mid-run branch-push race)"
     },
     "1881": {
