@@ -16,7 +16,9 @@ entrypoints on the tiny-real fixture produced by ``issue1738_sae_arm.py
 
 Identity gates (plan section 7) run FIRST in ``build``, before the heavy Y
 rebuild: assembly-fingerprint string equality per pred16 cell, banked-R^2
-reproduction (|dR^2| < 5e-3), f_out array equality vs the banked ``feat_ids``,
+reproduction (|dR^2| < 5e-3), banked-``feat_ids``-authoritative f_out gated by
+machine-independent set-validity invariants vs the recomputed counts (NOT
+recompute equality — argsort cap-boundary tie order is CPU-SIMD-dependent),
 ci alignment, split-sha cross-asserts, and scan-count identity — all compared
 against the banked ``sae_fits.json`` FIELDS (under ``--smoke`` those fields
 are the fixture's own, never production constants — smoke-scale gate
@@ -318,17 +320,64 @@ def _scan_and_gate(cfg: Cfg, banked: dict) -> tuple[dict, np.ndarray, dict, np.n
     assert len(scan["dropped"]) == banked["n_dropped"], (
         f"scan dropped {len(scan['dropped'])} != banked n_dropped {banked['n_dropped']}"
     )
-    # gate: f_out identity vs banked feat_ids (array equality) + activity floor
-    f_out, floor = SN.restrict(scan["out_fit"], scan["n_fit"], SA.MAX_FEATURES_OUT)
-    pf = np.load(Path(cfg.perfeature_npz))
-    assert "feat_ids" in pf, sorted(pf.files)
-    banked_fids = pf["feat_ids"]
-    assert len(f_out) == len(banked_fids) and (f_out == banked_fids).all(), (
-        f"f_out mismatch vs banked feat_ids (n={len(f_out)} vs {len(banked_fids)})"
-    )
+    # gate: banked feat_ids are AUTHORITATIVE for f_out — the banked pred16 predictions
+    # were fit on exactly that feature set, so the rebuilt Y columns must be those
+    # features. Validity vs the recomputed counts is checked as MACHINE-INDEPENDENT set
+    # invariants, NOT recompute equality: SN.restrict() breaks cap-boundary count ties
+    # via unstable np.argsort(-counts), whose tie order is CPU-SIMD-kernel dependent
+    # (numpy 2.x x86-simd-sort: AVX-512 on GCE n2 vs none on the VM Xeon; crash-fix r3
+    # measured 5 features tied at boundary count 7198 for the last 2 of 16384 slots).
+    _, floor = SN.restrict(scan["out_fit"], scan["n_fit"], SA.MAX_FEATURES_OUT)
     assert floor == banked["restriction"]["activity_floor_rows"], (
         f"activity floor {floor} != banked {banked['restriction']['activity_floor_rows']}"
     )
+    pf = np.load(Path(cfg.perfeature_npz))
+    assert "feat_ids" in pf, sorted(pf.files)
+    banked_fids = np.asarray(pf["feat_ids"])
+    assert len(banked_fids) == banked["restriction"]["n_f_out"], (
+        f"banked feat_ids n={len(banked_fids)} != sae_fits n_f_out "
+        f"{banked['restriction']['n_f_out']} — perfeature npz / sae_fits.json mismatch"
+    )
+    assert banked_fids.ndim == 1 and bool((np.diff(banked_fids) > 0).all()), (
+        "banked feat_ids not strictly increasing / unique — corrupt restriction artifact"
+    )
+    counts = scan["out_fit"]
+    cap = SA.MAX_FEATURES_OUT
+    n_eligible = int((counts >= floor).sum())
+    assert len(banked_fids) == min(cap, n_eligible), (
+        f"banked feat_ids n={len(banked_fids)} != min(cap={cap}, n_eligible={n_eligible}) "
+        "— banked set size inconsistent with recomputed eligibility"
+    )
+    banked_counts = counts[banked_fids]
+    n_below = int((banked_counts < floor).sum())
+    assert n_below == 0, (
+        f"{n_below} banked features below activity floor {floor} "
+        f"(min banked count {int(banked_counts.min())})"
+    )
+    boundary = int(banked_counts.min())
+    above = np.flatnonzero(counts > boundary)
+    n_above = int(above.size)
+    assert n_above < cap, (
+        f"{n_above} features with count > boundary {boundary} >= cap {cap} — "
+        "banked set cannot be a valid top-cap selection for these counts"
+    )
+    missing_above = np.setdiff1d(above, banked_fids)
+    assert missing_above.size == 0, (
+        f"{missing_above.size} features with count > boundary {boundary} missing from "
+        f"banked set (first ids: {missing_above[:5].tolist()})"
+    )
+    n_tied = int((counts == boundary).sum())
+    print(
+        f"[build] f_out set-validity gate PASS (banked feat_ids authoritative): "
+        f"boundary count={boundary}, n strictly above={n_above}, n tied at "
+        f"boundary={n_tied}, tie slots={min(cap, n_eligible) - n_above}, "
+        f"n_eligible={n_eligible}, n_banked={len(banked_fids)}",
+        flush=True,
+    )
+    f_out = banked_fids
+    # f_in (px/cx, cap 8192) keeps the recompute — the same argsort tie-order caveat
+    # applies at ITS cap boundary, but f_in only shapes X, which this task never
+    # consumes (built alongside Y then deleted; plan section 4 P1) — do NOT gate it.
     f_in = {
         a: SN.restrict(scan["in_fit"][a], scan["n_fit"], SA.MAX_FEATURES_IN)[0]
         for a in ("px", "cx")
