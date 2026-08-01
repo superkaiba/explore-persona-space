@@ -26,11 +26,14 @@ Phases (``--phase``):
   target; CVD pinned by the dispatcher env).
 - ``import-check`` : resolve every deferred import + exit 0.
 
-BINDING last-token directive (task #1947 epm:progress v7): every context-side
-capture records BOTH summaries from ONE forward pass — last-prompt-token
-(``context_last`` / ``prefix_last``, the #779 convention) PRIMARY + span-mean
-SECONDARY; answer-side stays span-mean. Implemented via the ``SPAN_ARMS_LAST``
-1-token spans in ``analysis/representation_shift.py``.
+BINDING last-token directive (task #1947 epm:progress v7 + v9): every
+context-side capture records the summaries from ONE forward pass —
+``last_prompt`` (the FINAL token of the generation-rendered prompt, the #779
+convention / the #1768 lasttoken-repool position) PRIMARY, plus span-mean and
+``last_ctx`` (last user-content token) SECONDARY, and ``prefix_last`` for the
+prefix arm; answer-side stays span-mean. Implemented via the
+``SPAN_ARMS_LAST`` 1-token spans in ``analysis/representation_shift.py``
+(v9 decode check at capture time).
 """
 
 from __future__ import annotations
@@ -70,8 +73,9 @@ BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 JUDGED_BAND = (0.60, 0.85)  # plan §7 lattice (== recipe.JUDGED_RATE_BAND)
 JUDGE_N_DRAWS = 3  # plan §6
 LAYERS = (14, 19, 25)  # plan §11 (#1768 comparability)
-# Both context summaries in ONE forward pass (binding directive) + answer side.
-CAPTURE_SPANS = ("prefix", "context", "response", "prefix_last", "context_last")
+# All context summaries in ONE forward pass (binding directive v7+v9: last_prompt
+# PRIMARY, span-mean + last_ctx SECONDARY, prefix_last) + answer side.
+CAPTURE_SPANS = ("prefix", "context", "response", "prefix_last", "last_prompt", "last_ctx")
 _JUDGE_ID_BUDGET = 53  # Batch custom_id budget (#1415)
 # Per-phase disk floors on the pod out-root (plan §9 mount binding).
 PHASE_HEADROOM_GB = {"capture": 40.0, "corpus": 40.0, "fit": 10.0}
@@ -1379,14 +1383,16 @@ def unit_fit(cfg: Cfg, slug: str) -> None:
 
 
 def _fit_lasttoken_arm(cfg: Cfg, slug: str) -> None:
-    """Within-run LAST-TOKEN M⁺ map per layer (binding directive v7 items 2-3:
-    last-token context summary is the PRIMARY within-run map; span-mean stays
-    the M0-comparability D read). Fits context_last -> response ridge on the
-    arm's OWN corpus store over the SAME pfx split, identity+bias + kNN
-    attached (3584->3584, applicable). The base-side M0_lasttoken fits ONLY
-    when the staged r1 base store carries a context_last arm; the D column is
-    flagged ``no-M0-floor-available`` unless the Phase-0 probe resolved the
-    #1768 lasttoken_ctx re-run outputs (the directive's fallback clause)."""
+    """Within-run LAST-TOKEN M⁺ map per layer (binding directive v7 items 2-3
+    + v9: the PRIMARY last-token context summary is ``last_prompt`` — the
+    final token of the generation-rendered prompt, the #1768 lasttoken-repool
+    position — NOT the last user-content token; span-mean stays the
+    M0-comparability D read). Fits last_prompt -> response ridge on the arm's
+    OWN corpus store over the SAME pfx split, identity+bias + kNN attached
+    (3584->3584, applicable). The base-side M0_lasttoken fits ONLY when the
+    staged r1 base store carries a last_prompt arm; the D column is flagged
+    ``no-M0-floor-available`` unless the Phase-0 probe resolved the #1768
+    lasttoken_ctx re-run outputs (the directive's fallback clause)."""
     import issue1768_fit as FIT
     import numpy as np
 
@@ -1403,13 +1409,13 @@ def _fit_lasttoken_arm(cfg: Cfg, slug: str) -> None:
 
     def _subset_lt(store: dict, layer: int):
         """(C_lasttoken, V_response, pfx qidx) for the pinned rows, or None
-        when the store carries no context_last arm (r1 base stores predate
+        when the store carries no last_prompt arm (r1 base stores predate
         the directive)."""
-        if "context_last" not in store["arms"] or layer not in store["arms"]["context_last"]:
+        if "last_prompt" not in store["arms"] or layer not in store["arms"]["last_prompt"]:
             return None
         keep = [i for i, q in enumerate(store["row_question_idx"]) if int(q) in pfx_by_src]
         qidx = np.asarray([pfx_by_src[int(store["row_question_idx"][i])] for i in keep])
-        C = FIT._store_span_rows(store, "context_last", layer)[keep]
+        C = FIT._store_span_rows(store, "last_prompt", layer)[keep]
         V = FIT._store_span_rows(store, "response", layer)[keep]
         return C, V, qidx
 
@@ -1420,7 +1426,7 @@ def _fit_lasttoken_arm(cfg: Cfg, slug: str) -> None:
         if dest.exists():
             continue
         own_lt = _subset_lt(own, layer)
-        assert own_lt is not None, (slug, layer, "own store missing context_last (directive v7)")
+        assert own_lt is not None, (slug, layer, "own store missing last_prompt (directive v7+v9)")
         C, V, qidx = own_lt
         tr, val, te = FIT._split_idx(FIT._pfx_split_from_qidx(qidx, sample))
         pred_te, meta, _payload = FIT._fit_map(C, V, tr, val, te, dev, allow_underdetermined=True)
@@ -1435,7 +1441,7 @@ def _fit_lasttoken_arm(cfg: Cfg, slug: str) -> None:
         if base_lt is None:
             fits["M0_lasttoken"] = {
                 "status": "unavailable",
-                "reason": "r1 base store carries no context_last arm",
+                "reason": "r1 base store carries no last_prompt arm",
             }
         else:
             C0, V0, q0 = base_lt
@@ -1452,7 +1458,7 @@ def _fit_lasttoken_arm(cfg: Cfg, slug: str) -> None:
             "arm_id": slug,
             "layer": int(layer),
             "condition": "bare_n_lasttoken",
-            "input_span": "context_last",
+            "input_span": "last_prompt",
             "n_rows": int(len(qidx)),
             "n_train": int(len(tr)),
             "n_val": int(len(val)),
@@ -1504,7 +1510,22 @@ def _r3_floor_crosscheck(cfg: Cfg, slug: str, recs: dict[int, dict]) -> None:
 
     dest = cfg.out_root / "fits" / "r3_crosscheck" / f"{slug}.json"
     if dest.exists():
-        return
+        # r2 Critical 3: the report is persisted BEFORE the fail-loud raise, so
+        # on the one-retry _fan path a resumed unit re-enters here with a
+        # persisted ``verdict: fail`` on disk. Only a clean verdict may
+        # short-circuit — a divergence re-raises on every resume (a retry does
+        # not clear a divergence); anything else recomputes (seconds).
+        prior = _read_json(dest)
+        prior_verdict = prior.get("verdict")
+        if prior_verdict == "fail" and not cfg.smoke:
+            raise RuntimeError(
+                f"[i1947-fit] {slug}: persisted r3 cross-check report carries "
+                f"verdict=fail ({prior.get('n_divergent')} divergent layer(s)) — "
+                "D verdicts must not be narrated off divergent floors "
+                "(see fits/r3_crosscheck; resume does not clear a divergence)"
+            )
+        if prior_verdict in ("pass", "informational-smoke"):
+            return
     prefix = f"{X1768.HF_PREFIX}/on_target/eval_results/fits_bare_n"
     names = hub.retry_transient(
         lambda: [
@@ -1665,6 +1686,84 @@ def _battery_sentinel(cfg: Cfg, payload: dict) -> dict:
     }
 
 
+def _fan(
+    cfg: Cfg,
+    argv_base: list[str],
+    gpus: list[int],
+    queue: list[str],
+    on_complete=None,
+) -> tuple[list[str], dict[str, float], bool, list[str]]:
+    """Work-conserving fan-out; ONE retry per failed unit (transient absorber
+    — r1 Critical 1 fix note). ``on_complete(unit, wall_h, walls) -> bool``
+    may HALT dispatch (the corpus re-projection gate, r1 Minor 6): pending
+    units are DRAINED into the returned ``not_started`` list (r2 Critical 2 —
+    a non-empty ``pending`` after halt would spin the scheduler loop forever
+    once ``running`` empties), the halted retry-insert is suppressed, and
+    running units drain. Returns (failed, unit_walls, halted, not_started)."""
+    pending = list(queue)
+    running: dict[int, tuple[subprocess.Popen, str, float]] = {}
+    failed: list[str] = []
+    retried: set[str] = set()
+    unit_walls: dict[str, float] = {}
+    not_started: list[str] = []
+    n_total = len(pending)
+    n_done = 0
+    halted = False
+    while pending or running:
+        for gpu in gpus:
+            if halted or gpu in running or not pending:
+                continue
+            unit = pending.pop(0)
+            env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(gpu)}
+            cmd = argv_base + ["--phase", "unit", "--unit", unit, "--gpu-id", str(gpu)]
+            log = cfg.out_root / "logs" / f"unit_{unit.replace(':', '_')}.log"
+            log.parent.mkdir(parents=True, exist_ok=True)
+            with log.open("ab") as fh:
+                proc = subprocess.Popen(cmd, env=env, stdout=fh, stderr=subprocess.STDOUT)
+            running[gpu] = (proc, unit, time.time())
+            print(f"[dispatch] gpu{gpu} <- {unit}", flush=True)
+        time.sleep(3 if not cfg.smoke else 0.2)
+        for gpu in list(running):
+            proc, unit, t_start = running[gpu]
+            rc = proc.poll()
+            if rc is None:
+                continue
+            del running[gpu]
+            wall_h = (time.time() - t_start) / 3600.0
+            if rc != 0 and unit not in retried and not halted:
+                retried.add(unit)
+                # r2 Minor: count the first attempt's wall toward the
+                # re-projection basis (len(walls) transiently counts the
+                # in-flight retry as done — bounded by len(gpus), negligible
+                # vs dropping the wall entirely).
+                unit_walls[unit] = unit_walls.get(unit, 0.0) + wall_h
+                pending.insert(0, unit)  # per-unit outputs are resume-idempotent
+                print(f"[dispatch] {unit} rc={rc} — ONE retry", flush=True)
+                continue
+            n_done += 1
+            unit_walls[unit] = unit_walls.get(unit, 0.0) + wall_h
+            if rc != 0:
+                failed.append(unit)
+                log = cfg.out_root / "logs" / f"unit_{unit.replace(':', '_')}.log"
+                tail = log.read_text(encoding="utf-8", errors="replace").splitlines()[-40:]
+                print(f"[dispatch] {unit} FAILED rc={rc} (post-retry); log tail:", flush=True)
+                for line in tail:
+                    print(f"    {line}", flush=True)
+            elif on_complete is not None and not halted and on_complete(unit, wall_h, unit_walls):
+                halted = True
+                print(f"[dispatch] unit {n_done}/{n_total} {unit} done rc=0", flush=True)
+                not_started.extend(pending)
+                pending.clear()  # r2 Critical 2: drain so the loop can terminate
+                print(
+                    f"[dispatch] HALT: compute gate fired — draining running units; "
+                    f"{len(not_started)} queued unit(s) marked not-started",
+                    flush=True,
+                )
+            else:
+                print(f"[dispatch] unit {n_done}/{n_total} {unit} done rc=0", flush=True)
+    return failed, unit_walls, halted, not_started
+
+
 def cmd_capture_fit(cfg: Cfg, argv_base: list[str]) -> int:
     """Work-conserving per-unit subprocess fan-out over the physical GPUs
     (CVD pinned in the LAUNCHER env — the #545 clobber rule). Every unit gets
@@ -1719,66 +1818,6 @@ def cmd_capture_fit(cfg: Cfg, argv_base: list[str]) -> int:
         pilot_walls[pilot] = per_unit_h
         captures = captures[1:]  # pilot unit already done (resume-idempotent anyway)
 
-    def _fan(queue: list[str], on_complete=None) -> tuple[list[str], dict[str, float], bool]:
-        """Work-conserving fan-out; ONE retry per failed unit (transient
-        absorber — r1 Critical 1 fix note). ``on_complete(unit, wall_h,
-        walls) -> bool`` may HALT dispatch (the corpus re-projection gate, r1
-        Minor 6): pending units stop dispatching, running units drain."""
-        pending = list(queue)
-        running: dict[int, tuple[subprocess.Popen, str, float]] = {}
-        failed: list[str] = []
-        retried: set[str] = set()
-        unit_walls: dict[str, float] = {}
-        n_total = len(pending)
-        n_done = 0
-        halted = False
-        while pending or running:
-            for gpu in gpus:
-                if halted or gpu in running or not pending:
-                    continue
-                unit = pending.pop(0)
-                env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(gpu)}
-                cmd = argv_base + ["--phase", "unit", "--unit", unit, "--gpu-id", str(gpu)]
-                log = cfg.out_root / "logs" / f"unit_{unit.replace(':', '_')}.log"
-                log.parent.mkdir(parents=True, exist_ok=True)
-                with log.open("ab") as fh:
-                    proc = subprocess.Popen(cmd, env=env, stdout=fh, stderr=subprocess.STDOUT)
-                running[gpu] = (proc, unit, time.time())
-                print(f"[dispatch] gpu{gpu} <- {unit}", flush=True)
-            time.sleep(3 if not cfg.smoke else 0.2)
-            for gpu in list(running):
-                proc, unit, t_start = running[gpu]
-                rc = proc.poll()
-                if rc is None:
-                    continue
-                del running[gpu]
-                wall_h = (time.time() - t_start) / 3600.0
-                if rc != 0 and unit not in retried:
-                    retried.add(unit)
-                    pending.insert(0, unit)  # per-unit outputs are resume-idempotent
-                    print(f"[dispatch] {unit} rc={rc} — ONE retry", flush=True)
-                    continue
-                n_done += 1
-                unit_walls[unit] = unit_walls.get(unit, 0.0) + wall_h
-                if rc != 0:
-                    failed.append(unit)
-                    log = cfg.out_root / "logs" / f"unit_{unit.replace(':', '_')}.log"
-                    tail = log.read_text(encoding="utf-8", errors="replace").splitlines()[-40:]
-                    print(f"[dispatch] {unit} FAILED rc={rc} (post-retry); log tail:", flush=True)
-                    for line in tail:
-                        print(f"    {line}", flush=True)
-                elif (
-                    on_complete is not None and not halted and on_complete(unit, wall_h, unit_walls)
-                ):
-                    halted = True
-                    print(f"[dispatch] unit {n_done}/{n_total} {unit} done rc=0", flush=True)
-                    print(
-                        "[dispatch] HALT: compute gate fired — draining running units", flush=True
-                    )
-                else:
-                    print(f"[dispatch] unit {n_done}/{n_total} {unit} done rc=0", flush=True)
-        return failed, unit_walls, halted
-
     n_units_total = len(captures) + len(fits) + len(pilot_walls)
     reproject_fired = {"done": False}
 
@@ -1809,7 +1848,9 @@ def cmd_capture_fit(cfg: Cfg, argv_base: list[str]) -> int:
         print(f"[dispatch] corpus re-projection: {json.dumps(report)}", flush=True)
         return report["ratio"] > 2
 
-    failed_caps, _cap_walls, halted = _fan(captures, on_complete=_corpus_reprojection)
+    failed_caps, _cap_walls, halted, skipped_caps = _fan(
+        cfg, argv_base, gpus, captures, on_complete=_corpus_reprojection
+    )
     skipped_fits: list[str] = []
     failed_fits: list[str] = []
     if halted:
@@ -1823,12 +1864,14 @@ def cmd_capture_fit(cfg: Cfg, argv_base: list[str]) -> int:
                 flush=True,
             )
         runnable, skipped_fits = _runnable_fits(fits, failed_caps)
-        failed_fits, _fit_walls, _ = _fan(runnable)
+        failed_fits, _fit_walls, _, _ = _fan(cfg, argv_base, gpus, runnable)
     failed = failed_caps + failed_fits
-    if failed or skipped_fits:
+    if failed or skipped_fits or skipped_caps:
         print("[dispatch] TERMINAL UNIT-FAILURE REPORT (fail-loud, never silent-skip):", flush=True)
         for u in failed:
             print(f"    FAILED  {u}", flush=True)
+        for u in skipped_caps:
+            print(f"    SKIPPED {u} (not started — compute-gate halt)", flush=True)
         for u in skipped_fits:
             print(f"    SKIPPED {u} (corpus input failed or compute-gate halt)", flush=True)
     if halted:
@@ -1843,6 +1886,7 @@ def cmd_capture_fit(cfg: Cfg, argv_base: list[str]) -> int:
         "status": status,
         "n_units": len(units),
         "failed_units": failed,
+        "skipped_capture_units": skipped_caps,
         "skipped_fit_units": skipped_fits,
         **_meta(),
     }

@@ -12,10 +12,12 @@ draw loops), δ split-half reliability at n=300 (§6 criterion 5), the
 map-change D forest (P5 fit JSONs), and the registered analyzer-frame
 re-reductions (§6 notes 1-9, flag-gated over the persisted per-row stores).
 
-Directive compliance (task #1947 epm:progress v7): within-run context reads
-use the LAST-TOKEN summary (``context_last``) as PRIMARY with span-mean
-retained as SECONDARY (the #1768-comparability surface); the D-vs-M0
-comparability read stays span-mean (the reused r3 M0/floors are span-mean).
+Directive compliance (task #1947 epm:progress v7 + v9): within-run context
+reads use the LAST-TOKEN summary (``last_prompt`` — the final token of the
+generation-rendered prompt, the #1768 lasttoken-repool position; NOT the last
+user-content token ``last_ctx``) as PRIMARY with span-mean retained as
+SECONDARY (the #1768-comparability surface); the D-vs-M0 comparability read
+stays span-mean (the reused r3 M0/floors are span-mean).
 Reporting is PER LAYER at {14, 19, 25} — no cross-layer max headline (the
 selection-symmetric per-axis carve-out, plan §6).
 """
@@ -52,7 +54,7 @@ N_BOOT = 2000  # row-cluster bootstrap draws (plan §6 horse-race CIs)
 BOOT_SEED = 653  # #1481 convention (plan §10)
 GATE_BAND = (0.3, 0.7)  # H4 theory band
 TREES = ("matched_text", "onpolicy")
-CTX_PRIMARY = "context_last"  # binding last-token directive (PRIMARY)
+CTX_PRIMARY = "last_prompt"  # directive v9 PRIMARY: final rendered-prompt token
 CTX_SECONDARY = "context"  # span-mean (SECONDARY + #1768 comparability)
 FRAMES_ALL = ("h6-n-match", "h3-20row", "consumed-reliability")
 
@@ -265,7 +267,7 @@ def arm_battery(cfg: Cfg, slug: str, layer: int, shared: dict) -> dict:
         rec["alignments"] = aligns
         if t["c_src"] is not None and sigma is not None:
             rec["gate_trained_rows"] = {
-                "primary_context_last": DIRS.gate_read(
+                "primary_last_prompt": DIRS.gate_read(
                     t["ctx_primary"], stack, t["c_src"], w, sigma
                 ),
                 "secondary_context_mean": DIRS.gate_read(
@@ -453,7 +455,7 @@ def make_figures(cfg: Cfg, batteries: list[dict], d_forest: list[dict]) -> list[
                         ((mt.get("alignments") or {}).get("delta") or {}).get("cos", np.nan)
                     )
                 else:
-                    g = (mt.get("gate_trained_rows") or {}).get("primary_context_last") or {}
+                    g = (mt.get("gate_trained_rows") or {}).get("primary_last_prompt") or {}
                     vals.append(g.get("spearman_rho", np.nan))
             ax.bar(x, vals, color=pal[r])
             if band:
