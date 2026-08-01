@@ -42,6 +42,23 @@ if str(REPO_ROOT) not in sys.path:
 
 from scripts import issue1739_bareq_score as bqs  # noqa: E402
 
+
+@pytest.fixture(autouse=True)
+def _judge_free_process(monkeypatch):
+    """The no-judge entry rail asserts a FRESH-process condition (production:
+    each leg runs in its own process, so sys.modules carries only the leg's
+    OWN imports). Under a multi-file pytest run a SIBLING test file (e.g.
+    test_issue1739_dataplane.py) may already have imported the judge surface,
+    tripping the rail on state this leg never imported — scrub those modules
+    for the test's duration (monkeypatch restores them) so the rail keeps
+    testing exactly the production condition. Order-interaction fix from the
+    new-arm-round pin-sweep (64 cross-file failures; every file green alone).
+    """
+    for m in bqs._wca().FORBIDDEN_JUDGE_MODULES:
+        if m in sys.modules:
+            monkeypatch.delitem(sys.modules, m)
+
+
 DIM = 7  # > len(LAYERS) and != every row count, so an (n, d) <-> (d, n) slip cannot pass
 LAYERS = (0, 1)
 ROSTER = [
