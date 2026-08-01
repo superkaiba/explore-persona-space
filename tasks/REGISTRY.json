@@ -5964,9 +5964,9 @@
       "goal": "Characterise what fine-tuning a behavior into a specific context does to the context->answer mapping in activation space, on the model-organism fleet: whether the context vector moves, whether the map itself changes, whether the answer vector moves, what shape the write has and whether it is predictable ahead of time (delta vs r_B vs the marker unembedding row), and which of theory assumptions A7-A11 hold.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1768",
-      "status": "followups_running",
-      "title": "Fine-tuning-induced map change is context-dependent through two channels: prefix richness alone reproduces most of the conversation-trained arm's floor crossing, while the trained conversation prefix amplifies persona-trained arms well beyond richness-matched never-trained prefixes (HIGH confidence)"
+      "path": "tasks/awaiting_promotion/1768",
+      "status": "awaiting_promotion",
+      "title": "Fine-tuning-induced map change is context-dependent but not gated on trained-prefix identity: never-trained prefixes resembling the training corpus overshoot the trained-prefix anchor on every persona-trained arm (HIGH confidence)"
     },
     "1769": {
       "goal": "Determine when behavioral commitment happens in Qwen-2.5-7B-Instruct: does steering a persona-vector direction r_B only during prefill vs only during decode vs both change on-policy judged behavior expression - i.e., is the answer's behavior already committed in the pre-answer context state, or decided token-by-token during generation?",
@@ -6922,8 +6922,8 @@
       "goal": "Does the context\u2192answer map predict the same structure the SAE represents? Two ways of decomposing the same answer activation have been measured separately and never compared: the map's **predictable subspace** (which directions of `v_A` the fitted map recovers) and the SAE's **representable subspace** (which directions its dictionary reconstructs). This task asks whether they coincide, and whether targeting the SAE's reconstruction instead of the raw activation changes what the map can do.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/1895",
-      "status": "running",
+      "path": "tasks/interpreting/1895",
+      "status": "interpreting",
       "title": "Does the context\u2192answer map's predictable subspace coincide with the SAE's representable subspace?"
     },
     "1896": {
@@ -6972,8 +6972,8 @@
       "goal": "On the model-organism fleet at per-prompt grain (the #1768 16,400-real-user-prompt corpus), determine which per-context predictor computable BEFORE fine-tuning best predicts per-context leakage of the trained behavior (graded judge DV for content arms; three-space log P(marker) for marker arms), whether base behavioral propensity survives as the champion, and whether context-vector similarity's predictive power is mediated by answer-side similarity; post-FT and delta candidates form a separate mechanistic panel, and every similarity candidate is computed against both the training-context-centroid and panel-source-context anchors.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1900",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1900",
+      "status": "awaiting_promotion",
       "title": "Base behavioral propensity predicts where a trained behavior is expressed, but pre-fine-tuning answer similarity is the only predictor of the fine-tuning-induced change (MODERATE confidence)"
     },
     "1901": {
@@ -7317,19 +7317,19 @@
     },
     "1945": {
       "goal": "Determine whether the context\u2192answer map's dominant (context \u00d7 direction) interaction residual admits recoverable low-rank bilinear structure (H1) or is per-pair idiosyncratic (H2), by pointing #1775's rank-r bilinear machinery at the #1482 residual pair space against a permuted-pairing null with the answer-sampling floor netted out.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/1945",
       "status": "interpreting",
-      "title": "Does the map's residual interaction have low-rank structure, or is it per-pair idiosyncratic?"
+      "title": "The context\u2192answer map's error interaction is per-pair noise to within a trace rank-one residue, putting the map near its information ceiling (MODERATE confidence)"
     },
     "1946": {
       "goal": "Settle whether the bare-query and prefix arms are **mirror images** in SAE feature space, as they demonstrably are in the dense per-context taxonomy.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/1946",
       "status": "interpreting",
-      "title": "Per-context error in SAE feature space: does the prefix/bare mirror image survive the sparse re-basis?"
+      "title": "The prefix/bare mirror image in per-context map error survives the SAE feature-space re-basis (HIGH confidence)"
     },
     "1947": {
       "goal": "Retrain the content-behavior organism fleet under a single-visit data regime (every training row consumed exactly once \u2014 ~1,200 unique rows per cell covering the full 75-step schedule; pilot cell gates the fleet on reaching the 0.60-0.85 install band), then run the theory-assumption battery (write vs delta/r_B, write rank, base-geometry gate, map change) evaluated on exactly the trained rows (TF base+trained on the gradient-producing rows, delta over the same ~300-row set) alongside the standard panel/corpus surfaces, to decide whether the #1768 assumption failures survive without data repetition and on-distribution.",
@@ -7384,15 +7384,15 @@
     "1953": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1953",
-      "status": "reviewing",
+      "path": "tasks/completed/1953",
+      "status": "completed",
       "title": "daily-fix: fix red main: test_workflow_lint_jsonl_splitlines.py::test_live_tree_passes \u2014 Fix the `.splitlines()` JSONL read at `s"
     },
     "1954": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1954",
-      "status": "running",
+      "path": "tasks/reviewing/1954",
+      "status": "reviewing",
       "title": "daily-fix: fix red main: test_issue1689_os_exit_shutdown_bypass.py::test_entrypoint_calls_os_exit[issue1689_fits_mirror.py] \u2014 Convert the __main__ guard of scripts/is"
     },
     "1955": {
@@ -7405,8 +7405,8 @@
     "1956": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1956",
-      "status": "proposed",
+      "path": "tasks/reviewing/1956",
+      "status": "reviewing",
       "title": "daily-fix: fix red main: test_shared_vm_thread_caps::test_no_new_torch_before_dotenv_vm_entrypoints \u2014 load_dotenv before heavy imports in issue1773_register_steer_stats.py"
     },
     "196": {

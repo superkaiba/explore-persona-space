@@ -1,0 +1,178 @@
+{
+  "commit": "2e6ce5a06e",
+  "created": "2026-08-01T03:09:43Z",
+  "figsize": [
+    11.5,
+    14.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "history-only (prefix) arm \u2014 SAE space",
+        "xlabel": "category \u0394 (harder \u2192 right)",
+        "legend_labels": [
+          "significant (BH)",
+          "not significant"
+        ],
+        "xticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ],
+        "yticklabels": [
+          "English",
+          "factual Q&A",
+          "creative writing",
+          "coding",
+          "advice / how-to",
+          "chitchat",
+          "translation",
+          "math",
+          "summarization",
+          "harmful request",
+          "roleplay",
+          "NSFW",
+          "other topic",
+          "refusal-adjacent",
+          "answer is refusal",
+          "code answers",
+          "list answers",
+          "prose answers",
+          "depth 2",
+          "depth 3\u20134",
+          "depth \u22655",
+          "WildChat"
+        ]
+      },
+      {
+        "title_left": "history-only (prefix) arm \u2014 dense space",
+        "xlabel": "category \u0394 (harder \u2192 right)",
+        "xticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15"
+        ]
+      },
+      {
+        "title_left": "full-context arm \u2014 SAE space",
+        "xlabel": "category \u0394 (harder \u2192 right)",
+        "xticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ],
+        "yticklabels": [
+          "English",
+          "factual Q&A",
+          "creative writing",
+          "coding",
+          "advice / how-to",
+          "chitchat",
+          "translation",
+          "math",
+          "summarization",
+          "harmful request",
+          "roleplay",
+          "NSFW",
+          "other topic",
+          "refusal-adjacent",
+          "answer is refusal",
+          "code answers",
+          "list answers",
+          "prose answers",
+          "depth 2",
+          "depth 3\u20134",
+          "depth \u22655",
+          "WildChat"
+        ]
+      },
+      {
+        "title_left": "full-context arm \u2014 dense space",
+        "xlabel": "category \u0394 (harder \u2192 right)",
+        "xticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      },
+      {
+        "title_left": "bare-query arm \u2014 SAE space",
+        "xlabel": "category \u0394 (harder \u2192 right)",
+        "xticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ],
+        "yticklabels": [
+          "English",
+          "factual Q&A",
+          "creative writing",
+          "coding",
+          "advice / how-to",
+          "chitchat",
+          "translation",
+          "math",
+          "summarization",
+          "harmful request",
+          "roleplay",
+          "NSFW",
+          "other topic",
+          "refusal-adjacent",
+          "answer is refusal",
+          "code answers",
+          "list answers",
+          "prose answers",
+          "depth 2",
+          "depth 3\u20134",
+          "depth \u22655",
+          "WildChat"
+        ]
+      },
+      {
+        "title_left": "bare-query arm \u2014 dense space",
+        "xlabel": "category \u0394 (harder \u2192 right)",
+        "xticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      }
+    ],
+    "series": [
+      "significant (BH)",
+      "not significant"
+    ]
+  },
+  "data_path": "eval_results/issue_1946/sae_space/taxonomy.json"
+}

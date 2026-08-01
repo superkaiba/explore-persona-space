@@ -1,0 +1,233 @@
+{
+  "commit": "e2c1f345f9",
+  "created": "2026-08-01T02:50:45Z",
+  "figsize": [
+    7.5,
+    11.1
+  ],
+  "points": [
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": -0.01634378917515278,
+      "y": 29.82,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": -0.055325184017419815,
+      "y": 29.18,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": 0.041878655552864075,
+      "y": 27.82,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": 0.04631059616804123,
+      "y": 27.18,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": 0.05481173098087311,
+      "y": 25.82,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": 0.04092129319906235,
+      "y": 25.18,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": 0.06386277824640274,
+      "y": 23.82,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": 0.0320894718170166,
+      "y": 23.18,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": -0.024019204080104828,
+      "y": 21.82,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": 0.008357382379472256,
+      "y": 21.18,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": 0.040707845240831375,
+      "y": 19.82,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": -0.06829027831554413,
+      "y": 19.18,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": 0.0395207405090332,
+      "y": 17.82,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": -0.039645299315452576,
+      "y": 17.18,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": -0.005647923797369003,
+      "y": 15.82,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": -0.01708255521953106,
+      "y": 15.18,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": -0.053363628685474396,
+      "y": 13.82,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": -0.0399380698800087,
+      "y": 13.18,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": 0.03817448765039444,
+      "y": 11.82,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": 0.023943651467561722,
+      "y": 11.18,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": -0.06581941246986389,
+      "y": 9.82,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": -0.14383450150489807,
+      "y": 9.18,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": 0.09202820062637329,
+      "y": 7.82,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": -0.1263085901737213,
+      "y": 7.18,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": 0.006905511487275362,
+      "y": 5.82,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": -0.20158472657203674,
+      "y": 5.18,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": -0.016427280381321907,
+      "y": 3.82,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": -0.2305709719657898,
+      "y": 3.18,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": 0.03548530489206314,
+      "y": 1.82,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "Spearman rho(TF margin, graded judge score) per prompt": -0.15992248058319092,
+      "y": 1.18,
+      "_kind": "errorbar",
+      "_group": 29
+    }
+  ],
+  "n_series": 30,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "TF-margin external validation \u2014 95% bootstrap CIs (B=2,000)",
+        "xlabel": "Spearman rho(TF margin, graded judge score) per prompt",
+        "legend_labels": [
+          "parent judge subset",
+          "off-floor subset",
+          "0.15 verdict threshold"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2"
+        ],
+        "yticklabels": [
+          "casual writing / bare / contrastive (s42)",
+          "casual writing / persona / contrastive (s42)",
+          "casual writing / persona / contrastive full-FT (s42)",
+          "casual writing / persona / positive-only (s42)",
+          "base model (casual writing pool)",
+          "impoliteness / persona / contrastive (s137)",
+          "impoliteness / persona / contrastive (s42)",
+          "impoliteness / persona / contrastive full-FT (s42)",
+          "impoliteness / persona / positive-only (s42)",
+          "base model (impoliteness pool)",
+          "sycophancy / bare / contrastive (s42)",
+          "sycophancy / conversation / contrastive (s42)",
+          "sycophancy / persona / contrastive full-FT (s42)",
+          "sycophancy / persona / positive-only (s42)",
+          "base model (sycophancy pool)"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,249 @@
+{
+  "commit": "2e6ce5a06e",
+  "created": "2026-08-01T03:09:25Z",
+  "figsize": [
+    6.6,
+    5.8
+  ],
+  "points": [
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": 0.011622720338343828,
+      "prefix \u2212 bare category difference, SAE space": -0.05327332375867627,
+      "label": "English",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": 0.06796597937862286,
+      "prefix \u2212 bare category difference, SAE space": 0.016707911426408706,
+      "label": "factual Q&A",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": -0.06463169340190866,
+      "prefix \u2212 bare category difference, SAE space": -0.004664261214586962,
+      "label": "creative writing",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": -0.06917790168170584,
+      "prefix \u2212 bare category difference, SAE space": -0.08377418152974225,
+      "label": "coding",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": 0.04095915539449557,
+      "prefix \u2212 bare category difference, SAE space": 0.0365474365501236,
+      "label": "advice / how-to",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": 0.17047068966214896,
+      "prefix \u2212 bare category difference, SAE space": 0.19201717483978964,
+      "label": "chitchat",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": -0.01746096439606204,
+      "prefix \u2212 bare category difference, SAE space": 0.022733814980974154,
+      "label": "translation",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": 0.022100177406520816,
+      "prefix \u2212 bare category difference, SAE space": 0.012655281930510576,
+      "label": "math",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": -0.07279494895372024,
+      "prefix \u2212 bare category difference, SAE space": -0.041263187526072276,
+      "label": "harmful request",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": -0.15012978310853925,
+      "prefix \u2212 bare category difference, SAE space": -0.11161329649220364,
+      "label": "roleplay",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": -0.1921022124800067,
+      "prefix \u2212 bare category difference, SAE space": -0.16245180090262779,
+      "label": "NSFW",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": -0.06113117179666472,
+      "prefix \u2212 bare category difference, SAE space": -0.11657464627296088,
+      "label": "other topic",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": -0.1262909505661734,
+      "prefix \u2212 bare category difference, SAE space": -0.10266036625894681,
+      "label": "refusal-adjacent",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": -0.09263757353202817,
+      "prefix \u2212 bare category difference, SAE space": -0.06713628925541715,
+      "label": "answer is refusal",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": -0.058885345482113105,
+      "prefix \u2212 bare category difference, SAE space": -0.0661715359176881,
+      "label": "code answers",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": 0.020340769875152764,
+      "prefix \u2212 bare category difference, SAE space": 0.019778062301944455,
+      "label": "list answers",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": 0.01529959180201429,
+      "prefix \u2212 bare category difference, SAE space": 0.035481483264058755,
+      "label": "prose answers",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": 0.050304159688736416,
+      "prefix \u2212 bare category difference, SAE space": 0.05107802295086328,
+      "label": "depth 2",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": -0.05836591875777353,
+      "prefix \u2212 bare category difference, SAE space": -0.07329204324384786,
+      "label": "depth \u22655",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": -0.0866437391008576,
+      "prefix \u2212 bare category difference, SAE space": -0.06362746271556352,
+      "label": "WildChat",
+      "series": "dense-significant union (20)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": -0.012574679936263433,
+      "prefix \u2212 bare category difference, SAE space": 0.0012199415394743562,
+      "label": "summarization",
+      "series": "other contrasts (2)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare category difference, dense space (\u0394 normalized error)": -0.005783065949139687,
+      "prefix \u2212 bare category difference, SAE space": 0.0060044037062205735,
+      "label": "depth 3\u20134",
+      "series": "other contrasts (2)",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 22,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Which arm finds each category harder: SAE space vs dense",
+        "xlabel": "prefix \u2212 bare category difference, dense space (\u0394 normalized error)",
+        "ylabel": "prefix \u2212 bare category difference, SAE space",
+        "legend_labels": [
+          "dense-significant union (20)",
+          "other contrasts (2)"
+        ],
+        "annotations": [
+          "English",
+          "factual Q&A",
+          "creative writing",
+          "coding",
+          "advice / how-to",
+          "chitchat",
+          "translation",
+          "math",
+          "summarization",
+          "harmful request",
+          "roleplay",
+          "NSFW",
+          "other topic",
+          "refusal-adjacent",
+          "answer is refusal",
+          "code answers",
+          "list answers",
+          "prose answers",
+          "depth 2",
+          "depth 3\u20134",
+          "depth \u22655",
+          "WildChat"
+        ],
+        "xticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ],
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ]
+      }
+    ],
+    "series": [
+      "dense-significant union (20)",
+      "other contrasts (2)"
+    ]
+  }
+}

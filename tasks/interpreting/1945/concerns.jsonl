@@ -1,0 +1,1 @@
+{"ts": "2026-08-01T04:07:12Z", "event": "raised", "concern_id": "hub-verify-waiver-missing-strata", "severity": "BLOCKER", "summary": "no-flags workflow_lint FAILs on issue1945_strata_breakdown.py:99 - bare list_repo_tree needs HUB_VERIFY_RETRY_EXEMPT waiver (or route via hub.list_hf_files_under_path)", "raised_by": "code-reviewer", "raised_at_round": 2}
