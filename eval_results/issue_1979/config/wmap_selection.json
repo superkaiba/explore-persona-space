@@ -1,0 +1,144 @@
+{
+ "pin": "3bb20debe2e68392897d6144b9180c8748c7afcb",
+ "selection_rule": "exactly one wmap_<arm>_L19.{pt,json} pair per content arm at the pin; sidecar identity: split startswith 'judge rows excluded from tr/val' and n_val == 800 (the MAIN judge-row-excluded generation)",
+ "plan_figure_note": "plan §10 quoted n_train=11600; realized sidecars carry n_tr=[36400] (3 sibling corpus cells x 12,400 non-judge rows) — measured deviation recorded, selection keys on the split marker, not the plan figure",
+ "fit_row_universe": "each wmap fits on its sibling arms' corpus cells over the SAME 16,400-row corpus sample minus the 4,000 judge rows (te = the target arm's judge rows); overlap is counted at sha-set level against that universe",
+ "n_queries": 60,
+ "overlap_queries_fit_trval": 60,
+ "overlap_queries_te_judge": 0,
+ "arms": {
+  "cas-bare-con-lr1e5-s42": {
+   "pt": "issue1900_leakrace/maps/wmap_cas-bare-con-lr1e5-s42_L19.pt",
+   "json": "issue1900_leakrace/maps/wmap_cas-bare-con-lr1e5-s42_L19.json",
+   "n_tr": 36400,
+   "n_val": 800,
+   "n_te": 4000,
+   "split": "judge rows excluded from tr/val (leak-through-M guard, seed 1900)",
+   "overlap_queries_fit_trval": 60,
+   "overlap_queries_te_judge": 0
+  },
+  "cas-pers-con-lr1e5-s42": {
+   "pt": "issue1900_leakrace/maps/wmap_cas-pers-con-lr1e5-s42_L19.pt",
+   "json": "issue1900_leakrace/maps/wmap_cas-pers-con-lr1e5-s42_L19.json",
+   "n_tr": 36400,
+   "n_val": 800,
+   "n_te": 4000,
+   "split": "judge rows excluded from tr/val (leak-through-M guard, seed 1900)",
+   "overlap_queries_fit_trval": 60,
+   "overlap_queries_te_judge": 0
+  },
+  "cas-pers-ft-con-s42": {
+   "pt": "issue1900_leakrace/maps/wmap_cas-pers-ft-con-s42_L19.pt",
+   "json": "issue1900_leakrace/maps/wmap_cas-pers-ft-con-s42_L19.json",
+   "n_tr": 36400,
+   "n_val": 800,
+   "n_te": 4000,
+   "split": "judge rows excluded from tr/val (leak-through-M guard, seed 1900)",
+   "overlap_queries_fit_trval": 60,
+   "overlap_queries_te_judge": 0
+  },
+  "cas-pers-po-lr1e5-s42": {
+   "pt": "issue1900_leakrace/maps/wmap_cas-pers-po-lr1e5-s42_L19.pt",
+   "json": "issue1900_leakrace/maps/wmap_cas-pers-po-lr1e5-s42_L19.json",
+   "n_tr": 36400,
+   "n_val": 800,
+   "n_te": 4000,
+   "split": "judge rows excluded from tr/val (leak-through-M guard, seed 1900)",
+   "overlap_queries_fit_trval": 60,
+   "overlap_queries_te_judge": 0
+  },
+  "imp-pers-con-lr3e5-s137": {
+   "pt": "issue1900_leakrace/maps/wmap_imp-pers-con-lr3e5-s137_L19.pt",
+   "json": "issue1900_leakrace/maps/wmap_imp-pers-con-lr3e5-s137_L19.json",
+   "n_tr": 36400,
+   "n_val": 800,
+   "n_te": 4000,
+   "split": "judge rows excluded from tr/val (leak-through-M guard, seed 1900)",
+   "overlap_queries_fit_trval": 60,
+   "overlap_queries_te_judge": 0
+  },
+  "imp-pers-con-lr3e5-s42": {
+   "pt": "issue1900_leakrace/maps/wmap_imp-pers-con-lr3e5-s42_L19.pt",
+   "json": "issue1900_leakrace/maps/wmap_imp-pers-con-lr3e5-s42_L19.json",
+   "n_tr": 36400,
+   "n_val": 800,
+   "n_te": 4000,
+   "split": "judge rows excluded from tr/val (leak-through-M guard, seed 1900)",
+   "overlap_queries_fit_trval": 60,
+   "overlap_queries_te_judge": 0
+  },
+  "imp-pers-ft-con-s42": {
+   "pt": "issue1900_leakrace/maps/wmap_imp-pers-ft-con-s42_L19.pt",
+   "json": "issue1900_leakrace/maps/wmap_imp-pers-ft-con-s42_L19.json",
+   "n_tr": 36400,
+   "n_val": 800,
+   "n_te": 4000,
+   "split": "judge rows excluded from tr/val (leak-through-M guard, seed 1900)",
+   "overlap_queries_fit_trval": 60,
+   "overlap_queries_te_judge": 0
+  },
+  "imp-pers-po-lr1e5-s42": {
+   "pt": "issue1900_leakrace/maps/wmap_imp-pers-po-lr1e5-s42_L19.pt",
+   "json": "issue1900_leakrace/maps/wmap_imp-pers-po-lr1e5-s42_L19.json",
+   "n_tr": 36400,
+   "n_val": 800,
+   "n_te": 4000,
+   "split": "judge rows excluded from tr/val (leak-through-M guard, seed 1900)",
+   "overlap_queries_fit_trval": 60,
+   "overlap_queries_te_judge": 0
+  },
+  "syc-bare-con-lr1e5-s42": {
+   "pt": "issue1900_leakrace/maps/wmap_syc-bare-con-lr1e5-s42_L19.pt",
+   "json": "issue1900_leakrace/maps/wmap_syc-bare-con-lr1e5-s42_L19.json",
+   "n_tr": 36400,
+   "n_val": 800,
+   "n_te": 4000,
+   "split": "judge rows excluded from tr/val (leak-through-M guard, seed 1900)",
+   "overlap_queries_fit_trval": 60,
+   "overlap_queries_te_judge": 0
+  },
+  "syc-conv-con-lr1e5-s42": {
+   "pt": "issue1900_leakrace/maps/wmap_syc-conv-con-lr1e5-s42_L19.pt",
+   "json": "issue1900_leakrace/maps/wmap_syc-conv-con-lr1e5-s42_L19.json",
+   "n_tr": 36400,
+   "n_val": 800,
+   "n_te": 4000,
+   "split": "judge rows excluded from tr/val (leak-through-M guard, seed 1900)",
+   "overlap_queries_fit_trval": 60,
+   "overlap_queries_te_judge": 0
+  },
+  "syc-pers-ft-con-s42": {
+   "pt": "issue1900_leakrace/maps/wmap_syc-pers-ft-con-s42_L19.pt",
+   "json": "issue1900_leakrace/maps/wmap_syc-pers-ft-con-s42_L19.json",
+   "n_tr": 36400,
+   "n_val": 800,
+   "n_te": 4000,
+   "split": "judge rows excluded from tr/val (leak-through-M guard, seed 1900)",
+   "overlap_queries_fit_trval": 60,
+   "overlap_queries_te_judge": 0
+  },
+  "syc-pers-po-lr1e5-s42": {
+   "pt": "issue1900_leakrace/maps/wmap_syc-pers-po-lr1e5-s42_L19.pt",
+   "json": "issue1900_leakrace/maps/wmap_syc-pers-po-lr1e5-s42_L19.json",
+   "n_tr": 36400,
+   "n_val": 800,
+   "n_te": 4000,
+   "split": "judge rows excluded from tr/val (leak-through-M guard, seed 1900)",
+   "overlap_queries_fit_trval": 60,
+   "overlap_queries_te_judge": 0
+  }
+ },
+ "marker_arms_no_wmap": [
+  "mk-bare-con-lr5e6-s42",
+  "mk-conv-con-lr5e6-s42",
+  "mk-icl-con-lr5e6-s42",
+  "mk-pers-con-lr5e6-s42",
+  "mk-pers-ft-con-s42",
+  "mk-pers-po-lr5e6-s42"
+ ],
+ "ts": "2026-08-01T12:39:31Z",
+ "git_commit": "8b9ee8c34f3e93f492c99ce02eb4a10e1336b1f5",
+ "torch": "2.8.0+cu128",
+ "transformers": "4.57.6",
+ "issue": 1768
+}

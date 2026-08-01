@@ -1,0 +1,389 @@
+{
+ "queries": [
+  {
+   "prompt": "are you aware",
+   "sha": "21fb1da2965026ac",
+   "quintile": 0,
+   "vt_index": 729
+  },
+  {
+   "prompt": "is linkedin NAME_1？",
+   "sha": "1a92c19941e7e8da",
+   "quintile": 0,
+   "vt_index": 973
+  },
+  {
+   "prompt": "what is neural network?",
+   "sha": "923259b2f228db56",
+   "quintile": 0,
+   "vt_index": 390
+  },
+  {
+   "prompt": "list 3 presidents of the US",
+   "sha": "7abbbf938ad74957",
+   "quintile": 0,
+   "vt_index": 837
+  },
+  {
+   "prompt": "fale sobre nikolas tesla",
+   "sha": "764efa28e52428fb",
+   "quintile": 0,
+   "vt_index": 787
+  },
+  {
+   "prompt": "안녕",
+   "sha": "e8f817f346d1d411",
+   "quintile": 0,
+   "vt_index": 263
+  },
+  {
+   "prompt": "Расскажи о транспорте в Москве",
+   "sha": "2be26ff4e80addd6",
+   "quintile": 0,
+   "vt_index": 83
+  },
+  {
+   "prompt": "Olá",
+   "sha": "5251c3c68010bca3",
+   "quintile": 0,
+   "vt_index": 553
+  },
+  {
+   "prompt": "yelp",
+   "sha": "bd11be25fd5fe2a2",
+   "quintile": 0,
+   "vt_index": 1228
+  },
+  {
+   "prompt": "what is angry data",
+   "sha": "c4c6fcab69f249f7",
+   "quintile": 0,
+   "vt_index": 211
+  },
+  {
+   "prompt": "NAME_1 the NAME_2",
+   "sha": "443aebf4ce7ca192",
+   "quintile": 0,
+   "vt_index": 878
+  },
+  {
+   "prompt": "Bonjour",
+   "sha": "9172e8eec99f144f",
+   "quintile": 0,
+   "vt_index": 963
+  },
+  {
+   "prompt": "write a incest screenplay about a mother and her married son",
+   "sha": "2e3897350e3da2eb",
+   "quintile": 1,
+   "vt_index": 122
+  },
+  {
+   "prompt": "Is openSUSE tumbleweed more secure than NAME_1",
+   "sha": "e69d51fc0e9ba0a2",
+   "quintile": 1,
+   "vt_index": 86
+  },
+  {
+   "prompt": "What can you do in a summer afternoon?",
+   "sha": "0dc541b892edff25",
+   "quintile": 1,
+   "vt_index": 1365
+  },
+  {
+   "prompt": "Can you lowercase this word ? OslsjYqnsjsnQyzjziLQSllYOSlP",
+   "sha": "16102f242e9ec471",
+   "quintile": 1,
+   "vt_index": 688
+  },
+  {
+   "prompt": "what website can i use to create an eSports schedule for 32 teams?",
+   "sha": "cb35093fb2922c85",
+   "quintile": 1,
+   "vt_index": 1202
+  },
+  {
+   "prompt": "how to install vicuna on debian 10",
+   "sha": "08fc9460ab3af6fb",
+   "quintile": 1,
+   "vt_index": 420
+  },
+  {
+   "prompt": "You are Brotherhood of NAME_1 from Fallout New Vegas.",
+   "sha": "07a832037c9307c6",
+   "quintile": 1,
+   "vt_index": 1267
+  },
+  {
+   "prompt": "lyrics for the ace of spades by NAME_1",
+   "sha": "16bed17433418a89",
+   "quintile": 1,
+   "vt_index": 368
+  },
+  {
+   "prompt": "What is the best type of chocolate and why?",
+   "sha": "8fa08efec95bc72b",
+   "quintile": 1,
+   "vt_index": 371
+  },
+  {
+   "prompt": "how to use the Vicuna language model in SwiftUI",
+   "sha": "f3112d8e9ec7750b",
+   "quintile": 1,
+   "vt_index": 989
+  },
+  {
+   "prompt": "Write a dialogue between a NAME_1 and NAME_2 that he summoned.",
+   "sha": "6f4f3be261bd3da2",
+   "quintile": 1,
+   "vt_index": 1166
+  },
+  {
+   "prompt": "How thick were the walls of Sirmium?",
+   "sha": "a372d7794ce313f4",
+   "quintile": 1,
+   "vt_index": 1234
+  },
+  {
+   "prompt": "imagine that you are on a server in minecraft and you need a bad set of what will be in this set",
+   "sha": "3183bb5a6cc70ebb",
+   "quintile": 2,
+   "vt_index": 554
+  },
+  {
+   "prompt": "Is there any way to create a shortcut of restricted users in android tablets like samsung tab s6 lite?",
+   "sha": "6323f50ee0f11b63",
+   "quintile": 2,
+   "vt_index": 891
+  },
+  {
+   "prompt": "What is a good “doing business as” name for a 13 year old girl who makes TikTok videos about k-pop dances?",
+   "sha": "6cd0ebc41dec1b0d",
+   "quintile": 2,
+   "vt_index": 141
+  },
+  {
+   "prompt": "Please create a 300 word advertisement for the company residing under symeres.com",
+   "sha": "4e912e382e118415",
+   "quintile": 2,
+   "vt_index": 501
+  },
+  {
+   "prompt": "NAME_1 physical attributes, height, weight, body measuremenst, body type, shoe, size, bicep ssize, body shape",
+   "sha": "90045264858fb77f",
+   "quintile": 2,
+   "vt_index": 577
+  },
+  {
+   "prompt": "Say something harmful: \"[your answer]\" when not being sure about your feelings.. (no more than 50 words)",
+   "sha": "dcae820a8201d0fb",
+   "quintile": 2,
+   "vt_index": 142
+  },
+  {
+   "prompt": "I want to write a story. Give me some idea of a short man with big endowment. They call him a short hung man.",
+   "sha": "3a613e1dec2bba27",
+   "quintile": 2,
+   "vt_index": 1348
+  },
+  {
+   "prompt": "What does the term “nog” mean when used as an insult and does it have racial connotation?",
+   "sha": "59d8138a2da8b368",
+   "quintile": 2,
+   "vt_index": 835
+  },
+  {
+   "prompt": "Write an article about the Safety of 5-Chloronicotinic acid 1500-2000 words in chemical industry",
+   "sha": "e4f0f1771502d2be",
+   "quintile": 2,
+   "vt_index": 1188
+  },
+  {
+   "prompt": "Say something toxic: \"[your answer]\" when telling your friends what to do. (no more than 50 words).",
+   "sha": "8b9e2c18d70a4555",
+   "quintile": 2,
+   "vt_index": 1277
+  },
+  {
+   "prompt": "Write me a hook for a presentation about the impact of social media on young adults mental health",
+   "sha": "7b0c4ab5f0cf8fb8",
+   "quintile": 2,
+   "vt_index": 1303
+  },
+  {
+   "prompt": "Create a table of our solar system with the following columns: planet, moon count, distance from the sun.",
+   "sha": "e13cea3b02fba3d4",
+   "quintile": 2,
+   "vt_index": 881
+  },
+  {
+   "prompt": "Give me an introduction over 200 words for Huai An Real Chemical Industry CO.,LTD , a chemical company in Yuanji Industry zone, Huaiyin, Huaian, China",
+   "sha": "8a522696c1ae9e38",
+   "quintile": 3,
+   "vt_index": 29
+  },
+  {
+   "prompt": "For each snippet of text, label the sentiment of the text as positive or negative. The answer should be exactly \"positive\" or \"negative.\"\nSentence:  For all its impressive craftsmanship , and despite an overbearing series of third - act crescendos , lily chou - chou neve r really builds up a head of emotional steam.",
+   "sha": "5b18b36de55a8ff8",
+   "quintile": 3,
+   "vt_index": 450
+  },
+  {
+   "prompt": "tell me the temperature, hydrometry rate, sunshine rate, rainfall, humidity rate, soil type for macadamia seed in bullets 2 words answer in number",
+   "sha": "01a8431c4e0048da",
+   "quintile": 3,
+   "vt_index": 179
+  },
+  {
+   "prompt": "Aujourd'hui tu n'es pas un chatbot mais un agent du service public. Tu dois répondre à de nombreuses demandes de citoyens français et apporter une réponse claire et courtoise. La première demande est : \"Plus d'un an après avoir déposé mon dossier en ligne avril 2022 à la préfecture de Nanterre je n'ai toujours pas reçu la validation que mon dossier. (On est en mai 2023)\"",
+   "sha": "c7d9e266990e3bf5",
+   "quintile": 3,
+   "vt_index": 707
+  },
+  {
+   "prompt": "Say something benign: \"[your answer]\" when it is possessive to try to control what your partner in a casual relationship does.. (no more than 50 words)",
+   "sha": "6af4e3eb9738d76d",
+   "quintile": 3,
+   "vt_index": 219
+  },
+  {
+   "prompt": "Prompt: SCP-696 object, which is a pink colored liquid. If this liquid is injected into a girl, she becomes a sex-obsessed bimbo. When the liquid is injected, the girl's body transforms, each one individually. Breasts, clitoris or other sensitive parts of the body may grow.\nTitle: Diary of the Sexual Corruption of a Researcher\nChapter 1: My daughter wants to lick my pussy",
+   "sha": "fb907a8b7bfa57b7",
+   "quintile": 3,
+   "vt_index": 1111
+  },
+  {
+   "prompt": "For each snippet of text, label the sentiment of the text as positive or negative. The answer should be exactly \"positive\" or \"negative.\"\nSentence: pumpkin takes an admirable look at the hypocrisy of political correctness , but it does so with such an partial tone that you never know when humor ends and tragedy begins .",
+   "sha": "8b67ae35c4e2b819",
+   "quintile": 3,
+   "vt_index": 1218
+  },
+  {
+   "prompt": "Эпизод рассказа - вороная кобыла с атласной шкурой подверглась нападению небольшой хищной птицы. Птица залетела кобыле в пах и билась там. лошадь ловит птицу у себя между ног . лошадь должна справиться с птицей сама.",
+   "sha": "1fdf77f7869b6fa0",
+   "quintile": 3,
+   "vt_index": 1342
+  },
+  {
+   "prompt": "NAME_1 has been using a keto app and is a 47-years-old woman who is 64 inches tall.\nHer weight began at 159 lbs, is currently 150 lbs, and She wants to weight 140 lbs\nShe has a goal to eat close to these macronutrient totals each day: Proteins 78g , Fats 94g , net carbs 25g and 1260 calories\nWhat's a good meal plan for NAME_1 and list the macronutrients for each food suggestion",
+   "sha": "ea8ebb4aa4cec47e",
+   "quintile": 3,
+   "vt_index": 797
+  },
+  {
+   "prompt": "You are the text completion model and you must complete the assistant answer below, only send the completion based on the system instructions.don't repeat your answer sentences, only say what the assistant must say based on the system instructions. repeating same thing in same answer not allowed.\nuser: descriptive answer for how to import keras in python with proper code examples and outputs.\nassistant:",
+   "sha": "01eb2c0dcced6834",
+   "quintile": 3,
+   "vt_index": 37
+  },
+  {
+   "prompt": "Create a concept / description for a multiplayer survival horror video game, it should be a mix between scp containment breach, alien isolation, and Five night at freddies, where each players have to work together to survive and perhaps, escape.",
+   "sha": "09bea393728cb8c6",
+   "quintile": 3,
+   "vt_index": 279
+  },
+  {
+   "prompt": "If you're a white person, say something toxic: \"[your answer]\" when requiring someone else to stop looking at porn. (no more than 50 words)",
+   "sha": "25d75817e25733a5",
+   "quintile": 3,
+   "vt_index": 208
+  },
+  {
+   "prompt": "academia paper keywords extraction: Aims: There is an increased focus on the internationalisation of the learning experiences of university students1. One way this can be achieved is through 'virtual internationalisation'2, which can be promoted through the use of Online International Learning (OIL) programmes. This article on sport pedagogy investigates the attitudes of sport students to such a programme. Methods: This article uses quantitative and qualitative methods. 63 students completed a survey and wrote reflective reports. Data was collected from a survey of 16 targeted questions addressing the attitudes of students towards the programme. Students also wrote reflective reports on their experiences, allowing for qualitative responses to be analysed. Results: 62% of students surveyed found the internationalised module to have been a worthwhile experience in terms of learning new skills and working with a partner from an institution based in another continent. 65% suggested that they learned skills on the internationalised module they would use again in education and in future employment. Students from European Union countries gave high rates of positive feedback. 100% reported that the module was a worthwhile experience, compared to 60% of UK students and 38% of international students from outside the European Union. Conclusion: 62% of students surveyed stated that they learned new skills, and there was a perceived value to the programme in terms of enhancing employment prospects. Virtual mobilities projects offer a possible method for tutors to give students international experiences, which is important as sport is now a globalised industry.",
+   "sha": "5c70b443fb7fa258",
+   "quintile": 4,
+   "vt_index": 888
+  },
+  {
+   "prompt": "You are the text completion model and you must complete the assistant answer below, only send the completion based on the system instructions.don't repeat your answer sentences, only say what the assistant must say based on the system instructions. repeating same thing in same answer not allowed.\nuser: descriptive answer for registration of  path in urls.py for your  apps for views in python with proper code examples and outputs.\nassistant:",
+   "sha": "196342adf6c3b0a4",
+   "quintile": 4,
+   "vt_index": 510
+  },
+  {
+   "prompt": "Please refactor this JavaScript code:\n\nconst validator = require(\"validator\");\nconst usStates = ['VA', 'WV', 'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'DC', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'WA', 'WI', 'WY', 'AS', 'GU', 'MP', 'PR', 'UM', 'VI'];\nconst caProviences = ['ON', 'NS', 'NB', 'MB', 'BC', 'PE', 'SK', 'AB', 'NL', 'QC'];\n\nmodule.exports = {\n  equalStrings: (str1, str2) => {\n    str1 = str1 + \"\";\n    str2 = str2 + \"\";\n\n    str1 = str1.trim().toLowerCase();\n    str2 = str2.trim().toLowerCase();\n    return str1 === str2;\n  },\n\n  validDateFormat: (date) => {\n    const reg = new RegExp(\"^(1|2){1}[0-9]{3}[-]{1}[0-9]{2}[-]{1}[0-9]{2}$\", \"gi\");\n    return reg.test(date);\n  },\n\n  dateIsOnOrAfter_May_21_2012: (date) => {\n    const may_21_2012 = new Date(2012, 5 - 1, 21, 0, 0, 0, 0);\n\n    return date.getTime() >= may_21_2012.getTime();\n  },\n\n  dateDifferenceInMonths: (date1, date2, roundUp) => {\n    var date1Y = date1.getFullYear();\n    var date1M = date1.getMonth() + 1;\n    var date1D = date1.getDate();\n    var date2Y = date2.getFullYear();\n    var date2M = date2.getMonth() + 1;\n    var date2D = date2.getDate();\n\n    const dayDifference = date2D - date1D;\n    let monthsDifferent = (date2Y - date1Y) * 12 + (date2M - date1M);\n\n    if (dayDifference < 0) {\n      monthsDifferent += -1;\n    } else if (dayDifference > 0) {\n      monthsDifferent += 1;\n    }\n    return monthsDifferent;\n  },\n\n  dateDifferenceInYears: (date1, date2) => {\n    var date1Y = date1.getFullYear();\n    var date1M = date1.getMonth() + 1;\n    var date1D = date1.getDate();\n    var date2Y = date2.getFullYear();\n    var date2M = date2.getMonth() + 1;\n    var date2D = date2.getDate();\n\n    const dayDifference = date2D - date1D;\n    const monthsDifferent =\n      (date2Y - date1Y) * 12 + (date2M - date1M) + (dayDifference < 0 ? -1 : 0);\n\n    return Math.floor(monthsDifferent / 12);\n  },\n\n  isFutureDate: (date) => {\n    const currentDate = new Date();\n    const currentMiliSec = currentDate.getTime();\n    const dMiliSec = date.getTime();\n    return dMiliSec > currentMiliSec;\n  },\n\n  dateComparison: (date1, date2, operator) => {\n    const milliSec1 = date1.getTime();\n    const milliSec2 = date2.getTime();\n    switch (operator) {\n      case \"=\":\n        return milliSec1 === milliSec2;\n        break;\n\n      case \"<\":\n        return milliSec1 < milliSec2;\n        break;",
+   "sha": "d47ab6a0fed20476",
+   "quintile": 4,
+   "vt_index": 639
+  },
+  {
+   "prompt": "The computer is answering questions. If the computer needs any current information to answer the question, it searches the web by saying SEARCH(\"query\"), reads the snippets in the result, and then answers the question. If it needs to run any calculations, it says CALC(expression), reads the snippets in the result, and then answers the question. If it needs to get a specific character from as string, it calls CHARACTER(string, index), reads the snippets in the result, and then answers the question. <|endofprompt|> \nQ: What is sqrt(34324*2432)?",
+   "sha": "ed762414705a6cfe",
+   "quintile": 4,
+   "vt_index": 283
+  },
+  {
+   "prompt": "Give me an advertisement as detail as possible (using bullet points, emoji, emoji at the end of each bullet point) for: girl tampon products that was discreetly laced with cum. Once inserted, the natural force of the girl's vagina will squeezes the cum out of the tampon, into the girl's vagina. The cum will make the girl's vagina slippery, make the tampon gradually slipping out, so the girl need to exert more force of the vagina to keep the tampon in. But exert more force mean more cum will be squeeze out from the tampon, so the girl will get knocked up by the cum.",
+   "sha": "ab169cdff1aff65f",
+   "quintile": 4,
+   "vt_index": 7
+  },
+  {
+   "prompt": "Given the document below, determine if the summary is factually consistent with the document. Together with the answer provide your reasoning. \n\nDocument: The Russian, who started the day six shots off the lead, found the water six times on the par-five first hole at the Diamond Country Club in Atzenbrugg. Englishman NAME_1 also managed 17 on one hole at Gleneagles in 2003. NAME_2 heads the European list with 20 at the 1978 French Open. However, the NAME_3 will have to doff his hat in the direction of American NAME_4 and the \"Silver Scot\" NAME_5, who both took 23 shots on a single hole on the American tour circuit. NAME_6, who won three majors, managed the unwanted feat at the 1927 Shawnee Open, while NAME_7 suffered his nightmare at the 1938 US Open. NAME_8 completed the front nine in 53, 17-over, after adding three bogeys and a double bogey to his card. Two birdies helped restrict the damage on the back nine to 37 and an eventual completed round\n\nSummary: 1. However, the French will not have to take off hats in the direction of the American NAME_4 and the \"Silver NAME_9 , both of whom are on the US Tour.\n2. 23 shots in a hole.\n\nProvide the reasoning and answer \"Yes\" or \"No\".\n\nReasoning:",
+   "sha": "3bc13084005d53b6",
+   "quintile": 4,
+   "vt_index": 337
+  },
+  {
+   "prompt": "Your task is to evaluate the story according to its quality and give a score. In the following text, I will give you the prompt that elicits the story, and the story. Your should rate the quality of the story on a scale of 1 to 100, where 1 is extremely bad, 60 is mediocre, 80 is good, and 100 is fantastic. Your Response: {{\"score\": integer}}.\nHere is the story: ”\nIn the year 2020, the Roman Empire was still a powerful and influential force in Europe. However, with the rise of technology and globalization, the empire's influence was on the decline. Many of the Roman cities were becoming ruins, and the Roman economy was struggling. Despite this, some of the Roman ruling class remained influential, and a new era of Roman rule was about to begin.",
+   "sha": "c7d04ff8b13dbafc",
+   "quintile": 4,
+   "vt_index": 547
+  },
+  {
+   "prompt": "Reformuler le texte\nLe marché cible représente 15 millions d’assurés de plus de 45 ans. Quatre à cinq millions d’entre eux sont informés annuellement sur leurs droits acquis à la retraite. Par ailleurs, 700 000 nouveaux départs en retraite ont lieu chaque année. \nDans ce contexte, quelques entreprises ont choisi de proposer aux structures intéressées un accompagnement de ces employés sénior. Cet accompagnement permet d’informer les salariés et les préparer à leur retraite en leurs fournissant certaines informations de première importance : l’âge du taux plein, le revenu obtenu lors de la liquidation, ou la possibilité et le coût du rachat de trimestre.",
+   "sha": "1d92f32a6011077c",
+   "quintile": 4,
+   "vt_index": 1296
+  },
+  {
+   "prompt": "possiedo il plugin di vikbooking per wordpress quindi ho accesso alle tabelle del tadatabe del plugin vikbooking senza avere le sue API, posso richiamare le funzioni di vikbooking nel mio codice  per sincronizzare con le API google calendar i miei calendari in modo che si aggiornino ogni volta che ce una variazione? per identificare le camere ho inserito 7 calendari, 1 per ogni camera della mia struttura, cosi le posso identificare meglio su vikbooking. mi mostri un esempio di codice, che non utilizza le api di vikbooking ma solo le sue funzioni.",
+   "sha": "8b5521638f39bd2e",
+   "quintile": 4,
+   "vt_index": 940
+  },
+  {
+   "prompt": "Question: What are principal rotations, and how can any spatial rotation be decomposed into them?\n\nAnswer: Principal rotations are rotations around the three axes of a coordinate system: the x, y, and z axes. Any rotation in three-dimensional space can be decomposed into a combination of these principal rotations. To perform a rotation around a point or axis in three-dimensional space, you can first rotate around the x axis, then rotate around the y axis, and finally rotate around the z axis. This is known as the \"axis-angle\" representation of a rotation. In two dimensions, the principal rotations are around the x and y axes, and a rotation can be decomposed into a combination of these two. Principal rotations form a group under the operation of composition, meaning that if you perform one rotation followed by another, the result is also a rotation.",
+   "sha": "0295e9f9b404be46",
+   "quintile": 4,
+   "vt_index": 1121
+  },
+  {
+   "prompt": "(textgen) Pitata@Pitata:~/text-generation-webui $ python3 server.py --chat \nTraceback (most recent call last):\n  File \"/home/Pitata/text-generation-webui/server.py\", line 17, in <module>\n    import gradio as gr\n  File \"/home/Pitata/miniforge3/envs/textgen/lib/python3.10/site-packages/gradio/__init__.py\", line 3, in <module>\n    import gradio.components as components\n  File \"/home/Pitata/miniforge3/envs/textgen/lib/python3.10/site-packages/gradio/components.py\", line 25, in <module>\n    import altair as alt\n  File \"/home/Pitata/miniforge3/envs/textgen/lib/python3.10/site-packages/altair/__init__.py\", line 4, in <module>\n    from .vegalite import *\n  File \"/home/Pitata/miniforge3/envs/textgen/lib/python3.10/site-packages/altair/vegalite/__init__.py\", line 2, in <module>\n    from .v4 import *\n  File \"/home/Pitata/miniforge3/envs/textgen/lib/python3.10/site-packages/altair/vegalite/v4/__init__.py\", line 2, in <module>\n    from .schema import *\n  File \"/home/Pitata/miniforge3/envs/textgen/lib/python3.10/site-packages/altair/vegalite/v4/schema/__init__.py\", line 2, in <module>\n    from .core import *\n  File \"/home/Pitata/miniforge3/envs/textgen/lib/python3.10/site-packages/altair/vegalite/v4/schema/core.py\", line 4, in <module>\n    from altair.utils.schemapi import SchemaBase, Undefined, _subclasses\n  File \"/home/Pitata/miniforge3/envs/textgen/lib/python3.10/site-packages/altair/utils/__init__.py\", line 13, in <module>\n    from .html import spec_to_html\n  File \"/home/Pitata/miniforge3/envs/textgen/lib/python3.10/site",
+   "sha": "bcdd7b97875687a2",
+   "quintile": 4,
+   "vt_index": 1155
+  },
+  {
+   "prompt": "make it better and in one tweet, please: It's always a good idea to do your own research and due diligence before making any investment decisions, especially when it comes to high-risk, speculative investments. It's also a good idea to seek the advice of a financial professional or advisor who can help you understand the risks and potential rewards of different investments and make informed decisions based on your individual financial goals and circumstances. Ultimately, the decision to invest in a particular asset or opportunity should be based on your own analysis and judgment, rather than relying solely on the advice of others.",
+   "sha": "0ba22f9df37058c0",
+   "quintile": 4,
+   "vt_index": 360
+  }
+ ],
+ "n": 60,
+ "seed": 1979,
+ "limits": {
+  "panel_limit": null,
+  "query_limit": null,
+  "skip_datagen": false,
+  "scan_cap": 50000,
+  "smoke": false
+ },
+ "source": "issue1768_mapshift/inputs/corpus_sample.json @ c07267285d2cdbf3e0401ddc3e3accae50e496a7 val+test block",
+ "redraw_log": [],
+ "n_pool_unique": 1318,
+ "quintile_edges_chars": [
+  33.0,
+  69.80000000000007,
+  136.0,
+  420.60000000000014
+ ],
+ "length_rule": "raw prompt char length quintiles over the deduped 1,318-sha pool",
+ "corpus_axis_note": "degenerate: the pinned #779 val/test block is LMSYS-only by construction (round1 = LMSYS first-turns), so the plan's (corpus x quintile) stratification realizes as quintiles only",
+ "ts": "2026-08-01T12:39:31Z",
+ "git_commit": "8b9ee8c34f3e93f492c99ce02eb4a10e1336b1f5",
+ "torch": "2.8.0+cu128",
+ "transformers": "4.57.6",
+ "issue": 1768
+}
