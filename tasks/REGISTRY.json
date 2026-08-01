@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1974,
+  "highest_id": 1975,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7549,6 +7549,13 @@
       "path": "tasks/proposed/1974",
       "status": "proposed",
       "title": "daily-fix: pooling-convention row in mapping disclosure"
+    },
+    "1975": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1975",
+      "status": "proposed",
+      "title": "daily-fix: map fit-space parity assert (issue1739 natpv)"
     },
     "199": {
       "has_clean_result": true,
