@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1959,
+  "highest_id": 1960,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7437,6 +7437,13 @@
       "path": "tasks/archived/196",
       "status": "archived",
       "title": "Core question: interventions on persona space"
+    },
+    "1960": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1960",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan lattice parser \u2014 negated-existence atom"
     },
     "197": {
       "has_clean_result": false,
