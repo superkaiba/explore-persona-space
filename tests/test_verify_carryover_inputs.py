@@ -428,7 +428,9 @@ def test_skill_6a5_stanza_names_helper() -> None:
 
 def _rsync_findings(repo: Path, text: str, extras: list[str] | None = None, issue: int = 77):
     fs = vci.run_check(text, repo_root=repo, issue=issue, check_ref="origin/main")
-    return vci.apply_rsync_lane_downgrade(fs, cover_set=vci.rsync_cover_set(extras))
+    return vci.apply_rsync_lane_downgrade(
+        fs, cover_set=vci.rsync_cover_set(extras), extra_cover=vci.rsync_extra_cover(extras)
+    )
 
 
 def test_rsync_lane_downgrades_in_ref_eval_results(repo: Path, tmp_path: Path) -> None:
@@ -563,6 +565,106 @@ def test_rsync_lane_json_fields(repo: Path, tmp_path: Path) -> None:
     assert payload["lane"] == "rsync"
     assert payload["extra_sync_paths"] == ["eval_results/issue_12"]
     assert [(f["verdict"], f["reason"]) for f in payload["findings"]] == [("pass", "in-ref")]
+
+
+# ---------------------------------------------------------------------------
+# #1915 — exclude-pattern subtraction: include-tree membership is necessary
+# but NOT sufficient (build_rsync_command threads --exclude per
+# RSYNC_EXCLUDE_PATTERNS entry, matched at every depth), while the
+# --extra-sync-path rsync is exclude-free (build_extra_rsync_command).
+# ---------------------------------------------------------------------------
+
+
+def _classified(repo: Path, rel: str, issue: int = 77):
+    """Classify one concrete committed path directly (channel-A extraction
+    only emits eval_results|ood_eval_results|data prefixes, so tests/ and
+    scripts/ citations enter the ladder here)."""
+    return vci.classify({"path": rel}, repo_root=repo, issue=issue, check_ref="origin/main")
+
+
+def test_rsync_lane_downgrades_nested_excluded_dir(repo: Path) -> None:
+    """#1915: a committed tests/fixtures/eval_results/ path is inside the
+    ./tests include tree, but rsync's unanchored 'eval_results/' exclude
+    matches at every depth -> FAIL(rsync-lane-not-synced) naming the
+    pattern + the (exclude-free) --extra-sync-path remediation."""
+    rel = "tests/fixtures/eval_results/a.json"
+    _write(repo, rel)
+    _commit_push(repo, rel)
+    f = _classified(repo, rel)
+    assert (f.verdict, f.reason) == ("pass", "in-ref")
+    assert vci.rsync_excluded(rel) == "eval_results/"
+    fs = vci.apply_rsync_lane_downgrade(
+        [f], cover_set=vci.rsync_cover_set(None), extra_cover=vci.rsync_extra_cover(None)
+    )
+    assert [(x.verdict, x.reason) for x in fs] == [("fail", "rsync-lane-not-synced")]
+    assert "'eval_results/'" in fs[0].detail  # names the matching exclude pattern
+    assert "--extra-sync-path" in fs[0].detail  # named remediation
+    assert "no excludes" in fs[0].detail  # ...which structurally works
+
+
+def test_rsync_lane_nested_excluded_extra_sync_restores_pass(repo: Path) -> None:
+    """#1915: --extra-sync-path covering the nested-excluded path suppresses
+    the exclude check — build_extra_rsync_command applies no excludes, so
+    extra-covered paths genuinely stage."""
+    rel = "tests/fixtures/eval_results/a.json"
+    _write(repo, rel)
+    _commit_push(repo, rel)
+    f = _classified(repo, rel)
+    extras = ["tests/fixtures/eval_results"]
+    fs = vci.apply_rsync_lane_downgrade(
+        [f], cover_set=vci.rsync_cover_set(extras), extra_cover=vci.rsync_extra_cover(extras)
+    )
+    assert [(x.verdict, x.reason) for x in fs] == [("pass", "in-ref")]
+
+
+def test_rsync_lane_include_tree_no_excluded_segment_stays_pass(repo: Path, tmp_path: Path) -> None:
+    """#1915 zero-regression pin: a plain include-tree citation with no
+    excluded component keeps pass/in-ref end-to-end under --lane rsync."""
+    _write(repo, "data/sft/train.jsonl")
+    _commit_push(repo, "data/sft/train.jsonl")
+    text = "Trains on data/sft/train.jsonl rows."
+    assert vci.rsync_excluded("data/sft/train.jsonl") is None
+    fs = _rsync_findings(repo, text)
+    assert [(f.verdict, f.reason) for f in fs] == [("pass", "in-ref")]
+    assert _main(repo, _plan(tmp_path, text), extra=["--lane", "rsync"]) == 0
+
+
+def test_rsync_lane_glob_exclude_pattern_downgrades(repo: Path) -> None:
+    """#1915: a glob exclude (*.pyc) fnmatches the final segment of a path
+    inside the ./scripts include tree -> downgrade names the glob."""
+    rel = "scripts/foo.pyc"
+    _write(repo, rel)
+    _commit_push(repo, rel)
+    f = _classified(repo, rel)
+    assert (f.verdict, f.reason) == ("pass", "in-ref")
+    assert vci.rsync_excluded(rel) == "*.pyc"
+    fs = vci.apply_rsync_lane_downgrade(
+        [f], cover_set=vci.rsync_cover_set(None), extra_cover=vci.rsync_extra_cover(None)
+    )
+    assert [(x.verdict, x.reason) for x in fs] == [("fail", "rsync-lane-not-synced")]
+    assert "'*.pyc'" in fs[0].detail
+
+
+def test_rsync_lane_nested_excluded_end_to_end_cli(repo: Path, tmp_path: Path) -> None:
+    """#1915 CLI threading: an extractable data/sft/eval_results/ citation
+    (inside the ./data/sft include tree, 'eval_results/' excluded at depth)
+    exits 1 under --lane rsync and 0 with a covering --extra-sync-path."""
+    rel = "data/sft/eval_results/nested.json"
+    _write(repo, rel)
+    _commit_push(repo, rel)
+    text = f"Consumes {rel} at stage time."
+    fs = _rsync_findings(repo, text)
+    assert [(f.verdict, f.reason) for f in fs] == [("fail", "rsync-lane-not-synced")]
+    assert "'eval_results/'" in fs[0].detail
+    fs2 = _rsync_findings(repo, text, extras=["data/sft/eval_results"])
+    assert [(f.verdict, f.reason) for f in fs2] == [("pass", "in-ref")]
+    assert _main(repo, _plan(tmp_path, text), extra=["--lane", "rsync"]) == 1
+    rc = _main(
+        repo,
+        _plan(tmp_path, text),
+        extra=["--lane", "rsync", "--extra-sync-path", "data/sft/eval_results"],
+    )
+    assert rc == 0
 
 
 def test_invalid_extra_sync_path_exits_2(repo: Path, tmp_path: Path) -> None:
