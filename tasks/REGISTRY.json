@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1980,
+  "highest_id": 1981,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7592,6 +7592,13 @@
       "path": "tasks/proposed/1980",
       "status": "proposed",
       "title": "workflow-fix: gotchas #952 streaming SIGABRT recipe misses break-suspended iterator (it.close())"
+    },
+    "1981": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1981",
+      "status": "proposed",
+      "title": "workflow-fix: branch-sync already-at-tip short-circuit + recalibrated mutation caps (runpod.py)"
     },
     "199": {
       "has_clean_result": true,
