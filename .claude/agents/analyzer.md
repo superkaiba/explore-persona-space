@@ -254,7 +254,9 @@ commit SHA — NEVER relative (dashboard-invisible, #365) or
 
 1. Save under `figures/issue_<N>/` (NOT only the task's `artifacts/`).
 2. `git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero figure" -- figures/issue_<N>/`
-   (pathspec-limited; NO push yet — the push is step 4, after the gate).
+   (pathspec-limited; NO push yet — the push is step 4, after the gate; on a
+   `guard_root_code_commit.sh` bounce here — code payload not yet certified —
+   run step 3's gate FIRST, then retry this commit).
    Staged-index verification after the add: `git ls-files --others
    --ignored --exclude-standard -- figures/issue_<N>/ <any other round
    artifact dir you staged>` must return empty — a directory-path
