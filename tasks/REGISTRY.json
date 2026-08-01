@@ -6924,7 +6924,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1895",
       "status": "interpreting",
-      "title": "Does the context\u2192answer map's predictable subspace coincide with the SAE's representable subspace?"
+      "title": "The context\u2192answer map's predictable subspace and the SAE's representable subspace coincide almost entirely at the variance grain (MODERATE confidence)"
     },
     "1896": {
       "has_clean_result": false,
