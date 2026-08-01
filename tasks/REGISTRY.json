@@ -7567,8 +7567,8 @@
     "1977": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1977",
-      "status": "running",
+      "path": "tasks/reviewing/1977",
+      "status": "reviewing",
       "title": "daily-fix: exempt path-limited git add --all in guard"
     },
     "1978": {
