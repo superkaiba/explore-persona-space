@@ -7058,8 +7058,8 @@
     "1911": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1911",
-      "status": "reviewing",
+      "path": "tasks/completed/1911",
+      "status": "completed",
       "title": "workflow-fix: document the 'CMD -c ... || echo 0' double-print trap in gotchas.md"
     },
     "1912": {
