@@ -118,15 +118,24 @@
   },
   "leg1_coverage": {
    "context_end": {
-    "n_eval_contexts": 1982,
-    "n_bare_substituted": 1008,
-    "n_reused_from_wcrung_store": 974,
     "n_bare_rows_unused": 5,
+    "n_bare_substituted": 1008,
+    "n_eval_contexts": 1982,
+    "n_reused_from_wcrung_store": 974,
+    "note": "substituted rows took their BARE capture rep; reused rows kept their committed wildchat-rung rep, which for a single-turn context IS its bare rep (the capture leg's bit-equality gate; re-verified here via reuse_licence_check). n_bare_rows_unused counts captured bare rows whose context has no kept DV row.",
     "reuse_licence_check": {
-     "label": "reused-row prefix vs bare constant head",
-     "n_rows": 974,
+     "bars": {
+      "calibration": "bf16 padded-batch two-bar recipe (gotchas.md; #779 r12) \u2014 NOT exact equality: the compared reps come from different padded batches",
+      "early_cos_min": 0.999,
+      "early_layers": 4,
+      "flat_cos_min": 0.995
+     },
      "early_cos_min": 0.9999564722917416,
      "flat_cos_min": 0.9992225030855856,
+     "label": "reused-row prefix vs bare constant head",
+     "mode": "hard",
+     "n_rows": 974,
+     "passed": true,
      "per_layer_cos_min": [
       0.9999927009635107,
       0.9999760777400439,
@@ -157,28 +166,28 @@
       0.9998118223672696,
       0.9992225030855856
      ],
-     "bars": {
-      "early_layers": 4,
-      "early_cos_min": 0.999,
-      "flat_cos_min": 0.995,
-      "calibration": "bf16 padded-batch two-bar recipe (gotchas.md; #779 r12) \u2014 NOT exact equality: the compared reps come from different padded batches"
-     },
-     "passed": true,
-     "ran": true,
-     "mode": "hard"
-    },
-    "note": "substituted rows took their BARE capture rep; reused rows kept their committed wildchat-rung rep, which for a single-turn context IS its bare rep (the capture leg's bit-equality gate; re-verified here via reuse_licence_check). n_bare_rows_unused counts captured bare rows whose context has no kept DV row."
+     "ran": true
+    }
    },
    "prefix_end": {
-    "n_eval_contexts": 1982,
-    "n_bare_substituted": 1008,
-    "n_reused_from_wcrung_store": 974,
     "n_bare_rows_unused": 5,
+    "n_bare_substituted": 1008,
+    "n_eval_contexts": 1982,
+    "n_reused_from_wcrung_store": 974,
+    "note": "substituted rows took their BARE capture rep; reused rows kept their committed wildchat-rung rep, which for a single-turn context IS its bare rep (the capture leg's bit-equality gate; re-verified here via reuse_licence_check). n_bare_rows_unused counts captured bare rows whose context has no kept DV row.",
     "reuse_licence_check": {
-     "label": "reused-row prefix vs bare constant head",
-     "n_rows": 974,
+     "bars": {
+      "calibration": "bf16 padded-batch two-bar recipe (gotchas.md; #779 r12) \u2014 NOT exact equality: the compared reps come from different padded batches",
+      "early_cos_min": 0.999,
+      "early_layers": 4,
+      "flat_cos_min": 0.995
+     },
      "early_cos_min": 0.9999564722917416,
      "flat_cos_min": 0.9992225030855856,
+     "label": "reused-row prefix vs bare constant head",
+     "mode": "hard",
+     "n_rows": 974,
+     "passed": true,
      "per_layer_cos_min": [
       0.9999927009635107,
       0.9999760777400439,
@@ -209,26 +218,27 @@
       0.9998118223672696,
       0.9992225030855856
      ],
-     "bars": {
-      "early_layers": 4,
-      "early_cos_min": 0.999,
-      "flat_cos_min": 0.995,
-      "calibration": "bf16 padded-batch two-bar recipe (gotchas.md; #779 r12) \u2014 NOT exact equality: the compared reps come from different padded batches"
-     },
-     "passed": true,
-     "ran": true,
-     "mode": "hard"
-    },
-    "note": "substituted rows took their BARE capture rep; reused rows kept their committed wildchat-rung rep, which for a single-turn context IS its bare rep (the capture leg's bit-equality gate; re-verified here via reuse_licence_check). n_bare_rows_unused counts captured bare rows whose context has no kept DV row."
+     "ran": true
+    }
    }
   },
   "leg1_null_probe": {
    "context_end": {
+    "any_ci_excludes_zero": true,
     "constancy": {
-     "label": "bare prefix reps (null probe)",
-     "n_rows": 1982,
+     "bars": {
+      "calibration": "bf16 padded-batch two-bar recipe (gotchas.md; #779 r12) \u2014 NOT exact equality: the compared reps come from different padded batches",
+      "early_cos_min": 0.999,
+      "early_layers": 4,
+      "flat_cos_min": 0.995
+     },
+     "constant": true,
      "early_cos_min": 0.9999317304603885,
      "flat_cos_min": 0.9991457599733363,
+     "label": "bare prefix reps (null probe)",
+     "max_abs_dev_from_row0": 2.375,
+     "n_rows": 1982,
+     "passed": true,
      "per_layer_cos_min": [
       0.999961936473592,
       0.9999717405246527,
@@ -258,17 +268,10 @@
       0.999724910918003,
       0.9997717183353548,
       0.9991457599733363
-     ],
-     "bars": {
-      "early_layers": 4,
-      "early_cos_min": 0.999,
-      "flat_cos_min": 0.995,
-      "calibration": "bf16 padded-batch two-bar recipe (gotchas.md; #779 r12) \u2014 NOT exact equality: the compared reps come from different padded batches"
-     },
-     "passed": true,
-     "constant": true,
-     "max_abs_dev_from_row0": 2.375
+     ]
     },
+    "n_finite_rho": 28,
+    "note": "the bare-render prefix position is a CONSTANT vector across rows, so this arm is a built-in null: it must read ~chance (NaN / CI bracketing 0). A non-chance read is a capture/indexing bug, not a finding.",
     "rho_per_layer": [
      0.006760498049644774,
      0.049213290627851944,
@@ -299,17 +302,24 @@
      0.061106265003247055,
      0.05997956670710429
     ],
-    "n_finite_rho": 28,
-    "any_ci_excludes_zero": true,
-    "verdict": "ANOMALY",
-    "note": "the bare-render prefix position is a CONSTANT vector across rows, so this arm is a built-in null: it must read ~chance (NaN / CI bracketing 0). A non-chance read is a capture/indexing bug, not a finding."
+    "verdict": "ANOMALY"
    },
    "prefix_end": {
+    "any_ci_excludes_zero": true,
     "constancy": {
-     "label": "bare prefix reps (null probe)",
-     "n_rows": 1982,
+     "bars": {
+      "calibration": "bf16 padded-batch two-bar recipe (gotchas.md; #779 r12) \u2014 NOT exact equality: the compared reps come from different padded batches",
+      "early_cos_min": 0.999,
+      "early_layers": 4,
+      "flat_cos_min": 0.995
+     },
+     "constant": true,
      "early_cos_min": 0.9999317304603885,
      "flat_cos_min": 0.9991457599733363,
+     "label": "bare prefix reps (null probe)",
+     "max_abs_dev_from_row0": 2.375,
+     "n_rows": 1982,
+     "passed": true,
      "per_layer_cos_min": [
       0.999961936473592,
       0.9999717405246527,
@@ -339,17 +349,10 @@
       0.999724910918003,
       0.9997717183353548,
       0.9991457599733363
-     ],
-     "bars": {
-      "early_layers": 4,
-      "early_cos_min": 0.999,
-      "flat_cos_min": 0.995,
-      "calibration": "bf16 padded-batch two-bar recipe (gotchas.md; #779 r12) \u2014 NOT exact equality: the compared reps come from different padded batches"
-     },
-     "passed": true,
-     "constant": true,
-     "max_abs_dev_from_row0": 2.375
+     ]
     },
+    "n_finite_rho": 28,
+    "note": "the bare-render prefix position is a CONSTANT vector across rows, so this arm is a built-in null: it must read ~chance (NaN / CI bracketing 0). A non-chance read is a capture/indexing bug, not a finding.",
     "rho_per_layer": [
      0.006760498049644774,
      0.049213290627851944,
@@ -380,10 +383,7 @@
      0.061106265003247055,
      0.05997956670710429
     ],
-    "n_finite_rho": 28,
-    "any_ci_excludes_zero": true,
-    "verdict": "ANOMALY",
-    "note": "the bare-render prefix position is a CONSTANT vector across rows, so this arm is a built-in null: it must read ~chance (NaN / CI bracketing 0). A non-chance read is a capture/indexing bug, not a finding."
+    "verdict": "ANOMALY"
    }
   },
   "leg1_committed_contrast": {
@@ -481,6 +481,19 @@
    "this_run_eval_ctx_ids_sha256": "bcf6ee0c8f6f0aa320addfa36b017706850080f6cc470e7d9caf38b2f2a0385b",
    "comparability": "comparable: identical eval context list (sha match) + identical frozen-layer convention + identical roster and DV"
   },
+  "subsets_emitted": [
+   "pooled",
+   "multi_turn_only",
+   "single_turn_only"
+  ],
+  "preds_persisted": {
+   "dir": "eval_results/issue_1739/bareq_map/sycophancy/preds",
+   "leg1_pattern": "bareq_leg1_preds.<variant>.jsonl",
+   "leg2_pattern": null,
+   "files": [],
+   "schema": "one row per (arm, context) at the frozen layer: arm, context_id, dv, score, multi_turn, frozen_layer_idx, layer, subset-independent \u2014 any subset read is a re-analysis of this file, never another re-score"
+  },
+  "leg2_shuffled_map_seed_bands": null,
   "leg2_folds": null,
   "leg2_query_bank": null,
   "leg2_eval_blocks": null,
@@ -587,209 +600,208 @@
    "eval_results/issue_1739/dv_dataset/sycophancy/labeling.json": "8d6aed280943e1c6868bfb44448dbfa6fbee17d91b26533fa26896931617defb",
    "eval_results/issue_1739/wildchat_rung/dv_dataset/sycophancy/labeling.json": "b6217ef9f7089915a87094d3a34ee1d48ec10c17f969353dae93121cc5cb5765",
    "eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json": "343387cfc740dbe85571014e9a96e93b2a20ea59c18f2cc75af2cb378737c25d",
-   "eval_results/issue_1739/wildchat_rung/arm_results/sycophancy/all_arms_spearman.json": "24603663319417e3df6e12f08c043179dfcf0a58d719ddc3bd326bbdd88ef635"
+   "eval_results/issue_1739/wildchat_rung/arm_results/sycophancy/all_arms_spearman.json": "24603663319417e3df6e12f08c043179dfcf0a58d719ddc3bd326bbdd88ef635",
+   "eval_results/issue_1739/bareq_map/bareq_queries.json": "a4e73cc7fe3ce8ccfb0174a372614fba7827aaf458af03730004c3a6cd0aea96"
   },
   "caveats": [
    "#1092's 0.02 was bare->answer-ACTIVATIONS at SAE grain, so it is an analogy, not a numerically comparable floor for bare->judged-DV"
   ],
-  "git_commit": "34185b2456b926a3f3cd1a0d3395a243b90456b0",
+  "git_commit": "0cc65baafc3a85ec8e7b5b3a915b9c72ac769a0f",
   "env_versions": {
    "python": "3.11.15",
    "numpy": "2.2.6",
    "torch": "2.8.0+cu128"
   },
-  "wall_s": 897.8,
+  "wall_s": 276.9,
   "judge_called": false
  },
- "ts": "2026-07-31T17:14:37Z",
+ "ts": "2026-08-01T01:37:54Z",
  "transfer_rows": [
   {
-   "leg": "1",
-   "behavior": "sycophancy",
-   "variant": "context_end",
-   "regime": "e1",
-   "u_rung": 18793,
-   "u_rung_label": "full",
-   "eval_rung": "wildchat_rung",
-   "config": "config_a",
-   "render_match": "matched",
-   "input_rep": "bare_context_end",
-   "f_u": null,
-   "f_l": null,
    "arm": "arm11_oracle_proj",
-   "family": "oracle",
-   "rung_kind": "eval_transfer",
-   "rho_frozen": 0.08426817677603524,
+   "behavior": "sycophancy",
+   "budget_l": 16000,
    "ci_frozen": [
     0.04071590918916402,
     0.12690460318296318
    ],
-   "n_eval": 1982,
-   "layer": 11,
-   "budget_l": 16000,
+   "config": "config_a",
    "draw": 0,
-   "seed": 0
-  },
-  {
+   "eval_rung": "wildchat_rung",
+   "f_l": null,
+   "f_u": null,
+   "family": "oracle",
+   "input_rep": "bare_context_end",
+   "layer": 11,
    "leg": "1",
-   "behavior": "sycophancy",
-   "variant": "context_end",
+   "n_eval": 1982,
    "regime": "e1",
+   "render_match": "matched",
+   "rho_frozen": 0.08426817677603524,
+   "rung_kind": "eval_transfer",
+   "seed": 0,
    "u_rung": 18793,
    "u_rung_label": "full",
-   "eval_rung": "wildchat_rung",
-   "config": "config_a",
-   "render_match": "matched",
-   "input_rep": "bare_context_end",
-   "f_u": null,
-   "f_l": null,
+   "variant": "context_end"
+  },
+  {
    "arm": "arm13_shuffled_map",
-   "family": "control",
-   "rung_kind": "eval_transfer",
-   "rho_frozen": 0.013259101764462336,
+   "behavior": "sycophancy",
+   "budget_l": 16000,
    "ci_frozen": [
     -0.0316226277116978,
     0.059119325146038265
    ],
-   "n_eval": 1982,
+   "config": "config_a",
+   "draw": 0,
+   "eval_rung": "wildchat_rung",
+   "f_l": null,
+   "f_u": null,
+   "family": "control",
+   "input_rep": "bare_context_end",
    "layer": 24,
-   "budget_l": 16000,
-   "draw": 0,
-   "seed": 0
-  },
-  {
    "leg": "1",
-   "behavior": "sycophancy",
-   "variant": "context_end",
+   "n_eval": 1982,
    "regime": "e1",
+   "render_match": "matched",
+   "rho_frozen": 0.013259101764462336,
+   "rung_kind": "eval_transfer",
+   "seed": 0,
    "u_rung": 18793,
    "u_rung_label": "full",
-   "eval_rung": "wildchat_rung",
-   "config": "config_a",
-   "render_match": "matched",
-   "input_rep": "bare_context_end",
-   "f_u": null,
-   "f_l": null,
+   "variant": "context_end"
+  },
+  {
    "arm": "arm1_ctx_e1",
-   "family": "context",
-   "rung_kind": "eval_transfer",
-   "rho_frozen": 0.014666473513451324,
+   "behavior": "sycophancy",
+   "budget_l": 16000,
    "ci_frozen": [
     -0.02516224767443173,
     0.06125570100454505
    ],
-   "n_eval": 1982,
-   "layer": 16,
-   "budget_l": 16000,
+   "config": "config_a",
    "draw": 0,
-   "seed": 0
-  },
-  {
+   "eval_rung": "wildchat_rung",
+   "f_l": null,
+   "f_u": null,
+   "family": "context",
+   "input_rep": "bare_context_end",
+   "layer": 16,
    "leg": "1",
-   "behavior": "sycophancy",
-   "variant": "context_end",
+   "n_eval": 1982,
    "regime": "e1",
+   "render_match": "matched",
+   "rho_frozen": 0.014666473513451324,
+   "rung_kind": "eval_transfer",
+   "seed": 0,
    "u_rung": 18793,
    "u_rung_label": "full",
-   "eval_rung": "wildchat_rung",
-   "config": "config_a",
-   "render_match": "matched",
-   "input_rep": "bare_context_end",
-   "f_u": null,
-   "f_l": null,
+   "variant": "context_end"
+  },
+  {
    "arm": "arm3_identity_bias",
-   "family": "context",
-   "rung_kind": "eval_transfer",
-   "rho_frozen": 0.014666473513451324,
+   "behavior": "sycophancy",
+   "budget_l": 16000,
    "ci_frozen": [
     -0.02516224767443173,
     0.06125570100454505
    ],
-   "n_eval": 1982,
-   "layer": 16,
-   "budget_l": 16000,
+   "config": "config_a",
    "draw": 0,
-   "seed": 0
-  },
-  {
+   "eval_rung": "wildchat_rung",
+   "f_l": null,
+   "f_u": null,
+   "family": "context",
+   "input_rep": "bare_context_end",
+   "layer": 16,
    "leg": "1",
-   "behavior": "sycophancy",
-   "variant": "context_end",
+   "n_eval": 1982,
    "regime": "e1",
+   "render_match": "matched",
+   "rho_frozen": 0.014666473513451324,
+   "rung_kind": "eval_transfer",
+   "seed": 0,
    "u_rung": 18793,
    "u_rung_label": "full",
-   "eval_rung": "wildchat_rung",
-   "config": "config_a",
-   "render_match": "matched",
-   "input_rep": "bare_context_end",
-   "f_u": null,
-   "f_l": null,
+   "variant": "context_end"
+  },
+  {
    "arm": "arm4_ridge_ctx",
-   "family": "context",
-   "rung_kind": "eval_transfer",
-   "rho_frozen": 0.19320635708068928,
+   "behavior": "sycophancy",
+   "budget_l": 16000,
    "ci_frozen": [
     0.14610769525983416,
     0.23899777742680187
    ],
-   "n_eval": 1982,
-   "layer": 20,
-   "budget_l": 16000,
+   "config": "config_a",
    "draw": 0,
-   "seed": 0
-  },
-  {
+   "eval_rung": "wildchat_rung",
+   "f_l": null,
+   "f_u": null,
+   "family": "context",
+   "input_rep": "bare_context_end",
+   "layer": 20,
    "leg": "1",
-   "behavior": "sycophancy",
-   "variant": "context_end",
+   "n_eval": 1982,
    "regime": "e1",
+   "render_match": "matched",
+   "rho_frozen": 0.19320635708068928,
+   "rung_kind": "eval_transfer",
+   "seed": 0,
    "u_rung": 18793,
    "u_rung_label": "full",
-   "eval_rung": "wildchat_rung",
-   "config": "config_a",
-   "render_match": "matched",
-   "input_rep": "bare_context_end",
-   "f_u": null,
-   "f_l": null,
+   "variant": "context_end"
+  },
+  {
    "arm": "arm6_map_proj_e1",
-   "family": "map",
-   "rung_kind": "eval_transfer",
-   "rho_frozen": 0.20033589551923164,
+   "behavior": "sycophancy",
+   "budget_l": 16000,
    "ci_frozen": [
     0.15395884768854082,
     0.24139580769139427
    ],
-   "n_eval": 1982,
-   "layer": 11,
-   "budget_l": 16000,
+   "config": "config_a",
    "draw": 0,
-   "seed": 0
+   "eval_rung": "wildchat_rung",
+   "f_l": null,
+   "f_u": null,
+   "family": "map",
+   "input_rep": "bare_context_end",
+   "layer": 11,
+   "leg": "1",
+   "n_eval": 1982,
+   "regime": "e1",
+   "render_match": "matched",
+   "rho_frozen": 0.20033589551923164,
+   "rung_kind": "eval_transfer",
+   "seed": 0,
+   "u_rung": 18793,
+   "u_rung_label": "full",
+   "variant": "context_end"
   }
  ],
  "transfer_skips": [
   {
-   "variant": "prefix_end",
    "arm": "*",
-   "reason": "constant-prefix NULL variant: the bare render's prefix rep is verified CONSTANT across rows, so every arm score is zero-variance and rho is undefined by construction. The arm sweep is skipped; null_probe carries the verdict. A constancy FAILURE would have run the sweep as the anomaly diagnostic."
+   "reason": "constant-prefix NULL variant: the bare render's prefix rep is verified CONSTANT across rows, so every arm score is zero-variance and rho is undefined by construction. The arm sweep is skipped; null_probe carries the verdict. A constancy FAILURE would have run the sweep as the anomaly diagnostic.",
+   "variant": "prefix_end"
   }
  ],
  "per_layer_rows": [
   {
-   "leg": "1",
-   "behavior": "sycophancy",
-   "variant": "context_end",
-   "regime": "e1",
-   "u_rung": 18793,
-   "u_rung_label": "full",
-   "eval_rung": "wildchat_rung",
-   "config": "config_a",
-   "render_match": "matched",
-   "input_rep": "bare_context_end",
-   "f_u": null,
-   "f_l": null,
    "arm": "arm11_oracle_proj",
+   "behavior": "sycophancy",
+   "budget_l": 16000,
+   "config": "config_a",
+   "draw": 0,
+   "eval_rung": "wildchat_rung",
+   "f_l": null,
+   "f_u": null,
    "family": "oracle",
-   "rung_kind": "eval_transfer_per_layer",
+   "frozen_layer": 11,
+   "frozen_layer_idx": 11,
+   "frozen_source": "modal-committed-train-cells:eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json",
+   "input_rep": "bare_context_end",
    "layers": [
     0,
     1,
@@ -820,6 +832,10 @@
     26,
     27
    ],
+   "leg": "1",
+   "n_eval": 1982,
+   "regime": "e1",
+   "render_match": "matched",
    "rho_per_layer": [
     0.04561850233278343,
     0.026067778419308782,
@@ -850,31 +866,27 @@
     0.024438169389685585,
     0.06995610086521291
    ],
-   "frozen_layer_idx": 11,
-   "frozen_layer": 11,
-   "frozen_source": "modal-committed-train-cells:eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json",
    "rho_per_layer_train_own_pool": null,
-   "n_eval": 1982,
-   "budget_l": 16000,
-   "draw": 0,
-   "seed": 0
-  },
-  {
-   "leg": "1",
-   "behavior": "sycophancy",
-   "variant": "context_end",
-   "regime": "e1",
+   "rung_kind": "eval_transfer_per_layer",
+   "seed": 0,
    "u_rung": 18793,
    "u_rung_label": "full",
-   "eval_rung": "wildchat_rung",
-   "config": "config_a",
-   "render_match": "matched",
-   "input_rep": "bare_context_end",
-   "f_u": null,
-   "f_l": null,
+   "variant": "context_end"
+  },
+  {
    "arm": "arm13_shuffled_map",
+   "behavior": "sycophancy",
+   "budget_l": 16000,
+   "config": "config_a",
+   "draw": 0,
+   "eval_rung": "wildchat_rung",
+   "f_l": null,
+   "f_u": null,
    "family": "control",
-   "rung_kind": "eval_transfer_per_layer",
+   "frozen_layer": 24,
+   "frozen_layer_idx": 24,
+   "frozen_source": "modal-committed-train-cells:eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json",
+   "input_rep": "bare_context_end",
    "layers": [
     0,
     1,
@@ -905,6 +917,10 @@
     26,
     27
    ],
+   "leg": "1",
+   "n_eval": 1982,
+   "regime": "e1",
+   "render_match": "matched",
    "rho_per_layer": [
     -0.021204604977829566,
     0.023294848474806697,
@@ -935,31 +951,27 @@
     -0.021918267615338424,
     0.06210323780434006
    ],
-   "frozen_layer_idx": 24,
-   "frozen_layer": 24,
-   "frozen_source": "modal-committed-train-cells:eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json",
    "rho_per_layer_train_own_pool": null,
-   "n_eval": 1982,
-   "budget_l": 16000,
-   "draw": 0,
-   "seed": 0
-  },
-  {
-   "leg": "1",
-   "behavior": "sycophancy",
-   "variant": "context_end",
-   "regime": "e1",
+   "rung_kind": "eval_transfer_per_layer",
+   "seed": 0,
    "u_rung": 18793,
    "u_rung_label": "full",
-   "eval_rung": "wildchat_rung",
-   "config": "config_a",
-   "render_match": "matched",
-   "input_rep": "bare_context_end",
-   "f_u": null,
-   "f_l": null,
+   "variant": "context_end"
+  },
+  {
    "arm": "arm1_ctx_e1",
+   "behavior": "sycophancy",
+   "budget_l": 16000,
+   "config": "config_a",
+   "draw": 0,
+   "eval_rung": "wildchat_rung",
+   "f_l": null,
+   "f_u": null,
    "family": "context",
-   "rung_kind": "eval_transfer_per_layer",
+   "frozen_layer": 16,
+   "frozen_layer_idx": 16,
+   "frozen_source": "modal-committed-train-cells:eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json",
+   "input_rep": "bare_context_end",
    "layers": [
     0,
     1,
@@ -990,6 +1002,10 @@
     26,
     27
    ],
+   "leg": "1",
+   "n_eval": 1982,
+   "regime": "e1",
+   "render_match": "matched",
    "rho_per_layer": [
     0.0028270655911227793,
     0.03867550253668495,
@@ -1020,31 +1036,27 @@
     0.00945784651178434,
     0.035625908921523355
    ],
-   "frozen_layer_idx": 16,
-   "frozen_layer": 16,
-   "frozen_source": "modal-committed-train-cells:eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json",
    "rho_per_layer_train_own_pool": null,
-   "n_eval": 1982,
-   "budget_l": 16000,
-   "draw": 0,
-   "seed": 0
-  },
-  {
-   "leg": "1",
-   "behavior": "sycophancy",
-   "variant": "context_end",
-   "regime": "e1",
+   "rung_kind": "eval_transfer_per_layer",
+   "seed": 0,
    "u_rung": 18793,
    "u_rung_label": "full",
-   "eval_rung": "wildchat_rung",
-   "config": "config_a",
-   "render_match": "matched",
-   "input_rep": "bare_context_end",
-   "f_u": null,
-   "f_l": null,
+   "variant": "context_end"
+  },
+  {
    "arm": "arm3_identity_bias",
+   "behavior": "sycophancy",
+   "budget_l": 16000,
+   "config": "config_a",
+   "draw": 0,
+   "eval_rung": "wildchat_rung",
+   "f_l": null,
+   "f_u": null,
    "family": "context",
-   "rung_kind": "eval_transfer_per_layer",
+   "frozen_layer": 16,
+   "frozen_layer_idx": 16,
+   "frozen_source": "modal-committed-train-cells:eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json",
+   "input_rep": "bare_context_end",
    "layers": [
     0,
     1,
@@ -1075,6 +1087,10 @@
     26,
     27
    ],
+   "leg": "1",
+   "n_eval": 1982,
+   "regime": "e1",
+   "render_match": "matched",
    "rho_per_layer": [
     0.0028270655911227793,
     0.03867550253668495,
@@ -1105,31 +1121,27 @@
     0.00945784651178434,
     0.035625908921523355
    ],
-   "frozen_layer_idx": 16,
-   "frozen_layer": 16,
-   "frozen_source": "modal-committed-train-cells:eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json",
    "rho_per_layer_train_own_pool": null,
-   "n_eval": 1982,
-   "budget_l": 16000,
-   "draw": 0,
-   "seed": 0
-  },
-  {
-   "leg": "1",
-   "behavior": "sycophancy",
-   "variant": "context_end",
-   "regime": "e1",
+   "rung_kind": "eval_transfer_per_layer",
+   "seed": 0,
    "u_rung": 18793,
    "u_rung_label": "full",
-   "eval_rung": "wildchat_rung",
-   "config": "config_a",
-   "render_match": "matched",
-   "input_rep": "bare_context_end",
-   "f_u": null,
-   "f_l": null,
+   "variant": "context_end"
+  },
+  {
    "arm": "arm4_ridge_ctx",
+   "behavior": "sycophancy",
+   "budget_l": 16000,
+   "config": "config_a",
+   "draw": 0,
+   "eval_rung": "wildchat_rung",
+   "f_l": null,
+   "f_u": null,
    "family": "context",
-   "rung_kind": "eval_transfer_per_layer",
+   "frozen_layer": 20,
+   "frozen_layer_idx": 20,
+   "frozen_source": "modal-committed-train-cells:eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json",
+   "input_rep": "bare_context_end",
    "layers": [
     0,
     1,
@@ -1160,6 +1172,10 @@
     26,
     27
    ],
+   "leg": "1",
+   "n_eval": 1982,
+   "regime": "e1",
+   "render_match": "matched",
    "rho_per_layer": [
     0.06227303893046792,
     0.08338128068959275,
@@ -1190,31 +1206,27 @@
     0.19304529919022453,
     0.1755232369946856
    ],
-   "frozen_layer_idx": 20,
-   "frozen_layer": 20,
-   "frozen_source": "modal-committed-train-cells:eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json",
    "rho_per_layer_train_own_pool": null,
-   "n_eval": 1982,
-   "budget_l": 16000,
-   "draw": 0,
-   "seed": 0
-  },
-  {
-   "leg": "1",
-   "behavior": "sycophancy",
-   "variant": "context_end",
-   "regime": "e1",
+   "rung_kind": "eval_transfer_per_layer",
+   "seed": 0,
    "u_rung": 18793,
    "u_rung_label": "full",
-   "eval_rung": "wildchat_rung",
-   "config": "config_a",
-   "render_match": "matched",
-   "input_rep": "bare_context_end",
-   "f_u": null,
-   "f_l": null,
+   "variant": "context_end"
+  },
+  {
    "arm": "arm6_map_proj_e1",
+   "behavior": "sycophancy",
+   "budget_l": 16000,
+   "config": "config_a",
+   "draw": 0,
+   "eval_rung": "wildchat_rung",
+   "f_l": null,
+   "f_u": null,
    "family": "map",
-   "rung_kind": "eval_transfer_per_layer",
+   "frozen_layer": 11,
+   "frozen_layer_idx": 11,
+   "frozen_source": "modal-committed-train-cells:eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json",
+   "input_rep": "bare_context_end",
    "layers": [
     0,
     1,
@@ -1245,6 +1257,10 @@
     26,
     27
    ],
+   "leg": "1",
+   "n_eval": 1982,
+   "regime": "e1",
+   "render_match": "matched",
    "rho_per_layer": [
     0.09546125125551848,
     0.09836190051342455,
@@ -1275,14 +1291,12 @@
     0.15195911360827496,
     0.13801424119025169
    ],
-   "frozen_layer_idx": 11,
-   "frozen_layer": 11,
-   "frozen_source": "modal-committed-train-cells:eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json",
    "rho_per_layer_train_own_pool": null,
-   "n_eval": 1982,
-   "budget_l": 16000,
-   "draw": 0,
-   "seed": 0
+   "rung_kind": "eval_transfer_per_layer",
+   "seed": 0,
+   "u_rung": 18793,
+   "u_rung_label": "full",
+   "variant": "context_end"
   }
  ],
  "n_transfer_rows": 6,
