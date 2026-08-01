@@ -11015,6 +11015,15 @@ def test_render_startup_script_workload_cmd_carries_push_verify_leg() -> None:
         repo_branch="issue-1205",
     )
     assert "_EPS_PUSH_BRANCH=issue-1205" in script_wt
+    # #1880: the retry path fetches + rebases (inline committer identity,
+    # so a missing repo-level identity can never kill the rebase) before
+    # the retry push; on rebase failure the abort fires and the existing
+    # bundle + exit 86 flow takes over.
+    assert 'fetch origin "${_EPS_PUSH_BRANCH}"' in script
+    assert "-c user.email=eps-workload@localhost" in script
+    assert "-c user.name=eps-workload" in script
+    assert 'rebase "origin/${_EPS_PUSH_BRANCH}"' in script
+    assert "rebase --abort" in script
 
 
 def test_render_startup_script_workload_cmd_git_credential_gated_on_token() -> None:
@@ -11191,6 +11200,78 @@ def test_push_verify_leg_executes_in_tmp_repo_case_c_noop(tmp_path: Path) -> Non
     assert proc.returncode == 0, (proc.stdout, proc.stderr)
     assert "[push-verify] OK: no unpushed commits" in proc.stdout
     assert not (workload / "data" / "issue_137").exists()
+
+
+def _advance_origin_main(
+    tmp_path: Path, origin: Path, env: dict[str, str], fname: str, content: str
+) -> str:
+    """Advance the bare origin's ``main`` past the workload clone.
+
+    Simulates a MID-RUN orchestrator branch push (#1880: a sibling lane's
+    crash-fix relaunch advancing ``origin/issue-<N>`` while this lane's
+    clone is in flight) via a fresh full clone + commit + push. Returns
+    the new origin tip SHA.
+    """
+    orch = tmp_path / "orchestrator"
+    _git(tmp_path, "clone", f"file://{origin}", str(orch), env=env)
+    _git(orch, "config", "user.email", "o@example.com", env=env)
+    _git(orch, "config", "user.name", "o", env=env)
+    (orch / fname).write_text(content)
+    _git(orch, "add", fname, env=env)
+    _git(orch, "commit", "-m", "orchestrator mid-run branch push", env=env)
+    _git(orch, "push", "origin", "main:main", env=env)
+    return _git(orch, "rev-parse", "HEAD", env=env).stdout.strip()
+
+
+def test_push_verify_leg_executes_in_tmp_repo_case_d_behind_origin_rebase_lands(
+    tmp_path: Path,
+) -> None:
+    """Case D (#1880): a local result commit on a clone BEHIND origin (a
+    mid-run orchestrator push advanced the branch -- the #1739 hallu-lane
+    shape). Pre-#1880 the leg lost DETERMINISTICALLY: both pushes rejected
+    non-fast-forward, so a HEALTHY completed run exited 86 into
+    crash-persist. The fetch+rebase retry replays the result commit onto
+    the advanced tip and lands it: rc 0 AND
+    ``rev-list --count origin/<branch>..HEAD`` == 0."""
+    origin, workload, env, runner = _push_leg_rig(tmp_path)
+    _advance_origin_main(tmp_path, origin, env, "orchestrator.txt", "mid-run fix\n")
+    (workload / "result.json").write_text("{}\n")
+    _git(workload, "add", "result.json", env=env)
+    _git(workload, "commit", "-m", "eval results", env=env)
+    proc = _run_leg(runner, env)
+    assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+    assert "fetch + rebase onto" in proc.stdout  # the #1880 branch engaged
+    assert "[push-verify] retry landed" in proc.stdout
+    count = _git(workload, "rev-list", "--count", "origin/main..HEAD", env=env).stdout.strip()
+    assert count == "0"
+    # BOTH commits are on origin: the orchestrator's and the rebased result.
+    files = _git(
+        tmp_path, "-C", str(origin), "ls-tree", "--name-only", "main", env=env
+    ).stdout.split()
+    assert "result.json" in files and "orchestrator.txt" in files
+
+
+def test_push_verify_leg_executes_in_tmp_repo_case_e_rebase_conflict_exit86_bundle(
+    tmp_path: Path,
+) -> None:
+    """Case E (#1880 fail-loud pin): behind-origin with a GENUINE content
+    conflict (both sides add ``result.json`` with different bytes) -- the
+    rebase conflicts, the abort fires, the retry push fails
+    non-fast-forward, and the leg keeps the EXISTING fail-loud path:
+    exit 86 + the data/issue_<N>/ bundle (no silent swallow)."""
+    origin, workload, env, runner = _push_leg_rig(tmp_path)
+    _advance_origin_main(tmp_path, origin, env, "result.json", '{"who": "orchestrator"}\n')
+    (workload / "result.json").write_text('{"who": "workload"}\n')
+    _git(workload, "add", "result.json", env=env)
+    _git(workload, "commit", "-m", "eval results", env=env)
+    proc = _run_leg(runner, env)
+    assert proc.returncode == 86, (proc.returncode, proc.stdout, proc.stderr)
+    assert "[push-verify] FAIL" in proc.stdout
+    bundles = sorted((workload / "data" / "issue_137").glob("unpushed-*.bundle"))
+    assert len(bundles) == 1, bundles
+    # The abort fired: no rebase left in progress in the workload clone.
+    assert not (workload / ".git" / "rebase-merge").exists()
+    assert not (workload / ".git" / "rebase-apply").exists()
 
 
 # ---------------------------------------------------------------------------

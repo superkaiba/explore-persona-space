@@ -1591,9 +1591,21 @@ def render_startup_script(
             'if [ "$_EPS_UNPUSHED" != "0" ]; then',
             '  echo "[push-verify] ${_EPS_UNPUSHED} unpushed commit(s) on'
             ' ${_EPS_PUSH_BRANCH} — retrying push (#1205)"',
-            '  git -C "$WORKLOAD_ROOT" push origin "HEAD:${_EPS_PUSH_BRANCH}"'
-            ' || { sleep 20; git -C "$WORKLOAD_ROOT" push origin "HEAD:${_EPS_PUSH_BRANCH}"; }'
-            " || true",
+            '  git -C "$WORKLOAD_ROOT" push origin "HEAD:${_EPS_PUSH_BRANCH}" || {',
+            '    echo "[push-verify] push rejected: fetch + rebase onto'
+            ' origin/${_EPS_PUSH_BRANCH} before retry (#1880)"',
+            '    git -C "$WORKLOAD_ROOT" fetch origin "${_EPS_PUSH_BRANCH}" || true',
+            "    # Inline committer identity so a missing repo-level identity can never",
+            "    # kill the rebase at the first pick. A DIRTY tracked file makes the",
+            "    # rebase refuse to start -> the abort fires -> the retry push fails",
+            "    # non-fast-forward -> the existing bundle + exit 86 path below takes",
+            "    # over (fail-loud preserved; #1880).",
+            '    git -C "$WORKLOAD_ROOT" -c user.email=eps-workload@localhost'
+            ' -c user.name=eps-workload rebase "origin/${_EPS_PUSH_BRANCH}"'
+            ' || git -C "$WORKLOAD_ROOT" rebase --abort || true',
+            "    sleep 20",
+            '    git -C "$WORKLOAD_ROOT" push origin "HEAD:${_EPS_PUSH_BRANCH}"',
+            "  } || true",
             '  _EPS_UNPUSHED="$(git -C "$WORKLOAD_ROOT" rev-list --count'
             ' "origin/${_EPS_PUSH_BRANCH}..HEAD")"',
             '  if [ "$_EPS_UNPUSHED" != "0" ]; then',
