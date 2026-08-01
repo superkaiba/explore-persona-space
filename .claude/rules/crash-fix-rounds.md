@@ -446,6 +446,14 @@ the relaunch ran the pre-fix commit, checkpointed garbage — val R²
      ancestors). A rebase that rewrote the fix SHA
      fails the probe LOUD: re-resolve the SHA on the rewritten branch
      (or have the implementer re-declare), never skip the probe.
+   - **Mid-run branch-push race (#1880):** pushing fix commits to
+     `origin/issue-<N>` while SIBLING lanes of the same issue are mid-run
+     advances origin past their clones — their terminal results-git
+     pushes then take the fetch+rebase path
+     (`.claude/rules/pod-side-reporting.md` § Result-push verification
+     contract, #1880), and a lane running a pre-#1880 driver
+     deterministically false-crashes at its terminal push with its
+     results intact in crash-persist.
 2. **Stale-checkpoint disposition (element 5), executed in the SAME
    command chain as the launch** (the pid-file-contract shape,
    `.claude/rules/pod-side-reporting.md` § Pid-file launch contract),

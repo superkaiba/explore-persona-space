@@ -69,3 +69,17 @@ def test_rule_carries_artifact_presence_assert() -> None:
     assert "no-op, never a false-fail" in section  # empty-set arm
     assert "OUT OF SCOPE" in section  # HF-destined boundary (#1090)
     assert "epm:results" in section  # declared-paths source
+
+
+def test_rule_carries_fetch_rebase_before_push() -> None:
+    """The #1880 fetch+rebase-before-push clause lives inside the #1205
+    section with its load-bearing elements: the fetch+rebase recipe, the
+    conflict-abort disposition (fail-loud path preserved), the SHA-rewrite
+    disclosure, and the orchestrator-side mid-run-push warning bullet."""
+    text = _RULE_PATH.read_text(encoding="utf-8")
+    section = text.split("### Result-push verification contract (#1205)", 1)[1]
+    section = section.split("\n### ", 1)[0]
+    assert "git fetch origin <branch> && git rebase origin/<branch>" in section
+    assert "git rebase --abort" in section
+    assert "rewrites the LOCAL result" in section  # SHA-rewrite disclosure
+    assert "**Orchestrator side (#1880):**" in section
