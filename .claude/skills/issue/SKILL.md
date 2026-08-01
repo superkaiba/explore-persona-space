@@ -2316,6 +2316,12 @@ Brief passed to the implementer:
   Belt-and-suspenders on `implementer.md` § After Implementation items 1 + 1a,
   so round briefs surface the duty without the implementer having to
   recall its agent spec (the #509 precedent).
+- **A brief NEVER suppresses the implementation marker.** Never instruct an
+  implementer to "post nothing" / skip its `epm:experiment-implementation` /
+  `epm:results` marker — the code-review ensemble's mechanical contract KEYS
+  on that four-section marker, so suppressing it manufactures a
+  `marker-shape` blocker and an extra fix round (#1900, 2026-07-31). A
+  round whose diff is deliberately partial still posts the marker, saying so.
 - **Marker-version discipline — a brief NEVER instructs a literal marker
   version.** Any brief line about posting `epm:experiment-implementation` /
   `epm:results` / `epm:proposed-tests` says: "post at the next version —

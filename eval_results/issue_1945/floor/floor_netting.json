@@ -1,0 +1,119 @@
+{
+  "metadata": {
+    "git_commit": "f7dbe1cb9a2eb045f74a3189a178b0c7922246d3",
+    "generated_utc": "2026-08-01T01:57:48.231625+00:00",
+    "python": "3.11.15",
+    "numpy": "2.2.6",
+    "scipy": "1.17.1",
+    "torch": "2.8.0+cu128",
+    "host": "cia-benchmark-vm",
+    "seed": 1945,
+    "parent_seed": 1482,
+    "b_draws": 200,
+    "stage_dir": "/home/thomasjiralerspong/explore-persona-space/data/issue_1482/twoway_stage",
+    "smoke": false,
+    "ru_maxrss_mb": 3542.703125
+  },
+  "recipe": "rows = sqrt(floor_i/d) * N(0, I_k) (parent isotropy assumption); share = vc_e(synth) / vc_e(observed subsample R), matched (n, k) geometry",
+  "per_cell": {
+    "context_L14_ridge": {
+      "floor_share_of_interaction": {
+        "raw": 0.0001122367247570417,
+        "normalized": 0.005848078652699573
+      },
+      "log_space_synth_note": "log-space synthetic share undefined \u2014 zero-valued K-resample floors produce identically-zero synthetic rows (log(0)); the raw + normalized shares carry the netting read",
+      "n_sub_per_fold": [
+        962,
+        997
+      ]
+    },
+    "prefix_L14_ridge": {
+      "floor_share_of_interaction": {
+        "raw": 1.382146493103082e-05,
+        "normalized": 0.003373608720416728
+      },
+      "log_space_synth_note": "log-space synthetic share undefined \u2014 zero-valued K-resample floors produce identically-zero synthetic rows (log(0)); the raw + normalized shares carry the netting read",
+      "n_sub_per_fold": [
+        973,
+        1001
+      ]
+    },
+    "bare_L14_ridge": {
+      "floor_share_of_interaction": {
+        "raw": 4.868331207545521e-05,
+        "normalized": 0.0048342193763779235
+      },
+      "log_space_synth_note": "log-space synthetic share undefined \u2014 zero-valued K-resample floors produce identically-zero synthetic rows (log(0)); the raw + normalized shares carry the netting read",
+      "n_sub_per_fold": [
+        972,
+        997
+      ]
+    },
+    "context_L19_ridge": {
+      "floor_share_of_interaction": {
+        "raw": 0.00012577695205967794,
+        "normalized": 0.0089047634217118
+      },
+      "log_space_synth_note": "log-space synthetic share undefined \u2014 zero-valued K-resample floors produce identically-zero synthetic rows (log(0)); the raw + normalized shares carry the netting read",
+      "n_sub_per_fold": [
+        955,
+        982
+      ]
+    },
+    "prefix_L19_ridge": {
+      "floor_share_of_interaction": {
+        "raw": 1.558756740343981e-05,
+        "normalized": 0.004055511581547362
+      },
+      "log_space_synth_note": "log-space synthetic share undefined \u2014 zero-valued K-resample floors produce identically-zero synthetic rows (log(0)); the raw + normalized shares carry the netting read",
+      "n_sub_per_fold": [
+        973,
+        1001
+      ]
+    },
+    "bare_L19_ridge": {
+      "floor_share_of_interaction": {
+        "raw": 3.550765988985855e-05,
+        "normalized": 0.005709658900427583
+      },
+      "log_space_synth_note": "log-space synthetic share undefined \u2014 zero-valued K-resample floors produce identically-zero synthetic rows (log(0)); the raw + normalized shares carry the netting read",
+      "n_sub_per_fold": [
+        968,
+        993
+      ]
+    },
+    "context_L26_ridge": {
+      "floor_share_of_interaction": {
+        "raw": 7.609795767922641e-05,
+        "normalized": 0.005555227462100602
+      },
+      "log_space_synth_note": "log-space synthetic share undefined \u2014 zero-valued K-resample floors produce identically-zero synthetic rows (log(0)); the raw + normalized shares carry the netting read",
+      "n_sub_per_fold": [
+        957,
+        982
+      ]
+    },
+    "prefix_L26_ridge": {
+      "floor_share_of_interaction": {
+        "raw": 2.2557351369875945e-05,
+        "normalized": 0.0019066337324680673
+      },
+      "log_space_synth_note": "log-space synthetic share undefined \u2014 zero-valued K-resample floors produce identically-zero synthetic rows (log(0)); the raw + normalized shares carry the netting read",
+      "n_sub_per_fold": [
+        971,
+        1000
+      ]
+    },
+    "bare_L26_ridge": {
+      "floor_share_of_interaction": {
+        "raw": 3.473673647221131e-05,
+        "normalized": 0.0037015084292457996
+      },
+      "log_space_synth_note": "log-space synthetic share undefined \u2014 zero-valued K-resample floors produce identically-zero synthetic rows (log(0)); the raw + normalized shares carry the netting read",
+      "n_sub_per_fold": [
+        961,
+        986
+      ]
+    }
+  }
+}

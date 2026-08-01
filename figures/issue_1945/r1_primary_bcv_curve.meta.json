@@ -1,0 +1,531 @@
+{
+  "commit": "d6628781f3",
+  "created": "2026-08-01T02:15:38Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "rank of the low-rank fit": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "series": "individual held-out blocks (8)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "held-out interaction R-squared": 0.0011741450126426223,
+      "series": "individual held-out blocks (8)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "held-out interaction R-squared": 0.0009659644212477632,
+      "series": "individual held-out blocks (8)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "held-out interaction R-squared": 0.00045871300939601226,
+      "series": "individual held-out blocks (8)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "held-out interaction R-squared": -0.0007373337208322504,
+      "series": "individual held-out blocks (8)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "held-out interaction R-squared": -0.0030785603148117424,
+      "series": "individual held-out blocks (8)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "held-out interaction R-squared": -0.008119004637702818,
+      "series": "individual held-out blocks (8)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "held-out interaction R-squared": -0.019735778574695415,
+      "series": "individual held-out blocks (8)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "held-out interaction R-squared": 0.001223574340393304,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "held-out interaction R-squared": 0.000986467227694172,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "held-out interaction R-squared": 0.0005117673350493728,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "held-out interaction R-squared": -0.0007149757991688836,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "held-out interaction R-squared": -0.003544318416784693,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "held-out interaction R-squared": -0.008459085680126358,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "held-out interaction R-squared": -0.020130547811625914,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "held-out interaction R-squared": 0.001125582652307854,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "held-out interaction R-squared": 0.0008968196164946944,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "held-out interaction R-squared": 0.00032239888224291045,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "held-out interaction R-squared": -0.0006630480126029746,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "held-out interaction R-squared": -0.003401200344030102,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "held-out interaction R-squared": -0.008782701391660996,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "held-out interaction R-squared": -0.02151998609502639,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "held-out interaction R-squared": 0.0011073717913210354,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "held-out interaction R-squared": 0.0008784230235535017,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "held-out interaction R-squared": 0.0005106171714253647,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "held-out interaction R-squared": -0.0005760708074793377,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "held-out interaction R-squared": -0.0030181001846475417,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "held-out interaction R-squared": -0.008236574179366296,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "held-out interaction R-squared": -0.01967530974552765,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "held-out interaction R-squared": 0.0014191096375230836,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "held-out interaction R-squared": 0.001048004561434417,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "held-out interaction R-squared": 0.0006359477330043449,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "held-out interaction R-squared": -0.0006263885946472041,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "held-out interaction R-squared": -0.002880079755538311,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "held-out interaction R-squared": -0.007930349719910367,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "held-out interaction R-squared": -0.019417273836259755,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "held-out interaction R-squared": 0.0013825354705716828,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "held-out interaction R-squared": 0.001055924352574724,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "held-out interaction R-squared": 0.000561226819748511,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "held-out interaction R-squared": -0.0006345095659939393,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "held-out interaction R-squared": -0.002825868313040661,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "held-out interaction R-squared": -0.007557482799569986,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "held-out interaction R-squared": -0.01931741326409911,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "held-out interaction R-squared": 0.0013846685866983248,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "held-out interaction R-squared": 0.0009861671176268655,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "held-out interaction R-squared": 0.0006341242986041968,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "held-out interaction R-squared": -0.0005620078073635276,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "held-out interaction R-squared": -0.0025960326318725012,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "held-out interaction R-squared": -0.0071397891114582,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "held-out interaction R-squared": -0.019046021510466707,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "held-out interaction R-squared": 0.0013372457260060384,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "held-out interaction R-squared": 0.0011956507671883818,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "held-out interaction R-squared": 0.0008440217938948673,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "held-out interaction R-squared": -0.000346354082873622,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "held-out interaction R-squared": -0.002492479822779294,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "held-out interaction R-squared": -0.0074850214256378415,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "held-out interaction R-squared": -0.01919173607376489,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "series": "observed (pooled over 8 blocks)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "held-out interaction R-squared": 0.001269279152182993,
+      "series": "observed (pooled over 8 blocks)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "held-out interaction R-squared": 0.001001677635976815,
+      "series": "observed (pooled over 8 blocks)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "held-out interaction R-squared": 0.0005598521304206976,
+      "series": "observed (pooled over 8 blocks)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "held-out interaction R-squared": -0.0006075860488702174,
+      "series": "observed (pooled over 8 blocks)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "held-out interaction R-squared": -0.0029795799729381055,
+      "series": "observed (pooled over 8 blocks)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "held-out interaction R-squared": -0.007963751118179107,
+      "series": "observed (pooled over 8 blocks)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "held-out interaction R-squared": -0.01975425836393323,
+      "series": "observed (pooled over 8 blocks)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "held-out interaction R-squared": -0.00022152410326161209,
+      "series": "permuted-pairing null, p97.5 of per-draw max",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "held-out interaction R-squared": -0.00022152410326161209,
+      "series": "permuted-pairing null, p97.5 of per-draw max",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "held-out interaction R-squared": -0.0002165358050299111,
+      "series": "Gaussian second-moment null, p97.5 of per-draw max",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "held-out interaction R-squared": -0.0002165358050299111,
+      "series": "Gaussian second-moment null, p97.5 of per-draw max",
+      "_kind": "line",
+      "_group": 10
+    }
+  ],
+  "n_series": 11,
+  "total_points": 76,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Recoverable interaction structure, primary cell (log space, 256 directions)",
+        "xlabel": "rank of the low-rank fit",
+        "ylabel": "held-out interaction R-squared",
+        "legend_labels": [
+          "individual held-out blocks (8)",
+          "observed (pooled over 8 blocks)",
+          "permuted-pairing null, p97.5 of per-draw max",
+          "Gaussian second-moment null, p97.5 of per-draw max"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70"
+        ],
+        "yticklabels": [
+          "\u22120.025",
+          "\u22120.020",
+          "\u22120.015",
+          "\u22120.010",
+          "\u22120.005",
+          "0.000",
+          "0.005"
+        ]
+      }
+    ],
+    "series": [
+      "individual held-out blocks (8)",
+      "observed (pooled over 8 blocks)",
+      "permuted-pairing null, p97.5 of per-draw max",
+      "Gaussian second-moment null, p97.5 of per-draw max"
+    ]
+  }
+}
