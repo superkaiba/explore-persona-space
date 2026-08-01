@@ -96,6 +96,7 @@ def stage_manifest() -> tuple[dict[int, tuple[str, str]], dict]:
     t0 = time.time()
     entries = hub.retry_transient(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient; scoped prefix listing
             HfApi().list_repo_tree(
                 DATA_REPO, path_in_repo=MANIFEST_PREFIX, repo_type="dataset", recursive=True
             )
@@ -141,7 +142,10 @@ def stage_manifest() -> tuple[dict[int, tuple[str, str]], dict]:
         "stage_dir": str(STAGE_DIR),
         "stage_seconds": round(time.time() - t0, 1),
     }
-    assert set(ci_map) <= holdout_ci | set(ci_map), "unreachable"
+    assert set(ci_map) <= holdout_ci, (
+        f"{len(set(ci_map) - holdout_ci)} part rows labeled holdout are absent"
+        " from the split doc's holdout ci set"
+    )
     return ci_map, digest
 
 
