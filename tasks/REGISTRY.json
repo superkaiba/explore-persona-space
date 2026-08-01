@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1947,
+  "highest_id": 1979,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5964,9 +5964,9 @@
       "goal": "Characterise what fine-tuning a behavior into a specific context does to the context->answer mapping in activation space, on the model-organism fleet: whether the context vector moves, whether the map itself changes, whether the answer vector moves, what shape the write has and whether it is predictable ahead of time (delta vs r_B vs the marker unembedding row), and which of theory assumptions A7-A11 hold.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1768",
-      "status": "followups_running",
-      "title": "Fine-tuning-induced map change is context-dependent through two channels: prefix richness alone reproduces most of the conversation-trained arm's floor crossing, while the trained conversation prefix amplifies persona-trained arms well beyond richness-matched never-trained prefixes (HIGH confidence)"
+      "path": "tasks/awaiting_promotion/1768",
+      "status": "awaiting_promotion",
+      "title": "Fine-tuning-induced map change is context-dependent but not gated on trained-prefix identity: never-trained prefixes resembling the training corpus overshoot the trained-prefix anchor on every persona-trained arm (HIGH confidence)"
     },
     "1769": {
       "goal": "Determine when behavioral commitment happens in Qwen-2.5-7B-Instruct: does steering a persona-vector direction r_B only during prefill vs only during decode vs both change on-policy judged behavior expression - i.e., is the answer's behavior already committed in the pre-answer context state, or decided token-by-token during generation?",
@@ -6718,8 +6718,8 @@
     "1868": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1868",
-      "status": "reviewing",
+      "path": "tasks/completed/1868",
+      "status": "completed",
       "title": "daily-fix: Step 10d teardown re-runs sync on in-flight advis"
     },
     "1869": {
@@ -6739,22 +6739,22 @@
     "1870": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1870",
-      "status": "reviewing",
+      "path": "tasks/completed/1870",
+      "status": "completed",
       "title": "daily-fix: sync KEPT-stash outcome gets durable surfacing"
     },
     "1871": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1871",
-      "status": "reviewing",
+      "path": "tasks/completed/1871",
+      "status": "completed",
       "title": "daily-fix: judge-monitor reads are digest-grain, never full "
     },
     "1872": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1872",
-      "status": "proposed",
+      "path": "tasks/completed/1872",
+      "status": "completed",
       "title": "daily-fix: register step 5a in workflow.yaml steps enum"
     },
     "1873": {
@@ -6767,15 +6767,15 @@
     "1874": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1874",
-      "status": "proposed",
+      "path": "tasks/completed/1874",
+      "status": "completed",
       "title": "daily-fix: /daily filed bodies cite marker per mechanism cla"
     },
     "1875": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1875",
-      "status": "proposed",
+      "path": "tasks/reviewing/1875",
+      "status": "reviewing",
       "title": "daily-fix: /issue Step 0 preloads TaskOutput/Monitor schemas"
     },
     "1876": {
@@ -6879,8 +6879,8 @@
     "1889": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1889",
-      "status": "proposed",
+      "path": "tasks/completed/1889",
+      "status": "completed",
       "title": "workflow-fix: inline lint gate blind to untracked payload files"
     },
     "1890": {
@@ -6920,11 +6920,11 @@
     },
     "1895": {
       "goal": "Does the context\u2192answer map predict the same structure the SAE represents? Two ways of decomposing the same answer activation have been measured separately and never compared: the map's **predictable subspace** (which directions of `v_A` the fitted map recovers) and the SAE's **representable subspace** (which directions its dictionary reconstructs). This task asks whether they coincide, and whether targeting the SAE's reconstruction instead of the raw activation changes what the map can do.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/planning/1895",
-      "status": "planning",
-      "title": "Does the context\u2192answer map's predictable subspace coincide with the SAE's representable subspace?"
+      "path": "tasks/awaiting_promotion/1895",
+      "status": "awaiting_promotion",
+      "title": "The context\u2192answer map's predictable subspace and the SAE's representable subspace coincide almost entirely at the variance grain (MODERATE confidence)"
     },
     "1896": {
       "has_clean_result": false,
@@ -6972,8 +6972,8 @@
       "goal": "On the model-organism fleet at per-prompt grain (the #1768 16,400-real-user-prompt corpus), determine which per-context predictor computable BEFORE fine-tuning best predicts per-context leakage of the trained behavior (graded judge DV for content arms; three-space log P(marker) for marker arms), whether base behavioral propensity survives as the champion, and whether context-vector similarity's predictive power is mediated by answer-side similarity; post-FT and delta candidates form a separate mechanistic panel, and every similarity candidate is computed against both the training-context-centroid and panel-source-context anchors.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1900",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1900",
+      "status": "awaiting_promotion",
       "title": "Base behavioral propensity predicts where a trained behavior is expressed, but pre-fine-tuning answer similarity is the only predictor of the fine-tuning-induced change (MODERATE confidence)"
     },
     "1901": {
@@ -7058,8 +7058,8 @@
     "1911": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1911",
-      "status": "running",
+      "path": "tasks/completed/1911",
+      "status": "completed",
       "title": "workflow-fix: document the 'CMD -c ... || echo 0' double-print trap in gotchas.md"
     },
     "1912": {
@@ -7234,8 +7234,8 @@
     "1934": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1934",
-      "status": "running",
+      "path": "tasks/completed/1934",
+      "status": "completed",
       "title": "Fence-tolerant judge JSON parse: 2.02% of judged calls drop on markdown fences, not truncation"
     },
     "1935": {
@@ -7290,8 +7290,8 @@
     "1941": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1941",
-      "status": "approved",
+      "path": "tasks/completed/1941",
+      "status": "completed",
       "title": "functional_role axis: kappa 0.318 reproduces at both scales \u2014 the only axis with no contrastive evidence"
     },
     "1942": {
@@ -7317,27 +7317,41 @@
     },
     "1945": {
       "goal": "Determine whether the context\u2192answer map's dominant (context \u00d7 direction) interaction residual admits recoverable low-rank bilinear structure (H1) or is per-pair idiosyncratic (H2), by pointing #1775's rank-r bilinear machinery at the #1482 residual pair space against a permuted-pairing null with the answer-sampling floor netted out.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/planning/1945",
-      "status": "planning",
-      "title": "Does the map's residual interaction have low-rank structure, or is it per-pair idiosyncratic?"
+      "path": "tasks/awaiting_promotion/1945",
+      "status": "awaiting_promotion",
+      "title": "The context\u2192answer map's error interaction is per-pair noise to within a trace rank-one residue, putting the map near its information ceiling (MODERATE confidence)"
     },
     "1946": {
       "goal": "Settle whether the bare-query and prefix arms are **mirror images** in SAE feature space, as they demonstrably are in the dense per-context taxonomy.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/planning/1946",
-      "status": "planning",
-      "title": "Per-context error in SAE feature space: does the prefix/bare mirror image survive the sparse re-basis?"
+      "path": "tasks/followups_running/1946",
+      "status": "followups_running",
+      "title": "The prefix/bare mirror image in per-context map error survives the SAE feature-space re-basis (HIGH confidence)"
     },
     "1947": {
       "goal": "Retrain the content-behavior organism fleet under a single-visit data regime (every training row consumed exactly once \u2014 ~1,200 unique rows per cell covering the full 75-step schedule; pilot cell gates the fleet on reaching the 0.60-0.85 install band), then run the theory-assumption battery (write vs delta/r_B, write rank, base-geometry gate, map change) evaluated on exactly the trained rows (TF base+trained on the gradient-producing rows, delta over the same ~300-row set) alongside the standard panel/corpus surfaces, to decide whether the #1768 assumption failures survive without data repetition and on-distribution.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/1947",
-      "status": "planning",
+      "path": "tasks/running/1947",
+      "status": "running",
       "title": "Single-visit organism fleet: no training row repeated; theory assumptions tested on exactly the trained rows"
+    },
+    "1948": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1948",
+      "status": "proposed",
+      "title": "workflow-fix: round-unique inline lint-gate payload path"
+    },
+    "1949": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1949",
+      "status": "proposed",
+      "title": "workflow-fix: root-commit guard pathspec escape fails under foreign staged files"
     },
     "195": {
       "has_clean_result": false,
@@ -7346,6 +7360,77 @@
       "status": "archived",
       "title": "Spreading out priors in midtraining"
     },
+    "1950": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1950",
+      "status": "proposed",
+      "title": "workflow-fix: inline lint gate purges stale pycache before its pytest sweep"
+    },
+    "1951": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1951",
+      "status": "proposed",
+      "title": "Fix thread-caps main red: issue1773_register_steer_stats imports matplotlib before load_dotenv"
+    },
+    "1952": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/1952",
+      "status": "archived",
+      "title": "workflow-fix: root-commit guard cwd attribution for cross-call-assigned cd-variable targets"
+    },
+    "1953": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1953",
+      "status": "completed",
+      "title": "daily-fix: fix red main: test_workflow_lint_jsonl_splitlines.py::test_live_tree_passes \u2014 Fix the `.splitlines()` JSONL read at `s"
+    },
+    "1954": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1954",
+      "status": "completed",
+      "title": "daily-fix: fix red main: test_issue1689_os_exit_shutdown_bypass.py::test_entrypoint_calls_os_exit[issue1689_fits_mirror.py] \u2014 Convert the __main__ guard of scripts/is"
+    },
+    "1955": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1955",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md \u2014 numpy argsort SIMD tie-order trap for cross-machine top-k identity gates"
+    },
+    "1956": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1956",
+      "status": "completed",
+      "title": "daily-fix: fix red main: test_shared_vm_thread_caps::test_no_new_torch_before_dotenv_vm_entrypoints \u2014 load_dotenv before heavy imports in issue1773_register_steer_stats.py"
+    },
+    "1957": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1957",
+      "status": "proposed",
+      "title": "workflow-fix: audit inline-CI rule misses bracket-less verbal form (CI <num> to <num>)"
+    },
+    "1958": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1958",
+      "status": "proposed",
+      "title": "workflow-fix: pre_reg audit gains pre-set/declared/specified synonym branch"
+    },
+    "1959": {
+      "goal": "Determine whether the prefix/bare mirror in per-context map error is carried by a small identifiable subset of the 16,384 restricted answer-side SAE features or is diffuse across the dictionary, by decomposing the banked per-category prefix\u2212bare squared-error differences feature-by-feature.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1959",
+      "status": "proposed",
+      "title": "Per-feature decomposition of the prefix\u2212bare mirror: concentrated or diffuse across the SAE dictionary"
+    },
     "196": {
       "has_clean_result": false,
       "kind": "experiment",
@@ -7353,12 +7438,153 @@
       "status": "archived",
       "title": "Core question: interventions on persona space"
     },
+    "1960": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1960",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan lattice parser \u2014 negated-existence atom"
+    },
+    "1961": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/1961",
+      "status": "reviewing",
+      "title": "workflow-fix: per-pod pod-safety predicate for multi-round issues"
+    },
+    "1962": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1962",
+      "status": "proposed",
+      "title": "daily-fix: cross-issue lint-gate concurrency arbitration"
+    },
+    "1963": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1963",
+      "status": "proposed",
+      "title": "daily-fix: guard family syncs scripts/guard_*.sh with pin te"
+    },
+    "1964": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1964",
+      "status": "proposed",
+      "title": "daily-fix: dispatch preflight staging+flag probes"
+    },
+    "1965": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1965",
+      "status": "proposed",
+      "title": "daily-fix: route long judge drivers off VM on 1st kill"
+    },
+    "1966": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1966",
+      "status": "proposed",
+      "title": "daily-fix: never push to a branch live boxes sync mid-run"
+    },
+    "1967": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1967",
+      "status": "proposed",
+      "title": "daily-fix: per-tier pilot walls + c12 screen vocabulary"
+    },
+    "1968": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1968",
+      "status": "proposed",
+      "title": "daily-fix: hold subagent respawn past active 429 storm"
+    },
+    "1969": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1969",
+      "status": "proposed",
+      "title": "daily-fix: fellows stall reads need grace window"
+    },
     "197": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/197",
       "status": "on_hold",
       "title": "What things are transferrable with prompts vs without prompts"
+    },
+    "1970": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1970",
+      "status": "proposed",
+      "title": "daily-fix: inline-round pod upload-verify satisfier"
+    },
+    "1971": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1971",
+      "status": "proposed",
+      "title": "daily-fix: report TTY-attached unmapped idle sessions"
+    },
+    "1972": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1972",
+      "status": "proposed",
+      "title": "daily-fix: widen pre-gate spec-freshness sync set"
+    },
+    "1973": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/1973",
+      "status": "running",
+      "title": "daily-fix: slurm fetch_results atomic rsync pull"
+    },
+    "1974": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1974",
+      "status": "proposed",
+      "title": "daily-fix: pooling-convention row in mapping disclosure"
+    },
+    "1975": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1975",
+      "status": "proposed",
+      "title": "daily-fix: map fit-space parity assert (issue1739 natpv)"
+    },
+    "1976": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1976",
+      "status": "proposed",
+      "title": "daily-fix: pre-split trigger for fits+figures+smoke units"
+    },
+    "1977": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/1977",
+      "status": "running",
+      "title": "daily-fix: exempt path-limited git add --all in guard"
+    },
+    "1978": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1978",
+      "status": "proposed",
+      "title": "daily-fix: extract Step 10d guards to checked-in script"
+    },
+    "1979": {
+      "goal": "At per-prefix grain (leakage per (arm, destination prefix), averaged over a fixed shared 60-query set; 50-60 prefix panel including trained prefixes, trained contrastive negatives, bystanders, near-twins, real conversation and ICL prefixes), determine which pre-fine-tuning predictor best predicts per-prefix leakage level and change (full roster: context/answer similarity pre+post, delta similarities, through-map forms, whitened gate, r_B projections, write-map, propensity incumbent, kNN answer-side variant; both anchors), whether context similarity is answer-mediated at this grain, and whether the #1768 assumption refutations (gate A7, write rank A6, write direction A5) survive at the theory's native prefix grain or were per-query grain artifacts.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1979",
+      "status": "proposed",
+      "title": "Per-prefix leakage-predictor race + theory-assumption battery at prefix grain (50 prefixes x 60 shared queries)"
     },
     "199": {
       "has_clean_result": true,

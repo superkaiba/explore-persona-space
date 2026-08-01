@@ -653,3 +653,69 @@ def test_read_payload_missing_path_inconclusive(tmp_path: Path) -> None:
     repo = _make_repo(tmp_path)
     with pytest.raises(ilg.Inconclusive):
         ilg.read_payload(["scripts/does_not_exist.py"], repo)
+
+
+# ---------------------------------------------------------------------------
+# EPM_SCAN_EXTRA_FILES payload threading + untracked-payload note (#1889)
+# ---------------------------------------------------------------------------
+def test_pytest_leg_env_carries_scan_extra_files(tmp_path: Path) -> None:
+    """The mapped-pytest leg's CHILD env carries the os.pathsep-joined payload
+    list as EPM_SCAN_EXTRA_FILES (#1889), observable through the hermetic
+    EPM_INLINE_GATE_PYTEST_CMD override. The echo line is WARN-prefixed so it
+    classifies as a report line (never a verdict input), and the `1 passed`
+    tail satisfies PYTEST_SUMMARY_RE."""
+    repo = _make_repo(tmp_path)
+    (repo / "scripts" / "sib.py").write_text("print(0)\n", encoding="utf-8")  # untracked sibling
+    payload = ["scripts/mod.py", "scripts/sib.py"]
+    payload_file = tmp_path / "payload.txt"
+    payload_file.write_text("\n".join(payload) + "\n", encoding="utf-8")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir(exist_ok=True)
+    env = os.environ.copy()
+    lint_file = tmp_path / "lint.txt"
+    lint_file.write_text(LINT_OK, encoding="utf-8")
+    env["EPM_INLINE_GATE_LINT_CMD"] = f"cat {lint_file}"
+    map_file = tmp_path / "map.txt"
+    map_file.write_text("tests/test_x.py\tscripts/mod.py\n", encoding="utf-8")
+    env["EPM_INLINE_GATE_MAP_CMD"] = f"cat {map_file}"
+    # Shell override runs with the merged child env: $EPM_SCAN_EXTRA_FILES expands there.
+    env["EPM_INLINE_GATE_PYTEST_CMD"] = (
+        'echo "WARN scan-extra=$EPM_SCAN_EXTRA_FILES" && echo "1 passed in 0.01s"'
+    )
+    env.pop("EPM_SCAN_EXTRA_FILES", None)  # prove the value comes from the gate, not the host
+    env["EPM_INLINE_CERT_PATH"] = str(tmp_path / "cert.txt")
+    env["EPM_CERT_REHASH_DELAY_S"] = "0"
+    r = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--issue",
+            "9999",
+            "--payload-file",
+            str(payload_file),
+            "--repo-root",
+            str(repo),
+            "--out-dir",
+            str(out_dir),
+        ],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    joined = os.pathsep.join(sorted(payload))
+    assert r.returncode == 0, (r.returncode, r.stdout, r.stderr)
+    # The payload paths reached the pytest child's env (echoed + audit-persisted).
+    assert f"WARN scan-extra={joined}" in r.stdout, r.stdout
+    audit = (out_dir / "issue-9999-inline-lint.txt").read_text(encoding="utf-8")
+    assert f"WARN scan-extra={joined}" in audit, audit
+
+
+def test_untracked_payload_note_printed(tmp_path: Path) -> None:
+    """An UNTRACKED payload path gets the stderr audit note (#1889);
+    a tracked payload path prints no note. Report-only: verdict unchanged."""
+    repo = _make_repo(tmp_path)
+    (repo / "scripts" / "new.py").write_text("print(1)\n", encoding="utf-8")  # not tracked
+    r = _run_gate(repo, ["scripts/mod.py", "scripts/new.py"], tmp_path, lint_out=LINT_OK)
+    assert r.returncode == 0, (r.returncode, r.stdout, r.stderr)
+    assert "inline_lint_gate: note: payload scripts/new.py is untracked" in r.stderr, r.stderr
+    assert "payload scripts/mod.py is untracked" not in r.stderr, r.stderr

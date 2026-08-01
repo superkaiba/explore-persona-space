@@ -1,0 +1,439 @@
+{
+  "layer": 19,
+  "seed_cross": 1946,
+  "n_perm_cross": 10000,
+  "verdict": "Reproduced",
+  "verdict_rule": "Reproduced iff perm_p<0.05 AND rho_M>0 AND SA_M>=15/20; Inverted iff perm_p<0.05 AND rho_M<0 AND SA_M<=5; Uncorrelated iff perm_p>=0.05; Mixed otherwise (plan section 3; verdict on sae_space, unadjusted battery)",
+  "registered_primary": {
+    "rho_M": 0.8554488989271598,
+    "rho_M_perm_p_two_sided": 0.0,
+    "SA_M": 18,
+    "n_union": 20,
+    "union": [
+      "language=en",
+      "topic=factual_qa",
+      "topic=creative_writing",
+      "topic=coding",
+      "topic=advice_howto",
+      "topic=chitchat_social",
+      "topic=translation",
+      "topic=math",
+      "topic=harmful_or_unsafe_request",
+      "topic=roleplay_persona",
+      "topic=nsfw",
+      "topic=other",
+      "refusal_adjacent=yes",
+      "answer_is_refusal=yes",
+      "format=code",
+      "format=list",
+      "format=prose",
+      "depth=2-2",
+      "depth=>=5",
+      "corpus=wildchat"
+    ]
+  },
+  "registered_secondary": {
+    "per_arm": {
+      "prefix": {
+        "rho": 0.4116318464144551,
+        "perm_p_two_sided": 0.0556,
+        "n_dense_significant": 13,
+        "sign_agree_on_dense_significant": 10
+      },
+      "context": {
+        "rho": 0.7594579333709769,
+        "perm_p_two_sided": 0.0,
+        "n_dense_significant": 16,
+        "sign_agree_on_dense_significant": 14
+      },
+      "bare": {
+        "rho": 0.7967250141163185,
+        "perm_p_two_sided": 0.0,
+        "n_dense_significant": 18,
+        "sign_agree_on_dense_significant": 17
+      }
+    },
+    "per_context": {
+      "prefix": {
+        "spearman": 0.6597464190009682,
+        "p": 0.0,
+        "n": 9941
+      },
+      "context": {
+        "spearman": 0.7206222865016183,
+        "p": 0.0,
+        "n": 9941
+      },
+      "bare": {
+        "spearman": 0.7532144669440369,
+        "p": 0.0,
+        "n": 9941
+      },
+      "difference_prefix_minus_bare": {
+        "spearman": 0.7099611394128592,
+        "p": 0.0,
+        "n": 9941
+      }
+    }
+  },
+  "robustness_spaces": {
+    "dense_feat_space": {
+      "rho_M": 0.9457933370976849,
+      "rho_M_perm_p_two_sided": 0.0,
+      "SA_M": 19,
+      "n_union": 20,
+      "per_arm": {
+        "prefix": {
+          "rho": 0.5753811405985318,
+          "perm_p_two_sided": 0.0053,
+          "n_dense_significant": 13,
+          "sign_agree_on_dense_significant": 10
+        },
+        "context": {
+          "rho": 0.8656126482213439,
+          "perm_p_two_sided": 0.0,
+          "n_dense_significant": 16,
+          "sign_agree_on_dense_significant": 14
+        },
+        "bare": {
+          "rho": 0.9006211180124224,
+          "perm_p_two_sided": 0.0,
+          "n_dense_significant": 18,
+          "sign_agree_on_dense_significant": 17
+        }
+      }
+    },
+    "max_space": {
+      "rho_M": 0.9141727837380011,
+      "rho_M_perm_p_two_sided": 0.0,
+      "SA_M": 18,
+      "n_union": 20,
+      "per_arm": {
+        "prefix": {
+          "rho": 0.49181253529079616,
+          "perm_p_two_sided": 0.0216,
+          "n_dense_significant": 13,
+          "sign_agree_on_dense_significant": 11
+        },
+        "context": {
+          "rho": 0.17334839073969507,
+          "perm_p_two_sided": 0.4378,
+          "n_dense_significant": 16,
+          "sign_agree_on_dense_significant": 9
+        },
+        "bare": {
+          "rho": 0.4624505928853755,
+          "perm_p_two_sided": 0.0307,
+          "n_dense_significant": 18,
+          "sign_agree_on_dense_significant": 13
+        }
+      }
+    },
+    "frac_space": {
+      "rho_M": 0.8373800112930547,
+      "rho_M_perm_p_two_sided": 0.0,
+      "SA_M": 18,
+      "n_union": 20,
+      "per_arm": {
+        "prefix": {
+          "rho": 0.7955957086391869,
+          "perm_p_two_sided": 0.0001,
+          "n_dense_significant": 13,
+          "sign_agree_on_dense_significant": 12
+        },
+        "context": {
+          "rho": 0.6849237718802936,
+          "perm_p_two_sided": 0.0006,
+          "n_dense_significant": 16,
+          "sign_agree_on_dense_significant": 13
+        },
+        "bare": {
+          "rho": 0.8881987577639752,
+          "perm_p_two_sided": 0.0,
+          "n_dense_significant": 18,
+          "sign_agree_on_dense_significant": 18
+        }
+      }
+    }
+  },
+  "descriptive_mirror_categories": {
+    "prefix:language=en": {
+      "present": true,
+      "sae_delta": 0.09754837809225281,
+      "sae_boot_ci": [
+        0.08453919129739125,
+        0.1110694594687484
+      ],
+      "sae_bh_significant": true,
+      "dense_delta": 0.07934407349371353,
+      "dense_bh_significant": true
+    },
+    "prefix:topic=chitchat_social": {
+      "present": true,
+      "sae_delta": 0.039532453984407745,
+      "sae_boot_ci": [
+        0.01724763301971836,
+        0.06269222281666693
+      ],
+      "sae_bh_significant": true,
+      "dense_delta": 0.08398913355886417,
+      "dense_bh_significant": true
+    },
+    "prefix:topic=translation": {
+      "present": true,
+      "sae_delta": 0.1364963673144609,
+      "sae_boot_ci": [
+        0.10399636735796024,
+        0.1714664400312897
+      ],
+      "sae_bh_significant": true,
+      "dense_delta": 0.07083757123636614,
+      "dense_bh_significant": true
+    },
+    "prefix:corpus=wildchat": {
+      "present": true,
+      "sae_delta": -0.10427278945245078,
+      "sae_boot_ci": [
+        -0.11704698067082331,
+        -0.09179075146575741
+      ],
+      "sae_bh_significant": true,
+      "dense_delta": -0.13090848206556838,
+      "dense_bh_significant": true
+    },
+    "prefix:topic=nsfw": {
+      "present": true,
+      "sae_delta": -0.036508051909731165,
+      "sae_boot_ci": [
+        -0.07187992542699781,
+        0.0016344411546889651
+      ],
+      "sae_bh_significant": false,
+      "dense_delta": -0.1034739823894335,
+      "dense_bh_significant": true
+    },
+    "prefix:topic=creative_writing": {
+      "present": true,
+      "sae_delta": -0.021897475451197357,
+      "sae_boot_ci": [
+        -0.037764756835519483,
+        -0.005937713164270737
+      ],
+      "sae_bh_significant": true,
+      "dense_delta": -0.06908706777816254,
+      "dense_bh_significant": true
+    },
+    "bare:topic=roleplay_persona": {
+      "present": true,
+      "sae_delta": 0.12536945151346268,
+      "sae_boot_ci": [
+        0.08833785533557716,
+        0.163979448587596
+      ],
+      "sae_bh_significant": true,
+      "dense_delta": 0.10409584292865831,
+      "dense_bh_significant": true
+    },
+    "bare:depth=>=5": {
+      "present": true,
+      "sae_delta": 0.045860718877325235,
+      "sae_boot_ci": [
+        0.030834135412267406,
+        0.061003764351189586
+      ],
+      "sae_bh_significant": true,
+      "dense_delta": 0.03572153632324404,
+      "dense_bh_significant": true
+    },
+    "bare:topic=chitchat_social": {
+      "present": true,
+      "sae_delta": -0.1524847208553819,
+      "sae_boot_ci": [
+        -0.17802016739809534,
+        -0.1256943300087706
+      ],
+      "sae_bh_significant": true,
+      "dense_delta": -0.08648155610328478,
+      "dense_bh_significant": true
+    }
+  },
+  "floor_adjusted_sensitivity": {
+    "prefix": {
+      "available": true,
+      "n_shared_contrasts": 19,
+      "rho": 0.8122807017543858,
+      "perm_p_two_sided": 0.0,
+      "n_dense_significant_shared": 9,
+      "sign_agree_on_dense_significant": 8,
+      "construct_caveat": "sae_enc_of_mean_state (approximate) \u2014 robustness only"
+    },
+    "context": {
+      "available": true,
+      "n_shared_contrasts": 19,
+      "rho": 0.8982456140350875,
+      "perm_p_two_sided": 0.0,
+      "n_dense_significant_shared": 5,
+      "sign_agree_on_dense_significant": 5,
+      "construct_caveat": "sae_enc_of_mean_state (approximate) \u2014 robustness only"
+    },
+    "bare": {
+      "available": true,
+      "n_shared_contrasts": 19,
+      "rho": 0.93859649122807,
+      "perm_p_two_sided": 0.0,
+      "n_dense_significant_shared": 12,
+      "sign_agree_on_dense_significant": 12,
+      "construct_caveat": "sae_enc_of_mean_state (approximate) \u2014 robustness only"
+    }
+  },
+  "exploratory_sign_share_prefix_harder": {
+    "note": "EXPLORATORY (Alternatives-critic companion; plan item 11) \u2014 denominator-free per-category share of holdout contexts where nerr_prefix > nerr_bare, per space",
+    "by_contrast": {
+      "language=en": {
+        "n_group": 5870,
+        "sae_share_prefix_harder": 0.6105621805792164,
+        "dense_share_prefix_harder": 0.6749574105621806
+      },
+      "topic=factual_qa": {
+        "n_group": 2996,
+        "sae_share_prefix_harder": 0.6962616822429907,
+        "dense_share_prefix_harder": 0.7827102803738317
+      },
+      "topic=creative_writing": {
+        "n_group": 1604,
+        "sae_share_prefix_harder": 0.678927680798005,
+        "dense_share_prefix_harder": 0.6253117206982544
+      },
+      "topic=coding": {
+        "n_group": 1586,
+        "sae_share_prefix_harder": 0.5138713745271122,
+        "dense_share_prefix_harder": 0.5825977301387137
+      },
+      "topic=advice_howto": {
+        "n_group": 1297,
+        "sae_share_prefix_harder": 0.7070161912104858,
+        "dense_share_prefix_harder": 0.7293754818812644
+      },
+      "topic=chitchat_social": {
+        "n_group": 608,
+        "sae_share_prefix_harder": 0.819078947368421,
+        "dense_share_prefix_harder": 0.8092105263157895
+      },
+      "topic=translation": {
+        "n_group": 414,
+        "sae_share_prefix_harder": 0.6811594202898551,
+        "dense_share_prefix_harder": 0.6956521739130435
+      },
+      "topic=math": {
+        "n_group": 311,
+        "sae_share_prefix_harder": 0.6527331189710611,
+        "dense_share_prefix_harder": 0.7266881028938906
+      },
+      "topic=summarization_extraction": {
+        "n_group": 299,
+        "sae_share_prefix_harder": 0.7357859531772575,
+        "dense_share_prefix_harder": 0.7357859531772575
+      },
+      "topic=harmful_or_unsafe_request": {
+        "n_group": 267,
+        "sae_share_prefix_harder": 0.6104868913857678,
+        "dense_share_prefix_harder": 0.5917602996254682
+      },
+      "topic=roleplay_persona": {
+        "n_group": 252,
+        "sae_share_prefix_harder": 0.5,
+        "dense_share_prefix_harder": 0.49206349206349204
+      },
+      "topic=nsfw": {
+        "n_group": 209,
+        "sae_share_prefix_harder": 0.45454545454545453,
+        "dense_share_prefix_harder": 0.45454545454545453
+      },
+      "topic=other": {
+        "n_group": 82,
+        "sae_share_prefix_harder": 0.4634146341463415,
+        "dense_share_prefix_harder": 0.573170731707317
+      },
+      "refusal_adjacent=yes": {
+        "n_group": 519,
+        "sae_share_prefix_harder": 0.5375722543352601,
+        "dense_share_prefix_harder": 0.5394990366088632
+      },
+      "answer_is_refusal=yes": {
+        "n_group": 204,
+        "sae_share_prefix_harder": 0.5833333333333334,
+        "dense_share_prefix_harder": 0.6029411764705882
+      },
+      "format=code": {
+        "n_group": 755,
+        "sae_share_prefix_harder": 0.5019867549668874,
+        "dense_share_prefix_harder": 0.5708609271523178
+      },
+      "format=list": {
+        "n_group": 1522,
+        "sae_share_prefix_harder": 0.6892247043363995,
+        "dense_share_prefix_harder": 0.7279894875164258
+      },
+      "format=prose": {
+        "n_group": 5341,
+        "sae_share_prefix_harder": 0.6948137052986332,
+        "dense_share_prefix_harder": 0.708668788616364
+      },
+      "depth=2-2": {
+        "n_group": 4154,
+        "sae_share_prefix_harder": 0.682956186807896,
+        "dense_share_prefix_harder": 0.722436206066442
+      },
+      "depth=3-4": {
+        "n_group": 3298,
+        "sae_share_prefix_harder": 0.679805942995755,
+        "dense_share_prefix_harder": 0.6879927228623408
+      },
+      "depth=>=5": {
+        "n_group": 2489,
+        "sae_share_prefix_harder": 0.5873844917637605,
+        "dense_share_prefix_harder": 0.6448372840498192
+      },
+      "corpus=wildchat": {
+        "n_group": 4925,
+        "sae_share_prefix_harder": 0.6383756345177665,
+        "dense_share_prefix_harder": 0.6728934010152284
+      }
+    }
+  },
+  "contrast_family": [
+    "language=en",
+    "topic=factual_qa",
+    "topic=creative_writing",
+    "topic=coding",
+    "topic=advice_howto",
+    "topic=chitchat_social",
+    "topic=translation",
+    "topic=math",
+    "topic=summarization_extraction",
+    "topic=harmful_or_unsafe_request",
+    "topic=roleplay_persona",
+    "topic=nsfw",
+    "topic=other",
+    "refusal_adjacent=yes",
+    "answer_is_refusal=yes",
+    "format=code",
+    "format=list",
+    "format=prose",
+    "depth=2-2",
+    "depth=3-4",
+    "depth=>=5",
+    "corpus=wildchat"
+  ],
+  "inputs": {
+    "sae_fits": "/workspace/eps-issue-1946/eval_results/issue_1738/bare_query/sae_arm/sae_fits.json",
+    "assembly_fingerprint": "6cb65f73f7afaa95fdb39e070fb4673d1601b3d44e9046d6d2512c647ab8d3f7",
+    "dense_eval": "/workspace/eps-issue-1946/eval_results/issue_1738"
+  },
+  "git_commit": "86977e774b07d8f25d64817eb3b4d77e59a88898",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "ts": "2026-08-01T02:09:07Z",
+  "data_revision": "05cb982b0d3f9a21b5735d196a0afdc8175590e5",
+  "smoke": false
+}

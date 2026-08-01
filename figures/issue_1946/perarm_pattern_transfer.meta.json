@@ -1,0 +1,622 @@
+{
+  "commit": "2e6ce5a06e",
+  "created": "2026-08-01T03:09:34Z",
+  "figsize": [
+    12.5,
+    4.4
+  ],
+  "points": [
+    {
+      "category \u0394, dense space": 0.07934407349371353,
+      "category \u0394, SAE space": 0.09754837809225281,
+      "label": "English",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": 0.046183980019255055,
+      "category \u0394, SAE space": -0.04215657810824813,
+      "label": "factual Q&A",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": -0.06908706777816254,
+      "category \u0394, SAE space": -0.021897475451197357,
+      "label": "creative writing",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": -0.03961814684859688,
+      "category \u0394, SAE space": 0.04239457816691561,
+      "label": "coding",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": 0.0035191109431765843,
+      "category \u0394, SAE space": -0.04067167033867103,
+      "label": "advice / how-to",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": 0.08398913355886417,
+      "category \u0394, SAE space": 0.039532453984407745,
+      "label": "chitchat",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": 0.07083757123636614,
+      "category \u0394, SAE space": 0.1364963673144609,
+      "label": "translation",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": -0.017079749570975467,
+      "category \u0394, SAE space": 0.07220203516795809,
+      "label": "math",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": 0.0018133979705055037,
+      "category \u0394, SAE space": 0.005056959466225419,
+      "label": "summarization",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": 0.01469730138645653,
+      "category \u0394, SAE space": 0.029180565409855697,
+      "label": "harmful request",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": -0.04603394017988094,
+      "category \u0394, SAE space": 0.013756155021259042,
+      "label": "roleplay",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": -0.1034739823894335,
+      "category \u0394, SAE space": -0.036508051909731165,
+      "label": "NSFW",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": 0.03790579076177736,
+      "category \u0394, SAE space": 0.03339592384403156,
+      "label": "other topic",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": -0.03476662529037433,
+      "category \u0394, SAE space": -0.0013674572963744414,
+      "label": "refusal-adjacent",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": -0.004668588941883267,
+      "category \u0394, SAE space": -0.016311175702155012,
+      "label": "answer is refusal",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": -0.021585270694351455,
+      "category \u0394, SAE space": 0.06987075185759828,
+      "label": "code answers",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": 0.023111275874076465,
+      "category \u0394, SAE space": 0.001510154631737537,
+      "label": "list answers",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": -0.010254643709502798,
+      "category \u0394, SAE space": -0.04599740950799225,
+      "label": "prose answers",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": 0.026737397547043518,
+      "category \u0394, SAE space": 0.026294886660810812,
+      "label": "depth 2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": -0.010166638300338482,
+      "category \u0394, SAE space": -0.0056284260793241225,
+      "label": "depth 3\u20134",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": -0.022644382434529486,
+      "category \u0394, SAE space": -0.027431324366522625,
+      "label": "depth \u22655",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": -0.13090848206556838,
+      "category \u0394, SAE space": -0.10427278945245078,
+      "label": "WildChat",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "category \u0394, dense space": 0.03238334713277802,
+      "category \u0394, SAE space": 0.08880720276107562,
+      "label": "English",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": 0.008805467813402634,
+      "category \u0394, SAE space": -0.03878987583450533,
+      "label": "factual Q&A",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": -0.010898800120736463,
+      "category \u0394, SAE space": -0.011039568072076178,
+      "label": "creative writing",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": 0.014260416694594213,
+      "category \u0394, SAE space": 0.1087340823652761,
+      "label": "coding",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": -0.016159290357431633,
+      "category \u0394, SAE space": -0.03618661457057887,
+      "label": "advice / how-to",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": -0.0670567386464253,
+      "category \u0394, SAE space": -0.11907929703490933,
+      "label": "chitchat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": 0.03295004101535687,
+      "category \u0394, SAE space": 0.0249594308582734,
+      "label": "translation",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": -0.021025238387566925,
+      "category \u0394, SAE space": 0.05235796056662256,
+      "label": "math",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": 0.01382102233283189,
+      "category \u0394, SAE space": 0.007554546964450626,
+      "label": "summarization",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": 0.030602902067647486,
+      "category \u0394, SAE space": 0.03295550303368444,
+      "label": "harmful request",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": 0.01970323016067843,
+      "category \u0394, SAE space": 0.03320606568089951,
+      "label": "roleplay",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": 0.012533756821575204,
+      "category \u0394, SAE space": 0.018174916960798038,
+      "label": "NSFW",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": 0.08459770572744535,
+      "category \u0394, SAE space": 0.13329982873116053,
+      "label": "other topic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": 0.02566574768923796,
+      "category \u0394, SAE space": 0.03479620254259175,
+      "label": "refusal-adjacent",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": 0.03444215748995666,
+      "category \u0394, SAE space": 0.03729255456888553,
+      "label": "answer is refusal",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": 0.015491698476387594,
+      "category \u0394, SAE space": 0.10816339027752736,
+      "label": "code answers",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": 0.013025262245397684,
+      "category \u0394, SAE space": 0.0036376802004784436,
+      "label": "list answers",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": -0.028128609979725938,
+      "category \u0394, SAE space": -0.08790818047067961,
+      "label": "prose answers",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": -0.0035582147729461555,
+      "category \u0394, SAE space": -0.00394062674776241,
+      "label": "depth 2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": 0.0009074377539110556,
+      "category \u0394, SAE space": 0.005631578978636864,
+      "label": "depth 3\u20134",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": 0.003539779321764691,
+      "category \u0394, SAE space": -0.0015446700544074488,
+      "label": "depth \u22655",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": -0.024542893499411633,
+      "category \u0394, SAE space": -0.02203271359824166,
+      "label": "WildChat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category \u0394, dense space": 0.0677213531553697,
+      "category \u0394, SAE space": 0.15082170185092908,
+      "label": "English",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": -0.02178199935936781,
+      "category \u0394, SAE space": -0.05886448953465684,
+      "label": "factual Q&A",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": -0.004455374376253873,
+      "category \u0394, SAE space": -0.017233214236610395,
+      "label": "creative writing",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": 0.029559754833108964,
+      "category \u0394, SAE space": 0.12616875969665786,
+      "label": "coding",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": -0.03744004445131899,
+      "category \u0394, SAE space": -0.07721910688879463,
+      "label": "advice / how-to",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": -0.08648155610328478,
+      "category \u0394, SAE space": -0.1524847208553819,
+      "label": "chitchat",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": 0.08829853563242818,
+      "category \u0394, SAE space": 0.11376255233348675,
+      "label": "translation",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": -0.03917992697749628,
+      "category \u0394, SAE space": 0.059546753237447514,
+      "label": "math",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": 0.014388077906768937,
+      "category \u0394, SAE space": 0.003837017926751063,
+      "label": "summarization",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": 0.08749225034017677,
+      "category \u0394, SAE space": 0.07044375293592797,
+      "label": "harmful request",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": 0.10409584292865831,
+      "category \u0394, SAE space": 0.12536945151346268,
+      "label": "roleplay",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": 0.08862823009057319,
+      "category \u0394, SAE space": 0.12594374899289662,
+      "label": "NSFW",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": 0.09903696255844208,
+      "category \u0394, SAE space": 0.14997057011699244,
+      "label": "other topic",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": 0.09152432527579907,
+      "category \u0394, SAE space": 0.10129290896257237,
+      "label": "refusal-adjacent",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": 0.0879689845901449,
+      "category \u0394, SAE space": 0.050825113553262136,
+      "label": "answer is refusal",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": 0.03730007478776165,
+      "category \u0394, SAE space": 0.13604228777528637,
+      "label": "code answers",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": 0.0027705059989237,
+      "category \u0394, SAE space": -0.018267907670206918,
+      "label": "list answers",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": -0.025554235511517087,
+      "category \u0394, SAE space": -0.081478892772051,
+      "label": "prose answers",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": -0.0235667621416929,
+      "category \u0394, SAE space": -0.024783136290052465,
+      "label": "depth 2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": -0.0043835723511987945,
+      "category \u0394, SAE space": -0.011632829785544696,
+      "label": "depth 3\u20134",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": 0.03572153632324404,
+      "category \u0394, SAE space": 0.045860718877325235,
+      "label": "depth \u22655",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category \u0394, dense space": -0.04426474296471078,
+      "category \u0394, SAE space": -0.040645326736887255,
+      "label": "WildChat",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 66,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "history-only (prefix) arm: \u03c1=0.41, p=0.0556",
+        "xlabel": "category \u0394, dense space",
+        "ylabel": "category \u0394, SAE space",
+        "annotations": [
+          "English",
+          "factual Q&A",
+          "creative writing",
+          "coding",
+          "advice / how-to",
+          "chitchat",
+          "translation",
+          "math",
+          "summarization",
+          "harmful request",
+          "roleplay",
+          "NSFW",
+          "other topic",
+          "refusal-adjacent",
+          "answer is refusal",
+          "code answers",
+          "list answers",
+          "prose answers",
+          "depth 2",
+          "depth 3\u20134",
+          "depth \u22655",
+          "WildChat"
+        ],
+        "xticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10"
+        ],
+        "yticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15"
+        ]
+      },
+      {
+        "title_left": "full-context arm: \u03c1=0.76, p<1e-4",
+        "xlabel": "category \u0394, dense space",
+        "ylabel": "category \u0394, SAE space",
+        "annotations": [
+          "English",
+          "factual Q&A",
+          "creative writing",
+          "coding",
+          "advice / how-to",
+          "chitchat",
+          "translation",
+          "math",
+          "summarization",
+          "harmful request",
+          "roleplay",
+          "NSFW",
+          "other topic",
+          "refusal-adjacent",
+          "answer is refusal",
+          "code answers",
+          "list answers",
+          "prose answers",
+          "depth 2",
+          "depth 3\u20134",
+          "depth \u22655",
+          "WildChat"
+        ],
+        "xticklabels": [
+          "\u22120.075",
+          "\u22120.050",
+          "\u22120.025",
+          "0.000",
+          "0.025",
+          "0.050",
+          "0.075",
+          "0.100"
+        ],
+        "yticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15"
+        ]
+      },
+      {
+        "title_left": "bare-query arm: \u03c1=0.80, p<1e-4",
+        "xlabel": "category \u0394, dense space",
+        "ylabel": "category \u0394, SAE space",
+        "annotations": [
+          "English",
+          "factual Q&A",
+          "creative writing",
+          "coding",
+          "advice / how-to",
+          "chitchat",
+          "translation",
+          "math",
+          "summarization",
+          "harmful request",
+          "roleplay",
+          "NSFW",
+          "other topic",
+          "refusal-adjacent",
+          "answer is refusal",
+          "code answers",
+          "list answers",
+          "prose answers",
+          "depth 2",
+          "depth 3\u20134",
+          "depth \u22655",
+          "WildChat"
+        ],
+        "xticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15"
+        ],
+        "yticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      }
+    ]
+  }
+}

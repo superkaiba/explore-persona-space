@@ -1,0 +1,238 @@
+{
+  "commit": "74e43d5b63",
+  "created": "2026-08-01T02:13:11Z",
+  "figsize": [
+    10.5,
+    6.6
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "cos(attributed, measured)": 0.1574048634322949,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "cos(attributed, measured)": 0.46814814047417075,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "cos(attributed, measured)": 0.10903697241800323,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "cos(attributed, measured)": 0.2557864468516099,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "cos(attributed, measured)": 0.1054053569270353,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "cos(attributed, measured)": 0.07652057280191532,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "cos(attributed, measured)": 0.02535099195032086,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.81,
+      "cos(attributed, measured)": -0.04415776951335685,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "cos(attributed, measured)": 0.03331560637453795,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "cos(attributed, measured)": 0.0667765813441526,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "cos(attributed, measured)": 0.017115686778357626,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "cos(attributed, measured)": 0.034305049224224525,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "cos(attributed, measured)": 0.00692922356782916,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "cos(attributed, measured)": 0.008605743386219548,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "cos(attributed, measured)": 0.009641445438383871,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.19,
+      "cos(attributed, measured)": -0.006685978289767173,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "imp-pers-con\n lr3e5 s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.782682764610801,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-pers-po\n lr1e5 s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.0982418361385773,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-pers-con\n lr1e5 s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.046100645607776,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-bare-con\n lr1e5 s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.0863383935826834,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-conv-po\n lr1e5 s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.031455718981338,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-pers-po\n lr5e6 s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.555726578008473,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-pers-ft-con s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 4.062878210973665,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-pers-ft-con s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 4.039139299311567,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Does round 1's map stand-in reproduce the measured text effect?",
+        "ylabel": "cos(attributed, measured)",
+        "legend_labels": [
+          "mean-shift cosine",
+          "per-row cosine (median)"
+        ],
+        "annotations": [
+          "0.16",
+          "0.47",
+          "0.11",
+          "0.26",
+          "0.11",
+          "0.08",
+          "0.03",
+          "-0.04",
+          "0.03",
+          "0.07",
+          "0.02",
+          "0.03",
+          "0.01",
+          "0.01",
+          "0.01",
+          "-0.01",
+          "attributed $= M_0(c^+)-M_0(c^0)$ (base map refit on the same cell/split) vs measured $= v^0(t^+)-v^0(t^0)$; held-out test rows, layer 19."
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "ylabel": "relative error $\\|a-m\\|/\\|m\\|$",
+        "annotations": [
+          "2.78",
+          "2.10",
+          "3.05",
+          "3.09",
+          "3.03",
+          "2.56",
+          "4.06",
+          "4.04"
+        ],
+        "xticklabels": [
+          "imp-pers-con\n lr3e5 s42",
+          "imp-pers-po\n lr1e5 s137",
+          "cas-pers-con\n lr1e5 s137",
+          "syc-bare-con\n lr1e5 s42",
+          "syc-conv-po\n lr1e5 s137",
+          "mk-pers-po\n lr5e6 s137",
+          "imp-pers-ft-con s137",
+          "syc-pers-ft-con s137"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0",
+          "4.5"
+        ]
+      }
+    ],
+    "series": [
+      "mean-shift cosine",
+      "per-row cosine (median)"
+    ]
+  }
+}

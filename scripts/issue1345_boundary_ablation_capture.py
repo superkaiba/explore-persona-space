@@ -467,6 +467,43 @@ def render_boundary_turn(
 ONPOLICY_EXPECTED_GATE_REJECTS = ("attribution_multi",)
 
 
+def normalize_onpolicy_leading_ws(stories: list[dict]) -> tuple[list[dict], dict]:
+    """Move a story-slot row's `a_start` past a leading whitespace, in place of it.
+
+    The parent V1 convention puts `a_start` at the answer's first CONTENT
+    character: the gate re-derives it by NORMALIZED occurrence search, and a space
+    between the opening quote and the match start belongs to neither the quote nor
+    the answer. On-policy rows generated before the writer lstripped its answers
+    store `a_start = len(prefix)` with a space-initial answer, so the span points
+    AT the space and the capture's span-consistency assert sees a +1 disagreement.
+
+    This is a CONVENTION normalization, not a "trust the gate over the store"
+    override: it lstrips the answer and advances `a_start` by exactly the
+    whitespace removed, then leaves BOTH trust-boundary asserts to run unchanged.
+    A row that still disagrees afterwards fails loud, as it should.
+
+    Measured on the real pool: 7/2089 rows (0.34%), all `a_start` +1, and ZERO of
+    the 2,082 space-free rows disagree — the split is exact, so this is the whole
+    class rather than a symptom of a wider offset.
+    """
+    stats = {"normalized": 0, "conv_ids": []}
+    out = []
+    for s in stories:
+        turns = s.get("parsed_turns") or []
+        answer = str(s.get("answer", ""))
+        lead = len(answer) - len(answer.lstrip())
+        if not lead or len(turns) != 1 or "a_start" not in turns[0]:
+            out.append(s)
+            continue
+        turn = dict(turns[0])
+        turn["a_start"] = int(turn["a_start"]) + lead
+        row = {**s, "answer": answer.lstrip(), "parsed_turns": [turn]}
+        stats["normalized"] += 1
+        stats["conv_ids"].append(str(s.get("conv_id")))
+        out.append(row)
+    return out, stats
+
+
 def render_arm(
     arm: str,
     stories: list[dict],
@@ -1040,6 +1077,7 @@ def main() -> None:
 
     model, tokenizer, model_id = ex.load_model(args.model, tiny_model_dir=args.tiny_model_dir)
 
+    ws_stats: dict = {"normalized": 0, "conv_ids": []}
     if args.arm:
         if args.stories_jsonl is not None:
             # On-policy story-slot rows: same kept-stories schema, local source.
@@ -1048,9 +1086,12 @@ def main() -> None:
             )
             stories = c.read_jsonl(args.stories_jsonl)
             assert stories, f"{args.stories_jsonl} is empty"
+            stories, ws_stats = normalize_onpolicy_leading_ws(stories)
             print(
                 f"[capture] kept stories from {args.stories_jsonl} "
-                f"({len(stories)} rows, on-policy override)",
+                f"({len(stories)} rows, on-policy override); "
+                f"leading-ws span normalization: {ws_stats['normalized']} row(s) "
+                f"{ws_stats['conv_ids'][:12]}",
                 flush=True,
             )
         elif key == V1_ARM:
@@ -1201,6 +1242,8 @@ def main() -> None:
         # downstream conv_id-space reconciliation can find the on-policy
         # gate-reject tail without knowing where the render buried it. Absent
         # keys default empty: the comparator render path has no arm gate.
+        "n_leading_ws_span_normalized": ws_stats["normalized"],
+        "leading_ws_span_normalized_conv_ids": ws_stats["conv_ids"],
         "n_dropped_gate_reject": render_stats.get("gate_rejects", 0),
         "gate_reject_reasons": render_stats.get("gate_reject_reasons", {}),
         "gate_reject_conv_ids": render_stats.get("gate_reject_conv_ids", []),

@@ -476,6 +476,23 @@ def test_helper_canonical_9b_same_still_accepted_directly(helper_module, capsys)
     assert "aliased" not in captured.err
 
 
+def test_helper_accepts_5a_with_next_step_5(helper_module, capsys):
+    """#1872: step id `5a` (code_review_dispatch) is registered in workflow.yaml § steps.
+
+    Sessions record the code-review-dispatch exit point as `--step 5a`
+    ("reviewer ensemble spawned, verdicts pending"); the helper accepts it
+    directly (no alias) and resolves next_expected_step to `5` (code_review,
+    verdict collection). Pins the yaml entry so a rename fails loud.
+    """
+    rc = helper_module.main(
+        ["--issue", "1872", "--step", "5a", "--exit-kind", "clean", "--dry-run"]
+    )
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert "step: 5a" in captured.out
+    assert "next_expected_step: 5" in captured.out
+
+
 def test_unknown_step_error_suggests_near_miss(helper_module, capsys):
     """The exit-2 typo guard survives the alias AND names near-miss ids."""
     rc = helper_module.main(
