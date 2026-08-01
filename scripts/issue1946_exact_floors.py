@@ -1307,6 +1307,23 @@ def phase_harvest(cfg: Cfg, state: dict) -> None:
         )
     }
     rels += sorted(optional)
+
+    # The battery dual-write nests its summaries under the characterize layout
+    # (<space>/analysis_tensors/summaries/characterize/<name>); local dst stays flat.
+    def _hub_rel(rel: str) -> str:
+        parts = rel.split("/")
+        if (
+            len(parts) == 2
+            and parts[0] in SPACES
+            and parts[1]
+            in (
+                "taxonomy.json",
+                "depth_contrasts.json",
+            )
+        ):
+            return f"{parts[0]}/analysis_tensors/summaries/characterize/{parts[1]}"
+        return rel
+
     n_fetched = 0
     for rel in rels:
         dst = cfg.out_eval / rel
@@ -1316,7 +1333,7 @@ def phase_harvest(cfg: Cfg, state: dict) -> None:
             continue
         try:
             hub.stage_hub_file(
-                C.HF_DATA_REPO, f"{cfg.upload_prefix}/{rel}", dst, repo_type="dataset"
+                C.HF_DATA_REPO, f"{cfg.upload_prefix}/{_hub_rel(rel)}", dst, repo_type="dataset"
             )
             n_fetched += 1
         except Exception:
