@@ -382,11 +382,15 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # The U+2032 PRIME below is the literal char being matched (primed
         # condition labels like C1-prime), not an accidental homoglyph --
         # hence the noqa, mirroring the U+2212 entries above.
-        r"\b[CcHhP][1-9](?:'|′)?"  # noqa: RUF001
+        # Optional single lowercase sub-tag letter ([a-rt-z]: excludes
+        # plural-s so "the five flat H2s" heading prose stays unmatched;
+        # H100/H200 stay excluded by [1-9] + the trailing lookahead).
+        r"\b[CcHhP][1-9][a-rt-z]?(?:'|′)?"  # noqa: RUF001
         r"(?:\s*(?:condition|control|completion|coefficient|hypothesis|test"
         r"|sub-?(?:claim|experiment|hypothesis)))?(?![a-zA-Z0-9_])",
-        "Project-internal condition/hypothesis labels (C1/C2/C3, H1/H2/H3, P1/P2/P3 "
-        "with optional prime) — replace with named conditions inline",
+        "Project-internal condition/hypothesis labels (C1/C2, H1/H2/H3, "
+        "H1c/H4b sub-tags, P1/P2/P3 with optional prime) — replace with "
+        "named conditions inline",
     ),
     "cell_tags": (
         # Per-cell / per-condition / per-judge plan-internal tags:

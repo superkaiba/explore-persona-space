@@ -7911,6 +7911,55 @@ def test_v3_unwrapped_data_table_cell_tag_warns():
     assert "BS_E0" in warn.detail or "Method A" in warn.detail
 
 
+def test_v3_unwrapped_data_table_sub_tag_code_warns():
+    """Check 19b: an `H1c`-form sub-tag code in a bare `## Data` table
+    cell WARNs — mirror-sync with the audit's widened `condition_labels`
+    pattern (single optional lowercase sub-tag letter, #1914)."""
+    bare_table = (
+        "Per-hypothesis row counts (2 of 2,000 rows shown for illustration):\n\n"
+        "| Hypothesis | Rows | Note |\n"
+        "|---|---|---|\n"
+        "| H1c | 1000 | sub-hypothesis arm |\n"
+        "| H4b | 1000 | sub-hypothesis arm |\n\n"
+    )
+    body = _V3_GOOD_BODY.replace(
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n",
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n\n" + bare_table,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]  # WARN ≠ FAIL
+    by_name = _results_by_name(results)
+    warn = by_name["Data unwrapped example table (v3)"]
+    assert warn.passed and warn.is_warn, warn.render()
+    assert "H1c" in warn.detail
+
+
+def test_v3_unwrapped_data_table_plural_h2s_does_not_warn():
+    """Check 19b: a plural markdown-heading form (`H2s`) in a bare table
+    cell does NOT WARN — the widened sub-tag letter class excludes `s`
+    (measured false-positive class, #1914)."""
+    bare_table = (
+        "Heading forms used (full breakdown):\n\n"
+        "| Heading form | Count |\n"
+        "|---|---|\n"
+        "| Three H2s total | 3 |\n"
+        "| legacy H2s | 5 |\n\n"
+    )
+    body = _V3_GOOD_BODY.replace(
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n",
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n\n" + bare_table,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    warn = by_name["Data unwrapped example table (v3)"]
+    assert warn.passed and not warn.is_warn, warn.render()
+
+
 def test_v3_takeaways_too_few_bullets_fails():
     body = _V3_GOOD_BODY.replace(
         "- Headline finding: tulu-25 lifts alignment **+17 pts** "
