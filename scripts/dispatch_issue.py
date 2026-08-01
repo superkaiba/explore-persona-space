@@ -2125,6 +2125,46 @@ def _keep_running_tag_state_safe(issue: int) -> bool | None:
     return keep_running_tag_state(int(issue))
 
 
+def _fetch_results_for_finalize(backend: Any, handle: Any, issue: int) -> str | None:
+    """Run ``backend.fetch_results`` for finalize; return the TYPED failure.
+
+    Returns the ``FetchResultsError`` message when the results pull
+    failed TYPED — an interrupted / timed-out pull, or a failed staging
+    merge (#1973, incident #1768 r3): the caller (``_cmd_finalize``)
+    still runs the confirm gate for evidence, then surfaces the exit-3
+    ``fetch_results_failed`` verdict (teardown skipped, sidecar kept,
+    finalize re-runnable) — never an unqualified ``ok: true``. Returns
+    ``None`` on success. A NON-typed fetch CRASH keeps the legacy
+    fail-soft contract (#588): log loudly + continue to the confirm
+    gate — a missing local sentinel FAILs confirm with the right
+    surfacing (teardown skipped, evidence preserved), never a finalize
+    traceback.
+    """
+    from explore_persona_space.backends.base import FetchResultsError
+
+    try:
+        backend.fetch_results(handle)
+    except FetchResultsError as exc:
+        logging.getLogger("dispatch_issue").error(
+            "finalize: fetch_results FAILED (typed) for issue=%d: %s — running the "
+            "confirm gate for evidence, then surfacing a NON-ok finalize verdict "
+            "(teardown skipped, sidecar kept).",
+            issue,
+            exc,
+        )
+        return str(exc)
+    except Exception as exc:
+        logging.getLogger("dispatch_issue").error(
+            "finalize: fetch_results FAILED for issue=%d (%s: %s); continuing to the "
+            "confirm_artifacts gate — a missing local sentinel will FAIL confirm with "
+            "the right surfacing (teardown skipped, evidence preserved).",
+            issue,
+            type(exc).__name__,
+            exc,
+        )
+    return None
+
+
 def _cmd_finalize(
     args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]
 ) -> int:
@@ -2333,37 +2373,7 @@ def _cmd_finalize(
     # own two-tier contract — but wrap defensively: a fetch CRASH must
     # surface as the confirm FAIL (right surfacing, evidence preserved),
     # not as a finalize traceback.
-    from explore_persona_space.backends.base import FetchResultsError
-
-    fetch_failed: str | None = None
-    try:
-        backend.fetch_results(handle)
-    except FetchResultsError as exc:
-        # #1973 (incident #1768 r3): a TYPED fetch failure — an
-        # interrupted / timed-out results pull, or a failed staging
-        # merge — must surface in the finalize VERDICT, never behind an
-        # ``ok: true``. Record it, still run the confirm gate (a confirm
-        # FAIL exits 3 with its own reason — right surfacing, evidence
-        # preserved), and convert a confirm PASS (or skip) into the
-        # exit-3 ``fetch_results_failed`` body after the gate: teardown
-        # SKIPPED, sidecar NOT retired, finalize re-runnable.
-        fetch_failed = str(exc)
-        logging.getLogger("dispatch_issue").error(
-            "finalize: fetch_results FAILED (typed) for issue=%d: %s — running the "
-            "confirm gate for evidence, then surfacing a NON-ok finalize verdict "
-            "(teardown skipped, sidecar kept).",
-            int(args.issue),
-            exc,
-        )
-    except Exception as exc:
-        logging.getLogger("dispatch_issue").error(
-            "finalize: fetch_results FAILED for issue=%d (%s: %s); continuing to the "
-            "confirm_artifacts gate — a missing local sentinel will FAIL confirm with "
-            "the right surfacing (teardown skipped, evidence preserved).",
-            int(args.issue),
-            type(exc).__name__,
-            exc,
-        )
+    fetch_failed = _fetch_results_for_finalize(backend, handle, int(args.issue))
 
     confirm_degraded: str | None = None
     if not args.skip_confirm_artifacts:
