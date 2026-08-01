@@ -165,7 +165,7 @@ def active_1481_task(monkeypatch):
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_task_events", lambda issue: events)
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
-    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None: False)
+    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None, **_kw: False)
     return now, events
 
 
@@ -269,7 +269,7 @@ def test_done_status_non_fire_control_autostop_still_acts(
     monkeypatch.setattr(asw, "_task_events", lambda issue: _events_1481(now))
     monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: None)
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
-    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None: False)
+    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None, **_kw: False)
     # missed=1 -> new_missed=2 == threshold -> the auto-stop fires this tick.
     payload = {
         "pod_id": "p1481",

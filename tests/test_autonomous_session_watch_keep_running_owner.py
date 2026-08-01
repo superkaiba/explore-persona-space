@@ -160,7 +160,7 @@ def rig_1345(monkeypatch, isolated_registry):
     monkeypatch.setattr(asw, "_task_status", lambda issue: "awaiting_promotion")
     monkeypatch.setattr(asw, "_task_events", lambda issue: events)
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: True)
-    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None: False)
+    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None, **_kw: False)
     monkeypatch.setattr(asw, "_post_progress_marker", _post_stub)
     monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append((msg, dry_run)))
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
