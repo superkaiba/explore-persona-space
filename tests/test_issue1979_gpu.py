@@ -230,6 +230,30 @@ def test_gate_consumer_accepts_real_slot_stats_contract():
     assert med_logp2 == pytest.approx(3.0) and med_z2 == pytest.approx(1.5)
 
 
+def test_gate_ft_tolerance_and_mandatory_secondary_condition():
+    """Crash-fix r5 (`f1b:gate:mk-pers-ft-con-s42` at 1.99 nats): full-FT marker
+    arms gate at 1.8 nats with the |dz| secondary condition MANDATORY; LoRA arms
+    keep the 2.0-nat #1900 bar; ~0-nat reads fail regardless of class."""
+    ft_row = {"kind": "marker", "method": "ft", "ft_repo": "org/repo", "ft_subfolder": "s"}
+    lora_row = {"kind": "marker", "method": "lora", "adapter_repo": "org/repo"}
+    assert G._gate_threshold_for(ft_row) == (1.8, "ft")
+    assert G._gate_threshold_for(lora_row) == (2.0, "lora")
+    # FT at 1.9 nats + positive |dz| passes (incl. the realized r4 value, 1.99)
+    G._assert_gate_pass("mk-pers-ft-con-s42", "ft", 1.8, 1.9, 0.4)
+    G._assert_gate_pass("mk-pers-ft-con-s42", "ft", 1.8, 1.99, 0.4)
+    # FT at 1.9 nats + |dz| == 0 fails — secondary condition is mandatory
+    with pytest.raises(AssertionError, match=r"dz_marker"):
+        G._assert_gate_pass("mk-pers-ft-con-s42", "ft", 1.8, 1.9, 0.0)
+    # ~0 nats (unapplied / wrong artifact) fails regardless of arm class
+    with pytest.raises(AssertionError, match=r"dlogP"):
+        G._assert_gate_pass("mk-pers-ft-con-s42", "ft", 1.8, 0.02, 0.0)
+    with pytest.raises(AssertionError, match=r"dlogP"):
+        G._assert_gate_pass("mk-a", "lora", 2.0, 0.02, 0.4)
+    # LoRA keeps the 2.0 bar: 1.9 nats fails for a LoRA arm
+    with pytest.raises(AssertionError, match=r"dlogP"):
+        G._assert_gate_pass("mk-a", "lora", 2.0, 1.9, 0.4)
+
+
 def test_slot_persist_consumer_accepts_real_slot_stats():
     """run_f1b_slot's persist path: validate_marker_slot_record + the {**rec}
     payload spread must accept the real return records."""
