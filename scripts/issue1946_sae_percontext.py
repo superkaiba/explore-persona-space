@@ -146,6 +146,7 @@ class Cfg:
     smoke: bool = False
     no_upload: bool = False
     rss_cap_gb: float = RSS_CAP_GB_DEFAULT
+    force: bool = False  # disables ALL resume-skips (build + phase entry guards)
     # inputs (production: derived from staging_root; smoke: SA fixture paths)
     local_sae_dir: Path | None = None
     pred16_src: Path | None = None
@@ -399,7 +400,19 @@ def phase_build(cfg: Cfg) -> None:
         yh_dir = cfg.space_dir(Y_HOLDOUT_SPACE[pool]) / "y_holdout"
         yh_dir.mkdir(parents=True, exist_ok=True)
         yh_p = yh_dir / f"L{LAYER}.npz"
-        if not yh_p.exists():
+        # resume-skip keyed on the assembly fingerprint (mirror of the percontext
+        # skip below) — bare existence would silently reuse a stale-pin y_holdout.
+        yh_reuse = False
+        if yh_p.exists() and not cfg.force:
+            with np.load(yh_p) as old:
+                yh_reuse = "fingerprint" in old and str(old["fingerprint"]) == fp
+        if yh_reuse:
+            print(
+                f"[build] y_holdout {Y_HOLDOUT_SPACE[pool]}/L{LAYER}.npz ({pool}): "
+                "resume-skip (fingerprint match)",
+                flush=True,
+            )
+        else:
             np.savez(
                 yh_p,
                 y16=y_ho.astype(np.float16),
@@ -416,7 +429,7 @@ def phase_build(cfg: Cfg) -> None:
                 cell_i += 1
                 tc = time.time()
                 pc_p = pc_dir / f"{arm}_L{LAYER}_ridge.npz"
-                if pc_p.exists():
+                if pc_p.exists() and not cfg.force:
                     with np.load(pc_p) as old:
                         if "fingerprint" in old and str(old["fingerprint"]) == fp:
                             print(
@@ -459,14 +472,48 @@ def _load_sae(cfg: Cfg):
     return SAEMOD.BatchTopKSAE.load(k=64, device="cpu", cache_dir=Path(cfg.sae_cache), layer=LAYER)
 
 
+def _floors_outputs_current(cfg: Cfg) -> str | None:
+    """Entry skip-guard predicate: a one-line reason when every floors output
+    exists AND the floors npz carries the current y_holdout fingerprint; else
+    None (recompute). Any unreadable/partial output reads as stale -> recompute."""
+    kdir = cfg.out_eval / "floors_env_mean" / "kresample"
+    np_p = kdir / f"floors_L{LAYER}.npz"
+    yh_p = cfg.space_dir("sae_space") / "y_holdout" / f"L{LAYER}.npz"
+    label_dsts = [
+        cfg.out_eval / env / "judge_labels" / "labels.json"
+        for env in ("floors_env_mean", "floors_env_labels_only")
+    ]
+    if not (
+        np_p.is_file()
+        and (kdir / "floor_summary.json").is_file()
+        and yh_p.is_file()
+        and all(p.is_file() for p in label_dsts)
+    ):
+        return None
+    with np.load(yh_p) as yh:
+        want = str(yh["fingerprint"])
+    with np.load(np_p) as z:
+        if "fingerprint" not in z or str(z["fingerprint"]) != want:
+            return None  # pre-guard or stale-pin floors npz -> recompute
+    return f"floors_L{LAYER}.npz fingerprint matches y_holdout ({want[:16]}...)"
+
+
 def phase_floors(cfg: Cfg) -> None:
     """Approximate SAE-space K-resample floor: SAE-encode the banked per-draw MEAN
     dense states, restrict to f_out, then the verbatim #1738 floor arithmetic
     (``phase_kresample_floor`` L446-453). Construct label: ``sae_enc_of_mean_state
     (approximate)`` — the verdict never rests on this arm (plan section 4 P2)."""
     print("[phase=floors] start", flush=True)
+    if not cfg.force:
+        reason = _floors_outputs_current(cfg)
+        if reason:
+            print(
+                f"[phase=floors] skip — outputs current ({reason}); --force recomputes", flush=True
+            )
+            return
     yh = np.load(cfg.space_dir("sae_space") / "y_holdout" / f"L{LAYER}.npz")
     y16, yci = yh["y16"].astype(np.float64), yh["ci"]
+    yh_fp = str(yh["fingerprint"])
     kpaths = sorted(Path(cfg.kresample_dir).glob("kresample_shard*.pt"))
     assert kpaths, f"no kresample shards under {cfg.kresample_dir}"
     cis: list[int] = []
@@ -527,6 +574,7 @@ def phase_floors(cfg: Cfg) -> None:
         floor=floor.astype(np.float64),
         den=den.astype(np.float64),
         share=share.astype(np.float64),
+        fingerprint=np.array(yh_fp),  # entry skip-guard key (lineage to y_holdout)
     )
     _atomic_json(
         kdir / "floor_summary.json",
@@ -561,12 +609,46 @@ def phase_floors(cfg: Cfg) -> None:
 # ── P3: taxonomy (verbatim parent battery, 4 checked subprocess invocations) ────────
 
 
+def _taxonomy_output_current(cfg: Cfg, space: str) -> str | None:
+    """Entry skip-guard predicate for one space: a one-line reason when the
+    battery outputs exist, carry all 3 arm tables, and are newer than every npz
+    input the battery consumes; else None (re-run). Unparseable -> re-run."""
+    tax_p = cfg.space_dir(space) / "taxonomy.json"
+    depth_p = cfg.space_dir(space) / "depth_contrasts.json"
+    if not (tax_p.is_file() and depth_p.is_file()):
+        return None
+    try:
+        tax = json.loads(tax_p.read_text())
+    except json.JSONDecodeError:
+        return None  # partial/corrupt output from an interrupted run -> re-run
+    if not all(f"{a}_L{LAYER}_ridge" in tax.get("arms", {}) for a in ARMS):
+        return None
+    inputs = (
+        list((cfg.space_dir(space) / "percontext").glob("*.npz"))
+        + list((cfg.space_dir(space) / "pred16").glob("*.npz"))
+        + list(cfg.y_holdout_dir(space).glob("*.npz"))
+    )
+    if not inputs:
+        return None
+    if tax_p.stat().st_mtime < max(p.stat().st_mtime for p in inputs):
+        return None  # inputs rebuilt after the last battery run -> re-run
+    return "taxonomy.json + depth_contrasts.json current (3 arm tables, newer than npz inputs)"
+
+
 def phase_taxonomy(cfg: Cfg) -> None:
     """Run ``issue1738_characterize.py --phase taxonomy`` VERBATIM per space —
     no reimplemented statistics (plan section 4 P3). A non-zero rc halts loudly."""
     print("[phase=taxonomy] start", flush=True)
     script = PROJECT_ROOT / "scripts" / "issue1738_characterize.py"
     for i, space in enumerate(SPACES, 1):
+        if not cfg.force:
+            reason = _taxonomy_output_current(cfg, space)
+            if reason:
+                print(
+                    f"[taxonomy] space {i}/4 {space}: skip — {reason}; --force recomputes",
+                    flush=True,
+                )
+                continue
         cmd = [
             sys.executable,
             str(script),
@@ -668,8 +750,38 @@ def _verdict(rho: float, p: float, sa: int) -> str:
     return "Mixed"
 
 
+def _compare_outputs_current(cfg: Cfg) -> str | None:
+    """Entry skip-guard predicate: a one-line reason when the comparison JSON +
+    SAE per-context CSV exist, parse with a verdict, and are newer than every
+    per-space taxonomy.json input; else None (recompute)."""
+    out_p = cfg.out_eval / "crossspace_comparison.json"
+    csv_p = cfg.out_eval / f"percontext_summary_L{LAYER}_ridge_sae.csv"
+    if not (out_p.is_file() and csv_p.is_file()):
+        return None
+    try:
+        comp = json.loads(out_p.read_text())
+    except json.JSONDecodeError:
+        return None  # partial/corrupt output from an interrupted run -> recompute
+    if "verdict" not in comp or "registered_primary" not in comp:
+        return None
+    tax_ps = [cfg.space_dir(s) / "taxonomy.json" for s in SPACES]
+    if not all(p.is_file() for p in tax_ps):
+        return None
+    if out_p.stat().st_mtime < max(p.stat().st_mtime for p in tax_ps):
+        return None  # taxonomy re-ran after the last compare -> recompute
+    return f"crossspace_comparison.json current (verdict={comp['verdict']}, newer than taxonomy)"
+
+
 def phase_compare(cfg: Cfg) -> None:
     print("[phase=compare] start", flush=True)
+    if not cfg.force:
+        reason = _compare_outputs_current(cfg)
+        if reason:
+            print(
+                f"[phase=compare] skip — outputs current ({reason}); --force recomputes",
+                flush=True,
+            )
+            return
     dense_tax = json.loads((cfg.dense_eval / "taxonomy.json").read_text())
     dense_bare_tax = json.loads((cfg.dense_eval / "bare_query" / "taxonomy.json").read_text())
     dense_rows = {
@@ -917,11 +1029,44 @@ def _check_png(path: Path) -> None:
     assert img.size > 0 and float(np.ptp(img)) > 0, f"{path}: blank render"
 
 
+def _figures_outputs_current(cfg: Cfg) -> str | None:
+    """Entry skip-guard predicate: a one-line reason when meta.json + every
+    figure it lists exist, load-check as non-blank PNGs, and meta.json is newer
+    than the comparison JSON it renders; else None (re-render)."""
+    meta_p = cfg.fig_dir / "meta.json"
+    comp_p = cfg.out_eval / "crossspace_comparison.json"
+    if not (meta_p.is_file() and comp_p.is_file()):
+        return None
+    try:
+        meta = json.loads(meta_p.read_text())
+    except json.JSONDecodeError:
+        return None  # partial/corrupt output from an interrupted run -> re-render
+    figs = [cfg.fig_dir / n for n in meta.get("figures", [])]
+    if not figs or not all(p.is_file() for p in figs):
+        return None
+    if meta_p.stat().st_mtime < comp_p.stat().st_mtime:
+        return None  # compare re-ran after the last render -> re-render
+    for p in figs:
+        try:
+            _check_png(p)
+        except AssertionError:
+            return None  # a blank/truncated PNG reads as stale -> re-render
+    return f"{len(figs)} figures + meta.json current (load-checked, newer than comparison)"
+
+
 def phase_figures(cfg: Cfg) -> None:
     print("[phase=figures] start", flush=True)
     import matplotlib
 
     matplotlib.use("Agg")
+    if not cfg.force:
+        reason = _figures_outputs_current(cfg)
+        if reason:
+            print(
+                f"[phase=figures] skip — outputs current ({reason}); --force recomputes",
+                flush=True,
+            )
+            return
     import matplotlib.pyplot as plt
 
     from explore_persona_space.analysis.paper_plots import paper_palette, set_paper_style
@@ -1480,6 +1625,12 @@ def main() -> int:
     )
     ap.add_argument("--upload-prefix", default=UPLOAD_PREFIX_DEFAULT)
     ap.add_argument("--rss-cap-gb", type=float, default=RSS_CAP_GB_DEFAULT)
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="disable ALL resume-skips (y_holdout/percontext + floors/taxonomy/"
+        "compare/figures entry guards); stage's content-addressed skip is unaffected",
+    )
     ap.add_argument("--no-upload", action="store_true")
     ap.add_argument("--smoke", action="store_true", help="tiny-real CPU e2e (PASS_UNIFIED)")
     ap.add_argument("--smoke-dir", default=str(PROJECT_ROOT / "data" / "issue_1946" / "smoke"))
@@ -1499,6 +1650,7 @@ def main() -> int:
             upload_prefix=args.upload_prefix,
             no_upload=args.no_upload,
             rss_cap_gb=args.rss_cap_gb,
+            force=args.force,
         )
     )
     phases = {
