@@ -7079,8 +7079,8 @@
     "1914": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1914",
-      "status": "planning",
+      "path": "tasks/approved/1914",
+      "status": "approved",
       "title": "daily-fix: widen body-audit condition-label regex H1c forms"
     },
     "1915": {
