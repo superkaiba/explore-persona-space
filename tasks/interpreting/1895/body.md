@@ -26,11 +26,11 @@ relates_to:
 
 ## Takeaways
 
-- Overlap between the map's top-64 predictable directions and the SAE's top-64 reconstruction subspace is 0.867; variance-matched rotations already produce 0.845–0.862 — ~98% of the overlap is variance-driven.
+- Overlap between the map's top-64 predictable directions and the SAE's top-64 reconstruction subspace is 0.867; variance-matched rotations already produce 0.845–0.862, so ~98% of the overlap is variance-driven.
 - The beyond-variance excess is small and setting-dependent: above every draw at the primary setting, band-clearing at sizes 128–256, weaker at finer shell grain, below-null on the decoder-SVD twin.
 - The map's above-plug-in residual prediction (+0.034, 20k holdout) reverses to −0.089 on the pure SAE error (512-row pilot, Path-A-trained map); an answer-token-convention component (13.4% of residual energy) drives it.
 - Targeting the SAE reconstruction is easier by +0.029 held-out R² (0.746 vs 0.717) — almost exactly the variance-profile expectation of 0.743.
-- Per-direction, map R² and SAE reconstruction quality correlate at 0.97; controlling variance rank leaves 0.076, and the per-feature partial is −0.050 — not an independent correlate.
+- Per-direction, map R² and SAE reconstruction quality correlate at 0.97; controlling variance rank leaves 0.076, and the per-feature partial is −0.050, i.e. not an independent correlate.
 
 ## Goal
 
@@ -40,7 +40,7 @@ relates_to:
 
 ## Methodology
 
-**Design:** All quantities are deterministic linear-algebra reads over banked Qwen-2.5-7B-Instruct layer-19 activations of real single-turn chats. Objects: `v_C` = final-context-token state; `v_A` = mean answer-token state; `f̄` = banked mean-pooled SAE code; `r̄ = W_dec·f̄ + b_dec` (the pooled SAE reconstruction — by linearity the mean of per-token reconstructions, so on-distribution); `ē = v_A − r̄` (the SAE-residual target); `Q` = eigenbasis of the train-split covariance of `v_A` (all 3,584 directions). `P_pred(k)` = span of the top-k eigendirections ranked by the map's per-direction held-out R² (banked profile primary for k ≤ 64; this run's matched 120k refit for k = 128/256, since the banked profile covers only 256 directions). `P_sae(k)` = top-k principal directions of centered `r̄` on the holdout (primary), with an activity-weighted decoder-SVD twin and the residual-PCA complement. The plan fixed a three-part decision rule before data: (`P_align`) the k=64 overlap exceeds the 97.5th percentile of a 1,000-draw within-shell rotation null at 32 eigenvalue shells; (`P_dark`) the lower 95% bootstrap bound of R²(`v_C`→`ē`) minus its variance-profile plug-in exceeds 0; (`P_var0`) the variance-partialled per-direction correlation's interval includes 0. Outcome cells: shared-structure, orthogonal-decompositions, mixed, variance-trivial. A 512-row teacher-forced pilot gated the target convention: reconstruction identity (median relative deviation 2.4e-3 < 5e-3) and mask-mismatch share (median 1.9e-4 vs SAE-error share 8.8e-2) selected Path A — banked `v_A` kept as target, with the mismatch carried as the load-bearing caveat (see Results). Contrastive negatives / persona-vector recipes: not applicable (no behavior implantation, no contrastive direction extraction). Judged SAE feature labels stayed frozen; every read here is mechanical. Conciseness note: total Results prose runs over the 800-word budget, and individual result blocks may exceed the 120-word warn cap — six result sections are retained deliberately, because each positive predicate of the decision rule requires its own sensitivity/purity read plus the low-level per-unit view.
+**Design:** All quantities are deterministic linear-algebra reads over banked Qwen-2.5-7B-Instruct layer-19 activations of real single-turn chats. Objects: `v_C` = final-context-token state; `v_A` = mean answer-token state; `f̄` = banked mean-pooled SAE code; `r̄ = W_dec·f̄ + b_dec` (the pooled SAE reconstruction — by linearity the mean of per-token reconstructions, so on-distribution); `ē = v_A − r̄` (the SAE-residual target); `Q` = eigenbasis of the train-split covariance of `v_A` (all 3,584 directions). `P_pred(k)` = span of the top-k eigendirections ranked by the map's per-direction held-out R² (banked profile primary for k ≤ 64; this run's matched 120k refit for k = 128/256, since the banked profile covers only 256 directions). `P_sae(k)` = top-k principal directions of centered `r̄` on the holdout (primary), with an activity-weighted decoder-SVD twin and the residual-PCA complement. The plan fixed a three-part decision rule before data: (`P_align`) the k=64 overlap exceeds the 97.5th percentile of a 1,000-draw within-shell rotation null at 32 eigenvalue shells; (`P_dark`) the lower 95% bootstrap bound of R²(`v_C`→`ē`) minus its variance-profile plug-in exceeds 0; (`P_var0`) the variance-partialled per-direction correlation's interval includes 0. Outcome cells: shared-structure, orthogonal-decompositions, mixed, variance-trivial. A 512-row teacher-forced pilot gated the target convention: reconstruction identity (median relative deviation 2.4e-3 < 5e-3) and mask-mismatch share (median 1.9e-4 vs SAE-error share 8.8e-2) selected Path A — banked `v_A` kept as target, with the mismatch carried as the caveat the Results section quantifies. Contrastive negatives / persona-vector recipes: not applicable (no behavior implantation, no contrastive direction extraction). Judged SAE feature labels stayed frozen; every read here is mechanical. Conciseness note: total Results prose runs over the 800-word budget, and individual result blocks may exceed the 120-word warn cap — six result sections are retained deliberately, because each positive predicate of the decision rule requires its own sensitivity/purity read plus the low-level per-unit view.
 
 **Training:** N/A — no model training. All fitted maps are ridge or small-MLP analysis fits on frozen activations; complete fit hyperparameters:
 
@@ -102,7 +102,7 @@ Subspace overlap O(k) — mean squared cosine of principal angles between the ma
 
 > **Figure.** *Observed overlap exceeds the variance-matched null band only at some settings.* Observed overlap (black; circles = banked profile, squares = matched 120k refit) vs null bands (2.5th–97.5th percentiles) for the reconstruction-PCA subspace (left), the SAE-residual complement (middle), and the weighted-decoder-SVD twin (right).
 
-Overlap with the reconstruction subspace is high at every k (0.855–0.884), but variance-preserving rotations reproduce nearly all of it: at k = 64 (32 shells) the band spans 0.845–0.862 vs 0.867 observed — above every draw, yet ~0.014 over the null median. The excess also clears the band at k = 128–256, but not at 64 shells for k = 64, not at k = 32, and never on the decoder-SVD twin at 32/64 shells — that twin reads only 0.24–0.33 absolute overlap and sits below its own null at several settings. The residual complement clears its 32-shell band at k = 256 and sits at the band floor at k = 16.
+Overlap with the reconstruction subspace is high at every k (0.855–0.884), but variance-preserving rotations reproduce nearly all of it: at k = 64 (32 shells) the band spans 0.845–0.862 vs 0.867 observed. The observed value exceeds every draw yet sits only ~0.014 over the null median. The excess also clears the band at k = 128–256, but not at 64 shells for k = 64, not at k = 32, and never on the decoder-SVD twin at 32/64 shells — that twin reads only 0.24–0.33 absolute overlap and sits below its own null at several settings. The residual complement clears its 32-shell band at k = 256 and sits at the band floor at k = 16.
 
 ### About 51 of the map's top-64 directions lie inside the SAE's top-64 reconstruction subspace; the last few are nearly orthogonal
 
@@ -124,7 +124,7 @@ Left half: held-out pooled R² for the three context-arm targets with variance-p
 
 Reconstruction is easier by +0.029 R² (0.746 vs 0.717); the plug-in already predicts 0.743 — a paired excess of +0.003. MLP twins add +0.032 (reconstruction) and +0.011 (residual) over ridge, ordering unchanged; the plug-in derives from the ridge profile, so it is not a like-for-like MLP reference.
 
-The residual reads +0.034 above its plug-in on the full holdout, yet the same map scores 0.089 below it on the pure SAE error — a paired purity effect of +0.106. The excess traces to the answer-token-convention component (13.4% of residual energy, partly context-predictable), not SAE-missed structure. The pure read scores a map trained on the Path-A residual, biasing it downward; a pure-trained corpus-wide refit (Path B) bounds any true residual predictability.
+The residual reads +0.034 above its plug-in on the full holdout, yet the same map scores −0.089 against it on the pure SAE error — a paired purity effect of +0.106. The excess traces to the answer-token-convention component (13.4% of residual energy, partly context-predictable), not SAE-missed structure. The pure read scores a map trained on the Path-A residual, biasing it downward; a pure-trained corpus-wide refit (Path B, not run) would bound any true residual predictability.
 
 ### The SAE out-reconstructs the map at the top of the spectrum and collapses in the tail where the map retains signal
 
@@ -144,7 +144,7 @@ Each of the 3,584 eigendirections: SAE reconstruction quality FVE (x) vs the mat
 
 > **Figure.** *Map predictability and SAE reconstruction quality form one variance-ordered curve.* The 3,584 directions form one tight monotone curve from rank 1 (top right) to rank 3,584 (bottom left); color encodes log eigenvalue rank.
 
-The relation is tight (Spearman 0.97, n = 3,584) and rank-ordered by color: variance rank moves both quantities along one curve — the low-level picture behind every aggregate coincidence statistic above.
+The relation is tight (Spearman 0.97, n = 3,584) and rank-ordered by color: variance rank moves both quantities along one curve; this is the per-unit view behind the aggregate coincidence statistics above.
 
 ### Beyond variance rank, the shared axis is small per-direction and absent per-feature
 
@@ -154,7 +154,7 @@ Within-decile Spearman correlations between map per-direction R² and SAE recons
 
 > **Figure.** *Stratified correlations decay with variance per-direction and vanish per-feature once known correlates are controlled.* Per-direction decile correlations decay 0.94 → 0.10 with decreasing variance; per-feature activity-decile correlations sit flat at 0.26–0.37. Dashed lines: partial correlation 0.076 (direction grain) and −0.050 (feature grain).
 
-Per-direction, the partial correlation given variance rank is 0.076 (interval 0.038 to 0.090; n = 3,584), and decile correlations decay from 0.94 to 0.10 — 9 of 10 pass the false-discovery screen, though variance gradients inside top deciles inflate them. Per-feature (n = 16,384), controlling variance rank, consistency, and activity leaves −0.050: reconstruction quality adds nothing beyond the known correlates — largely the variance axis re-measured.
+Per-direction, the partial correlation given variance rank is 0.076 (interval 0.038 to 0.090; n = 3,584), and decile correlations decay from 0.94 to 0.10 — 9 of 10 pass the false-discovery screen, though variance gradients inside top deciles inflate them. Per-feature (n = 16,384), controlling variance rank, consistency, and activity leaves −0.050: reconstruction quality adds nothing beyond the known correlates; the residue is largely the variance axis re-measured.
 
 ---
 
