@@ -429,17 +429,28 @@ def _parse_generation_tolerant(raw: str, behavior: str) -> dict | None:
     first ``N_QUESTIONS`` and re-validate through the parent parser (so every
     other parent check — instruction pairs, empty/duplicate questions,
     eval_prompt — still runs on the clipped payload). Any OTHER parse failure
-    (under-count, malformed JSON, duplicates) is a FAILED generation call:
-    return None so the caller's oversample/retry-tranche machinery absorbs it
-    (the bank floor still fails loud after the budgeted tranches).
+    (under-count, malformed JSON, top-level non-dict JSON, duplicates) is a
+    FAILED generation call: return None so the caller's oversample/retry-tranche
+    machinery absorbs it (the bank floor still fails loud after the budgeted
+    tranches). AttributeError is caught alongside ValueError because the parent
+    parser calls ``obj.get(...)`` on the decoded payload, so a valid-JSON
+    non-dict generation (bare array / string / null) escapes as AttributeError
+    (concern parse-tolerance-nondict-json-escape, r4 code review).
     """
     try:
         return qg.parse_generation(raw)
-    except ValueError as err:
+    except (ValueError, AttributeError) as err:
         try:
             obj = json.loads(qg._strip_fence(raw))
         except json.JSONDecodeError:
             logger.warning("[banks] %s: rejected generation call (%s)", behavior, err)
+            return None
+        if not isinstance(obj, dict):
+            logger.warning(
+                "[banks] %s: rejected generation call (top-level %s, not a JSON object)",
+                behavior,
+                type(obj).__name__,
+            )
             return None
         questions = obj.get("questions")
         if isinstance(questions, list) and len(questions) > qg.N_QUESTIONS:

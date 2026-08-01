@@ -71,6 +71,18 @@ def test_malformed_json_rejected_no_crash():
     assert dg._parse_generation_tolerant("{not json", "sycophancy") is None
 
 
+def test_non_dict_json_rejected_no_crash(caplog):
+    """Valid JSON whose top level is NOT a dict (bare array / string / null)
+    raises AttributeError in the parent parser (obj.get on a non-dict); the
+    wrapper must count it as a per-call reject, never crash the banks phase
+    (concern parse-tolerance-nondict-json-escape)."""
+    for raw in ("[1, 2, 3]", '"just a string"', "null"):
+        with caplog.at_level(logging.WARNING, logger=dg.logger.name):
+            gen = dg._parse_generation_tolerant(raw, "sycophancy")
+        assert gen is None, f"non-dict payload {raw!r} escaped the tolerance wrapper"
+    assert "not a JSON object" in caplog.text
+
+
 def test_over_count_with_duplicate_in_clip_window_rejected():
     """The clip path still runs ALL parent validations: a duplicate inside the
     first N_QUESTIONS fails the parent's duplicate check -> counted reject."""
