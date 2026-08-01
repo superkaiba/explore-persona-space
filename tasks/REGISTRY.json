@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1963,
+  "highest_id": 1964,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7465,6 +7465,13 @@
       "path": "tasks/proposed/1963",
       "status": "proposed",
       "title": "daily-fix: guard family syncs scripts/guard_*.sh with pin te"
+    },
+    "1964": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1964",
+      "status": "proposed",
+      "title": "daily-fix: dispatch preflight staging+flag probes"
     },
     "197": {
       "has_clean_result": false,
