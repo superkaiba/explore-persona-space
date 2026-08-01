@@ -6936,8 +6936,8 @@
     "1897": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1897",
-      "status": "proposed",
+      "path": "tasks/planning/1897",
+      "status": "planning",
       "title": "workflow-fix: Step 10d probes PR state; verify landing before verdict consume"
     },
     "1898": {
