@@ -28,9 +28,9 @@ relates_to:
 
 - Overlap between the map's top-64 predictable directions and the SAE's top-64 reconstruction subspace is 0.867; variance-matched rotations already produce 0.845–0.862, so ~98% of the overlap is variance-driven.
 - The beyond-variance excess is small and setting-dependent: above every draw at the primary setting, band-clearing at sizes 128–256, weaker at finer shell grain, below-null on the decoder-SVD twin.
-- The map's above-plug-in residual prediction (+0.034, 20k holdout) reverses to −0.089 on the pure SAE error (512-row pilot, Path-A-trained map); an answer-token-convention component (13.4% of residual energy) drives it.
+- The map's above-plug-in residual prediction (+0.034, 20k holdout) reverses to −0.089 on the pure SAE error (512-row pilot, map trained on the banked-target-convention residual); an answer-token-convention component (13.4% of residual energy) drives it.
 - Targeting the SAE reconstruction is easier by +0.029 held-out R² (0.746 vs 0.717) — almost exactly the variance-profile expectation of 0.743.
-- Per-direction, map R² and SAE reconstruction quality correlate at 0.97; controlling variance rank leaves 0.076 (split-half decoupling attenuates it to ~0.05), and the per-feature partial is −0.050, i.e. not an independent correlate.
+- Per-direction, map R² and SAE reconstruction quality correlate at 0.97; controlling variance rank leaves 0.076 (split-half decoupling attenuates it to ~0.05), and the per-feature partial is −0.050 (raw 0.25), i.e. not an independent correlate.
 
 ## Goal
 
@@ -55,7 +55,7 @@ relates_to:
 | Paired bootstrap | 10,000 multinomial draws over holdout contexts, seed 1895; fitted maps held fixed (scoring uncertainty only) | #1482 pdshrink pattern |
 | SAE | `andyrdt/saes-qwen2.5-7b-instruct` rev `c37e53c4bb07`, `resid_post_layer_19/trainer_1` (k = 64); k = 128 trainer_2 pilot twin | #1482 Gate-B primary |
 
-**Evaluation:** Four dependent variables. (1) Subspace overlap O(k) = mean cos² principal angle, judged against covariance-matched nulls that Haar-rotate the SAE basis within eigenvalue shells — preserving the variance profile, destroying directional alignment. (2) Paired held-out pooled R² across the three targets on identical rows. (3) The residual target's R² minus a variance-profile plug-in: Σ energy(u)·g(u) / Σ energy(u), with g(u) the matched refit's per-direction R² profile over all 3,584 directions — the exact quantitative statement of "predictability is a function of variance rank alone" (a rotation null is vacuous for pooled R², which is rotation-invariant in the target). The plug-in is a fixed reference value, not a null distribution; the residual read is reported against both 0 and the plug-in, plus a shared-λ error decomposition (additivity relative deviation 5.6e-10; 77.9% of the raw-target map's squared error lies on the SAE-representable component, 23.3% on the residual — which holds only 9.9% of pooled target variance, a ~2.4× error enrichment). (4) Partial Spearman correlations given variance rank (per-direction) and given variance rank + consistency + activity (per-feature), with within-decile stratified reads weighted equally (both variables decay with variance, so the partial alone is not trusted); the exploratory decile family is screened by Benjamini–Hochberg false-discovery control at q = 0.05. A split-half re-derivation (even/odd deterministic holdout halves; constructions built on one half, scored on the other) controls the shared-holdout construction coupling in the overlap and partial-correlation reads. Both mapping arms ran: the context arm carries every read; the prefix arm is a null by construction on this single-turn corpus (the prefix is one constant template string) — R² ≤ 0.0002 and retrieval at chance for all three targets. Both standing baselines ran for every new fitted map (chance acc@1 = 1/20,000 = 5e-5):
+**Evaluation:** Four dependent variables. (1) Subspace overlap O(k) = mean cos² principal angle, judged against covariance-matched nulls that Haar-rotate the SAE basis within eigenvalue shells — preserving the variance profile, destroying directional alignment. (2) Paired held-out pooled R² across the three targets on identical rows. (3) The residual target's R² minus a variance-profile plug-in: Σ energy(u)·g(u) / Σ energy(u), with g(u) the matched refit's per-direction R² profile over all 3,584 directions — the exact quantitative statement of "predictability is a function of variance rank alone" (a rotation null is vacuous for pooled R², which is rotation-invariant in the target). The plug-in is a fixed reference value, not a null distribution; the residual read is reported against both 0 and the plug-in, plus a shared-λ error decomposition (additivity relative deviation 5.6e-10; 77.9% of the raw-target map's squared error lies on the SAE-representable component, 23.3% on the residual — which holds only 9.9% of pooled target variance, a ~2.4× error enrichment). (4) Partial Spearman correlations given variance rank (per-direction) and given variance rank + consistency + activity (per-feature), with within-decile stratified reads weighted equally (both variables decay with variance, so the partial alone is not trusted); the exploratory decile family is screened by Benjamini–Hochberg false-discovery control at q = 0.05. A split-half re-derivation (even/odd deterministic holdout halves; constructions built on one half, scored on the other) controls the shared-holdout construction coupling in the overlap and partial-correlation reads. The k = 128 dictionary pilot twin bounds dictionary-size sensitivity: its per-direction reconstruction-quality profile rank-correlates 0.981 with the k = 64 profile on the 512 pilot rows. Both mapping arms ran: the context arm carries every read; the prefix arm is a null by construction on this single-turn corpus (the prefix is one constant template string) — R² ≤ 0.0002 and retrieval at chance for all three targets. Both standing baselines ran for every new fitted map (chance acc@1 = 1/20,000 = 5e-5):
 
 | Target (context arm) | map R² | identity+bias R² | map kNN acc@1 (euclid / cosine) | identity+bias kNN acc@1 (euclid / cosine) |
 |---|---|---|---|---|
@@ -74,7 +74,7 @@ On the residual target the two retrieval reads dissociate: identity+bias beats t
                "pooled_r2": 0.33601681685153906, "identity_bias_r2": -19.378161490300744, ...}
 ```
 
-The pilot gate verdict (subset: 6 of 20 fields; full file: [pilot_gate.json](https://raw.githubusercontent.com/superkaiba/explore-persona-space/eb22508d64fe93ecb7538569d1020b129907e3d3/eval_results/issue_1895/pilot_gate.json)):
+The pilot gate verdict (subset: 6 of 17 top-level fields; full file: [pilot_gate.json](https://raw.githubusercontent.com/superkaiba/explore-persona-space/eb22508d64fe93ecb7538569d1020b129907e3d3/eval_results/issue_1895/pilot_gate.json)):
 
 ```json
 {"path": "A", "n_pilot": 512, "g2a_median_reldev": 0.002417054260149598,
@@ -102,7 +102,9 @@ Subspace overlap O(k) — mean squared cosine of principal angles between the ma
 
 > **Figure.** *Observed overlap exceeds the variance-matched null band only at some settings.* Observed overlap (black; circles = banked profile, squares = matched 120k refit) vs null bands (2.5th–97.5th percentiles) for the reconstruction-PCA subspace (left), the SAE-residual complement (middle), and the weighted-decoder-SVD twin (right).
 
-Overlap with the reconstruction subspace is high at every k (0.855–0.884), but variance-preserving rotations reproduce nearly all of it: at k = 64 (32 shells) the band spans 0.845–0.862 vs 0.867 observed (unchanged under split-half decoupling: cross-half 0.867–0.875, within-half 0.864–0.876). The observed value exceeds every draw yet sits only ~0.014 over the null median. The excess also clears the band at k = 128–256, but not at 64 shells for k = 64, not at k = 32, and never on the decoder-SVD twin at 32/64 shells — that twin reads only 0.24–0.33 absolute overlap and sits below its own null at several settings. The residual complement clears its 32-shell band at k = 256 and sits at the band floor at k = 16.
+Overlap with the reconstruction subspace is high at every k (0.855–0.884), but variance-preserving rotations reproduce nearly all of it: at k = 64 (32 shells) the band spans 0.845–0.862 vs 0.867 observed (unchanged under split-half decoupling: cross-half 0.867–0.875, within-half 0.864–0.876). The observed value exceeds every draw yet sits only ~0.014 over the null median.
+
+The excess also clears the band at k = 128–256, but not at 64 shells for k = 64, not at k = 32, and never on the decoder-SVD twin at 32/64 shells — that twin reads only 0.24–0.33 absolute overlap and sits below its own null at several settings. The residual complement clears its 32-shell band at k = 256 and sits at the band floor at k = 16.
 
 ### About 51 of the map's top-64 directions lie inside the SAE's top-64 reconstruction subspace; the last few are nearly orthogonal
 
@@ -116,13 +118,13 @@ The aggregate 0.867 decomposes into 51 near-shared directions (cos² ≥ 0.9; 55
 
 ### The SAE reconstruction is an easier target by exactly its variance profile; the residual's above-profile predictability reverses on the pure SAE error
 
-Left half: held-out pooled R² for the three context-arm targets with variance-profile plug-ins (dashes) and MLP twins (diamonds). Right half: residual-target R² minus its plug-in on the full holdout and on the 512 pilot rows (Path-A residual vs pure SAE error).
+Left half: held-out pooled R² for the three context-arm targets with variance-profile plug-ins (dashes) and MLP twins (diamonds). Right half: residual-target R² minus its plug-in on the full holdout and the 512 pilot rows (Path-A residual vs pure SAE error; Path A: the banked answer state kept as target).
 
 ![Three-target fits with plug-in references and the residual-excess purity reads](https://raw.githubusercontent.com/superkaiba/explore-persona-space/eb22508d64fe93ecb7538569d1020b129907e3d3/figures/issue_1895/three_target_fits_delta_dark.png)
 
 > **Figure.** *The residual's above-plug-in excess disappears on the pure SAE error.* Whiskers: 95% bootstrap intervals, fitted maps held fixed. Residual excess: full holdout +0.034 (0.028 to 0.041); pilot Path-A +0.017 (−0.009 to +0.043); pilot pure −0.089 (−0.141 to −0.045); same fitted map, paired draws.
 
-Reconstruction is easier by +0.029 R² (0.746 vs 0.717); the plug-in already predicts 0.743 — a paired excess of +0.003. MLP twins add +0.032 (reconstruction) and +0.011 (residual) over ridge, ordering unchanged; the plug-in derives from the ridge profile, so it is not a like-for-like MLP reference.
+Reconstruction is easier by +0.029 R² (0.746 vs 0.717); the plug-in already predicts 0.743 — a paired excess of +0.003. MLP twins add +0.032 (reconstruction) and +0.011 (residual) over ridge, ordering unchanged; the plug-in derives from the ridge profile, not a like-for-like MLP reference.
 
 The residual reads +0.034 above its plug-in on the full holdout, yet the same map scores −0.089 against it on the pure SAE error — a paired purity effect of +0.106. The excess traces to the answer-token-convention component (13.4% of residual energy, partly context-predictable), not SAE-missed structure. The pure read scores a map trained on the Path-A residual, biasing it downward; a pure-trained corpus-wide refit (Path B, not run) would bound any true residual predictability.
 
@@ -154,7 +156,9 @@ Within-decile Spearman correlations between map per-direction R² and SAE recons
 
 > **Figure.** *Stratified correlations decay with variance per-direction and vanish per-feature once known correlates are controlled.* Per-direction decile correlations decay 0.94 → 0.10 with decreasing variance; per-feature activity-decile correlations sit flat at 0.26–0.37. Dashed lines: partial correlation 0.076 (direction grain) and −0.050 (feature grain).
 
-Per-direction, the partial correlation given variance rank is 0.076 (interval 0.038 to 0.090; n = 3,584), and decile correlations decay from 0.94 to 0.10 — 9 of 10 pass the false-discovery screen, though variance gradients inside top deciles inflate them. The split-half control attenuates this partial to 0.030–0.068 cross-half vs 0.072–0.105 within-half: the full-holdout 0.076 carries mild construction-coupling inflation but stays positive when decoupled. Per-feature (n = 16,384), controlling variance rank, consistency, and activity leaves −0.050: reconstruction quality adds nothing beyond the known correlates; the residue is largely the variance axis re-measured.
+Per-direction, the partial correlation given variance rank is 0.076 (interval 0.038 to 0.090; n = 3,584), and decile correlations decay from 0.94 to 0.10 — 9 of 10 pass the false-discovery screen, though variance gradients inside top deciles inflate them. The split-half control attenuates this partial to 0.030–0.068 cross-half vs 0.072–0.105 within-half: the full-holdout 0.076 carries mild construction-coupling inflation but stays positive when decoupled.
+
+Per-feature (raw Spearman 0.25, n = 16,384), controlling variance rank, consistency, and activity leaves −0.050: reconstruction quality adds nothing beyond the known correlates; the residue is largely the variance axis re-measured. Estimation noise does not produce these reads: the parent run's banked 20-draw shuffle null puts the per-feature R² noise floor near −0.07 (per-activity-decile medians; 97.5th percentiles −0.05 to −0.04), far below this read's observed median of 0.18.
 
 ---
 
