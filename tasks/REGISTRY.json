@@ -6830,8 +6830,8 @@
     "1882": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1882",
-      "status": "approved",
+      "path": "tasks/running/1882",
+      "status": "running",
       "title": "workflow-fix: TG file-grain gate arm \u2014 tree-prefix normalization + warnings-line exclusion"
     },
     "1883": {
