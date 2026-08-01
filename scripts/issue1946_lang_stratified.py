@@ -25,8 +25,12 @@ import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # thread caps + credentials BEFORE numpy/pandas import (#847)
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SAE_CSV = REPO_ROOT / "eval_results/issue_1946/percontext_summary_L19_ridge_sae.csv"
