@@ -1596,3 +1596,229 @@ def test_gen_tally_counts_namespaced_gate_reasons_without_crashing(monkeypatch):
     assert "counts.setdefault(reason, 0)" in src
     # The strict assert must survive for non-namespaced reasons.
     assert 'assert reason in counts, f"unaccounted drop reason {reason!r}"' in src
+
+
+def test_max_tokens_is_overridable_upward_only(monkeypatch):
+    """A rule-23 truncation re-judge needs a bigger budget, but the #1916 floor
+    must still hold — a caller may only go UP."""
+    jl = _judge_module(monkeypatch)
+    import inspect
+
+    sig = inspect.signature(jl.run_leg)
+    assert sig.parameters["max_tokens"].default == jl.JUDGE_MAX_TOKENS
+    src = inspect.getsource(jl.run_leg)
+    assert "max_tokens >= JUDGE_MAX_TOKENS" in src, "the floor must be enforced at run_leg"
+    assert "max_tokens=max_tokens" in src, "the override must reach judge_graded"
+    assert '"max_tokens": max_tokens' in src, "the report must record the budget ACTUALLY used"
+    main_src = inspect.getsource(jl.main)
+    assert "max_tokens=args.max_tokens" in main_src
+    # A below-floor value fails loud rather than silently re-truncating.
+    with pytest.raises(AssertionError, match="below the #1916"):
+        jl.run_leg(
+            jl.LEG_AI_LIKENESS,
+            [("ail_x_s1", "q", "a")],
+            Path("/tmp/nope-i1345"),
+            "x",
+            execute=False,
+            max_tokens=64,
+        )
+
+
+# ---------------------------------------------------------------------------
+# 3j. Leading-whitespace span convention (the unit-4 a_start +1 class)
+# ---------------------------------------------------------------------------
+def test_gen_anchors_a_start_at_the_first_content_char(monkeypatch):
+    """The parent V1 convention puts a_start at the answer's first CONTENT char —
+    the gate re-derives it by NORMALIZED occurrence search, so a space between the
+    opening quote and the match belongs to neither. A space-initial answer stored
+    at a_start = len(prefix) points the span AT the space and the capture's
+    span-consistency assert sees +1. Measured 7/2089, and zero of the 2,082
+    space-free rows disagree."""
+    gen = _gen_module(monkeypatch)
+
+    cap = _cap_module(monkeypatch)
+    prefix = f'Dana asked, "What is X?" The {_attrib_name()} replied, "'
+    body = "A perfectly ordinary answer with plenty of characters in it."
+    # The q/boundary spans come from the GATE, not hand-written numbers: the gen
+    # side now compares every span key against the gate's re-derivation, so a
+    # hand-written q_end is (correctly) rejected as a mismatch.
+    probe_turn, probe_reason = cap.gate_for_capture(cap.V1_ARM)(prefix + body + '"', body)
+    assert probe_reason == "ok", probe_reason
+    pool = {
+        "conv_id": "s1",
+        "prefix": prefix,
+        "source_story": prefix + body + '"',
+        "turn": {**probe_turn, "a_start": len(prefix), "a_end": len(prefix)},
+    }
+    plain, r1 = gen.assemble_row(pool, body, shape=gen.SHAPE_STORY_SLOT, model_key="pretrained")
+    spaced, r2 = gen.assemble_row(
+        pool, "   " + body, shape=gen.SHAPE_STORY_SLOT, model_key="pretrained"
+    )
+    assert r1 == "ok" and r2 == "ok", (r1, r2)
+    # Both anchor a_start at the first content char — identical spans and answer.
+    assert (
+        spaced["parsed_turns"][0]["a_start"] == plain["parsed_turns"][0]["a_start"] == len(prefix)
+    )
+    assert spaced["answer"] == plain["answer"] == body
+    assert spaced["leading_ws_stripped"] == 3 and plain["leading_ws_stripped"] == 0
+    # And the stored span still reproduces the answer byte-for-byte.
+    t = spaced["parsed_turns"][0]
+    assert spaced["story"][t["a_start"] : t["a_end"]] == spaced["answer"]
+
+
+def test_gen_drops_a_row_whose_spans_disagree_with_the_gate(monkeypatch):
+    """The gate returning 'ok' is only the FIRST of the capture's two
+    trust-boundary checks; a row can pass the gate and still disagree on a span.
+    That comparison must happen at GEN time, not as a mid-capture assert."""
+    gen = _gen_module(monkeypatch)
+    import inspect
+
+    src = inspect.getsource(gen.assemble_row)
+    assert "v1_gate_span_mismatch_" in src, "the span comparison must be a named drop class"
+    for key in ("q_start", "q_end", "boundary_end", "a_start", "a_end"):
+        assert key in src
+    tally = inspect.getsource(gen.keep_rows)
+    assert 'counts["v1_gate_span_mismatch"] += 1' in tally, "span mismatches must be counted"
+
+
+def test_capture_normalizes_leading_ws_spans_for_preexisting_rows(monkeypatch):
+    """Rows generated BEFORE the writer lstripped are already uploaded, so the
+    capture normalizes the convention at load — advancing a_start by exactly the
+    whitespace removed and leaving BOTH trust-boundary asserts to run unchanged."""
+    cap = _cap_module(monkeypatch)
+
+    prefix = f'Dana asked, "What is X?" The {_attrib_name()} replied, "'
+    body = "An answer with enough characters to pass the floor."
+    story = prefix + "  " + body + '"'
+    a0 = len(prefix)
+    row = {
+        "conv_id": "s1",
+        "story": story,
+        "answer": "  " + body,
+        "parsed_turns": [
+            {"q_start": 12, "q_end": 25, "a_start": a0, "a_end": a0 + len("  " + body)}
+        ],
+    }
+    out, stats = cap.normalize_onpolicy_leading_ws([row])
+    assert stats["normalized"] == 1 and stats["conv_ids"] == ["s1"]
+    t = out[0]["parsed_turns"][0]
+    assert t["a_start"] == a0 + 2, "a_start must advance by exactly the stripped whitespace"
+    assert out[0]["answer"] == body
+    assert out[0]["story"][t["a_start"] : t["a_end"]] == body, "the span still IS the answer"
+    # A row with no leading whitespace is passed through untouched.
+    clean = {
+        "conv_id": "s2",
+        "story": prefix + body + '"',
+        "answer": body,
+        "parsed_turns": [{"q_start": 12, "q_end": 25, "a_start": a0, "a_end": a0 + len(body)}],
+    }
+    out2, stats2 = cap.normalize_onpolicy_leading_ws([clean])
+    assert stats2["normalized"] == 0 and out2[0] is clean
+
+
+def test_capture_normalization_is_not_a_trust_the_gate_override(monkeypatch):
+    """It only moves a_start past whitespace it actually removed — it never adopts
+    the gate's number, so a genuine drift still fails the unchanged assert."""
+    cap = _cap_module(monkeypatch)
+    import inspect
+
+    src = inspect.getsource(cap.normalize_onpolicy_leading_ws)
+    assert "gate" not in src.split('"""')[2], "the normalization must not consult the gate"
+    assert 'int(turn["a_start"]) + lead' in src, "a_start moves by the stripped width only"
+    # A row whose spans are wrong for some OTHER reason is left alone to assert.
+    prefix = "x" * 20
+    bogus = {
+        "conv_id": "s3",
+        "story": prefix + "answer text here" + '"',
+        "answer": "answer text here",
+        "parsed_turns": [{"a_start": 999, "a_end": 1010}],
+    }
+    out, stats = cap.normalize_onpolicy_leading_ws([bogus])
+    assert stats["normalized"] == 0 and out[0]["parsed_turns"][0]["a_start"] == 999
+
+
+# ---------------------------------------------------------------------------
+# 3k. AI-likeness axis validation against the rule-25 neighbour channels
+# ---------------------------------------------------------------------------
+def _axis_module(monkeypatch):
+    monkeypatch.setenv("EPM_I1345_VARIANT", "story_boundary_ablation")
+    monkeypatch.setenv("EPM_STORY_CHARACTER_NAME", "Assistant")
+    import issue1345_judge_axis_validation as axis
+
+    return axis
+
+
+@pytest.mark.parametrize(
+    ("cell", "want"),
+    [
+        ("char_helios", "helios"),
+        ("char_helios_base", "helios"),
+        ("char_helios_op", "helios"),
+        ("char_helios_op_base", "helios"),
+        ("char_dana_op_base", "dana"),
+    ],
+)
+def test_character_name_derives_from_the_cell_tag(monkeypatch, cell, want):
+    """Every provenance/model suffix must strip to the same character, or the
+    name channel would silently look for the wrong string."""
+    axis = _axis_module(monkeypatch)
+    assert axis.character_name_of(cell) == want
+
+
+def test_name_regex_is_word_bounded_and_case_insensitive(monkeypatch):
+    """The stories use both HELIOS and Helios; a case-sensitive probe would
+    undercount the channel and overstate how name-free the text is."""
+    axis = _axis_module(monkeypatch)
+    r = axis.name_regex("helios")
+    assert r.search("HELIOS considered the question")
+    assert r.search("Helios replied at once")
+    assert not r.search("heliospheric physics"), "must not match inside a longer word"
+
+
+def test_name_swap_max_shift_is_bounded_by_the_carrying_share(monkeypatch):
+    """The number that made the authorized ablation unnecessary: a name swap can
+    only move the pooled mean in proportion to the name-carrying share, so a
+    channel present in a handful of 300 rows caps the achievable movement at a
+    few points. Bound to the SHIPPED artifact so the claim stays checkable."""
+    import inspect
+    import json
+    from pathlib import Path
+
+    axis = _axis_module(monkeypatch)
+    src = inspect.getsource(axis.validate_cell)
+    assert "100.0 * n_name / n_all" in src, "the bound must be computed, not asserted in prose"
+
+    p = Path("eval_results/issue_1345/judge_legs/axis_validation.json")
+    if not p.exists():  # the run's artifact is not present in every checkout
+        pytest.skip("axis_validation.json not present")
+    cells = {r["cell"]: r for r in json.loads(p.read_text())["cells"]}
+    for cell, rec in cells.items():
+        n_name = rec["name_channel"]["carries"]["n"]
+        n_all = rec["pooled"]["n"]
+        assert rec["name_swap_max_pooled_shift"] == round(100.0 * n_name / n_all, 3), cell
+        # Every INJECTED cell must have zero name-channel leverage (the
+        # instruct-written answers never name the character).
+        if "_op" not in cell:
+            assert n_name == 0, f"{cell} unexpectedly carries the name channel"
+    # And the on-policy cells' leverage is small enough that a swap cannot decide
+    # anything — the finding that made the 1,500-call ablation unnecessary.
+    op = [r for k, r in cells.items() if "_op" in k]
+    assert op, "no on-policy cells in the artifact"
+    assert max(r["name_swap_max_pooled_shift"] for r in op) < 5.0
+
+
+def test_block_reports_n_mean_sd(monkeypatch):
+    axis = _axis_module(monkeypatch)
+    b = axis._block([10.0, 20.0, 30.0])
+    assert b["n"] == 3 and b["mean"] == 20.0 and b["sd"] is not None
+    assert axis._block([])["mean"] is None
+    assert axis._block([5.0])["sd"] is None, "sd undefined at n=1, not fabricated"
+
+
+def test_ai_word_pattern_covers_the_rubrics_excluded_self_reference(monkeypatch):
+    """The rubric excludes 'explicitly SAYING it is an AI'; the channel probe must
+    match that vocabulary or the exclusion goes unchecked."""
+    axis = _axis_module(monkeypatch)
+    for s in ("I am an AI", "as a language model", "artificial intelligence", "your assistant"):
+        assert axis.AI_WORD_RE.search(s), s
+    assert not axis.AI_WORD_RE.search("the aircraft banked left")

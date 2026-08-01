@@ -438,6 +438,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_step2_floor.py",
     # NEW (#1595) — stopped-volume persist-before-park pin (SKILL.md + pod-config.md)
     "tests/test_issue_skill_stopped_volume_persist_pin.py",
+    # NEW (#1868) — SKILL.md Terminal-teardown landing-confirmation pin
+    "tests/test_issue_skill_terminal_landing_pin.py",
     # NEW (#1841) — Step 6d.2 tick-parse field-preservation pin
     "tests/test_issue_skill_tick_parse_preservation.py",
     # NEW (#1587) — SKILL.md trigger-dense tag-adoption pin

@@ -1,0 +1,141 @@
+{
+  "commit": "2e6ce5a06e",
+  "created": "2026-08-01T03:09:31Z",
+  "figsize": [
+    11.0,
+    9.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "per-context SAE errors, prefix vs bare (n=9941)",
+        "xlabel": "SAE-space error, prefix arm",
+        "ylabel": "SAE-space error, bare arm",
+        "xticklabels": [
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0"
+        ]
+      },
+      {
+        "title_left": "difference pattern across spaces: \u03c1=0.71, p\u22480 (n=9941)",
+        "xlabel": "per-context prefix \u2212 bare error, dense space",
+        "ylabel": "per-context prefix \u2212 bare error, SAE space",
+        "xticklabels": [
+          "\u22123",
+          "\u22122",
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3"
+        ],
+        "yticklabels": [
+          "\u22123",
+          "\u22122",
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      },
+      {
+        "title_left": "cross-space per-context, history-only (prefix) arm: \u03c1=0.66",
+        "xlabel": "dense-space error, prefix arm",
+        "ylabel": "SAE-space error, prefix arm",
+        "xticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0"
+        ],
+        "yticklabels": [
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      {
+        "title_left": "cross-space per-context, bare-query arm: \u03c1=0.75",
+        "xlabel": "dense-space error, bare arm",
+        "ylabel": "SAE-space error, bare arm",
+        "xticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0"
+        ]
+      },
+      {
+        "ylabel": "log10 count",
+        "yticklabels": [
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$"
+        ]
+      },
+      {
+        "ylabel": "log10 count",
+        "yticklabels": [
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$"
+        ]
+      }
+    ]
+  },
+  "data_path": "eval_results/issue_1946/percontext_summary_L19_ridge_sae.csv"
+}

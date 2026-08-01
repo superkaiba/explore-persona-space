@@ -14,16 +14,14 @@ from __future__ import annotations
 import json
 import math
 import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT / "src"))
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
-
-load_dotenv()  # thread-cap hook MUST bind before the heavy imports (#847/#1146)
+# Shared-VM thread caps (#847): load_dotenv() setdefaults OMP/MKL/OPENBLAS/
+# NUMEXPR_NUM_THREADS before matplotlib/numpy/scipy freeze their pools.
+load_dotenv()
 
 import matplotlib  # noqa: E402
 

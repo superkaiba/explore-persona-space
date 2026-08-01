@@ -451,6 +451,18 @@ def assemble_row(
     """
     if shape == SHAPE_STORY_SLOT:
         answer, stripped = _strip_one_trailing_quote(answer_text)
+        # LEADING whitespace must come off before a_start is taken. The parent V1
+        # convention puts a_start at the answer's first CONTENT character — the
+        # gate re-derives it by normalized occurrence search, and its own comment
+        # says a space between the opening quote and the match start "belongs to
+        # neither". Storing a_start = len(prefix) with a space-initial answer
+        # points the span AT the space, so the capture's span-consistency assert
+        # sees a +1 disagreement and dies. Measured 7/2089 (0.34%) on the real
+        # pool, and ZERO of the 2,082 space-free rows disagree — the split is
+        # exact, so this is the whole class. The store's Y spans are what the
+        # fits read, so the on-policy and injected arms MUST encode the answer
+        # region under one convention, not merely self-consistently.
+        answer, lead_ws = answer.lstrip(), len(answer) - len(answer.lstrip())
         if len(answer) < ANSWER_CHAR_MIN:
             return None, "answer_too_short"
         prefix = pool_row["prefix"]
@@ -496,6 +508,15 @@ def assemble_row(
         v1_turn, v1_reason = _v1_gate_cached()(story, answer)
         if v1_reason != "ok" or v1_turn is None:
             return None, f"v1_gate_{v1_reason}"
+        # The gate returning "ok" is only the FIRST of the capture's two
+        # trust-boundary checks. The second compares the STORED spans against the
+        # gate's re-derivation key-by-key, and a row can pass the gate while
+        # disagreeing on a span — exactly the a_start +1 class the leading-space
+        # lstrip above fixes. Run that comparison HERE too, so any future
+        # divergence is a gen-time drop rather than a mid-capture assert.
+        for span_key in ("q_start", "q_end", "boundary_end", "a_start", "a_end"):
+            if span_key in v1_turn and span_key in turn and v1_turn[span_key] != turn[span_key]:
+                return None, f"v1_gate_span_mismatch_{span_key}"
         return {
             "conv_id": pool_row["conv_id"],
             "story": story,
@@ -505,6 +526,7 @@ def assemble_row(
             "model": model_key,
             "provenance": c.PROV_ONPOLICY,
             "trailing_quote_stripped": stripped,
+            "leading_ws_stripped": lead_ws,
             "prefix_chars": a_start,
         }, "ok"
 
@@ -618,6 +640,8 @@ def keep_rows(
         "render_none": 0,
         "finish_length_capped": 0,
         "trailing_quote_stripped": 0,
+        "leading_ws_stripped": 0,
+        "v1_gate_span_mismatch": 0,
     }
     kept: list[dict] = []
     for raw in raw_rows:
@@ -635,6 +659,9 @@ def keep_rows(
             # have not seen before still gets COUNTED rather than crashing the
             # run or vanishing. Every other reason must be pre-declared, so the
             # assert still catches a typo'd or unaccounted local drop class.
+            if reason.startswith("v1_gate_span_mismatch_"):
+                counts["v1_gate_span_mismatch"] += 1
+                continue
             if reason.startswith("v1_gate_"):
                 counts.setdefault(reason, 0)
             assert reason in counts, f"unaccounted drop reason {reason!r}"
@@ -645,6 +672,8 @@ def keep_rows(
             continue
         if row.get("trailing_quote_stripped"):
             counts["trailing_quote_stripped"] += 1
+        if row.get("leading_ws_stripped"):
+            counts["leading_ws_stripped"] += 1
         # Y_BOUNDARY sensitivity split (#1345 fits): a cap-truncated answer ends
         # MID-SENTENCE, so the boundary target read just after it is an artifact
         # of the cap rather than a natural end-of-answer transition. Y_MEAN over
