@@ -139,6 +139,26 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "transfer columns exactly), or an explicit arm-slug list",
     )
     ap.add_argument(
+        "--transfer-preds",
+        action="store_true",
+        help="ALSO persist per-(arm, eval context) frozen-layer transfer predictions "
+        "for the --transfer leg (one JSONL per unit under "
+        "arm_results/percell/transfer_preds/, schema = arms.transfer_preds_rows with "
+        "a per-context 'rung' label). Default OFF: the transfer leg's aggregate rows "
+        "are unchanged, so every other lane is byte-identical. Turning it on is what "
+        "makes an OOD-rung scatter / per-context subset read a pure re-analysis "
+        "instead of another GPU re-score (the train setting already persists its "
+        "per-cell preds npz via arms._save_cell_preds).",
+    )
+    ap.add_argument(
+        "--eval-rung-knn",
+        action="store_true",
+        help="ALSO compute the kNN-retrieval companion (and a PER-EVAL-RUNG "
+        "breakdown) for the map's eval-distribution reconstruction read in "
+        "map_diagnostics.json. Default OFF — kNN is O(n^2 d) per (layer, metric) "
+        "and the pooled-R^2-only object is what every prior lane recorded.",
+    )
+    ap.add_argument(
         "--pilot",
         action="store_true",
         help="§9 pilot gate: run ONE production-shape unit (max L, full U, first "
@@ -760,7 +780,14 @@ def _fit_map(args, x_w, y_w):
 NL_MAP_REUSE_ENV = "EPM_I1739_NL_MAP_REUSE"
 
 
-def _eval_rung_reconstruction(mapfit, z_ev_w, za_ev_w) -> dict:
+def _key_sha(unit_key: str) -> str:
+    """Stable 16-hex filename stem for a unit key (same convention as preds npz)."""
+    import hashlib
+
+    return hashlib.sha1(unit_key.encode()).hexdigest()[:16]
+
+
+def _eval_rung_reconstruction(mapfit, z_ev_w, za_ev_w, *, rungs=None, knn: bool = False) -> dict:
     """Per-layer reconstruction R^2 of the map on THIS behavior's eval rung.
 
     The SECOND of the two map-quality reads the standing mapping-companions
@@ -779,24 +806,83 @@ def _eval_rung_reconstruction(mapfit, z_ev_w, za_ev_w) -> dict:
     well BELOW the U-pool read (an off-distribution extrapolation from the
     #1092 WildChat pool onto behavior eval distributions; strongly negative is
     a recordable finding, not a bug -- see the #1774 apply-path resolution).
+
+    ``rungs`` (per-eval-row rung labels, aligned with ``z_ev_w``'s row axis) and
+    ``knn=True`` are the map-recon-on-eval-dist round's two additive extensions:
+    with them the read is broken out PER EVAL DISTRIBUTION (each OOD rung
+    separately, not only the pooled eval split) and carries the standing
+    kNN-retrieval companion (CLAUDE.md identity+bias / kNN bullet) computed with
+    the SAME ``mapping_baselines.knn_retrieval`` helper ``map_diagnostics`` uses
+    on the U-pool holdout, so the two are directly comparable. Both default OFF:
+    with ``rungs=None, knn=False`` the returned object is byte-identical to the
+    pre-existing pooled-R^2-only read, so every other lane is unperturbed.
+    kNN is O(n^2 d) per (layer, metric), which is why it is opt-in.
     """
     import math
 
     from explore_persona_space.experiments.issue_1739 import fits
+    from explore_persona_space.experiments.issue_1739.constants import KNN_KS
+
+    def _block(pred_b, true_b) -> list[dict]:
+        rows = []
+        for li in range(pred_b.shape[0]):
+            row = {"layer_idx": li, "r2_eval_rung": float(fits.r2_pooled(pred_b[li], true_b[li]))}
+            if knn:
+                from explore_persona_space.analysis.mapping_baselines import knn_retrieval
+
+                # SAME helper map_diagnostics uses on the U-pool holdout, so the
+                # eval-distribution retrieval read is directly comparable to it.
+                # chance = k/n_pool rides the helper's own `chance_at_k` field.
+                row["knn"] = {
+                    metric: knn_retrieval(pred_b[li], true_b[li], ks=KNN_KS, metric=metric)
+                    for metric in ("euclidean", "cosine")
+                }
+            rows.append(row)
+        return rows
 
     pred = fits.apply_map(z_ev_w, mapfit)
-    per_layer = [
-        {"layer_idx": li, "r2_eval_rung": float(fits.r2_pooled(pred[li], za_ev_w[li]))}
-        for li in range(pred.shape[0])
-    ]
+    per_layer = _block(pred, za_ev_w)
     finite = [r["r2_eval_rung"] for r in per_layer if math.isfinite(r["r2_eval_rung"])]
-    return {
+    out = {
         "per_layer": per_layer,
         "r2_eval_rung_mean": (sum(finite) / len(finite)) if finite else None,
         "n_eval_rows": int(z_ev_w.shape[1]),
         "n_layers": int(pred.shape[0]),
         "estimator": "fits.r2_pooled (same as r2_map)",
     }
+    if knn:
+        out["knn_ks"] = list(KNN_KS)
+    if rungs is not None:
+        import numpy as _np
+
+        labels = _np.asarray([str(r) for r in rungs])
+        if labels.size != pred.shape[1]:
+            raise ValueError(f"rungs/eval-row mismatch: {labels.size} vs {pred.shape[1]}")
+        per_rung: dict[str, dict] = {}
+        for rung in sorted(set(labels.tolist())):
+            sel = _np.flatnonzero(labels == rung)
+            # kNN needs a candidate pool bigger than the largest k; below that
+            # the retrieval read is degenerate — record the rung's R^2 only.
+            rows = (
+                _block(pred[:, sel], za_ev_w[:, sel])
+                if sel.size > max(KNN_KS) or not knn
+                else [
+                    {
+                        "layer_idx": li,
+                        "r2_eval_rung": float(fits.r2_pooled(pred[li, sel], za_ev_w[li, sel])),
+                    }
+                    for li in range(pred.shape[0])
+                ]
+            )
+            fin = [r["r2_eval_rung"] for r in rows if math.isfinite(r["r2_eval_rung"])]
+            per_rung[rung] = {
+                "n_rows": int(sel.size),
+                "per_layer": rows,
+                "r2_eval_rung_mean": (sum(fin) / len(fin)) if fin else None,
+                "knn_skipped_small_pool": bool(knn and sel.size <= max(KNN_KS)),
+            }
+        out["per_rung"] = per_rung
+    return out
 
 
 def _load_nl_map(
@@ -1248,7 +1334,13 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
                     # _eval_rung_reconstruction on why it lands here and not in
                     # the shared payload.
                     diag_out[f"{spec0.variant}|{u_label}"]["eval_rung"] = _eval_rung_reconstruction(
-                        mapfit, z_ev_w, za_ev_w
+                        mapfit,
+                        z_ev_w,
+                        za_ev_w,
+                        # row_rungs = the PER-CONTEXT rung label aligned with
+                        # ctx_order (tbl_ev.rungs is the DISTINCT rung list).
+                        rungs=tbl_ev.row_rungs if getattr(args, "eval_rung_knn", False) else None,
+                        knn=bool(getattr(args, "eval_rung_knn", False)),
                     )
         # ONE whitened fp64 copy per group, SHARED by identity across the
         # regime slices (the run_cell_multi contract) — the old per-spec
@@ -1578,6 +1670,35 @@ def _run_transfer_for_group(
             skips_u += arms.roster_accounting_skips(
                 roster, scores_ev, arm_skips, budget_l=budget_l, draw=draw, seed=seed
             )
+            if getattr(args, "transfer_preds", False):
+                # Per-(arm, eval context) frozen-layer OOD predictions — the
+                # eval-rung twin of the train setting's `preds/*.npz` sidecar,
+                # via the SAME reviewed helper the wcrung/pvsynth rung runners
+                # already use. Written BEFORE the checkpoint line so a resumed
+                # unit (which skips this block with its rows already recorded)
+                # never leaves a half-written sidecar; one file per unit,
+                # truncate-and-replace (write_preds_jsonl), keyed on the unit
+                # key's sha so a re-run of a unit overwrites exactly its own
+                # rows. `rung` rides the generic label column, so an OOD
+                # scatter is a pure post-hoc read of this file.
+                arms.write_preds_jsonl(
+                    tpath.parent / "transfer_preds" / (_key_sha(key) + ".jsonl"),
+                    arms.transfer_preds_rows(
+                        scores_ev,
+                        dv_ev,
+                        tbl_ev.ctx_order,
+                        frozen_by_arm,
+                        provenance={
+                            **provs[r],
+                            "budget_l": int(budget_l),
+                            "draw": int(draw),
+                            "seed": int(seed),
+                            "n_eval_pooled": len(tbl_ev.ctx_order),
+                        },
+                        layers=tuple(layers),
+                        labels={"rung": [str(x) for x in rungs_ev]},
+                    ),
+                )
             # In-distribution anchor: the unit's own in-split OOF read per ladder arm.
             for row in rec["arms"]:
                 if row["arm"] in scores_ev:
