@@ -111,6 +111,12 @@ BINDING_PROMPT_BUDGET = min(
 PHASE_HEADROOM_GB = {"f1a": 150.0, "f1b": 40.0, "f1c": 10.0, "f1d": 30.0, "f1e": 10.0, "f1f": 5.0}
 WORKER_HEADROOM_GB = 5.0
 MAX_HEAVY_MODEL_CONCURRENT = 2  # ≤2 coexisting merged/staged model dirs per node (plan §9)
+# per-unit failure budget (crash-fix r3, job 16717): one bad unit must not kill
+# the whole job — collect failures, keep scheduling INDEPENDENT units, abort only
+# past the budget or on a systemic pattern; failed units stay resumable (no done
+# sentinel), and the run still exits non-zero when ANY unit failed.
+FAILURE_BUDGET = 5  # abort when MORE than this many units fail (matches the observed blast radius)
+SYSTEMIC_EXC_REPEAT = 3  # same exception class this many times = systemic -> abort early
 
 SHARD_BYTE_BUDGET = 8_500_000  # <9 MB raw-text shards (non-LFS path)
 
@@ -450,6 +456,39 @@ def _write_sentinel(cfg: Cfg, key: str, wall_s: float, outputs: list[str]) -> No
 
 def _done(cfg: Cfg, key: str) -> bool:
     return _sentinel_path(cfg, key).exists()
+
+
+def _failure_path(cfg: Cfg, key: str) -> Path:
+    return cfg.out_root / "failed" / (key.replace(":", "__") + ".json")
+
+
+def _write_failure(cfg: Cfg, key: str, exc: BaseException) -> None:
+    """Worker-side failure breadcrumb (exception class for the dispatcher's
+    systemic-failure detector). NOT a done sentinel — a failed unit writes no
+    ``done/`` sentinel, so resume re-runs exactly the failed/pending units."""
+    CAP._atomic_json(
+        _failure_path(cfg, key),
+        {
+            "key": key,
+            "exc_class": type(exc).__name__,
+            "exc_msg": str(exc)[:500],
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        },
+    )
+
+
+def _read_failure_class(cfg: Cfg, key: str) -> str:
+    """Exception class from the worker's failure breadcrumb; 'unknown' when the
+    worker died without writing one (SIGKILL/OOM) or the file is unreadable —
+    the failure itself is already recorded via the nonzero rc, this string only
+    feeds the systemic-repeat detector."""
+    p = _failure_path(cfg, key)
+    if not p.exists():
+        return "unknown"
+    try:
+        return str(json.loads(p.read_text()).get("exc_class", "unknown"))
+    except (OSError, json.JSONDecodeError):
+        return "unknown"
 
 
 # ── shared helpers (rendering, capture, storage, upload) ──────────────────────
@@ -1023,6 +1062,28 @@ def run_f1b_slot(cfg: Cfg, manifests: dict, arm_id: str, side: str) -> list[str]
 # ── f1c: anchor captures ──────────────────────────────────────────────────────
 
 
+def _anchor_known_personas(cfg: Cfg, rows: list[dict], mix_id: str) -> list[str]:
+    """Known-persona set for the f1c anchor TF capture: the labels the LOADED
+    mix rows actually carry, validated against the arm registry.
+
+    A shared training-mix row pool serves several arms (the FT->LoRA
+    ``mix_pos_sources`` mapping), and ``CAP._mix_positive_rows`` labels rows
+    with the REPRESENTATIVE arm's slug rather than the mix id — so passing
+    ``[mix_id]`` alone fails the reused helper's persona integrity assert
+    (fellows job 16717: row persona ``syc-pers-ft-con-s42`` under mix
+    ``syc-pers-con-lr1e5-s42``). The helper's assert is a legitimate
+    integrity check and stays untouched; the fix is glue-side. Returns the
+    sorted union of realized labels + mix_id; a label that is neither the
+    mix id nor a registered arm id still fails loud (genuinely foreign rows).
+    """
+    reg = json.loads((cfg.out_root / "arm_registry.json").read_text())
+    registered = set(reg["mix_pos_sources"])
+    labels = {r["persona"] for r in rows}
+    foreign = labels - registered - {mix_id}
+    assert not foreign, (mix_id, sorted(foreign), "persona labels not in arm_registry.json")
+    return sorted(labels | {mix_id})
+
+
 def run_f1c(cfg: Cfg, manifests: dict, mix_id: str) -> list[str]:
     """Training-centroid anchors for one mix (base model TF; 20 rows @ seed 1979)."""
     import numpy as np
@@ -1037,7 +1098,8 @@ def run_f1c(cfg: Cfg, manifests: dict, mix_id: str) -> list[str]:
     for i, r in enumerate(rows):
         r.setdefault("persona", mix_id)
         r.setdefault("row_sha", _sha16(f"{mix_id}||anchor||{i}"))
-    spans, positions = _tf_capture_rows(cfg, X.BASE_MODEL, rows, [mix_id])
+    known = _anchor_known_personas(cfg, rows, mix_id)
+    spans, positions = _tf_capture_rows(cfg, X.BASE_MODEL, rows, known)
     anchors: dict = {
         "mix": mix_id,
         "arm": rep["arm_id"],
@@ -1693,6 +1755,8 @@ def dispatch(cfg: Cfg, manifests: dict, items: list[Item]) -> None:
     running: dict[str, tuple[subprocess.Popen, Item, float]] = {}  # gpu -> (proc, item, t0)
     done_keys = {it.key for it in items if _done(cfg, it.key)}
     failures: list[str] = []
+    exc_class_counts: dict[str, int] = {}
+    abort_reason: str | None = None
     n_total = len(pending)
     n_done = 0
     script = str(Path(__file__).resolve())
@@ -1708,9 +1772,10 @@ def dispatch(cfg: Cfg, manifests: dict, items: list[Item]) -> None:
         return True
 
     while pending or running:
-        # fill idle GPUs (work-conserving: any ready item, no phase barrier)
+        # fill idle GPUs (work-conserving: any ready item, no phase barrier;
+        # per-unit failures are non-fatal up to the budget — only abort stops fills)
         for gpu in gpus:
-            if gpu in running or failures:
+            if gpu in running or abort_reason:
                 continue
             nxt = next((it for it in pending if _ready(it)), None)
             if nxt is None:
@@ -1730,7 +1795,7 @@ def dispatch(cfg: Cfg, manifests: dict, items: list[Item]) -> None:
             running[gpu] = (proc, nxt, time.time())
             logger.info("[dispatch] gpu%s <- %s (pid %d)", gpu, nxt.key, proc.pid)
         if not running:
-            if pending and not failures:
+            if pending and not failures and not abort_reason:
                 raise RuntimeError(
                     f"deadlock: {len(pending)} pending items, none ready "
                     f"(unmet deps?): {[it.key for it in pending][:8]}"
@@ -1749,16 +1814,34 @@ def dispatch(cfg: Cfg, manifests: dict, items: list[Item]) -> None:
                 n_done += 1
                 print(f"[f1] unit {n_done}/{n_total} {it.key} elapsed={wall:.0f}s", flush=True)
             else:
-                failures.append(f"{it.key} rc={rc}")
+                exc_class = _read_failure_class(cfg, it.key)
+                failures.append(f"{it.key} rc={rc} exc={exc_class}")
+                exc_class_counts[exc_class] = exc_class_counts.get(exc_class, 0) + 1
+                if len(failures) > FAILURE_BUDGET:
+                    abort_reason = f"failure budget exceeded ({len(failures)} > {FAILURE_BUDGET})"
+                elif exc_class_counts[exc_class] >= SYSTEMIC_EXC_REPEAT:
+                    abort_reason = f"systemic failure: {exc_class} x{exc_class_counts[exc_class]}"
                 logger.error(
-                    "[dispatch] FAILED %s rc=%s after %.0fs — no new items "
-                    "scheduled; draining running workers",
+                    "[dispatch] FAILED %s rc=%s exc=%s after %.0fs (failures %d/%d budget) — %s",
                     it.key,
                     rc,
+                    exc_class,
                     wall,
+                    len(failures),
+                    FAILURE_BUDGET,
+                    f"ABORT: {abort_reason}; draining running workers"
+                    if abort_reason
+                    else "non-fatal; independent units keep scheduling "
+                    "(failed unit stays resumable — no done sentinel)",
                 )
     if failures:
-        raise RuntimeError(f"F1 units failed: {failures}")
+        skipped = [it.key for it in pending]
+        raise RuntimeError(
+            f"F1 units failed ({len(failures)} of {n_total}"
+            + (f"; ABORTED early: {abort_reason}" if abort_reason else "")
+            + (f"; {len(skipped)} pending never scheduled: {skipped[:8]}" if skipped else "")
+            + f"): {failures}"
+        )
     # the driver IS the dispatcher terminal (issue1979_dispatch.sh execs it in-process),
     # so this single end-of-run line is the dispatcher's own terminal emission
     print("[phase=done]", flush=True)  # noqa: phase-done-reserved
@@ -1970,11 +2053,16 @@ def main(argv: list[str] | None = None) -> int:
         t0 = time.time()
         from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
 
-        assert_out_root_headroom(
-            cfg.out_root, WORKER_HEADROOM_GB, phase=f"worker:{args.worker_unit}"
-        )
-        outputs = run_unit(cfg, manifests, args.worker_unit)
+        try:
+            assert_out_root_headroom(
+                cfg.out_root, WORKER_HEADROOM_GB, phase=f"worker:{args.worker_unit}"
+            )
+            outputs = run_unit(cfg, manifests, args.worker_unit)
+        except BaseException as exc:  # breadcrumb for the dispatcher, then fail loud
+            _write_failure(cfg, args.worker_unit, exc)
+            raise
         _write_sentinel(cfg, args.worker_unit, time.time() - t0, outputs)
+        _failure_path(cfg, args.worker_unit).unlink(missing_ok=True)  # stale prior-run crumb
         return 0
     dispatch(cfg, manifests, items)
     return 0
