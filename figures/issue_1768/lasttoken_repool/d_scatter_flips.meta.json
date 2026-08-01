@@ -1,0 +1,1566 @@
+{
+  "commit": "1750260472",
+  "created": "2026-08-01T06:29:18Z",
+  "figsize": [
+    4.6,
+    4.4
+  ],
+  "points": [
+    {
+      "$D$ (span-mean, round 1)": 1.6215300070743908,
+      "$D$ (last-token, last_prompt)": 4.272193071024457,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 1.8074976773092093,
+      "$D$ (last-token, last_prompt)": 4.14193073415143,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 1.2817237844258802,
+      "$D$ (last-token, last_prompt)": 3.7522957483033945,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 2.389780686041888,
+      "$D$ (last-token, last_prompt)": 3.0818733569245467,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.9524256605106274,
+      "$D$ (last-token, last_prompt)": -0.3005787508698692,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -2.0559857924058837,
+      "$D$ (last-token, last_prompt)": -0.3911366564971974,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -2.1974470720861614,
+      "$D$ (last-token, last_prompt)": -0.28418068636501914,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 0.8846401942012463,
+      "$D$ (last-token, last_prompt)": 3.284897105626568,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 0.6160859164395092,
+      "$D$ (last-token, last_prompt)": 2.78240382443653,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 5.693617808238647,
+      "$D$ (last-token, last_prompt)": 11.217482491915934,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 5.900319040606028,
+      "$D$ (last-token, last_prompt)": 6.1426512385608305,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 1.201931239892839,
+      "$D$ (last-token, last_prompt)": 4.232689504226219,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 1.3526179388051531,
+      "$D$ (last-token, last_prompt)": 4.5606916347952655,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 6.111968026497848,
+      "$D$ (last-token, last_prompt)": 14.17737264707813,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 4.839470881391964,
+      "$D$ (last-token, last_prompt)": 13.444454855046438,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 3.0839496893679765,
+      "$D$ (last-token, last_prompt)": 5.717842834567113,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 3.2852405974560916,
+      "$D$ (last-token, last_prompt)": 5.518298845816087,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 8.358762796221173,
+      "$D$ (last-token, last_prompt)": 22.326819254611515,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 4.995073590341242,
+      "$D$ (last-token, last_prompt)": 10.81836947077688,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 2.9568802534281637,
+      "$D$ (last-token, last_prompt)": 6.801410802673612,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 4.180238620939146,
+      "$D$ (last-token, last_prompt)": 7.6752803244478915,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 4.26808214108237,
+      "$D$ (last-token, last_prompt)": 11.867521626297567,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 2.193835709284393,
+      "$D$ (last-token, last_prompt)": 5.606483360715796,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 2.1727586696805865,
+      "$D$ (last-token, last_prompt)": 9.307566277329704,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.9593856199646087,
+      "$D$ (last-token, last_prompt)": -0.9511177847349712,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.9074183121414485,
+      "$D$ (last-token, last_prompt)": -1.0413206100233294,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.8911828171496978,
+      "$D$ (last-token, last_prompt)": -0.7066322146455901,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.5060515817850337,
+      "$D$ (last-token, last_prompt)": -0.49668143277888044,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.2022392404928075,
+      "$D$ (last-token, last_prompt)": -1.666611367422409,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -2.9244040673974943,
+      "$D$ (last-token, last_prompt)": -1.7198739288337581,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -2.861809714942903,
+      "$D$ (last-token, last_prompt)": -1.3413939196015416,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.2073994095871416,
+      "$D$ (last-token, last_prompt)": -1.766157122226514,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -4.61939362132416,
+      "$D$ (last-token, last_prompt)": -1.4804000510536275,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -4.473370696110752,
+      "$D$ (last-token, last_prompt)": -1.4519292950622567,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -4.763572979683174,
+      "$D$ (last-token, last_prompt)": -1.6018265020478752,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -4.502276981514264,
+      "$D$ (last-token, last_prompt)": -1.4710213464933766,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.40415280764282,
+      "$D$ (last-token, last_prompt)": -2.1564499304551914,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.314127437409347,
+      "$D$ (last-token, last_prompt)": -2.1630840553292314,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.295169740547766,
+      "$D$ (last-token, last_prompt)": -2.3331822763441155,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.351205083448739,
+      "$D$ (last-token, last_prompt)": -2.2781549101653678,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -2.9763582202539465,
+      "$D$ (last-token, last_prompt)": -2.3896298139033667,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.00854089692886,
+      "$D$ (last-token, last_prompt)": -1.07066394004391,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -2.748609677514965,
+      "$D$ (last-token, last_prompt)": -2.0438258457936884,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.251612751495934,
+      "$D$ (last-token, last_prompt)": -2.1252192089159916,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 0.5630153354539811,
+      "$D$ (last-token, last_prompt)": 6.048562312458458,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 0.9378701029341414,
+      "$D$ (last-token, last_prompt)": 3.6334785721778893,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -4.155391773486861,
+      "$D$ (last-token, last_prompt)": -2.79448278411721,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -4.139241030953677,
+      "$D$ (last-token, last_prompt)": -2.7904103240910354,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -4.187225418099781,
+      "$D$ (last-token, last_prompt)": -2.8186424175189444,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -4.183029029711085,
+      "$D$ (last-token, last_prompt)": -2.790011213586027,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -2.1373910838732737,
+      "$D$ (last-token, last_prompt)": -0.378187535218375,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 4.912634679176749,
+      "$D$ (last-token, last_prompt)": 9.322112600145665,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 1.4995424048027122,
+      "$D$ (last-token, last_prompt)": 4.151294414896295,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -2.0485192183791874,
+      "$D$ (last-token, last_prompt)": -0.47265176988446633,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -2.7618051427497274,
+      "$D$ (last-token, last_prompt)": -1.4404903634253188,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 9.635235560723459,
+      "$D$ (last-token, last_prompt)": 7.117606480881163,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 9.696340008585068,
+      "$D$ (last-token, last_prompt)": 6.907728540949398,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 8.810120223536437,
+      "$D$ (last-token, last_prompt)": 5.780279324665308,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 8.326522445086667,
+      "$D$ (last-token, last_prompt)": 4.822128405446669,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 1.2452279351506572,
+      "$D$ (last-token, last_prompt)": 0.6880261575910884,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 0.7798522522219251,
+      "$D$ (last-token, last_prompt)": 0.4807837478832564,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 7.597228312542633,
+      "$D$ (last-token, last_prompt)": 5.965091045940458,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 6.819427162613529,
+      "$D$ (last-token, last_prompt)": 5.06679430093099,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 13.639312137414443,
+      "$D$ (last-token, last_prompt)": 12.816947199729654,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 12.488295920751604,
+      "$D$ (last-token, last_prompt)": 10.121904493030339,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 9.479975179805876,
+      "$D$ (last-token, last_prompt)": 7.851677862452789,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 9.81865387041885,
+      "$D$ (last-token, last_prompt)": 8.339284386639685,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 2.747278890228637,
+      "$D$ (last-token, last_prompt)": 2.8495571453479496,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 2.834041654105839,
+      "$D$ (last-token, last_prompt)": 2.7912897494374604,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 14.379633766248627,
+      "$D$ (last-token, last_prompt)": 14.52565327131716,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 13.74156807430047,
+      "$D$ (last-token, last_prompt)": 14.209622053369998,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 12.328270888853648,
+      "$D$ (last-token, last_prompt)": 9.630706917338287,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 12.262266369939447,
+      "$D$ (last-token, last_prompt)": 10.33893411666935,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 6.629152387693434,
+      "$D$ (last-token, last_prompt)": 5.7022701490834855,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 6.509657645815766,
+      "$D$ (last-token, last_prompt)": 5.33196254610144,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 4.480372214879374,
+      "$D$ (last-token, last_prompt)": 4.13509383034841,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 4.3148976729963415,
+      "$D$ (last-token, last_prompt)": 4.0294643253646,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 18.711998325308205,
+      "$D$ (last-token, last_prompt)": 17.8460410807212,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 14.256059197696075,
+      "$D$ (last-token, last_prompt)": 12.004227089724708,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 12.90595606136192,
+      "$D$ (last-token, last_prompt)": 10.563415913281368,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 13.31761927969583,
+      "$D$ (last-token, last_prompt)": 12.41079109345376,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 12.87879841277784,
+      "$D$ (last-token, last_prompt)": 12.457191783906065,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 10.918100792674483,
+      "$D$ (last-token, last_prompt)": 10.584820270146707,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 10.70685117359642,
+      "$D$ (last-token, last_prompt)": 10.767420492352237,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 4.2258902807332,
+      "$D$ (last-token, last_prompt)": 3.79973385746073,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 4.2464683442631195,
+      "$D$ (last-token, last_prompt)": 3.8147431988092677,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -2.1778184515476724,
+      "$D$ (last-token, last_prompt)": -1.7772080398472099,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -2.035681007836615,
+      "$D$ (last-token, last_prompt)": -1.8655430752284383,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.6929953842944432,
+      "$D$ (last-token, last_prompt)": -1.3492872660867095,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.2493929073725667,
+      "$D$ (last-token, last_prompt)": -1.10992574648321,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.8232521353988496,
+      "$D$ (last-token, last_prompt)": -3.007953712701612,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.7689853546568983,
+      "$D$ (last-token, last_prompt)": -2.9888618351829184,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.3881975079516273,
+      "$D$ (last-token, last_prompt)": -2.6983516635780935,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.88347801106063,
+      "$D$ (last-token, last_prompt)": -3.105829093426018,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -5.381645503377113,
+      "$D$ (last-token, last_prompt)": -4.545256679934207,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -5.269444068529699,
+      "$D$ (last-token, last_prompt)": -4.491201313397499,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -5.61612511287094,
+      "$D$ (last-token, last_prompt)": -4.8057836609880065,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.044564984826402,
+      "$D$ (last-token, last_prompt)": -4.477755806676203,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.863441741646909,
+      "$D$ (last-token, last_prompt)": -3.1244602544727638,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.6373895509359713,
+      "$D$ (last-token, last_prompt)": -3.1322264574787715,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -4.151055259546667,
+      "$D$ (last-token, last_prompt)": -3.4947509963114953,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.9651555693642173,
+      "$D$ (last-token, last_prompt)": -3.397826948158373,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.7860915246069933,
+      "$D$ (last-token, last_prompt)": -3.5413218533252615,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -4.197076976186378,
+      "$D$ (last-token, last_prompt)": -3.579843282540645,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.560704666119568,
+      "$D$ (last-token, last_prompt)": -2.9839123084831023,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.709829621107862,
+      "$D$ (last-token, last_prompt)": -3.061153742485533,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 7.830205087349388,
+      "$D$ (last-token, last_prompt)": 7.329873072284931,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 8.167650089340412,
+      "$D$ (last-token, last_prompt)": 6.510346070829161,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 5.11499793760453,
+      "$D$ (last-token, last_prompt)": 4.772868094614617,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 5.8400069603735005,
+      "$D$ (last-token, last_prompt)": 4.900834553744701,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -4.665993901887488,
+      "$D$ (last-token, last_prompt)": -3.80682532972669,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -4.649996341140369,
+      "$D$ (last-token, last_prompt)": -3.762217283174359,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -4.771037781378471,
+      "$D$ (last-token, last_prompt)": -3.892899149306708,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -4.679401274315583,
+      "$D$ (last-token, last_prompt)": -3.8253462503418865,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 0.8835472118952001,
+      "$D$ (last-token, last_prompt)": 0.8532649265224261,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 0.785865999382974,
+      "$D$ (last-token, last_prompt)": 0.8562250873319694,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 3.920686533509482,
+      "$D$ (last-token, last_prompt)": 2.4526306014108172,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 3.7663450490812984,
+      "$D$ (last-token, last_prompt)": 2.575058373696976,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 14.504513360180667,
+      "$D$ (last-token, last_prompt)": 14.444727250735209,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 10.204431275966048,
+      "$D$ (last-token, last_prompt)": 7.081664962186288,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 3.5738811053291037,
+      "$D$ (last-token, last_prompt)": 2.4942696113072174,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 3.5760174731245318,
+      "$D$ (last-token, last_prompt)": 2.8106278638167765,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.3661560589675332,
+      "$D$ (last-token, last_prompt)": -0.8789548004474224,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 18.730067645922304,
+      "$D$ (last-token, last_prompt)": 15.41559387742194,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 19.391565564556828,
+      "$D$ (last-token, last_prompt)": 14.46979740070637,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 16.299778274009824,
+      "$D$ (last-token, last_prompt)": 11.766456740323733,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 15.128118677200106,
+      "$D$ (last-token, last_prompt)": 9.01007178866449,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.0815998526251782,
+      "$D$ (last-token, last_prompt)": -1.0081722855047666,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.9628129144226207,
+      "$D$ (last-token, last_prompt)": -1.6271664554841223,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -2.220419648050335,
+      "$D$ (last-token, last_prompt)": -2.3733689506298923,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 15.06526416131178,
+      "$D$ (last-token, last_prompt)": 12.943082886932828,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 12.442629217370808,
+      "$D$ (last-token, last_prompt)": 9.535549434630305,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 30.50158041858215,
+      "$D$ (last-token, last_prompt)": 25.184679606112496,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 27.4434897640948,
+      "$D$ (last-token, last_prompt)": 21.248695699671835,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 17.0192761033326,
+      "$D$ (last-token, last_prompt)": 17.047313063662884,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 17.633687901918847,
+      "$D$ (last-token, last_prompt)": 17.407686381201422,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 4.879168918627258,
+      "$D$ (last-token, last_prompt)": 4.726712795369409,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 4.926753342540323,
+      "$D$ (last-token, last_prompt)": 4.642980002975307,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 36.033366734181456,
+      "$D$ (last-token, last_prompt)": 31.748432070932836,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 31.26093580543126,
+      "$D$ (last-token, last_prompt)": 34.097469815099615,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 24.93274505225169,
+      "$D$ (last-token, last_prompt)": 22.867713274702652,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 25.081761371422147,
+      "$D$ (last-token, last_prompt)": 24.323529776060127,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 11.620281972310934,
+      "$D$ (last-token, last_prompt)": 12.221041122676397,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 10.711939920338182,
+      "$D$ (last-token, last_prompt)": 11.458763973127283,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 6.172514838879096,
+      "$D$ (last-token, last_prompt)": 7.70690169892011,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 6.6125892310691405,
+      "$D$ (last-token, last_prompt)": 7.5384208326912585,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 49.14118423006835,
+      "$D$ (last-token, last_prompt)": 38.02036873049146,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 26.421377476231058,
+      "$D$ (last-token, last_prompt)": 26.9145970657447,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 23.976640075109444,
+      "$D$ (last-token, last_prompt)": 23.872889173917514,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 30.172530550785112,
+      "$D$ (last-token, last_prompt)": 25.856767120588657,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 30.301775489159382,
+      "$D$ (last-token, last_prompt)": 26.4702971899014,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 19.408475853303422,
+      "$D$ (last-token, last_prompt)": 23.577444383477108,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 19.768415864652255,
+      "$D$ (last-token, last_prompt)": 23.98383588068124,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 7.666350277557029,
+      "$D$ (last-token, last_prompt)": 8.863790813223915,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 7.506594166408618,
+      "$D$ (last-token, last_prompt)": 8.731974031482466,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -7.526243011160645,
+      "$D$ (last-token, last_prompt)": -8.998347442741682,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -7.208787555574023,
+      "$D$ (last-token, last_prompt)": -8.927960880331305,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -5.92851622093449,
+      "$D$ (last-token, last_prompt)": -7.711272511611938,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -4.889316393897378,
+      "$D$ (last-token, last_prompt)": -7.458763786513778,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -13.167731805993583,
+      "$D$ (last-token, last_prompt)": -12.131460074822629,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -13.243171080675271,
+      "$D$ (last-token, last_prompt)": -12.076236637456127,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -12.000163430998393,
+      "$D$ (last-token, last_prompt)": -11.37850168302406,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -13.375144770387363,
+      "$D$ (last-token, last_prompt)": -12.431771381767328,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -17.654038464526508,
+      "$D$ (last-token, last_prompt)": -16.384691452333648,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -17.46830707166976,
+      "$D$ (last-token, last_prompt)": -16.211581852849477,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -18.231305395303337,
+      "$D$ (last-token, last_prompt)": -16.973433699425673,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -17.450717015816764,
+      "$D$ (last-token, last_prompt)": -16.116347063051624,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -13.048753698183182,
+      "$D$ (last-token, last_prompt)": -12.001198158916495,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -13.14938719535065,
+      "$D$ (last-token, last_prompt)": -12.117206734648377,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -14.465657583571247,
+      "$D$ (last-token, last_prompt)": -13.485251270382967,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -14.032738373139585,
+      "$D$ (last-token, last_prompt)": -13.383126939461134,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -14.275622275638618,
+      "$D$ (last-token, last_prompt)": -13.731709208029747,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -14.24155251128288,
+      "$D$ (last-token, last_prompt)": -13.788091869383125,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -12.344908866118796,
+      "$D$ (last-token, last_prompt)": -11.655252179990512,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -12.583166577527225,
+      "$D$ (last-token, last_prompt)": -11.818349654050143,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 16.03859725042352,
+      "$D$ (last-token, last_prompt)": 15.628471526247914,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 15.724762748620506,
+      "$D$ (last-token, last_prompt)": 14.314025097320354,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 10.509275652919627,
+      "$D$ (last-token, last_prompt)": 10.154507726062945,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 11.193960722591406,
+      "$D$ (last-token, last_prompt)": 10.687243637027308,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -15.341354709201905,
+      "$D$ (last-token, last_prompt)": -14.086434777680267,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -15.099341732031897,
+      "$D$ (last-token, last_prompt)": -13.946331949871457,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -15.60671362867813,
+      "$D$ (last-token, last_prompt)": -14.559097089254085,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -15.417660910497002,
+      "$D$ (last-token, last_prompt)": -14.29929247193008,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.2791597623702273,
+      "$D$ (last-token, last_prompt)": -0.843591796527825,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -4.093059724915037,
+      "$D$ (last-token, last_prompt)": -3.2829369206341212,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -3.183893672533216,
+      "$D$ (last-token, last_prompt)": -2.411723175516066,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 6.9574212100637425,
+      "$D$ (last-token, last_prompt)": 4.561241433722145,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 6.414669366528138,
+      "$D$ (last-token, last_prompt)": 4.768587623137748,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 32.77685737142647,
+      "$D$ (last-token, last_prompt)": 26.97537424648945,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 19.283459679921236,
+      "$D$ (last-token, last_prompt)": 15.567505615631113,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 6.1812416656907985,
+      "$D$ (last-token, last_prompt)": 5.053554029066746,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": 6.5038357237136175,
+      "$D$ (last-token, last_prompt)": 5.250295952680993,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -5.601385825639014,
+      "$D$ (last-token, last_prompt)": -5.857158080037177,
+      "series": "verdict held (n=193)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.0549491828251147,
+      "$D$ (last-token, last_prompt)": 2.0650004028284474,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.2711536959908063,
+      "$D$ (last-token, last_prompt)": 1.0643211493179265,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -0.09938177215224275,
+      "$D$ (last-token, last_prompt)": 2.9999598735907114,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -0.11704076191105806,
+      "$D$ (last-token, last_prompt)": 2.625087224783286,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -0.7286147188873313,
+      "$D$ (last-token, last_prompt)": 1.900585534834848,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -0.8410732320518042,
+      "$D$ (last-token, last_prompt)": 1.8098664207858697,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -0.8899509564024726,
+      "$D$ (last-token, last_prompt)": 1.5914951708680825,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -0.8858832160080858,
+      "$D$ (last-token, last_prompt)": 1.7704899645479157,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -0.23942750332247975,
+      "$D$ (last-token, last_prompt)": 2.3130994425446296,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -0.21839195771792852,
+      "$D$ (last-token, last_prompt)": 2.4828325085287553,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.8858910125328219,
+      "$D$ (last-token, last_prompt)": 0.04002480939610198,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.955112094005841,
+      "$D$ (last-token, last_prompt)": -0.03322525740590887,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.9992012403423196,
+      "$D$ (last-token, last_prompt)": -0.013549222763592716,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.006360890676901,
+      "$D$ (last-token, last_prompt)": 0.7139145969929253,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.1219895215264515,
+      "$D$ (last-token, last_prompt)": 0.7266439333558576,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -0.7157310803609711,
+      "$D$ (last-token, last_prompt)": 0.7379855346712576,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -0.6830150513826583,
+      "$D$ (last-token, last_prompt)": 0.8097194878599616,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -0.3620178164735215,
+      "$D$ (last-token, last_prompt)": 0.3859175297251163,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -0.5200558510893343,
+      "$D$ (last-token, last_prompt)": 0.05308215660470772,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -0.07708805548313968,
+      "$D$ (last-token, last_prompt)": 0.4677410727896749,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": 0.2993788130945916,
+      "$D$ (last-token, last_prompt)": 0.7437066450277232,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -1.3316757503225176,
+      "$D$ (last-token, last_prompt)": -0.5480322313817716,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$D$ (span-mean, round 1)": -0.20213385118500327,
+      "$D$ (last-token, last_prompt)": -0.7382495553587418,
+      "series": "verdict FLIPPED (n=23)",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 216,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "$D$ (span-mean, round 1)",
+        "ylabel": "$D$ (last-token, last_prompt)",
+        "legend_labels": [
+          "verdict held (n=193)",
+          "verdict FLIPPED (n=23)"
+        ],
+        "xticklabels": [
+          "\u221230",
+          "\u221220",
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ],
+        "yticklabels": [
+          "\u221230",
+          "\u221220",
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ]
+      }
+    ],
+    "series": [
+      "verdict held (n=193)",
+      "verdict FLIPPED (n=23)"
+    ]
+  }
+}
