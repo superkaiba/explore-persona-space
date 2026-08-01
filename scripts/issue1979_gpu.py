@@ -928,6 +928,19 @@ def _slot_contexts(rows: list[dict]) -> list[str]:
     return contexts
 
 
+def _gate_mix_contexts(tok, mix_rows: list[dict]) -> list[str]:
+    """Gate measurement contexts: cut at the first marker in the RESPONSE region only —
+    ICL demo prompts legitimately carry the glyph (r6)."""
+    contexts = []
+    for r in mix_rows:
+        prompt_text = tok.decode(r["prompt_token_ids"])
+        resp_text = tok.decode(r["response_token_ids"])
+        cut = resp_text.find("※")
+        resp_ctx = resp_text[:cut].rstrip() if cut != -1 else resp_text
+        contexts.append(prompt_text + resp_ctx)
+    return contexts
+
+
 def _assert_marker_tokenization(tokenizer) -> None:
     ids = tokenizer.encode(MARKER_TEXT, add_special_tokens=False)
     assert ids == [83399], f"marker tokenization drifted: {ids} != [83399]"
@@ -1071,11 +1084,7 @@ def run_f1b_gate(cfg: Cfg, manifests: dict, arm_id: str) -> list[str]:
     from transformers import AutoTokenizer
 
     tok = AutoTokenizer.from_pretrained(X.BASE_MODEL)
-    mix_ctx = []
-    for r in mix_rows:
-        text = tok.decode(r["prompt_token_ids"] + r["response_token_ids"])
-        cut = text.find("※")
-        mix_ctx.append(text[:cut].rstrip() if cut != -1 else text)
+    mix_ctx = _gate_mix_contexts(tok, mix_rows)
     base_rows = _load_unit_rows(cfg, "base_mk")[:GATE_N_CORPUS_ROWS]
     corpus_ctx = _slot_contexts(base_rows)
 

@@ -254,6 +254,35 @@ def test_gate_ft_tolerance_and_mandatory_secondary_condition():
         G._assert_gate_pass("mk-a", "lora", 2.0, 1.9, 0.4)
 
 
+def test_gate_mix_contexts_cut_restricted_to_response_region():
+    """Crash-fix r6: ICL-context arms carry the marker glyph inside the PROMPT's
+    in-context demos — the gate's cut must search only the response region, keeping
+    the full prompt (demo markers included) and cutting the response at its own
+    first marker (rstripped). No marker in the response => full response kept."""
+
+    class _StubTok:
+        """Tokenizer stand-in: decode() maps fixed id tuples to fixed strings."""
+
+        def __init__(self):
+            self._map = {
+                (1, 2): "demo Q? demo answer ※\nreal Q?",  # prompt WITH a demo marker
+                (3, 4): "answer text ※ tail",  # response with its own marker
+                (5,): "clean answer no marker",  # response without a marker
+            }
+
+        def decode(self, ids):
+            return self._map[tuple(ids)]
+
+    tok = _StubTok()
+    rows = [
+        {"prompt_token_ids": [1, 2], "response_token_ids": [3, 4]},
+        {"prompt_token_ids": [1, 2], "response_token_ids": [5]},
+    ]
+    ctxs = G._gate_mix_contexts(tok, rows)
+    assert ctxs[0] == "demo Q? demo answer ※\nreal Q?" + "answer text"
+    assert ctxs[1] == "demo Q? demo answer ※\nreal Q?" + "clean answer no marker"
+
+
 def test_slot_persist_consumer_accepts_real_slot_stats():
     """run_f1b_slot's persist path: validate_marker_slot_record + the {**rec}
     payload spread must accept the real return records."""
