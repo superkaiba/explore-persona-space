@@ -6879,8 +6879,8 @@
     "1889": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1889",
-      "status": "reviewing",
+      "path": "tasks/completed/1889",
+      "status": "completed",
       "title": "workflow-fix: inline lint gate blind to untracked payload files"
     },
     "1890": {
