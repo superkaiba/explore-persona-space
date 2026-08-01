@@ -24,7 +24,10 @@
       "delta": -0.28474166178644533,
       "r_B": 0.012328971182397154
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 10,
@@ -36,7 +39,10 @@
       "delta": -0.23112713340624574,
       "r_B": 0.03911870436225417
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.01
+     }
     },
     {
      "step": 15,
@@ -48,7 +54,10 @@
       "delta": -0.21366971080600203,
       "r_B": 0.055488135068404144
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.09
+     }
     },
     {
      "step": 20,
@@ -60,7 +69,10 @@
       "delta": -0.22369424721642947,
       "r_B": 0.06344573761922491
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.1919191919191919
+     }
     },
     {
      "step": 25,
@@ -72,7 +84,10 @@
       "delta": -0.21972214681277782,
       "r_B": 0.08105432341606292
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.29
+     }
     },
     {
      "step": 30,
@@ -84,7 +99,10 @@
       "delta": -0.1957525711597567,
       "r_B": 0.10859337340759416
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.42
+     }
     },
     {
      "step": 35,
@@ -97,7 +115,7 @@
       "r_B": 0.12944143396230265
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.66
      }
     },
@@ -111,7 +129,10 @@
       "delta": -0.12733956051332723,
       "r_B": 0.13980038468635392
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.73
+     }
     },
     {
      "step": 45,
@@ -123,7 +144,10 @@
       "delta": -0.10092224160197029,
       "r_B": 0.1461761226823202
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.54
+     }
     },
     {
      "step": 50,
@@ -135,7 +159,10 @@
       "delta": -0.07879656402876545,
       "r_B": 0.15213266874637668
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.59
+     }
     },
     {
      "step": 55,
@@ -147,7 +174,10 @@
       "delta": -0.060595561773474346,
       "r_B": 0.15566042901653931
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.67
+     }
     },
     {
      "step": 60,
@@ -159,7 +189,10 @@
       "delta": -0.05132756430509112,
       "r_B": 0.15913239938381787
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.72
+     }
     },
     {
      "step": 65,
@@ -171,7 +204,10 @@
       "delta": -0.04470825625672506,
       "r_B": 0.15938295277145875
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.69
+     }
     },
     {
      "step": 70,
@@ -183,7 +219,10 @@
       "delta": -0.045119661124266415,
       "r_B": 0.160246477935839
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.69
+     }
     },
     {
      "step": 75,
@@ -195,7 +234,10 @@
       "delta": -0.04509783682222802,
       "r_B": 0.16070899820754397
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.67
+     }
     }
    ],
    "null_bands": {
@@ -260,7 +302,8 @@
     "w_norm_on_policy": 8.412642405290608
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-bare-con-lr1e5-s137_L19": {
    "arm_id": "cas-bare-con-lr1e5-s137",
@@ -286,7 +329,10 @@
       "delta": -0.21984306051723043,
       "r_B": 0.004425659578009023
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 10,
@@ -298,7 +344,10 @@
       "delta": -0.10761247126010323,
       "r_B": 0.05732182408564727
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.01
+     }
     },
     {
      "step": 15,
@@ -310,7 +359,10 @@
       "delta": -0.0324803175918251,
       "r_B": 0.10574808719336155
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.09
+     }
     },
     {
      "step": 20,
@@ -322,7 +374,10 @@
       "delta": -0.023948021284725063,
       "r_B": 0.13736710064793858
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.1919191919191919
+     }
     },
     {
      "step": 25,
@@ -334,7 +389,10 @@
       "delta": 0.01434254295154593,
       "r_B": 0.1954057790214531
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.29
+     }
     },
     {
      "step": 30,
@@ -346,7 +404,10 @@
       "delta": 0.06581993703794181,
       "r_B": 0.25458715861325965
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.42
+     }
     },
     {
      "step": 35,
@@ -359,7 +420,7 @@
       "r_B": 0.2834782534821988
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.66
      }
     },
@@ -373,7 +434,10 @@
       "delta": 0.11705671778903705,
       "r_B": 0.29099066613199537
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.73
+     }
     },
     {
      "step": 45,
@@ -385,7 +449,10 @@
       "delta": 0.13374917098912162,
       "r_B": 0.28707077639587614
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.54
+     }
     },
     {
      "step": 50,
@@ -397,7 +464,10 @@
       "delta": 0.14565469584955848,
       "r_B": 0.2855062059652145
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.59
+     }
     },
     {
      "step": 55,
@@ -409,7 +479,10 @@
       "delta": 0.15252499175556405,
       "r_B": 0.28508123257664514
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.67
+     }
     },
     {
      "step": 60,
@@ -421,7 +494,10 @@
       "delta": 0.1569790934641465,
       "r_B": 0.28631717136568985
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.72
+     }
     },
     {
      "step": 65,
@@ -433,7 +509,10 @@
       "delta": 0.15990209528570515,
       "r_B": 0.28533622633675576
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.69
+     }
     },
     {
      "step": 70,
@@ -445,7 +524,10 @@
       "delta": 0.16134753826342785,
       "r_B": 0.28644354581297754
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.69
+     }
     },
     {
      "step": 75,
@@ -457,7 +539,10 @@
       "delta": 0.16097474616147198,
       "r_B": 0.2856596425414547
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.67
+     }
     }
    ],
    "null_bands": {
@@ -522,7 +607,8 @@
     "w_norm_on_policy": 22.426774190780158
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-bare-con-lr1e5-s137_L25": {
    "arm_id": "cas-bare-con-lr1e5-s137",
@@ -548,7 +634,10 @@
       "delta": -0.27635084408626287,
       "r_B": 0.004472073257727364
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 10,
@@ -560,7 +649,10 @@
       "delta": -0.1548782435003447,
       "r_B": 0.054438354874030086
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.01
+     }
     },
     {
      "step": 15,
@@ -572,7 +664,10 @@
       "delta": -0.07527810317794306,
       "r_B": 0.09879497836967252
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.09
+     }
     },
     {
      "step": 20,
@@ -584,7 +679,10 @@
       "delta": -0.0654490055720726,
       "r_B": 0.12321782219514305
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.1919191919191919
+     }
     },
     {
      "step": 25,
@@ -596,7 +694,10 @@
       "delta": -0.038043345460064625,
       "r_B": 0.1750914382729154
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.29
+     }
     },
     {
      "step": 30,
@@ -608,7 +709,10 @@
       "delta": 0.004635489793039632,
       "r_B": 0.22790618369448246
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.42
+     }
     },
     {
      "step": 35,
@@ -621,7 +725,7 @@
       "r_B": 0.2515762002791082
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.66
      }
     },
@@ -635,7 +739,10 @@
       "delta": 0.0331704518747384,
       "r_B": 0.2517200824889409
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.73
+     }
     },
     {
      "step": 45,
@@ -647,7 +754,10 @@
       "delta": 0.03551390503220262,
       "r_B": 0.23940807333124217
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.54
+     }
     },
     {
      "step": 50,
@@ -659,7 +769,10 @@
       "delta": 0.03776505114295008,
       "r_B": 0.23229034882482544
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.59
+     }
     },
     {
      "step": 55,
@@ -671,7 +784,10 @@
       "delta": 0.03853076636045373,
       "r_B": 0.22834484408959604
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.67
+     }
     },
     {
      "step": 60,
@@ -683,7 +799,10 @@
       "delta": 0.041349692201378976,
       "r_B": 0.22860805024811282
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.72
+     }
     },
     {
      "step": 65,
@@ -695,7 +814,10 @@
       "delta": 0.042336331233147916,
       "r_B": 0.227067098240821
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.69
+     }
     },
     {
      "step": 70,
@@ -707,7 +829,10 @@
       "delta": 0.04373577059696828,
       "r_B": 0.22816561954724102
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.69
+     }
     },
     {
      "step": 75,
@@ -719,7 +844,10 @@
       "delta": 0.04367660061947246,
       "r_B": 0.22734176776132017
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.67
+     }
     }
    ],
    "null_bands": {
@@ -784,7 +912,8 @@
     "w_norm_on_policy": 57.59627650187861
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-bare-con-lr1e5-s42_L14": {
    "arm_id": "cas-bare-con-lr1e5-s42",
@@ -810,7 +939,10 @@
       "delta": -0.2863747971544677,
       "r_B": 0.009776483080642731
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 10,
@@ -822,7 +954,10 @@
       "delta": -0.23477851741282224,
       "r_B": 0.03886757662333585
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 15,
@@ -834,7 +969,10 @@
       "delta": -0.21684484334807824,
       "r_B": 0.056097831327707924
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.09
+     }
     },
     {
      "step": 20,
@@ -846,7 +984,10 @@
       "delta": -0.2254287269455872,
       "r_B": 0.06556237509240322
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.24
+     }
     },
     {
      "step": 25,
@@ -858,7 +999,10 @@
       "delta": -0.21867104039521418,
       "r_B": 0.08373006992098854
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.34
+     }
     },
     {
      "step": 30,
@@ -870,7 +1014,10 @@
       "delta": -0.19365240392871394,
       "r_B": 0.10948763189866728
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.53
+     }
     },
     {
      "step": 35,
@@ -882,7 +1029,10 @@
       "delta": -0.16116566234170615,
       "r_B": 0.12977062173243417
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.53
+     }
     },
     {
      "step": 40,
@@ -895,7 +1045,7 @@
       "r_B": 0.14441415843444563
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.61
      }
     },
@@ -909,7 +1059,10 @@
       "delta": -0.09847523413554628,
       "r_B": 0.15232369364663748
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.64
+     }
     },
     {
      "step": 50,
@@ -921,7 +1074,10 @@
       "delta": -0.0750665989642582,
       "r_B": 0.15750945653496756
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.61
+     }
     },
     {
      "step": 55,
@@ -933,7 +1089,10 @@
       "delta": -0.059222062434012325,
       "r_B": 0.1616627542447534
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.69
+     }
     },
     {
      "step": 75,
@@ -945,7 +1104,10 @@
       "delta": -0.03971099786819871,
       "r_B": 0.16684723753670802
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.64
+     }
     }
    ],
    "null_bands": {
@@ -1010,7 +1172,8 @@
     "w_norm_on_policy": 8.915615772453268
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-bare-con-lr1e5-s42_L19": {
    "arm_id": "cas-bare-con-lr1e5-s42",
@@ -1036,7 +1199,10 @@
       "delta": -0.22220474678586632,
       "r_B": 0.0011079587673679732
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 10,
@@ -1048,7 +1214,10 @@
       "delta": -0.10718584872721969,
       "r_B": 0.05890384108585807
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 15,
@@ -1060,7 +1229,10 @@
       "delta": -0.03886995426363793,
       "r_B": 0.10286832993769184
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.09
+     }
     },
     {
      "step": 20,
@@ -1072,7 +1244,10 @@
       "delta": -0.02385608292283064,
       "r_B": 0.14008697206658946
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.24
+     }
     },
     {
      "step": 25,
@@ -1084,7 +1259,10 @@
       "delta": 0.012817973187437276,
       "r_B": 0.19195691722722644
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.34
+     }
     },
     {
      "step": 30,
@@ -1096,7 +1274,10 @@
       "delta": 0.049106444809148525,
       "r_B": 0.2400120831256717
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.53
+     }
     },
     {
      "step": 35,
@@ -1108,7 +1289,10 @@
       "delta": 0.0857425527519348,
       "r_B": 0.26871640633999916
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.53
+     }
     },
     {
      "step": 40,
@@ -1121,7 +1305,7 @@
       "r_B": 0.2833426815539365
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.61
      }
     },
@@ -1135,7 +1319,10 @@
       "delta": 0.13237335591458524,
       "r_B": 0.2864907765069396
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.64
+     }
     },
     {
      "step": 50,
@@ -1147,7 +1334,10 @@
       "delta": 0.14374475204835588,
       "r_B": 0.28444750141571834
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.61
+     }
     },
     {
      "step": 55,
@@ -1159,7 +1349,10 @@
       "delta": 0.1508738240325278,
       "r_B": 0.28503485620803354
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.69
+     }
     },
     {
      "step": 75,
@@ -1171,7 +1364,10 @@
       "delta": 0.16312358516965197,
       "r_B": 0.28689153863401134
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.64
+     }
     }
    ],
    "null_bands": {
@@ -1236,7 +1432,8 @@
     "w_norm_on_policy": 23.604165846169117
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-bare-con-lr1e5-s42_L25": {
    "arm_id": "cas-bare-con-lr1e5-s42",
@@ -1262,7 +1459,10 @@
       "delta": -0.2799261267530547,
       "r_B": -0.0011619831591709467
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 10,
@@ -1274,7 +1474,10 @@
       "delta": -0.1541830196882261,
       "r_B": 0.05625898429197082
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 15,
@@ -1286,7 +1489,10 @@
       "delta": -0.0790400973733256,
       "r_B": 0.09569946865429377
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.09
+     }
     },
     {
      "step": 20,
@@ -1298,7 +1504,10 @@
       "delta": -0.06160252823507949,
       "r_B": 0.1276974464984152
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.24
+     }
     },
     {
      "step": 25,
@@ -1310,7 +1519,10 @@
       "delta": -0.037072145502622875,
       "r_B": 0.1719912834887643
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.34
+     }
     },
     {
      "step": 30,
@@ -1322,7 +1534,10 @@
       "delta": -0.0087164818239612,
       "r_B": 0.2136670790398011
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.53
+     }
     },
     {
      "step": 35,
@@ -1334,7 +1549,10 @@
       "delta": 0.013955144054511143,
       "r_B": 0.23329085436116598
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.53
+     }
     },
     {
      "step": 40,
@@ -1347,7 +1565,7 @@
       "r_B": 0.24114386115290565
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.61
      }
     },
@@ -1361,7 +1579,10 @@
       "delta": 0.035550690456610835,
       "r_B": 0.23691418824965438
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.64
+     }
     },
     {
      "step": 50,
@@ -1373,7 +1594,10 @@
       "delta": 0.03808597384056785,
       "r_B": 0.23019079813177995
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.61
+     }
     },
     {
      "step": 55,
@@ -1385,7 +1609,10 @@
       "delta": 0.039716199864786944,
       "r_B": 0.2279137109956779
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.69
+     }
     },
     {
      "step": 75,
@@ -1397,7 +1624,10 @@
       "delta": 0.04604168455203212,
       "r_B": 0.2277000230457523
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.64
+     }
     }
    ],
    "null_bands": {
@@ -1462,7 +1692,8 @@
     "w_norm_on_policy": 61.26793548813629
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-bare-po-lr1e5-s137_L14": {
    "arm_id": "cas-bare-po-lr1e5-s137",
@@ -1488,7 +1719,10 @@
       "delta": -0.2849852648610263,
       "r_B": 0.015836798386641104
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 30,
@@ -1501,7 +1735,7 @@
       "r_B": 0.17332857796982115
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.68
      }
     },
@@ -1515,7 +1749,10 @@
       "delta": 0.020128098642041348,
       "r_B": 0.23422123788949736
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.88
+     }
     }
    ],
    "null_bands": {
@@ -1580,7 +1817,8 @@
     "w_norm_on_policy": 8.792805010089257
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-bare-po-lr1e5-s137_L19": {
    "arm_id": "cas-bare-po-lr1e5-s137",
@@ -1606,7 +1844,10 @@
       "delta": -0.22155238636959887,
       "r_B": 0.014848854630632118
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 30,
@@ -1619,7 +1860,7 @@
       "r_B": 0.36558945359829165
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.68
      }
     },
@@ -1633,7 +1874,10 @@
       "delta": 0.24264318367254897,
       "r_B": 0.40072742817695606
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.88
+     }
     }
    ],
    "null_bands": {
@@ -1698,7 +1942,8 @@
     "w_norm_on_policy": 23.95448438947072
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-bare-po-lr1e5-s137_L25": {
    "arm_id": "cas-bare-po-lr1e5-s137",
@@ -1724,7 +1969,10 @@
       "delta": -0.2788426173769699,
       "r_B": 0.012870485475379181
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 30,
@@ -1737,7 +1985,7 @@
       "r_B": 0.3588178796057887
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.68
      }
     },
@@ -1751,7 +1999,10 @@
       "delta": 0.137611907709359,
       "r_B": 0.3637885978756211
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.88
+     }
     }
    ],
    "null_bands": {
@@ -1816,7 +2067,8 @@
     "w_norm_on_policy": 62.203777626719884
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-bare-po-lr1e5-s42_L14": {
    "arm_id": "cas-bare-po-lr1e5-s42",
@@ -1842,7 +2094,10 @@
       "delta": -0.2836452282378297,
       "r_B": 0.016712122261178627
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 25,
@@ -1855,7 +2110,7 @@
       "r_B": 0.14673895947507123
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.6
      }
     },
@@ -1869,7 +2124,10 @@
       "delta": 0.028409247479714166,
       "r_B": 0.2343265446387863
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.86
+     }
     }
    ],
    "null_bands": {
@@ -1934,7 +2192,8 @@
     "w_norm_on_policy": 7.836635286615311
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-bare-po-lr1e5-s42_L19": {
    "arm_id": "cas-bare-po-lr1e5-s42",
@@ -1960,7 +2219,10 @@
       "delta": -0.22181056283237918,
       "r_B": 0.014491581075689545
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 25,
@@ -1973,7 +2235,7 @@
       "r_B": 0.3206893884321448
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.6
      }
     },
@@ -1987,7 +2249,10 @@
       "delta": 0.2517649353249229,
       "r_B": 0.40614678243845576
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.86
+     }
     }
    ],
    "null_bands": {
@@ -2052,7 +2317,8 @@
     "w_norm_on_policy": 20.614268504089914
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-bare-po-lr1e5-s42_L25": {
    "arm_id": "cas-bare-po-lr1e5-s42",
@@ -2078,7 +2344,10 @@
       "delta": -0.2800939671915336,
       "r_B": 0.011681960201349368
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 25,
@@ -2091,7 +2360,7 @@
       "r_B": 0.3197591059492515
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.6
      }
     },
@@ -2105,7 +2374,10 @@
       "delta": 0.14276872027115636,
       "r_B": 0.3738760208828832
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.86
+     }
     }
    ],
    "null_bands": {
@@ -2170,7 +2442,8 @@
     "w_norm_on_policy": 52.52772203151201
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-conv-con-lr1e5-s137_L14": {
    "arm_id": "cas-conv-con-lr1e5-s137",
@@ -2196,7 +2469,10 @@
       "delta": -0.2768375852491492,
       "r_B": 0.011022334959020342
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 10,
@@ -2209,7 +2485,7 @@
       "r_B": 0.049252311587825004
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.66
      }
     },
@@ -2223,7 +2499,10 @@
       "delta": 0.022795471978938494,
       "r_B": 0.18436900032934508
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 1.0
+     }
     }
    ],
    "null_bands": {
@@ -2288,7 +2567,8 @@
     "w_norm_on_policy": 6.565903646935217
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-conv-con-lr1e5-s137_L19": {
    "arm_id": "cas-conv-con-lr1e5-s137",
@@ -2314,7 +2594,10 @@
       "delta": -0.16235001973854632,
       "r_B": 0.012149876786729729
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 10,
@@ -2327,7 +2610,7 @@
       "r_B": 0.09561281649294603
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.66
      }
     },
@@ -2341,7 +2624,10 @@
       "delta": 0.16211973999367685,
       "r_B": 0.32599701644787427
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 1.0
+     }
     }
    ],
    "null_bands": {
@@ -2406,7 +2692,8 @@
     "w_norm_on_policy": 14.373005442217469
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-conv-con-lr1e5-s137_L25": {
    "arm_id": "cas-conv-con-lr1e5-s137",
@@ -2432,7 +2719,10 @@
       "delta": -0.24529592412713788,
       "r_B": 0.015336995055056823
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 10,
@@ -2445,7 +2735,7 @@
       "r_B": 0.08014051098366562
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.66
      }
     },
@@ -2459,7 +2749,10 @@
       "delta": -0.004701319074601963,
       "r_B": 0.2559628920274327
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 1.0
+     }
     }
    ],
    "null_bands": {
@@ -2524,7 +2817,8 @@
     "w_norm_on_policy": 38.194733586914545
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-conv-con-lr1e5-s42_L14": {
    "arm_id": "cas-conv-con-lr1e5-s42",
@@ -2550,7 +2844,10 @@
       "delta": -0.27686353440854927,
       "r_B": 0.014520370658433208
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.01
+     }
     },
     {
      "step": 10,
@@ -2563,7 +2860,7 @@
       "r_B": 0.04926880392764932
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.696969696969697
      }
     },
@@ -2577,7 +2874,10 @@
       "delta": 0.023633002465647653,
       "r_B": 0.1876610911481242
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 1.0
+     }
     }
    ],
    "null_bands": {
@@ -2642,7 +2942,8 @@
     "w_norm_on_policy": 6.4719012709334605
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-conv-con-lr1e5-s42_L19": {
    "arm_id": "cas-conv-con-lr1e5-s42",
@@ -2668,7 +2969,10 @@
       "delta": -0.1627280211178921,
       "r_B": 0.013366912742969514
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.01
+     }
     },
     {
      "step": 10,
@@ -2681,7 +2985,7 @@
       "r_B": 0.08813404152940045
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.696969696969697
      }
     },
@@ -2695,7 +2999,10 @@
       "delta": 0.16022548453291463,
       "r_B": 0.3332671551886382
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 1.0
+     }
     }
    ],
    "null_bands": {
@@ -2760,7 +3067,8 @@
     "w_norm_on_policy": 13.79723398571831
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-conv-con-lr1e5-s42_L25": {
    "arm_id": "cas-conv-con-lr1e5-s42",
@@ -2786,7 +3094,10 @@
       "delta": -0.24301006427359012,
       "r_B": 0.01699675188086249
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.01
+     }
     },
     {
      "step": 10,
@@ -2799,7 +3110,7 @@
       "r_B": 0.0715848764319306
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.696969696969697
      }
     },
@@ -2813,7 +3124,10 @@
       "delta": -0.002199209366865282,
       "r_B": 0.2645054729470598
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 1.0
+     }
     }
    ],
    "null_bands": {
@@ -2878,7 +3192,8 @@
     "w_norm_on_policy": 37.26353947604327
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-conv-po-lr3e5-s42_L14": {
    "arm_id": "cas-conv-po-lr3e5-s42",
@@ -2905,7 +3220,7 @@
       "r_B": 0.06928308458388965
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.65
      }
     },
@@ -2919,7 +3234,10 @@
       "delta": -0.15211915713754975,
       "r_B": 0.12849954583805462
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.9797979797979798
+     }
     },
     {
      "step": 75,
@@ -2931,7 +3249,10 @@
       "delta": 0.22741523822942575,
       "r_B": 0.22907564923800605
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 1.0
+     }
     }
    ],
    "null_bands": {
@@ -2996,7 +3317,8 @@
     "w_norm_on_policy": 6.5120849274484005
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-conv-po-lr3e5-s42_L19": {
    "arm_id": "cas-conv-po-lr3e5-s42",
@@ -3023,7 +3345,7 @@
       "r_B": 0.12214433900613333
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.65
      }
     },
@@ -3037,7 +3359,10 @@
       "delta": 0.06214676047816111,
       "r_B": 0.2800884776739957
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.9797979797979798
+     }
     },
     {
      "step": 75,
@@ -3049,7 +3374,10 @@
       "delta": 0.26187391588709663,
       "r_B": 0.32920657299172784
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 1.0
+     }
     }
    ],
    "null_bands": {
@@ -3114,7 +3442,8 @@
     "w_norm_on_policy": 15.126854525042393
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-conv-po-lr3e5-s42_L25": {
    "arm_id": "cas-conv-po-lr3e5-s42",
@@ -3141,7 +3470,7 @@
       "r_B": 0.1090125387488334
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.65
      }
     },
@@ -3155,7 +3484,10 @@
       "delta": 0.06420349629497653,
       "r_B": 0.283262353710819
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.9797979797979798
+     }
     },
     {
      "step": 75,
@@ -3167,7 +3499,10 @@
       "delta": -0.012804516302382173,
       "r_B": 0.23092790985938186
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 1.0
+     }
     }
    ],
    "null_bands": {
@@ -3232,7 +3567,8 @@
     "w_norm_on_policy": 40.30358551600784
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-pers-con-lr1e5-s137_L14": {
    "arm_id": "cas-pers-con-lr1e5-s137",
@@ -3258,7 +3594,10 @@
       "delta": -0.39455048633958933,
       "r_B": -0.007664619655383576
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 30,
@@ -3271,7 +3610,7 @@
       "r_B": 0.09482865583718605
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.85
      }
     },
@@ -3285,7 +3624,10 @@
       "delta": -0.06573116840497853,
       "r_B": 0.1456863092365384
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.93
+     }
     }
    ],
    "null_bands": {
@@ -3350,7 +3692,8 @@
     "w_norm_on_policy": 9.27925927807764
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-pers-con-lr1e5-s137_L19": {
    "arm_id": "cas-pers-con-lr1e5-s137",
@@ -3376,7 +3719,10 @@
       "delta": -0.2737906265251835,
       "r_B": -0.01471127798974584
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 30,
@@ -3389,7 +3735,7 @@
       "r_B": 0.2561403147912319
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.85
      }
     },
@@ -3403,7 +3749,10 @@
       "delta": 0.19608411078886712,
       "r_B": 0.2920577006061147
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.93
+     }
     }
    ],
    "null_bands": {
@@ -3468,7 +3817,8 @@
     "w_norm_on_policy": 24.540916903888995
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-pers-con-lr1e5-s137_L25": {
    "arm_id": "cas-pers-con-lr1e5-s137",
@@ -3494,7 +3844,10 @@
       "delta": -0.3366567036513648,
       "r_B": -0.005062673816930368
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 30,
@@ -3507,7 +3860,7 @@
       "r_B": 0.2355719926353802
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.85
      }
     },
@@ -3521,7 +3874,10 @@
       "delta": 0.042143241828267196,
       "r_B": 0.23513476759529145
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.93
+     }
     }
    ],
    "null_bands": {
@@ -3586,7 +3942,8 @@
     "w_norm_on_policy": 64.39138081240097
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-pers-con-lr1e5-s42_L14": {
    "arm_id": "cas-pers-con-lr1e5-s42",
@@ -3612,7 +3969,10 @@
       "delta": -0.3907815644527502,
       "r_B": -0.0062475083174523705
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 25,
@@ -3625,7 +3985,7 @@
       "r_B": 0.07989291771236239
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.6
      }
     },
@@ -3639,7 +3999,10 @@
       "delta": -0.05418088811934999,
       "r_B": 0.15318222699898895
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.94
+     }
     }
    ],
    "null_bands": {
@@ -3704,7 +4067,8 @@
     "w_norm_on_policy": 8.157088027386303
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-pers-con-lr1e5-s42_L19": {
    "arm_id": "cas-pers-con-lr1e5-s42",
@@ -3730,7 +4094,10 @@
       "delta": -0.27509574048439134,
       "r_B": -0.01584749573928147
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 25,
@@ -3743,7 +4110,7 @@
       "r_B": 0.21714401359639354
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.6
      }
     },
@@ -3757,7 +4124,10 @@
       "delta": 0.20273453796137994,
       "r_B": 0.29618772134543253
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.94
+     }
     }
    ],
    "null_bands": {
@@ -3822,7 +4192,8 @@
     "w_norm_on_policy": 21.379241224298454
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-pers-con-lr1e5-s42_L25": {
    "arm_id": "cas-pers-con-lr1e5-s42",
@@ -3848,7 +4219,10 @@
       "delta": -0.3348999887732487,
       "r_B": -0.004318465043088291
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 25,
@@ -3861,7 +4235,7 @@
       "r_B": 0.20287435423105027
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.6
      }
     },
@@ -3875,7 +4249,10 @@
       "delta": 0.046674049744642114,
       "r_B": 0.2383037393650805
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.94
+     }
     }
    ],
    "null_bands": {
@@ -3940,7 +4317,8 @@
     "w_norm_on_policy": 52.429913675772326
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-pers-ft-con-s137_L14": {
    "arm_id": "cas-pers-ft-con-s137",
@@ -4018,7 +4396,8 @@
     "w_norm_on_policy": 10.63228703206308
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "cas-pers-ft-con-s137_L19": {
    "arm_id": "cas-pers-ft-con-s137",
@@ -4096,7 +4475,8 @@
     "w_norm_on_policy": 25.92066337062826
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "cas-pers-ft-con-s137_L25": {
    "arm_id": "cas-pers-ft-con-s137",
@@ -4174,7 +4554,8 @@
     "w_norm_on_policy": 67.61158502031721
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "cas-pers-ft-con-s42_L14": {
    "arm_id": "cas-pers-ft-con-s42",
@@ -4252,7 +4633,8 @@
     "w_norm_on_policy": 9.448869393093656
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "cas-pers-ft-con-s42_L19": {
    "arm_id": "cas-pers-ft-con-s42",
@@ -4330,7 +4712,8 @@
     "w_norm_on_policy": 23.61427044063931
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "cas-pers-ft-con-s42_L25": {
    "arm_id": "cas-pers-ft-con-s42",
@@ -4408,7 +4791,8 @@
     "w_norm_on_policy": 58.929192259481816
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "cas-pers-ft-po-s137_L14": {
    "arm_id": "cas-pers-ft-po-s137",
@@ -4486,7 +4870,8 @@
     "w_norm_on_policy": 9.42679587464987
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "cas-pers-ft-po-s137_L19": {
    "arm_id": "cas-pers-ft-po-s137",
@@ -4564,7 +4949,8 @@
     "w_norm_on_policy": 24.173577367005226
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "cas-pers-ft-po-s137_L25": {
    "arm_id": "cas-pers-ft-po-s137",
@@ -4642,7 +5028,8 @@
     "w_norm_on_policy": 61.044022369972055
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "cas-pers-ft-po-s42_L14": {
    "arm_id": "cas-pers-ft-po-s42",
@@ -4720,7 +5107,8 @@
     "w_norm_on_policy": 9.527559108504613
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "cas-pers-ft-po-s42_L19": {
    "arm_id": "cas-pers-ft-po-s42",
@@ -4798,7 +5186,8 @@
     "w_norm_on_policy": 24.219560695294938
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "cas-pers-ft-po-s42_L25": {
    "arm_id": "cas-pers-ft-po-s42",
@@ -4876,7 +5265,8 @@
     "w_norm_on_policy": 60.91784706418548
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "cas-pers-po-lr1e5-s137_L14": {
    "arm_id": "cas-pers-po-lr1e5-s137",
@@ -4902,7 +5292,10 @@
       "delta": -0.39320653005115264,
       "r_B": -0.0063668714543309605
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 25,
@@ -4915,7 +5308,7 @@
       "r_B": 0.13036479303318363
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.81
      }
     },
@@ -4929,7 +5322,10 @@
       "delta": 0.008878506660157753,
       "r_B": 0.2183488055859908
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.98
+     }
     }
    ],
    "null_bands": {
@@ -4994,7 +5390,8 @@
     "w_norm_on_policy": 8.449266379205374
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-pers-po-lr1e5-s137_L19": {
    "arm_id": "cas-pers-po-lr1e5-s137",
@@ -5020,7 +5417,10 @@
       "delta": -0.27729496446622226,
       "r_B": -0.005803614014406249
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 25,
@@ -5033,7 +5433,7 @@
       "r_B": 0.33856604854235894
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.81
      }
     },
@@ -5047,7 +5447,10 @@
       "delta": 0.3051452800157086,
       "r_B": 0.4193175978103548
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.98
+     }
     }
    ],
    "null_bands": {
@@ -5112,7 +5515,8 @@
     "w_norm_on_policy": 22.263157073326592
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-pers-po-lr1e5-s137_L25": {
    "arm_id": "cas-pers-po-lr1e5-s137",
@@ -5138,7 +5542,10 @@
       "delta": -0.3390979665824268,
       "r_B": 0.005466833884982641
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 25,
@@ -5151,7 +5558,7 @@
       "r_B": 0.35278270100479786
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.81
      }
     },
@@ -5165,7 +5572,10 @@
       "delta": 0.15615551902640282,
       "r_B": 0.4048151328779939
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.98
+     }
     }
    ],
    "null_bands": {
@@ -5230,7 +5640,8 @@
     "w_norm_on_policy": 57.505006582830006
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-pers-po-lr1e5-s42_L14": {
    "arm_id": "cas-pers-po-lr1e5-s42",
@@ -5256,7 +5667,10 @@
       "delta": -0.39177347522330846,
       "r_B": -0.0041368854903927246
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 25,
@@ -5269,7 +5683,7 @@
       "r_B": 0.13984145997611272
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.81
      }
     },
@@ -5283,7 +5697,10 @@
       "delta": 0.011044871229020266,
       "r_B": 0.222598284017801
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.99
+     }
     }
    ],
    "null_bands": {
@@ -5348,7 +5765,8 @@
     "w_norm_on_policy": 8.803692312595459
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-pers-po-lr1e5-s42_L19": {
    "arm_id": "cas-pers-po-lr1e5-s42",
@@ -5374,7 +5792,10 @@
       "delta": -0.27619659542335506,
       "r_B": -0.005072800724565615
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 25,
@@ -5387,7 +5808,7 @@
       "r_B": 0.34871727810330144
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.81
      }
     },
@@ -5401,7 +5822,10 @@
       "delta": 0.3065791073844906,
       "r_B": 0.41899142861897043
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.99
+     }
     }
    ],
    "null_bands": {
@@ -5466,7 +5890,8 @@
     "w_norm_on_policy": 23.533944044384242
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "cas-pers-po-lr1e5-s42_L25": {
    "arm_id": "cas-pers-po-lr1e5-s42",
@@ -5492,7 +5917,10 @@
       "delta": -0.33717206103823877,
       "r_B": 0.0078021599724019414
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 25,
@@ -5505,7 +5933,7 @@
       "r_B": 0.3624395252813116
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.81
      }
     },
@@ -5519,7 +5947,10 @@
       "delta": 0.15623431041115227,
       "r_B": 0.402182807422411
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.99
+     }
     }
    ],
    "null_bands": {
@@ -5584,7 +6015,8 @@
     "w_norm_on_policy": 61.741033587432796
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-bare-con-lr3e5-s137_L14": {
    "arm_id": "imp-bare-con-lr3e5-s137",
@@ -5610,7 +6042,10 @@
       "delta": -0.35085674027163555,
       "r_B": -0.08996311789559452
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 30,
@@ -5623,7 +6058,7 @@
       "r_B": 0.17141033983932294
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.66
      }
     },
@@ -5637,7 +6072,10 @@
       "delta": 0.15022320874068973,
       "r_B": 0.25481929146727844
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.7272727272727273
+     }
     }
    ],
    "null_bands": {
@@ -5702,7 +6140,8 @@
     "w_norm_on_policy": 15.469820176005268
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-bare-con-lr3e5-s137_L19": {
    "arm_id": "imp-bare-con-lr3e5-s137",
@@ -5728,7 +6167,10 @@
       "delta": -0.16702334163580823,
       "r_B": -0.026403761493932164
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 30,
@@ -5741,7 +6183,7 @@
       "r_B": 0.3764131049287378
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.66
      }
     },
@@ -5755,7 +6197,10 @@
       "delta": 0.2762229609165479,
       "r_B": 0.42649517588464225
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.7272727272727273
+     }
     }
    ],
    "null_bands": {
@@ -5820,7 +6265,8 @@
     "w_norm_on_policy": 37.89313876993211
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-bare-con-lr3e5-s137_L25": {
    "arm_id": "imp-bare-con-lr3e5-s137",
@@ -5846,7 +6292,10 @@
       "delta": -0.003499485254815554,
       "r_B": 0.03720228904250696
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 30,
@@ -5859,7 +6308,7 @@
       "r_B": 0.3322805340155454
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.66
      }
     },
@@ -5873,7 +6322,10 @@
       "delta": 0.08945892294211374,
       "r_B": 0.33053854504470614
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.7272727272727273
+     }
     }
    ],
    "null_bands": {
@@ -5938,7 +6390,8 @@
     "w_norm_on_policy": 100.15991393374736
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-bare-con-lr3e5-s42_L14": {
    "arm_id": "imp-bare-con-lr3e5-s42",
@@ -5965,7 +6418,7 @@
       "r_B": 0.029457332962268216
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.6
      }
     },
@@ -5979,7 +6432,10 @@
       "delta": 0.17163311132346254,
       "r_B": 0.2674005844432447
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.63
+     }
     }
    ],
    "null_bands": {
@@ -6044,7 +6500,8 @@
     "w_norm_on_policy": 16.31839796536572
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-bare-con-lr3e5-s42_L19": {
    "arm_id": "imp-bare-con-lr3e5-s42",
@@ -6071,7 +6528,7 @@
       "r_B": 0.3107249776370707
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.6
      }
     },
@@ -6085,7 +6542,10 @@
       "delta": 0.2676873218897363,
       "r_B": 0.41429774020130894
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.63
+     }
     }
    ],
    "null_bands": {
@@ -6150,7 +6610,8 @@
     "w_norm_on_policy": 39.21666471043531
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-bare-con-lr3e5-s42_L25": {
    "arm_id": "imp-bare-con-lr3e5-s42",
@@ -6177,7 +6638,7 @@
       "r_B": 0.31062990082559727
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.6
      }
     },
@@ -6191,7 +6652,10 @@
       "delta": 0.0716716321208167,
       "r_B": 0.3172567318583352
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.63
+     }
     }
    ],
    "null_bands": {
@@ -6256,7 +6720,8 @@
     "w_norm_on_policy": 102.67750812236163
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-bare-po-lr1e5-s137_L14": {
    "arm_id": "imp-bare-po-lr1e5-s137",
@@ -6282,7 +6747,10 @@
       "delta": -0.4692846593826519,
       "r_B": -0.15436898918069944
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 40,
@@ -6295,7 +6763,7 @@
       "r_B": 0.05644032524882727
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.63
      }
     },
@@ -6309,7 +6777,10 @@
       "delta": -0.07833965282981864,
       "r_B": 0.14349143110738738
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.63
+     }
     }
    ],
    "null_bands": {
@@ -6374,7 +6845,8 @@
     "w_norm_on_policy": 13.884106808225091
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-bare-po-lr1e5-s137_L19": {
    "arm_id": "imp-bare-po-lr1e5-s137",
@@ -6400,7 +6872,10 @@
       "delta": -0.36934285437500475,
       "r_B": -0.10200062455755705
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 40,
@@ -6413,7 +6888,7 @@
       "r_B": 0.37017546612515606
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.63
      }
     },
@@ -6427,7 +6902,10 @@
       "delta": 0.23772594464213956,
       "r_B": 0.4194136107224346
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.63
+     }
     }
    ],
    "null_bands": {
@@ -6492,7 +6970,8 @@
     "w_norm_on_policy": 35.39208825904461
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-bare-po-lr1e5-s137_L25": {
    "arm_id": "imp-bare-po-lr1e5-s137",
@@ -6518,7 +6997,10 @@
       "delta": -0.2565528039187292,
       "r_B": -0.02647396267846777
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 40,
@@ -6531,7 +7013,7 @@
       "r_B": 0.3852635463551528
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.63
      }
     },
@@ -6545,7 +7027,10 @@
       "delta": 0.21269850449480296,
       "r_B": 0.4058236238980514
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.63
+     }
     }
    ],
    "null_bands": {
@@ -6610,7 +7095,8 @@
     "w_norm_on_policy": 92.50135497071007
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-bare-po-lr1e5-s42_L14": {
    "arm_id": "imp-bare-po-lr1e5-s42",
@@ -6636,7 +7122,10 @@
       "delta": -0.4691804545879988,
       "r_B": -0.15476759677568877
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 40,
@@ -6649,7 +7138,7 @@
       "r_B": 0.05423810668330605
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.65
      }
     },
@@ -6663,7 +7152,10 @@
       "delta": -0.08474328212563144,
       "r_B": 0.14052446934109206
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.69
+     }
     }
    ],
    "null_bands": {
@@ -6728,7 +7220,8 @@
     "w_norm_on_policy": 13.834125813336447
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-bare-po-lr1e5-s42_L19": {
    "arm_id": "imp-bare-po-lr1e5-s42",
@@ -6754,7 +7247,10 @@
       "delta": -0.36917129909126895,
       "r_B": -0.10370424390068175
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 40,
@@ -6767,7 +7263,7 @@
       "r_B": 0.3752016853895419
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.65
      }
     },
@@ -6781,7 +7277,10 @@
       "delta": 0.24374395160680287,
       "r_B": 0.4234159429021971
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.69
+     }
     }
    ],
    "null_bands": {
@@ -6846,7 +7345,8 @@
     "w_norm_on_policy": 35.26557293081139
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-bare-po-lr1e5-s42_L25": {
    "arm_id": "imp-bare-po-lr1e5-s42",
@@ -6872,7 +7372,10 @@
       "delta": -0.256678062489108,
       "r_B": -0.02907650715291205
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 40,
@@ -6885,7 +7388,7 @@
       "r_B": 0.3855973530085251
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.65
      }
     },
@@ -6899,7 +7402,10 @@
       "delta": 0.21342724754368828,
       "r_B": 0.4069450518629405
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.69
+     }
     }
    ],
    "null_bands": {
@@ -6964,7 +7470,8 @@
     "w_norm_on_policy": 91.56681438291916
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-conv-con-lr1e5-s137_L14": {
    "arm_id": "imp-conv-con-lr1e5-s137",
@@ -6990,7 +7497,10 @@
       "delta": -0.5605410510300612,
       "r_B": -0.18993886135259386
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 20,
@@ -7003,7 +7513,7 @@
       "r_B": -0.09657701036274427
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.7096774193548387
      }
     },
@@ -7017,7 +7527,10 @@
       "delta": -0.22335904305015408,
       "r_B": 0.07485010160160192
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.8888888888888888
+     }
     }
    ],
    "null_bands": {
@@ -7082,7 +7595,8 @@
     "w_norm_on_policy": 14.391794603779836
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-conv-con-lr1e5-s137_L19": {
    "arm_id": "imp-conv-con-lr1e5-s137",
@@ -7108,7 +7622,10 @@
       "delta": -0.50438161288659,
       "r_B": -0.11593365590611773
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 20,
@@ -7121,7 +7638,7 @@
       "r_B": 0.09271058337300322
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.7096774193548387
      }
     },
@@ -7135,7 +7652,10 @@
       "delta": -0.06897941248034825,
       "r_B": 0.3054737489982404
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.8888888888888888
+     }
     }
    ],
    "null_bands": {
@@ -7200,7 +7720,8 @@
     "w_norm_on_policy": 28.644927978627827
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-conv-con-lr1e5-s137_L25": {
    "arm_id": "imp-conv-con-lr1e5-s137",
@@ -7226,7 +7747,10 @@
       "delta": -0.3518244691363541,
       "r_B": -0.0630646944279962
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 20,
@@ -7239,7 +7763,7 @@
       "r_B": 0.1290096787495347
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.7096774193548387
      }
     },
@@ -7253,7 +7777,10 @@
       "delta": -0.03535247295690223,
       "r_B": 0.28086629459701484
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.8888888888888888
+     }
     }
    ],
    "null_bands": {
@@ -7318,7 +7845,8 @@
     "w_norm_on_policy": 71.77959002966547
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-conv-con-lr1e5-s42_L14": {
    "arm_id": "imp-conv-con-lr1e5-s42",
@@ -7345,7 +7873,7 @@
       "r_B": -0.09667823395703334
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.6630434782608695
      }
     },
@@ -7359,7 +7887,10 @@
       "delta": -0.21733691733788363,
       "r_B": 0.07628056229224152
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.89
+     }
     }
    ],
    "null_bands": {
@@ -7424,7 +7955,8 @@
     "w_norm_on_policy": 12.468458843963779
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-conv-con-lr1e5-s42_L19": {
    "arm_id": "imp-conv-con-lr1e5-s42",
@@ -7451,7 +7983,7 @@
       "r_B": 0.09377868577990008
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.6630434782608695
      }
     },
@@ -7465,7 +7997,10 @@
       "delta": -0.06290594278532581,
       "r_B": 0.3110661584697652
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.89
+     }
     }
    ],
    "null_bands": {
@@ -7530,7 +8065,8 @@
     "w_norm_on_policy": 25.423581845358385
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-conv-con-lr1e5-s42_L25": {
    "arm_id": "imp-conv-con-lr1e5-s42",
@@ -7557,7 +8093,7 @@
       "r_B": 0.12521867601013714
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.6630434782608695
      }
     },
@@ -7571,7 +8107,10 @@
       "delta": -0.02993623329078286,
       "r_B": 0.28284041633129126
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.89
+     }
     }
    ],
    "null_bands": {
@@ -7636,7 +8175,8 @@
     "w_norm_on_policy": 64.61274821534737
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-conv-po-lr1e5-s137_L14": {
    "arm_id": "imp-conv-po-lr1e5-s137",
@@ -7662,7 +8202,10 @@
       "delta": -0.5622968998397135,
       "r_B": -0.19047574610841259
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 20,
@@ -7675,7 +8218,7 @@
       "r_B": -0.08955856382345724
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.7096774193548387
      }
     },
@@ -7689,7 +8232,10 @@
       "delta": -0.1612624458834178,
       "r_B": 0.12997058733745565
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.91
+     }
     }
    ],
    "null_bands": {
@@ -7754,7 +8300,8 @@
     "w_norm_on_policy": 10.4329688275374
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-conv-po-lr1e5-s137_L19": {
    "arm_id": "imp-conv-po-lr1e5-s137",
@@ -7780,7 +8327,10 @@
       "delta": -0.5066234656399485,
       "r_B": -0.11663340667209808
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 20,
@@ -7793,7 +8343,7 @@
       "r_B": 0.1050505658439773
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.7096774193548387
      }
     },
@@ -7807,7 +8357,10 @@
       "delta": -0.04506770566736555,
       "r_B": 0.3536422970940169
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.91
+     }
     }
    ],
    "null_bands": {
@@ -7872,7 +8425,8 @@
     "w_norm_on_policy": 21.422362762383074
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-conv-po-lr1e5-s137_L25": {
    "arm_id": "imp-conv-po-lr1e5-s137",
@@ -7898,7 +8452,10 @@
       "delta": -0.355810035575482,
       "r_B": -0.0627535964681675
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 20,
@@ -7911,7 +8468,7 @@
       "r_B": 0.14732292252082524
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.7096774193548387
      }
     },
@@ -7925,7 +8482,10 @@
       "delta": -0.03795527462545726,
       "r_B": 0.3323091617060331
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.91
+     }
     }
    ],
    "null_bands": {
@@ -7990,7 +8550,8 @@
     "w_norm_on_policy": 57.17413493341124
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-conv-po-lr1e5-s42_L14": {
    "arm_id": "imp-conv-po-lr1e5-s42",
@@ -8016,7 +8577,10 @@
       "delta": -0.5579576311792537,
       "r_B": -0.18750605375134274
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 20,
@@ -8029,7 +8593,7 @@
       "r_B": -0.08746962524055445
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.8021978021978022
      }
     },
@@ -8043,7 +8607,10 @@
       "delta": -0.14691389685318215,
       "r_B": 0.13865081093546308
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.94
+     }
     }
    ],
    "null_bands": {
@@ -8108,7 +8675,8 @@
     "w_norm_on_policy": 10.695640502154909
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-conv-po-lr1e5-s42_L19": {
    "arm_id": "imp-conv-po-lr1e5-s42",
@@ -8134,7 +8702,10 @@
       "delta": -0.5038082417062664,
       "r_B": -0.1146928481853483
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 20,
@@ -8147,7 +8718,7 @@
       "r_B": 0.11136299028857326
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.8021978021978022
      }
     },
@@ -8161,7 +8732,10 @@
       "delta": -0.04254003460436747,
       "r_B": 0.35632500748866835
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.94
+     }
     }
    ],
    "null_bands": {
@@ -8226,7 +8800,8 @@
     "w_norm_on_policy": 22.885145196654165
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-conv-po-lr1e5-s42_L25": {
    "arm_id": "imp-conv-po-lr1e5-s42",
@@ -8252,7 +8827,10 @@
       "delta": -0.35470904163834294,
       "r_B": -0.06040457525711295
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 20,
@@ -8265,7 +8843,7 @@
       "r_B": 0.15209392794066312
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.8021978021978022
      }
     },
@@ -8279,7 +8857,10 @@
       "delta": -0.041618322445378685,
       "r_B": 0.3358153148150457
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.94
+     }
     }
    ],
    "null_bands": {
@@ -8344,7 +8925,8 @@
     "w_norm_on_policy": 60.4236450139779
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-icl-po-lr1e4-s42_L14": {
    "arm_id": "imp-icl-po-lr1e4-s42",
@@ -8370,7 +8952,10 @@
       "delta": -0.2795872854316285,
       "r_B": -0.07232950004959326
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.9896907216494846
+     }
     },
     {
      "step": 35,
@@ -8383,7 +8968,7 @@
       "r_B": 0.13562340596048156
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.8
      }
     },
@@ -8397,7 +8982,10 @@
       "delta": -0.03062916764149569,
       "r_B": 0.13500406530332243
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.98
+     }
     }
    ],
    "null_bands": {
@@ -8462,7 +9050,8 @@
     "w_norm_on_policy": 17.702199549777863
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-icl-po-lr1e4-s42_L19": {
    "arm_id": "imp-icl-po-lr1e4-s42",
@@ -8488,7 +9077,10 @@
       "delta": 0.0482002653626296,
       "r_B": 0.23729859037023443
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.9896907216494846
+     }
     },
     {
      "step": 35,
@@ -8501,7 +9093,7 @@
       "r_B": 0.4326450631300457
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.8
      }
     },
@@ -8515,7 +9107,10 @@
       "delta": 0.25507349552717334,
       "r_B": 0.4584116862840269
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.98
+     }
     }
    ],
    "null_bands": {
@@ -8580,7 +9175,8 @@
     "w_norm_on_policy": 40.1611391850539
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-icl-po-lr1e4-s42_L25": {
    "arm_id": "imp-icl-po-lr1e4-s42",
@@ -8606,7 +9202,10 @@
       "delta": 0.17128572463816155,
       "r_B": 0.24127586103923546
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.9896907216494846
+     }
     },
     {
      "step": 35,
@@ -8619,7 +9218,7 @@
       "r_B": 0.3976838712389712
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.8
      }
     },
@@ -8633,7 +9232,10 @@
       "delta": 0.13670938889785775,
       "r_B": 0.39982737399399504
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.98
+     }
     }
    ],
    "null_bands": {
@@ -8698,7 +9300,8 @@
     "w_norm_on_policy": 104.56126793550156
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-pers-con-lr3e5-s137_L14": {
    "arm_id": "imp-pers-con-lr3e5-s137",
@@ -8724,7 +9327,10 @@
       "delta": -0.4960664778708415,
       "r_B": -0.1445502364367009
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 35,
@@ -8737,7 +9343,7 @@
       "r_B": 0.17584798527270928
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.73
      }
     },
@@ -8751,7 +9357,10 @@
       "delta": 0.03227118947897823,
       "r_B": 0.22716655717421083
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.89
+     }
     }
    ],
    "null_bands": {
@@ -8816,7 +9425,8 @@
     "w_norm_on_policy": 17.877461965091058
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-pers-con-lr3e5-s137_L19": {
    "arm_id": "imp-pers-con-lr3e5-s137",
@@ -8842,7 +9452,10 @@
       "delta": -0.42375058802962867,
       "r_B": -0.08859184129131437
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 35,
@@ -8855,7 +9468,7 @@
       "r_B": 0.38878327046907746
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.73
      }
     },
@@ -8869,7 +9482,10 @@
       "delta": 0.20186589900579227,
       "r_B": 0.4206265723106856
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.89
+     }
     }
    ],
    "null_bands": {
@@ -8934,7 +9550,8 @@
     "w_norm_on_policy": 41.2962917465615
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-pers-con-lr3e5-s137_L25": {
    "arm_id": "imp-pers-con-lr3e5-s137",
@@ -8960,7 +9577,10 @@
       "delta": -0.21943122523379807,
       "r_B": -0.02612463257327791
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 35,
@@ -8973,7 +9593,7 @@
       "r_B": 0.31580452378548446
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.73
      }
     },
@@ -8987,7 +9607,10 @@
       "delta": 0.014411711892908463,
       "r_B": 0.3087124236193368
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.89
+     }
     }
    ],
    "null_bands": {
@@ -9052,7 +9675,8 @@
     "w_norm_on_policy": 104.85196475877119
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-pers-con-lr3e5-s42_L14": {
    "arm_id": "imp-pers-con-lr3e5-s42",
@@ -9079,7 +9703,7 @@
       "r_B": 0.1322190030236564
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.81
      }
     },
@@ -9093,7 +9717,10 @@
       "delta": 0.020152760990893488,
       "r_B": 0.22387901238458546
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.91
+     }
     }
    ],
    "null_bands": {
@@ -9158,7 +9785,8 @@
     "w_norm_on_policy": 16.981605941590942
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-pers-con-lr3e5-s42_L19": {
    "arm_id": "imp-pers-con-lr3e5-s42",
@@ -9185,7 +9813,7 @@
       "r_B": 0.3641719310725035
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.81
      }
     },
@@ -9199,7 +9827,10 @@
       "delta": 0.20470495066193226,
       "r_B": 0.4233577290934255
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.91
+     }
     }
    ],
    "null_bands": {
@@ -9264,7 +9895,8 @@
     "w_norm_on_policy": 39.115735881750815
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-pers-con-lr3e5-s42_L25": {
    "arm_id": "imp-pers-con-lr3e5-s42",
@@ -9291,7 +9923,7 @@
       "r_B": 0.30130638965682405
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.81
      }
     },
@@ -9305,7 +9937,10 @@
       "delta": 0.010551758501598944,
       "r_B": 0.3032276696344126
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.91
+     }
     }
    ],
    "null_bands": {
@@ -9370,7 +10005,8 @@
     "w_norm_on_policy": 100.31039904557244
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-pers-ft-con-s137_L14": {
    "arm_id": "imp-pers-ft-con-s137",
@@ -9448,7 +10084,8 @@
     "w_norm_on_policy": 16.06188749307605
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "imp-pers-ft-con-s137_L19": {
    "arm_id": "imp-pers-ft-con-s137",
@@ -9526,7 +10163,8 @@
     "w_norm_on_policy": 33.8318225129668
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "imp-pers-ft-con-s137_L25": {
    "arm_id": "imp-pers-ft-con-s137",
@@ -9604,7 +10242,8 @@
     "w_norm_on_policy": 89.688210790981
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "imp-pers-ft-con-s42_L14": {
    "arm_id": "imp-pers-ft-con-s42",
@@ -9682,7 +10321,8 @@
     "w_norm_on_policy": 17.079634436823355
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "imp-pers-ft-con-s42_L19": {
    "arm_id": "imp-pers-ft-con-s42",
@@ -9760,7 +10400,8 @@
     "w_norm_on_policy": 34.392097251065934
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "imp-pers-ft-con-s42_L25": {
    "arm_id": "imp-pers-ft-con-s42",
@@ -9838,7 +10479,8 @@
     "w_norm_on_policy": 87.90009243145498
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "imp-pers-ft-po-s137_L14": {
    "arm_id": "imp-pers-ft-po-s137",
@@ -9916,7 +10558,8 @@
     "w_norm_on_policy": 16.76661056777911
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "imp-pers-ft-po-s137_L19": {
    "arm_id": "imp-pers-ft-po-s137",
@@ -9994,7 +10637,8 @@
     "w_norm_on_policy": 36.336367866405325
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "imp-pers-ft-po-s137_L25": {
    "arm_id": "imp-pers-ft-po-s137",
@@ -10072,7 +10716,8 @@
     "w_norm_on_policy": 94.01838745046227
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "imp-pers-ft-po-s42_L14": {
    "arm_id": "imp-pers-ft-po-s42",
@@ -10150,7 +10795,8 @@
     "w_norm_on_policy": 16.79510125339528
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "imp-pers-ft-po-s42_L19": {
    "arm_id": "imp-pers-ft-po-s42",
@@ -10228,7 +10874,8 @@
     "w_norm_on_policy": 36.12159128070924
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "imp-pers-ft-po-s42_L25": {
    "arm_id": "imp-pers-ft-po-s42",
@@ -10306,7 +10953,8 @@
     "w_norm_on_policy": 92.89223926808744
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "imp-pers-po-lr1e5-s137_L14": {
    "arm_id": "imp-pers-po-lr1e5-s137",
@@ -10332,7 +10980,10 @@
       "delta": -0.5743199164658443,
       "r_B": -0.1957338003474069
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 35,
@@ -10345,7 +10996,7 @@
       "r_B": -0.02490532851072694
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.66
      }
     },
@@ -10359,7 +11010,10 @@
       "delta": -0.22508875583665422,
       "r_B": 0.10258440099040991
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.67
+     }
     }
    ],
    "null_bands": {
@@ -10424,7 +11078,8 @@
     "w_norm_on_policy": 12.745874633297818
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-pers-po-lr1e5-s137_L19": {
    "arm_id": "imp-pers-po-lr1e5-s137",
@@ -10450,7 +11105,10 @@
       "delta": -0.5763200635404166,
       "r_B": -0.16615968164236986
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 35,
@@ -10463,7 +11121,7 @@
       "r_B": 0.22896427840245026
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.66
      }
     },
@@ -10477,7 +11135,10 @@
       "delta": -0.021626537844580306,
       "r_B": 0.3465510481183443
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.67
+     }
     }
    ],
    "null_bands": {
@@ -10542,7 +11203,8 @@
     "w_norm_on_policy": 30.249954020764626
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-pers-po-lr1e5-s137_L25": {
    "arm_id": "imp-pers-po-lr1e5-s137",
@@ -10568,7 +11230,10 @@
       "delta": -0.4274971783217458,
       "r_B": -0.09358955966692331
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 35,
@@ -10581,7 +11246,7 @@
       "r_B": 0.23869864670459323
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.66
      }
     },
@@ -10595,7 +11260,10 @@
       "delta": 0.0020027968772145673,
       "r_B": 0.3191132937635654
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.67
+     }
     }
    ],
    "null_bands": {
@@ -10660,7 +11328,8 @@
     "w_norm_on_policy": 79.10361499701621
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-pers-po-lr1e5-s42_L14": {
    "arm_id": "imp-pers-po-lr1e5-s42",
@@ -10686,7 +11355,10 @@
       "delta": -0.574128214842279,
       "r_B": -0.19558086353595586
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 35,
@@ -10699,7 +11371,7 @@
       "r_B": -0.02356251635818543
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.66
      }
     },
@@ -10713,7 +11385,10 @@
       "delta": -0.225324200592517,
       "r_B": 0.09988104508804048
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.59
+     }
     }
    ],
    "null_bands": {
@@ -10778,7 +11453,8 @@
     "w_norm_on_policy": 12.621534224755088
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-pers-po-lr1e5-s42_L19": {
    "arm_id": "imp-pers-po-lr1e5-s42",
@@ -10804,7 +11480,10 @@
       "delta": -0.5766466726770247,
       "r_B": -0.16634305927723442
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 35,
@@ -10817,7 +11496,7 @@
       "r_B": 0.22590755549081207
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.66
      }
     },
@@ -10831,7 +11510,10 @@
       "delta": -0.025782659241464424,
       "r_B": 0.3418869495054227
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.59
+     }
     }
    ],
    "null_bands": {
@@ -10896,7 +11578,8 @@
     "w_norm_on_policy": 29.459574528296482
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "imp-pers-po-lr1e5-s42_L25": {
    "arm_id": "imp-pers-po-lr1e5-s42",
@@ -10922,7 +11605,10 @@
       "delta": -0.4311256753030854,
       "r_B": -0.09567410092939282
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.0
+     }
     },
     {
      "step": 35,
@@ -10935,7 +11621,7 @@
       "r_B": 0.23321734244644618
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.66
      }
     },
@@ -10949,7 +11635,10 @@
       "delta": -0.005151347472530914,
       "r_B": 0.31524051741968
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.59
+     }
     }
    ],
    "null_bands": {
@@ -11014,7 +11703,8 @@
     "w_norm_on_policy": 76.96624368551322
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "mk-bare-con-lr5e6-s137_L14": {
    "arm_id": "mk-bare-con-lr5e6-s137",
@@ -11348,11 +12038,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-bare-con-lr5e6-s137_L19": {
    "arm_id": "mk-bare-con-lr5e6-s137",
@@ -11686,11 +12377,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-bare-con-lr5e6-s137_L25": {
    "arm_id": "mk-bare-con-lr5e6-s137",
@@ -12024,11 +12716,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-bare-con-lr5e6-s42_L14": {
    "arm_id": "mk-bare-con-lr5e6-s42",
@@ -12362,11 +13055,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-bare-con-lr5e6-s42_L19": {
    "arm_id": "mk-bare-con-lr5e6-s42",
@@ -12700,11 +13394,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-bare-con-lr5e6-s42_L25": {
    "arm_id": "mk-bare-con-lr5e6-s42",
@@ -13038,11 +13733,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-bare-po-lr5e6-s137_L14": {
    "arm_id": "mk-bare-po-lr5e6-s137",
@@ -13376,11 +14072,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-bare-po-lr5e6-s137_L19": {
    "arm_id": "mk-bare-po-lr5e6-s137",
@@ -13714,11 +14411,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-bare-po-lr5e6-s137_L25": {
    "arm_id": "mk-bare-po-lr5e6-s137",
@@ -14052,11 +14750,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-bare-po-lr5e6-s42_L14": {
    "arm_id": "mk-bare-po-lr5e6-s42",
@@ -14390,11 +15089,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-bare-po-lr5e6-s42_L19": {
    "arm_id": "mk-bare-po-lr5e6-s42",
@@ -14728,11 +15428,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-bare-po-lr5e6-s42_L25": {
    "arm_id": "mk-bare-po-lr5e6-s42",
@@ -15066,11 +15767,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-conv-con-lr5e6-s137_L14": {
    "arm_id": "mk-conv-con-lr5e6-s137",
@@ -15404,11 +16106,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-conv-con-lr5e6-s137_L19": {
    "arm_id": "mk-conv-con-lr5e6-s137",
@@ -15742,11 +16445,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-conv-con-lr5e6-s137_L25": {
    "arm_id": "mk-conv-con-lr5e6-s137",
@@ -16080,11 +16784,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-conv-con-lr5e6-s42_L14": {
    "arm_id": "mk-conv-con-lr5e6-s42",
@@ -16418,11 +17123,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-conv-con-lr5e6-s42_L19": {
    "arm_id": "mk-conv-con-lr5e6-s42",
@@ -16756,11 +17462,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-conv-con-lr5e6-s42_L25": {
    "arm_id": "mk-conv-con-lr5e6-s42",
@@ -17094,11 +17801,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-conv-po-lr5e6-s137_L14": {
    "arm_id": "mk-conv-po-lr5e6-s137",
@@ -17432,11 +18140,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-conv-po-lr5e6-s137_L19": {
    "arm_id": "mk-conv-po-lr5e6-s137",
@@ -17770,11 +18479,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-conv-po-lr5e6-s137_L25": {
    "arm_id": "mk-conv-po-lr5e6-s137",
@@ -18108,11 +18818,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-conv-po-lr5e6-s42_L14": {
    "arm_id": "mk-conv-po-lr5e6-s42",
@@ -18446,11 +19157,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-conv-po-lr5e6-s42_L19": {
    "arm_id": "mk-conv-po-lr5e6-s42",
@@ -18784,11 +19496,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-conv-po-lr5e6-s42_L25": {
    "arm_id": "mk-conv-po-lr5e6-s42",
@@ -19122,11 +19835,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-icl-con-lr5e6-s137_L14": {
    "arm_id": "mk-icl-con-lr5e6-s137",
@@ -19460,11 +20174,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-icl-con-lr5e6-s137_L19": {
    "arm_id": "mk-icl-con-lr5e6-s137",
@@ -19798,11 +20513,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-icl-con-lr5e6-s137_L25": {
    "arm_id": "mk-icl-con-lr5e6-s137",
@@ -20136,11 +20852,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-icl-con-lr5e6-s42_L14": {
    "arm_id": "mk-icl-con-lr5e6-s42",
@@ -20474,11 +21191,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-icl-con-lr5e6-s42_L19": {
    "arm_id": "mk-icl-con-lr5e6-s42",
@@ -20812,11 +21530,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-icl-con-lr5e6-s42_L25": {
    "arm_id": "mk-icl-con-lr5e6-s42",
@@ -21150,11 +21869,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-icl-po-lr5e6-s137_L14": {
    "arm_id": "mk-icl-po-lr5e6-s137",
@@ -21488,11 +22208,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-icl-po-lr5e6-s137_L19": {
    "arm_id": "mk-icl-po-lr5e6-s137",
@@ -21826,11 +22547,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-icl-po-lr5e6-s137_L25": {
    "arm_id": "mk-icl-po-lr5e6-s137",
@@ -22164,11 +22886,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-icl-po-lr5e6-s42_L14": {
    "arm_id": "mk-icl-po-lr5e6-s42",
@@ -22502,11 +23225,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-icl-po-lr5e6-s42_L19": {
    "arm_id": "mk-icl-po-lr5e6-s42",
@@ -22840,11 +23564,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-icl-po-lr5e6-s42_L25": {
    "arm_id": "mk-icl-po-lr5e6-s42",
@@ -23178,11 +23903,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-pers-con-lr5e6-s137_L14": {
    "arm_id": "mk-pers-con-lr5e6-s137",
@@ -23516,11 +24242,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-pers-con-lr5e6-s137_L19": {
    "arm_id": "mk-pers-con-lr5e6-s137",
@@ -23854,11 +24581,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-pers-con-lr5e6-s137_L25": {
    "arm_id": "mk-pers-con-lr5e6-s137",
@@ -24192,11 +24920,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-pers-con-lr5e6-s42_L14": {
    "arm_id": "mk-pers-con-lr5e6-s42",
@@ -24530,11 +25259,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-pers-con-lr5e6-s42_L19": {
    "arm_id": "mk-pers-con-lr5e6-s42",
@@ -24868,11 +25598,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-pers-con-lr5e6-s42_L25": {
    "arm_id": "mk-pers-con-lr5e6-s42",
@@ -25206,11 +25937,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 40
   },
   "mk-pers-ft-con-s137_L14": {
    "arm_id": "mk-pers-ft-con-s137",
@@ -25315,11 +26047,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 0
   },
   "mk-pers-ft-con-s137_L19": {
    "arm_id": "mk-pers-ft-con-s137",
@@ -25424,11 +26157,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 0
   },
   "mk-pers-ft-con-s137_L25": {
    "arm_id": "mk-pers-ft-con-s137",
@@ -25533,11 +26267,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 0
   },
   "mk-pers-ft-con-s42_L14": {
    "arm_id": "mk-pers-ft-con-s42",
@@ -25642,11 +26377,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 0
   },
   "mk-pers-ft-con-s42_L19": {
    "arm_id": "mk-pers-ft-con-s42",
@@ -25751,11 +26487,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 0
   },
   "mk-pers-ft-con-s42_L25": {
    "arm_id": "mk-pers-ft-con-s42",
@@ -25860,11 +26597,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 0
   },
   "mk-pers-ft-po-s137_L14": {
    "arm_id": "mk-pers-ft-po-s137",
@@ -25969,11 +26707,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 0
   },
   "mk-pers-ft-po-s137_L19": {
    "arm_id": "mk-pers-ft-po-s137",
@@ -26078,11 +26817,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 0
   },
   "mk-pers-ft-po-s137_L25": {
    "arm_id": "mk-pers-ft-po-s137",
@@ -26187,11 +26927,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 0
   },
   "mk-pers-ft-po-s42_L14": {
    "arm_id": "mk-pers-ft-po-s42",
@@ -26296,11 +27037,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 0
   },
   "mk-pers-ft-po-s42_L19": {
    "arm_id": "mk-pers-ft-po-s42",
@@ -26405,11 +27147,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 0
   },
   "mk-pers-ft-po-s42_L25": {
    "arm_id": "mk-pers-ft-po-s42",
@@ -26514,11 +27257,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 0
   },
   "mk-pers-po-lr5e6-s137_L14": {
    "arm_id": "mk-pers-po-lr5e6-s137",
@@ -26852,11 +27596,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-pers-po-lr5e6-s137_L19": {
    "arm_id": "mk-pers-po-lr5e6-s137",
@@ -27190,11 +27935,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-pers-po-lr5e6-s137_L25": {
    "arm_id": "mk-pers-po-lr5e6-s137",
@@ -27528,11 +28274,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-pers-po-lr5e6-s42_L14": {
    "arm_id": "mk-pers-po-lr5e6-s42",
@@ -27866,11 +28613,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-pers-po-lr5e6-s42_L19": {
    "arm_id": "mk-pers-po-lr5e6-s42",
@@ -28204,11 +28952,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "mk-pers-po-lr5e6-s42_L25": {
    "arm_id": "mk-pers-po-lr5e6-s42",
@@ -28542,11 +29291,12 @@
    },
    "candidate_degeneracy": [
     [
-     "W_U_marker_row",
-     "r_B"
+     "r_B",
+     "W_U_marker_row"
     ]
    ],
-   "install_coverage": "per-rung (#1481 reads_by_step)"
+   "install_coverage": "per-rung (#1481 marker reads_by_step: delta_logp_mean)",
+   "install_n_steps": 46
   },
   "syc-bare-con-lr1e5-s137_L14": {
    "arm_id": "syc-bare-con-lr1e5-s137",
@@ -28572,7 +29322,10 @@
       "delta": -0.33265296358066354,
       "r_B": -0.19985898871355595
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.19
+     }
     },
     {
      "step": 20,
@@ -28585,7 +29338,7 @@
       "r_B": -0.12224550905062369
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.62
      }
     },
@@ -28599,7 +29352,10 @@
       "delta": -0.041480068830921715,
       "r_B": -0.15454528791825445
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.73
+     }
     }
    ],
    "null_bands": {
@@ -28664,7 +29420,8 @@
     "w_norm_on_policy": 8.677739283002781
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-bare-con-lr1e5-s137_L19": {
    "arm_id": "syc-bare-con-lr1e5-s137",
@@ -28690,7 +29447,10 @@
       "delta": -0.2934371429757741,
       "r_B": -0.17642653858382554
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.19
+     }
     },
     {
      "step": 20,
@@ -28703,7 +29463,7 @@
       "r_B": 0.020842904209320796
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.62
      }
     },
@@ -28717,7 +29477,10 @@
       "delta": 0.15572227154546817,
       "r_B": 0.006255341751892015
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.73
+     }
     }
    ],
    "null_bands": {
@@ -28782,7 +29545,8 @@
     "w_norm_on_policy": 24.647457912054783
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-bare-con-lr1e5-s137_L25": {
    "arm_id": "syc-bare-con-lr1e5-s137",
@@ -28808,7 +29572,10 @@
       "delta": -0.21139863411803972,
       "r_B": -0.10082034222705193
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.19
+     }
     },
     {
      "step": 20,
@@ -28821,7 +29588,7 @@
       "r_B": -0.006384291554965132
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.62
      }
     },
@@ -28835,7 +29602,10 @@
       "delta": 0.09669701730122197,
       "r_B": -0.13285245938256948
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.73
+     }
     }
    ],
    "null_bands": {
@@ -28900,7 +29670,8 @@
     "w_norm_on_policy": 59.76136217045078
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-bare-con-lr1e5-s42_L14": {
    "arm_id": "syc-bare-con-lr1e5-s42",
@@ -28926,7 +29697,10 @@
       "delta": -0.3313470838866358,
       "r_B": -0.1974013101172236
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.17
+     }
     },
     {
      "step": 20,
@@ -28939,7 +29713,7 @@
       "r_B": -0.12522076471097537
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.6
      }
     },
@@ -28953,7 +29727,10 @@
       "delta": -0.03770704566025317,
       "r_B": -0.15654160238346507
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.7
+     }
     }
    ],
    "null_bands": {
@@ -29018,7 +29795,8 @@
     "w_norm_on_policy": 8.655602824367572
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-bare-con-lr1e5-s42_L19": {
    "arm_id": "syc-bare-con-lr1e5-s42",
@@ -29044,7 +29822,10 @@
       "delta": -0.29387797477835,
       "r_B": -0.17327672988002824
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.17
+     }
     },
     {
      "step": 20,
@@ -29057,7 +29838,7 @@
       "r_B": 0.01320131522196017
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.6
      }
     },
@@ -29071,7 +29852,10 @@
       "delta": 0.15456195083631039,
       "r_B": 0.0034960796093729675
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.7
+     }
     }
    ],
    "null_bands": {
@@ -29136,7 +29920,8 @@
     "w_norm_on_policy": 23.83556234066958
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-bare-con-lr1e5-s42_L25": {
    "arm_id": "syc-bare-con-lr1e5-s42",
@@ -29162,7 +29947,10 @@
       "delta": -0.21024883373022146,
       "r_B": -0.09867677384314057
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.17
+     }
     },
     {
      "step": 20,
@@ -29175,7 +29963,7 @@
       "r_B": -0.018506236121497172
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.6
      }
     },
@@ -29189,7 +29977,10 @@
       "delta": 0.09327922126305087,
       "r_B": -0.13380142332041098
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.7
+     }
     }
    ],
    "null_bands": {
@@ -29254,7 +30045,8 @@
     "w_norm_on_policy": 58.530167792618556
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-bare-po-lr1e5-s137_L14": {
    "arm_id": "syc-bare-po-lr1e5-s137",
@@ -29280,7 +30072,10 @@
       "delta": -0.3385014051490827,
       "r_B": -0.19033490608190473
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.2
+     }
     },
     {
      "step": 15,
@@ -29293,7 +30088,7 @@
       "r_B": -0.14971622324136766
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.79
      }
     },
@@ -29307,7 +30102,10 @@
       "delta": 0.012795979411150413,
       "r_B": -0.163259238221081
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.96
+     }
     }
    ],
    "null_bands": {
@@ -29372,7 +30170,8 @@
     "w_norm_on_policy": 8.996543157106602
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-bare-po-lr1e5-s137_L19": {
    "arm_id": "syc-bare-po-lr1e5-s137",
@@ -29398,7 +30197,10 @@
       "delta": -0.29946778757662745,
       "r_B": -0.1656127711907303
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.2
+     }
     },
     {
      "step": 15,
@@ -29411,7 +30213,7 @@
       "r_B": 0.03799200259146991
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.79
      }
     },
@@ -29425,7 +30227,10 @@
       "delta": 0.23746927453027394,
       "r_B": 0.055752419098720966
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.96
+     }
     }
    ],
    "null_bands": {
@@ -29490,7 +30295,8 @@
     "w_norm_on_policy": 23.82895295186306
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-bare-po-lr1e5-s137_L25": {
    "arm_id": "syc-bare-po-lr1e5-s137",
@@ -29516,7 +30322,10 @@
       "delta": -0.21845493536501262,
       "r_B": -0.09564069415921717
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.2
+     }
     },
     {
      "step": 15,
@@ -29529,7 +30338,7 @@
       "r_B": 0.04193913030352319
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.79
      }
     },
@@ -29543,7 +30352,10 @@
       "delta": 0.1539044824565103,
       "r_B": -0.10237526328272216
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.96
+     }
     }
    ],
    "null_bands": {
@@ -29608,7 +30420,8 @@
     "w_norm_on_policy": 60.263563996639085
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-bare-po-lr1e5-s42_L14": {
    "arm_id": "syc-bare-po-lr1e5-s42",
@@ -29634,7 +30447,10 @@
       "delta": -0.33473851104859076,
       "r_B": -0.1920959539295603
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.2
+     }
     },
     {
      "step": 15,
@@ -29647,7 +30463,7 @@
       "r_B": -0.1496988821403034
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.76
      }
     },
@@ -29661,7 +30477,10 @@
       "delta": 0.017063020100688022,
       "r_B": -0.16640197036610496
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.94
+     }
     }
    ],
    "null_bands": {
@@ -29726,7 +30545,8 @@
     "w_norm_on_policy": 9.108772417822548
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-bare-po-lr1e5-s42_L19": {
    "arm_id": "syc-bare-po-lr1e5-s42",
@@ -29752,7 +30572,10 @@
       "delta": -0.2914182084286634,
       "r_B": -0.16299007090335885
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.2
+     }
     },
     {
      "step": 15,
@@ -29765,7 +30588,7 @@
       "r_B": 0.04181934681639895
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.76
      }
     },
@@ -29779,7 +30602,10 @@
       "delta": 0.2367717050745269,
       "r_B": 0.05473412597440678
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.94
+     }
     }
    ],
    "null_bands": {
@@ -29844,7 +30670,8 @@
     "w_norm_on_policy": 24.63366470205763
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-bare-po-lr1e5-s42_L25": {
    "arm_id": "syc-bare-po-lr1e5-s42",
@@ -29870,7 +30697,10 @@
       "delta": -0.20931106385338544,
       "r_B": -0.0875535091066324
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.2
+     }
     },
     {
      "step": 15,
@@ -29883,7 +30713,7 @@
       "r_B": 0.04017196718035137
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.76
      }
     },
@@ -29897,7 +30727,10 @@
       "delta": 0.15162650130627336,
       "r_B": -0.11039169140371959
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.94
+     }
     }
    ],
    "null_bands": {
@@ -29962,7 +30795,8 @@
     "w_norm_on_policy": 61.209660279207014
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-conv-con-lr1e5-s137_L14": {
    "arm_id": "syc-conv-con-lr1e5-s137",
@@ -29989,7 +30823,7 @@
       "r_B": -0.23843051011465313
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.7171717171717171
      }
     },
@@ -30003,7 +30837,10 @@
       "delta": -0.32232326524898014,
       "r_B": -0.23322231652476072
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.7171717171717171
+     }
     },
     {
      "step": 75,
@@ -30015,7 +30852,10 @@
       "delta": -0.1164476546442094,
       "r_B": -0.20129380980437542
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.8383838383838383
+     }
     }
    ],
    "null_bands": {
@@ -30080,7 +30920,8 @@
     "w_norm_on_policy": 4.329380502942874
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-conv-con-lr1e5-s137_L19": {
    "arm_id": "syc-conv-con-lr1e5-s137",
@@ -30107,7 +30948,7 @@
       "r_B": -0.20760664151611957
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.7171717171717171
      }
     },
@@ -30121,7 +30962,10 @@
       "delta": -0.25395483954088893,
       "r_B": -0.11185390280290114
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.7171717171717171
+     }
     },
     {
      "step": 75,
@@ -30133,7 +30977,10 @@
       "delta": -0.022904241512933035,
       "r_B": -0.031084871580132758
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.8383838383838383
+     }
     }
    ],
    "null_bands": {
@@ -30198,7 +31045,8 @@
     "w_norm_on_policy": 6.79218421490014
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-conv-con-lr1e5-s137_L25": {
    "arm_id": "syc-conv-con-lr1e5-s137",
@@ -30225,7 +31073,7 @@
       "r_B": -0.14710796252136707
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.7171717171717171
      }
     },
@@ -30239,7 +31087,10 @@
       "delta": -0.08719196828660351,
       "r_B": -0.06535055657525504
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.7171717171717171
+     }
     },
     {
      "step": 75,
@@ -30251,7 +31102,10 @@
       "delta": -0.0401804295940034,
       "r_B": -0.18514812088175045
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.8383838383838383
+     }
     }
    ],
    "null_bands": {
@@ -30316,7 +31170,8 @@
     "w_norm_on_policy": 19.726191244428602
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-conv-con-lr1e5-s42_L14": {
    "arm_id": "syc-conv-con-lr1e5-s42",
@@ -30343,7 +31198,7 @@
       "r_B": -0.23435149584414974
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.696969696969697
      }
     },
@@ -30357,7 +31212,10 @@
       "delta": -0.32944064340992696,
       "r_B": -0.22914066496284888
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.64
+     }
     },
     {
      "step": 75,
@@ -30369,7 +31227,10 @@
       "delta": -0.11986034334244311,
       "r_B": -0.19846279852324944
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.88
+     }
     }
    ],
    "null_bands": {
@@ -30434,7 +31295,8 @@
     "w_norm_on_policy": 4.227744104598949
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-conv-con-lr1e5-s42_L19": {
    "arm_id": "syc-conv-con-lr1e5-s42",
@@ -30461,7 +31323,7 @@
       "r_B": -0.20262763865266975
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.696969696969697
      }
     },
@@ -30475,7 +31337,10 @@
       "delta": -0.2564440997511349,
       "r_B": -0.10794725308764108
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.64
+     }
     },
     {
      "step": 75,
@@ -30487,7 +31352,10 @@
       "delta": -0.028403061763937126,
       "r_B": -0.03517230555332897
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.88
+     }
     }
    ],
    "null_bands": {
@@ -30552,7 +31420,8 @@
     "w_norm_on_policy": 6.734790767526338
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-conv-con-lr1e5-s42_L25": {
    "arm_id": "syc-conv-con-lr1e5-s42",
@@ -30579,7 +31448,7 @@
       "r_B": -0.14033688585329096
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.696969696969697
      }
     },
@@ -30593,7 +31462,10 @@
       "delta": -0.07984555230599272,
       "r_B": -0.05854094903921907
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.64
+     }
     },
     {
      "step": 75,
@@ -30605,7 +31477,10 @@
       "delta": -0.04521858076515795,
       "r_B": -0.19296292849338317
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.88
+     }
     }
    ],
    "null_bands": {
@@ -30670,7 +31545,8 @@
     "w_norm_on_policy": 19.48577973105503
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-conv-po-lr1e5-s137_L14": {
    "arm_id": "syc-conv-po-lr1e5-s137",
@@ -30697,7 +31573,7 @@
       "r_B": -0.23557714252459386
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.75
      }
     },
@@ -30711,7 +31587,10 @@
       "delta": -0.3320141049449353,
       "r_B": -0.21932242477113065
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.7474747474747475
+     }
     },
     {
      "step": 75,
@@ -30723,7 +31602,10 @@
       "delta": -0.08777255333373318,
       "r_B": -0.20384004455352328
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.93
+     }
     }
    ],
    "null_bands": {
@@ -30788,7 +31670,8 @@
     "w_norm_on_policy": 4.590476823675794
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-conv-po-lr1e5-s137_L19": {
    "arm_id": "syc-conv-po-lr1e5-s137",
@@ -30815,7 +31698,7 @@
       "r_B": -0.19192241565422216
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.75
      }
     },
@@ -30829,7 +31712,10 @@
       "delta": -0.24373866242079553,
       "r_B": -0.07841256505602096
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.7474747474747475
+     }
     },
     {
      "step": 75,
@@ -30841,7 +31727,10 @@
       "delta": 0.017424064473479117,
       "r_B": -0.031302658695553015
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.93
+     }
     }
    ],
    "null_bands": {
@@ -30906,7 +31795,8 @@
     "w_norm_on_policy": 7.246438397369619
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-conv-po-lr1e5-s137_L25": {
    "arm_id": "syc-conv-po-lr1e5-s137",
@@ -30933,7 +31823,7 @@
       "r_B": -0.12847378803747705
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.75
      }
     },
@@ -30947,7 +31837,10 @@
       "delta": -0.052095376465128795,
       "r_B": -0.030492793341456288
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.7474747474747475
+     }
     },
     {
      "step": 75,
@@ -30959,7 +31852,10 @@
       "delta": -0.022141655918357043,
       "r_B": -0.19925776049937632
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.93
+     }
     }
    ],
    "null_bands": {
@@ -31024,7 +31920,8 @@
     "w_norm_on_policy": 20.917754381844688
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-conv-po-lr1e5-s42_L14": {
    "arm_id": "syc-conv-po-lr1e5-s42",
@@ -31051,7 +31948,7 @@
       "r_B": -0.2304297580106523
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.7575757575757576
      }
     },
@@ -31065,7 +31962,10 @@
       "delta": -0.3345076838646874,
       "r_B": -0.22053120330579085
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.7708333333333334
+     }
     },
     {
      "step": 75,
@@ -31077,7 +31977,10 @@
       "delta": -0.08618841907443332,
       "r_B": -0.20553111388409753
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.96
+     }
     }
    ],
    "null_bands": {
@@ -31142,7 +32045,8 @@
     "w_norm_on_policy": 4.042627486521866
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-conv-po-lr1e5-s42_L19": {
    "arm_id": "syc-conv-po-lr1e5-s42",
@@ -31169,7 +32073,7 @@
       "r_B": -0.1895182918005512
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.7575757575757576
      }
     },
@@ -31183,7 +32087,10 @@
       "delta": -0.2484063581290993,
       "r_B": -0.08098909455437142
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.7708333333333334
+     }
     },
     {
      "step": 75,
@@ -31195,7 +32102,10 @@
       "delta": 0.02276997858065083,
       "r_B": -0.028009310686067598
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.96
+     }
     }
    ],
    "null_bands": {
@@ -31260,7 +32170,8 @@
     "w_norm_on_policy": 6.414853160821936
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-conv-po-lr1e5-s42_L25": {
    "arm_id": "syc-conv-po-lr1e5-s42",
@@ -31287,7 +32198,7 @@
       "r_B": -0.12676774365295243
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.7575757575757576
      }
     },
@@ -31301,7 +32212,10 @@
       "delta": -0.059282288152809205,
       "r_B": -0.03560617685699966
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.7708333333333334
+     }
     },
     {
      "step": 75,
@@ -31313,7 +32227,10 @@
       "delta": -0.026109604071921637,
       "r_B": -0.20191302597252592
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.96
+     }
     }
    ],
    "null_bands": {
@@ -31378,7 +32295,8 @@
     "w_norm_on_policy": 18.954581962243093
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-icl-con-lr1e5-s137_L14": {
    "arm_id": "syc-icl-con-lr1e5-s137",
@@ -31404,7 +32322,10 @@
       "delta": -0.5249918281866166,
       "r_B": -0.23038849406860226
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.45
+     }
     },
     {
      "step": 10,
@@ -31417,7 +32338,7 @@
       "r_B": -0.2368845293375125
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.73
      }
     },
@@ -31431,7 +32352,10 @@
       "delta": -0.2322326913204274,
       "r_B": -0.19243829100528326
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.99
+     }
     }
    ],
    "null_bands": {
@@ -31496,7 +32420,8 @@
     "w_norm_on_policy": 7.537320898162907
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-icl-con-lr1e5-s137_L19": {
    "arm_id": "syc-icl-con-lr1e5-s137",
@@ -31522,7 +32447,10 @@
       "delta": -0.5000265064500072,
       "r_B": -0.1560475806890366
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.45
+     }
     },
     {
      "step": 10,
@@ -31535,7 +32463,7 @@
       "r_B": -0.030202109946552088
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.73
      }
     },
@@ -31549,7 +32477,10 @@
       "delta": -0.00015151924190308767,
       "r_B": 0.04856405785810045
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.99
+     }
     }
    ],
    "null_bands": {
@@ -31614,7 +32545,8 @@
     "w_norm_on_policy": 22.070207960082342
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-icl-con-lr1e5-s137_L25": {
    "arm_id": "syc-icl-con-lr1e5-s137",
@@ -31640,7 +32572,10 @@
       "delta": -0.4234296731660581,
       "r_B": -0.05471643385906764
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.45
+     }
     },
     {
      "step": 10,
@@ -31653,7 +32588,7 @@
       "r_B": -0.003603542724931553
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.73
      }
     },
@@ -31667,7 +32602,10 @@
       "delta": -0.08085387363225587,
       "r_B": -0.09434077154629797
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.99
+     }
     }
    ],
    "null_bands": {
@@ -31732,7 +32670,8 @@
     "w_norm_on_policy": 60.73903898795491
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-icl-con-lr1e5-s42_L14": {
    "arm_id": "syc-icl-con-lr1e5-s42",
@@ -31758,7 +32697,10 @@
       "delta": -0.518174925845809,
       "r_B": -0.23537762621270322
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.47
+     }
     },
     {
      "step": 10,
@@ -31771,7 +32713,7 @@
       "r_B": -0.2288431469214292
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.71
      }
     },
@@ -31785,7 +32727,10 @@
       "delta": -0.21249578893539392,
       "r_B": -0.18278944300106661
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.98
+     }
     }
    ],
    "null_bands": {
@@ -31850,7 +32795,8 @@
     "w_norm_on_policy": 7.465478057341491
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-icl-con-lr1e5-s42_L19": {
    "arm_id": "syc-icl-con-lr1e5-s42",
@@ -31876,7 +32822,10 @@
       "delta": -0.49096702970456674,
       "r_B": -0.14823625283619882
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.47
+     }
     },
     {
      "step": 10,
@@ -31889,7 +32838,7 @@
       "r_B": -0.011482450178662739
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.71
      }
     },
@@ -31903,7 +32852,10 @@
       "delta": 0.006166905233191082,
       "r_B": 0.045341052001842866
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.98
+     }
     }
    ],
    "null_bands": {
@@ -31968,7 +32920,8 @@
     "w_norm_on_policy": 20.802823178295125
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-icl-con-lr1e5-s42_L25": {
    "arm_id": "syc-icl-con-lr1e5-s42",
@@ -31994,7 +32947,10 @@
       "delta": -0.4177645682533868,
       "r_B": -0.05341045951869243
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.47
+     }
     },
     {
      "step": 10,
@@ -32007,7 +32963,7 @@
       "r_B": 0.017681424857802497
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.71
      }
     },
@@ -32021,7 +32977,10 @@
       "delta": -0.076201666345183,
       "r_B": -0.10870837298689559
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.98
+     }
     }
    ],
    "null_bands": {
@@ -32086,7 +33045,8 @@
     "w_norm_on_policy": 58.18586529438412
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-icl-po-lr1e5-s137_L14": {
    "arm_id": "syc-icl-po-lr1e5-s137",
@@ -32112,7 +33072,10 @@
       "delta": -0.5215710989175101,
       "r_B": -0.23063540360479712
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.5
+     }
     },
     {
      "step": 10,
@@ -32125,7 +33088,7 @@
       "r_B": -0.22268654355972953
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.82
      }
     },
@@ -32139,7 +33102,10 @@
       "delta": -0.18238985217351344,
       "r_B": -0.22120119232410204
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 1.0
+     }
     }
    ],
    "null_bands": {
@@ -32204,7 +33170,8 @@
     "w_norm_on_policy": 7.916846759646786
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-icl-po-lr1e5-s137_L19": {
    "arm_id": "syc-icl-po-lr1e5-s137",
@@ -32230,7 +33197,10 @@
       "delta": -0.4932825411740607,
       "r_B": -0.13814588943946168
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.5
+     }
     },
     {
      "step": 10,
@@ -32243,7 +33213,7 @@
       "r_B": 0.011975669055517177
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.82
      }
     },
@@ -32257,7 +33227,10 @@
       "delta": 0.023859914545156718,
       "r_B": 0.027203105549914567
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 1.0
+     }
     }
    ],
    "null_bands": {
@@ -32322,7 +33295,8 @@
     "w_norm_on_policy": 21.221753512212135
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-icl-po-lr1e5-s137_L25": {
    "arm_id": "syc-icl-po-lr1e5-s137",
@@ -32348,7 +33322,10 @@
       "delta": -0.42051478489856076,
       "r_B": -0.039549609187260616
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.5
+     }
     },
     {
      "step": 10,
@@ -32361,7 +33338,7 @@
       "r_B": 0.05093683179245783
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.82
      }
     },
@@ -32375,7 +33352,10 @@
       "delta": -0.06947273628814649,
       "r_B": -0.14662092170657384
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 1.0
+     }
     }
    ],
    "null_bands": {
@@ -32440,7 +33420,8 @@
     "w_norm_on_policy": 59.77060674589725
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-icl-po-lr3e5-s42_L14": {
    "arm_id": "syc-icl-po-lr3e5-s42",
@@ -32467,7 +33448,7 @@
       "r_B": -0.22945559088351508
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.77
      }
     },
@@ -32481,7 +33462,10 @@
       "delta": -0.349544466405025,
       "r_B": -0.11790865114362013
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 1.0
+     }
     },
     {
      "step": 75,
@@ -32493,7 +33477,10 @@
       "delta": -0.06178485825120685,
       "r_B": -0.22541651612758615
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 1.0
+     }
     }
    ],
    "null_bands": {
@@ -32558,7 +33545,8 @@
     "w_norm_on_policy": 7.226135579954037
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-icl-po-lr3e5-s42_L19": {
    "arm_id": "syc-icl-po-lr3e5-s42",
@@ -32585,7 +33573,7 @@
       "r_B": -0.010049032992025125
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.77
      }
     },
@@ -32599,7 +33587,10 @@
       "delta": -0.11471477505806413,
       "r_B": 0.12238213696529418
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 1.0
+     }
     },
     {
      "step": 75,
@@ -32611,7 +33602,10 @@
       "delta": 0.11549093853081009,
       "r_B": -0.02098042644592066
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 1.0
+     }
     }
    ],
    "null_bands": {
@@ -32676,7 +33670,8 @@
     "w_norm_on_policy": 19.22253642671133
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-icl-po-lr3e5-s42_L25": {
    "arm_id": "syc-icl-po-lr3e5-s42",
@@ -32703,7 +33698,7 @@
       "r_B": 0.0422088237122784
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.77
      }
     },
@@ -32717,7 +33712,10 @@
       "delta": -0.08843273326514758,
       "r_B": 0.13456238106975246
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 1.0
+     }
     },
     {
      "step": 75,
@@ -32729,7 +33727,10 @@
       "delta": -0.057572895518099736,
       "r_B": -0.2849310827621237
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 1.0
+     }
     }
    ],
    "null_bands": {
@@ -32794,7 +33795,8 @@
     "w_norm_on_policy": 55.723520767856726
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-pers-con-lr1e5-s137_L14": {
    "arm_id": "syc-pers-con-lr1e5-s137",
@@ -32820,7 +33822,10 @@
       "delta": -0.28568953956746174,
       "r_B": -0.15132748046676125
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.24
+     }
     },
     {
      "step": 15,
@@ -32833,7 +33838,7 @@
       "r_B": -0.1096658124762928
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.61
      }
     },
@@ -32847,7 +33852,10 @@
       "delta": 0.01935570484665051,
       "r_B": -0.11775475307658806
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.67
+     }
     }
    ],
    "null_bands": {
@@ -32912,7 +33920,8 @@
     "w_norm_on_policy": 8.134801432169219
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-pers-con-lr1e5-s137_L19": {
    "arm_id": "syc-pers-con-lr1e5-s137",
@@ -32938,7 +33947,10 @@
       "delta": -0.24092073325913482,
       "r_B": -0.09671324947731333
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.24
+     }
     },
     {
      "step": 15,
@@ -32951,7 +33963,7 @@
       "r_B": 0.029053614168400313
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.61
      }
     },
@@ -32965,7 +33977,10 @@
       "delta": 0.2232297524346669,
       "r_B": 0.03817487010005196
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.67
+     }
     }
    ],
    "null_bands": {
@@ -33030,7 +34045,8 @@
     "w_norm_on_policy": 19.393084869839292
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-pers-con-lr1e5-s137_L25": {
    "arm_id": "syc-pers-con-lr1e5-s137",
@@ -33056,7 +34072,10 @@
       "delta": -0.22514973810100428,
       "r_B": -0.053146811724177116
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.24
+     }
     },
     {
      "step": 15,
@@ -33069,7 +34088,7 @@
       "r_B": 0.028273603615306602
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.61
      }
     },
@@ -33083,7 +34102,10 @@
       "delta": 0.13376149010739852,
       "r_B": -0.1296161433347466
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.67
+     }
     }
    ],
    "null_bands": {
@@ -33148,7 +34170,8 @@
     "w_norm_on_policy": 53.85460982127925
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-pers-con-lr1e5-s42_L14": {
    "arm_id": "syc-pers-con-lr1e5-s42",
@@ -33175,7 +34198,7 @@
       "r_B": -0.1156539994894037
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.65
      }
     },
@@ -33189,7 +34212,10 @@
       "delta": 0.02463634027891811,
       "r_B": -0.11931103951853543
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.63
+     }
     }
    ],
    "null_bands": {
@@ -33254,7 +34280,8 @@
     "w_norm_on_policy": 8.218307247681215
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-pers-con-lr1e5-s42_L19": {
    "arm_id": "syc-pers-con-lr1e5-s42",
@@ -33281,7 +34308,7 @@
       "r_B": 0.025916865486641415
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.65
      }
     },
@@ -33295,7 +34322,10 @@
       "delta": 0.22597537778120852,
       "r_B": 0.03715950652963778
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.63
+     }
     }
    ],
    "null_bands": {
@@ -33360,7 +34390,8 @@
     "w_norm_on_policy": 20.199962974026334
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-pers-con-lr1e5-s42_L25": {
    "arm_id": "syc-pers-con-lr1e5-s42",
@@ -33387,7 +34418,7 @@
       "r_B": 0.020465525440622065
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.65
      }
     },
@@ -33401,7 +34432,10 @@
       "delta": 0.13396793232286194,
       "r_B": -0.13415230406125433
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.63
+     }
     }
    ],
    "null_bands": {
@@ -33466,7 +34500,8 @@
     "w_norm_on_policy": 55.47677578185943
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-pers-ft-con-s137_L14": {
    "arm_id": "syc-pers-ft-con-s137",
@@ -33544,7 +34579,8 @@
     "w_norm_on_policy": 10.903238029511446
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "syc-pers-ft-con-s137_L19": {
    "arm_id": "syc-pers-ft-con-s137",
@@ -33622,7 +34658,8 @@
     "w_norm_on_policy": 28.874963086468533
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "syc-pers-ft-con-s137_L25": {
    "arm_id": "syc-pers-ft-con-s137",
@@ -33700,7 +34737,8 @@
     "w_norm_on_policy": 70.33930986358085
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "syc-pers-ft-con-s42_L14": {
    "arm_id": "syc-pers-ft-con-s42",
@@ -33778,7 +34816,8 @@
     "w_norm_on_policy": 10.406524081882326
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "syc-pers-ft-con-s42_L19": {
    "arm_id": "syc-pers-ft-con-s42",
@@ -33856,7 +34895,8 @@
     "w_norm_on_policy": 28.85900835188368
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "syc-pers-ft-con-s42_L25": {
    "arm_id": "syc-pers-ft-con-s42",
@@ -33934,7 +34974,8 @@
     "w_norm_on_policy": 74.57773936399876
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "syc-pers-ft-po-s137_L14": {
    "arm_id": "syc-pers-ft-po-s137",
@@ -34012,7 +35053,8 @@
     "w_norm_on_policy": 10.834573530806555
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "syc-pers-ft-po-s137_L19": {
    "arm_id": "syc-pers-ft-po-s137",
@@ -34090,7 +35132,8 @@
     "w_norm_on_policy": 27.715205405891385
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "syc-pers-ft-po-s137_L25": {
    "arm_id": "syc-pers-ft-po-s137",
@@ -34168,7 +35211,8 @@
     "w_norm_on_policy": 73.29104395820139
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "syc-pers-ft-po-s42_L14": {
    "arm_id": "syc-pers-ft-po-s42",
@@ -34246,7 +35290,8 @@
     "w_norm_on_policy": 11.079412912256156
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "syc-pers-ft-po-s42_L19": {
    "arm_id": "syc-pers-ft-po-s42",
@@ -34324,7 +35369,8 @@
     "w_norm_on_policy": 28.566893434911975
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "syc-pers-ft-po-s42_L25": {
    "arm_id": "syc-pers-ft-po-s42",
@@ -34402,7 +35448,8 @@
     "w_norm_on_policy": 76.0474775529514
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 1
   },
   "syc-pers-po-lr1e5-s137_L14": {
    "arm_id": "syc-pers-po-lr1e5-s137",
@@ -34428,7 +35475,10 @@
       "delta": -0.2913284370808709,
       "r_B": -0.14483460399283773
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.29
+     }
     },
     {
      "step": 15,
@@ -34441,7 +35491,7 @@
       "r_B": -0.08003046437171563
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.79
      }
     },
@@ -34455,7 +35505,10 @@
       "delta": 0.053132253735799315,
       "r_B": -0.11387732911049965
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.82
+     }
     }
    ],
    "null_bands": {
@@ -34520,7 +35573,8 @@
     "w_norm_on_policy": 8.682127386676914
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-pers-po-lr1e5-s137_L19": {
    "arm_id": "syc-pers-po-lr1e5-s137",
@@ -34546,7 +35600,10 @@
       "delta": -0.23994558530758964,
       "r_B": -0.0833071214492389
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.29
+     }
     },
     {
      "step": 15,
@@ -34559,7 +35616,7 @@
       "r_B": 0.1045599667667432
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.79
      }
     },
@@ -34573,7 +35630,10 @@
       "delta": 0.26684716150036186,
       "r_B": 0.07309151097525413
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.82
+     }
     }
    ],
    "null_bands": {
@@ -34638,7 +35698,8 @@
     "w_norm_on_policy": 19.594139413574887
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-pers-po-lr1e5-s137_L25": {
    "arm_id": "syc-pers-po-lr1e5-s137",
@@ -34664,7 +35725,10 @@
       "delta": -0.23228644401564397,
       "r_B": -0.04798178250267187
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.29
+     }
     },
     {
      "step": 15,
@@ -34677,7 +35741,7 @@
       "r_B": 0.1035677248454801
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.79
      }
     },
@@ -34691,7 +35755,10 @@
       "delta": 0.14441548481776656,
       "r_B": -0.12308857374135669
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.82
+     }
     }
    ],
    "null_bands": {
@@ -34756,7 +35823,8 @@
     "w_norm_on_policy": 54.791277114276376
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-pers-po-lr1e5-s42_L14": {
    "arm_id": "syc-pers-po-lr1e5-s42",
@@ -34782,7 +35850,10 @@
       "delta": -0.2884399515195531,
       "r_B": -0.14519307017314761
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.32
+     }
     },
     {
      "step": 10,
@@ -34795,7 +35866,7 @@
       "r_B": -0.12590729103543533
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.61
      }
     },
@@ -34809,7 +35880,10 @@
       "delta": 0.0529073147135941,
       "r_B": -0.10449205384845912
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.87
+     }
     }
    ],
    "null_bands": {
@@ -34874,7 +35948,8 @@
     "w_norm_on_policy": 6.270542403707079
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-pers-po-lr1e5-s42_L19": {
    "arm_id": "syc-pers-po-lr1e5-s42",
@@ -34900,7 +35975,10 @@
       "delta": -0.23750937410239015,
       "r_B": -0.08131794346401303
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.32
+     }
     },
     {
      "step": 10,
@@ -34913,7 +35991,7 @@
       "r_B": 0.04302515295095461
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.61
      }
     },
@@ -34927,7 +36005,10 @@
       "delta": 0.26946447038249133,
       "r_B": 0.07110100026006701
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.87
+     }
     }
    ],
    "null_bands": {
@@ -34992,7 +36073,8 @@
     "w_norm_on_policy": 11.964450766099626
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   },
   "syc-pers-po-lr1e5-s42_L25": {
    "arm_id": "syc-pers-po-lr1e5-s42",
@@ -35018,7 +36100,10 @@
       "delta": -0.2292652891019619,
       "r_B": -0.04580057622021488
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.32
+     }
     },
     {
      "step": 10,
@@ -35031,7 +36116,7 @@
       "r_B": 0.07571114773069937
      },
      "install": {
-      "install_metric": "judged_rate_selected_step_only",
+      "install_metric": "judged_rate_tier1_selection_pool",
       "install": 0.61
      }
     },
@@ -35045,7 +36130,10 @@
       "delta": 0.1479336445322575,
       "r_B": -0.12421894391909874
      },
-     "install": null
+     "install": {
+      "install_metric": "judged_rate_tier1_selection_pool",
+      "install": 0.87
+     }
     }
    ],
    "null_bands": {
@@ -35110,11 +36198,12 @@
     "w_norm_on_policy": 34.79041527894704
    },
    "candidate_degeneracy": [],
-   "install_coverage": "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+   "install_coverage": "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)",
+   "install_n_steps": 15
   }
  },
  "smoke": false,
- "ts": "2026-08-01T01:29:59Z",
+ "ts": "2026-08-01T01:55:31Z",
  "issue": 1768,
- "git_commit": "2b9a6be710a46d06d8af3c2e36053c36d4d1ad00"
+ "git_commit": "0c840a697bd8b04ebac3f1ffdf2bd29763934e2f"
 }

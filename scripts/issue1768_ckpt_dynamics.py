@@ -827,10 +827,18 @@ def _verdict_manifest() -> dict:
 def _install_by_step(man: dict, lad: dict) -> dict[int, dict]:
     """Per-rung install trajectory, where #1481 recorded one.
 
-    MARKER arms carry a full `reads_by_step` ladder (delta_logp_mean /
-    delta_margin_mean / emission rates). CONTENT arms carry ONLY the selected
-    step's judged rate — no per-step rates exist in the manifest — so their
-    coupling read is a single point (recorded as such, never interpolated).
+    BOTH families carry a full per-step ladder, under DIFFERENT manifest
+    shapes — read each from its own path:
+
+    - marker: ``man["marker"]["arms"][arm_id]["reads_by_step"]`` — 40 steps of
+      delta_logp_mean / delta_margin_mean / emission rates.
+    - content: ``man["content"][beh][ctx]["arms"][arm_id]["rates_by_step"]`` —
+      15 steps of the Tier-1 selection-pool judged rate (the selection
+      instrument). NB the `arms` key sits BESIDE `seeds`; `issue1768_cells`
+      enumerates arms through `seeds`, so a reader that follows only the
+      enumeration path sees just the selected step and wrongly concludes no
+      per-step content rates exist. They do, for all 144 content entries, and
+      their steps coincide exactly with the Hub checkpoint ladder.
     """
     if lad["kind"] == "marker":
         entry = man["marker"]["arms"].get(lad["arm_id"]) or {}
@@ -844,6 +852,15 @@ def _install_by_step(man: dict, lad: dict) -> dict[int, dict]:
                 "gen_emission_rate": v.get("gen_emission_rate"),
             }
         return out
+    entry = ((man["content"].get(lad["beh_key"]) or {}).get(lad["ctx_key"]) or {}).get("arms") or {}
+    rates = (entry.get(lad["arm_id"]) or {}).get("rates_by_step") or {}
+    if rates:
+        return {
+            int(s): {"install_metric": "judged_rate_tier1_selection_pool", "install": v}
+            for s, v in rates.items()
+        }
+    # no per-step rates for this arm: fall back to its selected-step read, and
+    # SAY the read is a single point rather than implying a curve
     return {
         int(lad["selected_step"]): {
             "install_metric": "judged_rate_selected_step_only",
@@ -1031,10 +1048,11 @@ def phase_analyze(out_root: Path, results_dir: Path, smoke: bool = False) -> Non
                 },
                 "candidate_degeneracy": [list(d) for d in degenerate],
                 "install_coverage": (
-                    "per-rung (#1481 reads_by_step)"
+                    "per-rung (#1481 marker reads_by_step: delta_logp_mean)"
                     if lad["kind"] == "marker"
-                    else "selected-step judged rate ONLY (#1481 records no content rates_by_step)"
+                    else "per-rung (#1481 content rates_by_step: Tier-1 selection-pool judged rate)"
                 ),
+                "install_n_steps": len(install),
             }
 
     summary = _summarize(curves, coverage, parity, smoke)
@@ -1186,14 +1204,21 @@ def _summarize(curves: dict, coverage: dict, parity: list[dict], smoke: bool) ->
             "marker": _agg(lambda e: e["kind"] == "marker", "norm_trend"),
         },
         "install_coupling": {
-            "rho_install_vs_cos_delta_marker": _agg(
-                lambda e: e["kind"] == "marker", "rho_install_vs_cos_delta"
-            ),
-            "rho_install_vs_norm_marker": _agg(
-                lambda e: e["kind"] == "marker", "rho_install_vs_norm"
-            ),
-            "content_note": "content arms carry only a selected-step judged rate "
-            "(#1481 records no per-step content rates) — no content coupling curve",
+            "rho_install_vs_cos_delta": {
+                "all": _agg(lambda e: True, "rho_install_vs_cos_delta"),
+                "content": _agg(lambda e: e["kind"] == "content", "rho_install_vs_cos_delta"),
+                "marker": _agg(lambda e: e["kind"] == "marker", "rho_install_vs_cos_delta"),
+            },
+            "rho_install_vs_norm": {
+                "all": _agg(lambda e: True, "rho_install_vs_norm"),
+                "content": _agg(lambda e: e["kind"] == "content", "rho_install_vs_norm"),
+                "marker": _agg(lambda e: e["kind"] == "marker", "rho_install_vs_norm"),
+            },
+            "install_metric_note": "the two families' install metrics are NOT "
+            "comparable in level — marker = delta_logp_mean (nats, #1481 "
+            "reads_by_step), content = Tier-1 selection-pool judged rate (#1481 "
+            "rates_by_step). Only the WITHIN-arm rank correlations aggregated "
+            "here are cross-family comparable.",
         },
         "coverage": {
             "n_arms": len(coverage),

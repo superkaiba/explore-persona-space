@@ -319,6 +319,47 @@ def test_download_adapter_scratch_dirs_are_per_invocation(tmp_path, monkeypatch)
     assert (d2 / "adapter_model.safetensors").is_file()
 
 
+def test_install_by_step_reads_content_rates_from_the_arms_key():
+    """Content per-step rates live under content[beh][ctx]['arms'], BESIDE the
+    'seeds' key the arm enumeration walks. Reading only the enumeration path
+    yields a single selected-step point and the false conclusion that no
+    per-step content rates exist — they exist for all 144 content entries."""
+    man = {
+        "content": {
+            "cas": {
+                "pers": {
+                    "seeds": {"42": {"con": {"arm_id": "a", "selection": {"step": 25}}}},
+                    "arms": {"a": {"rates_by_step": {"5": 0.0, "15": 0.19, "25": 0.6}}},
+                }
+            }
+        },
+        "marker": {"arms": {"m": {"reads_by_step": {"10": {"delta_logp_mean": 0.5}}}}},
+    }
+    lad = {
+        "kind": "content",
+        "arm_id": "a",
+        "beh_key": "cas",
+        "ctx_key": "pers",
+        "selected_step": 25,
+        "selection_read": 0.6,
+    }
+    got = dyn._install_by_step(man, lad)
+    assert sorted(got) == [5, 15, 25], got  # a CURVE, not one point
+    assert got[15]["install"] == 0.19
+    assert got[5]["install_metric"] == "judged_rate_tier1_selection_pool"
+
+    # marker keeps its own shape/metric
+    mlad = {"kind": "marker", "arm_id": "m", "beh_key": "mk", "ctx_key": "pers"}
+    mgot = dyn._install_by_step(man, mlad)
+    assert sorted(mgot) == [10] and mgot[10]["install_metric"] == "delta_logp_mean"
+
+    # an arm with no rates_by_step degrades to a LABELLED single point
+    lad2 = {**lad, "arm_id": "missing"}
+    g2 = dyn._install_by_step(man, lad2)
+    assert sorted(g2) == [25]
+    assert g2[25]["install_metric"] == "judged_rate_selected_step_only"
+
+
 # ── unit enumeration ─────────────────────────────────────────────────────────
 
 

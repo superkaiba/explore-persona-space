@@ -171,33 +171,45 @@ def _draw_norm_and_install(curves: dict, layer: int, out_dir: Path):
     ax_n.set_title("Write magnitude grows with training")
     ax_n.legend(fontsize=7)
 
-    n_inst = 0
-    for c in panels.get("mk", []):
-        pts = [
-            p for p in c["points"] if p.get("install") and p["install"].get("install") is not None
-        ]
-        if len(pts) < 2:
-            continue
-        n_inst += 1
-        ax_i.plot(
-            [p["step"] for p in pts],
-            [p["install"]["install"] for p in pts],
-            lw=1.1,
-            marker="o",
-            ms=2.4,
-            alpha=0.8,
-            label=_arm_label(c),
-        )
+    # Content and marker install metrics differ in UNITS (judged rate in [0,1]
+    # vs Δ log P in nats), so they get separate y-axes — never one shared scale.
+    ax_i2 = ax_i.twinx()
+    n_content = n_marker = 0
+    for i, beh in enumerate(behs):
+        for c in panels[beh]:
+            pts = [
+                p
+                for p in c["points"]
+                if p.get("install") and p["install"].get("install") is not None
+            ]
+            if len(pts) < 2:
+                continue
+            target = ax_i2 if beh == "mk" else ax_i
+            if beh == "mk":
+                n_marker += 1
+            else:
+                n_content += 1
+            target.plot(
+                [p["step"] for p in pts],
+                [p["install"]["install"] for p in pts],
+                lw=1.0,
+                marker="o",
+                ms=2.2,
+                alpha=0.75,
+                color=colors[i % len(colors)],
+                ls="--" if beh == "mk" else "-",
+            )
     ax_i.set_xlabel("Training step (optimizer steps)")
-    ax_i.set_ylabel("Marker install strength\n(Δ log P, trained − base, nats)")
-    ax_i.set_title(f"Install strength vs step ({n_inst} marker arms)")
-    if n_inst and n_inst <= 8:
-        ax_i.legend(fontsize=6)
-    if not n_inst:
+    ax_i.set_ylabel("Content install\n(judged rate, Tier-1 selection pool)")
+    ax_i2.set_ylabel("Marker install\n(Δ log P, trained − base, nats)")
+    ax_i.set_title(
+        f"Install strength vs step\n({n_content} content arms solid, {n_marker} marker dashed)"
+    )
+    if not (n_content or n_marker):
         ax_i.text(
             0.5,
             0.5,
-            "No per-step install read available\n(#1481 records per-step reads for marker arms only)",
+            "No per-step install read available",
             ha="center",
             va="center",
             transform=ax_i.transAxes,
