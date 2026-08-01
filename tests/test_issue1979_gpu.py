@@ -167,3 +167,182 @@ def test_dispatch_clean_run_emits_terminal_record(tmp_path, monkeypatch):
     G.dispatch(cfg, {}, items)
     assert (tmp_path / "f1_results.json").exists()
     assert len(launched) == 3
+
+
+# ── (c) crash-fix r4: marker slot-key contract (job 16731 KeyError) ──────────
+
+
+def _tiny_slot_fixture():
+    """REAL ``compute_marker_slot_stats`` on a CPU-tiny fixture: the return-dict
+    SHAPE comes from the real function (never a hand-built dict); only the
+    GPU-scale model + HF tokenizer are stand-ins (signature-conformant forward
+    returning real (B, T, V) logits; single-token marker encode)."""
+    import types
+
+    torch = pytest.importorskip("torch")
+    from explore_persona_space.eval.marker_logprob import compute_marker_slot_stats
+
+    class _TinyLM(torch.nn.Module):
+        def __init__(self, vocab: int = 32, hidden: int = 8):
+            super().__init__()
+            torch.manual_seed(0)
+            self.emb = torch.nn.Embedding(vocab, hidden)
+            self.head = torch.nn.Linear(hidden, vocab)
+
+        def forward(self, input_ids=None, attention_mask=None):
+            del attention_mask  # causal stub: last-position logits are all the callee reads
+            return types.SimpleNamespace(logits=self.head(self.emb(input_ids)))
+
+    class _TinyTok:
+        eos_token_id = 2
+        pad_token_id = 0
+
+        def encode(self, text: str, add_special_tokens: bool = False):
+            if text == G.MARKER_TEXT:
+                return [5]  # single-token marker (the callee's own assert)
+            return [3, 4 + (len(text) % 7)]
+
+    return compute_marker_slot_stats(
+        _TinyLM(),
+        _TinyTok(),
+        ["ctx a", "ctx bee", "ctx sea"],
+        G.MARKER_TEXT,
+        device="cpu",
+        include_argmax=True,
+    )
+
+
+def test_gate_consumer_accepts_real_slot_stats_contract():
+    """The job-16731 crash shape: run_f1b_gate's median consumer must accept the
+    REAL compute_marker_slot_stats return dicts (contract keys logp/z_marker/
+    z_eos/logZ — NOT the guessed 'logp_marker')."""
+    pytest.importorskip("torch")
+    from explore_persona_space.eval.marker_logprob import MARKER_SLOT_CONTRACT_KEYS
+
+    recs = _tiny_slot_fixture()
+    assert len(recs) == 3
+    assert set(MARKER_SLOT_CONTRACT_KEYS) <= set(recs[0]), sorted(recs[0])
+    assert "logp_marker" not in recs[0]  # the r4 guessed key is NOT the contract
+    med_logp, med_z = G._gate_medians(recs, recs, recs, recs)
+    assert med_logp == 0.0 and med_z == 0.0
+    shifted = [{**r, "logp": r["logp"] + 3.0, "z_marker": r["z_marker"] + 1.5} for r in recs]
+    med_logp2, med_z2 = G._gate_medians(shifted, recs, shifted, recs)
+    assert med_logp2 == pytest.approx(3.0) and med_z2 == pytest.approx(1.5)
+
+
+def test_slot_persist_consumer_accepts_real_slot_stats():
+    """run_f1b_slot's persist path: validate_marker_slot_record + the {**rec}
+    payload spread must accept the real return records."""
+    pytest.importorskip("torch")
+    from explore_persona_space.eval.marker_logprob import validate_marker_slot_record
+
+    recs = _tiny_slot_fixture()
+    for rec in recs:
+        validate_marker_slot_record(rec)
+        payload = {"row_sha": "x", "prefix_id": "p", "query_sha": "q", **rec}
+        assert payload["logp"] == pytest.approx(rec["z_marker"] - rec["logZ"], abs=1e-3)
+
+
+# ── (d) crash-fix r4: smoke-first subset threading ───────────────────────────
+
+
+def _smoke_manifests():
+    content = [
+        {"arm_id": "c-lora-a", "kind": "content", "method": "lora", "mix_arm_id": "mix-c"},
+        {"arm_id": "c-lora-b", "kind": "content", "method": "lora", "mix_arm_id": "mix-c2"},
+        {"arm_id": "c-ft", "kind": "content", "method": "ft", "mix_arm_id": "mix-ft"},
+    ]
+    marker = [
+        {"arm_id": "mk-a", "kind": "marker", "method": "lora", "mix_arm_id": "mix-mk"},
+        {"arm_id": "mk-b", "kind": "marker", "method": "lora", "mix_arm_id": "mix-mk2"},
+    ]
+    return {
+        "content_arms": content,
+        "marker_arms": marker,
+        "arm_rows": {r["arm_id"]: r for r in content + marker},
+        "members": [],
+        "queries": [],
+        "wmap": {},
+    }
+
+
+def test_derive_smoke_arms_one_per_kind_method_class():
+    arms = G.derive_smoke_arms(_smoke_manifests())
+    assert arms == ("c-lora-a", "c-ft", "mk-a")  # first of each realized class
+
+
+def test_f1d_fit_specs_full_grid_vs_smoke_subset(tmp_path):
+    full = G.f1d_fit_specs(_cfg(tmp_path))
+    assert len(full) == 8 and ("union", "span_mean", G.UNION_LAYER) in full
+    smoke = G.f1d_fit_specs(
+        G.Cfg(out_root=tmp_path, config_dir=tmp_path, phases=("f1d",), smoke_subset=True)
+    )
+    assert smoke == [("m0", "span_mean", G.UNION_LAYER)]
+
+
+def test_smoke_subset_work_items_dep_closed_and_f1d_restricted(tmp_path):
+    """The smoke leg's realized grid: f1d collapses to stage + m0:span_mean:L19,
+    and EVERY dep of every item resolves inside the item set (no dispatch
+    deadlock by construction) — the PASS_UNIFIED per-phase threading pin."""
+    cfg = G.Cfg(out_root=tmp_path, config_dir=tmp_path, phases=("f1a",), smoke_subset=True)
+    man = _smoke_manifests()
+    man = {  # the load_manifests arms_filter equivalent (one arm per class)
+        **man,
+        "content_arms": [r for r in man["content_arms"] if r["arm_id"] in ("c-lora-a", "c-ft")],
+        "marker_arms": [r for r in man["marker_arms"] if r["arm_id"] == "mk-a"],
+    }
+    items = G.build_work_items(cfg, man)
+    keys = {it.key for it in items}
+    assert {k for k in keys if k.startswith("f1d")} == {
+        "f1d:stage",
+        f"f1d:m0:span_mean:{G.UNION_LAYER}",
+    }
+    for it in items:
+        for dep in it.deps:
+            assert dep in keys, f"{it.key} depends on unrealized unit {dep}"
+    # the crashed r3 class stays covered: the marker gate + slot units are in the grid
+    assert "f1b:gate:mk-a" in keys and "f1b:slotown:mk-a" in keys
+
+
+def test_full_grid_work_items_unchanged_and_dep_closed(tmp_path):
+    cfg = _cfg(tmp_path)  # smoke_subset defaults False
+    items = G.build_work_items(cfg, _smoke_manifests())
+    keys = {it.key for it in items}
+    assert {k for k in keys if k.startswith("f1d")} == {
+        "f1d:stage",
+        *{f"f1d:m0:{p}:{li}" for p in ("span_mean", "last_prompt") for li in G.LAYERS_1979},
+        *{f"f1d:union:{p}:{G.UNION_LAYER}" for p in ("span_mean", "last_prompt")},
+    }
+    for it in items:
+        for dep in it.deps:
+            assert dep in keys, f"{it.key} depends on unrealized unit {dep}"
+
+
+def test_dispatch_smoke_subset_emits_smoke_done_not_done(tmp_path, monkeypatch, capsys):
+    """The smoke leg must never emit the reserved [phase=done] terminal token
+    (pod-side-reporting §1: the poller would false-complete the run before the
+    full leg starts)."""
+    pytest.importorskip("torch")  # _meta() in the terminal record imports torch
+    cfg = G.Cfg(
+        out_root=tmp_path, config_dir=tmp_path / "config", phases=("f1c",), smoke_subset=True
+    )
+    items = [G.Item(key=f"f1c:m{i}", phase="f1c") for i in range(2)]
+    launched: list[str] = []
+    _patch_dispatch_seams(monkeypatch, cfg, {}, launched)
+    G.dispatch(cfg, {}, items)
+    out = capsys.readouterr().out
+    assert "[phase=smoke_done]" in out and "[phase=done]" not in out
+    assert json.loads((tmp_path / "f1_results.json").read_text())["status"] == "smoke_done"
+
+
+def test_worker_flags_thread_smoke_subset(tmp_path):
+    cfg = G.Cfg(
+        out_root=tmp_path,
+        config_dir=tmp_path,
+        phases=("f1e",),
+        smoke_subset=True,
+        arms_filter=("c-lora-a",),
+    )
+    flags = cfg.worker_flags()
+    assert "--smoke-subset" in flags  # run_f1e's f1d_fit_specs view in the worker
+    assert "--arms" in flags and "c-lora-a" in flags[flags.index("--arms") + 1]

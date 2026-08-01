@@ -38,6 +38,11 @@ the manifests and prints the realized work-item list; ``--import-check``
 resolves EVERY deferred import + signature-binds the load-bearing reused
 call sites; ``--panel-limit/--query-limit`` slice the grid AT MANIFEST LOAD,
 so every downstream consumer sees the sliced grid through the identical path.
+``--smoke-subset`` (the dispatch wrapper's SMOKE_FIRST leg, crash-fix r4)
+additionally restricts to ONE arm per realized (kind x method) class + the
+single f1d (m0, span_mean, L19) fit via the shared ``f1d_fit_specs()``
+enumeration, and emits ``[phase=smoke_done]`` instead of the reserved
+``[phase=done]`` terminal line.
 """
 
 from __future__ import annotations
@@ -147,6 +152,10 @@ class Cfg:
     skip_m0_ref_parity: bool = False
     max_parallel: int | None = None
     gpu_id: int = 0  # informational; the launcher env CVD pin selects the GPU
+    # smoke-first leg (crash-fix r4): one arm per realized (kind × method)
+    # class + f1d restricted to the (m0, span_mean, L19) fit — threaded through
+    # build_work_items AND run_f1e via the shared f1d_fit_specs() enumeration.
+    smoke_subset: bool = False
 
     @property
     def limited(self) -> bool:
@@ -176,6 +185,8 @@ class Cfg:
             flags += ["--skip-upload"]
         if self.skip_m0_ref_parity:
             flags += ["--skip-m0-ref-parity"]
+        if self.smoke_subset:
+            flags += ["--smoke-subset"]  # workers need f1d_fit_specs' restricted view (run_f1e)
         flags += ["--tf-batch", str(self.tf_batch)]
         return flags
 
@@ -286,6 +297,34 @@ def _mixes(manifests: dict) -> dict[str, dict]:
     for row in manifests["content_arms"] + manifests["marker_arms"]:
         mixes.setdefault(row["mix_arm_id"], row)
     return mixes
+
+
+def f1d_fit_specs(cfg: Cfg) -> list[tuple[str, str, int]]:
+    """The realized F1d fit list — the ONE enumeration ``build_work_items`` AND
+    ``run_f1e`` share, so unit selection and f1e's map-payload reads cannot
+    diverge (crash-fix r4 smoke-first leg).
+
+    Full grid: m0 at 2 positions × LAYERS_1979 + union at 2 positions × L19
+    (8 fits). Under ``cfg.smoke_subset``: the single (m0, span_mean, L19) fit
+    — same code path, one unit ("f1d span-mean L19 only", r4 brief)."""
+    if cfg.smoke_subset:
+        return [("m0", "span_mean", UNION_LAYER)]
+    specs = [("m0", pos, layer) for pos in ("span_mean", "last_prompt") for layer in LAYERS_1979]
+    specs += [("union", pos, UNION_LAYER) for pos in ("span_mean", "last_prompt")]
+    return specs
+
+
+def derive_smoke_arms(manifests: dict) -> tuple[str, ...]:
+    """Smoke-first arm subset: the FIRST arm of each realized (kind × method)
+    class in arms.json — one lora content, one ft-mapped content, one marker
+    per method present ("ONE unit per arm class", r4 brief). Deterministic
+    (manifest order), so dispatcher + workers derive the same set."""
+    picks: dict[tuple[str, str], str] = {}
+    for row in manifests["content_arms"] + manifests["marker_arms"]:
+        cls = (row["kind"], "ft" if row["method"] == "ft" else "lora")
+        picks.setdefault(cls, row["arm_id"])
+    assert picks, "derive_smoke_arms: no arms realized in manifests"
+    return tuple(picks.values())
 
 
 def _merge_adapter_row(cfg: Cfg, row: dict) -> Path:
@@ -415,18 +454,13 @@ def build_work_items(cfg: Cfg, manifests: dict) -> list[Item]:
     # f1c: one anchor capture per mix (base model)
     for mix in sorted(_mixes(manifests)):
         items.append(Item(key=f"f1c:{mix}", phase="f1c"))
-    # f1d: M0 re-materialization (2 positions x 3 layers) + union refit (2 x L19)
+    # f1d: M0 re-materialization (2 positions x 3 layers) + union refit (2 x L19);
+    # the realized fit list comes from f1d_fit_specs(cfg) — the SAME enumeration
+    # run_f1e loads payloads from (smoke_subset restricts both in lockstep).
     items.append(Item(key="f1d:stage", phase="f1d"))
-    for pos in ("span_mean", "last_prompt"):
-        for layer in LAYERS_1979:
-            items.append(Item(key=f"f1d:m0:{pos}:{layer}", phase="f1d", deps=("f1d:stage",)))
-        items.append(
-            Item(
-                key=f"f1d:union:{pos}:{UNION_LAYER}",
-                phase="f1d",
-                deps=("f1d:stage", "f1a:base_content"),
-            )
-        )
+    for mkind, pos, layer in f1d_fit_specs(cfg):
+        deps = ("f1d:stage",) if mkind == "m0" else ("f1d:stage", "f1a:base_content")
+        items.append(Item(key=f"f1d:{mkind}:{pos}:{layer}", phase="f1d", deps=deps))
     # f1e: one batched tables item over everything; f1f: judge inputs
     f1e_deps = tuple(
         it.key
@@ -926,7 +960,10 @@ def _slot_stats_for(cfg: Cfg, model_path: str, contexts: list[str]) -> list[dict
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    from explore_persona_space.eval.marker_logprob import compute_marker_slot_stats
+    from explore_persona_space.eval.marker_logprob import (
+        MARKER_SLOT_CONTRACT_KEYS,
+        compute_marker_slot_stats,
+    )
 
     device = CAP._device()
     tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -948,15 +985,42 @@ def _slot_stats_for(cfg: Cfg, model_path: str, contexts: list[str]) -> list[dict
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+    # #530 four-float slot contract (eval/marker_logprob.MARKER_SLOT_CONTRACT_KEYS
+    # = ("logp", "z_marker", "z_eos", "logZ")): pin the consumer-side key set at
+    # the ONE chokepoint every f1b consumer reads through, so a guessed key
+    # (crash-fix r4, job 16731: "logp_marker") fails HERE, not mid-gate.
+    if recs:
+        missing = set(MARKER_SLOT_CONTRACT_KEYS) - set(recs[0])
+        assert not missing, (
+            f"marker slot record missing #530 contract keys {sorted(missing)}: {sorted(recs[0])}"
+        )
     return recs
+
+
+def _gate_medians(
+    trained_mix: list[dict],
+    base_mix: list[dict],
+    trained_cor: list[dict],
+    base_cor: list[dict],
+) -> tuple[float, float]:
+    """Median (Δ logP over mix rows, |Δ z_marker| over corpus rows) for the #1900
+    identity gate, keyed to the #530 four-float slot contract
+    (``eval/marker_logprob.MARKER_SLOT_CONTRACT_KEYS`` = ("logp", "z_marker",
+    "z_eos", "logZ") — the log-prob key is ``logp`` = z_marker − logZ, NOT
+    ``logp_marker``; crash-fix r4, fellows job 16731)."""
+    import numpy as np
+
+    d_logp = np.array([t["logp"] - b["logp"] for t, b in zip(trained_mix, base_mix, strict=True)])
+    d_z = np.array(
+        [abs(t["z_marker"] - b["z_marker"]) for t, b in zip(trained_cor, base_cor, strict=True)]
+    )
+    return float(np.median(d_logp)), float(np.median(d_z))
 
 
 def run_f1b_gate(cfg: Cfg, manifests: dict, arm_id: str) -> list[str]:
     """#1900 frame-free marker identity gate (plan §4 F1b), BEFORE the fleet pass:
     median training-row delta logP >= +2 nats (<=50 mix-positive rows) and
     median |delta z_marker| > 0 on 50 corpus rows."""
-    import numpy as np
-
     row = manifests["arm_rows"][arm_id]
     _marker_gauge_assert(row)
     ensure_arm_registry(cfg, manifests)
@@ -982,13 +1046,7 @@ def run_f1b_gate(cfg: Cfg, manifests: dict, arm_id: str) -> list[str]:
     base_mix = _slot_stats_for(cfg, X.BASE_MODEL, mix_ctx)
     base_cor = _slot_stats_for(cfg, X.BASE_MODEL, corpus_ctx)
 
-    d_logp = np.array(
-        [t["logp_marker"] - b["logp_marker"] for t, b in zip(trained_mix, base_mix, strict=True)]
-    )
-    d_z = np.array(
-        [abs(t["z_marker"] - b["z_marker"]) for t, b in zip(trained_cor, base_cor, strict=True)]
-    )
-    med_logp, med_z = float(np.median(d_logp)), float(np.median(d_z))
+    med_logp, med_z = _gate_medians(trained_mix, base_mix, trained_cor, base_cor)
     out = cfg.out_root / "marker_tf" / arm_id / "identity_gate.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     CAP._atomic_json(
@@ -1461,17 +1519,15 @@ def run_f1e(cfg: Cfg, manifests: dict) -> list[str]:
                 store, layer, "response", prefix_ids, odd
             ).to(torch.float16)
 
-    # persisted F1d map payloads (deps guarantee they exist): m0 at 3 layers x
-    # 2 positions, union at L19 x 2 positions.
+    # persisted F1d map payloads (deps guarantee they exist): the realized fit
+    # list from f1d_fit_specs(cfg) — full grid m0 at 3 layers x 2 positions +
+    # union at L19 x 2 positions; under cfg.smoke_subset the single
+    # (m0, span_mean, L19) fit (same enumeration build_work_items scheduled).
     map_payloads: dict[tuple[str, str, int], dict] = {}
-    for mkind in ("m0", "union"):
-        for mpos in ("span_mean", "last_prompt"):
-            for layer in LAYERS_1979 if mkind == "m0" else (UNION_LAYER,):
-                p = cfg.out_root / "maps" / f"{mkind}_{mpos}_L{layer}.pt"
-                assert p.exists(), f"F1d map payload missing: {p} (f1e deps include f1d)"
-                map_payloads[(mkind, mpos, layer)] = torch.load(
-                    p, map_location="cpu", weights_only=False
-                )
+    for mkind, mpos, layer in f1d_fit_specs(cfg):
+        p = cfg.out_root / "maps" / f"{mkind}_{mpos}_L{layer}.pt"
+        assert p.exists(), f"F1d map payload missing: {p} (f1e deps include f1d)"
+        map_payloads[(mkind, mpos, layer)] = torch.load(p, map_location="cpu", weights_only=False)
 
     # kind-level through-map transforms of base c̄(P) (P3a/P3b/P6 inputs; the
     # union variants feed the union-vs-bare dump comparison).
@@ -1576,8 +1632,13 @@ def run_f1e(cfg: Cfg, manifests: dict) -> list[str]:
                     arm_tab[f"L{layer}/{pos}"]["g_hat"] = [float(v) for v in g_hat]
                     if layer == UNION_LAYER:
                         # M5 inputs: M0-transformed post-FT context means (both
-                        # fitted positions) at the primary layer.
+                        # fitted positions) at the primary layer. The membership
+                        # guard only ever skips under cfg.smoke_subset (f1d
+                        # restricted to span_mean L19); in production every
+                        # payload was hard-asserted present at load above.
                         for mpos in ("span_mean", "last_prompt"):
+                            if ("m0", mpos, layer) not in map_payloads:
+                                continue
                             pk = "context" if mpos == "span_mean" else mpos
                             Cp = _prefix_means(onpol, layer, pk, prefix_ids)
                             predp = _apply_saved_map(
@@ -1843,11 +1904,15 @@ def dispatch(cfg: Cfg, manifests: dict, items: list[Item]) -> None:
             + f"): {failures}"
         )
     # the driver IS the dispatcher terminal (issue1979_dispatch.sh execs it in-process),
-    # so this single end-of-run line is the dispatcher's own terminal emission
-    print("[phase=done]", flush=True)  # noqa: phase-done-reserved
+    # so this single end-of-run line is the dispatcher's own terminal emission.
+    # The smoke-first leg must NOT emit the reserved [phase=done] token — the
+    # poller reads the tail's newest [phase=...], and a smoke-leg done would
+    # false-complete the run before the full leg starts (pod-side-reporting §1).
+    terminal = "smoke_done" if cfg.smoke_subset else "done"
+    print(f"[phase={terminal}]", flush=True)  # noqa: phase-done-reserved
     CAP._atomic_json(
         cfg.out_root / "f1_results.json",
-        {"issue": 1979, "phase": "f1", "status": "done", "n_items": len(items), **_meta()},
+        {"issue": 1979, "phase": "f1", "status": terminal, "n_items": len(items), **_meta()},
     )
 
 
@@ -1991,6 +2056,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument("--arms", default="", help="comma list of arm ids (smoke subset)")
     ap.add_argument(
+        "--smoke-subset",
+        action="store_true",
+        help="smoke-first leg: one arm per realized (kind x method) class (derived from "
+        "arms.json unless --arms is explicit) + f1d restricted to m0 span_mean L19; "
+        "terminal line becomes [phase=smoke_done] (never the reserved [phase=done])",
+    )
+    ap.add_argument(
         "--skip-upload", action="store_true", help="smoke only: skip per-unit HF uploads"
     )
     ap.add_argument("--tf-batch", type=int, default=X.TF_BATCH_SIZE)
@@ -2041,8 +2113,15 @@ def main(argv: list[str] | None = None) -> int:
         skip_m0_ref_parity=args.skip_m0_ref_parity,
         max_parallel=args.max_parallel,
         gpu_id=int(args.gpu_id),
+        smoke_subset=args.smoke_subset,
     )
     cfg.out_root.mkdir(parents=True, exist_ok=True)
+    if cfg.smoke_subset and not cfg.arms_filter:
+        # derive the one-arm-per-class subset from the unfiltered manifests, then
+        # reload filtered so EVERY consumer (dispatcher + workers via --arms in
+        # worker_flags) sees the identical reduced grid through the one path.
+        cfg = dataclasses.replace(cfg, arms_filter=derive_smoke_arms(load_manifests(cfg)))
+        logger.info("[smoke-subset] arms=%s (one per kind x method class)", cfg.arms_filter)
     manifests = load_manifests(cfg)
     items = [it for it in build_work_items(cfg, manifests) if it.phase in phases]
 
