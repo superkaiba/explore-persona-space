@@ -84,9 +84,11 @@ Per-conversation views over all 9,941 held-out conversations. Top row: SAE-space
 
 ![Four-panel per-conversation view with hexagon density plots of SAE-space prefix versus bare error and of the prefix minus bare difference across spaces, plus dense-versus-SAE error scatters for the prefix arm and the bare arm.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9deb689c31ea0145f1dcfeb678da8a137fb4078d/figures/issue_1946/percontext_error_views.png)
 
-> **Figure.** Per-conversation difference pattern: Spearman 0.710 across spaces (0 of 10,000 shuffles, n = 9,941); per-arm cross-space coupling 0.66 (prefix) and 0.75 (bare). Log-count hexagon shading on the density panels — this is the per-unit data behind the headline.
+> **Figure.** *The per-conversation difference pattern transfers across spaces.* Per-conversation difference pattern: Spearman 0.710 across spaces (0 of 10,000 shuffles, n = 9,941); per-arm cross-space coupling 0.66 (prefix) and 0.75 (bare). Log-count hexagon shading on the density panels — this is the per-unit data behind the headline.
 
-Each conversation enters once, so the mask-overlap caveat does not apply; the 0.710 read supports the same verdict. Per-arm coupling of 0.66–0.75 is an upper bound on shared signal (shared difficulty inflates it). One caution on reading the aggregate: category averaging over roughly 450 conversations per contrast amplifies even a modest shared component, and the strong category-level agreement is compatible with per-conversation coupling alone. This panel is the per-unit data behind the aggregate — where the spaces disagree conversation by conversation.
+Each conversation enters once, so the mask-overlap caveat does not apply; the 0.710 read supports the same verdict. Per-arm coupling of 0.66–0.75 is an upper bound on shared signal (shared difficulty inflates it).
+
+One caution on reading the aggregate: category averaging over roughly 450 conversations per contrast amplifies even a modest shared component, and the strong category-level agreement is compatible with per-conversation coupling alone. This panel is the per-unit data behind the aggregate — where the spaces disagree conversation by conversation.
 
 ### Per-arm category profiles transfer unevenly; the prefix arm is at the detection edge in the verdict space
 
@@ -106,7 +108,9 @@ The prefix−bare difference pattern in dense space (x) re-scored in three alter
 
 > **Figure.** *The pattern holds in every reading.* Dense-input comparator 0.946 (19 of 20 signs); max-pooled 0.914 and active-fraction 0.837 (18 of 20 each). n = 9,941 conversations behind each of the 22 points per panel.
 
-Keeping dense inputs and moving only the target basis to SAE features preserves the pattern almost exactly (0.946): the headline's attenuation to 0.855 enters at the input encoding, and both values fall well inside the Reproduced region. Per-arm profiles are pooling-fragile where the difference is not: the prefix profile reaches 0.796 under active-fraction pooling (p = 0.0001) and 0.575 in the dense-input comparator, so its verdict-space 0.412 is its weakest reading; under max-pooling all three per-arm transfers are weak (prefix 0.492, bare 0.462, full-context 0.173) while the difference correlation holds 0.84–0.95. The leading explanation: subtracting the arms removes error shifts both share, which pooling changes most. An untested alternative: a few large contrasts anchor the difference pattern and dilute per-arm fragility.
+Keeping dense inputs and moving only the target basis to SAE features preserves the pattern almost exactly (0.946): the headline's attenuation to 0.855 enters at the input encoding, and both values fall well inside the Reproduced region. Per-arm profiles are pooling-fragile where the difference is not: the prefix profile reaches 0.796 under active-fraction pooling (p = 0.0001) and 0.575 in the dense-input comparator, so its verdict-space 0.412 is its weakest reading; under max-pooling all three per-arm transfers are weak (prefix 0.492, bare 0.462, full-context 0.173) while the difference correlation holds 0.84–0.95.
+
+The leading explanation: subtracting the arms removes error shifts both share, which pooling changes most. An untested alternative: a few large contrasts anchor the difference pattern and dilute per-arm fragility.
 
 ### The nine named mirror categories keep their dense signs; eight of nine stay significant
 
@@ -116,7 +120,7 @@ Per arm (rows) and reading (columns: SAE, dense), the 22 category deltas with bo
 
 > **Figure.** *The per-category structure behind the scatters.* All nine mirror categories named in the dense round keep their sign in SAE space; eight of nine stay significant. Error bars: 10,000-draw bootstrap CIs; n = 9,941 conversations.
 
-The mirror's named directions survive individually: the prefix arm stays harder on English (+0.098 SAE vs +0.079 dense), translation (+0.136 vs +0.071), and chitchat (+0.040 vs +0.084), and easier on WildChat (−0.104 vs −0.131); the bare arm stays harder on roleplay (+0.125 vs +0.104) and easier on chitchat (−0.152 vs −0.086). The one significance loss is the prefix NSFW delta: −0.037 in SAE space (CI −0.072 to +0.002) vs a significant −0.103 dense.
+The mirror's named directions survive individually: the prefix arm stays harder on English (+0.098 SAE vs +0.079 dense), translation (+0.136 vs +0.071), and chitchat (+0.040 vs +0.084), and easier on WildChat (−0.104 vs −0.131); the bare arm stays harder on roleplay (+0.125 vs +0.104) and easier on chitchat (−0.152 vs −0.086). The one significance loss is the prefix NSFW delta: −0.037 in SAE space (bootstrap CI narrowly straddling zero) vs a significant −0.103 dense.
 
 ### Floor adjustment repeats the dense round's refusal collapse (quarantined robustness read)
 
@@ -134,7 +138,7 @@ Held-out R² per arm and conversation-depth band (2 / 3–4 / ≥ 5 turns) in ea
 
 ![Grouped bar chart of held-out R squared by conversation depth band for the history-only, full-context, and bare-query arms across the four reading variants, showing a stable arm ordering and little movement with depth.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9deb689c31ea0145f1dcfeb678da8a137fb4078d/figures/issue_1946/depth_band_r2.png)
 
-> **Figure.** The arm ordering (full-context > bare > prefix) holds in every reading and depth band, with no depth cliff anywhere; within a reading R² moves little (mean-pooled prefix 0.33–0.37). Band sizes n = 4,154 / 3,298 / 2,489 conversations.
+> **Figure.** *No depth cliff in any reading.* The arm ordering (full-context > bare > prefix) holds in every reading and depth band, with no depth cliff anywhere; within a reading R² moves little (mean-pooled prefix 0.33–0.37). Band sizes n = 4,154 / 3,298 / 2,489 conversations.
 
 Depth does not moderate the cross-space comparison: no reading degrades selectively on deep threads. Exploratory — the plan fixed no statistic for this read.
 
