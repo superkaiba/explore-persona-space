@@ -1,0 +1,20 @@
+{
+ "regime_key": {
+  "behavior": "impolite",
+  "instrument": "registered_graded_r23",
+  "n_draws": 3,
+  "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+  "stub": false
+ },
+ "record": {
+  "tag": "imp-bare-con-rep-s42-r75",
+  "n_items": 100,
+  "n_scored": 99,
+  "k_positive": 18,
+  "rate": 0.18181818181818182,
+  "graded_mean": 20.892255892255893,
+  "item_drop_frac": 0.010000000000000009,
+  "n_dropped_draws_content": 3,
+  "n_transport_lost_draws": 0
+ }
+}
