@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1954,
+  "highest_id": 1955,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7394,6 +7394,13 @@
       "path": "tasks/proposed/1954",
       "status": "proposed",
       "title": "daily-fix: fix red main: test_issue1689_os_exit_shutdown_bypass.py::test_entrypoint_calls_os_exit[issue1689_fits_mirror.py] \u2014 Convert the __main__ guard of scripts/is"
+    },
+    "1955": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1955",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md \u2014 numpy argsort SIMD tie-order trap for cross-machine top-k identity gates"
     },
     "196": {
       "has_clean_result": false,
