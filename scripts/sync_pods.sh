@@ -11,7 +11,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # See scripts/_pods_conf_path.sh for the motivating incident (#500).
 # shellcheck source=_pods_conf_path.sh
 source "$SCRIPT_DIR/_pods_conf_path.sh"
-REPO_DIR="/workspace/explore-persona-space"
 SSH_KEY="$HOME/.ssh/id_ed25519"
 SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes -i $SSH_KEY"
 LOG="/tmp/sync_pods.log"
@@ -29,9 +28,11 @@ labels=()
 while IFS=' ' read -r name host port gpus gpu_type label rest; do
     [[ "$name" =~ ^#.*$ || -z "$name" ]] && continue
     echo "Syncing $name ($host:$port)..."
+    # The pod-side sync body (live-workload skip + branch-aware pull, #1893)
+    # lives in the shared pod_code_sync.sh, piped over ssh via `bash -s`.
+    # The stdin redirect also keeps ssh from consuming the pods.conf stream.
     (
-        ssh $SSH_OPTS -p "$port" "root@$host" \
-            "cd $REPO_DIR && git stash -q 2>/dev/null; git pull --ff-only origin main 2>/dev/null || git pull --rebase=merges origin main" \
+        ssh $SSH_OPTS -p "$port" "root@$host" bash -s < "$SCRIPT_DIR/pod_code_sync.sh" \
             >> "$LOG" 2>&1 \
         && echo "$(date '+%H:%M:%S') $name: OK" >> "$LOG" \
         || echo "$(date '+%H:%M:%S') $name: FAILED" >> "$LOG"
