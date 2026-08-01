@@ -1811,6 +1811,9 @@ def main() -> int:
     ap.add_argument("--fig-dir", default=str(PROJECT_ROOT / "figures" / "issue_1946"))
     ap.add_argument("--dense-eval", default=str(PROJECT_ROOT / "eval_results" / "issue_1738"))
     ap.add_argument("--banked-eval", default=str(PROJECT_ROOT / "eval_results" / "issue_1946"))
+    # UPLOAD_PREFIX_EXEMPT: single-issue driver; the default IS #1946's own contract bucket
+    # (issue1946_sae_percontext/exact_floors) and the resume skip-if-complete predicate keys on
+    # it — a replay of the recorded plan-§10 command must land in the same bucket.
     ap.add_argument("--upload-prefix", default=UPLOAD_PREFIX_DEFAULT)
     ap.add_argument("--data-revision", default=DATA_REVISION_DEFAULT)
     ap.add_argument("--banked-revision", default=BANKED_REVISION_DEFAULT)
