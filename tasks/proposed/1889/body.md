@@ -4,6 +4,7 @@ kind: infra
 tags:
 - wf-fix
 - wf-fix-fp:b63d128dcc37
+- urgent-main-red
 created_at: '2026-07-30T18:55:26Z'
 has_clean_result: false
 origin_prompt: 'map963k-reuse correction marker 2026-07-30T18:52:31Z on #1739: pre-commit/inline
