@@ -7009,8 +7009,8 @@
     "1905": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1905",
-      "status": "planning",
+      "path": "tasks/approved/1905",
+      "status": "approved",
       "title": "workflow-fix: verify_plan check-ignore on declared-committed paths"
     },
     "1906": {
