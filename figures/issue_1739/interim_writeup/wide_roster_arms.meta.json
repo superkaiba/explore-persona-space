@@ -1,0 +1,1204 @@
+{
+  "commit": "ff548adcf6",
+  "created": "2026-08-01T18:51:55Z",
+  "figsize": [
+    16.5,
+    10.5
+  ],
+  "points": [
+    {
+      "x": 0.0783,
+      "y": 0.15659940239839015,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.063593,
+      "y": 0.1271868198043385,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.068884,
+      "y": 0.1377673091644803,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.040547,
+      "y": 0.08109327121306614,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.044099,
+      "y": 0.08819728074302594,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.020939,
+      "y": 0.04187845802566634,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.020939,
+      "y": 0.04187845802566634,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.077885,
+      "y": 0.15576916013499797,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.084592,
+      "y": 0.16918426220318392,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.018444,
+      "y": -0.03688746501886956,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.11569739964225999,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.07836320061139967,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.09602585450630505,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.031081035525566826,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.03656204242431089,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": -0.010077847881182773,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": -0.010077847881182773,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.11243916030370091,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.12550885985100127,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": -0.0822373723507856,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.18963326950419118,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.17442279169443345,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.1822677878309185,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.12335446214658065,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.1366610065198386,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.08988823727684987,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.08988823727684987,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.19564193377328382,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.20548550691359357,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.010596934812897654,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.061045,
+      "y": 0.12208923716807271,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.165804,
+      "y": 0.3316089547032272,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.168373,
+      "y": 0.33674524319519833,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.09508,
+      "y": 0.19015989341519268,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.080224,
+      "y": 0.16044838917171245,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.00638,
+      "y": 0.012760244230850374,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.00638,
+      "y": 0.012760244230850374,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.042134,
+      "y": 0.08426817677603524,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.233978,
+      "y": 0.46795619183481396,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.005623,
+      "y": -0.011246758117024249,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.07505538858554016,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.2898146954491275,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.29766424126233715,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.1446713511567028,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.11488572135550291,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.03222878938815982,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.03222878938815982,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.04071590918916402,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.43225874562133915,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.05904122511715664,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.17170730510678478,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.375320524104384,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.3787475678471822,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.23523060735280601,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.2021915853462749,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.05586623771133048,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.05586623771133048,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.12690460318296318,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.5009344778311108,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.03873596690454902,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.055343,
+      "y": 0.1106850043455737,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.040167,
+      "y": 0.08033327005287226,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.027861,
+      "y": 0.05572215499654248,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": -0.006276,
+      "y": -0.012551199670331255,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.014911,
+      "y": 0.02982174644281996,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": -0.053283,
+      "y": -0.10656516179586661,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": -0.053283,
+      "y": -0.10656516179586661,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.088813,
+      "y": 0.1776250067441395,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.137331,
+      "y": 0.27466212546736546,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": -0.037234,
+      "y": -0.07446705314755472,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.06194325287851192,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.038845882596455994,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.013518678017349857,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": -0.057249276344913475,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": -0.013056340529319494,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": -0.14662258620894034,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": -0.14662258620894034,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.12897881111142884,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.2303018391026266,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": -0.124272297366234,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.15737854673807122,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.1229033372117959,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.10010865569308909,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.03376300788554108,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.07345734502969425,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": -0.0618787512540887,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": -0.0618787512540887,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.22217726079100428,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.312718790167518,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": -0.0300554153614023,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.040844,
+      "y": 0.08168819251553991,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.024689,
+      "y": 0.04937824735796209,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.006453,
+      "y": 0.012906357207579176,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.023575,
+      "y": 0.047150634717658846,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.016693,
+      "y": 0.033386109673660964,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.032609,
+      "y": 0.0652180812139317,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.035756,
+      "y": 0.0715118307542849,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.085822,
+      "y": 0.1716449542333964,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.07566,
+      "y": 0.15131949769128186,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.014044,
+      "y": 0.028087848616540467,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.03235096096527105,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.00035062590093126733,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.038738096388220275,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.004340721074729964,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.018486195253530728,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.01404369232076677,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.024765202214188792,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.13099690225492008,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.1037365384985294,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.01632707299642509,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.12956161025384813,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.09800052905088905,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.05837464626325887,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.09493115158933631,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.0881107669423566,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.11695378825397297,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.12232185418850999,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.20872520457294202,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.18857849439099464,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.08013623816505494,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.042246,
+      "y": -0.08449120105480969,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.035513,
+      "y": 0.07102666389708606,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.05802,
+      "y": 0.11603918189878422,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.018656,
+      "y": 0.03731242006091419,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.006917,
+      "y": 0.013833453190031406,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.012766,
+      "y": 0.025532053181463017,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.002207,
+      "y": 0.0044148439282251355,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.038051,
+      "y": 0.07610162871765053,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.221835,
+      "y": 0.44366940129382504,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.009347,
+      "y": -0.018693946153949818,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.12668183590752743,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.022292749649177115,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.07491418913091352,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.007790271160144496,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.02791454070342637,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.020067224394949228,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.039169215658513605,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.03166772628063711,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.409728263680503,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.06882404754021397,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.03887534980589874,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.11601010477322105,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.15802240556426086,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.08367857898405423,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.05684624090091972,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.06936752685278404,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.04573623904015059,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.12302545802064821,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.4782517125065801,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.027559304108578198,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.077336,
+      "y": 0.15467299748591137,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.006513,
+      "y": 0.01302687371893692,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.042059,
+      "y": -0.0841184378520676,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.00385,
+      "y": -0.007699771366182447,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.014658,
+      "y": 0.02931638522839349,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.031817,
+      "y": -0.06363455858828869,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.031817,
+      "y": -0.06363455858828869,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.082746,
+      "y": 0.16549186253354312,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.128574,
+      "y": 0.25714752757483794,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.008977,
+      "y": -0.017953189055749334,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.11087869576706881,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.02914098214975147,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.13222733949181467,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.051703365070469416,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.011565146016590835,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.10699118606756303,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.10699118606756303,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.11814500694595477,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.21186842799813377,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.0631652005545169,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.19978777652265658,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.05976751427829119,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.0360205307969143,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.0367354869329826,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.07701093958873398,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.018696786086485298,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.018696786086485298,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.21077204946094108,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.2985214117429702,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.024778987832771337,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 180,
+  "text": {
+    "suptitle": "Wide arm roster on the random held-out WildChat rung",
+    "fig_texts": [
+      "Bars outlined in black are the four arms added by this round (direct MLP, map->ridge on predicted answers,\nmap->ridge on real answers, oracle ridge). Error bars are 95% bootstrap CIs over contexts, drawn as non-negative offsets."
+    ],
+    "axes": [
+      {
+        "title_left": "evil \u2014 context end (n=1987)",
+        "xticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ],
+        "yticklabels": [
+          "map -> PV proj.  (L23)",
+          "map -> ridge on predicted answers  (L20)  *new",
+          "map -> ridge trained on real answers  (L16)  *new",
+          "direct ridge: context -> expression  (L20)",
+          "direct MLP: context -> expression  (L17)  *new",
+          "PV proj. on context (paper method)  (L24)",
+          "identity+bias -> PV proj.  (L24)",
+          "oracle: PV proj. on TRUE answer  (L27)",
+          "oracle: ridge on TRUE answer  (L18)  *new",
+          "control: shuffled map -> PV proj.  (L15)"
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 context end (n=1982)",
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "hallucination \u2014 context end (n=1967)",
+        "xticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      },
+      {
+        "title_left": "evil \u2014 prefix end (n=1987)",
+        "xlabel": "Spearman $\\rho$ vs judged expression",
+        "xticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ],
+        "yticklabels": [
+          "map -> PV proj.  (L3)",
+          "map -> ridge on predicted answers  (L2)  *new",
+          "map -> ridge trained on real answers  (L27)  *new",
+          "direct ridge: context -> expression  (L0)",
+          "direct MLP: context -> expression  (L25)  *new",
+          "PV proj. on context (paper method)  (L19)",
+          "identity+bias -> PV proj.  (L19)",
+          "oracle: PV proj. on TRUE answer  (L27)",
+          "oracle: ridge on TRUE answer  (L18)  *new",
+          "control: shuffled map -> PV proj.  (L27)"
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 prefix end (n=1982)",
+        "xlabel": "Spearman $\\rho$ vs judged expression",
+        "xticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "hallucination \u2014 prefix end (n=1967)",
+        "xlabel": "Spearman $\\rho$ vs judged expression",
+        "xticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      }
+    ]
+  }
+}

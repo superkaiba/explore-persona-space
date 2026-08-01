@@ -1,0 +1,287 @@
+{
+  "commit": "ff548adcf6",
+  "created": "2026-08-01T18:52:10Z",
+  "figsize": [
+    16.0,
+    8.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "inter-context SD\n(0-100 scale)": 0.8948027741744258,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "inter-context SD\n(0-100 scale)": 12.066356844563622,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "inter-context SD\n(0-100 scale)": 26.333414932525272,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "inter-context SD\n(0-100 scale)": 4.428858042265232,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "inter-context SD\n(0-100 scale)": 34.87632295870317,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "y": 13.119479457951428,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "y": 13.23844445014182,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "y": 23.307578108964897,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "y": 20.394313764370647,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "y": 42.08159012324281,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "y": 32.92238643679731,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "y": 40.501693121164465,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "y": 32.2471044477493,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "y": 36.43860846146838,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "hhrt\nn=1868",
+      "fraction of contexts in\nthe bottom [0,10) bin": 0.9967880085653105,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "toxicchat\nn=519",
+      "fraction of contexts in\nthe bottom [0,10) bin": 0.9344894026974951,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "train\nn=6468",
+      "fraction of contexts in\nthe bottom [0,10) bin": 0.6130179344465059,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "wildchat_rung\nn=1987",
+      "fraction of contexts in\nthe bottom [0,10) bin": 0.9894313034725717,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "pvsynth\nn=200",
+      "fraction of contexts in\nthe bottom [0,10) bin": 0.655,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "aita\nn=1304",
+      "y": 0.18711656441717792,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "train\nn=16000",
+      "y": 0.0970625,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "wildchat_rung\nn=1982",
+      "y": 0.5297679112008072,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "pvsynth\nn=200",
+      "y": 0.505,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "nqopen\nn=3167",
+      "y": 0.2718661193558573,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "simpleqa\nn=4021",
+      "y": 0.08331260880378015,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "train\nn=16000",
+      "y": 0.547,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "wildchat_rung\nn=1967",
+      "y": 0.26232841891204883,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "pvsynth\nn=200",
+      "y": 0.21,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 28,
+  "text": {
+    "suptitle": "Behavior-expression spread against the pre-registered gate (SD >= 10 AND < 80% bottom bin)",
+    "fig_texts": [
+      "Both panels per behavior are the two conditions of the same pre-registered gate; a setting passes only if BOTH hold.\nHatched bars are hallucination's own rungs, whose 0-1 fabrication rate is rescaled x100 onto the gate's scale \u2014 a DIFFERENT\nconstruct from the graded trait score, not comparable to the solid bars beside it."
+    ],
+    "axes": [
+      {
+        "title_left": "evil",
+        "ylabel": "inter-context SD\n(0-100 scale)",
+        "annotations": [
+          "FAILS floor",
+          "FAILS floor",
+          "floor: SD >= 10"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ]
+      },
+      {
+        "ylabel": "fraction of contexts in\nthe bottom [0,10) bin",
+        "annotations": [
+          "FAILS",
+          "FAILS",
+          "FAILS",
+          "ceiling: < 0.80"
+        ],
+        "xticklabels": [
+          "hhrt\nn=1868",
+          "toxicchat\nn=519",
+          "train\nn=6468",
+          "wildchat_rung\nn=1987",
+          "pvsynth\nn=200"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "xticklabels": [
+          "aita\nn=1304",
+          "train\nn=16000",
+          "wildchat_rung\nn=1982",
+          "pvsynth\nn=200"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "xticklabels": [
+          "nqopen\nn=3167",
+          "simpleqa\nn=4021",
+          "train\nn=16000",
+          "wildchat_rung\nn=1967",
+          "pvsynth\nn=200"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  }
+}
