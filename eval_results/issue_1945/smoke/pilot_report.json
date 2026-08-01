@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "git_commit": "6ea044af6dc04467541186ec147d39fa1e788787",
+    "generated_utc": "2026-07-31T23:47:49.335531+00:00",
+    "python": "3.11.15",
+    "numpy": "2.2.6",
+    "scipy": "1.17.1",
+    "torch": "2.8.0+cu128",
+    "host": "cia-benchmark-vm",
+    "seed": 1945,
+    "parent_seed": 1482,
+    "b_draws": 8,
+    "stage_dir": "/home/thomasjiralerspong/explore-persona-space/data/issue_1482/twoway_stage",
+    "smoke": true,
+    "ru_maxrss_mb": 1508.30078125
+  },
+  "realized_keys": "PASS (12 pred + 3 y + 3 floors)",
+  "grouping_probe": {
+    "L14": {
+      "n_rows": 9941,
+      "n_distinct_ci": 9941
+    },
+    "L19": {
+      "n_rows": 9941,
+      "n_distinct_ci": 9941
+    },
+    "L26": {
+      "n_rows": 9941,
+      "n_distinct_ci": 9941
+    }
+  },
+  "grouping_note": "one context per conversation (distinct global corpus indices; #1738 carve) \u2014 row folds are conversation-level by construction; fallback not needed",
+  "fold_identity_rel_dev": 0.0,
+  "parity_gate": {
+    "max_rel_diff": 0.00028735475967825035,
+    "per_slice": [
+      0.00028735475967825035,
+      0.0002568935148235285,
+      0.0002641459314767753
+    ],
+    "tol": 0.0001,
+    "pass": false,
+    "solver": "slow-fallback",
+    "shape": {
+      "n_rows": 4971,
+      "d_feat": 514
+    },
+    "wall_s": 9.25
+  },
+  "pilot": {
+    "pilot_wall_s": 14.02,
+    "pilot_battery_s": 7.44,
+    "pilot_setup_s": 6.19,
+    "pilot_b_draws": 8,
+    "ru_maxrss_gb_before": 1.47,
+    "ru_maxrss_gb_after": 1.9,
+    "extrapolation": {
+      "formula": "battery_s x (draws_full/draws_pilot) x (36 + 36x(32/128)^2 units) + setup_s x 72 + 60s x 3 layers",
+      "projected_p1_wall_h": 2.038,
+      "booked_p1_wall_h": 1.5,
+      "ratio_vs_booked": 1.359,
+      "abort_threshold": 2.0
+    }
+  }
+}
