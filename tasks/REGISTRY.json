@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1978,
+  "highest_id": 1979,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7577,6 +7577,13 @@
       "path": "tasks/proposed/1978",
       "status": "proposed",
       "title": "daily-fix: extract Step 10d guards to checked-in script"
+    },
+    "1979": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1979",
+      "status": "proposed",
+      "title": "Per-prefix leakage-predictor race + theory-assumption battery at prefix grain (50 prefixes x 60 shared queries)"
     },
     "199": {
       "has_clean_result": true,
