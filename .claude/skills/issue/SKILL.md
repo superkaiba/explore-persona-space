@@ -13776,14 +13776,85 @@ convention).
    `epm:merged` note just posted above. Include the line
    `Moved to **completed**.`
 
+4. **Terminal landing confirmation (#1868; incident #1792).** Runs as
+   the session's FINAL act — after every terminal marker post this
+   session makes, including the §5 `post_step_completed.py` record.
+   `completed` + `epm:done` existing only locally is a crash-window:
+   this is the one site where "the next re-entry will fix it" does not
+   hold (the session ends here, and the resume-semantics row for
+   `completed` + `epm:done` + `epm:merged` is a no-op), so the terminal
+   record must be CONFIRMED on origin before the session ends.
+   `scripts/sync_repo_root.py` exits 0 on `state=in-flight` BY DESIGN —
+   "your push has NOT landed; re-run after the in-flight sync
+   completes" (sync_repo_root.py L33-35) — so the retry duty is
+   CALLER-owned, and this step is that caller. Incident #1792
+   (2026-07-29): the in-flight advisory printed at 13:20:47Z, teardown
+   followed 12 s later with no re-run; the terminal commits reached
+   origin only via concurrent sessions' pushes.
+
+   The LANDED arbiter is a fetched-origin blob check — the task's
+   canonical `events.jsonl` on `origin/main` carries `"epm:done"` —
+   NEVER the sync helper's exit code (exit 0 includes
+   `state=in-flight`): the same arbiter-not-exit-code doctrine as the
+   post-merge guard above (its existence re-check, not the helper's
+   exit 0, proves the pull ran). Bounded by construction — 2 attempts,
+   one 20 s inter-attempt wait — never a multi-hour poll (the #1317
+   anti-pattern). Nothing here blocks or reverses the `completed`
+   transition. The KEPT-stash surfacing duty (#1751) applies to these
+   sync invocations like every other.
+
+   ```bash
+   REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+   CANON=$(realpath --relative-to="$REPO_ROOT" \
+     "$(uv run python "$REPO_ROOT/scripts/task.py" find <N>)" 2>/dev/null)
+   if [ -z "$CANON" ]; then
+     # Resolution failure, NOT a landing failure — echo the distinct
+     # diagnostic; do NOT post the terminal-landing-unconfirmed note.
+     echo "[step10d] terminal landing check SKIPPED — task.py find <N> resolved no canonical folder (empty CANON; resolution failure, not a landing failure)"
+   else
+     LANDED=no
+     for ATTEMPT in 1 2; do
+       uv run python "$REPO_ROOT/scripts/sync_repo_root.py"
+       timeout --kill-after=30s 120s git -C "$REPO_ROOT" fetch origin main --quiet || true
+       if git -C "$REPO_ROOT" cat-file -e "origin/main:$CANON/events.jsonl" 2>/dev/null \
+          && git -C "$REPO_ROOT" show "origin/main:$CANON/events.jsonl" \
+             | grep -qF '"epm:done"'; then
+         LANDED=yes; break
+       fi
+       if [ "$ATTEMPT" -eq 1 ]; then sleep 20; fi   # let an in-flight sibling sync finish
+     done
+     if [ "$LANDED" = no ]; then
+       echo "[step10d] terminal landing UNCONFIRMED after 2 bounded sync attempts — completed/epm:done exist only locally (crash-window; #1792); next successful fleet sync is the backstop"
+       uv run python "$REPO_ROOT/scripts/task.py" post-marker <N> epm:progress \
+         --note "terminal-landing-unconfirmed after 2 bounded sync_repo_root attempts (state=in-flight or transport) — completed status move + epm:done not yet observed on origin/main; next successful fleet sync carries them (#1868)"
+     else
+       echo "[step10d] terminal landing CONFIRMED on origin/main (attempt $ATTEMPT)"
+     fi
+   fi
+   ```
+
+   On the UNCONFIRMED arm the `epm:progress` note is itself a local
+   commit that rides the next successful fleet sync — a self-describing
+   residual: whichever session's sync next converges the shared root
+   carries both the note and the terminal record to origin. Named
+   re-entry residual: a later `/issue <N>` re-entry that retries the
+   merge (the resume-semantics `completed` + `epm:done` + no
+   `epm:merged` row) posts fresh markers whose landing this already-run
+   step does not re-confirm — and a prior round's `epm:done` on origin
+   would satisfy the arbiter regardless. Acceptable: in that state the
+   terminal record is already durable on origin (exactly the
+   crash-window class this step closes), and the fleet-sync backstop
+   carries the fresh commits. After this step the session ends.
+
 **Terminal-failure branch.** If the merge terminally failed after every
 retry surface exhausted (`epm:merge-failed v1` posted at the safe-case
 Failure bullet, the merge-conflict-recovery Failure arm, the
 artifact-confirmed / new-shared-`src/`-infra refusal, or the surgical
 checkout's `push-failed`/`partial-apply` arms), the code-change task
 still needs to complete (see the Failure bullet's own contract:
-"a code-change task still completes"). Run the SAME three-step sequence
-(CRON-TEARDOWN → `set-status completed` → `epm:done`), but the
+"a code-change task still completes"). Run the SAME four-step sequence
+(CRON-TEARDOWN → `set-status completed` → `epm:done` → terminal landing
+confirmation), but the
 `epm:done` note records `merge_status: failed` and links to the
 `epm:merge-failed v1` marker for the manual-resolution audit trail. The
 merge retries idempotently on the next `/issue <N>` re-invocation
