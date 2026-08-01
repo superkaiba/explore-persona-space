@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1967,
+  "highest_id": 1968,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7493,6 +7493,13 @@
       "path": "tasks/proposed/1967",
       "status": "proposed",
       "title": "daily-fix: per-tier pilot walls + c12 screen vocabulary"
+    },
+    "1968": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1968",
+      "status": "proposed",
+      "title": "daily-fix: hold subagent respawn past active 429 storm"
     },
     "197": {
       "has_clean_result": false,
