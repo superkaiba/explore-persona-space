@@ -378,6 +378,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_implementer_spec_names_invariant_local_union.py",
     # NEW (#1699) — implementer spec pin: ruff-policy pin invocation in lint step (#1672)
     "tests/test_implementer_spec_names_ruff_policy_pin.py",
+    # NEW (#1876) — SKILL.md Bare-push-snippets commit form (5) + guard hook
+    # block-message compliant-forms lead pin
+    "tests/test_issue_skill_bare_push_snippets_pin.py",
     # NEW (#1659) — SKILL.md 9a-ter + CLAUDE.md measured 1-cell pilot +
     # >=2x pilot-extrapolated fence-sizing pin
     "tests/test_issue_skill_compute_pilot_fence_pin.py",
