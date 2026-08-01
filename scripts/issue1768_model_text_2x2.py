@@ -1195,10 +1195,22 @@ def phase_analysis(cfg: Cfg) -> None:
     decomp, attrib = {}, {}
     for k, arm_id in enumerate(have_rtf):
         t0 = time.time()
+        # resume: a completed arm's per-arm JSONs ARE the durable record (every
+        # read here is deterministic), so a relaunch reloads instead of
+        # re-staging ~1.8 GB and refitting M0 — 72 units x ~90 s is well past
+        # the checkpoint-per-phase intra-phase floor
+        dpath = res / "per_arm" / f"{arm_id}_2x2.json"
+        apath = res / "per_arm" / f"{arm_id}_attrib.json"
+        if dpath.exists() and apath.exists():
+            decomp[arm_id] = json.loads(dpath.read_text())
+            attrib[arm_id] = json.loads(apath.read_text())
+            print(f"[an] decomposition {k + 1}/{len(have_rtf)} {arm_id} resumed", flush=True)
+            _status(cfg, "an_analysis", decomposed=k + 1, total=len(have_rtf))
+            continue
         fetched = _stage_arm_analysis_stores(cfg, arm_id)  # stream: stage -> reduce -> delete
         try:
             decomp[arm_id] = _decompose_arm(cfg, arm_id)
-            C._atomic_json(res / "per_arm" / f"{arm_id}_2x2.json", decomp[arm_id])
+            C._atomic_json(dpath, decomp[arm_id])
             try:
                 attrib[arm_id] = _m0_attribution(cfg, arm_id, cfg.attrib_layer)
             except Exception as exc:  # noqa: BLE001 — validation read, never kills the round
@@ -1207,6 +1219,7 @@ def phase_analysis(cfg: Cfg) -> None:
                     "layer": cfg.attrib_layer,
                 }
                 logger.warning("[an] M0 attribution failed for %s: %s", arm_id, exc)
+            C._atomic_json(apath, {"arm_id": arm_id, **attrib[arm_id]})
         finally:
             for p in fetched:
                 p.unlink(missing_ok=True)
@@ -1220,13 +1233,18 @@ def phase_analysis(cfg: Cfg) -> None:
     arms_b = [a for a in _btf_arms(cfg) if (cfg.out_root / BTF_TREE / a / "tbar_plus.pt").exists()]
     for k, arm_id in enumerate(arms_b):
         t0 = time.time()
+        bpath = res / "leg_b" / f"{arm_id}.json"
+        if bpath.exists():  # same resume contract as the decomposition loop
+            leg_b[arm_id] = json.loads(bpath.read_text())
+            print(f"[an] leg-b {k + 1}/{len(arms_b)} {arm_id} resumed", flush=True)
+            continue
         try:
             write = _corpus_matched_write(cfg, arm_id, base_means)
         except Exception as exc:  # noqa: BLE001 — optional third cosine
             logger.warning("[an] corpus matched write unavailable for %s: %s", arm_id, exc)
             write = None
         leg_b[arm_id] = _leg_b_read(cfg, arm_id, write)
-        C._atomic_json(res / "leg_b" / f"{arm_id}.json", leg_b[arm_id])
+        C._atomic_json(bpath, leg_b[arm_id])
         print(
             f"[an] leg-b {k + 1}/{len(arms_b)} {arm_id} elapsed={time.time() - t0:.0f}s", flush=True
         )
