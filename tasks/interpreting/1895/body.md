@@ -4,7 +4,7 @@ title: The context→answer map's predictable subspace and the SAE's representab
 kind: experiment
 tags: []
 created_at: '2026-07-30T20:04:08Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1482
 origin_prompt: 'can we run these experiments: - Is what oir model able to reconstruct
   the same as what SAEs find - Map from continuous features to SAE features (or reconstructed
