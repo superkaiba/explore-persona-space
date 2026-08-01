@@ -6788,8 +6788,8 @@
     "1877": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1877",
-      "status": "running",
+      "path": "tasks/reviewing/1877",
+      "status": "reviewing",
       "title": "workflow-fix: gotchas \u2014 HF download-accel failure matrix (scope disables per workload)"
     },
     "1878": {
