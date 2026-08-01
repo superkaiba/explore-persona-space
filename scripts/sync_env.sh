@@ -35,18 +35,48 @@ sync_pod() {
     local host="$1" port="$2" label="$3"
     echo "[$label] Syncing code + environment..."
 
+    # 1. Code sync FIRST via the shared guarded pod-side body (#1893):
+    # live-workload skip + branch-aware pull live in pod_code_sync.sh.
     # Capture the remote output so a git-auth failure can be classified and
-    # redirected to the repair leg (#1401); the `&& rc=0 || rc=$?` form keeps
-    # `set -e` from aborting before the classification runs.
+    # redirected to the repair leg (#1401 — the git pull lives in THIS call
+    # now); the `&& rc=0 || rc=$?` form keeps `set -e` from aborting before
+    # the classification runs.
+    local code_output code_rc
+    code_output=$(
+        ssh $SSH_OPTS -p "$port" "root@$host" bash -s < "$SCRIPT_DIR/pod_code_sync.sh" 2>&1
+    ) && code_rc=0 || code_rc=$?
+    echo "$code_output"
+
+    if [ "$code_rc" -ne 0 ]; then
+        # NONZERO code sync => pod FAILED; never env-sync a half-synced tree.
+        # Loud redirect (#1401): a git-auth 40x here is repaired by the
+        # dedicated keys --refresh-token leg, not by re-running sync env
+        # (the #1333 operator's first reflex).
+        if echo "$code_output" | grep -qE 'returned error: 40[13]|Authentication failed|Permission .* denied'; then
+            echo "[$label] ✗ FAILED (git auth error detected)"
+            echo "[$label]   hint: run  uv run python scripts/pod.py keys --refresh-token $label"
+        else
+            echo "[$label] ✗ FAILED (code sync)"
+        fi
+        return 1
+    fi
+
+    if echo "$code_output" | grep -qF 'SYNC-SKIPPED (live workload'; then
+        # Live registered workload on the pod: no git pull ran, and mutating
+        # .venv under a running python process is the same hazard class —
+        # skip the pod entirely (loud, not a failure).
+        echo "[$label] ⏭ SKIPPED (live workload — no git pull, no uv sync)"
+        return 0
+    fi
+    # A detached-HEAD / unresolvable-branch skip (exit 0, no live-workload
+    # line) PROCEEDS to uv sync BY DESIGN — env matches the checked-out tree.
+
+    # 2. Environment sync (uv install + uv sync only; the pull moved above).
     local output rc
     output=$(
         ssh $SSH_OPTS -p "$port" "root@$host" bash -s 2>&1 <<'REMOTE_SCRIPT'
 set -e
 cd /workspace/explore-persona-space
-
-# Pull latest code
-git stash -q 2>/dev/null || true
-git pull --ff-only origin main 2>/dev/null || git pull --rebase=merges origin main
 
 # Install uv if missing
 if ! command -v uv &>/dev/null; then
@@ -67,15 +97,7 @@ REMOTE_SCRIPT
     if [ "$rc" -eq 0 ]; then
         echo "[$label] ✓ Synced"
     else
-        # Loud redirect (#1401): `sync env` is code+uv sync only — a git-auth
-        # 40x here is repaired by the dedicated keys --refresh-token leg, not
-        # by re-running sync env (the #1333 operator's first reflex).
-        if echo "$output" | grep -qE 'returned error: 40[13]|Authentication failed|Permission .* denied'; then
-            echo "[$label] ✗ FAILED (git auth error detected)"
-            echo "[$label]   hint: run  uv run python scripts/pod.py keys --refresh-token $label"
-        else
-            echo "[$label] ✗ FAILED"
-        fi
+        echo "[$label] ✗ FAILED"
         return 1
     fi
 }

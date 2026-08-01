@@ -24,7 +24,8 @@ Usage:
     python scripts/pod.py health --fix               # Auto-fix issues
     python scripts/pod.py health --json              # Machine-readable output
 
-    python scripts/pod.py sync code                  # Git pull on all pods
+    python scripts/pod.py sync code                  # Git pull on all pods (skips live
+                                                     # workloads; syncs each pod's own branch)
     python scripts/pod.py sync env                   # uv sync on all pods
     python scripts/pod.py sync data --pull           # Pull datasets from HF Hub
     python scripts/pod.py sync data --push           # Push datasets to HF Hub
