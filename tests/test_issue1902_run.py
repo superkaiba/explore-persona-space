@@ -98,6 +98,46 @@ def test_batches_by_token_budget_invariants(monkeypatch):
         assert len(b) * max(e["n_total"] for e in b) <= 100 or len(b) == 1
 
 
+def test_inverse_batch_order_restores_entry_order(monkeypatch):
+    """capture_cell saves tensors under entries-order row_ids, but
+    _batches_by_token_budget length-SORTS entries — indexing the batch-order
+    concat with the inverse permutation must recover entries order exactly
+    (crash-fix 7: sorted-order tensors were saved under unsorted row_ids,
+    scrambling the ctx<->answer pairing for non-first source cells)."""
+    import torch
+
+    monkeypatch.setattr(R, "CAPTURE_TOKEN_BUDGET", 100)
+    monkeypatch.setattr(R, "CAPTURE_BATCH_MAX", 3)
+    # 10 entries, distinct ids, varied lengths INCLUDING ties (30 x3, 10 x2).
+    lengths = [30, 10, 90, 30, 5, 30, 10, 40, 20, 60]
+    entries = [{"id": f"row_{i:02d}", "n_total": n} for i, n in enumerate(lengths)]
+    for pos, e in enumerate(entries):
+        e["_pos"] = pos
+    batches = R._batches_by_token_budget(entries)
+    flat = [e["_pos"] for b in batches for e in b]
+    assert flat != list(range(len(entries)))  # sorting actually reorders this fixture
+    # Stable sort: tied-length entries keep their original relative order.
+    assert [p for p in flat if lengths[p] == 30] == [0, 3, 5]
+    assert [p for p in flat if lengths[p] == 10] == [1, 6]
+    inv = R._inverse_batch_order(batches, n_entries=len(entries))
+    # A tensor built in batch order (row value = original position) comes
+    # back in entry order after indexing with the inverse permutation.
+    batch_order = torch.tensor(flat, dtype=torch.float32).unsqueeze(1)
+    assert batch_order[inv].squeeze(1).tolist() == [float(i) for i in range(len(entries))]
+    # Ids realign too: batch-order ids indexed by inv == entries-order ids.
+    ids_batch_order = [e["id"] for b in batches for e in b]
+    assert [ids_batch_order[i] for i in inv.tolist()] == [e["id"] for e in entries]
+
+
+def test_inverse_batch_order_asserts_full_coverage():
+    """The sanity assert fires when the batches drop or duplicate an entry."""
+    entries = [{"n_total": 10, "_pos": p} for p in range(4)]
+    with pytest.raises(AssertionError, match="exactly once"):
+        R._inverse_batch_order([[entries[0], entries[1]], [entries[3]]], n_entries=4)
+    with pytest.raises(AssertionError, match="exactly once"):
+        R._inverse_batch_order([[entries[0], entries[0]], [entries[1]]], n_entries=2)
+
+
 def test_unit_regime_mismatch_refuses(tmp_path):
     import argparse
 
@@ -545,7 +585,7 @@ def test_capture_cost_basis_is_realized_projected_not_resample_capacity():
     rescue capacity, ~11x realized) into the capture projection. The basis is
     the realized-corpus intersection ("projected")."""
     src = Path(R.__file__).read_text(encoding="utf-8")
-    i = src.index("report[\"capture_cost\"]")
+    i = src.index('report["capture_cost"]')
     window = src[max(0, i - 900) : i]
     assert 'int(g["projected"])' in window
     assert 'int(g["projected_after_resample"])' not in window

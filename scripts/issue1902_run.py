@@ -1147,6 +1147,27 @@ def _batches_by_token_budget(entries: list[dict]) -> list[list[dict]]:
     return batches
 
 
+def _inverse_batch_order(batches: list[list[dict]], n_entries: int):
+    """Inverse permutation mapping batch-order concatenated rows back to
+    original entries order.
+
+    ``_batches_by_token_budget`` length-SORTS entries (minimal padding), so
+    tensors built by concatenating per-batch outputs are in sorted order;
+    indexing them with the returned ``torch.LongTensor`` restores entries
+    order (saved row ``i`` == ``entries[i]``, matching the entries-order
+    ``row_ids`` / ``row_index.jsonl``). Requires each entry to carry its
+    original position under ``"_pos"``; asserts every position
+    ``0..n_entries-1`` appears exactly once across the batches."""
+    import torch
+
+    flat = [e["_pos"] for b in batches for e in b]
+    assert sorted(flat) == list(range(n_entries)), (
+        f"batches must cover every entry exactly once (got {len(flat)} rows "
+        f"for {n_entries} entries)"
+    )
+    return torch.argsort(torch.as_tensor(flat, dtype=torch.long))
+
+
 def _pool_batch(
     model,
     entries: list[dict],
@@ -1269,7 +1290,10 @@ def capture_cell(
     ctx_written = all((ctx_dir / f"L{layer}.pt").exists() for layer in layers)
     n_layers_h: dict[int, list] = {layer: [] for layer in layers}
     ctx_acc: dict[int, dict[str, list]] = {layer: {} for layer in layers}
+    for pos, e in enumerate(entries):
+        e["_pos"] = pos  # original position — batching length-sorts (see _inverse_batch_order)
     batches = _batches_by_token_budget(entries)
+    inv = _inverse_batch_order(batches, n_entries=len(entries))
     t0 = time.time()
     for bi, batch in enumerate(batches, start=1):
         pooled = _pool_batch(
@@ -1313,7 +1337,9 @@ def capture_cell(
         else None
     )
     for layer in layers:
-        w_full = torch.cat(n_layers_h[layer])  # fp32 when keep_fp32, else fp16
+        # Batches are length-SORTED: unsort concatenated outputs back to
+        # entries order (via inv) before saving under entries-order row_ids.
+        w_full = torch.cat(n_layers_h[layer])[inv]  # fp32 when keep_fp32, else fp16
         row_ids = [e["id"] for e in entries]
         torch.save(
             {"w": w_full.to(torch.float16), "row_ids": row_ids},
@@ -1329,7 +1355,9 @@ def capture_cell(
     if not ctx_written:
         ctx_dir.mkdir(parents=True, exist_ok=True)
         for layer in layers:
-            full = {k: torch.cat(v) for k, v in ctx_acc[layer].items()}
+            # Same unsort as the answer store: ctx accumulators are in
+            # length-sorted batch order; row_ids below are entries order.
+            full = {k: torch.cat(v)[inv] for k, v in ctx_acc[layer].items()}
             torch.save(
                 {k: v.to(torch.float16) for k, v in full.items()}
                 | {"row_ids": [e["id"] for e in entries]},
