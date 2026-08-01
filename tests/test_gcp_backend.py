@@ -6821,6 +6821,10 @@ def test_persist_python_survives_dead_stdout_pipe(tmp_path) -> None:
             "EPS_PERSIST_FIRST_STAGE_DIR": str(tmp_path / "staged-first"),
             "EPS_PERSIST_FINAL_STAGE_DIR": str(tmp_path / "staged-final"),
             "EPS_PERSIST_WORKSPACE_LOGS_DIR": str(tmp_path / "workspace-logs"),
+            # #1890 hermeticity: the ws-tensors sweep would otherwise glob the
+            # REAL /workspace/analysis_tensors* on this VM (host-state-dependent
+            # walk + staging copies; reviewer-prescribed isolation).
+            "EPS_PERSIST_WS_TENSORS_ROOT": str(tmp_path / "ws-tensors"),
         }
     )
     # Dead-reader pipe, constructed deterministically: close the read end
