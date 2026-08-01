@@ -76,12 +76,25 @@ def _slim_path(cache: Path, kind: str, unit: str) -> Path:
     return cache / f"{kind}__{unit}.npz"
 
 
-def fetch_response(cache: Path, kind: str, unit: str, layers: list[int]) -> tuple[dict, list[str]]:
+def fetch_response(
+    cache: Path,
+    kind: str,
+    unit: str,
+    layers: list[int],
+    *,
+    persist: bool = False,
+) -> tuple[dict, list[str]]:
     """Response-span arrays for one unit, via a delete-after-extract stage.
 
     ``kind`` is ``corpus_capture`` (file ``pooled.pt``) or
-    ``corpus_capture_tf`` (``pooled_tf.pt``). The slim per-unit ``.npz`` is
-    kept so a re-run / a second layer pass never re-downloads.
+    ``corpus_capture_tf`` (``pooled_tf.pt``).
+
+    ``persist`` caches the extracted arrays as a slim fp16 ``.npz``. Cache ONLY
+    the BASE units: they are re-read by every arm, while a per-arm plus/tf store
+    is consumed exactly once. Persisting per-arm stores would write ~1.4 GB x 72
+    arms x 2 kinds of npz on top of the ~52 GB of last-token stores and blow the
+    ~130 GB per-pod MooseFS quota (gotchas.md EDQUOT entry). fp16 is LOSSLESS
+    here — the round-1 stores are themselves fp16.
     """
     from explore_persona_space.orchestrate import hub
 
@@ -106,9 +119,12 @@ def fetch_response(cache: Path, kind: str, unit: str, layers: list[int]) -> tupl
         arrs, shas = _response_arrays(target, layers, "response")
     finally:
         target.unlink(missing_ok=True)
-    np.savez(slim, **{f"L{li}": arrs[li].astype(np.float32) for li in layers})
-    _atomic_json(slim.with_suffix(".sha.json"), {"row_sha": shas, "unit": unit, "kind": kind})
-    logger.info("[stage] %s/%s response extracted (%d rows)", kind, unit, len(shas))
+    if persist:
+        np.savez(slim, **{f"L{li}": arrs[li].astype(np.float16) for li in layers})
+        _atomic_json(slim.with_suffix(".sha.json"), {"row_sha": shas, "unit": unit, "kind": kind})
+    logger.info(
+        "[stage] %s/%s response extracted (%d rows, cached=%s)", kind, unit, len(shas), persist
+    )
     return arrs, shas
 
 
@@ -143,7 +159,9 @@ def build_cell(
 
     C0_by, c0_sha = load_lasttoken(out_root, base_unit, layers, position)
     Cp_by, cp_sha = load_lasttoken(out_root, arm_id, layers, position)
-    V0_by, v0_sha = fetch_response(cache, "corpus_capture", base_unit, layers)
+    # base is re-read by every arm -> cache it; per-arm stores are consumed once
+    # and must NOT be cached (per-pod quota, see fetch_response).
+    V0_by, v0_sha = fetch_response(cache, "corpus_capture", base_unit, layers, persist=True)
     Vp_by, vp_sha = fetch_response(cache, "corpus_capture", arm_id, layers)
     Vt_by, vt_sha = fetch_response(cache, "corpus_capture_tf", arm_id, layers)
 
