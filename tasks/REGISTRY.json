@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1962,
+  "highest_id": 1963,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7458,6 +7458,13 @@
       "path": "tasks/proposed/1962",
       "status": "proposed",
       "title": "daily-fix: cross-issue lint-gate concurrency arbitration"
+    },
+    "1963": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1963",
+      "status": "proposed",
+      "title": "daily-fix: guard family syncs scripts/guard_*.sh with pin te"
     },
     "197": {
       "has_clean_result": false,
