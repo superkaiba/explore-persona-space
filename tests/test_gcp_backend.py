@@ -5468,6 +5468,18 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
         # worker-logs sweep target; small -> plain-copied, not tailed).
         (root / "logs" / "issue_137").mkdir(parents=True)
         (root / "logs" / "issue_137" / "corpus_gpu0_all.log").write_text("worker traceback\n")
+        # #1890: analysis-tensors staging trees at BOTH sweep roots — the
+        # workload-root issue-scoped convention (the #1739 shape) with a
+        # nested hf_dl cache (prune assert), plus a flat file at the
+        # isolated ws root (the issue_823/952 /workspace flat shape; env
+        # default below points EPS_PERSIST_WS_TENSORS_ROOT at ws-tensors/).
+        (root / "analysis_tensors" / "issue_137" / "maps").mkdir(parents=True)
+        (root / "analysis_tensors" / "issue_137" / "maps" / "m.npz").write_text("npz")
+        (root / "analysis_tensors" / "issue_137" / "hf_dl").mkdir()
+        (root / "analysis_tensors" / "issue_137" / "hf_dl" / "c.bin").write_text("x" * 64)
+        ws_tensors = tmp_path / "ws-tensors" / "analysis_tensors"
+        ws_tensors.mkdir(parents=True)
+        (ws_tensors / "cx.pt").write_text("pt")
     else:
         # exist_ok: #885 behavioral tests pre-create root/logs/** fixtures
         # before invoking the harness with make_dirs=False.
@@ -5497,6 +5509,11 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
             # default -> the sweep SKIPs, following the #935 EPS_DONE_LOGS_DIR
             # isolation precedent).
             "EPS_PERSIST_WORKSPACE_LOGS_DIR": str(tmp_path / "workspace-logs"),
+            # #1890: isolate the scratch-root analysis-tensors sweep per test —
+            # the production default is the real /workspace, which EXISTS on
+            # this shared VM (pod-style HF cache), so an un-threaded run would
+            # nondeterministically glob real /workspace/analysis_tensors* dirs.
+            "EPS_PERSIST_WS_TENSORS_ROOT": str(tmp_path / "ws-tensors"),
         }
     )
     env.update(env_overrides or {})
@@ -5519,6 +5536,8 @@ def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     run exactly as production runs it, uploads the first bundle
     (crash_report + workload.log, ONE staged commit — #1151) → worker_logs
     (one staged-tree commit, #885) → eval_results dir → data dirs → the
+    analysis-tensors trees at BOTH roots (workload-root unsuffixed +
+    scratch-root ``_ws``-suffixed, LAST among the dirs — #1890) → the
     final bundle (timestamped log copy + transcript, ONE staged commit —
     #1151), passes the cache excludes to upload_folder, prunes nested
     caches from the dir stats, and exits 0 with ZERO per-file upload_file
@@ -5532,12 +5551,16 @@ def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     assert seq[2] == ("folder", "issue137_partial/att-x/eval_results_issue_137")
     assert seq[3] == ("folder", "issue137_partial/att-x/data_issue_137")
     assert seq[4] == ("folder", "issue137_partial/att-x/data_issue137")
-    assert seq[5] == ("folder", "issue137_partial/att-x")
-    final_staged = sorted(calls[5]["staged"])
+    # #1890: analysis-tensors trees AFTER the named data dirs (largest class
+    # last — the #854 traceback-first ordering), BEFORE the final bundle.
+    assert seq[5] == ("folder", "issue137_partial/att-x/analysis_tensors")
+    assert seq[6] == ("folder", "issue137_partial/att-x/analysis_tensors_ws")
+    assert seq[7] == ("folder", "issue137_partial/att-x")
+    final_staged = sorted(calls[7]["staged"])
     assert len(final_staged) == 2, final_staged
     assert final_staged[0] == "crash_persist_transcript.log"
     assert re.fullmatch(r"workload_\d{8}T\d{6}Z\.log", final_staged[1]), final_staged
-    assert len(seq) == 6, seq
+    assert len(seq) == 8, seq
     # #1151: ZERO per-file upload_file calls anywhere (the #664 stall class).
     assert not any(c["kind"] == "file" for c in calls)
     # The worker-logs commit staged the fixture worker log verbatim (#885).
@@ -5550,6 +5573,16 @@ def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     # _dir_entries pruned BOTH the top-level and the nested hf_dl caches: only
     # track.jsonl is counted for data_issue_137.
     assert "[crash-persist] uploading dir data_issue_137 (1 files" in proc.stdout
+    # #1890: the analysis-tensors uploads mirror the cache + store excludes
+    # (store/ is the mirrored-on-HF durable class — never re-uploaded), the
+    # workload-root tree staged only the .npz (nested hf_dl pruned from the
+    # stats), and the ws-root tree staged its flat file under the _ws name.
+    at_call = calls[5]
+    assert "**/hf_dl/**" in at_call["ignore_patterns"]
+    assert "store/**" in at_call["ignore_patterns"]
+    assert "**/store/**" in at_call["ignore_patterns"]
+    assert "[crash-persist] uploading dir analysis_tensors (1 files" in proc.stdout
+    assert calls[6]["staged"] == {"cx.pt": "pt"}
     # Eagerly-streamed audit lines, start to DONE.
     assert "[crash-persist] BEGIN repo=org/repo dest=issue137_partial/att-x" in proc.stdout
     assert "[crash-persist] DONE" in proc.stdout
@@ -5560,7 +5593,7 @@ def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     assert "[crash-persist] DONE" in transcript_text
     # The staged transcript copy the fake hub recorded ALSO carries the full
     # audit through DONE (transcript-last semantics preserved, #854).
-    uploaded_transcript = calls[5]["staged"]["crash_persist_transcript.log"]
+    uploaded_transcript = calls[7]["staged"]["crash_persist_transcript.log"]
     assert "[crash-persist] DONE" in uploaded_transcript
     # #1339 AC-1 (second half): small dirs (default bound 1000 >> the fixture
     # sizes) provably take the UNCHANGED single-commit path — no batch line
@@ -5586,6 +5619,10 @@ def test_persist_heredoc_prints_skips_and_honors_env_cap(tmp_path) -> None:
     assert "[crash-persist] SKIP eval_results_issue_137: no such dir" in proc.stdout
     assert "[crash-persist] SKIP data_issue_137: no such dir" in proc.stdout
     assert "[crash-persist] SKIP data_issue137: no such dir" in proc.stdout
+    # #1890: zero analysis_tensors* matches at BOTH roots -> ONE loud
+    # aggregate SKIP (glob-no-match, not a per-dir miss) and NO new upload —
+    # the pre-change call sequence is preserved (the full-list equality below).
+    assert "[crash-persist] SKIP analysis_tensors*: none at" in proc.stdout
     assert "[crash-persist] DONE" in proc.stdout
     # The ONLY upload is the final bundle carrying the transcript audit
     # (#1151: it rides an upload_folder commit now, never upload_file).
@@ -5892,12 +5929,13 @@ def test_persist_heredoc_workspace_logs_missing_dir_skips_soft(tmp_path) -> None
     rc 0, a loud SKIP (the #610 missing-dir class), and the pre-existing
     sweep is unchanged — the workload-root worker log still lands at its
     byte-identical unprefixed repo path and the total upload_folder call
-    count stays 6 (one per surface, zero new commits)."""
+    count stays 8 (one per surface — incl. the two #1890 analysis-tensors
+    fixture trees; the ABSENT dispatch dir adds zero new commits)."""
     proc, calls, _ = _run_persist_heredoc(tmp_path)  # default fixture; dispatch dir absent
     assert proc.returncode == 0, proc.stderr
     assert "[crash-persist] SKIP workspace_logs: no such dir" in proc.stdout
     seq = [(c["kind"], c["path_in_repo"]) for c in calls]
-    assert len(seq) == 6, seq
+    assert len(seq) == 8, seq
     assert calls[1]["path_in_repo"] == "issue137_partial/att-x/worker_logs"
     assert calls[1]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
 
@@ -5969,6 +6007,48 @@ def test_persist_heredoc_workspace_logs_same_dir_skips(tmp_path) -> None:
     assert "SKIP workspace_logs: same dir as worker logs root" in proc.stdout
     wl = [c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs")]
     assert wl[0]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
+
+
+# ---------------------------------------------------------------------------
+# #1890 — crash-persist analysis-tensors staging-tree sweep (both roots)
+# ---------------------------------------------------------------------------
+
+
+def test_persist_heredoc_analysis_tensors_sibling_glob_dirs_only(tmp_path) -> None:
+    """#1890: the analysis-tensors sweep matches SIBLING dir names via the
+    analysis_tensors* glob (the run_1072_lowdim shape), uploads each under
+    its OWN local name, and a glob-matching regular FILE is filtered out
+    (dirs only) — with no aggregate no-match SKIP once >=1 tree matched."""
+    root = tmp_path / "workload"
+    (root / "analysis_tensors_lowdim" / "issue_137").mkdir(parents=True)
+    (root / "analysis_tensors_lowdim" / "issue_137" / "v.npz").write_text("npz")
+    (root / "analysis_tensors.tar").write_text("not a dir")
+    proc, calls, _ = _run_persist_heredoc(tmp_path, make_dirs=False)
+    assert proc.returncode == 0, proc.stderr
+    at = [c for c in calls if c["kind"] == "folder" and "analysis_tensors" in c["path_in_repo"]]
+    assert [c["path_in_repo"] for c in at] == ["issue137_partial/att-x/analysis_tensors_lowdim"]
+    assert at[0]["staged"] == {"issue_137/v.npz": "npz"}
+    assert "SKIP analysis_tensors*: none at" not in proc.stdout
+
+
+def test_persist_heredoc_analysis_tensors_ws_root_same_as_workload_skips(tmp_path) -> None:
+    """#1890 degenerate-root guard (the #1605 same-dir sibling): the scratch
+    root pointed at $WORKLOAD_ROOT itself SKIPs the _ws pass loudly — the
+    tree uploads exactly ONCE, under its unsuffixed workload-root name
+    (never a double upload burning the 300s budget)."""
+    root = tmp_path / "workload"
+    (root / "analysis_tensors").mkdir(parents=True)
+    (root / "analysis_tensors" / "cx.pt").write_text("pt")
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides={"EPS_PERSIST_WS_TENSORS_ROOT": str(root)},
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] SKIP analysis_tensors ws pass: root == ws_root" in proc.stdout
+    at = [c for c in calls if c["kind"] == "folder" and "analysis_tensors" in c["path_in_repo"]]
+    assert [c["path_in_repo"] for c in at] == ["issue137_partial/att-x/analysis_tensors"]
+    assert at[0]["staged"] == {"cx.pt": "pt"}
 
 
 # ---------------------------------------------------------------------------
