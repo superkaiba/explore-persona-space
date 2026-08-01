@@ -376,7 +376,13 @@ Run the structural verifier against the plan version just persisted:
   committed outputs; a plan genuinely committing outputs under a
   gitignore-matched path instead notes the force-add + staged-index
   verification in the same section as the declaration, or relocates the
-  output out of the ignored root).
+  output out of the ignored root), and
+  `N/A — no base-side predictor vs change DV` (check 45 — the change-DV /
+  base-side-predictor vocabulary is incidental or quotes a sibling's
+  design, not this plan's own predictor race; a plan genuinely racing a
+  base-side predictor against a trained−base change DV instead registers a
+  level/change companion column AND states the winner sign convention —
+  signed Spearman ρ vs |ρ|).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
