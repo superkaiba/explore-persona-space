@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1958,
+  "highest_id": 1959,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7422,6 +7422,14 @@
       "path": "tasks/proposed/1958",
       "status": "proposed",
       "title": "workflow-fix: pre_reg audit gains pre-set/declared/specified synonym branch"
+    },
+    "1959": {
+      "goal": "Determine whether the prefix/bare mirror in per-context map error is carried by a small identifiable subset of the 16,384 restricted answer-side SAE features or is diffuse across the dictionary, by decomposing the banked per-category prefix\u2212bare squared-error differences feature-by-feature.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1959",
+      "status": "proposed",
+      "title": "Per-feature decomposition of the prefix\u2212bare mirror: concentrated or diffuse across the SAE dictionary"
     },
     "196": {
       "has_clean_result": false,
