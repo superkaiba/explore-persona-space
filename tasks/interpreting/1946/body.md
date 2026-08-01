@@ -1,6 +1,6 @@
 ---
-title: 'Per-context error in SAE feature space: does the prefix/bare mirror image
-  survive the sparse re-basis?'
+title: The prefix/bare mirror image in per-context map error survives the SAE feature-space
+  re-basis (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-31T19:59:47Z'
