@@ -7327,8 +7327,8 @@
       "goal": "Settle whether the bare-query and prefix arms are **mirror images** in SAE feature space, as they demonstrably are in the dense per-context taxonomy.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1946",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1946",
+      "status": "awaiting_promotion",
       "title": "The prefix/bare mirror image in per-context map error survives the SAE feature-space re-basis (HIGH confidence)"
     },
     "1947": {
