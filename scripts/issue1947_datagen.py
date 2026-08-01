@@ -119,9 +119,15 @@ NEG_Q_BARE, NEG_MEMBERS_BARE = 75, 4  # bare cells drop the default member
 NEG_Q_OVERSAMPLE = 1.25  # judge-filter (<50) headroom on the question axis
 GENERIC_POOL_N = 900  # 400 corpus + 500 same-recipe-class extension
 GENERIC_EXT_N = 500
-MARKER_Q_N = 1344  # 1,280 + 5% budget-gate headroom (exact-select post-gate)
+MARKER_Q_N = 1344  # initial harvest: 1,280 + 5% budget-gate headroom (adaptive top-up below)
 MARKER_POS = cells.MARKER_POS  # 1,280
 MARKER_NEG = cells.MARKER_NEG  # 5,120 (1:4 marker-line ratio, named deviation)
+# Crash-fix r7 (P0 crash 3): the icl two-shot demo block inflates rendered row
+# lengths, so a FIXED 5% headroom is context-dependent (icl dropped 8.6%). The
+# marker question pool is now ADAPTIVE: bounded top-up tranches until every
+# context clears MARKER_POS budget-surviving positives, hard-capped at 2x.
+MARKER_Q_HARD_CAP = 2 * MARKER_POS  # 2,560 — adaptive top-up ceiling
+MARKER_Q_TOPUP_MIN = 64  # smallest tranche (survivor headroom over the deficit)
 MAX_LENGTH = 2048  # trainer max_length -> the token-budget gate's budget
 GEN_MAX_NEW_TOKENS = 1024  # greedy base R cap (CLAUDE.md free-generation default)
 WILDCHAT_DATASET = "allenai/WildChat-1M"
@@ -930,18 +936,25 @@ def _wc_stream_fingerprint(needed: int, cap: int, forbidden_shas: set[str]) -> s
     return hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
 
 
-def _stream_wildchat_questions(cfg: Cfg, needed: int, forbidden_shas: set[str]) -> list[str]:
+def _stream_wildchat_questions(
+    cfg: Cfg,
+    needed: int,
+    forbidden_shas: set[str],
+    ckpt_name: str = "wildchat_stream_ckpt.json",
+) -> list[str]:
     """Bounded WildChat-1M streaming question harvest (#1092 rules: real field
     shapes — FULL language names, top-level redacted/toxic bools — kept-cap AND
     total-streamed cap, per-filter reject counters in the done line, chunked
-    intra-stream checkpoint + fingerprint-gated resume — r1 Minor 1)."""
+    intra-stream checkpoint + fingerprint-gated resume — r1 Minor 1).
+    ``ckpt_name`` gives top-up tranches their own checkpoint file so a top-up
+    never clobbers the generic phase's terminal checkpoint (crash-fix r7)."""
     if cfg.mock_gen:
         return [f"Mock WildChat question {i:05d}?" for i in range(needed)]
     from datasets import load_dataset
 
     cap = 2_000 if cfg.smoke else WILDCHAT_STREAM_CAP
     fp = _wc_stream_fingerprint(needed, cap, forbidden_shas)
-    ckpt_path = cfg.out_root / "generic" / "wildchat_stream_ckpt.json"
+    ckpt_path = cfg.out_root / "generic" / ckpt_name
     kept: list[str] = []
     seen: set[str] = set(forbidden_shas)
     rejects = dict.fromkeys(_WC_FILTER_KEYS, 0)
@@ -1140,6 +1153,175 @@ def _marker_questions(cfg: Cfg) -> list[str]:
     return list(rec["questions"])
 
 
+class MarkerBudgetShortfall(RuntimeError):
+    """Budget-surviving positives under target — retryable via question top-up
+    (crash-fix r7). Message shape kept verbatim from the pre-fix raise; the
+    hard-cap re-raise in ``_topup_marker_questions`` wraps this same text."""
+
+    def __init__(self, ctx_key: str, n_kept: int, n_pos: int):
+        super().__init__(
+            f"marker {ctx_key}: only {n_kept} budget-surviving positives < {n_pos} — "
+            "raise MARKER_Q_N headroom"
+        )
+        self.ctx_key = ctx_key
+        self.n_kept = n_kept
+        self.n_pos = n_pos
+
+
+def _marker_q_hard_cap(cfg: Cfg) -> int:
+    """Adaptive-pool ceiling: 2x the positives target (2,560); smoke keeps the
+    same 2x-of-initial-pool proportion over its 12-question slice."""
+    return 24 if cfg.smoke else MARKER_Q_HARD_CAP
+
+
+def _topup_marker_questions(
+    cfg: Cfg, shortfall: MarkerBudgetShortfall, tranche_idx: int
+) -> list[str]:
+    """Harvest a bounded tranche of ADDITIONAL WildChat questions when a
+    context's budget-surviving positives land under target (crash-fix r7).
+
+    Same disjointness screens as the original harvest — every bank/corpus/eval
+    source via ``_forbidden_question_shas`` PLUS everything already harvested
+    (the generic ext questions and the current marker pool) — and fails loud
+    with the pre-fix message shape once the pool hits the hard cap. Extends
+    ``generic/marker_questions.json`` in place (questions + n +
+    sha256_canonical + a ``topups`` audit trail) so the realized pool stays
+    the single reproducibility record."""
+    mq_path = cfg.generic_dir / "marker_questions.json"
+    rec = json.loads(mq_path.read_text(encoding="utf-8"))
+    pool = list(rec["questions"])
+    hard_cap = _marker_q_hard_cap(cfg)
+    deficit = shortfall.n_pos - shortfall.n_kept
+    want = min(max(2 * deficit, MARKER_Q_TOPUP_MIN), hard_cap - len(pool))
+    if want <= 0:
+        raise RuntimeError(
+            f"{shortfall} (question pool hard cap {hard_cap} exhausted at {len(pool)})"
+        ) from shortfall
+    print(
+        f"[marker] {shortfall.ctx_key}: top-up tranche {tranche_idx} harvesting {want} "
+        f"additional questions (budget-survivors {shortfall.n_kept}/{shortfall.n_pos})",
+        flush=True,
+    )
+    if cfg.mock_gen:
+        start = 50_000 + 1_000 * tranche_idx  # disjoint from the mock initial pool indices
+        fresh = [f"Mock WildChat question {start + i:05d}?" for i in range(want)]
+    else:
+        corpus_rows = _read_jsonl(cfg.generic_dir / "generic_corpus.jsonl")
+        forbidden = _forbidden_question_shas(cfg, corpus_rows)
+        forbidden.update(_qsha(q) for q in pool)
+        ext_path = cfg.generic_dir / "raw_generic_ext.jsonl"
+        if ext_path.exists():
+            forbidden.update(_qsha(r["question"]) for r in _read_jsonl(ext_path))
+        fresh = _stream_wildchat_questions(
+            cfg, want, forbidden, ckpt_name=f"wildchat_topup_ckpt_t{tranche_idx}.json"
+        )
+    pool_shas = {_qsha(q) for q in pool}
+    fresh = [q for q in fresh if _qsha(q) not in pool_shas]  # belt: mock-index collisions
+    if not fresh:
+        raise RuntimeError(
+            f"{shortfall} (top-up tranche {tranche_idx} yielded 0 new questions)"
+        ) from shortfall
+    new_pool = pool + fresh
+    rec.update(questions=new_pool, n=len(new_pool), sha256_canonical=_canonical_sha(new_pool))
+    rec.setdefault("topups", []).append(
+        {
+            "tranche": tranche_idx,
+            "ctx_key": shortfall.ctx_key,
+            "n_added": len(fresh),
+            "added_sha256_canonical": _canonical_sha(fresh),
+        }
+    )
+    _write_json(mq_path, rec)
+    return fresh
+
+
+def _extend_r_map(
+    shim, tok, backend, msgs_for_q, questions: list[str], label: str
+) -> dict[str, str]:
+    """``mk._greedy_r_map`` with cache EXTENSION (crash-fix r7): the per-label
+    cache returns the stored map verbatim (ignoring ``questions``), so top-up
+    delta questions get fresh greedy gens HERE — cost is the DELTA only (the
+    already-generated R for the original pool is reused byte-identical); the
+    cache is atomically rewritten and the delta rollout text persisted."""
+    import issue1333_dispatch as d1333
+    import issue1481_marker as mk
+    from explore_persona_space.experiments import issue_1333 as C
+
+    r_map = mk._greedy_r_map(shim, tok, backend, msgs_for_q, questions, label)
+    missing = [q for q in questions if q not in r_map]
+    if not missing:
+        return r_map
+    prompts = [
+        tok.apply_chat_template(msgs_for_q(q), tokenize=False, add_generation_prompt=True)
+        for q in missing
+    ]
+    responses = backend.generate(prompts, C.R_GEN_MAX_NEW_TOKENS)
+    n_trunc = sum(
+        1
+        for r in responses
+        if len(tok.encode(r, add_special_tokens=False)) >= C.R_GEN_MAX_NEW_TOKENS
+    )
+    logger.info(
+        "[marker] r_%s top-up: %d delta generations (%d at the cap)", label, len(missing), n_trunc
+    )
+    delta = dict(zip(missing, responses, strict=True))
+    cache = Path(shim.out_root) / "mixes" / f"r_{label}.json"
+    rec = json.loads(cache.read_text(encoding="utf-8"))
+    rec["r_by_q"].update(delta)
+    rec.setdefault("topups", []).append(
+        {"n_added": len(missing), "truncation_rate": n_trunc / len(responses)}
+    )
+    _write_json(cache, rec)
+    d1333._persist_rollouts(
+        shim,
+        "mixes",
+        f"{label}_topup{len(rec['topups'])}",
+        {"label": label, "r_by_q": delta, "truncation_rate": n_trunc / len(responses)},
+    )
+    return rec["r_by_q"]
+
+
+def _record_marker_ctx_selection(cfg: Cfg, ctx_key: str, meta: dict) -> None:
+    """Record the ctx's budget-surviving SELECTED question set on
+    ``marker_questions.json`` (final realized pool + per-context survivor sets
+    keep the mixes reproducible — crash-fix r7). Pre-fix metas carry no
+    per-question sha list; their set identity stays pinned by
+    ``questions_sha256`` (``selected_question_shas`` backfills as None)."""
+    mq_path = cfg.generic_dir / "marker_questions.json"
+    rec = json.loads(mq_path.read_text(encoding="utf-8"))
+    rec.setdefault("ctx_selected", {})[ctx_key] = {
+        "n_positive": meta["n_positive"],
+        "questions_sha256": meta["questions_sha256"],
+        "selected_question_shas": meta.get("selected_question_shas"),
+    }
+    _write_json(mq_path, rec)
+
+
+def _build_marker_mix_with_topup(
+    cfg: Cfg, shim, tok, backend, ctx_key: str, src_msgs, neg_msgs_by_slug: dict
+) -> dict:
+    """``_build_marker_mix`` under the adaptive question top-up loop (crash-fix
+    r7): on a budget shortfall, harvest additional disjoint WildChat questions
+    (bounded tranches, hard-capped), extend the r-map caches for the DELTA
+    only, and rebuild. Bounded: the pool grows monotonically toward the hard
+    cap and a zero-yield tranche raises. Systematic-overflow (>10% reject)
+    RuntimeErrors from ``enforce_mix_token_budget`` are NOT retried — those
+    stay fail-loud (the budget itself is wrong, not the headroom)."""
+    tranche = 0
+    while True:
+        questions = _marker_questions(cfg)
+        r_src = _extend_r_map(shim, tok, backend, src_msgs, questions, f"src_{ctx_key}")
+        r_neg_by_slug = {
+            slug: _extend_r_map(shim, tok, backend, msgs, questions, f"neg_{slug}")
+            for slug, msgs in neg_msgs_by_slug.items()
+        }
+        try:
+            return _build_marker_mix(cfg, tok, ctx_key, r_src, r_neg_by_slug)
+        except MarkerBudgetShortfall as shortfall:
+            tranche += 1
+            _topup_marker_questions(cfg, shortfall, tranche)
+
+
 def _build_marker_mix(cfg: Cfg, tok, ctx_key: str, r_src: dict, r_neg_by_slug: dict) -> dict:
     """One marker cell's single-visit mix: EXACT 1,280 pos + 5,120 neg selected
     AFTER the token-budget gate (headroom questions absorb the pair-drops),
@@ -1181,10 +1363,9 @@ def _build_marker_mix(cfg: Cfg, tok, ctx_key: str, r_src: dict, r_neg_by_slug: d
     kept_pos_q = {json.dumps(r, sort_keys=True): q for r, q in zip(pos_rows, pos_meta, strict=True)}
     kept_cn_q = {json.dumps(r, sort_keys=True): mq for r, mq in zip(cn_rows, cn_meta, strict=True)}
     if len(kept_pos) < n_pos:
-        raise RuntimeError(
-            f"marker {ctx_key}: only {len(kept_pos)} budget-surviving positives < {n_pos} — "
-            "raise MARKER_Q_N headroom"
-        )
+        # Retryable via the adaptive question top-up (crash-fix r7); message
+        # shape unchanged from the pre-fix RuntimeError.
+        raise MarkerBudgetShortfall(ctx_key, len(kept_pos), n_pos)
     sel_pos = kept_pos[:n_pos]
     sel_pos_q = {kept_pos_q[json.dumps(r, sort_keys=True)] for r in sel_pos}
     by_member: dict[str, list[dict]] = {m.slug: [] for m in panel}
@@ -1241,6 +1422,7 @@ def _build_marker_mix(cfg: Cfg, tok, ctx_key: str, r_src: dict, r_neg_by_slug: d
         "mix_permutation_seed": cells.MARKER_SEED,
         "sha256": sha,
         "questions_sha256": _canonical_sha(sorted(sel_pos_q)),
+        "selected_question_shas": sorted(_qsha(q) for q in sel_pos_q),
         "r_provenance": "fresh greedy base R (max_new_tokens 1024), positives + negatives",
     }
     _write_json(out_dir / "mix_meta.json", meta)
@@ -1280,26 +1462,32 @@ def phase_marker(cfg: Cfg) -> None:
             )
         member_by_slug = {m.slug: m for m in neg_mod.default_panel()}
         needed_slugs = sorted({m.slug for ck in ctx_keys for m in mk.training_negative_panel(ck)})
-        r_neg_by_slug = {
-            slug: mk._greedy_r_map(
-                shim, tok, backend, member_by_slug[slug].messages, questions, f"neg_{slug}"
-            )
-            for slug in needed_slugs
-        }
+        neg_msgs_by_slug = {slug: member_by_slug[slug].messages for slug in needed_slugs}
+        for slug in needed_slugs:
+            # Initial full-pool maps (generation order preserved vs pre-fix;
+            # cache-hit no-op on resume, delta-extended if the pool grew).
+            _extend_r_map(shim, tok, backend, neg_msgs_by_slug[slug], questions, f"neg_{slug}")
         for ctx_key in ctx_keys:
             out_dir = cfg.mixes_dir / cells.marker_slug(ctx_key)
-            if (out_dir / "train_mix.jsonl").exists():
+            if (out_dir / "train_mix.jsonl").exists() and (out_dir / "mix_meta.json").exists():
+                # Resume: pers/bare/conv mixes from the crashed run are final
+                # (write_mix + _write_json are atomic tmp+replace; mix_meta is
+                # written LAST) — an icl top-up retry never regenerates them.
                 logger.info("[marker] %s mix exists — skip", ctx_key)
+                meta = json.loads((out_dir / "mix_meta.json").read_text(encoding="utf-8"))
+                _record_marker_ctx_selection(cfg, ctx_key, meta)
                 continue
-            r_src = mk._greedy_r_map(
+            panel_slugs = [m.slug for m in mk.training_negative_panel(ctx_key)]
+            meta = _build_marker_mix_with_topup(
+                cfg,
                 shim,
                 tok,
                 backend,
+                ctx_key,
                 mk.source_context(shim, ctx_key).messages,
-                questions,
-                f"src_{ctx_key}",
+                {slug: neg_msgs_by_slug[slug] for slug in panel_slugs},
             )
-            meta = _build_marker_mix(cfg, tok, ctx_key, r_src, r_neg_by_slug)
+            _record_marker_ctx_selection(cfg, ctx_key, meta)
             print(f"[marker] mix {meta['slug']} rows={meta['n_total']}", flush=True)
     finally:
         backend.close("i1947-marker")
@@ -1514,6 +1702,7 @@ def _import_check() -> int:
     """Execute every deferred import this driver's phases perform (Axis-1
     import-resolution smoke; scripts.* + vLLM-adjacent chains included)."""
     import issue1074_generator_compare as i1074  # noqa: F401
+    import issue1333_dispatch as d1333  # noqa: F401
     import issue1481_marker as mk  # noqa: F401
 
     from explore_persona_space.eval.graded_judge import judge_graded  # noqa: F401
@@ -1529,6 +1718,8 @@ def _import_check() -> int:
         "CTX_SOURCE_IDENTITY",
     ):
         assert hasattr(mk, name), f"issue1481_marker.{name} missing"
+    assert hasattr(d1333, "_persist_rollouts"), "issue1333_dispatch._persist_rollouts missing"
+    assert hasattr(C, "R_GEN_MAX_NEW_TOKENS"), "issue_1333.R_GEN_MAX_NEW_TOKENS missing"
     for name in (
         "make_row",
         "write_mix",
