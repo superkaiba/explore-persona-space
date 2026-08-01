@@ -666,7 +666,17 @@ def phase_capture(
         f"cuda_visible={os.environ.get('CUDA_VISIBLE_DEVICES')} smoke={smoke}",
         flush=True,
     )
-    scratch = out_root / "adapter_scratch" / f"shard{i}"
+    # PER-INVOCATION scratch, never a shard-index-keyed one: two concurrent legs
+    # over DIFFERENT arm sets reuse the same shard indices (`0/2` and `1/2` each),
+    # so a `shard{i}`-keyed dir is SHARED across legs — and this function rmtree's
+    # its scratch on exit, which then deletes a still-live sibling's freshly
+    # downloaded adapter. PEFT sees no local safetensors, falls back to treating
+    # the path as a Hub repo id, and dies with HFValidationError. That is exactly
+    # the fan-out shared-staging race in gotchas.md, and it cost 59 content units
+    # of this round when the marker leg finished first.
+    scratch_root = out_root / "adapter_scratch"
+    scratch_root.mkdir(parents=True, exist_ok=True)
+    scratch = Path(tempfile.mkdtemp(dir=scratch_root, prefix=f"shard{i}of{n}-"))
     runner: AdapterRunner | None = None
     rows_cache: dict[tuple[str, str], list[dict]] = {}
     t_phase = time.time()
