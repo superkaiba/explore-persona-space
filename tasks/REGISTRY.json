@@ -6802,8 +6802,8 @@
     "1879": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1879",
-      "status": "running",
+      "path": "tasks/reviewing/1879",
+      "status": "reviewing",
       "title": "workflow-fix: verify_task_body per-result multi-figure (non-pair) check"
     },
     "188": {
