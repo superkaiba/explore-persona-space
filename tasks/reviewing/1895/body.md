@@ -24,6 +24,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1895.md](https://github.com/superkaiba/explore-persona-space/blob/5db3dbc06c59c7594d0418e16da82751aad27fde/docs/methodology/issue_1895.md) · [gist](https://gist.github.com/superkaiba/6f393d5d8b011b585f987eba0da8f173)
+
 ## Takeaways
 
 - Overlap between the map's top-64 predictable directions and the SAE's top-64 reconstruction subspace is 0.867; variance-matched rotations already produce 0.845–0.862, so ~98% of the overlap is variance-driven.
