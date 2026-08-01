@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1957,
+  "highest_id": 1958,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7415,6 +7415,13 @@
       "path": "tasks/proposed/1957",
       "status": "proposed",
       "title": "workflow-fix: audit inline-CI rule misses bracket-less verbal form (CI <num> to <num>)"
+    },
+    "1958": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1958",
+      "status": "proposed",
+      "title": "workflow-fix: pre_reg audit gains pre-set/declared/specified synonym branch"
     },
     "196": {
       "has_clean_result": false,
