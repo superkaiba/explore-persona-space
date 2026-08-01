@@ -7037,8 +7037,8 @@
     "1909": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1909",
-      "status": "reviewing",
+      "path": "tasks/completed/1909",
+      "status": "completed",
       "title": "workflow-fix: gotchas entry for function-scoped import-check name shadow (UnboundLocalError class)"
     },
     "191": {
