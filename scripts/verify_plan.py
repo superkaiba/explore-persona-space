@@ -7,7 +7,7 @@ Phase 1.5.0 BEFORE the fact-checker + critic ensemble spawn. The plan-side
 sibling of ``scripts/verify_task_body.py`` (clean-result bodies): pure
 regex / string presence checks, NO LLM calls, no network, no side effects
 (the orchestrator running the adversarial-planner skill posts the
-``epm:plan-verify`` marker — never this script). Five disclosed read-only
+``epm:plan-verify`` marker — never this script). Six disclosed read-only
 exceptions: check 31, when its trigger fires and a pin-form satisfier names
 a ``tests/`` path, existence-``stat()``s the named pin-test file(s) under
 the repo root — read-only, no import, no network (#1557); check 34, when
@@ -20,11 +20,15 @@ dispatch set — read-only, no import, no network; check 41, when its
 trigger fires and the cheaper satisfiers leave survivors, path-loads
 ``scripts/select_step9c_tests.py`` and runs its pure selection functions
 over the plan's declared touched files — file reads under ``tests/``, no
-git, no network; and check 42, when its trigger fires, invokes
+git, no network; check 42, when its trigger fires, invokes
 ``git rev-parse --verify --quiet '<sha>^{commit}'`` per unique cited SHA
 — read-only, no network (git-local object DB read; #1683/#1414;
 retries once on a brief ``.git/index.lock`` collision, SKIPs on git
-unavailability); measured ~0.7-0.9 s on the live tree.
+unavailability); and check 44, when its trigger fires, pipes the plan's
+declared-committed paths through one batched
+``git check-ignore -v --stdin`` — read-only, no network (index-aware
+git-local ignore-rule + index read; #1900/#958/#734; same retry/SKIP
+fail-open contract as check 42); measured ~0.7-0.9 s on the live tree.
 
 Check catalog (id — classification — kind scope)
 ------------------------------------------------
@@ -110,13 +114,15 @@ Check catalog (id — classification — kind scope)
       resolves
   c43 /workspace sentinels vs   WARN-only, conditional    experiment only
       unpinned auto lane
+  c44 declared-committed paths  WARN-only, conditional    all kinds
+      not gitignored
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41, 42, 43) also SKIP when their content trigger does not
-fire.
+37, 38, 39, 40, 41, 42, 43, 44) also SKIP when their content trigger does
+not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -191,6 +197,12 @@ labeled-line forms):
     helper. A genuinely sentinel-signaling plan instead pins a
     drained lane: ``backend: gcp`` / ``backend: runpod`` /
     ``backend: fellows`` — the fellows drain landed at #1898)
+  - ``N/A — no committed outputs`` (check 44 — the commit-to-git vocabulary
+    is incidental or quotes a sibling/incident, not this plan's own declared
+    committed outputs; a plan genuinely committing outputs under a
+    gitignore-matched path instead notes the force-add + staged-index
+    verification in the same section as the declaration, or relocates the
+    output out of the ignored root)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -7518,6 +7530,227 @@ def check_sentinel_lane(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 44 — declared-committed paths not gitignored ────────────────────
+
+_C44_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c34/c41/c42 pattern)
+
+# Trigger: commit vocabulary on a line (raw scan, fences INCLUDED — the c43
+# precedent: committed-output declarations live in fenced ``phase_outputs:``
+# YAML and dispatch prose alike). Deliberately narrow — "committed to the
+# issue branch / git / main / the repo" and the "rides the git clone"
+# lane-reachability idiom — NOT the bare token "commit", which false-fires
+# on fix-commit citations (c42's surface) and git mechanics prose.
+_C44_COMMIT_VOCAB_RE = re.compile(
+    r"(?i)(?:\bcommit(?:ted|s)?\s+(?:to|into|on)\s+(?:the\s+)?"
+    r"(?:issue[-\s]branch|git\b|main\b|repo\b)"
+    r"|\brides?\s+the\s+git\s+clone\b)"
+)
+
+# Path-like token: at least one `/`; later segments may carry glob (`*`) and
+# brace (`{a,b}`) characters, expanded / reduced by ``_c44_expand_tokens``.
+_C44_PATH_TOKEN_RE = re.compile(r"[A-Za-z0-9_.\-]+(?:/[A-Za-z0-9_.\-{},*]+)+")
+
+# Same-section satisfier: an explicit force-add / staged-index-verification
+# note next to the declaration (the /issue Step 9a-ter § Staged-index
+# verification recipe). Plan-wide satisfiers are deliberately NOT accepted —
+# a global mention elsewhere must not silence a specific declared path.
+_C44_FORCE_ADD_RE = re.compile(
+    r"(?i)(?:git\s+add\s+(?:-f\b|--force\b)|\bforce[-\s]add"
+    r"|staged[-\s]index[-\s]verif|ls-files\s+--others\s+--ignored)"
+)
+
+
+def _c44_expand_tokens(line: str) -> list[str]:
+    """Repo-relative path tokens on one trigger line. Excluded: absolute
+    paths (``/workspace/...`` — pod-side, not repo paths) and URL tails
+    (``https://host/...``) — both arrive with a ``/`` immediately before the
+    token, the one shared signature. Brace groups (``{a.json,b.json}``)
+    expand to every member; glob-bearing tokens reduce to their deepest
+    literal directory prefix (check-ignore on the directory); trailing
+    sentence punctuation is stripped. Returns [] when nothing survives."""
+    out: list[str] = []
+    for m in _C44_PATH_TOKEN_RE.finditer(line):
+        if m.start() > 0 and line[m.start() - 1] == "/":
+            continue  # absolute path or URL tail — not a repo-relative path
+        tok = m.group(0).rstrip(".,")
+        bm = re.match(r"^(.*)\{([^{}]*)\}(.*)$", tok)
+        variants = (
+            [bm.group(1) + part + bm.group(3) for part in bm.group(2).split(",")] if bm else [tok]
+        )
+        for v in variants:
+            v = v.rstrip(".,")
+            if any(ch in v for ch in "*?{}"):
+                literal: list[str] = []
+                for comp in v.split("/"):
+                    if any(ch in comp for ch in "*?{}"):
+                        break
+                    literal.append(comp)
+                v = "/".join(literal)
+            if v:
+                out.append(v)
+    return out
+
+
+def _c44_check_ignore(paths: list[str]) -> dict[str, str] | None:
+    """Map each gitignore-MATCHED path in ``paths`` to its matching pattern,
+    via ONE batched, index-aware ``git check-ignore -v --stdin`` call
+    (deliberately never ``--no-index``: a tracked path rides the clone
+    regardless of ignore rules — the #1900 post-fix state — so the index
+    consult is load-bearing). Exit 0/1 are both healthy (some/none ignored);
+    a matched pattern beginning with ``!`` (negation) reads as NOT-ignored —
+    some git versions print negation-matched paths under ``-v``. Returns
+    ``None`` when git is unavailable (timeout / OSError after one 0.1 s
+    retry / exit ≥ 2) — the caller SKIPs fail-open, the c42 contract."""
+    cmd = ["git", "check-ignore", "-v", "--stdin"]
+    payload = "\n".join(paths) + "\n"
+    for attempt in (1, 2):
+        try:
+            r = subprocess.run(
+                cmd,
+                input=payload,
+                capture_output=True,
+                text=True,
+                timeout=10,
+                cwd=str(_C44_REPO_ROOT),
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            return None  # timeout is not retriable — the git command hung
+        except OSError:
+            if attempt == 1:
+                time.sleep(0.1)
+                continue
+            return None
+        if r.returncode >= 2:
+            return None
+        ignored: dict[str, str] = {}
+        for out_line in r.stdout.splitlines():
+            head, sep, path = out_line.rpartition("\t")
+            if not sep:
+                continue
+            parts = head.split(":", 2)
+            pattern = parts[2] if len(parts) == 3 else head
+            if pattern.startswith("!"):
+                continue  # negation pattern — the path is NOT ignored
+            ignored[path] = pattern
+        return ignored
+    return None  # unreachable (defensive; the loop always returns)
+
+
+def _c44_heads(lines: list[str], mask: list[bool]) -> list[tuple[int, int]]:
+    """Fence-unmasked ``##``/``###`` heading positions as (line_idx, level)."""
+    heads: list[tuple[int, int]] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced:
+            continue
+        m = _HEADING_RE.match(line.strip())
+        if m and len(m.group(1)) in (2, 3):
+            heads.append((i, len(m.group(1))))
+    return heads
+
+
+def _c44_section_span(heads: list[tuple[int, int]], idx: int, n_lines: int) -> tuple[int, int]:
+    """[start, end) of the ``##``/``###`` section containing line ``idx`` —
+    the nearest preceding heading to the next heading of the same or higher
+    level; the preamble (before the first ``##``/``###``) is its own
+    section."""
+    prev: tuple[int, int, int] | None = None
+    for j, (h_idx, lvl) in enumerate(heads):
+        if h_idx <= idx:
+            prev = (j, h_idx, lvl)
+        else:
+            break
+    if prev is None:
+        return 0, heads[0][0] if heads else n_lines
+    j, h_idx, lvl = prev
+    for h2_idx, lvl2 in heads[j + 1 :]:
+        if lvl2 <= lvl:
+            return h_idx, h2_idx
+    return h_idx, n_lines
+
+
+def check_committed_paths_not_gitignored(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, ALL kinds: a plan that declares output/config
+    paths as committed-to-git while a live ``.gitignore`` rule would silently
+    skip them under a plain ``git add`` (rc=0, no error — the #958
+    signature) must note the force-add / staged-index verification in the
+    SAME section as the declaration. A gitignore-eaten "committed" input
+    strands the git-clone lanes (GCP, fellows) at their first config read
+    (the #734 shape). Founding instance: #1900's plan declared
+    ``data/issue_1900/config/{subset.json,arms.json}`` committed to the
+    issue branch while ``data/*`` matched — caught only by the round-1
+    Methodology critic; the fix force-added them (index-aware default
+    ``git check-ignore`` correctly reads the post-fix tracked state as
+    not-ignored). WARN, never FAIL: the declaration may be satisfiable by an
+    implementation-time force-add the plan simply forgot to note — the
+    critic ensemble stays the judgment layer. Fail-open SKIP when git is
+    unavailable (the c42 contract). Trigger AND path extraction scan the RAW
+    plan text (fences INCLUDED, the c43 precedent); the
+    ``N/A — no committed outputs`` escape short-circuits BEFORE any git
+    access (the c34 NA idiom)."""
+    cid, name = "c44_committed_paths_gitignored", "declared-committed paths not gitignored"
+    del kind  # all kinds — a gitignore-eaten declared output strands any kind's lanes
+    if _standalone_na_declared(plan, r"no committed outputs\b"):
+        return _skip(cid, name, "explicit escape declared (N/A — no committed outputs)")
+    lines = plan.splitlines()
+    vocab_idx = [i for i, line in enumerate(lines) if _C44_COMMIT_VOCAB_RE.search(line)]
+    if not vocab_idx:
+        return _skip(cid, name, "no committed-output declarations detected")
+    declared: list[tuple[int, str]] = []  # (line_idx, repo-relative path)
+    for i in vocab_idx:
+        for tok in _c44_expand_tokens(lines[i]):
+            declared.append((i, tok))
+    if not declared:
+        return _skip(cid, name, "commit vocabulary without extractable repo paths")
+    unique_paths = sorted({p for _, p in declared})
+    ignored = _c44_check_ignore(unique_paths)
+    if ignored is None:
+        return _skip(cid, name, "git check-ignore unavailable — check inconclusive")
+    if not ignored:
+        return _pass(
+            cid,
+            name,
+            f"none of the {len(unique_paths)} declared-committed path(s) match a live "
+            ".gitignore rule (index-aware `git check-ignore`; tracked paths read not-ignored)",
+        )
+    mask = _fence_mask(lines)
+    heads = _c44_heads(lines, mask)
+    offenders: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for i, p in declared:
+        if p not in ignored or p in seen:
+            continue
+        start, end = _c44_section_span(heads, i, len(lines))
+        if _C44_FORCE_ADD_RE.search("\n".join(lines[start:end])):
+            continue  # same-section force-add / staged-index-verification note
+        seen.add(p)
+        offenders.append((p, ignored[p]))
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            "every gitignore-matched declared-committed path carries a same-section "
+            "force-add / staged-index-verification note",
+        )
+    shown = "; ".join(f"`{p}` (matched by `{rule}`)" for p, rule in offenders[:4])
+    more = " …" if len(offenders) > 4 else ""
+    return _warn(
+        cid,
+        name,
+        f"plan declares {len(offenders)} committed output path(s) a live .gitignore rule "
+        f"would silently skip under a plain `git add` (rc=0, no error — the #958 signature): "
+        f'{shown}{more}. A gitignore-eaten "committed" input strands the git-clone lanes '
+        "(GCP/fellows) at their first read (#734; founding instance #1900: "
+        "`data/issue_1900/config/` declared committed while `data/*` matched). Remedy: "
+        "force-add with staged-index verification (`git add -f` + `git ls-files --others "
+        "--ignored --exclude-standard` per /issue SKILL.md Step 9a-ter § Staged-index "
+        "verification) noted in the SAME section as the declaration, or relocate the output "
+        "out of the ignored root, or drop the committed claim; if the vocabulary is "
+        "incidental, declare `N/A — no committed outputs` on its own line, unwrapped "
+        "(no backticks/quotes)",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -7562,6 +7795,7 @@ CHECKS = [
     check_regression_anchor_executed,
     check_commit_sha_resolves,
     check_sentinel_lane,
+    check_committed_paths_not_gitignored,
 ]
 
 
