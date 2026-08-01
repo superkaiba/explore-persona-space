@@ -823,6 +823,48 @@ def stage_marker_mix(cfg: Cfg, cell: cells.CellSpec) -> None:
             )
 
 
+def _teardown_marker_cell(backend, model_box: list, slug: str) -> None:
+    """Contract-ordered marker-cell teardown (#1947 crash-fix r11).
+
+    Frees the HF base model FIRST, THEN runs ``backend.close`` — whose
+    ``issue1333_dispatch._wait_engine_release`` drain-wait REQUIRES that the
+    caller holds NO live HF-weight reference at the call (r9 contract):
+    closing with the ~15 GiB base model still resident times the wait out
+    DETERMINISTICALLY. ``model_box`` is a single-slot list carrying the SOLE
+    remaining reference (the caller ``del``s its own binding before calling),
+    so the ``x = _free_hf(x)`` rebind here is a REAL drop — a plain
+    ``base_model`` parameter would leave the caller's binding alive through
+    the drain-wait, re-creating the bug. The gc/empty_cache lines are the
+    post-rebind flush the r9 contract asks for. A close-time exception is
+    logged + suppressed when an inner exception is already propagating
+    (``sys.exc_info()``) so the inner error stays visible; with no inner
+    exception in flight a close failure raises normally (fail-fast).
+    """
+    import issue1333_dispatch as d1333
+
+    model = model_box.pop() if model_box else None
+    model = d1333._free_hf(model)  # rebind BEFORE the drain-wait (r9 contract)
+    gc.collect()
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    except Exception:
+        pass
+    inner_active = sys.exc_info()[0] is not None
+    try:
+        backend.close(slug)
+    except Exception:
+        if not inner_active:
+            raise
+        logger.exception(
+            "[marker-teardown] backend.close(%s) raised while an inner exception was "
+            "propagating; suppressed so the inner error surfaces",
+            slug,
+        )
+
+
 def run_marker_cell(cfg: Cfg, cell: cells.CellSpec) -> dict:
     """One marker cell: stage -> #1481 marker train (remapped uploads) ->
     per-rung four-float slot ladder -> apply-path gate -> programmatic
@@ -859,16 +901,12 @@ def run_marker_cell(cfg: Cfg, cell: cells.CellSpec) -> dict:
     try:
         ladder = mk._ladder_cell(mcfg, seams, mspec, backend, base_model, tok)
     finally:
-        backend.close(cell.slug)
+        # r9 contract: free the base model BEFORE close's drain-wait, and
+        # drop THIS frame's binding too — hand the sole reference over in a
+        # single-slot box so the helper's _free_hf rebind is a real drop.
+        _model_box = [base_model]
         del base_model
-        gc.collect()
-        try:
-            import torch
-
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-        except Exception:
-            pass
+        _teardown_marker_cell(backend, _model_box, cell.slug)
     gate = mk._apply_path_gate(mcfg, mspec, ladder)
     selection = mk.select_rung_1481(ladder)
     out_dir = cfg.out_root / "marker_ladders" / cell.slug
