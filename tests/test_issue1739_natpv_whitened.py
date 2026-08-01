@@ -61,14 +61,34 @@ def _fit_and_persist_whitening(args, seed: int = 3) -> dict:
     return out
 
 
-def _fake_map(seed: int) -> dict:
-    """A persisted-map payload in the real shape ``_map_projectors_raw`` returns."""
+def _persisted_map_arrays(seed: int) -> dict:
+    """Arrays in the REAL persisted-map layout (the on-disk npz shapes).
+
+    VERIFIED against the live artifacts' npz headers (both
+    ``{context_end,prefix_end}__ufull.npz`` on the data repo, read via ranged
+    requests 2026-07-31): ``w (28, 3584, 3584) fp16`` and ``x_mu`` / ``x_sd`` /
+    ``y_mu`` each ``(28, 1, 3584) fp32`` — matching the ``fits.MapFit`` field
+    annotations. The singleton axis is load-bearing: an earlier fixture that
+    guessed ``(Ly, d)`` for x_mu/x_sd passed every test and then crashed the
+    production fold at ``wl @ h`` (size 1 vs 3584).
+    """
     r = _rng(seed)
     return {
-        "w": r.normal(size=(LY, DIM, DIM)).astype(np.float32),
-        "x_mu": r.normal(size=(LY, DIM)),
-        "x_sd": np.abs(r.normal(size=(LY, DIM))) + 0.5,
-        "y_mu": r.normal(size=(LY, 1, DIM)),
+        "w": r.normal(size=(LY, DIM, DIM)).astype(np.float16),
+        "x_mu": r.normal(size=(LY, 1, DIM)).astype(np.float32),
+        "x_sd": (np.abs(r.normal(size=(LY, 1, DIM))) + 0.5).astype(np.float32),
+        "y_mu": r.normal(size=(LY, 1, DIM)).astype(np.float32),
+    }
+
+
+def _fake_map(seed: int) -> dict:
+    """What ``_map_projectors_raw`` RETURNS — squeezed via the real normalizer."""
+    a = _persisted_map_arrays(seed)
+    return {
+        "w": a["w"],
+        "x_mu": natpv._map_row_vecs(a["x_mu"], "x_mu", "test"),
+        "x_sd": natpv._map_row_vecs(a["x_sd"], "x_sd", "test"),
+        "y_mu": natpv._map_row_vecs(a["y_mu"], "y_mu", "test"),
         "meta": {"apply": "pred = ((x - x_mu)/x_sd) @ w + y_mu (whitened space)"},
         "path": "<test>",
     }
@@ -132,7 +152,7 @@ def test_map_read_matches_main_grid_composition(setup, read, variant):
                 (
                     ((z[ly] - mp["x_mu"][ly]) / mp["x_sd"][ly])
                     @ np.asarray(mp["w"][ly], dtype=np.float64)
-                    + mp["y_mu"][ly, 0]
+                    + mp["y_mu"][ly]
                 )
                 @ rb_w[ly]
                 for ly in range(LY)
@@ -174,17 +194,18 @@ def test_projectors_cover_every_read_and_regime(setup):
     assert set(prov["map_meta"]) == set(VARIANTS)
 
 
-def test_map_projectors_raw_real_body_loads_persisted_shape(tmp_path, monkeypatch):
-    """Execute the REAL _map_projectors_raw body (network boundary faked only)."""
-    r = _rng(5)
+def test_map_projectors_raw_real_body_squeezes_the_persisted_layout(tmp_path, monkeypatch):
+    """REAL _map_projectors_raw body on the REAL (Ly, 1, d) on-disk layout.
+
+    Regression pin for the production crash: the persisted npz stores x_mu /
+    x_sd / y_mu as (Ly, 1, d), and the fold needs them squeezed to (Ly, d).
+    """
+    a = _persisted_map_arrays(5)
     path = tmp_path / "context_end__ufull.npz"
     with path.open("wb") as fh:
         np.savez(
             fh,
-            w=r.normal(size=(LY, DIM, DIM)).astype(np.float16),
-            x_mu=r.normal(size=(LY, DIM)).astype(np.float32),
-            x_sd=(np.abs(r.normal(size=(LY, DIM))) + 0.5).astype(np.float32),
-            y_mu=r.normal(size=(LY, 1, DIM)).astype(np.float32),
+            **a,
             layers=np.arange(LY),
             meta=json.dumps({"apply": "pred = ((x - x_mu)/x_sd) @ w + y_mu (whitened space)"}),
         )
@@ -192,9 +213,50 @@ def test_map_projectors_raw_real_body_loads_persisted_shape(tmp_path, monkeypatc
     monkeypatch.setattr(natpv, "_REPO_ROOT", tmp_path / "nonexistent")
     out = natpv._map_projectors_raw("context_end", tmp_path)
     assert out["w"].shape == (LY, DIM, DIM)
-    assert out["x_mu"].shape == out["x_sd"].shape == (LY, DIM)
-    assert out["y_mu"].shape == (LY, 1, DIM)
+    assert out["x_mu"].shape == out["x_sd"].shape == out["y_mu"].shape == (LY, DIM)
     assert "whitened space" in out["meta"]["apply"]
+
+
+def test_whitened_fold_survives_the_real_persisted_map_layout(tmp_path, monkeypatch):
+    """End-to-end regression for the crash: (Ly, 1, d) map -> fold, no ValueError.
+
+    Drives _whitened_projectors through the REAL loader against an npz written
+    in the REAL layout — the exact path that raised
+    'matmul: Input operand 1 has a mismatch in its core dimension 0
+    (size 1 is different from 3584)' at `v = wl @ h` in production.
+    """
+    args = argparse.Namespace(whitening_root=tmp_path, u_size="full", space="whitened")
+    _fit_and_persist_whitening(args)
+    for i, variant in enumerate(VARIANTS):
+        a = _persisted_map_arrays(41 + i)
+        with (tmp_path / f"{variant}__ufull.npz").open("wb") as fh:
+            np.savez(fh, **a, layers=np.arange(LY), meta=json.dumps({"apply": "whitened space"}))
+    monkeypatch.setattr(
+        natpv,
+        "_stage_hf",
+        lambda path_in_repo, dest, revision="main": tmp_path / Path(path_in_repo).name,
+    )
+    monkeypatch.setattr(natpv, "_REPO_ROOT", tmp_path / "nonexistent")
+    proj, _prov = natpv._whitened_projectors(
+        args, {"e1": _rng(51).normal(size=(LY, DIM))}, tmp_path
+    )
+    for read in ("map_ctx", "map_pre"):
+        vec, const = proj[read]["e1"]
+        assert vec.shape == (LY, DIM) and const.shape == (LY,)
+        assert np.isfinite(vec).all() and np.isfinite(const).all()
+
+
+@pytest.mark.parametrize("bad", [(LY, 2, DIM), (LY, DIM, DIM), (DIM,), (LY - 1, 1, DIM)])
+def test_map_row_vecs_fails_loud_on_unexpected_layout(bad):
+    with pytest.raises(RuntimeError, match="unexpected layout"):
+        natpv._map_row_vecs(np.zeros(bad), "x_sd", "context_end")
+
+
+def test_map_row_vecs_squeezes_and_preserves_values():
+    a = _rng(7).normal(size=(LY, 1, DIM))
+    out = natpv._map_row_vecs(a, "x_mu", "context_end")
+    assert out.shape == (LY, DIM) and out.dtype == np.float64
+    np.testing.assert_allclose(out, a[:, 0, :])
 
 
 def test_load_whitening_missing_fails_loud(tmp_path):

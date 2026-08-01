@@ -681,13 +681,15 @@ def _whitened_projectors(args, directions: dict, stage: Path) -> tuple[dict, dic
                         v = wl @ rb_w
                         c = -float(mu[ly] @ v)
                     else:
+                        # x_mu/x_sd/y_mu arrive squeezed to (Ly, d) by
+                        # _map_row_vecs, so every term here is 1-D per layer.
                         g = np.asarray(mp["w"][ly], dtype=np.float64) @ rb_w
                         h = g / mp["x_sd"][ly]
                         v = wl @ h
                         c = (
                             -float(mu[ly] @ v)
                             - float(mp["x_mu"][ly] @ h)
-                            + float(mp["y_mu"][ly, 0] @ rb_w)
+                            + float(mp["y_mu"][ly] @ rb_w)
                         )
                     vec[ly], const[ly] = v, c
                 out[read][regime] = (vec, const)
@@ -699,6 +701,32 @@ def _whitened_projectors(args, directions: dict, stage: Path) -> tuple[dict, dic
     return out, prov
 
 
+def _map_row_vecs(arr, name: str, variant: str, n_layers: int = 28):
+    """``(Ly, 1, d)`` -> ``(Ly, d)`` fp64, fail-loud on any other layout.
+
+    The persisted map writes ``x_mu`` / ``x_sd`` / ``y_mu`` as ``(Ly, 1, d)``
+    (``fits.MapFit`` field annotations; VERIFIED against the real
+    ``{context_end,prefix_end}__ufull.npz`` headers on the data repo —
+    ``w (28, 3584, 3584) fp16``, the other three ``(28, 1, 3584) fp32``, both
+    variants identical). The RAW path never noticed because it only ever
+    BROADCASTS these against an ``(n, d)`` block; the whitened fold does
+    per-layer 1-D algebra, so the singleton axis has to come off at the LOAD
+    boundary — one place — rather than at each use site.
+    """
+    import numpy as np
+
+    a = np.asarray(arr, dtype=np.float64)
+    if a.ndim == 3 and a.shape[1] == 1:
+        a = a[:, 0, :]
+    if a.ndim != 2 or a.shape[0] != n_layers:
+        raise RuntimeError(
+            f"map {variant}: {name} has unexpected layout {np.shape(arr)} — expected "
+            f"({n_layers}, 1, d) per fits.MapFit (or ({n_layers}, d)); the whitened fold "
+            "cannot index it per layer"
+        )
+    return a
+
+
 def _map_projectors_raw(variant: str, stage: Path) -> dict:
     """Load a persisted map's raw arrays (``w``/``x_mu``/``x_sd``/``y_mu``).
 
@@ -706,6 +734,9 @@ def _map_projectors_raw(variant: str, stage: Path) -> dict:
     this keeps the arrays so the whitened path can fold ``W`` in as well. The
     map's ``apply`` contract is ``pred = ((x - x_mu)/x_sd) @ w + y_mu`` in
     WHITENED space — which is exactly why the whitened path is the faithful one.
+
+    ``x_mu`` / ``x_sd`` / ``y_mu`` are returned SQUEEZED to ``(Ly, d)``; ``w``
+    stays ``(Ly, d, d)``.
     """
     import numpy as np
 
@@ -723,9 +754,9 @@ def _map_projectors_raw(variant: str, stage: Path) -> dict:
             raise RuntimeError(f"map {variant} layers != 0..27")
         out = {
             "w": np.asarray(z["w"]),
-            "x_mu": np.asarray(z["x_mu"], dtype=np.float64),
-            "x_sd": np.asarray(z["x_sd"], dtype=np.float64),
-            "y_mu": np.asarray(z["y_mu"], dtype=np.float64),
+            "x_mu": _map_row_vecs(z["x_mu"], "x_mu", variant),
+            "x_sd": _map_row_vecs(z["x_sd"], "x_sd", variant),
+            "y_mu": _map_row_vecs(z["y_mu"], "y_mu", variant),
             "meta": meta,
             "path": str(path),
         }
