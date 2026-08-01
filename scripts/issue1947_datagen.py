@@ -419,9 +419,54 @@ def _mock_template_response(spec: qg.TraitSpec, attempt: int) -> str:
     )
 
 
+def _parse_generation_tolerant(raw: str, behavior: str) -> dict | None:
+    """Per-call parse tolerance for the ~15x repeated template calls (crash-fix r4).
+
+    The parent parser (``issue1090_questiongen.parse_generation``) hard-asserts
+    EXACTLY ``N_QUESTIONS`` — its exact-40 contract belongs to #1090 and stays
+    untouched. Under repeated verbatim template calls, occasional over-count
+    generations (41+) are expected model noise and are salvageable: CLIP to the
+    first ``N_QUESTIONS`` and re-validate through the parent parser (so every
+    other parent check — instruction pairs, empty/duplicate questions,
+    eval_prompt — still runs on the clipped payload). Any OTHER parse failure
+    (under-count, malformed JSON, duplicates) is a FAILED generation call:
+    return None so the caller's oversample/retry-tranche machinery absorbs it
+    (the bank floor still fails loud after the budgeted tranches).
+    """
+    try:
+        return qg.parse_generation(raw)
+    except ValueError as err:
+        try:
+            obj = json.loads(qg._strip_fence(raw))
+        except json.JSONDecodeError:
+            logger.warning("[banks] %s: rejected generation call (%s)", behavior, err)
+            return None
+        questions = obj.get("questions")
+        if isinstance(questions, list) and len(questions) > qg.N_QUESTIONS:
+            n_raw = len(questions)
+            obj["questions"] = questions[: qg.N_QUESTIONS]
+            try:
+                gen = qg.parse_generation(json.dumps(obj, ensure_ascii=False))
+            except ValueError as err2:
+                logger.warning(
+                    "[banks] %s: rejected generation call after clip (%s)", behavior, err2
+                )
+                return None
+            logger.info(
+                "[banks] %s: clipped over-count generation: %d -> %d",
+                behavior,
+                n_raw,
+                qg.N_QUESTIONS,
+            )
+            return gen
+        logger.warning("[banks] %s: rejected generation call (%s)", behavior, err)
+        return None
+
+
 def _extend_bank(cfg: Cfg, beh_key: str) -> dict:
     """Extend one behavior's bank to >= 40 + n_new unique screened questions via
-    repeated verbatim pv-template calls (dedup across calls; screens per call)."""
+    repeated verbatim pv-template calls (dedup across calls; screens per call;
+    per-call parse tolerance via _parse_generation_tolerant)."""
     spec = _trait_spec(beh_key)
     behavior = BEHAVIOR_BY_KEY[beh_key]
     out_path = cfg.banks_dir / f"{behavior}_extended.json"
@@ -435,6 +480,7 @@ def _extend_bank(cfg: Cfg, beh_key: str) -> dict:
     seen = {q.strip() for q in existing}
     new_qs: list[str] = []
     attempts_used = 0
+    parse_rejects = 0
     screen_log: list[dict] = []
     cache_root = cfg.banks_dir / "cache" / behavior
     for attempt in range(1, BANK_MAX_TEMPLATE_CALLS + 1):
@@ -445,7 +491,11 @@ def _extend_bank(cfg: Cfg, beh_key: str) -> dict:
             raw = _mock_template_response(spec, attempt)
         else:
             raw = qg._dispatch_one(spec, 1000 + attempt, cache_root)
-        gen = qg.parse_generation(raw)
+        gen = _parse_generation_tolerant(raw, behavior)
+        if gen is None:
+            parse_rejects += 1
+            screen_log.append({"attempt": attempt, "parse_reject": True})
+            continue
         violations = qg.screen_questions(spec, gen["questions"])
         if spec.false_claim_screen and not cfg.mock_gen:
             violations = violations + qg.screen_false_claims(
@@ -462,7 +512,8 @@ def _extend_bank(cfg: Cfg, beh_key: str) -> dict:
     if len(new_qs) < n_new_target:
         raise RuntimeError(
             f"[banks] {behavior}: only {len(new_qs)} unique screened new questions after "
-            f"{attempts_used} template calls (target {n_new_target}) — raise "
+            f"{attempts_used} template calls (target {n_new_target}, "
+            f"{parse_rejects} parse-rejected calls) — raise "
             f"BANK_MAX_TEMPLATE_CALLS or investigate screen rejections: {screen_log}"
         )
     new_qs = new_qs[:n_new_target]
@@ -476,12 +527,19 @@ def _extend_bank(cfg: Cfg, beh_key: str) -> dict:
         "new_sha256_canonical": _canonical_sha(new_qs),
         "template_sha256": hashlib.sha256(qg.template_text().encode("utf-8")).hexdigest(),
         "attempts_used": attempts_used,
+        "parse_rejects": parse_rejects,
         "screen_log": screen_log,
         "mock": cfg.mock_gen,
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     _write_json(out_path, rec)
-    logger.info("[banks] %s: %d new questions in %d calls", behavior, len(new_qs), attempts_used)
+    logger.info(
+        "[banks] %s: %d new questions in %d calls (%d parse-rejected)",
+        behavior,
+        len(new_qs),
+        attempts_used,
+        parse_rejects,
+    )
     return rec
 
 
