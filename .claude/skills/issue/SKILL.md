@@ -2459,6 +2459,9 @@ else
 #     from workflow.yaml via `workflow_lint.py --emit-tables`; syncing
 #     one without the other creates a stale-derived tree — the 0e2c3b21
 #     incident, 2026-07-26)
+#     <-> :(glob)tests/test_issue_skill_*.py (prose-pin tests over
+#     .claude/skills content; syncing SKILL.md without its paired pin
+#     test reds the Step 9c gate — the #1824 vintage skew, #1883)
 #   FAMILY_lint: scripts/workflow_lint.py <-> :(glob)tests/test_workflow_lint*.py
 #     plus tests/test_workflow_yaml.py and tests/test_autonomous_session_watch.py
 #     (pin tests import symbols from workflow_lint.py; syncing new pin
@@ -2475,6 +2478,7 @@ declare -A FAMILY_OF
 FAMILY_OF[".claude/workflow.yaml"]="workflow"
 FAMILY_OF[".claude/skills"]="workflow"    # contains markers.md, the derived table target
 FAMILY_OF["tests/test_workflow_yaml.py"]="workflow"    # imports render_*_table from workflow_lint AND reads workflow.yaml data via load_workflow_yaml — a workflow-data behavioral test
+FAMILY_OF[":(glob)tests/test_issue_skill_*.py"]="workflow"
 FAMILY_OF["scripts/workflow_lint.py"]="lint"
 FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"
 FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"    # test_codex_outage_docstring_pass_count_lint_stays_green imports check_asw_docstring_pass_count from workflow_lint
@@ -2484,7 +2488,7 @@ FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
 # Singletons: .claude/agents, .claude/rules, CLAUDE.md — each is its
 # own family key (set below in the pass-1 loop by defaulting to its own path).
 
-SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py"
+SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
 # Bounded freshness fetch (#1747 — the #1289/#1714 shape): local main can lag
 # origin on the shared root; a failed fetch degrades to last-fetched
 # origin/main — never a wedge, never a fallback to local main.
@@ -2576,13 +2580,15 @@ safely override the skip for those specific files with a manual
 **The sync scope is specs + the spec-coupled lint/guard family — do NOT
 extend it further into `scripts/`, `tests/`, or `src/`.** The family
 exception (#1560: `scripts/workflow_lint.py`, `.claude/hooks`,
-`:(glob)tests/test_guard_*.py`, `:(glob)tests/test_workflow_lint*.py`)
+`:(glob)tests/test_guard_*.py`, `:(glob)tests/test_workflow_lint*.py`;
+#1883 adds `:(glob)tests/test_issue_skill_*.py`, the prose-pin tests
+over `.claude/skills` content — the #1824 vintage skew)
 exists because those files execute FROM the worktree tree on four
 surfaces — the Step 10d TG legs, worktree pytest / Step 9c, the hooks'
 own-tree `workflow_lint` import, and the inline gate invoked in a
 worktree — and their constants/budgets pair with the specs this sync
 already refreshes: half-syncing manufactured the #1489/#1482/#1417 gate
-blocks. The family is deliberately closed up to ONE seam: its only src
+blocks. The lint/guard family is deliberately closed up to ONE seam: its only src
 imports are from the low-churn `explore_persona_space.workflow` module
 (the linter's 2-symbol import at `workflow_lint.py:672-681`, plus
 `tests/test_workflow_lint.py:96`'s 3-symbol
@@ -2590,12 +2596,23 @@ imports are from the low-churn `explore_persona_space.workflow` module
 residual: a synced family file ImportError-ing on that module means
 branch-era `src/explore_persona_space/workflow.py` skew (rebase onto
 origin/main, or cross-check at the repo root; module stable since
-2026-06-13). Family atomicity (#1714): within the spec-coupled
+2026-06-13). The skill-pin glob (`:(glob)tests/test_issue_skill_*.py`,
+#1883) carries two additional accepted seams of the same β-class:
+`tests/test_issue_skill_long_phase_heartbeat.py` imports the
+scripts-side `autonomous_session_watch` + `tick_triage` modules
+(L53-54), and `tests/test_issue_skill_trigger_dense_tag_adoption.py`
+importlib-loads `scripts/select_step9c_tests.py` by path and text-pins
+a literal in `src/explore_persona_space/backends/excerpt_digest.py` —
+same remedy: a synced pin test failing on branch-era `scripts/`/`src/`
+skew means rebase onto origin/main, or cross-check at the repo root.
+Family atomicity (#1714): within the spec-coupled
 lint/guard family, the per-item branch-side-edit skip is transitive —
 a branch-side edit on ANY family member widens the skip to the WHOLE
 family (never narrows it). Three families are declared: workflow
 (`.claude/workflow.yaml` + `.claude/skills` where the derived
-`markers.md` and SKILL.md generated tables live), lint
+`markers.md` and SKILL.md generated tables live, plus
+`:(glob)tests/test_issue_skill_*.py` — the prose-pin tests over that
+skills content, #1883), lint
 (`scripts/workflow_lint.py` + `:(glob)tests/test_workflow_lint*.py`
 plus the explicit importers `tests/test_workflow_yaml.py` and
 `tests/test_autonomous_session_watch.py`), and guard (`.claude/hooks`
@@ -12206,13 +12223,14 @@ else
     FAMILY_OF[".claude/workflow.yaml"]="workflow"
     FAMILY_OF[".claude/skills"]="workflow"
     FAMILY_OF["tests/test_workflow_yaml.py"]="workflow"
+    FAMILY_OF[":(glob)tests/test_issue_skill_*.py"]="workflow"
     FAMILY_OF["scripts/workflow_lint.py"]="lint"
     FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"
     FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"
     FAMILY_OF[".claude/hooks"]="guard"
     FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
     FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
-    SPECS_10D=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py"
+    SPECS_10D=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
     MB_10D=$(git -C "$WT" merge-base HEAD origin/main)
     declare -A DIRTY_FAMILIES_10D
     for f in $SPECS_10D; do
