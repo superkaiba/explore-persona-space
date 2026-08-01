@@ -749,6 +749,7 @@ def run_dispatch(args) -> int:
         fh.close()
         if rc != 0:
             failures.append((gpu, rc))
+            # JSONL_SPLITLINES_EXEMPT: worker LOG tail for crash diagnostics, not JSONL content
             tail = log.read_text(encoding="utf-8", errors="replace").splitlines()[-120:]
             print(f"[capture] gpu{gpu} FAILED rc={rc}; tail of {log}:", flush=True)
             for ln in tail:
