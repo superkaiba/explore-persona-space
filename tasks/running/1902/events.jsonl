@@ -200,3 +200,4 @@
 {"ts": "2026-08-01T17:42:55Z", "kind": "epm:progress", "version": 82, "by": "unknown", "note": "[long-phase-heartbeat] job 16587: fits: [fits] unit 386/549 mlp_pre_BS_f0 elapsed=955.8s total=25626s | units=446"}
 {"ts": "2026-08-01T18:01:48Z", "kind": "epm:progress", "version": 83, "by": "unknown", "note": "[long-phase-heartbeat] job 16587: fits: [fits] unit 390/549 mlp_pre_BS_f2 elapsed=954.1s total=26538s | units=450 | wall_left=4:00:46"}
 {"ts": "2026-08-01T18:20:42Z", "kind": "epm:progress", "version": 84, "by": "unknown", "note": "[long-phase-heartbeat] job 16587: fits: [fits] unit 394/549 mlp_pre_BD_f0 elapsed=922.2s total=27381s | units=454 | wall_left=3:41:53"}
+{"ts": "2026-08-01T18:39:37Z", "kind": "epm:progress", "version": 85, "by": "unknown", "note": "[long-phase-heartbeat] job 16587: fits: [fits] unit 402/549 mlp_pre_BR_f5 elapsed=865.3s total=29169s | units=462 | wall_left=3:22:57"}
