@@ -6767,8 +6767,8 @@
     "1874": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1874",
-      "status": "reviewing",
+      "path": "tasks/completed/1874",
+      "status": "completed",
       "title": "daily-fix: /daily filed bodies cite marker per mechanism cla"
     },
     "1875": {
