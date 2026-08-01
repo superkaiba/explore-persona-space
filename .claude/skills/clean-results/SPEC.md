@@ -617,7 +617,13 @@ file AND state the omission with an explicit exemption phrase — "not
 embedded: <reason>" or "superseded by <the embedded view>" — in the same
 paragraph as the filename; a bare provenance mention ("committed at the
 same pin") does not count, and `verify_task_body.py` check 31 WARNs
-`companion-named-not-embedded`.
+`companion-named-not-embedded`. Conversely, a `### <result>` embedding
+MORE THAN ONE inline figure with pair evidence in neither the figure
+basenames (a per-unit companion stem) nor the figures' alt text /
+blockquote captions (a per-unit / raw-alongside / companion declaration)
+draws `verify_task_body.py` check 49's WARN — the mechanical backstop of
+the one-result-one-figure rule (#1879): declare the pair in the
+caption/alt, or split the extra analysis into its own `### <result>`.
 
 **Raw alongside processed** (the transformed-figure special case). When a
 result's figure plots a residualized / partialled / binned /
@@ -1088,6 +1094,23 @@ Forward-only: each check branches on the sentinel. The v4 checks
     #1769 Result 5 shipped its H1-carrying three-treatment lattice as a
     `> **Figure.**`-captioned GFM table with zero inline images, and only
     the round-1 LM REVISE caught it.)
+49. **Unpaired multi-figure result** (`check_v4_result_figure_cardinality`,
+    v4 only, WARN — NEVER FAIL): a `### <result>` block embedding MORE
+    THAN ONE inline figure (markdown `![...]` plus HTML `<img>` embeds;
+    fenced code + `<details>` bodies excluded) with NO pair evidence —
+    no embedded basename matching the per-unit companion naming
+    convention, and no declared-pair idiom (per-unit vocabulary,
+    raw-alongside, unbinned/low-level, companion/counterpart) in the
+    figures' alt text or the section's blockquote caption lines — draws
+    a WARN naming the H3, the figure count, and the figure basenames.
+    General section prose deliberately does NOT count as pair evidence
+    (the origin section's what-is-plotted beat says "per-question" as
+    routine disclosure prose, so whole-section matching would silence
+    the incident shape); the clean-result-critic Lens 9
+    one-result-one-figure rule stays the substantive owner. (#1879;
+    incident: #1769's fu1 re-gate shipped the dose ladder + the α=3
+    lattice — two distinct analyses — under one `### <result>`, and only
+    the LM critic caught it.)
 
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
 (check 22), HF-URL-resolves (check 23), figure-sidecar opaque

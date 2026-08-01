@@ -175,7 +175,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 63 results total (2 prepended + CHECKS[1:]=48 + 13 appended, counting
+    # 64 results total (2 prepended + CHECKS[1:]=49 + 13 appended, counting
     # the #1827 plan-conditions check narrated below; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
@@ -193,9 +193,11 @@ def test_good_body_passes_all():
     # PASS, no registered count claim), and check 46
     # `check_hf_brace_expanded_path_claims` (#1520 — vacuous PASS, no
     # brace-path claims adjacent to pinned HF tree links), and check 48
-    # `check_v4_quant_result_figure` (#1832 — PASS-skip, not a v4 body)
+    # `check_v4_quant_result_figure` (#1832 — PASS-skip, not a v4 body),
+    # and check 49 `check_v4_result_figure_cardinality` (#1879 —
+    # PASS-skip, not a v4 body)
     # ride CHECKS;
-    # 36/37/39/44/48
+    # 36/37/39/44/48/49
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
     # 41 is the fake-sha NO-OP PASS above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
@@ -205,7 +207,7 @@ def test_good_body_passes_all():
     # verify_text (needs the issue number) and PASS-skips here (legacy body).
     # The plan-conditions coverage check (#1827) is dispatched in verify_text
     # (needs plans/plan.md) and NO-OP PASSes here (no plan sibling).
-    assert len(results) == 63
+    assert len(results) == 64
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert "plan conditions coverage" in {r.name for r in results}
@@ -5843,9 +5845,9 @@ def test_checks_list_size():
     denominator check (needs eval JSONs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 63 results (2 prepended + CHECKS[1:]=48 +
+    So `verify_text` returns 64 results (2 prepended + CHECKS[1:]=49 +
     13 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 49 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    at 50 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
@@ -5856,10 +5858,11 @@ def test_checks_list_size():
     `check_github_tree_adjacent_file_claims` (#1507) — check 44
     `check_footer_hf_paths_pinned` (#1509) — check 45
     `check_figure_caption_count_claims_vs_sidecar` (#1511) — check 46
-    `check_hf_brace_expanded_path_claims` (#1520) — and check 48
-    `check_v4_quant_result_figure` (#1832) ride CHECKS).
+    `check_hf_brace_expanded_path_claims` (#1520) — check 48
+    `check_v4_quant_result_figure` (#1832) — and check 49
+    `check_v4_result_figure_cardinality` (#1879) ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 49
+    assert len(verify_task_body.CHECKS) == 50
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_footer_hf_paths_pinned in verify_task_body.CHECKS
@@ -5868,6 +5871,7 @@ def test_checks_list_size():
     assert verify_task_body.check_figure_beat_claims_vs_sidecar_text in verify_task_body.CHECKS
     assert verify_task_body.check_v4_result_paragraph_sentences in verify_task_body.CHECKS
     assert verify_task_body.check_v4_quant_result_figure in verify_task_body.CHECKS
+    assert verify_task_body.check_v4_result_figure_cardinality in verify_task_body.CHECKS
     assert verify_task_body.check_footer_reuse_bullets_pinned in verify_task_body.CHECKS
     assert verify_task_body.check_v4_sample_disclosure_count in verify_task_body.CHECKS
     assert verify_task_body.check_hf_unpinned_count_claims in verify_task_body.CHECKS
@@ -11764,11 +11768,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (49 as of
-    check 48, #1832; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (50 as of
+    check 49, #1879; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 49
+    assert len(verify_task_body.CHECKS) == 50
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -16827,3 +16831,243 @@ def test_check48_issue1769_result5_incident_fixture_warns():
     assert "'Evil and sycophancy decode-driven timing at" in res.detail
     assert "GFM table" in res.detail
     assert "no inline figure" in res.detail
+
+
+# ─── Check 49: multi-figure result sections without pair evidence (v4 WARN, #1879) ─
+#
+# Lens 9's one-result-one-figure rule allows a second inline figure ONLY as
+# the sanctioned raw+processed / aggregate+per-unit pair (SPEC.md § Low-level
+# data plot behind every aggregate). Check 49 WARNs a `### <result>` embedding
+# >1 inline figure whose pair evidence is in NEITHER the figure basenames
+# (`_PER_UNIT_FIG_RE`) nor the figures' alt text / blockquote caption lines
+# (`_DECLARED_PAIR_RE`) — general section prose deliberately does NOT count
+# (the origin #1769 what-is-plotted beat says "per-question" as routine
+# SPEC-mandated disclosure prose). WARN, never FAIL; vacuous PASS on non-v4
+# bodies.
+
+_CHECK49_NAME = "One inline figure per result, or a declared pair (v4)"
+
+# Verbatim incident fixture: task #1769's fu1 re-gate dose-ladder section —
+# BOTH figure blocks (alt + blockquote caption verbatim from the #1769 body)
+# under one H3, plus the real what-is-plotted prose whose "per-question"
+# sentence must NOT silence the WARN (the caption/alt scoping is the round-1
+# plan-critic Must-Fix). Two distinct analyses (dose ladder + alpha-3 lattice)
+# shipped under one `### <result>`; the verifier read PASS and only the LM
+# clean-result-critic caught it.
+_ISSUE1769_FU1_DOSE_LADDER_BLOCK = """\
+### The dose ladder places the CJK collapse between α=2 and 3
+
+The figure plots Δ_both (raw scoring, mean graded score minus the neither arm) against α ∈ {1, 1.5, 2, 3, 4} per behavior, with the interpretable window (α ≤ 2) and the CJK-affected region shaded; the per-question data behind the ladder points appear in the α=1.5, α=2, and α=3 sections.
+
+![Dose ladder of both-arm effect versus alpha with interpretable-window and CJK-affected shading](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c66bd5b6d9672983b29f7341f96f4451aeee6eb6/figures/issue_1769/fig_dose_ladder.png)
+
+> **Figure.** *Installed effect rises through α=3 for hallucination and sycophancy while evil peaks at α=2; the α=3–4 points sit in the CJK-affected region.* Δ_both (raw) per behavior at five doses, 200 draws per arm-dose (evil: 5.8, 61.6, 86.0, 72.4, 31.6 across the ladder); evil labeled scheming.
+
+![Decode fraction at alpha 3 under three CJK-intrusion treatments with degenerate cells marked](https://raw.githubusercontent.com/superkaiba/explore-persona-space/46f3eb7d42d7e45f30d414d893c181fcf0c860e0/figures/issue_1769/fig_alpha3_lattice.png)
+
+> **Figure.** *Only sycophancy keeps a computable three-treatment read at α=3.* f_d with 95% CIs per treatment; evil and hallucination exclusion cells are drawn as N/A notes (84.5% and 92% decode-arm intrusion; 30 and 13 of 200 draws remain); evil labeled scheming.
+
+Installed effect rises through α=3 for hallucination (67.4) and sycophancy (47.4) while evil peaks at 86.0 at α=2, and all three fall back at α=4.
+"""
+
+
+def test_check49_verbatim_1769_fu1_dose_ladder_warns():
+    """Row 1 (kill-criterion arbiter): the verbatim #1769 fu1 dose-ladder
+    section — two figures, no alt/caption idiom hit ("per behavior" /
+    "per arm-dose" / "per treatment" are not in the alternation; "(raw)"
+    has no alongside/counterpart/version/view/scatter within reach), no
+    per-unit basename — WARNs naming the H3 + both basenames, and the
+    prose-level "per-question" sentence does not silence it."""
+    body = _v4_minimal_results_body(_ISSUE1769_FU1_DOSE_LADDER_BLOCK)
+    res = verify_task_body.check_v4_result_figure_cardinality(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'The dose ladder places the CJK collapse" in res.detail
+    assert "2 figures" in res.detail
+    assert "fig_dose_ladder.png" in res.detail
+    assert "fig_alpha3_lattice.png" in res.detail
+
+
+def test_check49_per_unit_companion_stem_passes():
+    """Row 2 — pair evidence (a): a second figure whose basename matches
+    the `_PER_UNIT_FIG_RE` companion naming convention
+    (`..._percontext_delta.png`) silences the WARN; alts + captions stay
+    idiom-free so the stem is the only evidence."""
+    body = _v4_minimal_results_body(
+        "### Lift by seed\n\n"
+        "Aggregate lift across seeds.\n\n"
+        "![Aggregate lift bars](https://x/figures/issue_9/lift_summary.png)\n\n"
+        "> **Figure.** *Lead.* Aggregate bars.\n\n"
+        "![Delta grid](https://x/figures/issue_9/lift_percontext_delta.png)\n\n"
+        "> **Figure.** *Lead.* Same data at finer grain.\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check49_declared_pair_in_caption_or_alt_passes():
+    """Row 3 — pair evidence (b): a declared-pair idiom in the second
+    figure's CAPTION ("per-question companion ...") or ALT ("raw scatter
+    alongside ...") silences the WARN; the basenames carry no per-unit
+    stem, so the alt/caption declaration is the only evidence."""
+    caption_declared = _v4_minimal_results_body(
+        "### Effect by question\n\n"
+        "Forest plot plus the underlying data.\n\n"
+        "![Forest plot of effects](https://x/figures/issue_9/forest.png)\n\n"
+        "> **Figure.** *Lead.* Pooled effects.\n\n"
+        "![Scatter of effects](https://x/figures/issue_9/scatter_all.png)\n\n"
+        "> **Figure.** *Lead.* per-question companion of the forest plot above.\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(caption_declared)
+    assert res.passed is True
+    assert res.is_warn is False
+    alt_declared = _v4_minimal_results_body(
+        "### Residualized effect\n\n"
+        "Residualized read plus its pre-processing twin.\n\n"
+        "![Residualized effect](https://x/figures/issue_9/effect_resid.png)\n\n"
+        "> **Figure.** *Lead.* Residualized.\n\n"
+        "![raw scatter alongside the residualized view](https://x/figures/issue_9/effect_all.png)\n\n"
+        "> **Figure.** *Lead.* Pre-processing twin.\n"
+    )
+    res2 = verify_task_body.check_v4_result_figure_cardinality(alt_declared)
+    assert res2.passed is True
+    assert res2.is_warn is False
+
+
+def test_check49_one_figure_per_section_passes():
+    """Row 4: the conforming one-figure-per-result shape draws no WARN."""
+    body = _v4_minimal_results_body(
+        "### Lift by seed\n\n"
+        "Aggregate lift across seeds.\n\n"
+        "![Aggregate lift bars](https://x/figures/issue_9/lift_summary.png)\n\n"
+        "> **Figure.** *Lead.* Aggregate bars.\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(body)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "no unpaired multi-figure section" in res.detail
+
+
+def test_check49_three_figures_no_evidence_warns():
+    """Row 5: three inline figures with no pair evidence WARN with
+    count=3."""
+    body = _v4_minimal_results_body(
+        "### Three analyses in one\n\n"
+        "Three separate reads bundled into one section.\n\n"
+        "![First read](https://x/figures/issue_9/read_one.png)\n\n"
+        "![Second read](https://x/figures/issue_9/read_two.png)\n\n"
+        "![Third read](https://x/figures/issue_9/read_three.png)\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "3 figures" in res.detail
+    assert "read_one.png" in res.detail
+    assert "read_three.png" in res.detail
+
+
+def test_check49_fenced_and_details_figures_not_counted():
+    """Row 6: figures living only inside a fenced code block or a
+    `<details>` example block are NOT counted (`_prose_layer`
+    convention) — one real figure + two quoted embeds stay conforming."""
+    fenced = _v4_minimal_results_body(
+        "### Skeleton example\n\n"
+        "Real figure plus a quoted skeleton.\n\n"
+        "![Real figure](https://x/figures/issue_9/real.png)\n\n"
+        "```markdown\n"
+        "![Quoted embed](https://x/figures/issue_9/quoted_a.png)\n"
+        "![Quoted embed](https://x/figures/issue_9/quoted_b.png)\n"
+        "```\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(fenced)
+    assert res.passed is True
+    assert res.is_warn is False
+    collapsed = _v4_minimal_results_body(
+        "### Collapsed views\n\n"
+        "Real figure plus collapsed extras.\n\n"
+        "![Real figure](https://x/figures/issue_9/real.png)\n\n"
+        "<details>\n<summary>extra views</summary>\n\n"
+        "![Extra view](https://x/figures/issue_9/extra_a.png)\n\n"
+        "![Extra view](https://x/figures/issue_9/extra_b.png)\n\n"
+        "</details>\n"
+    )
+    res2 = verify_task_body.check_v4_result_figure_cardinality(collapsed)
+    assert res2.passed is True
+    assert res2.is_warn is False
+
+
+def test_check49_skips_non_v4_and_missing_results():
+    """Row 7 (forward-only): a v3-sentinel body with two figures under one
+    `###` PASSes vacuously, as do legacy bodies and a v4 body with no
+    `## Results` H2."""
+    v3_two_figs = (
+        "# T (LOW confidence)\n\n<!-- clean-result-v3 -->\n\n## Findings\n\n"
+        "### R\n\n![a](https://x/figures/issue_9/a.png)\n\n"
+        "![b](https://x/figures/issue_9/b.png)\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(v3_two_figs)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "skipped — not a v4 body" in res.detail
+    res_legacy = verify_task_body.check_v4_result_figure_cardinality(GOOD_BODY)
+    assert res_legacy.passed is True
+    assert res_legacy.is_warn is False
+    no_results = "# T (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n## Takeaways\n\n- x\n"
+    res_nores = verify_task_body.check_v4_result_figure_cardinality(no_results)
+    assert res_nores.passed is True
+    assert res_nores.is_warn is False
+    assert "## Results missing" in res_nores.detail
+
+
+def test_check49_warn_never_flips_verdict_and_rides_checks():
+    """Row 8 + registration: the WARN rides the body-only CHECKS dispatch
+    (`verify_text` emits it) with `passed=True`, so the aggregate verdict
+    (`ok == all(r.passed)`) can never flip on this check."""
+    assert verify_task_body.check_v4_result_figure_cardinality in verify_task_body.CHECKS
+    body = _v4_minimal_results_body(_ISSUE1769_FU1_DOSE_LADDER_BLOCK)
+    ok, results = verify_task_body.verify_text(body)
+    r49 = next(r for r in results if r.name == _CHECK49_NAME)
+    assert r49.is_warn is True
+    assert r49.passed is True
+    assert ok == all(r.passed for r in results)
+    assert ok == all(r.passed for r in results if r.name != _CHECK49_NAME)
+
+
+def test_check49_one_figure_each_across_sections_passes():
+    """Row 9: cardinality is per-SECTION, not per-body — two `###`
+    sections with one figure each draw no WARN."""
+    body = _v4_minimal_results_body(
+        "### First result\n\n"
+        "First read.\n\n"
+        "![First figure](https://x/figures/issue_9/first.png)\n\n"
+        "### Second result\n\n"
+        "Second read.\n\n"
+        "![Second figure](https://x/figures/issue_9/second.png)\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(body)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "all 2" in res.detail
+
+
+def test_check49_prose_only_pair_vocab_still_warns():
+    """Row 10 (pins the round-1 Must-Fix scoping): declared-pair vocabulary
+    living ONLY in general section prose — the verbatim real-body line
+    "the per-question companion below is the per-unit data behind these
+    aggregates" — does NOT silence two unpaired figures; only alt text +
+    blockquote caption lines count."""
+    body = _v4_minimal_results_body(
+        "### Aggregates and extras\n\n"
+        "the per-question companion below is the per-unit data behind these aggregates\n\n"
+        "![Aggregate bars](https://x/figures/issue_9/agg_bars.png)\n\n"
+        "> **Figure.** *Lead.* Pooled bars.\n\n"
+        "![Second analysis](https://x/figures/issue_9/extra_analysis.png)\n\n"
+        "> **Figure.** *Lead.* A different read entirely.\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'Aggregates and extras'" in res.detail
+    assert "agg_bars.png" in res.detail
+    assert "extra_analysis.png" in res.detail
